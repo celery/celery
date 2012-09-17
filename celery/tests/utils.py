@@ -514,6 +514,7 @@ def mock_open(typ=WhateverIO, side_effect=None):
             if side_effect is not None:
                 context.__enter__.side_effect = side_effect
             val = context.__enter__.return_value = typ()
+            val.__exit__ = Mock()
             yield val
 
 

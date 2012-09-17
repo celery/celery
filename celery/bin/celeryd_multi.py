@@ -92,6 +92,7 @@ from __future__ import absolute_import, print_function
 
 import errno
 import os
+import shlex
 import signal
 import socket
 import sys
@@ -105,7 +106,7 @@ from kombu.utils import cached_property
 from kombu.utils.encoding import from_utf8
 
 from celery import VERSION_BANNER
-from celery.platforms import PIDFile, shellsplit
+from celery.platforms import Pidfile, IS_WINDOWS
 from celery.utils import term
 from celery.utils.text import pluralize
 
@@ -299,7 +300,7 @@ class MultiTool(object):
             pid = None
             pidfile = expander(pidfile_template)
             try:
-                pid = PIDFile(pidfile).read_pid()
+                pid = Pidfile(pidfile).read_pid()
             except ValueError:
                 pass
             if pid:
@@ -373,7 +374,7 @@ class MultiTool(object):
 
     def waitexec(self, argv, path=sys.executable):
         args = ' '.join([path] + list(argv))
-        argstr = shellsplit(from_utf8(args))
+        argstr = shlex.split(from_utf8(args), posix=not IS_WINDOWS)
         pipe = Popen(argstr, env=self.env)
         self.info('  {0}'.format(' '.join(argstr)))
         retcode = pipe.wait()

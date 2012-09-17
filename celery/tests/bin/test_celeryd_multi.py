@@ -261,7 +261,7 @@ class test_MultiTool(Case):
         self.assertEqual(sigs[1][0], ('b', 11, signal.SIGKILL))
         self.assertEqual(sigs[2][0], ('c', 12, signal.SIGKILL))
 
-    def prepare_pidfile_for_getpids(self, PIDFile):
+    def prepare_pidfile_for_getpids(self, Pidfile):
         class pids(object):
 
             def __init__(self, path):
@@ -273,13 +273,13 @@ class test_MultiTool(Case):
                             'celeryd@bar.pid': 11}[self.path]
                 except KeyError:
                     raise ValueError()
-        PIDFile.side_effect = pids
+        Pidfile.side_effect = pids
 
-    @patch('celery.bin.celeryd_multi.PIDFile')
+    @patch('celery.bin.celeryd_multi.Pidfile')
     @patch('socket.gethostname')
-    def test_getpids(self, gethostname, PIDFile):
+    def test_getpids(self, gethostname, Pidfile):
         gethostname.return_value = 'e.com'
-        self.prepare_pidfile_for_getpids(PIDFile)
+        self.prepare_pidfile_for_getpids(Pidfile)
         callback = Mock()
 
         p = NamespacedOptionParser(['foo', 'bar', 'baz'])
@@ -303,12 +303,12 @@ class test_MultiTool(Case):
         # without callback, should work
         nodes = self.t.getpids(p, 'celeryd', callback=None)
 
-    @patch('celery.bin.celeryd_multi.PIDFile')
+    @patch('celery.bin.celeryd_multi.Pidfile')
     @patch('socket.gethostname')
     @patch('celery.bin.celeryd_multi.sleep')
-    def test_shutdown_nodes(self, slepp, gethostname, PIDFile):
+    def test_shutdown_nodes(self, slepp, gethostname, Pidfile):
         gethostname.return_value = 'e.com'
-        self.prepare_pidfile_for_getpids(PIDFile)
+        self.prepare_pidfile_for_getpids(Pidfile)
         self.assertIsNone(self.t.shutdown_nodes([]))
         self.t.signal_node = Mock()
         node_alive = self.t.node_alive = Mock()

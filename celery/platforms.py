@@ -13,22 +13,21 @@ import atexit
 import errno
 import os
 import platform as _platform
-import shlex
 import signal as _signal
 import sys
 
+from billiard import current_process
 from contextlib import contextmanager
 from itertools import imap
 
 from .local import try_import
-
-from kombu.utils.limits import TokenBucket
 
 _setproctitle = try_import('setproctitle')
 resource = try_import('resource')
 pwd = try_import('pwd')
 grp = try_import('grp')
 
+# exitcodes
 EX_OK = getattr(os, 'EX_OK', 0)
 EX_FAILURE = 1
 EX_UNAVAILABLE = getattr(os, 'EX_UNAVAILABLE', 69)
@@ -44,13 +43,12 @@ DAEMON_WORKDIR = '/'
 PIDFILE_FLAGS = os.O_CREAT | os.O_EXCL | os.O_WRONLY
 PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
 
-_setps_bucket = TokenBucket(0.5)  # 30/m, every 2 seconds
-
 PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
-Seems we're already running? (PID: {1})"""
+Seems we're already running? (pid: {1})"""
 
 
 def pyimplementation():
+    """Returns string identifying the current Python implementation."""
     if hasattr(_platform, 'python_implementation'):
         return _platform.python_implementation()
     elif sys.platform.startswith('java'):
@@ -65,6 +63,12 @@ def pyimplementation():
 
 
 def _find_option_with_arg(argv, short_opts=None, long_opts=None):
+    """Search argv for option specifying its short and longopt
+    alternatives.
+
+    Returns the value of the option if found.
+
+    """
     for i, arg in enumerate(argv):
         if arg.startswith('-'):
             if long_opts and arg.startswith('--'):
@@ -77,6 +81,10 @@ def _find_option_with_arg(argv, short_opts=None, long_opts=None):
 
 
 def maybe_patch_concurrency(argv, short_opts=None, long_opts=None):
+    """With short and long opt alternatives that specify the command-line
+    option to set the pool, this makes sure that anything that needs
+    to be patched is completed as early as possible.
+    (e.g. eventlet/gevent monkey patches)."""
     try:
         pool = _find_option_with_arg(argv, short_opts, long_opts)
     except KeyError:
@@ -89,7 +97,6 @@ def maybe_patch_concurrency(argv, short_opts=None, long_opts=None):
 
 class LockFailed(Exception):
     """Raised if a pidlock can't be acquired."""
-    pass
 
 
 def get_fdmax(default=None):
@@ -106,13 +113,14 @@ def get_fdmax(default=None):
     return fdmax
 
 
-class PIDFile(object):
-    """PID lock file.
+class Pidfile(object):
+    """Pidfile
 
     This is the type returned by :func:`create_pidlock`.
 
-    **Should not be used directly, use the :func:`create_pidlock`
-    context instead**
+    TIP: Use the :func:`create_pidlock` function instead,
+    which is more convenient and also removes stale pidfiles (when
+    the process holding the lock is no longer running).
 
     """
 
@@ -142,34 +150,23 @@ class PIDFile(object):
 
     def read_pid(self):
         """Reads and returns the current pid."""
-        try:
-            fh = open(self.path, 'r')
-        except IOError as exc:
-            if exc.errno == errno.ENOENT:
-                return
-            raise
+        with ignore_errno('ENOENT'):
+            with open(self.path, 'r') as fh:
+                line = fh.readline()
+                if line.strip() == line:  # must contain '\n'
+                    raise ValueError(
+                        'Partial or invalid pidfile {0.path}'.format(self))
 
-        try:
-            line = fh.readline()
-            if line.strip() == line:  # must contain '\n'
-                raise ValueError(
-                    'Partial or invalid pidfile {0.path}'.format(self))
-        finally:
-            fh.close()
-
-        try:
-            return int(line.strip())
-        except ValueError:
-            raise ValueError('PID file {0.path} invalid.'.format(self))
+                try:
+                    return int(line.strip())
+                except ValueError:
+                    raise ValueError(
+                        'pidfile {0.path} contents invalid.'.format(self))
 
     def remove(self):
         """Removes the lock."""
-        try:
+        with ignore_errno(errno.ENOENT, errno.EACCES):
             os.unlink(self.path)
-        except OSError as exc:
-            if exc.errno in (errno.ENOENT, errno.EACCES):
-                return
-            raise
 
     def remove_if_stale(self):
         """Removes the lock if the process is not running.
@@ -217,19 +214,21 @@ class PIDFile(object):
                     "Inconsistency: Pidfile content doesn't match at re-read")
         finally:
             rfh.close()
+PIDFile = Pidfile  # compat alias
 
 
 def create_pidlock(pidfile):
-    """Create and verify pid file.
+    """Create and verify pidfile.
 
-    If the pid file already exists the program exits with an error message,
-    however if the process it refers to is not running anymore, the pid file
+    If the pidfile already exists the program exits with an error message,
+    however if the process it refers to is not running anymore, the pidfile
     is deleted and the program continues.
 
-    The caller is responsible for releasing the lock before the program
-    exits.
+    This function will automatically install an :mod:`atexit` handler
+    to release the lock at exit, you can skip this by calling
+    :func:`_create_pidlock` instead.
 
-    :returns: :class:`PIDFile`.
+    :returns: :class:`Pidfile`.
 
     **Example**:
 
@@ -244,7 +243,7 @@ def create_pidlock(pidfile):
 
 
 def _create_pidlock(pidfile):
-    pidlock = PIDFile(pidfile)
+    pidlock = Pidfile(pidfile)
     if pidlock.is_locked() and not pidlock.remove_if_stale():
         raise SystemExit(PIDLOCKED.format(pidfile, pidlock.read_pid()))
     pidlock.acquire()
@@ -252,6 +251,7 @@ def _create_pidlock(pidfile):
 
 
 def fileno(f):
+    """Get object fileno, or :const:`None` if not defined."""
     try:
         return f.fileno()
     except AttributeError:
@@ -260,13 +260,11 @@ def fileno(f):
 
 class DaemonContext(object):
     _is_open = False
-    workdir = DAEMON_WORKDIR
-    umask = DAEMON_UMASK
 
     def __init__(self, pidfile=None, workdir=None, umask=None,
             fake=False, **kwargs):
-        self.workdir = workdir or self.workdir
-        self.umask = self.umask if umask is None else umask
+        self.workdir = workdir or DAEMON_WORKDIR
+        self.umask = DAEMON_UMASK if umask is None else umask
         self.fake = fake
         self.stdfds = (sys.stdin, sys.stdout, sys.stderr)
 
@@ -286,7 +284,7 @@ class DaemonContext(object):
             preserve = [fileno(f) for f in self.stdfds if fileno(f)]
             for fd in reversed(range(get_fdmax(default=2048))):
                 if fd not in preserve:
-                    with ignore_EBADF():
+                    with ignore_errno(errno.EBADF):
                         os.close(fd)
 
             for fd in self.stdfds:
@@ -316,7 +314,7 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
 
     :keyword logfile: Optional log file.  The ability to write to this file
        will be verified before the process is detached.
-    :keyword pidfile: Optional pid file.  The pid file will not be created,
+    :keyword pidfile: Optional pidfile.  The pidfile will not be created,
       as this is the responsibility of the child.  But the process will
       exit if the pid lock exists and the pid written is still running.
     :keyword uid: Optional user id or user name to change
@@ -332,7 +330,6 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
 
     .. code-block:: python
 
-        import atexit
         from celery.platforms import detached, create_pidlock
 
         with detached(logfile='/var/log/app.log', pidfile='/var/run/app.pid',
@@ -418,6 +415,7 @@ def _setgroups_hack(groups):
 
 
 def setgroups(groups):
+    """Set active groups from a list of group ids."""
     max_groups = None
     try:
         max_groups = os.sysconf('SC_NGROUPS_MAX')
@@ -434,6 +432,8 @@ def setgroups(groups):
 
 
 def initgroups(uid, gid):
+    """Compat version of :func:`os.initgroups` which was first
+    added to Python 2.7."""
     if not pwd:  # pragma: no cover
         return
     username = pwd.getpwuid(uid)[0]
@@ -444,25 +444,13 @@ def initgroups(uid, gid):
     setgroups(groups)
 
 
-def setegid(gid):
-    """Set effective group id."""
-    gid = parse_gid(gid)
-    if gid != os.getegid():
-        os.setegid(gid)
-
-
-def seteuid(uid):
-    """Set effective user id."""
-    uid = parse_uid(uid)
-    if uid != os.geteuid():
-        os.seteuid(uid)
-
-
 def setgid(gid):
+    """Version of :func:`os.setgid` supporting group names."""
     os.setgid(parse_gid(gid))
 
 
 def setuid(uid):
+    """Version of :func:`os.setuid` supporting usernames."""
     os.setuid(parse_uid(uid))
 
 
@@ -625,29 +613,48 @@ if os.environ.get('NOSETPS'):  # pragma: no cover
         pass
 else:
 
-    def set_mp_process_title(progname, info=None, hostname=None,  # noqa
-            rate_limit=False):
+    def set_mp_process_title(progname, info=None, hostname=None):  # noqa
         """Set the ps name using the multiprocessing process name.
 
         Only works if :mod:`setproctitle` is installed.
 
         """
-        if not rate_limit or _setps_bucket.can_consume(1):
-            from billiard import current_process
-            if hostname:
-                progname = '{0}@{1}'.format(progname, hostname.split('.')[0])
-            return set_process_title(
-                '{0}:{1}'.format(progname, current_process().name), info=info)
+        if hostname:
+            progname = '{0}@{1}'.format(progname, hostname.split('.')[0])
+        return set_process_title(
+            '{0}:{1}'.format(progname, current_process().name), info=info)
 
 
-def shellsplit(s):
-    return shlex.split(s, posix=not IS_WINDOWS)
+def get_errno(n):
+    """Get errno for string, e.g. ``ENOENT``."""
+    if isinstance(n, basestring):
+        return getattr(errno, n)
+    return n
 
 
 @contextmanager
-def ignore_EBADF():
+def ignore_errno(*errnos, **kwargs):
+    """Context manager to ignore specific POSIX error codes.
+
+    Takes a list of error codes to ignore, which can be either
+    the name of the code, or the code integer itself::
+
+        >>> with ignore_errno('ENOENT'):
+        ...     with open('foo', 'r'):
+        ...         return r.read()
+
+        >>> with ignore_errno(errno.ENOENT, errno.EPERM):
+        ...    pass
+
+    :keyword types: A tuple of exceptions to ignore (when the errno matches),
+                    defaults to :exc:`Exception`.
+    """
+    types = kwargs.get('types') or (Exception, )
+    errnos = [get_errno(errno) for errno in errnos]
     try:
         yield
-    except OSError as exc:
-        if exc.errno != errno.EBADF:
+    except types, exc:
+        if not hasattr(exc, 'errno'):
+            raise
+        if exc.errno not in errnos:
             raise
