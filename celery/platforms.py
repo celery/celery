@@ -626,9 +626,13 @@ else:
             '%s:%s' % (progname, current_process().name), info=info)
 
 
-def shellsplit(s, posix=True):
-    """Compat. version of :func:`shutil.shellsplit` that supports
-    the ``posix`` option which was first added in Python 2.6."""
+def shellsplit(s):
+    """Compat. version of :func:`shlex.split` that supports
+    the ``posix`` option which was first added in Python 2.6.
+
+    Posix behavior will be disabled if running under Windows.
+
+    """
     lexer = shlex.shlex(s, posix=not IS_WINDOWS)
     lexer.whitespace_split = True
     lexer.commenters = ''
