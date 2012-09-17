@@ -120,6 +120,7 @@ class Worker(WorkController):
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
+        WorkController.on_consumer_ready(self, consumer)
         print('celery@{0.hostname} has started.'.format(self))
 
     def redirect_stdouts_to_logger(self):
