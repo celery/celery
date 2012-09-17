@@ -43,14 +43,18 @@ class Context(object):
     args = None
     kwargs = None
     retries = 0
+    eta = None
+    expires = None
     is_eager = False
     delivery_info = None
     taskset = None   # compat alias to group
     group = None
     chord = None
+    utc = None
     called_directly = True
     callbacks = None
     errbacks = None
+    timeouts = None
     _children = None   # see property
 
     def __init__(self, *args, **kwargs):

@@ -199,6 +199,9 @@ The request defines the following attributes:
 
 :taskset: The unique id of the taskset this task is a member of (if any).
 
+:chord: The unique id of the chord this task belongs to (if the task
+        is part of the header).
+
 :args: Positional arguments.
 
 :kwargs: Keyword arguments.
@@ -208,6 +211,14 @@ The request defines the following attributes:
 
 :is_eager: Set to :const:`True` if the task is executed locally in
            the client, and not by a worker.
+
+:eta: The original ETA of the task (if any).
+      This is in UTC time (depending on the :setting:`CELERY_ENABLE_UTC`
+      setting).
+
+:expires: The original expiry time of the task (if any).
+          This is in UTC time (depending on the :setting:`CELERY_ENABLE_UTC`
+          setting).
 
 :logfile: The file the worker logs to.  See `Logging`_.
 
@@ -221,6 +232,15 @@ The request defines the following attributes:
                 to resend the task to the same destination queue.
                 Availability of keys in this dict depends on the
                 message broker used.
+
+:called_directly: This flag is set to true if the task was not
+                  executed by the worker.
+
+:callbacks: A list of subtasks to be called if this task returns successfully.
+
+:errback: A list of subtasks to be called if this task fails.
+
+:utc: Set to true the caller has utc enabled (:setting:`CELERY_ENABLE_UTC`).
 
 
 An example task accessing information in the context is:
