@@ -11,7 +11,6 @@ from celery import current_app
 from celery import platforms
 from celery.platforms import (
     get_fdmax,
-    shellsplit,
     ignore_errno,
     set_process_title,
     signals,
@@ -47,13 +46,6 @@ class test_ignore_errno(Case):
                 exc = OSError()
                 exc.errno = errno.ENOENT
                 raise exc
-
-
-class test_shellsplit(Case):
-
-    def test_split(self):
-        self.assertEqual(shellsplit("the 'quick' brown fox"),
-                ['the', 'quick', 'brown', 'fox'])
 
 
 class test_set_process_title(Case):
