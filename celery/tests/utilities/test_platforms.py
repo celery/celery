@@ -19,8 +19,6 @@ from celery.platforms import (
     maybe_drop_privileges,
     setuid,
     setgid,
-    seteuid,
-    setegid,
     initgroups,
     parse_uid,
     parse_gid,
@@ -179,20 +177,6 @@ if not current_app.IS_WINDOWS:
             parse_uid.assert_called_with('user')
             _setuid.assert_called_with(5001)
 
-        @patch('celery.platforms.parse_uid')
-        @patch('os.geteuid')
-        @patch('os.seteuid')
-        def test_seteuid(self, _seteuid, _geteuid, parse_uid):
-            parse_uid.return_value = 5001
-            _geteuid.return_value = 5001
-            seteuid('user')
-            parse_uid.assert_called_with('user')
-            self.assertFalse(_seteuid.called)
-
-            _geteuid.return_value = 1
-            seteuid('user')
-            _seteuid.assert_called_with(5001)
-
         @patch('celery.platforms.parse_gid')
         @patch('os.setgid')
         def test_setgid(self, _setgid, parse_gid):
@@ -200,20 +184,6 @@ if not current_app.IS_WINDOWS:
             setgid('group')
             parse_gid.assert_called_with('group')
             _setgid.assert_called_with(50001)
-
-        @patch('celery.platforms.parse_gid')
-        @patch('os.getegid')
-        @patch('os.setegid')
-        def test_setegid(self, _setegid, _getegid, parse_gid):
-            parse_gid.return_value = 50001
-            _getegid.return_value = 50001
-            setegid('group')
-            parse_gid.assert_called_with('group')
-            self.assertFalse(_setegid.called)
-
-            _getegid.return_value = 1
-            setegid('group')
-            _setegid.assert_called_with(50001)
 
         def test_parse_uid_when_int(self):
             self.assertEqual(parse_uid(5001), 5001)
