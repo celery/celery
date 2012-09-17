@@ -142,8 +142,6 @@ class WorkController(configurated):
         pass
 
     def on_consumer_ready(self, consumer):
-        print 'In consumer_ready'
-        print self.on_consumer_ready_callbacks
         [callback(consumer) for callback in self.on_consumer_ready_callbacks] 
 
     def setup_instance(self, queues=None, ready_callback=None,
