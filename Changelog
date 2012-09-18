@@ -26,7 +26,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 ======
 :release-date: TBA
 
-- Now depends on kombu 2.4.6
+- Now depends on kombu 2.4.7
 
 - Now depends on billiard 2.7.3.13
 
@@ -69,6 +69,11 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
   hostlist for failover that is coming in the next Kombu version.
 
 - The repr of a crontab schedule value of '0' should be '*'  (Issue #972).
+
+- Revoked tasks are now removed from reserved/active state in the worker
+  (Issue #969)
+
+    Fix contributed by Alexey Zatelepin.
 
 - gevent: Now supports hard time limits using ``gevent.Timeout`.
 
