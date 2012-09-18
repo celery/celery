@@ -215,7 +215,7 @@ class AttributeDictMixin(object):
             return self[k]
         except KeyError:
             raise AttributeError(
-                "{0!r} object has no attribute {1!r}".format(
+                '{0!r} object has no attribute {1!r}'.format(
                     type(self).__name__, k))
 
     def __setattr__(self, key, value):

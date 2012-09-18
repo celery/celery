@@ -52,8 +52,7 @@ _local_timezone = None
 
 
 class LocalTimezone(tzinfo):
-    """
-    Local time implementation taken from Python's docs.
+    """Local time implementation taken from Python's docs.
 
     Used only when pytz isn't available, and most likely inaccurate. If you're
     having trouble with this class, don't waste your time, just install pytz.
@@ -71,7 +70,7 @@ class LocalTimezone(tzinfo):
         tzinfo.__init__(self)
 
     def __repr__(self):
-        return "<LocalTimezone>"
+        return '<LocalTimezone>'
 
     def utcoffset(self, dt):
         if self._isdst(dt):

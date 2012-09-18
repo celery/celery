@@ -23,12 +23,12 @@ def safe_ref(target, on_delete=None):  # pragma: no cover
         goes out of scope with the reference object, (either a
         :class:`weakref.ref` or a :class:`BoundMethodWeakref`) as argument.
     """
-    if getattr(target, "im_self", None) is not None:
+    if getattr(target, 'im_self', None) is not None:
         # Turn a bound method into a BoundMethodWeakref instance.
         # Keep track of these instances for lookup by disconnect().
         assert hasattr(target, 'im_func'), \
-            """safe_ref target {0!r} has im_self, but no im_func, " \
-            "don't know how to create reference""".format(target)
+            """safe_ref target {0!r} has im_self, but no im_func: \
+            don't know how to create reference""".format(target)
         return get_bound_method_weakref(target=target,
                                         on_delete=on_delete)
     if callable(on_delete):
@@ -142,8 +142,8 @@ class BoundMethodWeakref(object):  # pragma: no cover
                     try:
                         traceback.print_exc()
                     except AttributeError:
-                        print("Exception during saferef {0} cleanup function "
-                              "{1}: {2}".format(self, function, exc))
+                        print('Exception during saferef {0} cleanup function '
+                              '{1}: {2}'.format(self, function, exc))
 
         self.deletion_methods = [on_delete]
         self.key = self.calculate_key(target)
@@ -163,7 +163,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
 
     def __str__(self):
         """Give a friendly representation of the object"""
-        return """{0}( {1}.{2} )""".format(
+        return '{0}( {1}.{2} )'.format(
             type(self).__name__,
             self.self_name,
             self.func_name,
@@ -212,7 +212,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
         ...     pass
 
         >>> def foo(self):
-        ...     return "foo"
+        ...     return 'foo'
         >>> A.bar = foo
 
     But this shouldn't be a common use case. So, on platforms where methods

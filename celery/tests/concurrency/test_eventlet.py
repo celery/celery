@@ -41,7 +41,7 @@ class EventletCase(Case):
 class test_aaa_eventlet_patch(EventletCase):
 
     def test_aaa_is_patched(self):
-        raise SkipTest("side effects")
+        raise SkipTest('side effects')
         monkey_patched = []
         prev_monkey_patch = self.eventlet.monkey_patch
         self.eventlet.monkey_patch = lambda: monkey_patched.append(True)
