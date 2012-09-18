@@ -15,7 +15,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 ======
 :release-date: TBA
 
-- Now depends on kombu 2.4.6
+- Now depends on kombu 2.4.7
 
 - Now depends on billiard 2.7.3.13
 
