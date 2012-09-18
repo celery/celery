@@ -45,6 +45,21 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
     - Pool now sets a ``current_process().index`` attribute that can be used to create
       as many log files as there are processes in the pool.
 
+- Canvas: chord/group/chain no longer modifies the state when called
+
+    Previously calling a chord/group/chain would modify the ids of subtasks
+    so that::
+
+        >>> c = chord([add.s(2, 2), add.s(4, 4)], xsum.s())
+        >>> c()
+        >>> c() <-- call again
+
+    at the second time the ids for the tasks would be the same as in the
+    previous invocation.  This is now fixed, so that calling a subtask
+    won't mutate any options.
+
+- Canvas: Chaining a chord to another task now works.
+
 - Worker: Fixed a bug where the request stack could be corrupted if
   relative imports are used.
 
@@ -52,9 +67,6 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
     send a failed task result (NoneType does not have id attribute).
 
     Fix contributed by Sam Cooke.
-
-- ``subtask.clone`` now deepcopies options so that original subtask
-  is not modified when used in chains/groups etc.
 
 - Because of many bugs the fast local optimization has been disabled,
   and can only be enabled by setting the :envvar:`USE_FAST_LOCALS` attribute.

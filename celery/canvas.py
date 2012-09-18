@@ -353,11 +353,11 @@ class chord(Signature):
 
     def __call__(self, body=None, **kwargs):
         _chord = self.Chord
-        body = self.kwargs['body'] = body or self.kwargs['body']
+        body = (body or self.kwargs['body']).clone()
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
             return self.apply((), kwargs)
         callback_id = body.options.setdefault('task_id', uuid())
-        _chord(**dict(self.kwargs, **kwargs))
+        _chord(**dict(self.kwargs, body=body, **kwargs))
         return _chord.AsyncResult(callback_id)
 
     def clone(self, *args, **kwargs):
