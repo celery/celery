@@ -79,12 +79,3 @@ class test_timezone(Case):
             self.assertTrue(timezone.get_timezone('UTC'))
         finally:
             timeutils.pytz = prev
-
-    def test_get_timezone_without_pytz(self):
-        prev, timeutils.pytz = timeutils.pytz, None
-        try:
-            self.assertTrue(timezone.get_timezone('UTC'))
-            with self.assertRaises(ImproperlyConfigured):
-                timezone.get_timezone('Europe/Oslo')
-        finally:
-            timeutils.pytz = prev

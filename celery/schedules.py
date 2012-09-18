@@ -13,14 +13,13 @@ import re
 
 from datetime import datetime, timedelta
 
-from dateutil.relativedelta import relativedelta
 from kombu.utils import cached_property
 
 from . import current_app
 from .utils import is_iterable
 from .utils.timeutils import (
     timedelta_seconds, weekday, maybe_timedelta, remaining,
-    humanize_seconds, timezone, maybe_make_aware
+    humanize_seconds, timezone, maybe_make_aware, ffwd
 )
 from .datastructures import AttributeDict
 
@@ -400,13 +399,13 @@ class crontab(schedule):
             datedata.dom += 1
             roll_over()
 
-        return relativedelta(year=datedata.year,
-                             month=months_of_year[datedata.moy],
-                             day=days_of_month[datedata.dom],
-                             hour=next_hour,
-                             minute=next_minute,
-                             second=0,
-                             microsecond=0)
+        return ffwd(year=datedata.year,
+                    month=months_of_year[datedata.moy],
+                    day=days_of_month[datedata.dom],
+                    hour=next_hour,
+                    minute=next_minute,
+                    second=0,
+                    microsecond=0)
 
     def __init__(self, minute='*', hour='*', day_of_week='*',
             day_of_month='*', month_of_year='*', nowfun=None):
@@ -440,9 +439,7 @@ class crontab(schedule):
                                  self._orig_day_of_month,
                                  self._orig_month_of_year), None)
 
-    def remaining_estimate(self, last_run_at, tz=None):
-        """Returns when the periodic task should run next as a timedelta."""
-        tz = tz or self.tz
+    def remaining_delta(self, last_run_at, ffwd=ffwd):
         last_run_at = self.maybe_make_aware(last_run_at)
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
@@ -457,9 +454,9 @@ class crontab(schedule):
         if execute_this_hour:
             next_minute = min(minute for minute in self.minute
                                         if minute > last_run_at.minute)
-            delta = relativedelta(minute=next_minute,
-                                  second=0,
-                                  microsecond=0)
+            delta = ffwd(minute=next_minute,
+                         second=0,
+                         microsecond=0)
         else:
             next_minute = min(self.minute)
             execute_today = (execute_this_date and
@@ -468,10 +465,10 @@ class crontab(schedule):
             if execute_today:
                 next_hour = min(hour for hour in self.hour
                                         if hour > last_run_at.hour)
-                delta = relativedelta(hour=next_hour,
-                                      minute=next_minute,
-                                      second=0,
-                                      microsecond=0)
+                delta = ffwd(hour=next_hour,
+                             minute=next_minute,
+                             second=0,
+                             microsecond=0)
             else:
                 next_hour = min(self.hour)
                 all_dom_moy = (self._orig_day_of_month == '*' and
@@ -482,19 +479,22 @@ class crontab(schedule):
                                 self.day_of_week)
                     add_week = next_day == dow_num
 
-                    delta = relativedelta(weeks=add_week and 1 or 0,
-                                          weekday=(next_day - 1) % 7,
-                                          hour=next_hour,
-                                          minute=next_minute,
-                                          second=0,
-                                          microsecond=0)
+                    delta = ffwd(weeks=add_week and 1 or 0,
+                                 weekday=(next_day - 1) % 7,
+                                 hour=next_hour,
+                                 minute=next_minute,
+                                 second=0,
+                                 microsecond=0)
                 else:
                     delta = self._delta_to_next(last_run_at,
                                                 next_hour, next_minute)
 
         now = self.maybe_make_aware(self.now())
-        return remaining(self.to_local(last_run_at), delta,
-                         self.to_local(now))
+        return self.to_local(last_run_at), delta, self.to_local(now)
+
+    def remaining_estimate(self, last_run_at, ffwd=ffwd):
+        """Returns when the periodic task should run next as a timedelta."""
+        return remaining(*self.remaining_delta(last_run_at, ffwd=ffwd))
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,

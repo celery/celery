@@ -221,8 +221,9 @@ def add_chain_task(app):
                     # set the results parent attribute.
                     res.parent = prev_res
 
-                results.append(res)
-                tasks.append(task)
+                if not isinstance(prev_task, chord):
+                    results.append(res)
+                    tasks.append(task)
                 prev_task, prev_res = task, res
 
             return tasks, results

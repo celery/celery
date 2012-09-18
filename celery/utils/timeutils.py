@@ -12,24 +12,19 @@ import os
 import time as _time
 from itertools import izip
 
-from datetime import datetime, timedelta, tzinfo
+from calendar import monthrange
+from datetime import date, datetime, timedelta, tzinfo
 
-from dateutil import tz
-from dateutil.parser import parse as parse_iso8601
-from kombu.utils import cached_property
+from kombu.utils import cached_property, reprcall
 
-from celery.exceptions import ImproperlyConfigured
+from pytz import timezone as _timezone
 
+from .functional import dictfilter
+from .iso8601 import parse_iso8601
 from .text import pluralize
-
-try:
-    import pytz
-except ImportError:     # pragma: no cover
-    pytz = None         # noqa
 
 
 C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
-
 
 DAYNAMES = 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
 WEEKDAYS = dict(izip(DAYNAMES, range(7)))
@@ -54,8 +49,7 @@ _local_timezone = None
 class LocalTimezone(tzinfo):
     """Local time implementation taken from Python's docs.
 
-    Used only when pytz isn't available, and most likely inaccurate. If you're
-    having trouble with this class, don't waste your time, just install pytz.
+    Used only when UTC is not enabled.
     """
 
     def __init__(self):
@@ -122,12 +116,7 @@ class _Zone(object):
 
     def get_timezone(self, zone):
         if isinstance(zone, basestring):
-            if pytz is None:
-                if zone == 'UTC':
-                    return tz.gettz('UTC')
-                raise ImproperlyConfigured(
-                    'Timezones requires the pytz library')
-            return pytz.timezone(zone)
+            return _timezone(zone)
         return zone
 
     @cached_property
@@ -192,7 +181,7 @@ def delta_resolution(dt, delta):
     return dt
 
 
-def remaining(start, ends_in, now=None, relative=False, debug=False):
+def remaining(start, ends_in, now=None, relative=False):
     """Calculate the remaining time for a start date and a timedelta.
 
     e.g. "how many seconds left for 30 seconds after start?"
@@ -212,8 +201,8 @@ def remaining(start, ends_in, now=None, relative=False, debug=False):
         end_date = delta_resolution(end_date, ends_in)
     ret = end_date - now
     if C_REMDEBUG:
-        print('rem: NOW:%s START:%s END_DATE:%s REM:%s' % (
-            now, start, end_date, ret))
+        print('rem: NOW:%r START:%r ENDS_IN:%r END_DATE:%s REM:%s' % (
+            now, start, ends_in, end_date, ret))
     return ret
 
 
@@ -309,3 +298,44 @@ def maybe_make_aware(dt, tz=None):
         dt = to_utc(dt)
     return localize(dt,
         timezone.utc if tz is None else timezone.tz_or_local(tz))
+
+
+class ffwd(object):
+    """Version of relativedelta that only supports addition."""
+
+    def __init__(self, year=None, month=None, weeks=0, weekday=None, day=None,
+            hour=None, minute=None, second=None, microsecond=None, **kwargs):
+        self.year = year
+        self.month = month
+        self.weeks = weeks
+        self.weekday = weekday
+        self.day = day
+        self.hour = hour
+        self.minute = minute
+        self.second = second
+        self.microsecond = microsecond
+        self.days = weeks * 7
+        self._has_time = self.hour is not None or self.minute is not None
+
+    def __repr__(self):
+        return reprcall('ffwd', (), self._fields(weeks=self.weeks,
+                                                 weekday=self.weekday))
+
+    def __radd__(self, other):
+        if not isinstance(other, date):
+            return NotImplemented
+        year = self.year or other.year
+        month = self.month or other.month
+        day = min(monthrange(year, month)[1], self.day or other.day)
+        ret = other.replace(**dict(dictfilter(self._fields()),
+                            year=year, month=month, day=day))
+        if self.weekday is not None:
+            ret += timedelta(days=(7 - ret.weekday() + self.weekday) % 7)
+        return ret + timedelta(days=self.days)
+
+    def _fields(self, **extra):
+        return dictfilter({
+            'year': self.year, 'month': self.month, 'day': self.day,
+            'hour': self.hour, 'minute': self.minute,
+            'second': self.second, 'microsecond': self.microsecond,
+        }, **extra)

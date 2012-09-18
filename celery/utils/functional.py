@@ -261,3 +261,8 @@ class _regen(UserList, list):
     @cached_property
     def data(self):
         return list(self.__it)
+
+
+def dictfilter(d, **keys):
+    d = dict(d, **keys) if keys else d
+    return dict((k, v) for k, v in d.iteritems() if v is not None)

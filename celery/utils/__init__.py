@@ -247,6 +247,7 @@ def gen_task_name(app, name, module_name):
         return '.'.join([app.main, name])
     return '.'.join(filter(None, [module_name, name]))
 
+
 # ------------------------------------------------------------------------ #
 # > XXX Compat
 from .log import LOG_LEVELS     # noqa
