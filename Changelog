@@ -47,6 +47,8 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
     previous invocation.  This is now fixed, so that calling a subtask
     won't mutate any options.
 
+- Canvas: Chaining a chord to another task now works.
+
 - Worker: Fixed a bug where the request stack could be corrupted if
   relative imports are used.
 

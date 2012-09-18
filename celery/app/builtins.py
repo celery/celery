@@ -214,8 +214,8 @@ def add_chain_task(app):
                         next_step = steps.popleft()
                     except IndexError:
                         next_step = None
-                if next_step is not None:
-                    task = chord(task, body=next_step, task_id=tid)
+                    if next_step is not None:
+                        task = chord(task, body=next_step, task_id=tid)
                 if prev_task:
                     # link previous task to this task.
                     prev_task.link(task)
