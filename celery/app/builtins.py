@@ -277,7 +277,7 @@ def add_chord_task(app):
 
             # - convert back to group if serialized
             tasks = header.tasks if isinstance(header, group) else header
-            header = group(maybe_subtask(s).clone() for s in tasks)
+            header = group([maybe_subtask(s).clone() for s in tasks])
             # - eager applies the group inline
             if eager:
                 return header.apply(args=partial_args, task_id=group_id)
