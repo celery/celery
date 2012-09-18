@@ -2,9 +2,6 @@ from __future__ import absolute_import
 
 from datetime import datetime, timedelta
 
-from mock import Mock
-
-from celery.exceptions import ImproperlyConfigured
 from celery.utils import timeutils
 from celery.utils.timeutils import timezone
 from celery.tests.utils import Case
@@ -74,8 +71,4 @@ class test_timeutils(Case):
 class test_timezone(Case):
 
     def test_get_timezone_with_pytz(self):
-        prev, timeutils.pytz = timeutils.pytz, Mock()
-        try:
-            self.assertTrue(timezone.get_timezone('UTC'))
-        finally:
-            timeutils.pytz = prev
+        self.assertTrue(timezone.get_timezone('UTC'))
