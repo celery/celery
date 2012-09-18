@@ -59,6 +59,11 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 - The repr of a crontab schedule value of '0' should be '*'  (Issue #972).
 
+- Revoked tasks are now removed from reserved/active state in the worker
+  (Issue #969)
+
+    Fix contributed by Alexey Zatelepin.
+
 - gevent: Now supports hard time limits using ``gevent.Timeout`.
 
 3.0.9
