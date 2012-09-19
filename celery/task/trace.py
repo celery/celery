@@ -49,10 +49,12 @@ EXCEPTION_STATES = states.EXCEPTION_STATES
 
 #: set by :func:`setup_worker_optimizations`
 _tasks = None
+_patched = {}
 
 
 def setup_worker_optimizations(app):
     global _tasks
+    global trace_task_ret
 
     # make sure custom Task.__call__ methods that calls super
     # will not mess up the request/task stack.
@@ -72,6 +74,21 @@ def setup_worker_optimizations(app):
     # set fast shortcut to task registry
     _tasks = app._tasks
 
+    trace_task_ret = _fast_trace_task
+
+
+def reset_worker_optimizations():
+    global trace_task_ret
+    trace_task_ret = trace_task
+    try:
+        delattr(BaseTask, '_stackprotected')
+    except AttributeError:
+        pass
+    try:
+        BaseTask.__call__ = _patched.pop('BaseTask.__call__')
+    except KeyError:
+        pass
+
 
 def _install_stack_protection():
     # Patches BaseTask.__call__ in the worker to handle the edge case
@@ -88,7 +105,7 @@ def _install_stack_protection():
     # will blow if a custom task class defines __call__ and also
     # calls super().
     if not getattr(BaseTask, '_stackprotected', False):
-        orig = BaseTask.__call__
+        _patched['BaseTask.__call__'] = orig = BaseTask.__call__
 
         def __protected_call__(self, *args, **kwargs):
             req, stack = self.request, self.request_stack
@@ -346,7 +363,15 @@ def trace_task(task, uuid, args, kwargs, request={}, **opts):
         return report_internal_error(task, exc)
 
 
-def trace_task_ret(task, uuid, args, kwargs, request={}):
+def _trace_task_ret(name, uuid, args, kwargs, request={}, **opts):
+    return trace_task(current_app.tasks[name],
+                      uuid, args, kwargs, request, **opts)
+trace_task_ret = _trace_task_ret
+
+
+def _fast_trace_task(task, uuid, args, kwargs, request={}):
+    # setup_worker_optimizations will point trace_task_ret to here,
+    # so this is the function used in the worker.
     return _tasks[task].__trace__(uuid, args, kwargs, request)[0]
 
 

@@ -29,7 +29,6 @@ from celery import platforms
 from celery.app import app_or_default
 from celery.app.abstract import configurated, from_config
 from celery.exceptions import SystemTerminate, TaskRevokedError
-from celery.task.trace import setup_worker_optimizations
 from celery.utils.functional import noop
 from celery.utils.imports import qualname, reload_from_cwd
 from celery.utils.log import get_logger
@@ -308,7 +307,6 @@ class WorkController(configurated):
     def __init__(self, loglevel=None, hostname=None, ready_callback=noop,
             queues=None, app=None, pidfile=None, **kwargs):
         self.app = app_or_default(app or self.app)
-        setup_worker_optimizations(self.app)
 
         self._shutdown_complete = Event()
         self.setup_defaults(kwargs, namespace='celeryd')

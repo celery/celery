@@ -27,6 +27,7 @@ from celery.app import app_or_default
 from celery.app.abstract import configurated, from_config
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
 from celery.loaders.app import AppLoader
+from celery.task import trace
 from celery.utils import cry, isatty, worker_direct
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, mlevel, set_in_sighandler
@@ -150,6 +151,10 @@ class Worker(configurated):
     def run(self):
         self.init_queues()
         self.app.loader.init_worker()
+
+        # apply task execution optimizations
+        trace.setup_worker_optimizations(self.app)
+
         # this signal can be used to e.g. change queues after
         # the -Q option has been applied.
         signals.celeryd_after_setup.send(sender=self.hostname, instance=self,

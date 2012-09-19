@@ -20,6 +20,7 @@ from celery import current_app
 from celery.apps import worker as cd
 from celery.bin.celeryd import WorkerCommand, main as celeryd_main
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
+from celery.task import trace
 from celery.utils.log import ensure_process_aware_logger
 from celery.worker import state
 
@@ -31,6 +32,14 @@ from celery.tests.utils import (
 )
 
 ensure_process_aware_logger()
+
+
+
+class WorkerAppCase(AppCase):
+
+    def tearDown(self):
+        super(WorkerAppCase, self).tearDown()
+        trace.reset_worker_optimizations()
 
 
 def disable_stdouts(fun):
@@ -69,7 +78,7 @@ class Worker(cd.Worker):
         self.redirect_stdouts = False
 
 
-class test_Worker(AppCase):
+class test_Worker(WorkerAppCase):
 
     Worker = Worker
 
@@ -385,7 +394,7 @@ class test_Worker(AppCase):
         self.assertTrue(worker_ready_sent[0])
 
 
-class test_funs(AppCase):
+class test_funs(WorkerAppCase):
 
     def test_active_thread_count(self):
         self.assertTrue(cd.active_thread_count())
@@ -433,7 +442,7 @@ class test_funs(AppCase):
             sys.argv = s
 
 
-class test_signal_handlers(AppCase):
+class test_signal_handlers(WorkerAppCase):
 
     class _Worker(object):
         stopped = False
