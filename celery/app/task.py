@@ -56,6 +56,7 @@ class Context(object):
     errbacks = None
     timeouts = None
     _children = None   # see property
+    _protected = 0
 
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)

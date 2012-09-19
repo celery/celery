@@ -24,12 +24,12 @@ from kombu.utils.finalize import Finalize
 from celery import concurrency as _concurrency
 from celery import platforms
 from celery import signals
-from celery.app import app_or_default, set_default_app
+from celery.app import app_or_default
 from celery.app.abstract import configurated, from_config
 from celery.exceptions import (
     ImproperlyConfigured, SystemTerminate, TaskRevokedError,
 )
-from celery.task import trace
+from celery.task.trace import setup_worker_optimizations
 from celery.utils import worker_direct
 from celery.utils.imports import qualname, reload_from_cwd
 from celery.utils.log import mlevel, worker_logger as logger
@@ -115,15 +115,7 @@ class WorkController(configurated):
 
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app_or_default(app or self.app)
-        # all new threads start without a current app, so if an app is not
-        # passed on to the thread it will fall back to the "default app",
-        # which then could be the wrong app.  So for the worker
-        # we set this to always return our app.  This is a hack,
-        # and means that only a single app can be used for workers
-        # running in the same process.
-        set_default_app(self.app)
-        self.app.finalize()
-        trace._tasks = self.app._tasks   # optimization
+        setup_worker_optimizations(self.app)
         self.hostname = hostname or socket.gethostname()
         self.on_before_init(**kwargs)
 

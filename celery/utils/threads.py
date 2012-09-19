@@ -213,6 +213,10 @@ class _LocalStack(object):
         else:
             return stack.pop()
 
+    def __len__(self):
+        stack = getattr(self._local, 'stack', None)
+        return len(stack) if stack else 0
+
     @property
     def stack(self):
         """get_current_worker_task uses this to find
@@ -293,6 +297,9 @@ class _FastLocalStack(threading.local):
             return self.stack[-1]
         except (AttributeError, IndexError):
             return None
+
+    def __len__(self):
+        return len(self.stack)
 
 if USE_FAST_LOCALS:
     LocalStack = _FastLocalStack

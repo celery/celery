@@ -132,7 +132,9 @@ class test_chord(AppCase):
             x = chord(add.s(i, i) for i in xrange(10))
             body = add.s(2)
             result = x(body)
-            self.assertEqual(result.id, body.options['task_id'])
+            # does not modify original subtask
+            with self.assertRaises(KeyError):
+                body.options['task_id']
             self.assertTrue(chord.Chord.called)
         finally:
             chord.Chord = prev
