@@ -133,9 +133,9 @@ NAMESPACES = {
         'STORE_ERRORS_EVEN_IF_IGNORED': Option(False, type='bool'),
         'TASK_PUBLISH_RETRY': Option(True, type='bool'),
         'TASK_PUBLISH_RETRY_POLICY': Option({
-                'max_retries': 100,
+                'max_retries': 3,
                 'interval_start': 0,
-                'interval_max': 1,
+                'interval_max': 0.2,
                 'interval_step': 0.2}, type='dict'),
         'TASK_RESULT_EXPIRES': Option(timedelta(days=1), type='float'),
         'TASK_SERIALIZER': Option('pickle'),
