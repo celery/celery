@@ -29,7 +29,6 @@ from celery.app.abstract import configurated, from_config
 from celery.exceptions import (
     ImproperlyConfigured, SystemTerminate, TaskRevokedError,
 )
-from celery.task.trace import setup_worker_optimizations
 from celery.utils import worker_direct
 from celery.utils.imports import qualname, reload_from_cwd
 from celery.utils.log import mlevel, worker_logger as logger
@@ -115,7 +114,6 @@ class WorkController(configurated):
 
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app_or_default(app or self.app)
-        setup_worker_optimizations(self.app)
         self.hostname = hostname or socket.gethostname()
         self.on_before_init(**kwargs)
 
