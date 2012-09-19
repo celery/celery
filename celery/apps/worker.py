@@ -102,6 +102,9 @@ class Worker(WorkController):
         self.redirect_stdouts_level = redirect_stdouts_level
 
     def on_start(self):
+        # apply task execution optimizations
+        trace.setup_worker_optimizations(self.app)
+
         # this signal can be used to e.g. change queues after
         # the -Q option has been applied.
         signals.celeryd_after_setup.send(sender=self.hostname, instance=self,

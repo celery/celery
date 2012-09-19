@@ -132,6 +132,7 @@ class test_chord(AppCase):
             x = chord(add.s(i, i) for i in xrange(10))
             body = add.s(2)
             result = x(body)
+            self.assertTrue(result.id)
             # does not modify original subtask
             with self.assertRaises(KeyError):
                 body.options['task_id']
