@@ -34,7 +34,6 @@ from celery.tests.utils import (
 ensure_process_aware_logger()
 
 
-
 class WorkerAppCase(AppCase):
 
     def tearDown(self):

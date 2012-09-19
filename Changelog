@@ -57,6 +57,12 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
     Fix contributed by Sam Cooke.
 
+- The worker now makes sure the request/task stacks are not modified
+  by the initial ``Task.__call__``.
+
+    This would previously be a problem if a custom task class defined
+    ``__call__`` and also called ``super()``.
+
 - Because of many bugs the fast local optimization has been disabled,
   and can only be enabled by setting the :envvar:`USE_FAST_LOCALS` attribute.
 
