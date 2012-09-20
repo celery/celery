@@ -366,8 +366,8 @@ class Command(object):
         pass
 
     def _get_default_app(self, *args, **kwargs):
-        from celery.app import default_app
-        return default_app._get_current_object()  # omit proxy
+        from celery._state import get_current_app
+        return get_current_app()  # omit proxy
 
 
 def daemon_options(default_pidfile=None, default_logfile=None):
