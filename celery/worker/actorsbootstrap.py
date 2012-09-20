@@ -51,7 +51,6 @@ class ActorProxy(object):
     def wait_to_start(self):
         self.async_start_result._result
          
-    
 
 class ActorsManager(Actor):
     connection = None
@@ -109,7 +108,7 @@ class ActorsManager(Actor):
     
         def stop_actor(self, actor_id):
             if actor_id in self.actor_registry:
-                _ , (_, consumer) = self.actor_registry.pop(actor_id)
+                (_, consumer) = self.actor_registry.pop(actor_id)
                 self.maybe_conn_error(consumer.cancel)
                 
         def maybe_conn_error(self, fun):
@@ -134,7 +133,7 @@ class ActorsManager(Actor):
     def stop_actor_by_id(self, actor_id, nowait=False):              
         return self.scatter('stop_actor', {'actor_id' : actor_id}, 
                             nowait=nowait)   
-        
+    
     def start(self):
         debug('Starting ActorsManager')
     
