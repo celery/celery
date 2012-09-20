@@ -930,7 +930,7 @@ Decides if publishing task messages will be retried in the case
 of connection loss or other connection errors.
 See also :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`.
 
-Disabled by default.
+Enabled by default.
 
 .. setting:: CELERY_TASK_PUBLISH_RETRY_POLICY
 

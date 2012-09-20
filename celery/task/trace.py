@@ -382,8 +382,9 @@ def _install_stack_protection():
         _patched['BaseTask.__call__'] = orig = BaseTask.__call__
 
         def __protected_call__(self, *args, **kwargs):
-            req, stack = self.request, self.request_stack
-            if not req._protected and len(stack) == 2 and \
+            stack = self.request_stack
+            req = stack.top
+            if req and not req._protected and len(stack) == 2 and \
                     not req.called_directly:
                 req._protected = 1
                 return self.run(*args, **kwargs)

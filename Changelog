@@ -68,6 +68,12 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
     Fix contributed by Sam Cooke.
 
+- The worker now makes sure the request/task stacks are not modified
+  by the initial ``Task.__call__``.
+
+    This would previously be a problem if a custom task class defined
+    ``__call__`` and also called ``super()``.
+
 - Because of many bugs the fast local optimization has been disabled,
   and can only be enabled by setting the :envvar:`USE_FAST_LOCALS` attribute.
 
@@ -75,6 +81,22 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
   so that broken socket reads do not hinder proper shutdown (Issue #975).
 
 - More fixes related to late eventlet/gevent patching.
+
+- Documentation for the settings out of sync with reality:
+
+    - :setting:`CELERY_TASK_PUBLISH_RETRY`
+
+        Documented as disabled by default, but it was enabled by default
+        since 2.5 as stated by the 2.5 changelog.
+
+    - :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`
+
+        The default max_retries had been set to 100, but documented as being
+        3, and the interval_max was set to 1 but documented as 0.2.
+        The default setting are now set to 3 and 0.2 as it was originally
+        documented.
+
+    Fix contributed by Matt Long.
 
 - Worker: Log messages when connection established and lost have been improved
   so that they are more useful when used with the upcoming multiple broker
