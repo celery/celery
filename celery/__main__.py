@@ -20,5 +20,17 @@ def _compat_worker():
     main()
 
 
+def _compat_multi():
+    maybe_patch_concurrency()
+    from celery.bin.celeryd_multi import main
+    main()
+
+
+def _compat_beat():
+    maybe_patch_concurrency()
+    from celery.bin.celerybeat import main
+    main()
+
+
 if __name__ == '__main__':
     main()
