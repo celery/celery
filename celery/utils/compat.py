@@ -159,6 +159,16 @@ try:
     from logging import LoggerAdapter
 except ImportError:
     LoggerAdapter = _CompatLoggerAdapter  # noqa
+else:
+    if not hasattr(LoggerAdapter, 'isEnabledFor'):
+        def isEnabledFor(self, level):
+            """
+            See if the underlying logger is enabled for the specified level.
+            """
+            return self.logger.isEnabledFor(level)
+        LoggerAdapter.isEnabledFor = isEnabledFor
+        del isEnabledFor
+
 
 ############## itertools.zip_longest #######################################
 
