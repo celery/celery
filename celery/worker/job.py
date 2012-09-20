@@ -23,7 +23,7 @@ from celery import exceptions
 from celery import signals
 from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
-from celery.exceptions import TaskRevokedError
+from celery.exceptions import Ignore, TaskRevokedError
 from celery.platforms import signals as _signals
 from celery.task.trace import (
     trace_task,
@@ -64,8 +64,9 @@ class Request(object):
                  'eventer', 'connection_errors',
                  'task', 'eta', 'expires',
                  'request_dict', 'acknowledged', 'success_msg',
-                 'error_msg', 'retry_msg', 'time_start', 'worker_pid',
-                 '_already_revoked', '_terminate_on_ack', '_tzlocal')
+                 'error_msg', 'retry_msg', 'ignore_msg',
+                 'time_start', 'worker_pid', '_already_revoked',
+                 '_terminate_on_ack', '_tzlocal')
 
     #: Format string used to log task success.
     success_msg = """\
@@ -80,6 +81,10 @@ class Request(object):
     #: Format string used to log internal error.
     internal_error_msg = """\
         Task %(name)s[%(id)s] INTERNAL ERROR: %(exc)s
+    """
+
+    ignored_msg = """\
+        Task %(name)s[%(id)s] ignored
     """
 
     #: Format string used to log task retry.
@@ -380,9 +385,15 @@ class Request(object):
                          traceback=traceback)
 
         if internal:
-            format = self.internal_error_msg
-            description = 'INTERNAL ERROR'
-            severity = logging.CRITICAL
+            if isinstance(einfo.exception, Ignore):
+                format = self.ignored_msg
+                description = 'ignored'
+                severity = logging.INFO
+                exc_info = None
+            else:
+                format = self.internal_error_msg
+                description = 'INTERNAL ERROR'
+                severity = logging.CRITICAL
 
         context = {
             'hostname': self.hostname,
