@@ -17,7 +17,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 - Now depends on kombu 2.4.7
 
-- Now depends on billiard 2.7.3.13
+- Now depends on billiard 2.7.3.14
 
     - Fixes crash at startup when using Django and pre-1.4 projects
       (setup_environ).
