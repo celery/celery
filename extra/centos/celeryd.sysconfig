@@ -1,8 +1,26 @@
+# Which Python to use
+#ENV_PYTHON="/path/to.virtualenvs/bin/python"
+
+# Where to chdir before launching celeryd
+#CELERYD_CHDIR="/path/to/application/folder"
+
+# Path to celery - which might be in a virtualenv
+#CELERY="/path/to/.virtualenvs/bin/celery"
+
+# Path to the celeryd multi (might be in a virtualenv)
+#CELERYD_MULTI="/"/path/to/.virtualenvs/bin/celeryd-multi"
+
 # Passed into celeryd multi
 #CELERYD="-m celery.bin.celeryd_detach"
+# OR add -b option is set to your broker URL as necessary
+#CELERYD="-m celery.bin.celeryd_detach -b amqp://localhost//"
 
-# Path to the celerd multi
-#CELERYD_MULTI="/usr/bin/celeryd-multi"
+# How to call "manage.py celeryctl"
+#CELERYCTL="$ENV_PYTHON $CELERYD_CHDIR/manage.py celeryctl"
+
+# Log and PID files
+#CELERYD_LOG_FILE="/var/log/celeryd/my-celeryworker.log"
+#CELERYD_PID_FILE="/var/run/celeryd/my-celeryworker.pid"
 
 # Sets the verbosity of the celeryd logging.
 #CELERYD_LOG_LEVEL="INFO"
@@ -17,5 +35,5 @@
 # Default arguments to be passed into celeryd.
 #CELERYD_OPTS=""
 
-# Change to this directory first before launching celeryd.
-#CELERYD_CHDIR=""
+# Set the task modules that you want to have celery load
+# CELERY_IMPORTS=("tasks", )
