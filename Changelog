@@ -71,6 +71,22 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 - More fixes related to late eventlet/gevent patching.
 
+- Documentation for the settings out of sync with reality:
+
+    - :setting:`CELERY_TASK_PUBLISH_RETRY`
+
+        Documented as disabled by default, but it was enabled by default
+        since 2.5 as stated by the 2.5 changelog.
+
+    - :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`
+
+        The default max_retries had been set to 100, but documented as being
+        3, and the interval_max was set to 1 but documented as 0.2.
+        The default setting are now set to 3 and 0.2 as it was originally
+        documented.
+
+    Fix contributed by Matt Long.
+
 - Worker: Log messages when connection established and lost have been improved
   so that they are more useful when used with the upcoming multiple broker
   hostlist for failover that is coming in the next Kombu version.
