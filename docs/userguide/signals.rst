@@ -226,7 +226,7 @@ used to route a task to any specific worker:
     @celeryd_after_setup.connect
     def setup_direct_queue(sender, instance, **kwargs):
         queue_name = '%s.dq' % sender   # sender is the hostname of the worker
-        instance.app.queues.select_add(queue_name)
+        instance.app.amqp.queues.select_add(queue_name)
 
 Provides arguments:
 
