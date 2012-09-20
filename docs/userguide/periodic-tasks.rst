@@ -31,9 +31,13 @@ The periodic task schedules uses the UTC time zone by default,
 but you can change the time zone used using the :setting:`CELERY_TIMEZONE`
 setting.
 
-If you use a time zone other than UTC it's recommended to install the
-:mod:`pytz` library as this can improve the accuracy and keep your timezone
-specifications up to date:
+The `pytz`_ library is recommended when setting a default timezone.
+If :mod:`pytz` is not installed it will fallback to the mod:`dateutil`
+library, which depends on a system timezone file being available for
+the timezone selected.
+
+Timezone definitions change frequently, so for the best results
+an up to date :mod:`pytz` installation should be used.
 
 .. code-block:: bash
 
@@ -46,13 +50,31 @@ An example time zone could be `Europe/London`:
 
     CELERY_TIMEZONE = 'Europe/London'
 
-.. admonition:: Changing the time zone
-
 The default scheduler (storing the schedule in the :file:`celerybeat-schedule`
-file) will automatically detect that the timezone has changed, and so will
+file) will automatically detect that the time zone has changed, and so will
 reset the schedule itself, but other schedulers may not be so smart (e.g. the
-Django database scheduler) and in that case you will have to reset the
+Django database scheduler, see below) and in that case you will have to reset the
 schedule manually.
+
+.. admonition:: Django Users
+
+    Celery recommends and is compatible with the new ``USE_TZ`` setting introduced
+    in Django 1.4.
+
+    For Django users the time zone specified in the ``TIME_ZONE`` setting
+    will be used, or you can specify a custom time zone for Celery alone
+    by using the :setting:`CELERY_TIMEZONE` setting.
+
+    The database scheduler will not reset when timezone related settings
+    change, so you must do this manually:
+
+    .. code-block:: bash
+
+        $ python manage.py shell
+        >>> from djcelery.models import PeriodicTask
+        >>> PeriodicTask.objects.update(last_run_at=None)
+
+.. _`pytz`: http://pypi.python.org/pypi/pytz/
 
 .. _beat-entries:
 
@@ -77,7 +99,6 @@ Example: Run the `tasks.add` task every 30 seconds.
     }
 
     CELERY_TIMEZONE = 'UTC'
-
 
 Using a :class:`~datetime.timedelta` for the schedule means the task will
 be executed 30 seconds after `celery beat` starts, and then every 30 seconds
@@ -207,42 +228,6 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 +-----------------------------------------+--------------------------------------------+
 
 See :class:`celery.schedules.crontab` for more documentation.
-
-.. _beat-timezones:
-
-Timezones
-=========
-
-By default the current local timezone is used, but you can also set a specific
-timezone by enabling the :setting:`CELERY_ENABLE_UTC` setting and configuring
-the :setting:`CELERY_TIMEZONE` setting:
-
-.. code-block:: python
-
-    CELERY_ENABLE_UTC = True
-    CELERY_TIMEZONE = 'Europe/London'
-
-.. admonition:: Django Users
-
-    For Django users the timezone specified in the ``TIME_ZONE`` setting
-    will be used, but *not if the :setting:`CELERY_ENABLE_UTC` setting is
-    enabled*.
-
-    Celery is also compatible with the new ``USE_TZ`` setting introduced
-    in Django 1.4.
-
-.. note::
-
-    The `pytz`_ library is recommended when setting a default timezone.
-    If :mod:`pytz` is not installed it will fallback to the mod:`dateutil`
-    library, which depends on a system timezone file being available for
-    the timezone selected.
-
-    Timezone definitions change frequently, so for the best results
-    an up to date :mod:`pytz` installation should be used.
-
-
-.. _`pytz`: http://pypi.python.org/pypi/pytz/
 
 .. _beat-starting:
 
