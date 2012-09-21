@@ -103,7 +103,7 @@ stop_workers () {
     celerypids=$(cat $CELERYD_PID_FILE | xargs echo)
     echo "Killing PIDs $celerypids"
     log_message "Killing PIDs $celerypids ..." 
-    kill -9 $celerypids
+    kill -s TERM $celerypids
     RETVAL=$?
 
     # SLeep a few seconds to make sure the process really is dead
