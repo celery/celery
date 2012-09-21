@@ -390,6 +390,7 @@ class Request(object):
                 description = 'ignored'
                 severity = logging.INFO
                 exc_info = None
+                self.acknowledge()
             else:
                 format = self.internal_error_msg
                 description = 'INTERNAL ERROR'
