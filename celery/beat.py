@@ -172,7 +172,7 @@ class Scheduler(object):
         is_due, next_time_to_run = entry.is_due()
 
         if is_due:
-            info('Scheduler: Sending due task %s', entry.task)
+            info('Scheduler: Sending due task %s (%s)', entry.name, entry.task)
             try:
                 result = self.apply_async(entry, publisher=publisher)
             except Exception as exc:
