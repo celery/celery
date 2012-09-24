@@ -15,8 +15,6 @@ import socket
 import sys
 import traceback
 
-from threading import Event
-
 from billiard import cpu_count
 from kombu.syn import detect_environment
 from kombu.utils.finalize import Finalize
@@ -30,22 +28,11 @@ from celery.exceptions import (
     ImproperlyConfigured, SystemTerminate, TaskRevokedError,
 )
 from celery.utils import worker_direct
-from celery.utils.imports import qualname, reload_from_cwd
+from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel, worker_logger as logger
 
 from . import bootsteps
 from . import state
-
-try:
-    from greenlet import GreenletExit
-    IGNORE_ERRORS = (GreenletExit, )
-except ImportError:  # pragma: no cover
-    IGNORE_ERRORS = ()
-
-#: Worker states
-RUN = 0x1
-CLOSE = 0x2
-TERMINATE = 0x3
 
 UNKNOWN_QUEUE = """\
 Trying to select queue subset of {0!r}, but queue {1} is not
@@ -54,9 +41,6 @@ defined in the CELERY_QUEUES setting.
 If you want to automatically declare unknown queues you can
 enable the CELERY_CREATE_MISSING_QUEUES setting.
 """
-
-#: Default socket timeout at shutdown.
-SHUTDOWN_SOCKET_TIMEOUT = 5.0
 
 
 class Namespace(bootsteps.Namespace):
@@ -79,10 +63,6 @@ class Namespace(bootsteps.Namespace):
 
 class WorkController(configurated):
     """Unmanaged worker instance."""
-    RUN = RUN
-    CLOSE = CLOSE
-    TERMINATE = TERMINATE
-
     app = None
     concurrency = from_config()
     loglevel = from_config('log_level')
@@ -108,8 +88,6 @@ class WorkController(configurated):
     disable_rate_limits = from_config()
     worker_lost_wait = from_config()
 
-    _state = None
-    _running = 0
     pidlock = None
 
     def __init__(self, app=None, hostname=None, **kwargs):
@@ -118,17 +96,7 @@ class WorkController(configurated):
         self.on_before_init(**kwargs)
 
         self._finalize = Finalize(self, self.stop, exitpriority=1)
-        self._shutdown_complete = Event()
         self.setup_instance(**self.prepare_args(**kwargs))
-
-    def on_before_init(self, **kwargs):
-        pass
-
-    def on_start(self):
-        pass
-
-    def on_consumer_ready(self, consumer):
-        pass
 
     def setup_instance(self, queues=None, ready_callback=None,
             pidfile=None, include=None, **kwargs):
@@ -155,7 +123,32 @@ class WorkController(configurated):
         # Initialize boot steps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
         self.components = []
-        self.namespace = Namespace(app=self.app).apply(self, **kwargs)
+        self.namespace = Namespace(app=self.app,
+                                   on_start=self.on_start,
+                                   on_close=self.on_close,
+                                   on_stopped=self.on_stopped)
+        self.namespace.apply(self, **kwargs)
+
+
+    def on_before_init(self, **kwargs):
+        pass
+
+    def on_start(self):
+        if self.pidfile:
+            self.pidlock = platforms.create_pidlock(self.pidfile)
+
+    def on_consumer_ready(self, consumer):
+        pass
+
+    def on_close(self):
+        self.app.loader.shutdown_worker()
+
+    def on_stopped(self):
+        self.timer.stop()
+        self.consumer.close_connection()
+
+        if self.pidlock:
+            self.pidlock.release()
 
     def setup_queues(self, queues):
         if isinstance(queues, basestring):
@@ -187,33 +180,15 @@ class WorkController(configurated):
 
     def start(self):
         """Starts the workers main loop."""
-        self.on_start()
-        self._state = self.RUN
-        if self.pidfile:
-            self.pidlock = platforms.create_pidlock(self.pidfile)
         try:
-            for i, component in enumerate(self.components):
-                logger.debug('Starting %s...', qualname(component))
-                self._running = i + 1
-                if component:
-                    component.start()
-                logger.debug('%s OK!', qualname(component))
+            self.namespace.start(self)
         except SystemTerminate:
             self.terminate()
         except Exception as exc:
-            logger.error('Unrecoverable error: %r', exc,
-                         exc_info=True)
+            logger.error('Unrecoverable error: %r', exc, exc_info=True)
             self.stop()
         except (KeyboardInterrupt, SystemExit):
             self.stop()
-
-        try:
-            # Will only get here if running green,
-            # makes sure all greenthreads have exited.
-            self._shutdown_complete.wait()
-        except IGNORE_ERRORS:
-            pass
-    run = start   # XXX Compat
 
     def process_task_sem(self, req):
         return self._quick_acquire(self.process_task, req)
@@ -260,41 +235,8 @@ class WorkController(configurated):
             self._shutdown(warm=False)
 
     def _shutdown(self, warm=True):
-        what = 'Stopping' if warm else 'Terminating'
-        socket_timeout = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(SHUTDOWN_SOCKET_TIMEOUT)  # Issue 975
-
-        if self._state in (self.CLOSE, self.TERMINATE):
-            return
-
-        self.app.loader.shutdown_worker()
-
-        if self.pool:
-            self.pool.close()
-
-        if self._state != self.RUN or self._running != len(self.components):
-            # Not fully started, can safely exit.
-            self._state = self.TERMINATE
-            self._shutdown_complete.set()
-            return
-        self._state = self.CLOSE
-
-        for component in reversed(self.components):
-            logger.debug('%s %s...', what, qualname(component))
-            if component:
-                stop = component.stop
-                if not warm:
-                    stop = getattr(component, 'terminate', None) or stop
-                stop()
-
-        self.timer.stop()
-        self.consumer.close_connection()
-
-        if self.pidlock:
-            self.pidlock.release()
-        self._state = self.TERMINATE
-        socket.setdefaulttimeout(socket_timeout)
-        self._shutdown_complete.set()
+        self.namespace.stop(self, terminate=not warm)
+        self.namespace.join()
 
     def reload(self, modules=None, reload=False, reloader=None):
         modules = self.app.loader.task_modules if modules is None else modules
@@ -308,6 +250,10 @@ class WorkController(configurated):
                 logger.debug('reloading module %s', module)
                 reload_from_cwd(sys.modules[module], reloader)
         self.pool.restart()
+
+    @property
+    def _state(self):
+        return self.namespace.state
 
     @property
     def state(self):

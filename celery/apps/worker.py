@@ -102,6 +102,8 @@ class Worker(WorkController):
         self.redirect_stdouts_level = redirect_stdouts_level
 
     def on_start(self):
+        WorkController.on_start(self)
+
         # apply task execution optimizations
         trace.setup_worker_optimizations(self.app)
 

@@ -94,12 +94,9 @@ from celery.utils.log import get_logger
 from celery.utils.timeutils import humanize_seconds
 
 from . import state
-from .bootsteps import StartStopComponent
+from .bootsteps import StartStopComponent, RUN, CLOSE
 from .control import Panel
 from .heartbeat import Heart
-
-RUN = 0x1
-CLOSE = 0x2
 
 #: Heartbeat check is called every heartbeat_seconds' / rate'.
 AMQHEARTBEAT_RATE = 2.0

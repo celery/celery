@@ -24,10 +24,11 @@ from celery.task import periodic_task as periodic_task_dec
 from celery.utils import uuid
 from celery.worker import WorkController
 from celery.worker.components import Queues, Timers, EvLoop, Pool
+from celery.worker.bootsteps import RUN, CLOSE, TERMINATE
 from celery.worker.buckets import FastQueue
 from celery.worker.job import Request
 from celery.worker.consumer import BlockingConsumer
-from celery.worker.consumer import QoS, RUN, PREFETCH_COUNT_MAX, CLOSE
+from celery.worker.consumer import QoS, PREFETCH_COUNT_MAX
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 
@@ -770,7 +771,7 @@ class test_WorkController(AppCase):
 
     def create_worker(self, **kw):
         worker = self.app.WorkController(concurrency=1, loglevel=0, **kw)
-        worker._shutdown_complete.set()
+        worker.namespace.shutdown_complete.set()
         return worker
 
     @patch('celery.platforms.create_pidlock')
@@ -839,17 +840,17 @@ class test_WorkController(AppCase):
     def test_dont_stop_or_terminate(self):
         worker = WorkController(concurrency=1, loglevel=0)
         worker.stop()
-        self.assertNotEqual(worker._state, worker.CLOSE)
+        self.assertNotEqual(worker.namespace.state, CLOSE)
         worker.terminate()
-        self.assertNotEqual(worker._state, worker.CLOSE)
+        self.assertNotEqual(worker.namespace.state, CLOSE)
 
         sigsafe, worker.pool.signal_safe = worker.pool.signal_safe, False
         try:
-            worker._state = worker.RUN
+            worker.namespace.state = RUN
             worker.stop(in_sighandler=True)
-            self.assertNotEqual(worker._state, worker.CLOSE)
+            self.assertNotEqual(worker.namespace.state, CLOSE)
             worker.terminate(in_sighandler=True)
-            self.assertNotEqual(worker._state, worker.CLOSE)
+            self.assertNotEqual(worker.namespace.state, CLOSE)
         finally:
             worker.pool.signal_safe = sigsafe
 
@@ -892,10 +893,10 @@ class test_WorkController(AppCase):
                            kwargs={})
         task = Request.from_message(m, m.decode())
         worker.components = []
-        worker._state = worker.RUN
+        worker.namespace.state = RUN
         with self.assertRaises(KeyboardInterrupt):
             worker.process_task(task)
-        self.assertEqual(worker._state, worker.TERMINATE)
+        self.assertEqual(worker.namespace.state, TERMINATE)
 
     def test_process_task_raise_SystemTerminate(self):
         worker = self.worker
@@ -906,10 +907,10 @@ class test_WorkController(AppCase):
                            kwargs={})
         task = Request.from_message(m, m.decode())
         worker.components = []
-        worker._state = worker.RUN
+        worker.namespace.state = RUN
         with self.assertRaises(SystemExit):
             worker.process_task(task)
-        self.assertEqual(worker._state, worker.TERMINATE)
+        self.assertEqual(worker.namespace.state, TERMINATE)
 
     def test_process_task_raise_regular(self):
         worker = self.worker
@@ -986,7 +987,7 @@ class test_WorkController(AppCase):
 
     def test_start__stop(self):
         worker = self.worker
-        worker._shutdown_complete.set()
+        worker.namespace.shutdown_complete.set()
         worker.components = [Mock(), Mock(), Mock(), Mock()]
 
         worker.start()
@@ -1020,7 +1021,7 @@ class test_WorkController(AppCase):
 
     def test_start__terminate(self):
         worker = self.worker
-        worker._shutdown_complete.set()
+        worker.namespace.shutdown_complete.set()
         worker.components = [Mock(), Mock(), Mock(), Mock(), Mock()]
         for component in worker.components[:3]:
             component.terminate = None
@@ -1028,8 +1029,8 @@ class test_WorkController(AppCase):
         worker.start()
         for w in worker.components[:3]:
             self.assertTrue(w.start.call_count)
-        self.assertTrue(worker._running, len(worker.components))
-        self.assertEqual(worker._state, RUN)
+        self.assertTrue(worker.namespace.started, len(worker.components))
+        self.assertEqual(worker.namespace.state, RUN)
         worker.terminate()
         for component in worker.components[:3]:
             self.assertTrue(component.stop.call_count)

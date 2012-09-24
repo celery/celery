@@ -54,6 +54,10 @@ class Pool(bootsteps.StartStopComponent):
             w.max_concurrency, w.min_concurrency = w.autoscale
         self.autoreload_enabled = autoreload
 
+    def close(self, w):
+        if w.pool:
+            w.pool.close()
+
     def on_poll_init(self, pool, hub):
         apply_after = hub.timer.apply_after
         apply_at = hub.timer.apply_at

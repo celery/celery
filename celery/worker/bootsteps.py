@@ -8,12 +8,29 @@
 """
 from __future__ import absolute_import
 
+import socket
+
 from collections import defaultdict
 from importlib import import_module
+from threading import Event
 
 from celery.datastructures import DependencyGraph
-from celery.utils.imports import instantiate
+from celery.utils.imports import instantiate, qualname
 from celery.utils.log import get_logger
+
+try:
+    from greenlet import GreenletExit
+    IGNORE_ERRORS = (GreenletExit, )
+except ImportError:  # pragma: no cover
+    IGNORE_ERRORS = ()
+
+#: Default socket timeout at shutdown.
+SHUTDOWN_SOCKET_TIMEOUT = 5.0
+
+#: States
+RUN = 0x1
+CLOSE = 0x2
+TERMINATE = 0x3
 
 logger = get_logger(__name__)
 
@@ -32,13 +49,79 @@ class Namespace(object):
 
     """
     name = None
-    _unclaimed = defaultdict(dict)
-    _started_count = 0
+    state = None
+    started = 0
 
-    def __init__(self, name=None, app=None):
+    _unclaimed = defaultdict(dict)
+
+    def __init__(self, name=None, app=None, on_start=None,
+            on_close=None, on_stopped=None):
         self.app = app
         self.name = name or self.name
+        self.on_start = on_start
+        self.on_close = on_close
+        self.on_stopped = on_stopped
         self.services = []
+        self.shutdown_complete = Event()
+
+    def start(self, parent):
+        self.state = RUN
+        if self.on_start:
+            self.on_start()
+        for i, component in enumerate(parent.components):
+            if component:
+                logger.debug('Starting %s...', qualname(component))
+                self.started = i + 1
+                component.start()
+                logger.debug('%s OK!', qualname(component))
+
+    def close(self, parent):
+        if self.on_close:
+            self.on_close()
+        for component in parent.components:
+            try:
+                close = component.close
+            except AttributeError:
+                pass
+            else:
+                close()
+
+    def stop(self, parent, terminate=False):
+        what = 'Terminating' if terminate else 'Stopping'
+        socket_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(SHUTDOWN_SOCKET_TIMEOUT)  # Issue 975
+
+        if self.state in (CLOSE, TERMINATE):
+            return
+
+        if self.state != RUN or self.started != len(parent.components):
+            # Not fully started, can safely exit.
+            self.state = TERMINATE
+            self.shutdown_complete.set()
+            return
+
+        self.state = CLOSE
+        for component in reversed(parent.components):
+            if component:
+                logger.debug('%s %s...', what, qualname(component))
+                stop = component.stop
+                if terminate:
+                    stop = getattr(component, 'terminate', None) or stop
+                stop()
+
+        if self.on_stopped:
+            self.on_stopped()
+        self.state = TERMINATE
+        socket.setdefaulttimeout(socket_timeout)
+        self.shutdown_complete.set()
+
+    def join(self, timeout=None):
+        try:
+            # Will only get here if running green,
+            # makes sure all greenthreads have exited.
+            self.shutdown_complete.wait(timeout=timeout)
+        except IGNORE_ERRORS:
+            pass
 
     def modules(self):
         """Subclasses can override this to return a
@@ -199,6 +282,9 @@ class StartStopComponent(Component):
 
     def stop(self):
         return self.obj.stop()
+
+    def close(self):
+        pass
 
     def terminate(self):
         if self.terminable:
