@@ -144,7 +144,7 @@ class WorkController(configurated):
 
     def on_stopped(self):
         self.timer.stop()
-        self.consumer.close_connection()
+        self.consumer.shutdown()
 
         if self.pidlock:
             self.pidlock.release()

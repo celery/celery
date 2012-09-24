@@ -86,11 +86,20 @@ class Namespace(object):
             else:
                 close(parent)
 
-    def stop(self, parent, terminate=False):
-        what = 'Terminating' if terminate else 'Stopping'
+    def restart(self, parent, description='Restarting', terminate=False):
         socket_timeout = socket.getdefaulttimeout()
         socket.setdefaulttimeout(SHUTDOWN_SOCKET_TIMEOUT)  # Issue 975
+        try:
+            for component in reversed(parent.components):
+                if component:
+                    logger.debug('%s %s...', description, qualname(component))
+                    (component.terminate if terminate
+                        else component.stop)(parent)
+        finally:
+            socket.setdefaulttimeout(socket_timeout)
 
+    def stop(self, parent, close=True, terminate=False):
+        what = 'Terminating' if terminate else 'Stopping'
         if self.state in (CLOSE, TERMINATE):
             return
 
@@ -102,16 +111,11 @@ class Namespace(object):
             self.shutdown_complete.set()
             return
         self.state = CLOSE
-
-        for component in reversed(parent.components):
-            if component:
-                logger.debug('%s %s...', what, qualname(component))
-                (component.terminate if terminate else component.stop)(parent)
+        self.restart(parent, what, terminate)
 
         if self.on_stopped:
             self.on_stopped()
         self.state = TERMINATE
-        socket.setdefaulttimeout(socket_timeout)
         self.shutdown_complete.set()
 
     def join(self, timeout=None):
@@ -191,6 +195,13 @@ class Namespace(object):
                             *(self.name.capitalize(), ) + args)
 
 
+def _prepare_requires(req):
+    if not isinstance(req, basestring):
+        req = req.name
+    return req
+
+
+
 class ComponentType(type):
     """Metaclass for components."""
 
@@ -204,6 +215,8 @@ class ComponentType(type):
             namespace = attrs.get('namespace', None)
             if not namespace:
                 attrs['namespace'], _, attrs['name'] = cname.partition('.')
+        attrs['requires'] = tuple(_prepare_requires(req)
+                                    for req in attrs.get('requires', ()))
         cls = super(ComponentType, cls).__new__(cls, name, bases, attrs)
         if not abstract:
             Namespace._unclaimed[cls.namespace][cls.name] = cls
