@@ -213,16 +213,17 @@ def add_chain_task(app):
                         next_step = steps.popleft()
                     except IndexError:
                         next_step = None
-                if next_step is not None:
-                    task = chord(task, body=next_step, task_id=tid)
+                    if next_step is not None:
+                        task = chord(task, body=next_step, task_id=tid)
                 if prev_task:
                     # link previous task to this task.
                     prev_task.link(task)
                     # set the results parent attribute.
                     res.parent = prev_res
 
-                results.append(res)
-                tasks.append(task)
+                if not isinstance(prev_task, chord):
+                    results.append(res)
+                    tasks.append(task)
                 prev_task, prev_res = task, res
 
             return tasks, results
@@ -275,8 +276,8 @@ def add_chord_task(app):
             prepare_member = self._prepare_member
 
             # - convert back to group if serialized
-            if not isinstance(header, group):
-                header = group([maybe_subtask(t) for t in  header])
+            tasks = header.tasks if isinstance(header, group) else header
+            header = group([maybe_subtask(s).clone() for s in tasks])
             # - eager applies the group inline
             if eager:
                 return header.apply(args=partial_args, task_id=group_id)

@@ -11,14 +11,14 @@
 """
 from __future__ import absolute_import
 
+from copy import deepcopy
 from operator import itemgetter
 from itertools import chain as _chain, imap
 
-from kombu.utils import fxrange, kwdict, reprcall
+from kombu.utils import cached_property, fxrange, kwdict, reprcall, uuid
 
 from celery import current_app
 from celery.local import Proxy
-from celery.utils import cached_property, uuid
 from celery.utils.functional import (
     maybe_list, is_list, regen,
     chunks as _chunks,
@@ -116,10 +116,11 @@ class Signature(dict):
                 dict(self.kwargs, **kwargs) if kwargs else self.kwargs,
                 dict(self.options, **options) if options else self.options)
 
-    def clone(self, args=(), kwargs={}, **options):
-        args, kwargs, options = self._merge(args, kwargs, options)
-        s = Signature.from_dict({'task': self.task, 'args': args,
-                                 'kwargs': kwargs, 'options': options,
+    def clone(self, args=(), kwargs={}, **opts):
+        # need to deepcopy options so origins links etc. is not modified.
+        args, kwargs, opts = self._merge(args, kwargs, opts)
+        s = Signature.from_dict({'task': self.task, 'args': tuple(args),
+                                 'kwargs': kwargs, 'options': deepcopy(opts),
                                  'subtask_type': self.subtask_type,
                                  'immutable': self.immutable})
         s._type = self._type
@@ -352,11 +353,12 @@ class chord(Signature):
 
     def __call__(self, body=None, **kwargs):
         _chord = self.Chord
-        body = self.kwargs['body'] = body or self.kwargs['body']
+        body = (body or self.kwargs['body']).clone()
+        kwargs = dict(self.kwargs, body=body, **kwargs)
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
             return self.apply((), kwargs)
         callback_id = body.options.setdefault('task_id', uuid())
-        _chord(**dict(self.kwargs, **kwargs))
+        _chord(**kwargs)
         return _chord.AsyncResult(callback_id)
 
     def clone(self, *args, **kwargs):

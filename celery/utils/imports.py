@@ -15,10 +15,7 @@ import sys
 
 from contextlib import contextmanager
 
-# symbol_by_name was moved to local because it's used
-# early in the import stage, where celery.utils loads
-# too much (e.g. for eventlet patching)
-from celery.local import symbol_by_name
+from kombu.utils import symbol_by_name
 
 from .compat import reload
 

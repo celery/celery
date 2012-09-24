@@ -43,15 +43,20 @@ class Context(object):
     args = None
     kwargs = None
     retries = 0
+    eta = None
+    expires = None
     is_eager = False
     delivery_info = None
     taskset = None   # compat alias to group
     group = None
     chord = None
+    utc = None
     called_directly = True
     callbacks = None
     errbacks = None
+    timeouts = None
     _children = None   # see property
+    _protected = 0
 
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
@@ -267,9 +272,9 @@ class Task(object):
         if not was_bound:
             self.annotate()
 
-        from celery.utils.threads import LocalStack
-        self.request_stack = LocalStack()
-        self.request_stack.push(Context())
+            from celery.utils.threads import LocalStack
+            self.request_stack = LocalStack()
+            self.request_stack.push(Context())
 
         # PeriodicTask uses this to add itself to the PeriodicTask schedule.
         self.on_bound(app)
@@ -544,6 +549,7 @@ class Task(object):
         if delivery_info:
             options.setdefault('exchange', delivery_info.get('exchange'))
             options.setdefault('routing_key', delivery_info.get('routing_key'))
+        options.setdefault('expires', request.expires)
 
         if not eta and countdown is None:
             countdown = self.default_retry_delay

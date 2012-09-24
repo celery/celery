@@ -8,15 +8,9 @@
 """
 from __future__ import absolute_import
 
-import os
-
 from celery.utils.compat import UserDict
 
 from .base import apply_target, BasePool
-
-#: Makes sure we don't use threading.local for stacks
-#: since apparently they don't work properly.
-os.environ['USE_PURE_LOCALS'] = '1'
 
 
 class NullDict(UserDict):

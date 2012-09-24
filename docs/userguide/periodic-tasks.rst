@@ -31,15 +31,6 @@ The periodic task schedules uses the UTC time zone by default,
 but you can change the time zone used using the :setting:`CELERY_TIMEZONE`
 setting.
 
-If you use a time zone other than UTC it's recommended to install the
-:mod:`pytz` library as this can improve the accuracy and keep your timezone
-specifications up to date:
-
-.. code-block:: bash
-
-    $ pip install -U pytz
-
-
 An example time zone could be `Europe/London`:
 
 .. code-block:: python
@@ -230,19 +221,6 @@ the :setting:`CELERY_TIMEZONE` setting:
 
     Celery is also compatible with the new ``USE_TZ`` setting introduced
     in Django 1.4.
-
-.. note::
-
-    The `pytz`_ library is recommended when setting a default timezone.
-    If :mod:`pytz` is not installed it will fallback to the mod:`dateutil`
-    library, which depends on a system timezone file being available for
-    the timezone selected.
-
-    Timezone definitions change frequently, so for the best results
-    an up to date :mod:`pytz` installation should be used.
-
-
-.. _`pytz`: http://pypi.python.org/pypi/pytz/
 
 .. _beat-starting:
 

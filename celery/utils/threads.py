@@ -13,17 +13,10 @@ import sys
 import threading
 import traceback
 
-from kombu.syn import _detect_environment
-
 from celery.local import Proxy
+from celery.utils.compat import THREAD_TIMEOUT_MAX
 
-USE_PURE_LOCALS = os.environ.get('USE_PURE_LOCALS')
-
-
-try:
-    TIMEOUT_MAX = threading.TIMEOUT_MAX
-except AttributeError:
-    TIMEOUT_MAX = 1e10  # noqa
+USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
 
 
 class bgThread(threading.Thread):
@@ -76,7 +69,7 @@ class bgThread(threading.Thread):
         self._is_shutdown.set()
         self._is_stopped.wait()
         if self.is_alive():
-            self.join(TIMEOUT_MAX)
+            self.join(THREAD_TIMEOUT_MAX)
 
 try:
     from greenlet import getcurrent as get_ident
@@ -220,6 +213,10 @@ class _LocalStack(object):
         else:
             return stack.pop()
 
+    def __len__(self):
+        stack = getattr(self._local, 'stack', None)
+        return len(stack) if stack else 0
+
     @property
     def stack(self):
         """get_current_worker_task uses this to find
@@ -301,7 +298,10 @@ class _FastLocalStack(threading.local):
         except (AttributeError, IndexError):
             return None
 
-if _detect_environment() == 'default' and not USE_PURE_LOCALS:
+    def __len__(self):
+        return len(self.stack)
+
+if USE_FAST_LOCALS:
     LocalStack = _FastLocalStack
 else:
     # - See #706

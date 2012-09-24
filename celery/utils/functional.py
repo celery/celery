@@ -16,8 +16,9 @@ from itertools import islice
 
 from kombu.utils import cached_property
 from kombu.utils.functional import promise, maybe_promise
+from kombu.utils.compat import OrderedDict
 
-from .compat import UserDict, UserList, OrderedDict
+from .compat import UserDict, UserList
 
 KEYWORD_MARK = object()
 is_not_None = partial(operator.is_not, None)
@@ -260,3 +261,8 @@ class _regen(UserList, list):
     @cached_property
     def data(self):
         return list(self.__it)
+
+
+def dictfilter(d, **keys):
+    d = dict(d, **keys) if keys else d
+    return dict((k, v) for k, v in d.iteritems() if v is not None)

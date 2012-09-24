@@ -79,6 +79,7 @@ import threading
 from time import sleep
 from Queue import Empty
 
+from kombu.syn import _detect_environment
 from kombu.utils.encoding import safe_repr
 from kombu.utils.eventio import READ, WRITE, ERR
 
@@ -86,10 +87,11 @@ from celery.app import app_or_default
 from celery.datastructures import AttributeDict
 from celery.exceptions import InvalidTaskError, SystemTerminate
 from celery.task.trace import build_tracer
+from celery.utils import text
 from celery.utils import timer2
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
-from celery.utils import text
+from celery.utils.timeutils import humanize_seconds
 
 from . import state
 from .bootsteps import StartStopComponent
@@ -110,6 +112,7 @@ Received and deleted unknown message. Wrong destination?!?
 
 The full contents of the message body was: %s
 """
+
 #: Error message for when an unregistered task is received.
 UNKNOWN_TASK_ERROR = """\
 Received unregistered task of type %s.
@@ -135,14 +138,27 @@ The full contents of the message body was:
 %s
 """
 
-MESSAGE_REPORT_FMT = """\
+MESSAGE_REPORT = """\
 body: {0} {{content_type:{1} content_encoding:{2} delivery_info:{3}}}\
 """
 
 
 RETRY_CONNECTION = """\
-Consumer: Connection to broker lost. \
+consumer: Connection to broker lost. \
 Trying to re-establish the connection...\
+"""
+
+CONNECTION_ERROR = """\
+consumer: Cannot connect to %s: %s.
+%s
+"""
+
+CONNECTION_RETRY = """\
+Trying again {when}...\
+"""
+
+CONNECTION_FAILOVER = """\
+Will retry using next failover.\
 """
 
 task_reserved = state.task_reserved
@@ -153,7 +169,7 @@ info, warn, error, crit = (logger.info, logger.warn,
 
 
 def debug(msg, *args, **kwargs):
-    logger.debug('Consumer: {0}'.format(msg), *args, **kwargs)
+    logger.debug('consumer: {0}'.format(msg), *args, **kwargs)
 
 
 def dump_body(m, body):
@@ -342,6 +358,12 @@ class Consumer(object):
         if not hub:
             self.amqheartbeat = 0
 
+        if _detect_environment() == 'gevent':
+            # there's a gevent bug that causes timeouts to not be reset,
+            # so if the connection timeout is exceeded once, it can NEVER
+            # connect again.
+            self.app.conf.BROKER_CONNECTION_TIMEOUT = None
+
     def update_strategies(self):
         S = self.strategies
         app = self.app
@@ -527,10 +549,10 @@ class Consumer(object):
         self.qos.decrement_eventually()
 
     def _message_report(self, body, message):
-        return MESSAGE_REPORT_FMT.format(dump_body(message, body),
-                                         safe_repr(message.content_type),
-                                         safe_repr(message.content_encoding),
-                                         safe_repr(message.delivery_info))
+        return MESSAGE_REPORT.format(dump_body(message, body),
+                                     safe_repr(message.content_type),
+                                     safe_repr(message.content_encoding),
+                                     safe_repr(message.delivery_info))
 
     def handle_unknown_message(self, body, message):
         warn(UNKNOWN_FORMAT, self._message_report(body, message))
@@ -591,7 +613,7 @@ class Consumer(object):
             debug('Closing broker connection...')
             self.maybe_conn_error(connection.close)
 
-    def stop_consumers(self, close_connection=True):
+    def stop_consumers(self, close_connection=True, join=True):
         """Stop consuming tasks and broadcast commands, also stops
         the heartbeat thread and event dispatcher.
 
@@ -608,7 +630,7 @@ class Consumer(object):
             self.heart = self.heart.stop()
 
         debug('Cancelling task consumer...')
-        if self.task_consumer:
+        if join and self.task_consumer:
             self.maybe_conn_error(self.task_consumer.cancel)
 
         if self.event_dispatcher:
@@ -617,7 +639,7 @@ class Consumer(object):
                     self.maybe_conn_error(self.event_dispatcher.close)
 
         debug('Cancelling broadcast consumer...')
-        if self.broadcast_consumer:
+        if join and self.broadcast_consumer:
             self.maybe_conn_error(self.broadcast_consumer.cancel)
 
         if close_connection:
@@ -675,6 +697,7 @@ class Consumer(object):
         self._pidbox_node_stopped = threading.Event()
         try:
             with self._open_connection() as conn:
+                info('pidbox: Connected to %s.', conn.as_uri())
                 self.pidbox_node.channel = conn.default_channel
                 self.broadcast_consumer = self.pidbox_node.listen(
                                             callback=self.on_control)
@@ -691,7 +714,7 @@ class Consumer(object):
         """Re-establish the broker connection and set up consumers,
         heartbeat and the event dispatcher."""
         debug('Re-establishing connection to the broker...')
-        self.stop_consumers()
+        self.stop_consumers(join=False)
 
         # Clear internal queues to get rid of old messages.
         # They can't be acked anyway, as a delivery tag is specific
@@ -701,7 +724,7 @@ class Consumer(object):
 
         # Re-establish the broker connection and setup the task consumer.
         self.connection = self._open_connection()
-        debug('Connection established.')
+        info('consumer: Connected to %s.', self.connection.as_uri())
         self.task_consumer = self.app.amqp.TaskConsumer(self.connection,
                                     on_decode_error=self.on_decode_error)
         # QoS: Reset prefetch window.
@@ -746,16 +769,18 @@ class Consumer(object):
         :setting:`BROKER_CONNECTION_RETRY` setting is enabled
 
         """
+        conn = self.app.connection(heartbeat=self.amqheartbeat)
 
         # Callback called for each retry while the connection
         # can't be established.
-        def _error_handler(exc, interval):
-            error('Consumer: Connection Error: %s. '
-                  'Trying again in %d seconds...', exc, interval)
+        def _error_handler(exc, interval, next_step=CONNECTION_RETRY):
+            if getattr(conn, 'alt', None) and interval == 0:
+                next_step = CONNECTION_FAILOVER
+            error(CONNECTION_ERROR, conn.as_uri(), exc,
+                  next_step.format(when=humanize_seconds(interval, 'in', ' ')))
 
         # remember that the connection is lazy, it won't establish
         # until it's needed.
-        conn = self.app.connection(heartbeat=self.amqheartbeat)
         if not self.app.conf.BROKER_CONNECTION_RETRY:
             # retry disabled, just call connect directly.
             conn.connect()
@@ -776,7 +801,7 @@ class Consumer(object):
         # anymore.
         self.close()
         debug('Stopping consumers...')
-        self.stop_consumers(close_connection=False)
+        self.stop_consumers(close_connection=False, join=True)
 
     def close(self):
         self._state = CLOSE

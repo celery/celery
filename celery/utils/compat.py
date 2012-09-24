@@ -43,10 +43,14 @@ else:
 
 
 ############## collections.OrderedDict ######################################
+# was moved to kombu
+from kombu.utils.compat import OrderedDict  # noqa
+
+############## threading.TIMEOUT_MAX #######################################
 try:
-    from collections import OrderedDict
-except ImportError:                         # pragma: no cover
-    from ordereddict import OrderedDict     # noqa
+    from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
+except ImportError:
+    THREAD_TIMEOUT_MAX = 1e10  # noqa
 
 ############## format(int, ',d') ##########################
 

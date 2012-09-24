@@ -24,6 +24,7 @@ from billiard import current_process
 from celery import VERSION_BANNER, platforms, signals
 from celery.exceptions import SystemTerminate
 from celery.loaders.app import AppLoader
+from celery.task import trace
 from celery.utils import cry, isatty
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
@@ -82,6 +83,9 @@ class Worker(WorkController):
 
     def on_before_init(self, purge=False, redirect_stdouts=None,
             redirect_stdouts_level=None, **kwargs):
+        # apply task execution optimizations
+        trace.setup_worker_optimizations(self.app)
+
         # this signal can be used to set up configuration for
         # workers by name.
         conf = self.app.conf
@@ -98,6 +102,9 @@ class Worker(WorkController):
         self.redirect_stdouts_level = redirect_stdouts_level
 
     def on_start(self):
+        # apply task execution optimizations
+        trace.setup_worker_optimizations(self.app)
+
         # this signal can be used to e.g. change queues after
         # the -Q option has been applied.
         signals.celeryd_after_setup.send(sender=self.hostname, instance=self,
@@ -120,7 +127,7 @@ class Worker(WorkController):
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
-        print('celery@{0.hostname} has started.'.format(self))
+        print('celery@{0.hostname} ready.'.format(self))
 
     def redirect_stdouts_to_logger(self):
         self.app.log.setup(self.loglevel, self.logfile,

@@ -249,6 +249,7 @@ class Request(object):
             self._terminate_on_ack = pool, signal
 
     def _announce_revoked(self, reason, terminated, signum, expired):
+        task_ready(self)
         self.send_event('task-revoked',
                         terminated=terminated, signum=signum, expired=expired)
         if self.store_errors:

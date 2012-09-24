@@ -19,7 +19,7 @@ from functools import wraps
 from itertools import count, imap
 from time import time, sleep, mktime
 
-from celery.utils.threads import TIMEOUT_MAX
+from celery.utils.compat import THREAD_TIMEOUT_MAX
 from kombu.log import get_logger
 
 VERSION = (1, 0, 0)
@@ -274,7 +274,7 @@ class Timer(threading.Thread):
         if self.running:
             self._is_shutdown.set()
             self._is_stopped.wait()
-            self.join(TIMEOUT_MAX)
+            self.join(THREAD_TIMEOUT_MAX)
             self.running = False
 
     def ensure_started(self):

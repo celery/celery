@@ -27,10 +27,12 @@ from celery.exceptions import (
 )
 from celery.task.trace import (
     trace_task,
-    trace_task_ret,
+    _trace_task_ret,
     TraceInfo,
     mro_lookup,
     build_tracer,
+    setup_worker_optimizations,
+    reset_worker_optimizations,
 )
 from celery.result import AsyncResult
 from celery.signals import task_revoked
@@ -41,7 +43,7 @@ from celery.worker import job as module
 from celery.worker.job import Request, TaskRequest
 from celery.worker.state import revoked
 
-from celery.tests.utils import Case, assert_signal_called
+from celery.tests.utils import AppCase, Case, assert_signal_called
 
 scratch = {'ACK': False}
 some_kwargs_scratchpad = {}
@@ -231,7 +233,7 @@ class MockEventDispatcher(object):
         self.sent.append(event)
 
 
-class test_TaskRequest(Case):
+class test_TaskRequest(AppCase):
 
     def test_task_wrapper_repr(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {'f': 'x'})
@@ -570,10 +572,34 @@ class test_TaskRequest(Case):
         finally:
             mytask.ignore_result = False
 
+    def test_fast_trace_task(self):
+        from celery.task import trace
+        setup_worker_optimizations(self.app)
+        self.assertIs(trace.trace_task_ret, trace._fast_trace_task)
+        try:
+            mytask.__trace__ = build_tracer(mytask.name, mytask,
+                                            self.app.loader, 'test')
+            res = trace.trace_task_ret(mytask.name, uuid(), [4], {})
+            self.assertEqual(res, 4 ** 4)
+        finally:
+            reset_worker_optimizations()
+            self.assertIs(trace.trace_task_ret, trace._trace_task_ret)
+        delattr(mytask, '__trace__')
+        res = trace.trace_task_ret(mytask.name, uuid(), [4], {})
+        self.assertEqual(res, 4 ** 4)
+
     def test_trace_task_ret(self):
         mytask.__trace__ = build_tracer(mytask.name, mytask,
-                                        current_app.loader, 'test')
-        res = trace_task_ret(mytask.name, uuid(), [4], {})
+                                        self.app.loader, 'test')
+        res = _trace_task_ret(mytask.name, uuid(), [4], {})
+        self.assertEqual(res, 4 ** 4)
+
+    def test_trace_task_ret__no_trace(self):
+        try:
+            delattr(mytask, '__trace__')
+        except AttributeError:
+            pass
+        res = _trace_task_ret(mytask.name, uuid(), [4], {})
         self.assertEqual(res, 4 ** 4)
 
     def test_execute_safe_catches_exception(self):

@@ -98,17 +98,16 @@ Billiard is a fork of the Python multiprocessing module containing
 many performance and stability improvements.  It is an eventual goal
 that these improvements will be merged back into Python one day.
 
-It is also used for compatibility with older Python versions.
+It is also used for compatibility with older Python versions
+that doesn't come with the multiprocessing module.
 
 .. _`billiard`: http://pypi.python.org/pypi/billiard
 
-- `python-dateutil`_
+- `pytz`
 
-The dateutil module is used by Celery to parse ISO-8601 formatted time strings,
-as well as its ``relativedelta`` class which is used in the implementation
-of crontab style periodic tasks.
+The pytz module provides timezone definitions and related tools.
 
-.. _`python-dateutil`: http://pypi.python.org/pypi/python-dateutil
+.. _`pytz`: http://pypi.python.org/pypi/pytz
 
 django-celery
 ~~~~~~~~~~~~~
@@ -914,17 +913,3 @@ The `-B` / `--beat` option to celeryd doesn't work?
 ----------------------------------------------------------------
 **Answer**: That's right. Run `celerybeat` and `celeryd` as separate
 services instead.
-
-.. _faq-windows-django-settings:
-
-`django-celery` can't find settings?
---------------------------------------
-
-**Answer**: You need to specify the :option:`--settings` argument to
-:program:`manage.py`:
-
-.. code-block:: bash
-
-    $ python manage.py celeryd start --settings=settings
-
-See http://bit.ly/bo9RSw

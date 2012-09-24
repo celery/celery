@@ -146,13 +146,6 @@ that are consulted in order:
 ``config_from_object``
 ----------------------
 
-.. sidebar:: Timezones & pytz
-
-    Setting a time zone other than UTC requires the :mod:`pytz` library
-    to be installed, see the :setting:`CELERY_TIMEZONE` setting for more
-    information.
-
-
 The :meth:`@Celery.config_from_object` method loads configuration
 from a configuration object.
 

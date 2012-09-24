@@ -1035,9 +1035,31 @@ class test_crontab_is_due(Case):
             else:
                 break
 
+    def assertRelativedelta(self, due, last_ran):
+        try:
+            from dateutil.relativedelta import relativedelta
+        except ImportError:
+            return
+        l1, d1, n1 = due.run_every.remaining_delta(last_ran)
+        l2, d2, n2 = due.run_every.remaining_delta(last_ran,
+                                                   ffwd=relativedelta)
+        if not isinstance(d1, relativedelta):
+            self.assertEqual(l1, l2)
+            for field, value in d1._fields().iteritems():
+                self.assertEqual(getattr(d1, field), value)
+            self.assertFalse(d2.years)
+            self.assertFalse(d2.months)
+            self.assertFalse(d2.days)
+            self.assertFalse(d2.leapdays)
+            self.assertFalse(d2.hours)
+            self.assertFalse(d2.minutes)
+            self.assertFalse(d2.seconds)
+            self.assertFalse(d2.microseconds)
+
     def test_every_minute_execution_is_due(self):
         last_ran = self.now - timedelta(seconds=61)
         due, remaining = every_minute.run_every.is_due(last_ran)
+        self.assertRelativedelta(every_minute, last_ran)
         self.assertTrue(due)
         self.seconds_almost_equal(remaining, self.next_minute, 1)
 

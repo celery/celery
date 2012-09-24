@@ -6,13 +6,14 @@ from mock import Mock, patch
 from nose import SkipTest
 from pickle import loads, dumps
 
+from kombu.utils import cached_property, uuid
+
 from celery import current_app
 from celery import states
 from celery.datastructures import AttributeDict
 from celery.exceptions import ImproperlyConfigured
 from celery.result import AsyncResult
 from celery.task import subtask
-from celery.utils import cached_property, uuid
 from celery.utils.timeutils import timedelta_seconds
 
 from celery.tests.utils import Case

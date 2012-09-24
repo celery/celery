@@ -20,7 +20,96 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 - `Task.apply_async` now supports timeout and soft_timeout arguments (Issue #802)
 - `App.control.Inspect.conf` can be used for inspecting worker configuration
 
-.. _version-3.0.9:
+.. _version-3.0.10:
+
+3.0.10
+======
+:release-date: TBA
+
+- Now depends on kombu 2.4.7
+
+- Now depends on billiard 2.7.3.13
+
+    - Fixes crash at startup when using Django and pre-1.4 projects
+      (setup_environ).
+
+    - Hard time limits now sends the KILL signal shortly after TERM,
+      to terminate processes that have signal handlers blocked by C extensions.
+
+    - Billiard now installs even if the C extension cannot be built.
+
+        It's still recommended to build the C extension if you are using
+        a transport other than rabbitmq/redis (or use force_execv for some
+        other reason).
+
+    - Pool now sets a ``current_process().index`` attribute that can be used to create
+      as many log files as there are processes in the pool.
+
+- Canvas: chord/group/chain no longer modifies the state when called
+
+    Previously calling a chord/group/chain would modify the ids of subtasks
+    so that::
+
+        >>> c = chord([add.s(2, 2), add.s(4, 4)], xsum.s())
+        >>> c()
+        >>> c() <-- call again
+
+    at the second time the ids for the tasks would be the same as in the
+    previous invocation.  This is now fixed, so that calling a subtask
+    won't mutate any options.
+
+- Canvas: Chaining a chord to another task now works.
+
+- Worker: Fixed a bug where the request stack could be corrupted if
+  relative imports are used.
+
+    Problem usually manifested itself as an exception while trying to
+    send a failed task result (NoneType does not have id attribute).
+
+    Fix contributed by Sam Cooke.
+
+- The worker now makes sure the request/task stacks are not modified
+  by the initial ``Task.__call__``.
+
+    This would previously be a problem if a custom task class defined
+    ``__call__`` and also called ``super()``.
+
+- Because of many bugs the fast local optimization has been disabled,
+  and can only be enabled by setting the :envvar:`USE_FAST_LOCALS` attribute.
+
+- Worker: Now sets a default socket timeout of 5 seconds at shutdown
+  so that broken socket reads do not hinder proper shutdown (Issue #975).
+
+- More fixes related to late eventlet/gevent patching.
+
+- Documentation for the settings out of sync with reality:
+
+    - :setting:`CELERY_TASK_PUBLISH_RETRY`
+
+        Documented as disabled by default, but it was enabled by default
+        since 2.5 as stated by the 2.5 changelog.
+
+    - :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`
+
+        The default max_retries had been set to 100, but documented as being
+        3, and the interval_max was set to 1 but documented as 0.2.
+        The default setting are now set to 3 and 0.2 as it was originally
+        documented.
+
+    Fix contributed by Matt Long.
+
+- Worker: Log messages when connection established and lost have been improved
+  so that they are more useful when used with the upcoming multiple broker
+  hostlist for failover that is coming in the next Kombu version.
+
+- The repr of a crontab schedule value of '0' should be '*'  (Issue #972).
+
+- Revoked tasks are now removed from reserved/active state in the worker
+  (Issue #969)
+
+    Fix contributed by Alexey Zatelepin.
+
+- gevent: Now supports hard time limits using ``gevent.Timeout`.
 
 3.0.9
 =====
