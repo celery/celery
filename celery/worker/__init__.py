@@ -93,6 +93,7 @@ class WorkController(configurated):
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app_or_default(app or self.app)
         self.hostname = hostname or socket.gethostname()
+        self.app.loader.init_worker()
         self.on_before_init(**kwargs)
 
         self._finalize = Finalize(self, self.stop, exitpriority=1)
@@ -101,7 +102,6 @@ class WorkController(configurated):
     def setup_instance(self, queues=None, ready_callback=None,
             pidfile=None, include=None, **kwargs):
         self.pidfile = pidfile
-        self.app.loader.init_worker()
         self.setup_defaults(kwargs, namespace='celeryd')
         self.setup_queues(queues)
         self.setup_includes(include)
