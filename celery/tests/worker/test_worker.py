@@ -9,6 +9,7 @@ from Queue import Empty
 
 from billiard.exceptions import WorkerLostError
 from kombu import Connection
+from kombu.common import QoS, PREFETCH_COUNT_MAX
 from kombu.exceptions import StdChannelError
 from kombu.transport.base import Message
 from mock import Mock, patch
@@ -24,11 +25,10 @@ from celery.task import periodic_task as periodic_task_dec
 from celery.utils import uuid
 from celery.worker import WorkController
 from celery.worker.components import Queues, Timers, EvLoop, Pool
-from celery.worker.bootsteps import RUN, CLOSE, TERMINATE
+from celery.worker.bootsteps import RUN, CLOSE, TERMINATE, StartStopComponent
 from celery.worker.buckets import FastQueue
 from celery.worker.job import Request
 from celery.worker.consumer import BlockingConsumer
-from celery.worker.consumer import QoS, PREFETCH_COUNT_MAX
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 
@@ -830,7 +830,7 @@ class test_WorkController(AppCase):
     def test_with_embedded_celerybeat(self):
         worker = WorkController(concurrency=1, loglevel=0, beat=True)
         self.assertTrue(worker.beat)
-        self.assertIn(worker.beat, worker.components)
+        self.assertIn(worker.beat, [w.obj for w in worker.components])
 
     def test_with_autoscaler(self):
         worker = self.create_worker(autoscale=[10, 3], send_events=False,
@@ -988,13 +988,18 @@ class test_WorkController(AppCase):
     def test_start__stop(self):
         worker = self.worker
         worker.namespace.shutdown_complete.set()
-        worker.components = [Mock(), Mock(), Mock(), Mock()]
+        worker.components = [StartStopComponent(self) for _ in range(4)]
+        worker.namespace.state = RUN
+        worker.namespace.started = 4
+        for w in worker.components:
+            w.start = Mock()
+            w.stop = Mock()
 
         worker.start()
         for w in worker.components:
             self.assertTrue(w.start.call_count)
         worker.stop()
-        for component in worker.components:
+        for w in worker.components:
             self.assertTrue(w.stop.call_count)
 
         # Doesn't close pool if no pool.
@@ -1022,9 +1027,9 @@ class test_WorkController(AppCase):
     def test_start__terminate(self):
         worker = self.worker
         worker.namespace.shutdown_complete.set()
+        worker.namespace.started = 5
+        worker.namespace.state = RUN
         worker.components = [Mock(), Mock(), Mock(), Mock(), Mock()]
-        for component in worker.components[:3]:
-            component.terminate = None
 
         worker.start()
         for w in worker.components[:3]:
@@ -1032,9 +1037,8 @@ class test_WorkController(AppCase):
         self.assertTrue(worker.namespace.started, len(worker.components))
         self.assertEqual(worker.namespace.state, RUN)
         worker.terminate()
-        for component in worker.components[:3]:
-            self.assertTrue(component.stop.call_count)
-        self.assertTrue(worker.components[4].terminate.call_count)
+        for component in worker.components:
+            self.assertTrue(component.terminate.call_count)
 
     def test_Queues_pool_not_rlimit_safe(self):
         w = Mock()

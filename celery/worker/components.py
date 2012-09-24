@@ -58,6 +58,10 @@ class Pool(bootsteps.StartStopComponent):
         if w.pool:
             w.pool.close()
 
+    def terminate(self, w):
+        if w.pool:
+            w.pool.terminate()
+
     def on_poll_init(self, pool, hub):
         apply_after = hub.timer.apply_after
         apply_at = hub.timer.apply_at

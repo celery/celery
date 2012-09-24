@@ -129,7 +129,6 @@ class WorkController(configurated):
                                    on_stopped=self.on_stopped)
         self.namespace.apply(self, **kwargs)
 
-
     def on_before_init(self, **kwargs):
         pass
 

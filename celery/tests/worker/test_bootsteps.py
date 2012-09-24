@@ -87,12 +87,12 @@ class test_StartStopComponent(Case):
         # it to the parent.components list.
         x.include(self)
         self.assertTrue(self.components)
-        self.assertIs(self.components[0], x.obj)
+        self.assertIs(self.components[0], x)
 
-        x.start()
+        x.start(self)
         x.obj.start.assert_called_with()
 
-        x.stop()
+        x.stop(self)
         x.obj.stop.assert_called_with()
 
     def test_include_when_disabled(self):
@@ -101,25 +101,14 @@ class test_StartStopComponent(Case):
         x.include(self)
         self.assertFalse(self.components)
 
-    def test_terminate_when_terminable(self):
-        x = self.Def(self)
-        x.terminable = True
-        x.create = Mock()
-
-        x.include(self)
-        x.terminate()
-        x.obj.terminate.assert_called_with()
-        self.assertFalse(x.obj.stop.call_count)
-
-    def test_terminate_calls_stop_when_not_terminable(self):
+    def test_terminate(self):
         x = self.Def(self)
         x.terminable = False
         x.create = Mock()
 
         x.include(self)
-        x.terminate()
+        x.terminate(self)
         x.obj.stop.assert_called_with()
-        self.assertFalse(x.obj.terminate.call_count)
 
 
 class test_Namespace(AppCase):
