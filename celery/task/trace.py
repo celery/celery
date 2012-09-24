@@ -29,7 +29,7 @@ from celery._state import _task_stack
 from celery.app import set_default_app
 from celery.app.task import Task as BaseTask, Context
 from celery.datastructures import ExceptionInfo
-from celery.exceptions import RetryTaskError
+from celery.exceptions import Ignore, RetryTaskError
 from celery.utils.serialization import get_pickleable_exception
 from celery.utils.log import get_logger
 
@@ -43,6 +43,7 @@ send_success = signals.task_success.send
 success_receivers = signals.task_success.receivers
 STARTED = states.STARTED
 SUCCESS = states.SUCCESS
+IGNORED = states.IGNORED
 RETRY = states.RETRY
 FAILURE = states.FAILURE
 EXCEPTION_STATES = states.EXCEPTION_STATES
@@ -222,6 +223,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 try:
                     R = retval = fun(*args, **kwargs)
                     state = SUCCESS
+                except Ignore as exc:
+                    I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                 except RetryTaskError as exc:
                     I = Info(RETRY, exc)
                     state, retval = I.state, I.retval

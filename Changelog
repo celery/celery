@@ -24,11 +24,11 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 3.0.10
 ======
-:release-date: TBA
+:release-date: 2012-09-20 05:30 P.M BST
 
 - Now depends on kombu 2.4.7
 
-- Now depends on billiard 2.7.3.13
+- Now depends on billiard 2.7.3.14
 
     - Fixes crash at startup when using Django and pre-1.4 projects
       (setup_environ).
@@ -39,7 +39,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
     - Billiard now installs even if the C extension cannot be built.
 
         It's still recommended to build the C extension if you are using
-        a transport other than rabbitmq/redis (or use force_execv for some
+        a transport other than rabbitmq/redis (or use forced execv for some
         other reason).
 
     - Pool now sets a ``current_process().index`` attribute that can be used to create
@@ -48,7 +48,9 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 - Canvas: chord/group/chain no longer modifies the state when called
 
     Previously calling a chord/group/chain would modify the ids of subtasks
-    so that::
+    so that:
+
+    .. code-block:: python
 
         >>> c = chord([add.s(2, 2), add.s(4, 4)], xsum.s())
         >>> c()
@@ -58,15 +60,29 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
     previous invocation.  This is now fixed, so that calling a subtask
     won't mutate any options.
 
-- Canvas: Chaining a chord to another task now works.
+- Canvas: Chaining a chord to another task now works (Issue #965).
 
 - Worker: Fixed a bug where the request stack could be corrupted if
   relative imports are used.
 
     Problem usually manifested itself as an exception while trying to
-    send a failed task result (NoneType does not have id attribute).
+    send a failed task result (``NoneType does not have id attribute``).
 
     Fix contributed by Sam Cooke.
+
+- Tasks can now raise :exc:`~celery.exceptions.Ignore` to skip updating states
+  or events after return.
+
+    Example:
+
+    .. code-block:: python
+
+        from celery.exceptions import Ignore
+
+        @task
+        def custom_revokes():
+            if redis.sismember('tasks.revoked', custom_revokes.request.id):
+                raise Ignore()
 
 - The worker now makes sure the request/task stacks are not modified
   by the initial ``Task.__call__``.
@@ -74,7 +90,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
     This would previously be a problem if a custom task class defined
     ``__call__`` and also called ``super()``.
 
-- Because of many bugs the fast local optimization has been disabled,
+- Because of problems the fast local optimization has been disabled,
   and can only be enabled by setting the :envvar:`USE_FAST_LOCALS` attribute.
 
 - Worker: Now sets a default socket timeout of 5 seconds at shutdown
@@ -82,7 +98,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 - More fixes related to late eventlet/gevent patching.
 
-- Documentation for the settings out of sync with reality:
+- Documentation for settings out of sync with reality:
 
     - :setting:`CELERY_TASK_PUBLISH_RETRY`
 
@@ -98,9 +114,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
     Fix contributed by Matt Long.
 
-- Worker: Log messages when connection established and lost have been improved
-  so that they are more useful when used with the upcoming multiple broker
-  hostlist for failover that is coming in the next Kombu version.
+- Worker: Log messages when connection established and lost have been improved.
 
 - The repr of a crontab schedule value of '0' should be '*'  (Issue #972).
 
@@ -109,7 +123,24 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
     Fix contributed by Alexey Zatelepin.
 
-- gevent: Now supports hard time limits using ``gevent.Timeout`.
+- gevent: Now supports hard time limits using ``gevent.Timeout``.
+
+- Documentation: Links to init scripts now point to the 3.0 branch instead
+  of the development branch (master).
+
+- Documentation: Fixed typo in signals user guide (Issue #986).
+
+    ``instance.app.queues`` -> ``instance.app.amqp.queues``.
+
+- Eventlet/gevent: The worker did not properly set the custom app
+  for new greenlets.
+
+- Eventlet/gevent: Fixed a bug where the worker could not recover
+  from connection loss (Issue #959).
+
+    Also, because of a suspected bug in gevent the
+    :setting:`BROKER_CONNECTION_TIMEOUT` setting has been disabled
+    when using gevent
 
 3.0.9
 =====

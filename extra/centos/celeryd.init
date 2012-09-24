@@ -69,7 +69,7 @@ start_workers () {
         cd $CELERYD_CHDIR
     fi
 
-    echo -n $"Starting $prog: "
+    log_message "Starting $prog"
     $CELERY multi start $prog \
                                --pidfile=$CELERYD_PID_FILE \
                                --logfile=$CELERYD_LOG_FILE \
@@ -98,27 +98,34 @@ stop_workers () {
         return
     fi
 
-    # First, try to nicely shut it down.
-    $CELERY stop $prog --pidfile=$CELERYD_PID_FILE --quiet
+    # According to the latest Celery workers guide (3.0.x+), 
+    #  stopping workers should be via TERM signals
+    celerypids=$(cat $CELERYD_PID_FILE | xargs echo)
+    echo "Killing PIDs $celerypids"
+    log_message "Killing PIDs $celerypids ..." 
+    kill -s TERM $celerypids
     RETVAL=$?
 
-    # SLeep a few seconds. (this was part of the original script; we can't
-    # trust that it will end immediately, or that running the command will
-    # stop it.
+    # SLeep a few seconds to make sure the process really is dead
     sleep 3
 
-    # If we haven't ended, explicitly kill it!
-    if [ -f $CELERYD_PID_FILE ] && [ -e /proc/$(cat $CELERYD_PID_FILE) ]; then
-        $CELERY stop $prog -KILL --pidfile=$CELERYD_PID_FILE --quiet
-    fi
-
-    if [ "$RETVAL" == "0" ]; then
-        rm -f /var/lock/sybsys/$prog
+    # Now make sure that the process really does not exist
+    RETVAL=$(ps h -p $celerypids)
+    if [ "$RETVAL" == "" ]; then
+        rm -f /var/lock/subsys/$prog
+        log_message "SUCCESS killing PIDs $celerypids" 
         success
     else
+        log_message "FAILED killing PIDs $celerypids" 
         failure
     fi
     echo
+}
+
+log_message() {
+    now=$(/bin/date -u "+%Y-%m-%d %H:%M:%S")
+    echo "[$now:] $1" >> $CELERYD_LOG_FILE
+
 }
 
 case "$1" in

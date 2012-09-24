@@ -25,6 +25,10 @@ class SecurityError(Exception):
     """
 
 
+class Ignore(Exception):
+    """A task can raise this to ignore doing state updates."""
+
+
 class SystemTerminate(SystemExit):
     """Signals that the worker should terminate."""
 
