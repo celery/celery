@@ -72,7 +72,7 @@ class Namespace(object):
             if component:
                 logger.debug('Starting %s...', qualname(component))
                 self.started = i + 1
-                component.start()
+                component.start(parent)
                 logger.debug('%s OK!', qualname(component))
 
     def close(self, parent):
@@ -84,7 +84,8 @@ class Namespace(object):
             except AttributeError:
                 pass
             else:
-                close()
+                close(parent)
+        self.state = CLOSE
 
     def stop(self, parent, terminate=False):
         what = 'Terminating' if terminate else 'Stopping'
@@ -94,20 +95,21 @@ class Namespace(object):
         if self.state in (CLOSE, TERMINATE):
             return
 
+        self.close()
+
         if self.state != RUN or self.started != len(parent.components):
             # Not fully started, can safely exit.
             self.state = TERMINATE
             self.shutdown_complete.set()
             return
 
-        self.state = CLOSE
         for component in reversed(parent.components):
             if component:
                 logger.debug('%s %s...', what, qualname(component))
                 stop = component.stop
                 if terminate:
                     stop = getattr(component, 'terminate', None) or stop
-                stop()
+                stop(parent)
 
         if self.on_stopped:
             self.on_stopped()
@@ -277,13 +279,13 @@ class StartStopComponent(Component):
     abstract = True
     terminable = False
 
-    def start(self):
+    def start(self, parent):
         return self.obj.start()
 
-    def stop(self):
+    def stop(self, parent):
         return self.obj.stop()
 
-    def close(self):
+    def close(self, parent):
         pass
 
     def terminate(self):
