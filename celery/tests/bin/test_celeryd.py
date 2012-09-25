@@ -294,7 +294,7 @@ class test_Worker(WorkerAppCase):
     def test_redirect_stdouts(self):
         worker = self.Worker()
         worker.redirect_stdouts = False
-        worker.redirect_stdouts_to_logger()
+        worker.setup_logging()
         with self.assertRaises(AttributeError):
             sys.stdout.logger
 
@@ -308,7 +308,7 @@ class test_Worker(WorkerAppCase):
         try:
             worker = self.Worker()
             worker.app.log.__class__._setup = False
-            worker.redirect_stdouts_to_logger()
+            worker.setup_logging()
             self.assertTrue(logging_setup[0])
             with self.assertRaises(AttributeError):
                 sys.stdout.logger
