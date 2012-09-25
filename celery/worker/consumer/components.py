@@ -8,9 +8,9 @@ from kombu.common import QoS
 from celery.datastructures import AttributeDict
 from celery.utils.log import get_logger
 
-from .bootsteps import StartStopComponent
-from .control import Panel
-from .heartbeat import Heart
+from celery.worker.bootsteps import StartStopComponent
+from celery.worker.control import Panel
+from celery.worker.heartbeat import Heart
 
 logger = get_logger(__name__)
 info, error, debug = logger.info, logger.error, logger.debug
@@ -24,10 +24,10 @@ class ConsumerConnection(StartStopComponent):
         c.connection = None
 
     def start(self, c):
-        debug('  Re-establishing connection to the broker...')
+        debug('Re-establishing connection to the broker...')
         c.connection = c._open_connection()
         # Re-establish the broker connection and setup the task consumer.
-        info('  consumer: Connected to %s.', c.connection.as_uri())
+        info('consumer: Connected to %s.', c.connection.as_uri())
 
     def stop(self, c):
         pass
@@ -62,7 +62,7 @@ class Events(StartStopComponent):
 
     def stop(self, c):
         if c.event_dispatcher:
-            debug('  Shutting down event dispatcher...')
+            debug('Shutting down event dispatcher...')
             c.event_dispatcher = \
                     c.maybe_conn_error(c.event_dispatcher.close)
 
@@ -84,7 +84,7 @@ class Heartbeat(StartStopComponent):
     def stop(self, c):
         if c.heart:
             # Stop the heartbeat thread if it's running.
-            debug('  Heart: Going into cardiac arrest...')
+            debug('Heart: Going into cardiac arrest...')
             c.heart = c.heart.stop()
 
     def shutdown(self, c):
@@ -119,7 +119,7 @@ class Controller(StartStopComponent):
     def shutdown(self, c):
         self.stop_pidbox_node()
         if self.broadcast_consumer:
-            debug('  Cancelling broadcast consumer...')
+            debug('Cancelling broadcast consumer...')
             c.maybe_conn_error(self.broadcast_consumer.cancel)
             self.broadcast_consumer = None
 
@@ -151,11 +151,11 @@ class Controller(StartStopComponent):
         c = self.consumer
         if self._pidbox_node_stopped:
             self._pidbox_node_shutdown.set()
-            debug('  Waiting for broadcast thread to shutdown...')
+            debug('Waiting for broadcast thread to shutdown...')
             self._pidbox_node_stopped.wait()
             self._pidbox_node_stopped = self._pidbox_node_shutdown = None
         elif self.broadcast_consumer:
-            debug('  Closing broadcast channel...')
+            debug('Closing broadcast channel...')
             self.broadcast_consumer = \
                 c.maybe_conn_error(self.broadcast_consumer.channel.close)
 
@@ -206,8 +206,8 @@ class Tasks(StartStopComponent):
 
     def shutdown(self, c):
         if c.task_consumer:
-            debug('  Cancelling task consumer...')
+            debug('Cancelling task consumer...')
             c.maybe_conn_error(c.task_consumer.cancel)
-            debug('  Closing consumer channel...')
+            debug('Closing consumer channel...')
             c.maybe_conn_error(c.task_consumer.close)
             c.task_consumer = None

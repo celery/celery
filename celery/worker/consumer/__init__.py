@@ -29,9 +29,8 @@ from celery.utils.imports import qualname
 from celery.utils.log import get_logger
 from celery.utils.text import dump_body
 from celery.utils.timeutils import humanize_seconds
-
-from . import state
-from .bootsteps import Namespace as _NS, StartStopComponent, CLOSE
+from celery.worker import state
+from celery.worker.bootsteps import Namespace as _NS, StartStopComponent, CLOSE
 
 logger = get_logger(__name__)
 info, warn, error, crit = (logger.info, logger.warn,
@@ -125,6 +124,7 @@ class Component(StartStopComponent):
 
 class Namespace(_NS):
     name = 'consumer'
+    builtin_boot_steps = ('celery.worker.consumer.components', )
 
     def shutdown(self, parent):
         delayed = self._shutdown_step(parent, parent.components, force=False)
@@ -142,7 +142,8 @@ class Namespace(_NS):
         return delayed
 
     def modules(self):
-        return ('celery.worker.parts', )
+        return (self.builtin_boot_steps +
+                self.app.conf.CELERYD_CONSUMER_BOOT_STEPS)
 
 
 class Consumer(object):
