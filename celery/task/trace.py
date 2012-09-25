@@ -387,8 +387,8 @@ def _install_stack_protection():
         def __protected_call__(self, *args, **kwargs):
             stack = self.request_stack
             req = stack.top
-            if req and not req._protected and len(stack) == 2 and \
-                    not req.called_directly:
+            if req and not req._protected and \
+                    len(stack) == 1 and not req.called_directly:
                 req._protected = 1
                 return self.run(*args, **kwargs)
             return orig(self, *args, **kwargs)
