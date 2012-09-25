@@ -22,6 +22,7 @@ from functools import partial
 from billiard import current_process
 
 from celery import VERSION_BANNER, platforms, signals
+from celery.app.abstract import from_config
 from celery.exceptions import SystemTerminate
 from celery.loaders.app import AppLoader
 from celery.task import trace
@@ -80,9 +81,10 @@ EXTRA_INFO_FMT = """
 
 
 class Worker(WorkController):
+    redirect_stdouts = from_config()
+    redirect_stdouts_level = from_config()
 
-    def on_before_init(self, purge=False, redirect_stdouts=None,
-            redirect_stdouts_level=None, **kwargs):
+    def on_before_init(self, purge=False, no_color=None, **kwargs):
         # apply task execution optimizations
         trace.setup_worker_optimizations(self.app)
 
@@ -92,14 +94,11 @@ class Worker(WorkController):
         signals.celeryd_init.send(sender=self.hostname, instance=self,
                                   conf=conf)
         self.purge = purge
+        self.no_color = no_color
         self._isatty = isatty(sys.stdout)
-        self.colored = self.app.log.colored(self.logfile)
-        if redirect_stdouts is None:
-            redirect_stdouts = conf.CELERY_REDIRECT_STDOUTS,
-        if redirect_stdouts_level is None:
-            redirect_stdouts_level = conf.CELERY_REDIRECT_STDOUTS_LEVEL
-        self.redirect_stdouts = redirect_stdouts
-        self.redirect_stdouts_level = redirect_stdouts_level
+        self.colored = self.app.log.colored(self.logfile,
+            enabled=not no_color if no_color is not None else no_color
+        )
 
     def on_start(self):
         WorkController.on_start(self)
@@ -124,16 +123,19 @@ class Worker(WorkController):
         print(str(self.colored.cyan(' \n', self.startup_info())) +
               str(self.colored.reset(self.extra_info() or '')))
         self.set_process_status('-active-')
-        self.redirect_stdouts_to_logger()
+        self.setup_logging()
         self.install_platform_tweaks(self)
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
         print('celery@{0.hostname} ready.'.format(self))
 
-    def redirect_stdouts_to_logger(self):
+    def setup_logging(self, colorize=None):
+        if colorize is None and self.no_color is not None:
+            colorize = not self.no_color
         self.app.log.setup(self.loglevel, self.logfile,
-                           self.redirect_stdouts, self.redirect_stdouts_level)
+                           self.redirect_stdouts, self.redirect_stdouts_level,
+                           colorize=colorize)
 
     def purge_messages(self):
         count = self.app.control.purge()
