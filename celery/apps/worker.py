@@ -101,6 +101,10 @@ class Worker(WorkController):
             enabled=not no_color if no_color is not None else no_color
         )
 
+    def on_init_namespace(self):
+        print('SETUP LOGGING: %r' % (self.redirect_stdouts, ))
+        self.setup_logging()
+
     def on_start(self):
         WorkController.on_start(self)
 
@@ -122,10 +126,11 @@ class Worker(WorkController):
 
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
-        print(str(self.colored.cyan(' \n', self.startup_info())) +
-              str(self.colored.reset(self.extra_info() or '')))
+        sys.__stdout__.write(
+            str(self.colored.cyan(' \n', self.startup_info())) +
+            str(self.colored.reset(self.extra_info() or '')) + '\n'
+        )
         self.set_process_status('-active-')
-        self.setup_logging()
         self.install_platform_tweaks(self)
 
     def on_consumer_ready(self, consumer):

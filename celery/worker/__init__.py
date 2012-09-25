@@ -123,11 +123,16 @@ class WorkController(configurated):
         # Initialize boot steps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
         self.components = []
+        self.on_init_namespace()
         self.namespace = Namespace(app=self.app,
                                    on_start=self.on_start,
                                    on_close=self.on_close,
                                    on_stopped=self.on_stopped)
         self.namespace.apply(self, **kwargs)
+
+
+    def on_init_namespace(self):
+        pass
 
     def on_before_init(self, **kwargs):
         pass

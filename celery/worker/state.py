@@ -53,6 +53,13 @@ should_stop = False
 should_terminate = False
 
 
+def maybe_shutdown():
+    if should_stop:
+        raise SystemExit()
+    elif should_terminate:
+        raise SystemTerminate()
+
+
 def task_accepted(request):
     """Updates global state when a task has been accepted."""
     active_requests.add(request)

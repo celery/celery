@@ -67,7 +67,7 @@ class Events(StartStopComponent):
                     c.maybe_conn_error(c.event_dispatcher.close)
 
     def shutdown(self, c):
-        pass
+        self.stop(c)
 
 
 class Heartbeat(StartStopComponent):
@@ -88,7 +88,7 @@ class Heartbeat(StartStopComponent):
             c.heart = c.heart.stop()
 
     def shutdown(self, c):
-        pass
+        self.stop(c)
 
 
 class Controller(StartStopComponent):
@@ -100,7 +100,6 @@ class Controller(StartStopComponent):
 
     def __init__(self, c, **kwargs):
         self.app = c.app
-        self.pool = c.pool
         pidbox_state = AttributeDict(
             app=c.app, hostname=c.hostname, consumer=c,
         )
@@ -141,8 +140,8 @@ class Controller(StartStopComponent):
         if self.pidbox_node and self.pidbox_node.channel:
             c.maybe_conn_error(self.pidbox_node.channel.close)
 
-        if self.pool is not None and self.pool.is_green:
-            return self.pool.spawn_n(self._green_pidbox_node)
+        if c.pool is not None and c.pool.is_green:
+            return c.pool.spawn_n(self._green_pidbox_node)
         self.pidbox_node.channel = c.connection.channel()
         self.broadcast_consumer = self.pidbox_node.listen(
                                         callback=self.on_control)

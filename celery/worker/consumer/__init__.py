@@ -13,15 +13,10 @@ from __future__ import absolute_import
 import logging
 import socket
 
-from time import sleep
-from Queue import Empty
-
 from kombu.syn import _detect_environment
 from kombu.utils.encoding import safe_repr
-from kombu.utils.eventio import READ, WRITE, ERR
 
 from celery.app import app_or_default
-from celery.exceptions import InvalidTaskError, SystemTerminate
 from celery.task.trace import build_tracer
 from celery.utils.timer2 import default_timer, to_timestamp
 from celery.utils.functional import noop
@@ -30,15 +25,15 @@ from celery.utils.log import get_logger
 from celery.utils.text import dump_body
 from celery.utils.timeutils import humanize_seconds
 from celery.worker import state
+from celery.worker.state import maybe_shutdown
 from celery.worker.bootsteps import Namespace as _NS, StartStopComponent, CLOSE
+
+from . import loops
 
 logger = get_logger(__name__)
 info, warn, error, crit = (logger.info, logger.warn,
                            logger.error, logger.critical)
 task_reserved = state.task_reserved
-
-#: Heartbeat check is called every heartbeat_seconds' / rate'.
-AMQHEARTBEAT_RATE = 2.0
 
 CONNECTION_RETRY = """\
 consumer: Connection to broker lost. \
@@ -102,13 +97,9 @@ class Component(StartStopComponent):
     name = 'worker.consumer'
     last = True
 
-    def Consumer(self, w):
-        return (w.consumer_cls or
-                Consumer if w.hub else BlockingConsumer)
-
     def create(self, w):
         prefetch_count = w.concurrency * w.prefetch_multiplier
-        c = w.consumer = self.instantiate(self.Consumer(w),
+        c = w.consumer = self.instantiate(w.consumer_cls,
                 w.ready_queue,
                 hostname=w.hostname,
                 send_events=w.send_events,
@@ -191,6 +182,8 @@ class Consumer(object):
         self.channel_errors = conninfo.channel_errors
 
         self._does_info = logger.isEnabledFor(logging.INFO)
+        if not hasattr(self, 'loop'):
+            self.loop = loops.asynloop if hub else loops.synloop
         if hub:
             hub.on_init.append(self.on_poll_init)
         self.hub = hub
@@ -226,17 +219,24 @@ class Consumer(object):
         consuming messages.
 
         """
-        ns = self.namespace
+        ns, loop, loop_args = self.namespace, self.loop, self.loop_args()
         while ns.state != CLOSE:
-            self.maybe_shutdown()
+            maybe_shutdown()
             try:
-                self.namespace.start(self)
-                self.consume_messages()
+                ns.start(self)
+                loop(*loop_args)
             except self.connection_errors + self.channel_errors:
                 error(CONNECTION_RETRY, exc_info=True)
-                ns.restart(self)
-            ns.close(self)
-            ns.state = CLOSE
+                self.restart()
+
+    def loop_args(self):
+        return (self, self.connection, self.task_consumer,
+                self.strategies, self.namespace, self.hub, self.qos,
+                self.amqheartbeat, self.handle_unknown_message,
+                self.handle_unknown_task, self.handle_invalid_task)
+
+    def restart(self):
+        return self.namespace.restart(self)
 
     def on_poll_init(self, hub):
         hub.update_readers(self.connection.eventmap)
@@ -304,7 +304,7 @@ class Consumer(object):
 
         return conn.ensure_connection(_error_handler,
                     self.app.conf.BROKER_CONNECTION_MAX_RETRIES,
-                    callback=self.maybe_shutdown)
+                    callback=maybe_shutdown)
 
     def stop(self):
         """Stop consuming.
@@ -314,12 +314,6 @@ class Consumer(object):
 
         """
         self.namespace.stop(self)
-
-    def maybe_shutdown(self):
-        if state.should_stop:
-            raise SystemExit()
-        elif state.should_terminate:
-            raise SystemTerminate()
 
     def add_task_queue(self, queue, exchange=None, exchange_type=None,
             routing_key=None, **options):
@@ -357,106 +351,6 @@ class Consumer(object):
             conninfo = self.connection.info()
             conninfo.pop('password', None)  # don't send password.
         return {'broker': conninfo, 'prefetch_count': self.qos.value}
-
-    def consume_messages(self, sleep=sleep, min=min, Empty=Empty,
-            hbrate=AMQHEARTBEAT_RATE):
-        """Consume messages forever (or until an exception is raised)."""
-
-        with self.hub as hub:
-            ns = self.namespace
-            qos = self.qos
-            update_qos = qos.update
-            update_readers = hub.update_readers
-            readers, writers = hub.readers, hub.writers
-            poll = hub.poller.poll
-            fire_timers = hub.fire_timers
-            scheduled = hub.timer._queue
-            connection = self.connection
-            hb = self.amqheartbeat
-            hbtick = connection.heartbeat_check
-            on_poll_start = connection.transport.on_poll_start
-            on_poll_empty = connection.transport.on_poll_empty
-            strategies = self.strategies
-            drain_nowait = connection.drain_nowait
-            on_task_callbacks = hub.on_task
-            keep_draining = connection.transport.nb_keep_draining
-
-            if hb and connection.supports_heartbeats:
-                hub.timer.apply_interval(
-                    hb * 1000.0 / hbrate, hbtick, (hbrate, ))
-
-            def on_task_received(body, message):
-                if on_task_callbacks:
-                    [callback() for callback in on_task_callbacks]
-                try:
-                    name = body['task']
-                except (KeyError, TypeError):
-                    return self.handle_unknown_message(body, message)
-                try:
-                    strategies[name](message, body, message.ack_log_error)
-                except KeyError as exc:
-                    self.handle_unknown_task(body, message, exc)
-                except InvalidTaskError as exc:
-                    self.handle_invalid_task(body, message, exc)
-                #fire_timers()
-
-            self.task_consumer.callbacks = [on_task_received]
-            self.task_consumer.consume()
-
-            debug('Ready to accept tasks!')
-
-            while ns.state != CLOSE and self.connection:
-                # shutdown if signal handlers told us to.
-                if state.should_stop:
-                    raise SystemExit()
-                elif state.should_terminate:
-                    raise SystemTerminate()
-
-                # fire any ready timers, this also returns
-                # the number of seconds until we need to fire timers again.
-                poll_timeout = fire_timers() if scheduled else 1
-
-                # We only update QoS when there is no more messages to read.
-                # This groups together qos calls, and makes sure that remote
-                # control commands will be prioritized over task messages.
-                if qos.prev != qos.value:
-                    update_qos()
-
-                update_readers(on_poll_start())
-                if readers or writers:
-                    connection.more_to_read = True
-                    while connection.more_to_read:
-                        try:
-                            events = poll(poll_timeout)
-                        except ValueError:  # Issue 882
-                            return
-                        if not events:
-                            on_poll_empty()
-                        for fileno, event in events or ():
-                            try:
-                                if event & READ:
-                                    readers[fileno](fileno, event)
-                                if event & WRITE:
-                                    writers[fileno](fileno, event)
-                                if event & ERR:
-                                    for handlermap in readers, writers:
-                                        try:
-                                            handlermap[fileno](fileno, event)
-                                        except KeyError:
-                                            pass
-                            except (KeyError, Empty):
-                                continue
-                            except socket.error:
-                                if ns.state != CLOSE:  # pragma: no cover
-                                    raise
-                        if keep_draining:
-                            drain_nowait()
-                            poll_timeout = 0
-                        else:
-                            connection.more_to_read = False
-                else:
-                    # no sockets yet, startup is probably not done.
-                    sleep(min(poll_timeout, 0.1))
 
     def on_task(self, task, task_reserved=task_reserved):
         """Handle received task.
@@ -527,45 +421,3 @@ class Consumer(object):
         for name, task in self.app.tasks.iteritems():
             S[name] = task.start_strategy(app, self)
             task.__trace__ = build_tracer(name, task, loader, hostname)
-
-
-class BlockingConsumer(Consumer):
-
-    def consume_messages(self):
-        # receive_message handles incoming messages.
-        self.task_consumer.register_callback(self.receive_message)
-        self.task_consumer.consume()
-
-        debug('Ready to accept tasks!')
-        ns = self.namespace
-
-        while ns.state != CLOSE and self.connection:
-            self.maybe_shutdown()
-            if self.qos.prev != self.qos.value:     # pragma: no cover
-                self.qos.update()
-            try:
-                self.connection.drain_events(timeout=10.0)
-            except socket.timeout:
-                pass
-            except socket.error:
-                if ns.state != CLOSE:            # pragma: no cover
-                    raise
-
-    def receive_message(self, body, message):
-        """Handles incoming messages.
-
-        :param body: The message body.
-        :param message: The kombu message object.
-
-        """
-        try:
-            name = body['task']
-        except (KeyError, TypeError):
-            return self.handle_unknown_message(body, message)
-
-        try:
-            self.strategies[name](message, body, message.ack_log_error)
-        except KeyError as exc:
-            self.handle_unknown_task(body, message, exc)
-        except InvalidTaskError as exc:
-            self.handle_invalid_task(body, message, exc)
