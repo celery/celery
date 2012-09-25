@@ -141,27 +141,37 @@ class test_task_retries(Case):
         self.assertEqual(retry_task_noargs.iterations, 4)
 
     def test_retry_kwargs_can_be_empty(self):
-        with self.assertRaises(RetryTaskError):
-            retry_task_mockapply.retry(args=[4, 4], kwargs=None)
-
-    def test_retry_not_eager(self):
-        retry_task_mockapply.request.called_directly = False
-        exc = Exception('baz')
-        try:
-            retry_task_mockapply.retry(args=[4, 4], kwargs={'task_retries': 0},
-                                       exc=exc, throw=False)
-            self.assertTrue(retry_task_mockapply.__class__.applied)
-        finally:
-            retry_task_mockapply.__class__.applied = 0
-
+        retry_task_mockapply.push_request()
         try:
             with self.assertRaises(RetryTaskError):
+                retry_task_mockapply.retry(args=[4, 4], kwargs=None)
+        finally:
+            retry_task_mockapply.pop_request()
+
+    def test_retry_not_eager(self):
+        retry_task_mockapply.push_request()
+        try:
+            retry_task_mockapply.request.called_directly = False
+            exc = Exception('baz')
+            try:
                 retry_task_mockapply.retry(
                     args=[4, 4], kwargs={'task_retries': 0},
-                    exc=exc, throw=True)
-            self.assertTrue(retry_task_mockapply.__class__.applied)
+                    exc=exc, throw=False,
+                )
+                self.assertTrue(retry_task_mockapply.__class__.applied)
+            finally:
+                retry_task_mockapply.__class__.applied = 0
+
+            try:
+                with self.assertRaises(RetryTaskError):
+                    retry_task_mockapply.retry(
+                        args=[4, 4], kwargs={'task_retries': 0},
+                        exc=exc, throw=True)
+                self.assertTrue(retry_task_mockapply.__class__.applied)
+            finally:
+                retry_task_mockapply.__class__.applied = 0
         finally:
-            retry_task_mockapply.__class__.applied = 0
+            retry_task_mockapply.pop_request()
 
     def test_retry_with_kwargs(self):
         retry_task_customexc.__class__.max_retries = 3
@@ -322,11 +332,16 @@ class test_tasks(Case):
         self.assertTrue(publisher.exchange)
 
     def test_context_get(self):
-        request = self.createTask('c.unittest.t.c.g').request
-        request.foo = 32
-        self.assertEqual(request.get('foo'), 32)
-        self.assertEqual(request.get('bar', 36), 36)
-        request.clear()
+        task = self.createTask('c.unittest.t.c.g')
+        task.push_request()
+        try:
+            request = task.request
+            request.foo = 32
+            self.assertEqual(request.get('foo'), 32)
+            self.assertEqual(request.get('bar', 36), 36)
+            request.clear()
+        finally:
+            task.pop_request()
 
     def test_task_class_repr(self):
         task = self.createTask('c.unittest.t.repr')
@@ -350,9 +365,13 @@ class test_tasks(Case):
 
     def test_after_return(self):
         task = self.createTask('c.unittest.t.after_return')
-        task.request.chord = return_True_task.s()
-        task.after_return('SUCCESS', 1.0, 'foobar', (), {}, None)
-        task.request.clear()
+        task.push_request()
+        try:
+            task.request.chord = return_True_task.s()
+            task.after_return('SUCCESS', 1.0, 'foobar', (), {}, None)
+            task.request.clear()
+        finally:
+            task.pop_request()
 
     def test_send_task_sent_event(self):
         T1 = self.createTask('c.unittest.t.t1')
@@ -393,15 +412,19 @@ class test_tasks(Case):
         def yyy():
             pass
 
-        tid = uuid()
-        yyy.update_state(tid, 'FROBULATING', {'fooz': 'baaz'})
-        self.assertEqual(yyy.AsyncResult(tid).status, 'FROBULATING')
-        self.assertDictEqual(yyy.AsyncResult(tid).result, {'fooz': 'baaz'})
+        yyy.push_request()
+        try:
+            tid = uuid()
+            yyy.update_state(tid, 'FROBULATING', {'fooz': 'baaz'})
+            self.assertEqual(yyy.AsyncResult(tid).status, 'FROBULATING')
+            self.assertDictEqual(yyy.AsyncResult(tid).result, {'fooz': 'baaz'})
 
-        yyy.request.id = tid
-        yyy.update_state(state='FROBUZATING', meta={'fooz': 'baaz'})
-        self.assertEqual(yyy.AsyncResult(tid).status, 'FROBUZATING')
-        self.assertDictEqual(yyy.AsyncResult(tid).result, {'fooz': 'baaz'})
+            yyy.request.id = tid
+            yyy.update_state(state='FROBUZATING', meta={'fooz': 'baaz'})
+            self.assertEqual(yyy.AsyncResult(tid).status, 'FROBUZATING')
+            self.assertDictEqual(yyy.AsyncResult(tid).result, {'fooz': 'baaz'})
+        finally:
+            yyy.pop_request()
 
     def test_repr(self):
 
@@ -421,13 +444,17 @@ class test_tasks(Case):
 
     def test_get_logger(self):
         t1 = self.createTask('c.unittest.t.t1')
-        logfh = WhateverIO()
-        logger = t1.get_logger(logfile=logfh, loglevel=0)
-        self.assertTrue(logger)
+        t1.push_request()
+        try:
+            logfh = WhateverIO()
+            logger = t1.get_logger(logfile=logfh, loglevel=0)
+            self.assertTrue(logger)
 
-        t1.request.loglevel = 3
-        logger = t1.get_logger(logfile=logfh, loglevel=None)
-        self.assertTrue(logger)
+            t1.request.loglevel = 3
+            logger = t1.get_logger(logfile=logfh, loglevel=None)
+            self.assertTrue(logger)
+        finally:
+            t1.pop_request()
 
 
 class test_TaskSet(Case):
