@@ -536,7 +536,7 @@ class BlockingConsumer(Consumer):
         self.task_consumer.consume()
 
         debug('Ready to accept tasks!')
-        ns = self.ns
+        ns = self.namespace
 
         while ns.state != CLOSE and self.connection:
             self.maybe_shutdown()
