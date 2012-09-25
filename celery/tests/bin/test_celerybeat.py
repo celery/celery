@@ -115,6 +115,7 @@ class test_Beat(AppCase):
             pass
         b = beatapp.Beat()
         b.redirect_stdouts = False
+        b.app.log.__class__._setup = False
         b.setup_logging()
         with self.assertRaises(AttributeError):
             sys.stdout.logger

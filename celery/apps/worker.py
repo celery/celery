@@ -108,7 +108,8 @@ class Worker(configurated):
 
     def __init__(self, hostname=None, purge=False, beat=False,
             queues=None, include=None, app=None, pidfile=None,
-            autoscale=None, autoreload=False, no_execv=False, **kwargs):
+            autoscale=None, autoreload=False, no_execv=False,
+            no_color=None, **kwargs):
         self.app = app = app_or_default(app or self.app)
         self.hostname = hostname or socket.gethostname()
 
@@ -131,13 +132,16 @@ class Worker(configurated):
         self.pidfile = pidfile
         self.autoscale = None
         self.autoreload = autoreload
+        self.no_color = no_color
         self.no_execv = no_execv
         if autoscale:
             max_c, _, min_c = autoscale.partition(',')
             self.autoscale = [int(max_c), min_c and int(min_c) or 0]
         self._isatty = isatty(sys.stdout)
 
-        self.colored = app.log.colored(self.logfile)
+        self.colored = app.log.colored(self.logfile,
+            enabled=not no_color if no_color is not None else no_color
+        )
 
         if isinstance(self.use_queues, basestring):
             self.use_queues = self.use_queues.split(',')
@@ -173,7 +177,7 @@ class Worker(configurated):
               str(self.colored.reset(self.extra_info() or '')))
         self.set_process_status('-active-')
 
-        self.redirect_stdouts_to_logger()
+        self.setup_logging()
         try:
             self.run_worker()
         except IGNORE_ERRORS:
@@ -191,9 +195,12 @@ class Worker(configurated):
         if self.app.conf.CELERY_WORKER_DIRECT:
             self.app.amqp.queues.select_add(worker_direct(self.hostname))
 
-    def redirect_stdouts_to_logger(self):
+    def setup_logging(self, colorize=None):
+        if colorize is None and self.no_color is not None:
+            colorize = not self.no_color
         self.app.log.setup(self.loglevel, self.logfile,
-                           self.redirect_stdouts, self.redirect_stdouts_level)
+                           self.redirect_stdouts, self.redirect_stdouts_level,
+                           colorize=colorize)
 
     def purge_messages(self):
         count = self.app.control.purge()

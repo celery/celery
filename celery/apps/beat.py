@@ -47,14 +47,17 @@ class Beat(configurated):
     redirect_stdouts_level = from_config()
 
     def __init__(self, max_interval=None, app=None,
-            socket_timeout=30, pidfile=None, **kwargs):
+            socket_timeout=30, pidfile=None, no_color=None, **kwargs):
         """Starts the celerybeat task scheduler."""
         self.app = app = app_or_default(app or self.app)
         self.setup_defaults(kwargs, namespace='celerybeat')
 
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
-        self.colored = app.log.colored(self.logfile)
+        self.no_color = no_color
+        self.colored = app.log.colored(self.logfile,
+            enabled=not no_color if no_color is not None else no_color,
+        )
         self.pidfile = pidfile
 
         if not isinstance(self.loglevel, int):
@@ -67,12 +70,12 @@ class Beat(configurated):
         self.set_process_title()
         self.start_scheduler()
 
-    def setup_logging(self):
-        handled = self.app.log.setup_logging_subsystem(loglevel=self.loglevel,
-                                                       logfile=self.logfile)
-        if self.redirect_stdouts and not handled:
-            self.app.log.redirect_stdouts_to_logger(logger,
-                    loglevel=self.redirect_stdouts_level)
+    def setup_logging(self, colorize=None):
+        if colorize is None and self.no_color is not None:
+            colorize = not self.no_color
+        self.app.log.setup(self.loglevel, self.logfile,
+                           self.redirect_stdouts, self.redirect_stdouts_level,
+                           colorize=colorize)
 
     def start_scheduler(self):
         c = self.colored

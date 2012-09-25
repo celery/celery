@@ -94,7 +94,7 @@ class Command(BaseCommand):
 
     option_list = (
         Option('--quiet', '-q', action='store_true'),
-        Option('--no-color', '-C', action='store_true'),
+        Option('--no-color', '-C', action='store_true', default=None),
     )
 
     def __init__(self, app=None, no_color=False, stdout=sys.stdout,

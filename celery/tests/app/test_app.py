@@ -340,7 +340,7 @@ class test_App(Case):
 
     def test_Windows_log_color_disabled(self):
         self.app.IS_WINDOWS = True
-        self.assertFalse(self.app.log.supports_color())
+        self.assertFalse(self.app.log.supports_color(True))
 
     def test_compat_setting_CARROT_BACKEND(self):
         self.app.config_from_object(Object(CARROT_BACKEND='set_by_us'))

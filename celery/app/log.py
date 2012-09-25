@@ -60,8 +60,10 @@ class Logging(object):
         self.colorize = self.app.conf.CELERYD_LOG_COLOR
 
     def setup(self, loglevel=None, logfile=None, redirect_stdouts=False,
-            redirect_level='WARNING'):
-        handled = self.setup_logging_subsystem(loglevel, logfile)
+            redirect_level='WARNING', colorize=None):
+        handled = self.setup_logging_subsystem(
+            loglevel, logfile, colorize=colorize,
+        )
         if not handled:
             logger = get_logger('celery.redirected')
             if redirect_stdouts:
@@ -80,8 +82,7 @@ class Logging(object):
         Logging._setup = True
         loglevel = mlevel(loglevel or self.loglevel)
         format = format or self.format
-        if colorize is None:
-            colorize = self.supports_color(logfile)
+        colorize = self.supports_color(colorize, logfile)
         reset_multiprocessing_logger()
         if not is_py3k:
             ensure_process_aware_logger()
@@ -124,8 +125,7 @@ class Logging(object):
         """
         loglevel = mlevel(loglevel or self.loglevel)
         format = format or self.task_format
-        if colorize is None:
-            colorize = self.supports_color(logfile)
+        colorize = self.supports_color(colorize, logfile)
 
         logger = self.setup_handlers(get_logger('celery.task'),
                                      logfile, format, colorize,
@@ -154,24 +154,24 @@ class Logging(object):
             sys.stderr = proxy
         return proxy
 
-    def supports_color(self, logfile=None):
+    def supports_color(self, colorize=None, logfile=None):
+        colorize = self.colorize if colorize is None else colorize
         if self.app.IS_WINDOWS:
             # Windows does not support ANSI color codes.
             return False
-        if self.colorize is None:
+        if colorize or colorize is None:
             # Only use color if there is no active log file
             # and stderr is an actual terminal.
             return logfile is None and isatty(sys.stderr)
-        return self.colorize
+        return colorize
 
-    def colored(self, logfile=None):
-        return colored(enabled=self.supports_color(logfile))
+    def colored(self, logfile=None, enabled=None):
+        return colored(enabled=self.supports_color(enabled, logfile))
 
     def setup_handlers(self, logger, logfile, format, colorize,
             formatter=ColorFormatter, **kwargs):
         if self._is_configured(logger):
             return logger
-
         handler = self._detect_handler(logfile)
         handler.setFormatter(formatter(format, use_color=colorize))
         logger.addHandler(handler)
