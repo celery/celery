@@ -91,8 +91,9 @@ class Worker(WorkController):
         # this signal can be used to set up configuration for
         # workers by name.
         conf = self.app.conf
-        signals.celeryd_init.send(sender=self.hostname, instance=self,
-                                  conf=conf)
+        signals.celeryd_init.send(
+            sender=self.hostname, instance=self, conf=conf,
+        )
         self.purge = purge
         self.no_color = no_color
         self._isatty = isatty(sys.stdout)
@@ -108,8 +109,9 @@ class Worker(WorkController):
 
         # this signal can be used to e.g. change queues after
         # the -Q option has been applied.
-        signals.celeryd_after_setup.send(sender=self.hostname, instance=self,
-                                         conf=self.app.conf)
+        signals.celeryd_after_setup.send(
+            sender=self.hostname, instance=self, conf=self.app.conf,
+        )
 
         if getattr(os, 'getuid', None) and os.getuid() == 0:
             warnings.warn(RuntimeWarning(
@@ -145,7 +147,7 @@ class Worker(WorkController):
     def tasklist(self, include_builtins=True):
         tasks = self.app.tasks
         if not include_builtins:
-            tasks = [t for t in tasks if not t.startswith('celery.')]
+            tasks = (t for t in tasks if not t.startswith('celery.'))
         return '\n'.join('  . {0}'.format(task) for task in sorted(tasks))
 
     def extra_info(self):
