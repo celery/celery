@@ -235,6 +235,10 @@ class Task(object):
     #: Default task expiry time.
     expires = None
 
+    #: Some may expect a request to exist even if the task has not been
+    #: called.  This should probably be deprecated.
+    _default_request = None
+
     __bound__ = False
 
     from_config = (
@@ -273,7 +277,6 @@ class Task(object):
 
             from celery.utils.threads import LocalStack
             self.request_stack = LocalStack()
-            self.request_stack.push(Context())
 
         # PeriodicTask uses this to add itself to the PeriodicTask schedule.
         self.on_bound(app)
@@ -774,10 +777,17 @@ class Task(object):
         """`repr(task)`"""
         return '<@task: %s>' % (self.name, )
 
-    @property
-    def request(self):
-        """Current request object."""
-        return self.request_stack.top
+    def _get_request(self):
+        """Get current request object."""
+        req = self.request_stack.top
+        if req is None:
+            # task was not called, but some may still expect a request
+            # to be there, perhaps that should be deprecated.
+            if self._default_request is None:
+                self._default_request = Context()
+            return self._default_request
+        return req
+    request = property(_get_request)
 
     @property
     def __name__(self):

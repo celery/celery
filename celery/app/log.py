@@ -37,7 +37,7 @@ class TaskFormatter(ColorFormatter):
 
     def format(self, record):
         task = get_current_task()
-        if task:
+        if task and task.request:
             record.__dict__.update(task_id=task.request.id,
                                    task_name=task.name)
         else:

@@ -6,7 +6,7 @@
     The task implementation has been moved to :mod:`celery.app.task`.
 
     This contains the backward compatible Task class used in the old API,
-    and shouldn't be used anymore.
+    and shouldn't be used in new applications.
 
 """
 from __future__ import absolute_import
@@ -21,7 +21,8 @@ from celery.utils.log import get_task_logger
 
 #: list of methods that must be classmethods in the old API.
 _COMPAT_CLASSMETHODS = (
-    'delay', 'apply_async', 'retry', 'apply', 'AsyncResult', 'subtask',
+    'delay', 'apply_async', 'retry', 'apply',
+    'AsyncResult', 'subtask', '_get_request',
 )
 
 
@@ -63,10 +64,10 @@ class Task(BaseTask):
     for name in _COMPAT_CLASSMETHODS:
         locals()[name] = reclassmethod(getattr(BaseTask, name))
 
+    @class_property
     @classmethod
-    def _get_request(self):
-        return self.request_stack.top
-    request = class_property(_get_request)
+    def request(cls):
+        return cls._get_request()
 
     @classmethod
     def get_logger(self, **kwargs):
