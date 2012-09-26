@@ -263,10 +263,11 @@ class DaemonContext(object):
     _is_open = False
 
     def __init__(self, pidfile=None, workdir=None, umask=None,
-            fake=False, **kwargs):
+            fake=False, after_chdir=None, **kwargs):
         self.workdir = workdir or DAEMON_WORKDIR
         self.umask = DAEMON_UMASK if umask is None else umask
         self.fake = fake
+        self.after_chdir = after_chdir
         self.stdfds = (sys.stdin, sys.stdout, sys.stderr)
 
     def redirect_to_null(self, fd):
@@ -281,6 +282,9 @@ class DaemonContext(object):
 
             os.chdir(self.workdir)
             os.umask(self.umask)
+
+            if self.after_chdir:
+                self.after_chdir()
 
             preserve = [fileno(f) for f in self.stdfds if fileno(f)]
             for fd in reversed(range(get_fdmax(default=2048))):
@@ -354,14 +358,17 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
         # no point trying to setuid unless we're root.
         maybe_drop_privileges(uid=uid, gid=gid)
 
-    # Since without stderr any errors will be silently suppressed,
-    # we need to know that we have access to the logfile.
-    logfile and open(logfile, 'a').close()
-    # Doesn't actually create the pidfile, but makes sure it's not stale.
-    if pidfile:
-        _create_pidlock(pidfile).release()
+    def after_chdir_do():
+        # Since without stderr any errors will be silently suppressed,
+        # we need to know that we have access to the logfile.
+        logfile and open(logfile, 'a').close()
+        # Doesn't actually create the pidfile, but makes sure it's not stale.
+        if pidfile:
+            _create_pidlock(pidfile).release()
 
-    return DaemonContext(umask=umask, workdir=workdir, fake=fake)
+    return DaemonContext(
+        umask=umask, workdir=workdir, fake=fake, after_chdir=after_chdir_do,
+    )
 
 
 def parse_uid(uid):
