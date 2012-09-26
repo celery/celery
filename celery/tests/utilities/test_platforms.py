@@ -284,11 +284,15 @@ if not current_app.IS_WINDOWS:
             geteuid.return_value = 5001
             context = detached(uid='user', gid='group', logfile='/foo/bar')
             self.assertIsInstance(context, DaemonContext)
+            self.assertTrue(context.after_chdir)
+            context.after_chdir()
             open.assert_called_with('/foo/bar', 'a')
             open.return_value.close.assert_called_with()
 
             context = detached(pidfile='/foo/bar/pid')
             self.assertIsInstance(context, DaemonContext)
+            self.assertTrue(context.after_chdir)
+            context.after_chdir()
             pidlock.assert_called_with('/foo/bar/pid')
 
     class test_DaemonContext(Case):

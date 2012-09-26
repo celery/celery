@@ -89,7 +89,7 @@ Application
         Only necessary for dynamically created apps for which you can
         use the with statement::
 
-            with Celery(...) as app:
+            with Celery(set_as_current=False) as app:
                 with app.connection() as conn:
                     pass
 
