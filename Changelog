@@ -7,7 +7,7 @@
 .. contents::
     :local:
 
-If you're looking for versions prior to 3.x you should see :ref:`history`.
+If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 .. _version-3.1.0:
 
@@ -19,6 +19,77 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 - `celery inspect stats` now contains worker pid
 - `Task.apply_async` now supports timeout and soft_timeout arguments (Issue #802)
 - `App.control.Inspect.conf` can be used for inspecting worker configuration
+
+.. _version-3.0.11:
+
+3.0.11
+======
+:release-date: 2012-09-26 04:00 P.M UTC
+
+- [security:low] generic-init.d scripts changed permissions of /var/log & /var/run
+
+    In the daemonization tutorial the recommended directories were as follows:
+
+    .. code-block:: bash
+
+        CELERYD_LOG_FILE="/var/log/celery/%n.log"
+        CELERYD_PID_FILE="/var/run/celery/%n.pid"
+
+    But in the scripts themselves the default files were ``/var/log/celery%n.log``
+    and ``/var/run/celery%n.pid``, so if the user did not change the location
+    by configuration, the directories ``/var/log`` and ``/var/run`` would be
+    created - and worse have their permissions and owners changed.
+
+    This change means that:
+
+        - Default pid file is ``/var/run/celery/%n.pid``
+        - Default log file is ``/var/log/celery/%n.log``
+
+        - The directories are only created and have their permissions
+          changed if *no custom locations are set*.
+
+    Users can force paths to be created by calling the ``create-paths``
+    subcommand:
+
+    .. code-block:: bash
+
+        $ sudo /etc/init.d/celeryd create-paths
+
+    .. admonition:: Upgrading Celery will not update init scripts
+
+        To update the init scripts you have to re-download
+        the files from source control and update them manually.
+        You can find the init scripts for version 3.0.x at:
+
+            http://github.com/celery/celery/tree/3.0/extra/generic-init.d
+
+- Now depends on billiard 2.7.3.17
+
+- Fixes request stack protection when app is initialized more than
+  once (Issue #1003).
+
+- ETA tasks now properly works when system timezone is not the same
+  as the configured timezone (Issue #1004).
+
+- Terminating a task now works if the task has been sent to the
+  pool but not yet acknowledged by a pool process (Issue #1007).
+
+    Fix contributed by Alexey Zatelepin
+
+- Terminating a task now properly updates the state of the task to revoked,
+  and sends a ``task-revoked`` event.
+
+- :program:`celery worker` and :program:`celery beat` commands now respects
+  the :option:`--no-color` option (Issue #999).
+
+- Fixed typos in eventlet examples (Issue #1000)
+
+    Fix contributed by Bryan Bishop.
+    Congratulations on opening bug #1000!
+
+- Tasks that raise :exc:`~celery.exceptions.Ignore` are now acknowledged.
+
+- Beat: Now shows the name of the entry in ``sending due task`` logs.
 
 .. _version-3.0.10:
 
