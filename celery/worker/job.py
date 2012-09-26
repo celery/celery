@@ -34,7 +34,7 @@ from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.serialization import get_pickled_exception
 from celery.utils.text import truncate
-from celery.utils.timeutils import maybe_iso8601, timezone
+from celery.utils.timeutils import maybe_iso8601, timezone, maybe_make_aware
 
 from . import state
 
@@ -45,9 +45,8 @@ _does_debug = logger.isEnabledFor(logging.DEBUG)
 _does_info = logger.isEnabledFor(logging.INFO)
 
 # Localize
-tz_to_local = timezone.to_local
-tz_or_local = timezone.tz_or_local
 tz_utc = timezone.utc
+tz_or_local = timezone.tz_or_local
 send_revoked = signals.task_revoked.send
 
 task_accepted = state.task_accepted
@@ -64,7 +63,7 @@ class Request(object):
                  'eventer', 'connection_errors',
                  'task', 'eta', 'expires',
                  'request_dict', 'acknowledged', 'success_msg',
-                 'error_msg', 'retry_msg', 'ignore_msg',
+                 'error_msg', 'retry_msg', 'ignore_msg', 'utc',
                  'time_start', 'worker_pid', '_already_revoked',
                  '_terminate_on_ack', '_tzlocal')
 
@@ -108,7 +107,7 @@ class Request(object):
             self.kwargs = kwdict(self.kwargs)
         eta = body.get('eta')
         expires = body.get('expires')
-        utc = body.get('utc', False)
+        utc = self.utc = body.get('utc', False)
         self.on_ack = on_ack
         self.hostname = hostname or socket.gethostname()
         self.eventer = eventer
@@ -121,14 +120,15 @@ class Request(object):
         # timezone means the message is timezone-aware, and the only timezone
         # supported at this point is UTC.
         if eta is not None:
-            tz = tz_utc if utc else self.tzlocal
-            self.eta = tz_to_local(maybe_iso8601(eta), self.tzlocal, tz)
+            self.eta = maybe_iso8601(eta)
+            if utc:
+                self.eta = maybe_make_aware(self.eta, self.tzlocal)
         else:
             self.eta = None
         if expires is not None:
-            tz = tz_utc if utc else self.tzlocal
-            self.expires = tz_to_local(maybe_iso8601(expires),
-                                       self.tzlocal, tz)
+            self.expires = maybe_iso8601(expires)
+            if utc:
+                self.expires = maybe_make_aware(self.expires, self.tzlocal)
         else:
             self.expires = None
 
@@ -238,9 +238,11 @@ class Request(object):
 
     def maybe_expire(self):
         """If expired, mark the task as revoked."""
-        if self.expires and datetime.now(self.tzlocal) > self.expires:
-            revoked_tasks.add(self.id)
-            return True
+        if self.expires:
+            now = datetime.now(tz_or_local(self.tzlocal) if self.utc else None)
+            if now > self.expires:
+                revoked_tasks.add(self.id)
+                return True
 
     def terminate(self, pool, signal=None):
         if self.time_start:
@@ -456,7 +458,7 @@ class Request(object):
     @property
     def tzlocal(self):
         if self._tzlocal is None:
-            self._tzlocal = tz_or_local(self.app.conf.CELERY_TIMEZONE)
+            self._tzlocal = self.app.conf.CELERY_TIMEZONE
         return self._tzlocal
 
     @property

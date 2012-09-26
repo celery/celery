@@ -96,13 +96,6 @@ class LocalTimezone(tzinfo):
         return tt.tm_isdst > 0
 
 
-def _get_local_timezone():
-    global _local_timezone
-    if _local_timezone is None:
-        _local_timezone = LocalTimezone()
-    return _local_timezone
-
-
 class _Zone(object):
 
     def tz_or_local(self, tzinfo=None):
@@ -115,10 +108,13 @@ class _Zone(object):
             dt = make_aware(dt, orig or self.utc)
         return localize(dt, self.tz_or_local(local))
 
+    def to_system(self, dt):
+        return localize(dt, self.local)
+
     def to_local_fallback(self, dt, *args, **kwargs):
         if is_naive(dt):
-            return make_aware(dt, _get_local_timezone())
-        return localize(dt, _get_local_timezone())
+            return make_aware(dt, self.local)
+        return localize(dt, self.local)
 
     def get_timezone(self, zone):
         if isinstance(zone, basestring):
@@ -132,7 +128,7 @@ class _Zone(object):
 
     @cached_property
     def local(self):
-        return _get_local_timezone()
+        return LocalTimezone()
 
     @cached_property
     def utc(self):

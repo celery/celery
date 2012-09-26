@@ -56,6 +56,9 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Fixes request stack protection when app is initialized more than
   once (Issue #1003).
 
+- ETA tasks now properly works when system timezone is not the same
+  as the configured timezone (Issue #1004).
+
 - Terminating a task now works if the task has been sent to the
   pool but not yet acknowledged by a pool process (Issue #1007).
 
