@@ -152,7 +152,8 @@ class MultiTool(object):
         self.commands = {'start': self.start,
                          'show': self.show,
                          'stop': self.stop,
-                         'stop_verify': self.stop_verify,
+                         'stopwait': self.stopwait,
+                         'stop_verify': self.stopwait,  # compat alias
                          'restart': self.restart,
                          'kill': self.kill,
                          'names': self.names,
@@ -345,11 +346,12 @@ class MultiTool(object):
         self._stop_nodes(p, cmd, retry=2, callback=on_node_shutdown)
         self.retval = int(any(retvals))
 
-    def stop_verify(self, argv, cmd):
+    def stopwait(self, argv, cmd):
         self.splash()
         p = NamespacedOptionParser(argv)
         self.with_detacher_default_options(p)
         return self._stop_nodes(p, cmd, retry=2)
+    stop_verify = stopwait   # compat
 
     def expand(self, argv, cmd=None):
         template = argv[0]
