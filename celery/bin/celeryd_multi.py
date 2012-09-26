@@ -155,7 +155,7 @@ class MultiTool(object):
                          'show': self.show,
                          'stop': self.stop,
                          'stopwait': self.stopwait,
-                         'stop_verify': self.stopwait,
+                         'stop_verify': self.stopwait,  # compat alias
                          'restart': self.restart,
                          'kill': self.kill,
                          'names': self.names,
