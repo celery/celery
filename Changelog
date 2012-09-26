@@ -51,7 +51,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
             http://github.com/celery/celery/tree/3.0/extra/generic-init.d
 
-- Now depends on billiard 2.7.3.16
+- Now depends on billiard 2.7.3.17
 
 - Fixes request stack protection when app is initialized more than
   once (Issue #1003).
