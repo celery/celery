@@ -24,6 +24,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.11
 ======
+:release-date: 2012-09-26 04:00 P.M UTC
 
 - [security:low] generic-init.d scripts changed permissions of /var/log & /var/run
 
