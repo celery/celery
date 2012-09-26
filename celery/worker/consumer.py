@@ -30,7 +30,7 @@ from celery.utils import text
 from celery.utils import timer2
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
-from celery.utils.timeutils import humanize_seconds
+from celery.utils.timeutils import humanize_seconds, timezone
 
 from . import state
 from .bootsteps import StartStopComponent, RUN, CLOSE
@@ -393,16 +393,18 @@ class Consumer(object):
                     expires=task.expires and task.expires.isoformat())
 
         if task.eta:
+            eta = timezone.to_system(task.eta) if task.utc else task.eta
             try:
-                eta = timer2.to_timestamp(task.eta)
+                eta = timer2.to_timestamp(eta)
             except OverflowError as exc:
                 error("Couldn't convert eta %s to timestamp: %r. Task: %r",
                       task.eta, exc, task.info(safe=True), exc_info=True)
                 task.acknowledge()
             else:
                 self.qos.increment_eventually()
-                self.timer.apply_at(eta, self.apply_eta_task, (task, ),
-                                    priority=6)
+                self.timer.apply_at(
+                    eta, self.apply_eta_task, (task, ), priority=6,
+                )
         else:
             task_reserved(task)
             self._quick_put(task)
