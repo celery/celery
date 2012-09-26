@@ -216,6 +216,7 @@ class Delegate(Command):
 
 class multi(Command):
     """Start multiple worker instances."""
+    respects_app_option = False
 
     def get_options(self):
         return ()
@@ -881,6 +882,9 @@ class CeleryCommand(BaseCommand):
         return self.execute(command, argv)
 
     def execute_from_commandline(self, argv=None):
+        argv = sys.argv if argv is None else argv
+        if 'multi' in argv[1:3]:  # Issue 1008
+            self.respects_app_option = False
         try:
             sys.exit(determine_exit_status(
                 super(CeleryCommand, self).execute_from_commandline(argv)))

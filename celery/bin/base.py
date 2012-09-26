@@ -124,6 +124,10 @@ class Command(object):
     # module Rst documentation to parse help from (if any)
     doc = None
 
+    # Some programs (multi) does not want to load the app specified
+    # (Issue #1008).
+    respects_app_option = True
+
     #: List of options to parse before parsing other options.
     preload_options = (
         Option('-A', '--app', default=None),
@@ -286,12 +290,15 @@ class Command(object):
         config_module = preload_options.get('config_module')
         if config_module:
             os.environ['CELERY_CONFIG_MODULE'] = config_module
-        if app:
-            self.app = self.find_app(app)
-        elif self.app is None:
-            self.app = self.get_app(loader=loader)
-        if self.enable_config_from_cmdline:
-            argv = self.process_cmdline_config(argv)
+        if self.respects_app_option:
+            if app and self.respects_app_option:
+                self.app = self.find_app(app)
+            elif self.app is None:
+                self.app = self.get_app(loader=loader)
+            if self.enable_config_from_cmdline:
+                argv = self.process_cmdline_config(argv)
+        else:
+            self.app = celery.Celery()
         return argv
 
     def find_app(self, app):
