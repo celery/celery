@@ -21,8 +21,8 @@
 # abnormally in the absence of a valid process ID.
 #set -e
 
-DEFAULT_PID_FILE="/var/run/celerybeat.pid"
-DEFAULT_LOG_FILE="/var/log/celerybeat.log"
+DEFAULT_PID_FILE="/var/run/celery/beat.pid"
+DEFAULT_LOG_FILE="/var/log/celery/beat.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_CELERYBEAT="celerybeat"
 
@@ -37,9 +37,17 @@ if test -f /etc/default/celerybeat; then
 fi
 
 CELERYBEAT=${CELERYBEAT:-$DEFAULT_CELERYBEAT}
-CELERYBEAT_PID_FILE=${CELERYBEAT_PID_FILE:-${CELERYBEAT_PIDFILE:-$DEFAULT_PID_FILE}}
-CELERYBEAT_LOG_FILE=${CELERYBEAT_LOG_FILE:-${CELERYBEAT_LOGFILE:-$DEFAULT_LOG_FILE}}
 CELERYBEAT_LOG_LEVEL=${CELERYBEAT_LOG_LEVEL:-${CELERYBEAT_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
+CELERY_CREATE_RUNDIR=0
+CELERY_CREATE_LOGDIR=0
+if [ -z "$CELERYBEAT_PID_FILE" ]; then
+    CELERYBEAT_PID_FILE="$DEFAULT_PID_FILE"
+    CELERY_CREATE_RUNDIR=1
+fi
+if [ -z "$CELERYBEAT_LOG_FILE" ]; then
+    CELERYBEAT_LOG_FILE="$DEFAULT_LOG_FILE"
+    CELERY_CREATE_LOGDIR=1
+fi
 
 export CELERY_LOADER
 
@@ -51,21 +59,13 @@ fi
 
 CELERYBEAT_LOG_DIR=`dirname $CELERYBEAT_LOG_FILE`
 CELERYBEAT_PID_DIR=`dirname $CELERYBEAT_PID_FILE`
-if [ ! -d "$CELERYBEAT_LOG_DIR" ]; then
-    mkdir -p $CELERYBEAT_LOG_DIR
-fi
-if [ ! -d "$CELERYBEAT_PID_DIR" ]; then
-    mkdir -p $CELERYBEAT_PID_DIR
-fi
 
 # Extra start-stop-daemon options, like user/group.
 if [ -n "$CELERYBEAT_USER" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --uid $CELERYBEAT_USER"
-    chown "$CELERYBEAT_USER" $CELERYBEAT_LOG_DIR $CELERYBEAT_PID_DIR
 fi
 if [ -n "$CELERYBEAT_GROUP" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --gid $CELERYBEAT_GROUP"
-    chgrp "$CELERYBEAT_GROUP" $CELERYBEAT_LOG_DIR $CELERYBEAT_PID_DIR
 fi
 
 CELERYBEAT_CHDIR=${CELERYBEAT_CHDIR:-$CELERYD_CHDIR}
@@ -79,21 +79,51 @@ export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 check_dev_null() {
     if [ ! -c /dev/null ]; then
         echo "/dev/null is not a character device!"
-        exit 1
+        exit 75  # EX_TEMPFAIL
     fi
 }
 
-ensure_dir() {
-    if [ -d "$1" ]; then
+maybe_die() {
+    if [ $? -ne 0 ]; then
+        echo "Exiting: $*"
+        exit 77  # EX_NOPERM
+    fi
+}
+
+create_default_dir() {
+    if [ ! -d "$1" ]; then
+        echo "- Creating default directory: '$1'"
         mkdir -p "$1"
-        chown $CELERYBEAT_USER:$CELERYBEAT_GROUP "$1"
+        maybe_die "Couldn't create directory $1"
+        echo "- Changing permissions of '$1' to 02755"
         chmod 02755 "$1"
+        maybe_die "Couldn't change permissions for $1"
+        if [ -n "$CELERYBEAT_USER" ]; then
+            echo "- Changing owner of '$1' to '$CELERYBEAT_USER'"
+            chown "$CELERYBEAT_USER" "$1"
+            maybe_die "Couldn't change owner of $1"
+        fi
+        if [ -n "$CELERYBEAT_GROUP" ]; then
+            echo "- Changing group of '$1' to '$CELERYBEAT_GROUP'"
+            chgrp "$CELERYBEAT_GROUP" "$1"
+            maybe_die "Couldn't change group of $1"
+        fi
     fi
 }
 
 check_paths() {
-    ensure_dir "$(dirname $CELERYBEAT_PID_FILE)"
-    ensure_dir "$(dirname $CELERYBEAT_LOG_FILE)"
+    if [ $CELERY_CREATE_LOGDIR -eq 1 ]; then
+        create_default_dir "$CELERYBEAT_LOG_DIR"
+    fi
+    if [ $CELERY_CREATE_RUNDIR -eq 1 ]; then
+        create_default_dir "$CELERYBEAT_PID_DIR"
+    fi
+}
+
+
+create_paths () {
+    create_default_dir "$CELERYBEAT_LOG_DIR"
+    create_default_dir "$CELERYBEAT_PID_DIR"
 }
 
 
@@ -142,29 +172,37 @@ start_beat () {
 
 
 case "$1" in
-  start)
-    check_dev_null
-    check_paths
-    start_beat
+    start)
+        check_dev_null
+        check_paths
+        start_beat
     ;;
-  stop)
-    check_paths
-    stop_beat
+    stop)
+        check_paths
+        stop_beat
     ;;
-  reload|force-reload)
-    echo "Use start+stop"
+    reload|force-reload)
+        echo "Use start+stop"
     ;;
-  restart)
-    echo "Restarting celery periodic task scheduler"
-    check_paths
-    stop_beat
-    check_dev_null
-    start_beat
+    restart)
+        echo "Restarting celery periodic task scheduler"
+        check_paths
+        stop_beat
+        check_dev_null
+        start_beat
     ;;
-
-  *)
-    echo "Usage: /etc/init.d/celerybeat {start|stop|restart}"
-    exit 1
+    create-paths)
+        check_dev_null
+        create_paths
+    ;;
+    check-paths)
+        check_dev_null
+        check_paths
+    ;;
+    *)
+        echo "Usage: /etc/init.d/celerybeat {start|stop|restart|create-paths}"
+        exit 64  # EX_USAGE
+    ;;
 esac
 
 exit 0
