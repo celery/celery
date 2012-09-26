@@ -142,4 +142,4 @@ class TaskPool(BasePool):
 
     @property
     def timers(self):
-        return {self.maintain_pool: 30.0}
+        return {self.maintain_pool: 5.0}
