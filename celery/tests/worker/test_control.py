@@ -352,17 +352,17 @@ class test_ControlPanel(Case):
     def test_revoke_terminate(self):
         request = Mock()
         request.id = tid = uuid()
-        state.active_requests.add(request)
+        state.reserved_requests.add(request)
         try:
             r = control.revoke(Mock(), tid, terminate=True)
             self.assertIn(tid, revoked)
             self.assertTrue(request.terminate.call_count)
-            self.assertIn('terminated', r['ok'])
+            self.assertIn('terminating', r['ok'])
             # unknown task id only revokes
             r = control.revoke(Mock(), uuid(), terminate=True)
-            self.assertIn('revoked', r['ok'])
+            self.assertIn('not found', r['ok'])
         finally:
-            state.active_requests.discard(request)
+            state.reserved_requests.discard(request)
 
     def test_autoscale(self):
         self.panel.state.consumer = Mock()
