@@ -7,7 +7,49 @@
 .. contents::
     :local:
 
-If you're looking for versions prior to 3.x you should see :ref:`history`.
+If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
+
+.. _version-3.0.11:
+
+3.0.11
+======
+
+- [security:low] generic-init.d scripts changed permissions of /var/log & /var/run
+
+    In the daemonization tutorial the recommended directories were as follows:
+
+    .. code-block:: bash
+
+        CELERYD_LOG_FILE="/var/log/celery/%n.log"
+        CELERYD_PID_FILE="/var/run/celery/%n.pid"
+
+    But in the scripts themselves the default files were ``/var/log/celery%n.log``
+    and ``/var/run/celery%n.pid``, so if the user did not change the location
+    by configuration, the directories ``/var/log`` and ``/var/run`` would be
+    created - and worse have their permissions and owners changed.
+
+    This change means that:
+
+        - Default pid file is ``/var/run/celery/%n.pid``
+        - Default log file is ``/var/log/celery/%n.log``
+
+        - The directories are only created and have their permissions
+          changed if *no custom locations are set*.
+
+    Users can force paths to be created by calling the ``create-paths``
+    subcommand:
+
+    .. code-block:: bash
+
+        $ sudo /etc/init.d/celeryd create-paths
+
+    .. admonition:: Upgrading Celery will not update init scripts
+
+        To update the init scripts you have to re-download
+        the files from source control and update them manually.
+        You can find the init scripts for version 3.0.x at:
+
+            http://github.com/celery/celery/tree/3.0/extra/generic-init.d
 
 .. _version-3.1.0:
 
