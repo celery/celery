@@ -51,6 +51,21 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
             http://github.com/celery/celery/tree/3.0/extra/generic-init.d
 
+- :program:`celery worker` and :program:`celery beat` commands now respects
+  the :option:`--no-color` option (Issue #999).
+
+- Fixes request stack protection when app is initialized more than
+  once (Issue #1003).
+
+- Fixed typos in eventlet examples (Issue #1000)
+
+    Fix contributed by Bryan Bishop.
+    Congratulations on opening bug #1000!
+
+- Tasks that raise :exc:`~celery.exceptions.Ignore` are now acknowledged.
+
+- Beat: Now shows the name of the entry in ``sending due task`` logs.
+
 .. _version-3.0.10:
 
 3.0.10
