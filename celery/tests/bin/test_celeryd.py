@@ -289,7 +289,7 @@ class test_Worker(WorkerAppCase):
 
     @disable_stdouts
     def test_redirect_stdouts(self):
-        worker = self.Worker(redirect_stdouts=False)
+        self.Worker(redirect_stdouts=False)
         with self.assertRaises(AttributeError):
             sys.stdout.logger
 

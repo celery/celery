@@ -31,7 +31,7 @@ try:
     # print_statement does not work with io.StringIO
     from io import BytesIO as PrintIO
 except ImportError:
-    from StringIO import StringIO as PrintIO
+    from StringIO import StringIO as PrintIO  # noqa
 
 HELP = """
 ---- -- - - ---- Commands- -------------- --- ------------

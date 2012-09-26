@@ -20,6 +20,7 @@ from collections import defaultdict
 from kombu.utils import cached_property
 
 from celery import __version__
+from celery.exceptions import SystemTerminate
 from celery.datastructures import LimitedSet
 
 #: Worker software/platform information.

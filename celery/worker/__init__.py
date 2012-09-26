@@ -130,7 +130,6 @@ class WorkController(configurated):
                                    on_stopped=self.on_stopped)
         self.namespace.apply(self, **kwargs)
 
-
     def on_init_namespace(self):
         pass
 

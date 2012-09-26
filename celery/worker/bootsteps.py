@@ -201,7 +201,6 @@ def _prepare_requires(req):
     return req
 
 
-
 class ComponentType(type):
     """Metaclass for components."""
 
