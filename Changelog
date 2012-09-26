@@ -53,11 +53,19 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on billiard 2.7.3.16
 
-- :program:`celery worker` and :program:`celery beat` commands now respects
-  the :option:`--no-color` option (Issue #999).
-
 - Fixes request stack protection when app is initialized more than
   once (Issue #1003).
+
+- Terminating a task now works if the task has been sent to the
+  pool but not yet acknowledged by a pool process (Issue #1007).
+
+    Fix contributed by Alexey Zatelepin
+
+- Terminating a task now properly updates the state of the task to revoked,
+  and sends a ``task-revoked`` event.
+
+- :program:`celery worker` and :program:`celery beat` commands now respects
+  the :option:`--no-color` option (Issue #999).
 
 - Fixed typos in eventlet examples (Issue #1000)
 

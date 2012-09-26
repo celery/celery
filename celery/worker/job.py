@@ -352,19 +352,21 @@ class Request(object):
         task_ready(self)
 
         if not exc_info.internal:
+            exc = exc_info.exception
 
-            if isinstance(exc_info.exception, exceptions.RetryTaskError):
+            if isinstance(exc, exceptions.RetryTaskError):
                 return self.on_retry(exc_info)
 
-            # This is a special case as the process would not have had
+            # These are special cases where the process would not have had
             # time to write the result.
-            if isinstance(exc_info.exception, exceptions.WorkerLostError) and \
-                    self.store_errors:
-                self.task.backend.mark_as_failure(self.id, exc_info.exception)
+            if self.store_errors:
+                if isinstance(exc, exceptions.WorkerLostError):
+                    self.task.backend.mark_as_failure(self.id, exc_info.exception)
+                elif isinstance(exc, exceptions.Terminated):
+                    self._announce_revoked('terminated', True, str(exc), False)
             # (acks_late) acknowledge after result stored.
             if self.task.acks_late:
                 self.acknowledge()
-
         self._log_error(exc_info)
 
     def _log_error(self, einfo):
