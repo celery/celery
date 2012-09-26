@@ -68,6 +68,15 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Terminating a task now properly updates the state of the task to revoked,
   and sends a ``task-revoked`` event.
 
+- Multi: No longer parses --app option (Issue #1008).
+
+- Generic worker init script now waits for workers to shutdown by default.
+
+- Multi: stop_verify command renamed to stopwait.
+
+- Daemonization: Now delays trying to create pidfile/logfile until after
+  the working directory has been changed into.
+
 - :program:`celery worker` and :program:`celery beat` commands now respects
   the :option:`--no-color` option (Issue #999).
 
