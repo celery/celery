@@ -786,7 +786,7 @@ Deprecations
 
     To do this we had to rename the configuration syntax. If you use any of
     the custom AMQP routing options (queue/exchange/routing_key, etc.), you
-    should read the new FAQ entry: http://bit.ly/aiWoH.
+    should read the new FAQ entry: :ref:`faq-task-routing`.
 
     The previous syntax is deprecated and scheduled for removal in v2.0.
 

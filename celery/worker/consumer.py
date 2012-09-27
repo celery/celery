@@ -120,7 +120,7 @@ The message has been ignored and discarded.
 
 Did you remember to import the module containing this task?
 Or maybe you are using relative imports?
-Please see http://bit.ly/gLye1c for more information.
+More: http://docs.celeryq.org/en/latest/userguide/tasks.html#names
 
 The full contents of the message body was:
 %s
@@ -131,8 +131,8 @@ INVALID_TASK_ERROR = """\
 Received invalid task message: %s
 The message has been ignored and discarded.
 
-Please ensure your message conforms to the task
-message protocol as described here: http://bit.ly/hYj41y
+Please ensure your message conforms to the task message format:
+http://docs.celeryq.org/en/latest/internals/protocol.html
 
 The full contents of the message body was:
 %s

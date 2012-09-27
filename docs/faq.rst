@@ -889,22 +889,6 @@ Several database tables are created by default, these relate to
 Windows
 =======
 
-.. _faq-windows-worker-spawn-loop:
-
-celeryd keeps spawning processes at startup
--------------------------------------------
-
-**Answer**: This is a known issue on Windows.
-You have to start celeryd with the command:
-
-.. code-block:: bash
-
-    $ python -m celery.bin.celeryd
-
-Any additional arguments can be appended to this command.
-
-See http://bit.ly/bo9RSw
-
 .. _faq-windows-worker-embedded-beat:
 
 The `-B` / `--beat` option to celeryd doesn't work?
