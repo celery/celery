@@ -37,31 +37,6 @@ def qhtml(options):
 
 
 @task
-@needs('clean_docs', 'paver.doctools.html')
-def ghdocs(options):
-    builtdocs = sphinx_builddir(options)
-    sh("git checkout gh-pages && \
-            cp -r %s/* .    && \
-            git commit . -m 'Rendered documentation for Github Pages.' && \
-            git push origin gh-pages && \
-            git checkout master" % builtdocs)
-
-
-@task
-@needs('clean_docs', 'paver.doctools.html')
-def upload_pypi_docs(options):
-    builtdocs = path('docs') / options.builddir / 'html'
-    sh("%s setup.py upload_sphinx --upload-dir='%s'" % (
-        sys.executable, builtdocs))
-
-
-@task
-@needs('upload_pypi_docs', 'ghdocs')
-def upload_docs(options):
-    pass
-
-
-@task
 def autodoc(options):
     sh('extra/release/doc4allmods celery')
 
@@ -177,12 +152,6 @@ def gitcleanforce(options):
 @needs('flakes', 'autodoc', 'verifyindex',
        'verifyconfigref', 'test', 'gitclean')
 def releaseok(options):
-    pass
-
-
-@task
-@needs('releaseok', 'removepyc', 'upload_docs')
-def release(options):
     pass
 
 

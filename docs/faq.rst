@@ -232,10 +232,7 @@ to process messages.
 Also, there's another way to be language independent, and that is to use REST
 tasks, instead of your tasks being functions, they're URLs. With this
 information you can even create simple web servers that enable preloading of
-code. See: `User Guide: Remote Tasks`_.
-
-.. _`User Guide: Remote Tasks`:
-    http://celery.github.com/celery/userguide/remote-tasks.html
+code. See: :ref:`User Guide: Remote Tasks <guide-webhooks>`.
 
 .. _faq-troubleshooting:
 
