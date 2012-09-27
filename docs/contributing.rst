@@ -880,12 +880,10 @@ Releasing
 
 Commands to make a new public stable release::
 
-    $ paver releaseok     # checks pep8, autodoc index and runs tests
-    $ paver removepyc  # Remove .pyc files.
-    $ git clean -xdn # Check that there's no left-over files in the repository.
-    $ python2.5 setup.py sdist upload # Upload package to PyPI
-    $ paver upload_pypi_docs
-    $ paver ghdocs # Build and upload documentation to Github.
+    $ paver releaseok  # checks pep8, autodoc index, runs tests and more
+    $ paver removepyc  # Remove .pyc files
+    $ git clean -xdn   # Check that there's no left-over files in the repo
+    $ python setup.py sdist upload  # Upload package to PyPI
 
 If this is a new release series then you also need to do the
 following:
