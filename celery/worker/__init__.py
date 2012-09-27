@@ -6,7 +6,7 @@
     :class:`WorkController` can be used to instantiate in-process workers.
 
     The worker consists of several components, all managed by boot-steps
-    (mod:`celery.worker.bootsteps`).
+    (mod:`celery.bootsteps`).
 
 """
 from __future__ import absolute_import
@@ -19,6 +19,7 @@ from billiard import cpu_count
 from kombu.syn import detect_environment
 from kombu.utils.finalize import Finalize
 
+from celery import bootsteps
 from celery import concurrency as _concurrency
 from celery import platforms
 from celery import signals
@@ -31,7 +32,6 @@ from celery.utils import worker_direct
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel, worker_logger as logger
 
-from . import bootsteps
 from . import state
 
 UNKNOWN_QUEUE = """\

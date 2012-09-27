@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from mock import Mock
 
-from celery.worker import bootsteps
+from celery import bootsteps
 
 from celery.tests.utils import AppCase, Case
 

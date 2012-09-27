@@ -18,10 +18,10 @@ import threading
 from functools import partial
 from time import sleep, time
 
+from celery import bootsteps
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
 
-from . import bootsteps
 from . import state
 from .hub import DummyLock
 

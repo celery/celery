@@ -17,6 +17,7 @@ from kombu.common import QoS, ignore_errors
 from kombu.syn import _detect_environment
 from kombu.utils.encoding import safe_repr
 
+from celery import bootsteps
 from celery.app import app_or_default
 from celery.task.trace import build_tracer
 from celery.utils.timer2 import default_timer, to_timestamp
@@ -25,7 +26,7 @@ from celery.utils.log import get_logger
 from celery.utils.text import truncate
 from celery.utils.timeutils import humanize_seconds, timezone
 
-from . import bootsteps, heartbeat, loops, pidbox
+from . import heartbeat, loops, pidbox
 from .state import task_reserved, maybe_shutdown
 
 CLOSE = bootsteps.CLOSE

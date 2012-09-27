@@ -14,9 +14,10 @@ from Queue import Empty
 
 from kombu.utils.eventio import READ, WRITE, ERR
 
+from celery.bootsteps import CLOSE
 from celery.exceptions import InvalidTaskError, SystemTerminate
-from celery.worker import state
-from celery.worker.bootsteps import CLOSE
+
+from . import state
 
 #: Heartbeat check is called every heartbeat_seconds' / rate'.
 AMQHEARTBEAT_RATE = 2.0

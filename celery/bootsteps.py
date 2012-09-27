@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.worker.bootsteps
-    ~~~~~~~~~~~~~~~~~~~~~~~
+    celery.bootsteps
+    ~~~~~~~~~~~~~~~~
 
     The boot-steps!
 

@@ -15,10 +15,11 @@ from functools import partial
 
 from billiard.exceptions import WorkerLostError
 
+from celery import bootsteps
 from celery.utils.log import worker_logger as logger
 from celery.utils.timer2 import Schedule
 
-from . import bootsteps, hub
+from . import hub
 from .buckets import TaskBucket, FastQueue
 
 

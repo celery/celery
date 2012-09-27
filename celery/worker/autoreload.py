@@ -18,12 +18,11 @@ from threading import Event
 
 from kombu.utils import eventio
 
+from celery import bootsteps
 from celery.platforms import ignore_errno
 from celery.utils.imports import module_file
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
-
-from . import bootsteps
 
 try:                        # pragma: no cover
     import pyinotify

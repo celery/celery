@@ -1,11 +1,11 @@
 ==========================================
- celery.worker.bootsteps
+ celery.bootsteps
 ==========================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.worker.bootsteps
+.. currentmodule:: celery.bootsteps
 
-.. automodule:: celery.worker.bootsteps
+.. automodule:: celery.bootsteps
     :members:
     :undoc-members:

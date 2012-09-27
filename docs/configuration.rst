@@ -1409,7 +1409,7 @@ CELERYD_BOOT_STEPS
 
 This setting enables you to add additional components to the worker process.
 It should be a list of module names with
-:class:`celery.worker.bootsteps.Component`
+:class:`celery.bootsteps.Step`
 classes, that augments functionality in the worker.
 
 .. setting:: CELERYD_CONSUMER_BOOT_STEPS
@@ -1419,7 +1419,7 @@ CELERYD_CONSUMER_BOOT_STEPS
 
 This setting enables you to add additional components to the workers consumer.
 It should be a list of module names with
-:class:`celery.worker.bootsteps.Component`` classes, that augments
+:class:`celery.bootsteps.Step`` classes, that augments
 functionality in the consumer.
 
 .. setting:: CELERYD_POOL

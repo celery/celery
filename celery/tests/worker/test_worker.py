@@ -17,6 +17,7 @@ from nose import SkipTest
 
 from celery import current_app
 from celery.app.defaults import DEFAULTS
+from celery.bootsteps import RUN, CLOSE, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
 from celery.datastructures import AttributeDict
 from celery.exceptions import SystemTerminate
@@ -25,7 +26,6 @@ from celery.task import periodic_task as periodic_task_dec
 from celery.utils import uuid
 from celery.worker import WorkController
 from celery.worker.components import Queues, Timers, Hub, Pool
-from celery.worker.bootsteps import RUN, CLOSE, TERMINATE, StartStopStep
 from celery.worker.buckets import FastQueue
 from celery.worker.job import Request
 from celery.worker import consumer
