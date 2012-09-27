@@ -786,7 +786,7 @@ Deprecations
 
     To do this we had to rename the configuration syntax. If you use any of
     the custom AMQP routing options (queue/exchange/routing_key, etc.), you
-    should read the new FAQ entry: http://bit.ly/aiWoH.
+    should read the new FAQ entry: :ref:`faq-task-routing`.
 
     The previous syntax is deprecated and scheduled for removal in v2.0.
 
@@ -1121,10 +1121,7 @@ Important changes
 
 * Celery now supports task retries.
 
-    See `Cookbook: Retrying Tasks`_ for more information.
-
-.. _`Cookbook: Retrying Tasks`:
-    http://celery.github.com/celery/cookbook/task-retries.html
+    See :ref:`task-retry` for more information.
 
 * We now have an AMQP result store backend.
 
@@ -1556,12 +1553,8 @@ arguments, so be sure to flush your task queue before you upgrade.
         CELERY_AMQP_CONSUMER_QUEUE
         CELERY_AMQP_EXCHANGE_TYPE
 
-  See the entry `Can I send some tasks to only some servers?`_ in the
-  `FAQ`_ for more information.
-
-.. _`Can I send some tasks to only some servers?`:
-        http://bit.ly/celery_AMQP_routing
-.. _`FAQ`: http://celery.github.com/celery/faq.html
+  See the entry :ref:`faq-task-routing` in the
+  :ref:`FAQ <faq>` for more information.
 
 * Task errors are now logged using log level `ERROR` instead of `INFO`,
   and stacktraces are dumped. Thanks to Grégoire Cachet.

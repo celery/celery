@@ -31,8 +31,6 @@ by :ref:`using webhooks <guide-webhooks>`.
 
 .. _RCelery: http://leapfrogdevelopment.github.com/rcelery/
 .. _`PHP client`: https://github.com/gjedeer/celery-php
-.. _`using webhooks`:
-    http://celery.github.com/celery/userguide/remote-tasks.html
 
 What do I need?
 ===============
