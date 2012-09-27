@@ -3,7 +3,7 @@
 celery.worker.consumer
 ~~~~~~~~~~~~~~~~~~~~~~
 
-This module contains the component responsible for consuming messages
+This module contains the components responsible for consuming messages
 from the broker, processing the messages and keeping the broker connections
 up and running.
 
@@ -13,6 +13,7 @@ from __future__ import absolute_import
 import logging
 import socket
 
+from kombu.common import QoS, ignore_errors
 from kombu.syn import _detect_environment
 from kombu.utils.encoding import safe_repr
 
@@ -20,20 +21,17 @@ from celery.app import app_or_default
 from celery.task.trace import build_tracer
 from celery.utils.timer2 import default_timer, to_timestamp
 from celery.utils.functional import noop
-from celery.utils.imports import qualname
 from celery.utils.log import get_logger
-from celery.utils.text import dump_body
+from celery.utils.text import truncate
 from celery.utils.timeutils import humanize_seconds, timezone
-from celery.worker import state
-from celery.worker.state import maybe_shutdown
-from celery.worker.bootsteps import Namespace as _NS, StartStopComponent, CLOSE
 
-from . import loops
+from . import bootsteps, heartbeat, loops, pidbox
+from .state import task_reserved, maybe_shutdown
 
+CLOSE = bootsteps.CLOSE
 logger = get_logger(__name__)
-info, warn, error, crit = (logger.info, logger.warn,
-                           logger.error, logger.critical)
-task_reserved = state.task_reserved
+debug, info, warn, error, crit = (logger.debug, logger.info, logger.warn,
+                                  logger.error, logger.critical)
 
 CONNECTION_RETRY = """\
 consumer: Connection to broker lost. \
@@ -89,73 +87,19 @@ body: {0} {{content_type:{1} content_encoding:{2} delivery_info:{3}}}\
 """
 
 
-def debug(msg, *args, **kwargs):
-    logger.debug('consumer: {0}'.format(msg), *args, **kwargs)
-
-
-class Component(StartStopComponent):
-    name = 'worker.consumer'
-    last = True
-
-    def create(self, w):
-        prefetch_count = w.concurrency * w.prefetch_multiplier
-        c = w.consumer = self.instantiate(w.consumer_cls,
-                w.ready_queue,
-                hostname=w.hostname,
-                send_events=w.send_events,
-                init_callback=w.ready_callback,
-                initial_prefetch_count=prefetch_count,
-                pool=w.pool,
-                timer=w.timer,
-                app=w.app,
-                controller=w,
-                hub=w.hub)
-        return c
-
-
-class Namespace(_NS):
-    name = 'consumer'
-    builtin_boot_steps = ('celery.worker.consumer.components', )
-
-    def shutdown(self, parent):
-        delayed = self._shutdown_step(parent, parent.components, force=False)
-        self._shutdown_step(parent, delayed, force=True)
-
-    def _shutdown_step(self, parent, components, force=False):
-        delayed = []
-        for component in components:
-            if component:
-                logger.debug('Shutdown %s...', qualname(component))
-                if not force and getattr(component, 'delay_shutdown', False):
-                    delayed.append(component)
-                else:
-                    component.shutdown(parent)
-        return delayed
-
-    def modules(self):
-        return (self.builtin_boot_steps +
-                self.app.conf.CELERYD_CONSUMER_BOOT_STEPS)
+def dump_body(m, body):
+    return '{0} ({1}b)'.format(truncate(safe_repr(body), 1024),
+                               len(m.body))
 
 
 class Consumer(object):
-    """Listen for messages received from the broker and
-    move them to the ready queue for task processing.
 
-    :param ready_queue: See :attr:`ready_queue`.
-    :param timer: See :attr:`timer`.
-
-    """
-
-    #: The queue that holds tasks ready for immediate processing.
+    #: Intra-queue for tasks ready to be handled
     ready_queue = None
 
-    #: Optional callback to be called when the connection is established.
-    #: Will only be called once, even if the connection is lost and
-    #: re-established.
+    #: Optional callback called the first time the worker
+    #: is ready to receive tasks.
     init_callback = None
-
-    #: The current hostname.  Defaults to the system hostname.
-    hostname = None
 
     #: The current worker pool instance.
     pool = None
@@ -163,6 +107,15 @@ class Consumer(object):
     #: A timer used for high-priority internal tasks, such
     #: as sending heartbeats.
     timer = None
+
+    class Namespace(bootsteps.Namespace):
+        name = 'consumer'
+
+        def shutdown(self, parent):
+            self.restart(parent, 'Shutdown', 'shutdown')
+
+        def modules(self):
+            return self.app.conf.CELERYD_CONSUMER_BOOT_STEPS
 
     def __init__(self, ready_queue,
             init_callback=noop, hostname=None,
@@ -182,17 +135,20 @@ class Consumer(object):
         self.channel_errors = conninfo.channel_errors
 
         self._does_info = logger.isEnabledFor(logging.INFO)
+        self._quick_put = self.ready_queue.put
+
+        if hub:
+            self.amqheartbeat = amqheartbeat
+            if self.amqheartbeat is None:
+                self.amqheartbeat = self.app.conf.BROKER_HEARTBEAT
+            self.hub = hub
+            self.hub.on_init.append(self.on_poll_init)
+        else:
+            self.hub = None
+            self.amqheartbeat = 0
+
         if not hasattr(self, 'loop'):
             self.loop = loops.asynloop if hub else loops.synloop
-        if hub:
-            hub.on_init.append(self.on_poll_init)
-        self.hub = hub
-        self._quick_put = self.ready_queue.put
-        self.amqheartbeat = amqheartbeat
-        if self.amqheartbeat is None:
-            self.amqheartbeat = self.app.conf.BROKER_HEARTBEAT
-        if not hub:
-            self.amqheartbeat = 0
 
         if _detect_environment() == 'gevent':
             # there's a gevent bug that causes timeouts to not be reset,
@@ -200,34 +156,37 @@ class Consumer(object):
             # connect again.
             self.app.conf.BROKER_CONNECTION_TIMEOUT = None
 
-        self.components = []
-        self.namespace = Namespace(app=self.app,
-                                   on_start=self.on_start,
-                                   on_close=self.on_close)
+        self.steps = []
+        self.namespace = self.Namespace(
+            app=self.app, on_start=self.on_start, on_close=self.on_close,
+        )
         self.namespace.apply(self, **kwargs)
 
-    def on_start(self):
-        # reload all task's execution strategies.
-        self.update_strategies()
-        self.init_callback(self)
-
     def start(self):
-        """Start the consumer.
-
-        Automatically survives intermittent connection failure,
-        and will retry establishing the connection and restart
-        consuming messages.
-
-        """
-        ns, loop, loop_args = self.namespace, self.loop, self.loop_args()
+        ns, loop = self.namespace, self.loop
         while ns.state != CLOSE:
             maybe_shutdown()
             try:
                 ns.start(self)
-                loop(*loop_args)
             except self.connection_errors + self.channel_errors:
-                error(CONNECTION_RETRY, exc_info=True)
-                self.restart()
+                maybe_shutdown()
+                if ns.state != CLOSE and self.connection:
+                    error(CONNECTION_RETRY, exc_info=True)
+                    ns.restart(self)
+
+    def shutdown(self):
+        self.namespace.shutdown(self)
+
+    def stop(self):
+        self.namespace.stop(self)
+
+    def on_start(self):
+        self.update_strategies()
+
+    def on_ready(self):
+        callback, self.init_callback = self.init_callback, None
+        if callback:
+            callback(self)
 
     def loop_args(self):
         return (self, self.connection, self.task_consumer,
@@ -235,25 +194,9 @@ class Consumer(object):
                 self.amqheartbeat, self.handle_unknown_message,
                 self.handle_unknown_task, self.handle_invalid_task)
 
-    def restart(self):
-        return self.namespace.restart(self)
-
     def on_poll_init(self, hub):
         hub.update_readers(self.connection.eventmap)
         self.connection.transport.on_poll_init(hub.poller)
-
-    def maybe_conn_error(self, fun):
-        """Applies function but ignores any connection or channel
-        errors raised."""
-        try:
-            fun()
-        except (AttributeError, ) + \
-                self.connection_errors + \
-                self.channel_errors:
-            pass
-
-    def shutdown(self):
-        self.namespace.shutdown(self)
 
     def on_decode_error(self, message, exc):
         """Callback called if an error occurs while decoding
@@ -278,7 +221,7 @@ class Consumer(object):
         self.ready_queue.clear()
         self.timer.clear()
 
-    def _open_connection(self):
+    def connect(self):
         """Establish the broker connection.
 
         Will retry establishing the connection if the
@@ -305,15 +248,6 @@ class Consumer(object):
         return conn.ensure_connection(_error_handler,
                     self.app.conf.BROKER_CONNECTION_MAX_RETRIES,
                     callback=maybe_shutdown)
-
-    def stop(self):
-        """Stop consuming.
-
-        Does not close the broker connection, so be sure to call
-        :meth:`close_connection` when you are finished with it.
-
-        """
-        self.namespace.stop(self)
 
     def add_task_queue(self, queue, exchange=None, exchange_type=None,
             routing_key=None, **options):
@@ -416,10 +350,114 @@ class Consumer(object):
         message.reject_log_error(logger, self.connection_errors)
 
     def update_strategies(self):
-        S = self.strategies
-        app = self.app
-        loader = app.loader
-        hostname = self.hostname
+        loader = self.app.loader
         for name, task in self.app.tasks.iteritems():
-            S[name] = task.start_strategy(app, self)
-            task.__trace__ = build_tracer(name, task, loader, hostname)
+            self.strategies[name] = task.start_strategy(self.app, self)
+            task.__trace__ = build_tracer(name, task, loader, self.hostname)
+
+
+class Connection(bootsteps.StartStopStep):
+    name = 'consumer.connection'
+
+    def __init__(self, c, **kwargs):
+        c.connection = None
+
+    def start(self, c):
+        c.connection = c.connect()
+        info('Connected to %s', c.connection.as_uri())
+
+    def shutdown(self, c):
+        # We must set self.connection to None here, so
+        # that the green pidbox thread exits.
+        connection, c.connection = c.connection, None
+        if connection:
+            ignore_errors(connection, connection.close)
+
+
+class Events(bootsteps.StartStopStep):
+    name = 'consumer.events'
+    requires = (Connection, )
+
+    def __init__(self, c, send_events=None, **kwargs):
+        self.send_events = send_events
+        c.event_dispatcher = None
+
+    def start(self, c):
+        # Flush events sent while connection was down.
+        prev = c.event_dispatcher
+        dis = c.event_dispatcher = c.app.events.Dispatcher(
+            c.connection, hostname=c.hostname, enabled=self.send_events,
+        )
+        if prev:
+            dis.copy_buffer(prev)
+            dis.flush()
+
+    def stop(self, c):
+        if c.event_dispatcher:
+            ignore_errors(c, c.event_dispatcher.close)
+            c.event_dispatcher = None
+    shutdown = stop
+
+
+class Heart(bootsteps.StartStopStep):
+    name = 'consumer.heart'
+    requires = (Events, )
+
+    def __init__(self, c, **kwargs):
+        c.heart = None
+
+    def start(self, c):
+        c.heart = heartbeat.Heart(c.timer, c.event_dispatcher)
+        c.heart.start()
+
+    def stop(self, c):
+        c.heart = c.heart and c.heart.stop()
+    shutdown = stop
+
+
+class Control(bootsteps.StartStopStep):
+    name = 'consumer.control'
+    requires = (Events, )
+
+    def __init__(self, c, **kwargs):
+        self.is_green = c.pool is not None and c.pool.is_green
+        self.box = (pidbox.gPidbox if self.is_green else pidbox.Pidbox)(c)
+        self.start = self.box.start
+        self.stop = self.box.stop
+        self.shutdown = self.box.shutdown
+
+
+class Tasks(bootsteps.StartStopStep):
+    name = 'consumer.tasks'
+    requires = (Control, )
+
+    def __init__(self, c, initial_prefetch_count=2, **kwargs):
+        c.task_consumer = c.qos = None
+        self.initial_prefetch_count = initial_prefetch_count
+
+    def start(self, c):
+        c.task_consumer = c.app.amqp.TaskConsumer(
+            c.connection, on_decode_error=c.on_decode_error,
+        )
+        c.qos = QoS(c.task_consumer, self.initial_prefetch_count)
+        c.qos.update()  # set initial prefetch count
+
+    def stop(self, c):
+        if c.task_consumer:
+            debug('Cancelling task consumer...')
+            ignore_errors(c, c.task_consumer.cancel)
+
+    def shutdown(self, c):
+        if c.task_consumer:
+            self.stop(c)
+            debug('Closing consumer channel...')
+            ignore_errors(c, c.task_consumer.close)
+            c.task_consumer = None
+
+
+class Evloop(bootsteps.StartStopStep):
+    name = 'consumer.evloop'
+    last = True
+
+    def start(self, c):
+        c.loop(*c.loop_args())

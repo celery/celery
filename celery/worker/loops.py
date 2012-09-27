@@ -1,8 +1,8 @@
 """
-celery.worker.consumer.loop
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+celery.worker.loop
+~~~~~~~~~~~~~~~~~~
 
-Worker eventloop.
+The consumers highly-optimized inner loop.
 
 """
 from __future__ import absolute_import
@@ -15,18 +15,14 @@ from Queue import Empty
 from kombu.utils.eventio import READ, WRITE, ERR
 
 from celery.exceptions import InvalidTaskError, SystemTerminate
-from celery.utils.log import get_logger
 from celery.worker import state
 from celery.worker.bootsteps import CLOSE
-
-logger = get_logger(__name__)
-debug = logger.debug
 
 #: Heartbeat check is called every heartbeat_seconds' / rate'.
 AMQHEARTBEAT_RATE = 2.0
 
 
-def asynloop(obj, connection, consumer, strategies, namespace, hub, qos,
+def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
         heartbeat, handle_unknown_message, handle_unknown_task,
         handle_invalid_task, sleep=sleep, min=min, Empty=Empty,
         hbrate=AMQHEARTBEAT_RATE):
@@ -67,10 +63,9 @@ def asynloop(obj, connection, consumer, strategies, namespace, hub, qos,
 
         consumer.callbacks = [on_task_received]
         consumer.consume()
+        obj.on_ready()
 
-        debug('Ready to accept tasks!')
-
-        while namespace.state != CLOSE and obj.connection:
+        while ns.state != CLOSE and obj.connection:
             # shutdown if signal handlers told us to.
             if state.should_stop:
                 raise SystemExit()
@@ -112,7 +107,7 @@ def asynloop(obj, connection, consumer, strategies, namespace, hub, qos,
                         except (KeyError, Empty):
                             continue
                         except socket.error:
-                            if namespace.state != CLOSE:  # pragma: no cover
+                            if ns.state != CLOSE:  # pragma: no cover
                                 raise
                     if keep_draining:
                         drain_nowait()
@@ -124,7 +119,7 @@ def asynloop(obj, connection, consumer, strategies, namespace, hub, qos,
                 sleep(min(poll_timeout, 0.1))
 
 
-def synloop(obj, connection, consumer, strategies, namespace, hub, qos,
+def synloop(obj, connection, consumer, strategies, ns, hub, qos,
         heartbeat, handle_unknown_message, handle_unknown_task,
         handle_invalid_task, **kwargs):
     """Fallback blocking eventloop for transports that doesn't support AIO."""
@@ -145,9 +140,9 @@ def synloop(obj, connection, consumer, strategies, namespace, hub, qos,
     consumer.register_callback(on_task_received)
     consumer.consume()
 
-    debug('Ready to accept tasks!')
+    obj.on_ready()
 
-    while namespace.state != CLOSE and obj.connection:
+    while ns.state != CLOSE and obj.connection:
         state.maybe_shutdown()
         if qos.prev != qos.value:         # pragma: no cover
             qos.update()
@@ -156,5 +151,5 @@ def synloop(obj, connection, consumer, strategies, namespace, hub, qos,
         except socket.timeout:
             pass
         except socket.error:
-            if namespace.state != CLOSE:  # pragma: no cover
+            if ns.state != CLOSE:  # pragma: no cover
                 raise

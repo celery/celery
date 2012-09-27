@@ -43,24 +43,6 @@ enable the CELERY_CREATE_MISSING_QUEUES setting.
 """
 
 
-class Namespace(bootsteps.Namespace):
-    """This is the boot-step namespace of the :class:`WorkController`.
-
-    It loads modules from :setting:`CELERYD_BOOT_STEPS`, and its
-    own set of built-in boot-step modules.
-
-    """
-    name = 'worker'
-    builtin_boot_steps = ('celery.worker.components',
-                          'celery.worker.autoscale',
-                          'celery.worker.autoreload',
-                          'celery.worker.consumer',
-                          'celery.worker.mediator')
-
-    def modules(self):
-        return self.builtin_boot_steps + self.app.conf.CELERYD_BOOT_STEPS
-
-
 class WorkController(configurated):
     """Unmanaged worker instance."""
     app = None
@@ -89,6 +71,24 @@ class WorkController(configurated):
     worker_lost_wait = from_config()
 
     pidlock = None
+
+    class Namespace(bootsteps.Namespace):
+        """This is the boot-step namespace of the :class:`WorkController`.
+
+        It loads modules from :setting:`CELERYD_BOOT_STEPS`, and its
+        own set of built-in boot-step modules.
+
+        """
+        name = 'worker'
+        builtin_boot_steps = (
+            'celery.worker.components',
+            'celery.worker.autoscale',
+            'celery.worker.autoreload',
+            'celery.worker.mediator',
+        )
+
+        def modules(self):
+            return self.builtin_boot_steps + self.app.conf.CELERYD_BOOT_STEPS
 
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app_or_default(app or self.app)
@@ -122,12 +122,12 @@ class WorkController(configurated):
 
         # Initialize boot steps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
-        self.components = []
+        self.steps = []
         self.on_init_namespace()
-        self.namespace = Namespace(app=self.app,
-                                   on_start=self.on_start,
-                                   on_close=self.on_close,
-                                   on_stopped=self.on_stopped)
+        self.namespace = self.Namespace(app=self.app,
+                                        on_start=self.on_start,
+                                        on_close=self.on_close,
+                                        on_stopped=self.on_stopped)
         self.namespace.apply(self, **kwargs)
 
     def on_init_namespace(self):

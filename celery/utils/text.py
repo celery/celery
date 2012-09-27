@@ -81,8 +81,3 @@ def pretty(value, width=80, nl_width=80, **kw):
         return '\n{0}{1}'.format(' ' * 4, pformat(value, width=nl_width, **kw))
     else:
         return pformat(value, width=width, **kw)
-
-
-def dump_body(m, body):
-    return '{0} ({1}b)'.format(truncate(safe_repr(body), 1024),
-                               len(m.body))

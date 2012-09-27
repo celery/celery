@@ -3,20 +3,19 @@
     celery.worker.bootsteps
     ~~~~~~~~~~~~~~~~~~~~~~~
 
-    The boot-step components.
+    The boot-steps!
 
 """
 from __future__ import absolute_import
-
-import socket
 
 from collections import defaultdict
 from importlib import import_module
 from threading import Event
 
 from celery.datastructures import DependencyGraph
-from celery.utils.imports import instantiate, qualname
+from celery.utils.imports import instantiate
 from celery.utils.log import get_logger
+from celery.utils.threads import default_socket_timeout
 
 try:
     from greenlet import GreenletExit
@@ -35,13 +34,17 @@ TERMINATE = 0x3
 logger = get_logger(__name__)
 
 
+def qualname(c):
+    return '.'.join([c.namespace.name, c.name.capitalize()])
+
+
 class Namespace(object):
-    """A namespace containing components.
+    """A namespace containing bootsteps.
 
-    Every component must belong to a namespace.
+    Every step must belong to a namespace.
 
-    When component classes are created they are added to the
-    mapping of unclaimed components.  The components will be
+    When step classes are created they are added to the
+    mapping of unclaimed steps.  The steps will be
     claimed when the namespace they belong to is created.
 
     :keyword name: Set the name of this namespace.
@@ -68,35 +71,30 @@ class Namespace(object):
         self.state = RUN
         if self.on_start:
             self.on_start()
-        for i, component in enumerate(parent.components):
-            if component:
-                logger.debug('Starting %s...', qualname(component))
+        for i, step in enumerate(parent.steps):
+            if step:
+                logger.debug('Starting %s...', qualname(step))
                 self.started = i + 1
-                component.start(parent)
-                logger.debug('%s OK!', qualname(component))
+                print('STARTING: %r' % (step.start, ))
+                step.start(parent)
+                logger.debug('%s OK!', qualname(step))
 
     def close(self, parent):
         if self.on_close:
             self.on_close()
-        for component in parent.components:
-            try:
-                close = component.close
-            except AttributeError:
-                pass
-            else:
+        for step in parent.steps:
+            close = getattr(step, 'close', None)
+            if close:
                 close(parent)
 
-    def restart(self, parent, description='Restarting', terminate=False):
-        socket_timeout = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(SHUTDOWN_SOCKET_TIMEOUT)  # Issue 975
-        try:
-            for component in reversed(parent.components):
-                if component:
-                    logger.debug('%s %s...', description, qualname(component))
-                    (component.terminate if terminate
-                        else component.stop)(parent)
-        finally:
-            socket.setdefaulttimeout(socket_timeout)
+    def restart(self, parent, description='Restarting', attr='stop'):
+        with default_socket_timeout(SHUTDOWN_SOCKET_TIMEOUT):  # Issue 975
+            for step in reversed(parent.steps):
+                if step:
+                    logger.debug('%s %s...', description, qualname(step))
+                    fun = getattr(step, attr, None)
+                    if fun:
+                        fun(parent)
 
     def stop(self, parent, close=True, terminate=False):
         what = 'Terminating' if terminate else 'Stopping'
@@ -105,13 +103,13 @@ class Namespace(object):
 
         self.close(parent)
 
-        if self.state != RUN or self.started != len(parent.components):
+        if self.state != RUN or self.started != len(parent.steps):
             # Not fully started, can safely exit.
             self.state = TERMINATE
             self.shutdown_complete.set()
             return
         self.state = CLOSE
-        self.restart(parent, what, terminate)
+        self.restart(parent, what, 'terminate' if terminate else 'stop')
 
         if self.on_stopped:
             self.on_stopped()
@@ -128,40 +126,40 @@ class Namespace(object):
 
     def modules(self):
         """Subclasses can override this to return a
-        list of modules to import before components are claimed."""
+        list of modules to import before steps are claimed."""
         return []
 
     def load_modules(self):
-        """Will load the component modules this namespace depends on."""
+        """Will load the steps modules this namespace depends on."""
         for m in self.modules():
             self.import_module(m)
 
     def apply(self, parent, **kwargs):
-        """Apply the components in this namespace to an object.
+        """Apply the steps in this namespace to an object.
 
         This will apply the ``__init__`` and ``include`` methods
-        of each components with the object as argument.
+        of each steps with the object as argument.
 
-        For ``StartStopComponents`` the services created
-        will also be added the the objects ``components`` attribute.
+        For :class:`StartStopStep` the services created
+        will also be added the the objects ``steps`` attribute.
 
         """
         self._debug('Loading modules.')
         self.load_modules()
-        self._debug('Claiming components.')
-        self.components = self._claim()
+        self._debug('Claiming steps.')
+        self.steps = self._claim()
         self._debug('Building boot step graph.')
-        self.boot_steps = [self.bind_component(name, parent, **kwargs)
+        self.boot_steps = [self.bind_step(name, parent, **kwargs)
                                 for name in self._finalize_boot_steps()]
         self._debug('New boot order: {%s}',
                 ', '.join(c.name for c in self.boot_steps))
 
-        for component in self.boot_steps:
-            component.include(parent)
+        for step in self.boot_steps:
+            step.include(parent)
         return self
 
-    def bind_component(self, name, parent, **kwargs):
-        """Bind component to parent object and this namespace."""
+    def bind_step(self, name, parent, **kwargs):
+        """Bind step to parent object and this namespace."""
         comp = self[name](parent, **kwargs)
         comp.namespace = self
         return comp
@@ -170,16 +168,16 @@ class Namespace(object):
         return import_module(module)
 
     def __getitem__(self, name):
-        return self.components[name]
+        return self.steps[name]
 
     def _find_last(self):
-        for C in self.components.itervalues():
+        for C in self.steps.itervalues():
             if C.last:
                 return C
 
     def _finalize_boot_steps(self):
         G = self.graph = DependencyGraph((C.name, C.requires)
-                            for C in self.components.itervalues())
+                            for C in self.steps.itervalues())
         last = self._find_last()
         if last:
             for obj in G:
@@ -201,8 +199,8 @@ def _prepare_requires(req):
     return req
 
 
-class ComponentType(type):
-    """Metaclass for components."""
+class StepType(type):
+    """Metaclass for steps."""
 
     def __new__(cls, name, bases, attrs):
         abstract = attrs.pop('abstract', False)
@@ -210,47 +208,47 @@ class ComponentType(type):
             try:
                 cname = attrs['name']
             except KeyError:
-                raise NotImplementedError('Components must be named')
+                raise NotImplementedError('Steps must be named')
             namespace = attrs.get('namespace', None)
             if not namespace:
                 attrs['namespace'], _, attrs['name'] = cname.partition('.')
         attrs['requires'] = tuple(_prepare_requires(req)
                                     for req in attrs.get('requires', ()))
-        cls = super(ComponentType, cls).__new__(cls, name, bases, attrs)
+        cls = super(StepType, cls).__new__(cls, name, bases, attrs)
         if not abstract:
             Namespace._unclaimed[cls.namespace][cls.name] = cls
         return cls
 
 
-class Component(object):
-    """A component.
+class Step(object):
+    """A Bootstep.
 
-    The :meth:`__init__` method is called when the component
+    The :meth:`__init__` method is called when the step
     is bound to a parent object, and can as such be used
     to initialize attributes in the parent object at
     parent instantiation-time.
 
     """
-    __metaclass__ = ComponentType
+    __metaclass__ = StepType
 
-    #: The name of the component, or the namespace
-    #: and the name of the component separated by dot.
+    #: The name of the step, or the namespace
+    #: and the name of the step separated by dot.
     name = None
 
-    #: List of component names this component depends on.
-    #: Note that the dependencies must be in the same namespace.
+    #: List of other steps that that must be started before this step.
+    #: Note that all dependencies must be in the same namespace.
     requires = ()
 
     #: can be used to specify the namespace,
     #: if the name does not include it.
     namespace = None
 
-    #: if set the component will not be registered,
-    #: but can be used as a component base class.
+    #: if set the step will not be registered,
+    #: but can be used as a base class.
     abstract = True
 
     #: Optional obj created by the :meth:`create` method.
-    #: This is used by StartStopComponents to keep the
+    #: This is used by :class:`StartStopStep` to keep the
     #: original service object.
     obj = None
 
@@ -267,12 +265,12 @@ class Component(object):
         pass
 
     def create(self, parent):
-        """Create the component."""
+        """Create the step."""
         pass
 
     def include_if(self, parent):
         """An optional predicate that decided whether this
-        component should be created."""
+        step should be created."""
         return self.enabled
 
     def instantiate(self, qualname, *args, **kwargs):
@@ -284,14 +282,16 @@ class Component(object):
             return True
 
 
-class StartStopComponent(Component):
+class StartStopStep(Step):
     abstract = True
 
     def start(self, parent):
-        return self.obj.start()
+        if self.obj:
+            return self.obj.start()
 
     def stop(self, parent):
-        return self.obj.stop()
+        if self.obj:
+            return self.obj.stop()
 
     def close(self, parent):
         pass
@@ -300,5 +300,5 @@ class StartStopComponent(Component):
         self.stop(parent)
 
     def include(self, parent):
-        if super(StartStopComponent, self).include(parent):
-            parent.components.append(self)
+        if super(StartStopStep, self).include(parent):
+            parent.steps.append(self)

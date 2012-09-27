@@ -21,15 +21,15 @@ from time import sleep, time
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
 
+from . import bootsteps
 from . import state
-from .bootsteps import StartStopComponent
 from .hub import DummyLock
 
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error
 
 
-class WorkerComponent(StartStopComponent):
+class WorkerComponent(bootsteps.StartStopStep):
     name = 'worker.autoscaler'
     requires = ('pool', )
 
