@@ -49,10 +49,7 @@ class PlaceHolder(object):
 
 
 def find_step(obj, typ):
-    for c in obj.namespace.boot_steps:
-        if isinstance(c, typ):
-            return c
-    raise Exception('Instance %s has no step %s' % (obj, typ))
+    return obj.namespace.steps[typ.name]
 
 
 class _MyKombuConsumer(Consumer):

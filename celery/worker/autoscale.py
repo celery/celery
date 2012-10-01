@@ -31,7 +31,6 @@ debug, info, error = logger.debug, logger.info, logger.error
 
 
 class WorkerComponent(bootsteps.StartStopStep):
-    name = 'Autoscaler'
     requires = (Pool, )
 
     def __init__(self, w, **kwargs):

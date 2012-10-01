@@ -12,27 +12,16 @@ class test_Step(Case):
     class Def(bootsteps.Step):
         name = 'test_Step.Def'
 
-    def test_steps_must_be_named(self):
-        with self.assertRaises(NotImplementedError):
-
-            class X(bootsteps.Step):
-                pass
-
-        class Y(bootsteps.Step):
-            abstract = True
-
     def test_namespace_name(self, ns='test_namespace_name'):
 
         class X(bootsteps.Step):
             namespace = ns
             name = 'X'
-        self.assertEqual(X.namespace, ns)
         self.assertEqual(X.name, 'X')
 
         class Y(bootsteps.Step):
-            name = '%s.Y' % (ns, )
-        self.assertEqual(Y.namespace, ns)
-        self.assertEqual(Y.name, 'Y')
+            name = '%s.Y' % ns
+        self.assertEqual(Y.name, '%s.Y' % ns)
 
     def test_init(self):
         self.assertTrue(self.Def(self))
@@ -116,18 +105,6 @@ class test_Namespace(AppCase):
     class NS(bootsteps.Namespace):
         name = 'test_Namespace'
 
-    class ImportingNS(bootsteps.Namespace):
-
-        def __init__(self, *args, **kwargs):
-            bootsteps.Namespace.__init__(self, *args, **kwargs)
-            self.imported = []
-
-        def modules(self):
-            return ['A', 'B', 'C']
-
-        def import_module(self, module):
-            self.imported.append(module)
-
     def test_steps_added_to_unclaimed(self):
 
         class tnA(bootsteps.Step):
@@ -139,24 +116,18 @@ class test_Namespace(AppCase):
         class xxA(bootsteps.Step):
             name = 'xx.A'
 
-        self.assertIn('A', self.NS._unclaimed['test_Namespace'])
-        self.assertIn('B', self.NS._unclaimed['test_Namespace'])
-        self.assertIn('A', self.NS._unclaimed['xx'])
-        self.assertNotIn('B', self.NS._unclaimed['xx'])
+        class NS(self.NS):
+            default_steps = [tnA, tnB]
+        ns = NS(app=self.app)
+
+        self.assertIn(tnA, ns._all_steps())
+        self.assertIn(tnB, ns._all_steps())
+        self.assertNotIn(xxA, ns._all_steps())
 
     def test_init(self):
         ns = self.NS(app=self.app)
         self.assertIs(ns.app, self.app)
         self.assertEqual(ns.name, 'test_Namespace')
-        self.assertFalse(ns.services)
-
-    def test_interface_modules(self):
-        self.NS(app=self.app).modules()
-
-    def test_load_modules(self):
-        x = self.ImportingNS(app=self.app)
-        x.load_modules()
-        self.assertListEqual(x.imported, ['A', 'B', 'C'])
 
     def test_apply(self):
 
@@ -166,42 +137,30 @@ class test_Namespace(AppCase):
             def modules(self):
                 return ['A', 'B']
 
-        class A(bootsteps.Step):
-            name = 'test_apply.A'
-            requires = ['C']
-
         class B(bootsteps.Step):
             name = 'test_apply.B'
 
         class C(bootsteps.Step):
             name = 'test_apply.C'
-            requires = ['B']
+            requires = [B]
+
+        class A(bootsteps.Step):
+            name = 'test_apply.A'
+            requires = [C]
 
         class D(bootsteps.Step):
             name = 'test_apply.D'
             last = True
 
-        x = MyNS(app=self.app)
-        x.import_module = Mock()
+        x = MyNS([A, D], app=self.app)
         x.apply(self)
 
-        self.assertItemsEqual(x.steps.values(), [A, B, C, D])
-        self.assertTrue(x.import_module.call_count)
-
-        for boot_step in x.boot_steps:
-            self.assertEqual(boot_step.namespace, x)
-
-        self.assertIsInstance(x.boot_steps[0], B)
-        self.assertIsInstance(x.boot_steps[1], C)
-        self.assertIsInstance(x.boot_steps[2], A)
-        self.assertIsInstance(x.boot_steps[3], D)
-
-        self.assertIs(x['A'], A)
-
-    def test_import_module(self):
-        x = self.NS(app=self.app)
-        import os
-        self.assertIs(x.import_module('os'), os)
+        self.assertIsInstance(x.order[0], B)
+        self.assertIsInstance(x.order[1], C)
+        self.assertIsInstance(x.order[2], A)
+        self.assertIsInstance(x.order[3], D)
+        self.assertIn(A, x.types)
+        self.assertIs(x[A.name], x.order[2])
 
     def test_find_last_but_no_steps(self):
 

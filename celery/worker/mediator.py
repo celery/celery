@@ -30,7 +30,6 @@ logger = get_logger(__name__)
 
 
 class WorkerComponent(StartStopStep):
-    name = 'Mediator'
     requires = (components.Pool, components.Queues, )
 
     def __init__(self, w, **kwargs):

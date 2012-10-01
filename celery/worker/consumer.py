@@ -363,7 +363,6 @@ class Consumer(object):
 
 
 class Connection(bootsteps.StartStopStep):
-    name = 'Connection'
 
     def __init__(self, c, **kwargs):
         c.connection = None
@@ -381,7 +380,6 @@ class Connection(bootsteps.StartStopStep):
 
 
 class Events(bootsteps.StartStopStep):
-    name = 'Events'
     requires = (Connection, )
 
     def __init__(self, c, send_events=None, **kwargs):
@@ -406,7 +404,6 @@ class Events(bootsteps.StartStopStep):
 
 
 class Heart(bootsteps.StartStopStep):
-    name = 'Heart'
     requires = (Events, )
 
     def __init__(self, c, **kwargs):
@@ -422,7 +419,6 @@ class Heart(bootsteps.StartStopStep):
 
 
 class Control(bootsteps.StartStopStep):
-    name = 'Control'
     requires = (Events, )
 
     def __init__(self, c, **kwargs):
@@ -434,7 +430,6 @@ class Control(bootsteps.StartStopStep):
 
 
 class Tasks(bootsteps.StartStopStep):
-    name = 'Tasks'
     requires = (Control, )
 
     def __init__(self, c, initial_prefetch_count=2, **kwargs):
@@ -462,7 +457,6 @@ class Tasks(bootsteps.StartStopStep):
 
 
 class Evloop(bootsteps.StartStopStep):
-    name = 'Evloop'
     last = True
 
     def start(self, c):

@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import
 
-from collections import defaultdict
+from collections import deque
 from importlib import import_module
 from threading import Event
 
@@ -16,7 +16,7 @@ from kombu.common import ignore_errors
 from kombu.utils import symbol_by_name
 
 from .datastructures import DependencyGraph
-from .utils.imports import instantiate
+from .utils.imports import instantiate, qualname, symbol_by_name
 from .utils.log import get_logger
 from .utils.threads import default_socket_timeout
 
@@ -39,20 +39,24 @@ debug = logger.debug
 
 
 def _pre(ns, fmt):
-    return '| {0}: {1}'.format(ns.name, fmt)
+    return '| {0}: {1}'.format(ns.alias, fmt)
+
+
+def _maybe_name(s):
+    if not isinstance(s, basestring):
+        return s.name
+    return s
 
 
 class Namespace(object):
     """A namespace containing bootsteps.
 
-    Every step must belong to a namespace.
-
-    When step classes are created they are added to the
-    mapping of unclaimed steps.  The steps will be
-    claimed when the namespace they belong to is created.
-
-    :keyword name: Set the name of this namespace.
+    :keyword steps: List of steps.
+    :keyword name: Set explicit name for this namespace.
     :keyword app: Set the Celery app for this namespace.
+    :keyword on_start: Optional callback applied after namespace start.
+    :keyword on_close: Optional callback applied before namespace close.
+    :keyword on_stopped: Optional callback applied after namespace stopped.
 
     """
     name = None
@@ -60,22 +64,23 @@ class Namespace(object):
     started = 0
     default_steps = set()
 
-    def __init__(self, name=None, app=None, on_start=None,
+    def __init__(self, steps=None, name=None, app=None, on_start=None,
             on_close=None, on_stopped=None):
         self.app = app
-        self.name = name or self.name
+        self.name = name or self.name or qualname(type(self))
+        self.types = set(steps or []) | set(self.default_steps)
         self.on_start = on_start
         self.on_close = on_close
         self.on_stopped = on_stopped
-        self.services = []
         self.shutdown_complete = Event()
+        self.steps = {}
 
     def start(self, parent):
         self.state = RUN
         if self.on_start:
             self.on_start()
         for i, step in enumerate(filter(None, parent.steps)):
-            self._debug('Starting %s', step.name)
+            self._debug('Starting %s', step.alias)
             self.started = i + 1
             step.start(parent)
             debug('^-- substep ok')
@@ -92,7 +97,7 @@ class Namespace(object):
         with default_socket_timeout(SHUTDOWN_SOCKET_TIMEOUT):  # Issue 975
             for step in reversed(parent.steps):
                 if step:
-                    self._debug('%s %s...', description, step.name)
+                    self._debug('%s %s...', description, step.alias)
                     fun = getattr(step, attr, None)
                     if fun:
                         fun(parent)
@@ -136,22 +141,17 @@ class Namespace(object):
 
         """
         self._debug('Loading boot-steps.')
-        self.steps = self.claim_steps()
-        self._debug('Building graph.')
-        self.boot_steps = [self.bind_step(name, parent, **kwargs)
-                                for name in self._finalize_boot_steps()]
-        self._debug('New boot order: {%s}',
-                ', '.join(c.name for c in self.boot_steps))
+        order = self.order = []
+        steps = self.steps = self.claim_steps()
 
-        for step in self.boot_steps:
+        self._debug('Building graph...')
+        for name in self._finalize_boot_steps(steps):
+            step = steps[name] = steps[name](parent, **kwargs)
+            order.append(step)
             step.include(parent)
+        self._debug('New boot order: {%s}',
+                    ', '.join(s.alias for s in self.order))
         return self
-
-    def bind_step(self, name, parent, **kwargs):
-        """Bind step to parent object and this namespace."""
-        comp = self[name](parent, **kwargs)
-        comp.namespace = self
-        return comp
 
     def import_module(self, module):
         return import_module(module)
@@ -164,9 +164,23 @@ class Namespace(object):
             if C.last:
                 return C
 
-    def _finalize_boot_steps(self):
+    def _firstpass(self, steps):
+        stream = deque(step.requires for step in steps.itervalues())
+        while stream:
+            for node in stream.popleft():
+                node = symbol_by_name(node)
+                if node.name not in self.steps:
+                    steps[node.name] = node
+                stream.append(node.requires)
+        for node in steps.itervalues():
+            node.requires = [_maybe_name(n) for n in node.requires]
+        for step in steps.values():
+            [steps[n] for n in step.requires]
+
+    def _finalize_boot_steps(self, steps):
+        self._firstpass(steps)
         G = self.graph = DependencyGraph((C.name, C.requires)
-                            for C in self.steps.itervalues())
+                            for C in steps.itervalues())
         last = self._find_last()
         if last:
             for obj in G:
@@ -178,10 +192,10 @@ class Namespace(object):
             raise KeyError('unknown boot-step: %s' % exc)
 
     def claim_steps(self):
-        return dict(self.load_step(step) for step in self._unclaimed_steps())
+        return dict(self.load_step(step) for step in self._all_steps())
 
-    def _unclaimed_steps(self):
-        return set(self.default_steps) | self.app.steps[self.name]
+    def _all_steps(self):
+        return self.types | self.app.steps[self.name]
 
     def load_step(self, step):
         step = symbol_by_name(step)
@@ -190,11 +204,9 @@ class Namespace(object):
     def _debug(self, msg, *args):
         return debug(_pre(self, msg), *args)
 
-
-def _prepare_requires(req):
-    if not isinstance(req, basestring):
-        req = req.name
-    return req
+    @property
+    def alias(self):
+        return self.name.rsplit('.', 1)[-1]
 
 
 class StepType(type):
@@ -202,11 +214,16 @@ class StepType(type):
 
     def __new__(cls, name, bases, attrs):
         module = attrs.get('__module__')
-        qname = '.'.join([module, name]) if module else name
-        attrs['name'] = attrs.get('name') or qname
-        attrs['requires'] = tuple(_prepare_requires(req)
-                                    for req in attrs.get('requires', ()))
+        qname = '{0}.{1}'.format(module, name) if module else name
+        attrs.update(
+            __qualname__=qname,
+            name=attrs.get('name') or qname,
+            requires=attrs.get('requires', ()),
+        )
         return super(StepType, cls).__new__(cls, name, bases, attrs)
+
+    def __repr__(self):
+        return 'step:{0.name}{{{0.requires!r}}}'.format(self)
 
 
 class Step(object):
@@ -220,21 +237,12 @@ class Step(object):
     """
     __metaclass__ = StepType
 
-    #: The name of the step, or the namespace
-    #: and the name of the step separated by dot.
+    #: Optional step name, will use qualname if not specified.
     name = None
 
     #: List of other steps that that must be started before this step.
     #: Note that all dependencies must be in the same namespace.
     requires = ()
-
-    #: can be used to specify the namespace,
-    #: if the name does not include it.
-    namespace = None
-
-    #: if set the step will not be registered,
-    #: but can be used as a base class.
-    abstract = True
 
     #: Optional obj created by the :meth:`create` method.
     #: This is used by :class:`StartStopStep` to keep the
@@ -270,9 +278,15 @@ class Step(object):
             self.obj = self.create(parent)
             return True
 
+    def __repr__(self):
+        return '<step: {0.alias}>'.format(self)
+
+    @property
+    def alias(self):
+        return self.name.rsplit('.', 1)[-1]
+
 
 class StartStopStep(Step):
-    abstract = True
 
     def start(self, parent):
         if self.obj:
@@ -294,7 +308,6 @@ class StartStopStep(Step):
 
 
 class ConsumerStep(StartStopStep):
-    abstract = True
     requires = ('Connection', )
     consumers = None
 

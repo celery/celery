@@ -24,7 +24,6 @@ from .buckets import TaskBucket, FastQueue
 
 
 class Hub(bootsteps.StartStopStep):
-    name = 'Hub'
 
     def __init__(self, w, **kwargs):
         w.hub = None
@@ -41,7 +40,6 @@ class Hub(bootsteps.StartStopStep):
 class Queues(bootsteps.Step):
     """This step initializes the internal queues
     used by the worker."""
-    name = 'Queues'
     requires = (Hub, )
 
     def create(self, w):
@@ -78,7 +76,6 @@ class Pool(bootsteps.StartStopStep):
         * min_concurrency
 
     """
-    name = 'Pool'
     requires = (Queues, )
 
     def __init__(self, w, autoscale=None, autoreload=None,
@@ -185,7 +182,6 @@ class Beat(bootsteps.StartStopStep):
     argument is set.
 
     """
-    name = 'Beat'
 
     def __init__(self, w, beat=False, **kwargs):
         self.enabled = w.beat = beat
@@ -201,7 +197,6 @@ class Beat(bootsteps.StartStopStep):
 
 class Timers(bootsteps.Step):
     """This step initializes the internal timers used by the worker."""
-    name = 'Timers'
     requires = (Pool, )
 
     def include_if(self, w):
@@ -226,7 +221,6 @@ class Timers(bootsteps.Step):
 
 class StateDB(bootsteps.Step):
     """This step sets up the workers state db if enabled."""
-    name = 'StateDB'
 
     def __init__(self, w, **kwargs):
         self.enabled = w.state_db
@@ -238,7 +232,6 @@ class StateDB(bootsteps.Step):
 
 
 class Consumer(bootsteps.StartStopStep):
-    name = 'Consumer'
     last = True
 
     def create(self, w):
