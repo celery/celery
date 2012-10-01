@@ -21,7 +21,6 @@
     celery.worker.strategy
     celery.worker.autoreload
     celery.worker.autoscale
-    celery.worker.bootsteps
     celery.concurrency
     celery.concurrency.solo
     celery.concurrency.processes

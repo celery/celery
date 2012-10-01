@@ -9,9 +9,12 @@
 from __future__ import absolute_import, print_function
 
 import os
+import socket
 import sys
 import threading
 import traceback
+
+from contextlib import contextmanager
 
 from celery.local import Proxy
 from celery.utils.compat import THREAD_TIMEOUT_MAX
@@ -282,6 +285,14 @@ class LocalManager(object):
     def __repr__(self):
         return '<{0} storages: {1}>'.format(
             self.__class__.__name__, len(self.locals))
+
+
+@contextmanager
+def default_socket_timeout(timeout):
+    prev = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(timeout)
+    yield
+    socket.setdefaulttimeout(prev)
 
 
 class _FastLocalStack(threading.local):

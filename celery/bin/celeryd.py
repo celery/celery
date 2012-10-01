@@ -197,7 +197,7 @@ class WorkerCommand(Command):
             Option('--autoreload', action='store_true'),
             Option('--no-execv', action='store_true', default=False),
             Option('-D', '--detach', action='store_true'),
-        ) + daemon_options()
+        ) + daemon_options() + tuple(self.app.user_options['worker'])
 
 
 def main():

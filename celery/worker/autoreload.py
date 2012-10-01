@@ -18,12 +18,13 @@ from threading import Event
 
 from kombu.utils import eventio
 
+from celery import bootsteps
 from celery.platforms import ignore_errno
 from celery.utils.imports import module_file
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
 
-from .bootsteps import StartStopComponent
+from .components import Pool
 
 try:                        # pragma: no cover
     import pyinotify
@@ -35,9 +36,8 @@ except ImportError:         # pragma: no cover
 logger = get_logger(__name__)
 
 
-class WorkerComponent(StartStopComponent):
-    name = 'worker.autoreloader'
-    requires = ('pool', )
+class WorkerComponent(bootsteps.StartStopStep):
+    requires = (Pool, )
 
     def __init__(self, w, autoreload=None, **kwargs):
         self.enabled = w.autoreload = autoreload

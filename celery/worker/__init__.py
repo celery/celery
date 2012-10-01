@@ -6,7 +6,7 @@
     :class:`WorkController` can be used to instantiate in-process workers.
 
     The worker consists of several components, all managed by boot-steps
-    (mod:`celery.worker.bootsteps`).
+    (mod:`celery.bootsteps`).
 
 """
 from __future__ import absolute_import
@@ -19,6 +19,7 @@ from billiard import cpu_count
 from kombu.syn import detect_environment
 from kombu.utils.finalize import Finalize
 
+from celery import bootsteps
 from celery import concurrency as _concurrency
 from celery import platforms
 from celery import signals
@@ -31,7 +32,6 @@ from celery.utils import worker_direct
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel, worker_logger as logger
 
-from . import bootsteps
 from . import state
 
 UNKNOWN_QUEUE = """\
@@ -41,24 +41,6 @@ defined in the CELERY_QUEUES setting.
 If you want to automatically declare unknown queues you can
 enable the CELERY_CREATE_MISSING_QUEUES setting.
 """
-
-
-class Namespace(bootsteps.Namespace):
-    """This is the boot-step namespace of the :class:`WorkController`.
-
-    It loads modules from :setting:`CELERYD_BOOT_STEPS`, and its
-    own set of built-in boot-step modules.
-
-    """
-    name = 'worker'
-    builtin_boot_steps = ('celery.worker.components',
-                          'celery.worker.autoscale',
-                          'celery.worker.autoreload',
-                          'celery.worker.consumer',
-                          'celery.worker.mediator')
-
-    def modules(self):
-        return self.builtin_boot_steps + self.app.conf.CELERYD_BOOT_STEPS
 
 
 class WorkController(configurated):
@@ -90,6 +72,28 @@ class WorkController(configurated):
 
     pidlock = None
 
+    class Namespace(bootsteps.Namespace):
+        """This is the boot-step namespace of the :class:`WorkController`.
+
+        It loads modules from :setting:`CELERYD_BOOT_STEPS`, and its
+        own set of built-in boot-step modules.
+
+        """
+        name = 'Worker'
+        default_steps = set([
+            'celery.worker.components:Hub',
+            'celery.worker.components:Queues',
+            'celery.worker.components:Pool',
+            'celery.worker.components:Beat',
+            'celery.worker.components:Timers',
+            'celery.worker.components:StateDB',
+            'celery.worker.components:Consumer',
+            'celery.worker.autoscale:WorkerComponent',
+            'celery.worker.autoreload:WorkerComponent',
+            'celery.worker.mediator:WorkerComponent',
+
+        ])
+
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app_or_default(app or self.app)
         self.hostname = hostname or socket.gethostname()
@@ -117,17 +121,22 @@ class WorkController(configurated):
         self.loglevel = mlevel(self.loglevel)
         self.ready_callback = ready_callback or self.on_consumer_ready
         self.use_eventloop = self.should_use_eventloop()
+        self.options = kwargs
 
         signals.worker_init.send(sender=self)
 
         # Initialize boot steps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
-        self.components = []
-        self.namespace = Namespace(app=self.app,
-                                   on_start=self.on_start,
-                                   on_close=self.on_close,
-                                   on_stopped=self.on_stopped)
+        self.steps = []
+        self.on_init_namespace()
+        self.namespace = self.Namespace(app=self.app,
+                                        on_start=self.on_start,
+                                        on_close=self.on_close,
+                                        on_stopped=self.on_stopped)
         self.namespace.apply(self, **kwargs)
+
+    def on_init_namespace(self):
+        pass
 
     def on_before_init(self, **kwargs):
         pass
@@ -144,7 +153,7 @@ class WorkController(configurated):
 
     def on_stopped(self):
         self.timer.stop()
-        self.consumer.close_connection()
+        self.consumer.shutdown()
 
         if self.pidlock:
             self.pidlock.release()
