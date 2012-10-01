@@ -81,13 +81,13 @@ class Agent(Actor):
                 pass
             else:
                 if actor.consumer and actor.consumer.channel:
-                    ignore_errors(self.connection, consumer.cancel)
+                    ignore_errors(self.connection, actor.consumer.cancel)
 
     def __init__(self, connection, app=None, *args, **kwargs):
         self.connection = connection
         self.app = app
         self.registry = {}
-        super(ActorManager, self).__init__(*args, **kwargs)
+        super(Agent, self).__init__(*args, **kwargs)
 
     def contribute_to_state(self, state):
         state.connection = self.connection
@@ -95,7 +95,7 @@ class Agent(Actor):
         state.connection_errors = conninfo.connection_errors
         state.channel_errors = conninfo.channel_errors
         state.reset()
-        return super(ActorsManager, self).contribute_to_state(state)
+        return super(Agent, self).contribute_to_state(state)
 
     def add_actor(self, actor, nowait=False):
         name = qualname(actor)
