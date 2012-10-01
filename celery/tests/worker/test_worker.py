@@ -186,19 +186,19 @@ class test_QoS(Case):
         self.assertEqual(qos.value, PREFETCH_COUNT_MAX - 1)
 
     def test_consumer_increment_decrement(self):
-        consumer = Mock()
-        qos = QoS(consumer, 10)
+        mconsumer = Mock()
+        qos = QoS(mconsumer, 10)
         qos.update()
         self.assertEqual(qos.value, 10)
-        consumer.qos.assert_called_with(prefetch_count=10)
+        mconsumer.qos.assert_called_with(prefetch_count=10)
         qos.decrement_eventually()
         qos.update()
         self.assertEqual(qos.value, 9)
-        consumer.qos.assert_called_with(prefetch_count=9)
+        mconsumer.qos.assert_called_with(prefetch_count=9)
         qos.decrement_eventually()
         self.assertEqual(qos.value, 8)
-        consumer.qos.assert_called_with(prefetch_count=9)
-        self.assertIn({'prefetch_count': 9}, consumer.qos.call_args)
+        mconsumer.qos.assert_called_with(prefetch_count=9)
+        self.assertIn({'prefetch_count': 9}, mconsumer.qos.call_args)
 
         # Does not decrement 0 value
         qos.value = 0
@@ -208,8 +208,8 @@ class test_QoS(Case):
         self.assertEqual(qos.value, 0)
 
     def test_consumer_decrement_eventually(self):
-        consumer = Mock()
-        qos = QoS(consumer, 10)
+        mconsumer = Mock()
+        qos = QoS(mconsumer, 10)
         qos.decrement_eventually()
         self.assertEqual(qos.value, 9)
         qos.value = 0
@@ -217,8 +217,8 @@ class test_QoS(Case):
         self.assertEqual(qos.value, 0)
 
     def test_set(self):
-        consumer = Mock()
-        qos = QoS(consumer, 10)
+        mconsumer = Mock()
+        qos = QoS(mconsumer, 10)
         qos.set(12)
         self.assertEqual(qos.prev, 12)
         qos.set(qos.prev)
@@ -662,7 +662,6 @@ class test_Consumer(Case):
         l = MyKombuConsumer(self.ready_queue, timer=self.timer, pool=pool)
         l.node = Mock()
         controller = find_step(l, consumer.Control)
-        box = controller.box
 
         class BConsumer(Mock):
 

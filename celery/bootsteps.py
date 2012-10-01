@@ -16,7 +16,7 @@ from kombu.common import ignore_errors
 from kombu.utils import symbol_by_name
 
 from .datastructures import DependencyGraph
-from .utils.imports import instantiate, qualname, symbol_by_name
+from .utils.imports import instantiate, qualname
 from .utils.log import get_logger
 from .utils.threads import default_socket_timeout
 

@@ -439,7 +439,7 @@ class test_ControlPanel(Case):
         self.assertEqual([(('foo',), {}), (('bar',), {})],
                           _import.call_args_list)
 
-    def test_pool_restart_relaod_modules(self):
+    def test_pool_restart_reload_modules(self):
         consumer = Consumer()
         consumer.controller = _WC(app=current_app)
         consumer.controller.pool.restart = Mock()
@@ -468,4 +468,3 @@ class test_ControlPanel(Case):
             self.assertTrue(consumer.controller.pool.restart.called)
             self.assertTrue(_reload.called)
             self.assertFalse(_import.called)
-            
