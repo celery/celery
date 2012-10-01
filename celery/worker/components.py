@@ -24,7 +24,7 @@ from .buckets import TaskBucket, FastQueue
 
 
 class Hub(bootsteps.StartStopStep):
-    name = 'worker.hub'
+    name = 'Hub'
 
     def __init__(self, w, **kwargs):
         w.hub = None
@@ -41,7 +41,7 @@ class Hub(bootsteps.StartStopStep):
 class Queues(bootsteps.Step):
     """This step initializes the internal queues
     used by the worker."""
-    name = 'worker.queues'
+    name = 'Queues'
     requires = (Hub, )
 
     def create(self, w):
@@ -78,7 +78,7 @@ class Pool(bootsteps.StartStopStep):
         * min_concurrency
 
     """
-    name = 'worker.pool'
+    name = 'Pool'
     requires = (Queues, )
 
     def __init__(self, w, autoscale=None, autoreload=None,
@@ -185,7 +185,7 @@ class Beat(bootsteps.StartStopStep):
     argument is set.
 
     """
-    name = 'worker.beat'
+    name = 'Beat'
 
     def __init__(self, w, beat=False, **kwargs):
         self.enabled = w.beat = beat
@@ -201,7 +201,7 @@ class Beat(bootsteps.StartStopStep):
 
 class Timers(bootsteps.Step):
     """This step initializes the internal timers used by the worker."""
-    name = 'worker.timers'
+    name = 'Timers'
     requires = (Pool, )
 
     def include_if(self, w):
@@ -226,7 +226,7 @@ class Timers(bootsteps.Step):
 
 class StateDB(bootsteps.Step):
     """This step sets up the workers state db if enabled."""
-    name = 'worker.state-db'
+    name = 'StateDB'
 
     def __init__(self, w, **kwargs):
         self.enabled = w.state_db
@@ -238,7 +238,7 @@ class StateDB(bootsteps.Step):
 
 
 class Consumer(bootsteps.StartStopStep):
-    name = 'worker.consumer'
+    name = 'Consumer'
     last = True
 
     def create(self, w):
@@ -253,5 +253,6 @@ class Consumer(bootsteps.StartStopStep):
                 timer=w.timer,
                 app=w.app,
                 controller=w,
-                hub=w.hub)
+                hub=w.hub,
+                worker_options=w.options)
         return c

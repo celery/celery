@@ -24,13 +24,14 @@ from celery.bootsteps import StartStopStep
 from celery.utils.threads import bgThread
 from celery.utils.log import get_logger
 
+from . import components
 
 logger = get_logger(__name__)
 
 
 class WorkerComponent(StartStopStep):
-    name = 'worker.mediator'
-    requires = ('pool', 'queues', )
+    name = 'Mediator'
+    requires = (components.Pool, components.Queues, )
 
     def __init__(self, w, **kwargs):
         w.mediator = None

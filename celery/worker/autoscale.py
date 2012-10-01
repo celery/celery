@@ -23,6 +23,7 @@ from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
 
 from . import state
+from .components import Pool
 from .hub import DummyLock
 
 logger = get_logger(__name__)
@@ -30,8 +31,8 @@ debug, info, error = logger.debug, logger.info, logger.error
 
 
 class WorkerComponent(bootsteps.StartStopStep):
-    name = 'worker.autoscaler'
-    requires = ('pool', )
+    name = 'Autoscaler'
+    requires = (Pool, )
 
     def __init__(self, w, **kwargs):
         self.enabled = w.autoscale

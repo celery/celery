@@ -11,7 +11,7 @@ from __future__ import absolute_import
 import threading
 import warnings
 
-from collections import deque
+from collections import defaultdict, deque
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
@@ -72,6 +72,8 @@ class Celery(object):
         self.set_as_current = set_as_current
         self.registry_cls = symbol_by_name(self.registry_cls)
         self.accept_magic_kwargs = accept_magic_kwargs
+        self.user_options = defaultdict(set)
+        self.steps = defaultdict(set)
 
         self.configured = False
         self._pending_defaults = deque()

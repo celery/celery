@@ -110,19 +110,24 @@ class Consumer(object):
     timer = None
 
     class Namespace(bootsteps.Namespace):
-        name = 'consumer'
+        name = 'Consumer'
+        default_steps = [
+            'celery.worker.consumer:Connection',
+            'celery.worker.consumer:Events',
+            'celery.worker.consumer:Heart',
+            'celery.worker.consumer:Control',
+            'celery.worker.consumer:Tasks',
+            'celery.worker.consumer:Evloop',
+        ]
 
         def shutdown(self, parent):
             self.restart(parent, 'Shutdown', 'shutdown')
-
-        def modules(self):
-            return self.app.conf.CELERYD_CONSUMER_BOOT_STEPS
 
     def __init__(self, ready_queue,
             init_callback=noop, hostname=None,
             pool=None, app=None,
             timer=None, controller=None, hub=None, amqheartbeat=None,
-            **kwargs):
+            worker_options=None, **kwargs):
         self.app = app_or_default(app)
         self.controller = controller
         self.ready_queue = ready_queue
@@ -161,7 +166,7 @@ class Consumer(object):
         self.namespace = self.Namespace(
             app=self.app, on_start=self.on_start, on_close=self.on_close,
         )
-        self.namespace.apply(self, **kwargs)
+        self.namespace.apply(self, **worker_options or {})
 
     def start(self):
         ns, loop = self.namespace, self.loop
@@ -358,7 +363,7 @@ class Consumer(object):
 
 
 class Connection(bootsteps.StartStopStep):
-    name = 'consumer.connection'
+    name = 'Connection'
 
     def __init__(self, c, **kwargs):
         c.connection = None
@@ -376,7 +381,7 @@ class Connection(bootsteps.StartStopStep):
 
 
 class Events(bootsteps.StartStopStep):
-    name = 'consumer.events'
+    name = 'Events'
     requires = (Connection, )
 
     def __init__(self, c, send_events=None, **kwargs):
@@ -401,7 +406,7 @@ class Events(bootsteps.StartStopStep):
 
 
 class Heart(bootsteps.StartStopStep):
-    name = 'consumer.heart'
+    name = 'Heart'
     requires = (Events, )
 
     def __init__(self, c, **kwargs):
@@ -417,7 +422,7 @@ class Heart(bootsteps.StartStopStep):
 
 
 class Control(bootsteps.StartStopStep):
-    name = 'consumer.control'
+    name = 'Control'
     requires = (Events, )
 
     def __init__(self, c, **kwargs):
@@ -429,7 +434,7 @@ class Control(bootsteps.StartStopStep):
 
 
 class Tasks(bootsteps.StartStopStep):
-    name = 'consumer.tasks'
+    name = 'Tasks'
     requires = (Control, )
 
     def __init__(self, c, initial_prefetch_count=2, **kwargs):
@@ -457,7 +462,7 @@ class Tasks(bootsteps.StartStopStep):
 
 
 class Evloop(bootsteps.StartStopStep):
-    name = 'consumer.evloop'
+    name = 'Evloop'
     last = True
 
     def start(self, c):

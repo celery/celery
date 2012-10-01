@@ -79,16 +79,20 @@ class WorkController(configurated):
         own set of built-in boot-step modules.
 
         """
-        name = 'worker'
-        builtin_boot_steps = (
-            'celery.worker.components',
-            'celery.worker.autoscale',
-            'celery.worker.autoreload',
-            'celery.worker.mediator',
-        )
+        name = 'Worker'
+        default_steps = set([
+            'celery.worker.components:Hub',
+            'celery.worker.components:Queues',
+            'celery.worker.components:Pool',
+            'celery.worker.components:Beat',
+            'celery.worker.components:Timers',
+            'celery.worker.components:StateDB',
+            'celery.worker.components:Consumer',
+            'celery.worker.autoscale:WorkerComponent',
+            'celery.worker.autoreload:WorkerComponent',
+            'celery.worker.mediator:WorkerComponent',
 
-        def modules(self):
-            return self.builtin_boot_steps + self.app.conf.CELERYD_BOOT_STEPS
+        ])
 
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app_or_default(app or self.app)
@@ -117,6 +121,7 @@ class WorkController(configurated):
         self.loglevel = mlevel(self.loglevel)
         self.ready_callback = ready_callback or self.on_consumer_ready
         self.use_eventloop = self.should_use_eventloop()
+        self.options = kwargs
 
         signals.worker_init.send(sender=self)
 
