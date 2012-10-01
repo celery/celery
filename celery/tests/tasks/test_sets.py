@@ -148,6 +148,7 @@ class test_TaskSet(Case):
         def xyz():
             pass
         from celery._state import _task_stack
+        xyz.push_request()
         _task_stack.push(xyz)
         try:
             ts.apply_async(publisher=Publisher())

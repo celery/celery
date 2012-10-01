@@ -83,6 +83,16 @@ Application
 
         Base task class for this app.
 
+    .. method:: Celery.close
+
+        Cleans-up after application, like closing any pool connections.
+        Only necessary for dynamically created apps for which you can
+        use the with statement::
+
+            with Celery(set_as_current=False) as app:
+                with app.connection() as conn:
+                    pass
+
     .. method:: Celery.bugreport
 
         Returns a string with information useful for the Celery core

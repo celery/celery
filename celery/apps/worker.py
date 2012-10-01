@@ -22,8 +22,10 @@ from functools import partial
 from billiard import current_process
 
 from celery import VERSION_BANNER, platforms, signals
+from celery.app.abstract import from_config
 from celery.exceptions import SystemTerminate
 from celery.loaders.app import AppLoader
+from celery.task import trace
 from celery.utils import cry, isatty
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
@@ -79,29 +81,41 @@ EXTRA_INFO_FMT = """
 
 
 class Worker(WorkController):
+    redirect_stdouts = from_config()
+    redirect_stdouts_level = from_config()
 
-    def on_before_init(self, purge=False, redirect_stdouts=None,
-            redirect_stdouts_level=None, **kwargs):
+    def on_before_init(self, purge=False, no_color=None, **kwargs):
+        # apply task execution optimizations
+        trace.setup_worker_optimizations(self.app)
+
         # this signal can be used to set up configuration for
         # workers by name.
         conf = self.app.conf
-        signals.celeryd_init.send(sender=self.hostname, instance=self,
-                                  conf=conf)
+        signals.celeryd_init.send(
+            sender=self.hostname, instance=self, conf=conf,
+        )
         self.purge = purge
+        self.no_color = no_color
         self._isatty = isatty(sys.stdout)
-        self.colored = self.app.log.colored(self.logfile)
-        if redirect_stdouts is None:
-            redirect_stdouts = conf.CELERY_REDIRECT_STDOUTS,
-        if redirect_stdouts_level is None:
-            redirect_stdouts_level = conf.CELERY_REDIRECT_STDOUTS_LEVEL
-        self.redirect_stdouts = redirect_stdouts
-        self.redirect_stdouts_level = redirect_stdouts_level
+        self.colored = self.app.log.colored(self.logfile,
+            enabled=not no_color if no_color is not None else no_color
+        )
+
+    def on_init_namespace(self):
+        print('SETUP LOGGING: %r' % (self.redirect_stdouts, ))
+        self.setup_logging()
 
     def on_start(self):
+        WorkController.on_start(self)
+
+        # apply task execution optimizations
+        trace.setup_worker_optimizations(self.app)
+
         # this signal can be used to e.g. change queues after
         # the -Q option has been applied.
-        signals.celeryd_after_setup.send(sender=self.hostname, instance=self,
-                                         conf=self.app.conf)
+        signals.celeryd_after_setup.send(
+            sender=self.hostname, instance=self, conf=self.app.conf,
+        )
 
         if getattr(os, 'getuid', None) and os.getuid() == 0:
             warnings.warn(RuntimeWarning(
@@ -112,20 +126,23 @@ class Worker(WorkController):
 
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
-        print(str(self.colored.cyan(' \n', self.startup_info())) +
-              str(self.colored.reset(self.extra_info() or '')))
+        sys.__stdout__.write(
+            str(self.colored.cyan(' \n', self.startup_info())) +
+            str(self.colored.reset(self.extra_info() or '')) + '\n'
+        )
         self.set_process_status('-active-')
-        self.redirect_stdouts_to_logger()
         self.install_platform_tweaks(self)
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
-        WorkController.on_consumer_ready(self, consumer)
-        print('celery@{0.hostname} has started.'.format(self))
+        print('celery@{0.hostname} ready.'.format(self))
 
-    def redirect_stdouts_to_logger(self):
+    def setup_logging(self, colorize=None):
+        if colorize is None and self.no_color is not None:
+            colorize = not self.no_color
         self.app.log.setup(self.loglevel, self.logfile,
-                           self.redirect_stdouts, self.redirect_stdouts_level)
+                           self.redirect_stdouts, self.redirect_stdouts_level,
+                           colorize=colorize)
 
     def purge_messages(self):
         count = self.app.control.purge()
@@ -135,7 +152,7 @@ class Worker(WorkController):
     def tasklist(self, include_builtins=True):
         tasks = self.app.tasks
         if not include_builtins:
-            tasks = [t for t in tasks if not t.startswith('celery.')]
+            tasks = (t for t in tasks if not t.startswith('celery.'))
         return '\n'.join('  . {0}'.format(task) for task in sorted(tasks))
 
     def extra_info(self):
@@ -260,7 +277,7 @@ def _clone_current_worker():
 
 def install_worker_restart_handler(worker, sig='SIGHUP'):
 
-    def restart_worker_sig_handler(signum, frame):
+    def restart_worker_sig_handler(*args):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
         safe_say('Restarting celeryd ({0})'.format(' '.join(sys.argv)))
@@ -276,7 +293,7 @@ def install_cry_handler():
     if is_jython or is_pypy:  # pragma: no cover
         return
 
-    def cry_handler(signum, frame):
+    def cry_handler(*args):
         """Signal handler logging the stacktrace of all active threads."""
         with in_sighandler():
             safe_say(cry())
@@ -286,9 +303,10 @@ def install_cry_handler():
 def install_rdb_handler(envvar='CELERY_RDBSIG',
                         sig='SIGUSR2'):  # pragma: no cover
 
-    def rdb_handler(signum, frame):
+    def rdb_handler(*args):
         """Signal handler setting a rdb breakpoint at the current frame."""
         with in_sighandler():
+            _, frame = args
             from celery.contrib import rdb
             rdb.set_trace(frame)
     if os.environ.get(envvar):

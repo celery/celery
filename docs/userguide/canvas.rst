@@ -16,7 +16,7 @@ Subtasks
 .. versionadded:: 2.0
 
 You just learned how to call a task using the tasks ``delay`` method
-in the :ref:`calling <calling>` guide, and this is often all you need,
+in the :ref:`calling <guide-calling>` guide, and this is often all you need,
 but sometimes you may want to pass the signature of a task invocation to
 another process or as an argument to another function, for this Celery uses
 something called *subtasks*.
@@ -31,8 +31,8 @@ or even serialized and sent across the wire.
         >>> subtask('tasks.add', args=(2, 2), countdown=10)
         tasks.add(2, 2)
 
-    This subtask has a signature of arity 2 (two arguments): ``(2, 2)``,
-    and sets the countdown execution option to 10.
+  This subtask has a signature of arity 2 (two arguments): ``(2, 2)``,
+  and sets the countdown execution option to 10.
 
 - or you can create one using the task's ``subtask`` method::
 

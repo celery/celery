@@ -18,20 +18,20 @@ import threading
 from functools import partial
 from time import sleep, time
 
+from celery import bootsteps
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
 
 from . import state
-from .bootsteps import StartStopComponent
+from .components import Pool
 from .hub import DummyLock
 
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error
 
 
-class WorkerComponent(StartStopComponent):
-    name = 'worker.autoscaler'
-    requires = ('pool', )
+class WorkerComponent(bootsteps.StartStopStep):
+    requires = (Pool, )
 
     def __init__(self, w, **kwargs):
         self.enabled = w.autoscale

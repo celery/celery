@@ -116,3 +116,7 @@ Rinat Shigapov, 2012/07/20
 Hynek Schlawack, 2012/07/23
 Paul McMillan, 2012/07/26
 Mitar, 2012/07/28
+Adam DePue, 2012/08/22
+Thomas Meson, 2012/08/28
+Daniel Lundin, 2012/08/30
+Alexey Zatelepin, 2012/09/18

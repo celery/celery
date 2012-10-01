@@ -147,3 +147,8 @@ def setup(app):
         rolename="signal",
         indextemplate="pair: %s; signal",
     )
+    app.add_crossref_type(
+        directivename="event",
+        rolename="event",
+        indextemplate="pair: %s; event",
+    )

@@ -9,6 +9,7 @@
     :maxdepth: 1
 
     celery.worker
+    celery.worker.components
     celery.worker.consumer
     celery.worker.job
     celery.worker.mediator
@@ -20,7 +21,6 @@
     celery.worker.strategy
     celery.worker.autoreload
     celery.worker.autoscale
-    celery.worker.bootsteps
     celery.concurrency
     celery.concurrency.solo
     celery.concurrency.processes

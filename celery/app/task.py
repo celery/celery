@@ -8,6 +8,8 @@
 """
 from __future__ import absolute_import
 
+import sys
+
 from celery import current_app
 from celery import states
 from celery.__compat__ import class_property
@@ -21,7 +23,7 @@ from celery.utils.imports import instantiate
 from celery.utils.mail import ErrorMail
 
 from .annotations import resolve_all as resolve_all_annotations
-from .registry import _unpickle_task
+from .registry import _unpickle_task_v2
 
 #: extracts attributes related to publishing a message from an object.
 extract_exec_options = mattrgetter(
@@ -41,15 +43,20 @@ class Context(object):
     args = None
     kwargs = None
     retries = 0
+    eta = None
+    expires = None
     is_eager = False
     delivery_info = None
     taskset = None   # compat alias to group
     group = None
     chord = None
+    utc = None
     called_directly = True
     callbacks = None
     errbacks = None
+    timeouts = None
     _children = None   # see property
+    _protected = 0
 
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
@@ -229,6 +236,10 @@ class Task(object):
     #: Default task expiry time.
     expires = None
 
+    #: Some may expect a request to exist even if the task has not been
+    #: called.  This should probably be deprecated.
+    _default_request = None
+
     __bound__ = False
 
     from_config = (
@@ -265,9 +276,8 @@ class Task(object):
         if not was_bound:
             self.annotate()
 
-        from celery.utils.threads import LocalStack
-        self.request_stack = LocalStack()
-        self.request_stack.push(Context())
+            from celery.utils.threads import LocalStack
+            self.request_stack = LocalStack()
 
         # PeriodicTask uses this to add itself to the PeriodicTask schedule.
         self.on_bound(app)
@@ -316,10 +326,15 @@ class Task(object):
             self.pop_request()
             _task_stack.pop()
 
-    # - tasks are pickled into the name of the task only, and the reciever
-    # - simply grabs it from the local registry.
     def __reduce__(self):
-        return (_unpickle_task, (self.name, ), None)
+        # - tasks are pickled into the name of the task only, and the reciever
+        # - simply grabs it from the local registry.
+        # - in later versions the module of the task is also included,
+        # - and the receiving side tries to import that module so that
+        # - it will work even if the task has not been registered.
+        mod = type(self).__module__
+        mod = mod if mod and mod in sys.modules else None
+        return (_unpickle_task_v2, (self.name, mod), None)
 
     def run(self, *args, **kwargs):
         """The body of the task executed by workers."""
@@ -535,6 +550,7 @@ class Task(object):
         if delivery_info:
             options.setdefault('exchange', delivery_info.get('exchange'))
             options.setdefault('routing_key', delivery_info.get('routing_key'))
+        options.setdefault('expires', request.expires)
 
         if not eta and countdown is None:
             countdown = self.default_retry_delay
@@ -770,10 +786,17 @@ class Task(object):
         """`repr(task)`"""
         return '<@task: {0.name}>'.format(self)
 
-    @property
-    def request(self):
-        """Current request object."""
-        return self.request_stack.top
+    def _get_request(self):
+        """Get current request object."""
+        req = self.request_stack.top
+        if req is None:
+            # task was not called, but some may still expect a request
+            # to be there, perhaps that should be deprecated.
+            if self._default_request is None:
+                self._default_request = Context()
+            return self._default_request
+        return req
+    request = property(_get_request)
 
     @property
     def __name__(self):

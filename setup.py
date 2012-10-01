@@ -151,21 +151,15 @@ def reqs(f):
     return filter(None, [strip_comments(l) for l in open(
         os.path.join(os.getcwd(), 'requirements', f)).readlines()])
 
-install_requires = reqs('default-py3k.txt' if is_py3k else 'default.txt')
-
+install_requires = reqs('default.txt')
+if is_py3k:
+    install_requires.extend(reqs('extra-py3k.txt'))
 if is_jython:
     install_requires.extend(reqs('jython.txt'))
-if py_version[0:2] == (2, 6):
-    install_requires.extend(reqs('py26.txt'))
 
 # -*- Tests Requires -*-
 
-if is_py3k:
-    tests_require = reqs('test-py3k.txt')
-elif is_pypy:
-    tests_require = reqs('test-pypy.txt')
-else:
-    tests_require = reqs('test.txt')
+tests_require = reqs('test.txt')
 
 # -*- Long Description -*-
 
@@ -183,11 +177,11 @@ console_scripts = entrypoints['console_scripts'] = [
 if CELERY_COMPAT_PROGRAMS:
     console_scripts.extend([
         'celeryd = celery.__main__:_compat_worker',
-        'celerybeat = celery.bin.celerybeat:main',
+        'celerybeat = celery.__main__:_compat_beat',
         'camqadm = celery.bin.camqadm:main',
         'celeryev = celery.bin.celeryev:main',
         'celeryctl = celery.bin.celeryctl:main',
-        'celeryd-multi = celery.bin.celeryd_multi:main',
+        'celeryd-multi = celery.__main__:_compat_multi',
     ])
 
 # bundles: Only relevant for Celery developers.

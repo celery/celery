@@ -13,6 +13,8 @@ from textwrap import fill
 
 from pprint import pformat
 
+from kombu.utils.encoding import safe_repr
+
 
 def dedent_initial(s, n=4):
     return s[n:] if s[:n] == ' ' * n else s

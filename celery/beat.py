@@ -7,6 +7,7 @@
 
 """
 from __future__ import absolute_import
+from __future__ import with_statement
 
 import errno
 import os
@@ -18,7 +19,7 @@ import traceback
 from threading import Event, Thread
 
 from billiard import Process, ensure_multiprocessing
-from kombu.utils import reprcall
+from kombu.utils import cached_property, reprcall
 from kombu.utils.functional import maybe_promise
 
 from . import __version__
@@ -27,13 +28,13 @@ from . import signals
 from . import current_app
 from .app import app_or_default
 from .schedules import maybe_schedule, crontab
-from .utils import cached_property
 from .utils.imports import instantiate
 from .utils.timeutils import humanize_seconds
 from .utils.log import get_logger
 
 logger = get_logger(__name__)
-debug, info, error = logger.debug, logger.info, logger.error
+debug, info, error, warning = (logger.debug, logger.info,
+                               logger.error, logger.warning)
 
 DEFAULT_MAX_INTERVAL = 300  # 5 minutes
 
@@ -171,7 +172,7 @@ class Scheduler(object):
         is_due, next_time_to_run = entry.is_due()
 
         if is_due:
-            info('Scheduler: Sending due task %s', entry.task)
+            info('Scheduler: Sending due task %s (%s)', entry.name, entry.task)
             try:
                 result = self.apply_async(entry, publisher=publisher)
             except Exception as exc:
@@ -322,11 +323,8 @@ class PersistentScheduler(Scheduler):
 
     def _remove_db(self):
         for suffix in self.known_suffixes:
-            try:
+            with platforms.ignore_errno(errno.ENOENT):
                 os.remove(self.schedule_filename + suffix)
-            except OSError as exc:
-                if exc.errno != errno.ENOENT:
-                    raise
 
     def setup_schedule(self):
         try:
@@ -341,13 +339,31 @@ class PersistentScheduler(Scheduler):
                                                 writeback=True)
         else:
             if '__version__' not in self._store:
+                warning('Reset: Account for new __version__ field')
                 self._store.clear()   # remove schedule at 2.2.2 upgrade.
-            if 'utc' not in self._store:
-                self._store.clear()   # remove schedule at 3.0.1 upgrade.
+            if 'tz' not in self._store:
+                warning('Reset: Account for new tz field')
+                self._store.clear()   # remove schedule at 3.0.8 upgrade
+            if 'utc_enabled' not in self._store:
+                warning('Reset: Account for new utc_enabled field')
+                self._store.clear()   # remove schedule at 3.0.9 upgrade
+
+        tz = self.app.conf.CELERY_TIMEZONE
+        stored_tz = self._store.get('tz')
+        if stored_tz is not None and stored_tz != tz:
+            warning('Reset: Timezone changed from %r to %r', stored_tz, tz)
+            self._store.clear()   # Timezone changed, reset db!
+        utc = self.app.conf.CELERY_ENABLE_UTC
+        stored_utc = self._store.get('utc_enabled')
+        if stored_utc is not None and stored_utc != utc:
+            choices = {True: 'enabled', False: 'disabled'}
+            warning('Reset: UTC changed from %s to %s',
+                    choices[stored_utc], choices[utc])
+            self._store.clear()   # UTC setting changed, reset db!
         entries = self._store.setdefault('entries', {})
         self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
         self.install_default_entries(self.schedule)
-        self._store.update(__version__=__version__, utc=True)
+        self._store.update(__version__=__version__, tz=tz, utc_enabled=utc)
         self.sync()
         debug('Current schedule:\n' + '\n'.join(repr(entry)
                                     for entry in entries.itervalues()))

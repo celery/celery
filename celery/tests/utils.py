@@ -473,13 +473,23 @@ def mock_module(*names):
 
     mods = []
     for name in names:
-        prev[name] = sys.modules.get(name)
+        try:
+            prev[name] = sys.modules[name]
+        except KeyError:
+            pass
         mod = sys.modules[name] = MockModule(name)
         mods.append(mod)
-    yield mods
-    for name in names:
-        if prev[name]:
-            sys.modules[name] = prev[name]
+    try:
+        yield mods
+    finally:
+        for name in names:
+            try:
+                sys.modules[name] = prev[name]
+            except KeyError:
+                try:
+                    del(sys.modules[name])
+                except KeyError:
+                    pass
 
 
 @contextmanager
@@ -504,6 +514,7 @@ def mock_open(typ=WhateverIO, side_effect=None):
             if side_effect is not None:
                 context.__enter__.side_effect = side_effect
             val = context.__enter__.return_value = typ()
+            val.__exit__ = Mock()
             yield val
 
 

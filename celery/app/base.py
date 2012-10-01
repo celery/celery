@@ -11,7 +11,7 @@ from __future__ import absolute_import
 import threading
 import warnings
 
-from collections import deque
+from collections import defaultdict, deque
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
@@ -72,6 +72,8 @@ class Celery(object):
         self.set_as_current = set_as_current
         self.registry_cls = symbol_by_name(self.registry_cls)
         self.accept_magic_kwargs = accept_magic_kwargs
+        self.user_options = defaultdict(set)
+        self.steps = defaultdict(set)
 
         self.configured = False
         self._pending_defaults = deque()
@@ -98,6 +100,15 @@ class Celery(object):
 
     def set_current(self):
         _tls.current_app = self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        self.close()
+
+    def close(self):
+        self._maybe_close_pool()
 
     def on_init(self):
         """Optional callback called at init."""
@@ -319,6 +330,9 @@ class Celery(object):
         return s
 
     def _after_fork(self, obj_):
+        self._maybe_close_pool()
+
+    def _maybe_close_pool(self):
         if self._pool:
             self._pool.force_close_all()
             self._pool = None

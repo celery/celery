@@ -25,10 +25,11 @@ from kombu.utils import kwdict
 
 from celery import current_app
 from celery import states, signals
-from celery._state import _task_stack, default_app
+from celery._state import _task_stack
+from celery.app import set_default_app
 from celery.app.task import Task as BaseTask, Context
 from celery.datastructures import ExceptionInfo
-from celery.exceptions import RetryTaskError
+from celery.exceptions import Ignore, RetryTaskError
 from celery.utils.serialization import get_pickleable_exception
 from celery.utils.log import get_logger
 
@@ -42,27 +43,37 @@ send_success = signals.task_success.send
 success_receivers = signals.task_success.receivers
 STARTED = states.STARTED
 SUCCESS = states.SUCCESS
+IGNORED = states.IGNORED
 RETRY = states.RETRY
 FAILURE = states.FAILURE
 EXCEPTION_STATES = states.EXCEPTION_STATES
 
-try:
-    _tasks = default_app._tasks
-except AttributeError:
-    # Windows: will be set later by concurrency.processes.
-    pass
+#: set by :func:`setup_worker_optimizations`
+_tasks = None
+_patched = {}
 
 
-def mro_lookup(cls, attr, stop=()):
+def mro_lookup(cls, attr, stop=(), monkey_patched=[]):
     """Returns the first node by MRO order that defines an attribute.
 
     :keyword stop: A list of types that if reached will stop the search.
+    :keyword monkey_patched: Use one of the stop classes if the attr's
+        module origin is not in this list, this to detect monkey patched
+        attributes.
 
     :returns None: if the attribute was not found.
 
     """
     for node in cls.mro():
         if node in stop:
+            try:
+                attr = node.__dict__[attr]
+                module_origin = attr.__module__
+            except (AttributeError, KeyError):
+                pass
+            else:
+                if module_origin not in monkey_patched:
+                    return node
             return
         if attr in node.__dict__:
             return node
@@ -71,7 +82,8 @@ def mro_lookup(cls, attr, stop=()):
 def task_has_custom(task, attr):
     """Returns true if the task or one of its bases
     defines ``attr`` (excluding the one in BaseTask)."""
-    return mro_lookup(task.__class__, attr, stop=(BaseTask, object))
+    return mro_lookup(task.__class__, attr, stop=(BaseTask, object),
+                      monkey_patched=['celery.app.task'])
 
 
 class TraceInfo(object):
@@ -211,6 +223,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 try:
                     R = retval = fun(*args, **kwargs)
                     state = SUCCESS
+                except Ignore as exc:
+                    I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                 except RetryTaskError as exc:
                     I = Info(RETRY, exc)
                     state, retval = I.state, I.retval
@@ -276,7 +290,15 @@ def trace_task(task, uuid, args, kwargs, request={}, **opts):
         return report_internal_error(task, exc)
 
 
-def trace_task_ret(task, uuid, args, kwargs, request={}):
+def _trace_task_ret(name, uuid, args, kwargs, request={}, **opts):
+    return trace_task(current_app.tasks[name],
+                      uuid, args, kwargs, request, **opts)
+trace_task_ret = _trace_task_ret
+
+
+def _fast_trace_task(task, uuid, args, kwargs, request={}):
+    # setup_worker_optimizations will point trace_task_ret to here,
+    # so this is the function used in the worker.
     return _tasks[task].__trace__(uuid, args, kwargs, request)[0]
 
 
@@ -297,3 +319,78 @@ def report_internal_error(task, exc):
         return exc_info
     finally:
         del(_tb)
+
+
+def setup_worker_optimizations(app):
+    global _tasks
+    global trace_task_ret
+
+    # make sure custom Task.__call__ methods that calls super
+    # will not mess up the request/task stack.
+    _install_stack_protection()
+
+    # all new threads start without a current app, so if an app is not
+    # passed on to the thread it will fall back to the "default app",
+    # which then could be the wrong app.  So for the worker
+    # we set this to always return our app.  This is a hack,
+    # and means that only a single app can be used for workers
+    # running in the same process.
+    set_default_app(app)
+
+    # evaluate all task classes by finalizing the app.
+    app.finalize()
+
+    # set fast shortcut to task registry
+    _tasks = app._tasks
+
+    trace_task_ret = _fast_trace_task
+    try:
+        sys.modules['celery.worker.job'].trace_task_ret = _fast_trace_task
+    except KeyError:
+        pass
+
+
+def reset_worker_optimizations():
+    global trace_task_ret
+    trace_task_ret = _trace_task_ret
+    try:
+        delattr(BaseTask, '_stackprotected')
+    except AttributeError:
+        pass
+    try:
+        BaseTask.__call__ = _patched.pop('BaseTask.__call__')
+    except KeyError:
+        pass
+    try:
+        sys.modules['celery.worker.job'].trace_task_ret = _trace_task_ret
+    except KeyError:
+        pass
+
+
+def _install_stack_protection():
+    # Patches BaseTask.__call__ in the worker to handle the edge case
+    # where people override it and also call super.
+    #
+    # - The worker optimizes away BaseTask.__call__ and instead
+    #   calls task.run directly.
+    # - so with the addition of current_task and the request stack
+    #   BaseTask.__call__ now pushes to those stacks so that
+    #   they work when tasks are called directly.
+    #
+    # The worker only optimizes away __call__ in the case
+    # where it has not been overridden, so the request/task stack
+    # will blow if a custom task class defines __call__ and also
+    # calls super().
+    if not getattr(BaseTask, '_stackprotected', False):
+        _patched['BaseTask.__call__'] = orig = BaseTask.__call__
+
+        def __protected_call__(self, *args, **kwargs):
+            stack = self.request_stack
+            req = stack.top
+            if req and not req._protected and \
+                    len(stack) == 1 and not req.called_directly:
+                req._protected = 1
+                return self.run(*args, **kwargs)
+            return orig(self, *args, **kwargs)
+        BaseTask.__call__ = __protected_call__
+        BaseTask._stackprotected = True

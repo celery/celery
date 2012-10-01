@@ -15,10 +15,7 @@ import sys
 
 from contextlib import contextmanager
 
-# symbol_by_name was moved to local because it's used
-# early in the import stage, where celery.utils loads
-# too much (e.g. for eventlet patching)
-from celery.local import symbol_by_name
+from kombu.utils import symbol_by_name
 
 from .compat import reload
 
@@ -27,18 +24,10 @@ class NotAPackage(Exception):
     pass
 
 
-if sys.version_info >= (3, 3):  # pragma: no cover
-
-    def qualname(obj):
-        return obj.__qualname__
-
-else:
-
-    def qualname(obj):  # noqa
-        if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
-            return qualname(obj.__class__)
-
-        return '%s.%s' % (obj.__module__, obj.__name__)
+def qualname(obj):  # noqa
+    if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
+        obj = obj.__class__
+    return '%s.%s' % (obj.__module__, obj.__name__)
 
 
 def instantiate(name, *args, **kwargs):

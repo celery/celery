@@ -12,13 +12,14 @@ from __future__ import absolute_import
 import re
 
 from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
+
+from kombu.utils import cached_property
 
 from . import current_app
 from .utils import is_iterable
 from .utils.timeutils import (
     timedelta_seconds, weekday, maybe_timedelta, remaining,
-    humanize_seconds, timezone, maybe_make_aware
+    humanize_seconds, timezone, maybe_make_aware, ffwd
 )
 from .datastructures import AttributeDict
 
@@ -31,6 +32,10 @@ CRON_INVALID_TYPE = """\
 Argument cronspec needs to be of any of the following types: \
 int, basestring, or an iterable type. {type!r} was given.\
 """
+
+
+def _weak_bool(s):
+    return 0 if s == '0' else s
 
 
 class ParseException(Exception):
@@ -46,11 +51,11 @@ class schedule(object):
         self.nowfun = nowfun
 
     def now(self):
-        return (self.nowfun or current_app.now)()
+        return (self.nowfun or self.app.now)()
 
     def remaining_estimate(self, last_run_at):
         return remaining(last_run_at, self.run_every,
-                         self.relative, maybe_make_aware(self.now()))
+                         self.maybe_make_aware(self.now()), self.relative)
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
@@ -80,11 +85,17 @@ class schedule(object):
             the django-celery database scheduler the value is 5 seconds.
 
         """
+        last_run_at = self.maybe_make_aware(last_run_at)
         rem_delta = self.remaining_estimate(last_run_at)
         rem = timedelta_seconds(rem_delta)
         if rem == 0:
             return True, self.seconds
         return False, rem
+
+    def maybe_make_aware(self, dt):
+        if self.utc_enabled:
+            return maybe_make_aware(dt, self.tz)
+        return dt
 
     def __repr__(self):
         return '<freq: {0.human_seconds}>'.format(self)
@@ -101,6 +112,23 @@ class schedule(object):
     @property
     def human_seconds(self):
         return humanize_seconds(self.seconds)
+
+    @cached_property
+    def app(self):
+        return current_app._get_current_object()
+
+    @cached_property
+    def tz(self):
+        return timezone.get_timezone(self.app.conf.CELERY_TIMEZONE)
+
+    @cached_property
+    def utc_enabled(self):
+        return self.app.conf.CELERY_ENABLE_UTC
+
+    def to_local(self, dt):
+        if not self.utc_enabled:
+            return timezone.to_local_fallback(dt, self.tz)
+        return dt
 
 
 class crontab_parser(object):
@@ -371,13 +399,13 @@ class crontab(schedule):
             datedata.dom += 1
             roll_over()
 
-        return relativedelta(year=datedata.year,
-                             month=months_of_year[datedata.moy],
-                             day=days_of_month[datedata.dom],
-                             hour=next_hour,
-                             minute=next_minute,
-                             second=0,
-                             microsecond=0)
+        return ffwd(year=datedata.year,
+                    month=months_of_year[datedata.moy],
+                    day=days_of_month[datedata.dom],
+                    hour=next_hour,
+                    minute=next_minute,
+                    second=0,
+                    microsecond=0)
 
     def __init__(self, minute='*', hour='*', day_of_week='*',
             day_of_month='*', month_of_year='*', nowfun=None):
@@ -394,15 +422,15 @@ class crontab(schedule):
         self.nowfun = nowfun
 
     def now(self):
-        return (self.nowfun or current_app.now)()
+        return (self.nowfun or self.app.now)()
 
     def __repr__(self):
         return ('<crontab: %s %s %s %s %s (m/h/d/dM/MY)>' %
-                                            (self._orig_minute or '*',
-                                             self._orig_hour or '*',
-                                             self._orig_day_of_week or '*',
-                                             self._orig_day_of_month or '*',
-                                             self._orig_month_of_year or '*'))
+                        (_weak_bool(self._orig_minute) or '*',
+                         _weak_bool(self._orig_hour) or '*',
+                         _weak_bool(self._orig_day_of_week) or '*',
+                         _weak_bool(self._orig_day_of_month) or '*',
+                         _weak_bool(self._orig_month_of_year) or '*'))
 
     def __reduce__(self):
         return (self.__class__, (self._orig_minute,
@@ -411,10 +439,8 @@ class crontab(schedule):
                                  self._orig_day_of_month,
                                  self._orig_month_of_year), None)
 
-    def remaining_estimate(self, last_run_at, tz=None):
-        """Returns when the periodic task should run next as a timedelta."""
-        tz = tz or self.tz
-        last_run_at = maybe_make_aware(last_run_at)
+    def remaining_delta(self, last_run_at, ffwd=ffwd):
+        last_run_at = self.maybe_make_aware(last_run_at)
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (last_run_at.month in self.month_of_year and
@@ -428,9 +454,9 @@ class crontab(schedule):
         if execute_this_hour:
             next_minute = min(minute for minute in self.minute
                                         if minute > last_run_at.minute)
-            delta = relativedelta(minute=next_minute,
-                                  second=0,
-                                  microsecond=0)
+            delta = ffwd(minute=next_minute,
+                         second=0,
+                         microsecond=0)
         else:
             next_minute = min(self.minute)
             execute_today = (execute_this_date and
@@ -439,10 +465,10 @@ class crontab(schedule):
             if execute_today:
                 next_hour = min(hour for hour in self.hour
                                         if hour > last_run_at.hour)
-                delta = relativedelta(hour=next_hour,
-                                      minute=next_minute,
-                                      second=0,
-                                      microsecond=0)
+                delta = ffwd(hour=next_hour,
+                             minute=next_minute,
+                             second=0,
+                             microsecond=0)
             else:
                 next_hour = min(self.hour)
                 all_dom_moy = (self._orig_day_of_month == '*' and
@@ -453,18 +479,22 @@ class crontab(schedule):
                                 self.day_of_week)
                     add_week = next_day == dow_num
 
-                    delta = relativedelta(weeks=add_week and 1 or 0,
-                                          weekday=(next_day - 1) % 7,
-                                          hour=next_hour,
-                                          minute=next_minute,
-                                          second=0,
-                                          microsecond=0)
+                    delta = ffwd(weeks=add_week and 1 or 0,
+                                 weekday=(next_day - 1) % 7,
+                                 hour=next_hour,
+                                 minute=next_minute,
+                                 second=0,
+                                 microsecond=0)
                 else:
                     delta = self._delta_to_next(last_run_at,
                                                 next_hour, next_minute)
 
-        return remaining(timezone.to_local(last_run_at, tz),
-                         delta, timezone.to_local(self.now(), tz))
+        now = self.maybe_make_aware(self.now())
+        return self.to_local(last_run_at), delta, self.to_local(now)
+
+    def remaining_estimate(self, last_run_at, ffwd=ffwd):
+        """Returns when the periodic task should run next as a timedelta."""
+        return remaining(*self.remaining_delta(last_run_at, ffwd=ffwd))
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
@@ -489,10 +519,6 @@ class crontab(schedule):
                     other.hour == self.hour and
                     other.minute == self.minute)
         return other is self
-
-    @property
-    def tz(self):
-        return current_app.conf.CELERY_TIMEZONE
 
 
 def maybe_schedule(s, relative=False):

@@ -10,6 +10,9 @@ from __future__ import absolute_import
 
 import inspect
 
+from importlib import import_module
+
+from celery._state import get_current_app
 from celery.exceptions import NotRegistered
 
 
@@ -56,5 +59,10 @@ class TaskRegistry(dict):
 
 
 def _unpickle_task(name):
-    from celery import current_app
-    return current_app.tasks[name]
+    return get_current_app().tasks[name]
+
+
+def _unpickle_task_v2(name, module=None):
+    if module:
+        import_module(module)
+    return get_current_app().tasks[name]

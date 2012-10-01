@@ -41,7 +41,7 @@ has been sent by providing the `sender` argument to
 
 .. code-block:: python
 
-    @task_sent.connect(task_sent_handler, sender='tasks.add')
+    @task_sent.connect(sender='tasks.add')
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
                           kwargs=None, \*\*kwds):
         print('Got signal task_sent for task id {0}'.format(task_id)
@@ -226,7 +226,7 @@ used to route a task to any specific worker:
     @celeryd_after_setup.connect
     def setup_direct_queue(sender, instance, **kwargs):
         queue_name = '{0}.dq'.format(sender)  # sender is the hostname of the worker
-        instance.app.queues.select_add(queue_name)
+        instance.app.amqp.queues.select_add(queue_name)
 
 Provides arguments:
 

@@ -56,6 +56,7 @@ def get_logger(name):
         l.parent = base_logger
     return l
 task_logger = get_logger('celery.task')
+worker_logger = get_logger('celery.worker')
 
 
 def get_task_logger(name):
@@ -82,6 +83,8 @@ class ColorFormatter(logging.Formatter):
         self.use_color = use_color
 
     def formatException(self, ei):
+        if ei and not isinstance(ei, tuple):
+            ei = sys.exc_info()
         r = logging.Formatter.formatException(self, ei)
         if isinstance(r, str) and not is_py3k:
             return safe_str(r)
@@ -192,9 +195,6 @@ class LoggingProxy(object):
     def isatty(self):
         """Always returns :const:`False`. Just here for file support."""
         return False
-
-    def fileno(self):
-        return None
 
 
 def ensure_process_aware_logger():

@@ -6,28 +6,59 @@
 Index
 =====
 
-* `requirements/default.txt`
+* :file:`requirements/default.txt`
 
-    The default requirements (Python 2.7+).
+    Default requirements for Python 2.7+.
 
-* `requirements/py26.txt`
+* :file:`requirements/extra-py3k.txt`
 
-    Extra requirements needed to run on Python 2.6.
+    Extra requirements for Python 3.2+.
 
-* `requirements/test.txt`
+* :file:`requirements/jython.txt`
+
+    Extra requirements needed to run on Jython 2.5
+
+* :file:`requirements/security.txt`
+
+    Extra requirements needed to use the message signing serializer,
+    see the Security Guide.
+
+* :file:`requirements/test.txt`
 
     Requirements needed to run the full unittest suite.
 
+* :file:`requirements/test-ci.txt`
 
+    Extra test requirements required by the CI suite (Tox).
+
+* :file:`requirements/doc.txt`
+
+    Extra requirements required to build the Sphinx documentation.
+
+* :file:`requirements/pkgutils.txt`
+
+    Extra requirements required to perform package distribution maintenance.
+
+* :file:`requirements/dev.txt`
+
+    Requirement file installing the current master branch of Celery and deps.
 
 Examples
 ========
 
-Running the tests using Python 2.6
-----------------------------------
+Installing requirements for running Python 3
+--------------------------------------------
 
 ::
 
-    $ pip -E $VIRTUAL_ENV install -U -r requirements/default.txt
-    $ pip -E $VIRTUAL_ENV install -U -r requirements/test.txt
+    $ pip install -U -r requirements/default.txt
+    $ pip install -U -r requirements/extra-py3k.txt
 
+
+Running the tests
+-----------------
+
+::
+
+    $ pip install -U -r requirements/default.txt
+    $ pip install -U -r requirements/test.txt

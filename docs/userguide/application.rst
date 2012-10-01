@@ -146,13 +146,6 @@ that are consulted in order:
 ``config_from_object``
 ----------------------
 
-.. sidebar:: Timezones & pytz
-
-    Setting a time zone other than UTC requires the :mod:`pytz` library
-    to be installed, see the :setting:`CELERY_TIMEZONE` setting for more
-    information.
-
-
 The :meth:`@Celery.config_from_object` method loads configuration
 from a configuration object.
 
@@ -274,7 +267,7 @@ you use the task, or access an attribute (in this case :meth:`repr`):
     >>> add.__evaluated__()
     True
 
-*Finalization* of the appq happens either explicitly by calling
+*Finalization* of the app happens either explicitly by calling
 :meth:`@Celery.finalize` -- or implicitly by accessing the :attr:`~@Celery.tasks`
 attribute.
 

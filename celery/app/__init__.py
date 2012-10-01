@@ -36,11 +36,6 @@ app_or_default = None
 #: The 'default' loader is the default loader used by old applications.
 default_loader = os.environ.get('CELERY_LOADER') or 'default'
 
-#: Global fallback app instance.
-set_default_app(Celery('default', loader=default_loader,
-                                  set_as_current=False,
-                                  accept_magic_kwargs=True))
-
 
 def bugreport():
     return current_app().bugreport()

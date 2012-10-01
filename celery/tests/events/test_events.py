@@ -151,12 +151,9 @@ class test_EventReceiver(AppCase):
         connection = Mock()
         connection.transport_cls = 'memory'
         r = events.EventReceiver(connection, node_id='celery.tests')
-        events.EventReceiver.handlers['*'] = my_handler
-        try:
-            r._receive(message, object())
-            self.assertTrue(got_event[0])
-        finally:
-            events.EventReceiver.handlers = {}
+        r.handlers['*'] = my_handler
+        r._receive(message, object())
+        self.assertTrue(got_event[0])
 
     def test_itercapture(self):
         connection = self.app.connection()

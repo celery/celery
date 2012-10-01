@@ -14,6 +14,7 @@ from celery.task import (
     periodic_task,
     PeriodicTask
 )
+from celery import current_app
 from celery.app import app_or_default
 from celery.exceptions import RetryTaskError
 from celery.execute import send_task
@@ -23,6 +24,10 @@ from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601, timedelta_seconds
 
 from celery.tests.utils import Case, with_eager_tasks, WhateverIO
+
+
+def now():
+    return current_app.now()
 
 
 def return_True(*args, **kwargs):
@@ -136,27 +141,37 @@ class test_task_retries(Case):
         self.assertEqual(retry_task_noargs.iterations, 4)
 
     def test_retry_kwargs_can_be_empty(self):
-        with self.assertRaises(RetryTaskError):
-            retry_task_mockapply.retry(args=[4, 4], kwargs=None)
-
-    def test_retry_not_eager(self):
-        retry_task_mockapply.request.called_directly = False
-        exc = Exception('baz')
-        try:
-            retry_task_mockapply.retry(args=[4, 4], kwargs={'task_retries': 0},
-                                       exc=exc, throw=False)
-            self.assertTrue(retry_task_mockapply.__class__.applied)
-        finally:
-            retry_task_mockapply.__class__.applied = 0
-
+        retry_task_mockapply.push_request()
         try:
             with self.assertRaises(RetryTaskError):
+                retry_task_mockapply.retry(args=[4, 4], kwargs=None)
+        finally:
+            retry_task_mockapply.pop_request()
+
+    def test_retry_not_eager(self):
+        retry_task_mockapply.push_request()
+        try:
+            retry_task_mockapply.request.called_directly = False
+            exc = Exception('baz')
+            try:
                 retry_task_mockapply.retry(
                     args=[4, 4], kwargs={'task_retries': 0},
-                    exc=exc, throw=True)
-            self.assertTrue(retry_task_mockapply.__class__.applied)
+                    exc=exc, throw=False,
+                )
+                self.assertTrue(retry_task_mockapply.__class__.applied)
+            finally:
+                retry_task_mockapply.__class__.applied = 0
+
+            try:
+                with self.assertRaises(RetryTaskError):
+                    retry_task_mockapply.retry(
+                        args=[4, 4], kwargs={'task_retries': 0},
+                        exc=exc, throw=True)
+                self.assertTrue(retry_task_mockapply.__class__.applied)
+            finally:
+                retry_task_mockapply.__class__.applied = 0
         finally:
-            retry_task_mockapply.__class__.applied = 0
+            retry_task_mockapply.pop_request()
 
     def test_retry_with_kwargs(self):
         retry_task_customexc.__class__.max_retries = 3
@@ -292,8 +307,8 @@ class test_tasks(Case):
 
         # With eta.
         presult2 = T1.apply_async(kwargs=dict(name='George Costanza'),
-                            eta=datetime.utcnow() + timedelta(days=1),
-                            expires=datetime.utcnow() + timedelta(days=2))
+                            eta=now() + timedelta(days=1),
+                            expires=now() + timedelta(days=2))
         self.assertNextTaskDataEqual(consumer, presult2, T1.name,
                 name='George Costanza', test_eta=True, test_expires=True)
 
@@ -317,11 +332,16 @@ class test_tasks(Case):
         self.assertTrue(publisher.exchange)
 
     def test_context_get(self):
-        request = self.createTask('c.unittest.t.c.g').request
-        request.foo = 32
-        self.assertEqual(request.get('foo'), 32)
-        self.assertEqual(request.get('bar', 36), 36)
-        request.clear()
+        task = self.createTask('c.unittest.t.c.g')
+        task.push_request()
+        try:
+            request = task.request
+            request.foo = 32
+            self.assertEqual(request.get('foo'), 32)
+            self.assertEqual(request.get('bar', 36), 36)
+            request.clear()
+        finally:
+            task.pop_request()
 
     def test_task_class_repr(self):
         task = self.createTask('c.unittest.t.repr')
@@ -345,9 +365,13 @@ class test_tasks(Case):
 
     def test_after_return(self):
         task = self.createTask('c.unittest.t.after_return')
-        task.request.chord = return_True_task.s()
-        task.after_return('SUCCESS', 1.0, 'foobar', (), {}, None)
-        task.request.clear()
+        task.push_request()
+        try:
+            task.request.chord = return_True_task.s()
+            task.after_return('SUCCESS', 1.0, 'foobar', (), {}, None)
+            task.request.clear()
+        finally:
+            task.pop_request()
 
     def test_send_task_sent_event(self):
         T1 = self.createTask('c.unittest.t.t1')
@@ -388,15 +412,19 @@ class test_tasks(Case):
         def yyy():
             pass
 
-        tid = uuid()
-        yyy.update_state(tid, 'FROBULATING', {'fooz': 'baaz'})
-        self.assertEqual(yyy.AsyncResult(tid).status, 'FROBULATING')
-        self.assertDictEqual(yyy.AsyncResult(tid).result, {'fooz': 'baaz'})
+        yyy.push_request()
+        try:
+            tid = uuid()
+            yyy.update_state(tid, 'FROBULATING', {'fooz': 'baaz'})
+            self.assertEqual(yyy.AsyncResult(tid).status, 'FROBULATING')
+            self.assertDictEqual(yyy.AsyncResult(tid).result, {'fooz': 'baaz'})
 
-        yyy.request.id = tid
-        yyy.update_state(state='FROBUZATING', meta={'fooz': 'baaz'})
-        self.assertEqual(yyy.AsyncResult(tid).status, 'FROBUZATING')
-        self.assertDictEqual(yyy.AsyncResult(tid).result, {'fooz': 'baaz'})
+            yyy.request.id = tid
+            yyy.update_state(state='FROBUZATING', meta={'fooz': 'baaz'})
+            self.assertEqual(yyy.AsyncResult(tid).status, 'FROBUZATING')
+            self.assertDictEqual(yyy.AsyncResult(tid).result, {'fooz': 'baaz'})
+        finally:
+            yyy.pop_request()
 
     def test_repr(self):
 
@@ -416,13 +444,17 @@ class test_tasks(Case):
 
     def test_get_logger(self):
         t1 = self.createTask('c.unittest.t.t1')
-        logfh = WhateverIO()
-        logger = t1.get_logger(logfile=logfh, loglevel=0)
-        self.assertTrue(logger)
+        t1.push_request()
+        try:
+            logfh = WhateverIO()
+            logger = t1.get_logger(logfile=logfh, loglevel=0)
+            self.assertTrue(logger)
 
-        t1.request.loglevel = 3
-        logger = t1.get_logger(logfile=logfh, loglevel=None)
-        self.assertTrue(logger)
+            t1.request.loglevel = 3
+            logger = t1.get_logger(logfile=logfh, loglevel=None)
+            self.assertTrue(logger)
+        finally:
+            t1.pop_request()
 
 
 class test_TaskSet(Case):
@@ -530,12 +562,13 @@ class test_periodic_tasks(Case):
             type('Foo', (PeriodicTask, ), {'__module__': __name__})
 
     def test_remaining_estimate(self):
+        s = my_periodic.run_every
         self.assertIsInstance(
-            my_periodic.run_every.remaining_estimate(datetime.utcnow()),
+            s.remaining_estimate(s.maybe_make_aware(now())),
             timedelta)
 
     def test_is_due_not_due(self):
-        due, remaining = my_periodic.run_every.is_due(datetime.utcnow())
+        due, remaining = my_periodic.run_every.is_due(now())
         self.assertFalse(due)
         # This assertion may fail if executed in the
         # first minute of an hour, thus 59 instead of 60
@@ -544,7 +577,7 @@ class test_periodic_tasks(Case):
     def test_is_due(self):
         p = my_periodic
         due, remaining = p.run_every.is_due(
-                datetime.utcnow() - p.run_every.run_every)
+                now() - p.run_every.run_every)
         self.assertTrue(due)
         self.assertEqual(remaining,
                          timedelta_seconds(p.run_every.run_every))
@@ -904,7 +937,7 @@ class test_crontab_remaining_estimate(Case):
 class test_crontab_is_due(Case):
 
     def setUp(self):
-        self.now = datetime.utcnow()
+        self.now = now()
         self.next_minute = 60 - self.now.second - 1e-6 * self.now.microsecond
 
     def test_default_crontab_spec(self):
@@ -1029,9 +1062,31 @@ class test_crontab_is_due(Case):
             else:
                 break
 
+    def assertRelativedelta(self, due, last_ran):
+        try:
+            from dateutil.relativedelta import relativedelta
+        except ImportError:
+            return
+        l1, d1, n1 = due.run_every.remaining_delta(last_ran)
+        l2, d2, n2 = due.run_every.remaining_delta(last_ran,
+                                                   ffwd=relativedelta)
+        if not isinstance(d1, relativedelta):
+            self.assertEqual(l1, l2)
+            for field, value in d1._fields().iteritems():
+                self.assertEqual(getattr(d1, field), value)
+            self.assertFalse(d2.years)
+            self.assertFalse(d2.months)
+            self.assertFalse(d2.days)
+            self.assertFalse(d2.leapdays)
+            self.assertFalse(d2.hours)
+            self.assertFalse(d2.minutes)
+            self.assertFalse(d2.seconds)
+            self.assertFalse(d2.microseconds)
+
     def test_every_minute_execution_is_due(self):
         last_ran = self.now - timedelta(seconds=61)
         due, remaining = every_minute.run_every.is_due(last_ran)
+        self.assertRelativedelta(every_minute, last_ran)
         self.assertTrue(due)
         self.seconds_almost_equal(remaining, self.next_minute, 1)
 

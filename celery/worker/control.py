@@ -39,17 +39,19 @@ class Panel(UserDict):
 def revoke(panel, task_id, terminate=False, signal=None, **kwargs):
     """Revoke task by task id."""
     revoked.add(task_id)
-    action = 'revoked'
     if terminate:
         signum = _signals.signum(signal or 'TERM')
-        for request in state.active_requests:
+        for request in state.reserved_requests:
             if request.id == task_id:
-                action = 'terminated ({0})'.format(signum)
+                logger.info('Terminating %s (%s)', task_id, signum)
                 request.terminate(panel.consumer.pool, signal=signum)
                 break
+        else:
+            return {'ok': 'terminate: task {0} not found'.format(task_id)}
+        return {'ok': 'terminating {0} ({1})'.format(task_id, signal)}
 
-    logger.info('Task %s %s.', task_id, action)
-    return {'ok': 'task {0} {1}'.format(task_id, action)}
+    logger.info('Revoking task %s', task_id)
+    return {'ok': 'revoking task {0}'.format(task_id)}
 
 @Panel.register
 def report(panel):

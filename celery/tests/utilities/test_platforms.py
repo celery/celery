@@ -11,51 +11,41 @@ from celery import current_app
 from celery import platforms
 from celery.platforms import (
     get_fdmax,
-    shellsplit,
-    ignore_EBADF,
+    ignore_errno,
     set_process_title,
     signals,
     maybe_drop_privileges,
     setuid,
     setgid,
-    seteuid,
-    setegid,
     initgroups,
     parse_uid,
     parse_gid,
     detached,
     DaemonContext,
     create_pidlock,
-    PIDFile,
+    Pidfile,
     LockFailed,
     setgroups,
     _setgroups_hack
 )
 
-from celery.tests.utils import Case, WhateverIO, override_stdouts
+from celery.tests.utils import Case, WhateverIO, override_stdouts, mock_open
 
 
-class test_ignore_EBADF(Case):
+class test_ignore_errno(Case):
 
     def test_raises_EBADF(self):
-        with ignore_EBADF():
+        with ignore_errno('EBADF'):
             exc = OSError()
             exc.errno = errno.EBADF
             raise exc
 
     def test_otherwise(self):
         with self.assertRaises(OSError):
-            with ignore_EBADF():
+            with ignore_errno('EBADF'):
                 exc = OSError()
                 exc.errno = errno.ENOENT
                 raise exc
-
-
-class test_shellsplit(Case):
-
-    def test_split(self):
-        self.assertEqual(shellsplit("the 'quick' brown fox"),
-                ['the', 'quick', 'brown', 'fox'])
 
 
 class test_set_process_title(Case):
@@ -178,20 +168,6 @@ if not current_app.IS_WINDOWS:
             parse_uid.assert_called_with('user')
             _setuid.assert_called_with(5001)
 
-        @patch('celery.platforms.parse_uid')
-        @patch('os.geteuid')
-        @patch('os.seteuid')
-        def test_seteuid(self, _seteuid, _geteuid, parse_uid):
-            parse_uid.return_value = 5001
-            _geteuid.return_value = 5001
-            seteuid('user')
-            parse_uid.assert_called_with('user')
-            self.assertFalse(_seteuid.called)
-
-            _geteuid.return_value = 1
-            seteuid('user')
-            _seteuid.assert_called_with(5001)
-
         @patch('celery.platforms.parse_gid')
         @patch('os.setgid')
         def test_setgid(self, _setgid, parse_gid):
@@ -199,20 +175,6 @@ if not current_app.IS_WINDOWS:
             setgid('group')
             parse_gid.assert_called_with('group')
             _setgid.assert_called_with(50001)
-
-        @patch('celery.platforms.parse_gid')
-        @patch('os.getegid')
-        @patch('os.setegid')
-        def test_setegid(self, _setegid, _getegid, parse_gid):
-            parse_gid.return_value = 50001
-            _getegid.return_value = 50001
-            setegid('group')
-            parse_gid.assert_called_with('group')
-            self.assertFalse(_setegid.called)
-
-            _getegid.return_value = 1
-            setegid('group')
-            _setegid.assert_called_with(50001)
 
         def test_parse_uid_when_int(self):
             self.assertEqual(parse_uid(5001), 5001)
@@ -296,12 +258,13 @@ if not current_app.IS_WINDOWS:
             finally:
                 platforms.resource = prev
 
-        @patch('celery.platforms.create_pidlock')
+        @patch('celery.platforms._create_pidlock')
         @patch('celery.platforms.signals')
         @patch('celery.platforms.maybe_drop_privileges')
         @patch('os.geteuid')
         @patch('__builtin__.open')
-        def test_default(self, open, geteuid, maybe_drop, signals, pidlock):
+        def test_default(self, open, geteuid, maybe_drop,
+                signals, pidlock):
             geteuid.return_value = 0
             context = detached(uid='user', gid='group')
             self.assertIsInstance(context, DaemonContext)
@@ -312,11 +275,15 @@ if not current_app.IS_WINDOWS:
             geteuid.return_value = 5001
             context = detached(uid='user', gid='group', logfile='/foo/bar')
             self.assertIsInstance(context, DaemonContext)
+            self.assertTrue(context.after_chdir)
+            context.after_chdir()
             open.assert_called_with('/foo/bar', 'a')
             open.return_value.close.assert_called_with()
 
             context = detached(pidfile='/foo/bar/pid')
             self.assertIsInstance(context, DaemonContext)
+            self.assertTrue(context.after_chdir)
+            context.after_chdir()
             pidlock.assert_called_with('/foo/bar/pid')
 
     class test_DaemonContext(Case):
@@ -345,9 +312,7 @@ if not current_app.IS_WINDOWS:
 
             chdir.assert_called_with(x.workdir)
             umask.assert_called_with(x.umask)
-            open.assert_called_with(platforms.DAEMON_REDIRECT_TO, os.O_RDWR)
-            self.assertEqual(dup2.call_args_list[0], [(0, 1), {}])
-            self.assertEqual(dup2.call_args_list[1], [(0, 2), {}])
+            self.assertTrue(dup2.called)
 
             fork.reset_mock()
             fork.return_value = 1
@@ -363,11 +328,11 @@ if not current_app.IS_WINDOWS:
                 pass
             self.assertFalse(x._detach.called)
 
-    class test_PIDFile(Case):
+    class test_Pidfile(Case):
 
-        @patch('celery.platforms.PIDFile')
-        def test_create_pidlock(self, PIDFile):
-            p = PIDFile.return_value = Mock()
+        @patch('celery.platforms.Pidfile')
+        def test_create_pidlock(self, Pidfile):
+            p = Pidfile.return_value = Mock()
             p.is_locked.return_value = True
             p.remove_if_stale.return_value = False
             with self.assertRaises(SystemExit):
@@ -378,7 +343,7 @@ if not current_app.IS_WINDOWS:
             self.assertIs(ret, p)
 
         def test_context(self):
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.write_pid = Mock()
             p.remove = Mock()
 
@@ -388,7 +353,7 @@ if not current_app.IS_WINDOWS:
             p.remove.assert_called_with()
 
         def test_acquire_raises_LockFailed(self):
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.write_pid = Mock()
             p.write_pid.side_effect = OSError()
 
@@ -398,59 +363,54 @@ if not current_app.IS_WINDOWS:
 
         @patch('os.path.exists')
         def test_is_locked(self, exists):
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             exists.return_value = True
             self.assertTrue(p.is_locked())
             exists.return_value = False
             self.assertFalse(p.is_locked())
 
-        @patch('__builtin__.open')
-        def test_read_pid(self, open_):
-            s = open_.return_value = WhateverIO()
-            s.write('1816\n')
-            s.seek(0)
-            p = PIDFile('/var/pid')
-            self.assertEqual(p.read_pid(), 1816)
+        def test_read_pid(self):
+            with mock_open() as s:
+                s.write('1816\n')
+                s.seek(0)
+                p = Pidfile('/var/pid')
+                self.assertEqual(p.read_pid(), 1816)
 
-        @patch('__builtin__.open')
-        def test_read_pid_partially_written(self, open_):
-            s = open_.return_value = WhateverIO()
-            s.write('1816')
-            s.seek(0)
-            p = PIDFile('/var/pid')
-            with self.assertRaises(ValueError):
-                p.read_pid()
+        def test_read_pid_partially_written(self):
+            with mock_open() as s:
+                s.write('1816')
+                s.seek(0)
+                p = Pidfile('/var/pid')
+                with self.assertRaises(ValueError):
+                    p.read_pid()
 
-        @patch('__builtin__.open')
-        def test_read_pid_raises_ENOENT(self, open_):
+        def test_read_pid_raises_ENOENT(self):
             exc = IOError()
             exc.errno = errno.ENOENT
-            open_.side_effect = exc
-            p = PIDFile('/var/pid')
-            self.assertIsNone(p.read_pid())
+            with mock_open(side_effect=exc):
+                p = Pidfile('/var/pid')
+                self.assertIsNone(p.read_pid())
 
-        @patch('__builtin__.open')
-        def test_read_pid_raises_IOError(self, open_):
+        def test_read_pid_raises_IOError(self):
             exc = IOError()
             exc.errno = errno.EAGAIN
-            open_.side_effect = exc
-            p = PIDFile('/var/pid')
-            with self.assertRaises(IOError):
-                p.read_pid()
+            with mock_open(side_effect=exc):
+                p = Pidfile('/var/pid')
+                with self.assertRaises(IOError):
+                    p.read_pid()
 
-        @patch('__builtin__.open')
-        def test_read_pid_bogus_pidfile(self, open_):
-            s = open_.return_value = WhateverIO()
-            s.write('eighteensixteen\n')
-            s.seek(0)
-            p = PIDFile('/var/pid')
-            with self.assertRaises(ValueError):
-                p.read_pid()
+        def test_read_pid_bogus_pidfile(self):
+            with mock_open() as s:
+                s.write('eighteensixteen\n')
+                s.seek(0)
+                p = Pidfile('/var/pid')
+                with self.assertRaises(ValueError):
+                    p.read_pid()
 
         @patch('os.unlink')
         def test_remove(self, unlink):
             unlink.return_value = True
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.remove()
             unlink.assert_called_with(p.path)
 
@@ -459,7 +419,7 @@ if not current_app.IS_WINDOWS:
             exc = OSError()
             exc.errno = errno.ENOENT
             unlink.side_effect = exc
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.remove()
             unlink.assert_called_with(p.path)
 
@@ -468,7 +428,7 @@ if not current_app.IS_WINDOWS:
             exc = OSError()
             exc.errno = errno.EACCES
             unlink.side_effect = exc
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.remove()
             unlink.assert_called_with(p.path)
 
@@ -477,14 +437,14 @@ if not current_app.IS_WINDOWS:
             exc = OSError()
             exc.errno = errno.EAGAIN
             unlink.side_effect = exc
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             with self.assertRaises(OSError):
                 p.remove()
             unlink.assert_called_with(p.path)
 
         @patch('os.kill')
         def test_remove_if_stale_process_alive(self, kill):
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.read_pid = Mock()
             p.read_pid.return_value = 1816
             kill.return_value = 0
@@ -499,7 +459,7 @@ if not current_app.IS_WINDOWS:
         @patch('os.kill')
         def test_remove_if_stale_process_dead(self, kill):
             with override_stdouts():
-                p = PIDFile('/var/pid')
+                p = Pidfile('/var/pid')
                 p.read_pid = Mock()
                 p.read_pid.return_value = 1816
                 p.remove = Mock()
@@ -512,7 +472,7 @@ if not current_app.IS_WINDOWS:
 
         def test_remove_if_stale_broken_pid(self):
             with override_stdouts():
-                p = PIDFile('/var/pid')
+                p = Pidfile('/var/pid')
                 p.read_pid = Mock()
                 p.read_pid.side_effect = ValueError()
                 p.remove = Mock()
@@ -521,7 +481,7 @@ if not current_app.IS_WINDOWS:
                 p.remove.assert_called_with()
 
         def test_remove_if_stale_no_pidfile(self):
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.read_pid = Mock()
             p.read_pid.return_value = None
             p.remove = Mock()
@@ -543,7 +503,7 @@ if not current_app.IS_WINDOWS:
             r.write('1816\n')
             r.seek(0)
 
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.write_pid()
             w.seek(0)
             self.assertEqual(w.readline(), '1816\n')
@@ -570,7 +530,7 @@ if not current_app.IS_WINDOWS:
             r.write('11816\n')
             r.seek(0)
 
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             with self.assertRaises(LockFailed):
                 p.write_pid()
 

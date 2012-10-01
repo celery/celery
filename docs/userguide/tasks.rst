@@ -199,6 +199,9 @@ The request defines the following attributes:
 
 :taskset: The unique id of the taskset this task is a member of (if any).
 
+:chord: The unique id of the chord this task belongs to (if the task
+        is part of the header).
+
 :args: Positional arguments.
 
 :kwargs: Keyword arguments.
@@ -208,6 +211,14 @@ The request defines the following attributes:
 
 :is_eager: Set to :const:`True` if the task is executed locally in
            the client, and not by a worker.
+
+:eta: The original ETA of the task (if any).
+      This is in UTC time (depending on the :setting:`CELERY_ENABLE_UTC`
+      setting).
+
+:expires: The original expiry time of the task (if any).
+          This is in UTC time (depending on the :setting:`CELERY_ENABLE_UTC`
+          setting).
 
 :logfile: The file the worker logs to.  See `Logging`_.
 
@@ -221,6 +232,15 @@ The request defines the following attributes:
                 to resend the task to the same destination queue.
                 Availability of keys in this dict depends on the
                 message broker used.
+
+:called_directly: This flag is set to true if the task was not
+                  executed by the worker.
+
+:callbacks: A list of subtasks to be called if this task returns successfully.
+
+:errback: A list of subtasks to be called if this task fails.
+
+:utc: Set to true the caller has utc enabled (:setting:`CELERY_ENABLE_UTC`).
 
 
 An example task accessing information in the context is:
@@ -390,6 +410,10 @@ General
     exception will be raised.  *NOTE:* You have to call :meth:`~@Task.retry`
     manually, as it will not automatically retry on exception..
 
+    The default value is 3.
+    A value of :const:`None` will disable the retry limit and the
+    task will retry forever until it succeeds.
+
 .. attribute:: Task.default_retry_delay
 
     Default time in seconds before a retry of the task
@@ -398,8 +422,10 @@ General
 
 .. attribute:: Task.rate_limit
 
-    Set the rate limit for this task type, i.e. how many times in
-    a given period of time is the task allowed to run.
+    Set the rate limit for this task type which limits the number of tasks
+    that can be run in a given time frame.  Tasks will still complete when
+    a rate limit is in effect, but it may take some time before it's allowed to
+    start.
 
     If this is :const:`None` no rate limit is in effect.
     If it is an integer, it is interpreted as "tasks per second".
@@ -699,8 +725,8 @@ state metadata.  This can then be used to create e.g. progress bars.
 Creating pickleable exceptions
 ------------------------------
 
-A little known Python fact is that exceptions must behave a certain
-way to support being pickled.
+A rarely known Python fact is that exceptions must conform to some
+simple rules to support being serialized by the pickle module.
 
 Tasks that raise exceptions that are not pickleable will not work
 properly when Pickle is used as the serializer.
@@ -836,7 +862,7 @@ that can be added to tasks like this:
 
     @celery.task(base=DatabaseTask)
     def process_rows():
-        for row in self.db.table.all():
+        for row in process_rows.db.table.all():
             ...
 
 The ``db`` attribute of the ``process_rows`` task will then

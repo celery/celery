@@ -69,8 +69,8 @@ News
 
 * Improved Contributing guide.
 
-    If you'd like to contribute to Celery you should read this
-    guide: http://celery.github.com/celery/contributing.html
+    If you'd like to contribute to Celery you should read the
+    :ref:`Contributing Gudie <contributing>`.
 
     We are looking for contributors at all skill levels, so don't
     hesitate!
@@ -100,7 +100,7 @@ Fixes
 * Fixes case where the worker could become unresponsive because of tasks
   exceeding the hard time limit.
 
-* The ``task-sent`` event was missing from the event reference.
+* The :event:`task-sent` event was missing from the event reference.
 
 * ``ResultSet.iterate`` now returns results as they finish (Issue #459).
 

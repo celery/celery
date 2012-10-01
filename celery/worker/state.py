@@ -17,9 +17,11 @@ import shelve
 
 from collections import defaultdict
 
+from kombu.utils import cached_property
+
 from celery import __version__
+from celery.exceptions import SystemTerminate
 from celery.datastructures import LimitedSet
-from celery.utils import cached_property
 
 #: Worker software/platform information.
 SOFTWARE_INFO = {'sw_ident': 'py-celery',
@@ -40,7 +42,7 @@ reserved_requests = set()
 active_requests = set()
 
 #: count of tasks executed by the worker, sorted by type.
-total_count = defaultdict(lambda: 0)
+total_count = defaultdict(int)
 
 #: the list of currently revoked tasks.  Persistent if statedb set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
@@ -50,6 +52,13 @@ task_reserved = reserved_requests.add
 
 should_stop = False
 should_terminate = False
+
+
+def maybe_shutdown():
+    if should_stop:
+        raise SystemExit()
+    elif should_terminate:
+        raise SystemTerminate()
 
 
 def task_accepted(request):

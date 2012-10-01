@@ -556,7 +556,7 @@ Backward incompatible changes
         'pong'
 
 * The following deprecated settings has been removed (as scheduled by
-  the `deprecation timeline`_):
+  the :ref:`deprecation-timeline`):
 
     =====================================  =====================================
     **Setting name**                       **Replace with**
@@ -567,9 +567,6 @@ Backward incompatible changes
     `CELERY_AMQP_CONSUMER_ROUTING_KEY`     `CELERY_QUEUES`
     `CELERY_AMQP_PUBLISHER_ROUTING_KEY`    `CELERY_DEFAULT_ROUTING_KEY`
     =====================================  =====================================
-
-.. _`deprecation timeline`:
-    http://celery.github.com/celery/internals/deprecation.html
 
 * The `celery.task.rest` module has been removed, use :mod:`celery.task.http`
   instead (as scheduled by the `deprecation timeline`_).
@@ -763,7 +760,7 @@ News
         Hard time limit. The worker processing the task will be killed and
         replaced with a new one when this is exceeded.
 
-    * :setting:`CELERYD_SOFT_TASK_TIME_LIMIT`
+    * :setting:`CELERYD_TASK_SOFT_TIME_LIMIT`
 
         Soft time limit. The :exc:`~@SoftTimeLimitExceeded`
         exception will be raised when this is exceeded.  The task can catch

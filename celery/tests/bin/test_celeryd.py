@@ -19,6 +19,7 @@ from celery import current_app
 from celery.apps import worker as cd
 from celery.bin.celeryd import WorkerCommand, main as celeryd_main
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
+from celery.task import trace
 from celery.utils.log import ensure_process_aware_logger
 from celery.worker import state
 
@@ -30,6 +31,13 @@ from celery.tests.utils import (
 )
 
 ensure_process_aware_logger()
+
+
+class WorkerAppCase(AppCase):
+
+    def tearDown(self):
+        super(WorkerAppCase, self).tearDown()
+        trace.reset_worker_optimizations()
 
 
 def disable_stdouts(fun):
@@ -52,12 +60,13 @@ def disable_stdouts(fun):
 
 
 class Worker(cd.Worker):
+    redirect_stdouts = False
 
     def start(self, *args, **kwargs):
         self.on_start()
 
 
-class test_Worker(AppCase):
+class test_Worker(WorkerAppCase):
     Worker = Worker
 
     def teardown(self):
@@ -165,8 +174,8 @@ class test_Worker(AppCase):
         worker.autoscale = 13, 10
         self.assertTrue(worker.startup_info())
 
-        worker = self.Worker(queues='foo,bar,baz,xuzzy,do,re,mi')
-        app = worker.app
+        app = Celery(set_as_current=False)
+        worker = self.Worker(app=app, queues='foo,bar,baz,xuzzy,do,re,mi')
         prev, app.loader = app.loader, Mock()
         try:
             app.loader.__module__ = 'acme.baked_beans'
@@ -280,9 +289,7 @@ class test_Worker(AppCase):
 
     @disable_stdouts
     def test_redirect_stdouts(self):
-        worker = self.Worker()
-        worker.redirect_stdouts = False
-        worker.redirect_stdouts_to_logger()
+        self.Worker(redirect_stdouts=False)
         with self.assertRaises(AttributeError):
             sys.stdout.logger
 
@@ -294,9 +301,9 @@ class test_Worker(AppCase):
             logging_setup[0] = True
 
         try:
-            worker = self.Worker()
+            worker = self.Worker(redirect_stdouts=False)
             worker.app.log.__class__._setup = False
-            worker.redirect_stdouts_to_logger()
+            worker.setup_logging()
             self.assertTrue(logging_setup[0])
             with self.assertRaises(AttributeError):
                 sys.stdout.logger
@@ -306,13 +313,13 @@ class test_Worker(AppCase):
     @disable_stdouts
     def test_platform_tweaks_osx(self):
 
-        class OSXWorker(self.Worker):
+        class OSXWorker(Worker):
             proxy_workaround_installed = False
 
             def osx_proxy_detection_workaround(self):
                 self.proxy_workaround_installed = True
 
-        worker = OSXWorker()
+        worker = OSXWorker(redirect_stdouts=False)
 
         def install_HUP_nosupport(controller):
             controller.hup_not_supported_installed = True
@@ -364,7 +371,7 @@ class test_Worker(AppCase):
         self.assertTrue(worker_ready_sent[0])
 
 
-class test_funs(AppCase):
+class test_funs(WorkerAppCase):
 
     def test_active_thread_count(self):
         self.assertTrue(cd.active_thread_count())
@@ -412,7 +419,7 @@ class test_funs(AppCase):
             sys.argv = s
 
 
-class test_signal_handlers(AppCase):
+class test_signal_handlers(WorkerAppCase):
 
     class _Worker(object):
         stopped = False

@@ -6,6 +6,7 @@ import sys
 from nose import SkipTest
 from mock import patch, Mock
 
+from celery.app.defaults import is_pypy
 from celery.concurrency.eventlet import (
     apply_target,
     Schedule,
@@ -20,16 +21,27 @@ class EventletCase(Case):
 
     @skip_if_pypy
     def setUp(self):
+        if is_pypy:
+            raise SkipTest('mock_modules not working on PyPy1.9')
         try:
             self.eventlet = __import__('eventlet')
         except ImportError:
             raise SkipTest(
                 'eventlet not installed, skipping related tests.')
 
+    @skip_if_pypy
+    def tearDown(self):
+        for mod in [mod for mod in sys.modules if mod.startswith('eventlet')]:
+            try:
+                del(sys.modules[mod])
+            except KeyError:
+                pass
 
-class test_eventlet_patch(EventletCase):
 
-    def test_is_patched(self):
+class test_aaa_eventlet_patch(EventletCase):
+
+    def test_aaa_is_patched(self):
+        raise SkipTest('side effects')
         monkey_patched = []
         prev_monkey_patch = self.eventlet.monkey_patch
         self.eventlet.monkey_patch = lambda: monkey_patched.append(True)
@@ -53,7 +65,7 @@ eventlet_modules = (
 )
 
 
-class test_Schedule(Case):
+class test_Schedule(EventletCase):
 
     def test_sched(self):
         with mock_module(*eventlet_modules):
@@ -79,7 +91,7 @@ class test_Schedule(Case):
                 x.clear()
 
 
-class test_TasKPool(Case):
+class test_TaskPool(EventletCase):
 
     def test_pool(self):
         with mock_module(*eventlet_modules):
@@ -100,7 +112,7 @@ class test_TasKPool(Case):
         self.assertTrue(base.apply_target.called)
 
 
-class test_Timer(Case):
+class test_Timer(EventletCase):
 
     def test_timer(self):
         x = Timer()

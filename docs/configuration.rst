@@ -67,24 +67,10 @@ CELERY_TIMEZONE
 
 Configure Celery to use a custom time zone.
 The timezone value can be any time zone supported by the :mod:`pytz`
-library.  :mod:`pytz` must be installed for the selected zone
-to be used.
+library.
 
-If not set then the systems default local time zone is used.
-
-.. warning::
-
-    Celery requires the :mod:`pytz` library to be installed,
-    when using custom time zones (other than UTC).  You can
-    install it using :program:`pip` or :program:`easy_install`:
-
-    .. code-block:: bash
-
-        $ pip install pytz
-
-    Pytz is a library that defines the timzones of the world,
-    it changes quite frequently so it is not included in the Python Standard
-    Library.
+If not set then the UTC timezone is used if :setting:`CELERY_ENABLE_UTC` is
+enabled, otherwise it falls back to the local timezone.
 
 .. _conf-tasks:
 
@@ -944,7 +930,7 @@ Decides if publishing task messages will be retried in the case
 of connection loss or other connection errors.
 See also :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`.
 
-Disabled by default.
+Enabled by default.
 
 .. setting:: CELERY_TASK_PUBLISH_RETRY_POLICY
 
@@ -1245,7 +1231,7 @@ CELERY_SEND_TASK_SENT_EVENT
 
 .. versionadded:: 2.2
 
-If enabled, a `task-sent` event will be sent for every task so tasks can be
+If enabled, a :event:`task-sent` event will be sent for every task so tasks can be
 tracked before they are consumed by a worker.
 
 Disabled by default.
@@ -1422,8 +1408,19 @@ CELERYD_BOOT_STEPS
 ~~~~~~~~~~~~~~~~~~
 
 This setting enables you to add additional components to the worker process.
-It should be a list of module names with :class:`celery.abstract.Component`
+It should be a list of module names with
+:class:`celery.bootsteps.Step`
 classes, that augments functionality in the worker.
+
+.. setting:: CELERYD_CONSUMER_BOOT_STEPS
+
+CELERYD_CONSUMER_BOOT_STEPS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This setting enables you to add additional components to the workers consumer.
+It should be a list of module names with
+:class:`celery.bootsteps.Step`` classes, that augments
+functionality in the consumer.
 
 .. setting:: CELERYD_POOL
 
