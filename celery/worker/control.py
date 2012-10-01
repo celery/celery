@@ -53,6 +53,7 @@ def revoke(panel, task_id, terminate=False, signal=None, **kwargs):
     logger.info('Revoking task %s', task_id)
     return {'ok': 'revoking task {0}'.format(task_id)}
 
+
 @Panel.register
 def report(panel):
     return {'ok': panel.app.bugreport()}
@@ -213,7 +214,7 @@ def dump_tasks(panel, taskinfoitems=None, **kwargs):
 
 @Panel.register
 def ping(panel, **kwargs):
-    return {'ok':'pong'}
+    return {'ok': 'pong'}
 
 
 @Panel.register
@@ -275,14 +276,7 @@ def active_queues(panel):
     return [dict(queue.as_dict(recurse=True))
                     for queue in panel.consumer.task_consumer.queues]
 
+
 @Panel.register
 def dump_conf(panel, **kwargs):
     return jsonify(dict(panel.app.conf))
-
-@Panel.register
-def start_actor(panel, name, actor_id):
-    return panel.consumer.add_actor(name, actor_id)
-
-@Panel.register
-def stop_actor(panel, actor_id):
-    return panel.consumer.stop_actor(actor_id)

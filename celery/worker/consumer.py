@@ -118,6 +118,7 @@ class Consumer(object):
             'celery.worker.consumer:Control',
             'celery.worker.consumer:Tasks',
             'celery.worker.consumer:Evloop',
+            'celery.worker.actors:Bootstep',
         ]
 
         def shutdown(self, parent):
@@ -179,35 +180,6 @@ class Consumer(object):
                 if ns.state != CLOSE and self.connection:
                     error(CONNECTION_RETRY, exc_info=True)
                     ns.restart(self)
-
-    def add_actor(self, actor_name, actor_id):
-        """Add actor to the actor registry and start the actor main method"""
-        try:
-            actor = instantiate(actor_name, connection = self.connection,
-                                id = actor_id)
-            consumer = actor.Consumer(self.connection.channel())
-            consumer.consume()
-            self.actor_registry[actor.id] = consumer
-            info('Register actor in the actor registry: %s' % actor_name)
-            return actor.id
-        except Exception as exc:
-            error('Start actor error: %r', exc, exc_info=True)
-
-    def stop_all_actors(self):
-        for _, consumer in self.actor_registry.items():
-            self.maybe_conn_error(consumer.cancel)
-        self.actor_registry.clear()
-
-
-    def reset_actor_nodes(self):
-        for _, consumer in self.actor_registry.items():
-            self.maybe_conn_error(consumer.cancel)
-            consumer.consume()
-
-    def stop_actor(self, actor_id):
-        if actor_id in self.actor_registry:
-            consumer = self.actor_registry.pop(actor_id)
-            self.maybe_conn_error(consumer.cancel)
 
     def shutdown(self):
         self.namespace.shutdown(self)
