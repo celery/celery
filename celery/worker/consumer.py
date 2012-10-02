@@ -118,6 +118,7 @@ class Consumer(object):
             'celery.worker.consumer:Control',
             'celery.worker.consumer:Tasks',
             'celery.worker.consumer:Evloop',
+            'celery.worker.consumer:Agent',
         ]
 
         def shutdown(self, parent):
@@ -454,6 +455,17 @@ class Tasks(bootsteps.StartStopStep):
             debug('Closing consumer channel...')
             ignore_errors(c, c.task_consumer.close)
             c.task_consumer = None
+
+
+class Agent(bootsteps.StartStopStep):
+    requires = (Connection, )
+
+    def __init__(self, c, **kwargs):
+        self.agent_cls = self.enabled = c.app.conf.CELERYD_AGENT
+
+    def create(self, c):
+        agent = c.agent = self.instantiate(self.agent_cls, c.connection)
+        return agent
 
 
 class Evloop(bootsteps.StartStopStep):

@@ -148,9 +148,10 @@ class Namespace(object):
         for name in self._finalize_boot_steps(steps):
             step = steps[name] = steps[name](parent, **kwargs)
             order.append(step)
-            step.include(parent)
         self._debug('New boot order: {%s}',
                     ', '.join(s.alias for s in self.order))
+        for step in order:
+            step.include(parent)
         return self
 
     def import_module(self, module):
@@ -244,11 +245,6 @@ class Step(object):
     #: Note that all dependencies must be in the same namespace.
     requires = ()
 
-    #: Optional obj created by the :meth:`create` method.
-    #: This is used by :class:`StartStopStep` to keep the
-    #: original service object.
-    obj = None
-
     #: This flag is reserved for the workers Consumer,
     #: since it is required to always be started last.
     #: There can only be one object marked with lsat
@@ -261,10 +257,6 @@ class Step(object):
     def __init__(self, parent, **kwargs):
         pass
 
-    def create(self, parent):
-        """Create the step."""
-        pass
-
     def include_if(self, parent):
         """An optional predicate that decided whether this
         step should be created."""
@@ -273,10 +265,17 @@ class Step(object):
     def instantiate(self, name, *args, **kwargs):
         return instantiate(name, *args, **kwargs)
 
-    def include(self, parent):
+    def _should_include(self, parent):
         if self.include_if(parent):
-            self.obj = self.create(parent)
-            return True
+            return True, self.create(parent)
+        return False, None
+
+    def include(self, parent):
+        return self._should_include(parent)[0]
+
+    def create(self, parent):
+        """Create the step."""
+        pass
 
     def __repr__(self):
         return '<step: {0.alias}>'.format(self)
@@ -287,6 +286,11 @@ class Step(object):
 
 
 class StartStopStep(Step):
+
+    #: Optional obj created by the :meth:`create` method.
+    #: This is used by :class:`StartStopStep` to keep the
+    #: original service object.
+    obj = None
 
     def start(self, parent):
         if self.obj:
@@ -303,8 +307,11 @@ class StartStopStep(Step):
         self.stop(parent)
 
     def include(self, parent):
-        if super(StartStopStep, self).include(parent):
+        inc, ret = self._should_include(parent)
+        if inc:
+            self.obj = ret
             parent.steps.append(self)
+        return inc
 
 
 class ConsumerStep(StartStopStep):

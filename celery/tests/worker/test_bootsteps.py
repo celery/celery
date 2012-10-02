@@ -9,8 +9,11 @@ from celery.tests.utils import AppCase, Case
 
 class test_Step(Case):
 
-    class Def(bootsteps.Step):
+    class Def(bootsteps.StartStopStep):
         name = 'test_Step.Def'
+
+    def setUp(self):
+        self.steps = []
 
     def test_namespace_name(self, ns='test_namespace_name'):
 

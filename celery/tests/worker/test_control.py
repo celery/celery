@@ -382,7 +382,7 @@ class test_ControlPanel(Case):
         m = {'method': 'ping',
              'destination': hostname}
         r = self.panel.handle_message(m, None)
-        self.assertEqual(r, 'pong')
+        self.assertEqual(r, {'ok': 'pong'})
 
     def test_shutdown(self):
         m = {'method': 'shutdown',
@@ -405,8 +405,8 @@ class test_ControlPanel(Case):
                       mailbox=self.app.control.mailbox)
         r = panel.dispatch('ping', reply_to={'exchange': 'x',
                                              'routing_key': 'x'})
-        self.assertEqual(r, 'pong')
-        self.assertDictEqual(replies[0], {panel.hostname: 'pong'})
+        self.assertEqual(r, {'ok': 'pong'})
+        self.assertDictEqual(replies[0], {panel.hostname: {'ok': 'pong'}})
 
     def test_pool_restart(self):
         consumer = Consumer()
