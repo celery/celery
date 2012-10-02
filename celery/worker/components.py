@@ -42,6 +42,9 @@ class Queues(bootsteps.Step):
     used by the worker."""
     requires = (Hub, )
 
+    def __init__(self, w, **kwargs):
+        w.start_mediator = False
+
     def create(self, w):
         w.start_mediator = True
         if not w.pool_cls.rlimit_safe:
