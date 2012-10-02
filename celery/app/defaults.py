@@ -150,7 +150,7 @@ NAMESPACES = {
         'WORKER_DIRECT': Option(False, type='bool'),
     },
     'CELERYD': {
-        'AGENT': Option('celery.worker.actors:Agent'),
+        'AGENT': Option('cell.agents:dAgent'),
         'AUTOSCALER': Option('celery.worker.autoscale:Autoscaler'),
         'AUTORELOADER': Option('celery.worker.autoreload:Autoreloader'),
         'BOOT_STEPS': Option((), type='tuple'),
