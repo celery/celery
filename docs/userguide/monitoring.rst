@@ -406,7 +406,7 @@ to be able to log into the admin later)::
 Now that the service is started you can visit the monitor
 at http://127.0.0.1:8000, and log in using the user you created.
 
-For a list of the command line options supported by :program:`djcelerymon`,
+For a list of the command-line options supported by :program:`djcelerymon`,
 please see ``djcelerymon --help``.
 
 .. _monitoring-celeryev:

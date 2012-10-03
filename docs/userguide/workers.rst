@@ -25,7 +25,7 @@ You can start the worker in the foreground by executing the command:
 
     $ celery worker --app=app -l info
 
-For a full list of available command line options see
+For a full list of available command-line options see
 :mod:`~celery.bin.celeryd`, or simply do:
 
 .. code-block:: bash
@@ -153,7 +153,7 @@ Remote control
 .. sidebar:: The ``celery`` command
 
     The :program:`celery` program is used to execute remote control
-    commands from the command line.  It supports all of the commands
+    commands from the command-line.  It supports all of the commands
     listed below.  See :ref:`monitoring-celeryctl` for more information.
 
 pool support: *processes, eventlet, gevent*, blocking:*threads/solo* (see note)

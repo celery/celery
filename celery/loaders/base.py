@@ -159,7 +159,7 @@ class BaseLoader(object):
 
         def getarg(arg):
             """Parse a single configuration definition from
-            the command line."""
+            the command-line."""
 
             ## find key/value
             # ns.key=value|ns_key=value (case insensitive)

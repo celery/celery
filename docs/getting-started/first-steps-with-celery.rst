@@ -170,7 +170,7 @@ background as a daemon.  To do this you need to use the tools provided
 by your platform, or something like `supervisord`_ (see :ref:`daemonizing`
 for more information).
 
-For a complete listing of the command line options available, do:
+For a complete listing of the command-line options available, do:
 
 .. code-block:: bash
 

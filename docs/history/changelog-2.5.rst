@@ -133,10 +133,10 @@ Fixes
 
     Fix contributed by Martin Melin.
 
-- celeryctl can now be configured on the command line.
+- celeryctl can now be configured on the command-line.
 
     Like with celeryd it is now possible to configure celery settings
-    on the command line for celeryctl:
+    on the command-line for celeryctl:
 
     .. code-block:: bash
 

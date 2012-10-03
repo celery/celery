@@ -113,7 +113,7 @@ development it is useful to be able to start a worker instance by using the
 
     $ python manage.py celery worker --loglevel=info
 
-For a complete listing of the command line options available,
+For a complete listing of the command-line options available,
 use the help command:
 
 .. code-block:: bash

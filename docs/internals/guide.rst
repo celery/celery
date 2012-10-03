@@ -260,9 +260,10 @@ Module Overview
 - celery.apps
 
     Major user applications: ``celeryd``, and ``celerybeat``
+
 - celery.bin
 
-    Command line applications.
+    Command-line applications.
     setup.py creates setuptools entrypoints for these.
 
 - celery.concurrency

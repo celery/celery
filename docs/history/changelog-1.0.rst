@@ -522,7 +522,7 @@ Fixes
         >>> result.get()
         'pong'
 
-* `camqadm`: This is a new utility for command line access to the AMQP API.
+* `camqadm`: This is a new utility for command-line access to the AMQP API.
 
     Excellent for deleting queues/bindings/exchanges, experimentation and
     testing:

@@ -80,7 +80,7 @@ for warning in (CDeprecationWarning, CPendingDeprecationWarning):
     warnings.simplefilter('once', warning, 0)
 
 ARGV_DISABLED = """
-Unrecognized command line arguments: {0}
+Unrecognized command-line arguments: {0}
 
 Try --help?
 """
@@ -103,7 +103,7 @@ class HelpFormatter(IndentedHelpFormatter):
 
 
 class Command(object):
-    """Base class for command line applications.
+    """Base class for command-line applications.
 
     :keyword app: The current app.
     :keyword get_app: Callable returning the current app if no app provided.
@@ -163,9 +163,9 @@ class Command(object):
         raise NotImplementedError('subclass responsibility')
 
     def execute_from_commandline(self, argv=None):
-        """Execute application from command line.
+        """Execute application from command-line.
 
-        :keyword argv: The list of command line arguments.
+        :keyword argv: The list of command-line arguments.
                        Defaults to ``sys.argv``.
 
         """
@@ -199,7 +199,7 @@ class Command(object):
         return '%%prog [options] {0.args}'.format(self)
 
     def get_options(self):
-        """Get supported command line options."""
+        """Get supported command-line options."""
         return self.option_list
 
     def expanduser(self, value):
@@ -208,7 +208,7 @@ class Command(object):
         return value
 
     def handle_argv(self, prog_name, argv):
-        """Parses command line arguments from ``argv`` and dispatches
+        """Parses command-line arguments from ``argv`` and dispatches
         to :meth:`run`.
 
         :param prog_name: The program name (``argv[0]``).

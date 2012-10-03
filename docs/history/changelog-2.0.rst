@@ -766,7 +766,7 @@ News
         exception will be raised when this is exceeded.  The task can catch
         this to e.g. clean up before the hard time limit comes.
 
-    New command line arguments to celeryd added:
+    New command-line arguments to celeryd added:
     `--time-limit` and `--soft-time-limit`.
 
     What's left?

@@ -147,13 +147,13 @@ Fixes
 * :program:`celeryd-multi`: Fixed `set changed size during iteration` bug
     occurring in the restart command.
 
-* celeryd: Accidentally tried to use additional command line arguments.
+* celeryd: Accidentally tried to use additional command-line arguments.
 
    This would lead to an error like:
 
     `got multiple values for keyword argument 'concurrency'`.
 
-    Additional command line arguments are now ignored, and does not
+    Additional command-line arguments are now ignored, and does not
     produce this error.  However -- we do reserve the right to use
     positional arguments in the future, so please do not depend on this
     behavior.
@@ -360,7 +360,7 @@ News
     There's also a Debian init.d script for :mod:`~celery.bin.celeryev` available,
     see :ref:`daemonizing` for more information.
 
-    New command line arguments to celeryev:
+    New command-line arguments to celeryev:
 
         * :option:`-c|--camera`: Snapshot camera class to use.
         * :option:`--logfile|-f`: Log file

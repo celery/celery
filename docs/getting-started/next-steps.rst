@@ -93,7 +93,7 @@ When the worker starts you should see a banner and some messages::
      [2012-06-08 16:23:51,078: WARNING/MainProcess] celery@halcyon.local has started.
 
 -- The *broker* is the URL you specifed in the broker argument in our ``celery``
-module, you can also specify a different broker on the command line by using
+module, you can also specify a different broker on the command-line by using
 the :option:`-b` option.
 
 -- *Concurrency* is the number of multiprocessing worker process used
@@ -125,7 +125,7 @@ as a means for Quality of Service, separation of concerns,
 and emulating priorities, all described in the :ref:`Routing Guide
 <guide-routing>`.
 
-You can get a complete list of command line arguments
+You can get a complete list of command-line arguments
 by passing in the `--help` flag:
 
 .. code-block:: bash
@@ -177,12 +177,20 @@ or stop it:
 
     $ celery multi stop -w1 -A proj -l info
 
+The ``stop`` command is asynchronous so it will not wait for the
+worker to shutdown.  You will probably want to use the ``stopwait`` command
+instead which will ensure all currently executing tasks is completed:
+
+.. code-block:: bash
+
+    $ celery multi stopwait -w1 -A proj -l info
+
 .. note::
 
     :program:`celery multi` doesn't store information about workers
-    so you need to use the same command line parameters when restarting.
-    Also the same pidfile and logfile arguments must be used when
-    stopping/killing.
+    so you need to use the same command-line arguments when
+    restarting.  Only the same pidfile and logfile arguments must be
+    used when stopping.
 
 By default it will create pid and log files in the current directory,
 to protect against multiple workers launching on top of each other
@@ -196,7 +204,7 @@ you are encouraged to put these in a dedicated directory:
                                             --logfile=/var/log/celery/%n.pid
 
 With the multi command you can start multiple workers, and there is a powerful
-command line syntax to specify arguments for different workers too,
+command-line syntax to specify arguments for different workers too,
 e.g:
 
 .. code-block:: bash
