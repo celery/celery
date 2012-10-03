@@ -331,9 +331,7 @@ class State(object):
         Returns a list of `(uuid, task)` tuples.
 
         """
-        return self._sort_tasks_by_time([(uuid, task)
-                for uuid, task in self.itertasks(limit)
-                    if task.name == name])
+        return self._sort_tasks_by_time([(uuid, task) for uuid, task in self.itertasks() if task.name == name])[0:limit]
 
     def tasks_by_worker(self, hostname, limit=None):
         """Get all tasks by worker.
