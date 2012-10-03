@@ -395,6 +395,10 @@ class Task(object):
                               worker server.  Defaults to the
                               :attr:`routing_key` attribute.
 
+        :keyword queue: The queue to route the task to. When exchange and 
+                        routing key are not specified, they will have 
+                        the same value. 
+
         :keyword exchange: The named exchange to send the task to.
                            Defaults to the :attr:`exchange` attribute.
 
