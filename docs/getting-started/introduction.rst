@@ -211,7 +211,7 @@ Features
         - **User Components**
 
             Each worker component can be customized, and additional components
-            can be defined by the user.  The worker is built up using "boot steps" — a
+            can be defined by the user.  The worker is built up using "bootsteps" — a
             dependency graph enabling fine grained control of the worker's
             internals.
 

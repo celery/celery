@@ -3,7 +3,7 @@
     celery.worker.components
     ~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Default worker boot-steps.
+    Default worker bootsteps.
 
 """
 from __future__ import absolute_import
@@ -38,7 +38,7 @@ class Hub(bootsteps.StartStopStep):
 
 
 class Queues(bootsteps.Step):
-    """This step initializes the internal queues
+    """This bootstep initializes the internal queues
     used by the worker."""
     requires = (Hub, )
 
@@ -66,7 +66,7 @@ class Queues(bootsteps.Step):
 
 
 class Pool(bootsteps.StartStopStep):
-    """The pool step.
+    """Bootstep managing the worker pool.
 
     Describes how to initialize the worker pool, and starts and stops
     the pool during worker startup/shutdown.
@@ -223,7 +223,7 @@ class Timers(bootsteps.Step):
 
 
 class StateDB(bootsteps.Step):
-    """This step sets up the workers state db if enabled."""
+    """This bootstep sets up the workers state db if enabled."""
 
     def __init__(self, w, **kwargs):
         self.enabled = w.state_db

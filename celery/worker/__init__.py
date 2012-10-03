@@ -5,7 +5,7 @@
 
     :class:`WorkController` can be used to instantiate in-process workers.
 
-    The worker consists of several components, all managed by boot-steps
+    The worker consists of several components, all managed by bootsteps
     (mod:`celery.bootsteps`).
 
 """
@@ -73,10 +73,11 @@ class WorkController(configurated):
     pidlock = None
 
     class Namespace(bootsteps.Namespace):
-        """This is the boot-step namespace of the :class:`WorkController`.
+        """This is the bootstep namespace for the
+        :class:`WorkController` class.
 
-        It loads modules from :setting:`CELERYD_BOOT_STEPS`, and its
-        own set of built-in boot-step modules.
+        It loads modules from :setting:`CELERYD_BOOTSTEPS`, and its
+        own set of built-in bootsteps.
 
         """
         name = 'Worker'
@@ -125,7 +126,7 @@ class WorkController(configurated):
 
         signals.worker_init.send(sender=self)
 
-        # Initialize boot steps
+        # Initialize bootsteps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
         self.steps = []
         self.on_init_namespace()

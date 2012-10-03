@@ -3,7 +3,7 @@
     celery.bootsteps
     ~~~~~~~~~~~~~~~~
 
-    The boot-steps!
+    The bootsteps!
 
 """
 from __future__ import absolute_import
@@ -140,12 +140,12 @@ class Namespace(object):
         will also be added the the objects ``steps`` attribute.
 
         """
-        self._debug('Loading boot-steps.')
+        self._debug('Preparing bootsteps.')
         order = self.order = []
         steps = self.steps = self.claim_steps()
 
         self._debug('Building graph...')
-        for name in self._finalize_boot_steps(steps):
+        for name in self._finalize_steps(steps):
             step = steps[name] = steps[name](parent, **kwargs)
             order.append(step)
         self._debug('New boot order: {%s}',
@@ -178,7 +178,7 @@ class Namespace(object):
         for step in steps.values():
             [steps[n] for n in step.requires]
 
-    def _finalize_boot_steps(self, steps):
+    def _finalize_steps(self, steps):
         self._firstpass(steps)
         G = self.graph = DependencyGraph((C.name, C.requires)
                             for C in steps.itervalues())
@@ -190,13 +190,14 @@ class Namespace(object):
         try:
             return G.topsort()
         except KeyError as exc:
-            raise KeyError('unknown boot-step: %s' % exc)
+            raise KeyError('unknown bootstep: %s' % exc)
 
     def claim_steps(self):
         return dict(self.load_step(step) for step in self._all_steps())
 
     def _all_steps(self):
-        return self.types | self.app.steps[self.name]
+        print('My NAME IS: %r' % (self.name, ))
+        return self.types | self.app.steps[self.name.lower()]
 
     def load_step(self, step):
         step = symbol_by_name(step)
