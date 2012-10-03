@@ -40,6 +40,16 @@ Application
 
         Current configuration.
 
+    .. attribute:: user_options
+
+        Custom options for command-line programs.
+        See :ref:`extending-commandoptions`
+
+    .. attribute:: steps
+
+        Custom bootsteps to extend and modify the worker.
+        See :ref:`extending-bootsteps`.
+
     .. attribute:: Celery.current_task
 
         The instance of the task that is being executed, or :const:`None`.
