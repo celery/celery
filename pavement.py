@@ -137,6 +137,12 @@ def removepyc(options):
 
 
 @task
+def update_graphs(options):
+    sh('celery worker_graph | dot -Tpng -o docs/images/worker_graph.png')
+    sh('celery consumer_graph | dot -Tpng -o docs/images/consumer_graph.png')
+
+
+@task
 @needs('removepyc')
 def gitclean(options):
     sh('git clean -xdn')

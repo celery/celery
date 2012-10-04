@@ -13,6 +13,22 @@
 Bootsteps
 =========
 
+.. _extending-worker-bootsteps:
+
+Worker Bootsteps
+================
+
+.. figure:: ../images/worker_graph.png
+   :width: 700px
+
+
+Consumer Bootsteps
+==================
+
+.. figure:: ../images/consumer_graph.png
+   :width: 700px
+
+
 .. _extending-programs:
 
 Command-line programs
@@ -67,7 +83,7 @@ of :class:`celery.bin.base.Command`.  Sadly there is limited documentation,
 but you can find inspiration from the various commands in the
 :mod:`celery.bin` package.
 
-This is how the `Flower`_ extension adds the :program:`celery flower` command,
+This is how the Flower_ monitoring extension adds the :program:`celery flower` command,
 by adding an entry-point in :file:`setup.py`:
 
 .. code-block:: python
@@ -82,6 +98,8 @@ by adding an entry-point in :file:`setup.py`:
     )
 
 
+.. _Flower: http://pypi.python.org/pypi/flower
+
 The command definition is in two parts separated by the equal sign, where the
 first part is the name of the subcommand (flower), then the fully qualified
 module path to the class that implements the command
@@ -91,6 +109,7 @@ module path to the class that implements the command
 In the module :file:`flower/command.py`, the command class is defined
 something like this:
 
+.. code-block:: python
 
     from celery.bin.base import Command, Option
 

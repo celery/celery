@@ -458,6 +458,7 @@ class Tasks(bootsteps.StartStopStep):
 
 
 class Agent(bootsteps.StartStopStep):
+    conditional = True
     requires = (Connection, )
 
     def __init__(self, c, **kwargs):

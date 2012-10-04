@@ -15,6 +15,13 @@ Glossary
         Sends a task message so that the task function is
         :term:`executed <executing>` by a worker.
 
+    kombu
+        Python messaging library used by Celery to send and receive messages.
+
+    billiard
+        Fork of the Python multiprocessing library containing improvements
+        required by Celery.
+
     executing
         Workers *execute* task :term:`requests <request>`.
 
