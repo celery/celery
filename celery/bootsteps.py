@@ -6,7 +6,7 @@
     The bootsteps!
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from collections import deque
 from importlib import import_module
@@ -15,7 +15,7 @@ from threading import Event
 from kombu.common import ignore_errors
 from kombu.utils import symbol_by_name
 
-from .datastructures import DependencyGraph
+from .datastructures import DependencyGraph, GraphFormatter
 from .utils.imports import instantiate, qualname
 from .utils.log import get_logger
 from .utils.threads import default_socket_timeout
@@ -42,10 +42,40 @@ def _pre(ns, fmt):
     return '| {0}: {1}'.format(ns.alias, fmt)
 
 
-def _maybe_name(s):
-    if not isinstance(s, basestring):
-        return s.name
-    return s
+def _label(s):
+    return s.name.rsplit('.', 1)[-1]
+
+
+class StepFormatter(GraphFormatter):
+
+    namespace_prefix = '⧉'
+    conditional_prefix = '∘'
+    namespace_scheme = {
+        'shape': 'parallelogram',
+        'color': 'slategray4',
+        'fillcolor': 'slategray3',
+    }
+
+    def label(self, step):
+        return '{0}{1}'.format(self._get_prefix(step),
+            (step.label or _label(step)).encode('utf-8', 'ignore'),
+        )
+
+    def _get_prefix(self, step):
+        if step.last:
+            return self.namespace_prefix
+        if step.conditional:
+            return self.conditional_prefix
+        return ''
+
+    def node(self, obj, **attrs):
+        scheme = self.namespace_scheme if obj.last else self.node_scheme
+        return self.draw_node(obj, scheme, attrs)
+
+    def edge(self, a, b, **attrs):
+        if a.last:
+            attrs.update(arrowhead='none', color='darkseagreen3')
+        return self.draw_edge(a, b, self.edge_scheme, attrs)
 
 
 class Namespace(object):
@@ -59,6 +89,8 @@ class Namespace(object):
     :keyword on_stopped: Optional callback applied after namespace stopped.
 
     """
+    GraphFormatter = StepFormatter
+
     name = None
     state = None
     started = 0
@@ -145,8 +177,9 @@ class Namespace(object):
         steps = self.steps = self.claim_steps()
 
         self._debug('Building graph...')
-        for name in self._finalize_steps(steps):
-            step = steps[name] = steps[name](parent, **kwargs)
+        for S in self._finalize_steps(steps):
+            step = S(parent, **kwargs)
+            steps[step.name] = step
             order.append(step)
         self._debug('New boot order: {%s}',
                     ', '.join(s.alias for s in self.order))
@@ -173,20 +206,21 @@ class Namespace(object):
                 if node.name not in self.steps:
                     steps[node.name] = node
                 stream.append(node.requires)
-        for node in steps.itervalues():
-            node.requires = [_maybe_name(n) for n in node.requires]
-        for step in steps.values():
-            [steps[n] for n in step.requires]
+        # Make sure we have all the steps
+        assert [steps[req.name] for step in steps.values()
+                    for req in step.requires]
 
     def _finalize_steps(self, steps):
-        self._firstpass(steps)
-        G = self.graph = DependencyGraph((C.name, C.requires)
-                            for C in steps.itervalues())
         last = self._find_last()
+        self._firstpass(steps)
+        it = ((C, C.requires) for C in steps.itervalues())
+        G = self.graph = DependencyGraph(it,
+            formatter=self.GraphFormatter(root=last),
+        )
         if last:
             for obj in G:
-                if obj != last.name:
-                    G.add_edge(last.name, obj)
+                if obj != last:
+                    G.add_edge(last, obj)
         try:
             return G.topsort()
         except KeyError as exc:
@@ -196,7 +230,6 @@ class Namespace(object):
         return dict(self.load_step(step) for step in self._all_steps())
 
     def _all_steps(self):
-        print('My NAME IS: %r' % (self.name, ))
         return self.types | self.app.steps[self.name.lower()]
 
     def load_step(self, step):
@@ -208,7 +241,7 @@ class Namespace(object):
 
     @property
     def alias(self):
-        return self.name.rsplit('.', 1)[-1]
+        return _label(self)
 
 
 class StepType(type):
@@ -223,6 +256,9 @@ class StepType(type):
             requires=attrs.get('requires', ()),
         )
         return super(StepType, cls).__new__(cls, name, bases, attrs)
+
+    def __str__(self):
+        return self.name
 
     def __repr__(self):
         return 'step:{0.name}{{{0.requires!r}}}'.format(self)
@@ -241,6 +277,12 @@ class Step(object):
 
     #: Optional step name, will use qualname if not specified.
     name = None
+
+    #: Optional short name used for graph outputs and in logs.
+    label = None
+
+    #: Set this to true if the step is enabled based on some condition.
+    conditional = False
 
     #: List of other steps that that must be started before this step.
     #: Note that all dependencies must be in the same namespace.
@@ -283,7 +325,7 @@ class Step(object):
 
     @property
     def alias(self):
-        return self.name.rsplit('.', 1)[-1]
+        return self.label or _label(self)
 
 
 class StartStopStep(Step):

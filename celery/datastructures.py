@@ -6,7 +6,7 @@
     Custom types and data structures.
 
 """
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
 import time
@@ -19,6 +19,106 @@ from billiard.einfo import ExceptionInfo  # noqa
 from kombu.utils.limits import TokenBucket  # noqa
 
 from .utils.functional import LRUCache, first, uniq  # noqa
+
+DOT_HEAD = """
+{IN}{type} {id} {{
+{INp}graph [{attrs}]
+"""
+DOT_ATTR = '{name}={value}'
+DOT_NODE = '{INp}"{0}" [{attrs}]'
+DOT_EDGE = '{INp}"{0}" {dir} "{1}" [{attrs}]'
+DOT_ATTRSEP = ', '
+DOT_DIRS = {'graph': '--', 'digraph': '->'}
+DOT_TAIL = '{IN}}}'
+
+
+class GraphFormatter(object):
+    _attr = DOT_ATTR.strip()
+    _node = DOT_NODE.strip()
+    _edge = DOT_EDGE.strip()
+    _head = DOT_HEAD.strip()
+    _tail = DOT_TAIL.strip()
+    _attrsep = DOT_ATTRSEP
+    _dirs = dict(DOT_DIRS)
+
+    scheme = {
+        'shape': 'box',
+        'arrowhead': 'vee',
+        'style': 'filled',
+        'fontname': 'Helvetica Neue',
+    }
+    node_scheme = {
+        'fillcolor': 'palegreen3',
+        'color': 'palegreen4',
+    }
+    term_scheme = {
+        'fillcolor': 'palegreen1',
+        'color': 'palegreen2',
+    }
+    edge_scheme = {
+        'color': 'darkseagreen4',
+        'arrowcolor': 'black',
+        'arrowsize': 0.7,
+    }
+    graph_scheme = {'bgcolor': 'mintcream'}
+
+    def __init__(self, root=None, type=None, id=None, indent=0, inw=' ' * 4):
+        self.id = id or 'dependencies'
+        self.root = root
+        self.type = type or 'digraph'
+        self.direction = self._dirs[self.type]
+        self.IN = inw * (indent or 0)
+        self.INp = self.IN + inw
+        #self.graph_scheme = dict(self.graph_scheme, root=self.label(self.root))
+
+    def attr(self, name, value):
+        value = '"{0}"'.format(str(value))
+        return self.FMT(self._attr, name=name, value=value)
+
+    def attrs(self, d, scheme=None):
+        d = dict(self.scheme, **dict(scheme, **d or {}) if scheme else d)
+        return self._attrsep.join(self.attr(k, v) for k, v in d.iteritems())
+
+    def head(self, **attrs):
+        return self.FMT(self._head, id=self.id, type=self.type,
+            attrs=self.attrs(attrs, self.graph_scheme),
+        )
+
+    def tail(self):
+        return self.FMT(self._tail)
+
+    def label(self, obj):
+        return obj
+
+    def node(self, obj, **attrs):
+        return self.draw_node(obj, self.node_scheme, attrs)
+
+    def terminal_node(self, obj, **attrs):
+        return self.draw_node(obj, self.term_scheme, attrs)
+
+    def edge(self, a, b, **attrs):
+        return self.draw_edge(a, b, **attrs)
+
+    def _enc(self, s):
+        return s.encode('utf-8', 'ignore')
+
+    def FMT(self, fmt, *args, **kwargs):
+        return self._enc(fmt.format(
+            *args, **dict(kwargs, IN=self.IN, INp=self.INp)
+        ))
+
+    def draw_edge(self, a, b, scheme=None, attrs=None):
+        return self.FMT(self._edge, self.label(a), self.label(b),
+            dir=self.direction, attrs=self.attrs(attrs, self.edge_scheme),
+        )
+
+    def draw_node(self, obj, scheme=None, attrs=None):
+        return self.FMT(self._node, self.label(obj),
+            attrs=self.attrs(attrs, scheme),
+        )
+
+
+
 
 
 class CycleError(Exception):
@@ -40,7 +140,8 @@ class DependencyGraph(object):
 
     """
 
-    def __init__(self, it=None):
+    def __init__(self, it=None, formatter=None):
+        self.formatter = formatter or GraphFormatter()
         self.adjacent = {}
         if it is not None:
             self.update(it)
@@ -158,20 +259,33 @@ class DependencyGraph(object):
 
         return result
 
-    def to_dot(self, fh, ws=' ' * 4):
+    def to_dot(self, fh, formatter=None):
         """Convert the graph to DOT format.
 
         :param fh: A file, or a file-like object to write the graph to.
 
         """
+        seen = set()
+        draw = formatter or self.formatter
         P = partial(print, file=fh)
-        P('digraph dependencies {')
+
+        def if_not_seen(fun, obj):
+            if draw.label(obj) not in seen:
+                P(fun(obj))
+                seen.add(draw.label(obj))
+
+        P(draw.head())
         for obj, adjacent in self.iteritems():
+            objl = draw.label(obj)
             if not adjacent:
-                P(ws + '"{0}"'.format(obj))
+                if_not_seen(draw.terminal_node, obj)
             for req in adjacent:
-                P(ws + '"{0}" -> "{1}"'.format(obj, req))
-        P('}')
+                if_not_seen(draw.node, obj)
+                P(draw.edge(obj, req))
+        P(draw.tail())
+
+    def format(self, obj):
+        return self.formatter(obj) if self.formatter else obj
 
     def __iter__(self):
         return iter(self.adjacent)

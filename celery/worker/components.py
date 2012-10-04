@@ -40,6 +40,7 @@ class Hub(bootsteps.StartStopStep):
 class Queues(bootsteps.Step):
     """This bootstep initializes the internal queues
     used by the worker."""
+    label = 'Queues (intra)'
     requires = (Hub, )
 
     def __init__(self, w, **kwargs):
@@ -185,6 +186,8 @@ class Beat(bootsteps.StartStopStep):
     argument is set.
 
     """
+    label = 'Beat'
+    conditional = True
 
     def __init__(self, w, beat=False, **kwargs):
         self.enabled = w.beat = beat
@@ -198,8 +201,8 @@ class Beat(bootsteps.StartStopStep):
         return b
 
 
-class Timers(bootsteps.Step):
-    """This step initializes the internal timers used by the worker."""
+class Timer(bootsteps.Step):
+    """This step initializes the internal timer used by the worker."""
     requires = (Pool, )
 
     def include_if(self, w):

@@ -18,6 +18,8 @@ from importlib import import_module
 from itertools import imap
 from pprint import pformat
 
+from kombu.utils.encoding import safe_str
+
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from celery.utils import term
 from celery.utils import text
@@ -27,11 +29,6 @@ from celery.utils.timeutils import maybe_iso8601
 
 from celery.bin.base import Command as BaseCommand, Option
 
-try:
-    # print_statement does not work with io.StringIO
-    from io import BytesIO as PrintIO
-except ImportError:
-    from StringIO import StringIO as PrintIO  # noqa
 
 HELP = """
 ---- -- - - ---- Commands- -------------- --- ------------
@@ -475,9 +472,7 @@ class worker_graph(Command):
 
     def run(self, **kwargs):
         worker = self.app.WorkController()
-        out = PrintIO()
-        worker.namespace.graph.to_dot(out)
-        self.out(out.getvalue())
+        worker.namespace.graph.to_dot(self.stdout)
 
 
 @command
@@ -485,9 +480,7 @@ class consumer_graph(Command):
 
     def run(self, **kwargs):
         worker = self.app.WorkController()
-        out = PrintIO()
-        worker.consumer.namespace.graph.to_dot(out)
-        self.out(out.getvalue())
+        worker.consumer.namespace.graph.to_dot(self.stdout)
 
 
 class _RemoteControl(Command):

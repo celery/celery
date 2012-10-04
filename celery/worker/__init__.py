@@ -86,7 +86,7 @@ class WorkController(configurated):
             'celery.worker.components:Queues',
             'celery.worker.components:Pool',
             'celery.worker.components:Beat',
-            'celery.worker.components:Timers',
+            'celery.worker.components:Timer',
             'celery.worker.components:StateDB',
             'celery.worker.components:Consumer',
             'celery.worker.autoscale:WorkerComponent',

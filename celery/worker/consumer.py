@@ -441,7 +441,7 @@ class Tasks(bootsteps.StartStopStep):
         c.task_consumer = c.app.amqp.TaskConsumer(
             c.connection, on_decode_error=c.on_decode_error,
         )
-        c.qos = QoS(c.task_consumer, self.initial_prefetch_count)
+        c.qos = QoS(c.task_consumer.qos, self.initial_prefetch_count)
         c.qos.update()  # set initial prefetch count
 
     def stop(self, c):
@@ -469,6 +469,7 @@ class Agent(bootsteps.StartStopStep):
 
 
 class Evloop(bootsteps.StartStopStep):
+    label = 'event loop'
     last = True
 
     def start(self, c):

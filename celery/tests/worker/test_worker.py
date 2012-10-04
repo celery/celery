@@ -25,7 +25,7 @@ from celery.task import task as task_dec
 from celery.task import periodic_task as periodic_task_dec
 from celery.utils import uuid
 from celery.worker import WorkController
-from celery.worker.components import Queues, Timers, Hub, Pool
+from celery.worker import components
 from celery.worker.buckets import FastQueue
 from celery.worker.job import Request
 from celery.worker import consumer
@@ -922,14 +922,14 @@ class test_WorkController(AppCase):
         try:
             raise KeyError('foo')
         except KeyError as exc:
-            Timers(worker).on_timer_error(exc)
+            components.Timer(worker).on_timer_error(exc)
             msg, args = self.comp_logger.error.call_args[0]
             self.assertIn('KeyError', msg % args)
 
     def test_on_timer_tick(self):
         worker = WorkController(concurrency=1, loglevel=10)
 
-        Timers(worker).on_timer_tick(30.0)
+        components.Timer(worker).on_timer_tick(30.0)
         xargs = self.comp_logger.debug.call_args[0]
         fmt, arg = xargs[0], xargs[1]
         self.assertEqual(30.0, arg)
@@ -1105,18 +1105,18 @@ class test_WorkController(AppCase):
     def test_Queues_pool_not_rlimit_safe(self):
         w = Mock()
         w.pool_cls.rlimit_safe = False
-        Queues(w).create(w)
+        components.Queues(w).create(w)
         self.assertTrue(w.disable_rate_limits)
 
     def test_Queues_pool_no_sem(self):
         w = Mock()
         w.pool_cls.uses_semaphore = False
-        Queues(w).create(w)
+        components.Queues(w).create(w)
         self.assertIs(w.ready_queue.put, w.process_task)
 
     def test_Hub_crate(self):
         w = Mock()
-        x = Hub(w)
+        x = components.Hub(w)
         hub = x.create(w)
         self.assertTrue(w.timer.max_interval)
         self.assertIs(w.hub, hub)
@@ -1125,7 +1125,7 @@ class test_WorkController(AppCase):
         w = Mock()
         w.pool_cls = Mock()
         w.use_eventloop = False
-        pool = Pool(w)
+        pool = components.Pool(w)
         pool.create(w)
 
     def test_Pool_create(self):
@@ -1137,7 +1137,7 @@ class test_WorkController(AppCase):
         P = w.pool_cls.return_value = Mock()
         P.timers = {Mock(): 30}
         w.use_eventloop = True
-        pool = Pool(w)
+        pool = components.Pool(w)
         pool.create(w)
         self.assertIsInstance(w.semaphore, BoundedSemaphore)
         self.assertTrue(w.hub.on_init)

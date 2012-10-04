@@ -37,6 +37,8 @@ logger = get_logger(__name__)
 
 
 class WorkerComponent(bootsteps.StartStopStep):
+    label = 'Autoreloader'
+    conditional = True
     requires = (Pool, )
 
     def __init__(self, w, autoreload=None, **kwargs):
