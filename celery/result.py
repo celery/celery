@@ -20,7 +20,7 @@ from kombu.utils.compat import OrderedDict
 from . import current_app
 from . import states
 from .app import app_or_default
-from .datastructures import DependencyGraph
+from .datastructures import DependencyGraph, GraphFormatter
 from .exceptions import IncompleteStream, TimeoutError
 
 
@@ -187,11 +187,13 @@ class AsyncResult(ResultBase):
         """Returns :const:`True` if the task failed."""
         return self.state == states.FAILURE
 
-    def build_graph(self, intermediate=False):
-        graph = DependencyGraph()
+    def build_graph(self, intermediate=False, formatter=None):
+        graph = DependencyGraph(
+            formatter=formatter or GraphFormatter(root=self.id, shape='oval'),
+        )
         for parent, node in self.iterdeps(intermediate=intermediate):
+            graph.add_arc(node)
             if parent:
-                graph.add_arc(parent)
                 graph.add_edge(parent, node)
         return graph
 

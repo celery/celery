@@ -16,6 +16,7 @@ from functools import partial
 from itertools import chain
 
 from billiard.einfo import ExceptionInfo  # noqa
+from kombu.utils.encoding import safe_str
 from kombu.utils.limits import TokenBucket  # noqa
 
 from .utils.functional import LRUCache, first, uniq  # noqa
@@ -47,37 +48,33 @@ class GraphFormatter(object):
         'style': 'filled',
         'fontname': 'Helvetica Neue',
     }
-    node_scheme = {
-        'fillcolor': 'palegreen3',
-        'color': 'palegreen4',
-    }
-    term_scheme = {
-        'fillcolor': 'palegreen1',
-        'color': 'palegreen2',
-    }
     edge_scheme = {
         'color': 'darkseagreen4',
         'arrowcolor': 'black',
         'arrowsize': 0.7,
     }
+    node_scheme = {'fillcolor': 'palegreen3', 'color': 'palegreen4'}
+    term_scheme = {'fillcolor': 'palegreen1', 'color': 'palegreen2'}
     graph_scheme = {'bgcolor': 'mintcream'}
 
-    def __init__(self, root=None, type=None, id=None, indent=0, inw=' ' * 4):
+    def __init__(self, root=None, type=None, id=None,
+            indent=0, inw=' ' * 4, **scheme):
         self.id = id or 'dependencies'
         self.root = root
         self.type = type or 'digraph'
         self.direction = self._dirs[self.type]
         self.IN = inw * (indent or 0)
         self.INp = self.IN + inw
-        #self.graph_scheme = dict(self.graph_scheme, root=self.label(self.root))
+        self.scheme = dict(self.scheme, **scheme)
+        self.graph_scheme = dict(self.graph_scheme, root=self.label(self.root))
 
     def attr(self, name, value):
-        value = '"{0}"'.format(str(value))
+        value = '"{0}"'.format(value)
         return self.FMT(self._attr, name=name, value=value)
 
     def attrs(self, d, scheme=None):
         d = dict(self.scheme, **dict(scheme, **d or {}) if scheme else d)
-        return self._attrsep.join(self.attr(k, v) for k, v in d.iteritems())
+        return self._attrsep.join(safe_str(self.attr(k, v)) for k, v in d.iteritems())
 
     def head(self, **attrs):
         return self.FMT(self._head, id=self.id, type=self.type,
