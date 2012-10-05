@@ -74,7 +74,9 @@ class GraphFormatter(object):
 
     def attrs(self, d, scheme=None):
         d = dict(self.scheme, **dict(scheme, **d or {}) if scheme else d)
-        return self._attrsep.join(safe_str(self.attr(k, v)) for k, v in d.iteritems())
+        return self._attrsep.join(
+            safe_str(self.attr(k, v)) for k, v in d.iteritems()
+        )
 
     def head(self, **attrs):
         return self.FMT(self._head, id=self.id, type=self.type,
@@ -115,9 +117,6 @@ class GraphFormatter(object):
         )
 
 
-
-
-
 class CycleError(Exception):
     """A cycle was detected in an acyclic graph."""
 
@@ -151,6 +150,15 @@ class DependencyGraph(object):
         """Add an edge from object ``A`` to object ``B``
         (``A`` depends on ``B``)."""
         self[A].append(B)
+
+    def find_last(self, g):
+        for obj in g.adjacent.keys():
+            if obj.last:
+                return obj
+
+    def connect(self, graph):
+        """Add nodes from another graph."""
+        self.adjacent.update(graph.adjacent)
 
     def topsort(self):
         """Sort the graph topologically.
@@ -273,7 +281,6 @@ class DependencyGraph(object):
 
         P(draw.head())
         for obj, adjacent in self.iteritems():
-            objl = draw.label(obj)
             if not adjacent:
                 if_not_seen(draw.terminal_node, obj)
             for req in adjacent:

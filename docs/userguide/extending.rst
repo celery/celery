@@ -13,6 +13,8 @@
 Bootsteps
 =========
 
+.. figure:: ../images/worker_graph_full.png
+
 .. _extending-worker-bootsteps:
 
 Worker Bootsteps

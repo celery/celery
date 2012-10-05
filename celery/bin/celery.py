@@ -18,8 +18,6 @@ from importlib import import_module
 from itertools import imap
 from pprint import pformat
 
-from kombu.utils.encoding import safe_str
-
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from celery.utils import term
 from celery.utils import text
@@ -54,7 +52,7 @@ command_classes = [
 ]
 if DEBUG:
     command_classes.append(
-        ('Debug', ['worker_graph', 'consumer_graph'], 'red'),
+        ('Debug', ['graph'], 'red'),
     )
 
 
@@ -129,14 +127,14 @@ class Command(BaseCommand):
         try:
             ret = self.run(*args, **kwargs)
         except Error as exc:
-            self.error(self.colored.red('Error: {0!r}'.format(exc)))
+            self.error(self.colored.red('Error: {0}'.format(exc)))
             return exc.status
 
         return ret if ret is not None else EX_OK
 
-    def show_help(self, command):
-        self.run_from_argv(self.prog_name, [command, '--help'])
-        return EX_USAGE
+    def exit_help(self, command):
+        # this never exits due to OptionParser.parse_options
+        return self.run_from_argv(self.prog_name, [command, '--help'])
 
     def error(self, s):
         self.out(s, fh=self.stderr)
@@ -157,7 +155,7 @@ class Command(BaseCommand):
         return self(*args, **options)
 
     def usage(self, command):
-        return '%%prog {0} [options] {self.args}'.format(command, self=self)
+        return '%prog {0} [options] {self.args}'.format(command, self=self)
 
     def prettify_list(self, n):
         c = self.colored
@@ -468,19 +466,26 @@ class result(Command):
 
 
 @command
-class worker_graph(Command):
+class graph(Command):
+    args = '<TYPE> [arguments]\n.....  bootsteps [worker] [consumer]'
 
-    def run(self, **kwargs):
+    def run(self, what=None, *args, **kwargs):
+        map = {'bootsteps': self.bootsteps}
+        not what and self.exit_help('graph')
+        if what not in map:
+            raise Error('no graph {0} in {1}'.format(what, '|'.join(map)))
+        return map[what](*args, **kwargs)
+
+    def bootsteps(self, *args, **kwargs):
         worker = self.app.WorkController()
-        worker.namespace.graph.to_dot(self.stdout)
-
-
-@command
-class consumer_graph(Command):
-
-    def run(self, **kwargs):
-        worker = self.app.WorkController()
-        worker.consumer.namespace.graph.to_dot(self.stdout)
+        include = set(arg.lower() for arg in args or ['worker', 'consumer'])
+        if 'worker' in include:
+            graph = worker.namespace.graph
+            if 'consumer' in include:
+                worker.namespace.connect_with(worker.consumer.namespace)
+        else:
+            graph = worker.consumer.namespace.graph
+        graph.to_dot(self.stdout)
 
 
 class _RemoteControl(Command):
@@ -528,7 +533,7 @@ class _RemoteControl(Command):
         ])
 
     def usage(self, command):
-        return '%%prog {0} [options] {1} <command> [arg1 .. argN]'.format(
+        return '%prog {0} [options] {1} <command> [arg1 .. argN]'.format(
                 command, self.args)
 
     def call(self, *args, **kwargs):
@@ -726,7 +731,7 @@ class migrate(Command):
 
     def run(self, *args, **kwargs):
         if len(args) != 2:
-            return self.show_help('migrate')
+            return self.exit_help('migrate')
         from kombu import Connection
         from celery.contrib.migrate import migrate_tasks
 
@@ -854,7 +859,7 @@ class help(Command):
     """Show help screen and exit."""
 
     def usage(self, command):
-        return '%%prog <command> [options] {0.args}'.format(self)
+        return '%prog <command> [options] {0.args}'.format(self)
 
     def run(self, *args, **kwargs):
         self.parser.print_help()

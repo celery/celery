@@ -819,7 +819,6 @@ class test_WorkController(AppCase):
     def setup(self):
         self.worker = self.create_worker()
         from celery import worker
-        from celery.worker import components
         self._logger = worker.logger
         self._comp_logger = components.logger
         self.logger = worker.logger = Mock()
@@ -827,7 +826,6 @@ class test_WorkController(AppCase):
 
     def teardown(self):
         from celery import worker
-        from celery.worker import components
         worker.logger = self._logger
         components.logger = self._comp_logger
 
