@@ -391,32 +391,20 @@ class Task(object):
         :keyword retry_policy:  Override the retry policy used.  See the
                                 :setting:`CELERY_TASK_PUBLISH_RETRY` setting.
 
-        :keyword routing_key: The routing key used to route the task to a
-                              worker server.  Defaults to the
-                              :attr:`routing_key` attribute.
+        :keyword routing_key: Custom routing key used to route the task to a
+                              worker server. If in combination with a
+                              ``queue`` argument only used to specify custom
+                              routing keys to topic exchanges.
 
-        :keyword queue: The queue to route the task to. When exchange and 
-                        routing key are not specified, they will have 
-                        the same value. 
+        :keyword queue: The queue to route the task to.  This must be a key
+                        present in :setting:`CELERY_QUEUES`, or
+                        :setting:`CELERY_CREATE_MISSING_QUEUES` must be
+                        enabled.  See :ref:`guide-routing` for more
+                        information.
 
-        :keyword exchange: The named exchange to send the task to.
-                           Defaults to the :attr:`exchange` attribute.
-
-        :keyword exchange_type: The exchange type to initialize the exchange
-                                if not already declared.  Defaults to the
-                                :attr:`exchange_type` attribute.
-
-        :keyword immediate: Request immediate delivery.  Will raise an
-                            exception if the task cannot be routed to a worker
-                            immediately.  (Do not confuse this parameter with
-                            the `countdown` and `eta` settings, as they are
-                            unrelated).  Defaults to the :attr:`immediate`
-                            attribute.
-
-        :keyword mandatory: Mandatory routing. Raises an exception if
-                            there's no running workers able to take on this
-                            task.  Defaults to the :attr:`mandatory`
-                            attribute.
+        :keyword exchange: Named custom exchange to send the task to.
+                           Usually not used in combination with the ``queue``
+                           argument.
 
         :keyword priority: The task priority, a number between 0 and 9.
                            Defaults to the :attr:`priority` attribute.
@@ -445,6 +433,9 @@ class Task(object):
             will be appended to the parent tasks ``request.children``
             attribute.
         :keyword publisher: Deprecated alias to ``producer``.
+
+        Also supports all keyword arguments supported by
+        :meth:`kombu.messaging.Producer.publish`.
 
         .. note::
             If the :setting:`CELERY_ALWAYS_EAGER` setting is set, it will
