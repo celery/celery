@@ -84,6 +84,7 @@ class EventDispatcher(object):
         self.serializer = serializer or self.app.conf.CELERY_EVENT_SERIALIZER
         self.on_enabled = set()
         self.on_disabled = set()
+        self.tzoffset = [-time.timezone, -time.altzone]
 
         self.enabled = enabled
         if not connection and channel:
@@ -128,7 +129,8 @@ class EventDispatcher(object):
         if self.enabled:
             with self.mutex:
                 event = Event(type, hostname=self.hostname,
-                                    clock=self.app.clock.forward(), **fields)
+                                    clock=self.app.clock.forward(),
+                                    tzoffset=self.tzoffset, **fields)
                 try:
                     self.publisher.publish(event,
                                            routing_key=type.replace('-', '.'))
