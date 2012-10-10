@@ -165,7 +165,7 @@ class Consumer(object):
 
         self.steps = []
         self.namespace = self.Namespace(
-            app=self.app, on_start=self.on_start, on_close=self.on_close,
+            app=self.app, on_close=self.on_close,
         )
         self.namespace.apply(self, **worker_options or {})
 
@@ -186,9 +186,6 @@ class Consumer(object):
 
     def stop(self):
         self.namespace.stop(self)
-
-    def on_start(self):
-        self.update_strategies()
 
     def on_ready(self):
         callback, self.init_callback = self.init_callback, None
@@ -438,6 +435,7 @@ class Tasks(bootsteps.StartStopStep):
         self.initial_prefetch_count = initial_prefetch_count
 
     def start(self, c):
+        c.update_strategies()
         c.task_consumer = c.app.amqp.TaskConsumer(
             c.connection, on_decode_error=c.on_decode_error,
         )

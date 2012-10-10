@@ -113,7 +113,7 @@ class EvCommand(Command):
                 Option('-r', '--maxrate'),
                 Option('-l', '--loglevel', default='INFO'))
             + daemon_options(default_pidfile='celeryev.pid')
-            + self.app.user_options['events']
+            + tuple(self.app.user_options['events'])
         )
 
 
