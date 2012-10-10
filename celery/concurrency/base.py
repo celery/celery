@@ -17,7 +17,7 @@ from kombu.utils.encoding import safe_repr
 from celery.utils import timer2
 from celery.utils.log import get_logger
 
-logger = get_logger('celery.concurrency')
+logger = get_logger('celery.pool')
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,
