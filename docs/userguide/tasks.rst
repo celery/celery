@@ -1084,7 +1084,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
     def update_page_info(url):
         # fetch_page -> parse_page -> store_page
         chain = fetch_page.s() | parse_page.s(url) | store_page_info.s(url)
-        chain.apply_async()
+        chain()
 
     @celery.task(ignore_result=True)
     def fetch_page(url):
