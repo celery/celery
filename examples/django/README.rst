@@ -32,6 +32,8 @@ Starting the worker
 ===================
 
 The ``DJANGO_SETTINGS_MODULE`` environment must be set when starting the
-worker::
+worker:
+
+.. code-block:: bash
 
     $ DJANGO_SETTINGS_MODULE='proj.settings' celery -A tasks worker -l info
