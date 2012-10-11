@@ -36,11 +36,8 @@ from celery.utils.log import get_logger
 _logger = get_logger(__name__)
 
 send_prerun = signals.task_prerun.send
-prerun_receivers = signals.task_prerun.receivers
 send_postrun = signals.task_postrun.send
-postrun_receivers = signals.task_postrun.receivers
 send_success = signals.task_success.send
-success_receivers = signals.task_success.receivers
 STARTED = states.STARTED
 SUCCESS = states.SUCCESS
 IGNORED = states.IGNORED
@@ -197,6 +194,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     push_task = _task_stack.push
     pop_task = _task_stack.pop
     on_chord_part_return = backend.on_chord_part_return
+
+    prerun_receivers = signals.task_prerun.receivers
+    postrun_receivers = signals.task_postrun.receivers
+    success_receivers = signals.task_success.receivers
 
     from celery import canvas
     subtask = canvas.subtask

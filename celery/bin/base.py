@@ -306,15 +306,20 @@ class Command(object):
 
     def find_app(self, app):
         try:
+            print('sym by name: %r' % (app, ))
             sym = self.symbol_by_name(app)
         except AttributeError:
+            print('ATTRIBUTE ERROR')
             # last part was not an attribute, but a module
             sym = import_from_cwd(app)
         if isinstance(sym, ModuleType):
-            if getattr(sym, '__path__', None):
-                return self.find_app('{0}.celery:'.format(
-                            app.replace(':', '')))
-            return sym.celery
+            try:
+                return sym.celery
+            except AttributeError:
+                if getattr(sym, '__path__', None):
+                    return self.find_app('{0}.celery:'.format(
+                                app.replace(':', '')))
+                raise
         return sym
 
     def symbol_by_name(self, name):

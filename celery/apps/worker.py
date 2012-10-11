@@ -102,7 +102,6 @@ class Worker(WorkController):
         )
 
     def on_init_namespace(self):
-        print('SETUP LOGGING: %r' % (self.redirect_stdouts, ))
         self.setup_logging()
 
     def on_start(self):

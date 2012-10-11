@@ -9,6 +9,7 @@
 from __future__ import absolute_import
 
 import anyjson
+import imp
 import importlib
 import os
 import re
@@ -31,6 +32,8 @@ ERROR_ENVVAR_NOT_SET = (
 and as such the configuration could not be loaded.
 Please set this variable and make it point to
 a configuration module.""")
+
+_RACE_PROTECTION = False
 
 
 class BaseLoader(object):
@@ -209,6 +212,11 @@ class BaseLoader(object):
     def read_configuration(self):
         return {}
 
+    def autodiscover_tasks(self, packages, related_name='tasks'):
+        self.task_modules.update(mod.__name__
+            for mod in autodiscover_tasks(packages, related_name) if mod
+        )
+
     @property
     def conf(self):
         """Loader configuration."""
@@ -219,3 +227,32 @@ class BaseLoader(object):
     @cached_property
     def mail(self):
         return self.import_module('celery.utils.mail')
+
+
+def autodiscover_tasks(packages, related_name='tasks'):
+    global _RACE_PROTECTION
+
+    if _RACE_PROTECTION:
+        return
+    _RACE_PROTECTION = True
+    try:
+        return [find_related_module(pkg, related_name) for pkg in packages]
+    finally:
+        _RACE_PROTECTION = False
+
+
+def find_related_module(package, related_name):
+    """Given a package name and a module name, tries to find that
+    module."""
+
+    try:
+        pkg_path = importlib.import_module(package).__path__
+    except AttributeError:
+        return
+
+    try:
+        imp.find_module(related_name, pkg_path)
+    except ImportError:
+        return
+
+    return importlib.import_module('{0}.{1}'.format(package, related_name))

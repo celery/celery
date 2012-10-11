@@ -35,6 +35,10 @@ from .defaults import DEFAULTS, find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import AppPickler, Settings, bugreport, _unpickle_app
 
+DEFAULT_FIXUPS = (
+    'celery.fixups.django:DjangoFixup',
+)
+
 
 def _unpickle_appattr(reverse_name, args):
     """Given an attribute name and a list of args, gets
@@ -92,6 +96,8 @@ class Celery(object):
             self._preconf['BROKER_URL'] = broker
         if include:
             self._preconf['CELERY_IMPORTS'] = include
+        self.fixups = list(filter(None, (symbol_by_name(f).include(self)
+                                        for f in DEFAULT_FIXUPS)))
 
         if self.set_as_current:
             self.set_current()
@@ -194,6 +200,9 @@ class Celery(object):
 
     def config_from_cmdline(self, argv, namespace='celery'):
         self.conf.update(self.loader.cmdline_config_parser(argv, namespace))
+
+    def autodiscover_tasks(self, packages, related_name='tasks'):
+        self.loader.autodiscover_tasks(packages, related_name)
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
             eta=None, task_id=None, producer=None, connection=None,
