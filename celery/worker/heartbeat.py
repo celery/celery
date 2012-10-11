@@ -28,8 +28,7 @@ class Heart(object):
         self.interval = float(interval or 5.0)
         self.tref = None
 
-        # Make event dispatcher start/stop us when it's
-        # enabled/disabled.
+        # Make event dispatcher start/stop us when enabled/disabled.
         self.eventer.on_enabled.add(self.start)
         self.eventer.on_disabled.add(self.stop)
 
