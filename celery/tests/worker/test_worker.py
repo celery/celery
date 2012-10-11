@@ -187,7 +187,7 @@ class test_QoS(Case):
 
     def test_consumer_increment_decrement(self):
         mconsumer = Mock()
-        qos = QoS(mconsumer, 10)
+        qos = QoS(mconsumer.qos, 10)
         qos.update()
         self.assertEqual(qos.value, 10)
         mconsumer.qos.assert_called_with(prefetch_count=10)
@@ -209,7 +209,7 @@ class test_QoS(Case):
 
     def test_consumer_decrement_eventually(self):
         mconsumer = Mock()
-        qos = QoS(mconsumer, 10)
+        qos = QoS(mconsumer.qos, 10)
         qos.decrement_eventually()
         self.assertEqual(qos.value, 9)
         qos.value = 0
@@ -218,7 +218,7 @@ class test_QoS(Case):
 
     def test_set(self):
         mconsumer = Mock()
-        qos = QoS(mconsumer, 10)
+        qos = QoS(mconsumer.qos, 10)
         qos.set(12)
         self.assertEqual(qos.prev, 12)
         qos.set(qos.prev)
@@ -235,7 +235,8 @@ class test_Consumer(Case):
 
     def test_info(self):
         l = MyKombuConsumer(self.ready_queue, timer=self.timer)
-        l.qos = QoS(l.task_consumer, 10)
+        l.task_consumer = Mock()
+        l.qos = QoS(l.task_consumer.qos, 10)
         info = l.info
         self.assertEqual(info['prefetch_count'], 10)
         self.assertFalse(info['broker'])
@@ -432,7 +433,7 @@ class test_Consumer(Case):
         l.connection = Connection()
         l.task_consumer = Mock()
         l.connection.obj = l
-        l.qos = QoS(l.task_consumer, 10)
+        l.qos = QoS(l.task_consumer.qos, 10)
         l.loop(*l.loop_args())
 
     def test_loop_when_socket_error(self):
@@ -449,7 +450,7 @@ class test_Consumer(Case):
         c = l.connection = Connection()
         l.connection.obj = l
         l.task_consumer = Mock()
-        l.qos = QoS(l.task_consumer, 10)
+        l.qos = QoS(l.task_consumer.qos, 10)
         with self.assertRaises(socket.error):
             l.loop(*l.loop_args())
 
@@ -469,13 +470,12 @@ class test_Consumer(Case):
         l.connection = Connection()
         l.connection.obj = l
         l.task_consumer = Mock()
-        l.qos = QoS(l.task_consumer, 10)
+        l.qos = QoS(l.task_consumer.qos, 10)
 
         l.loop(*l.loop_args())
         l.loop(*l.loop_args())
         self.assertTrue(l.task_consumer.consume.call_count)
         l.task_consumer.qos.assert_called_with(prefetch_count=10)
-        l.task_consumer.qos = Mock()
         self.assertEqual(l.qos.value, 10)
         l.qos.decrement_eventually()
         self.assertEqual(l.qos.value, 9)
@@ -513,7 +513,7 @@ class test_Consumer(Case):
                            args=[2, 4, 8], kwargs={})
 
         l.task_consumer = Mock()
-        l.qos = QoS(l.task_consumer, 1)
+        l.qos = QoS(l.task_consumer.qos, 1)
         current_pcount = l.qos.value
         l.event_dispatcher = Mock()
         l.enabled = False

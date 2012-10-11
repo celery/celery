@@ -306,10 +306,8 @@ class Command(object):
 
     def find_app(self, app):
         try:
-            print('sym by name: %r' % (app, ))
             sym = self.symbol_by_name(app)
         except AttributeError:
-            print('ATTRIBUTE ERROR')
             # last part was not an attribute, but a module
             sym = import_from_cwd(app)
         if isinstance(sym, ModuleType):

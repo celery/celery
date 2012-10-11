@@ -74,4 +74,3 @@ old_module, new_module = recreate_module(__name__,  # pragma: no cover
     __homepage__=__homepage__, __docformat__=__docformat__,
     VERSION=VERSION, SERIES=SERIES, VERSION_BANNER=VERSION_BANNER,
 )
-

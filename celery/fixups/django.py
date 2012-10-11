@@ -7,7 +7,6 @@ import warnings
 from datetime import datetime
 
 from celery import signals
-from celery.utils.imports import import_from_cwd
 
 SETTINGS_MODULE = os.environ.get('DJANGO_SETTINGS_MODULE')
 
@@ -89,6 +88,7 @@ class DjangoFixup(object):
         )
 
     def install(self):
+        # Need to add project directory to path
         sys.path.append(os.getcwd())
         signals.beat_embedded_init.connect(self.close_database)
         signals.worker_ready.connect(self.on_worker_ready)

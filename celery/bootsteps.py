@@ -57,7 +57,7 @@ class StepFormatter(GraphFormatter):
     }
 
     def label(self, step):
-        return '{0}{1}'.format(self._get_prefix(step),
+        return step and '{0}{1}'.format(self._get_prefix(step),
             (step.label or _label(step)).encode('utf-8', 'ignore'),
         )
 
@@ -210,9 +210,6 @@ class Namespace(object):
                 if node.name not in self.steps:
                     steps[node.name] = node
                 stream.append(node.requires)
-        # Make sure we have all the steps
-        assert [steps[req.name] for step in steps.values()
-                    for req in step.requires]
 
     def _finalize_steps(self, steps):
         last = self._find_last()
