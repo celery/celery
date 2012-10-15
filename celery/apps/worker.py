@@ -156,9 +156,6 @@ class Worker(configurated):
         self.init_queues()
         self.app.loader.init_worker()
 
-        # apply task execution optimizations
-        trace.setup_worker_optimizations(self.app)
-
         # this signal can be used to e.g. change queues after
         # the -Q option has been applied.
         signals.celeryd_after_setup.send(sender=self.hostname, instance=self,
@@ -178,6 +175,10 @@ class Worker(configurated):
         self.set_process_status('-active-')
 
         self.setup_logging()
+
+        # apply task execution optimizations
+        trace.setup_worker_optimizations(self.app)
+
         try:
             self.run_worker()
         except IGNORE_ERRORS:
