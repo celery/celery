@@ -167,7 +167,7 @@ class Consumer(object):
         self.namespace = self.Namespace(
             app=self.app, on_close=self.on_close,
         )
-        self.namespace.apply(self, **worker_options or {})
+        self.namespace.apply(self, **dict(worker_options or {}, **kwargs))
 
     def start(self):
         ns, loop = self.namespace, self.loop
