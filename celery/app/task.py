@@ -320,6 +320,9 @@ class Task(object):
         _task_stack.push(self)
         self.push_request()
         try:
+            # add self if this is a bound task
+            if self.__self__ is not None:
+                return self.run(self.__self__, *args, **kwargs)
             return self.run(*args, **kwargs)
         finally:
             self.pop_request()
@@ -582,7 +585,10 @@ class Task(object):
         from celery.task.trace import eager_trace_task
 
         app = self._get_app()
-        args = args or []
+        args = args or ()
+        # add 'self' if this is a bound method.
+        if self.__self__ is not None:
+            args = (self.__self__, ) + tuple(args)
         kwargs = kwargs or {}
         task_id = options.get('task_id') or uuid()
         retries = options.get('retries', 0)
