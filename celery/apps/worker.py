@@ -103,12 +103,11 @@ class Worker(WorkController):
 
     def on_init_namespace(self):
         self.setup_logging()
+        # apply task execution optimizations
+        trace.setup_worker_optimizations(self.app)
 
     def on_start(self):
         WorkController.on_start(self)
-
-        # apply task execution optimizations
-        trace.setup_worker_optimizations(self.app)
 
         # this signal can be used to e.g. change queues after
         # the -Q option has been applied.

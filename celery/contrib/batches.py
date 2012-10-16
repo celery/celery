@@ -44,7 +44,6 @@ from Queue import Empty, Queue
 
 from celery.task import Task
 from celery.utils.log import get_logger
-from celery.worker import state
 from celery.worker.job import Request
 
 

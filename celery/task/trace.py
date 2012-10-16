@@ -346,9 +346,12 @@ def setup_worker_optimizations(app):
 
     trace_task_ret = _fast_trace_task
     try:
-        sys.modules['celery.worker.job'].trace_task_ret = _fast_trace_task
+        job = sys.modules['celery.worker.job']
     except KeyError:
         pass
+    else:
+        job.trace_task_ret = _fast_trace_task
+        job.__optimize__()
 
 
 def reset_worker_optimizations():

@@ -41,8 +41,16 @@ from . import state
 logger = get_logger(__name__)
 debug, info, warn, error = (logger.debug, logger.info,
                             logger.warn, logger.error)
-_does_debug = logger.isEnabledFor(logging.DEBUG)
-_does_info = logger.isEnabledFor(logging.INFO)
+_does_info = False
+_does_debug = False
+
+
+def __optimize__():
+    global _does_debug
+    global _does_info
+    _does_debug = logger.isEnabledFor(logging.DEBUG)
+    _does_info = logger.isEnabledFor(logging.INFO)
+__optimize__()
 
 # Localize
 tz_utc = timezone.utc
