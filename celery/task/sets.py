@@ -74,3 +74,15 @@ class TaskSet(list):
     @tasks.setter  # noqa
     def tasks(self, tasks):
         self[:] = tasks
+
+class OrderedTaskSet(TaskSet):
+    def _async_results(self, taskset_id, publisher):
+        main_task = current_root = self[0]
+        self.remove(current_root)
+
+        for index, task in enumerate(self):
+            current_root = current_root.link(task)
+
+        return main_task.apply_async(taskset_id=taskset_id,
+            publisher=publisher
+        )

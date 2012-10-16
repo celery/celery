@@ -4,7 +4,7 @@ import anyjson
 
 from celery import current_app
 from celery.task import Task
-from celery.task.sets import subtask, TaskSet
+from celery.task.sets import subtask, TaskSet, OrderedTaskSet
 from celery.canvas import Signature
 
 from celery.tests.utils import Case
@@ -184,3 +184,15 @@ class test_TaskSet(Case):
         ts = TaskSet([])
         ts.Publisher = 42
         self.assertEqual(ts.Publisher, 42)
+
+class test_OrderedTaskSet(Case):
+    def test_apply_async(self):
+        tasks = [MockTask.subtask((i, i)) for i in (2, 4, 8)]
+
+        ts = OrderedTaskSet(tasks)
+
+        ts.apply_async()
+
+        self.assertEqual(tasks[0].options['link'][0], tasks[1])
+        self.assertEqual(tasks[1].options['link'][0], tasks[2])
+        self.assertEqual(tasks, tasks[0].flatten_links())
