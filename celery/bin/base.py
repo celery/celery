@@ -20,7 +20,7 @@ Preload Options
 
 .. cmdoption:: --config
 
-    name of the configuration module (default: `celeryconfig`)
+    Name of the configuration module
 
 .. _daemon-options:
 
@@ -133,7 +133,7 @@ class Command(object):
         Option('-A', '--app', default=None),
         Option('-b', '--broker', default=None),
         Option('--loader', default=None),
-        Option('--config', default='celeryconfig', dest='config_module'),
+        Option('--config', default=None),
     )
 
     #: Enable if the application should support config from the cmdline.
@@ -287,9 +287,9 @@ class Command(object):
         broker = preload_options.get('broker', None)
         if broker:
             os.environ['CELERY_BROKER_URL'] = broker
-        config_module = preload_options.get('config_module')
-        if config_module:
-            os.environ['CELERY_CONFIG_MODULE'] = config_module
+        config = preload_options.get('config')
+        if config:
+            os.environ['CELERY_CONFIG_MODULE'] = config
         if self.respects_app_option:
             if app and self.respects_app_option:
                 self.app = self.find_app(app)

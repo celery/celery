@@ -12,15 +12,18 @@ import anyjson
 import importlib
 import os
 import re
+import sys
 
 from datetime import datetime
 
 from kombu.utils import cached_property
 from kombu.utils.encoding import safe_str
 
-from celery.datastructures import DictAttribute
+from celery.datastructures import AttributeDict, DictAttribute
 from celery.exceptions import ImproperlyConfigured
-from celery.utils.imports import import_from_cwd, symbol_by_name
+from celery.utils.imports import (
+    import_from_cwd, symbol_by_name, NotAPackage, find_module,
+)
 from celery.utils.functional import maybe_list
 
 BUILTIN_MODULES = frozenset()
@@ -30,6 +33,15 @@ ERROR_ENVVAR_NOT_SET = (
 and as such the configuration could not be loaded.
 Please set this variable and make it point to
 a configuration module.""")
+
+CONFIG_INVALID_NAME = """
+Error: Module '%(module)s' doesn't exist, or it's not a valid \
+Python module name.
+"""
+
+CONFIG_WITH_SUFFIX = CONFIG_INVALID_NAME + """
+Did you mean '%(suggest)s'?
+"""
 
 
 class BaseLoader(object):
@@ -145,6 +157,24 @@ class BaseLoader(object):
         self._conf = obj
         return True
 
+    def _import_config_module(self, name):
+        try:
+            self.find_module(name)
+        except NotAPackage:
+            if name.endswith('.py'):
+                raise NotAPackage, NotAPackage(
+                        CONFIG_WITH_SUFFIX % {
+                            'module': name,
+                            'suggest': name[:-3]}), sys.exc_info()[2]
+            raise NotAPackage, NotAPackage(
+                    CONFIG_INVALID_NAME % {
+                        'module': name}), sys.exc_info()[2]
+        else:
+            return self.import_from_cwd(name)
+
+    def find_module(self, module):
+        return find_module(module)
+
     def cmdline_config_parser(self, args, namespace='celery',
                 re_type=re.compile(r'\((\w+)\)'),
                 extra_types={'json': anyjson.loads},
@@ -205,6 +235,13 @@ class BaseLoader(object):
         mailer.send(message, fail_silently=fail_silently)
 
     def read_configuration(self):
+        try:
+            custom_config = os.environ['CELERY_CONFIG_MODULE']
+        except KeyError:
+            pass
+        else:
+            usercfg = self._import_config_module(custom_config)
+            return DictAttribute(usercfg)
         return {}
 
     @property
