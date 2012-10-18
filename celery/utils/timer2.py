@@ -15,7 +15,7 @@ import os
 import sys
 import threading
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import wraps
 from itertools import count
 from time import time, sleep
@@ -116,7 +116,7 @@ class Schedule(object):
 
         """
         if eta is None:
-            eta = datetime.now()
+            eta = time()
         if isinstance(eta, datetime):
             try:
                 eta = to_timestamp(eta)
@@ -134,8 +134,7 @@ class Schedule(object):
         return self.enter(self.Entry(fun, args, kwargs), eta, priority)
 
     def enter_after(self, msecs, entry, priority=0):
-        eta = datetime.now() + timedelta(seconds=msecs / 1000.0)
-        return self.enter(entry, eta, priority)
+        return self.enter(entry, time() + (msecs / 1000.0), priority)
 
     def apply_after(self, msecs, fun, args=(), kwargs={}, priority=0):
         return self.enter_after(msecs, self.Entry(fun, args, kwargs), priority)

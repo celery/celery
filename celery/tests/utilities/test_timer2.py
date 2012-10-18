@@ -83,8 +83,12 @@ class test_Timer(Case):
                 done[0] = True
 
             t.apply_after(300, set_done)
+            mss = 0
             while not done[0]:
+                if mss >= 2.0:
+                    raise Exception('test timed out')
                 time.sleep(0.1)
+                mss += 0.1
         finally:
             t.stop()
 
