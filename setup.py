@@ -142,8 +142,8 @@ def strip_comments(l):
 
 
 def reqs(f):
-    return filter(None, [strip_comments(l) for l in open(
-        os.path.join(os.getcwd(), 'requirements', f)).readlines()])
+    return list(filter(None, [strip_comments(l) for l in open(
+        os.path.join(os.getcwd(), 'requirements', f)).readlines()]))
 
 install_requires = reqs('default-py3k.txt' if is_py3k else 'default.txt')
 
