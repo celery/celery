@@ -352,9 +352,16 @@ class DictAttribute(object):
     `obj[k] -> obj.k`
 
     """
+    obj = None
 
     def __init__(self, obj):
-        self.obj = obj
+        object.__setattr__(self, 'obj', obj)
+
+    def __getattr__(self, key):
+        return getattr(self.obj, key)
+
+    def __setattr__(self, key, value):
+        return setattr(self.obj, key, value)
 
     def get(self, key, default=None):
         try:
@@ -382,14 +389,15 @@ class DictAttribute(object):
         return hasattr(self.obj, key)
 
     def _iterate_keys(self):
-        return iter(vars(self.obj))
+        return iter(dir(self.obj))
     iterkeys = _iterate_keys
 
     def __iter__(self):
         return self._iterate_keys()
 
     def _iterate_items(self):
-        return vars(self.obj).iteritems()
+        for key in self._iterate_keys():
+            yield getattr(self.obj, key)
     iteritems = _iterate_items
 
     if sys.version_info[0] == 3:  # pragma: no cover
