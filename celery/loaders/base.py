@@ -19,7 +19,7 @@ from datetime import datetime
 from kombu.utils import cached_property
 from kombu.utils.encoding import safe_str
 
-from celery.datastructures import AttributeDict, DictAttribute
+from celery.datastructures import DictAttribute
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.imports import (
     import_from_cwd, symbol_by_name, NotAPackage, find_module,
