@@ -19,7 +19,7 @@ from functools import partial, wraps
 from inspect import getargspec
 from pprint import pprint
 
-from kombu import Exchange, Queue
+from kombu.entity import Exchange, Queue
 
 from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 from .compat import StringIO
