@@ -18,9 +18,10 @@ import threading
 from datetime import datetime, timedelta
 from functools import wraps
 from itertools import count
-from time import time, sleep, mktime
+from time import time, sleep
 
 from celery.utils.compat import THREAD_TIMEOUT_MAX
+from celery.utils.timeutils import timedelta_seconds, timezone
 from kombu.log import get_logger
 
 VERSION = (1, 0, 0)
@@ -32,6 +33,7 @@ __docformat__ = 'restructuredtext'
 
 DEFAULT_MAX_INTERVAL = 2
 TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
+EPOCH = datetime.utcfromtimestamp(0).replace(tzinfo=timezone.utc)
 
 logger = get_logger('timer2')
 
@@ -73,7 +75,9 @@ class Entry(object):
 
 def to_timestamp(d):
     if isinstance(d, datetime):
-        return mktime(d.timetuple())
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=timezone.utc)
+        return timedelta_seconds(d - EPOCH)
     return d
 
 
