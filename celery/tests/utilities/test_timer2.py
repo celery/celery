@@ -43,7 +43,7 @@ class test_Schedule(Case):
 
     def test_handle_error(self):
         from datetime import datetime
-        mktime = timer2.mktime
+        to_timestamp = timer2.to_timestamp
         scratch = [None]
 
         def _overflow(x):
@@ -54,7 +54,7 @@ class test_Schedule(Case):
 
         s = timer2.Schedule(on_error=on_error)
 
-        timer2.mktime = _overflow
+        timer2.to_timestamp = _overflow
         try:
             s.enter(timer2.Entry(lambda: None, (), {}),
                     eta=datetime.now())
@@ -65,7 +65,7 @@ class test_Schedule(Case):
                 s.enter(timer2.Entry(lambda: None, (), {}),
                         eta=datetime.now())
         finally:
-            timer2.mktime = mktime
+            timer2.to_timestamp = to_timestamp
 
         exc = scratch[0]
         self.assertIsInstance(exc, OverflowError)

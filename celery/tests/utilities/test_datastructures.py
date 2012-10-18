@@ -46,10 +46,8 @@ class test_DictAttribute(Case):
         obj.attr1 = 1
         x = DictAttribute(obj)
         x['attr2'] = 2
-        self.assertDictEqual(dict(x.iteritems()),
-                             dict(attr1=1, attr2=2))
-        self.assertDictEqual(dict(x.items()),
-                             dict(attr1=1, attr2=2))
+        self.assertEqual(x['attr1'], 1)
+        self.assertEqual(x['attr2'], 2)
 
 
 class test_ConfigurationView(Case):

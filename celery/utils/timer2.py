@@ -120,7 +120,7 @@ class Schedule(object):
         if isinstance(eta, datetime):
             try:
                 eta = to_timestamp(eta)
-            except OverflowError, exc:
+            except Exception, exc:
                 if not self.handle_error(exc):
                     raise
                 return
