@@ -397,7 +397,7 @@ class DictAttribute(object):
 
     def _iterate_items(self):
         for key in self._iterate_keys():
-            yield getattr(self.obj, key)
+            yield key, getattr(self.obj, key)
     iteritems = _iterate_items
 
     if sys.version_info[0] == 3:  # pragma: no cover
