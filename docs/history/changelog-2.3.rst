@@ -69,8 +69,8 @@ News
 
 * Improved Contributing guide.
 
-    If you'd like to contribute to Celery you should read this
-    guide: http://celery.github.com/celery/contributing.html
+    If you'd like to contribute to Celery you should read the
+    :ref:`Contributing Gudie <contributing>`.
 
     We are looking for contributors at all skill levels, so don't
     hesitate!

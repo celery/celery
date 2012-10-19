@@ -153,22 +153,14 @@ class test_LoaderBase(Case):
 
 class test_DefaultLoader(Case):
 
-    def test_wanted_module_item(self):
-        l = default.Loader()
-        self.assertTrue(l.wanted_module_item('FOO'))
-        self.assertTrue(l.wanted_module_item('Foo'))
-        self.assertFalse(l.wanted_module_item('_FOO'))
-        self.assertFalse(l.wanted_module_item('__FOO'))
-        self.assertTrue(l.wanted_module_item('foo'))
-
-    @patch('celery.loaders.default.find_module')
+    @patch('celery.loaders.base.find_module')
     def test_read_configuration_not_a_package(self, find_module):
         find_module.side_effect = NotAPackage()
         l = default.Loader()
         with self.assertRaises(NotAPackage):
             l.read_configuration()
 
-    @patch('celery.loaders.default.find_module')
+    @patch('celery.loaders.base.find_module')
     def test_read_configuration_py_in_name(self, find_module):
         prev = os.environ['CELERY_CONFIG_MODULE']
         os.environ['CELERY_CONFIG_MODULE'] = 'celeryconfig.py'
@@ -180,7 +172,7 @@ class test_DefaultLoader(Case):
         finally:
             os.environ['CELERY_CONFIG_MODULE'] = prev
 
-    @patch('celery.loaders.default.find_module')
+    @patch('celery.loaders.base.find_module')
     def test_read_configuration_importerror(self, find_module):
         default.C_WNOCONF = True
         find_module.side_effect = ImportError()
@@ -238,7 +230,7 @@ class test_DefaultLoader(Case):
 
         with warnings.catch_warnings(record=True):
             l = _Loader()
-            self.assertDictEqual(l.conf, {})
+            self.assertFalse(l.configured)
             context_executed[0] = True
         self.assertTrue(context_executed[0])
 

@@ -20,6 +20,7 @@
     celery.app.builtins
     celery.app.log
     celery.app.utils
+    celery.bootsteps
     celery.task
     celery.task.base
     celery.result

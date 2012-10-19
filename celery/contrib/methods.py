@@ -30,6 +30,33 @@ or with any task decorator:
         def add(self, x, y):
             return x + y
 
+.. note::
+
+    The task must use the new Task base class (:class:`celery.Task`),
+    and the old base class using classmethods (``celery.task.Task``,
+    ``celery.task.base.Task``).
+
+    This means that you have to use the task decorator from a Celery app
+    instance, and not the old-API:
+
+    .. code-block:: python
+
+
+        from celery import task       # BAD
+        from celery.task import task  # ALSO BAD
+
+        # GOOD:
+        celery = Celery(...)
+
+        @celery.task(filter=task_method)
+        def foo(self): pass
+
+        # ALSO GOOD:
+        from celery import current_app
+
+        @current_app.task(filter=task_method)
+        def foo(self): pass
+
 Caveats
 -------
 
@@ -71,9 +98,7 @@ Caveats
 
 from __future__ import absolute_import
 
-from functools import partial
-
-from celery import task as _task
+from celery import current_app
 
 
 class task_method(object):
@@ -89,4 +114,5 @@ class task_method(object):
         return task
 
 
-task = partial(_task, filter=task_method)
+def task(*args, **kwargs):
+    return current_app.task(*args, **dict(kwargs, filter=task_method))

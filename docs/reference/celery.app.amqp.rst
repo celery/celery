@@ -39,16 +39,8 @@
     ------
 
     .. autoclass:: Queues
-
-        .. automethod:: add
-
-        .. automethod:: format
-
-        .. automethod:: select_subset
-
-        .. automethod:: new_missing
-
-        .. autoattribute:: consume_from
+        :members:
+        :undoc-members:
 
     TaskPublisher
     -------------

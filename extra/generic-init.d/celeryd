@@ -20,8 +20,8 @@
 
 #set -e
 
-DEFAULT_PID_FILE="/var/run/celeryd@%n.pid"
-DEFAULT_LOG_FILE="/var/log/celeryd@%n.log"
+DEFAULT_PID_FILE="/var/run/celery/%n.pid"
+DEFAULT_LOG_FILE="/var/log/celery/%n.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
 DEFAULT_CELERYD="-m celery worker --detach"
@@ -35,8 +35,17 @@ if [ -f "/etc/default/celeryd" ]; then
     . /etc/default/celeryd
 fi
 
-CELERYD_PID_FILE=${CELERYD_PID_FILE:-${CELERYD_PIDFILE:-$DEFAULT_PID_FILE}}
-CELERYD_LOG_FILE=${CELERYD_LOG_FILE:-${CELERYD_LOGFILE:-$DEFAULT_LOG_FILE}}
+CELERY_CREATE_RUNDIR=0
+CELERY_CREATE_LOGDIR=0
+if [ -z "$CELERYD_PID_FILE" ]; then
+    CELERYD_PID_FILE="$DEFAULT_PID_FILE"
+    CELERY_CREATE_RUNDIR=1
+fi
+if [ -z "$CELERYD_LOG_FILE" ]; then
+    CELERYD_LOG_FILE="$DEFAULT_LOG_FILE"
+    CELERY_CREATE_LOGDIR=1
+fi
+
 CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-${CELERYD_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
 CELERYD_MULTI=${CELERYD_MULTI:-"celery multi"}
 CELERYD=${CELERYD:-$DEFAULT_CELERYD}
@@ -51,21 +60,13 @@ fi
 
 CELERYD_LOG_DIR=`dirname $CELERYD_LOG_FILE`
 CELERYD_PID_DIR=`dirname $CELERYD_PID_FILE`
-if [ ! -d "$CELERYD_LOG_DIR" ]; then
-    mkdir -p $CELERYD_LOG_DIR
-fi
-if [ ! -d "$CELERYD_PID_DIR" ]; then
-    mkdir -p $CELERYD_PID_DIR
-fi
 
 # Extra start-stop-daemon options, like user/group.
 if [ -n "$CELERYD_USER" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --uid=$CELERYD_USER"
-    chown "$CELERYD_USER" $CELERYD_LOG_DIR $CELERYD_PID_DIR
 fi
 if [ -n "$CELERYD_GROUP" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --gid=$CELERYD_GROUP"
-    chgrp "$CELERYD_GROUP" $CELERYD_LOG_DIR $CELERYD_PID_DIR
 fi
 
 if [ -n "$CELERYD_CHDIR" ]; then
@@ -76,28 +77,59 @@ fi
 check_dev_null() {
     if [ ! -c /dev/null ]; then
         echo "/dev/null is not a character device!"
-        exit 1
+        exit 75  # EX_TEMPFAIL
     fi
 }
 
-ensure_dir() {
-    if [ -d "$1" ]; then
-        mkdir -p "$1"
-        chown $CELERYD_USER:$CELERYD_GROUP "$1"
-        chmod 02755 "$1"
+
+maybe_die() {
+    if [ $? -ne 0 ]; then
+        echo "Exiting: $* (errno $?)"
+        exit 77  # EX_NOPERM
     fi
 }
+
+create_default_dir() {
+    if [ ! -d "$1" ]; then
+        echo "- Creating default directory: '$1'"
+        mkdir -p "$1"
+        maybe_die "Couldn't create directory $1"
+        echo "- Changing permissions of '$1' to 02755"
+        chmod 02755 "$1"
+        maybe_die "Couldn't change permissions for $1"
+        if [ -n "$CELERYD_USER" ]; then
+            echo "- Changing owner of '$1' to '$CELERYD_USER'"
+            chown "$CELERYD_USER" "$1"
+            maybe_die "Couldn't change owner of $1"
+        fi
+        if [ -n "$CELERYD_GROUP" ]; then
+            echo "- Changing group of '$1' to '$CELERYD_GROUP'"
+            chgrp "$CELERYD_GROUP" "$1"
+            maybe_die "Couldn't change group of $1"
+        fi
+    fi
+}
+
 
 check_paths() {
-    ensure_dir "$(dirname $CELERYD_PID_FILE)"
-    ensure_dir "$(dirname $CELERYD_LOG_FILE)"
+    if [ $CELERY_CREATE_LOGDIR -eq 1 ]; then
+        create_default_dir "$CELERYD_LOG_DIR"
+    fi
+    if [ $CELERY_CREATE_RUNDIR -eq 1 ]; then
+        create_default_dir "$CELERYD_PID_DIR"
+    fi
+}
+
+create_paths() {
+    create_default_dir "$CELERYD_LOG_DIR"
+    create_default_dir "$CELERYD_PID_DIR"
 }
 
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
 stop_workers () {
-    $CELERYD_MULTI stop_verify $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
+    $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
 }
 
 
@@ -148,16 +180,22 @@ case "$1" in
         check_paths
         restart_workers
     ;;
-
     try-restart)
         check_dev_null
         check_paths
         restart_workers
     ;;
-
+    create-paths)
+        check_dev_null
+        create_paths
+    ;;
+    check-paths)
+        check_dev_null
+        check_paths
+    ;;
     *)
-        echo "Usage: /etc/init.d/celeryd {start|stop|restart|try-restart|kill}"
-        exit 1
+        echo "Usage: /etc/init.d/celeryd {start|stop|restart|kill|create_paths}"
+        exit 64  # EX_USAGE
     ;;
 esac
 

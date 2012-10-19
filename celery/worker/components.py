@@ -3,7 +3,7 @@
     celery.worker.components
     ~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Default worker boot-steps.
+    Default worker bootsteps.
 
 """
 from __future__ import absolute_import
@@ -15,16 +15,59 @@ from functools import partial
 
 from billiard.exceptions import WorkerLostError
 
+from celery import bootsteps
 from celery.utils.log import worker_logger as logger
 from celery.utils.timer2 import Schedule
 
-from . import bootsteps
+from . import hub
 from .buckets import TaskBucket, FastQueue
-from .hub import Hub, BoundedSemaphore
 
 
-class Pool(bootsteps.StartStopComponent):
-    """The pool component.
+class Hub(bootsteps.StartStopStep):
+
+    def __init__(self, w, **kwargs):
+        w.hub = None
+
+    def include_if(self, w):
+        return w.use_eventloop
+
+    def create(self, w):
+        w.timer = Schedule(max_interval=10)
+        w.hub = hub.Hub(w.timer)
+        return w.hub
+
+
+class Queues(bootsteps.Step):
+    """This bootstep initializes the internal queues
+    used by the worker."""
+    label = 'Queues (intra)'
+    requires = (Hub, )
+
+    def __init__(self, w, **kwargs):
+        w.start_mediator = False
+
+    def create(self, w):
+        w.start_mediator = True
+        if not w.pool_cls.rlimit_safe:
+            w.disable_rate_limits = True
+        if w.disable_rate_limits:
+            w.ready_queue = FastQueue()
+            if w.use_eventloop:
+                w.start_mediator = False
+                if w.pool_putlocks and w.pool_cls.uses_semaphore:
+                    w.ready_queue.put = w.process_task_sem
+                else:
+                    w.ready_queue.put = w.process_task
+            elif not w.pool_cls.requires_mediator:
+                # just send task directly to pool, skip the mediator.
+                w.ready_queue.put = w.process_task
+                w.start_mediator = False
+        else:
+            w.ready_queue = TaskBucket(task_registry=w.app.tasks)
+
+
+class Pool(bootsteps.StartStopStep):
+    """Bootstep managing the worker pool.
 
     Describes how to initialize the worker pool, and starts and stops
     the pool during worker startup/shutdown.
@@ -37,8 +80,7 @@ class Pool(bootsteps.StartStopComponent):
         * min_concurrency
 
     """
-    name = 'worker.pool'
-    requires = ('queues', )
+    requires = (Queues, )
 
     def __init__(self, w, autoscale=None, autoreload=None,
             no_execv=False, **kwargs):
@@ -53,6 +95,14 @@ class Pool(bootsteps.StartStopComponent):
         if w.autoscale:
             w.max_concurrency, w.min_concurrency = w.autoscale
         self.autoreload_enabled = autoreload
+
+    def close(self, w):
+        if w.pool:
+            w.pool.close()
+
+    def terminate(self, w):
+        if w.pool:
+            w.pool.terminate()
 
     def on_poll_init(self, pool, hub):
         apply_after = hub.timer.apply_after
@@ -107,7 +157,7 @@ class Pool(bootsteps.StartStopComponent):
         procs = w.min_concurrency
         forking_enable = not threaded or (w.no_execv or not w.force_execv)
         if not threaded:
-            semaphore = w.semaphore = BoundedSemaphore(procs)
+            semaphore = w.semaphore = hub.BoundedSemaphore(procs)
             w._quick_acquire = w.semaphore.acquire
             w._quick_release = w.semaphore.release
             max_restarts = 100
@@ -129,14 +179,15 @@ class Pool(bootsteps.StartStopComponent):
         return pool
 
 
-class Beat(bootsteps.StartStopComponent):
-    """Component used to embed a celerybeat process.
+class Beat(bootsteps.StartStopStep):
+    """Step used to embed a celerybeat process.
 
     This will only be enabled if the ``beat``
     argument is set.
 
     """
-    name = 'worker.beat'
+    label = 'Beat'
+    conditional = True
 
     def __init__(self, w, beat=False, **kwargs):
         self.enabled = w.beat = beat
@@ -150,51 +201,9 @@ class Beat(bootsteps.StartStopComponent):
         return b
 
 
-class Queues(bootsteps.Component):
-    """This component initializes the internal queues
-    used by the worker."""
-    name = 'worker.queues'
-    requires = ('ev', )
-
-    def create(self, w):
-        w.start_mediator = True
-        if not w.pool_cls.rlimit_safe:
-            w.disable_rate_limits = True
-        if w.disable_rate_limits:
-            w.ready_queue = FastQueue()
-            if w.use_eventloop:
-                w.start_mediator = False
-                if w.pool_putlocks and w.pool_cls.uses_semaphore:
-                    w.ready_queue.put = w.process_task_sem
-                else:
-                    w.ready_queue.put = w.process_task
-            elif not w.pool_cls.requires_mediator:
-                # just send task directly to pool, skip the mediator.
-                w.ready_queue.put = w.process_task
-                w.start_mediator = False
-        else:
-            w.ready_queue = TaskBucket(task_registry=w.app.tasks)
-
-
-class EvLoop(bootsteps.StartStopComponent):
-    name = 'worker.ev'
-
-    def __init__(self, w, **kwargs):
-        w.hub = None
-
-    def include_if(self, w):
-        return w.use_eventloop
-
-    def create(self, w):
-        w.timer = Schedule(max_interval=10)
-        hub = w.hub = Hub(w.timer)
-        return hub
-
-
-class Timers(bootsteps.Component):
-    """This component initializes the internal timers used by the worker."""
-    name = 'worker.timers'
-    requires = ('pool', )
+class Timer(bootsteps.Step):
+    """This step initializes the internal timer used by the worker."""
+    requires = (Pool, )
 
     def include_if(self, w):
         return not w.use_eventloop
@@ -216,9 +225,8 @@ class Timers(bootsteps.Component):
         logger.debug('Timer wake-up! Next eta %s secs.', delay)
 
 
-class StateDB(bootsteps.Component):
-    """This component sets up the workers state db if enabled."""
-    name = 'worker.state-db'
+class StateDB(bootsteps.Step):
+    """This bootstep sets up the workers state db if enabled."""
 
     def __init__(self, w, **kwargs):
         self.enabled = w.state_db
@@ -227,3 +235,23 @@ class StateDB(bootsteps.Component):
     def create(self, w):
         w._persistence = w.state.Persistent(w.state_db)
         atexit.register(w._persistence.save)
+
+
+class Consumer(bootsteps.StartStopStep):
+    last = True
+
+    def create(self, w):
+        prefetch_count = w.concurrency * w.prefetch_multiplier
+        c = w.consumer = self.instantiate(w.consumer_cls,
+                w.ready_queue,
+                hostname=w.hostname,
+                send_events=w.send_events,
+                init_callback=w.ready_callback,
+                initial_prefetch_count=prefetch_count,
+                pool=w.pool,
+                timer=w.timer,
+                app=w.app,
+                controller=w,
+                hub=w.hub,
+                worker_options=w.options)
+        return c

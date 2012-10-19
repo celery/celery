@@ -11,7 +11,7 @@ from __future__ import absolute_import
 import threading
 import warnings
 
-from collections import deque
+from collections import defaultdict, deque
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
@@ -34,6 +34,10 @@ from .builtins import shared_task, load_shared_tasks
 from .defaults import DEFAULTS, find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import AppPickler, Settings, bugreport, _unpickle_app
+
+DEFAULT_FIXUPS = (
+    'celery.fixups.django:DjangoFixup',
+)
 
 
 def _unpickle_appattr(reverse_name, args):
@@ -72,6 +76,8 @@ class Celery(object):
         self.set_as_current = set_as_current
         self.registry_cls = symbol_by_name(self.registry_cls)
         self.accept_magic_kwargs = accept_magic_kwargs
+        self.user_options = defaultdict(set)
+        self.steps = defaultdict(set)
 
         self.configured = False
         self._pending_defaults = deque()
@@ -90,6 +96,8 @@ class Celery(object):
             self._preconf['BROKER_URL'] = broker
         if include:
             self._preconf['CELERY_IMPORTS'] = include
+        self.fixups = list(filter(None, (symbol_by_name(f).include(self)
+                                        for f in DEFAULT_FIXUPS)))
 
         if self.set_as_current:
             self.set_current()
@@ -192,6 +200,9 @@ class Celery(object):
 
     def config_from_cmdline(self, argv, namespace='celery'):
         self.conf.update(self.loader.cmdline_config_parser(argv, namespace))
+
+    def autodiscover_tasks(self, packages, related_name='tasks'):
+        self.loader.autodiscover_tasks(packages, related_name)
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
             eta=None, task_id=None, producer=None, connection=None,

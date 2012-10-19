@@ -14,12 +14,13 @@ import os
 import sys
 import threading
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import wraps
 from itertools import count, imap
-from time import time, sleep, mktime
+from time import time, sleep
 
 from celery.utils.compat import THREAD_TIMEOUT_MAX
+from celery.utils.timeutils import timedelta_seconds, timezone
 from kombu.log import get_logger
 
 VERSION = (1, 0, 0)
@@ -31,6 +32,7 @@ __docformat__ = 'restructuredtext'
 
 DEFAULT_MAX_INTERVAL = 2
 TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
+EPOCH = datetime.utcfromtimestamp(0).replace(tzinfo=timezone.utc)
 
 logger = get_logger('timer2')
 
@@ -71,7 +73,9 @@ class Entry(object):
 
 def to_timestamp(d):
     if isinstance(d, datetime):
-        return mktime(d.timetuple())
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=timezone.utc)
+        return timedelta_seconds(d - EPOCH)
     return d
 
 
@@ -110,11 +114,11 @@ class Schedule(object):
 
         """
         if eta is None:
-            eta = datetime.now()
+            eta = time()
         if isinstance(eta, datetime):
             try:
                 eta = to_timestamp(eta)
-            except OverflowError as exc:
+            except Exception as exc:
                 if not self.handle_error(exc):
                     raise
                 return
@@ -128,8 +132,7 @@ class Schedule(object):
         return self.enter(self.Entry(fun, args, kwargs), eta, priority)
 
     def enter_after(self, msecs, entry, priority=0):
-        eta = datetime.now() + timedelta(seconds=msecs / 1000.0)
-        return self.enter(entry, eta, priority)
+        return self.enter(entry, time() + (msecs / 1000.0), priority)
 
     def apply_after(self, msecs, fun, args=(), kwargs={}, priority=0):
         return self.enter_after(msecs, self.Entry(fun, args, kwargs), priority)

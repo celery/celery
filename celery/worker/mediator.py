@@ -20,17 +20,19 @@ import logging
 from Queue import Empty
 
 from celery.app import app_or_default
+from celery.bootsteps import StartStopStep
 from celery.utils.threads import bgThread
 from celery.utils.log import get_logger
 
-from .bootsteps import StartStopComponent
+from . import components
 
 logger = get_logger(__name__)
 
 
-class WorkerComponent(StartStopComponent):
-    name = 'worker.mediator'
-    requires = ('pool', 'queues', )
+class WorkerComponent(StartStopStep):
+    label = 'Mediator'
+    conditional = True
+    requires = (components.Pool, components.Queues, )
 
     def __init__(self, w, **kwargs):
         w.mediator = None

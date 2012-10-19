@@ -40,6 +40,16 @@ Application
 
         Current configuration.
 
+    .. attribute:: user_options
+
+        Custom options for command-line programs.
+        See :ref:`extending-commandoptions`
+
+    .. attribute:: steps
+
+        Custom bootsteps to extend and modify the worker.
+        See :ref:`extending-bootsteps`.
+
     .. attribute:: Celery.current_task
 
         The instance of the task that is being executed, or :const:`None`.
@@ -89,7 +99,7 @@ Application
         Only necessary for dynamically created apps for which you can
         use the with statement::
 
-            with Celery(...) as app:
+            with Celery(set_as_current=False) as app:
                 with app.connection() as conn:
                     pass
 
@@ -123,6 +133,27 @@ Application
 
             >>> os.environ["CELERY_CONFIG_MODULE"] = "myapp.celeryconfig"
             >>> celery.config_from_envvar("CELERY_CONFIG_MODULE")
+
+    .. method:: Celery.autodiscover_tasks(packages, related_name="tasks")
+
+        With a list of packages, try to import modules of a specific name (by
+        default 'tasks').
+
+        For example if you have an (imagined) directory tree like this::
+
+            foo/__init__.py
+               tasks.py
+               models.py
+
+            bar/__init__.py
+                tasks.py
+                models.py
+
+            baz/__init__.py
+                models.py
+
+        Then calling ``app.autodiscover_tasks(['foo', bar', 'baz'])`` will
+        result in the modules ``foo.tasks`` and ``bar.tasks`` being imported.
 
     .. method:: Celery.add_defaults(d)
 

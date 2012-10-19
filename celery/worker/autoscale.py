@@ -7,8 +7,8 @@
     for growing and shrinking the pool according to the
     current autoscale settings.
 
-    The autoscale thread is only enabled if autoscale
-    has been enabled on the command line.
+    The autoscale thread is only enabled if :option:`--autoscale`
+    has been enabled on the command-line.
 
 """
 from __future__ import absolute_import
@@ -18,20 +18,22 @@ import threading
 from functools import partial
 from time import sleep, time
 
+from celery import bootsteps
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
 
 from . import state
-from .bootsteps import StartStopComponent
+from .components import Pool
 from .hub import DummyLock
 
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error
 
 
-class WorkerComponent(StartStopComponent):
-    name = 'worker.autoscaler'
-    requires = ('pool', )
+class WorkerComponent(bootsteps.StartStopStep):
+    label = 'Autoscaler'
+    conditional = True
+    requires = (Pool, )
 
     def __init__(self, w, **kwargs):
         self.enabled = w.autoscale

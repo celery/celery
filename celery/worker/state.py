@@ -20,6 +20,7 @@ from collections import defaultdict
 from kombu.utils import cached_property
 
 from celery import __version__
+from celery.exceptions import SystemTerminate
 from celery.datastructures import LimitedSet
 
 #: Worker software/platform information.
@@ -51,6 +52,13 @@ task_reserved = reserved_requests.add
 
 should_stop = False
 should_terminate = False
+
+
+def maybe_shutdown():
+    if should_stop:
+        raise SystemExit()
+    elif should_terminate:
+        raise SystemTerminate()
 
 
 def task_accepted(request):

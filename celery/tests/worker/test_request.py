@@ -619,7 +619,7 @@ class test_TaskRequest(AppCase):
     def test_worker_task_trace_handle_retry(self):
         from celery.exceptions import RetryTaskError
         tid = uuid()
-        mytask.request.update({'id': tid})
+        mytask.push_request(id=tid)
         try:
             raise ValueError('foo')
         except Exception as exc:
@@ -634,12 +634,13 @@ class test_TaskRequest(AppCase):
                 self.assertEqual(mytask.backend.get_status(tid),
                                  states.RETRY)
         finally:
-            mytask.request.clear()
+            mytask.pop_request()
 
     def test_worker_task_trace_handle_failure(self):
         tid = uuid()
-        mytask.request.update({'id': tid})
+        mytask.push_request()
         try:
+            mytask.request.id = tid
             try:
                 raise ValueError('foo')
             except Exception as exc:
@@ -651,7 +652,7 @@ class test_TaskRequest(AppCase):
                 self.assertEqual(mytask.backend.get_status(tid),
                                  states.FAILURE)
         finally:
-            mytask.request.clear()
+            mytask.pop_request()
 
     def test_task_wrapper_mail_attrs(self):
         tw = TaskRequest(mytask.name, uuid(), [], {})

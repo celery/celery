@@ -545,7 +545,7 @@ and create images:
 
     $ dot -Tpng graph.dot -o graph.png
 
-.. image:: ../images/graph.png
+.. image:: ../images/result_graph.png
 
 .. _canvas-group:
 

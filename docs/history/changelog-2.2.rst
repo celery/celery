@@ -233,7 +233,7 @@ Fixes
 * celerybeat:  PersistentScheduler now automatically removes a corrupted
   schedule file (Issue #346).
 
-* Programs that doesn't support positional command line arguments now provides
+* Programs that doesn't support positional command-line arguments now provides
   a user friendly error message.
 
 * Programs no longer tries to load the configuration file when showing
@@ -708,7 +708,7 @@ Important Notes
             $ camqadm exchange.delete celeryevent
 
 * `celeryd` now starts without configuration, and configuration can be
-  specified directly on the command line.
+  specified directly on the command-line.
 
   Configuration options must appear after the last argument, separated
   by two dashes:
@@ -912,7 +912,7 @@ News
    scheduled tasks.
 
 * The configuration module and loader to use can now be specified on
-  the command line.
+  the command-line.
 
     For example:
 

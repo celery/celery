@@ -374,7 +374,7 @@ In Other News
 
     Contributed by Daniel Hepper.
 
-- celerybeat can now be configured on the command line like celeryd.
+- celerybeat can now be configured on the command-line like celeryd.
 
   Additional configuration must be added at the end of the argument list
   followed by ``--``, for example:
@@ -473,7 +473,7 @@ In Other News
 
     Contributed by Chris Streeter.
 
-- User (tilde) is now expanded in command line arguments.
+- User (tilde) is now expanded in command-line arguments.
 
 - Can now configure CELERYCTL envvar in :file:`/etc/default/celeryd`.
 

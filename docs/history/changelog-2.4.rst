@@ -203,7 +203,7 @@ Important Notes
     then the value from the configuration will be used as default.
 
     Also, programs now support the :option:`-b|--broker` option to specify
-    a broker URL on the command line:
+    a broker URL on the command-line:
 
     .. code-block:: bash
 

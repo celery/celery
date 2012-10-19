@@ -9,7 +9,7 @@
 from __future__ import absolute_import
 
 from billiard.exceptions import (  # noqa
-    SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError,
+    SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError, Terminated,
 )
 
 UNREGISTERED_FMT = """\
@@ -23,6 +23,10 @@ class SecurityError(Exception):
     Handle with care.
 
     """
+
+
+class Ignore(Exception):
+    """A task can raise this to ignore doing state updates."""
 
 
 class SystemTerminate(SystemExit):

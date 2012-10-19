@@ -29,20 +29,18 @@ from celery._state import _task_stack
 from celery.app import set_default_app
 from celery.app.task import Task as BaseTask, Context
 from celery.datastructures import ExceptionInfo
-from celery.exceptions import RetryTaskError
+from celery.exceptions import Ignore, RetryTaskError
 from celery.utils.serialization import get_pickleable_exception
 from celery.utils.log import get_logger
 
 _logger = get_logger(__name__)
 
 send_prerun = signals.task_prerun.send
-prerun_receivers = signals.task_prerun.receivers
 send_postrun = signals.task_postrun.send
-postrun_receivers = signals.task_postrun.receivers
 send_success = signals.task_success.send
-success_receivers = signals.task_success.receivers
 STARTED = states.STARTED
 SUCCESS = states.SUCCESS
+IGNORED = states.IGNORED
 RETRY = states.RETRY
 FAILURE = states.FAILURE
 EXCEPTION_STATES = states.EXCEPTION_STATES
@@ -197,6 +195,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     pop_task = _task_stack.pop
     on_chord_part_return = backend.on_chord_part_return
 
+    prerun_receivers = signals.task_prerun.receivers
+    postrun_receivers = signals.task_postrun.receivers
+    success_receivers = signals.task_success.receivers
+
     from celery import canvas
     subtask = canvas.subtask
 
@@ -222,6 +224,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 try:
                     R = retval = fun(*args, **kwargs)
                     state = SUCCESS
+                except Ignore as exc:
+                    I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                 except RetryTaskError as exc:
                     I = Info(RETRY, exc)
                     state, retval = I.state, I.retval
@@ -342,9 +346,12 @@ def setup_worker_optimizations(app):
 
     trace_task_ret = _fast_trace_task
     try:
-        sys.modules['celery.worker.job'].trace_task_ret = _fast_trace_task
+        job = sys.modules['celery.worker.job']
     except KeyError:
         pass
+    else:
+        job.trace_task_ret = _fast_trace_task
+        job.__optimize__()
 
 
 def reset_worker_optimizations():
@@ -384,8 +391,8 @@ def _install_stack_protection():
         def __protected_call__(self, *args, **kwargs):
             stack = self.request_stack
             req = stack.top
-            if req and not req._protected and len(stack) == 2 and \
-                    not req.called_directly:
+            if req and not req._protected and \
+                    len(stack) == 1 and not req.called_directly:
                 req._protected = 1
                 return self.run(*args, **kwargs)
             return orig(self, *args, **kwargs)

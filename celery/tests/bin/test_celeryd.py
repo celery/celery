@@ -60,10 +60,7 @@ def disable_stdouts(fun):
 
 
 class Worker(cd.Worker):
-
-    def __init__(self, *args, **kwargs):
-        super(Worker, self).__init__(*args, **kwargs)
-        self.redirect_stdouts = False
+    redirect_stdouts = False
 
     def start(self, *args, **kwargs):
         self.on_start()
@@ -292,9 +289,7 @@ class test_Worker(WorkerAppCase):
 
     @disable_stdouts
     def test_redirect_stdouts(self):
-        worker = self.Worker()
-        worker.redirect_stdouts = False
-        worker.redirect_stdouts_to_logger()
+        self.Worker(redirect_stdouts=False)
         with self.assertRaises(AttributeError):
             sys.stdout.logger
 
@@ -306,9 +301,9 @@ class test_Worker(WorkerAppCase):
             logging_setup[0] = True
 
         try:
-            worker = self.Worker()
+            worker = self.Worker(redirect_stdouts=False)
             worker.app.log.__class__._setup = False
-            worker.redirect_stdouts_to_logger()
+            worker.setup_logging()
             self.assertTrue(logging_setup[0])
             with self.assertRaises(AttributeError):
                 sys.stdout.logger

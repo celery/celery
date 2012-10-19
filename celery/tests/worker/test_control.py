@@ -351,17 +351,17 @@ class test_ControlPanel(Case):
     def test_revoke_terminate(self):
         request = Mock()
         request.id = tid = uuid()
-        state.active_requests.add(request)
+        state.reserved_requests.add(request)
         try:
             r = control.revoke(Mock(), tid, terminate=True)
             self.assertIn(tid, revoked)
             self.assertTrue(request.terminate.call_count)
-            self.assertIn('terminated', r['ok'])
+            self.assertIn('terminating', r['ok'])
             # unknown task id only revokes
             r = control.revoke(Mock(), uuid(), terminate=True)
-            self.assertIn('revoked', r['ok'])
+            self.assertIn('not found', r['ok'])
         finally:
-            state.active_requests.discard(request)
+            state.reserved_requests.discard(request)
 
     def test_autoscale(self):
         self.panel.state.consumer = Mock()
@@ -382,7 +382,7 @@ class test_ControlPanel(Case):
         m = {'method': 'ping',
              'destination': hostname}
         r = self.panel.handle_message(m, None)
-        self.assertEqual(r, 'pong')
+        self.assertEqual(r, {'ok': 'pong'})
 
     def test_shutdown(self):
         m = {'method': 'shutdown',
@@ -405,8 +405,8 @@ class test_ControlPanel(Case):
                       mailbox=self.app.control.mailbox)
         r = panel.dispatch('ping', reply_to={'exchange': 'x',
                                              'routing_key': 'x'})
-        self.assertEqual(r, 'pong')
-        self.assertDictEqual(replies[0], {panel.hostname: 'pong'})
+        self.assertEqual(r, {'ok': 'pong'})
+        self.assertDictEqual(replies[0], {panel.hostname: {'ok': 'pong'}})
 
     def test_pool_restart(self):
         consumer = Consumer()
@@ -439,7 +439,7 @@ class test_ControlPanel(Case):
         self.assertEqual([(('foo',), {}), (('bar',), {})],
                           _import.call_args_list)
 
-    def test_pool_restart_relaod_modules(self):
+    def test_pool_restart_reload_modules(self):
         consumer = Consumer()
         consumer.controller = _WC(app=current_app)
         consumer.controller.pool.restart = Mock()

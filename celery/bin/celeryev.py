@@ -104,14 +104,17 @@ class EvCommand(Command):
         return set_process_title(prog, info=info)
 
     def get_options(self):
-        return (
-            Option('-d', '--dump', action='store_true'),
-            Option('-c', '--camera'),
-            Option('--detach', action='store_true'),
-            Option('-F', '--frequency', '--freq', type='float', default=1.0),
-            Option('-r', '--maxrate'),
-            Option('-l', '--loglevel', default='INFO'),
-        ) + daemon_options(default_pidfile='celeryev.pid')
+        return ((
+                Option('-d', '--dump', action='store_true'),
+                Option('-c', '--camera'),
+                Option('--detach', action='store_true'),
+                Option('-F', '--frequency', '--freq',
+                    type='float', default=1.0),
+                Option('-r', '--maxrate'),
+                Option('-l', '--loglevel', default='INFO'))
+            + daemon_options(default_pidfile='celeryev.pid')
+            + tuple(self.app.user_options['events'])
+        )
 
 
 def main():

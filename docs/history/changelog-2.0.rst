@@ -556,7 +556,7 @@ Backward incompatible changes
         'pong'
 
 * The following deprecated settings has been removed (as scheduled by
-  the `deprecation timeline`_):
+  the :ref:`deprecation-timeline`):
 
     =====================================  =====================================
     **Setting name**                       **Replace with**
@@ -568,14 +568,11 @@ Backward incompatible changes
     `CELERY_AMQP_PUBLISHER_ROUTING_KEY`    `CELERY_DEFAULT_ROUTING_KEY`
     =====================================  =====================================
 
-.. _`deprecation timeline`:
-    http://celery.github.com/celery/internals/deprecation.html
-
 * The `celery.task.rest` module has been removed, use :mod:`celery.task.http`
-  instead (as scheduled by the `deprecation timeline`_).
+  instead (as scheduled by the :ref:`deprecation-timeline`).
 
 * It's no longer allowed to skip the class name in loader names.
-  (as scheduled by the `deprecation timeline`_):
+  (as scheduled by the :ref:`deprecation-timeline`):
 
     Assuming the implicit `Loader` class name is no longer supported,
     if you use e.g.::
@@ -769,7 +766,7 @@ News
         exception will be raised when this is exceeded.  The task can catch
         this to e.g. clean up before the hard time limit comes.
 
-    New command line arguments to celeryd added:
+    New command-line arguments to celeryd added:
     `--time-limit` and `--soft-time-limit`.
 
     What's left?

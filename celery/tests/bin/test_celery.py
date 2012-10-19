@@ -45,9 +45,10 @@ class test_Command(AppCase):
         self.err = WhateverIO()
         self.cmd = Command(self.app, stdout=self.out, stderr=self.err)
 
-    def test_show_help(self):
+    def test_exit_help(self):
         self.cmd.run_from_argv = Mock()
-        self.assertEqual(self.cmd.show_help('foo'), EX_USAGE)
+        with self.assertRaises(SystemExit):
+            self.cmd.exit_help('foo')
         self.cmd.run_from_argv.assert_called_with(
                 self.cmd.prog_name, ['foo', '--help']
         )

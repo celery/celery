@@ -556,6 +556,14 @@ use the ``TimeUUID`` type as a comparator::
 
     create column family task_results with comparator = TimeUUIDType;
 
+CASSANDRA_OPTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Options to be passed to the `pycassa connection pool`_ (optional).
+
+.. _`pycassa connection pool`: http://pycassa.github.com/pycassa/api/pycassa/pool.html
+.. setting:: CASSANDRA_DETAILED_MODE
+
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -567,6 +575,10 @@ Example configuration
     CASSANDRA_READ_CONSISTENCY = "ONE"
     CASSANDRA_WRITE_CONSISTENCY = "ONE"
     CASSANDRA_DETAILED_MODE = True
+    CASSANDRA_OPTIONS = {
+        'timeout': 300,
+        'max_retries': 10
+    }
 
 .. _conf-messaging:
 
@@ -1402,14 +1414,25 @@ The directory containing X.509 certificates used for
 Custom Component Classes (advanced)
 -----------------------------------
 
-.. setting:: CELERYD_BOOT_STEPS
+.. setting:: CELERYD_BOOTSTEPS
 
-CELERYD_BOOT_STEPS
-~~~~~~~~~~~~~~~~~~
+CELERYD_BOOTSTEPS
+~~~~~~~~~~~~~~~~~
 
 This setting enables you to add additional components to the worker process.
-It should be a list of module names with :class:`celery.abstract.Component`
+It should be a list of module names with
+:class:`celery.bootsteps.Step`
 classes, that augments functionality in the worker.
+
+.. setting:: CELERYD_CONSUMER_BOOTSTEPS
+
+CELERYD_CONSUMER_BOOTSTEPS
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This setting enables you to add additional components to the workers consumer.
+It should be a list of module names with
+:class:`celery.bootsteps.Step`` classes, that augments
+functionality in the consumer.
 
 .. setting:: CELERYD_POOL
 

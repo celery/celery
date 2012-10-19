@@ -2,37 +2,29 @@ from __future__ import absolute_import
 
 from mock import Mock
 
-from celery.worker import bootsteps
+from celery import bootsteps
 
 from celery.tests.utils import AppCase, Case
 
 
-class test_Component(Case):
+class test_Step(Case):
 
-    class Def(bootsteps.Component):
-        name = 'test_Component.Def'
+    class Def(bootsteps.StartStopStep):
+        name = 'test_Step.Def'
 
-    def test_components_must_be_named(self):
-        with self.assertRaises(NotImplementedError):
-
-            class X(bootsteps.Component):
-                pass
-
-        class Y(bootsteps.Component):
-            abstract = True
+    def setUp(self):
+        self.steps = []
 
     def test_namespace_name(self, ns='test_namespace_name'):
 
-        class X(bootsteps.Component):
+        class X(bootsteps.Step):
             namespace = ns
             name = 'X'
-        self.assertEqual(X.namespace, ns)
         self.assertEqual(X.name, 'X')
 
-        class Y(bootsteps.Component):
-            name = '%s.Y' % (ns, )
-        self.assertEqual(Y.namespace, ns)
-        self.assertEqual(Y.name, 'Y')
+        class Y(bootsteps.Step):
+            name = '%s.Y' % ns
+        self.assertEqual(Y.name, '%s.Y' % ns)
 
     def test_init(self):
         self.assertTrue(self.Def(self))
@@ -70,13 +62,13 @@ class test_Component(Case):
         self.assertFalse(x.create.call_count)
 
 
-class test_StartStopComponent(Case):
+class test_StartStopStep(Case):
 
-    class Def(bootsteps.StartStopComponent):
-        name = 'test_StartStopComponent.Def'
+    class Def(bootsteps.StartStopStep):
+        name = 'test_StartStopStep.Def'
 
     def setUp(self):
-        self.components = []
+        self.steps = []
 
     def test_start__stop(self):
         x = self.Def(self)
@@ -84,42 +76,31 @@ class test_StartStopComponent(Case):
 
         # include creates the underlying object and sets
         # its x.obj attribute to it, as well as appending
-        # it to the parent.components list.
+        # it to the parent.steps list.
         x.include(self)
-        self.assertTrue(self.components)
-        self.assertIs(self.components[0], x.obj)
+        self.assertTrue(self.steps)
+        self.assertIs(self.steps[0], x)
 
-        x.start()
+        x.start(self)
         x.obj.start.assert_called_with()
 
-        x.stop()
+        x.stop(self)
         x.obj.stop.assert_called_with()
 
     def test_include_when_disabled(self):
         x = self.Def(self)
         x.enabled = False
         x.include(self)
-        self.assertFalse(self.components)
+        self.assertFalse(self.steps)
 
-    def test_terminate_when_terminable(self):
-        x = self.Def(self)
-        x.terminable = True
-        x.create = Mock()
-
-        x.include(self)
-        x.terminate()
-        x.obj.terminate.assert_called_with()
-        self.assertFalse(x.obj.stop.call_count)
-
-    def test_terminate_calls_stop_when_not_terminable(self):
+    def test_terminate(self):
         x = self.Def(self)
         x.terminable = False
         x.create = Mock()
 
         x.include(self)
-        x.terminate()
+        x.terminate(self)
         x.obj.stop.assert_called_with()
-        self.assertFalse(x.obj.terminate.call_count)
 
 
 class test_Namespace(AppCase):
@@ -127,47 +108,29 @@ class test_Namespace(AppCase):
     class NS(bootsteps.Namespace):
         name = 'test_Namespace'
 
-    class ImportingNS(bootsteps.Namespace):
+    def test_steps_added_to_unclaimed(self):
 
-        def __init__(self, *args, **kwargs):
-            bootsteps.Namespace.__init__(self, *args, **kwargs)
-            self.imported = []
-
-        def modules(self):
-            return ['A', 'B', 'C']
-
-        def import_module(self, module):
-            self.imported.append(module)
-
-    def test_components_added_to_unclaimed(self):
-
-        class tnA(bootsteps.Component):
+        class tnA(bootsteps.Step):
             name = 'test_Namespace.A'
 
-        class tnB(bootsteps.Component):
+        class tnB(bootsteps.Step):
             name = 'test_Namespace.B'
 
-        class xxA(bootsteps.Component):
+        class xxA(bootsteps.Step):
             name = 'xx.A'
 
-        self.assertIn('A', self.NS._unclaimed['test_Namespace'])
-        self.assertIn('B', self.NS._unclaimed['test_Namespace'])
-        self.assertIn('A', self.NS._unclaimed['xx'])
-        self.assertNotIn('B', self.NS._unclaimed['xx'])
+        class NS(self.NS):
+            default_steps = [tnA, tnB]
+        ns = NS(app=self.app)
+
+        self.assertIn(tnA, ns._all_steps())
+        self.assertIn(tnB, ns._all_steps())
+        self.assertNotIn(xxA, ns._all_steps())
 
     def test_init(self):
         ns = self.NS(app=self.app)
         self.assertIs(ns.app, self.app)
         self.assertEqual(ns.name, 'test_Namespace')
-        self.assertFalse(ns.services)
-
-    def test_interface_modules(self):
-        self.NS(app=self.app).modules()
-
-    def test_load_modules(self):
-        x = self.ImportingNS(app=self.app)
-        x.load_modules()
-        self.assertListEqual(x.imported, ['A', 'B', 'C'])
 
     def test_apply(self):
 
@@ -177,44 +140,32 @@ class test_Namespace(AppCase):
             def modules(self):
                 return ['A', 'B']
 
-        class A(bootsteps.Component):
-            name = 'test_apply.A'
-            requires = ['C']
-
-        class B(bootsteps.Component):
+        class B(bootsteps.Step):
             name = 'test_apply.B'
 
-        class C(bootsteps.Component):
+        class C(bootsteps.Step):
             name = 'test_apply.C'
-            requires = ['B']
+            requires = [B]
 
-        class D(bootsteps.Component):
+        class A(bootsteps.Step):
+            name = 'test_apply.A'
+            requires = [C]
+
+        class D(bootsteps.Step):
             name = 'test_apply.D'
             last = True
 
-        x = MyNS(app=self.app)
-        x.import_module = Mock()
+        x = MyNS([A, D], app=self.app)
         x.apply(self)
 
-        self.assertItemsEqual(x.components.values(), [A, B, C, D])
-        self.assertTrue(x.import_module.call_count)
+        self.assertIsInstance(x.order[0], B)
+        self.assertIsInstance(x.order[1], C)
+        self.assertIsInstance(x.order[2], A)
+        self.assertIsInstance(x.order[3], D)
+        self.assertIn(A, x.types)
+        self.assertIs(x[A.name], x.order[2])
 
-        for boot_step in x.boot_steps:
-            self.assertEqual(boot_step.namespace, x)
-
-        self.assertIsInstance(x.boot_steps[0], B)
-        self.assertIsInstance(x.boot_steps[1], C)
-        self.assertIsInstance(x.boot_steps[2], A)
-        self.assertIsInstance(x.boot_steps[3], D)
-
-        self.assertIs(x['A'], A)
-
-    def test_import_module(self):
-        x = self.NS(app=self.app)
-        import os
-        self.assertIs(x.import_module('os'), os)
-
-    def test_find_last_but_no_components(self):
+    def test_find_last_but_no_steps(self):
 
         class MyNS(bootsteps.Namespace):
             name = 'qwejwioqjewoqiej'

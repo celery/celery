@@ -50,7 +50,7 @@ Highlights
 
         Read more in the :ref:`Canvas <guide-canvas>` user guide.
 
-    - All of Celery's command line programs are now available from a single
+    - All of Celery's command-line programs are now available from a single
       :program:`celery` umbrella command.
 
     - This is the last version to support Python 2.5.
@@ -122,7 +122,7 @@ by default if the eventloop is not used.
 New ``celery`` umbrella command
 -------------------------------
 
-All Celery's command line programs are now available from a single
+All Celery's command-line programs are now available from a single
 :program:`celery` umbrella command.
 
 You can see a list of subcommands and options by running:

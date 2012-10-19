@@ -20,7 +20,7 @@ Preload Options
 
 .. cmdoption:: --config
 
-    name of the configuration module (default: `celeryconfig`)
+    Name of the configuration module
 
 .. _daemon-options:
 
@@ -80,7 +80,7 @@ for warning in (CDeprecationWarning, CPendingDeprecationWarning):
     warnings.simplefilter('once', warning, 0)
 
 ARGV_DISABLED = """
-Unrecognized command line arguments: {0}
+Unrecognized command-line arguments: {0}
 
 Try --help?
 """
@@ -103,7 +103,7 @@ class HelpFormatter(IndentedHelpFormatter):
 
 
 class Command(object):
-    """Base class for command line applications.
+    """Base class for command-line applications.
 
     :keyword app: The current app.
     :keyword get_app: Callable returning the current app if no app provided.
@@ -127,12 +127,16 @@ class Command(object):
     # module Rst documentation to parse help from (if any)
     doc = None
 
+    # Some programs (multi) does not want to load the app specified
+    # (Issue #1008).
+    respects_app_option = True
+
     #: List of options to parse before parsing other options.
     preload_options = (
         Option('-A', '--app', default=None),
         Option('-b', '--broker', default=None),
         Option('--loader', default=None),
-        Option('--config', default='celeryconfig', dest='config_module'),
+        Option('--config', default=None),
     )
 
     #: Enable if the application should support config from the cmdline.
@@ -159,9 +163,9 @@ class Command(object):
         raise NotImplementedError('subclass responsibility')
 
     def execute_from_commandline(self, argv=None):
-        """Execute application from command line.
+        """Execute application from command-line.
 
-        :keyword argv: The list of command line arguments.
+        :keyword argv: The list of command-line arguments.
                        Defaults to ``sys.argv``.
 
         """
@@ -195,7 +199,7 @@ class Command(object):
         return '%%prog [options] {0.args}'.format(self)
 
     def get_options(self):
-        """Get supported command line options."""
+        """Get supported command-line options."""
         return self.option_list
 
     def expanduser(self, value):
@@ -204,7 +208,7 @@ class Command(object):
         return value
 
     def handle_argv(self, prog_name, argv):
-        """Parses command line arguments from ``argv`` and dispatches
+        """Parses command-line arguments from ``argv`` and dispatches
         to :meth:`run`.
 
         :param prog_name: The program name (``argv[0]``).
@@ -286,15 +290,18 @@ class Command(object):
         broker = preload_options.get('broker', None)
         if broker:
             os.environ['CELERY_BROKER_URL'] = broker
-        config_module = preload_options.get('config_module')
-        if config_module:
-            os.environ['CELERY_CONFIG_MODULE'] = config_module
-        if app:
-            self.app = self.find_app(app)
-        elif self.app is None:
-            self.app = self.get_app(loader=loader)
-        if self.enable_config_from_cmdline:
-            argv = self.process_cmdline_config(argv)
+        config = preload_options.get('config')
+        if config:
+            os.environ['CELERY_CONFIG_MODULE'] = config
+        if self.respects_app_option:
+            if app and self.respects_app_option:
+                self.app = self.find_app(app)
+            elif self.app is None:
+                self.app = self.get_app(loader=loader)
+            if self.enable_config_from_cmdline:
+                argv = self.process_cmdline_config(argv)
+        else:
+            self.app = celery.Celery()
         return argv
 
     def find_app(self, app):
@@ -304,10 +311,13 @@ class Command(object):
             # last part was not an attribute, but a module
             sym = import_from_cwd(app)
         if isinstance(sym, ModuleType):
-            if getattr(sym, '__path__', None):
-                return self.find_app('{0}.celery:'.format(
-                            app.replace(':', '')))
-            return sym.celery
+            try:
+                return sym.celery
+            except AttributeError:
+                if getattr(sym, '__path__', None):
+                    return self.find_app('{0}.celery:'.format(
+                                app.replace(':', '')))
+                raise
         return sym
 
     def symbol_by_name(self, name):
@@ -377,8 +387,8 @@ class Command(object):
             return match.sub(lambda m: keys[m.expand(expand)], s)
 
     def _get_default_app(self, *args, **kwargs):
-        from celery.app import default_app
-        return default_app._get_current_object()  # omit proxy
+        from celery._state import get_current_app
+        return get_current_app()  # omit proxy
 
 
 def daemon_options(default_pidfile=None, default_logfile=None):

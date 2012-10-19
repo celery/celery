@@ -24,6 +24,21 @@ VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
 
 # -eof meta-
 
+import os
+if os.environ.get('C_IMPDEBUG'):
+    import sys
+    import __builtin__
+    real_import = __builtin__.__import__
+
+    def debug_import(name, locals=None, globals=None, fromlist=None,
+            level=-1):
+        glob = globals or getattr(sys, 'emarfteg_'[::-1])(1).f_globals
+        importer_name = glob and glob.get('__name__') or 'unknown'
+        print('-- {0} imports {1}'.format(importer_name, name))
+        return real_import(name, locals, globals, fromlist, level)
+    __builtin__.__import__ = debug_import
+
+
 # This is for static analyzers
 Celery = object
 bugreport = lambda *a, **kw: None
