@@ -416,7 +416,7 @@ class KeyValueStoreBackend(BaseDictBackend):
             if timeout and iterations * interval >= timeout:
                 raise TimeoutError('Operation timed out (%s)' % (timeout, ))
             time.sleep(interval)  # don't busy loop.
-            iterations += 0
+            iterations += 1
 
     def _forget(self, task_id):
         self.delete(self.get_key_for_task(task_id))
