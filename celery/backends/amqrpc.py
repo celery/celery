@@ -39,10 +39,9 @@ class AMQRPCBackend(amqp.AMQPBackend):
         return self.Exchange('c.amqrpc', type=type, delivery_mode=1,
                 durable=False, auto_delete=False)
 
-    def on_task_apply(self, task_id):
-        with self.app.pool.acquire_channel(block=True) as (conn, channel):
-            maybe_declare(self.binding(channel), retry=True)
-            return {'reply_to': self.oid}
+    def on_task_call(self, producer, task_id):
+        maybe_declare(self.binding(producer.channel), retry=True)
+        return {'reply_to': self.oid}
 
     def _create_binding(self, task_id):
         return self.binding

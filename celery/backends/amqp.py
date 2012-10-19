@@ -220,9 +220,13 @@ class AMQPBackend(BaseBackend):
 
             def callback(meta, message):
                 if meta['status'] in states.READY_STATES:
-                    results.append(meta)
+                    task_id = meta['task_id']
+                    if task_id in task_ids:
+                        results.append(meta)
+                    else:
+                        self._cache[task_id] = meta
 
-            bindings = self._many_bindings(task_id)
+            bindings = self._many_bindings(task_ids)
             with self.Consumer(channel, bindings, callbacks=[callback],
                     no_ack=True):
                 wait = conn.drain_events

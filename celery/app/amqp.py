@@ -199,7 +199,7 @@ class TaskProducer(Producer):
                 'utc': self.utc,
                 'callbacks': callbacks,
                 'errbacks': errbacks,
-                'reply_to': reply_to}
+                'reply_to': reply_to,
                 'timeouts': timeouts}
         group_id = group_id or taskset_id
         if group_id:

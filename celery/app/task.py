@@ -474,7 +474,7 @@ class Task(object):
                 evd = app.events.Dispatcher(channel=P.channel,
                                             buffer_while_offline=False)
 
-            extra_properties = self.backend.on_task_apply(task_id)
+            extra_properties = self.backend.on_task_call(producer, task_id)
             task_id = P.publish_task(self.name, args, kwargs,
                                      task_id=task_id,
                                      event_dispatcher=evd,
