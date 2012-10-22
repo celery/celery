@@ -4,12 +4,14 @@
 try:
     from setuptools import setup, find_packages
     from setuptools.command.test import test
+    is_setuptools = True
 except ImportError:
     raise
     from ez_setup import use_setuptools
     use_setuptools()
     from setuptools import setup, find_packages           # noqa
     from setuptools.command.test import test              # noqa
+    is_setuptools = False
 
 import os
 import sys
@@ -147,9 +149,9 @@ def strip_comments(l):
     return l.split('#', 1)[0].strip()
 
 
-def reqs(f):
+def reqs(*f):
     return list(filter(None, [strip_comments(l) for l in open(
-        os.path.join(os.getcwd(), 'requirements', f)).readlines()]))
+        os.path.join(os.getcwd(), 'requirements', *f)).readlines()]))
 
 install_requires = reqs('default.txt')
 if is_jython:
@@ -184,6 +186,20 @@ if CELERY_COMPAT_PROGRAMS:
 
 # bundles: Only relevant for Celery developers.
 entrypoints['bundle.bundles'] = ['celery = celery.contrib.bundles:bundles']
+
+if is_setuptools:
+    extras = lambda *p: reqs('extras', *p)
+    extras_require = extra['extras_require'] = {
+        'redis': extras('redis.txt'),
+        'mongodb': extras('mongodb.txt'),
+        'couchdb': extras('couchdb.txt'),
+        'beanstalk': extras('beanstalk.txt'),
+        'zookeeper': extras('zookeeper.txt'),
+        'zeromq': extras('zeromq.txt'),
+        'sqlalchemy': extras('sqlalchemy.txt'),
+        'librabbitmq': extras('librabbitmq.txt'),
+        'pyamqp': extras('pyamqp.txt'),
+    }
 
 # -*- %%% -*-
 
