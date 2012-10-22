@@ -9,6 +9,42 @@
 
 If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
+.. _version-3.0.12:
+
+3.0.12
+======
+:release-date: TBA
+
+- Event state's ``tasks_by_name`` applied limit before filtering by name.
+
+    Fix contributed by Alexander A. Sosnovskiy.
+
+- Results get_many method did not respect timeout argument.
+
+    Fix contributed by Remigiusz Modrzejewski
+
+- generic_init.d scripts now support setting :envvar:`CELERY_CREATE_DIRS` to
+  always create log and pid directories (Issue #1045).
+
+    This can be set in your :file:`/etc/default/celeryd`.
+
+- Fixed strange kombu import problem on Python 3.2 (Issue #1034).
+
+- Workers ETA scheduler now uses millisecond precision (Issue #1040).
+
+- The :param:`--config` argument to programs is now supported by all loaders.
+
+- The :setting:`CASSANDRA_OPTIONS` setting has now been documented.
+
+    Contributed by Jared Biel.
+
+- Task methods (:mod:`celery.contrib.methods`) can not be used with the old
+  task base class.
+
+- An optimization was too eager and caused some logging messages to never emit.
+
+- :mod:`celery.contrib.batches` now works again.
+
 .. _version-3.0.11:
 
 3.0.11
