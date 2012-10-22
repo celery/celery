@@ -333,10 +333,7 @@ class State(object):
                                                  for uuid, task in self.tasks.iteritems()
                                                  if task.name == name])
 
-        if limit:
-            return sorted_tasks[0:limit]
-        else:
-            return sorted_tasks
+        return sorted_tasks[0:limit or None]
 
     def tasks_by_worker(self, hostname, limit=None):
         """Get all tasks by worker.
