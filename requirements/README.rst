@@ -10,10 +10,6 @@ Index
 
     Default requirements for Python 2.7+.
 
-* :file:`requirements/extra-py3k.txt`
-
-    Extra requirements for Python 3.2+.
-
 * :file:`requirements/jython.txt`
 
     Extra requirements needed to run on Jython 2.5
@@ -46,13 +42,12 @@ Index
 Examples
 ========
 
-Installing requirements for running Python 3
---------------------------------------------
+Installing requirements
+-----------------------
 
 ::
 
     $ pip install -U -r requirements/default.txt
-    $ pip install -U -r requirements/extra-py3k.txt
 
 
 Running the tests
