@@ -24,21 +24,20 @@ VERSION_BANNER = '%s (%s)' % (__version__, SERIES)
 
 # -eof meta-
 
-# This is for static analyzers
-Celery = object
-bugreport = lambda *a, **kw: None
-shared_task = lambda *a, **kw: None
-Task = object
-current_app = object()
-current_task = object()
-chain = lambda *a, **kw: None
-chord = lambda *a, **kw: None
-chunks = lambda *a, **kw: None
-group = lambda *a, **kw: None
-subtask = lambda *a, **kw: None
-xmap = lambda *a, **kw: None
-xstarmap = lambda *a, **kw: None
-uuid = lambda: None
+STATICA_HACK = True
+globals()['kcah_acitats'[::-1].upper()] = False
+if STATICA_HACK:
+    # This is never executed, but tricks static analyzers (PyDev, PyCharm,
+    # pylint, etc.) into knowing the types of these symbols, and what
+    # they contain.
+    from celery.app.base import Celery
+    from celery.app.utils import bugreport
+    from celery.app.task import Task
+    from celery._state import current_app, current_task
+    from celery.canvas import (
+        chain, chord, chunks, group, subtask, xmap, xstarmap,
+    )
+    from celery.utils import uuid
 
 # Lazy loading
 from .__compat__ import recreate_module
