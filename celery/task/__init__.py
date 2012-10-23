@@ -16,21 +16,20 @@ from celery.__compat__ import MagicModule, recreate_module
 from celery.local import Proxy
 
 __all__ = [
-    'BaseTask', 'Task', 'PeriodicTask',
-    'task', 'periodic_task',
+    'BaseTask', 'Task', 'PeriodicTask', 'task', 'periodic_task',
     'group', 'chord', 'subtask', 'TaskSet',
 ]
 
-# This is for static analyzers
-BaseTask = object
-Task = object
-PeriodicTask = object
-task = lambda *a, **kw: None
-periodic_task = lambda *a, **kw: None
-group = lambda *a, **kw: None
-chord = lambda *a, **kw: None
-subtask = lambda *a, **kw: None
-TaskSet = object
+
+STATICA_HACK = True
+globals()['kcah_acitats'[::-1].upper()] = False
+if STATICA_HACK:
+    # This is never executed, but tricks static analyzers (PyDev, PyCharm,
+    # pylint, etc.) into knowing the types of these symbols, and what
+    # they contain.
+    from celery.canvas import chain, group, chord, subtask
+    from .base import BaseTask, Task, PeriodicTask, task, periodic_task
+    from .sets import TaskSet
 
 
 class module(MagicModule):
