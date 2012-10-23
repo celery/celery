@@ -62,7 +62,8 @@ def report(panel):
 @Panel.register
 def enable_events(panel):
     dispatcher = panel.consumer.event_dispatcher
-    if not dispatcher.enabled:
+    if 'task' not in dispatcher.domains:
+        dispatcher.domains.add('task')
         dispatcher.enable()
         dispatcher.send('worker-online')
         logger.info('Events enabled by remote.')
@@ -73,9 +74,9 @@ def enable_events(panel):
 @Panel.register
 def disable_events(panel):
     dispatcher = panel.consumer.event_dispatcher
-    if dispatcher.enabled:
+    if 'task' in dispatcher.domains:
+        dispatcher.domains.discard('task')
         dispatcher.send('worker-offline')
-        dispatcher.disable()
         logger.info('Events disabled by remote.')
         return {'ok': 'events disabled'}
     return {'ok': 'events already disabled'}

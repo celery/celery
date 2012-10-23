@@ -275,8 +275,11 @@ class State(object):
         hostname = fields.pop('hostname', None)
         if hostname:
             worker = self.get_or_create_worker(hostname)
-            handler = getattr(worker, 'on_' + type, None)
-            if handler:
+            try:
+                handler = self.__dict__['on_' + type]
+            except KeyError:
+                pass
+            else:
                 handler(**fields)
 
     def task_event(self, type, fields):

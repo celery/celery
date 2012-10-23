@@ -10,8 +10,11 @@ up and running.
 """
 from __future__ import absolute_import
 
+import kombu
 import logging
 import socket
+
+from functools import partial
 
 from kombu.common import QoS, ignore_errors
 from kombu.syn import _detect_environment
@@ -119,6 +122,7 @@ class Consumer(object):
             'celery.worker.consumer:Tasks',
             'celery.worker.consumer:Evloop',
             'celery.worker.consumer:Agent',
+            'celery.worker.consumer:Gossip',
         ]
 
         def shutdown(self, parent):
@@ -382,13 +386,15 @@ class Events(bootsteps.StartStopStep):
 
     def __init__(self, c, send_events=None, **kwargs):
         self.send_events = send_events
+        self.domains = None if self.send_events else ['worker']
         c.event_dispatcher = None
 
     def start(self, c):
         # Flush events sent while connection was down.
         prev = c.event_dispatcher
         dis = c.event_dispatcher = c.app.events.Dispatcher(
-            c.connection, hostname=c.hostname, enabled=self.send_events,
+            c.connection, hostname=c.hostname,
+            enabled=self.send_events, domains=self.domains,
         )
         if prev:
             dis.copy_buffer(prev)
@@ -465,6 +471,28 @@ class Agent(bootsteps.StartStopStep):
     def create(self, c):
         agent = c.agent = self.instantiate(self.agent_cls, c.connection)
         return agent
+
+
+class Gossip(bootsteps.ConsumerStep):
+    label = 'gossip'
+    requires = (Connection, )
+
+    def __init__(self, c, **kwargs):
+        self.Receiver = c.app.events.Receiver
+        self.hostname = c.hostname
+
+        self.state = c.cluster = c.app.events.State()
+        self.update_state = self.state.worker_event
+
+    def get_consumers(self, channel):
+        events = self.Receiver(channel, routing_key='worker.#')
+        events.process = self.on_event
+        return events.get_consumers(partial(kombu.Consumer, channel), channel)
+
+    def on_event(self, type, event):
+        if event['hostname'] != self.hostname:
+            print('Got event: %r %r' % (type, event))
+            self.update_state(type, event)
 
 
 class Evloop(bootsteps.StartStopStep):

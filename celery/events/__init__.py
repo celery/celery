@@ -48,6 +48,10 @@ def Event(type, _fields=None, **fields):
     return event
 
 
+def domain(type):
+    return type.split('-', 1)
+
+
 class EventDispatcher(object):
     """Send events as messages.
 
@@ -69,10 +73,11 @@ class EventDispatcher(object):
     You need to :meth:`close` this after use.
 
     """
+    DISABLED_TRANSPORTS = set(['sql'])
 
     def __init__(self, connection=None, hostname=None, enabled=True,
             channel=None, buffer_while_offline=True, app=None,
-            serializer=None):
+            serializer=None, domains=None):
         self.app = app_or_default(app or self.app)
         self.connection = connection
         self.channel = channel
@@ -85,10 +90,12 @@ class EventDispatcher(object):
         self.on_enabled = set()
         self.on_disabled = set()
         self.tzoffset = [-time.timezone, -time.altzone]
-
-        self.enabled = enabled
+        self.domains = set(domains or [])
         if not connection and channel:
             self.connection = channel.connection.client
+        self.enabled = enabled
+        if self.connection.transport.driver_type in self.DISABLED_TRANSPORTS:
+            self.enabled = False
         if self.enabled:
             self.enable()
 
@@ -127,6 +134,10 @@ class EventDispatcher(object):
 
         """
         if self.enabled:
+            domains = self.domains
+            if domains and domain(type) not in domains:
+                return
+
             with self.mutex:
                 event = Event(type, hostname=self.hostname,
                                     clock=self.app.clock.forward(),
