@@ -444,7 +444,7 @@ class Task(object):
         :keyword publisher: Deprecated alias to ``producer``.
 
         Also supports all keyword arguments supported by
-        :meth:`kombu.messaging.Producer.publish`.
+        :meth:`kombu.Producer.publish`.
 
         .. note::
             If the :setting:`CELERY_ALWAYS_EAGER` setting is set, it will

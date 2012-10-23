@@ -264,7 +264,7 @@ Application
         :keyword transport: defaults to the :setting:`BROKER_TRANSPORT`
                  setting.
 
-        :returns :class:`kombu.connection.Connection`:
+        :returns :class:`kombu.Connection`:
 
     .. method:: Celery.connection_or_acquire(connection=None)
 

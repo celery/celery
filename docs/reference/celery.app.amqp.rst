@@ -13,7 +13,7 @@
         .. attribute:: Connection
 
             Broker connection class used.  Default is
-            :class:`kombu.connection.Connection`.
+            :class:`kombu.Connection`.
 
         .. attribute:: Consumer
 
