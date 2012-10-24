@@ -85,6 +85,7 @@ class EventDispatcher(object):
         self.on_enabled = set()
         self.on_disabled = set()
         self.tzoffset = [-time.timezone, -time.altzone]
+        self.clock = self.app.clock
 
         self.enabled = enabled
         if not connection and channel:
@@ -129,7 +130,7 @@ class EventDispatcher(object):
         if self.enabled:
             with self.mutex:
                 event = Event(type, hostname=self.hostname,
-                                    clock=self.app.clock.forward(),
+                                    clock=self.clock.forward(),
                                     tzoffset=self.tzoffset, **fields)
                 try:
                     self.publisher.publish(event,
@@ -221,7 +222,7 @@ class EventReceiver(ConsumerMixin):
         type = body.pop('type').lower()
         clock = body.get('clock')
         if clock:
-            self.app.clock.adjust(clock)
+            self.clock.adjust(clock)
         self.process(type, Event(type, body))
 
 

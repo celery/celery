@@ -55,6 +55,9 @@ class Inspect(object):
     def report(self):
         return self._request('report')
 
+    def clock(self):
+        return self._request('clock')
+
     def active(self, safe=False):
         return self._request('dump_active', safe=safe)
 
@@ -89,7 +92,8 @@ class Control(object):
 
     def __init__(self, app=None):
         self.app = app_or_default(app)
-        self.mailbox = self.Mailbox('celery', type='fanout')
+        self.mailbox = self.Mailbox('celery',
+                type='fanout', clock=self.app.clock)
 
     @cached_property
     def inspect(self):
