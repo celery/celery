@@ -13,7 +13,6 @@ import kombu
 from threading import local
 
 from kombu.common import maybe_declare, oid_from
-from kombu.utils import cached_property
 
 from celery import current_task
 from celery.backends import amqp

@@ -182,6 +182,7 @@ class EventReceiver(ConsumerMixin):
                            routing_key=self.routing_key,
                            auto_delete=True,
                            durable=False)
+        self.clock = self.app.clock
 
     def get_exchange(self):
         return get_exchange(self.connection)

@@ -5,6 +5,8 @@ import socket
 from datetime import timedelta
 from Queue import Empty, Queue
 
+from mock import patch
+
 from celery import current_app
 from celery import states
 from celery.app import app_or_default
@@ -246,15 +248,11 @@ class test_AMQPBackend(AppCase):
             next(b.get_many(['id1']))
 
     def test_test_get_many_raises_inner_block(self):
-
-        class Backend(AMQPBackend):
-
-            def drain_events(self, *args, **kwargs):
-                raise KeyError('foo')
-
-        b = Backend()
-        with self.assertRaises(KeyError):
-            next(b.get_many(['id1']))
+        with patch('kombu.connection.Connection.drain_events') as drain:
+            drain.side_effect = KeyError('foo')
+            b = AMQPBackend()
+            with self.assertRaises(KeyError):
+                next(b.get_many(['id1']))
 
     def test_no_expires(self):
         b = self.create_backend(expires=None)
