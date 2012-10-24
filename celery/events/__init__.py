@@ -60,6 +60,10 @@ class EventDispatcher(object):
     :keyword hostname: Hostname to identify ourselves as,
         by default uses the hostname returned by :func:`socket.gethostname`.
 
+    :keyword domains: List of domains to send events for.  :meth:`send` will
+        ignore send requests to domains not in this list.
+        If this is :const:`None`, all events will be sent.
+
     :keyword enabled: Set to :const:`False` to not actually publish any events,
         making :meth:`send` a noop operation.
 
