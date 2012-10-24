@@ -115,8 +115,11 @@ class AMQPBackend(BaseBackend):
                             routing_key=self._routing_key(task_id),
                             serializer=self.serializer,
                             retry=True, retry_policy=self.retry_policy,
-                            declare=[self._create_binding(task_id)])
+                            declare=self.on_reply_declare(task_id))
         return result
+
+    def on_reply_declare(self, task_id):
+        return [self._create_binding(task_id)]
 
     def wait_for(self, task_id, timeout=None, cache=True, propagate=True,
             **kwargs):
