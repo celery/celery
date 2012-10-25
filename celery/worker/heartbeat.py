@@ -9,6 +9,8 @@
 """
 from __future__ import absolute_import
 
+from celery.utils.sysinfo import load_average
+
 from .state import SOFTWARE_INFO, active_requests, total_count
 
 
@@ -36,6 +38,7 @@ class Heart(object):
         return self.eventer.send(event, freq=self.interval,
                                  active=len(active_requests),
                                  processed=sum(total_count.itervalues()),
+                                 loadavg=load_average(),
                                  **SOFTWARE_INFO)
 
     def start(self):

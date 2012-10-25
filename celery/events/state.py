@@ -33,6 +33,7 @@ from celery.datastructures import AttributeDict, LRUCache
 # then the worker is considered to be offline.
 HEARTBEAT_EXPIRE_WINDOW = 200
 
+from datetime import datetime
 
 def heartbeat_expires(timestamp, freq=60,
         expire_window=HEARTBEAT_EXPIRE_WINDOW):
@@ -75,7 +76,7 @@ class Worker(Element):
                 self.heartbeats = self.heartbeats[self.heartbeat_max:]
 
     def __repr__(self):
-        return '<Worker: {0.hostname} (0.status_string)'.format(self)
+        return '<Worker: {0.hostname} ({0.status_string})'.format(self)
 
     @property
     def status_string(self):
@@ -88,7 +89,7 @@ class Worker(Element):
 
     @property
     def alive(self):
-        return (self.heartbeats and time() < self.heartbeat_expires)
+        return bool(self.heartbeats and time() < self.heartbeat_expires)
 
 
 class Task(Element):
@@ -216,8 +217,10 @@ class State(object):
         self.workers = LRUCache(limit=max_workers_in_memory)
         self.tasks = LRUCache(limit=max_tasks_in_memory)
         self.event_callback = callback
-        self.group_handlers = {'worker': self.worker_event,
-                               'task': self.task_event}
+        self.group_handlers = {
+            'worker': self.worker_event,
+            'task': self.task_event,
+        }
         self._mutex = threading.Lock()
 
     def freeze_while(self, fun, *args, **kwargs):
@@ -253,41 +256,46 @@ class State(object):
             return self._clear(ready)
 
     def get_or_create_worker(self, hostname, **kwargs):
-        """Get or create worker by hostname."""
+        """Get or create worker by hostname.
+
+        Returns tuple of ``(worker, was_created)``.
+        """
         try:
             worker = self.workers[hostname]
             worker.update(kwargs)
+            return worker, False
         except KeyError:
             worker = self.workers[hostname] = Worker(
                     hostname=hostname, **kwargs)
-        return worker
+            return worker, True
 
     def get_or_create_task(self, uuid):
         """Get or create task by uuid."""
         try:
-            return self.tasks[uuid]
+            return self.tasks[uuid], True
         except KeyError:
             task = self.tasks[uuid] = Task(uuid=uuid)
-            return task
+            return task, False
 
     def worker_event(self, type, fields):
         """Process worker event."""
-        hostname = fields.pop('hostname', None)
-        if hostname:
-            worker = self.get_or_create_worker(hostname)
-            try:
-                handler = self.__dict__['on_' + type]
-            except KeyError:
-                pass
-            else:
+        try:
+            hostname = fields['hostname']
+        except KeyError:
+            pass
+        else:
+            worker, created = self.get_or_create_worker(hostname)
+            handler = getattr(worker, 'on_' + type, None)
+            if handler:
                 handler(**fields)
+            return worker, created
 
     def task_event(self, type, fields):
         """Process task event."""
         uuid = fields.pop('uuid')
         hostname = fields.pop('hostname')
-        worker = self.get_or_create_worker(hostname)
-        task = self.get_or_create_task(uuid)
+        worker, _ = self.get_or_create_worker(hostname)
+        task, created = self.get_or_create_task(uuid)
         handler = getattr(task, 'on_' + type, None)
         if type == 'received':
             self.task_count += 1
@@ -296,6 +304,7 @@ class State(object):
         else:
             task.on_unknown_event(type, **fields)
         task.worker = worker
+        return created
 
     def event(self, event):
         with self._mutex:
@@ -304,8 +313,8 @@ class State(object):
     def _dispatch_event(self, event):
         self.event_count += 1
         event = kwdict(event)
-        group, _, type = event.pop('type').partition('-')
-        self.group_handlers[group](type, event)
+        group, _, subject = event.pop('type').partition('-')
+        self.group_handlers[group](subject, event)
         if self.event_callback:
             self.event_callback(self, event)
 

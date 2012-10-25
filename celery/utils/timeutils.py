@@ -335,3 +335,17 @@ class ffwd(object):
             'hour': self.hour, 'minute': self.minute,
             'second': self.second, 'microsecond': self.microsecond,
         }, **extra)
+
+
+__timezone__ = -_time.timezone
+__altzone__ = -_time.altzone
+
+
+def utcoffset():
+    if _time.daylight:
+        return (__timezone__ + __altzone__) // 3600
+    return __timezone__ // 3600
+
+
+def adjust_timestamp(ts, offset, here=utcoffset):
+    return ts - (offset - here()) * 3600

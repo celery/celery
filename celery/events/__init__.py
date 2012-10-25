@@ -17,6 +17,7 @@ import threading
 from collections import deque
 from contextlib import contextmanager
 from copy import copy
+from operator import itemgetter
 
 from kombu import Exchange, Queue, Producer
 from kombu.mixins import ConsumerMixin
@@ -24,8 +25,11 @@ from kombu.utils import cached_property
 
 from celery.app import app_or_default
 from celery.utils import uuid
+from celery.utils.timeutils import adjust_timestamp, utcoffset
 
 event_exchange = Exchange('celeryev', type='topic')
+
+_TZGETTER = itemgetter('utcoffset', 'timestamp')
 
 
 def get_exchange(conn):
@@ -48,8 +52,8 @@ def Event(type, _fields=None, **fields):
     return event
 
 
-def domain(type):
-    return type.split('-', 1)
+def group_from(type):
+    return type.split('-', 1)[0]
 
 
 class EventDispatcher(object):
@@ -60,9 +64,10 @@ class EventDispatcher(object):
     :keyword hostname: Hostname to identify ourselves as,
         by default uses the hostname returned by :func:`socket.gethostname`.
 
-    :keyword domains: List of domains to send events for.  :meth:`send` will
-        ignore send requests to domains not in this list.
-        If this is :const:`None`, all events will be sent.
+    :keyword groups: List of groups to send events for.  :meth:`send` will
+        ignore send requests to groups not in this list.
+        If this is :const:`None`, all events will be sent. Example groups
+        include ``"task"`` and ``"worker"``.
 
     :keyword enabled: Set to :const:`False` to not actually publish any events,
         making :meth:`send` a noop operation.
@@ -81,7 +86,7 @@ class EventDispatcher(object):
 
     def __init__(self, connection=None, hostname=None, enabled=True,
             channel=None, buffer_while_offline=True, app=None,
-            serializer=None, domains=None):
+            serializer=None, groups=None):
         self.app = app_or_default(app or self.app)
         self.connection = connection
         self.channel = channel
@@ -93,8 +98,7 @@ class EventDispatcher(object):
         self.serializer = serializer or self.app.conf.CELERY_EVENT_SERIALIZER
         self.on_enabled = set()
         self.on_disabled = set()
-        self.tzoffset = [-time.timezone, -time.altzone]
-        self.domains = set(domains or [])
+        self.groups = set(groups or [])
         if not connection and channel:
             self.connection = channel.connection.client
         self.enabled = enabled
@@ -102,6 +106,7 @@ class EventDispatcher(object):
             self.enabled = False
         if self.enabled:
             self.enable()
+        self.headers = {'hostname': self.hostname}
 
     def __enter__(self):
         return self
@@ -138,17 +143,18 @@ class EventDispatcher(object):
 
         """
         if self.enabled:
-            domains = self.domains
-            if domains and domain(type) not in domains:
+            groups = self.groups
+            if groups and group_from(type) not in groups:
                 return
 
             with self.mutex:
                 event = Event(type, hostname=self.hostname,
                                     clock=self.app.clock.forward(),
-                                    tzoffset=self.tzoffset, **fields)
+                                    utcoffset=utcoffset(), **fields)
                 try:
                     self.publisher.publish(event,
-                                           routing_key=type.replace('-', '.'))
+                                           routing_key=type.replace('-', '.'),
+                                           headers=self.headers)
                 except Exception as exc:
                     if not self.buffer_while_offline:
                         raise
@@ -196,6 +202,7 @@ class EventReceiver(ConsumerMixin):
                            routing_key=self.routing_key,
                            auto_delete=True,
                            durable=False)
+        self.adjust_clock = self.app.clock.adjust
 
     def get_exchange(self):
         return get_exchange(self.connection)
@@ -232,12 +239,24 @@ class EventReceiver(ConsumerMixin):
                                    connection=self.connection,
                                    channel=channel)
 
-    def _receive(self, body, message):
-        type = body.pop('type').lower()
+    def event_from_message(self, body, localize=True):
+        type = body.get('type', '').lower()
         clock = body.get('clock')
         if clock:
-            self.app.clock.adjust(clock)
-        self.process(type, Event(type, body))
+            self.adjust_clock(body.get('clock') or 0)
+        if localize:
+            try:
+                offset, timestamp = _TZGETTER(body)
+            except KeyError:
+                pass
+            else:
+                body['timestamp'] = adjust_timestamp(timestamp, offset)
+        from datetime import datetime
+        print('TS: %s' % (datetime.fromtimestamp(body['timestamp']), ))
+        return type, Event(type, body)
+
+    def _receive(self, body, message):
+        self.process(*self.event_from_message(body))
 
 
 class Events(object):

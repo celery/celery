@@ -385,8 +385,8 @@ class Events(bootsteps.StartStopStep):
     requires = (Connection, )
 
     def __init__(self, c, send_events=None, **kwargs):
-        self.send_events = send_events
-        self.domains = None if self.send_events else ['worker']
+        self.send_events = True
+        self.groups = None if send_events else ['worker']
         c.event_dispatcher = None
 
     def start(self, c):
@@ -394,7 +394,7 @@ class Events(bootsteps.StartStopStep):
         prev = c.event_dispatcher
         dis = c.event_dispatcher = c.app.events.Dispatcher(
             c.connection, hostname=c.hostname,
-            enabled=self.send_events, domains=self.domains,
+            enabled=self.send_events, groups=self.groups,
         )
         if prev:
             dis.copy_buffer(prev)
@@ -477,22 +477,60 @@ class Gossip(bootsteps.ConsumerStep):
     label = 'gossip'
     requires = (Connection, )
 
-    def __init__(self, c, **kwargs):
+    def __init__(self, c, interval=5.0, **kwargs):
         self.Receiver = c.app.events.Receiver
         self.hostname = c.hostname
 
-        self.state = c.cluster = c.app.events.State()
+        self.timer = c.timer
+        self.state = c.gossip = c.app.events.State()
+        self.interval = interval
+        self._tref = None
         self.update_state = self.state.worker_event
 
-    def get_consumers(self, channel):
-        events = self.Receiver(channel, routing_key='worker.#')
-        events.process = self.on_event
-        return events.get_consumers(partial(kombu.Consumer, channel), channel)
+    def on_node_join(self, worker):
+        info('{0.hostname} joined the party'.format(worker))
 
-    def on_event(self, type, event):
-        if event['hostname'] != self.hostname:
-            print('Got event: %r %r' % (type, event))
-            self.update_state(type, event)
+    def on_node_leave(self, worker):
+        info('{0.hostname} left'.format(worker))
+
+    def on_node_lost(self, worker):
+        warning('{0.hostname} went missing!')
+
+    def register_timer(self):
+        if self._tref is not None:
+            self._tref.cancel()
+        self.timer.apply_interval(self.interval * 1000.0, self.periodic)
+
+    def periodic(self):
+        for worker in self.state.workers.itervalues():
+            if not worker.alive:
+                try:
+                    self.on_node_lost(worker)
+                finally:
+                    self.state.workers.pop(worker.hostname, None)
+
+    def get_consumers(self, channel):
+        self.register_timer()
+        ev = self.Receiver(channel, routing_key='worker.#')
+        return [kombu.Consumer(channel,
+                    queues=[ev.queue],
+                    on_message=partial(self.on_message, ev.event_from_message),
+                    no_ack=True)]
+
+    def on_message(self, prepare, message):
+        hostname = (message.headers.get('hostname') or
+                    message.payload['hostname'])
+        if hostname != self.hostname:
+            type, event = prepare(message.payload)
+            group, _, subject = type.partition('-')
+            worker, created = self.update_state(subject, event)
+            if subject == 'offline':
+                try:
+                    self.on_node_leave(worker)
+                finally:
+                    self.state.workers.pop(worker.hostname, None)
+            elif created or subject == 'online':
+                self.on_node_join(worker)
 
 
 class Evloop(bootsteps.StartStopStep):
