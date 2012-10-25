@@ -7,26 +7,15 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import kombu
-import os
-import uuid
 
 from threading import local
 
-from kombu.common import maybe_declare
+from kombu.common import maybe_declare, oid_from
+
+from celery import current_task
 from celery.backends import amqp
-
-try:
-    from thread import get_ident            # noqa
-except ImportError:                         # pragma: no cover
-    try:
-        from dummy_thread import get_ident  # noqa
-    except ImportError:                     # pragma: no cover
-        from _thread import get_ident       # noqa
-
-_nodeid = uuid.getnode()
 
 
 class AMQRPCBackend(amqp.AMQPBackend):
@@ -50,8 +39,10 @@ class AMQRPCBackend(amqp.AMQPBackend):
         return [self.binding]
 
     def _routing_key(self, task_id):
-        from celery import current_task
         return current_task.request.reply_to
+
+    def on_reply_declare(self, task_id):
+        pass
 
     @property
     def binding(self):
@@ -63,6 +54,5 @@ class AMQRPCBackend(amqp.AMQPBackend):
         try:
             return self._tls.OID
         except AttributeError:
-            ent = '%x-%x-%x' % (_nodeid, os.getpid(), get_ident())
-            oid = self._tls.OID = str(uuid.uuid3(uuid.NAMESPACE_OID, ent))
+            oid = self._tls.OID = oid_from(self)
             return oid

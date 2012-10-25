@@ -27,7 +27,7 @@ if STATICA_HACK:
     # This is never executed, but tricks static analyzers (PyDev, PyCharm,
     # pylint, etc.) into knowing the types of these symbols, and what
     # they contain.
-    from celery.canvas import chain, group, chord, subtask
+    from celery.canvas import group, chord, subtask
     from .base import BaseTask, Task, PeriodicTask, task, periodic_task
     from .sets import TaskSet
 
@@ -42,7 +42,7 @@ old_module, new_module = recreate_module(__name__,  # pragma: no cover
     by_module={
         'celery.task.base':   ['BaseTask', 'Task', 'PeriodicTask',
                                'task', 'periodic_task'],
-        'celery.canvas':      ['chain', 'group', 'chord', 'subtask'],
+        'celery.canvas':      ['group', 'chord', 'subtask'],
         'celery.task.sets':   ['TaskSet'],
     },
     base=module,

@@ -45,14 +45,14 @@ if STATICA_HACK:
     # This is never executed, but tricks static analyzers (PyDev, PyCharm,
     # pylint, etc.) into knowing the types of these symbols, and what
     # they contain.
-    from celery.app.base import Celery
-    from celery.app.utils import bugreport
-    from celery.app.task import Task
-    from celery._state import current_app, current_task
-    from celery.canvas import (
+    from celery.app.base import Celery                  # noqa
+    from celery.app.utils import bugreport              # noqa
+    from celery.app.task import Task                    # noqa
+    from celery._state import current_app, current_task # noqa
+    from celery.canvas import (                         # noqa
         chain, chord, chunks, group, subtask, xmap, xstarmap,
     )
-    from celery.utils import uuid
+    from celery.utils import uuid                       # noqa
 
 # Lazy loading
 from .__compat__ import recreate_module

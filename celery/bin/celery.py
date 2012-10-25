@@ -603,6 +603,7 @@ class inspect(_RemoteControl):
         'revoked': (1.0, 'dump of revoked task ids'),
         'registered': (1.0, 'dump of registered tasks'),
         'ping': (0.2, 'ping worker(s)'),
+        'clock': (1.0, 'get value of logical clock'),
         'report': (1.0, 'get bugreport info')
     }
 

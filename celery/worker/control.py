@@ -188,7 +188,13 @@ def stats(panel, **kwargs):
             'consumer': panel.consumer.info,
             'pool': panel.consumer.pool.info,
             'autoscaler': asinfo,
-            'pid': os.getpid()}
+            'pid': os.getpid(),
+            'clock': str(panel.app.clock)}
+
+
+@Panel.register
+def clock(panel, **kwargs):
+    return {'clock': panel.app.clock.value}
 
 
 @Panel.register
