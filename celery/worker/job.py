@@ -299,7 +299,7 @@ class Request(object):
         task_accepted(self)
         if not self.task.acks_late:
             self.acknowledge()
-        self.send_event('task-started', pid=pid)
+        self.send_event('task-started')
         if _does_debug:
             debug('Task accepted: %s[%s] pid:%r', self.name, self.id, pid)
         if self._terminate_on_ack is not None:
