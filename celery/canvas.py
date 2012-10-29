@@ -188,6 +188,18 @@ class Signature(dict):
         args, kwargs, _ = self._merge(args, kwargs, {})
         return reprcall(self['task'], args, kwargs)
 
+    def election(self):
+        type = self.type
+        app = type.app
+        tid = self.options.get('task_id') or uuid()
+
+        with app.producer_or_acquire(None) as P:
+            props = type.backend.on_task_call(P, tid)
+            print('PROPS: %r' % (props, ))
+            app.control.election(tid, 'task', self.clone(task_id=tid, **props),
+                                 connection=P.connection)
+            return type.AsyncResult(tid)
+
     def __repr__(self):
         return self.reprcall()
 

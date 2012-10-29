@@ -30,6 +30,10 @@ class AMQRPCBackend(amqp.AMQPBackend):
 
     def on_task_call(self, producer, task_id):
         maybe_declare(self.binding(producer.channel), retry=True)
+        return self.extra_properties
+
+    @property
+    def extra_properties(self):
         return {'reply_to': self.oid}
 
     def _create_binding(self, task_id):

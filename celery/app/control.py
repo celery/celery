@@ -93,7 +93,7 @@ class Control(object):
     def __init__(self, app=None):
         self.app = app_or_default(app)
         self.mailbox = self.Mailbox('celery',
-                type='fanout', clock=self.app.clock)
+                type='fanout', )#clock=self.app.clock)
 
     @cached_property
     def inspect(self):
@@ -111,6 +111,11 @@ class Control(object):
         with self.app.connection_or_acquire(connection) as conn:
             return self.app.amqp.TaskConsumer(conn).purge()
     discard_all = purge
+
+    def election(self, id, topic, action=None, connection=None):
+        self.broadcast('election', connection=connection, arguments={
+            'id': id, 'topic': topic, 'action': action,
+        })
 
     def revoke(self, task_id, destination=None, terminate=False,
             signal='SIGTERM', **kwargs):

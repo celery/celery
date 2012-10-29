@@ -14,7 +14,10 @@ import kombu
 import logging
 import socket
 
+from collections import defaultdict
 from functools import partial
+from heapq import heappush
+from operator import itemgetter
 
 from kombu.common import QoS, ignore_errors
 from kombu.syn import _detect_environment
@@ -22,6 +25,7 @@ from kombu.utils.encoding import safe_repr
 
 from celery import bootsteps
 from celery.app import app_or_default
+from celery.canvas import subtask
 from celery.task.trace import build_tracer
 from celery.utils.timer2 import default_timer, to_timestamp
 from celery.utils.functional import noop
@@ -475,17 +479,82 @@ class Agent(bootsteps.StartStopStep):
 
 class Gossip(bootsteps.ConsumerStep):
     label = 'gossip'
-    requires = (Connection, )
+    requires = (Events, )
+    _cons_stamp_fields = itemgetter(
+        'clock', 'hostname', 'pid', 'topic', 'action',
+    )
 
     def __init__(self, c, interval=5.0, **kwargs):
+        self.app = c.app
+        c.gossip = self
         self.Receiver = c.app.events.Receiver
         self.hostname = c.hostname
 
         self.timer = c.timer
-        self.state = c.gossip = c.app.events.State()
+        self.state = c.app.events.State()
         self.interval = interval
         self._tref = None
+        self.consensus_requests = defaultdict(list)
+        self.consensus_replies = {}
         self.update_state = self.state.worker_event
+        self.event_handlers = {
+            'worker.elect': self.on_elect,
+            'worker.elect.ack': self.on_elect_ack,
+        }
+        self.clock = c.app.clock
+
+        self.election_handlers = {
+            'task': self.call_task
+        }
+
+    def election(self, id, topic, action=None):
+        self.consensus_replies[id] = []
+        self.dispatcher.send('worker-elect', id=id, topic=topic, action=action)
+
+    def call_task(self, task):
+        try:
+            X = subtask(task)
+            X.apply_async()
+        except Exception as exc:
+            error('Could not call task: %r', exc, exc_info=1)
+
+    def on_elect(self, event):
+        id = event['id']
+        self.dispatcher.send('worker-elect-ack', id=id)
+        clock, hostname, pid, topic, action = self._cons_stamp_fields(event)
+        heappush(self.consensus_requests[id],
+            (clock, '%s.%s' % (hostname, pid), topic, action),
+        )
+
+    def start(self, c):
+        super(Gossip, self).start(c)
+        self.dispatcher = c.event_dispatcher
+
+    def on_elect_ack(self, event):
+        id = event['id']
+        try:
+            replies = self.consensus_replies[id]
+        except KeyError:
+            return
+        alive_workers = self.state.alive_workers()
+        replies.append(event['hostname'])
+
+        if len(replies) >= len(alive_workers):
+            _, leader, topic, action = self.lock.sort_heap(
+                self.consensus_requests[id],
+            )
+            if leader == self.hostname:
+                print('I won the election %r' % (id, ))
+                try:
+                    handler = self.election_handlers[topic]
+                except KeyError:
+                    error('Unknown election topic %r' % (topic, ), exc_info=1)
+                else:
+                    handler(action)
+            else:
+                print('Node %s elected for %r' % (leader, id))
+            self.consensus_requests.pop(id, None)
+            self.consensus_replies.pop(id, None)
 
     def on_node_join(self, worker):
         info('{0.hostname} joined the party'.format(worker))
@@ -494,7 +563,7 @@ class Gossip(bootsteps.ConsumerStep):
         info('{0.hostname} left'.format(worker))
 
     def on_node_lost(self, worker):
-        warning('{0.hostname} went missing!')
+        warn('{0.hostname} went missing!')
 
     def register_timer(self):
         if self._tref is not None:
@@ -518,6 +587,14 @@ class Gossip(bootsteps.ConsumerStep):
                     no_ack=True)]
 
     def on_message(self, prepare, message):
+        _type = message.delivery_info['routing_key']
+        try:
+            handler = self.event_handlers[_type]
+        except KeyError:
+            pass
+        else:
+            return handler(message.payload)
+
         hostname = (message.headers.get('hostname') or
                     message.payload['hostname'])
         if hostname != self.hostname:
@@ -531,6 +608,8 @@ class Gossip(bootsteps.ConsumerStep):
                     self.state.workers.pop(worker.hostname, None)
             elif created or subject == 'online':
                 self.on_node_join(worker)
+        else:
+            self.clock.forward()
 
 
 class Evloop(bootsteps.StartStopStep):
