@@ -623,6 +623,32 @@ A list of routers, or a single router used to route tasks to queues.
 When deciding the final destination of a task the routers are consulted
 in order.  See :ref:`routers` for more information.
 
+.. setting:: CELERY_QUEUE_HA_POLICY
+
+CELERY_QUEUE_HA_POLICY
+~~~~~~~~~~~~~~~~~~~~~~
+:brokers: RabbitMQ
+
+This will set the default HA policy for a queue, and the value
+can either be a string (usually ``all``):
+
+.. code-block:: python
+
+    CELERY_QUEUE_HA_POLICY = 'all'
+
+Using 'all' will replicate the queue to all current nodes,
+Or you can give it a list of nodes to replicate to:
+
+.. code-block:: python
+
+    CELERY_QUEUE_HA_POLICY = ['rabbit@host1', 'rabbit@host2']
+
+
+Using a list will implicitly set ``x-ha-policy`` to 'nodes' and
+``x-ha-policy-params`` to the given list of nodes.
+
+See http://www.rabbitmq.com/ha.html for more information.
+
 .. setting:: CELERY_WORKER_DIRECT
 
 CELERY_WORKER_DIRECT
