@@ -151,9 +151,12 @@ class EventDispatcher(object):
             if groups and group_from(type) not in groups:
                 return
 
+            clock = self.clock.forward()
+
+
             with self.mutex:
                 event = Event(type, hostname=self.hostname,
-                                    clock=self.clock.forward(),
+                                    clock=clock,
                                     utcoffset=utcoffset(),
                                     pid=self.pid, **fields)
                 try:
@@ -247,6 +250,7 @@ class EventReceiver(ConsumerMixin):
     def event_from_message(self, body, localize=True, now=time.time):
         type = body.get('type', '').lower()
         self.adjust_clock(body.get('clock') or 0)
+
         if localize:
             try:
                 offset, timestamp = _TZGETTER(body)

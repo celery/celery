@@ -452,7 +452,7 @@ class CursesMonitor(object):  # pragma: no cover
 
     @property
     def tasks(self):
-        return self.state.tasks_by_timestamp()[:self.limit]
+        return list(self.state.tasks_by_time(limit=self.limit))
 
     @property
     def workers(self):
@@ -489,8 +489,7 @@ def capture_events(app, state, display):  # pragma: no cover
                 recv = app.events.Receiver(conn, handlers={'*': state.event})
                 display.resetscreen()
                 display.init_screen()
-                with recv.consumer():
-                    recv.drain_events(timeout=1, ignore_timeouts=True)
+                recv.capture()
             except conn.connection_errors + conn.channel_errors as exc:
                 print('Connection lost: {0!r}'.format(exc), file=sys.stderr)
 
