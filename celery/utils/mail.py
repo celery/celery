@@ -130,7 +130,7 @@ class ErrorMail(object):
 
     * hostname
 
-        Worker hostname.
+        Worker nodename.
 
     """
 
@@ -140,7 +140,7 @@ class ErrorMail(object):
 
     #: Format string used to generate error email subjects.
     subject = """\
-        [celery@{hostname}] Error: Task {name} ({id}): {exc!r}
+        [{hostname}] Error: Task {name} ({id}): {exc!r}
     """
 
     #: Format string used to generate error email content.

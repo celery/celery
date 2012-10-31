@@ -362,10 +362,9 @@ class State(object):
         task, created = self.get_or_create_task(uuid)
         task.worker = worker
 
-        clock = 0 if type == 'sent' else fields.get('clock')
-
         taskheap = self._taskheap
         timestamp = fields['timestamp']
+        clock = fields.get('clock')
         heappush(taskheap, _lamportinfo(clock, timestamp, worker.id, task))
         curcount = len(self.tasks)
         if len(taskheap) > self.max_tasks_in_memory * 2:
@@ -399,6 +398,8 @@ class State(object):
                 break
 
     def tasks_by_time(self, limit=None):
+        """Generator giving tasks ordered by time,
+        in ``(uuid, Task)`` tuples."""
         seen = set()
         for evtup in islice(reversed(self._taskheap), 0, limit):
             uuid = evtup[3].uuid
@@ -410,22 +411,20 @@ class State(object):
     def tasks_by_type(self, name, limit=None):
         """Get all tasks by type.
 
-        Returns a list of `(uuid, task)` tuples.
+        Returns a list of ``(uuid, Task)`` tuples.
 
         """
-        return islice(((tup[3].uuid, tup[3])
-                            for tup in self._taskheap
-                                if tup[3].name == name), 0, limit)
+        return islice(((uuid, task)
+                            for uuid, task in self.tasks_by_time()
+                                if task.name == name), 0, limit)
 
     def tasks_by_worker(self, hostname, limit=None):
         """Get all tasks by worker.
 
-        Returns a list of `(uuid, task)` tuples.
-
         """
-        return islice(((tup[3].uuid, tup[3])
-                        for tup in self._taskheap
-                            if tup[3].worker.hostname == hostname), 0, limit)
+        return islice(((uuid, task)
+                        for uuid, task in self.tasks_by_time()
+                            if task.name == name), 0, limit)
 
     def task_types(self):
         """Returns a list of all seen task types."""

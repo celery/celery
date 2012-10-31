@@ -204,7 +204,8 @@ class Consumer(object):
         return (self, self.connection, self.task_consumer,
                 self.strategies, self.namespace, self.hub, self.qos,
                 self.amqheartbeat, self.handle_unknown_message,
-                self.handle_unknown_task, self.handle_invalid_task)
+                self.handle_unknown_task, self.handle_invalid_task,
+                self.app.clock)
 
     def on_poll_init(self, hub):
         hub.update_readers(self.connection.eventmap)
