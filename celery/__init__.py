@@ -38,7 +38,6 @@ if os.environ.get('C_IMPDEBUG'):
         return real_import(name, locals, globals, fromlist, level)
     __builtin__.__import__ = debug_import
 
-
 STATICA_HACK = True
 globals()['kcah_acitats'[::-1].upper()] = False
 if STATICA_HACK:
