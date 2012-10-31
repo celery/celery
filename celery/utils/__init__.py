@@ -9,6 +9,7 @@
 from __future__ import absolute_import, print_function
 
 import os
+import socket
 import sys
 import traceback
 import warnings
@@ -48,6 +49,8 @@ WORKER_DIRECT_EXCHANGE = Exchange('C.dq')
 
 #: Format for worker direct queue names.
 WORKER_DIRECT_QUEUE_FORMAT = '{hostname}.dq'
+
+NODENAME_SEP = '@'
 
 
 def worker_direct(hostname):
@@ -246,6 +249,17 @@ def gen_task_name(app, name, module_name):
     if module_name == '__main__' and app.main:
         return '.'.join([app.main, name])
     return '.'.join(filter(None, [module_name, name]))
+
+
+def nodename(name, hostname):
+    return NODENAME_SEP.join((name, hostname))
+
+
+def nodesplit(nodename):
+    parts = nodename.split(NODENAME_SEP, 1)
+    if len(parts) == 1:
+        return None, parts[0]
+    return parts
 
 
 # ------------------------------------------------------------------------ #

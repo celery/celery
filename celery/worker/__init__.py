@@ -28,7 +28,7 @@ from celery.app.abstract import configurated, from_config
 from celery.exceptions import (
     ImproperlyConfigured, SystemTerminate, TaskRevokedError,
 )
-from celery.utils import worker_direct
+from celery.utils import nodename, nodesplit, worker_direct
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel, worker_logger as logger
 
@@ -41,6 +41,11 @@ defined in the CELERY_QUEUES setting.
 If you want to automatically declare unknown queues you can
 enable the CELERY_CREATE_MISSING_QUEUES setting.
 """
+
+
+def default_nodename(hostname):
+    name, host = nodesplit(hostname or '')
+    return nodename(name or 'celery', host or socket.gethostname())
 
 
 class WorkController(configurated):
@@ -97,7 +102,7 @@ class WorkController(configurated):
 
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app_or_default(app or self.app)
-        self.hostname = hostname or socket.gethostname()
+        self.hostname = default_nodename(hostname)
         self.app.loader.init_worker()
         self.on_before_init(**kwargs)
 

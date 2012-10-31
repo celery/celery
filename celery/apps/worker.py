@@ -62,7 +62,7 @@ ARTLINES = [
 ]
 
 BANNER = """\
-celery@{hostname} v{version}
+{hostname} v{version}
 
 [Configuration]
 . broker:      {conninfo}
@@ -133,7 +133,7 @@ class Worker(WorkController):
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
-        print('celery@{0.hostname} ready.'.format(self))
+        print('{0.hostname} ready.'.format(self))
 
     def setup_logging(self, colorize=None):
         if colorize is None and self.no_color is not None:
