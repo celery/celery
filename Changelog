@@ -26,9 +26,34 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 ======
 :release-date: TBA
 
+- Now depends on kombu 2.4.8
+
+    - [Redis] New and improved fair queue cycle algorithm (Kevin McCarthy).
+    - [Redis] Now uses a Redis-based mutex when restoring messages.
+    - [Redis] Number of messages that can be restored in one interval is no
+              longer limited (but can be set using the
+              ``unacked_restore_limit`` transport option.)
+    - Heartbeat value can be specified in broker URLs (Mher Movsisyan).
+    - Fixed problem with msgpack on Python 3 (Jasper Bryant-Greene).
+
+- Now depends on billiard 2.7.3.18
+
+- Celery can now be used with static analysis tools like PyDev/PyCharm/pylint
+  etc.
+
+- Development documentation has moved to Read The Docs.
+
+    The new URL is: http://docs.celeryproject.org/en/master
+
 - Event state's ``tasks_by_name`` applied limit before filtering by name.
 
     Fix contributed by Alexander A. Sosnovskiy.
+
+- New :setting:`CELERY_QUEUE_HA_POLICY` setting used to set the default
+  HA policy for queues when using RabbitMQ.
+
+- New method ``Task.subtask_from_request`` returns a subtask using the current
+  request.
 
 - Results get_many method did not respect timeout argument.
 
@@ -56,6 +81,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - :mod:`celery.contrib.batches` now works again.
 >>>>>>> 3.0
+
+- Fixed missing whitespace in ``bdist_rpm`` requirements (Issue #1046).
 
 .. _version-3.0.11:
 
@@ -116,9 +143,9 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Terminating a task now properly updates the state of the task to revoked,
   and sends a ``task-revoked`` event.
 
-- Multi: No longer parses --app option (Issue #1008).
-
 - Generic worker init script now waits for workers to shutdown by default.
+
+- Multi: No longer parses --app option (Issue #1008).
 
 - Multi: stop_verify command renamed to stopwait.
 
