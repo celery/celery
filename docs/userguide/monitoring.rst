@@ -205,6 +205,7 @@ Features
     - Revoke or terminate tasks
 
 - HTTP API
+- OpenID authentication
 
 **Screenshots**
 
