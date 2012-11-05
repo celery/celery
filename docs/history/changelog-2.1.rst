@@ -275,8 +275,9 @@ Important Notes
   if the database result backend is used.
 
 * django-celery now comes with a monitor for the Django Admin interface.
-  This can also be used if you're not a Django user.  See
-  :ref:`monitoring-django-admin` and :ref:`monitoring-nodjango` for more information.
+  This can also be used if you're not a Django user.
+  (Update: Django-Admin monitor has been replaced with Flower, see the
+  Monitoring guide).
 
 * If you get an error after upgrading saying:
   `AttributeError: 'module' object has no attribute 'system'`,

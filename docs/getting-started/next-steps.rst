@@ -115,8 +115,8 @@ Eventlet, Gevent, and threads (see :ref:`concurrency`).
 -- *Events* is an option that when enabled causes Celery to send
 monitoring messages (events) for actions occurring in the worker.
 These can be used by monitor programs like ``celery events``,
-celerymon and the Django-Celery admin monitor that you can read
-about in the :ref:`Monitoring and Management guide <guide-monitoring>`.
+and Flower - the real-time Celery monitor, which you can read about in
+the :ref:`Monitoring and Management guide <guide-monitoring>`.
 
 -- *Queues* is the list of queues that the worker will consume
 tasks from.  The worker can be told to consume from several queues
