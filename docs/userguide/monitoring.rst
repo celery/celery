@@ -281,21 +281,6 @@ For a complete list of options use ``--help``:
 
     $ celery events --help
 
-
-.. _monitoring-celerymon:
-
-celerymon: Web monitor
-----------------------
-
-`celerymon`_ is the ongoing work to create a web monitor.
-It's far from complete yet, and does currently only support
-a JSON API.  Help is desperately needed for this project, so if you,
-or someone you know would like to contribute templates, design, code
-or help this project in any way, please get in touch!
-
-:Tip: The Django admin monitor can be used even though you're not using
-      Celery with a Django project.  See :ref:`monitoring-nodjango`.
-
 .. _`celerymon`: http://github.com/celery/celerymon/
 
 .. _monitoring-rabbitmq:
@@ -420,7 +405,7 @@ Events
 ======
 
 The worker has the ability to send a message whenever some event
-happens.  These events are then captured by tools like :program:`celerymon`
+happens.  These events are then captured by tools like Flower,
 and :program:`celery events` to monitor the cluster.
 
 .. _monitoring-snapshots:
