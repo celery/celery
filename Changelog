@@ -15,15 +15,17 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 ======
 :release-date: TBA
 
-- Now depends on Kombu 2.4.8
+- Now depends on kombu 2.4.8
 
-    - [Redis] New and improved fair queue cycle algorithm.
+    - [Redis] New and improved fair queue cycle algorithm (Kevin McCarthy).
     - [Redis] Now uses a Redis-based mutex when restoring messages.
     - [Redis] Number of messages that can be restored in one interval is no
               longer limited (but can be set using the
               ``unacked_restore_limit`` transport option.)
-    - Heartbeat value can be specified in broker URLs.
-    - Fixed problem with msgpack on Python 3.
+    - Heartbeat value can be specified in broker URLs (Mher Movsisyan).
+    - Fixed problem with msgpack on Python 3 (Jasper Bryant-Greene).
+
+- Now depends on billiard 2.7.3.18
 
 - Celery can now be used with static analysis tools like PyDev/PyCharm/pylint
   etc.
