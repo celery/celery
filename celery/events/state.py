@@ -364,7 +364,7 @@ class State(object):
 
         taskheap = self._taskheap
         timestamp = fields['timestamp']
-        clock = fields.get('clock')
+        clock = 0 if type == 'sent' else fields.get('clock')
         heappush(taskheap, _lamportinfo(clock, timestamp, worker.id, task))
         curcount = len(self.tasks)
         if len(taskheap) > self.max_tasks_in_memory * 2:
@@ -400,6 +400,10 @@ class State(object):
     def tasks_by_time(self, limit=None):
         """Generator giving tasks ordered by time,
         in ``(uuid, Task)`` tuples."""
+
+        print('TASKHEAP')
+        from pprint import pprint
+        pprint(self._taskheap)
         seen = set()
         for evtup in islice(reversed(self._taskheap), 0, limit):
             uuid = evtup[3].uuid

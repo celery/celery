@@ -43,7 +43,6 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
         drain_nowait = connection.drain_nowait
         on_task_callbacks = hub.on_task
         keep_draining = connection.transport.nb_keep_draining
-        adjust_clock = clock.adjust
 
         if heartbeat and connection.supports_heartbeats:
             hub.timer.apply_interval(
@@ -56,8 +55,6 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
                 name = body['task']
             except (KeyError, TypeError):
                 return handle_unknown_message(body, message)
-
-            adjust_clock(body.get('clock') or 0)
 
             try:
                 strategies[name](message, body, message.ack_log_error)
@@ -128,15 +125,12 @@ def synloop(obj, connection, consumer, strategies, ns, hub, qos,
         heartbeat, handle_unknown_message, handle_unknown_task,
         handle_invalid_task, clock, **kwargs):
     """Fallback blocking eventloop for transports that doesn't support AIO."""
-    adjust_clock = clock.adjust
 
     def on_task_received(body, message):
         try:
             name = body['task']
         except (KeyError, TypeError):
             return handle_unknown_message(body, message)
-
-        adjust_clock(body.get('clock') or 0)
 
         try:
             strategies[name](message, body, message.ack_log_error)

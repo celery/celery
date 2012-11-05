@@ -141,8 +141,9 @@ class Persistent(object):
     storage = shelve
     _is_open = False
 
-    def __init__(self, filename):
+    def __init__(self, filename, clock=None):
         self.filename = filename
+        self.clock = clock
         self._load()
 
     def save(self):
@@ -152,12 +153,16 @@ class Persistent(object):
 
     def merge(self, d):
         revoked.update(d.get('revoked') or {})
+        if self.clock:
+            d['clock'] = self.clock.adjust(d.get('clock') or 0)
         return d
 
     def sync(self, d):
         prev = d.get('revoked') or {}
         prev.update(revoked.as_dict())
         d['revoked'] = prev
+        if self.clock:
+            d['clock'] = self.clock.forward()
         return d
 
     def open(self):

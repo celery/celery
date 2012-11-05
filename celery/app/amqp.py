@@ -215,8 +215,7 @@ class TaskProducer(Producer):
                 'callbacks': callbacks,
                 'errbacks': errbacks,
                 'reply_to': reply_to,
-                'timeouts': timeouts,
-                'clock': self.app.clock.forward()}
+                'timeouts': timeouts}
         group_id = group_id or taskset_id
         if group_id:
             body['taskset'] = group_id

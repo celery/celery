@@ -203,6 +203,11 @@ def dump_revoked(panel, **kwargs):
 
 
 @Panel.register
+def hello(panel, **kwargs):
+    return {'revoked': state.revoked._data, 'clock': panel.app.clock.forward()}
+
+
+@Panel.register
 def dump_tasks(panel, taskinfoitems=None, **kwargs):
     tasks = panel.app.tasks
     taskinfoitems = taskinfoitems or DEFAULT_TASK_INFO_ITEMS

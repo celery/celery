@@ -139,10 +139,13 @@ class EventDispatcher(object):
             for callback in self.on_disabled:
                 callback()
 
-    def send(self, type, utcoffset=utcoffset, Event=Event, **fields):
+    def send(self, type, utcoffset=utcoffset, blind=False,
+            Event=Event, **fields):
         """Send event.
 
         :param type: Kind of event.
+        :keyword utcoffset: Function returning the current utcoffset in hours.
+        :keyword blind: Do not send clock value
         :keyword \*\*fields: Event arguments.
 
         """
@@ -151,8 +154,7 @@ class EventDispatcher(object):
             if groups and group_from(type) not in groups:
                 return
 
-            clock = self.clock.forward()
-
+            clock = None if blind else self.clock.forward()
 
             with self.mutex:
                 event = Event(type, hostname=self.hostname,
@@ -249,7 +251,9 @@ class EventReceiver(ConsumerMixin):
 
     def event_from_message(self, body, localize=True, now=time.time):
         type = body.get('type', '').lower()
-        self.adjust_clock(body.get('clock') or 0)
+        clock = body.get('clock')
+        if clock:
+            self.adjust_clock(clock)
 
         if localize:
             try:

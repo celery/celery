@@ -517,10 +517,10 @@ class LimitedSet(object):
     """
     __slots__ = ('maxlen', 'expires', '_data', '__len__')
 
-    def __init__(self, maxlen=None, expires=None):
+    def __init__(self, maxlen=None, expires=None, data=None):
         self.maxlen = maxlen
         self.expires = expires
-        self._data = {}
+        self._data = {} if data is None else data
         self.__len__ = self._data.__len__
 
     def add(self, value):
@@ -552,7 +552,9 @@ class LimitedSet(object):
         return value in self._data
 
     def update(self, other):
-        if isinstance(other, self.__class__):
+        if isinstance(other, dict):
+            self._data.update(other)
+        elif isinstance(other, self.__class__):
             self._data.update(other._data)
         else:
             for obj in other:

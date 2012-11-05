@@ -86,6 +86,9 @@ class Inspect(object):
     def conf(self):
         return self._request('dump_conf')
 
+    def hello(self):
+        return self._request('hello')
+
 
 class Control(object):
     Mailbox = Mailbox
@@ -93,7 +96,7 @@ class Control(object):
     def __init__(self, app=None):
         self.app = app_or_default(app)
         self.mailbox = self.Mailbox('celery',
-                type='fanout', )#clock=self.app.clock)
+                type='fanout')#, clock=self.app.clock)
 
     @cached_property
     def inspect(self):

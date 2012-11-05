@@ -55,7 +55,6 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - An optimization was too eager and caused some logging messages to never emit.
 
 - :mod:`celery.contrib.batches` now works again.
->>>>>>> 3.0
 
 .. _version-3.0.11:
 

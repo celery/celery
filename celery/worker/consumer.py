@@ -34,7 +34,7 @@ from celery.utils.text import truncate
 from celery.utils.timeutils import humanize_seconds, timezone
 
 from . import heartbeat, loops, pidbox
-from .state import task_reserved, maybe_shutdown
+from .state import task_reserved, maybe_shutdown, revoked
 
 CLOSE = bootsteps.CLOSE
 logger = get_logger(__name__)
@@ -120,13 +120,14 @@ class Consumer(object):
         name = 'Consumer'
         default_steps = [
             'celery.worker.consumer:Connection',
+            'celery.worker.consumer:Mingle',
             'celery.worker.consumer:Events',
+            'celery.worker.consumer:Gossip',
             'celery.worker.consumer:Heart',
             'celery.worker.consumer:Control',
             'celery.worker.consumer:Tasks',
             'celery.worker.consumer:Evloop',
             'celery.worker.consumer:Agent',
-            'celery.worker.consumer:Gossip',
         ]
 
         def shutdown(self, parent):
@@ -478,8 +479,26 @@ class Agent(bootsteps.StartStopStep):
         return agent
 
 
+class Mingle(bootsteps.StartStopStep):
+    label = 'Mingle'
+    requires = (Connection, )
+
+    def start(self, c):
+        info('mingle: searching for neighbors')
+        I = c.app.control.inspect(timeout=1.0, connection=c.connection)
+        replies = I.hello()
+        if replies:
+            for reply in replies.itervalues():
+                c.app.clock.adjust(reply['clock'])
+                revoked.update(reply['revoked'])
+            info('mingle: synced with %s', ', '.join(replies))
+        else:
+            info('mingle: no one here')
+
+
+
 class Gossip(bootsteps.ConsumerStep):
-    label = 'gossip'
+    label = 'Gossip'
     requires = (Events, )
     _cons_stamp_fields = itemgetter(
         'clock', 'hostname', 'pid', 'topic', 'action',
@@ -545,26 +564,26 @@ class Gossip(bootsteps.ConsumerStep):
                 self.consensus_requests[id],
             )
             if leader == self.hostname:
-                print('I won the election %r' % (id, ))
+                info('I won the election %r', id)
                 try:
                     handler = self.election_handlers[topic]
                 except KeyError:
-                    error('Unknown election topic %r' % (topic, ), exc_info=1)
+                    error('Unknown election topic %r', topic, exc_info=1)
                 else:
                     handler(action)
             else:
-                print('Node %s elected for %r' % (leader, id))
+                info('node %s elected for %r', leader, id)
             self.consensus_requests.pop(id, None)
             self.consensus_replies.pop(id, None)
 
     def on_node_join(self, worker):
-        info('{0.hostname} joined the party'.format(worker))
+        info('%s joined the party', worker.hostname)
 
     def on_node_leave(self, worker):
-        info('{0.hostname} left'.format(worker))
+        info('%s left', worker.hostname)
 
     def on_node_lost(self, worker):
-        warn('{0.hostname} went missing!')
+        warn('%s went missing!', worker.hostname)
 
     def register_timer(self):
         if self._tref is not None:

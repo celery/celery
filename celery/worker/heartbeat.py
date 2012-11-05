@@ -27,7 +27,7 @@ class Heart(object):
     def __init__(self, timer, eventer, interval=None):
         self.timer = timer
         self.eventer = eventer
-        self.interval = float(interval or 5.0)
+        self.interval = float(interval or 2.0)
         self.tref = None
 
         # Make event dispatcher start/stop us when enabled/disabled.
