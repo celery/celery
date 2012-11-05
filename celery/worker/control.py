@@ -294,7 +294,6 @@ def dump_conf(panel, **kwargs):
     return jsonify(dict(panel.app.conf))
 
 
-
 @Panel.register
 def election(panel, id, topic, action=None, **kwargs):
     panel.consumer.gossip.election(id, topic, action)

@@ -496,7 +496,6 @@ class Mingle(bootsteps.StartStopStep):
             info('mingle: no one here')
 
 
-
 class Gossip(bootsteps.ConsumerStep):
     label = 'Gossip'
     requires = (Events, )

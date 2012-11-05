@@ -195,7 +195,6 @@ class Signature(dict):
 
         with app.producer_or_acquire(None) as P:
             props = type.backend.on_task_call(P, tid)
-            print('PROPS: %r' % (props, ))
             app.control.election(tid, 'task', self.clone(task_id=tid, **props),
                                  connection=P.connection)
             return type.AsyncResult(tid)

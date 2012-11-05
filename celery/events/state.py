@@ -400,10 +400,6 @@ class State(object):
     def tasks_by_time(self, limit=None):
         """Generator giving tasks ordered by time,
         in ``(uuid, Task)`` tuples."""
-
-        print('TASKHEAP')
-        from pprint import pprint
-        pprint(self._taskheap)
         seen = set()
         for evtup in islice(reversed(self._taskheap), 0, limit):
             uuid = evtup[3].uuid
@@ -428,7 +424,7 @@ class State(object):
         """
         return islice(((uuid, task)
                         for uuid, task in self.tasks_by_time()
-                            if task.name == name), 0, limit)
+                            if task.worker.hostname == hostname), 0, limit)
 
     def task_types(self):
         """Returns a list of all seen task types."""
