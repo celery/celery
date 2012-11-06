@@ -867,6 +867,13 @@ A dict of additional options passed to the underlying transport.
 
 See your transport user manual for supported options (if any).
 
+Example setting the visibility timeout (supported by Redis and SQS
+transports):
+
+.. code-block:: python
+
+    BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 18000}  # 5 hours
+
 .. _conf-task-execution:
 
 Task execution settings
