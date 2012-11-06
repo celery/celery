@@ -127,6 +127,8 @@ class TaskType(type):
     def __repr__(cls):
         if cls._app:
             return '<class %s of %s>' % (cls.__name__, cls._app, )
+        if cls.__v2_compat__:
+            return '<unbound %s (v2 compatible)>' % (cls.__name__, )
         return '<unbound %s>' % (cls.__name__, )
 
 
@@ -140,6 +142,7 @@ class Task(object):
     """
     __metaclass__ = TaskType
     __trace__ = None
+    __v2_compat__ = False  # set by old base in celery.task.base
 
     ErrorMail = ErrorMail
     MaxRetriesExceededError = MaxRetriesExceededError

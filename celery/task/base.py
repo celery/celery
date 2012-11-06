@@ -34,6 +34,7 @@ class Task(BaseTask):
     """
     abstract = True
     __bound__ = False
+    __v2_compat__ = True
 
     #- Deprecated compat. attributes -:
 
