@@ -335,8 +335,7 @@ News
     django-celery now comes with a Celery monitor for the Django
     Admin interface. To use this you need to run the django-celery
     snapshot camera, which stores snapshots to the database at configurable
-    intervals.  See :ref:`monitoring-nodjango` for information about using
-    this monitor if you're not using Django.
+    intervals.
 
     To use the Django admin monitor you need to do the following:
 
@@ -387,10 +386,6 @@ News
 
     The rate limit is off by default, which means it will take a snapshot
     for every :option:`--frequency` seconds.
-
-.. seealso::
-
-    :ref:`monitoring-django-admin` and :ref:`monitoring-snapshots`.
 
 * :func:`~celery.task.control.broadcast`: Added callback argument, this can be
   used to process replies immediately as they arrive.

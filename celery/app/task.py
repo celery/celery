@@ -127,8 +127,11 @@ class TaskType(type):
         return instance.__class__
 
     def __repr__(cls):
-        return ('<class {0.__name__} of {0._app}>' if cls._app
-           else '<unbound {0.__name__}>').format(cls)
+        if cls._app:
+            return '<class {0.__name__} of {0._app}>'.format(cls)
+        if cls.__v2_compat__:
+            return '<unbound {0.__name__} (v2 compatible)>'.format(cls)
+        return '<unbound {0.__name__}>'.format(cls)
 
 
 class Task(object):
@@ -141,6 +144,7 @@ class Task(object):
     """
     __metaclass__ = TaskType
     __trace__ = None
+    __v2_compat__ = False  # set by old base in celery.task.base
 
     ErrorMail = ErrorMail
     MaxRetriesExceededError = MaxRetriesExceededError
@@ -503,7 +507,7 @@ class Task(object):
             'routing_key': delivery_info.get('routing_key'),
             'expires': delivery_info.get('expires'),
         }
-        return self.subtask(args, kwargs, options, **extra_options)
+        return self.subtask(args, kwargs, options, type=self, **extra_options)
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
             eta=None, countdown=None, max_retries=None, **options):
@@ -577,7 +581,7 @@ class Task(object):
 
         # If task was executed eagerly using apply(),
         # then the retry must also be executed eagerly.
-        S.apply() if request.is_eager else S.apply_async()
+        S.apply().get() if request.is_eager else S.apply_async()
         ret = RetryTaskError(exc=exc, when=eta or countdown)
         if throw:
             raise ret

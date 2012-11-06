@@ -282,6 +282,8 @@ For a complete list of options use ``--help``:
 
     $ celery events --help
 
+.. _`celerymon`: http://github.com/celery/celerymon/
+
 .. _monitoring-rabbitmq:
 
 RabbitMQ

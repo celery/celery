@@ -562,7 +562,6 @@ CASSANDRA_OPTIONS
 Options to be passed to the `pycassa connection pool`_ (optional).
 
 .. _`pycassa connection pool`: http://pycassa.github.com/pycassa/api/pycassa/pool.html
-.. setting:: CASSANDRA_DETAILED_MODE
 
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
@@ -852,6 +851,13 @@ BROKER_TRANSPORT_OPTIONS
 A dict of additional options passed to the underlying transport.
 
 See your transport user manual for supported options (if any).
+
+Example setting the visibility timeout (supported by Redis and SQS
+transports):
+
+.. code-block:: python
+
+    BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 18000}  # 5 hours
 
 .. _conf-task-execution:
 

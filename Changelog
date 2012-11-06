@@ -24,7 +24,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.12
 ======
-:release-date: TBA
+:release-date: 2012-11-06 02:00 P.M UTC
 
 - Now depends on kombu 2.4.8
 
@@ -32,7 +32,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     - [Redis] Now uses a Redis-based mutex when restoring messages.
     - [Redis] Number of messages that can be restored in one interval is no
               longer limited (but can be set using the
-              ``unacked_restore_limit`` transport option.)
+              ``unacked_restore_limit``
+              :setting:`transport option <BROKER_TRANSPORT_OPTIONS>`.)
     - Heartbeat value can be specified in broker URLs (Mher Movsisyan).
     - Fixed problem with msgpack on Python 3 (Jasper Bryant-Greene).
 
@@ -44,10 +45,6 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Development documentation has moved to Read The Docs.
 
     The new URL is: http://docs.celeryproject.org/en/master
-
-- Event state's ``tasks_by_name`` applied limit before filtering by name.
-
-    Fix contributed by Alexander A. Sosnovskiy.
 
 - New :setting:`CELERY_QUEUE_HA_POLICY` setting used to set the default
   HA policy for queues when using RabbitMQ.
@@ -66,22 +63,26 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Fixed strange kombu import problem on Python 3.2 (Issue #1034).
 
-- Workers ETA scheduler now uses millisecond precision (Issue #1040).
+- Worker: ETA scheduler now uses millisecond precision (Issue #1040).
 
-- The :param:`--config` argument to programs is now supported by all loaders.
+- The ``--config`` argument to programs is now supported by all loaders.
 
 - The :setting:`CASSANDRA_OPTIONS` setting has now been documented.
 
     Contributed by Jared Biel.
 
-- Task methods (:mod:`celery.contrib.methods`) can not be used with the old
-  task base class.
+- Task methods (:mod:`celery.contrib.methods`) cannot be used with the old
+  task base class, the task decorator in that module now inherits from the new.
 
 - An optimization was too eager and caused some logging messages to never emit.
 
 - :mod:`celery.contrib.batches` now works again.
 
 - Fixed missing whitespace in ``bdist_rpm`` requirements (Issue #1046).
+
+- Event state's ``tasks_by_name`` applied limit before filtering by name.
+
+    Fix contributed by Alexander A. Sosnovskiy.
 
 .. _version-3.0.11:
 
