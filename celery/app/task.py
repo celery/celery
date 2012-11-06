@@ -494,7 +494,7 @@ class Task(object):
             'exchange': delivery_info.get('exchange'),
             'routing_key': delivery_info.get('routing_key')
         }
-        return self.subtask(args, kwargs, options, **extra_options)
+        return self.subtask(args, kwargs, options, type=self, **extra_options)
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
             eta=None, countdown=None, max_retries=None, **options):
@@ -566,7 +566,7 @@ class Task(object):
 
         # If task was executed eagerly using apply(),
         # then the retry must also be executed eagerly.
-        S.apply() if request.is_eager else S.apply_async()
+        S.apply().get() if request.is_eager else S.apply_async()
         ret = RetryTaskError(exc=exc, when=eta or countdown)
         if throw:
             raise ret
