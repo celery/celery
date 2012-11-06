@@ -48,9 +48,10 @@ Contents
     community
     tutorials/index
     faq
+    changelog
+    whatsnew-3.1
     whatsnew-3.0
     whatsnew-2.5
-    changelog
     reference/index
     internals/index
     history/index
