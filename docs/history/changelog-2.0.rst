@@ -569,10 +569,10 @@ Backward incompatible changes
     =====================================  =====================================
 
 * The `celery.task.rest` module has been removed, use :mod:`celery.task.http`
-  instead (as scheduled by the `deprecation timeline`_).
+  instead (as scheduled by the :ref:`deprecation-timeline`).
 
 * It's no longer allowed to skip the class name in loader names.
-  (as scheduled by the `deprecation timeline`_):
+  (as scheduled by the :ref:`deprecation-timeline`):
 
     Assuming the implicit `Loader` class name is no longer supported,
     if you use e.g.::

@@ -54,7 +54,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Worker: ETA scheduler now uses millisecond precision (Issue #1040).
 
-- The :param:`--config` argument to programs is now supported by all loaders.
+- The ``--config`` argument to programs is now supported by all loaders.
 
 - The :setting:`CASSANDRA_OPTIONS` setting has now been documented.
 

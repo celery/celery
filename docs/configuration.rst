@@ -576,7 +576,6 @@ CASSANDRA_OPTIONS
 Options to be passed to the `pycassa connection pool`_ (optional).
 
 .. _`pycassa connection pool`: http://pycassa.github.com/pycassa/api/pycassa/pool.html
-.. setting:: CASSANDRA_DETAILED_MODE
 
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
