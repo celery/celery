@@ -240,10 +240,10 @@ Available options
     Additional arguments to celerybeat, see `celerybeat --help` for a
     list.
 
-* CELERYBEAT_PIDFILE
+* CELERYBEAT_PID_FILE
     Full path to the PID file. Default is /var/run/celeryd.pid.
 
-* CELERYBEAT_LOGFILE
+* CELERYBEAT_LOG_FILE
     Full path to the celeryd log file. Default is /var/log/celeryd.log
 
 * CELERYBEAT_LOG_LEVEL
