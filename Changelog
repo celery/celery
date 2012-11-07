@@ -16,9 +16,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 :state: DEVEL
 :branch: master
 
-- `celery inspect stats` now contains worker pid
-- `Task.apply_async` now supports timeout and soft_timeout arguments (Issue #802)
-- `App.control.Inspect.conf` can be used for inspecting worker configuration
+See :ref:`whatsnew-3.1`
 
 .. _version-3.0.12:
 
