@@ -184,7 +184,7 @@ class Consumer(object):
             maybe_shutdown()
             try:
                 ns.start(self)
-            except self.connection_errors + self.channel_errors:
+            except self.connection_errors:
                 maybe_shutdown()
                 if ns.state != CLOSE and self.connection:
                     warn(CONNECTION_RETRY, exc_info=True)
