@@ -6,30 +6,28 @@
 
 Tasks are the building blocks of Celery applications.
 
-A task can be created out of any callable and defines what happens
-when the worker receives a particular message.
+A task is a class that can be created out of any callable. It performs
+dual roles in that it defines both what happens when a task is
+called (sends a message), and what happens when a worker receives that message.
 
-Every task has unique name which is referenced in the message,
-so that the worker can find the right task to execute.
+Every task class has a unique name, and this name is referenced in messages
+so that the worker can find the right function to execute.
 
-It's not a requirement, but it's a good idea to keep your tasks
-*idempotent*.  Idempotence means that a task can be applied multiple
-times without changing the result.
-
-This is important because the task message will not disappear
-until the message has been *acknowledged*. A worker can reserve
-many messages in advance and even if the worker is killed -- caused by a power failure
+A task message does not disappear
+until the message has been :term:`acknowledged` by a worker. A worker can reserve
+many messages in advance and even if the worker is killed -- caused by power failure
 or otherwise -- the message will be redelivered to another worker.
 
-But the worker cannot know if your tasks are idempotent, so the default
-behavior is to acknowledge the message in advance just before it's executed,
-this way a task that has been started will not be executed again.
+Ideally task functions should be :term:`idempotent`, which means that
+the function will not cause unintented effects even if called
+multiple times with the same arguments.
+Since the worker cannot detect if your tasks are idempotent, the default
+behavior is to acknowledge the message in advance, before it's executed,
+so that a task that has already been started is never executed again..
 
 If your task is idempotent you can set the :attr:`acks_late` option
-to have the worker acknowledge the message *after* that task has been
-executed instead.  This way the task will be redelivered to another
-worker, even if the task has already started executing before.
-See also the FAQ entry :ref:`faq-acks_late-vs-retry`.
+to have the worker acknowledge the message *after* the task returns
+instead.  See also the FAQ entry :ref:`faq-acks_late-vs-retry`.
 
 --
 
