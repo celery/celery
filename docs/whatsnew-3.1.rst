@@ -1,7 +1,7 @@
 .. _whatsnew-3.1:
 
 ===========================================
- What's new in Celery 3.1 (NICKNAME)
+ What's new in Celery 3.1 (Cipater)
 ===========================================
 
 Celery is a simple, flexible and reliable distributed system to
