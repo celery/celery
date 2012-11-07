@@ -195,7 +195,6 @@ if is_setuptools:
         'zeromq': extras('zeromq.txt'),
         'sqlalchemy': extras('sqlalchemy.txt'),
         'librabbitmq': extras('librabbitmq.txt'),
-        'pyamqp': extras('pyamqp.txt'),
     }
 
 # -*- %%% -*-
