@@ -604,6 +604,7 @@ class inspect(_RemoteControl):
         'registered': (1.0, 'dump of registered tasks'),
         'ping': (0.2, 'ping worker(s)'),
         'clock': (1.0, 'get value of logical clock'),
+        'conf': (1.0, 'dump worker configuration'),
         'report': (1.0, 'get bugreport info')
     }
 
