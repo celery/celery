@@ -178,9 +178,6 @@ if CELERY_COMPAT_PROGRAMS:
     console_scripts.extend([
         'celeryd = celery.__main__:_compat_worker',
         'celerybeat = celery.__main__:_compat_beat',
-        'camqadm = celery.bin.camqadm:main',
-        'celeryev = celery.bin.celeryev:main',
-        'celeryctl = celery.bin.celeryctl:main',
         'celeryd-multi = celery.__main__:_compat_multi',
     ])
 
