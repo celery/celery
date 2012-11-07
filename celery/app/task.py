@@ -498,15 +498,14 @@ class Task(object):
         request = self.request if request is None else request
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
-        delivery_info = request.delivery_info or {}
-        options = {
+        options = dict({
             'task_id': request.id,
             'link': request.callbacks,
             'link_error': request.errbacks,
-            'exchange': delivery_info.get('exchange'),
-            'routing_key': delivery_info.get('routing_key'),
-            'expires': delivery_info.get('expires'),
-        }
+            'group_id': request.taskset,
+            'chord': request.chord,
+            'timeouts': request.timeouts,
+        }, **request.delivery_info or {})
         return self.subtask(args, kwargs, options, type=self, **extra_options)
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
