@@ -24,6 +24,7 @@ from billiard import current_process
 from celery import VERSION_BANNER, platforms, signals
 from celery.app.abstract import from_config
 from celery.exceptions import SystemTerminate
+from celery.five import string, string_t
 from celery.loaders.app import AppLoader
 from celery.task import trace
 from celery.utils import cry, isatty
@@ -161,7 +162,7 @@ class Worker(WorkController):
 
     def startup_info(self):
         app = self.app
-        concurrency = unicode(self.concurrency)
+        concurrency = string(self.concurrency)
         appr = '{0}:0x{1:x}'.format(app.main or '__main__', id(app))
         if not isinstance(app.loader, AppLoader):
             loader = qualname(app.loader)
@@ -172,7 +173,7 @@ class Worker(WorkController):
             max, min = self.autoscale
             concurrency = '{{min={0}, max={1}}}'.format(min, max)
         pool = self.pool_cls
-        if not isinstance(pool, basestring):
+        if not isinstance(pool, string_t):
             pool = pool.__module__
         concurrency += ' ({0})'.format(pool.split('.')[-1])
         events = 'ON'

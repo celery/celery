@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 import os
 
-from .compat import format_d
+from celery.five import format_d, range
 
 try:
     from psutil import Process
@@ -61,7 +61,7 @@ def sample(x, n, k=0):
 
     """
     j = len(x) // n
-    for _ in xrange(n):
+    for _ in range(n):
         yield x[k]
         k += j
 

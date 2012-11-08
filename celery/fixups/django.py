@@ -168,7 +168,7 @@ class DjangoFixup(object):
         for close in funs:
             try:
                 close()
-            except self.database_errors, exc:
+            except self.database_errors as exc:
                 str_exc = str(exc)
                 if 'closed' not in str_exc and 'not connected' not in str_exc:
                     raise

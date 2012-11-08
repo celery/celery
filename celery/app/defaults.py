@@ -13,6 +13,7 @@ import sys
 from collections import deque
 from datetime import timedelta
 
+from celery.five import items
 from celery.utils import strtobool
 from celery.utils.functional import memoize
 
@@ -51,7 +52,7 @@ class Option(object):
     def __init__(self, default=None, *args, **kwargs):
         self.default = default
         self.type = kwargs.get('type') or 'string'
-        for attr, value in kwargs.iteritems():
+        for attr, value in items(kwargs):
             setattr(self, attr, value)
 
     def to_python(self, value):
@@ -215,7 +216,7 @@ def flatten(d, ns=''):
     stack = deque([(ns, d)])
     while stack:
         name, space = stack.popleft()
-        for key, value in space.iteritems():
+        for key, value in items(space):
             if isinstance(value, dict):
                 stack.append((name + key + '_', value))
             else:
@@ -242,7 +243,7 @@ def find(name, namespace='celery'):
         return namespace, name.upper(), NAMESPACES[namespace][name.upper()]
     except KeyError:
         # - Try all the other namespaces.
-        for ns, keys in NAMESPACES.iteritems():
+        for ns, keys in items(NAMESPACES):
             if ns.upper() == name.upper():
                 return None, ns, keys
             elif isinstance(keys, dict):

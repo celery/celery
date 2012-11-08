@@ -6,7 +6,7 @@ import socket
 from datetime import datetime, timedelta
 
 from kombu import pidbox
-from mock import Mock, patch
+from mock import Mock, patch, call
 
 from celery import current_app
 from celery.datastructures import AttributeDict
@@ -71,23 +71,21 @@ class test_ControlPanel(Case):
     def test_enable_events(self):
         consumer = Consumer()
         panel = self.create_panel(consumer=consumer)
-        consumer.event_dispatcher.enabled = False
+        evd = consumer.event_dispatcher
+        evd.groups = set()
         panel.handle('enable_events')
-        self.assertTrue(consumer.event_dispatcher.enable.call_count)
-        self.assertIn(('worker-online', ),
-                consumer.event_dispatcher.send.call_args)
-        consumer.event_dispatcher.enabled = True
+        self.assertIn('task', evd.groups)
+        evd.groups = set(['task'])
         self.assertIn('already enabled', panel.handle('enable_events')['ok'])
 
     def test_disable_events(self):
         consumer = Consumer()
         panel = self.create_panel(consumer=consumer)
-        consumer.event_dispatcher.enabled = True
+        evd = consumer.event_dispatcher
+        evd.enabled = True
+        evd.groups = set(['task'])
         panel.handle('disable_events')
-        self.assertTrue(consumer.event_dispatcher.disable.call_count)
-        self.assertIn(('worker-offline', ),
-                      consumer.event_dispatcher.send.call_args)
-        consumer.event_dispatcher.enabled = False
+        self.assertNotIn('task', evd.groups)
         self.assertIn('already disabled', panel.handle('disable_events')['ok'])
 
     def test_heartbeat(self):
@@ -436,7 +434,7 @@ class test_ControlPanel(Case):
 
         self.assertTrue(consumer.controller.pool.restart.called)
         self.assertFalse(_reload.called)
-        self.assertEqual([(('foo',), {}), (('bar',), {})],
+        self.assertEqual([call('bar'), call('foo')],
                           _import.call_args_list)
 
     def test_pool_restart_reload_modules(self):

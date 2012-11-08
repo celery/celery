@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -* coding: utf-8 -*-
 """
     celery.backends.cassandra
     ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -108,7 +108,7 @@ class CassandraBackend(BaseBackend):
                     pycassa.UnavailableException,
                     socket.error,
                     socket.timeout,
-                    Thrift.TException), exc:
+                    Thrift.TException) as exc:
                 if time.time() > ts:
                     raise
                 logger.warn('Cassandra error: %r. Retrying...', exc)
@@ -158,7 +158,7 @@ class CassandraBackend(BaseBackend):
             try:
                 if self.detailed_mode:
                     row = cf.get(task_id, column_reversed=True, column_count=1)
-                    meta = self.decode(row.values()[0])
+                    meta = self.decode(list(row.values())[0])
                     meta['task_id'] = task_id
                 else:
                     obj = cf.get(task_id)

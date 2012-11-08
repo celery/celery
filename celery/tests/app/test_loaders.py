@@ -13,6 +13,7 @@ from celery.exceptions import (
         ImproperlyConfigured,
         CPendingDeprecationWarning,
 )
+from celery.five import items
 from celery.loaders import base
 from celery.loaders import default
 from celery.loaders.app import AppLoader
@@ -33,7 +34,7 @@ dict_config = dict(FOO=10, BAR=20)
 class Object(object):
 
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
+        for k, v in items(kwargs):
             setattr(self, k, v)
 
 

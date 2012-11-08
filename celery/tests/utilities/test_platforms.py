@@ -9,6 +9,7 @@ from mock import Mock, patch
 
 from celery import current_app
 from celery import platforms
+from celery.five import open_fqdn
 from celery.platforms import (
     get_fdmax,
     ignore_errno,
@@ -262,7 +263,7 @@ if not current_app.IS_WINDOWS:
         @patch('celery.platforms.signals')
         @patch('celery.platforms.maybe_drop_privileges')
         @patch('os.geteuid')
-        @patch('__builtin__.open')
+        @patch(open_fqdn)
         def test_default(self, open, geteuid, maybe_drop,
                 signals, pidlock):
             geteuid.return_value = 0
@@ -493,7 +494,7 @@ if not current_app.IS_WINDOWS:
         @patch('os.getpid')
         @patch('os.open')
         @patch('os.fdopen')
-        @patch('__builtin__.open')
+        @patch(open_fqdn)
         def test_write_pid(self, open_, fdopen, osopen, getpid, fsync):
             getpid.return_value = 1816
             osopen.return_value = 13
@@ -519,7 +520,7 @@ if not current_app.IS_WINDOWS:
         @patch('os.getpid')
         @patch('os.open')
         @patch('os.fdopen')
-        @patch('__builtin__.open')
+        @patch(open_fqdn)
         def test_write_reread_fails(self, open_, fdopen,
                 osopen, getpid, fsync):
             getpid.return_value = 1816
@@ -545,11 +546,11 @@ if not current_app.IS_WINDOWS:
                     return
                 raise ValueError()
             setgroups.side_effect = on_setgroups
-            _setgroups_hack(range(400))
+            _setgroups_hack(list(range(400)))
 
             setgroups.side_effect = ValueError()
             with self.assertRaises(ValueError):
-                _setgroups_hack(range(400))
+                _setgroups_hack(list(range(400)))
 
         @patch('os.setgroups', create=True)
         def test_setgroups_hack_OSError(self, setgroups):
@@ -563,31 +564,31 @@ if not current_app.IS_WINDOWS:
                 raise exc
             setgroups.side_effect = on_setgroups
 
-            _setgroups_hack(range(400))
+            _setgroups_hack(list(range(400)))
 
             setgroups.side_effect = exc
             with self.assertRaises(OSError):
-                _setgroups_hack(range(400))
+                _setgroups_hack(list(range(400)))
 
             exc2 = OSError()
             exc.errno = errno.ESRCH
             setgroups.side_effect = exc2
             with self.assertRaises(OSError):
-                _setgroups_hack(range(400))
+                _setgroups_hack(list(range(400)))
 
         @patch('os.sysconf')
         @patch('celery.platforms._setgroups_hack')
         def test_setgroups(self, hack, sysconf):
             sysconf.return_value = 100
-            setgroups(range(400))
-            hack.assert_called_with(range(100))
+            setgroups(list(range(400)))
+            hack.assert_called_with(list(range(100)))
 
         @patch('os.sysconf')
         @patch('celery.platforms._setgroups_hack')
         def test_setgroups_sysconf_raises(self, hack, sysconf):
             sysconf.side_effect = ValueError()
-            setgroups(range(400))
-            hack.assert_called_with(range(400))
+            setgroups(list(range(400)))
+            hack.assert_called_with(list(range(400)))
 
         @patch('os.getgroups')
         @patch('os.sysconf')
@@ -598,7 +599,7 @@ if not current_app.IS_WINDOWS:
             esrch.errno = errno.ESRCH
             hack.side_effect = esrch
             with self.assertRaises(OSError):
-                setgroups(range(400))
+                setgroups(list(range(400)))
 
         @patch('os.getgroups')
         @patch('os.sysconf')
@@ -608,11 +609,11 @@ if not current_app.IS_WINDOWS:
             eperm = OSError()
             eperm.errno = errno.EPERM
             hack.side_effect = eperm
-            getgroups.return_value = range(400)
-            setgroups(range(400))
+            getgroups.return_value = list(range(400))
+            setgroups(list(range(400)))
             getgroups.assert_called_with()
 
             getgroups.return_value = [1000]
             with self.assertRaises(OSError):
-                setgroups(range(400))
+                setgroups(list(range(400)))
             getgroups.assert_called_with()

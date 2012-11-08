@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from collections import Callable
 from datetime import datetime, timedelta
 from functools import wraps
 from mock import patch
@@ -18,6 +19,7 @@ from celery import current_app
 from celery.app import app_or_default
 from celery.exceptions import RetryTaskError
 from celery.execute import send_task
+from celery.five import items, range, string_t
 from celery.result import EagerResult
 from celery.schedules import crontab, crontab_parser, ParseException
 from celery.utils import uuid
@@ -250,14 +252,14 @@ class test_tasks(Case):
         self.assertEqual(task_data['task'], task_name)
         task_kwargs = task_data.get('kwargs', {})
         if test_eta:
-            self.assertIsInstance(task_data.get('eta'), basestring)
+            self.assertIsInstance(task_data.get('eta'), string_t)
             to_datetime = parse_iso8601(task_data.get('eta'))
             self.assertIsInstance(to_datetime, datetime)
         if test_expires:
-            self.assertIsInstance(task_data.get('expires'), basestring)
+            self.assertIsInstance(task_data.get('expires'), string_t)
             to_datetime = parse_iso8601(task_data.get('expires'))
             self.assertIsInstance(to_datetime, datetime)
-        for arg_name, arg_value in kwargs.items():
+        for arg_name, arg_value in items(kwargs):
             self.assertEqual(task_kwargs.get(arg_name), arg_value)
 
     def test_incomplete_task_cls(self):
@@ -280,7 +282,7 @@ class test_tasks(Case):
         T1 = self.createTask('c.unittest.t.t1')
         self.assertIsInstance(T1, BaseTask)
         self.assertTrue(T1.run())
-        self.assertTrue(callable(T1),
+        self.assertTrue(isinstance(T1, Callable),
                 'Task class is callable()')
         self.assertTrue(T1(),
                 'Task class runs run() when called')
@@ -495,7 +497,7 @@ class test_TaskSet(Case):
                                            'id': subtask.id}, m)
             increment_counter(
                     increment_by=m.get('kwargs', {}).get('increment_by'))
-        self.assertEqual(increment_counter.count, sum(xrange(1, 10)))
+        self.assertEqual(increment_counter.count, sum(range(1, 10)))
 
     def test_named_taskset(self):
         prefix = 'test_named_taskset-'
@@ -686,15 +688,15 @@ class test_crontab_parser(Case):
         self.assertEqual(crontab_parser(8).parse('*/2'),
                           set([0, 2, 4, 6]))
         self.assertEqual(crontab_parser().parse('*/2'),
-                          set(i * 2 for i in xrange(30)))
+                          set(i * 2 for i in range(30)))
         self.assertEqual(crontab_parser().parse('*/3'),
-                          set(i * 3 for i in xrange(20)))
+                          set(i * 3 for i in range(20)))
         self.assertEqual(crontab_parser(8, 1).parse('*/2'),
                           set([1, 3, 5, 7]))
         self.assertEqual(crontab_parser(min_=1).parse('*/2'),
-                          set(i * 2 + 1 for i in xrange(30)))
+                          set(i * 2 + 1 for i in range(30)))
         self.assertEqual(crontab_parser(min_=1).parse('*/3'),
-                          set(i * 3 + 1 for i in xrange(20)))
+                          set(i * 3 + 1 for i in range(20)))
 
     def test_parse_composite(self):
         self.assertEqual(crontab_parser(8).parse('*/2'), set([0, 2, 4, 6]))
@@ -1072,7 +1074,7 @@ class test_crontab_is_due(Case):
                                                    ffwd=relativedelta)
         if not isinstance(d1, relativedelta):
             self.assertEqual(l1, l2)
-            for field, value in d1._fields().iteritems():
+            for field, value in items(d1._fields()):
                 self.assertEqual(getattr(d1, field), value)
             self.assertFalse(d2.years)
             self.assertFalse(d2.months)

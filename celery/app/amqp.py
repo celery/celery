@@ -18,6 +18,7 @@ from kombu.utils import cached_property, uuid
 from kombu.utils.encoding import safe_repr
 
 from celery import signals
+from celery.five import items
 from celery.utils.text import indent as textindent
 
 from . import app_or_default
@@ -55,7 +56,7 @@ class Queues(dict):
         self.ha_policy = ha_policy
         if isinstance(queues, (tuple, list)):
             queues = dict((q.name, q) for q in queues)
-        for name, q in (queues or {}).iteritems():
+        for name, q in items(queues or {}):
             self.add(q) if isinstance(q, Queue) else self.add_compat(name, **q)
 
     def __getitem__(self, name):
@@ -119,7 +120,7 @@ class Queues(dict):
         if not active:
             return ''
         info = [QUEUE_FORMAT.strip().format(q)
-                    for _, q in sorted(active.iteritems())]
+                    for _, q in sorted(items(active))]
         if indent_first:
             return textindent('\n'.join(info), indent)
         return info[0] + '\n' + textindent('\n'.join(info[1:]), indent)
@@ -270,7 +271,8 @@ class TaskConsumer(Consumer):
     def __init__(self, channel, queues=None, app=None, **kw):
         self.app = app or self.app
         super(TaskConsumer, self).__init__(channel,
-                queues or self.app.amqp.queues.consume_from.values(), **kw)
+                queues or list(self.app.amqp.queues.consume_from.values()),
+                **kw)
 
 
 class AMQP(object):

@@ -36,7 +36,7 @@ def try_while(fun, reason='Timed out', timeout=10, interval=0.5):
 
 class Worker(object):
     started = False
-    next_worker_id = count(1).next
+    worker_ids = count(1)
     _shutdown_called = False
 
     def __init__(self, hostname, loglevel='error'):
@@ -87,7 +87,7 @@ class Worker(object):
         if caller:
             hostname = '.'.join([qualname(caller), hostname])
         else:
-            hostname += str(cls.next_worker_id())
+            hostname += str(next(cls.worker_ids()))
         worker = cls(hostname)
         worker.ensure_started()
         stack = traceback.format_stack()
@@ -109,7 +109,7 @@ class WorkerCase(Case):
 
     @classmethod
     def setUpClass(cls):
-        logging.getLogger('amqplib').setLevel(logging.ERROR)
+        logging.getLogger('amqp').setLevel(logging.ERROR)
         cls.worker = Worker.managed(cls.hostname, caller=cls)
 
     @classmethod

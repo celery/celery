@@ -27,6 +27,7 @@ from kombu.utils import cached_property
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
+from celery.five import string_t
 from celery.utils.timeutils import maybe_timedelta
 
 from .base import BaseBackend
@@ -92,7 +93,7 @@ class MongoBackend(BaseBackend):
             # This enables the use of replica sets and sharding.
             # See pymongo.Connection() for more info.
             args = [self.mongodb_host]
-            if isinstance(self.mongodb_host, basestring) \
+            if isinstance(self.mongodb_host, string_t) \
                     and not self.mongodb_host.startswith('mongodb://'):
                 args.append(self.mongodb_port)
 

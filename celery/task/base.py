@@ -14,8 +14,8 @@ from __future__ import absolute_import
 from kombu import Exchange
 
 from celery import current_app
-from celery.__compat__ import class_property, reclassmethod
 from celery.app.task import Context, TaskType, Task as BaseTask  # noqa
+from celery.five import class_property, reclassmethod
 from celery.schedules import maybe_schedule
 from celery.utils.log import get_task_logger
 

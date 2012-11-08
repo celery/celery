@@ -17,12 +17,13 @@ if JSONIMP:
 print('anyjson implementation: {0!r}'.format(anyjson.implementation.name))
 
 from celery import Celery, group
+from celery.five import range
 
 DEFAULT_ITS = 40000
 
 BROKER_TRANSPORT = os.environ.get('BROKER', 'librabbitmq')
 if hasattr(sys, 'pypy_version_info'):
-    BROKER_TRANSPORT = 'amqplib'
+    BROKER_TRANSPORT = 'pyamqp'
 
 celery = Celery(__name__)
 celery.conf.update(BROKER_TRANSPORT=BROKER_TRANSPORT,
@@ -71,7 +72,7 @@ def it(_, n):
 
 def bench_apply(n=DEFAULT_ITS):
     time_start = time.time()
-    group(it.s(i, n) for i in xrange(n))()
+    group(it.s(i, n) for i in range(n))()
     print('-- apply {0} tasks: {1}s'.format(n, time.time() - time_start))
 
 

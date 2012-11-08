@@ -19,7 +19,10 @@ from .encoding import safe_repr
 
 
 #: List of base classes we probably don't want to reduce to.
-unwanted_base_classes = (StandardError, Exception, BaseException, object)
+try:
+    unwanted_base_classes = (StandardError, Exception, BaseException, object)
+except NameError:
+    unwanted_base_classes = (Exception, BaseException, object)  # py3k
 
 
 def subclass_exception(name, parent, module):  # noqa

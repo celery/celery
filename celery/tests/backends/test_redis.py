@@ -139,7 +139,7 @@ class test_RedisBackend(Case):
 
     def test_on_chord_apply(self):
         self.Backend().on_chord_apply('group_id', {},
-                                      result=map(AsyncResult, [1, 2, 3]))
+                result=[AsyncResult(x) for x in [1, 2, 3]])
 
     def test_mget(self):
         b = self.MockBackend()

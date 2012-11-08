@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import anyjson
 import os
@@ -25,6 +25,7 @@ from celery.exceptions import (
     InvalidTaskError,
     TaskRevokedError,
 )
+from celery.five import keys
 from celery.task.trace import (
     trace_task,
     _trace_task_ret,
@@ -127,16 +128,16 @@ class test_default_encode(Case):
     def test_jython(self):
         prev, sys.platform = sys.platform, 'java 1.6.1'
         try:
-            self.assertEqual(default_encode('foo'), 'foo')
+            self.assertEqual(default_encode(bytes('foo')), 'foo')
         finally:
             sys.platform = prev
 
-    def test_cython(self):
+    def test_cpython(self):
         prev, sys.platform = sys.platform, 'darwin'
         gfe, sys.getfilesystemencoding = sys.getfilesystemencoding, \
                                          lambda: 'utf-8'
         try:
-            self.assertEqual(default_encode('foo'), 'foo')
+            self.assertEqual(default_encode(bytes('foo')), 'foo')
         finally:
             sys.platform = prev
             sys.getfilesystemencoding = gfe
@@ -668,7 +669,7 @@ class test_TaskRequest(AppCase):
         self.assertTrue(x)
 
     def test_from_message(self):
-        us = u'æØåveéðƒeæ'
+        us = 'æØåveéðƒeæ'
         body = {'task': mytask.name, 'id': uuid(),
                 'args': [2], 'kwargs': {us: 'bar'}}
         m = Message(None, body=anyjson.dumps(body), backend='foo',
@@ -681,8 +682,8 @@ class test_TaskRequest(AppCase):
         self.assertEqual(tw.args, body['args'])
         us = from_utf8(us)
         if sys.version_info < (2, 6):
-            self.assertEqual(tw.kwargs.keys()[0], us)
-            self.assertIsInstance(tw.kwargs.keys()[0], str)
+            self.assertEqual(next(keys(tw.kwargs)), us)
+            self.assertIsInstance(next(keys(tw.kwargs)), str)
 
     def test_from_message_empty_args(self):
         body = {'task': mytask.name, 'id': uuid()}
@@ -704,7 +705,7 @@ class test_TaskRequest(AppCase):
 
     def test_from_message_nonexistant_task(self):
         body = {'task': 'cu.mytask.doesnotexist', 'id': uuid(),
-                'args': [2], 'kwargs': {u'æØåveéðƒeæ': 'bar'}}
+                'args': [2], 'kwargs': {'æØåveéðƒeæ': 'bar'}}
         m = Message(None, body=anyjson.dumps(body), backend='foo',
                           content_type='application/json',
                           content_encoding='utf-8')
@@ -825,8 +826,8 @@ class test_TaskRequest(AppCase):
         self._test_on_failure(Exception('Inside unit tests'))
 
     def test_on_failure_unicode_exception(self):
-        self._test_on_failure(Exception(u'Бобры атакуют'))
+        self._test_on_failure(Exception('Бобры атакуют'))
 
     def test_on_failure_utf8_exception(self):
         self._test_on_failure(Exception(
-            from_utf8(u'Бобры атакуют')))
+            from_utf8('Бобры атакуют')))

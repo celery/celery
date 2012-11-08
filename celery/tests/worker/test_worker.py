@@ -5,7 +5,6 @@ import socket
 from collections import deque
 from datetime import datetime, timedelta
 from threading import Event
-from Queue import Empty
 
 from billiard.exceptions import WorkerLostError
 from kombu import Connection
@@ -21,6 +20,7 @@ from celery.bootsteps import RUN, CLOSE, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
 from celery.datastructures import AttributeDict
 from celery.exceptions import SystemTerminate
+from celery.five import Empty, range
 from celery.task import task as task_dec
 from celery.task import periodic_task as periodic_task_dec
 from celery.utils import uuid
@@ -29,7 +29,7 @@ from celery.worker import components
 from celery.worker.buckets import FastQueue
 from celery.worker.job import Request
 from celery.worker import consumer
-from celery.worker.consumer import Consumer
+from celery.worker.consumer import Consumer as __Consumer
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 
@@ -50,6 +50,15 @@ class PlaceHolder(object):
 
 def find_step(obj, typ):
     return obj.namespace.steps[typ.name]
+
+
+class Consumer(__Consumer):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('enable_mingle', False)  # disable Mingle step
+        kwargs.setdefault('enable_gossip', False)  # disable Gossip step
+        kwargs.setdefault('enable_heartbeat', False)  # disable Heart step
+        super(Consumer, self).__init__(*args, **kwargs)
 
 
 class _MyKombuConsumer(Consumer):
@@ -150,11 +159,11 @@ class test_QoS(Case):
         qos = self._QoS(10)
 
         def add():
-            for i in xrange(1000):
+            for i in range(1000):
                 qos.increment_eventually()
 
         def sub():
-            for i in xrange(1000):
+            for i in range(1000):
                 qos.decrement_eventually()
 
         def threaded(funs):
@@ -355,7 +364,8 @@ class test_Consumer(Case):
         self.assertIn("Can't decode message body", crit.call_args[0][0])
 
     def _get_on_message(self, l):
-        l.qos = Mock()
+        if l.qos is None:
+            l.qos = Mock()
         l.event_dispatcher = Mock()
         l.task_consumer = Mock()
         l.connection = Mock()
@@ -380,6 +390,24 @@ class test_Consumer(Case):
         self.assertEqual(in_bucket.execute(), 2 * 4 * 8)
         self.assertTrue(self.timer.empty())
 
+    def test_start_channel_error(self):
+
+        class MockConsumer(Consumer):
+            iterations = 0
+
+            def loop(self, *args, **kwargs):
+                if not self.iterations:
+                    self.iterations = 1
+                    raise KeyError('foo')
+                raise SyntaxError('bar')
+
+        l = MockConsumer(self.ready_queue, timer=self.timer,
+                             send_events=False, pool=BasePool())
+        l.channel_errors = (KeyError, )
+        with self.assertRaises(KeyError):
+            l.start()
+        l.timer.stop()
+
     def test_start_connection_error(self):
 
         class MockConsumer(Consumer):
@@ -393,31 +421,9 @@ class test_Consumer(Case):
 
         l = MockConsumer(self.ready_queue, timer=self.timer,
                              send_events=False, pool=BasePool())
+
         l.connection_errors = (KeyError, )
-        with self.assertRaises(SyntaxError):
-            l.start()
-        l.heart.stop()
-        l.timer.stop()
-
-    def test_start_channel_error(self):
-        # Regression test for AMQPChannelExceptions that can occur within the
-        # consumer. (i.e. 404 errors)
-
-        class MockConsumer(Consumer):
-            iterations = 0
-
-            def loop(self, *args, **kwargs):
-                if not self.iterations:
-                    self.iterations = 1
-                    raise KeyError('foo')
-                raise SyntaxError('bar')
-
-        l = MockConsumer(self.ready_queue, timer=self.timer,
-                             send_events=False, pool=BasePool())
-
-        l.channel_errors = (KeyError, )
         self.assertRaises(SyntaxError, l.start)
-        l.heart.stop()
         l.timer.stop()
 
     def test_loop_ignores_socket_timeout(self):
@@ -485,7 +491,7 @@ class test_Consumer(Case):
 
     def test_ignore_errors(self):
         l = MyKombuConsumer(self.ready_queue, timer=self.timer)
-        l.connection_errors = (KeyError, )
+        l.connection_errors = (AttributeError, KeyError, )
         l.channel_errors = (SyntaxError, )
         ignore_errors(l, Mock(side_effect=AttributeError('foo')))
         ignore_errors(l, Mock(side_effect=KeyError('foo')))
@@ -513,7 +519,7 @@ class test_Consumer(Case):
                            args=[2, 4, 8], kwargs={})
 
         l.task_consumer = Mock()
-        l.qos = QoS(l.task_consumer.qos, 1)
+        qos = l.qos = QoS(l.task_consumer.qos, 1)
         current_pcount = l.qos.value
         l.event_dispatcher = Mock()
         l.enabled = False
@@ -600,7 +606,7 @@ class test_Consumer(Case):
         m.reject.assert_called_with()
         self.assertTrue(logger.critical.call_count)
 
-    def test_receieve_message_eta(self):
+    def test_receive_message_eta(self):
         l = _MyKombuConsumer(self.ready_queue, timer=self.timer)
         l.steps.pop()
         l.event_dispatcher = Mock()

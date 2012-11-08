@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.utils import term
 from celery.utils.term import colored, fg
@@ -38,31 +38,31 @@ class test_colored(Case):
         self.assertTrue(str(colored().iwhite('f')))
         self.assertTrue(str(colored().reset('f')))
 
-        self.assertTrue(str(colored().green(u'∂bar')))
+        self.assertTrue(str(colored().green('∂bar')))
 
         self.assertTrue(
-            colored().red(u'éefoo') + colored().green(u'∂bar'))
+            colored().red('éefoo') + colored().green('∂bar'))
 
         self.assertEqual(
             colored().red('foo').no_color(), 'foo')
 
         self.assertTrue(
-            repr(colored().blue(u'åfoo')))
+            repr(colored().blue('åfoo')))
 
-        self.assertEqual(repr(colored()), "''")
+        self.assertIn("''", repr(colored()))
 
         c = colored()
         s = c.red('foo', c.blue('bar'), c.green('baz'))
         self.assertTrue(s.no_color())
 
-        c._fold_no_color(s, u'øfoo')
-        c._fold_no_color(u'fooå', s)
+        c._fold_no_color(s, 'øfoo')
+        c._fold_no_color('fooå', s)
 
-        c = colored().red(u'åfoo')
-        self.assertEqual(c._add(c, u'baræ'),
-            u'\x1b[1;31m\xe5foo\x1b[0mbar\xe6')
+        c = colored().red('åfoo')
+        self.assertEqual(c._add(c, 'baræ'),
+            '\x1b[1;31m\xe5foo\x1b[0mbar\xe6')
 
-        c2 = colored().blue(u'ƒƒz')
+        c2 = colored().blue('ƒƒz')
         c3 = c._add(c, c2)
         self.assertEqual(c3,
-            u'\x1b[1;31m\xe5foo\x1b[0m\x1b[1;34m\u0192\u0192z\x1b[0m')
+            '\x1b[1;31m\xe5foo\x1b[0m\x1b[1;34m\u0192\u0192z\x1b[0m')

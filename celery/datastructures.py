@@ -14,11 +14,13 @@ import time
 from collections import defaultdict
 from functools import partial
 from itertools import chain
+from operator import itemgetter
 
 from billiard.einfo import ExceptionInfo  # noqa
 from kombu.utils.encoding import safe_str
 from kombu.utils.limits import TokenBucket  # noqa
 
+from .five import items
 from .utils.functional import LRUCache, first, uniq  # noqa
 
 DOT_HEAD = """
@@ -75,7 +77,7 @@ class GraphFormatter(object):
     def attrs(self, d, scheme=None):
         d = dict(self.scheme, **dict(scheme, **d or {}) if scheme else d)
         return self._attrsep.join(
-            safe_str(self.attr(k, v)) for k, v in d.iteritems()
+            safe_str(self.attr(k, v)) for k, v in items(d)
         )
 
     def head(self, **attrs):
@@ -152,7 +154,7 @@ class DependencyGraph(object):
         self[A].append(B)
 
     def find_last(self, g):
-        for obj in g.adjacent.keys():
+        for obj in g.adjacent:
             if obj.last:
                 return obj
 
@@ -205,7 +207,7 @@ class DependencyGraph(object):
 
     def edges(self):
         """Returns generator that yields for all edges in the graph."""
-        return (obj for obj, adj in self.iteritems() if adj)
+        return (obj for obj, adj in items(self) if adj)
 
     def _khan62(self):
         """Khans simple topological sort algorithm from '62
@@ -280,7 +282,7 @@ class DependencyGraph(object):
                 seen.add(draw.label(obj))
 
         P(draw.head())
-        for obj, adjacent in self.iteritems():
+        for obj, adjacent in items(self):
             if not adjacent:
                 if_not_seen(draw.terminal_node, obj)
             for req in adjacent:
@@ -304,7 +306,7 @@ class DependencyGraph(object):
         return obj in self.adjacent
 
     def _iterate_items(self):
-        return self.adjacent.iteritems()
+        return items(self.adjacent)
     items = iteritems = _iterate_items
 
     def __repr__(self):
@@ -471,7 +473,7 @@ class ConfigurationView(AttributeDictMixin):
         return False
 
     def __repr__(self):
-        return repr(dict(self.iteritems()))
+        return repr(dict(items(self)))
 
     def __iter__(self):
         return self._iterate_keys()
@@ -571,7 +573,7 @@ class LimitedSet(object):
 
     @property
     def chronologically(self):
-        return sorted(self._data.items(), key=lambda (value, when): when)
+        return sorted(self._data.items(), key=itemgetter(1))
 
     @property
     def first(self):

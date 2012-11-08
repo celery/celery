@@ -12,15 +12,17 @@ import sys
 import shlex
 import pprint
 
+from collections import Callable
 from functools import partial
 from itertools import count
 
-from amqplib import client_0_8 as amqp
+from amqp import Message
 
 from celery.app import app_or_default
 from celery.utils.functional import padlist
 
 from celery.bin.base import Command
+from celery.five import string_t
 from celery.utils import strtobool
 
 # Map to coerce strings to other types.
@@ -97,7 +99,7 @@ class Spec(object):
             if response is None:
                 return 'ok.'
             return response
-        if callable(self.returns):
+        if isinstance(self.returns, Callable):
             return self.returns(response)
         return self.returns.format(response)
 
@@ -148,7 +150,7 @@ class AMQShell(cmd.Cmd):
     identchars = cmd.IDENTCHARS = '.'
     needs_reconnect = False
     counter = 1
-    inc_counter = count(2).next
+    inc_counter = count(2)
 
     builtins = {'EOF': 'do_exit',
                 'exit': 'do_exit',
@@ -181,7 +183,7 @@ class AMQShell(cmd.Cmd):
         'basic.get': Spec(('queue', str),
                           ('no_ack', bool, 'off'),
                           returns=dump_message),
-        'basic.publish': Spec(('msg', amqp.Message),
+        'basic.publish': Spec(('msg', Message),
                               ('exchange', str),
                               ('routing_key', str),
                               ('mandatory', bool, 'no'),
@@ -215,7 +217,7 @@ class AMQShell(cmd.Cmd):
 
             >>> get_amqp_api_command('queue.delete', ['pobox', 'yes', 'no'])
             (<bound method Channel.queue_delete of
-             <amqplib.client_0_8.channel.Channel object at 0x...>>,
+             <amqp.channel.Channel object at 0x...>>,
              ('testfoo', True, False))
 
         """
@@ -300,7 +302,7 @@ class AMQShell(cmd.Cmd):
         if cmd == '':
             return self.default(line)
         else:
-            self.counter = self.inc_counter()
+            self.counter = next(self.inc_counter)
             try:
                 self.respond(self.dispatch(cmd, arg))
             except (AttributeError, KeyError) as exc:
@@ -312,7 +314,7 @@ class AMQShell(cmd.Cmd):
     def respond(self, retval):
         """What to do with the return value of a command."""
         if retval is not None:
-            if isinstance(retval, basestring):
+            if isinstance(retval, string_t):
                 self.say(retval)
             else:
                 self.say(pprint.pformat(retval))

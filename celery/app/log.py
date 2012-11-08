@@ -22,6 +22,7 @@ from kombu.log import NullHandler
 
 from celery import signals
 from celery._state import get_current_task
+from celery.five import string_t
 from celery.utils import isatty
 from celery.utils.log import (
     get_logger, mlevel,
@@ -31,7 +32,7 @@ from celery.utils.log import (
 )
 from celery.utils.term import colored
 
-is_py3k = sys.version_info[0] == 3
+PY3 = sys.version_info[0] == 3
 
 
 class TaskFormatter(ColorFormatter):
@@ -85,7 +86,7 @@ class Logging(object):
         format = format or self.format
         colorize = self.supports_color(colorize, logfile)
         reset_multiprocessing_logger()
-        if not is_py3k:
+        if not PY3:
             ensure_process_aware_logger()
         receivers = signals.setup_logging.send(sender=None,
                         loglevel=loglevel, logfile=logfile,
@@ -110,7 +111,7 @@ class Logging(object):
 
         # This is a hack for multiprocessing's fork+exec, so that
         # logging before Process.run works.
-        logfile_name = logfile if isinstance(logfile, basestring) else ''
+        logfile_name = logfile if isinstance(logfile, string_t) else ''
         os.environ.update(_MP_FORK_LOGLEVEL_=str(loglevel),
                           _MP_FORK_LOGFILE_=logfile_name,
                           _MP_FORK_LOGFORMAT_=format)

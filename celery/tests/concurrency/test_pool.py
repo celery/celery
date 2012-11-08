@@ -43,10 +43,10 @@ class test_TaskPool(Case):
         p = self.TaskPool(2)
         p.start()
         scratchpad = {}
-        proc_counter = itertools.count().next
+        proc_counter = itertools.count()
 
         def mycallback(ret_value):
-            process = proc_counter()
+            process = next(proc_counter)
             scratchpad[process] = {}
             scratchpad[process]['ret_value'] = ret_value
 

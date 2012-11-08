@@ -16,6 +16,7 @@ from kombu.common import ignore_errors
 from kombu.utils import symbol_by_name
 
 from .datastructures import DependencyGraph, GraphFormatter
+from .five import values, with_metaclass
 from .utils.imports import instantiate, qualname
 from .utils.log import get_logger
 from .utils.threads import default_socket_timeout
@@ -198,12 +199,12 @@ class Namespace(object):
         return self.steps[name]
 
     def _find_last(self):
-        for C in self.steps.itervalues():
+        for C in values(self.steps):
             if C.last:
                 return C
 
     def _firstpass(self, steps):
-        stream = deque(step.requires for step in steps.itervalues())
+        stream = deque(step.requires for step in values(steps))
         while stream:
             for node in stream.popleft():
                 node = symbol_by_name(node)
@@ -214,7 +215,7 @@ class Namespace(object):
     def _finalize_steps(self, steps):
         last = self._find_last()
         self._firstpass(steps)
-        it = ((C, C.requires) for C in steps.itervalues())
+        it = ((C, C.requires) for C in values(steps))
         G = self.graph = DependencyGraph(it,
             formatter=self.GraphFormatter(root=last),
         )
@@ -265,6 +266,7 @@ class StepType(type):
         return 'step:{0.name}{{{0.requires!r}}}'.format(self)
 
 
+@with_metaclass(StepType)
 class Step(object):
     """A Bootstep.
 
@@ -274,7 +276,6 @@ class Step(object):
     parent instantiation-time.
 
     """
-    __metaclass__ = StepType
 
     #: Optional step name, will use qualname if not specified.
     name = None

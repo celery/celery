@@ -10,6 +10,7 @@
 from __future__ import absolute_import
 
 from celery.exceptions import QueueNotFound
+from celery.five import string_t
 from celery.utils import lpmerge
 from celery.utils.functional import firstmethod, mpromise
 from celery.utils.imports import instantiate
@@ -51,7 +52,7 @@ class Router(object):
 
     def expand_destination(self, route):
         # Route can be a queue name: convenient for direct exchanges.
-        if isinstance(route, basestring):
+        if isinstance(route, string_t):
             queue, route = route, {}
         else:
             # can use defaults from configured queue, but override specific
@@ -84,7 +85,7 @@ def prepare(routes):
     def expand_route(route):
         if isinstance(route, dict):
             return MapRoute(route)
-        if isinstance(route, basestring):
+        if isinstance(route, string_t):
             return mpromise(instantiate, route)
         return route
 

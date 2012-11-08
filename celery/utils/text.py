@@ -8,7 +8,6 @@
 """
 from __future__ import absolute_import
 
-from itertools import ifilter, imap
 from textwrap import fill
 
 from pprint import pformat
@@ -19,7 +18,7 @@ def dedent_initial(s, n=4):
 
 
 def dedent(s, n=4):
-    return '\n'.join(imap(dedent_initial, s.splitlines()))
+    return '\n'.join(dedent_initial(p) for p in s.splitlines())
 
 
 def fill_paragraphs(s, width):
@@ -27,7 +26,7 @@ def fill_paragraphs(s, width):
 
 
 def join(l):
-    return '\n'.join(ifilter(None, l))
+    return '\n'.join(part for part in l if part)
 
 
 def ensure_2lines(s):

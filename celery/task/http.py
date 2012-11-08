@@ -10,21 +10,47 @@ from __future__ import absolute_import
 
 import anyjson
 import sys
-import urllib2
 
-from urllib import urlencode
-from urlparse import urlparse
 try:
-    from urlparse import parse_qsl
+    from urllib.parse import parse_qsl, urlencode, urlparse   # Py3
 except ImportError:  # pragma: no cover
-    from cgi import parse_qsl  # noqa
+    from urllib import urlencode              # noqa
+    from urlparse import urlparse, parse_qsl  # noqa
 
 from celery import __version__ as celery_version
+from celery.five import items, reraise
 from celery.utils.log import get_task_logger
 from .base import Task as BaseTask
 
 GET_METHODS = frozenset(['GET', 'HEAD'])
 logger = get_task_logger(__name__)
+
+
+if sys.version_info[0] == 3:  # pragma: no cover
+
+    from urllib.request import Request, urlopen
+
+    def utf8dict(tup):
+        if not isinstance(tup, dict):
+            return dict(tup)
+        return tup
+
+else:
+
+    from urllib2 import Request, urlopen  # noqa
+
+    def maybe_utf8(value):  # noqa
+        """Encode to utf-8, only if the value is Unicode."""
+        if isinstance(value, unicode):
+            return value.encode('utf-8')
+        return value
+
+
+    def utf8dict(tup):  # noqa
+        """With a dict's items() tuple return a new dict with any utf-8
+        keys/values encoded."""
+        return dict((key.encode('utf-8'), maybe_utf8(value))
+                        for key, value in tup)
 
 
 class InvalidResponseError(Exception):
@@ -39,28 +65,6 @@ class UnknownStatusError(InvalidResponseError):
     """The remote server gave an unknown status."""
 
 
-def maybe_utf8(value):
-    """Encode to utf-8, only if the value is Unicode."""
-    if isinstance(value, unicode):
-        return value.encode('utf-8')
-    return value
-
-
-if sys.version_info[0] == 3:  # pragma: no cover
-
-    def utf8dict(tup):
-        if not isinstance(tup, dict):
-            return dict(tup)
-        return tup
-else:
-
-    def utf8dict(tup):  # noqa
-        """With a dict's items() tuple return a new dict with any utf-8
-        keys/values encoded."""
-        return dict((key.encode('utf-8'), maybe_utf8(value))
-                        for key, value in tup)
-
-
 def extract_response(raw_response, loads=anyjson.loads):
     """Extract the response text from a raw JSON response."""
     if not raw_response:
@@ -68,8 +72,8 @@ def extract_response(raw_response, loads=anyjson.loads):
     try:
         payload = loads(raw_response)
     except ValueError as exc:
-        raise InvalidResponseError, InvalidResponseError(
-                str(exc)), sys.exc_info()[2]
+        reraise(InvalidResponseError, InvalidResponseError(
+                str(exc)), sys.exc_info()[2])
 
     status = payload['status']
     if status == 'success':
@@ -106,7 +110,7 @@ class MutableURL(object):
 
     def __str__(self):
         scheme, netloc, path, params, query, fragment = self.parts
-        query = urlencode(utf8dict(self.query.items()))
+        query = urlencode(utf8dict(items(self.query)))
         components = [scheme + '://', netloc, path or '/',
                       ';{0}'.format(params)   if params   else '',
                       '?{0}'.format(query)    if query    else '',
@@ -138,10 +142,10 @@ class HttpDispatch(object):
 
     def make_request(self, url, method, params):
         """Makes an HTTP request and returns the response."""
-        request = urllib2.Request(url, params)
-        for key, val in self.http_headers.items():
+        request = Request(url, params)
+        for key, val in items(self.http_headers):
             request.add_header(key, val)
-        response = urllib2.urlopen(request)         # user catches errors.
+        response = urlopen(request)  # user catches errors.
         return response.read()
 
     def dispatch(self):
@@ -151,7 +155,7 @@ class HttpDispatch(object):
         if self.method in GET_METHODS:
             url.query.update(self.task_kwargs)
         else:
-            params = urlencode(utf8dict(self.task_kwargs.items()))
+            params = urlencode(utf8dict(items(self.task_kwargs)))
         raw_response = self.make_request(str(url), self.method, params)
         return extract_response(raw_response)
 

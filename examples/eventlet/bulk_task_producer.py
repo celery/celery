@@ -44,7 +44,7 @@ class ProducerPool(object):
 
     def _run(self):
         self._producers = [spawn_n(self._producer)
-                                for _ in xrange(self.size)]
+                                for _ in range(self.size)]
 
     def _producer(self):
         connection = current_app.connection()

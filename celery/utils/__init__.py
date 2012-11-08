@@ -12,7 +12,6 @@ import os
 import sys
 import traceback
 import warnings
-import types
 import datetime
 
 from functools import partial, wraps
@@ -22,7 +21,7 @@ from pprint import pprint
 from kombu.entity import Exchange, Queue
 
 from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
-from .compat import StringIO
+from celery.five import StringIO, items, reraise, string_t
 
 from .functional import noop
 
@@ -95,7 +94,7 @@ def lpmerge(L, R):
 
     Keeps values from `L`, if the value in `R` is :const:`None`."""
     set = L.__setitem__
-    [set(k, v) for k, v in R.iteritems() if v is not None]
+    [set(k, v) for k, v in items(R) if v is not None]
     return L
 
 
@@ -162,7 +161,7 @@ def cry():  # pragma: no cover
     out = StringIO()
     P = partial(print, file=out)
     sep = '=' * 49
-    for tid, frame in sys._current_frames().iteritems():
+    for tid, frame in items(sys._current_frames()):
         thread = tmap.get(tid, main_thread)
         if not thread:
             # skip old junk (left-overs from a fork)
@@ -184,7 +183,7 @@ def maybe_reraise():
     exc_info = sys.exc_info()
     try:
         if exc_info[2]:
-            raise exc_info[0], exc_info[1], exc_info[2]
+            reraise(exc_info[0], exc_info[1], exc_info[2])
     finally:
         # see http://docs.python.org/library/sys.html#sys.exc_info
         del(exc_info)
@@ -193,7 +192,7 @@ def maybe_reraise():
 def strtobool(term, table={'false': False, 'no': False, '0': False,
                              'true':  True, 'yes': True,  '1': True,
                              'on':    True, 'off': False}):
-    if isinstance(term, basestring):
+    if isinstance(term, string_t):
         try:
             return table[term.lower()]
         except KeyError:
@@ -203,12 +202,12 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
 
 def jsonify(obj):
     """Transforms object making it suitable for json serialization"""
-    if isinstance(obj, (int, float, basestring, types.NoneType)):
+    if isinstance(obj, (int, float, string_t, type(None))):
         return obj
     elif isinstance(obj, (tuple, list)):
         return [jsonify(o) for o in obj]
     elif isinstance(obj, dict):
-        return dict((k, jsonify(v)) for k, v in obj.iteritems())
+        return dict((k, jsonify(v)) for k, v in items(obj))
     # See "Date Time String Format" in the ECMA-262 specification.
     elif isinstance(obj, datetime.datetime):
         r = obj.isoformat()

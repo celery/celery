@@ -1,4 +1,5 @@
 from celery import current_app, task, uuid
+from celery.five import range
 from celery.worker.consumer import Consumer
 #from celery.worker.job import Request
 from celery.app.task import Context
@@ -90,7 +91,7 @@ app = current_app._get_current_object()
 m = Message(None, {}, {}, task)
 
 ts = time()
-for i in xrange(1000000):
+for i in range(1000000):
     x = Request(task, hostname=hostname, app=app, task=task)
 print(time() - ts)
 

@@ -2,10 +2,9 @@ from __future__ import absolute_import
 
 import sys
 
-from Queue import Queue
-
 from mock import Mock, patch
 
+from celery.five import Queue
 from celery.worker.mediator import Mediator
 from celery.worker.state import revoked as revoked_tasks
 from celery.tests.utils import Case

@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from celery.five import range
 from celery.utils.dispatch.saferef import safe_ref
 from celery.tests.utils import Case
 
@@ -25,14 +26,14 @@ class SaferefTests(Case):
     def setUp(self):
         ts = []
         ss = []
-        for x in xrange(5000):
+        for x in range(5000):
             t = Class1()
             ts.append(t)
             s = safe_ref(t.x, self._closure)
             ss.append(s)
         ts.append(fun)
         ss.append(safe_ref(fun, self._closure))
-        for x in xrange(30):
+        for x in range(30):
             t = Class2()
             ts.append(t)
             s = safe_ref(t, self._closure)

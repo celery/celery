@@ -4,6 +4,7 @@ from mock import Mock, patch
 
 from celery import current_app as app, group, task, chord
 from celery.app import builtins
+from celery.five import range
 from celery._state import _task_stack
 from celery.tests.utils import Case
 
@@ -142,18 +143,18 @@ class test_chord(Case):
         app.tasks['celery.chord'] = self.prev
 
     def test_apply_async(self):
-        x = chord([add.s(i, i) for i in xrange(10)], body=xsum.s())
+        x = chord([add.s(i, i) for i in range(10)], body=xsum.s())
         r = x.apply_async()
         self.assertTrue(r)
         self.assertTrue(r.parent)
 
     def test_run_header_not_group(self):
-        self.task([add.s(i, i) for i in xrange(10)], xsum.s())
+        self.task([add.s(i, i) for i in range(10)], xsum.s())
 
     def test_apply_eager(self):
         app.conf.CELERY_ALWAYS_EAGER = True
         try:
-            x = chord([add.s(i, i) for i in xrange(10)], body=xsum.s())
+            x = chord([add.s(i, i) for i in range(10)], body=xsum.s())
             r = x.apply_async()
             self.assertEqual(r.get(), 90)
 

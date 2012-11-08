@@ -43,7 +43,7 @@ def B_callback(urls, id):
 @task()
 def B(id):
     return chord(make_request.s(id, '{0} {1!r}'.format(id, i))
-                    for i in xrange(10))(B_callback.s(id))
+                    for i in range(10))(B_callback.s(id))
 
 
 @task()

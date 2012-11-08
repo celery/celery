@@ -10,6 +10,8 @@ from __future__ import absolute_import
 
 import os
 
+from collections import Callable
+
 from celery.local import Proxy
 from celery import _state
 from celery._state import (  # noqa
@@ -127,6 +129,6 @@ def shared_task(*args, **kwargs):
             return Proxy(task_by_cons)
         return __inner
 
-    if len(args) == 1 and callable(args[0]):
+    if len(args) == 1 and isinstance(args[0], Callable):
         return create_shared_task(**kwargs)(args[0])
     return create_shared_task(**kwargs)

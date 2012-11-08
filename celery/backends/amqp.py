@@ -21,6 +21,7 @@ from kombu.messaging import Consumer, Producer
 
 from celery import states
 from celery.exceptions import TimeoutError
+from celery.five import range
 from celery.utils.log import get_logger
 
 from .base import BaseBackend
@@ -149,7 +150,7 @@ class AMQPBackend(BaseBackend):
             binding = self._create_binding(task_id)(channel)
             binding.declare()
             latest, acc = None, None
-            for i in xrange(backlog_limit):
+            for i in range(backlog_limit):
                 latest, acc = acc, binding.get(no_ack=True)
                 if not acc:  # no more messages
                     break

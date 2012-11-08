@@ -17,12 +17,12 @@ from __future__ import absolute_import
 import threading
 
 from collections import deque
-from itertools import chain, izip_longest
+from itertools import chain
 from time import time, sleep
-from Queue import Queue, Empty
 
 from kombu.utils.limits import TokenBucket
 
+from celery.five import Queue, Empty, values, zip_longest
 from celery.utils import timeutils
 
 
@@ -92,7 +92,7 @@ class TaskBucket(object):
             pass
 
         remaining_times = []
-        for bucket in self.buckets.values():
+        for bucket in values(self.buckets):
             remaining = bucket.expected_time()
             if not remaining:
                 try:
@@ -198,15 +198,15 @@ class TaskBucket(object):
 
     def qsize(self):
         """Get the total size of all the queues."""
-        return sum(bucket.qsize() for bucket in self.buckets.values())
+        return sum(bucket.qsize() for bucket in values(self.buckets))
 
     def empty(self):
         """Returns :const:`True` if all of the buckets are empty."""
-        return all(bucket.empty() for bucket in self.buckets.values())
+        return all(bucket.empty() for bucket in values(self.buckets))
 
     def clear(self):
         """Delete the data in all of the buckets."""
-        for bucket in self.buckets.values():
+        for bucket in values(self.buckets):
             bucket.clear()
 
     @property
@@ -214,8 +214,8 @@ class TaskBucket(object):
         """Flattens the data in all of the buckets into a single list."""
         # for queues with contents [(1, 2), (3, 4), (5, 6), (7, 8)]
         # zips and flattens to [1, 3, 5, 7, 2, 4, 6, 8]
-        return [x for x in chain.from_iterable(izip_longest(*[bucket.items
-                    for bucket in self.buckets.values()])) if x]
+        return [x for x in chain.from_iterable(zip_longest(*[bucket.items
+                    for bucket in values(self.buckets)])) if x]
 
 
 class FastQueue(Queue):

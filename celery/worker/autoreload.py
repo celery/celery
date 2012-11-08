@@ -17,8 +17,10 @@ from collections import defaultdict
 from threading import Event
 
 from kombu.utils import eventio
+from kombu.utils.encoding import ensure_bytes
 
 from celery import bootsteps
+from celery.five import items
 from celery.platforms import ignore_errno
 from celery.utils.imports import module_file
 from celery.utils.log import get_logger
@@ -64,7 +66,7 @@ def file_hash(filename, algorithm='md5'):
     hobj = hashlib.new(algorithm)
     with open(filename, 'rb') as f:
         for chunk in iter(lambda: f.read(2 ** 20), ''):
-            hobj.update(chunk)
+            hobj.update(ensure_bytes(chunk))
     return hobj.digest()
 
 
@@ -147,7 +149,7 @@ class KQueueMonitor(BaseMonitor):
             self.poller.poll(1)
 
     def close(self, poller):
-        for f, fd in self.filemap.iteritems():
+        for f, fd in items(self.filemap):
             if fd is not None:
                 poller.unregister(fd)
                 with ignore_errno('EBADF'):  # pragma: no cover

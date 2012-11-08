@@ -16,17 +16,17 @@ import re
 import sys
 
 from datetime import datetime
-from itertools import imap
 
 from kombu.utils import cached_property
 from kombu.utils.encoding import safe_str
 
 from celery.datastructures import DictAttribute
 from celery.exceptions import ImproperlyConfigured
+from celery.five import reraise, string_t
+from celery.utils.functional import maybe_list
 from celery.utils.imports import (
     import_from_cwd, symbol_by_name, NotAPackage, find_module,
 )
-from celery.utils.functional import maybe_list
 
 BUILTIN_MODULES = frozenset()
 
@@ -146,7 +146,7 @@ class BaseLoader(object):
         return self.config_from_object(module_name, silent=silent)
 
     def config_from_object(self, obj, silent=False):
-        if isinstance(obj, basestring):
+        if isinstance(obj, string_t):
             try:
                 if '.' in obj:
                     obj = symbol_by_name(obj, imp=self.import_from_cwd)
@@ -166,13 +166,13 @@ class BaseLoader(object):
             self.find_module(name)
         except NotAPackage:
             if name.endswith('.py'):
-                raise NotAPackage, NotAPackage(
+                reraise(NotAPackage, NotAPackage(
                         CONFIG_WITH_SUFFIX.format(
                             module=name,
-                            suggest=name[:-3])), sys.exc_info()[2]
-            raise NotAPackage, NotAPackage(
+                            suggest=name[:-3])), sys.exc_info()[2])
+            reraise(NotAPackage, NotAPackage(
                     CONFIG_INVALID_NAME.format(
-                        module=name)), sys.exc_info()[2]
+                        module=name)), sys.exc_info()[2])
         else:
             return self.import_from_cwd(name)
 
@@ -223,7 +223,7 @@ class BaseLoader(object):
                     raise ValueError('{0!r}: {1}'.format(ns_key, exc))
             return ns_key, value
 
-        return dict(imap(getarg, args))
+        return dict(getarg(arg) for arg in args)
 
     def mail_admins(self, subject, body, fail_silently=False,
             sender=None, to=None, host=None, port=None,

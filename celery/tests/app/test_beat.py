@@ -8,6 +8,7 @@ from nose import SkipTest
 
 from celery import beat
 from celery import task
+from celery.five import keys, string_t
 from celery.result import AsyncResult
 from celery.schedules import schedule
 from celery.task.base import Task
@@ -189,7 +190,7 @@ class test_Scheduler(Case):
 
     def test_info(self):
         scheduler = mScheduler()
-        self.assertIsInstance(scheduler.info, basestring)
+        self.assertIsInstance(scheduler.info, string_t)
 
     def test_maybe_entry(self):
         s = mScheduler()
@@ -368,8 +369,8 @@ class test_Service(Case):
         schedule = s.scheduler.schedule
         self.assertIsInstance(schedule, dict)
         self.assertIsInstance(s.scheduler, beat.Scheduler)
-        scheduled = schedule.keys()
-        for task_name in sh['entries'].keys():
+        scheduled = list(schedule.keys())
+        for task_name in keys(sh['entries']):
             self.assertIn(task_name, scheduled)
 
         s.sync()

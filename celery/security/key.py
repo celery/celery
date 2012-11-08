@@ -8,6 +8,8 @@
 """
 from __future__ import absolute_import
 
+from kombu.utils.encoding import ensure_bytes
+
 from .utils import crypto, reraise_errors
 
 
@@ -20,4 +22,4 @@ class PrivateKey(object):
     def sign(self, data, digest):
         """sign string containing data."""
         with reraise_errors('Unable to sign data: {0!r}'):
-            return crypto.sign(self._key, data, digest)
+            return crypto.sign(self._key, ensure_bytes(data), digest)

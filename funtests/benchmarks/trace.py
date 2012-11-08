@@ -1,4 +1,5 @@
 from celery import current_app, task, uuid
+from celery.five import range
 from celery.worker.consumer import Consumer
 from celery.worker.job import Request
 from celery.concurrency.solo import TaskPool
@@ -40,7 +41,7 @@ request = AttributeDict(
                  'callbacks': [],
                  'errbacks': [],
                  'chord': None}, **task)
-for i in xrange(100000):
+for i in range(100000):
     trace_task_ret(T, tid, (), {}, request)
 print(time() - ts)
 

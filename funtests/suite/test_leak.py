@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.join(os.getcwd(), os.pardir))
 from nose import SkipTest
 
 from celery import current_app
+from celery.five import range
 from celery.tests.utils import unittest
 
 import suite
@@ -66,7 +67,7 @@ class LeakFunCase(unittest.TestCase):
             base = self.get_rsize()
             first = None
             sizes = Sizes()
-            for i in xrange(n):
+            for i in range(n):
                 before, after = self.sample_allocated(fun, *args, **kwargs)
                 if not first:
                     first = after

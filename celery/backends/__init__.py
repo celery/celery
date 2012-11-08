@@ -14,6 +14,7 @@ from kombu.utils.url import _parse_url
 
 from celery.local import Proxy
 from celery._state import current_app
+from celery.five import reraise
 from celery.utils.imports import symbol_by_name
 from celery.utils.functional import memoize
 
@@ -45,8 +46,8 @@ def get_backend_cls(backend=None, loader=None):
     try:
         return symbol_by_name(backend, aliases)
     except ValueError as exc:
-        raise ValueError, ValueError(UNKNOWN_BACKEND.format(
-                    backend, exc)), sys.exc_info()[2]
+        reraise(ValueError, ValueError(UNKNOWN_BACKEND.format(
+                    backend, exc)), sys.exc_info()[2])
 
 
 def get_backend_by_url(backend=None, loader=None):

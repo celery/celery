@@ -1,5 +1,6 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
+from celery.five import string, long_t
 from celery.local import Proxy, PromiseProxy, maybe_evaluate, try_import
 from celery.tests.utils import Case
 
@@ -34,12 +35,13 @@ class test_Proxy(Case):
         self.assertEqual(x.__dict__, real.__dict__)
         self.assertEqual(repr(x), repr(real))
 
-    def test_nonzero(self):
+    def test_bool(self):
 
         class X(object):
 
-            def __nonzero__(self):
+            def __bool__(self):
                 return False
+            __nonzero__ = __bool__
 
         x = Proxy(lambda: X())
         self.assertFalse(x)
@@ -58,15 +60,17 @@ class test_Proxy(Case):
         class X(object):
 
             def __unicode__(self):
-                return u'UNICODE'
+                return 'UNICODE'
+            __str__ = __unicode__
 
             def __repr__(self):
                 return 'REPR'
 
         x = Proxy(lambda: X())
-        self.assertEqual(unicode(x), u'UNICODE')
+        self.assertEqual(string(x), 'UNICODE')
         del(X.__unicode__)
-        self.assertEqual(unicode(x), 'REPR')
+        del(X.__str__)
+        self.assertEqual(string(x), 'REPR')
 
     def test_dir(self):
 
@@ -198,7 +202,7 @@ class test_Proxy(Case):
         x = Proxy(lambda: 10)
         self.assertEqual(type(x.__float__()), float)
         self.assertEqual(type(x.__int__()), int)
-        self.assertEqual(type(x.__long__()), long)
+        self.assertEqual(type(x.__long__()), long_t)
         self.assertTrue(hex(x))
         self.assertTrue(oct(x))
 

@@ -98,7 +98,6 @@ import socket
 import sys
 
 from collections import defaultdict
-from itertools import imap
 from subprocess import Popen
 from time import sleep
 
@@ -106,6 +105,7 @@ from kombu.utils import cached_property
 from kombu.utils.encoding import from_utf8
 
 from celery import VERSION_BANNER
+from celery.five import items
 from celery.platforms import Pidfile, IS_WINDOWS
 from celery.utils import term
 from celery.utils.text import pluralize
@@ -428,7 +428,7 @@ def multi_args(p, cmd='celeryd', append='', prefix='', suffix=''):
         except ValueError:
             pass
         else:
-            names = list(imap(str, range(1, noderange + 1)))
+            names = list(map(str, range(1, noderange + 1)))
             prefix = 'celery'
     cmd = options.pop('--cmd', cmd)
     append = options.pop('--append', append)
@@ -439,7 +439,7 @@ def multi_args(p, cmd='celeryd', append='', prefix='', suffix=''):
     if suffix in ('""', "''"):
         suffix = ''
 
-    for ns_name, ns_opts in p.namespaces.items():
+    for ns_name, ns_opts in list(items(p.namespaces)):
         if ',' in ns_name or (ranges and '-' in ns_name):
             for subns in parse_ns_range(ns_name, ranges):
                 p.namespaces[subns].update(ns_opts)
@@ -451,7 +451,7 @@ def multi_args(p, cmd='celeryd', append='', prefix='', suffix=''):
                                 '%n': name})
         argv = ([expand(cmd)] +
                 [format_opt(opt, expand(value))
-                        for opt, value in p.optmerge(name, options).items()] +
+                        for opt, value in items(p.optmerge(name, options))] +
                 [passthrough])
         if append:
             argv.append(expand(append))
@@ -529,7 +529,7 @@ def parse_ns_range(ns, ranges=False):
     for space in ',' in ns and ns.split(',') or [ns]:
         if ranges and '-' in space:
             start, stop = space.split('-')
-            x = list(imap(str, range(int(start), int(stop) + 1)))
+            x = list(map(str, range(int(start), int(stop) + 1)))
             ret.extend(x)
         else:
             ret.append(space)
@@ -541,8 +541,8 @@ def abbreviations(mapping):
     def expand(S):
         ret = S
         if S is not None:
-            for short, long in mapping.items():
-                ret = ret.replace(short, long)
+            for short_opt, long_opt in items(mapping):
+                ret = ret.replace(short_opt, long_opt)
         return ret
 
     return expand

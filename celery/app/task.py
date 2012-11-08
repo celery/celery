@@ -12,10 +12,10 @@ import sys
 
 from celery import current_app
 from celery import states
-from celery.__compat__ import class_property
 from celery._state import get_current_worker_task, _task_stack
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
+from celery.five import class_property, items, with_metaclass
 from celery.result import EagerResult
 from celery.utils import gen_task_name, fun_takes_kwargs, uuid, maybe_reraise
 from celery.utils.functional import mattrgetter, maybe_list
@@ -134,6 +134,7 @@ class TaskType(type):
         return '<unbound {0.__name__}>'.format(cls)
 
 
+@with_metaclass(TaskType)
 class Task(object):
     """Task base class.
 
@@ -142,7 +143,6 @@ class Task(object):
     is overridden).
 
     """
-    __metaclass__ = TaskType
     __trace__ = None
     __v2_compat__ = False  # set by old base in celery.task.base
 
@@ -306,7 +306,7 @@ class Task(object):
     @classmethod
     def annotate(self):
         for d in resolve_all_annotations(self.app.annotations, self):
-            for key, value in d.iteritems():
+            for key, value in items(d):
                 if key.startswith('@'):
                     self.add_around(key[1:], value)
                 else:
@@ -631,7 +631,7 @@ class Task(object):
                               'delivery_info': {'is_eager': True}}
             supported_keys = fun_takes_kwargs(task.run, default_kwargs)
             extend_with = dict((key, val)
-                                    for key, val in default_kwargs.items()
+                                    for key, val in items(default_kwargs)
                                         if key in supported_keys)
             kwargs.update(extend_with)
 

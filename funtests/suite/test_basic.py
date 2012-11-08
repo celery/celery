@@ -8,6 +8,7 @@ sys.path.insert(0, os.getcwd())
 sys.path.insert(0, os.path.join(os.getcwd(), os.pardir))
 import suite
 
+from celery.five import range
 from celery.tests.utils import unittest
 from celery.tests.functional import tasks
 from celery.tests.functional.case import WorkerCase
@@ -21,7 +22,7 @@ class test_basic(WorkerCase):
     def test_roundtrip_simple_task(self):
         publisher = tasks.add.get_publisher()
         results = [(tasks.add.apply_async(i, publisher=publisher), i)
-                        for i in zip(xrange(100), xrange(100))]
+                        for i in zip(range(100), range(100))]
         for result, i in results:
             self.assertEqual(result.get(timeout=10), operator.add(*i))
 

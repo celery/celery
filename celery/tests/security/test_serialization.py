@@ -1,11 +1,12 @@
 from __future__ import absolute_import
 
-from celery.exceptions import SecurityError
+from kombu.serialization import registry
+from kombu.utils.encoding import ensure_bytes
 
+from celery.exceptions import SecurityError
 from celery.security.serialization import SecureSerializer, register_auth
 from celery.security.certificate import Certificate, CertStore
 from celery.security.key import PrivateKey
-from kombu.serialization import registry
 
 from . import CERT1, CERT2, KEY1, KEY2
 from .case import SecurityCase

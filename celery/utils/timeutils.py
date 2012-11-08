@@ -10,7 +10,6 @@ from __future__ import absolute_import
 
 import os
 import time as _time
-from itertools import izip
 
 from calendar import monthrange
 from datetime import date, datetime, timedelta, tzinfo
@@ -18,6 +17,8 @@ from datetime import date, datetime, timedelta, tzinfo
 from kombu.utils import cached_property, reprcall
 
 from pytz import timezone as _timezone
+
+from celery.five import string_t
 
 from .functional import dictfilter
 from .iso8601 import parse_iso8601
@@ -27,7 +28,7 @@ from .text import pluralize
 C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
 
 DAYNAMES = 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
-WEEKDAYS = dict(izip(DAYNAMES, range(7)))
+WEEKDAYS = dict(zip(DAYNAMES, range(7)))
 
 RATE_MODIFIER_MAP = {'s': lambda n: n,
                      'm': lambda n: n / 60.0,
@@ -111,7 +112,7 @@ class _Zone(object):
         return localize(dt, self.local)
 
     def get_timezone(self, zone):
-        if isinstance(zone, basestring):
+        if isinstance(zone, string_t):
             return _timezone(zone)
         return zone
 
@@ -206,7 +207,7 @@ def rate(rate):
     """Parses rate strings, such as `"100/m"` or `"2/h"`
     and converts them to seconds."""
     if rate:
-        if isinstance(rate, basestring):
+        if isinstance(rate, string_t):
             ops, _, modifier = rate.partition('/')
             return RATE_MODIFIER_MAP[modifier or 's'](int(ops)) or 0
         return rate or 0

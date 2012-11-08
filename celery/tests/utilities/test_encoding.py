@@ -1,9 +1,10 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 
 from nose import SkipTest
 
+from celery.five import string
 from celery.utils import encoding
 from celery.tests.utils import Case
 
@@ -13,13 +14,12 @@ class test_encoding(Case):
     def test_safe_str(self):
         self.assertTrue(encoding.safe_str(object()))
         self.assertTrue(encoding.safe_str('foo'))
-        self.assertTrue(encoding.safe_str(u'foo'))
 
     def test_safe_str_UnicodeDecodeError(self):
         if sys.version_info >= (3, 0):
             raise SkipTest('py3k: not relevant')
 
-        class foo(unicode):
+        class foo(string):
 
             def encode(self, *args, **kwargs):
                 raise UnicodeDecodeError('foo')

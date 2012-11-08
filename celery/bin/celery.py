@@ -19,6 +19,7 @@ from operator import itemgetter
 from pprint import pformat
 
 from celery.datastructures import DependencyGraph, GraphFormatter
+from celery.five import items, string, string_t, values
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from celery.utils import term
 from celery.utils import text
@@ -200,7 +201,7 @@ class Command(BaseCommand):
 
     def say_remote_command_reply(self, replies):
         c = self.colored
-        node = iter(replies).next()  # <-- take first.
+        node = next(iter(replies))  # <-- take first.
         reply = replies[node]
         status, preply = self.prettify(reply)
         self.say_chat('->', c.cyan(node, ': ') + status,
@@ -213,8 +214,8 @@ class Command(BaseCommand):
         if isinstance(n, dict):
             if 'ok' in n or 'error' in n:
                 return self.prettify_dict_ok_error(n)
-        if isinstance(n, basestring):
-            return OK, unicode(n)
+        if isinstance(n, string_t):
+            return OK, string(n)
         return OK, pformat(n)
 
     def say_chat(self, direction, title, body=''):
@@ -406,12 +407,12 @@ class call(Command):
     def run(self, name, *_, **kw):
         # Positional args.
         args = kw.get('args') or ()
-        if isinstance(args, basestring):
+        if isinstance(args, string_t):
             args = anyjson.loads(args)
 
         # Keyword args.
         kwargs = kw.get('kwargs') or {}
-        if isinstance(kwargs, basestring):
+        if isinstance(kwargs, string_t):
             kwargs = anyjson.loads(kwargs)
 
         # Expires can be int/float.
@@ -554,7 +555,7 @@ class _RemoteControl(Command):
 
         destination = kwargs.get('destination')
         timeout = kwargs.get('timeout') or self.choices[method][0]
-        if destination and isinstance(destination, basestring):
+        if destination and isinstance(destination, string_t):
             destination = [dest.strip() for dest in destination.split(',')]
 
         try:
@@ -807,7 +808,7 @@ class shell(Command):  # pragma: no cover
 
         if not without_tasks:
             self.locals.update(dict((task.__name__, task)
-                                for task in self.app.tasks.itervalues()
+                                for task in values(self.app.tasks)
                                     if not task.name.startswith('celery.')))
 
         if force_python:
@@ -999,7 +1000,7 @@ class graph(Command):
         def maybe_list(l, sep=','):
             return (l[0], l[1].split(sep) if sep in l[1] else l[1])
 
-        args = dict(map(simplearg, args))
+        args = dict(simplearg(arg) for arg in args)
         generic = 'generic' in args
 
         def generic_label(node):
@@ -1099,7 +1100,7 @@ class graph(Command):
         except KeyError:
             replies = self.app.control.inspect().stats()
             workers, threads = [], []
-            for worker, reply in replies.iteritems():
+            for worker, reply in items(replies):
                 workers.append(worker)
                 threads.append(reply['pool']['max-concurrency'])
 

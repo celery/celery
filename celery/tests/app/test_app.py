@@ -11,6 +11,7 @@ from celery import Celery
 from celery import app as _app
 from celery import _state
 from celery.app import defaults
+from celery.five import items
 from celery.loaders.base import BaseLoader
 from celery.platforms import pyimplementation
 from celery.utils.serialization import pickle
@@ -27,7 +28,7 @@ THIS_IS_A_KEY = 'this is a value'
 class Object(object):
 
     def __init__(self, **kwargs):
-        for key, value in kwargs.items():
+        for key, value in items(kwargs):
             setattr(self, key, value)
 
 
@@ -380,13 +381,13 @@ class test_App(Case):
                                        'userid': 'guest',
                                        'password': 'guest',
                                        'virtual_host': '/'},
-                            self.app.connection('amqplib://').info())
+                        self.app.connection('pyamqp://').info())
         self.app.conf.BROKER_PORT = 1978
         self.app.conf.BROKER_VHOST = 'foo'
         self.assertDictContainsSubset({'port': 1978,
                                        'virtual_host': 'foo'},
-                    self.app.connection('amqplib://:1978/foo').info())
-        conn = self.app.connection('amqplib:////value')
+        self.app.connection('pyamqp://:1978/foo').info())
+        conn = self.app.connection('pyamqp:////value')
         self.assertDictContainsSubset({'virtual_host': '/value'},
                                       conn.info())
 

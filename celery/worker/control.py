@@ -11,11 +11,10 @@ from __future__ import absolute_import
 import os
 
 from kombu.utils.encoding import safe_repr
-from itertools import imap
 
+from celery.five import UserDict, items
 from celery.platforms import signals as _signals
 from celery.utils import timeutils
-from celery.utils.compat import UserDict
 from celery.utils.log import get_logger
 from celery.utils import jsonify
 
@@ -62,24 +61,21 @@ def report(panel):
 @Panel.register
 def enable_events(panel):
     dispatcher = panel.consumer.event_dispatcher
-    if 'task' not in dispatcher.domains:
-        dispatcher.domains.add('task')
-        dispatcher.enable()
-        dispatcher.send('worker-online')
-        logger.info('Events enabled by remote.')
-        return {'ok': 'events enabled'}
-    return {'ok': 'events already enabled'}
+    if 'task' not in dispatcher.groups:
+        dispatcher.groups.add('task')
+        logger.info('Events of group {task} enabled by remote.')
+        return {'ok': 'task events enabled'}
+    return {'ok': 'task events already enabled'}
 
 
 @Panel.register
 def disable_events(panel):
     dispatcher = panel.consumer.event_dispatcher
-    if 'task' in dispatcher.domains:
-        dispatcher.domains.discard('task')
-        dispatcher.send('worker-offline')
-        logger.info('Events disabled by remote.')
-        return {'ok': 'events disabled'}
-    return {'ok': 'events already disabled'}
+    if 'task' in dispatcher.groups:
+        dispatcher.groups.discard('task')
+        logger.info('Events of group {task} disabled by remote.')
+        return {'ok': 'task events disabled'}
+    return {'ok': 'task events already disabled'}
 
 
 @Panel.register
@@ -168,7 +164,7 @@ def dump_reserved(panel, safe=False, **kwargs):
         logger.debug('--Empty queue--')
         return []
     logger.debug('* Dump of currently reserved tasks:\n%s',
-                 '\n'.join(imap(safe_repr, reserved)))
+                 '\n'.join(safe_repr(id) for id in reserved))
     return [request.info(safe=safe)
             for request in reserved]
 
@@ -217,7 +213,7 @@ def dump_tasks(panel, taskinfoitems=None, **kwargs):
                         for field in taskinfoitems
                             if getattr(task, field, None) is not None)
         if fields:
-            info = imap('='.join, fields.iteritems())
+            info = ['='.join(f) for f in items(fields)]
             return '{0} [{1}]'.format(task.name, ' '.join(info))
         return task.name
 

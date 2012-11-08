@@ -10,12 +10,12 @@ from __future__ import absolute_import
 import socket
 
 from time import sleep
-from Queue import Empty
 
 from kombu.utils.eventio import READ, WRITE, ERR
 
 from celery.bootsteps import CLOSE
 from celery.exceptions import InvalidTaskError, SystemTerminate
+from celery.five import Empty
 
 from . import state
 

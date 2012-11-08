@@ -6,13 +6,14 @@
     Terminals and colors.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import platform
 
 from functools import reduce
 
-from .encoding import safe_str
+from kombu.utils.encoding import safe_str
+from celery.five import string
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 OP_SEQ = '\033[%dm'
@@ -50,35 +51,36 @@ class colored(object):
                       'white': self.white}
 
     def _add(self, a, b):
-        return unicode(a) + unicode(b)
+        return string(a) + string(b)
 
     def _fold_no_color(self, a, b):
         try:
             A = a.no_color()
         except AttributeError:
-            A = unicode(a)
+            A = string(a)
         try:
             B = b.no_color()
         except AttributeError:
-            B = unicode(b)
-        return safe_str(A) + safe_str(B)
+            B = string(b)
+
+        return safe_str(safe_str(A) + safe_str(B))
 
     def no_color(self):
         if self.s:
-            return reduce(self._fold_no_color, self.s)
+            return safe_str(reduce(self._fold_no_color, self.s))
         return ''
 
     def embed(self):
         prefix = ''
         if self.enabled:
             prefix = self.op
-        return prefix + safe_str(reduce(self._add, self.s))
+        return safe_str(prefix) + safe_str(reduce(self._add, self.s))
 
     def __unicode__(self):
         suffix = ''
         if self.enabled:
             suffix = RESET_SEQ
-        return safe_str(self.embed() + suffix)
+        return safe_str(self.embed() + safe_str(suffix))
 
     def __str__(self):
         return safe_str(self.__unicode__())
@@ -153,4 +155,4 @@ class colored(object):
         return self.node(s or [''], RESET_SEQ)
 
     def __add__(self, other):
-        return unicode(self) + unicode(other)
+        return string(self) + string(other)

@@ -29,6 +29,7 @@ from kombu.utils import kwdict
 
 from celery import states
 from celery.datastructures import AttributeDict, LRUCache
+from celery.five import items, values
 from celery.utils.log import get_logger
 
 # The window (in percentage) is added to the workers heartbeat
@@ -191,8 +192,9 @@ class Task(Element):
         :param fields: Event data.
 
         """
-        if self.worker:
-            self.worker.update_heartbeat(fields['local_received'], timestamp)
+        time_received = fields.get('local_received') or 0
+        if self.worker and time_received:
+            self.worker.update_heartbeat(time_received, timestamp)
         if state != states.RETRY and self.state != states.RETRY and \
                 states.state(state) < states.state(self.state):
             # this state logically happens-before the current state, so merge.
@@ -363,7 +365,7 @@ class State(object):
         task.worker = worker
 
         taskheap = self._taskheap
-        timestamp = fields['timestamp']
+        timestamp = fields.get('timestamp') or 0
         clock = 0 if type == 'sent' else fields.get('clock')
         heappush(taskheap, _lamportinfo(clock, timestamp, worker.id, task))
         curcount = len(self.tasks)
@@ -392,7 +394,7 @@ class State(object):
             self.event_callback(self, event)
 
     def itertasks(self, limit=None):
-        for index, row in enumerate(self.tasks.iteritems()):
+        for index, row in enumerate(items(self.tasks)):
             yield row
             if limit and index + 1 >= limit:
                 break
@@ -428,11 +430,11 @@ class State(object):
 
     def task_types(self):
         """Returns a list of all seen task types."""
-        return list(sorted(set(task.name for task in self.tasks.itervalues())))
+        return list(sorted(set(task.name for task in values(self.tasks))))
 
     def alive_workers(self):
         """Returns a list of (seemingly) alive workers."""
-        return [w for w in self.workers.values() if w.alive]
+        return [w for w in values(self.workers) if w.alive]
 
     def __repr__(self):
         return '<State: events={0.event_count} tasks={0.task_count}>' \

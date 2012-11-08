@@ -10,9 +10,8 @@ from __future__ import absolute_import
 
 import base64
 
-from itertools import izip
 from kombu.serialization import registry, encode, decode
-from kombu.utils.encoding import bytes_to_str, str_to_bytes
+from kombu.utils.encoding import bytes_to_str, str_to_bytes, ensure_bytes
 
 from .certificate import Certificate, FSCertStore
 from .key import PrivateKey
@@ -48,6 +47,7 @@ class SecureSerializer(object):
             # this way the receiver doesn't have to decode the contents
             # to verify the signature (and thus avoiding potential flaws
             # in the decoding step).
+            body = ensure_bytes(body)
             return self._pack(body, content_type, content_encoding,
                               signature=self._key.sign(body, self._digest),
                               signer=self._cert.get_id())
@@ -61,18 +61,23 @@ class SecureSerializer(object):
                                        payload['signer'],
                                        payload['body'])
             self._cert_store[signer].verify(body, signature, self._digest)
-        return decode(body, payload['content_type'],
+        return decode(bytes_to_str(body), payload['content_type'],
                             payload['content_encoding'], force=True)
 
     def _pack(self, body, content_type, content_encoding, signer, signature,
-            sep='\x00\x01'):
-        return b64encode(sep.join([signer, signature,
-                                   content_type, content_encoding, body]))
+            sep=str_to_bytes('\x00\x01')):
+        fields = sep.join(ensure_bytes(s)
+                for s in [signer, signature, content_type,
+                          content_encoding, body])
+        return b64encode(fields)
 
-    def _unpack(self, payload, sep='\x00\x01',
-            fields=('signer', 'signature', 'content_type',
-                    'content_encoding', 'body')):
-        return dict(izip(fields, b64decode(payload).split(sep)))
+    def _unpack(self, payload, sep=str_to_bytes('\x00\x01')):
+        values = b64decode(ensure_bytes(payload)).split(sep)
+        return {'signer': bytes_to_str(values[0]),
+                'signature': ensure_bytes(values[1]),
+                'content_type': bytes_to_str(values[2]),
+                'content_encoding': bytes_to_str(values[3]),
+                'body': ensure_bytes(values[4])}
 
 
 def register_auth(key=None, cert=None, store=None, digest='sha1',

@@ -10,6 +10,8 @@ from __future__ import absolute_import
 import weakref
 import traceback
 
+from collections import Callable
+
 
 def safe_ref(target, on_delete=None):  # pragma: no cover
     """Return a *safe* weak reference to a callable target
@@ -23,15 +25,15 @@ def safe_ref(target, on_delete=None):  # pragma: no cover
         goes out of scope with the reference object, (either a
         :class:`weakref.ref` or a :class:`BoundMethodWeakref`) as argument.
     """
-    if getattr(target, 'im_self', None) is not None:
+    if getattr(target, '__self__', None) is not None:
         # Turn a bound method into a BoundMethodWeakref instance.
         # Keep track of these instances for lookup by disconnect().
-        assert hasattr(target, 'im_func'), \
-            """safe_ref target {0!r} has im_self, but no im_func: \
+        assert hasattr(target, '__func__'), \
+            """safe_ref target {0!r} has __self__, but no __func__: \
             don't know how to create reference""".format(target)
         return get_bound_method_weakref(target=target,
                                         on_delete=on_delete)
-    if callable(on_delete):
+    if isinstance(on_delete, Callable):
         return weakref.ref(target, on_delete)
     else:
         return weakref.ref(target)
@@ -66,7 +68,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
 
         weak reference to the target object
 
-    .. attribute:: weak_func
+    .. attribute:: weak_fun
 
         weak reference to the target function
 
@@ -112,10 +114,10 @@ class BoundMethodWeakref(object):  # pragma: no cover
         """Return a weak-reference-like instance for a bound method
 
         :param target: the instance-method target for the weak
-            reference, must have `im_self` and `im_func` attributes
+            reference, must have `__self__` and `__func__` attributes
             and be reconstructable via::
 
-                target.im_func.__get__(target.im_self)
+                target.__func__.__get__(target.__self__)
 
             which is true of built-in instance methods.
 
@@ -136,7 +138,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
                 pass
             for function in methods:
                 try:
-                    if callable(function):
+                    if isinstance(function, Callable):
                         function(self)
                 except Exception as exc:
                     try:
@@ -147,10 +149,10 @@ class BoundMethodWeakref(object):  # pragma: no cover
 
         self.deletion_methods = [on_delete]
         self.key = self.calculate_key(target)
-        self.weak_self = weakref.ref(target.im_self, remove)
-        self.weak_func = weakref.ref(target.im_func, remove)
-        self.self_name = str(target.im_self)
-        self.func_name = str(target.im_func.__name__)
+        self.weak_self = weakref.ref(target.__self__, remove)
+        self.weak_fun = weakref.ref(target.__func__, remove)
+        self.self_name = str(target.__self__)
+        self.fun_name = str(target.__func__.__name__)
 
     def calculate_key(cls, target):
         """Calculate the reference key for this reference
@@ -158,7 +160,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
         Currently this is a two-tuple of the `id()`'s of the
         target object and the target function respectively.
         """
-        return id(target.im_self), id(target.im_func)
+        return id(target.__self__), id(target.__func__)
     calculate_key = classmethod(calculate_key)
 
     def __str__(self):
@@ -166,14 +168,15 @@ class BoundMethodWeakref(object):  # pragma: no cover
         return '{0}( {1}.{2} )'.format(
             type(self).__name__,
             self.self_name,
-            self.func_name,
+            self.fun_name,
         )
 
     __repr__ = __str__
 
-    def __nonzero__(self):
+    def __bool__(self):
         """Whether we are still a valid reference"""
         return self() is not None
+    __nonzero__ = __bool__  # py2
 
     def __cmp__(self, other):
         """Compare with another reference"""
@@ -194,7 +197,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
         """
         target = self.weak_self()
         if target is not None:
-            function = self.weak_func()
+            function = self.weak_fun()
             if function is not None:
                 return function.__get__(target)
 
@@ -224,10 +227,10 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
         """Return a weak-reference-like instance for a bound method
 
         :param target: the instance-method target for the weak
-            reference, must have `im_self` and `im_func` attributes
+            reference, must have `__self__` and `__func__` attributes
             and be reconstructable via::
 
-                target.im_func.__get__(target.im_self)
+                target.__func__.__get__(target.__self__)
 
             which is true of built-in instance methods.
 
@@ -238,9 +241,9 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
             which will be passed a pointer to this object.
 
         """
-        assert getattr(target.im_self, target.__name__) == target, \
+        assert getattr(target.__self__, target.__name__) == target, \
                "method %s isn't available as the attribute %s of %s" % (
-                    target, target.__name__, target.im_self)
+                    target, target.__name__, target.__self__)
         super(BoundNonDescriptorMethodWeakref, self).__init__(target,
                                                               on_delete)
 
@@ -258,7 +261,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
         """
         target = self.weak_self()
         if target is not None:
-            function = self.weak_func()
+            function = self.weak_fun()
             if function is not None:
                 # Using curry() would be another option, but it erases the
                 # "signature" of the function. That is, after a function is

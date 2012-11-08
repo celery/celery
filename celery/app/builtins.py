@@ -10,7 +10,6 @@
 from __future__ import absolute_import
 
 from collections import deque
-from itertools import imap, izip, starmap
 
 from celery._state import get_current_worker_task
 from celery.utils import uuid
@@ -91,7 +90,7 @@ def add_map_task(app):
     @app.task(name='celery.map')
     def xmap(task, it):
         task = subtask(task).type
-        return list(imap(task, it))
+        return [task(item) for item in it]
     return xmap
 
 
@@ -102,7 +101,7 @@ def add_starmap_task(app):
     @app.task(name='celery.starmap')
     def xstarmap(task, it):
         task = subtask(task).type
-        return list(starmap(task, it))
+        return [task(*item) for item in it]
     return xstarmap
 
 
@@ -160,7 +159,7 @@ def add_group_task(app):
                 return task, AsyncResult(tid)
 
             try:
-                tasks, res = list(izip(*[prepare_member(task)
+                tasks, res = list(zip(*[prepare_member(task)
                                                 for task in tasks]))
             except ValueError:  # tasks empty
                 tasks, res = [], []
@@ -323,8 +322,8 @@ def add_chord_task(app):
                 opt_value = options.pop(opt_name, None)
                 if opt_value:
                     body.set(**{opt_name: opt_value})
-            map(body.link, options.pop('link', []))
-            map(body.link_error, options.pop('link_error', []))
+            [body.link(s) for s in options.pop('link', [])]
+            [body.link_error(s) for s in options.pop('link_error', [])]
             callback_id = body.options.setdefault('task_id', task_id or uuid())
             parent = super(Chord, self).apply_async((header, body, args),
                                                      kwargs, **options)

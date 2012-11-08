@@ -13,6 +13,7 @@ import platform as _platform
 
 from celery import datastructures
 from celery import platforms
+from celery.five import items
 from celery.utils.text import pretty
 from celery.utils.imports import qualname
 
@@ -96,7 +97,7 @@ class Settings(datastructures.ConfigurationView):
         """Returns a human readable string showing changes to the
         configuration."""
         return '\n'.join('{0}: {1}'.format(key, pretty(value, width=50))
-                        for key, value in self.without_defaults().iteritems())
+                        for key, value in items(self.without_defaults()))
 
 
 class AppPickler(object):

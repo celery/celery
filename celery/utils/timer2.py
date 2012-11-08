@@ -16,15 +16,15 @@ import threading
 
 from datetime import datetime
 from functools import wraps
-from itertools import count, imap
+from itertools import count
 from time import time, sleep
 
-from celery.utils.compat import THREAD_TIMEOUT_MAX
+from celery.five import THREAD_TIMEOUT_MAX, map
 from celery.utils.timeutils import timedelta_seconds, timezone
 from kombu.log import get_logger
 
 VERSION = (1, 0, 0)
-__version__ = '.'.join(imap(str, VERSION))
+__version__ = '.'.join(map(str, VERSION))
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://github.com/ask/timer2/'
@@ -118,7 +118,7 @@ class Schedule(object):
         if isinstance(eta, datetime):
             try:
                 eta = to_timestamp(eta)
-            except Exception, exc:
+            except Exception as exc:
                 if not self.handle_error(exc):
                     raise
                 return
@@ -218,7 +218,7 @@ class Timer(threading.Thread):
 
     running = False
     on_tick = None
-    _timer_count = count(1).next
+    _timer_count = count(1)
 
     if TIMER_DEBUG:  # pragma: no cover
         def start(self, *args, **kwargs):
@@ -238,7 +238,7 @@ class Timer(threading.Thread):
         self.mutex = threading.Lock()
         self.not_empty = threading.Condition(self.mutex)
         self.daemon = True
-        self.name = 'Timer-{0}'.format(self._timer_count())
+        self.name = 'Timer-{0}'.format(next(self._timer_count))
 
     def _next_entry(self):
         with self.not_empty:

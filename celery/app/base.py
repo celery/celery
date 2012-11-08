@@ -11,7 +11,7 @@ from __future__ import absolute_import
 import threading
 import warnings
 
-from collections import defaultdict, deque
+from collections import Callable, defaultdict, deque
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
@@ -22,10 +22,11 @@ from kombu.clocks import LamportClock
 from kombu.utils import cached_property
 
 from celery import platforms
+from celery._state import _task_stack, _tls, get_current_app, _register_app
 from celery.exceptions import AlwaysEagerIgnored
+from celery.five import items, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
-from celery._state import _task_stack, _tls, get_current_app, _register_app
 from celery.utils.functional import first
 from celery.utils.imports import instantiate, symbol_by_name
 
@@ -153,7 +154,7 @@ class Celery(object):
 
             return _create_task_cls
 
-        if len(args) == 1 and callable(args[0]):
+        if len(args) == 1 and isinstance(args[0], Callable):
             return inner_create_task_cls(**opts)(*args)
         return inner_create_task_cls(**opts)
 
@@ -180,11 +181,11 @@ class Celery(object):
                 while pending:
                     maybe_evaluate(pending.popleft())
 
-                for task in self._tasks.itervalues():
+                for task in values(self._tasks):
                     task.bind(self)
 
     def add_defaults(self, fun):
-        if not callable(fun):
+        if not isinstance(fun, Callable):
             d, fun = fun, lambda: d
         if self.configured:
             return self.conf.add_defaults(fun())
@@ -334,7 +335,7 @@ class Celery(object):
         while pending:
             s.add_defaults(pending.popleft()())
         if self._preconf:
-            for key, value in self._preconf.iteritems():
+            for key, value in items(self._preconf):
                 setattr(s, key, value)
         return s
 

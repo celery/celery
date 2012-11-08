@@ -27,8 +27,8 @@ VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
 import os
 if os.environ.get('C_IMPDEBUG'):
     import sys
-    import __builtin__
-    real_import = __builtin__.__import__
+    from .five import builtins
+    real_import = builtins.__import__
 
     def debug_import(name, locals=None, globals=None, fromlist=None,
             level=-1):
@@ -36,7 +36,7 @@ if os.environ.get('C_IMPDEBUG'):
         importer_name = glob and glob.get('__name__') or 'unknown'
         print('-- {0} imports {1}'.format(importer_name, name))
         return real_import(name, locals, globals, fromlist, level)
-    __builtin__.__import__ = debug_import
+    builtins.__import__ = debug_import
 
 STATICA_HACK = True
 globals()['kcah_acitats'[::-1].upper()] = False
@@ -54,7 +54,7 @@ if STATICA_HACK:
     from celery.utils import uuid                       # noqa
 
 # Lazy loading
-from .__compat__ import recreate_module
+from .five import recreate_module
 
 old_module, new_module = recreate_module(__name__,  # pragma: no cover
     by_module={

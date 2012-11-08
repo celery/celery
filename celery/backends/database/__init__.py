@@ -12,6 +12,7 @@ from functools import wraps
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
+from celery.five import range
 from celery.utils.timeutils import maybe_timedelta
 
 from celery.backends.base import BaseBackend
@@ -39,7 +40,7 @@ def retry(fun):
     def _inner(*args, **kwargs):
         max_retries = kwargs.pop('max_retries', 3)
 
-        for retries in xrange(max_retries + 1):
+        for retries in range(max_retries + 1):
             try:
                 return fun(*args, **kwargs)
             except (DatabaseError, OperationalError):

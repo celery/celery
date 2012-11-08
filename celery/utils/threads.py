@@ -17,7 +17,7 @@ import traceback
 from contextlib import contextmanager
 
 from celery.local import Proxy
-from celery.utils.compat import THREAD_TIMEOUT_MAX
+from celery.five import THREAD_TIMEOUT_MAX, items
 
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
 
@@ -78,12 +78,15 @@ try:
     from greenlet import getcurrent as get_ident
 except ImportError:  # pragma: no cover
     try:
-        from thread import get_ident  # noqa
-    except ImportError:  # pragma: no cover
+        from _thread import get_ident                   # noqa
+    except ImportError:
         try:
-            from dummy_thread import get_ident  # noqa
+            from thread import get_ident                # noqa
         except ImportError:  # pragma: no cover
-            from _thread import get_ident  # noqa
+            try:
+                from _dummy_thread import get_ident     # noqa
+            except ImportError:
+                from dummy_thread import get_ident      # noqa
 
 
 def release_local(local):
@@ -117,7 +120,7 @@ class Local(object):
         object.__setattr__(self, '__ident_func__', get_ident)
 
     def __iter__(self):
-        return iter(self.__storage__.items())
+        return items(self.__storage__)
 
     def __call__(self, proxy):
         """Create a proxy for a name."""

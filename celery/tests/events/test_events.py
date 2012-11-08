@@ -41,7 +41,7 @@ class test_EventDispatcher(AppCase):
 
     def test_send(self):
         producer = MockProducer()
-        eventer = self.app.events.Dispatcher(object(), enabled=False)
+        eventer = self.app.events.Dispatcher(Mock(), enabled=False)
         eventer.publisher = producer
         eventer.enabled = True
         eventer.send('World War II', ended=True)

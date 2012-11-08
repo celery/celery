@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import socket
 
 from datetime import timedelta
-from Queue import Empty, Queue
 
 from mock import patch
 
@@ -13,6 +12,7 @@ from celery.app import app_or_default
 from celery.backends.amqp import AMQPBackend
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import TimeoutError
+from celery.five import Empty, Queue, range
 from celery.utils import uuid
 
 from celery.tests.utils import AppCase, sleepdeprived
@@ -216,7 +216,7 @@ class test_AMQPBackend(AppCase):
         b = self.create_backend()
 
         tids = []
-        for i in xrange(10):
+        for i in range(10):
             tid = uuid()
             b.store_result(tid, i, states.SUCCESS)
             tids.append(tid)

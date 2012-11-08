@@ -26,6 +26,7 @@ from kombu.utils.encoding import safe_repr
 from celery import bootsteps
 from celery.app import app_or_default
 from celery.canvas import subtask
+from celery.five import items, values
 from celery.task.trace import build_tracer
 from celery.utils.timer2 import default_timer, to_timestamp
 from celery.utils.functional import noop
@@ -365,7 +366,7 @@ class Consumer(object):
 
     def update_strategies(self):
         loader = self.app.loader
-        for name, task in self.app.tasks.iteritems():
+        for name, task in items(self.app.tasks):
             self.strategies[name] = task.start_strategy(self.app, self)
             task.__trace__ = build_tracer(name, task, loader, self.hostname)
 
@@ -416,7 +417,8 @@ class Events(bootsteps.StartStopStep):
 class Heart(bootsteps.StartStopStep):
     requires = (Events, )
 
-    def __init__(self, c, **kwargs):
+    def __init__(self, c, enable_heartbeat=True, **kwargs):
+        self.enabled = enable_heartbeat
         c.heart = None
 
     def start(self, c):
@@ -483,12 +485,15 @@ class Mingle(bootsteps.StartStopStep):
     label = 'Mingle'
     requires = (Connection, )
 
+    def __init__(self, c, enable_mingle=True, **kwargs):
+        self.enabled = enable_mingle
+
     def start(self, c):
         info('mingle: searching for neighbors')
         I = c.app.control.inspect(timeout=1.0, connection=c.connection)
         replies = I.hello()
         if replies:
-            for reply in replies.itervalues():
+            for reply in values(replies):
                 c.app.clock.adjust(reply['clock'])
                 revoked.update(reply['revoked'])
             info('mingle: synced with %s', ', '.join(replies))
@@ -503,7 +508,8 @@ class Gossip(bootsteps.ConsumerStep):
         'clock', 'hostname', 'pid', 'topic', 'action',
     )
 
-    def __init__(self, c, interval=5.0, **kwargs):
+    def __init__(self, c, enable_gossip=True, interval=5.0, **kwargs):
+        self.enabled = enable_gossip
         self.app = c.app
         c.gossip = self
         self.Receiver = c.app.events.Receiver
@@ -590,7 +596,7 @@ class Gossip(bootsteps.ConsumerStep):
         self.timer.apply_interval(self.interval * 1000.0, self.periodic)
 
     def periodic(self):
-        for worker in self.state.workers.itervalues():
+        for worker in values(self.state.workers):
             if not worker.alive:
                 try:
                     self.on_node_lost(worker)

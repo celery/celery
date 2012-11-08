@@ -11,7 +11,10 @@ from __future__ import absolute_import
 import glob
 import os
 
+from kombu.utils.encoding import bytes_to_str
+
 from celery.exceptions import SecurityError
+from celery.five import values
 
 from .utils import crypto, reraise_errors
 
@@ -34,7 +37,7 @@ class Certificate(object):
 
     def get_issuer(self):
         """Returns issuer (CA) as a string"""
-        return ' '.join(x[1] for x in
+        return ' '.join(bytes_to_str(x[1]) for x in
                         self._cert.get_issuer().get_components())
 
     def get_id(self):
@@ -55,7 +58,7 @@ class CertStore(object):
 
     def itercerts(self):
         """an iterator over the certificates"""
-        for c in self._certs.itervalues():
+        for c in values(self._certs):
             yield c
 
     def __getitem__(self, id):

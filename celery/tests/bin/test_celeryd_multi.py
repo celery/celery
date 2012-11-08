@@ -87,27 +87,39 @@ class test_multi_args(Case):
         it = multi_args(p, cmd='COMMAND', append='*AP*',
                 prefix='*P*', suffix='*S*')
         names = list(it)
-        self.assertEqual(names[0][0:2], ('*P*jerry*S*',
+
+        def assert_line_in(name, args):
+            self.assertIn(name, [tup[0] for tup in names])
+            argv = None
+            for item in names:
+                if item[0] == name:
+                    argv = item[1]
+            self.assertTrue(argv)
+            for arg in args:
+                self.assertIn(arg, argv)
+
+
+        assert_line_in('*P*jerry*S*',
             [
                 'COMMAND', '-n *P*jerry*S*', '-Q bar',
                 '-c 5', '--flag', '--logfile=foo',
                 '-- .disable_rate_limits=1', '*AP*',
             ]
-        ))
-        self.assertEqual(names[1][0:2], ('*P*elaine*S*',
+        )
+        assert_line_in('*P*elaine*S*',
             [
                 'COMMAND', '-n *P*elaine*S*', '-Q bar',
                 '-c 5', '--flag', '--logfile=foo',
                 '-- .disable_rate_limits=1', '*AP*',
             ]
-        ))
-        self.assertEqual(names[2][0:2], ('*P*kramer*S*',
+        )
+        assert_line_in('*P*kramer*S*',
             [
                 'COMMAND', '--loglevel=DEBUG', '-n *P*kramer*S*',
                 '-Q bar', '--flag', '--logfile=foo',
                 '-- .disable_rate_limits=1', '*AP*',
             ]
-        ))
+        )
         expand = names[0][2]
         self.assertEqual(expand('%h'), '*P*jerry*S*')
         self.assertEqual(expand('%n'), 'jerry')
@@ -284,20 +296,25 @@ class test_MultiTool(Case):
 
         p = NamespacedOptionParser(['foo', 'bar', 'baz'])
         nodes = self.t.getpids(p, 'celeryd', callback=callback)
-        self.assertEqual(nodes, [
-            ('foo.e.com',
-              ('celeryd', '--pidfile=celeryd@foo.pid', '-n foo.e.com', ''),
-             10),
-            ('bar.e.com',
-              ('celeryd', '--pidfile=celeryd@bar.pid', '-n bar.e.com', ''),
-             11),
-        ])
+        node_0, node_1 = nodes
+        self.assertEqual(node_0[0], 'foo.e.com')
+        self.assertEqual(sorted(node_0[1]),
+            sorted(('celeryd', '--pidfile=celeryd@foo.pid',
+                    '-n foo.e.com', '')))
+        self.assertEqual(node_0[2], 10)
+
+        self.assertEqual(node_1[0], 'bar.e.com')
+        self.assertEqual(sorted(node_1[1]),
+            sorted(('celeryd', '--pidfile=celeryd@bar.pid',
+                    '-n bar.e.com', '')))
+        self.assertEqual(node_1[2], 11)
         self.assertTrue(callback.called)
-        callback.assert_called_with(
-            'baz.e.com',
+        cargs, _ = callback.call_args
+        self.assertEqual(cargs[0], 'baz.e.com')
+        self.assertItemsEqual(cargs[1],
             ['celeryd', '--pidfile=celeryd@baz.pid', '-n baz.e.com', ''],
-            None,
         )
+        self.assertIsNone(cargs[2])
         self.assertIn('DOWN', self.fh.getvalue())
 
         # without callback, should work
@@ -316,10 +333,12 @@ class test_MultiTool(Case):
 
         callback = Mock()
         self.t.stop(['foo', 'bar', 'baz'], 'celeryd', callback=callback)
-        sigs = self.t.signal_node.call_args_list
+        sigs = sorted(self.t.signal_node.call_args_list)
         self.assertEqual(len(sigs), 2)
-        self.assertEqual(sigs[0][0], ('foo.e.com', 10, signal.SIGTERM))
-        self.assertEqual(sigs[1][0], ('bar.e.com', 11, signal.SIGTERM))
+        self.assertIn(('foo.e.com', 10, signal.SIGTERM),
+                [tup[0] for tup in sigs])
+        self.assertIn(('bar.e.com', 11, signal.SIGTERM),
+                [tup[0] for tup in sigs])
         self.t.signal_node.return_value = False
         self.assertTrue(callback.called)
         self.t.stop(['foo', 'bar', 'baz'], 'celeryd', callback=None)

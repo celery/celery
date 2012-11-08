@@ -37,7 +37,7 @@ In the consumer:
 
        def run(self, **kwargs):
            results = []
-           for x in xrange(100):
+           for x in range(100):
                # Check after every 5 loops..
                if x % 5 == 0:  # alternatively, check when some timer is due
                    if self.is_aborted(**kwargs):

@@ -16,10 +16,6 @@ import re
 import sys
 import time
 import warnings
-try:
-    import __builtin__ as builtins
-except ImportError:  # py3k
-    import builtins  # noqa
 
 from contextlib import contextmanager
 from functools import partial, wraps
@@ -30,9 +26,12 @@ from nose import SkipTest
 from kombu.log import NullHandler
 from kombu.utils import nested
 
-from ..app import app_or_default
-from ..utils.compat import WhateverIO
-from ..utils.functional import noop
+from celery.app import app_or_default
+from celery.five import (
+    WhateverIO, builtins, items, reraise,
+    string_t, values, open_fqdn,
+)
+from celery.utils.functional import noop
 
 
 class Mock(mock.Mock):
@@ -40,7 +39,7 @@ class Mock(mock.Mock):
     def __init__(self, *args, **kwargs):
         attrs = kwargs.pop('attrs', None) or {}
         super(Mock, self).__init__(*args, **kwargs)
-        for attr_name, attr_value in attrs.items():
+        for attr_name, attr_value in items(attrs):
             setattr(self, attr_name, attr_value)
 
 
@@ -70,7 +69,7 @@ class _AssertRaisesBaseContext(object):
         self.expected = expected
         self.failureException = test_case.failureException
         self.obj_name = None
-        if isinstance(expected_regex, basestring):
+        if isinstance(expected_regex, string_t):
             expected_regex = re.compile(expected_regex)
         self.expected_regex = expected_regex
 
@@ -82,7 +81,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
         # The __warningregistry__'s need to be in a pristine state for tests
         # to work properly.
         warnings.resetwarnings()
-        for v in sys.modules.values():
+        for v in list(values(sys.modules)):
             if getattr(v, '__warningregistry__', None):
                 v.__warningregistry__ = {}
         self.warnings_manager = warnings.catch_warnings(record=True)
@@ -138,7 +137,7 @@ class Case(unittest.TestCase):
     def assertDictContainsSubset(self, expected, actual, msg=None):
         missing, mismatched = [], []
 
-        for key, value in expected.iteritems():
+        for key, value in items(expected):
             if key not in actual:
                 missing.append(key)
             elif value != actual[key]:
@@ -454,7 +453,7 @@ def patch_modules(*modules):
     for mod in modules:
         prev[mod], sys.modules[mod] = sys.modules[mod], ModuleType(mod)
     yield
-    for name, mod in prev.iteritems():
+    for name, mod in items(prev):
         if mod is None:
             sys.modules.pop(name, None)
         else:
@@ -500,7 +499,7 @@ def mock_context(mock, typ=Mock):
 
     def on_exit(*x):
         if x[0]:
-            raise x[0], x[1], x[2]
+            reraise(x[0], x[1], x[2])
     context.__exit__.side_effect = on_exit
     context.__enter__.return_value = context
     yield context
@@ -509,7 +508,7 @@ def mock_context(mock, typ=Mock):
 
 @contextmanager
 def mock_open(typ=WhateverIO, side_effect=None):
-    with mock.patch('__builtin__.open') as open_:
+    with mock.patch(open_fqdn) as open_:
         with mock_context(open_) as context:
             if side_effect is not None:
                 context.__enter__.side_effect = side_effect
@@ -528,7 +527,7 @@ def patch_settings(app=None, **config):
         from celery import current_app
         app = current_app
     prev = {}
-    for key, value in config.iteritems():
+    for key, value in items(config):
         try:
             prev[key] = getattr(app.conf, key)
         except AttributeError:
@@ -537,7 +536,7 @@ def patch_settings(app=None, **config):
 
     yield app.conf
 
-    for key, value in prev.iteritems():
+    for key, value in items(prev):
         setattr(app.conf, key, value)
 
 

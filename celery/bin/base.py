@@ -65,12 +65,12 @@ import sys
 import warnings
 
 from collections import defaultdict
-from itertools import izip
 from optparse import OptionParser, IndentedHelpFormatter, make_option as Option
 from types import ModuleType
 
 import celery
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
+from celery.five import items, string_t
 from celery.platforms import EX_FAILURE, EX_USAGE, maybe_patch_concurrency
 from celery.utils import text
 from celery.utils.imports import symbol_by_name, import_from_cwd
@@ -203,7 +203,7 @@ class Command(object):
         return self.option_list
 
     def expanduser(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, string_t):
             return os.path.expanduser(value)
         return value
 
@@ -224,7 +224,7 @@ class Command(object):
     def prepare_args(self, options, args):
         if options:
             options = dict((k, self.expanduser(v))
-                            for k, v in vars(options).iteritems()
+                            for k, v in items(vars(options))
                                 if not k.startswith('_'))
         args = [self.expanduser(arg) for arg in args]
         self.check_args(args)
@@ -263,7 +263,7 @@ class Command(object):
     def prepare_parser(self, parser):
         docs = [self.parse_doc(doc) for doc in (self.doc, __doc__) if doc]
         for doc in docs:
-            for long_opt, help in doc.iteritems():
+            for long_opt, help in items(doc):
                 option = parser.get_option(long_opt)
                 if option is not None:
                     option.help = ' '.join(help).format(default=option.default)
@@ -338,7 +338,7 @@ class Command(object):
         opts = {}
         for opt in self.preload_options:
             for t in (opt._long_opts, opt._short_opts):
-                opts.update(dict(izip(t, [opt.dest] * len(t))))
+                opts.update(dict(zip(t, [opt.dest] * len(t))))
         index = 0
         length = len(args)
         while index < length:

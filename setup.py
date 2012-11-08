@@ -83,10 +83,9 @@ classes = """
 """
 classifiers = [s.strip() for s in classes.split('\n') if s]
 
-# -*- Python 3 -*-
-is_py3k = sys.version_info[0] == 3
-if is_py3k:
-    extra.update(use_2to3=True)
+PY3 = sys.version_info[0] == 3
+JYTHON = sys.platform.startswith('java')
+PYPY = hasattr(sys, 'pypy_version_info')
 
 # -*- Distribution Meta -*-
 
@@ -141,8 +140,6 @@ class quicktest(test):
 # -*- Installation Requires -*-
 
 py_version = sys.version_info
-is_jython = sys.platform.startswith('java')
-is_pypy = hasattr(sys, 'pypy_version_info')
 
 
 def strip_comments(l):
@@ -154,12 +151,12 @@ def reqs(*f):
         os.path.join(os.getcwd(), 'requirements', *f)).readlines()]))
 
 install_requires = reqs('default.txt')
-if is_jython:
+if JYTHON:
     install_requires.extend(reqs('jython.txt'))
 
 # -*- Tests Requires -*-
 
-tests_require = reqs('test.txt')
+tests_require = reqs('test3.txt' if PY3 else 'test.txt')
 
 # -*- Long Description -*-
 

@@ -14,6 +14,7 @@ from importlib import import_module
 
 from celery._state import get_current_app
 from celery.exceptions import NotRegistered
+from celery.five import items
 
 
 class TaskRegistry(dict):
@@ -54,7 +55,7 @@ class TaskRegistry(dict):
         return self.filter_types('periodic')
 
     def filter_types(self, type):
-        return dict((name, task) for name, task in self.iteritems()
+        return dict((name, task) for name, task in items(self)
                                 if getattr(task, 'type', 'regular') == type)
 
 

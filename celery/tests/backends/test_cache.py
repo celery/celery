@@ -12,6 +12,7 @@ from celery import current_app
 from celery import states
 from celery.backends.cache import CacheBackend, DummyClient
 from celery.exceptions import ImproperlyConfigured
+from celery.five import items, string, text_t
 from celery.result import AsyncResult
 from celery.task import subtask
 from celery.utils import uuid
@@ -119,9 +120,9 @@ class MyMemcachedStringEncodingError(Exception):
 class MemcachedClient(DummyClient):
 
     def set(self, key, value, *args, **kwargs):
-        if isinstance(key, unicode):
+        if isinstance(key, text_t):
             raise MyMemcachedStringEncodingError(
-                    'Keys must be str, not unicode.  Convert your unicode '
+                    'Keys must be bytes, not string.  Convert your '
                     'strings using mystring.encode(charset)!')
         return super(MemcachedClient, self).set(key, value, *args, **kwargs)
 
@@ -188,7 +189,7 @@ class test_get_best_memcache(Case, MockCacheMixin):
 
     def test_backends(self):
         from celery.backends.cache import backends
-        for name, fun in backends.items():
+        for name, fun in items(backends):
             self.assertTrue(fun())
 
 
@@ -200,7 +201,7 @@ class test_memcache_key(Case, MockCacheMixin):
                 with mask_modules('pylibmc'):
                     from celery.backends import cache
                     cache._imp = [None]
-                    task_id, result = unicode(uuid()), 42
+                    task_id, result = string(uuid()), 42
                     b = cache.CacheBackend(backend='memcache')
                     b.store_result(task_id, result, status=states.SUCCESS)
                     self.assertEqual(b.get_result(task_id), result)
@@ -221,7 +222,7 @@ class test_memcache_key(Case, MockCacheMixin):
             with self.mock_pylibmc():
                 from celery.backends import cache
                 cache._imp = [None]
-                task_id, result = unicode(uuid()), 42
+                task_id, result = string(uuid()), 42
                 b = cache.CacheBackend(backend='memcache')
                 b.store_result(task_id, result, status=states.SUCCESS)
                 self.assertEqual(b.get_result(task_id), result)

@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from celery import canvas
 from celery import current_app
 from celery import result
+from celery.five import range
 from celery.result import AsyncResult, GroupResult
 from celery.task import task, TaskSet
 from celery.tests.utils import AppCase, Mock
@@ -67,7 +68,7 @@ class test_unlock_chord_task(AppCase):
                 subtask, canvas.maybe_subtask = canvas.maybe_subtask, passthru
                 try:
                     unlock('group_id', callback_s,
-                           result=map(AsyncResult, [1, 2, 3]))
+                           result=[AsyncResult(r) for r in [1, 2, 3]])
                 finally:
                     canvas.maybe_subtask = subtask
                 callback.apply_async.assert_called_with(([2, 4, 8, 6], ), {})
@@ -87,7 +88,7 @@ class test_unlock_chord_task(AppCase):
             try:
                 callback = Mock()
                 unlock('group_id', callback, interval=10, max_retries=30,
-                            result=map(AsyncResult, [1, 2, 3]))
+                            result=[AsyncResult(x) for x in [1, 2, 3]])
                 self.assertFalse(callback.delay.call_count)
                 # did retry
                 unlock.retry.assert_called_with(countdown=10, max_retries=30)
@@ -113,10 +114,10 @@ class test_chord(AppCase):
 
         self.app.conf.CELERY_ALWAYS_EAGER = True
         try:
-            x = chord(addX.s(i, i) for i in xrange(10))
+            x = chord(addX.s(i, i) for i in range(10))
             body = sumX.s()
             result = x(body)
-            self.assertEqual(result.get(), sum(i + i for i in xrange(10)))
+            self.assertEqual(result.get(), sum(i + i for i in range(10)))
         finally:
             self.app.conf.CELERY_ALWAYS_EAGER = False
 
@@ -129,7 +130,7 @@ class test_chord(AppCase):
         m.AsyncResult = AsyncResult
         prev, chord.Chord = chord.Chord, m
         try:
-            x = chord(add.s(i, i) for i in xrange(10))
+            x = chord(add.s(i, i) for i in range(10))
             body = add.s(2)
             result = x(body)
             self.assertTrue(result.id)
@@ -151,8 +152,8 @@ class test_Chord_task(AppCase):
             Chord = current_app.tasks['celery.chord']
 
             body = dict()
-            Chord(TaskSet(add.subtask((i, i)) for i in xrange(5)), body)
-            Chord([add.subtask((i, i)) for i in xrange(5)], body)
+            Chord(TaskSet(add.subtask((i, i)) for i in range(5)), body)
+            Chord([add.subtask((i, i)) for i in range(5)], body)
             self.assertEqual(current_app.backend.on_chord_apply.call_count, 2)
         finally:
             current_app.backend = prev

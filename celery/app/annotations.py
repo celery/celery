@@ -12,6 +12,7 @@
 """
 from __future__ import absolute_import
 
+from celery.five import string_t
 from celery.utils.functional import firstmethod, mpromise
 from celery.utils.imports import instantiate
 
@@ -44,7 +45,7 @@ def prepare(annotations):
     def expand_annotation(annotation):
         if isinstance(annotation, dict):
             return MapAnnotation(annotation)
-        elif isinstance(annotation, basestring):
+        elif isinstance(annotation, string_t):
             return mpromise(instantiate, annotation)
         return annotation
 

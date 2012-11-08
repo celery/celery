@@ -7,6 +7,7 @@ from itertools import cycle
 from mock import Mock
 from nose import SkipTest
 
+from celery.five import items, range
 from celery.utils.functional import noop
 from celery.tests.utils import Case
 try:
@@ -38,7 +39,7 @@ except ImportError:
 class Object(object):   # for writeable attributes.
 
     def __init__(self, **kwargs):
-        [setattr(self, k, v) for k, v in kwargs.items()]
+        [setattr(self, k, v) for k, v in items(kwargs)]
 
 
 class MockResult(object):
@@ -69,7 +70,7 @@ class MockPool(object):
         self._state = mp.RUN
         self._processes = kwargs.get('processes')
         self._pool = [Object(pid=i) for i in range(self._processes)]
-        self._current_proc = cycle(xrange(self._processes)).next
+        self._current_proc = cycle(range(self._processes))
 
     def close(self):
         self.closed = True
@@ -97,7 +98,7 @@ class ExeMockPool(MockPool):
         from threading import Timer
         res = target(*args, **kwargs)
         Timer(0.1, callback, (res, )).start()
-        return MockResult(res, self._current_proc())
+        return MockResult(res, next(self._current_proc))
 
 
 class TaskPool(mp.TaskPool):

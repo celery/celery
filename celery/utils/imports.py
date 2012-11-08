@@ -17,7 +17,7 @@ from contextlib import contextmanager
 
 from kombu.utils import symbol_by_name
 
-from .compat import reload
+from celery.five import reload
 
 
 class NotAPackage(Exception):

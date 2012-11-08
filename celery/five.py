@@ -1,25 +1,172 @@
 # -*- coding: utf-8 -*-
 """
-    celery.__compat__
-    ~~~~~~~~~~~~~~~~~
+    celery.five
+    ~~~~~~~~~~~
 
-    This module contains utilities to dynamically
-    recreate modules, either for lazy loading or
-    to create old modules at runtime instead of
-    having them litter the source tree.
+    Compatibility implementations of features
+    only available in newer Python versions.
+
 
 """
 from __future__ import absolute_import
 
+############## py3k #########################################################
+import sys
+PY3 = sys.version_info[0] == 3
+
+try:
+    reload = reload                         # noqa
+except NameError:                           # pragma: no cover
+    from imp import reload                  # noqa
+
+try:
+    from UserList import UserList           # noqa
+except ImportError:                         # pragma: no cover
+    from collections import UserList        # noqa
+
+try:
+    from UserDict import UserDict           # noqa
+except ImportError:                         # pragma: no cover
+    from collections import UserDict        # noqa
+
+
+if PY3:
+    import builtins
+
+    from queue import Queue, Empty
+    from itertools import zip_longest
+    from io import StringIO, BytesIO
+
+    map = map
+    string = str
+    string_t = str
+    long_t = int
+    text_t = str
+    range = range
+
+    open_fqdn = 'builtins.open'
+
+    def items(d):
+        return d.items()
+
+    def keys(d):
+        return d.keys()
+
+    def values(d):
+        return d.values()
+
+    def nextfun(it):
+        return it.__next__
+
+    exec_ = getattr(builtins, 'exec')
+
+    def reraise(tp, value, tb=None):
+        if value.__traceback__ is not tb:
+            raise value.with_traceback(tb)
+        raise value
+
+    class WhateverIO(StringIO):
+
+        def write(self, data):
+            if isinstance(data, bytes):
+                data = data.encode()
+            StringIO.write(self, data)
+
+else:
+    import __builtin__ as builtins  # noqa
+    from Queue import Queue, Empty  # noqa
+    from itertools import imap as map, izip_longest as zip_longest  # noqa
+    from StringIO import StringIO   # noqa
+    string = unicode                # noqa
+    string_t = basestring           # noqa
+    text_t = unicode
+    long_t = long                   # noqa
+    range = xrange
+
+    open_fqdn = '__builtin__.open'
+
+    def items(d):                   # noqa
+        return d.iteritems()
+
+    def keys(d):                    # noqa
+        return d.iterkeys()
+
+    def values(d):                  # noqa
+        return d.itervalues()
+
+    def nextfun(it):                # noqa
+        return it.next
+
+    def exec_(code, globs=None, locs=None):
+        """Execute code in a namespace."""
+        if globs is None:
+            frame = sys._getframe(1)
+            globs = frame.f_globals
+            if locs is None:
+                locs = frame.f_locals
+            del frame
+        elif locs is None:
+            locs = globs
+        exec("""exec code in globs, locs""")
+
+    exec_("""def reraise(tp, value, tb=None): raise tp, value, tb""")
+
+    BytesIO = WhateverIO = StringIO         # noqa
+
+def with_metaclass(Type, skip_attrs=set(['__dict__', '__weakref__'])):
+    """Class decorator to set metaclass.
+
+    Works with both Python 3 and Python 3 and it does not add
+    an extra class in the lookup order like ``six.with_metaclass`` does
+    (that is -- it copies the original class instead of using inheritance).
+
+    """
+
+    def _clone_with_metaclass(Class):
+        attrs = dict((key, value) for key, value in items(vars(Class))
+                        if key not in skip_attrs)
+        return Type(Class.__name__, Class.__bases__, attrs)
+
+    return _clone_with_metaclass
+
+
+############## collections.OrderedDict ######################################
+# was moved to kombu
+from kombu.utils.compat import OrderedDict  # noqa
+
+############## threading.TIMEOUT_MAX #######################################
+try:
+    from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
+except ImportError:
+    THREAD_TIMEOUT_MAX = 1e10  # noqa
+
+############## format(int, ',d') ##########################
+
+if sys.version_info >= (2, 7):  # pragma: no cover
+    def format_d(i):
+        return format(i, ',d')
+else:  # pragma: no cover
+    def format_d(i):  # noqa
+        s = '%d' % i
+        groups = []
+        while s and s[-1].isdigit():
+            groups.append(s[-3:])
+            s = s[:-3]
+        return s + ','.join(reversed(groups))
+
+
+############## Module Generation ##########################
+
+# Utilities to dynamically
+# recreate modules, either for lazy loading or
+# to create old modules at runtime instead of
+# having them litter the source tree.
 import operator
 import sys
 
 from functools import reduce
 from importlib import import_module
-from itertools import imap
 from types import ModuleType
-
-from .local import Proxy
 
 MODULE_DEPRECATED = """
 The module %s is deprecated and will be removed in a future version.
@@ -154,7 +301,7 @@ def create_module(name, attrs, cls_attrs=None, pkg=None, base=MagicModule,
     cls_attrs = {} if cls_attrs is None else cls_attrs
 
     attrs = dict((attr_name, prepare_attr(attr) if prepare_attr else attr)
-                    for attr_name, attr in attrs.iteritems())
+                    for attr_name, attr in attrs.items())
     module = sys.modules[fqdn] = type(name, (base, ), cls_attrs)(fqdn)
     module.__dict__.update(attrs)
     return module
@@ -169,7 +316,7 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={},
     cattrs = dict(_compat_modules=compat_modules,
                   _all_by_module=by_module, _direct=direct,
                   _object_origins=origins,
-                  __all__=tuple(set(reduce(operator.add, imap(tuple, [
+                  __all__=tuple(set(reduce(operator.add, map(tuple, [
                                 compat_modules, origins, direct, attrs])))))
     new_module = create_module(name, attrs, cls_attrs=cattrs, base=base)
     new_module.__dict__.update(dict((mod, get_compat_module(new_module, mod))
@@ -178,14 +325,15 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={},
 
 
 def get_compat_module(pkg, name):
+    from .local import Proxy
 
     def prepare(attr):
-        if isinstance(attr, basestring):
+        if isinstance(attr, string_t):
             return Proxy(getappattr, (attr, ))
         return attr
 
     attrs = COMPAT_MODULES[pkg.__name__][name]
-    if isinstance(attrs, basestring):
+    if isinstance(attrs, string_t):
         fqdn = '.'.join([pkg.__name__, name])
         module = sys.modules[fqdn] = import_module(attrs)
         return module
@@ -195,6 +343,6 @@ def get_compat_module(pkg, name):
 
 def get_origins(defs):
     origins = {}
-    for module, items in defs.iteritems():
+    for module, items in defs.items():
         origins.update(dict((item, module) for item in items))
     return origins

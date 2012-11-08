@@ -28,6 +28,7 @@ from celery.app.abstract import configurated, from_config
 from celery.exceptions import (
     ImproperlyConfigured, SystemTerminate, TaskRevokedError,
 )
+from celery.five import string_t, values
 from celery.utils import nodename, nodesplit, worker_direct
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel, worker_logger as logger
@@ -165,7 +166,7 @@ class WorkController(configurated):
             self.pidlock.release()
 
     def setup_queues(self, queues):
-        if isinstance(queues, basestring):
+        if isinstance(queues, string_t):
             queues = queues.split(',')
         self.queues = queues
         try:
@@ -181,12 +182,12 @@ class WorkController(configurated):
         # ensure all task modules are imported in case an execv happens.
         inc = self.app.conf.CELERY_INCLUDE
         if includes:
-            if isinstance(includes, basestring):
+            if isinstance(includes, string_t):
                 includes = includes.split(',')
             inc = self.app.conf.CELERY_INCLUDE = tuple(inc) + tuple(includes)
         self.include = includes
         task_modules = set(task.__class__.__module__
-                            for task in self.app.tasks.itervalues())
+                            for task in values(self.app.tasks))
         self.app.conf.CELERY_INCLUDE = tuple(set(inc) | task_modules)
 
     def prepare_args(self, **kwargs):

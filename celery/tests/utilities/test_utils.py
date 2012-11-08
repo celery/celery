@@ -5,6 +5,7 @@ from kombu.utils.functional import promise
 from mock import patch
 
 from celery import utils
+from celery.five import nextfun, range
 from celery.utils import text
 from celery.utils import functional
 from celery.utils.functional import mpromise, maybe_list
@@ -89,11 +90,11 @@ class test_utils(Case):
                 return True
             return False
 
-        self.assertEqual(5, functional.first(predicate, xrange(10)))
+        self.assertEqual(5, functional.first(predicate, range(10)))
         self.assertEqual(iterations[0], 6)
 
         iterations[0] = 0
-        self.assertIsNone(functional.first(predicate, xrange(10, 20)))
+        self.assertIsNone(functional.first(predicate, range(10, 20)))
         self.assertEqual(iterations[0], 10)
 
     def test_truncate_text(self):
@@ -141,8 +142,8 @@ class test_mpromise(Case):
 
     def test_is_memoized(self):
 
-        it = iter(xrange(20, 30))
-        p = mpromise(it.next)
+        it = iter(range(20, 30))
+        p = mpromise(nextfun(it))
         self.assertEqual(p(), 20)
         self.assertTrue(p.evaluated)
         self.assertEqual(p(), 20)

@@ -1,0 +1,3 @@
+nose
+nose-cover3
+mock

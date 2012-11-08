@@ -8,6 +8,7 @@ from celery.worker.hub import (
 
 from mock import Mock, call, patch
 
+from celery.five import range
 from celery.tests.utils import Case
 
 
@@ -23,6 +24,9 @@ class File(object):
         if isinstance(other, File):
             return self.fd == other.fd
         return NotImplemented
+
+    def __hash__(self):
+        return hash(self.fd)
 
 
 class test_DummyLock(Case):
@@ -59,7 +63,7 @@ class test_BoundedSemaphore(Case):
 
     def test_bounded(self):
         x = BoundedSemaphore(2)
-        for i in xrange(100):
+        for i in range(100):
             x.release()
         self.assertEqual(x.value, 2)
 
@@ -88,24 +92,24 @@ class test_BoundedSemaphore(Case):
 
         self.assertFalse(x._waiting)
         x.grow(3)
-        for i in xrange(x.initial_value):
+        for i in range(x.initial_value):
             self.assertTrue(x.acquire(Mock()))
         self.assertFalse(x.acquire(Mock()))
         x.clear()
 
         x.shrink(3)
-        for i in xrange(x.initial_value):
+        for i in range(x.initial_value):
             self.assertTrue(x.acquire(Mock()))
         self.assertFalse(x.acquire(Mock()))
         self.assertEqual(x.value, 0)
 
-        for i in xrange(100):
+        for i in range(100):
             x.release()
         self.assertEqual(x.value, x.initial_value)
 
     def test_clear(self):
         x = BoundedSemaphore(10)
-        for i in xrange(11):
+        for i in range(11):
             x.acquire(Mock())
         self.assertTrue(x._waiting)
         self.assertEqual(x.value, 0)
@@ -158,13 +162,13 @@ class test_Hub(Case):
         hub.scheduler = se()
 
         self.assertEqual(hub.fire_timers(max_timers=10), 3.982)
-        hub.timer.apply_entry.assert_has_calls(map(call, [e3, e2, e1]))
+        hub.timer.apply_entry.assert_has_calls([call(x) for x in [e3, e2, e1]])
 
-        entries[:] = [Mock() for _ in xrange(11)]
+        entries[:] = [Mock() for _ in range(11)]
         keep = list(entries)
         self.assertEqual(hub.fire_timers(max_timers=10, min_delay=1.13), 1.13)
-        hub.timer.apply_entry.assert_has_calls(map(call,
-            reversed(keep[1:])))
+        hub.timer.apply_entry.assert_has_calls([call(x)
+            for x in reversed(keep[1:])])
         self.assertEqual(hub.fire_timers(max_timers=10), 3.982)
         hub.timer.apply_entry.assert_has_calls(call(keep[0]))
 

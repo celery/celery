@@ -71,8 +71,8 @@ class test_AMQShell(AppCase):
     def test_completenames(self):
         self.assertEqual(self.shell.completenames('queue.dec'),
                 ['queue.declare'])
-        self.assertEqual(self.shell.completenames('declare'),
-                ['queue.declare', 'exchange.declare'])
+        self.assertEqual(sorted(self.shell.completenames('declare')),
+                sorted(['queue.declare', 'exchange.declare']))
 
     def test_empty_line(self):
         self.shell.emptyline = Mock()

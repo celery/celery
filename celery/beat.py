@@ -26,6 +26,7 @@ from . import platforms
 from . import signals
 from . import current_app
 from .app import app_or_default
+from .five import items, reraise, values
 from .schedules import maybe_schedule, crontab
 from .utils.imports import instantiate
 from .utils.timeutils import humanize_seconds
@@ -116,7 +117,7 @@ class ScheduleEntry(object):
         return self.schedule.is_due(self.last_run_at)
 
     def __iter__(self):
-        return vars(self).iteritems()
+        return iter(items(vars(self)))
 
     def __repr__(self):
         return '<Entry: {0.name} {call} {0.schedule}'.format(self,
@@ -189,7 +190,7 @@ class Scheduler(object):
         """
         remaining_times = []
         try:
-            for entry in self.schedule.itervalues():
+            for entry in values(self.schedule):
                 next_time_to_run = self.maybe_due(entry, self.publisher)
                 if next_time_to_run:
                     remaining_times.append(next_time_to_run)
@@ -223,9 +224,9 @@ class Scheduler(object):
                                         publisher=publisher,
                                         **entry.options)
         except Exception as exc:
-            raise SchedulingError, SchedulingError(
+            reraise(SchedulingError, SchedulingError(
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
-                    entry, exc)), sys.exc_info()[2]
+                    entry, exc)), sys.exc_info()[2])
         finally:
             if self.should_sync():
                 self._do_sync()
@@ -262,7 +263,7 @@ class Scheduler(object):
 
     def update_from_dict(self, dict_):
         self.schedule.update(dict((name, self._maybe_entry(name, entry))
-                                for name, entry in dict_.items()))
+                                for name, entry in items(dict_)))
 
     def merge_inplace(self, b):
         schedule = self.schedule
@@ -365,7 +366,7 @@ class PersistentScheduler(Scheduler):
         self._store.update(__version__=__version__, tz=tz, utc_enabled=utc)
         self.sync()
         debug('Current schedule:\n' + '\n'.join(repr(entry)
-                                    for entry in entries.itervalues()))
+                                    for entry in values(entries)))
 
     def get_schedule(self):
         return self._store['entries']

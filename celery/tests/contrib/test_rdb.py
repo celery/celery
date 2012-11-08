@@ -13,6 +13,10 @@ from celery.contrib.rdb import (
 from celery.tests.utils import Case, WhateverIO, skip_if_pypy
 
 
+class SockErr(socket.error):
+    errno = None
+
+
 class test_Rdb(Case):
 
     @patch('celery.contrib.rdb.Rdb')
@@ -49,11 +53,11 @@ class test_Rdb(Case):
             with patch('celery.contrib.rdb._frame'):
                 rdb.set_trace()
                 rdb.set_trace(Mock())
-                pset.side_effect = socket.error
+                pset.side_effect = SockErr
                 pset.side_effect.errno = errno.ECONNRESET
                 rdb.set_trace()
                 pset.side_effect.errno = errno.ENOENT
-                with self.assertRaises(socket.error):
+                with self.assertRaises(SockErr):
                     rdb.set_trace()
 
         # _close_session
@@ -80,9 +84,9 @@ class test_Rdb(Case):
             curproc.return_value.name = 'PoolWorker-10'
             Rdb(out=out)
 
-        err = sock.return_value.bind.side_effect = socket.error()
+        err = sock.return_value.bind.side_effect = SockErr()
         err.errno = errno.ENOENT
-        with self.assertRaises(socket.error):
+        with self.assertRaises(SockErr):
             Rdb(out=out)
         err.errno = errno.EADDRINUSE
         with self.assertRaises(Exception):

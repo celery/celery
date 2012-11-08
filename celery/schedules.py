@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from kombu.utils import cached_property
 
 from . import current_app
+from .five import string_t
 from .utils import is_iterable
 from .utils.timeutils import (
     timedelta_seconds, weekday, maybe_timedelta, remaining,
@@ -30,7 +31,7 @@ Invalid crontab pattern. Valid range is {min}-{max}. \
 
 CRON_INVALID_TYPE = """\
 Argument cronspec needs to be of any of the following types: \
-int, basestring, or an iterable type. {type!r} was given.\
+int, str, or an iterable type. {type!r} was given.\
 """
 
 
@@ -222,7 +223,7 @@ class crontab_parser(object):
         return range(self.min_, self.max_ + self.min_)
 
     def _expand_number(self, s):
-        if isinstance(s, basestring) and s[0] == '-':
+        if isinstance(s, string_t) and s[0] == '-':
             raise self.ParseException('negative numbers not supported')
         try:
             i = int(s)
@@ -310,13 +311,13 @@ class crontab(schedule):
         """Takes the given cronspec argument in one of the forms::
 
             int         (like 7)
-            basestring  (like '3-5,*/15', '*', or 'monday')
+            str         (like '3-5,*/15', '*', or 'monday')
             set         (like set([0,15,30,45]))
             list        (like [8-17])
 
         And convert it to an (expanded) set representing all time unit
         values on which the crontab triggers.  Only in case of the base
-        type being 'basestring', parsing occurs.  (It is fast and
+        type being 'str', parsing occurs.  (It is fast and
         happens only once for each crontab instance, so there is no
         significant performance overhead involved.)
 
@@ -332,7 +333,7 @@ class crontab(schedule):
         """
         if isinstance(cronspec, int):
             result = set([cronspec])
-        elif isinstance(cronspec, basestring):
+        elif isinstance(cronspec, string_t):
             result = crontab_parser(max_, min_).parse(cronspec)
         elif isinstance(cronspec, set):
             result = cronspec

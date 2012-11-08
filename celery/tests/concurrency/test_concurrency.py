@@ -13,12 +13,12 @@ class test_BasePool(Case):
     def test_apply_target(self):
 
         scratch = {}
-        counter = count(0).next
+        counter = count(0)
 
         def gen_callback(name, retval=None):
 
             def callback(*args):
-                scratch[name] = (counter(), args)
+                scratch[name] = (next(counter), args)
                 return retval
 
             return callback

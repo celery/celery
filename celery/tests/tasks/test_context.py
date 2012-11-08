@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-'
 from __future__ import absolute_import
 
+from collections import Callable
+
 from celery.task.base import Context
 from celery.tests.utils import Case
 
@@ -13,7 +15,7 @@ def get_context_as_dict(ctx, getter=getattr):
         if attr_name.startswith('_'):
             continue   # Ignore pseudo-private attributes
         attr = getter(ctx, attr_name)
-        if callable(attr):
+        if isinstance(attr, Callable):
             continue   # Ignore methods and other non-trivial types
         defaults[attr_name] = attr
     return defaults

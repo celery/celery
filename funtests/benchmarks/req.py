@@ -1,4 +1,5 @@
 from celery import current_app, task, uuid
+from celery.five import range
 from celery.worker.consumer import Consumer
 from celery.worker.job import Request
 from celery.concurrency.solo import TaskPool
@@ -33,7 +34,7 @@ x = Consumer(ready_queue, hostname=hostname, app=app)
 x.update_strategies()
 name = T.name
 ts = time()
-for i in xrange(100000):
+for i in range(100000):
     x.strategies[name](m, m.body, on_ack)
 print(time() - ts)
 

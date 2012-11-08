@@ -16,6 +16,7 @@ from functools import partial
 from billiard.exceptions import WorkerLostError
 
 from celery import bootsteps
+from celery.five import items, string_t
 from celery.utils.log import worker_logger as logger
 from celery.utils.timer2 import Schedule
 
@@ -84,7 +85,7 @@ class Pool(bootsteps.StartStopStep):
 
     def __init__(self, w, autoscale=None, autoreload=None,
             no_execv=False, **kwargs):
-        if isinstance(autoscale, basestring):
+        if isinstance(autoscale, string_t):
             max_c, _, min_c = autoscale.partition(',')
             autoscale = [int(max_c), min_c and int(min_c) or 0]
         w.autoscale = autoscale
@@ -122,7 +123,7 @@ class Pool(bootsteps.StartStopStep):
         hub.on_task.append(pool.maybe_handle_result)
 
         hub.update_readers(pool.readers)
-        for handler, interval in pool.timers.iteritems():
+        for handler, interval in items(pool.timers):
             hub.timer.apply_interval(interval * 1000.0, handler)
 
         def on_timeout_set(R, soft, hard):

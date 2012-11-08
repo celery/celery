@@ -13,7 +13,8 @@
 from __future__ import absolute_import
 
 import importlib
-import sys
+
+from .five import long_t, string, string_t
 
 
 def symbol_by_name(name, aliases={}, imp=None, package=None,
@@ -54,7 +55,7 @@ def symbol_by_name(name, aliases={}, imp=None, package=None,
     if imp is None:
         imp = importlib.import_module
 
-    if not isinstance(name, basestring):
+    if not isinstance(name, string_t):
         return name                                 # already a class
 
     name = aliases.get(name) or name
@@ -65,9 +66,8 @@ def symbol_by_name(name, aliases={}, imp=None, package=None,
     try:
         try:
             module = imp(module_name, package=package, **kwargs)
-        except ValueError, exc:
-            raise ValueError, ValueError(
-                    "Couldn't import %r: %s" % (name, exc)), sys.exc_info()[2]
+        except ValueError as exc:
+            raise ValueError("Couldn't import %r: %s" % (name, exc))
         return getattr(module, cls_name) if cls_name else module
     except (ImportError, AttributeError):
         if default is None:
@@ -88,7 +88,7 @@ class Proxy(object):
     """Proxy to another object."""
 
     # Code stolen from werkzeug.local.Proxy.
-    __slots__ = ('__local', '__args', '__kwargs', '__dict__', '__name__')
+    __slots__ = ('__local', '__args', '__kwargs', '__dict__')
 
     def __init__(self, local, args=None, kwargs=None, name=None):
         object.__setattr__(self, '_Proxy__local', local)
@@ -145,15 +145,16 @@ class Proxy(object):
             return '<{0} unbound>'.format(self.__class__.__name__)
         return repr(obj)
 
-    def __nonzero__(self):
+    def __bool__(self):
         try:
             return bool(self._get_current_object())
         except RuntimeError:  # pragma: no cover
             return False
+    __nonzero__ = __bool__  # Py2
 
     def __unicode__(self):
         try:
-            return unicode(self._get_current_object())
+            return string(self._get_current_object())
         except RuntimeError:  # pragma: no cover
             return repr(self)
 
@@ -217,7 +218,7 @@ class Proxy(object):
     __invert__ = lambda x: ~(x._get_current_object())
     __complex__ = lambda x: complex(x._get_current_object())
     __int__ = lambda x: int(x._get_current_object())
-    __long__ = lambda x: long(x._get_current_object())
+    __long__ = lambda x: long_t(x._get_current_object())
     __float__ = lambda x: float(x._get_current_object())
     __oct__ = lambda x: oct(x._get_current_object())
     __hex__ = lambda x: hex(x._get_current_object())

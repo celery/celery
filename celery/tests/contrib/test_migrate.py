@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from kombu import Connection, Producer, Queue, Exchange
 from kombu.exceptions import StdChannelError
@@ -27,9 +27,9 @@ class test_State(Case):
 
     def test_strtotal(self):
         x = State()
-        self.assertEqual(x.strtotal, u'?')
+        self.assertEqual(x.strtotal, '?')
         x.total_apx = 100
-        self.assertEqual(x.strtotal, u'100')
+        self.assertEqual(x.strtotal, '100')
 
 
 class test_migrate_task(Case):

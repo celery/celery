@@ -18,9 +18,9 @@ import sys
 
 from billiard import current_process
 from contextlib import contextmanager
-from itertools import imap
 
 from .local import try_import
+from .five import items, map, reraise, string_t
 
 _setproctitle = try_import('setproctitle')
 resource = try_import('resource')
@@ -46,6 +46,12 @@ PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
 PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
 Seems we're already running? (pid: {1})"""
 
+try:
+    from io import UnsupportedOperation
+    FILENO_ERRORS = (AttributeError, UnsupportedOperation)
+except ImportError:  # Py2
+    FILENO_ERRORS = (AttributeError, )  # noqa
+
 
 def pyimplementation():
     """Returns string identifying the current Python implementation."""
@@ -54,9 +60,9 @@ def pyimplementation():
     elif sys.platform.startswith('java'):
         return 'Jython ' + sys.platform
     elif hasattr(sys, 'pypy_version_info'):
-        v = '.'.join(imap(str, sys.pypy_version_info[:3]))
+        v = '.'.join(map(str, sys.pypy_version_info[:3]))
         if sys.pypy_version_info[3:]:
-            v += '-' + ''.join(imap(str, sys.pypy_version_info[3:]))
+            v += '-' + ''.join(map(str, sys.pypy_version_info[3:]))
         return 'PyPy ' + v
     else:
         return 'CPython'
@@ -135,7 +141,7 @@ class Pidfile(object):
         try:
             self.write_pid()
         except OSError as exc:
-            raise LockFailed, LockFailed(str(exc)), sys.exc_info()[2]
+            reraise(LockFailed, LockFailed(str(exc)), sys.exc_info()[2])
         return self
     __enter__ = acquire
 
@@ -254,7 +260,7 @@ def fileno(f):
     """Get object fileno, or :const:`None` if not defined."""
     try:
         return f.fileno()
-    except AttributeError:
+    except FILENO_ERRORS:
         pass
 
 
@@ -541,7 +547,7 @@ class Signals(object):
         """Get signal number from signal name."""
         if isinstance(signal_name, int):
             return signal_name
-        if not isinstance(signal_name, basestring) \
+        if not isinstance(signal_name, string_t) \
                 or not signal_name.isupper():
             raise TypeError('signal name must be uppercase string.')
         if not signal_name.startswith('SIG'):
@@ -583,7 +589,7 @@ class Signals(object):
 
     def update(self, _d_=None, **sigmap):
         """Set signal handlers from a mapping."""
-        for signal_name, handler in dict(_d_ or {}, **sigmap).iteritems():
+        for signal_name, handler in items(dict(_d_ or {}, **sigmap)):
             self[signal_name] = handler
 
 
@@ -634,7 +640,7 @@ else:
 
 def get_errno(n):
     """Get errno for string, e.g. ``ENOENT``."""
-    if isinstance(n, basestring):
+    if isinstance(n, string_t):
         return getattr(errno, n)
     return n
 
@@ -660,7 +666,7 @@ def ignore_errno(*errnos, **kwargs):
     errnos = [get_errno(errno) for errno in errnos]
     try:
         yield
-    except types, exc:
+    except types as exc:
         if not hasattr(exc, 'errno'):
             raise
         if exc.errno not in errnos:

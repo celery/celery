@@ -22,7 +22,7 @@ from .encoding import safe_str, str_t
 from .term import colored
 
 _process_aware = False
-is_py3k = sys.version_info[0] == 3
+PY3 = sys.version_info[0] == 3
 
 MP_LOG = os.environ.get('MP_LOG', False)
 
@@ -86,7 +86,7 @@ class ColorFormatter(logging.Formatter):
         if ei and not isinstance(ei, tuple):
             ei = sys.exc_info()
         r = logging.Formatter.formatException(self, ei)
-        if isinstance(r, str) and not is_py3k:
+        if isinstance(r, str) and not PY3:
             return safe_str(r)
         return r
 
@@ -102,7 +102,7 @@ class ColorFormatter(logging.Formatter):
                         type(record.msg), exc)
                 record.exc_info = True
 
-        if not is_py3k and 'processName' not in record.__dict__:
+        if not PY3 and 'processName' not in record.__dict__:
             # Very ugly, but have to make sure processName is supported
             # by foreign logger instances.
             # (processName is always supported by Python 2.7)

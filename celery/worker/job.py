@@ -24,6 +24,7 @@ from celery import signals
 from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import Ignore, TaskRevokedError
+from celery.five import items
 from celery.platforms import signals as _signals
 from celery.task.trace import (
     trace_task,
@@ -70,8 +71,7 @@ class Request(object):
                  'on_ack', 'delivery_info', 'hostname',
                  'eventer', 'connection_errors',
                  'task', 'eta', 'expires',
-                 'request_dict', 'acknowledged', 'success_msg',
-                 'error_msg', 'retry_msg', 'ignore_msg', 'utc',
+                 'request_dict', 'acknowledged', 'utc',
                  'time_start', 'worker_pid', '_already_revoked',
                  '_terminate_on_ack', '_tzlocal')
 
@@ -146,10 +146,6 @@ class Request(object):
             'routing_key': delivery_info.get('routing_key'),
             'priority': delivery_info.get('priority'),
         }
-
-        # amqplib transport adds the channel here for some reason, so need
-        # to remove it.
-        self.delivery_info.pop('channel', None)
         self.request_dict = body
 
     @classmethod
@@ -180,7 +176,7 @@ class Request(object):
                           'delivery_info': self.delivery_info}
         fun = self.task.run
         supported_keys = fun_takes_kwargs(fun, default_kwargs)
-        extend_with = dict((key, val) for key, val in default_kwargs.items()
+        extend_with = dict((key, val) for key, val in items(default_kwargs)
                                 if key in supported_keys)
         kwargs.update(extend_with)
         return kwargs

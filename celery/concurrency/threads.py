@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import
 
-from celery.utils.compat import UserDict
+from celery.five import UserDict
 
 from .base import apply_target, BasePool
 

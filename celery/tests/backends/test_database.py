@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime
 
@@ -152,7 +152,7 @@ class test_DatabaseBackend(Case):
         tb = DatabaseBackend()
 
         tid = uuid()
-        res = {u'something': 'special'}
+        res = {'something': 'special'}
         self.assertEqual(tb.save_group(tid, res), res)
 
         res2 = tb.restore_group(tid)

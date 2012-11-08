@@ -16,12 +16,11 @@ Generated with:
 """
 from __future__ import absolute_import
 
-import __builtin__
-
 from mock import Mock, patch
 
 from celery import current_app
 from celery.exceptions import ImproperlyConfigured
+from celery.five import builtins
 from celery.security import setup_security, disable_untrusted_serializers
 from kombu.serialization import registry
 
@@ -85,13 +84,13 @@ class test_security(SecurityCase):
 
         self.assertRaises(ImproperlyConfigured, setup_security)
 
-        _import = __builtin__.__import__
+        _import = builtins.__import__
 
         def import_hook(name, *args, **kwargs):
             if name == 'OpenSSL':
                 raise ImportError
             return _import(name, *args, **kwargs)
 
-        __builtin__.__import__ = import_hook
+        builtins.__import__ = import_hook
         self.assertRaises(ImproperlyConfigured, setup_security)
-        __builtin__.__import__ = _import
+        builtins.__import__ = _import

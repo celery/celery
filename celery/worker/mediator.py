@@ -17,10 +17,9 @@ from __future__ import absolute_import
 
 import logging
 
-from Queue import Empty
-
 from celery.app import app_or_default
 from celery.bootsteps import StartStopStep
+from celery.five import Empty
 from celery.utils.threads import bgThread
 from celery.utils.log import get_logger
 

@@ -40,9 +40,9 @@ Registering the click is done as follows:
 from __future__ import absolute_import
 
 from itertools import count
-from Queue import Empty, Queue
 
 from celery.task import Task
+from celery.five import Empty, Queue
 from celery.utils.log import get_logger
 from celery.worker.job import Request
 
@@ -132,7 +132,7 @@ class Batches(Task):
 
     def __init__(self):
         self._buffer = Queue()
-        self._count = count(1).next
+        self._count = count(1)
         self._tref = None
         self._pool = None
 
@@ -160,7 +160,7 @@ class Batches(Task):
                 self._tref = timer.apply_interval(self.flush_interval * 1000.0,
                                                   flush_buffer)
 
-            if not self._count() % self.flush_every:
+            if not next(self._count) % self.flush_every:
                 flush_buffer()
 
         return task_message_handler

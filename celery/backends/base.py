@@ -17,7 +17,6 @@ import time
 import sys
 
 from datetime import timedelta
-from itertools import imap
 
 from kombu import serialization
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
@@ -26,6 +25,7 @@ from celery import states
 from celery.app import current_task
 from celery.datastructures import LRUCache
 from celery.exceptions import TimeoutError, TaskRevokedError
+from celery.five import items
 from celery.result import from_serializable, GroupResult
 from celery.utils import timeutils
 from celery.utils.serialization import (
@@ -35,7 +35,7 @@ from celery.utils.serialization import (
 )
 
 EXCEPTION_ABLE_CODECS = frozenset(['pickle', 'yaml'])
-is_py3k = sys.version_info >= (3, 0)
+PY3 = sys.version_info >= (3, 0)
 
 
 def unpickle_backend(cls, args, kwargs):
@@ -116,7 +116,7 @@ class BaseBackend(object):
         return payload
 
     def decode(self, payload):
-        payload = is_py3k and payload or str(payload)
+        payload = PY3 and payload or str(payload)
         return serialization.decode(payload,
                                     content_type=self.content_type,
                                     content_encoding=self.content_encoding)
@@ -326,7 +326,7 @@ class KeyValueStoreBackend(BaseBackend):
         if hasattr(values, 'items'):
             # client returns dict so mapping preserved.
             return dict((self._strip_prefix(k), self.decode(v))
-                            for k, v in values.iteritems()
+                            for k, v in items(values)
                                 if v is not None)
         else:
             # client returns list so need to recreate mapping.
@@ -354,8 +354,8 @@ class KeyValueStoreBackend(BaseBackend):
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
                                                     for k in keys]), keys)
             self._cache.update(r)
-            ids.difference_update(set(imap(bytes_to_str, r)))
-            for key, value in r.iteritems():
+            ids.difference_update(set(map(bytes_to_str, r)))
+            for key, value in items(r):
                 yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:
                 raise TimeoutError('Operation timed out ({0})'.format(timeout))

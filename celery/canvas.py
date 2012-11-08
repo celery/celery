@@ -13,7 +13,7 @@ from __future__ import absolute_import
 
 from copy import deepcopy
 from operator import itemgetter
-from itertools import chain as _chain, imap
+from itertools import chain as _chain
 
 from kombu.utils import cached_property, fxrange, kwdict, reprcall, uuid
 
@@ -230,7 +230,7 @@ class chain(Signature):
         return chain(*d['kwargs']['tasks'], **kwdict(d['options']))
 
     def __repr__(self):
-        return ' | '.join(imap(repr, self.tasks))
+        return ' | '.join(map(repr, self.tasks))
 Signature.register_type(chain)
 
 
@@ -329,9 +329,9 @@ class group(Signature):
         return self.type(tasks, result, gid, args)
 
     def skew(self, start=1.0, stop=None, step=1.0):
-        _next_skew = fxrange(start, stop, step, repeatlast=True).next
+        it = fxrange(start, stop, step, repeatlast=True)
         for task in self.tasks:
-            task.set(countdown=_next_skew())
+            task.set(countdown=next(it))
         return self
 
     def __iter__(self):

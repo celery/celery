@@ -121,6 +121,7 @@ import sys
 from celery import concurrency
 from celery.bin.base import Command, Option, daemon_options
 from celery.bin.celeryd_detach import detached_celeryd
+from celery.five import string_t
 from celery.utils.log import LOG_LEVELS, mlevel
 
 
@@ -158,7 +159,7 @@ class WorkerCommand(Command):
             except KeyError:  # pragma: no cover
                 self.die('Unknown level {0!r}. Please use one of {1}.'.format(
                     loglevel, '|'.join(l for l in LOG_LEVELS
-                      if isinstance(l, basestring))))
+                      if isinstance(l, string_t))))
         return self.app.Worker(
             hostname=hostname, pool_cls=pool_cls, loglevel=loglevel, **kwargs
         ).start()

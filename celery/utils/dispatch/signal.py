@@ -3,14 +3,16 @@
 from __future__ import absolute_import
 
 import weakref
+from collections import Callable
 from . import saferef
+from celery.five import range
 
 WEAKREF_TYPES = (weakref.ReferenceType, saferef.BoundMethodWeakref)
 
 
 def _make_id(target):  # pragma: no cover
-    if hasattr(target, 'im_func'):
-        return (id(target.im_self), id(target.im_func))
+    if hasattr(target, '__func__'):
+        return (id(target.__self__), id(target.__func__))
     return id(target)
 
 
@@ -90,7 +92,7 @@ class Signal(object):  # pragma: no cover
 
             return _connect_signal
 
-        if args and callable(args[0]):
+        if args and isinstance(args[0], Callable):
             return _handle_options(*args[1:], **kwargs)(args[0])
         return _handle_options(*args, **kwargs)
 
@@ -117,7 +119,7 @@ class Signal(object):  # pragma: no cover
         else:
             lookup_key = (_make_id(receiver), _make_id(sender))
 
-        for index in xrange(len(self.receivers)):
+        for index in range(len(self.receivers)):
             (r_key, _) = self.receivers[index]
             if r_key == lookup_key:
                 del self.receivers[index]

@@ -41,11 +41,11 @@ import os
 import socket
 import sys
 
-from itertools import imap
 from pdb import Pdb
 
 from billiard import current_process
 
+from celery.five import range
 from celery.platforms import ignore_errno
 
 default_port = 6899
@@ -97,7 +97,7 @@ class Rdb(Pdb):
         self.say(BANNER.format(self=self))
 
         self._client, address = self._sock.accept()
-        self.remote_addr = ':'.join(imap(str, address))
+        self.remote_addr = ':'.join(map(str, address))
         self.say(SESSION_STARTED.format(self=self))
         self._handle = sys.stdin = sys.stdout = self._client.makefile('rw')
         Pdb.__init__(self, completekey='tab',
@@ -110,7 +110,7 @@ class Rdb(Pdb):
         except ValueError:
             pass
         this_port = None
-        for i in xrange(search_limit):
+        for i in range(search_limit):
             _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             this_port = port + skew + i
             try:

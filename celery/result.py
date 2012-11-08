@@ -12,7 +12,6 @@ import time
 
 from collections import deque
 from copy import copy
-from itertools import imap
 
 from kombu.utils import cached_property
 from kombu.utils.compat import OrderedDict
@@ -22,6 +21,7 @@ from . import states
 from .app import app_or_default
 from .datastructures import DependencyGraph, GraphFormatter
 from .exceptions import IncompleteStream, TimeoutError
+from .five import items, map, range, string_t
 
 
 def from_serializable(r):
@@ -31,7 +31,8 @@ def from_serializable(r):
         id = parent = None
         res, nodes = r
         if nodes:
-            return GroupResult(res, [AsyncResult(id) for id, _ in nodes])
+            return GroupResult(res,
+                        [from_serializable(child) for child in nodes])
         if isinstance(res, (list, tuple)):
             id, parent = res[0], res[1]
         return AsyncResult(id, parent=parent)
@@ -143,7 +144,7 @@ class AsyncResult(ResultBase):
 
             @task()
             def A(how_many):
-                return group(B.s(i) for i in xrange(how_many))
+                return group(B.s(i) for i in range(how_many))
 
             @task()
             def B(i):
@@ -224,7 +225,7 @@ class AsyncResult(ResultBase):
     def __eq__(self, other):
         if isinstance(other, AsyncResult):
             return other.id == self.id
-        elif isinstance(other, basestring):
+        elif isinstance(other, string_t):
             return other == self.id
         return NotImplemented
 
@@ -339,7 +340,7 @@ class ResultSet(ResultBase):
         :raises KeyError: if the result is not a member.
 
         """
-        if isinstance(result, basestring):
+        if isinstance(result, string_t):
             result = AsyncResult(result)
         try:
             self.results.remove(result)
@@ -408,7 +409,7 @@ class ResultSet(ResultBase):
         :returns: the number of tasks completed.
 
         """
-        return sum(imap(int, (result.successful() for result in self.results)))
+        return sum(map(int, (result.successful() for result in self.results)))
 
     def forget(self):
         """Forget about (and possible remove the result of) all the tasks."""
@@ -441,7 +442,7 @@ class ResultSet(ResultBase):
 
         while results:
             removed = set()
-            for task_id, result in results.iteritems():
+            for task_id, result in items(results):
                 if result.ready():
                     yield result.get(timeout=timeout and timeout - elapsed,
                                      propagate=propagate)
@@ -543,7 +544,7 @@ class ResultSet(ResultBase):
 
         """
         results = self.results
-        acc = [None for _ in xrange(len(self))]
+        acc = [None for _ in range(len(self))]
         for task_id, meta in self.iter_native(timeout=timeout,
                                               interval=interval):
             acc[results.index(task_id)] = meta['result']
