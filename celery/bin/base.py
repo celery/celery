@@ -134,6 +134,7 @@ class Command(object):
         Option('-b', '--broker', default=None),
         Option('--loader', default=None),
         Option('--config', default=None),
+        Option('--workdir', default=None, dest='working_directory'),
     )
 
     #: Enable if the application should support config from the cmdline.
@@ -266,18 +267,11 @@ class Command(object):
                     option.help = ' '.join(help) % {'default': option.default}
         return parser
 
-    def prepare_preload_options(self, options):
-        """Optional handler to do additional processing of preload options.
-
-        Configuration must not have been initialized
-        until after this is called.
-
-        """
-        pass
-
     def setup_app_from_commandline(self, argv):
         preload_options = self.parse_preload_options(argv)
-        self.prepare_preload_options(preload_options)
+        workdir = preload_options.get('working_directory')
+        if workdir:
+            os.chdir(workdir)
         app = (preload_options.get('app') or
                os.environ.get('CELERY_APP') or
                self.app)
@@ -384,5 +378,4 @@ def daemon_options(default_pidfile=None, default_logfile=None):
         Option('--uid', default=None),
         Option('--gid', default=None),
         Option('--umask', default=0, type='int'),
-        Option('--workdir', default=None, dest='working_directory'),
     )

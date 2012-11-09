@@ -68,11 +68,6 @@ class BeatCommand(Command):
         else:
             return beat().run()
 
-    def prepare_preload_options(self, options):
-        workdir = options.get('working_directory')
-        if workdir:
-            os.chdir(workdir)
-
     def get_options(self):
         c = self.app.conf
 

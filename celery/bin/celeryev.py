@@ -68,11 +68,6 @@ class EvCommand(Command):
                                   detach=detach)
         return self.run_evtop()
 
-    def prepare_preload_options(self, options):
-        workdir = options.get('working_directory')
-        if workdir:
-            os.chdir(workdir)
-
     def run_evdump(self):
         from celery.events.dumper import evdump
         self.set_process_status('dump')
