@@ -33,14 +33,6 @@ class test_EvCommand(Case):
         self.assertEqual(self.ev.run(dump=True), 'me dumper, you?')
         self.assertIn('celeryev:dump', proctitle.last[0])
 
-    @mpatch('os.chdir')
-    def test_prepare_preload_options(self, chdir):
-        self.ev.prepare_preload_options({'working_directory': '/opt/Project'})
-        chdir.assert_called_with('/opt/Project')
-        chdir.called = False
-        self.ev.prepare_preload_options({})
-        self.assertFalse(chdir.called)
-
     def test_run_top(self):
         try:
             import curses  # noqa
