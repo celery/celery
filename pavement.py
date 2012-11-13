@@ -134,6 +134,7 @@ def pep8(options):
 def removepyc(options):
     sh('find . -type f -a \\( %s \\) | xargs rm' % (
         ' -o '.join("-name '%s'" % (pat, ) for pat in PYCOMPILE_CACHES), ))
+    sh('find . -type d -name "__pycache__" | xargs rm -r')
 
 
 @task
