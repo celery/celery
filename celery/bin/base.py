@@ -278,7 +278,11 @@ class Command(object):
         app = (preload_options.get('app') or
                os.environ.get('CELERY_APP') or
                self.app)
-        loader = (preload_options.get('loader') or
+        preload_loader = preload_options.get('loader')
+        if preload_loader:
+            # Default app takes loader from this env (Issue #1066).
+            os.environ['CELERY_LOADER'] = preload_loader
+        loader = (preload_loader,
                   os.environ.get('CELERY_LOADER') or
                   'default')
         broker = preload_options.get('broker', None)
