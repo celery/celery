@@ -30,8 +30,9 @@ from celery.app import set_default_app
 from celery.app.task import Task as BaseTask, Context
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import Ignore, RetryTaskError
-from celery.utils.serialization import get_pickleable_exception
 from celery.utils.log import get_logger
+from celery.utils.objects import mro_lookup
+from celery.utils.serialization import get_pickleable_exception
 
 _logger = get_logger(__name__)
 
@@ -48,32 +49,6 @@ EXCEPTION_STATES = states.EXCEPTION_STATES
 #: set by :func:`setup_worker_optimizations`
 _tasks = None
 _patched = {}
-
-
-def mro_lookup(cls, attr, stop=(), monkey_patched=[]):
-    """Returns the first node by MRO order that defines an attribute.
-
-    :keyword stop: A list of types that if reached will stop the search.
-    :keyword monkey_patched: Use one of the stop classes if the attr's
-        module origin is not in this list, this to detect monkey patched
-        attributes.
-
-    :returns None: if the attribute was not found.
-
-    """
-    for node in cls.mro():
-        if node in stop:
-            try:
-                attr = node.__dict__[attr]
-                module_origin = attr.__module__
-            except (AttributeError, KeyError):
-                pass
-            else:
-                if module_origin not in monkey_patched:
-                    return node
-            return
-        if attr in node.__dict__:
-            return node
 
 
 def task_has_custom(task, attr):
