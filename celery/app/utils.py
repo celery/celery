@@ -101,7 +101,7 @@ class Settings(datastructures.ConfigurationView):
 
 
 class AppPickler(object):
-    """Default application pickler/unpickler."""
+    """Old application pickler/unpickler (<= 3.0)."""
 
     def __call__(self, cls, *args):
         kwargs = self.build_kwargs(*args)
@@ -127,7 +127,14 @@ class AppPickler(object):
 
 
 def _unpickle_app(cls, pickler, *args):
+    """Rebuild app for versions 2.5+"""
     return pickler()(cls, *args)
+
+
+def _unpickle_app_v2(cls, kwargs):
+    """Rebuild app for versions 3.1+"""
+    kwargs['set_as_current'] = False
+    return cls(**kwargs)
 
 
 def bugreport(app):

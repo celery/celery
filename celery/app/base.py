@@ -29,16 +29,24 @@ from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils.functional import first
 from celery.utils.imports import instantiate, symbol_by_name
+from celery.utils.objects import mro_lookup
 
 from .annotations import prepare as prepare_annotations
 from .builtins import shared_task, load_shared_tasks
 from .defaults import DEFAULTS, find_deprecated_settings
 from .registry import TaskRegistry
-from .utils import AppPickler, Settings, bugreport, _unpickle_app
+from .utils import (
+    AppPickler, Settings, bugreport, _unpickle_app, _unpickle_app_v2,
+)
 
 DEFAULT_FIXUPS = (
     'celery.fixups.django:DjangoFixup',
 )
+
+
+def app_has_custom(app, attr):
+    return mro_lookup(app.__class__, attr, stop=(Celery, object),
+                      monkey_patched=[__name__])
 
 
 def _unpickle_appattr(reverse_name, args):
@@ -90,9 +98,14 @@ class Celery(object):
         if not isinstance(self._tasks, TaskRegistry):
             self._tasks = TaskRegistry(self._tasks or {})
 
+        # If the class defins a custom __reduce_args__ we need to use
+        # the old way of pickling apps, which is pickling a list of
+        # args instead of the new way that pickles a dict of keywords.
+        self._using_v1_reduce = app_has_custom(self, '__reduce_args__')
+
         # these options are moved to the config to
         # simplify pickling of the app object.
-        self._preconf = {}
+        self._preconf = changes or {}
         if broker:
             self._preconf['BROKER_URL'] = broker
         if include:
@@ -387,13 +400,34 @@ class Celery(object):
             type(self).__name__, self.main or '__main__', id(self))
 
     def __reduce__(self):
+        if self._using_v1_reduce:
+            return self.__reduce_v1__()
+        return (_unpickle_app_v2, (self.__class__, self.__reduce_keys__()))
+
+    def __reduce_v1__(self):
         # Reduce only pickles the configuration changes,
         # so the default configuration doesn't have to be passed
         # between processes.
         return (_unpickle_app, (self.__class__, self.Pickler)
                               + self.__reduce_args__())
 
+    def __reduce_keys__(self):
+        """Returns keyword arguments used to reconstruct the object
+        when unpickling."""
+        return {
+            'main': self.main,
+            'changes': self.conf.changes,
+            'loader': self.loader_cls,
+            'backend': self.backend_cls,
+            'amqp': self.amqp_cls,
+            'events': self.events_cls,
+            'log': self.log_cls,
+            'control': self.control_cls,
+            'accept_magic_kwargs': self.accept_magic_kwargs,
+        }
+
     def __reduce_args__(self):
+        """Deprecated method, please use :meth:`__reduce_keys__` instead."""
         return (self.main, self.conf.changes, self.loader_cls,
                 self.backend_cls, self.amqp_cls, self.events_cls,
                 self.log_cls, self.control_cls, self.accept_magic_kwargs)
