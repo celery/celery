@@ -19,15 +19,13 @@ def _maybe_close_fd(fh):
         pass
 
 
+def fixup(app):
+    if SETTINGS_MODULE:
+        return DjangoFixup(app).install()
+
+
 class DjangoFixup(object):
     _db_recycles = 0
-
-    @classmethod
-    def include(cls, app):
-        if SETTINGS_MODULE:
-            self = cls(app)
-            self.install()
-            return self
 
     def __init__(self, app):
         from django import db
@@ -99,6 +97,8 @@ class DjangoFixup(object):
 
         self.app.loader.now = self.now
         self.app.loader.mail_admins = self.mail_admins
+
+        return self
 
     def now(self, utc=False):
         return datetime.utcnow() if utc else self._now()

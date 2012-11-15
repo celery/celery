@@ -39,9 +39,9 @@ from .utils import (
     AppPickler, Settings, bugreport, _unpickle_app, _unpickle_app_v2,
 )
 
-DEFAULT_FIXUPS = (
-    'celery.fixups.django:DjangoFixup',
-)
+BUILTIN_FIXUPS = frozenset([
+    'celery.fixups.django:fixup',
+])
 
 
 def app_has_custom(app, attr):
@@ -73,7 +73,8 @@ class Celery(object):
     def __init__(self, main=None, loader=None, backend=None,
             amqp=None, events=None, log=None, control=None,
             set_as_current=True, accept_magic_kwargs=False,
-            tasks=None, broker=None, include=None, **kwargs):
+            tasks=None, broker=None, include=None, fixups=None,
+            changes=None, **kwargs):
         self.clock = LamportClock()
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
@@ -110,8 +111,11 @@ class Celery(object):
             self._preconf['BROKER_URL'] = broker
         if include:
             self._preconf['CELERY_IMPORTS'] = include
-        self.fixups = list(filter(None, (symbol_by_name(f).include(self)
-                                        for f in DEFAULT_FIXUPS)))
+
+        # Apply fixups.
+        self.fixups = set(fixups or ())
+        for fixup in self.fixups | BUILTIN_FIXUPS:
+            symbol_by_name(fixup)(self)
 
         if self.set_as_current:
             self.set_current()
@@ -428,6 +432,7 @@ class Celery(object):
             'log': self.log_cls,
             'control': self.control_cls,
             'accept_magic_kwargs': self.accept_magic_kwargs,
+            'fixups': self.fixups,
         }
 
     def __reduce_args__(self):
