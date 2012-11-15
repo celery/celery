@@ -85,7 +85,7 @@ class test_Command(Case):
         x.execute_from_commandline(self.argv)
         self.assertTrue(exit.called)
         detach.assert_called_with(path=x.execv_path, uid=None, gid=None,
-            umask=0, working_directory=None, fake=False,
+            umask=0, fake=False,
             logfile='/var/log', pidfile='celeryd.pid',
             argv=['-m', 'celery.bin.celeryd', '-c', '1', '-lDEBUG',
                   '--logfile=/var/log', '--pidfile=celeryd.pid',

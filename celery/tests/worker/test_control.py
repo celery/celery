@@ -434,7 +434,7 @@ class test_ControlPanel(Case):
 
         self.assertTrue(consumer.controller.pool.restart.called)
         self.assertFalse(_reload.called)
-        self.assertEqual([call('bar'), call('foo')],
+        self.assertItemsEqual([call('bar'), call('foo')],
                           _import.call_args_list)
 
     def test_pool_restart_reload_modules(self):

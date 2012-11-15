@@ -61,7 +61,7 @@ class test_PublisherPool(AppCase):
             delattr(self.app, '_pool')
         except AttributeError:
             pass
-        self.app.amqp.__dict__.pop('producer_pool', None)
+        self.app.amqp._producer_pool = None
         try:
             pool = self.app.amqp.producer_pool
             self.assertEqual(pool.limit, self.app.pool.limit)
@@ -83,7 +83,7 @@ class test_PublisherPool(AppCase):
             delattr(self.app, '_pool')
         except AttributeError:
             pass
-        self.app.amqp.__dict__.pop('producer_pool', None)
+        self.app.amqp._producer_pool = None
         try:
             pool = self.app.amqp.producer_pool
             self.assertEqual(pool.limit, self.app.pool.limit)
