@@ -287,7 +287,7 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
     platforms.signals[sig] = restart_worker_sig_handler
 
 
-def install_cry_handler():
+def install_cry_handler(sig='SIGUSR1'):
     # Jython/PyPy does not have sys._current_frames
     if is_jython or is_pypy:  # pragma: no cover
         return
@@ -296,7 +296,7 @@ def install_cry_handler():
         """Signal handler logging the stacktrace of all active threads."""
         with in_sighandler():
             safe_say(cry())
-    platforms.signals['SIGUSR1'] = cry_handler
+    platforms.signals[sig] = cry_handler
 
 
 def install_rdb_handler(envvar='CELERY_RDBSIG',
