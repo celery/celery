@@ -170,10 +170,10 @@ py-celery at {{hostname}}.
         return True
 
     def format_subject(self, context):
-        return self.subject.strip().format(**context)
+        return self.email_subject.strip().format(**context)
 
     def format_body(self, context):
-        return self.body.strip().format(**context)
+        return self.email_body.strip().format(**context)
 
     def send(self, context, exc, fail_silently=True):
         if self.should_send(context, exc):
