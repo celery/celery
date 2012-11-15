@@ -285,6 +285,10 @@ class AMQP(object):
     #: Cached and prepared routing table.
     _rtable = None
 
+    #: Underlying producer pool instance automatically
+    #: set by the :attr:`producer_pool`.
+    _producer_pool = None
+
     def __init__(self, app):
         self.app = app
 
@@ -361,10 +365,14 @@ class AMQP(object):
     def router(self):
         return self.Router()
 
-    @cached_property
+    @property
     def producer_pool(self):
-        return ProducerPool(self.app.pool, limit=self.app.pool.limit,
-                            Producer=self.TaskProducer)
+        if self._producer_pool is None:
+            self._producer_pool = ProducerPool(self.app.pool,
+                limit=self.app.pool.limit,
+                Producer=self.TaskProducer,
+            )
+        return self._producer_pool
     publisher_pool = producer_pool  # compat alias
 
     @cached_property
