@@ -633,7 +633,7 @@ else:
 
         """
         if hostname:
-            progname = '{0}@{1}'.format(progname, hostname.split('.')[0])
+            progname = '{0}: {1}'.format(progname, hostname)
         return set_process_title(
             '{0}:{1}'.format(progname, current_process().name), info=info)
 
