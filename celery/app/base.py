@@ -336,6 +336,10 @@ class Celery(object):
         if self._pool:
             self._pool.force_close_all()
             self._pool = None
+            amqp = self.amqp
+            if amqp._producer_pool:
+                amqp._producer_pool.force_close_all()
+                amqp._producer_pool = None
 
     def create_task_cls(self):
         """Creates a base task class using default configuration
