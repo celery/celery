@@ -42,13 +42,25 @@ Example configuration
 
 This is an example configuration for a Python project.
 
-:file:`/etc/default/celeryd`::
+:file:`/etc/default/celeryd`:
+
+.. code-block:: bash
 
     # Name of nodes to start
     # here we have a single node
     CELERYD_NODES="w1"
     # or we could have three nodes:
     #CELERYD_NODES="w1 w2 w3"
+
+    # Absolute or relative path to the 'celery' command:
+    CELERY_BIN="/usr/local/bin/celery"
+    #CELERY_BIN="/virtualenvs/def/bin/celery"
+
+    # App instance to use
+    # comment out this line if you don't use an app
+    CELERY_APP="proj"
+    # or fully qualified:
+    #CELERY_APP="proj.tasks:app"
 
     # Where to chdir at start.
     CELERYD_CHDIR="/opt/Myproject/"
@@ -72,7 +84,9 @@ This is an example configuration for a Python project.
 Example Django configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is an example configuration for those using `django-celery`::
+This is an example configuration for those using `django-celery`:
+
+.. code-block:: bash
 
     # Name of nodes to start, here we have a single node
     CELERYD_NODES="w1"
@@ -82,17 +96,11 @@ This is an example configuration for those using `django-celery`::
     # Where to chdir at start.
     CELERYD_CHDIR="/opt/Myproject/"
 
-    # How to call "manage.py celeryd_multi"
-    CELERYD_MULTI="$CELERYD_CHDIR/manage.py celeryd_multi"
-
-    # How to call "manage.py celeryctl"
-    CELERYCTL="$CELERYD_CHDIR/manage.py celeryctl"
+    # How to call "manage.py celery"
+    CELERY_BIN="$CELERYD_CHDIR/manage.py celery"
 
     # Extra arguments to celeryd
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
-
-    # Name of the celery config module.
-    CELERY_CONFIG_MODULE="celeryconfig"
 
     # %n will be replaced with the nodename.
     CELERYD_LOG_FILE="/var/log/celery/%n.log"
@@ -110,8 +118,10 @@ This is an example configuration for those using `django-celery`::
 Example Django configuration Using Virtualenv
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In case you are using virtualenv, you should add the path to your 
-environment's python interpreter::
+In case you are using virtualenv, you should add the path to your
+environment's python interpreter:
+
+.. code-block:: bash
 
     # Name of nodes to start, here we have a single node
     CELERYD_NODES="w1"
@@ -120,16 +130,13 @@ environment's python interpreter::
 
     # Where to chdir at start.
     CELERYD_CHDIR="/opt/Myproject/"
-    
+
     # Python interpreter from environment.
     ENV_PYTHON="$CELERYD_CHDIR/env/bin/python"
-    
-    # How to call "manage.py celeryd_multi"
-    CELERYD_MULTI="$ENV_PYTHON $CELERYD_CHDIR/manage.py celeryd_multi"
 
-    # How to call "manage.py celeryctl"
-    CELERYCTL="$ENV_PYTHON $CELERYD_CHDIR/manage.py celeryctl"
-    
+    # How to call "manage.py celery"
+    CELERY_BIN="$ENV_PYTHON $CELERYD_CHDIR/manage.py celery"
+
     # Extra arguments to celeryd
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
@@ -152,6 +159,18 @@ environment's python interpreter::
 Available options
 ~~~~~~~~~~~~~~~~~~
 
+* CELERY_APP
+    App instance to use (value for ``--app`` argument).
+
+* CELERY_BIN
+    Absolute or relative path to the :program:`celery` program.
+    Examples:
+
+        * :file:`celery``
+        * :file:`/usr/local/bin/celery`
+        * :file:`/virtualenvs/proj/bin/celery`
+        * :file:`/virtualenvs/proj/bin/python -m celery`
+
 * CELERYD_NODES
     Node names to start.
 
@@ -171,19 +190,23 @@ Available options
 * CELERYD_LOG_LEVEL
     Log level to use for celeryd. Default is INFO.
 
-* CELERYD_MULTI
-    Path to the celeryd-multi program. Default is `celeryd-multi`.
-    You can point this to a virtualenv, or even use manage.py for django.
-
-* CELERYCTL
-    Path to the celeryctl program.  Default is `celeryctl`.
-    You can point this to a virtualenv, or even use manage.py for django.
-
 * CELERYD_USER
     User to run celeryd as. Default is current user.
 
 * CELERYD_GROUP
     Group to run celeryd as. Default is current user.
+
+* CELERY_CREATE_DIRS
+    Always create directories (log directory and pid file directory).
+    Default is to only create directories when no custom logfile/pidfile set.
+
+* CELERY_CREATE_RUNDIR
+    Always create pidfile directory.  By default only enabled when no custom
+    pidfile location set.
+
+* CELERY_CREATE_LOGDIR
+    Always create logfile directory.  By default only enable when no custom
+    logfile location set.
 
 .. _generic-initd-celerybeat:
 
@@ -199,16 +222,25 @@ Example configuration
 
 This is an example configuration for a Python project:
 
-`/etc/default/celerybeat`::
+`/etc/default/celerybeat`:
+
+.. code-block:: bash
+
+    # Absolute or relative path to the 'celery' command:
+    CELERY_BIN="/usr/local/bin/celery"
+    #CELERY_BIN="/virtualenvs/def/bin/celery"
+
+    # App instance to use
+    # comment out this line if you don't use an app
+    CELERY_APP="proj"
+    # or fully qualified:
+    #CELERY_APP="proj.tasks:app"
 
     # Where to chdir at start.
     CELERYBEAT_CHDIR="/opt/Myproject/"
 
     # Extra arguments to celerybeat
     CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
-
-    # Name of the celery config module.#
-    CELERY_CONFIG_MODULE="celeryconfig"
 
 .. _generic-initd-celerybeat-django-example:
 
@@ -225,8 +257,8 @@ This is an example configuration for those using `django-celery`
     # Name of the projects settings module.
     export DJANGO_SETTINGS_MODULE="settings"
 
-    # Path to celerybeat
-    CELERYBEAT="/opt/Project/manage.py celerybeat"
+    # Path to celery command
+    CELERY_BIN="/opt/Project/manage.py celery"
 
     # Extra arguments to celerybeat
     CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
@@ -235,6 +267,19 @@ This is an example configuration for those using `django-celery`
 
 Available options
 ~~~~~~~~~~~~~~~~~
+
+* CELERY_APP
+    App instance to use (value for ``--app`` argument).
+
+* CELERY_BIN
+    Absolute or relative path to the :program:`celery` program.
+    Examples:
+
+        * :file:`celery``
+        * :file:`/usr/local/bin/celery`
+        * :file:`/virtualenvs/proj/bin/celery`
+        * :file:`/virtualenvs/proj/bin/python -m celery`
+
 
 * CELERYBEAT_OPTS
     Additional arguments to celerybeat, see `celerybeat --help` for a
@@ -258,6 +303,18 @@ Available options
 
 * CELERYBEAT_GROUP
     Group to run celeryd as. Default is current user.
+
+* CELERY_CREATE_DIRS
+    Always create directories (log directory and pid file directory).
+    Default is to only create directories when no custom logfile/pidfile set.
+
+* CELERY_CREATE_RUNDIR
+    Always create pidfile directory.  By default only enabled when no custom
+    pidfile location set.
+
+* CELERY_CREATE_LOGDIR
+    Always create logfile directory.  By default only enable when no custom
+    logfile location set.
 
 .. _generic-initd-troubleshooting:
 

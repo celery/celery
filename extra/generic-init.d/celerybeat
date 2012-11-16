@@ -21,10 +21,11 @@
 # abnormally in the absence of a valid process ID.
 #set -e
 
+CELERY_BIN=${CELERY_BIN:-"celery"}
 DEFAULT_PID_FILE="/var/run/celery/beat.pid"
 DEFAULT_LOG_FILE="/var/log/celery/beat.log"
 DEFAULT_LOG_LEVEL="INFO"
-DEFAULT_CELERYBEAT="celery beat"
+DEFAULT_CELERYBEAT="$CELERY_BIN beat"
 
 # /etc/init.d/celerybeat: start and stop the celery periodic task scheduler daemon.
 
@@ -38,6 +39,12 @@ fi
 
 CELERYBEAT=${CELERYBEAT:-$DEFAULT_CELERYBEAT}
 CELERYBEAT_LOG_LEVEL=${CELERYBEAT_LOG_LEVEL:-${CELERYBEAT_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
+
+# Sets --app argument for CELERY_BIN
+CELERY_APP_ARG=""
+if [ ! -z "$CELERY_APP"]; then
+    CELERY_APP_ARG="--app=$CELERY_APP"
+fi
 
 # Set CELERY_CREATE_DIRS to always create log/pid dirs.
 CELERY_CREATE_DIRS=${CELERY_CREATE_DIRS:-0}
@@ -168,7 +175,7 @@ start_beat () {
     if [ -n "$VIRTUALENV" ]; then
         source $VIRTUALENV/bin/activate
     fi
-    $CELERYBEAT $CELERYBEAT_OPTS $DAEMON_OPTS --detach \
+    $CELERYBEAT $CELERY_APP_ARG $CELERYBEAT_OPTS $DAEMON_OPTS --detach \
                 --pidfile="$CELERYBEAT_PID_FILE"
 }
 
