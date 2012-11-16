@@ -181,7 +181,7 @@ class Pool(bootsteps.StartStopStep):
 
 
 class Beat(bootsteps.StartStopStep):
-    """Step used to embed a celerybeat process.
+    """Step used to embed a beat process.
 
     This will only be enabled if the ``beat``
     argument is set.

@@ -925,7 +925,7 @@ A built-in periodic task will delete the results after this time
     For the moment this only works with the amqp, database, cache, redis and MongoDB
     backends.
 
-    When using the database or MongoDB backends, `celerybeat` must be
+    When using the database or MongoDB backends, `celery beat` must be
     running for the results to be expired.
 
 .. setting:: CELERY_MAX_CACHED_RESULTS
@@ -1392,7 +1392,7 @@ If enabled `stdout` and `stderr` will be redirected
 to the current logger.
 
 Enabled by default.
-Used by :program:`celeryd` and :program:`celerybeat`.
+Used by :program:`celery worker` and :program:`celery beat`.
 
 .. setting:: CELERY_REDIRECT_STDOUTS_LEVEL
 
@@ -1536,15 +1536,15 @@ by the pool implementation.
 
 .. _conf-celerybeat:
 
-Periodic Task Server: celerybeat
---------------------------------
+Periodic Task Server: celery beat
+---------------------------------
 
 .. setting:: CELERYBEAT_SCHEDULE
 
 CELERYBEAT_SCHEDULE
 ~~~~~~~~~~~~~~~~~~~
 
-The periodic task schedule used by :mod:`~celery.bin.celerybeat`.
+The periodic task schedule used by :mod:`~celery.bin.beat`.
 See :ref:`beat-entries`.
 
 .. setting:: CELERYBEAT_SCHEDULER
@@ -1556,7 +1556,7 @@ The default scheduler class.  Default is
 `"celery.beat.PersistentScheduler"`.
 
 Can also be set via the :option:`-S` argument to
-:mod:`~celery.bin.celerybeat`.
+:mod:`~celery.bin.beat`.
 
 .. setting:: CELERYBEAT_SCHEDULE_FILENAME
 
@@ -1568,24 +1568,24 @@ of periodic tasks.  Can be a relative or absolute path, but be aware that the
 suffix `.db` may be appended to the file name (depending on Python version).
 
 Can also be set via the :option:`--schedule` argument to
-:mod:`~celery.bin.celerybeat`.
+:mod:`~celery.bin.beat`.
 
 .. setting:: CELERYBEAT_MAX_LOOP_INTERVAL
 
 CELERYBEAT_MAX_LOOP_INTERVAL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The maximum number of seconds :mod:`~celery.bin.celerybeat` can sleep
+The maximum number of seconds :mod:`~celery.bin.beat` can sleep
 between checking the schedule.
 
 
 The default for this value is scheduler specific.
-For the default celerybeat scheduler the value is 300 (5 minutes),
+For the default celery beat scheduler the value is 300 (5 minutes),
 but for e.g. the django-celery database scheduler it is 5 seconds
 because the schedule may be changed externally, and so it must take
 changes to the schedule into account.
 
-Also when running celerybeat embedded (:option:`-B`) on Jython as a thread
+Also when running celery beat embedded (:option:`-B`) on Jython as a thread
 the max interval is overridden and set to 1 so that it's possible
 to shut down in a timely manner.
 

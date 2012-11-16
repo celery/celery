@@ -311,16 +311,16 @@ class events(Delegate):
 
 @command
 class beat(Delegate):
-    """Start the celerybeat periodic task scheduler.
+    """Start the beat periodic task scheduler.
 
     Examples::
 
         celery beat -l info
-        celery beat -s /var/run/celerybeat/schedule --detach
+        celery beat -s /var/run/celery/beat-schedule --detach
         celery beat -S djcelery.schedulers.DatabaseScheduler
 
     """
-    Command = 'celery.bin.celerybeat:BeatCommand'
+    Command = 'celery.bin.beat:BeatCommand'
 
 
 @command

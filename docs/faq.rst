@@ -477,7 +477,7 @@ Is it safe to run :program:`celeryd` as root?
 
 We're not currently aware of any security issues, but it would
 be incredibly naive to assume that they don't exist, so running
-the Celery services (:program:`celeryd`, :program:`celerybeat`,
+the Celery services (:program:`celery worker`, :program:`celery beat`,
 :program:`celeryev`, etc) as an unprivileged user is recommended.
 
 .. _faq-brokers:
@@ -892,5 +892,5 @@ Windows
 
 The `-B` / `--beat` option to celeryd doesn't work?
 ----------------------------------------------------------------
-**Answer**: That's right. Run `celerybeat` and `celeryd` as separate
+**Answer**: That's right. Run `celery beat` and `celery worker` as separate
 services instead.

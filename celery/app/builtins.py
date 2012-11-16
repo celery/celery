@@ -42,7 +42,7 @@ def add_backend_cleanup_task(app):
     backend.
 
     This task is also added do the periodic task schedule so that it is
-    run every day at midnight, but :program:`celerybeat` must be running
+    run every day at midnight, but :program:`celery beat` must be running
     for this to be effective.
 
     Note that not all backends do anything for this, what needs to be

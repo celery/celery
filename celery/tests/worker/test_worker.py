@@ -893,7 +893,7 @@ class test_WorkController(AppCase):
         self.assertTrue(worker.mediator)
         self.assertTrue(worker.steps)
 
-    def test_with_embedded_celerybeat(self):
+    def test_with_embedded_beat(self):
         worker = WorkController(concurrency=1, loglevel=0, beat=True)
         self.assertTrue(worker.beat)
         self.assertIn(worker.beat, [w.obj for w in worker.steps])

@@ -36,7 +36,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: -B, --beat
 
-    Also run the `celerybeat` periodic task scheduler. Please note that
+    Also run the `celery beat` periodic task scheduler. Please note that
     there must only be one instance of this service.
 
 .. cmdoption:: -Q, --queues
@@ -151,7 +151,7 @@ class WorkerCommand(Command):
                     self.app.conf.CELERYD_POOL)
         if self.app.IS_WINDOWS and kwargs.get('beat'):
             self.die('-B option does not work on Windows.  '
-                     'Please run celerybeat as a separate service.')
+                     'Please run celery beat as a separate service.')
         hostname = self.simple_format(hostname)
         if loglevel:
             try:

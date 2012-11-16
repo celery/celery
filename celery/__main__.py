@@ -45,7 +45,7 @@ def _compat_multi():
 def _compat_beat():
     maybe_patch_concurrency()
     _warn_deprecated('celery beat')
-    from celery.bin.celerybeat import main
+    from celery.bin.beat import main
     main()
 
 

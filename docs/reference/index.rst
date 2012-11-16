@@ -47,7 +47,7 @@
     celery.apps.beat
     celery.bin.base
     celery.bin.celeryd
-    celery.bin.celerybeat
+    celery.bin.beat
     celery.bin.events
     celery.bin.celery
     celery.bin.amqp

@@ -48,7 +48,7 @@ class Beat(configurated):
 
     def __init__(self, max_interval=None, app=None,
             socket_timeout=30, pidfile=None, no_color=None, **kwargs):
-        """Starts the celerybeat task scheduler."""
+        """Starts the beat task scheduler."""
         self.app = app = app_or_default(app or self.app)
         self.setup_defaults(kwargs, namespace='celerybeat')
 
@@ -65,7 +65,7 @@ class Beat(configurated):
 
     def run(self):
         print(str(self.colored.cyan(
-                    'celerybeat v{0} is starting.'.format(VERSION_BANNER))))
+                    'celery beat v{0} is starting.'.format(VERSION_BANNER))))
         self.init_loader()
         self.set_process_title()
         self.start_scheduler()
@@ -99,7 +99,7 @@ class Beat(configurated):
             self.install_sync_handler(beat)
             beat.start()
         except Exception as exc:
-            logger.critical('celerybeat raised exception %s: %r',
+            logger.critical('beat raised exception %s: %r',
                             exc.__class__, exc,
                             exc_info=True)
 
@@ -124,12 +124,12 @@ class Beat(configurated):
 
     def set_process_title(self):
         arg_start = 'manage' in sys.argv[0] and 2 or 1
-        platforms.set_process_title('celerybeat',
+        platforms.set_process_title('celery beat',
                                info=' '.join(sys.argv[arg_start:]))
 
     def install_sync_handler(self, beat):
         """Install a `SIGTERM` + `SIGINT` handler that saves
-        the celerybeat schedule."""
+        the beat schedule."""
 
         def _sync(signum, frame):
             beat.sync()

@@ -11,7 +11,7 @@ from mock import patch
 from celery import beat
 from celery import platforms
 from celery.app import app_or_default
-from celery.bin import celerybeat as celerybeat_bin
+from celery.bin import beat as beat_bin
 from celery.apps import beat as beatapp
 
 from celery.tests.utils import AppCase
@@ -155,8 +155,8 @@ class test_div(AppCase):
 
     def setup(self):
         self.prev, beatapp.Beat = beatapp.Beat, MockBeat
-        self.ctx, celerybeat_bin.detached = \
-                celerybeat_bin.detached, MockDaemonContext
+        self.ctx, beat_bin.detached = \
+                beat_bin.detached, MockDaemonContext
 
     def teardown(self):
         beatapp.Beat = self.prev
@@ -164,20 +164,20 @@ class test_div(AppCase):
     def test_main(self):
         sys.argv = [sys.argv[0], '-s', 'foo']
         try:
-            celerybeat_bin.main()
+            beat_bin.main()
             self.assertTrue(MockBeat.running)
         finally:
             MockBeat.running = False
 
     def test_detach(self):
-        cmd = celerybeat_bin.BeatCommand()
+        cmd = beat_bin.BeatCommand()
         cmd.app = app_or_default()
         cmd.run(detach=True)
         self.assertTrue(MockDaemonContext.opened)
         self.assertTrue(MockDaemonContext.closed)
 
     def test_parse_options(self):
-        cmd = celerybeat_bin.BeatCommand()
+        cmd = beat_bin.BeatCommand()
         cmd.app = app_or_default()
-        options, args = cmd.parse_options('celerybeat', ['-s', 'foo'])
+        options, args = cmd.parse_options('celery beat', ['-s', 'foo'])
         self.assertEqual(options.schedule, 'foo')

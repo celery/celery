@@ -1,11 +1,11 @@
 ===================================================
- celery.bin.celerybeat
+ celery.bin.beat
 ===================================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.bin.celerybeat
+.. currentmodule:: celery.bin.beat
 
-.. automodule:: celery.bin.celerybeat
+.. automodule:: celery.bin.beat
     :members:
     :undoc-members:

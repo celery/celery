@@ -314,15 +314,15 @@ worker_shutdown
 
 Dispatched when the worker is about to shut down.
 
-Celerybeat Signals
-------------------
+Beat Signals
+------------
 
 .. signal:: beat_init
 
 beat_init
 ~~~~~~~~~
 
-Dispatched when celerybeat starts (either standalone or embedded).
+Dispatched when :program:`celery beat` starts (either standalone or embedded).
 Sender is the :class:`celery.beat.Service` instance.
 
 .. signal:: beat_embedded_init
@@ -330,8 +330,8 @@ Sender is the :class:`celery.beat.Service` instance.
 beat_embedded_init
 ~~~~~~~~~~~~~~~~~~
 
-Dispatched in addition to the :signal:`beat_init` signal when celerybeat is
-started as an embedded process.  Sender is the
+Dispatched in addition to the :signal:`beat_init` signal when :program:`celery
+beat` is started as an embedded process.  Sender is the
 :class:`celery.beat.Service` instance.
 
 Eventlet Signals

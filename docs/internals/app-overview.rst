@@ -222,7 +222,7 @@ App Dependency Tree
 * {app.AsyncResult}
     * celery.result.BaseAsyncResult / celery.result.AsyncResult
 
-* celery.bin.celeryd.WorkerCommand
+* celery.bin.worker.WorkerCommand
     * celery.apps.worker.Worker
         * celery.worker.WorkerController
             * celery.worker.consumer.Consumer
@@ -235,7 +235,7 @@ App Dependency Tree
             * celery.worker.controllers.Mediator
             * celery.beat.EmbeddedService
 
-* celery.bin.celeryev.run_celeryev
+* celery.bin.events.EvCommand
     * celery.events.snapshot.evcam
         * celery.events.snapshot.Polaroid
         * celery.events.EventReceiver
@@ -245,12 +245,9 @@ App Dependency Tree
     * celery.events.dumper
         * celery.events.EventReceiver
 
-* celery.bin.celeryctl.celeryctl
-    * celery.bin.celeryctl.Command
+* celery.bin.amqp.AMQPAdmin
 
-* celery.bin.caqmadm.AMQPAdmin
-
-* celery.bin.celerybeat.BeatCommand
+* celery.bin.beat.BeatCommand
     * celery.apps.beat.Beat
         * celery.beat.Service
             * celery.beat.Scheduler

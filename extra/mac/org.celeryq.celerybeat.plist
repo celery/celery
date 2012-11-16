@@ -11,7 +11,7 @@
     <key>Label</key>
     <string>org.celeryq.celerybeat</string>
     <key>Program</key>
-    <string>celerybeat</string>
+    <string>celery beat</string>
     <key>ProgramArguments</key>
     <array>
         <string>--loglevel=WARNING</string>

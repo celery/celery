@@ -240,7 +240,7 @@ class Scheduler(object):
 
     def _do_sync(self):
         try:
-            debug('Celerybeat: Synchronizing schedule...')
+            debug('beat: Synchronizing schedule...')
             self.sync()
         finally:
             self._last_sync = time.time()
@@ -285,7 +285,7 @@ class Scheduler(object):
         # callback called for each retry while the connection
         # can't be established.
         def _error_handler(exc, interval):
-            error('Celerybeat: Connection error: %s. '
+            error('beat: Connection error: %s. '
                   'Trying again in %s seconds...', exc, interval)
 
         return self.connection.ensure_connection(_error_handler,
@@ -408,19 +408,19 @@ class Service(object):
                                 self.scheduler_cls, self.app)
 
     def start(self, embedded_process=False):
-        info('Celerybeat: Starting...')
-        debug('Celerybeat: Ticking with max interval->%s',
+        info('beat: Starting...')
+        debug('beat: Ticking with max interval->%s',
               humanize_seconds(self.scheduler.max_interval))
 
         signals.beat_init.send(sender=self)
         if embedded_process:
             signals.beat_embedded_init.send(sender=self)
-            platforms.set_process_title('celerybeat')
+            platforms.set_process_title('celery beat')
 
         try:
             while not self._is_shutdown.is_set():
                 interval = self.scheduler.tick()
-                debug('Celerybeat: Waking up %s.',
+                debug('beat: Waking up %s.',
                       humanize_seconds(interval, prefix='in '))
                 time.sleep(interval)
         except (KeyboardInterrupt, SystemExit):
@@ -433,7 +433,7 @@ class Service(object):
         self._is_stopped.set()
 
     def stop(self, wait=False):
-        info('Celerybeat: Shutting down...')
+        info('beat: Shutting down...')
         self._is_shutdown.set()
         wait and self._is_stopped.wait()  # block until shutdown done.
 

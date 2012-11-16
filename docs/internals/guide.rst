@@ -259,7 +259,8 @@ Module Overview
 
 - celery.apps
 
-    Major user applications: ``celeryd``, and ``celerybeat``
+    Major user applications: worker and beat.
+    The command-line wrappers for these are in celery.bin (see below)
 
 - celery.bin
 
