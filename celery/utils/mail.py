@@ -161,8 +161,8 @@ py-celery at {{hostname}}.
 
     def __init__(self, task, **kwargs):
         self.task = task
-        self.email_subject = kwargs.get('subject', self.subject)
-        self.email_body = kwargs.get('body', self.body)
+        self.subject = kwargs.get('subject', self.subject)
+        self.body = kwargs.get('body', self.body)
 
     def should_send(self, context, exc):
         """Returns true or false depending on if a task error mail
@@ -170,10 +170,10 @@ py-celery at {{hostname}}.
         return True
 
     def format_subject(self, context):
-        return self.email_subject.strip().format(**context)
+        return self.subject.strip().format(**context)
 
     def format_body(self, context):
-        return self.email_body.strip().format(**context)
+        return self.body.strip().format(**context)
 
     def send(self, context, exc, fail_silently=True):
         if self.should_send(context, exc):
