@@ -50,5 +50,5 @@
     celery.bin.celerybeat
     celery.bin.celeryev
     celery.bin.celery
-    celery.bin.camqadm
+    celery.bin.amqp
     celery.bin.celeryd_multi

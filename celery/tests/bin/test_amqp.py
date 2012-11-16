@@ -3,12 +3,12 @@ from __future__ import absolute_import
 from mock import Mock, patch
 
 from celery import Celery
-from celery.bin.camqadm import (
+from celery.bin.amqp import (
     AMQPAdmin,
     AMQShell,
     dump_message,
     AMQPAdminCommand,
-    camqadm,
+    run,
     main,
 )
 
@@ -127,22 +127,22 @@ class test_AMQShell(AppCase):
         a.run()
         self.assertIn('bibi', self.fh.getvalue())
 
-    @patch('celery.bin.camqadm.AMQPAdminCommand')
+    @patch('celery.bin.amqp.AMQPAdminCommand')
     def test_main(self, Command):
         c = Command.return_value = Mock()
         main()
         c.execute_from_commandline.assert_called_with()
 
-    @patch('celery.bin.camqadm.AMQPAdmin')
-    def test_camqadm(self, cls):
+    @patch('celery.bin.amqp.AMQPAdmin')
+    def test_amqp(self, cls):
         c = cls.return_value = Mock()
-        camqadm()
+        run()
         c.run.assert_called_with()
 
-    @patch('celery.bin.camqadm.AMQPAdmin')
+    @patch('celery.bin.amqp.AMQPAdmin')
     def test_AMQPAdminCommand(self, cls):
         c = cls.return_value = Mock()
-        camqadm()
+        run()
         c.run.assert_called_with()
 
         x = AMQPAdminCommand(app=self.app)

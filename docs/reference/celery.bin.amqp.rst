@@ -1,11 +1,11 @@
 ===========================================================
- celery.bin.camqadm
+ celery.bin.amqp
 ===========================================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.bin.camqadm
+.. currentmodule:: celery.bin.amqp
 
-.. automodule:: celery.bin.camqadm
+.. automodule:: celery.bin.amqp
     :members:
     :undoc-members:

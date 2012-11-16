@@ -341,7 +341,7 @@ class amqp(Delegate):
         celery amqp queue.delete queue yes yes
 
     """
-    Command = 'celery.bin.camqadm:AMQPAdminCommand'
+    Command = 'celery.bin.amqp:AMQPAdminCommand'
 
 
 @command(name='list')

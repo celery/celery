@@ -331,7 +331,7 @@ class AMQShell(cmd.Cmd):
 
 
 class AMQPAdmin(object):
-    """The celery :program:`camqadm` utility."""
+    """The celery :program:`celery amqp` utility."""
     Shell = AMQShell
 
     def __init__(self, *args, **kwargs):
@@ -371,7 +371,7 @@ class AMQPAdminCommand(Command):
         return AMQPAdmin(*args, **options).run()
 
 
-def camqadm(*args, **options):
+def run(*args, **options):
     AMQPAdmin(*args, **options).run()
 
 
