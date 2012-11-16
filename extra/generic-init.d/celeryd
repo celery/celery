@@ -20,8 +20,8 @@
 
 #set -e
 
-DEFAULT_PID_FILE="/var/run/celery/%n.pid"
-DEFAULT_LOG_FILE="/var/log/celery/%n.log"
+DEFAULT_PID_FILE="/var/run/celery/%N.pid"
+DEFAULT_LOG_FILE="/var/log/celery/%N.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
 DEFAULT_CELERYD="-m celery worker --detach"

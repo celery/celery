@@ -99,29 +99,29 @@ class test_multi_args(Case):
                 self.assertIn(arg, argv)
 
 
-        assert_line_in('*P*jerry*S*',
+        assert_line_in('*P*jerry@*S*',
             [
-                'COMMAND', '-n *P*jerry*S*', '-Q bar',
+                'COMMAND', '-n *P*jerry@*S*', '-Q bar',
                 '-c 5', '--flag', '--logfile=foo',
                 '-- .disable_rate_limits=1', '*AP*',
             ]
         )
-        assert_line_in('*P*elaine*S*',
+        assert_line_in('*P*elaine@*S*',
             [
-                'COMMAND', '-n *P*elaine*S*', '-Q bar',
+                'COMMAND', '-n *P*elaine@*S*', '-Q bar',
                 '-c 5', '--flag', '--logfile=foo',
                 '-- .disable_rate_limits=1', '*AP*',
             ]
         )
-        assert_line_in('*P*kramer*S*',
+        assert_line_in('*P*kramer@*S*',
             [
-                'COMMAND', '--loglevel=DEBUG', '-n *P*kramer*S*',
+                'COMMAND', '--loglevel=DEBUG', '-n *P*kramer@*S*',
                 '-Q bar', '--flag', '--logfile=foo',
                 '-- .disable_rate_limits=1', '*AP*',
             ]
         )
         expand = names[0][2]
-        self.assertEqual(expand('%h'), '*P*jerry*S*')
+        self.assertEqual(expand('%h'), '*P*jerry@*S*')
         self.assertEqual(expand('%n'), 'jerry')
         names2 = list(multi_args(p, cmd='COMMAND', append='',
                 prefix='*P*', suffix='*S*'))
@@ -131,21 +131,21 @@ class test_multi_args(Case):
         p2 = NamespacedOptionParser(['10', '-c:1', '5'])
         names3 = list(multi_args(p2, cmd='COMMAND'))
         self.assertEqual(len(names3), 10)
-        self.assertEqual(names3[0][0:2], ('celery1.example.com',
-            ['COMMAND', '-n celery1.example.com', '-c 5', '']))
+        self.assertEqual(names3[0][0:2], ('celery1@example.com',
+            ['COMMAND', '-n celery1@example.com', '-c 5', '']))
         for i, worker in enumerate(names3[1:]):
-            self.assertEqual(worker[0:2], ('celery%s.example.com' % (i + 2),
-                ['COMMAND', '-n celery%s.example.com' % (i + 2), '']))
+            self.assertEqual(worker[0:2], ('celery%s@example.com' % (i + 2),
+                ['COMMAND', '-n celery%s@example.com' % (i + 2), '']))
 
         names4 = list(multi_args(p2, cmd='COMMAND', suffix='""'))
         self.assertEqual(len(names4), 10)
-        self.assertEqual(names4[0][0:2], ('celery1',
-            ['COMMAND', '-n celery1', '-c 5', '']))
+        self.assertEqual(names4[0][0:2], ('celery1@',
+            ['COMMAND', '-n celery1@', '-c 5', '']))
 
-        p3 = NamespacedOptionParser(['foo', '-c:foo', '5'])
+        p3 = NamespacedOptionParser(['foo@', '-c:foo', '5'])
         names5 = list(multi_args(p3, cmd='COMMAND', suffix='""'))
-        self.assertEqual(names5[0][0:2], ('foo',
-            ['COMMAND', '-n foo', '-c 5', '']))
+        self.assertEqual(names5[0][0:2], ('foo@',
+            ['COMMAND', '-n foo@', '-c 5', '']))
 
 
 class test_MultiTool(Case):
@@ -212,7 +212,7 @@ class test_MultiTool(Case):
     def test_splash(self):
         self.t.nosplash = False
         self.t.splash()
-        self.assertIn('celeryd-multi', self.fh.getvalue())
+        self.assertIn('celery multi', self.fh.getvalue())
 
     def test_usage(self):
         self.t.usage()
@@ -229,7 +229,7 @@ class test_MultiTool(Case):
 
     def test_restart(self):
         stop = self.t._stop_nodes = Mock()
-        self.t.restart(['jerry', 'george'], 'celeryd')
+        self.t.restart(['jerry', 'george'], 'celery worker')
         waitexec = self.t.waitexec = Mock()
         self.assertTrue(stop.called)
         callback = stop.call_args[1]['callback']
@@ -250,7 +250,7 @@ class test_MultiTool(Case):
         self.t.getpids = Mock()
         self.t.getpids.return_value = [2, 3, 4]
         self.t.shutdown_nodes = Mock()
-        self.t.stop(['a', 'b', '-INT'], 'celeryd')
+        self.t.stop(['a', 'b', '-INT'], 'celery worker')
         self.t.shutdown_nodes.assert_called_with(
             [2, 3, 4], sig=signal.SIGINT, retry=None, callback=None,
 
@@ -265,7 +265,7 @@ class test_MultiTool(Case):
         ]
         sig = self.t.signal_node = Mock()
 
-        self.t.kill(['a', 'b', 'c'], 'celeryd')
+        self.t.kill(['a', 'b', 'c'], 'celery worker')
 
         sigs = sig.call_args_list
         self.assertEqual(len(sigs), 3)
@@ -281,8 +281,8 @@ class test_MultiTool(Case):
 
             def read_pid(self):
                 try:
-                    return {'celeryd@foo.pid': 10,
-                            'celeryd@bar.pid': 11}[self.path]
+                    return {'foo.pid': 10,
+                            'bar.pid': 11}[self.path]
                 except KeyError:
                     raise ValueError()
         Pidfile.side_effect = pids
@@ -295,30 +295,30 @@ class test_MultiTool(Case):
         callback = Mock()
 
         p = NamespacedOptionParser(['foo', 'bar', 'baz'])
-        nodes = self.t.getpids(p, 'celeryd', callback=callback)
+        nodes = self.t.getpids(p, 'celery worker', callback=callback)
         node_0, node_1 = nodes
-        self.assertEqual(node_0[0], 'foo.e.com')
+        self.assertEqual(node_0[0], 'foo@e.com')
         self.assertEqual(sorted(node_0[1]),
-            sorted(('celeryd', '--pidfile=celeryd@foo.pid',
-                    '-n foo.e.com', '')))
+            sorted(('celery worker', '--pidfile=foo.pid',
+                    '-n foo@e.com', '')))
         self.assertEqual(node_0[2], 10)
 
-        self.assertEqual(node_1[0], 'bar.e.com')
+        self.assertEqual(node_1[0], 'bar@e.com')
         self.assertEqual(sorted(node_1[1]),
-            sorted(('celeryd', '--pidfile=celeryd@bar.pid',
-                    '-n bar.e.com', '')))
+            sorted(('celery worker', '--pidfile=bar.pid',
+                    '-n bar@e.com', '')))
         self.assertEqual(node_1[2], 11)
         self.assertTrue(callback.called)
         cargs, _ = callback.call_args
-        self.assertEqual(cargs[0], 'baz.e.com')
+        self.assertEqual(cargs[0], 'baz@e.com')
         self.assertItemsEqual(cargs[1],
-            ['celeryd', '--pidfile=celeryd@baz.pid', '-n baz.e.com', ''],
+            ['celery worker', '--pidfile=baz.pid', '-n baz@e.com', ''],
         )
         self.assertIsNone(cargs[2])
         self.assertIn('DOWN', self.fh.getvalue())
 
         # without callback, should work
-        nodes = self.t.getpids(p, 'celeryd', callback=None)
+        nodes = self.t.getpids(p, 'celery worker', callback=None)
 
     @patch('celery.bin.celeryd_multi.Pidfile')
     @patch('socket.gethostname')
@@ -335,9 +335,9 @@ class test_MultiTool(Case):
         self.t.stop(['foo', 'bar', 'baz'], 'celeryd', callback=callback)
         sigs = sorted(self.t.signal_node.call_args_list)
         self.assertEqual(len(sigs), 2)
-        self.assertIn(('foo.e.com', 10, signal.SIGTERM),
+        self.assertIn(('foo@e.com', 10, signal.SIGTERM),
                 [tup[0] for tup in sigs])
-        self.assertIn(('bar.e.com', 11, signal.SIGTERM),
+        self.assertIn(('bar@e.com', 11, signal.SIGTERM),
                 [tup[0] for tup in sigs])
         self.t.signal_node.return_value = False
         self.assertTrue(callback.called)
@@ -399,23 +399,23 @@ class test_MultiTool(Case):
     @patch('socket.gethostname')
     def test_get(self, gethostname):
         gethostname.return_value = 'e.com'
-        self.t.get(['xuzzy.e.com', 'foo', 'bar', 'baz'], 'celeryd')
+        self.t.get(['xuzzy@e.com', 'foo', 'bar', 'baz'], 'celery worker')
         self.assertFalse(self.fh.getvalue())
-        self.t.get(['foo.e.com', 'foo', 'bar', 'baz'], 'celeryd')
+        self.t.get(['foo@e.com', 'foo', 'bar', 'baz'], 'celery worker')
         self.assertTrue(self.fh.getvalue())
 
     @patch('socket.gethostname')
     def test_names(self, gethostname):
         gethostname.return_value = 'e.com'
         self.t.names(['foo', 'bar', 'baz'], 'celeryd')
-        self.assertIn('foo.e.com\nbar.e.com\nbaz.e.com', self.fh.getvalue())
+        self.assertIn('foo@e.com\nbar@e.com\nbaz@e.com', self.fh.getvalue())
 
     def test_execute_from_commandline(self):
         start = self.t.commands['start'] = Mock()
         self.t.error = Mock()
         self.t.execute_from_commandline(['multi', 'start', 'foo', 'bar'])
         self.assertFalse(self.t.error.called)
-        start.assert_called_with(['foo', 'bar'], 'celeryd')
+        start.assert_called_with(['foo', 'bar'], 'celery worker')
 
         self.t.error = Mock()
         self.t.execute_from_commandline(['multi', 'frob', 'foo', 'bar'])
