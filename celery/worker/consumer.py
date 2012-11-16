@@ -80,6 +80,8 @@ import threading
 from time import sleep
 from Queue import Empty
 
+from billiard.common import restart_state
+from billiard.exceptions import RestartFreqExceeded
 from kombu.syn import _detect_environment
 from kombu.utils.encoding import safe_repr, safe_str, bytes_t
 from kombu.utils.eventio import READ, WRITE, ERR
@@ -355,6 +357,7 @@ class Consumer(object):
         conninfo = self.app.connection()
         self.connection_errors = conninfo.connection_errors
         self.channel_errors = conninfo.channel_errors
+        self._restart_state = restart_state(maxR=5, maxT=1)
 
         self._does_info = logger.isEnabledFor(logging.INFO)
         self.strategies = {}
@@ -397,6 +400,11 @@ class Consumer(object):
         while self._state != CLOSE:
             self.restart_count += 1
             self.maybe_shutdown()
+            try:
+                self._restart_state.step()
+            except RestartFreqExceeded as exc:
+                crit('Frequent restarts detected: %r', exc, exc_info=1)
+                sleep(1)
             try:
                 self.reset_connection()
                 self.consume_messages()
