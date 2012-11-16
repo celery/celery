@@ -18,8 +18,9 @@ Generic init scripts
 
 See the `extra/generic-init.d/`_ directory Celery distribution.
 
-This directory contains generic bash init scripts for :program:`celeryd`,
-that should run on Linux, FreeBSD, OpenBSD, and other Unix platforms.
+This directory contains generic bash init scripts for the
+:program:`celery worker` program,
+these should run on Linux, FreeBSD, OpenBSD, and other Unix-like platforms.
 
 .. _`extra/generic-init.d/`:
     http://github.com/celery/celery/tree/3.0/extra/generic-init.d/
@@ -32,8 +33,9 @@ Init script: celeryd
 :Usage: `/etc/init.d/celeryd {start|stop|restart|status}`
 :Configuration file: /etc/default/celeryd
 
-To configure celeryd you probably need to at least tell it where to change
-directory to when it starts (to find your `celeryconfig`).
+To configure this script to run the worker properly you probably need to at least tell it where to change
+directory to when it starts (to find the module containing your app, or your
+configuration module).
 
 .. _generic-initd-celeryd-example:
 
@@ -65,15 +67,15 @@ This is an example configuration for a Python project.
     # Where to chdir at start.
     CELERYD_CHDIR="/opt/Myproject/"
 
-    # Extra arguments to celeryd
+    # Extra command-line arguments to the worker
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
     # Name of the celery config module.
     CELERY_CONFIG_MODULE="celeryconfig"
 
-    # %n will be replaced with the nodename.
-    CELERYD_LOG_FILE="/var/log/celery/%n.log"
-    CELERYD_PID_FILE="/var/run/celery/%n.pid"
+    # %N will be replaced with the first part of the nodename.
+    CELERYD_LOG_FILE="/var/log/celery/%N.log"
+    CELERYD_PID_FILE="/var/run/celery/%N.pid"
 
     # Workers should run as an unprivileged user.
     CELERYD_USER="celery"
@@ -99,7 +101,7 @@ This is an example configuration for those using `django-celery`:
     # How to call "manage.py celery"
     CELERY_BIN="$CELERYD_CHDIR/manage.py celery"
 
-    # Extra arguments to celeryd
+    # Extra command-line arguments for the worker (see celery worker --help).
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
     # %n will be replaced with the nodename.
@@ -137,7 +139,7 @@ environment's python interpreter:
     # How to call "manage.py celery"
     CELERY_BIN="$ENV_PYTHON $CELERYD_CHDIR/manage.py celery"
 
-    # Extra arguments to celeryd
+    # Extra command-line arguments to the worker (see celery worker --help)
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
     # Name of the celery config module.
@@ -175,26 +177,27 @@ Available options
     Node names to start.
 
 * CELERYD_OPTS
-    Additional arguments to celeryd, see `celeryd --help` for a list.
+    Additional command-line arguments for the worker, see
+    `celery worker --help` for a list.
 
 * CELERYD_CHDIR
     Path to change directory to at start. Default is to stay in the current
     directory.
 
 * CELERYD_PID_FILE
-    Full path to the PID file. Default is /var/run/celeryd%n.pid
+    Full path to the PID file. Default is /var/run/celery/%N.pid
 
 * CELERYD_LOG_FILE
-    Full path to the celeryd log file. Default is /var/log/celeryd@%n.log
+    Full path to the worker log file. Default is /var/log/celery/%N.log
 
 * CELERYD_LOG_LEVEL
-    Log level to use for celeryd. Default is INFO.
+    Worker log level. Default is INFO.
 
 * CELERYD_USER
-    User to run celeryd as. Default is current user.
+    User to run the worker as. Default is current user.
 
 * CELERYD_GROUP
-    Group to run celeryd as. Default is current user.
+    Group to run worker as. Default is current user.
 
 * CELERY_CREATE_DIRS
     Always create directories (log directory and pid file directory).
@@ -294,15 +297,11 @@ Available options
 * CELERYBEAT_LOG_LEVEL
     Log level to use for celeryd. Default is INFO.
 
-* CELERYBEAT
-    Path to the celeryd program. Default is `celeryd`.
-    You can point this to an virtualenv, or even use manage.py for django.
-
 * CELERYBEAT_USER
-    User to run celeryd as. Default is current user.
+    User to run beat as. Default is current user.
 
 * CELERYBEAT_GROUP
-    Group to run celeryd as. Default is current user.
+    Group to run beat as. Default is current user.
 
 * CELERY_CREATE_DIRS
     Always create directories (log directory and pid file directory).
@@ -337,15 +336,15 @@ For example my `sh -x` output does this:
 
     ++ start-stop-daemon --start --chdir /opt/App/release/app --quiet \
         --oknodo --background --make-pidfile --pidfile /var/run/celeryd.pid \
-        --exec /opt/App/release/app/manage.py celeryd -- --time-limit=300 \
+        --exec /opt/App/release/app/manage.py celery worker -- --time-limit=300 \
         -f /var/log/celeryd.log -l INFO
 
-Run the celeryd command after `--exec` (without the `--`) to show the
+Run the worker command after `--exec` (without the `--`) to show the
 actual resulting output:
 
 .. code-block:: bash
 
-    $ /opt/App/release/app/manage.py celeryd --time-limit=300 \
+    $ /opt/App/release/app/manage.py celery worker --time-limit=300 \
         -f /var/log/celeryd.log -l INFO
 
 .. _daemon-supervisord:

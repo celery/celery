@@ -54,6 +54,7 @@ Limitations
 
 The Beanstalk message transport does not currently support:
 
-    * Remote control commands (celeryctl, broadcast)
+    * Remote control commands (:program:`celery control`,
+      :program:`celery inspect`, broadcast)
     * Authentication
 

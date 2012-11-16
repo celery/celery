@@ -21,8 +21,8 @@ Security Fixes
 
 * [Security: `CELERYSA-0001`_] Daemons would set effective id's rather than
   real id's when the :option:`--uid`/:option:`--gid` arguments to
-  :program:`celeryd-multi`, :program:`celeryd_detach`,
-  :program:`celerybeat` and :program:`celeryev` were used.
+  :program:`celery multi`, :program:`celeryd_detach`,
+  :program:`celery beat` and :program:`celery events` were used.
 
   This means privileges weren't properly dropped, and that it would
   be possible to regain supervisor privileges later.
@@ -276,7 +276,7 @@ News
 * PyPy: The default pool implementation used is now multiprocessing
   if running on PyPy 1.5.
 
-* celeryd-multi: now supports "pass through" options.
+* multi: now supports "pass through" options.
 
     Pass through options makes it easier to use celery without a
     configuration file, or just add last-minute options on the command
@@ -286,9 +286,9 @@ News
 
     .. code-block:: bash
 
-        $ celeryd-multi start 4  -c 2  -- broker.host=amqp.example.com \
-                                          broker.vhost=/               \
-                                          celery.disable_rate_limits=yes
+        $ celery multi start 4  -c 2  -- broker.host=amqp.example.com \
+                                         broker.vhost=/               \
+                                         celery.disable_rate_limits=yes
 
 * celerybeat: Now retries establishing the connection (Issue #419).
 
@@ -336,7 +336,7 @@ News
 * Terminating a task on Windows now also terminates all of the tasks child
   processes (Issue #384).
 
-* celeryd: ``-I|--include`` option now always searches the current directory
+* worker: ``-I|--include`` option now always searches the current directory
   to import the specified modules.
 
 * Cassandra backend: Now expires results by using TTLs.

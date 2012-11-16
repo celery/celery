@@ -18,10 +18,10 @@
 Fixes
 -----
 
-* celeryd: Properly handle connection errors happening while
+* Worker: Properly handle connection errors happening while
   closing consumers.
 
-* celeryd: Events are now buffered if the connection is down,
+* Worker: Events are now buffered if the connection is down,
   then sent when the connection is re-established.
 
 * No longer depends on the :mod:`mailer` package.
@@ -73,7 +73,7 @@ Fixes
 
 * Can now store result/metadata for custom states.
 
-* celeryd: A warning is now emitted if the sending of task error
+* Worker: A warning is now emitted if the sending of task error
   emails fails.
 
 * celeryev: Curses monitor no longer crashes if the terminal window
@@ -81,7 +81,7 @@ Fixes
 
     See issue #160.
 
-* celeryd: On OS X it is not possible to run `os.exec*` in a process
+* Worker: On OS X it is not possible to run `os.exec*` in a process
   that is threaded.
 
       This breaks the SIGHUP restart handler,
@@ -104,7 +104,7 @@ Fixes
 
     See issue #163.
 
-* Debian init scripts: Use the absolute path of celeryd to allow stat
+* Debian init scripts: Use the absolute path of celeryd program to allow stat
 
     See issue #162.
 
@@ -173,18 +173,18 @@ Documentation
 
 * Experimental Cassandra backend added.
 
-* celeryd: SIGHUP handler accidentally propagated to worker pool processes.
+* Worker: SIGHUP handler accidentally propagated to worker pool processes.
 
     In combination with 7a7c44e39344789f11b5346e9cc8340f5fe4846c
-    this would make each child process start a new celeryd when
+    this would make each child process start a new worker instance when
     the terminal window was closed :/
 
-* celeryd: Do not install SIGHUP handler if running from a terminal.
+* Worker: Do not install SIGHUP handler if running from a terminal.
 
-    This fixes the problem where celeryd is launched in the background
+    This fixes the problem where the worker is launched in the background
     when closing the terminal.
 
-* celeryd: Now joins threads at shutdown.
+* Worker: Now joins threads at shutdown.
 
     See issue #152.
 
@@ -193,7 +193,7 @@ Documentation
 
     See issue #154.
 
-* Debian init script for celeryd: Stop now works correctly.
+* Debian worker init script: Stop now works correctly.
 
 * Task logger: `warn` method added (synonym for `warning`)
 
@@ -205,7 +205,7 @@ Documentation
 
     See issue #153.
 
-* celeryd: Now handles overflow exceptions in `time.mktime` while parsing
+* Worker: Now handles overflow exceptions in `time.mktime` while parsing
   the ETA field.
 
 * LoggerWrapper: Try to detect loggers logging back to stderr/stdout making
@@ -258,7 +258,7 @@ Documentation
 * Functional test suite added
 
     :mod:`celery.tests.functional.case` contains utilities to start
-    and stop an embedded celeryd process, for use in functional testing.
+    and stop an embedded worker process, for use in functional testing.
 
 .. _version-2.0.1:
 
@@ -382,7 +382,7 @@ Documentation
 
 * Added experimental support for persistent revokes.
 
-    Use the `-S|--statedb` argument to celeryd to enable it:
+    Use the `-S|--statedb` argument to the worker to enable it:
 
     .. code-block:: bash
 
@@ -539,7 +539,7 @@ Backward incompatible changes
 * Default (python) loader now prints warning on missing `celeryconfig.py`
   instead of raising :exc:`ImportError`.
 
-    celeryd raises :exc:`~@ImproperlyConfigured` if the configuration
+    The worker raises :exc:`~@ImproperlyConfigured` if the configuration
     is not set up. This makes it possible to use `--help` etc., without having a
     working configuration.
 
@@ -660,7 +660,7 @@ News
     * :ref:`guide-canvas`
     * :ref:`guide-routing`
 
-* celeryd: Standard out/error is now being redirected to the log file.
+* Worker: Standard out/error is now being redirected to the log file.
 
 * :mod:`billiard` has been moved back to the celery repository.
 
@@ -678,9 +678,9 @@ News
 
 * now depends on :mod:`pyparsing`
 
-* celeryd: Added `--purge` as an alias to `--discard`.
+* Worker: Added `--purge` as an alias to `--discard`.
 
-* celeryd: Ctrl+C (SIGINT) once does warm shutdown, hitting Ctrl+C twice
+* Worker: Ctrl+C (SIGINT) once does warm shutdown, hitting Ctrl+C twice
   forces termination.
 
 * Added support for using complex crontab-expressions in periodic tasks. For
@@ -694,7 +694,7 @@ News
 
   See :ref:`guide-beat`.
 
-* celeryd: Now waits for available pool processes before applying new
+* Worker: Now waits for available pool processes before applying new
   tasks to the pool.
 
     This means it doesn't have to wait for dozens of tasks to finish at shutdown
@@ -736,7 +736,7 @@ News
                                "routing_key": "name}
 
    This feature is added for easily setting up routing using the `-Q`
-   option to `celeryd`:
+   option to the worker:
 
    .. code-block:: bash
 
@@ -858,7 +858,7 @@ News
    :meth:`~celery.task.base.Task.on_retry`/
    :meth:`~celery.task.base.Task.on_failure` as einfo keyword argument.
 
-* celeryd: Added :setting:`CELERYD_MAX_TASKS_PER_CHILD` /
+* Worker: Added :setting:`CELERYD_MAX_TASKS_PER_CHILD` /
   :option:`--maxtasksperchild`
 
     Defines the maximum number of tasks a pool worker can process before
@@ -875,19 +875,19 @@ News
 * New signal: :signal:`~celery.signals.worker_process_init`: Sent inside the
   pool worker process at init.
 
-* celeryd :option:`-Q` option: Ability to specify list of queues to use,
+* Worker: :option:`-Q` option: Ability to specify list of queues to use,
   disabling other configured queues.
 
     For example, if :setting:`CELERY_QUEUES` defines four
     queues: `image`, `video`, `data` and `default`, the following
-    command would make celeryd only consume from the `image` and `video`
+    command would make the worker only consume from the `image` and `video`
     queues:
 
     .. code-block:: bash
 
         $ celeryd -Q image,video
 
-* celeryd: New return value for the `revoke` control command:
+* Worker: New return value for the `revoke` control command:
 
     Now returns::
 
@@ -895,7 +895,7 @@ News
 
     instead of `True`.
 
-* celeryd: Can now enable/disable events using remote control
+* Worker: Can now enable/disable events using remote control
 
     Example usage:
 
@@ -936,7 +936,7 @@ News
 
     The coverage output is then located in `celery/tests/cover/index.html`.
 
-* celeryd: New option `--version`: Dump version info and exit.
+* Worker: New option `--version`: Dump version info and exit.
 
 * :mod:`celeryd-multi <celeryd.bin.multi>`: Tool for shell scripts
   to start multiple workers.

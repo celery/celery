@@ -46,7 +46,7 @@
     celery.apps.worker
     celery.apps.beat
     celery.bin.base
-    celery.bin.celeryd
+    celery.bin.worker
     celery.bin.beat
     celery.bin.events
     celery.bin.celery

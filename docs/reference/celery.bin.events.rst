@@ -1,11 +1,11 @@
 =====================================================
- celery.bin.celeryev
+ celery.bin.events
 =====================================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.bin.celeryev
+.. currentmodule:: celery.bin.events
 
-.. automodule:: celery.bin.celeryev
+.. automodule:: celery.bin.events
     :members:
     :undoc-members:

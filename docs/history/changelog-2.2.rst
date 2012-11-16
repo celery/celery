@@ -21,8 +21,8 @@ Security Fixes
 
 * [Security: `CELERYSA-0001`_] Daemons would set effective id's rather than
   real id's when the :option:`--uid`/:option:`--gid` arguments to
-  :program:`celeryd-multi`, :program:`celeryd_detach`,
-  :program:`celerybeat` and :program:`celeryev` were used.
+  :program:`celery multi`, :program:`celeryd_detach`,
+  :program:`celery beat` and :program:`celery events` were used.
 
   This means privileges weren't properly dropped, and that it would
   be possible to regain supervisor privileges later.
@@ -45,9 +45,9 @@ Security Fixes
 
 * Redis result backend now works with Redis 2.4.4.
 
-* celeryd_multi: The :option:`--gid` option now works correctly.
+* multi: The :option:`--gid` option now works correctly.
 
-* celeryd: Retry wrongfully used the repr of the traceback instead
+* worker: Retry wrongfully used the repr of the traceback instead
   of the string representation.
 
 * App.config_from_object: Now loads module, not attribute of module.
@@ -108,7 +108,7 @@ Fixes
 * ``AsyncResult.get`` did not accept the ``interval`` and ``propagate``
    arguments.
 
-* celeryd: Fixed a bug where celeryd would not shutdown if a
+* worker: Fixed a bug where the worker would not shutdown if a
    :exc:`socket.error` was raised.
 
 .. _version-2.2.5:
@@ -163,7 +163,7 @@ News
 * New :setting:`BROKER_TRANSPORT_OPTIONS` setting can be used to pass
   additional arguments to a particular broker transport.
 
-* celeryd: ``worker_pid`` is now part of the request info as returned by
+* worker: ``worker_pid`` is now part of the request info as returned by
   broadcast commands.
 
 * TaskSet.apply/Taskset.apply_async now accepts an optional ``taskset_id``
@@ -213,13 +213,13 @@ Fixes
 * Internal module ``celery.worker.controllers`` renamed to
   ``celery.worker.mediator``.
 
-* celeryd: Threads now terminates the program by calling ``os._exit``, as it
+* worker: Threads now terminates the program by calling ``os._exit``, as it
   is the only way to ensure exit in the case of syntax errors, or other
   unrecoverable errors.
 
 * Fixed typo in ``maybe_timedelta`` (Issue #352).
 
-* celeryd: Broadcast commands now logs with loglevel debug instead of warning.
+* worker: Broadcast commands now logs with loglevel debug instead of warning.
 
 * AMQP Result Backend: Now resets cached channel if the connection is lost.
 
@@ -242,7 +242,7 @@ Fixes
 * Autoscaler: The "all processes busy" log message is now severity debug
   instead of error.
 
-* celeryd: If the message body can't be decoded, it is now passed through
+* worker: If the message body can't be decoded, it is now passed through
   ``safe_str`` when logging.
 
     This to ensure we don't get additional decoding errors when trying to log
@@ -257,7 +257,7 @@ Fixes
 * :mod:`celery.contrib.batches`: Now sets loglevel and logfile in the task
   request so ``task.get_logger`` works with batch tasks (Issue #357).
 
-* celeryd: An exception was raised if using the amqp transport and the prefetch
+* worker: An exception was raised if using the amqp transport and the prefetch
   count value exceeded 65535 (Issue #359).
 
     The prefetch count is incremented for every received task with an
@@ -271,7 +271,7 @@ Fixes
 * eventlet/gevent is now imported on demand so autodoc can import the modules
   without having eventlet/gevent installed.
 
-* celeryd: Ack callback now properly handles ``AttributeError``.
+* worker: Ack callback now properly handles ``AttributeError``.
 
 * ``Task.after_return`` is now always called *after* the result has been
   written.
@@ -305,7 +305,7 @@ Fixes
 Fixes
 -----
 
-* celeryd: 2.2.3 broke error logging, resulting in tracebacks not being logged.
+* worker: 2.2.3 broke error logging, resulting in tracebacks not being logged.
 
 * AMQP result backend: Polling task states did not work properly if there were
   more than one result message in the queue.
@@ -373,7 +373,7 @@ Fixes
     structure: the exchange key is now a dictionary containing the
     exchange declaration in full.
 
-* The :option:`-Q` option to :program:`celeryd` removed unused queue
+* The :option:`-Q` option to :program:`celery worker` removed unused queue
   declarations, so routing of tasks could fail.
 
     Queues are no longer removed, but rather `app.amqp.queues.consume_from()`
@@ -403,8 +403,8 @@ Fixes
 
     Previously it was overwritten by the countdown argument.
 
-* celeryd-multi/celeryd_detach: Now logs errors occuring when executing
-  the `celeryd` command.
+* celery multi/celeryd_detach: Now logs errors occuring when executing
+  the `celery worker` command.
 
 * daemonizing tutorial: Fixed typo ``--time-limit 300`` ->
   ``--time-limit=300``
@@ -431,7 +431,7 @@ Fixes
 
 * ``BasePool.on_terminate`` stub did not exist
 
-* celeryd detach: Adds readable error messages if user/group name does not
+* celeryd_detach: Adds readable error messages if user/group name does not
    exist.
 
 * Smarter handling of unicode decod errors when logging errors.
@@ -562,7 +562,7 @@ Important Notes
     This is great news for I/O-bound tasks!
 
     To change pool implementations you use the :option:`-P|--pool` argument
-    to :program:`celeryd`, or globally using the
+    to :program:`celery worker`, or globally using the
     :setting:`CELERYD_POOL` setting.  This can be the full name of a class,
     or one of the following aliases: `processes`, `eventlet`, `gevent`.
 
@@ -600,7 +600,7 @@ Important Notes
     to a newer version of Python, you can just continue to use Celery 2.2.
     Important fixes can be backported for as long as there is interest.
 
-* `celeryd`: Now supports Autoscaling of child worker processes.
+* worker: Now supports Autoscaling of child worker processes.
 
     The :option:`--autoscale` option can be used to configure the minimum
     and maximum number of child worker processes::
@@ -645,7 +645,7 @@ Important Notes
     to enable access from the outside you have to set the environment
     variable :envvar:`CELERY_RDB_HOST`.
 
-    When `celeryd` encounters your breakpoint it will log the following
+    When the worker encounters your breakpoint it will log the following
     information::
 
         [INFO/MainProcess] Got task from broker:
@@ -707,7 +707,7 @@ Important Notes
 
             $ camqadm exchange.delete celeryevent
 
-* `celeryd` now starts without configuration, and configuration can be
+* The worker now starts without configuration, and configuration can be
   specified directly on the command-line.
 
   Configuration options must appear after the last argument, separated
@@ -715,7 +715,7 @@ Important Notes
 
   .. code-block:: bash
 
-      $ celeryd -l info -I tasks -- broker.host=localhost broker.vhost=/app
+      $ celery worker -l info -I tasks -- broker.host=localhost broker.vhost=/app
 
 * Configuration is now an alias to the original configuration, so changes
   to the original will reflect Celery at runtime.
@@ -824,7 +824,7 @@ News
     But you are encouraged to use the more flexible
     :setting:`CELERYBEAT_SCHEDULE` setting.
 
-* Built-in daemonization support of celeryd using `celeryd-multi`
+* Built-in daemonization support of the worker using `celery multi`
   is no longer experimental and is considered production quality.
 
      See :ref:`daemon-generic` if you want to use the new generic init
@@ -834,7 +834,7 @@ News
   :setting:`CELERY_MESSAGE_COMPRESSION` setting, or the `compression` argument
   to `apply_async`.  This can also be set using routers.
 
-* `celeryd`: Now logs stacktrace of all threads when receiving the
+* worker: Now logs stacktrace of all threads when receiving the
    `SIGUSR1` signal.  (Does not work on cPython 2.4, Windows or Jython).
 
     Inspired by https://gist.github.com/737056
@@ -885,7 +885,7 @@ News
 
 * The following fields have been added to all events in the worker class:
 
-    * `sw_ident`: Name of worker software (e.g. celeryd).
+    * `sw_ident`: Name of worker software (e.g. py-celery).
     * `sw_ver`: Software version (e.g. 2.2.0).
     * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
 
@@ -918,7 +918,7 @@ News
 
     .. code-block:: bash
 
-        $ celeryd --config=celeryconfig.py --loader=myloader.Loader
+        $ celery worker --config=celeryconfig.py --loader=myloader.Loader
 
 * Added signals: `beat_init` and `beat_embedded_init`
 
@@ -936,7 +936,7 @@ News
 * Redis result backend: Removed deprecated settings `REDIS_TIMEOUT` and
   `REDIS_CONNECT_RETRY`.
 
-* CentOS init script for :program:`celeryd` now available in `extra/centos`.
+* CentOS init script for :program:`celery worker` now available in `extra/centos`.
 
 * Now depends on `pyparsing` version 1.5.0 or higher.
 
@@ -956,7 +956,7 @@ Fixes
 * AMQP Backend: Exceptions occurring while sending task results are now
   propagated instead of silenced.
 
-    `celeryd` will then show the full traceback of these errors in the log.
+    the worker will then show the full traceback of these errors in the log.
 
 * AMQP Backend: No longer deletes the result queue after successful
   poll, as this should be handled by the
@@ -964,7 +964,7 @@ Fixes
 
 * AMQP Backend: Now ensures queues are declared before polling results.
 
-* Windows: celeryd: Show error if running with `-B` option.
+* Windows: worker: Show error if running with `-B` option.
 
     Running celerybeat embedded is known not to work on Windows, so
     users are encouraged to run celerybeat as a separate service instead.
@@ -985,14 +985,14 @@ Fixes
 Experimental
 ------------
 
-* Jython: celeryd now runs on Jython using the threaded pool.
+* Jython: worker now runs on Jython using the threaded pool.
 
     All tests pass, but there may still be bugs lurking around the corners.
 
-* PyPy: celeryd now runs on PyPy.
+* PyPy: worker now runs on PyPy.
 
     It runs without any pool, so to get parallel execution you must start
-    multiple instances (e.g. using :program:`celeryd-multi`).
+    multiple instances (e.g. using :program:`multi`).
 
     Sadly an initial benchmark seems to show a 30% performance decrease on
     pypy-1.4.1 + JIT.  We would like to find out why this is, so stay tuned.

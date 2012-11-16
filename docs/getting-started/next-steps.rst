@@ -167,7 +167,7 @@ You can restart it too:
     > Waiting for 1 node.....
         > w1.halcyon.local: OK
     > Restarting node w1.halcyon.local: OK
-    celeryd multi v3.1.0 (Cipater)
+    celery multi v3.1.0 (Cipater)
     > Stopping nodes...
         > w1.halcyon.local: TERM -> 64052
 
@@ -209,7 +209,7 @@ e.g:
 
 .. code-block:: bash
 
-    $ celeryd multi start 10 -A proj -l info -Q:1-3 images,video -Q:4,5 data \
+    $ celery multi start 10 -A proj -l info -Q:1-3 images,video -Q:4,5 data \
         -Q default -L:4,5 debug
 
 For more examples see the :mod:`~celery.bin.multi` module in the API

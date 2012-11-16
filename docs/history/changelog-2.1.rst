@@ -22,10 +22,10 @@ Fixes
   returned by active routers.  This was a regression introduced recently
   (Issue #244).
 
-* `celeryev` curses monitor: Long arguments are now truncated so curses
+* curses monitor: Long arguments are now truncated so curses
   doesn't crash with out of bounds errors.  (Issue #235).
 
-* `celeryd`: Channel errors occurring while handling control commands no
+* multi: Channel errors occurring while handling control commands no
   longer crash the worker but are instead logged with severity error.
 
 * SQLAlchemy database backend: Fixed a race condition occurring when
@@ -43,9 +43,9 @@ Fixes
 
 * Unit test output no longer emits non-standard characters.
 
-* `celeryd`: The broadcast consumer is now closed if the connection is reset.
+* worker: The broadcast consumer is now closed if the connection is reset.
 
-* `celeryd`: Now properly handles errors occurring while trying to acknowledge
+* worker: Now properly handles errors occurring while trying to acknowledge
   the message.
 
 * `TaskRequest.on_failure` now encodes traceback using the current filesystem
@@ -86,7 +86,7 @@ Documentation
 * Fixed pickling errors when pickling :class:`AsyncResult` on older Python
   versions.
 
-* celeryd: prefetch count was decremented by eta tasks even if there
+* worker: prefetch count was decremented by eta tasks even if there
   were no active prefetch limits.
 
 
@@ -101,15 +101,15 @@ Documentation
 Fixes
 -----
 
-* celeryd: Now sends the :event:`task-retried` event for retried tasks.
+* worker: Now sends the :event:`task-retried` event for retried tasks.
 
-* celeryd: Now honors ignore result for
+* worker: Now honors ignore result for
   :exc:`~@WorkerLostError` and timeout errors.
 
 * celerybeat: Fixed :exc:`UnboundLocalError` in celerybeat logging
   when using logging setup signals.
 
-* celeryd: All log messages now includes `exc_info`.
+* worker: All log messages now includes `exc_info`.
 
 .. _version-2.1.1:
 
@@ -128,7 +128,7 @@ Fixes
 
 * snapshots: Fixed race condition leading to loss of events.
 
-* celeryd: Reject tasks with an eta that cannot be converted to a time stamp.
+* worker: Reject tasks with an eta that cannot be converted to a time stamp.
 
     See issue #209
 
@@ -144,10 +144,10 @@ Fixes
 
 * control command `dump_scheduled`: was using old .info attribute
 
-* :program:`celeryd-multi`: Fixed `set changed size during iteration` bug
+* multi: Fixed `set changed size during iteration` bug
     occurring in the restart command.
 
-* celeryd: Accidentally tried to use additional command-line arguments.
+* worker: Accidentally tried to use additional command-line arguments.
 
    This would lead to an error like:
 
@@ -178,8 +178,8 @@ News
 * Added :setting:`CELERY_REDIRECT_STDOUTS`, and
   :setting:`CELERYD_REDIRECT_STDOUTS_LEVEL` settings.
 
-    :setting:`CELERY_REDIRECT_STDOUTS` is used by :program:`celeryd` and
-    :program:`celerybeat`.  All output to `stdout` and `stderr` will be
+    :setting:`CELERY_REDIRECT_STDOUTS` is used by the worker and
+    beat.  All output to `stdout` and `stderr` will be
     redirected to the current logger if enabled.
 
     :setting:`CELERY_REDIRECT_STDOUTS_LEVEL` decides the log level used and is
@@ -323,7 +323,7 @@ News
 
 * celeryev: Event Snapshots
 
-    If enabled, :program:`celeryd` sends messages about what the worker is doing.
+    If enabled, the worker sends messages about what the worker is doing.
     These messages are called "events".
     The events are used by real-time monitors to show what the
     cluster is doing, but they are not very useful for monitoring
@@ -357,7 +357,7 @@ News
     lets you perform some actions, like revoking and rate limiting tasks,
     and shutting down worker nodes.
 
-    There's also a Debian init.d script for :mod:`~celery.bin.celeryev` available,
+    There's also a Debian init.d script for :mod:`~celery.bin.events` available,
     see :ref:`daemonizing` for more information.
 
     New command-line arguments to celeryev:
@@ -457,7 +457,7 @@ News
     will be configured using the :option:`--loglevel`/:option:`--logfile`
     argument, this will be used for *all defined loggers*.
 
-    Remember that celeryd also redirects stdout and stderr
+    Remember that the worker also redirects stdout and stderr
     to the celery logger, if manually configure logging
     you also need to redirect the stdouts manually:
 
@@ -472,7 +472,7 @@ News
             stdouts = logging.getLogger("mystdoutslogger")
             log.redirect_stdouts_to_logger(stdouts, loglevel=logging.WARNING)
 
-* celeryd: Added command-line option :option:`-I`/:option:`--include`:
+* worker: Added command-line option :option:`-I`/:option:`--include`:
 
     A comma separated list of (task) modules to be imported.
 
@@ -482,15 +482,15 @@ News
 
         $ celeryd -I app1.tasks,app2.tasks
 
-* celeryd: now emits a warning if running as the root user (euid is 0).
+* worker: now emits a warning if running as the root user (euid is 0).
 
 * :func:`celery.messaging.establish_connection`: Ability to override defaults
   used using keyword argument "defaults".
 
-* celeryd: Now uses `multiprocessing.freeze_support()` so that it should work
+* worker: Now uses `multiprocessing.freeze_support()` so that it should work
   with **py2exe**, **PyInstaller**, **cx_Freeze**, etc.
 
-* celeryd: Now includes more metadata for the :state:`STARTED` state: PID and
+* worker: Now includes more metadata for the :state:`STARTED` state: PID and
   host name of the worker that started the task.
 
     See issue #181
@@ -508,7 +508,7 @@ News
 
     See issue #182.
 
-* celeryd: Now emits a warning if there is already a worker node using the same
+* worker: Now emits a warning if there is already a worker node using the same
   name running on the same virtual host.
 
 * AMQP result backend: Sending of results are now retried if the connection
@@ -533,11 +533,11 @@ News
 * The crontab scheduler no longer wakes up every second, but implements
   `remaining_estimate` (*Optimization*).
 
-* celeryd:  Store :state:`FAILURE` result if the
+* worker:  Store :state:`FAILURE` result if the
    :exc:`~@WorkerLostError` exception occurs (worker process
    disappeared).
 
-* celeryd: Store :state:`FAILURE` result if one of the `*TimeLimitExceeded`
+* worker: Store :state:`FAILURE` result if one of the `*TimeLimitExceeded`
   exceptions occurs.
 
 * Refactored the periodic task responsible for cleaning up results.
@@ -596,7 +596,7 @@ News
 
 * unit tests: Don't leave threads running at tear down.
 
-* celeryd: Task results shown in logs are now truncated to 46 chars.
+* worker: Task results shown in logs are now truncated to 46 chars.
 
 * `Task.__name__` is now an alias to `self.__class__.__name__`.
    This way tasks introspects more like regular functions.
@@ -634,7 +634,7 @@ News
 * :meth:`EventReceiver.capture <celery.events.EventReceiver.capture>`
   Now supports a timeout keyword argument.
 
-* celeryd: The mediator thread is now disabled if
+* worker: The mediator thread is now disabled if
   :setting:`CELERY_RATE_LIMITS` is enabled, and tasks are directly sent to the
   pool without going through the ready queue (*Optimization*).
 
@@ -653,7 +653,7 @@ Fixes
 
     See issue #187.
 
-* celeryd no longer marks tasks as revoked if :setting:`CELERY_IGNORE_RESULT`
+* the worker no longer marks tasks as revoked if :setting:`CELERY_IGNORE_RESULT`
   is enabled.
 
     See issue #207.
@@ -684,9 +684,9 @@ Fixes
 Experimental
 ------------
 
-* celeryd-multi: Added daemonization support.
+* multi: Added daemonization support.
 
-    celeryd-multi can now be used to start, stop and restart worker nodes:
+    multi can now be used to start, stop and restart worker nodes:
 
     .. code-block:: bash
 
@@ -724,12 +724,12 @@ Experimental
 
     See `celeryd-multi help` for help.
 
-* celeryd-multi: `start` command renamed to `show`.
+* multi: `start` command renamed to `show`.
 
     `celeryd-multi start` will now actually start and detach worker nodes.
     To just generate the commands you have to use `celeryd-multi show`.
 
-* celeryd: Added `--pidfile` argument.
+* worker: Added `--pidfile` argument.
 
    The worker will write its pid when it starts.  The worker will
    not be started if this file exists and the pid contained is still alive.

@@ -118,7 +118,8 @@ class Worker(WorkController):
 
         if getattr(os, 'getuid', None) and os.getuid() == 0:
             warnings.warn(RuntimeWarning(
-                'Running celeryd with superuser privileges is discouraged!'))
+                'Running the worker with superuser privileges is discouraged!',
+            ))
 
         if self.purge:
             self.purge_messages()
@@ -206,7 +207,7 @@ class Worker(WorkController):
         # Install signal handler so SIGHUP restarts the worker.
         if not self._isatty:
             # only install HUP handler if detached from terminal,
-            # so closing the terminal window doesn't restart celeryd
+            # so closing the terminal window doesn't restart the worker
             # into the background.
             if self.app.IS_OSX:
                 # OS X can't exec from a process using threads.
@@ -239,7 +240,7 @@ def _shutdown_handler(worker, sig='TERM', how='Warm', exc=SystemExit,
             if current_process()._name == 'MainProcess':
                 if callback:
                     callback(worker)
-                safe_say('celeryd: {0} shutdown (MainProcess)'.format(how))
+                safe_say('worker: {0} shutdown (MainProcess)'.format(how))
             if active_thread_count() > 1:
                 setattr(state, {'Warm': 'should_stop',
                                 'Cold': 'should_terminate'}[how], True)
@@ -259,7 +260,7 @@ else:
 
 
 def on_SIGINT(worker):
-    safe_say('celeryd: Hitting Ctrl+C again will terminate all running tasks!')
+    safe_say('worker: Hitting Ctrl+C again will terminate all running tasks!')
     install_worker_term_hard_handler(worker, sig='SIGINT')
 if not is_jython:
     install_worker_int_handler = partial(
@@ -279,7 +280,7 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
     def restart_worker_sig_handler(*args):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
-        safe_say('Restarting celeryd ({0})'.format(' '.join(sys.argv)))
+        safe_say('Restarting celery worker ({0})'.format(' '.join(sys.argv)))
         import atexit
         atexit.register(_clone_current_worker)
         from celery.worker import state

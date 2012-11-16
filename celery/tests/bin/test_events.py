@@ -31,7 +31,7 @@ class test_EvCommand(Case):
     @patch('celery.bin.events', 'set_process_title', proctitle)
     def test_run_dump(self):
         self.assertEqual(self.ev.run(dump=True), 'me dumper, you?')
-        self.assertIn('celeryev:dump', proctitle.last[0])
+        self.assertIn('celery events:dump', proctitle.last[0])
 
     def test_run_top(self):
         try:
@@ -43,7 +43,7 @@ class test_EvCommand(Case):
         @patch('celery.bin.events', 'set_process_title', proctitle)
         def _inner():
             self.assertEqual(self.ev.run(), 'me top, you?')
-            self.assertIn('celeryev:top', proctitle.last[0])
+            self.assertIn('celery events:top', proctitle.last[0])
         return _inner()
 
     @patch('celery.events.snapshot', 'evcam', lambda *a, **k: (a, k))
@@ -55,7 +55,7 @@ class test_EvCommand(Case):
         self.assertIsNone(kw['maxrate'])
         self.assertEqual(kw['loglevel'], 'INFO')
         self.assertEqual(kw['logfile'], 'logfile')
-        self.assertIn('celeryev:cam', proctitle.last[0])
+        self.assertIn('celery events:cam', proctitle.last[0])
 
     @mpatch('celery.events.snapshot.evcam')
     @mpatch('celery.bin.events.detached')

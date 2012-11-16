@@ -247,7 +247,7 @@ Provides arguments:
 celeryd_init
 ~~~~~~~~~~~~
 
-This is the first signal sent when :program:`celeryd` starts up.
+This is the first signal sent when :program:`celery worker` starts up.
 The ``sender`` is the host name of the worker, so this signal can be used
 to setup worker specific configuration:
 

@@ -17,7 +17,7 @@
 * Periodic task interval schedules were accidentally rounded down,
   resulting in some periodic tasks being executed early.
 
-* Logging of humanized times in the celerybeat log is now more detailed.
+* Logging of humanized times in the beat log is now more detailed.
 
 * New :ref:`brokers` section in the Getting Started part of the Documentation
 
@@ -38,8 +38,8 @@ Security Fixes
 
 * [Security: `CELERYSA-0001`_] Daemons would set effective id's rather than
   real id's when the :option:`--uid`/:option:`--gid` arguments to
-  :program:`celeryd-multi`, :program:`celeryd_detach`,
-  :program:`celerybeat` and :program:`celeryev` were used.
+  :program:`celery multi`, :program:`celeryd_detach`,
+  :program:`celery beat` and :program:`celery events` were used.
 
   This means privileges weren't properly dropped, and that it would
   be possible to regain supervisor privileges later.
@@ -110,7 +110,7 @@ Fixes
 * processes pool: MaybeEncodingError was not wrapped in ExceptionInfo
   (Issue #524).
 
-* celeryd: would silence errors occuring after task consumer started.
+* worker: would silence errors occuring after task consumer started.
 
 * logging: Fixed a bug where unicode in stdout redirected log messages
   couldn't be written (Issue #522).
@@ -207,9 +207,9 @@ Important Notes
 
     .. code-block:: bash
 
-        $ celeryd -b redis://localhost
+        $ celery worker -b redis://localhost
 
-        $ celeryctl -b amqp://guest:guest@localhost//e
+        $ celery inspect -b amqp://guest:guest@localhost//e
 
     The environment variable :envvar:`CELERY_BROKER_URL` can also be used to
     easily override the default broker used.
@@ -250,10 +250,10 @@ Important Notes
     =====================================  ===================================
     **Old setting**                        **Alternative**
     =====================================  ===================================
-    `CELERYD_LOG_LEVEL`                    ``celeryd --loglevel=``
-    `CELERYD_LOG_FILE`                     ``celeryd --logfile=``
-    `CELERYBEAT_LOG_LEVEL`                 ``celerybeat --loglevel=``
-    `CELERYBEAT_LOG_FILE`                  ``celerybeat --logfile=``
+    `CELERYD_LOG_LEVEL`                    ``celery worker --loglevel=``
+    `CELERYD_LOG_FILE`                     ``celery worker --logfile=``
+    `CELERYBEAT_LOG_LEVEL`                 ``celery beat --loglevel=``
+    `CELERYBEAT_LOG_FILE`                  ``celery beat --logfile=``
     `CELERYMON_LOG_LEVEL`                  ``celerymon --loglevel=``
     `CELERYMON_LOG_FILE`                   ``celerymon --logfile=``
     =====================================  ===================================
@@ -318,7 +318,7 @@ News
 
     Contributed by Chris Adams.
 
-* ``celeryd_multi`` now supports a ``stop_verify`` command to wait for
+* ``multi`` now supports a ``stop_verify`` command to wait for
   processes to shutdown.
 
 * Cache backend did not work if the cache key was unicode (Issue #504).
@@ -336,14 +336,14 @@ News
 
     Fix contributed by Remy Noel
 
-* celeryd-multi did not work on Windows (Issue #472).
+* multi did not work on Windows (Issue #472).
 
 * New-style ``CELERY_REDIS_*`` settings now takes precedence over
   the old ``REDIS_*`` configuration keys (Issue #508).
 
     Fix contributed by Joshua Ginsberg
 
-* Generic celerybeat init script no longer sets `bash -e` (Issue #510).
+* Generic beat init script no longer sets `bash -e` (Issue #510).
 
     Fix contributed by Roger Hu.
 
@@ -364,7 +364,7 @@ News
 * Worker logged the string representation of args and kwargs
   without safe guards (Issue #480).
 
-* RHEL init script: Changed celeryd startup priority.
+* RHEL init script: Changed worker startup priority.
 
     The default start / stop priorities for MySQL on RHEL are
 
@@ -385,7 +385,7 @@ News
 * KeyValueStoreBackend.get_many did not respect the ``timeout`` argument
   (Issue #512).
 
-* celerybeat/celeryev's --workdir option did not chdir before after
+* beat/events's --workdir option did not chdir before after
   configuration was attempted (Issue #506).
 
 * After deprecating 2.4 support we can now name modules correctly, since we

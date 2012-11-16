@@ -5,15 +5,16 @@
     <key>Disabled</key>
     <false/>
     <key>GroupName</key>
-    <string>celerybeat</string>
+    <string>celery-beat</string>
     <key>KeepAlive</key>
     <true/>
     <key>Label</key>
-    <string>org.celeryq.celerybeat</string>
+    <string>org.celeryq.beat</string>
     <key>Program</key>
-    <string>celery beat</string>
+    <string>celery</string>
     <key>ProgramArguments</key>
     <array>
+        <string>beat</string>
         <string>--loglevel=WARNING</string>
     </array>
     <key>RunAtLoad</key>

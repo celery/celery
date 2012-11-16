@@ -153,7 +153,7 @@ e.g. for Redis you can use ``redis://localhost``, or MongoDB:
 
 You defined a single task, called ``add``, which returns the sum of two numbers.
 
-.. _celerytut-running-celeryd:
+.. _celerytut-running-the-worker:
 
 Running the celery worker server
 ================================

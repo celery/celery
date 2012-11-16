@@ -1,11 +1,11 @@
 ==========================================
- celery.bin.celeryd
+ celery.bin.worker
 ==========================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.bin.celeryd
+.. currentmodule:: celery.bin.worker
 
-.. automodule:: celery.bin.celeryd
+.. automodule:: celery.bin.worker
     :members:
     :undoc-members:

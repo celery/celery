@@ -54,4 +54,5 @@ Limitations
 
 The CouchDB message transport does not currently support:
 
-    * Remote control commands (celeryctl, broadcast)
+    * Remote control commands (:program:`celery inspect`,
+      :program:`celery control`, broadcast)

@@ -17,7 +17,7 @@ from celery import platforms
 from celery import signals
 from celery import current_app
 from celery.apps import worker as cd
-from celery.bin.celeryd import WorkerCommand, main as celeryd_main
+from celery.bin.worker import WorkerCommand, main as worker_main
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
 from celery.task import trace
 from celery.utils.log import ensure_process_aware_logger
@@ -101,7 +101,7 @@ class test_Worker(WorkerAppCase):
         x = WorkerCommand()
         x.run = Mock()
         with self.assertRaises(ImportError):
-            x.execute_from_commandline(['celeryd', '-P', 'xyzybox'])
+            x.execute_from_commandline(['worker', '-P', 'xyzybox'])
 
     @disable_stdouts
     def test_invalid_loglevel_gives_error(self):
@@ -405,15 +405,15 @@ class test_funs(WorkerAppCase):
     def test_parse_options(self):
         cmd = WorkerCommand()
         cmd.app = current_app
-        opts, args = cmd.parse_options('celeryd', ['--concurrency=512'])
+        opts, args = cmd.parse_options('worker', ['--concurrency=512'])
         self.assertEqual(opts.concurrency, 512)
 
     @disable_stdouts
     def test_main(self):
         p, cd.Worker = cd.Worker, Worker
-        s, sys.argv = sys.argv, ['celeryd', '--discard']
+        s, sys.argv = sys.argv, ['worker', '--discard']
         try:
-            celeryd_main()
+            worker_main()
         finally:
             cd.Worker = p
             sys.argv = s

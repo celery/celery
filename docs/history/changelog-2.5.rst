@@ -116,7 +116,7 @@ Fixes
 
         echo -n "1" > celeryd.pid
 
-    would cause celeryd to think that an existing instance was already
+    would cause the worker to think that an existing instance was already
     running (init has pid 1 after all).
 
 - Fixed 2.5 compatibility issue with use of print_exception.
@@ -133,14 +133,14 @@ Fixes
 
     Fix contributed by Martin Melin.
 
-- celeryctl can now be configured on the command-line.
+- [celery control|inspect] can now be configured on the command-line.
 
-    Like with celeryd it is now possible to configure celery settings
-    on the command-line for celeryctl:
+    Like with the worker it is now possible to configure celery settings
+    on the command-line for celery control|inspect
 
     .. code-block:: bash
 
-        $ celeryctl -- broker.pool_limit=30
+        $ celery inspect -- broker.pool_limit=30
 
 - Version dependency for python-dateutil fixed to be strict.
 
@@ -171,12 +171,12 @@ Fixes
 Fixes
 -----
 
-* Eventlet/Gevent: A small typo caused celeryd to hang when eventlet/gevent
+* Eventlet/Gevent: A small typo caused the worker to hang when eventlet/gevent
   was used, this was because the environment was not monkey patched
   early enough.
 
 * Eventlet/Gevent: Another small typo caused the mediator to be started
-  with eventlet/gevent, which would make celeryd sometimes hang at shutdown.
+  with eventlet/gevent, which would make the worker sometimes hang at shutdown.
 
 * Mulitprocessing: Fixed an error occurring if the pool was stopped
   before it was properly started.
@@ -187,7 +187,7 @@ Fixes
 * Internal timer (timer2) now logs exceptions instead of swallowing them
   (Issue #626).
 
-* celeryctl shell: can now be started with :option:`--eventlet` or
+* celery shell: can now be started with :option:`--eventlet` or
   :option:`--gevent` options to apply their monkey patches.
 
 .. _version-2.5.0:

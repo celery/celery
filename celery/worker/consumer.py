@@ -301,7 +301,7 @@ class Consumer(object):
         as a dict.
 
         This is also the consumer related info returned by
-        ``celeryctl stats``.
+        :program:`celery inspect stats`.
 
         """
         conninfo = {}

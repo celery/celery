@@ -10,7 +10,7 @@ Usage:
    32
 
 
-You can also specify the app to use with celeryd::
+You can also specify the app to use with the celery command:
 
     $ celery worker -l info --app=myapp
 

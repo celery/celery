@@ -230,7 +230,7 @@ Application
 
     .. method:: Celery.worker_main(argv=None)
 
-        Run :program:`celeryd` using `argv`.
+        Run :program:`celery worker` using `argv`.
 
         Uses :data:`sys.argv` if `argv` is not specified."""
 

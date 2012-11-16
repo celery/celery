@@ -279,7 +279,7 @@ class worker(Delegate):
 
         celery worker --autoscale=10,0
     """
-    Command = 'celery.bin.celeryd:WorkerCommand'
+    Command = 'celery.bin.worker:WorkerCommand'
 
     def run_from_argv(self, prog_name, argv):
         self.target.maybe_detach(argv)

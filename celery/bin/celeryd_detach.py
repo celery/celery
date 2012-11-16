@@ -3,7 +3,7 @@
     celery.bin.celeryd_detach
     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Program used to daemonize celeryd.
+    Program used to daemonize the worker
 
     Using :func:`os.execv` because forking and multiprocessing
     leads to weird issues (it was a long time ago now, but it
@@ -104,11 +104,11 @@ class detached_celeryd(object):
     option_list = OPTION_LIST
     usage = '%prog [options] [celeryd options]'
     version = celery.VERSION_BANNER
-    description = ('Detaches Celery worker nodes.  See `celeryd --help` '
+    description = ('Detaches Celery worker nodes.  See `celery worker --help` '
                    'for the list of supported worker arguments.')
     command = sys.executable
     execv_path = sys.executable
-    execv_argv = ['-m', 'celery.bin.celeryd']
+    execv_argv = ['-m', 'celery', 'worker']
 
     def Parser(self, prog_name):
         return PartialOptionParser(prog=prog_name,

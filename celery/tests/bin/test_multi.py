@@ -332,7 +332,7 @@ class test_MultiTool(Case):
         self.t.node_alive.return_value = False
 
         callback = Mock()
-        self.t.stop(['foo', 'bar', 'baz'], 'celeryd', callback=callback)
+        self.t.stop(['foo', 'bar', 'baz'], 'celery worker', callback=callback)
         sigs = sorted(self.t.signal_node.call_args_list)
         self.assertEqual(len(sigs), 2)
         self.assertIn(('foo@e.com', 10, signal.SIGTERM),
@@ -341,7 +341,7 @@ class test_MultiTool(Case):
                 [tup[0] for tup in sigs])
         self.t.signal_node.return_value = False
         self.assertTrue(callback.called)
-        self.t.stop(['foo', 'bar', 'baz'], 'celeryd', callback=None)
+        self.t.stop(['foo', 'bar', 'baz'], 'celery worker', callback=None)
 
         def on_node_alive(pid):
             if node_alive.call_count > 4:
@@ -349,7 +349,7 @@ class test_MultiTool(Case):
             return False
         self.t.signal_node.return_value = True
         self.t.node_alive.side_effect = on_node_alive
-        self.t.stop(['foo', 'bar', 'baz'], 'celeryd', retry=True)
+        self.t.stop(['foo', 'bar', 'baz'], 'celery worker', retry=True)
 
     @patch('os.kill')
     def test_node_alive(self, kill):
@@ -387,13 +387,13 @@ class test_MultiTool(Case):
     def test_start(self):
         self.t.waitexec = Mock()
         self.t.waitexec.return_value = 0
-        self.assertFalse(self.t.start(['foo', 'bar', 'baz'], 'celeryd'))
+        self.assertFalse(self.t.start(['foo', 'bar', 'baz'], 'celery worker'))
 
         self.t.waitexec.return_value = 1
-        self.assertFalse(self.t.start(['foo', 'bar', 'baz'], 'celeryd'))
+        self.assertFalse(self.t.start(['foo', 'bar', 'baz'], 'celery worker'))
 
     def test_show(self):
-        self.t.show(['foo', 'bar', 'baz'], 'celeryd')
+        self.t.show(['foo', 'bar', 'baz'], 'celery worker')
         self.assertTrue(self.fh.getvalue())
 
     @patch('socket.gethostname')
@@ -407,7 +407,7 @@ class test_MultiTool(Case):
     @patch('socket.gethostname')
     def test_names(self, gethostname):
         gethostname.return_value = 'e.com'
-        self.t.names(['foo', 'bar', 'baz'], 'celeryd')
+        self.t.names(['foo', 'bar', 'baz'], 'celery worker')
         self.assertIn('foo@e.com\nbar@e.com\nbaz@e.com', self.fh.getvalue())
 
     def test_execute_from_commandline(self):
@@ -438,7 +438,7 @@ class test_MultiTool(Case):
 
     def test_stopwait(self):
         self.t._stop_nodes = Mock()
-        self.t.stopwait(['foo', 'bar', 'baz'], 'celeryd')
+        self.t.stopwait(['foo', 'bar', 'baz'], 'celery worker')
         self.assertEqual(self.t._stop_nodes.call_args[1]['retry'], 2)
 
     @patch('celery.bin.multi.MultiTool')

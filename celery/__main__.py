@@ -31,7 +31,7 @@ def main():
 def _compat_worker():
     maybe_patch_concurrency()
     _warn_deprecated('celery worker')
-    from celery.bin.celeryd import main
+    from celery.bin.worker import main
     main()
 
 

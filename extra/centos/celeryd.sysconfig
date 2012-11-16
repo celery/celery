@@ -1,4 +1,4 @@
-# Path to the virtualenv. This could be /usr if python 
+# Path to the virtualenv. This could be /usr if python
 #   is in /usr/bin
 #BIN_PATH="/path/to/.virtualenvs/myvenv"
 
@@ -11,7 +11,7 @@
 # Path to celery - which might be in a virtualenv
 #CELERY="$BIN_PATH/bin/celery"
 
-# Passed into celeryd multi
+# Passed into celery multi
 #CELERYD="-m celery worker --detach"
 
 # Log and PID files

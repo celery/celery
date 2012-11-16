@@ -52,11 +52,11 @@ Critical
 
 * Now depends on :mod:`billiard` >= 0.3.1
 
-* celeryd: Previously exceptions raised by worker components could stall startup,
+* worker: Previously exceptions raised by worker components could stall startup,
   now it correctly logs the exceptions and shuts down.
 
-* celeryd: Prefetch counts was set too late. QoS is now set as early as possible,
-  so celeryd can't slurp in all the messages at start-up.
+* worker: Prefetch counts was set too late. QoS is now set as early as possible,
+  so the worker: can't slurp in all the messages at start-up.
 
 .. _v105-changes:
 
@@ -397,7 +397,7 @@ Fixes
 
     See: http://bit.ly/94fwdd
 
-* celeryd: The worker components are now configurable: :setting:`CELERYD_POOL`,
+* worker: The worker components are now configurable: :setting:`CELERYD_POOL`,
   :setting:`CELERYD_CONSUMER`, :setting:`CELERYD_MEDIATOR`, and
   :setting:`CELERYD_ETA_SCHEDULER`.
 
@@ -442,7 +442,7 @@ Fixes
 * Fixed a potential infinite loop in `BaseAsyncResult.__eq__`, although
   there is no evidence that it has ever been triggered.
 
-* celeryd: Now handles messages with encoding problems by acking them and
+* worker: Now handles messages with encoding problems by acking them and
   emitting an error message.
 
 .. _version-1.0.1:
@@ -474,9 +474,10 @@ Fixes
         worked on, this patch would enable us to use a better solution, and is
         scheduled for inclusion in the `2.0.0` release.
 
-* celeryd now shutdowns cleanly when receiving the :sig:`SIGTERM` signal.
+* The worker now shutdowns cleanly when receiving the :sig:`SIGTERM` signal.
 
-* celeryd now does a cold shutdown if the :sig:`SIGINT` signal is received (Ctrl+C),
+* The worker now does a cold shutdown if the :sig:`SIGINT` signal
+  is received (Ctrl+C),
   this means it tries to terminate as soon as possible.
 
 * Caching of results now moved to the base backend classes, so no need
@@ -492,7 +493,7 @@ Fixes
     `backend.reload_taskset_result` (that's for those who want to send
     results incrementally).
 
-* `celeryd` now works on Windows again.
+* The worker now works on Windows again.
 
     .. warning::
 
@@ -555,7 +556,7 @@ Fixes
 * The redis result backend no longer calls `SAVE` when disconnecting,
   as this is apparently better handled by Redis itself.
 
-* If `settings.DEBUG` is on, celeryd now warns about the possible
+* If `settings.DEBUG` is on, the worker now warns about the possible
   memory leak it can result in.
 
 * The ETA scheduler now sleeps at most two seconds between iterations.
@@ -579,7 +580,7 @@ Fixes
 * Events: Fields was not passed by `.send()` (fixes the UUID key errors
   in celerymon)
 
-* Added `--schedule`/`-s` option to celeryd, so it is possible to
+* Added `--schedule`/`-s` option to the worker, so it is possible to
   specify a custom schedule filename when using an embedded celerybeat
   server (the `-B`/`--beat`) option.
 
@@ -624,7 +625,7 @@ Backward incompatible changes
   available on your platform, or something like Supervisord to make
   celeryd/celerybeat/celerymon into background processes.
 
-    We've had too many problems with celeryd daemonizing itself, so it was
+    We've had too many problems with the worker daemonizing itself, so it was
     decided it has to be removed. Example startup scripts has been added to
     the `extra/` directory:
 
@@ -651,8 +652,8 @@ Backward incompatible changes
     Also the following configuration keys has been removed:
     `CELERYD_PID_FILE`, `CELERYBEAT_PID_FILE`, `CELERYMON_PID_FILE`.
 
-* Default celeryd loglevel is now `WARN`, to enable the previous log level
-  start celeryd with `--loglevel=INFO`.
+* Default worker loglevel is now `WARN`, to enable the previous log level
+  start the worker with `--loglevel=INFO`.
 
 * Tasks are automatically registered.
 
@@ -698,7 +699,7 @@ Backward incompatible changes
 
 * The periodic task system has been rewritten to a centralized solution.
 
-    This means `celeryd` no longer schedules periodic tasks by default,
+    This means the worker no longer schedules periodic tasks by default,
     but a new daemon has been introduced: `celerybeat`.
 
     To launch the periodic task scheduler you have to run celerybeat:
@@ -710,7 +711,7 @@ Backward incompatible changes
     Make sure this is running on one server only, if you run it twice, all
     periodic tasks will also be executed twice.
 
-    If you only have one worker server you can embed it into celeryd like this:
+    If you only have one worker server you can embed it into the worker like this:
 
     .. code-block:: bash
 
@@ -808,7 +809,7 @@ News
 
 * New cool task decorator syntax.
 
-* celeryd now sends events if enabled with the `-E` argument.
+* worker: now sends events if enabled with the `-E` argument.
 
     Excellent for monitoring tools, one is already in the making
     (http://github.com/celery/celerymon).
@@ -819,7 +820,7 @@ News
 
 * You can now delete (revoke) tasks that has already been applied.
 
-* You can now set the hostname celeryd identifies as using the `--hostname`
+* You can now set the hostname the worker identifies as using the `--hostname`
   argument.
 
 * Cache backend now respects the :setting:`CELERY_TASK_RESULT_EXPIRES` setting.
@@ -827,7 +828,7 @@ News
 * Message format has been standardized and now uses ISO-8601 format
   for dates instead of datetime.
 
-* `celeryd` now responds to the :sig:`SIGHUP` signal by restarting itself.
+* worker now responds to the :sig:`SIGHUP` signal by restarting itself.
 
 * Periodic tasks are now scheduled on the clock.
 
@@ -924,7 +925,7 @@ Changes
 * You can now set :setting:`CELERY_IGNORE_RESULT` to ignore task results by
   default (if enabled, tasks doesn't save results or errors to the backend used).
 
-* celeryd now correctly handles malformed messages by throwing away and
+* The worker now correctly handles malformed messages by throwing away and
   acknowledging the message, instead of crashing.
 
 .. _v100-bugs:
@@ -1134,7 +1135,7 @@ Important changes
 
     This to not receive more messages than we can handle.
 
-* Now redirects stdout/stderr to the celeryd log file when detached
+* Now redirects stdout/stderr to the workers log file when detached
 
 * Now uses `inspect.getargspec` to only pass default arguments
     the task supports.
@@ -1156,7 +1157,7 @@ Important changes
     This feature misses documentation and tests, so anyone interested
     is encouraged to improve this situation.
 
-* celeryd now survives a restart of the AMQP server!
+* The worker now survives a restart of the AMQP server!
 
   Automatically re-establish AMQP broker connection if it's lost.
 
@@ -1232,7 +1233,7 @@ Important changes
 
 * Fixed a bug where tasks raising unpickleable exceptions crashed pool
     workers. So if you've had pool workers mysteriously disappearing, or
-    problems with celeryd stopping working, this has been fixed in this
+    problems with the worker stopping working, this has been fixed in this
     version.
 
 * Fixed a race condition with periodic tasks.
@@ -1255,7 +1256,7 @@ News
 
 * New Tutorial: Creating a click counter using carrot and celery
 
-* Database entries for periodic tasks are now created at `celeryd`
+* Database entries for periodic tasks are now created at the workers
     startup instead of for each check (which has been a forgotten TODO/XXX
     in the code for a long time)
 
@@ -1264,7 +1265,7 @@ News
     stored task results are deleted. For the moment this only works for the
     database backend.
 
-* `celeryd` now emits a debug log message for which periodic tasks
+* The worker now emits a debug log message for which periodic tasks
     has been launched.
 
 * The periodic task table is now locked for reading while getting
@@ -1369,13 +1370,13 @@ News
   being raised.)
 
 * Added support for statistics for profiling and monitoring.
-  To start sending statistics start `celeryd` with the
+  To start sending statistics start the worker with the
   `--statistics option. Then after a while you can dump the results
   by running `python manage.py celerystats`. See
   `celery.monitoring` for more information.
 
 * The celery daemon can now be supervised (i.e. it is automatically
-  restarted if it crashes). To use this start celeryd with the
+  restarted if it crashes). To use this start the worker with the
   --supervised` option (or alternatively `-S`).
 
 * views.apply: View calling a task. Example
@@ -1457,7 +1458,7 @@ News
 * Now works with PostgreSQL (psycopg2) again by registering the
   `PickledObject` field.
 
-* `celeryd`: Added `--detach` option as an alias to `--daemon`, and
+* Worker: Added `--detach` option as an alias to `--daemon`, and
   it's the term used in the documentation from now on.
 
 * Make sure the pool and periodic task worker thread is terminated
@@ -1488,10 +1489,10 @@ News
 =====
 :release-date: 2009-06-08 01:07 P.M CET
 
-* celeryd: Added option `--discard`: Discard (delete!) all waiting
+* worker: Added option `--discard`: Discard (delete!) all waiting
   messages in the queue.
 
-* celeryd: The `--wakeup-after` option was not handled as a float.
+* Worker: The `--wakeup-after` option was not handled as a float.
 
 .. _version-0.3.1:
 
@@ -1741,7 +1742,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * Better test coverage
 * More documentation
-* celeryd doesn't emit `Queue is empty` message if
+* The worker doesn't emit `Queue is empty` message if
   `settings.CELERYD_EMPTY_MSG_EMIT_EVERY` is 0.
 
 .. _version-0.1.7:
@@ -1778,14 +1779,14 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * `autodiscover()` now works with zipped eggs.
 
-* celeryd: Now adds current working directory to `sys.path` for
+* Worker: Now adds current working directory to `sys.path` for
   convenience.
 
 * The `run_every` attribute of `PeriodicTask` classes can now be a
   `datetime.timedelta()` object.
 
-* celeryd: You can now set the `DJANGO_PROJECT_DIR` variable
-  for `celeryd` and it will add that to `sys.path` for easy launching.
+* Worker: You can now set the `DJANGO_PROJECT_DIR` variable
+  for the worker and it will add that to `sys.path` for easy launching.
 
 * Can now check if a task has been executed or not via HTTP.
 

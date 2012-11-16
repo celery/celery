@@ -18,7 +18,7 @@ celery//backends/__init__.py
 celery//backends/base.py
 celery//bin/__init__.py
 celery//bin/base.py
-celery//bin/celeryd.py
+celery//bin/worker.py
 celery//canvas.py
 celery//concurrency/__init__.py
 celery//concurrency/base.py

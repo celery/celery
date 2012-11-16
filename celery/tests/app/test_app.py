@@ -268,19 +268,20 @@ class test_App(Case):
         self.assertDictContainsSubset(changes, restored.conf)
 
     def test_worker_main(self):
-        from celery.bin import celeryd
+        from celery.bin import worker as worker_bin
 
-        class WorkerCommand(celeryd.WorkerCommand):
+        class WorkerCommand(worker_bin.WorkerCommand):
 
             def execute_from_commandline(self, argv):
                 return argv
 
-        prev, celeryd.WorkerCommand = celeryd.WorkerCommand, WorkerCommand
+        prev, worker_bin.WorkerCommand = \
+                worker_bin.WorkerCommand, WorkerCommand
         try:
             ret = self.app.worker_main(argv=['--version'])
             self.assertListEqual(ret, ['--version'])
         finally:
-            celeryd.WorkerCommand = prev
+            worker_bin.WorkerCommand = prev
 
     def test_config_from_envvar(self):
         os.environ['CELERYTEST_CONFIG_OBJECT'] = 'celery.tests.app.test_app'

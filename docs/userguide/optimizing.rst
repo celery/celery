@@ -124,7 +124,7 @@ the tasks according to the run-time. (see :ref:`guide-routing`).
        all messages will be delivered to the active node.
 
 .. [*] This is the concurrency setting; :setting:`CELERYD_CONCURRENCY` or the
-       :option:`-c` option to :program:`celeryd`.
+       :option:`-c` option to the :program:`celery worker` program.
 
 
 Reserve one task at a time

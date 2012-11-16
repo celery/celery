@@ -20,7 +20,7 @@ features related to monitoring, like events and broadcast commands.
 Workers
 =======
 
-.. _monitoring-celeryctl:
+.. _monitoring-control:
 
 
 ``celery``: Management Command-line Utilities
@@ -150,23 +150,25 @@ Commands
 
 .. note::
 
-    All ``inspect`` commands supports a ``--timeout`` argument,
+    All ``inspect`` and ``control`` commands supports a ``--timeout`` argument,
     This is the number of seconds to wait for responses.
     You may have to increase this timeout if you're not getting a response
     due to latency.
 
-.. _celeryctl-inspect-destination:
+.. _inspect-destination:
 
 Specifying destination nodes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By default the inspect commands operates on all workers.
+By default the inspect and control commands operates on all workers.
 You can specify a single, or a list of workers by using the
 `--destination` argument:
 
 .. code-block:: bash
 
     $ celery inspect -d w1,w2 reserved
+
+    $ celery control -d w1,w2 enable_events
 
 
 .. _monitoring-flower:

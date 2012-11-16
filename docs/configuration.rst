@@ -1017,17 +1017,17 @@ has been executed, not *just before*, which is the default behavior.
 
     FAQ: :ref:`faq-acks_late-vs-retry`.
 
-.. _conf-celeryd:
+.. _conf-worker:
 
-Worker: celeryd
----------------
+Worker
+------
 
 .. setting:: CELERY_IMPORTS
 
 CELERY_IMPORTS
 ~~~~~~~~~~~~~~
 
-A sequence of modules to import when the celery daemon starts.
+A sequence of modules to import when the worker starts.
 
 This is used to specify the task modules to import, but also
 to import signal handlers and additional remote control commands, etc.
@@ -1128,7 +1128,7 @@ Can be a relative or absolute path, but be aware that the suffix `.db`
 may be appended to the file name (depending on Python version).
 
 Can also be set via the :option:`--statedb` argument to
-:mod:`~celery.bin.celeryd`.
+:mod:`~celery.bin.worker`.
 
 Not enabled by default.
 
@@ -1373,7 +1373,7 @@ CELERYD_TASK_LOG_FORMAT
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 The format to use for log messages logged in tasks.  Can be overridden using
-the :option:`--loglevel` option to :mod:`~celery.bin.celeryd`.
+the :option:`--loglevel` option to :mod:`~celery.bin.worker`.
 
 Default is::
 
