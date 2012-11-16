@@ -4,7 +4,7 @@ from nose import SkipTest
 from mock import patch as mpatch
 
 from celery.app import app_or_default
-from celery.bin import celeryev
+from celery.bin import events
 
 from celery.tests.utils import Case, patch
 
@@ -25,10 +25,10 @@ class test_EvCommand(Case):
 
     def setUp(self):
         self.app = app_or_default()
-        self.ev = celeryev.EvCommand(app=self.app)
+        self.ev = events.EvCommand(app=self.app)
 
     @patch('celery.events.dumper', 'evdump', lambda **kw: 'me dumper, you?')
-    @patch('celery.bin.celeryev', 'set_process_title', proctitle)
+    @patch('celery.bin.events', 'set_process_title', proctitle)
     def test_run_dump(self):
         self.assertEqual(self.ev.run(dump=True), 'me dumper, you?')
         self.assertIn('celeryev:dump', proctitle.last[0])
@@ -40,14 +40,14 @@ class test_EvCommand(Case):
             raise SkipTest('curses monitor requires curses')
 
         @patch('celery.events.cursesmon', 'evtop', lambda **kw: 'me top, you?')
-        @patch('celery.bin.celeryev', 'set_process_title', proctitle)
+        @patch('celery.bin.events', 'set_process_title', proctitle)
         def _inner():
             self.assertEqual(self.ev.run(), 'me top, you?')
             self.assertIn('celeryev:top', proctitle.last[0])
         return _inner()
 
     @patch('celery.events.snapshot', 'evcam', lambda *a, **k: (a, k))
-    @patch('celery.bin.celeryev', 'set_process_title', proctitle)
+    @patch('celery.bin.events', 'set_process_title', proctitle)
     def test_run_cam(self):
         a, kw = self.ev.run(camera='foo.bar.baz', logfile='logfile')
         self.assertEqual(a[0], 'foo.bar.baz')
@@ -58,9 +58,9 @@ class test_EvCommand(Case):
         self.assertIn('celeryev:cam', proctitle.last[0])
 
     @mpatch('celery.events.snapshot.evcam')
-    @mpatch('celery.bin.celeryev.detached')
+    @mpatch('celery.bin.events.detached')
     def test_run_cam_detached(self, detached, evcam):
-        self.ev.prog_name = 'celeryev'
+        self.ev.prog_name = 'celery events'
         self.ev.run_evcam('myapp.Camera', detach=True)
         self.assertTrue(detached.called)
         self.assertTrue(evcam.called)
@@ -68,8 +68,8 @@ class test_EvCommand(Case):
     def test_get_options(self):
         self.assertTrue(self.ev.get_options())
 
-    @patch('celery.bin.celeryev', 'EvCommand', MockCommand)
+    @patch('celery.bin.events', 'EvCommand', MockCommand)
     def test_main(self):
         MockCommand.executed = []
-        celeryev.main()
+        events.main()
         self.assertTrue(MockCommand.executed)

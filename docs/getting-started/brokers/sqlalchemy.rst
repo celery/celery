@@ -62,7 +62,7 @@ Limitations
 
 The SQLAlchemy database transport does not currently support:
 
-    * Remote control commands (celeryev, broadcast)
+    * Remote control commands (:program:`celery events` command, broadcast)
     * Events, including the Django Admin monitor.
     * Using more than a few workers (can lead to messages being executed
       multiple times).

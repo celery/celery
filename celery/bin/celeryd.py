@@ -67,7 +67,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: -E, --events
 
-    Send events that can be captured by monitors like :program:`celeryev`,
+    Send events that can be captured by monitors like :program:`celery events`,
     `celerymon`, and others.
 
 .. cmdoption:: --purge

@@ -53,7 +53,7 @@ class CursesMonitor(object):  # pragma: no cover
     online_str = 'Workers online: '
     help_title = 'Keys: '
     help = ('j:up k:down i:info t:traceback r:result c:revoke ^c: quit')
-    greet = 'celeryev {0}'.format(VERSION_BANNER)
+    greet = 'celery events {0}'.format(VERSION_BANNER)
     info_str = 'Info: '
 
     def __init__(self, state, keymap=None, app=None):

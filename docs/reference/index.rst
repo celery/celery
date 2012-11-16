@@ -48,7 +48,7 @@
     celery.bin.base
     celery.bin.celeryd
     celery.bin.celerybeat
-    celery.bin.celeryev
+    celery.bin.events
     celery.bin.celery
     celery.bin.amqp
     celery.bin.celeryd_multi

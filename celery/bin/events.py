@@ -51,7 +51,7 @@ class EvCommand(Command):
     supports_args = False
 
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
-            loglevel='INFO', logfile=None, prog_name='celeryev',
+            loglevel='INFO', logfile=None, prog_name='celery events',
             pidfile=None, uid=None, gid=None, umask=None,
             working_directory=None, detach=False, **kwargs):
         self.prog_name = prog_name

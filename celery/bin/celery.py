@@ -306,7 +306,7 @@ class events(Delegate):
         celery events -d
         celery events -C mod.attr -F 1.0 --detach --maxrate=100/m -l info
     """
-    Command = 'celery.bin.celeryev:EvCommand'
+    Command = 'celery.bin.events:EvCommand'
 
 
 @command
