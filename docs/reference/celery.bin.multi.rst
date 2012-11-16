@@ -1,11 +1,11 @@
 ===============================================
- celery.bin.celeryd_multi
+ celery.bin.multi
 ===============================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.bin.celeryd_multi
+.. currentmodule:: celery.bin.multi
 
-.. automodule:: celery.bin.celeryd_multi
+.. automodule:: celery.bin.multi
     :members:
     :undoc-members:

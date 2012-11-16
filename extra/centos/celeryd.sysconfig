@@ -11,16 +11,8 @@
 # Path to celery - which might be in a virtualenv
 #CELERY="$BIN_PATH/bin/celery"
 
-# Path to the celeryd multi (might be in a virtualenv)
-#CELERYD_MULTI="$BIN_PATH/bin/celeryd-multi"
-
 # Passed into celeryd multi
-#CELERYD="-m celery.bin.celeryd_detach"
-# OR add -b option is set to your broker URL as necessary
-#CELERYD="-m celery.bin.celeryd_detach -b $amqp_url"
-
-# How to call "manage.py celeryctl"
-#CELERYCTL="$ENV_PYTHON $CELERYD_CHDIR/manage.py celeryctl"
+#CELERYD="-m celery worker --detach"
 
 # Log and PID files
 #CELERYD_LOG_FILE="/path/to/var/log/celeryd/app_name-celeryworker.log"
@@ -38,6 +30,8 @@
 
 # Default arguments to be passed into celeryd.
 #CELERYD_OPTS=""
+# e.g. add app option:
+#CELERYD="-A proj.tasks:app"
 
 # Set the task modules that you want to have celery load
 #CELERY_IMPORTS=("tasks", )

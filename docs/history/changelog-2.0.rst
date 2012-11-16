@@ -938,7 +938,7 @@ News
 
 * celeryd: New option `--version`: Dump version info and exit.
 
-* :mod:`celeryd-multi <celeryd.bin.celeryd_multi>`: Tool for shell scripts
+* :mod:`celeryd-multi <celeryd.bin.multi>`: Tool for shell scripts
   to start multiple workers.
 
     Some examples:

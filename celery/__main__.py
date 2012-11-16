@@ -38,7 +38,7 @@ def _compat_worker():
 def _compat_multi():
     maybe_patch_concurrency()
     _warn_deprecated('celery multi')
-    from celery.bin.celeryd_multi import main
+    from celery.bin.multi import main
     main()
 
 

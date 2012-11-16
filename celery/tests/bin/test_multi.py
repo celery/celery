@@ -6,7 +6,7 @@ import sys
 
 from mock import Mock, patch
 
-from celery.bin.celeryd_multi import (
+from celery.bin.multi import (
     main,
     MultiTool,
     findsig,
@@ -187,7 +187,7 @@ class test_MultiTool(Case):
 
         self.assertEqual(self.t.retcode, 1)
 
-    @patch('celery.bin.celeryd_multi.Popen')
+    @patch('celery.bin.multi.Popen')
     def test_waitexec(self, Popen):
         self.t.note = Mock()
         pipe = Popen.return_value = Mock()
@@ -287,7 +287,7 @@ class test_MultiTool(Case):
                     raise ValueError()
         Pidfile.side_effect = pids
 
-    @patch('celery.bin.celeryd_multi.Pidfile')
+    @patch('celery.bin.multi.Pidfile')
     @patch('socket.gethostname')
     def test_getpids(self, gethostname, Pidfile):
         gethostname.return_value = 'e.com'
@@ -320,9 +320,9 @@ class test_MultiTool(Case):
         # without callback, should work
         nodes = self.t.getpids(p, 'celery worker', callback=None)
 
-    @patch('celery.bin.celeryd_multi.Pidfile')
+    @patch('celery.bin.multi.Pidfile')
     @patch('socket.gethostname')
-    @patch('celery.bin.celeryd_multi.sleep')
+    @patch('celery.bin.multi.sleep')
     def test_shutdown_nodes(self, slepp, gethostname, Pidfile):
         gethostname.return_value = 'e.com'
         self.prepare_pidfile_for_getpids(Pidfile)
@@ -441,7 +441,7 @@ class test_MultiTool(Case):
         self.t.stopwait(['foo', 'bar', 'baz'], 'celeryd')
         self.assertEqual(self.t._stop_nodes.call_args[1]['retry'], 2)
 
-    @patch('celery.bin.celeryd_multi.MultiTool')
+    @patch('celery.bin.multi.MultiTool')
     def test_main(self, MultiTool):
         m = MultiTool.return_value = Mock()
         with self.assertRaises(SystemExit):

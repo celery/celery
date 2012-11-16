@@ -78,7 +78,7 @@ The :program:`celery` program can be used to start the worker:
 
 When the worker starts you should see a banner and some messages::
 
-     -------------- celery@halcyon.local v3.0 (Chiastic Slide)
+     -------------- celery@halcyon.local v3.1 (Cipater)
      ---- **** -----
      --- * ***  * -- [Configuration]
      -- * - **** --- . broker:      amqp://guest@localhost:5672//
@@ -152,7 +152,7 @@ start one or more workers in the background:
 .. code-block:: bash
 
     $ celery multi start w1 -A proj -l info
-    celeryd-multi v3.0.0 (Chiastic Slide)
+    celery multi v3.1.0 (Cipater)
     > Starting nodes...
         > w1.halcyon.local: OK
 
@@ -161,13 +161,13 @@ You can restart it too:
 .. code-block:: bash
 
     $ celery multi restart w1 -A proj -l info
-    celeryd-multi v3.0.0 (Chiastic Slide)
+    celery multi v3.1.0 (Cipater)
     > Stopping nodes...
         > w1.halcyon.local: TERM -> 64024
     > Waiting for 1 node.....
         > w1.halcyon.local: OK
     > Restarting node w1.halcyon.local: OK
-    celeryd-multi v3.0.0 (Chiastic Slide)
+    celeryd multi v3.1.0 (Cipater)
     > Stopping nodes...
         > w1.halcyon.local: TERM -> 64052
 
@@ -212,7 +212,7 @@ e.g:
     $ celeryd multi start 10 -A proj -l info -Q:1-3 images,video -Q:4,5 data \
         -Q default -L:4,5 debug
 
-For more examples see the :mod:`~celery.bin.celeryd_multi` module in the API
+For more examples see the :mod:`~celery.bin.multi` module in the API
 reference.
 
 .. _app-argument:

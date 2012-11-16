@@ -51,4 +51,4 @@
     celery.bin.events
     celery.bin.celery
     celery.bin.amqp
-    celery.bin.celeryd_multi
+    celery.bin.multi
