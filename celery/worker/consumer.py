@@ -295,21 +295,6 @@ class Consumer(object):
         self.app.amqp.queues.select_remove(queue)
         self.task_consumer.cancel_by_queue(queue)
 
-    @property
-    def info(self):
-        """Returns information about this consumer instance
-        as a dict.
-
-        This is also the consumer related info returned by
-        :program:`celery inspect stats`.
-
-        """
-        conninfo = {}
-        if self.connection:
-            conninfo = self.connection.info()
-            conninfo.pop('password', None)  # don't send password.
-        return {'broker': conninfo, 'prefetch_count': self.qos.value}
-
     def on_task(self, task, task_reserved=task_reserved):
         """Handle received task.
 
@@ -396,6 +381,11 @@ class Connection(bootsteps.StartStopStep):
         if connection:
             ignore_errors(connection, connection.close)
 
+    def info(self, c):
+        info = c.connection.info()
+        info.pop('password', None)  # don't send password.
+        return info
+
 
 class Events(bootsteps.StartStopStep):
     requires = (Connection, )
@@ -476,6 +466,9 @@ class Tasks(bootsteps.StartStopStep):
             debug('Closing consumer channel...')
             ignore_errors(c, c.task_consumer.close)
             c.task_consumer = None
+
+    def info(self, c):
+        return {'prefetch_count': c.qos.value}
 
 
 class Agent(bootsteps.StartStopStep):

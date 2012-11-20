@@ -11,6 +11,7 @@
 """
 from __future__ import absolute_import
 
+import os
 import socket
 import sys
 import traceback
@@ -265,6 +266,17 @@ class WorkController(configurated):
                 logger.debug('reloading module %s', module)
                 reload_from_cwd(sys.modules[module], reloader)
         self.pool.restart()
+
+    def info(self):
+        return {'total': self.state.total_count,
+                'pid': os.getpid(),
+                'clock': str(self.app.clock)}
+
+    def stats(self):
+        info = self.info()
+        info.update(self.namespace.info(self))
+        info.update(self.consumer.namespace.info(self.consumer))
+        return info
 
     @property
     def _state(self):

@@ -118,6 +118,12 @@ class Namespace(object):
             step.start(parent)
             debug('^-- substep ok')
 
+    def info(self, parent):
+        info = {}
+        for step in parent.steps:
+            info.update(step.info(parent) or {})
+        return info
+
     def close(self, parent):
         if self.on_close:
             self.on_close()
@@ -328,6 +334,9 @@ class Step(object):
     @property
     def alias(self):
         return self.label or _label(self)
+
+    def info(self, obj):
+        pass
 
 
 class StartStopStep(Step):

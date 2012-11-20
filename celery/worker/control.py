@@ -177,15 +177,7 @@ def dump_active(panel, safe=False, **kwargs):
 
 @Panel.register
 def stats(panel, **kwargs):
-    asinfo = {}
-    if panel.consumer.controller.autoscaler:
-        asinfo = panel.consumer.controller.autoscaler.info()
-    return {'total': state.total_count,
-            'consumer': panel.consumer.info,
-            'pool': panel.consumer.pool.info,
-            'autoscaler': asinfo,
-            'pid': os.getpid(),
-            'clock': str(panel.app.clock)}
+    return panel.consumer.controller.stats()
 
 
 @Panel.register

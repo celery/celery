@@ -179,6 +179,9 @@ class Pool(bootsteps.StartStopStep):
             w.hub.on_init.append(partial(self.on_poll_init, pool))
         return pool
 
+    def info(self, w):
+        return {'pool': w.pool.info}
+
 
 class Beat(bootsteps.StartStopStep):
     """Step used to embed a beat process.
