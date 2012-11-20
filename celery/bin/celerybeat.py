@@ -41,8 +41,6 @@ The :program:`celery beat` command.
 from __future__ import with_statement
 from __future__ import absolute_import
 
-import os
-
 from functools import partial
 
 from celery.platforms import detached
