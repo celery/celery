@@ -519,7 +519,7 @@ class test_Consumer(Case):
                            args=[2, 4, 8], kwargs={})
 
         l.task_consumer = Mock()
-        qos = l.qos = QoS(l.task_consumer.qos, 1)
+        l.qos = QoS(l.task_consumer.qos, 1)
         current_pcount = l.qos.value
         l.event_dispatcher = Mock()
         l.enabled = False

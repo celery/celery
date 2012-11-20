@@ -98,7 +98,6 @@ class test_multi_args(Case):
             for arg in args:
                 self.assertIn(arg, argv)
 
-
         assert_line_in('*P*jerry@*S*',
             [
                 'COMMAND', '-n *P*jerry@*S*', '-Q bar',

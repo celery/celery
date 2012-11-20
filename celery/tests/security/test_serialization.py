@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 from kombu.serialization import registry
-from kombu.utils.encoding import ensure_bytes
 
 from celery.exceptions import SecurityError
 from celery.security.serialization import SecureSerializer, register_auth

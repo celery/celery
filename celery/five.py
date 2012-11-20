@@ -113,6 +113,7 @@ else:
 
     BytesIO = WhateverIO = StringIO         # noqa
 
+
 def with_metaclass(Type, skip_attrs=set(['__dict__', '__weakref__'])):
     """Class decorator to set metaclass.
 

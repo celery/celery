@@ -71,8 +71,8 @@ class schedule(object):
 
         You can override this to decide the interval at runtime,
         but keep in mind the value of :setting:`CELERYBEAT_MAX_LOOP_INTERVAL`,
-        which decides the maximum number of seconds the Beat scheduler can sleep
-        between re-checking the periodic task intervals.  So if you
+        which decides the maximum number of seconds the Beat scheduler can
+        sleep between re-checking the periodic task intervals.  So if you
         dynamically change the next run at value, and the max interval is
         set to 5 minutes, it will take 5 minutes for the change to take
         effect, so you may consider lowering the value of
