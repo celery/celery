@@ -73,10 +73,10 @@ class Entry(object):
             return hash(self) == hash(other)
 
 
-def to_timestamp(d):
+def to_timestamp(d, default_timezone=timezone.utc):
     if isinstance(d, datetime):
         if d.tzinfo is None:
-            d = d.replace(tzinfo=timezone.utc)
+            d = d.replace(tzinfo=default_timezone)
         return timedelta_seconds(d - EPOCH)
     return d
 
