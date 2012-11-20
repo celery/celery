@@ -227,6 +227,10 @@ class chain(Signature):
 
     @classmethod
     def from_dict(self, d):
+        tasks = d['kwargs']['tasks']
+        if d['args'] and tasks:
+            # partial args passed on to first task in chain (Issue #1057).
+            tasks[0]['args'] = d['args'] + tasks[0]['args']
         return chain(*d['kwargs']['tasks'], **kwdict(d['options']))
 
     def __repr__(self):
