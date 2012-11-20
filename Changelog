@@ -9,7 +9,41 @@
 
 If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
-.. _version-3.0.12:
+.. _version-3.0.13:
+
+3.0.13
+======
+:release-date: TBA
+
+- Groups included in chains now give GroupResults (Issue #1057)
+
+    Previously it would incorrectly add a regular result instead of a group
+    result, but now this works:
+
+    .. code-block:: python
+
+        # [4 + 4, 4 + 8, 16 + 8]
+        >>> res = (add.s(2, 2) | group(add.s(4), add.s(8), add.s(16)))()
+        >>> res
+        <GroupResult: a0acf905-c704-499e-b03a-8d445e6398f7 [
+            4346501c-cb99-4ad8-8577-12256c7a22b1,
+            b12ead10-a622-4d44-86e9-3193a778f345,
+            26c7a420-11f3-4b33-8fac-66cd3b62abfd]>
+
+
+- Chains can now chain other chains and use partial arguments (Issue #1057).
+
+    Example:
+
+    .. code-block:: python
+
+        >>> c1 = (add.s(2) | add.s(4))
+        >>> c2 = (add.s(8) | add.s(16))
+
+        >>> c3 = (c1 | c2)
+
+        # 8 + 2 + 4 + 8 + 16
+        >>> assert c3(8).get() == 38
 
 3.0.12
 ======
