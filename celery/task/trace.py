@@ -345,6 +345,7 @@ def setup_worker_optimizations(app):
     # we set this to always return our app.  This is a hack,
     # and means that only a single app can be used for workers
     # running in the same process.
+    app.set_current()
     set_default_app(app)
 
     # evaluate all task classes by finalizing the app.
