@@ -183,8 +183,7 @@ def add_group_task(app):
 
 @shared_task
 def add_chain_task(app):
-    from celery.canvas import chord, group, maybe_subtask
-    from celery.result import GroupResult
+    from celery.canvas import Signature, chord, group, maybe_subtask
     _app = app
 
     class Chain(app.Task):
@@ -202,14 +201,16 @@ def add_chain_task(app):
                 task = maybe_subtask(steps.popleft())
                 task = task.clone() if i else task.clone(args)
                 res = task._freeze()
-                AsyncResult = task.type.AsyncResult
                 i += 1
 
                 if isinstance(task, group):
                     # automatically upgrade group(..) | s to chord(group, s)
                     try:
                         next_step = steps.popleft()
-                        task = chord(task, body=next_step, task_id=tid)
+                        # for chords we freeze by pretending it's a normal
+                        # task instead of a group.
+                        res = Signature._freeze(task)
+                        task = chord(task, body=next_step, task_id=res.task_id)
                     except IndexError:
                         pass
                 if prev_task:

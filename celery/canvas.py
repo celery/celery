@@ -19,7 +19,7 @@ from kombu.utils import cached_property, fxrange, kwdict, reprcall, uuid
 
 from celery import current_app
 from celery.local import Proxy
-from celery.result import GroupResult, from_serializable as serialized_result
+from celery.result import GroupResult
 from celery.utils.functional import (
     maybe_list, is_list, regen,
     chunks as _chunks,
@@ -334,7 +334,12 @@ class group(Signature):
 
     @classmethod
     def from_dict(self, d):
-        return group(d['kwargs']['tasks'], **kwdict(d['options']))
+        tasks = d['kwargs']['tasks']
+        if d['args'] and tasks:
+            # partial args passed on to all tasks in the group (Issue #1057).
+            for task in tasks:
+                task['args'] = d['args'] + task['args']
+        return group(tasks, **kwdict(d['options']))
 
     def __call__(self, *partial_args, **options):
         tasks, result, gid, args = self.type.prepare(options,
