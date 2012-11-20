@@ -11,6 +11,7 @@ from __future__ import with_statement
 
 import anyjson
 import heapq
+import os
 import sys
 import warnings
 

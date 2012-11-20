@@ -20,6 +20,7 @@ from kombu.utils import cached_property, fxrange, kwdict, reprcall, uuid
 from celery import current_app
 from celery.local import Proxy
 from celery.utils.compat import chain_from_iterable
+from celery.result import GroupResult
 from celery.utils.functional import (
     maybe_list, is_list, regen,
     chunks as _chunks,
@@ -127,6 +128,14 @@ class Signature(dict):
         s._type = self._type
         return s
     partial = clone
+
+    def _freeze(self, _id=None):
+        opts = self.options
+        try:
+            tid = opts['task_id']
+        except KeyError:
+            tid = opts['task_id'] = _id or uuid()
+        return self.type.AsyncResult(tid)
 
     def replace(self, args=None, kwargs=None, options=None):
         s = self.clone()
@@ -319,6 +328,20 @@ class group(Signature):
         tasks, result, gid, args = self.type.prepare(options,
                     map(Signature.clone, self.tasks), partial_args)
         return self.type(tasks, result, gid, args)
+
+    def _freeze(self, _id=None):
+        opts = self.options
+        try:
+            gid = opts['group']
+        except KeyError:
+            gid = opts['group'] = uuid()
+        new_tasks, results = [], []
+        for task in self.tasks:
+            task = maybe_subtask(task).clone()
+            results.append(task._freeze())
+            new_tasks.append(task)
+        self.tasks = self.kwargs['tasks'] = new_tasks
+        return GroupResult(gid, results)
 
     def skew(self, start=1.0, stop=None, step=1.0):
         _next_skew = fxrange(start, stop, step, repeatlast=True).next
