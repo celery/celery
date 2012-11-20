@@ -201,33 +201,17 @@ def add_chain_task(app):
                 # First task get partial args from chain.
                 task = maybe_subtask(steps.popleft())
                 task = task.clone() if i else task.clone(args)
+                res = task._freeze()
                 AsyncResult = task.type.AsyncResult
                 i += 1
-                tid = task.options.get('task_id')
-                if tid is None:
-                    tid = task.options['task_id'] = uuid()
-                res = AsyncResult(tid)
 
-                # groups must be turned into GroupResults
                 if isinstance(task, group):
-                    #
-                    gid = task.options.get('group')
-                    if gid is None:
-                        gid = task.options['group'] = uuid()
-                    group_results = []
-                    for sub in task.tasks:
-                        tid = sub.options.get('task_id')
-                        if tid is None:
-                            tid = sub.options['task_id'] = uuid()
-                        group_results.append(AsyncResult(tid))
-                    res = GroupResult(gid, group_results)
-
                     # automatically upgrade group(..) | s to chord(group, s)
                     try:
                         next_step = steps.popleft()
                         task = chord(task, body=next_step, task_id=tid)
                     except IndexError:
-                        res = GroupResult(gid, group_results)
+                        pass
                 if prev_task:
                     # link previous task to this task.
                     prev_task.link(task)
