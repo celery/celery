@@ -23,8 +23,12 @@ from .text import pluralize
 
 try:
     import pytz
-except ImportError:     # pragma: no cover
-    pytz = None         # noqa
+    from pytz import AmbiguousTimeError
+except ImportError:                         # pragma: no cover
+    pytz = None                             # noqa
+
+    class AmbiguousTimeError(Exception):    # noqa
+        pass
 
 
 C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
@@ -276,23 +280,31 @@ def is_naive(dt):
 def make_aware(dt, tz):
     """Sets the timezone for a datetime object."""
     try:
-        localize = tz.localize
+        _localize = tz.localize
     except AttributeError:
         return dt.replace(tzinfo=tz)
     else:
         # works on pytz timezones
-        return localize(dt, is_dst=None)
+        try:
+            return _localize(dt, is_dst=None)
+        except AmbiguousTimeError:
+            return min(_localize(dt, is_dst=True),
+                       _localize(dt, is_dst=False))
 
 
 def localize(dt, tz):
     """Convert aware datetime to another timezone."""
     dt = dt.astimezone(tz)
     try:
-        normalize = tz.normalize
-    except AttributeError:
+        _normalize = tz.normalize
+    except AttributeError:  # non-pytz tz
         return dt
     else:
-        return normalize(dt)  # pytz
+        try:
+            return _normalize(dt, is_dst=None)
+        except AmbiguousTimeError:
+            return min(_normalize(dt, is_dst=True),
+                       _normalize(dt, is_dst=False))
 
 
 def to_utc(dt):
