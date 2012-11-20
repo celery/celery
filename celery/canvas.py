@@ -322,7 +322,12 @@ class group(Signature):
 
     @classmethod
     def from_dict(self, d):
-        return group(d['kwargs']['tasks'], **kwdict(d['options']))
+        tasks = d['kwargs']['tasks']
+        if d['args'] and tasks:
+            # partial args passed on to all tasks in the group (Issue #1057).
+            for task in tasks:
+                task['args'] = d['args'] + task['args']
+        return group(tasks, **kwdict(d['options']))
 
     def __call__(self, *partial_args, **options):
         tasks, result, gid, args = self.type.prepare(options,
