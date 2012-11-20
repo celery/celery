@@ -51,7 +51,7 @@ def add_backend_cleanup_task(app):
 
     """
 
-    @app.task(name='celery.backend_cleanup')
+    @app.task(name='celery.backend_cleanup', _force_evaluate=True)
     def backend_cleanup():
         app.backend.cleanup()
     return backend_cleanup
@@ -69,7 +69,7 @@ def add_unlock_chord_task(app):
     from celery import result as _res
 
     @app.task(name='celery.chord_unlock', max_retries=None,
-              default_retry_delay=1, ignore_result=True)
+              default_retry_delay=1, ignore_result=True, _force_evaluate=True)
     def unlock_chord(group_id, callback, interval=None, propagate=False,
             max_retries=None, result=None, Result=_res.AsyncResult):
         if interval is None:
@@ -87,7 +87,7 @@ def add_unlock_chord_task(app):
 def add_map_task(app):
     from celery.canvas import subtask
 
-    @app.task(name='celery.map')
+    @app.task(name='celery.map', _force_evaluate=True)
     def xmap(task, it):
         task = subtask(task).type
         return [task(item) for item in it]
@@ -98,7 +98,7 @@ def add_map_task(app):
 def add_starmap_task(app):
     from celery.canvas import subtask
 
-    @app.task(name='celery.starmap')
+    @app.task(name='celery.starmap', _force_evaluate=True)
     def xstarmap(task, it):
         task = subtask(task).type
         return [task(*item) for item in it]
@@ -109,7 +109,7 @@ def add_starmap_task(app):
 def add_chunk_task(app):
     from celery.canvas import chunks as _chunks
 
-    @app.task(name='celery.chunks')
+    @app.task(name='celery.chunks', _force_evaluate=True)
     def chunks(task, it, n):
         return _chunks.apply_chunks(task, it, n)
     return chunks

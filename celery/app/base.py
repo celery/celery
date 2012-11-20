@@ -8,6 +8,7 @@
 """
 from __future__ import absolute_import
 
+import os
 import threading
 import warnings
 
@@ -39,6 +40,7 @@ from .utils import (
     AppPickler, Settings, bugreport, _unpickle_app, _unpickle_app_v2,
 )
 
+_EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
 BUILTIN_FIXUPS = frozenset([
     'celery.fixups.django:fixup',
 ])
@@ -148,7 +150,14 @@ class Celery(object):
 
     def task(self, *args, **opts):
         """Creates new task class from any callable."""
-
+        if _EXECV and not opts.get('_force_evaluate'):
+            # When using execv the task in the original module will point to a
+            # different app, so doing things like 'add.request' will point to
+            # a differnt task instance.  This makes sure it will always use
+            # the task instance from the current app.
+            # Really need a better solution for this :(
+            from . import shared_task as proxies_to_curapp
+            return proxies_to_curapp(*args, _force_evaluate=True, **opts)
         def inner_create_task_cls(shared=True, filter=None, **opts):
 
             def _create_task_cls(fun):
