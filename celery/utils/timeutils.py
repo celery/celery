@@ -302,6 +302,8 @@ def localize(dt, tz):
     else:
         try:
             return _normalize(dt, is_dst=None)
+        except TypeError:
+            return _normalize(dt)
         except AmbiguousTimeError:
             return min(_normalize(dt, is_dst=True),
                        _normalize(dt, is_dst=False))
