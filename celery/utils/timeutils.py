@@ -24,7 +24,6 @@ from .functional import dictfilter
 from .iso8601 import parse_iso8601
 from .text import pluralize
 
-
 C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
 
 DAYNAMES = 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
@@ -33,7 +32,6 @@ WEEKDAYS = dict(zip(DAYNAMES, range(7)))
 RATE_MODIFIER_MAP = {'s': lambda n: n,
                      'm': lambda n: n / 60.0,
                      'h': lambda n: n / 60.0 / 60.0}
-
 
 HAVE_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, 'total_seconds')
 

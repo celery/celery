@@ -18,6 +18,69 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 See :ref:`whatsnew-3.1`
 
+.. _version-3.0.13:
+
+3.0.13
+======
+:release-date: TBA
+
+- Fixed a deadlock issue that could occur when the producer pool
+  inherited the connection pool instance of the parent process.
+
+- The :option:`--loader` option now works again (Issue #1066).
+
+- :program:`celery` umbrella command: All subcommands now supports
+  the :option:`--workdir` option (Issue #1063).
+
+- Groups included in chains now give GroupResults (Issue #1057)
+
+    Previously it would incorrectly add a regular result instead of a group
+    result, but now this works:
+
+    .. code-block:: python
+
+        # [4 + 4, 4 + 8, 16 + 8]
+        >>> res = (add.s(2, 2) | group(add.s(4), add.s(8), add.s(16)))()
+        >>> res
+        <GroupResult: a0acf905-c704-499e-b03a-8d445e6398f7 [
+            4346501c-cb99-4ad8-8577-12256c7a22b1,
+            b12ead10-a622-4d44-86e9-3193a778f345,
+            26c7a420-11f3-4b33-8fac-66cd3b62abfd]>
+
+
+- Chains can now chain other chains and use partial arguments (Issue #1057).
+
+    Example:
+
+    .. code-block:: python
+
+        >>> c1 = (add.s(2) | add.s(4))
+        >>> c2 = (add.s(8) | add.s(16))
+
+        >>> c3 = (c1 | c2)
+
+        # 8 + 2 + 4 + 8 + 16
+        >>> assert c3(8).get() == 38
+
+- The :program:`celery shell` command now always adds the current
+  directory to the module path.
+
+- The worker will now properly handle the :exc:`pytz.AmbiguousTimeError`
+  exception raised when an ETA/countdown is prepared while being in DST
+  transition (Issue #1061).
+
+- force_execv: Now makes sure that task symbols in the original
+  task modules will always use the correct app instance (Issue #1072).
+
+- Handling of ETA/countdown fixed when the :setting:`CELERY_ENABLE_UTC`
+   setting is disabled (Issue #1065).
+
+- Fixed a typo in the broadcast routing documentation (Issue #1026).
+
+- Rewrote confusing section about idempotence in the task user guide.
+
+- Fixed typo in the daemonization tutorial (Issue #1055).
+
 .. _version-3.0.12:
 
 3.0.12
