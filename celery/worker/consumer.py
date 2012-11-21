@@ -820,9 +820,13 @@ class Consumer(object):
     def add_task_queue(self, queue, exchange=None, exchange_type=None,
             routing_key=None, **options):
         cset = self.task_consumer
-        try:
+        queues = self.app.amqp.queues
+        # Must use in' here, as __missing__ will automatically
+        # create queues when CELERY_CREATE_MISSING_QUEUES is enabled.
+        # (Issue #1079)
+        if queue in queues:
             q = self.app.amqp.queues[queue]
-        except KeyError:
+        else:
             exchange = queue if exchange is None else exchange
             exchange_type = 'direct' if exchange_type is None \
                                      else exchange_type
