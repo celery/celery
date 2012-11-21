@@ -123,16 +123,23 @@ use the help command:
 Calling our task
 ================
 
-Now that the worker is running, open up a new terminal to actually
-call the task you defined::
+Now that the worker is running, open up a new python interactive shell
+with ``python manage.py shell`` to actually call the task you defined::
 
     >>> from celerytest.tasks import add
 
     >>> add.delay(2, 2)
 
 
-The ``delay`` method is a handy shortcut to the ``apply_async`` method which
-enables you to have greater control of the task execution.
+Note that if you open a regular python shell by simply running ``python``
+you will need to import your Django application's settings by running::
+
+    # Replace 'myproject' with your project's name
+    >>> from myproject import settings
+
+
+The ``delay`` method used above is a handy shortcut to the ``apply_async`` 
+method which enables you to have greater control of the task execution.
 To read more about calling tasks, including specifying the time at which
 the task should be processed see :ref:`guide-calling`.
 
