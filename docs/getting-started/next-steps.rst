@@ -390,14 +390,14 @@ an argument signature specified.  The ``add`` task takes two arguments,
 so a subtask specifying two arguments would make a complete signature::
 
     >>> s1 = add.s(2, 2)
-    >>> res = s2.delay()
+    >>> res = s1.delay()
     >>> res.get()
     4
 
 But, you can also make incomplete signatures to create what we call
 *partials*::
 
-    # incomplete partial:  add(?, 2)
+    # incomplete partial: add(?, 2)
     >>> s2 = add.s(2)
 
 ``s2`` is now a partial subtask that needs another argument to be complete,
@@ -490,7 +490,7 @@ is called:
 
 .. code-block:: python
 
-    >>> from celery imoport chain
+    >>> from celery import chain
     >>> from proj.tasks import add, mul
 
     # (4 + 4) * 8

@@ -29,7 +29,7 @@ Example connecting to the :signal:`task_sent` signal:
 
     @task_sent.connect
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
-                          kwargs=None, \*\*kwds):
+                          kwargs=None, **kwds):
         print('Got signal task_sent for task id %s' % (task_id, ))
 
 
@@ -43,7 +43,7 @@ has been sent by providing the `sender` argument to
 
     @task_sent.connect(sender='tasks.add')
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
-                          kwargs=None, \*\*kwds):
+                          kwargs=None, **kwds):
         print('Got signal task_sent for task id %s' % (task_id, ))
 
 .. _signal-ref:

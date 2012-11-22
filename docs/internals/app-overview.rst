@@ -39,7 +39,7 @@ Creating custom Task subclasses:
     class DebugTask(Task):
         abstract = True
 
-        def on_failure(self, \*args, \*\*kwargs):
+        def on_failure(self, *args, **kwargs):
             import pdb
             pdb.set_trace()
 
