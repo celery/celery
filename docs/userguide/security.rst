@@ -94,7 +94,7 @@ The default `pickle` serializer is convenient because it supports
 arbitrary Python objects, whereas other serializers only
 work with a restricted set of types.
 
-But for the same reasons the `pickle` serializer is inherently insecure[*]_,
+But for the same reasons the `pickle` serializer is inherently insecure [*]_,
 and should be avoided whenever clients are untrusted or
 unauthenticated.
 
@@ -137,13 +137,13 @@ disable all insucure serializers so that the worker won't accept
 messages with untrusted content types.
 
 This is an example configuration using the `auth` serializer,
-with the private key and certificate files located in :`/etc/ssl`.
+with the private key and certificate files located in `/etc/ssl`.
 
 .. code-block:: python
 
     CELERY_SECURITY_KEY = '/etc/ssl/private/worker.key'
     CELERY_SECURITY_CERTIFICATE = '/etc/ssl/certs/worker.pem'
-    CELERY_SECURITY_CERT_STORE = '/etc/ssl/certs/\*.pem'
+    CELERY_SECURITY_CERT_STORE = '/etc/ssl/certs/*.pem'
     from celery.security import setup_security
     setup_security()
 
@@ -182,7 +182,7 @@ This should be fairly easy to setup using syslog (see also `syslog-ng`_ and
 support for using syslog.
 
 A tip for the paranoid is to send logs using UDP and cut the
-transmit part of the logging servers network cable :-)
+transmit part of the logging server's network cable :-)
 
 .. _`syslog-ng`: http://en.wikipedia.org/wiki/Syslog-ng
 .. _`rsyslog`: http://www.rsyslog.com/
