@@ -185,6 +185,10 @@ class Signature(dict):
             return chain(self, other)
         return NotImplemented
 
+    def __deepcopy__(self, memo):
+        memo[id(self)] = self
+        return dict(self)
+
     def __invert__(self):
         return self.apply_async().get()
 
