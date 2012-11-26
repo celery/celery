@@ -24,7 +24,7 @@ Unknown result backend: {0!r}.  Did you spell that correctly? ({1!r})\
 
 BACKEND_ALIASES = {
     'amqp': 'celery.backends.amqp:AMQPBackend',
-    'amqrpc': 'celery.backends.amqrpc.AMQRPCBackend',
+    'rpc': 'celery.backends.rpc.RPCBackend',
     'cache': 'celery.backends.cache:CacheBackend',
     'redis': 'celery.backends.redis:RedisBackend',
     'mongodb': 'celery.backends.mongodb:MongoBackend',

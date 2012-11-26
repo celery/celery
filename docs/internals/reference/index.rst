@@ -31,6 +31,7 @@
     celery.beat
     celery.backends
     celery.backends.base
+    celery.backends.rpc
     celery.backends.database
     celery.backends.cache
     celery.backends.amqp

@@ -172,7 +172,7 @@ In Other News
 
 
 
-- New result backend with RPC semantics (``amqrpc``).
+- New result backend with RPC semantics (``rpc``).
 
     This version of the ``amqp`` result backend is a very good alternative
     to use in classical RPC scenarios, where the process that initiates

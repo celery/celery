@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.backends.amqrpc
-    ~~~~~~~~~~~~~~~~~~~~~~
+    celery.backends.rpc
+    ~~~~~~~~~~~~~~~~~~~
 
     RPC-style result backend, using reply-to and one queue per client.
 
@@ -18,14 +18,14 @@ from celery import current_task
 from celery.backends import amqp
 
 
-class AMQRPCBackend(amqp.AMQPBackend):
+class RPCBackend(amqp.AMQPBackend):
     _tls = local()
 
     class Consumer(kombu.Consumer):
         auto_declare = False
 
     def _create_exchange(self, name, type='direct', persistent=False):
-        return self.Exchange('c.amqrpc', type=type, delivery_mode=1,
+        return self.Exchange('c.rep', type=type, delivery_mode=1,
                 durable=False, auto_delete=False)
 
     def on_task_call(self, producer, task_id):
