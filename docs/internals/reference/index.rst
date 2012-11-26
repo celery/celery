@@ -60,6 +60,7 @@
     celery.utils.iso8601
     celery.utils.compat
     celery.utils.serialization
+    celery.utils.sysinfo
     celery.utils.threads
     celery.utils.timer2
     celery.utils.imports
