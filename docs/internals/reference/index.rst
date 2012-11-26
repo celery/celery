@@ -54,6 +54,7 @@
     celery.backends.database.session
     celery.utils
     celery.utils.functional
+    celery.utils.objects
     celery.utils.term
     celery.utils.timeutils
     celery.utils.iso8601
