@@ -1,4 +1,4 @@
-.. _configuration:
+.' _configuration:
 
 ============================
  Configuration and defaults
@@ -919,6 +919,8 @@ stored task tombstones will be deleted.
 
 A built-in periodic task will delete the results after this time
 (:class:`celery.task.backend_cleanup`).
+
+Default is to expire after 1 day.
 
 .. note::
 
