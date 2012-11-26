@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 
-celery.bin.graph
-----------------
-
 The :program:`celery graph` command.
+
+.. program:: celery graph
 
 """
 from __future__ import absolute_import, unicode_literals

@@ -46,9 +46,10 @@
     celery.apps.worker
     celery.apps.beat
     celery.bin.base
+    celery.bin.celery
     celery.bin.worker
     celery.bin.beat
     celery.bin.events
-    celery.bin.celery
     celery.bin.amqp
     celery.bin.multi
+    celery.bin.graph
