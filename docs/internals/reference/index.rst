@@ -56,6 +56,7 @@
     celery.utils.functional
     celery.utils.term
     celery.utils.timeutils
+    celery.utils.iso8601
     celery.utils.compat
     celery.utils.serialization
     celery.utils.threads

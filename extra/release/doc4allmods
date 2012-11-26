@@ -9,6 +9,8 @@ SKIP_FILES="celery.five.rst
             celery.bin.celeryd_detach.rst
             celery.contrib.rst
             celery.contrib.bundles.rst
+            celery.fixups.rst
+            celery.fixups.django.rst
             celery.local.rst
             celery.app.base.rst
             celery.apps.rst
