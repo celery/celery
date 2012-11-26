@@ -34,6 +34,9 @@ def mytask():
 class WorkController(object):
     autoscaler = None
 
+    def stats(self):
+        return {'total': state.total_count}
+
 
 class Consumer(consumer.Consumer):
 
@@ -47,10 +50,6 @@ class Consumer(consumer.Consumer):
 
         from celery.concurrency.base import BasePool
         self.pool = BasePool(10)
-
-    @property
-    def info(self):
-        return {'xyz': 'XYZ'}
 
 
 class test_ControlPanel(Case):
@@ -139,13 +138,8 @@ class test_ControlPanel(Case):
     def test_stats(self):
         prev_count, state.total_count = state.total_count, 100
         try:
-            self.assertDictContainsSubset({'total': 100,
-                                           'consumer': {'xyz': 'XYZ'}},
+            self.assertDictContainsSubset({'total': 100},
                                           self.panel.handle('stats'))
-            self.panel.state.consumer = Mock()
-            self.panel.handle('stats')
-            self.assertTrue(
-                self.panel.state.consumer.controller.autoscaler.info.called)
         finally:
             state.total_count = prev_count
 

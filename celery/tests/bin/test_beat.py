@@ -39,6 +39,7 @@ class MockService(beat.Service):
 
 class MockBeat(beatapp.Beat):
     running = False
+    redirect_stdouts = False
 
     def run(self):
         MockBeat.running = True
@@ -46,6 +47,7 @@ class MockBeat(beatapp.Beat):
 
 class MockBeat2(beatapp.Beat):
     Service = MockService
+    redirect_stdouts = False
 
     def install_sync_handler(self, b):
         pass
@@ -53,6 +55,7 @@ class MockBeat2(beatapp.Beat):
 
 class MockBeat3(beatapp.Beat):
     Service = MockService
+    redirect_stdouts = False
 
     def install_sync_handler(self, b):
         raise TypeError('xxx')
@@ -170,14 +173,14 @@ class test_div(AppCase):
             MockBeat.running = False
 
     def test_detach(self):
-        cmd = beat_bin.BeatCommand()
+        cmd = beat_bin.beat()
         cmd.app = app_or_default()
         cmd.run(detach=True)
         self.assertTrue(MockDaemonContext.opened)
         self.assertTrue(MockDaemonContext.closed)
 
     def test_parse_options(self):
-        cmd = beat_bin.BeatCommand()
+        cmd = beat_bin.beat()
         cmd.app = app_or_default()
         options, args = cmd.parse_options('celery beat', ['-s', 'foo'])
         self.assertEqual(options.schedule, 'foo')

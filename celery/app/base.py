@@ -147,7 +147,7 @@ class Celery(object):
                     .execute_from_commandline(argv)
 
     def worker_main(self, argv=None):
-        return instantiate('celery.bin.worker:WorkerCommand', app=self) \
+        return instantiate('celery.bin.worker:worker', app=self) \
                     .execute_from_commandline(argv)
 
     def task(self, *args, **opts):

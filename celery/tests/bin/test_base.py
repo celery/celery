@@ -21,7 +21,7 @@ APP = MyApp()  # <-- Used by test_with_custom_app
 class MockCommand(Command):
     mock_args = ('arg1', 'arg2', 'arg3')
 
-    def parse_options(self, prog_name, arguments):
+    def parse_options(self, prog_name, arguments, command=None):
         options = Object()
         options.foo = 'bar'
         options.prog_name = prog_name
@@ -60,13 +60,13 @@ class test_Command(AppCase):
                                       kwargs2)
 
     def test_with_bogus_args(self):
-        cmd = MockCommand()
-        cmd.supports_args = False
         with override_stdouts() as (_, stderr):
+            cmd = MockCommand()
+            cmd.supports_args = False
             with self.assertRaises(SystemExit):
                 cmd.execute_from_commandline(argv=['--bogus'])
-        self.assertTrue(stderr.getvalue())
-        self.assertIn('Unrecognized', stderr.getvalue())
+            self.assertTrue(stderr.getvalue())
+            self.assertIn('Unrecognized', stderr.getvalue())
 
     def test_with_custom_config_module(self):
         prev = os.environ.pop('CELERY_CONFIG_MODULE', None)

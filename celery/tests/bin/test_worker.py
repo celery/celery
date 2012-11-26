@@ -17,7 +17,7 @@ from celery import platforms
 from celery import signals
 from celery import current_app
 from celery.apps import worker as cd
-from celery.bin.worker import WorkerCommand, main as worker_main
+from celery.bin.worker import worker, main as worker_main
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
 from celery.task import trace
 from celery.utils.log import ensure_process_aware_logger
@@ -75,9 +75,9 @@ class test_Worker(WorkerAppCase):
     @disable_stdouts
     def test_queues_string(self):
         celery = Celery(set_as_current=False)
-        worker = celery.Worker()
-        worker.setup_queues('foo,bar,baz')
-        self.assertEqual(worker.queues, ['foo', 'bar', 'baz'])
+        w = celery.Worker()
+        w.setup_queues('foo,bar,baz')
+        self.assertEqual(w.queues, ['foo', 'bar', 'baz'])
         self.assertTrue('foo' in celery.amqp.queues)
 
     @disable_stdouts
@@ -85,34 +85,34 @@ class test_Worker(WorkerAppCase):
         celery = Celery(set_as_current=False)
         with patch('celery.worker.cpu_count') as cpu_count:
             cpu_count.side_effect = NotImplementedError()
-            worker = celery.Worker(concurrency=None)
-            self.assertEqual(worker.concurrency, 2)
-        worker = celery.Worker(concurrency=5)
-        self.assertEqual(worker.concurrency, 5)
+            w = celery.Worker(concurrency=None)
+            self.assertEqual(w.concurrency, 2)
+        w = celery.Worker(concurrency=5)
+        self.assertEqual(w.concurrency, 5)
 
     @disable_stdouts
     def test_windows_B_option(self):
         celery = Celery(set_as_current=False)
         celery.IS_WINDOWS = True
         with self.assertRaises(SystemExit):
-            WorkerCommand(app=celery).run(beat=True)
+            worker(app=celery).run(beat=True)
 
     def test_setup_concurrency_very_early(self):
-        x = WorkerCommand()
+        x = worker()
         x.run = Mock()
         with self.assertRaises(ImportError):
             x.execute_from_commandline(['worker', '-P', 'xyzybox'])
 
     @disable_stdouts
     def test_invalid_loglevel_gives_error(self):
-        x = WorkerCommand(app=Celery(set_as_current=False))
+        x = worker(app=Celery(set_as_current=False))
         with self.assertRaises(SystemExit):
             x.run(loglevel='GRIM_REAPER')
 
     def test_no_loglevel(self):
         app = Celery(set_as_current=False)
         app.Worker = Mock()
-        WorkerCommand(app=app).run(loglevel=None)
+        worker(app=app).run(loglevel=None)
 
     def test_tasklist(self):
         celery = Celery(set_as_current=False)
@@ -266,7 +266,7 @@ class test_Worker(WorkerAppCase):
     @disable_stdouts
     def test_unknown_loglevel(self):
         with self.assertRaises(SystemExit):
-            WorkerCommand(app=self.app).run(loglevel='ALIEN')
+            worker(app=self.app).run(loglevel='ALIEN')
         worker1 = self.Worker(loglevel=0xFFFF)
         self.assertEqual(worker1.loglevel, 0xFFFF)
 
@@ -403,7 +403,7 @@ class test_funs(WorkerAppCase):
 
     @disable_stdouts
     def test_parse_options(self):
-        cmd = WorkerCommand()
+        cmd = worker()
         cmd.app = current_app
         opts, args = cmd.parse_options('worker', ['--concurrency=512'])
         self.assertEqual(opts.concurrency, 512)

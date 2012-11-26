@@ -391,7 +391,7 @@ class Connection(bootsteps.StartStopStep):
     def info(self, c):
         info = c.connection.info()
         info.pop('password', None)  # don't send password.
-        return info
+        return {'broker': info}
 
 
 class Events(bootsteps.StartStopStep):

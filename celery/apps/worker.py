@@ -103,11 +103,14 @@ class Worker(WorkController):
         )
 
     def on_init_namespace(self):
-        self.setup_logging()
+        self._custom_logging = self.setup_logging()
         # apply task execution optimizations
         trace.setup_worker_optimizations(self.app)
 
     def on_start(self):
+        if not self._custom_logging and self.redirect_stdouts:
+            self.app.log.redirect_stdouts(self.redirect_stdouts_level)
+
         WorkController.on_start(self)
 
         # this signal can be used to e.g. change queues after
@@ -140,9 +143,8 @@ class Worker(WorkController):
     def setup_logging(self, colorize=None):
         if colorize is None and self.no_color is not None:
             colorize = not self.no_color
-        self.app.log.setup(self.loglevel, self.logfile,
-                           self.redirect_stdouts, self.redirect_stdouts_level,
-                           colorize=colorize)
+        return self.app.log.setup(self.loglevel, self.logfile,
+                   redirect_stdouts=False, colorize=colorize)
 
     def purge_messages(self):
         count = self.app.control.purge()

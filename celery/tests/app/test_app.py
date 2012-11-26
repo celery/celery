@@ -270,18 +270,18 @@ class test_App(Case):
     def test_worker_main(self):
         from celery.bin import worker as worker_bin
 
-        class WorkerCommand(worker_bin.WorkerCommand):
+        class worker(worker_bin.worker):
 
             def execute_from_commandline(self, argv):
                 return argv
 
-        prev, worker_bin.WorkerCommand = \
-                worker_bin.WorkerCommand, WorkerCommand
+        prev, worker_bin.worker = \
+                worker_bin.worker, worker
         try:
             ret = self.app.worker_main(argv=['--version'])
             self.assertListEqual(ret, ['--version'])
         finally:
-            worker_bin.WorkerCommand = prev
+            worker_bin.worker = prev
 
     def test_config_from_envvar(self):
         os.environ['CELERYTEST_CONFIG_OBJECT'] = 'celery.tests.app.test_app'

@@ -7,8 +7,7 @@ from celery.bin.amqp import (
     AMQPAdmin,
     AMQShell,
     dump_message,
-    AMQPAdminCommand,
-    run,
+    amqp,
     main,
 )
 
@@ -127,25 +126,14 @@ class test_AMQShell(AppCase):
         a.run()
         self.assertIn('bibi', self.fh.getvalue())
 
-    @patch('celery.bin.amqp.AMQPAdminCommand')
+    @patch('celery.bin.amqp.amqp')
     def test_main(self, Command):
         c = Command.return_value = Mock()
         main()
         c.execute_from_commandline.assert_called_with()
 
     @patch('celery.bin.amqp.AMQPAdmin')
-    def test_amqp(self, cls):
-        c = cls.return_value = Mock()
-        run()
-        c.run.assert_called_with()
-
-    @patch('celery.bin.amqp.AMQPAdmin')
-    def test_AMQPAdminCommand(self, cls):
-        c = cls.return_value = Mock()
-        run()
-        c.run.assert_called_with()
-
-        x = AMQPAdminCommand(app=self.app)
+    def test_command(self, cls):
+        x = amqp(app=self.app)
         x.run()
         self.assertIs(cls.call_args[1]['app'], self.app)
-        c.run.assert_called_with()

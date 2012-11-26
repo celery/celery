@@ -246,12 +246,14 @@ class test_Consumer(Case):
         l = MyKombuConsumer(self.ready_queue, timer=self.timer)
         l.task_consumer = Mock()
         l.qos = QoS(l.task_consumer.qos, 10)
-        info = l.info
+        l.connection = Mock()
+        l.connection.info.return_value = {'foo': 'bar'}
+        l.controller = l.app.WorkController()
+        l.controller.pool = Mock()
+        l.controller.pool.info.return_value = [Mock(), Mock()]
+        l.controller.consumer = l
+        info = l.controller.stats()
         self.assertEqual(info['prefetch_count'], 10)
-        self.assertFalse(info['broker'])
-
-        l.connection = current_app.connection()
-        info = l.info
         self.assertTrue(info['broker'])
 
     def test_start_when_closed(self):

@@ -21,11 +21,11 @@ def proctitle(prog, info=None):
 proctitle.last = ()
 
 
-class test_EvCommand(Case):
+class test_events(Case):
 
     def setUp(self):
         self.app = app_or_default()
-        self.ev = events.EvCommand(app=self.app)
+        self.ev = events.events(app=self.app)
 
     @patch('celery.events.dumper', 'evdump', lambda **kw: 'me dumper, you?')
     @patch('celery.bin.events', 'set_process_title', proctitle)
@@ -68,7 +68,7 @@ class test_EvCommand(Case):
     def test_get_options(self):
         self.assertTrue(self.ev.get_options())
 
-    @patch('celery.bin.events', 'EvCommand', MockCommand)
+    @patch('celery.bin.events', 'events', MockCommand)
     def test_main(self):
         MockCommand.executed = []
         events.main()

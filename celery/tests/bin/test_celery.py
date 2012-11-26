@@ -9,7 +9,6 @@ from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
 from celery.bin.celery import (
     Command,
     Error,
-    worker,
     list_,
     call,
     purge,
@@ -45,14 +44,6 @@ class test_Command(AppCase):
         self.err = WhateverIO()
         self.cmd = Command(self.app, stdout=self.out, stderr=self.err)
 
-    def test_exit_help(self):
-        self.cmd.run_from_argv = Mock()
-        with self.assertRaises(SystemExit):
-            self.cmd.exit_help('foo')
-        self.cmd.run_from_argv.assert_called_with(
-                self.cmd.prog_name, ['foo', '--help']
-        )
-
     def test_error(self):
         self.cmd.out = Mock()
         self.cmd.error('FOO')
@@ -73,34 +64,21 @@ class test_Command(AppCase):
     def test_run_from_argv(self):
         with self.assertRaises(NotImplementedError):
             self.cmd.run_from_argv('prog', ['foo', 'bar'])
-        self.assertEqual(self.cmd.prog_name, 'prog')
 
-    def test_prettify_list(self):
-        self.assertEqual(self.cmd.prettify([])[1], '- empty -')
-        self.assertIn('bar', self.cmd.prettify(['foo', 'bar'])[1])
+    def test_pretty_list(self):
+        self.assertEqual(self.cmd.pretty([])[1], '- empty -')
+        self.assertIn('bar', self.cmd.pretty(['foo', 'bar'])[1])
 
-    def test_prettify_dict(self):
+    def test_pretty_dict(self):
         self.assertIn('OK',
-            str(self.cmd.prettify({'ok': 'the quick brown fox'})[0]))
+            str(self.cmd.pretty({'ok': 'the quick brown fox'})[0]))
         self.assertIn('ERROR',
-            str(self.cmd.prettify({'error': 'the quick brown fox'})[0]))
+            str(self.cmd.pretty({'error': 'the quick brown fox'})[0]))
 
-    def test_prettify(self):
-        self.assertIn('OK', str(self.cmd.prettify('the quick brown')))
-        self.assertIn('OK', str(self.cmd.prettify(object())))
-        self.assertIn('OK', str(self.cmd.prettify({'foo': 'bar'})))
-
-
-class test_Delegate(AppCase):
-
-    def test_get_options(self):
-        self.assertTrue(worker(app=self.app).get_options())
-
-    def test_run(self):
-        w = worker()
-        w.target.run = Mock()
-        w.run()
-        w.target.run.assert_called_with()
+    def test_pretty(self):
+        self.assertIn('OK', str(self.cmd.pretty('the quick brown')))
+        self.assertIn('OK', str(self.cmd.pretty(object())))
+        self.assertIn('OK', str(self.cmd.pretty({'foo': 'bar'})))
 
 
 class test_list(AppCase):
@@ -280,18 +258,22 @@ class test_CeleryCommand(AppCase):
         Help = x.commands['help'] = Mock()
         help = Help.return_value = Mock()
         x.execute('fooox', ['a'])
-        help.run_from_argv.assert_called_with(x.prog_name, ['help'])
+        help.run_from_argv.assert_called_with(x.prog_name, [], command='help')
         help.reset()
         x.execute('help', ['help'])
-        help.run_from_argv.assert_called_with(x.prog_name, ['help'])
+        help.run_from_argv.assert_called_with(x.prog_name, [], command='help')
 
         Dummy = x.commands['dummy'] = Mock()
         dummy = Dummy.return_value = Mock()
         dummy.run_from_argv.side_effect = Error('foo', status='EX_FAILURE')
         help.reset()
         x.execute('dummy', ['dummy'])
-        dummy.run_from_argv.assert_called_with(x.prog_name, ['dummy'])
-        help.run_from_argv.assert_called_with(x.prog_name, ['dummy'])
+        dummy.run_from_argv.assert_called_with(
+            x.prog_name, [], command='dummy',
+        )
+        help.run_from_argv.assert_called_with(
+            x.prog_name, [], command='dummy',
+        )
 
 
 class test_inspect(AppCase):

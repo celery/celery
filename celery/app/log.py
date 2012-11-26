@@ -67,15 +67,22 @@ class Logging(object):
             loglevel, logfile, colorize=colorize,
         )
         if not handled:
-            logger = get_logger('celery.redirected')
             if redirect_stdouts:
-                self.redirect_stdouts_to_logger(logger,
-                                loglevel=redirect_level)
+                self.redirect_stdouts(redirect_level)
         os.environ.update(
             CELERY_LOG_LEVEL=str(loglevel) if loglevel else '',
             CELERY_LOG_FILE=str(logfile) if logfile else '',
-            CELERY_LOG_REDIRECT='1' if redirect_stdouts else '',
-            CELERY_LOG_REDIRECT_LEVEL=str(redirect_level))
+        )
+        return handled
+
+    def redirect_stdouts(self, loglevel=None, name='celery.redirected'):
+        self.redirect_stdouts_to_logger(
+            get_logger(name), loglevel=loglevel
+        )
+        os.environ.update(
+            CELERY_LOG_REDIRECT='1',
+            CELERY_LOG_REDIRECT_LEVEL=str(loglevel or ''),
+        )
 
     def setup_logging_subsystem(self, loglevel=None, logfile=None,
             format=None, colorize=None, **kwargs):
