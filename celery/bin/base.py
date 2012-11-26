@@ -65,13 +65,19 @@ import sys
 import warnings
 
 from collections import defaultdict
+from heapq import heappush
 from optparse import OptionParser, IndentedHelpFormatter, make_option as Option
+from pprint import pformat
 from types import ModuleType
 
 import celery
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
-from celery.five import items, string_t
-from celery.platforms import EX_FAILURE, EX_USAGE, maybe_patch_concurrency
+from celery.five import items, string, string_t
+from celery.platforms import (
+    EX_FAILURE, EX_OK, EX_USAGE,
+    maybe_patch_concurrency,
+)
+from celery.utils import term
 from celery.utils import text
 from celery.utils.imports import symbol_by_name, import_from_cwd
 
@@ -88,6 +94,46 @@ Try --help?
 find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
 find_rst_ref = re.compile(r':\w+:`(.+?)`')
 find_sformat = re.compile(r'%(\w)')
+
+
+class Error(Exception):
+
+    def __init__(self, reason, status=EX_FAILURE):
+        self.reason = reason
+        self.status = status
+        super(Error, self).__init__(reason, status)
+
+    def __str__(self):
+        return self.reason
+
+
+class Extensions(object):
+
+    def __init__(self, namespace, register):
+        self.names = []
+        self.namespace = namespace
+        self.register = register
+
+    def add(self, cls, name):
+        heappush(self.names, name)
+        self.register(cls, name=name)
+
+    def load(self):
+        try:
+            from pkg_resources import iter_entry_points
+        except ImportError:
+            return
+
+        for ep in iter_entry_points(self.namespace):
+            sym = ':'.join([ep.module_name, ep.attrs[0]])
+            try:
+                cls = symbol_by_name(sym)
+            except (ImportError, SyntaxError) as exc:
+                warnings.warn(
+                    'Cannot load extension {0!r}: {1!r}'.format(sym, exc))
+            else:
+                self.add(cls, ep.name)
+        return self.names
 
 
 class HelpFormatter(IndentedHelpFormatter):
@@ -138,6 +184,8 @@ class Command(object):
         Option('--loader', default=None),
         Option('--config', default=None),
         Option('--workdir', default=None, dest='working_directory'),
+        Option('--no-color', '-C', action='store_true', default=None),
+        Option('--quiet', '-q', action='store_true'),
     )
 
     #: Enable if the application should support config from the cmdline.
@@ -155,9 +203,33 @@ class Command(object):
     #: Set to true if this command doesn't have subcommands
     leaf = True
 
-    def __init__(self, app=None, get_app=None):
+    # used by :meth:`say_remote_control_reply`.
+    show_body = True
+    # used by :meth:`say_chat`.
+    show_reply = True
+
+    prog_name = 'celery'
+
+    def __init__(self, app=None, get_app=None, no_color=False,
+            stdout=None, stderr=None, quiet=False):
         self.app = app
         self.get_app = get_app or self._get_default_app
+        self.stdout = stdout or sys.stdout
+        self.stderr = stderr or sys.stderr
+        self.no_color = no_color
+        self.colored = term.colored(enabled=not self.no_color)
+        self.quiet = quiet
+        if not self.description:
+            self.description = self.__doc__
+
+    def __call__(self, *args, **kwargs):
+        try:
+            ret = self.run(*args, **kwargs)
+        except Error as exc:
+            self.error(self.colored.red('Error: {0}'.format(exc)))
+            return exc.status
+
+        return ret if ret is not None else EX_OK
 
     def run(self, *args, **options):
         """This is the body of the command called by :meth:`handle_argv`."""
@@ -179,11 +251,12 @@ class Command(object):
         # Dump version and exit if '--version' arg set.
         self.early_version(argv)
         argv = self.setup_app_from_commandline(argv)
-        prog_name = os.path.basename(argv[0])
-        return self.handle_argv(prog_name, argv[1:])
+        self.prog_name = os.path.basename(argv[0])
+        return self.handle_argv(self.prog_name, argv[1:])
 
-    def run_from_argv(self, prog_name, argv=None):
-        return self.handle_argv(prog_name, sys.argv if argv is None else argv)
+    def run_from_argv(self, prog_name, argv=None, command=None):
+        return self.handle_argv(prog_name,
+                                sys.argv if argv is None else argv, command)
 
     def maybe_patch_concurrency(self, argv=None):
         argv = argv or sys.argv
@@ -196,8 +269,7 @@ class Command(object):
         pass
 
     def usage(self, command):
-        """Returns the command-line usage string for this app."""
-        return '%%prog [options] {0.args}'.format(self)
+        return '%prog {0} [options] {self.args}'.format(command, self=self)
 
     def get_options(self):
         """Get supported command-line options."""
@@ -208,7 +280,7 @@ class Command(object):
             return os.path.expanduser(value)
         return value
 
-    def handle_argv(self, prog_name, argv):
+    def handle_argv(self, prog_name, argv, command=None):
         """Parses command-line arguments from ``argv`` and dispatches
         to :meth:`run`.
 
@@ -219,8 +291,9 @@ class Command(object):
         and ``argv`` contains positional arguments.
 
         """
-        options, args = self.prepare_args(*self.parse_options(prog_name, argv))
-        return self.run(*args, **options)
+        options, args = self.prepare_args(
+            *self.parse_options(prog_name, argv, command))
+        return self(*args, **options)
 
     def prepare_args(self, options, args):
         if options:
@@ -235,21 +308,27 @@ class Command(object):
         if not self.supports_args and args:
             self.die(ARGV_DISABLED.format(', '.join(args)), EX_USAGE)
 
+    def error(self, s):
+        self.out(s, fh=self.stderr)
+
+    def out(self, s, fh=None):
+        print(s, file=fh or self.stdout)
+
     def die(self, msg, status=EX_FAILURE):
-        print(msg, file=sys.stderr)
+        self.error(msg)
         sys.exit(status)
 
     def early_version(self, argv):
         if '--version' in argv:
-            print(self.version)
+            print(self.version, file=self.stdout)
             sys.exit(0)
 
-    def parse_options(self, prog_name, arguments):
+    def parse_options(self, prog_name, arguments, command=None):
         """Parse the available options."""
         # Don't want to load configuration to just print the version,
         # so we handle --version manually here.
-        parser = self.create_parser(prog_name)
-        return parser.parse_args(arguments)
+        self.parser = self.create_parser(prog_name, command)
+        return self.parser.parse_args(arguments)
 
     def create_parser(self, prog_name, command=None):
         return self.prepare_parser(self.Parser(prog=prog_name,
@@ -272,6 +351,11 @@ class Command(object):
 
     def setup_app_from_commandline(self, argv):
         preload_options = self.parse_preload_options(argv)
+        quiet = preload_options.get('quiet')
+        if quiet is not None:
+            self.quiet = quiet
+        self.colored.enabled = \
+            not preload_options.get('no_color', self.no_color)
         workdir = preload_options.get('working_directory')
         if workdir:
             os.chdir(workdir)
@@ -387,6 +471,51 @@ class Command(object):
     def _get_default_app(self, *args, **kwargs):
         from celery._state import get_current_app
         return get_current_app()  # omit proxy
+
+    def pretty_list(self, n):
+        c = self.colored
+        if not n:
+            return '- empty -'
+        return '\n'.join(str(c.reset(c.white('*'), ' {0}'.format(item)))
+                            for item in n)
+
+    def pretty_dict_ok_error(self, n):
+        c = self.colored
+        try:
+            return (c.green('OK'),
+                    text.indent(self.pretty(n['ok'])[1], 4))
+        except KeyError:
+            pass
+        return (c.red('ERROR'),
+                text.indent(self.pretty(n['error'])[1], 4))
+
+    def say_remote_command_reply(self, replies):
+        c = self.colored
+        node = next(iter(replies))  # <-- take first.
+        reply = replies[node]
+        status, preply = self.pretty(reply)
+        self.say_chat('->', c.cyan(node, ': ') + status,
+                      text.indent(preply, 4) if self.show_reply else '')
+
+    def pretty(self, n):
+        OK = str(self.colored.green('OK'))
+        if isinstance(n, list):
+            return OK, self.pretty_list(n)
+        if isinstance(n, dict):
+            if 'ok' in n or 'error' in n:
+                return self.pretty_dict_ok_error(n)
+        if isinstance(n, string_t):
+            return OK, string(n)
+        return OK, pformat(n)
+
+    def say_chat(self, direction, title, body=''):
+        c = self.colored
+        if direction == '<-' and self.quiet:
+            return
+        dirstr = not self.quiet and c.bold(c.white(direction), ' ') or ''
+        self.out(c.reset(dirstr, title))
+        if body and self.show_body:
+            self.out(body)
 
 
 def daemon_options(default_pidfile=None, default_logfile=None):

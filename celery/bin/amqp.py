@@ -364,19 +364,32 @@ class AMQPAdmin(object):
             say(m, file=self.out)
 
 
-class AMQPAdminCommand(Command):
+class amqp(Command):
+    """AMQP Administration Shell.
+
+    Also works for non-amqp transports (but not ones that
+    store declarations in memory).
+
+    Examples::
+
+        celery amqp
+            start shell mode
+        celery amqp help
+            show list of commands
+
+        celery amqp exchange.delete name
+        celery amqp queue.delete queue
+        celery amqp queue.delete queue yes yes
+
+    """
 
     def run(self, *args, **options):
         options['app'] = self.app
         return AMQPAdmin(*args, **options).run()
 
 
-def run(*args, **options):
-    AMQPAdmin(*args, **options).run()
-
-
 def main():
-    AMQPAdminCommand().execute_from_commandline()
+    amqp().execute_from_commandline()
 
 if __name__ == '__main__':  # pragma: no cover
     main()

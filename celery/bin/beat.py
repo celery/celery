@@ -47,7 +47,16 @@ from celery.platforms import detached
 from celery.bin.base import Command, Option, daemon_options
 
 
-class BeatCommand(Command):
+class beat(Command):
+    """Start the beat periodic task scheduler.
+
+    Examples::
+
+        celery beat -l info
+        celery beat -s /var/run/celery/beat-schedule --detach
+        celery beat -S djcelery.schedulers.DatabaseScheduler
+
+    """
     doc = __doc__
     enable_config_from_cmdline = True
     supports_args = False
@@ -81,8 +90,7 @@ class BeatCommand(Command):
 
 
 def main():
-    beat = BeatCommand()
-    beat.execute_from_commandline()
+    beat().execute_from_commandline()
 
 if __name__ == '__main__':      # pragma: no cover
     main()

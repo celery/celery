@@ -125,18 +125,30 @@ from celery.five import string_t
 from celery.utils.log import LOG_LEVELS, mlevel
 
 
-class WorkerCommand(Command):
+class worker(Command):
+    """Start worker instance.
+
+    Examples::
+
+        celery worker --app=proj -l info
+        celery worker -A proj -l info -Q hipri,lopri
+
+        celery worker -A proj --concurrency=4
+        celery worker -A proj --concurrency=1000 -P eventlet
+
+        celery worker --autoscale=10,0
+    """
     doc = __doc__  # parse help from this.
     namespace = 'celeryd'
     enable_config_from_cmdline = True
     supports_args = False
 
-    def execute_from_commandline(self, argv=None):
+    def run_from_argv(self, prog_name, argv=None, command=None):
+        argv = list(sys.argv) if argv is None else argv
         self.maybe_detach(argv)
-        return super(WorkerCommand, self).execute_from_commandline(argv)
+        return super(worker, self).run_from_argv(prog_name, argv, command)
 
     def maybe_detach(self, argv, dopts=['-D', '--detach']):
-        argv = list(sys.argv) if argv is None else argv
         if any(arg in argv for arg in dopts):
             argv = [arg for arg in argv if arg not in dopts]
             # never returns
@@ -160,6 +172,7 @@ class WorkerCommand(Command):
                 self.die('Unknown level {0!r}. Please use one of {1}.'.format(
                     loglevel, '|'.join(l for l in LOG_LEVELS
                       if isinstance(l, string_t))))
+
         return self.app.Worker(
             hostname=hostname, pool_cls=pool_cls, loglevel=loglevel, **kwargs
         ).start()
@@ -209,8 +222,7 @@ def main():
         sys.modules['__main__'] = sys.modules[__name__]
     from billiard import freeze_support
     freeze_support()
-    worker = WorkerCommand()
-    worker.execute_from_commandline()
+    worker().execute_from_commandline()
 
 
 if __name__ == '__main__':          # pragma: no cover
