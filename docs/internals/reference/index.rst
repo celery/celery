@@ -11,6 +11,7 @@
     celery.worker
     celery.worker.components
     celery.worker.consumer
+    celery.worker.loops
     celery.worker.job
     celery.worker.mediator
     celery.worker.buckets
