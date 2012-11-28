@@ -57,7 +57,7 @@ copyright = u'2009-2012, Ask Solem & Contributors'
 # built documents.
 #
 # The short X.Y version.
-version = ".".join(map(str, celery.VERSION[0:2]))
+version = '.'.join(map(str, celery.VERSION[0:2]))
 # The full version, including alpha/beta/rc tags.
 release = celery.__version__
 
@@ -113,7 +113,7 @@ if False:
 # -- Options for Epub output ---------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = 'Celery Manual, Version 3.0'
+epub_title = 'Celery Manual, Version {0}'.format(version)
 epub_author = 'Ask Solem'
 epub_publisher = 'Celery Project'
 epub_copyright = '2009-2012'
@@ -130,7 +130,7 @@ epub_scheme = 'ISBN'
 epub_identifier = 'celeryproject.org'
 
 # A unique identification for the text.
-epub_uid = 'Celery Manual, Version 3.0'
+epub_uid = 'Celery Manual, Version {0}'.format(version)
 
 # HTML files that should be inserted before the pages created by sphinx.
 # The format is a list of tuples containing the path and title.

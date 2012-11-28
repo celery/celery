@@ -4,6 +4,13 @@
  What's new in Celery 3.1 (Cipater)
 ===========================================
 
+.. sidebar:: Change history
+
+    What's new documents describes the changes in major versions,
+    we also have a :ref:`changelog` that lists the changes in bugfix
+    releases (0.0.x), while older series are archived under the :ref:`history`
+    section.
+
 Celery is a simple, flexible and reliable distributed system to
 process vast amounts of messages, while providing operations with
 the tools required to maintain such a system.

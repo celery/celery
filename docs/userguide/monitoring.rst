@@ -23,8 +23,8 @@ Workers
 .. _monitoring-control:
 
 
-``celery``: Management Command-line Utilities
----------------------------------------------
+Management Command-line Utilities (``inspect``/``control``)
+-----------------------------------------------------------
 
 .. versionadded:: 2.1
 

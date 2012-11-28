@@ -225,7 +225,7 @@ News
         $ celeryctl inspect add_consumer queue exchange direct key
         $ celeryctl inspect cancel_consumer queue
 
-    See :ref:`monitoring-celeryctl` for more information about the
+    See :ref:`monitoring-control` for more information about the
     :program:`celeryctl` program.
 
 
@@ -395,7 +395,7 @@ News
 
     .. seealso::
 
-        The :ref:`monitoring-celeryctl` section in the :ref:`guide`.
+        The :ref:`monitoring-control` section in the :ref:`guide`.
 
     Some examples:
 

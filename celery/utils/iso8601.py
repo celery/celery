@@ -1,6 +1,8 @@
 """
-Original taken from pyiso8601 (http://code.google.com/p/pyiso8601/)
+Originally taken from pyiso8601 (http://code.google.com/p/pyiso8601/)
+
 Modified to match the behavior of dateutil.parser:
+
     - raise ValueError instead of ParseError
     - returns naive datetimes by default
     - uses pytz.FixedOffset

@@ -4,6 +4,13 @@
  Change history for Celery 2.5
 ===============================
 
+This document contains change notes for bugfix releases in the 2.5.x series,
+please see :ref:`whatsnew-2.5` for an overview of what's
+new in Celery 2.5.
+
+If you're looking for versions prior to 2.5 you should visit our
+:ref:`history` of releases.
+
 .. contents::
     :local:
 
