@@ -60,7 +60,7 @@ class Router(object):
 
         if queue:  # expand config from configured queue.
             try:
-                dest = self.queues[queue].as_dict()
+                _Q = self.queues[queue]  # noqa
             except KeyError:
                 if not self.create_missing:
                     raise QueueNotFound(
@@ -68,10 +68,9 @@ class Router(object):
                 for key in 'exchange', 'routing_key':
                     if route.get(key) is None:
                         route[key] = queue
-                dest = self.app.amqp.queues.add(queue, **route).as_dict()
+                self.app.amqp.queues.add(queue, **route)
             # needs to be declared by publisher
-            dest['queue'] = queue
-            return lpmerge(dest, route)
+            route['queue'] = queue
         return route
 
     def lookup_route(self, task, args=None, kwargs=None):
