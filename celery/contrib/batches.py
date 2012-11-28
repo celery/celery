@@ -7,25 +7,45 @@ Collect messages and processes them as a list.
 
 **Example**
 
-A click counter that flushes the buffer every 100 messages, and every
-10 seconds.
+An interface to the Web of Trust (WOT) API  that flushes the buffer every 100
+messages, and every 10 seconds.
 
 .. code-block:: python
 
+    import requests
+    from urlparse import urlparse
+
+    from six.moves import zip
+
     from celery import task
     from celery.contrib.batches import Batches
+    from celery import current_app
 
-    # Flush after 100 messages, or 10 seconds.
+    wot_api_target = "https://api.mywot.com/0.4/public_link_json"
+
+
     @task(base=Batches, flush_every=100, flush_interval=10)
-    def count_click(requests):
-        from collections import Counter
-        count = Counter(request.kwargs['url'] for request in requests)
-        for url, count in count.items():
-            print('>>> Clicks: {0} -> {1}'.format(url, count))
+    def wot_api(requests):
+        sig = lambda url: url
+        reponses = wot_api_real(
+            (sig(*request.args, **request.kwargs) for request in requests)
+        )
+        # use mark_as_done to manually return response data
+        for response, request in zip(reponses, requests):
+            current_app.backend.mark_as_done(request.id, response)
 
-Registering the click is done as follows:
 
-    >>> count_click.delay(url='http://example.com')
+    def wot_api_real(urls):
+        domains = [urlparse(url).netloc for url in urls]
+        response = requests.get(
+            wot_api_target,
+            params={"hosts": ('/').join(set(domains)) + '/'}
+        )
+        return [response.json[domain] for domain in domains]
+
+Using the API is done as follows:
+
+    >>> wot_api.delay('http://example.com')
 
 .. warning::
 
