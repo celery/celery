@@ -45,7 +45,7 @@ from Queue import Empty, Queue
 from celery.task import Task
 from celery.utils.log import get_logger
 from celery.worker.job import Request
-
+from celery.utils import noop
 
 logger = get_logger(__name__)
 
@@ -196,4 +196,4 @@ class Batches(Task):
         return self._pool.apply_async(apply_batches_task,
                     (self, args, 0, None),
                     accept_callback=on_accepted,
-                    callback=acks_late[True] and on_return or None)
+                    callback=acks_late[True] and on_return or noop)
