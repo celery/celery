@@ -22,7 +22,7 @@ from functools import partial
 
 from billiard.exceptions import WorkerLostError
 from kombu.syn import detect_environment
-from kombu.utils.finalize import Finalize
+from multiprocessing.util import Finalize
 
 from celery import concurrency as _concurrency
 from celery import platforms
