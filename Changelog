@@ -13,7 +13,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.13
 ======
-:release-date: TBA
+:release-date: 2012-11-30 XX:XX:XX X.X UTC
 
 - Fixed a deadlock issue that could occur when the producer pool
   inherited the connection pool instance of the parent process.
@@ -66,11 +66,42 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Handling of ETA/countdown fixed when the :setting:`CELERY_ENABLE_UTC`
    setting is disabled (Issue #1065).
 
+- A number of uneeded properties were included in messages,
+  caused by accidentally passing ``Queue.as_dict`` as message properties.
+
 - Fixed a typo in the broadcast routing documentation (Issue #1026).
 
 - Rewrote confusing section about idempotence in the task user guide.
 
 - Fixed typo in the daemonization tutorial (Issue #1055).
+
+- Fixed several typos in the documentation.
+
+    Contributed by Marius Gedminas.
+
+- Batches: Now works when using the eventlet pool.
+
+    Fix contributed by Thomas Grainger.
+
+- Batches: Added example sending results to :mod:`celery.contrib.batches`.
+
+    Contributed by Thomas Grainger.
+
+- Fixed problem when using earlier versions of :mod:`pytz`.
+
+    Fix contributed by Vlad.
+
+- Docs updated to include the default value for the
+  :setting:`CELERY_TASK_RESULT_EXPIRES` setting.
+
+- Improvements to the django-celery tutorial.
+
+    Contributed by Locker537.
+
+- The ``add_consumer`` control command did not properly persist
+  the addition of new queues so that they survived connection failure
+  (Issue #1079).
+
 
 3.0.12
 ======
