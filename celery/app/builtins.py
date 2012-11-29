@@ -75,8 +75,8 @@ def add_unlock_chord_task(app):
         if interval is None:
             interval = unlock_chord.default_retry_delay
         result = _res.GroupResult(group_id, [Result(r) for r in result])
-        j = result.join_native if result.supports_native_join else result.join
         if result.ready():
+            j = result.join_native if result.supports_native_join else result.join
             subtask(callback).delay(j(propagate=propagate))
         else:
             unlock_chord.retry(countdown=interval, max_retries=max_retries)
