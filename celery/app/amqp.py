@@ -181,9 +181,17 @@ class TaskProducer(Producer):
             errbacks=None, mandatory=None, priority=None, immediate=None,
             routing_key=None, serializer=None, delivery_mode=None,
             compression=None, reply_to=None, timeout=None, soft_timeout=None,
-            timeouts=None, **kwargs):
+            timeouts=None, declare=None, **kwargs):
         """Send task message."""
         retry = self.retry if retry is None else retry
+
+        declare = declare or []
+        if queue is not None:
+            if isinstance(queue, basestring):
+                queue = self.queues[queue]
+            exchange = exchange or queue.exchange.name
+            routing_key = routing_key or queue.routing_key
+
         # merge default and custom policy
         retry = self.retry if retry is None else retry
         _rp = (dict(self.retry_policy, **retry_policy) if retry_policy
@@ -227,7 +235,7 @@ class TaskProducer(Producer):
              serializer=serializer or self.serializer,
              compression=compression or self.compression,
              retry=retry, retry_policy=_rp, delivery_mode=delivery_mode,
-             priority=priority, declare=[self.queues[queue]] if queue else [],
+             priority=priority, declare=declare,
              **kwargs)
 
         signals.task_sent.send(sender=task_name, **body)
