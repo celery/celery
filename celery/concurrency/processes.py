@@ -38,6 +38,7 @@ def process_initializer(app, hostname):
     """Initializes the process so it can be used to process tasks."""
     platforms.signals.reset(*WORKER_SIGRESET)
     platforms.signals.ignore(*WORKER_SIGIGNORE)
+    platforms.maybe_patch_process_group()
     platforms.set_mp_process_title('celeryd', hostname=hostname)
     # This is for Windows and other platforms not supporting
     # fork(). Note that init_worker makes sure it's only
