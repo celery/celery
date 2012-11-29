@@ -23,7 +23,7 @@ back-of-the-envelope calculations by asking the question;
 
     ❝ How much water flows out of the Mississippi River in a day? ❞
 
-The point of this exercise[*] is to show that there is a limit
+The point of this exercise [*]_ is to show that there is a limit
 to how much data a system can process in a timely manner.
 Back of the envelope calculations can be used as a means to plan for this
 ahead of time.
@@ -95,19 +95,19 @@ by users.
 The prefetch limit is a **limit** for the number of tasks (messages) a worker
 can reserve for itself.  If it is zero, the worker will keep
 consuming messages, not respecting that there may be other
-available worker nodes that may be able to process them sooner[#],
+available worker nodes that may be able to process them sooner [*]_,
 or that the messages may not even fit in memory.
 
 The workers' default prefetch count is the
 :setting:`CELERYD_PREFETCH_MULTIPLIER` setting multiplied by the number
-of child worker processes[#].
+of child worker processes [*]_.
 
 If you have many tasks with a long duration you want
 the multiplier value to be 1, which means it will only reserve one
 task per worker process at a time.
 
 However -- If you have many short-running tasks, and throughput/round trip
-latency[#] is important to you, this number should be large. The worker is
+latency is important to you, this number should be large. The worker is
 able to process more tasks per second if the messages have already been
 prefetched, and is available in memory.  You may have to experiment to find
 the best value that works for you.  Values like 50 or 150 might make sense in
