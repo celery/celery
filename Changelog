@@ -53,6 +53,13 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
         # 8 + 2 + 4 + 8 + 16
         >>> assert c3(8).get() == 38
 
+- Subtasks can now be used with unregistered tasks.
+
+    You can specify subtasks even if you just have the name::
+
+        >>> s = subtask(task_name, args=(), kwargs=())
+        >>> s.delay()
+
 - The :program:`celery shell` command now always adds the current
   directory to the module path.
 
@@ -62,6 +69,10 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - force_execv: Now makes sure that task symbols in the original
   task modules will always use the correct app instance (Issue #1072).
+
+- AMQP Backend: Now republishes result messages that have been polled
+  (using ``result.ready()`` and friends, ``result.get()`` will not do this
+  in this version).
 
 - Handling of ETA/countdown fixed when the :setting:`CELERY_ENABLE_UTC`
    setting is disabled (Issue #1065).
