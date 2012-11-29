@@ -3,6 +3,7 @@ from __future__ import with_statement
 
 from functools import wraps
 
+from kombu import Exchange
 from kombu.utils.functional import maybe_promise
 
 from celery import current_app
@@ -59,12 +60,7 @@ d_queue = {'exchange': current_app.conf.CELERY_DEFAULT_EXCHANGE,
 
 
 class RouteCase(Case):
-
-    def assertAnswer(self, answer, expected):
-        self.assertEqual(answer['exchange'].name, expected['exchange'])
-        self.assertEqual(answer['routing_key'], expected['routing_key'])
-        if 'queue' in expected:
-            self.assertEqual(answer['queue'], expected['queue'])
+    pass
 
 
 class test_MapRoute(RouteCase):
@@ -73,7 +69,10 @@ class test_MapRoute(RouteCase):
     def test_route_for_task_expanded_route(self):
         expand = E(current_app.amqp.queues)
         route = routes.MapRoute({mytask.name: {'queue': 'foo'}})
-        self.assertAnswer(expand(route.route_for_task(mytask.name)), a_queue)
+        self.assertEqual(
+            expand(route.route_for_task(mytask.name))['queue'].name,
+            'foo',
+        )
         self.assertIsNone(route.route_for_task('celery.awesome'))
 
     @with_queues(foo=a_queue, bar=b_queue)
@@ -103,8 +102,8 @@ class test_lookup_route(RouteCase):
         R = routes.prepare(({mytask.name: {'queue': 'bar'}},
                             {mytask.name: {'queue': 'foo'}}))
         router = Router(R, current_app.amqp.queues)
-        self.assertAnswer(router.route({}, mytask.name,
-                          args=[1, 2], kwargs={}), b_queue)
+        self.assertEqual(router.route({}, mytask.name,
+                         args=[1, 2], kwargs={})['queue'].name, 'bar')
 
     @with_queues()
     def test_expands_queue_in_options(self):
@@ -118,17 +117,16 @@ class test_lookup_route(RouteCase):
                               'immediate': False},
                              mytask.name,
                              args=[1, 2], kwargs={})
-        self.assertDictContainsSubset({'routing_key': 'testq',
-                                       'immediate': False},
-                                       route)
-        self.assertEqual(route['exchange'].name, 'testq')
-        self.assertIn('queue', route)
+        self.assertEqual(route['queue'].name, 'testq')
+        self.assertEqual(route['queue'].exchange, Exchange('testq'))
+        self.assertEqual(route['queue'].routing_key, 'testq')
+        self.assertEqual(route['immediate'], False)
 
     @with_queues(foo=a_queue, bar=b_queue)
     def test_expand_destination_string(self):
         x = Router({}, current_app.amqp.queues)
         dest = x.expand_destination('foo')
-        self.assertEqual(dest['exchange'].name, 'fooexchange')
+        self.assertEqual(dest['queue'].name, 'foo')
 
     @with_queues(foo=a_queue, bar=b_queue, **{
         current_app.conf.CELERY_DEFAULT_QUEUE: d_queue})
@@ -136,10 +134,10 @@ class test_lookup_route(RouteCase):
         R = routes.prepare(({'celery.xaza': {'queue': 'bar'}},
                             {mytask.name: {'queue': 'foo'}}))
         router = Router(R, current_app.amqp.queues)
-        self.assertAnswer(router.route({}, mytask.name,
-                          args=[1, 2], kwargs={}), a_queue)
-        self.assertAnswer(router.route({}, 'celery.poza'),
-                dict(d_queue, queue=current_app.conf.CELERY_DEFAULT_QUEUE))
+        self.assertEqual(router.route({}, mytask.name,
+                          args=[1, 2], kwargs={})['queue'].name, 'foo')
+        self.assertEqual(router.route({}, 'celery.poza')['queue'].name,
+                current_app.conf.CELERY_DEFAULT_QUEUE)
 
 
 class test_prepare(Case):

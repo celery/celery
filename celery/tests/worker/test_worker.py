@@ -280,7 +280,7 @@ class test_Consumer(Case):
         l.receive_message(m.decode(), m)
         self.assertTrue(warn.call_count)
 
-    @patch('celery.utils.timer2.to_timestamp')
+    @patch('celery.worker.consumer.to_timestamp')
     def test_receive_message_eta_OverflowError(self, to_timestamp):
         to_timestamp.side_effect = OverflowError()
         l = MyKombuConsumer(self.ready_queue, timer=self.timer)
@@ -291,10 +291,11 @@ class test_Consumer(Case):
         l.event_dispatcher = Mock()
         l.pidbox_node = MockNode()
         l.update_strategies()
+        l.qos = Mock()
 
         l.receive_message(m.decode(), m)
+        self.assertTrue(to_timestamp.called)
         self.assertTrue(m.acknowledged)
-        self.assertTrue(to_timestamp.call_count)
 
     @patch('celery.worker.consumer.error')
     def test_receive_message_InvalidTaskError(self, error):
