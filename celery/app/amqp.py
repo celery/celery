@@ -233,7 +233,7 @@ class TaskProducer(Producer):
              serializer=serializer or self.serializer,
              compression=compression or self.compression,
              retry=retry, retry_policy=_rp, delivery_mode=delivery_mode,
-             priority=priority, declare=declare)
+             priority=priority, declare=declare,
              **kwargs)
 
         signals.task_sent.send(sender=task_name, **body)
