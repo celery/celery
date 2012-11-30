@@ -501,11 +501,20 @@ class Mingle(bootsteps.StartStopStep):
         info('mingle: searching for neighbors')
         I = c.app.control.inspect(timeout=1.0, connection=c.connection)
         replies = I.hello()
+        clock_reply_neighbors = []
         if replies:
-            for reply in values(replies):
-                c.app.clock.adjust(reply['clock'])
-                revoked.update(reply['revoked'])
-            info('mingle: synced with %s', ', '.join(replies))
+            for neighbor, reply in items(replies):
+                if 'clock' in reply:
+                    c.app.clock.adjust(reply['clock'])
+                    clock_reply_neighbors.append(neighbor)
+                else:
+                    debug('mingle: no \'clock\' key in reply')
+                if 'revoked' in reply:
+                    revoked.update(reply['revoked'])
+                else:
+                    debug('mingle: no \'revoked\' key in reply')
+        if clock_reply_neighbors:
+            info('mingle: synced with %s', ', '.join(clock_reply_neighbors))
         else:
             info('mingle: no one here')
 
