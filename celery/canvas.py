@@ -12,6 +12,7 @@
 from __future__ import absolute_import
 
 from copy import deepcopy
+from functools import partial as _partial
 from operator import itemgetter
 from itertools import chain as _chain
 
@@ -217,7 +218,7 @@ class Signature(dict):
         try:
             return self.type.apply_async
         except KeyError:
-            return current_app.send_task
+            return _partial(current_app.send_task, self['task'])
     task = _getitem_property('task')
     args = _getitem_property('args')
     kwargs = _getitem_property('kwargs')
