@@ -178,17 +178,20 @@ class TaskProducer(Producer):
             expires=None, exchange=None, exchange_type=None,
             event_dispatcher=None, retry=None, retry_policy=None,
             queue=None, now=None, retries=0, chord=None, callbacks=None,
-            errbacks=None, mandatory=None, priority=None, immediate=None,
-            routing_key=None, serializer=None, delivery_mode=None,
-            compression=None, reply_to=None, timeout=None, soft_timeout=None,
-            timeouts=None, declare=None, **kwargs):
+            errbacks=None, routing_key=None, serializer=None,
+            delivery_mode=None, compression=None, reply_to=None,
+            timeout=None, soft_timeout=None, timeouts=None,
+            declare=None, **kwargs):
         """Send task message."""
         retry = self.retry if retry is None else retry
 
         declare = declare or []
+        qname = queue
         if queue is not None:
             if isinstance(queue, basestring):
-                queue = self.queues[queue]
+                qname, queue = queue, self.queues[queue]
+            else:
+                qname = queue.name
             exchange = exchange or queue.exchange.name
             routing_key = routing_key or queue.routing_key
 
@@ -212,30 +215,29 @@ class TaskProducer(Producer):
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
-        body = {'task': task_name,
-                'id': task_id,
-                'args': task_args,
-                'kwargs': task_kwargs,
-                'retries': retries or 0,
-                'eta': eta,
-                'expires': expires,
-                'utc': self.utc,
-                'callbacks': callbacks,
-                'errbacks': errbacks,
-                'reply_to': reply_to,
-                'timeouts': timeouts or (timeout, soft_timeout)}
-        group_id = group_id or taskset_id
-        if group_id:
-            body['taskset'] = group_id
-        if chord:
-            body['chord'] = chord
+        body = {
+            'task': task_name,
+            'id': task_id,
+            'args': task_args,
+            'kwargs': task_kwargs,
+            'retries': retries or 0,
+            'eta': eta,
+            'expires': expires,
+            'utc': self.utc,
+            'callbacks': callbacks,
+            'errbacks': errbacks,
+            'reply_to': reply_to,
+            'timeouts': timeouts or (timeout, soft_timeout)}
+            'taskset': group_id or taskset_id,
+            'chord': chord,
+        }
 
-        self.publish(body, exchange=exchange, mandatory=mandatory,
-             immediate=immediate, routing_key=routing_key,
+        self.publish(body,
+             exchange=exchange, routing_key=routing_key,
              serializer=serializer or self.serializer,
              compression=compression or self.compression,
-             retry=retry, retry_policy=_rp, delivery_mode=delivery_mode,
-             priority=priority, declare=declare,
+             retry=retry, retry_policy=_rp,
+             delivery_mode=delivery_mode, declare=declare,
              **kwargs)
 
         signals.task_sent.send(sender=task_name, **body)
@@ -250,7 +252,7 @@ class TaskProducer(Producer):
                                                retries=retries,
                                                eta=eta,
                                                expires=expires,
-                                               queue=queue,
+                                               queue=qname,
                                                exchange=exname,
                                                routing_key=routing_key)
         return task_id

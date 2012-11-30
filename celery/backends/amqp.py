@@ -16,8 +16,7 @@ import time
 
 from collections import deque
 
-from kombu.entity import Exchange, Queue
-from kombu.messaging import Consumer, Producer
+from kombu import Exchange, Queue, Producer, Consumer
 
 from celery import states
 from celery.exceptions import TimeoutError
@@ -104,6 +103,18 @@ class AMQPBackend(BaseBackend):
     def _routing_key(self, task_id):
         return task_id.replace('-', '')
 
+    def _republish(self, channel, task_id, body, content_type,
+            content_encoding):
+        return Producer(channel).publish(body,
+            exchange=self.exchange,
+            routing_key=self._routing_key(task_id),
+            serializer=self.serializer,
+            content_type=content_type,
+            content_encoding=content_encoding,
+            retry=True, retry_policy=self.retry_policy,
+            declare=[self.on_reply_declare(task_id)],
+        )
+
     def _store_result(self, task_id, result, status, traceback=None):
         """Send task return value and status."""
         with self.mutex:
@@ -159,6 +170,8 @@ class AMQPBackend(BaseBackend):
 
             if latest:
                 # new state to report
+                self._republish(channel, task_id, latest.body,
+                                latest.content_type, latest.content_encoding)
                 payload = self._cache[task_id] = latest.payload
                 return payload
             else:

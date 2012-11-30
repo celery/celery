@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import pickle
 import socket
 
 from datetime import timedelta
@@ -15,7 +16,7 @@ from celery.exceptions import TimeoutError
 from celery.five import Empty, Queue, range
 from celery.utils import uuid
 
-from celery.tests.utils import AppCase, sleepdeprived
+from celery.tests.utils import AppCase, sleepdeprived, Mock
 
 
 class SomeClass(object):
@@ -131,11 +132,14 @@ class test_AMQPBackend(AppCase):
             def __init__(self, **merge):
                 self.payload = dict({'status': states.STARTED,
                                      'result': None}, **merge)
+                self.body = pickle.dumps(self.payload)
+                self.content_type = 'application/x-python-serialize'
+                self.content_encoding = 'binary'
 
         class MockBinding(object):
 
             def __init__(self, *args, **kwargs):
-                pass
+                self.channel = Mock()
 
             def __call__(self, *args, **kwargs):
                 return self
@@ -149,10 +153,14 @@ class test_AMQPBackend(AppCase):
                 except Empty:
                     pass
 
+            def is_bound(self):
+                return True
+
         class MockBackend(AMQPBackend):
             Queue = MockBinding
 
         backend = MockBackend()
+        backend._republish = Mock()
 
         # FFWD's to the latest state.
         results.put(Message(status=states.RECEIVED, seq=1))
@@ -168,6 +176,8 @@ class test_AMQPBackend(AppCase):
         tid = uuid()
         backend.get_task_meta(tid)
         self.assertIn(tid, backend._cache, 'Caches last known state')
+
+        self.assertTrue(backend._republish.called)
 
         # Returns cache if no new states.
         results.queue.clear()

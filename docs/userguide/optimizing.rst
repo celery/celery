@@ -66,7 +66,7 @@ If you're using RabbitMQ (AMQP) as the broker then you can install the
 
 The 'amqp' transport will automatically use the librabbitmq module if it's
 installed, or you can also specify the transport you want directly by using
-the ``amqplib://`` or ``librabbitmq://`` prefixes.
+the ``pyamqp://`` or ``librabbitmq://`` prefixes.
 
 .. _optimizing-connection-pools:
 

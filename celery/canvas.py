@@ -12,6 +12,7 @@
 from __future__ import absolute_import
 
 from copy import deepcopy
+from functools import partial as _partial
 from operator import itemgetter
 from itertools import chain as _chain
 
@@ -19,7 +20,7 @@ from kombu.utils import cached_property, fxrange, kwdict, reprcall, uuid
 
 from celery import current_app
 from celery.local import Proxy
-from celery.result import GroupResult
+from celery.result import AsyncResult, GroupResult
 from celery.utils.functional import (
     maybe_list, is_list, regen,
     chunks as _chunks,
@@ -134,7 +135,7 @@ class Signature(dict):
             tid = opts['task_id']
         except KeyError:
             tid = opts['task_id'] = _id or uuid()
-        return self.type.AsyncResult(tid)
+        return self.AsyncResult(tid)
 
     def replace(self, args=None, kwargs=None, options=None):
         s = self.clone()
@@ -155,7 +156,7 @@ class Signature(dict):
     def apply_async(self, args=(), kwargs={}, **options):
         # For callbacks: extra args are prepended to the stored args.
         args, kwargs, options = self._merge(args, kwargs, options)
-        return self.type.apply_async(args, kwargs, **options)
+        return self._apply_async(args, kwargs, **options)
 
     def append_to_list_option(self, key, value):
         items = self.options.setdefault(key, [])
@@ -218,6 +219,20 @@ class Signature(dict):
     @cached_property
     def type(self):
         return self._type or current_app.tasks[self['task']]
+
+    @cached_property
+    def AsyncResult(self):
+        try:
+            return self.type.AsyncResult
+        except KeyError:  # task not registered
+            return AsyncResult
+
+    @cached_property
+    def _apply_async(self):
+        try:
+            return self.type.apply_async
+        except KeyError:
+            return _partial(current_app.send_task, self['task'])
     task = _getitem_property('task')
     args = _getitem_property('args')
     kwargs = _getitem_property('kwargs')

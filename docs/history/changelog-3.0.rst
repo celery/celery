@@ -8,8 +8,7 @@ This document contains change notes for bugfix releases in the 3.0.x series
 (Chiastic Slide), please see :ref:`whatsnew-3.0` for an overview of what's
 new in Celery 3.0.
 
-If you're looking for versions prior to 3.0 you should visit our
-:ref:`history` of releases.
+If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 .. contents::
     :local:
@@ -18,7 +17,7 @@ If you're looking for versions prior to 3.0 you should visit our
 
 3.0.13
 ======
-:release-date: TBA
+:release-date: 2012-11-30 XX:XX:XX X.X UTC
 
 - Fixed a deadlock issue that could occur when the producer pool
   inherited the connection pool instance of the parent process.
@@ -58,6 +57,13 @@ If you're looking for versions prior to 3.0 you should visit our
         # 8 + 2 + 4 + 8 + 16
         >>> assert c3(8).get() == 38
 
+- Subtasks can now be used with unregistered tasks.
+
+    You can specify subtasks even if you just have the name::
+
+        >>> s = subtask(task_name, args=(), kwargs=())
+        >>> s.delay()
+
 - The :program:`celery shell` command now always adds the current
   directory to the module path.
 
@@ -68,14 +74,48 @@ If you're looking for versions prior to 3.0 you should visit our
 - force_execv: Now makes sure that task symbols in the original
   task modules will always use the correct app instance (Issue #1072).
 
+- AMQP Backend: Now republishes result messages that have been polled
+  (using ``result.ready()`` and friends, ``result.get()`` will not do this
+  in this version).
+
 - Handling of ETA/countdown fixed when the :setting:`CELERY_ENABLE_UTC`
    setting is disabled (Issue #1065).
+
+- A number of uneeded properties were included in messages,
+  caused by accidentally passing ``Queue.as_dict`` as message properties.
 
 - Fixed a typo in the broadcast routing documentation (Issue #1026).
 
 - Rewrote confusing section about idempotence in the task user guide.
 
 - Fixed typo in the daemonization tutorial (Issue #1055).
+
+- Fixed several typos in the documentation.
+
+    Contributed by Marius Gedminas.
+
+- Batches: Now works when using the eventlet pool.
+
+    Fix contributed by Thomas Grainger.
+
+- Batches: Added example sending results to :mod:`celery.contrib.batches`.
+
+    Contributed by Thomas Grainger.
+
+- Fixed problem when using earlier versions of :mod:`pytz`.
+
+    Fix contributed by Vlad.
+
+- Docs updated to include the default value for the
+  :setting:`CELERY_TASK_RESULT_EXPIRES` setting.
+
+- Improvements to the django-celery tutorial.
+
+    Contributed by Locker537.
+
+- The ``add_consumer`` control command did not properly persist
+  the addition of new queues so that they survived connection failure
+  (Issue #1079).
 
 .. _version-3.0.12:
 
