@@ -332,11 +332,11 @@ class test_Consumer(Case):
         l.event_dispatcher = Mock()
         l.node = MockNode()
         l.update_strategies()
+        l.qos = Mock()
 
         callback = self._get_on_message(l)
         callback(m.decode(), m)
         self.assertTrue(m.acknowledged)
-        self.assertTrue(to_timestamp.call_count)
 
     @patch('celery.worker.consumer.error')
     def test_receive_message_InvalidTaskError(self, error):

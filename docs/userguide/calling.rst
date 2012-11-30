@@ -491,20 +491,6 @@ AMQP's full routing capabilities. Interested parties may read the
 
     Routing key used to determine.
 
-- mandatory
-
-    This sets the delivery to be mandatory.  An exception will be raised
-    if there are no running workers able to take on the task.
-
-    Not supported by :mod:`amqplib`.
-
-- immediate
-
-    Request immediate delivery. Will raise an exception
-    if the task cannot be routed to a worker immediately.
-
-    Not supported by :mod:`amqplib`.
-
 - priority
 
     A number between `0` and `9`, where `0` is the highest priority.

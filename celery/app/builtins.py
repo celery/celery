@@ -79,7 +79,7 @@ def add_unlock_chord_task(app):
         if result.ready():
             subtask(callback).delay(j(propagate=propagate))
         else:
-            unlock_chord.retry(countdown=interval, max_retries=max_retries)
+            return unlock_chord.retry(countdown=interval, max_retries=max_retries)
     return unlock_chord
 
 

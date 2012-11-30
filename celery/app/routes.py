@@ -59,9 +59,9 @@ class Router(object):
             # things (like the routing_key): great for topic exchanges.
             queue = route.pop('queue', None)
 
-        if queue:  # expand config from configured queue.
+        if queue:
             try:
-                _Q = self.queues[queue]  # noqa
+                Q = self.queues[queue]  # noqa
             except KeyError:
                 if not self.create_missing:
                     raise QueueNotFound(
@@ -69,9 +69,9 @@ class Router(object):
                 for key in 'exchange', 'routing_key':
                     if route.get(key) is None:
                         route[key] = queue
-                self.app.amqp.queues.add(queue, **route)
+                Q = self.app.amqp.queues.add(queue, **route)
             # needs to be declared by publisher
-            route['queue'] = queue
+            route['queue'] = Q
         return route
 
     def lookup_route(self, task, args=None, kwargs=None):
