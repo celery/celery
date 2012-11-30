@@ -14,7 +14,10 @@ import pprint
 
 from itertools import count
 
-from amqplib import client_0_8 as amqp
+try:
+    import amqp
+except ImportError:
+    from amqplib import client_0_8 as amqp
 
 from celery.app import app_or_default
 from celery.utils.functional import padlist
@@ -216,7 +219,7 @@ class AMQShell(cmd.Cmd):
 
             >>> get_amqp_api_command('queue.delete', ['pobox', 'yes', 'no'])
             (<bound method Channel.queue_delete of
-             <amqplib.client_0_8.channel.Channel object at 0x...>>,
+             <amqp.channel.Channel object at 0x...>>,
              ('testfoo', True, False))
 
         """

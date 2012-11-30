@@ -123,12 +123,12 @@ kombu
 
 Kombu depends on the following packages:
 
-- `amqplib`_
+- `amqp`_
 
 The underlying pure-Python amqp client implementation.  AMQP being the default
-broker it is a natural dependency.
+broker this is a natural dependency.
 
-.. _`amqplib`: http://pypi.python.org/pypi/amqplib
+.. _`amqp`: http://pypi.python.org/pypi/amqp
 
 - `anyjson`_
 

@@ -20,7 +20,7 @@ DEFAULT_ITS = 40000
 
 BROKER_TRANSPORT = os.environ.get('BROKER', 'librabbitmq')
 if hasattr(sys, 'pypy_version_info'):
-    BROKER_TRANSPORT = 'amqplib'
+    BROKER_TRANSPORT = 'pyamqp'
 
 celery = Celery(__name__)
 celery.conf.update(BROKER_TRANSPORT=BROKER_TRANSPORT,

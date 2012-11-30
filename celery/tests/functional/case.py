@@ -109,7 +109,7 @@ class WorkerCase(Case):
 
     @classmethod
     def setUpClass(cls):
-        logging.getLogger('amqplib').setLevel(logging.ERROR)
+        logging.getLogger('amqp').setLevel(logging.ERROR)
         cls.worker = Worker.managed(cls.hostname, caller=cls)
 
     @classmethod

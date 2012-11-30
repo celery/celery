@@ -61,7 +61,7 @@ Highlights
 
         Celery will automatically use the :mod:`librabbitmq` module
         if installed, which is a very fast and memory-optimized
-        replacement for the amqplib module.
+        replacement for the py-amqp module.
 
     - Redis support is more reliable with improved ack emulation.
 
@@ -112,7 +112,8 @@ or Redis as a broker, resulting in:
 - Sub-millisecond timer precision.
 - Faster shutdown times.
 
-The transports supported are:  ``amqplib``, ``librabbitmq``, and ``redis``
+The transports supported are:  ``py-amqp`` ``librabbitmq``, ``redis``,
+and ``amqplib``.
 Hopefully this can be extended to include additional broker transports
 in the future.
 

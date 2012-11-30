@@ -52,8 +52,8 @@ up and running.
 * When a task with an ETA is received the QoS prefetch count is also
   incremented, so another message can be reserved. When the ETA is met
   the prefetch count is decremented again, though this cannot happen
-  immediately because amqplib doesn't support doing broker requests
-  across threads. Instead the current prefetch count is kept as a
+  immediately because most broker clients don't support doing broker
+  requests across threads.  Instead the current prefetch count is kept as a
   shared counter, so as soon as  :meth:`~Consumer.consume_messages`
   detects that the value has changed it will send out the actual
   QoS event to the broker.

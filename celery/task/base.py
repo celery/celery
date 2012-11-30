@@ -43,8 +43,8 @@ class Task(BaseTask):
     exchange = None
     exchange_type = None
     delivery_mode = None
-    mandatory = False
-    immediate = False
+    mandatory = False  # XXX deprecated
+    immediate = False  # XXX deprecated
     priority = None
     type = 'regular'
     error_whitelist = ()
