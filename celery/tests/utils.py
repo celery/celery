@@ -31,9 +31,9 @@ from nose import SkipTest
 from kombu.log import NullHandler
 from kombu.utils import nested
 
-from ..app import app_or_default
-from ..utils.compat import WhateverIO
-from ..utils.functional import noop
+from celery.app import app_or_default
+from celery.utils.compat import WhateverIO
+from celery.utils.functional import noop
 
 from .compat import catch_warnings
 
@@ -192,8 +192,8 @@ class Case(unittest.TestCase):
 class AppCase(Case):
 
     def setUp(self):
-        from ..app import current_app
-        from ..backends.cache import CacheBackend, DummyClient
+        from celery.app import current_app
+        from celery.backends.cache import CacheBackend, DummyClient
         app = self.app = self._current_app = current_app()
         if isinstance(app.backend, CacheBackend):
             if isinstance(app.backend.client, DummyClient):
