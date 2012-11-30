@@ -227,7 +227,7 @@ class TaskProducer(Producer):
             'callbacks': callbacks,
             'errbacks': errbacks,
             'reply_to': reply_to,
-            'timeouts': timeouts or (timeout, soft_timeout)}
+            'timeouts': timeouts or (timeout, soft_timeout),
             'taskset': group_id or taskset_id,
             'chord': chord,
         }
