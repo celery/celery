@@ -415,6 +415,8 @@ class KeyValueStoreBackend(BaseBackend):
             return
         key = self.get_key_for_chord(gid)
         deps = GroupResult.restore(gid, backend=task.backend)
+        if deps is None:
+            return
         val = self.incr(key)
         if val >= len(deps):
             subtask(task.request.chord).delay(deps.join(propagate=propagate))
