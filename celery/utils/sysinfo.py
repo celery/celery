@@ -8,8 +8,15 @@ from math import ceil
 from kombu.utils import cached_property
 
 
-def load_average():
-    return tuple(ceil(l * 1e2) / 1e2 for l in os.getloadavg())
+if hasattr(os, 'getloadavg'):
+
+    def load_average():
+        return tuple(ceil(l * 1e2) / 1e2 for l in os.getloadavg())
+
+else:  # Windows doesn't have getloadavg
+
+    def load_average():  # noqa
+        return (0.0, 0.0, 0.0)
 
 
 class df(object):
