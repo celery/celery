@@ -9,6 +9,10 @@ from kombu.utils import cached_property
 
 
 def load_average():
+    from celery import platforms
+    if platforms.IS_WINDOWS:
+        # Windows does not support os.getloadavg()
+        return tuple(0.0, 0.0, 0.0)
     return tuple(ceil(l * 1e2) / 1e2 for l in os.getloadavg())
 
 
