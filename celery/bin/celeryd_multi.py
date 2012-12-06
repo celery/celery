@@ -271,8 +271,9 @@ class MultiTool(object):
         def note_waiting():
             left = len(P)
             if left:
-                self.note(self.colored.blue('> Waiting for %s %s...' % (
-                    left, pluralize(left, 'node'))), newline=False)
+                pids = ', '.join(str(pid) for _, _, pid in P)
+                self.note(self.colored.blue('> Waiting for %s %s -> %s...' % (
+                    left, pluralize(left, 'node'), pids)), newline=False)
 
         if retry:
             note_waiting()
