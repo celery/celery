@@ -124,6 +124,8 @@ from celery.bin.celeryd_detach import detached_celeryd
 from celery.five import string_t
 from celery.utils.log import LOG_LEVELS, mlevel
 
+__MODULE_DOC__ = __doc__
+
 
 class worker(Command):
     """Start worker instance.
@@ -138,7 +140,7 @@ class worker(Command):
 
         celery worker --autoscale=10,0
     """
-    doc = __doc__  # parse help from this.
+    doc = __MODULE_DOC__  # parse help from this too
     namespace = 'celeryd'
     enable_config_from_cmdline = True
     supports_args = False
