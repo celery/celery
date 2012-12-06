@@ -20,14 +20,14 @@ from celery.utils import term
 from celery.utils import text
 from celery.utils.timeutils import maybe_iso8601
 
-from .base import Command, Error, Option, Extensions
+from celery.bin.base import Command, Error, Option, Extensions
 
 # Import commands from other modules
-from .amqp import amqp
-from .beat import beat
-from .events import events
-from .graph import graph
-from .worker import worker
+from celery.bin.amqp import amqp
+from celery.bin.beat import beat
+from celery.bin.events import events
+from celery.bin.graph import graph
+from celery.bin.worker import worker
 
 HELP = """
 ---- -- - - ---- Commands- -------------- --- ------------
