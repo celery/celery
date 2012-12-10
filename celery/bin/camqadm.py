@@ -17,7 +17,7 @@ from itertools import count
 try:
     import amqp
 except ImportError:
-    from amqplib import client_0_8 as amqp
+    from amqplib import client_0_8 as amqp  # noqa
 
 from celery.app import app_or_default
 from celery.utils.functional import padlist
