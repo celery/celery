@@ -729,6 +729,30 @@ for other tasks <task-synchronous-subtasks>`)
 Important Notes
 ~~~~~~~~~~~~~~~
 
+Tasks used within a chord must *not* ignore their results. In practice this
+means that you must enable a :const:`CELERY_RESULT_BACKEND` in order to use
+chords. Additionally, if :const:`CELERY_IGNORE_RESULT` is set to :const:`True`
+in your configuration, be sure that the individual tasks to be used within
+the chord are defined with :const:`ignore_result=False`. This applies to both
+Task subclasses and decorated tasks.
+
+Example Task subclass:
+
+.. code-block:: python
+
+    class MyTask(Task):
+        abstract = True
+        ignore_result = False
+
+
+Example decorated task:
+
+.. code-block:: python
+
+    @celery.task(ignore_result=False)
+    def another_task(project):
+        do_something()
+
 By default the synchronization step is implemented by having a recurring task
 poll the completion of the taskset every second, calling the subtask when
 ready.
