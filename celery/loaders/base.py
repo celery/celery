@@ -28,6 +28,8 @@ from celery.utils.imports import (
     import_from_cwd, symbol_by_name, NotAPackage, find_module,
 )
 
+from celery.app.defaults import DEFAULTS
+
 BUILTIN_MODULES = frozenset()
 
 ERROR_ENVVAR_NOT_SET = (
@@ -252,6 +254,12 @@ class BaseLoader(object):
         self.task_modules.update(mod.__name__
             for mod in autodiscover_tasks(packages, related_name) if mod
         )
+
+    @property
+    def conf_changes(self):
+        return dict((key, value) 
+                     for key, value in self.conf.items() 
+                     if key in DEFAULTS.keys())
 
     @property
     def conf(self):

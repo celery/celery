@@ -356,8 +356,8 @@ class Celery(object):
 
     def _get_config(self):
         self.configured = True
-        s = Settings({}, [self.prepare_config(self.loader.conf),
-                             deepcopy(DEFAULTS)])
+        s = Settings(self.loader.conf_changes, 
+                     [self.prepare_config(self.loader.conf), deepcopy(DEFAULTS)])
 
         # load lazy config dict initializers.
         pending = self._pending_defaults
