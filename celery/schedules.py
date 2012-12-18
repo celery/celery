@@ -196,7 +196,9 @@ class crontab_parser(object):
         fr = self._expand_number(toks[0])
         if len(toks) > 1:
             to = self._expand_number(toks[1])
-            return range(fr, min(to + 1, self.max_ + 1))
+            if to < fr:  # Wrap around max_ if necessary
+                return range(fr, self.min_ + self.max_) + range(self.min_, to + 1)
+            return range(fr, to + 1)
         return [fr]
 
     def _range_steps(self, toks):
@@ -223,12 +225,13 @@ class crontab_parser(object):
             except KeyError:
                 raise ValueError("Invalid weekday literal '%s'." % s)
 
-        if i < self.min_:
-            raise ValueError('Invalid beginning range: %s < %s.' %
-                                                   (i, self.min_))
-        if i > self.max_:
+        max_val = self.min_ + self.max_ - 1
+        if i > max_val:
             raise ValueError(
-                'Invalid end range: %s > %s.' % (i, self.max_))
+                'Invalid end range: %s > %s.' % (i, max_val))
+        if i < self.min_:
+            raise ValueError(
+                'Invalid beginning range: %s < %s.' % (i, self.min_))
         return i
 
 
