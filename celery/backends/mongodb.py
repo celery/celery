@@ -45,6 +45,7 @@ class MongoBackend(BaseDictBackend):
     mongodb_password = None
     mongodb_database = 'celery'
     mongodb_taskmeta_collection = 'celery_taskmeta'
+    mongodb_max_pool_size = 10
 
     def __init__(self, *args, **kwargs):
         """Initialize MongoDB backend instance.
@@ -77,6 +78,8 @@ class MongoBackend(BaseDictBackend):
                     'database', self.mongodb_database)
             self.mongodb_taskmeta_collection = config.get(
                 'taskmeta_collection', self.mongodb_taskmeta_collection)
+            self.mongodb_max_pool_size = config.get(
+                'max_pool_size', self.mongodb_max_pool_size)
 
         self._connection = None
 
@@ -92,11 +95,12 @@ class MongoBackend(BaseDictBackend):
             # This enables the use of replica sets and sharding.
             # See pymongo.Connection() for more info.
             args = [self.mongodb_host]
+            kwargs = {'max_pool_size': self.mongodb_max_pool_size}
             if isinstance(self.mongodb_host, basestring) \
                     and not self.mongodb_host.startswith('mongodb://'):
                 args.append(self.mongodb_port)
 
-            self._connection = Connection(*args)
+            self._connection = Connection(*args, **kwargs)
 
         return self._connection
 

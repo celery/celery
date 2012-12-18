@@ -488,6 +488,13 @@ This is a dict supporting the following keys:
     The collection name to store task meta data.
     Defaults to "celery_taskmeta".
 
+* max_pool_size
+    Passed as max_pool_size to PyMongo's Connection or MongoClient 
+    constructor. It is the maximum number of TCP connections to keep
+    open to MongoDB at a given time. If there are more open connections
+    than max_pool_size, sockets will be closed when they are released.
+    Defaults to 10.
+
 .. _example-mongodb-result-config:
 
 Example configuration
