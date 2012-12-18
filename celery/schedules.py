@@ -226,6 +226,9 @@ class crontab_parser(object):
         if i < self.min_:
             raise ValueError('Invalid beginning range: %s < %s.' %
                                                    (i, self.min_))
+        if i > self.max_:
+            raise ValueError(
+                'Invalid end range: %s > %s.' % (i, self.max_))
         return i
 
 
