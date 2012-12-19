@@ -284,7 +284,7 @@ class Consumer(object):
             q = queues[queue]
         else:
             exchange = queue if exchange is None else exchange
-            exchange_type = ('direct' if   exchange_type is None
+            exchange_type = ('direct' if exchange_type is None
                                       else exchange_type)
             q = queues.select_add(queue,
                                   exchange=exchange,

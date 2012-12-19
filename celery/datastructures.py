@@ -81,7 +81,8 @@ class GraphFormatter(object):
         )
 
     def head(self, **attrs):
-        return self.FMT(self._head, id=self.id, type=self.type,
+        return self.FMT(
+            self._head, id=self.id, type=self.type,
             attrs=self.attrs(attrs, self.graph_scheme),
         )
 
@@ -109,13 +110,14 @@ class GraphFormatter(object):
         ))
 
     def draw_edge(self, a, b, scheme=None, attrs=None):
-        return self.FMT(self._edge, self.label(a), self.label(b),
+        return self.FMT(
+            self._edge, self.label(a), self.label(b),
             dir=self.direction, attrs=self.attrs(attrs, self.edge_scheme),
         )
 
     def draw_node(self, obj, scheme=None, attrs=None):
-        return self.FMT(self._node, self.label(obj),
-            attrs=self.attrs(attrs, scheme),
+        return self.FMT(
+            self._node, self.label(obj), attrs=self.attrs(attrs, scheme),
         )
 
 

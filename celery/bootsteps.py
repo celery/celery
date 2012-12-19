@@ -222,8 +222,8 @@ class Namespace(object):
         last = self._find_last()
         self._firstpass(steps)
         it = ((C, C.requires) for C in values(steps))
-        G = self.graph = DependencyGraph(it,
-            formatter=self.GraphFormatter(root=last),
+        G = self.graph = DependencyGraph(
+            it, formatter=self.GraphFormatter(root=last),
         )
         if last:
             for obj in G:

@@ -17,8 +17,8 @@ import sys
 import traceback
 
 from billiard import cpu_count
+from billiard.util import Finalize
 from kombu.syn import detect_environment
-from kombu.utils.finalize import Finalize
 
 from celery import bootsteps
 from celery import concurrency as _concurrency

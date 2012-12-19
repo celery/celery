@@ -45,7 +45,6 @@ else:
             return value.encode('utf-8')
         return value
 
-
     def utf8dict(tup):  # noqa
         """With a dict's items() tuple return a new dict with any utf-8
         keys/values encoded."""
@@ -112,8 +111,8 @@ class MutableURL(object):
         scheme, netloc, path, params, query, fragment = self.parts
         query = urlencode(utf8dict(items(self.query)))
         components = [scheme + '://', netloc, path or '/',
-                      ';{0}'.format(params)   if params   else '',
-                      '?{0}'.format(query)    if query    else '',
+                      ';{0}'.format(params) if params else '',
+                      '?{0}'.format(query) if query else '',
                       '#{0}'.format(fragment) if fragment else '']
         return ''.join(filter(None, components))
 

@@ -258,7 +258,7 @@ class test_ControlPanel(Case):
         app.conf.CELERY_DISABLE_RATE_LIMITS = True
         try:
             e = self.panel.handle('rate_limit', arguments=dict(
-                 task_name=mytask.name, rate_limit='100/m'))
+                    task_name=mytask.name, rate_limit='100/m'))
             self.assertIn('rate limits disabled', e.get('error'))
         finally:
             app.conf.CELERY_DISABLE_RATE_LIMITS = False

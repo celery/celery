@@ -169,8 +169,7 @@ def dump_reserved(panel, safe=False, **kwargs):
 
 @Panel.register
 def dump_active(panel, safe=False, **kwargs):
-    return [request.info(safe=safe)
-                for request in state.active_requests]
+    return [request.info(safe=safe) for request in state.active_requests]
 
 
 @Panel.register
@@ -200,8 +199,8 @@ def dump_tasks(panel, taskinfoitems=None, **kwargs):
 
     def _extract_info(task):
         fields = dict((field, str(getattr(task, field, None)))
-                        for field in taskinfoitems
-                            if getattr(task, field, None) is not None)
+                            for field in taskinfoitems
+                                if getattr(task, field, None) is not None)
         if fields:
             info = ['='.join(f) for f in items(fields)]
             return '{0} [{1}]'.format(task.name, ' '.join(info))

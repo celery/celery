@@ -98,9 +98,9 @@ class Request(object):
     retry_msg = """Task %(name)s[%(id)s] retry: %(exc)s"""
 
     def __init__(self, body, on_ack=noop,
-            hostname=None, eventer=None, app=None,
-            connection_errors=None, request_dict=None,
-            delivery_info=None, task=None, **opts):
+                 hostname=None, eventer=None, app=None,
+                 connection_errors=None, request_dict=None,
+                 delivery_info=None, task=None, **opts):
         self.app = app or app_or_default(app)
         name = self.name = body['task']
         self.id = body['id']
@@ -110,7 +110,7 @@ class Request(object):
             self.kwargs.items
         except AttributeError:
             raise exceptions.InvalidTaskError(
-                    'Task keyword arguments is not a mapping')
+                'Task keyword arguments is not a mapping')
         if NEEDS_KWDICT:
             self.kwargs = kwdict(self.kwargs)
         eta = body.get('eta')
@@ -152,7 +152,8 @@ class Request(object):
     def from_message(cls, message, body, **kwargs):
         # should be deprecated
         return Request(body,
-            delivery_info=getattr(message, 'delivery_info', None), **kwargs)
+                       delivery_info=getattr(message, 'delivery_info', None),
+                       **kwargs)
 
     def extend_with_default_kwargs(self):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -177,7 +178,7 @@ class Request(object):
         fun = self.task.run
         supported_keys = fun_takes_kwargs(fun, default_kwargs)
         extend_with = dict((key, val) for key, val in items(default_kwargs)
-                                if key in supported_keys)
+                           if key in supported_keys)
         kwargs.update(extend_with)
         return kwargs
 
@@ -238,8 +239,8 @@ class Request(object):
                         'hostname': self.hostname, 'is_eager': False,
                         'delivery_info': self.delivery_info})
         retval = trace_task(self.task, self.id, self.args, kwargs, request,
-                               **{'hostname': self.hostname,
-                                  'loader': self.app.loader})
+                            **{'hostname': self.hostname,
+                               'loader': self.app.loader})
         self.acknowledge()
         return retval
 
@@ -280,7 +281,7 @@ class Request(object):
         if self.id in revoked_tasks:
             warn('Skipping revoked task: %s[%s]', self.name, self.id)
             self._announce_revoked('expired' if expired else 'revoked',
-                False, None, expired)
+                                   False, None, expired)
             return True
         return False
 
@@ -337,10 +338,10 @@ class Request(object):
         if _does_info:
             now = now or time.time()
             runtime = self.time_start and (time.time() - self.time_start) or 0
-            info(self.success_msg.strip(), {
-                    'id': self.id, 'name': self.name,
-                    'return_value': self.repr_result(ret_value),
-                    'runtime': runtime})
+            info(self.success_msg.strip(),
+                 {'id': self.id, 'name': self.name,
+                  'return_value': self.repr_result(ret_value),
+                  'runtime': runtime})
 
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
@@ -348,13 +349,13 @@ class Request(object):
             self.acknowledge()
 
         self.send_event('task-retried',
-                         exception=safe_repr(exc_info.exception.exc),
-                         traceback=safe_str(exc_info.traceback))
+                        exception=safe_repr(exc_info.exception.exc),
+                        traceback=safe_str(exc_info.traceback))
 
         if _does_info:
-            info(self.retry_msg.strip(), {
-                'id': self.id, 'name': self.name,
-                'exc': exc_info.exception})
+            info(self.retry_msg.strip(),
+                 {'id': self.id, 'name': self.name,
+                  'exc': exc_info.exception})
 
     def on_failure(self, exc_info):
         """Handler called if the task raised an exception."""
@@ -392,8 +393,7 @@ class Request(object):
         description = 'raised exception'
         severity = logging.ERROR
         self.send_event('task-failed',
-                         exception=exception,
-                         traceback=traceback)
+                        exception=exception, traceback=traceback)
 
         if internal:
             if isinstance(einfo.exception, Ignore):
@@ -453,13 +453,14 @@ class Request(object):
 
     def __str__(self):
         return '{0.name}[{0.id}]{1}{2}'.format(self,
-                ' eta:[{0}]'.format(self.eta) if self.eta else '',
-                ' expires:[{0}]'.format(self.expires) if self.expires else '')
+               ' eta:[{0}]'.format(self.eta) if self.eta else '',
+               ' expires:[{0}]'.format(self.expires) if self.expires else '')
     shortinfo = __str__
 
     def __repr__(self):
-        return '<{0} {1}: {2}>'.format(type(self).__name__, self.id,
-                reprcall(self.name, self.args, self.kwargs))
+        return '<{0} {1}: {2}>'.format(
+            type(self).__name__, self.id,
+            reprcall(self.name, self.args, self.kwargs))
 
     @property
     def tzlocal(self):
@@ -470,7 +471,7 @@ class Request(object):
     @property
     def store_errors(self):
         return (not self.task.ignore_result
-                 or self.task.store_errors_even_if_ignored)
+                or self.task.store_errors_even_if_ignored)
 
     @property
     def task_id(self):
@@ -494,7 +495,7 @@ class Request(object):
 class TaskRequest(Request):
 
     def __init__(self, name, id, args=(), kwargs={},
-            eta=None, expires=None, **options):
+                 eta=None, expires=None, **options):
         """Compatibility class."""
 
         super(TaskRequest, self).__init__({

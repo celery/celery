@@ -256,9 +256,10 @@ class CursesMonitor(object):  # pragma: no cover
             y = count(xs)
             task = self.state.tasks[self.selected_task]
             info = task.info(extra=['state'])
-            infoitems = [('args', info.pop('args', None)),
-                         ('kwargs', info.pop('kwargs', None))
-                        ] + list(info.items())
+            infoitems = [
+                ('args', info.pop('args', None)),
+                ('kwargs', info.pop('kwargs', None))
+            ] + list(info.items())
             for key, value in infoitems:
                 if key is None:
                     continue

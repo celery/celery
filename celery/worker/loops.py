@@ -24,9 +24,9 @@ AMQHEARTBEAT_RATE = 2.0
 
 
 def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
-        heartbeat, handle_unknown_message, handle_unknown_task,
-        handle_invalid_task, clock, sleep=sleep, min=min, Empty=Empty,
-        hbrate=AMQHEARTBEAT_RATE):
+             heartbeat, handle_unknown_message, handle_unknown_task,
+             handle_invalid_task, clock, sleep=sleep, min=min, Empty=Empty,
+             hbrate=AMQHEARTBEAT_RATE):
     """Non-blocking eventloop consuming messages until connection is lost,
     or shutdown is requested."""
 
@@ -122,8 +122,8 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
 
 
 def synloop(obj, connection, consumer, strategies, ns, hub, qos,
-        heartbeat, handle_unknown_message, handle_unknown_task,
-        handle_invalid_task, clock, **kwargs):
+            heartbeat, handle_unknown_message, handle_unknown_task,
+            handle_invalid_task, clock, **kwargs):
     """Fallback blocking eventloop for transports that doesn't support AIO."""
 
     def on_task_received(body, message):

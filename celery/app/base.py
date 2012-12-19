@@ -159,7 +159,8 @@ class Celery(object):
             # the task instance from the current app.
             # Really need a better solution for this :(
             from . import shared_task as proxies_to_curapp
-            return proxies_to_curapp(*args, _force_evaluate=True, **opts)
+            opts['_force_evaluate'] = True  # XXX Py2.5
+            return proxies_to_curapp(*args, **opts)
 
         def inner_create_task_cls(shared=True, filter=None, **opts):
 

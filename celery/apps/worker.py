@@ -98,7 +98,8 @@ class Worker(WorkController):
         self.purge = purge
         self.no_color = no_color
         self._isatty = isatty(sys.stdout)
-        self.colored = self.app.log.colored(self.logfile,
+        self.colored = self.app.log.colored(
+            self.logfile,
             enabled=not no_color if no_color is not None else no_color
         )
 

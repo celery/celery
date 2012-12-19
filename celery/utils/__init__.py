@@ -129,7 +129,7 @@ def fun_takes_kwargs(fun, kwlist=[]):
 
     """
     S = getattr(fun, 'argspec', getargspec(fun))
-    if S.keywords != None:
+    if S.keywords is not None:
         return kwlist
     return [kw for kw in kwlist if kw in S.args]
 
@@ -190,8 +190,8 @@ def maybe_reraise():
 
 
 def strtobool(term, table={'false': False, 'no': False, '0': False,
-                             'true':  True, 'yes': True,  '1': True,
-                             'on':    True, 'off': False}):
+                           'true': True, 'yes': True, '1': True,
+                           'on': True, 'off': False}):
     if isinstance(term, string_t):
         try:
             return table[term.lower()]

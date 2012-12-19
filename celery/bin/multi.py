@@ -276,8 +276,9 @@ class MultiTool(object):
             left = len(P)
             if left:
                 pids = ', '.join(str(pid) for _, _, pid in P)
-                self.note(self.colored.blue('> Waiting for {0} {1} -> {2}...'.format(
-                    left, pluralize(left, 'node'), pids)), newline=False)
+                self.note(self.colored.blue(
+                    '> Waiting for {0} {1} -> {2}...'.format(
+                        left, pluralize(left, 'node'), pids)), newline=False)
 
         if retry:
             note_waiting()
@@ -457,7 +458,7 @@ def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
             name = nodename
         else:
             nodename = '%s%s' % (prefix, name)
-            this_name = options['-n'] = '%s@%s' % (nodename,  this_suffix)
+            this_name = options['-n'] = '%s@%s' % (nodename, this_suffix)
         expand = abbreviations({'%h': this_name,
                                 '%n': name,
                                 '%N': nodename,

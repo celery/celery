@@ -44,26 +44,26 @@ if STATICA_HACK:
     # This is never executed, but tricks static analyzers (PyDev, PyCharm,
     # pylint, etc.) into knowing the types of these symbols, and what
     # they contain.
-    from celery.app.base import Celery                  # noqa
-    from celery.app.utils import bugreport              # noqa
-    from celery.app.task import Task                    # noqa
-    from celery._state import current_app, current_task # noqa
-    from celery.canvas import (                         # noqa
+    from celery.app.base import Celery                   # noqa
+    from celery.app.utils import bugreport               # noqa
+    from celery.app.task import Task                     # noqa
+    from celery._state import current_app, current_task  # noqa
+    from celery.canvas import (                          # noqa
         chain, chord, chunks, group, subtask, xmap, xstarmap,
     )
-    from celery.utils import uuid                       # noqa
+    from celery.utils import uuid                        # noqa
 
 # Lazy loading
 from .five import recreate_module
 
 old_module, new_module = recreate_module(__name__,  # pragma: no cover
     by_module={
-        'celery.app':      ['Celery', 'bugreport', 'shared_task'],
+        'celery.app': ['Celery', 'bugreport', 'shared_task'],
         'celery.app.task': ['Task'],
-        'celery._state':   ['current_app', 'current_task'],
-        'celery.canvas':   ['chain', 'chord', 'chunks', 'group',
-                            'subtask', 'xmap', 'xstarmap'],
-        'celery.utils':    ['uuid'],
+        'celery._state': ['current_app', 'current_task'],
+        'celery.canvas': ['chain', 'chord', 'chunks', 'group',
+                          'subtask', 'xmap', 'xstarmap'],
+        'celery.utils': ['uuid'],
     },
     direct={'task': 'celery.task'},
     __package__='celery', __file__=__file__,

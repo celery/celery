@@ -20,7 +20,8 @@ class Pidbox(object):
     def __init__(self, c):
         self.c = c
         self.hostname = c.hostname
-        self.node = c.app.control.mailbox.Node(c.hostname,
+        self.node = c.app.control.mailbox.Node(
+            c.hostname,
             handlers=control.Panel.data,
             state=AttributeDict(app=c.app, hostname=c.hostname, consumer=c),
         )

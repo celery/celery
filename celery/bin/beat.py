@@ -77,13 +77,13 @@ class beat(Command):
     def get_options(self):
         c = self.app.conf
 
-        return ((
-                Option('--detach', action='store_true'),
-                Option('-s', '--schedule',
+        return (
+            (Option('--detach', action='store_true'),
+             Option('-s', '--schedule',
                     default=c.CELERYBEAT_SCHEDULE_FILENAME),
-                Option('--max-interval', type='float'),
-                Option('-S', '--scheduler', dest='scheduler_cls'),
-                Option('-l', '--loglevel', default=c.CELERYBEAT_LOG_LEVEL))
+             Option('--max-interval', type='float'),
+             Option('-S', '--scheduler', dest='scheduler_cls'),
+             Option('-l', '--loglevel', default=c.CELERYBEAT_LOG_LEVEL))
             + daemon_options(default_pidfile='celerybeat.pid')
             + tuple(self.app.user_options['beat'])
         )

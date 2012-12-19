@@ -35,10 +35,10 @@ RATE_MODIFIER_MAP = {'s': lambda n: n,
 
 HAVE_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, 'total_seconds')
 
-TIME_UNITS = (('day',    60 * 60 * 24.0, lambda n: format(n, '.2f')),
-              ('hour',   60 * 60.0,      lambda n: format(n, '.2f')),
-              ('minute', 60.0,           lambda n: format(n, '.2f')),
-              ('second', 1.0,            lambda n: format(n, '.2f')))
+TIME_UNITS = (('day', 60 * 60 * 24.0, lambda n: format(n, '.2f')),
+              ('hour', 60 * 60.0, lambda n: format(n, '.2f')),
+              ('minute', 60.0, lambda n: format(n, '.2f')),
+              ('second', 1.0, lambda n: format(n, '.2f')))
 
 ZERO = timedelta(0)
 

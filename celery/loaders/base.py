@@ -30,19 +30,19 @@ from celery.utils.imports import (
 
 BUILTIN_MODULES = frozenset()
 
-ERROR_ENVVAR_NOT_SET = (
-"""The environment variable {0!r} is not set,
+ERROR_ENVVAR_NOT_SET = """\
+The environment variable {0!r} is not set,
 and as such the configuration could not be loaded.
 Please set this variable and make it point to
-a configuration module.""")
+a configuration module."""
 
 _RACE_PROTECTION = False
-CONFIG_INVALID_NAME = """
+CONFIG_INVALID_NAME = """\
 Error: Module '{module}' doesn't exist, or it's not a valid \
 Python module name.
 """
 
-CONFIG_WITH_SUFFIX = CONFIG_INVALID_NAME + """
+CONFIG_WITH_SUFFIX = CONFIG_INVALID_NAME + """\
 Did you mean '{suggest}'?
 """
 
@@ -249,9 +249,9 @@ class BaseLoader(object):
         return {}
 
     def autodiscover_tasks(self, packages, related_name='tasks'):
-        self.task_modules.update(mod.__name__
-            for mod in autodiscover_tasks(packages, related_name) if mod
-        )
+        self.task_modules.update(
+            mod.__name__ for mod in autodiscover_tasks(packages,
+                                                       related_name) if mod)
 
     @property
     def conf(self):

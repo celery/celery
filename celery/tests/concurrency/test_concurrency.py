@@ -28,9 +28,9 @@ class test_BasePool(Case):
                      callback=gen_callback('callback'),
                      accept_callback=gen_callback('accept_callback'))
 
-        self.assertDictContainsSubset({
-                              'target': (1, (8, 16)),
-                              'callback': (2, (42, ))}, scratch)
+        self.assertDictContainsSubset(
+            {'target': (1, (8, 16)),
+             'callback': (2, (42, ))}, scratch)
         pa1 = scratch['accept_callback']
         self.assertEqual(0, pa1[0])
         self.assertEqual(pa1[1][0], os.getpid())

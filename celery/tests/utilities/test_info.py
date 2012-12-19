@@ -18,14 +18,18 @@ RANDTEXT_RES = """\
     lazy dog\
 """
 
-QUEUES = {'queue1': {
-            'exchange': 'exchange1',
-            'exchange_type': 'type1',
-            'routing_key': 'bind1'},
-         'queue2': {
-            'exchange': 'exchange2',
-            'exchange_type': 'type2',
-            'routing_key': 'bind2'}}
+QUEUES = {
+    'queue1': {
+        'exchange': 'exchange1',
+        'exchange_type': 'type1',
+        'routing_key': 'bind1',
+    },
+    'queue2': {
+        'exchange': 'exchange2',
+        'exchange_type': 'type2',
+        'routing_key': 'bind2',
+    },
+}
 
 
 QUEUE_FORMAT1 = '. queue1           exchange=exchange1(type1) key=bind1'

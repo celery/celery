@@ -20,6 +20,21 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 ======
 :release-date: 2012-11-30 XX:XX:XX X.X UTC
 
+- Now depends on Kombu 2.5
+
+    - py-amqp has replaced amqplib as the default transport,
+      gaining support for AMQP 0.9, and the RabbitMQ extensions
+      including Consumer Cancel Notifications and heartbeats.
+
+    - support for multiple connection URLs for failover.
+
+    - Read more in the `Kombu 2.5 changelog`_.
+
+    .. _`Kombu 2.5 changelog`:
+        http://kombu.readthedocs.org/en/latest/changelog.html#version-2-5-0
+
+- Now depends on billiard 2.7.3.19
+
 - Fixed a deadlock issue that could occur when the producer pool
   inherited the connection pool instance of the parent process.
 
@@ -42,7 +57,6 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
             4346501c-cb99-4ad8-8577-12256c7a22b1,
             b12ead10-a622-4d44-86e9-3193a778f345,
             26c7a420-11f3-4b33-8fac-66cd3b62abfd]>
-
 
 - Chains can now chain other chains and use partial arguments (Issue #1057).
 

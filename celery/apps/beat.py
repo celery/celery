@@ -55,7 +55,8 @@ class Beat(configurated):
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
         self.no_color = no_color
-        self.colored = app.log.colored(self.logfile,
+        self.colored = app.log.colored(
+            self.logfile,
             enabled=not no_color if no_color is not None else no_color,
         )
         self.pidfile = pidfile
@@ -120,7 +121,7 @@ class Beat(configurated):
             scheduler_info=scheduler.info,
             hmax_interval=humanize_seconds(beat.max_interval),
             max_interval=beat.max_interval,
-            )
+        )
 
     def set_process_title(self):
         arg_start = 'manage' in sys.argv[0] and 2 or 1

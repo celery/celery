@@ -12,6 +12,7 @@
 from __future__ import absolute_import
 
 import os
+import sys
 import platform
 import shelve
 
@@ -97,9 +98,9 @@ if C_BENCH:  # pragma: no cover
         def on_shutdown():
             if bench_first is not None and bench_last is not None:
                 print('- Time spent in benchmark: {0!r}'.format(
-                        bench_last - bench_first))
+                      bench_last - bench_first))
                 print('- Avg: {0}'.format(
-                        sum(bench_sample) / len(bench_sample)))
+                      sum(bench_sample) / len(bench_sample)))
                 memdump()
 
     def task_reserved(request):  # noqa
@@ -113,7 +114,6 @@ if C_BENCH:  # pragma: no cover
 
         return __reserved(request)
 
-    import sys
     def task_ready(request):  # noqa
         global all_count
         global bench_start
@@ -123,7 +123,7 @@ if C_BENCH:  # pragma: no cover
             now = time()
             diff = now - bench_start
             print('- Time spent processing %s tasks (since first '
-                    'task received): ~{0:.4f}s\n'.format(bench_every, diff))
+                  'task received): ~{0:.4f}s\n'.format(bench_every, diff))
             sys.stdout.flush()
             bench_start = bench_last = now
             bench_sample.append(diff)

@@ -40,10 +40,10 @@ class module(MagicModule):
 
 old_module, new_module = recreate_module(__name__,  # pragma: no cover
     by_module={
-        'celery.task.base':   ['BaseTask', 'Task', 'PeriodicTask',
-                               'task', 'periodic_task'],
-        'celery.canvas':      ['group', 'chord', 'subtask'],
-        'celery.task.sets':   ['TaskSet'],
+        'celery.task.base': ['BaseTask', 'Task', 'PeriodicTask',
+                             'task', 'periodic_task'],
+        'celery.canvas': ['group', 'chord', 'subtask'],
+        'celery.task.sets': ['TaskSet'],
     },
     base=module,
     __package__='celery.task',
