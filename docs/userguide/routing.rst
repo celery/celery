@@ -41,8 +41,21 @@ configuration::
     CELERY_ROUTES = {'feed.tasks.import_feed': {'queue': 'feeds'}}
 
 With this route enabled import feed tasks will be routed to the
-`"feeds"` queue, while all other tasks will be routed to the default queue
-(named `"celery"` for historical reasons).
+`"feeds"` queue.
+
+Alternately, you can specify that all feed related tasks -- located beneath
+`"feed.tasks"` in this instance -- should be routed to the `"feeds"` queue::
+
+    CELERY_ROUTES = {'feed.tasks.': {'queue': 'feeds'}}
+
+The `.` following the name of the route indicates that a prefix match should be
+performed against it.  As such, `"feed.tasks.import_feed"` will match the
+`"feed.tasks."` prefix and be routed to the `"feeds"` queue.  If multiple
+prefixes match for a given task, the most specific (longest) prefix's route
+will be selected.
+
+All tasks that don't map to routes in :setting:`CELERY_ROUTES` will be routed to
+the default queue (named `"celery"` for historical reasons).
 
 Now you can start server `z` to only process the feeds queue like this:
 
