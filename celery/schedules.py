@@ -392,6 +392,8 @@ class crontab(schedule):
         else:
             datedata.dom = 0
             datedata.moy = bisect(months_of_year, last_run_at.month)
+            if datedata.moy == len(months_of_year):
+                datedata.moy = 0
         roll_over()
 
         while not (datetime(year=datedata.year,
