@@ -676,6 +676,12 @@ class test_crontab_parser(Case):
         self.assertEqual(crontab_parser(60, 1).parse('1-10'),
                           set(range(1, 10 + 1)))
 
+    def test_parse_range_wraps(self):
+        self.assertEqual(crontab_parser(12).parse('11-1'),
+                          set([11, 0, 1]))
+        self.assertEqual(crontab_parser(60, 1).parse('2-1'),
+                          set(range(1, 60 + 1)))
+
     def test_parse_groups(self):
         self.assertEqual(crontab_parser().parse('1,2,3,4'),
                           set([1, 2, 3, 4]))
@@ -702,6 +708,7 @@ class test_crontab_parser(Case):
         self.assertEqual(crontab_parser(8).parse('*/2'), set([0, 2, 4, 6]))
         self.assertEqual(crontab_parser().parse('2-9/5'), set([2, 7]))
         self.assertEqual(crontab_parser().parse('2-10/5'), set([2, 7]))
+        self.assertEqual(crontab_parser(min_=1).parse('55-5/3'), set([55, 58, 1, 4])) 
         self.assertEqual(crontab_parser().parse('2-11/5,3'), set([2, 3, 7]))
         self.assertEqual(crontab_parser().parse('2-4/3,*/5,0-21/4'),
                 set([0, 2, 4, 5, 8, 10, 12, 15, 16,
@@ -734,6 +741,20 @@ class test_crontab_parser(Case):
     def test_parse_errors_on_negative_number(self):
         with self.assertRaises(ParseException):
             crontab_parser(60).parse('-20')
+
+    def test_parse_errors_on_lt_min(self):
+        crontab_parser(min_=1).parse('1')
+        with self.assertRaises(ValueError):
+            crontab_parser(12, 1).parse('0')
+        with self.assertRaises(ValueError):
+            crontab_parser(24, 1).parse('12-0')
+
+    def test_parse_errors_on_gt_max(self):
+        crontab_parser(1).parse('0')
+        with self.assertRaises(ValueError):
+            crontab_parser(1).parse('1')
+        with self.assertRaises(ValueError):
+            crontab_parser(60).parse('61-0')
 
     def test_expand_cronspec_eats_iterables(self):
         self.assertEqual(crontab._expand_cronspec(iter([1, 2, 3]), 100),
