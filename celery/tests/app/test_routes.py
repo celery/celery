@@ -82,6 +82,25 @@ class test_MapRoute(RouteCase):
                              expand(route.route_for_task(mytask.name)))
         self.assertIsNone(route.route_for_task('celery.awesome'))
 
+    @with_queues(foo=a_queue, bar=b_queue)
+    def test_derive_route_for_task(self):
+        expand = E(current_app.amqp.queues)
+
+        # key on module
+        period = mytask.name.rfind('.')
+        key = mytask.name[:period + 1]
+
+        route = routes.MapRoute({key: a_queue})
+        self.assertIsNone(route.map.get(mytask.name))
+        self.assertDictContainsSubset(a_queue,
+                             expand(route.route_for_task(mytask.name)))
+        self.assertIsNotNone(route.map.get(mytask.name))  # verify route was cached
+
+        self.assertIsNone(route.map.get('foo.bar'))
+        self.assertIsNone(route.route_for_task('foo.bar'))
+        self.assertEqual(route.map.get('foo.bar'), route.no_route)  # ensure that we cache no derivation
+        self.assertIsNone(route.route_for_task('foo.bar'))  # ensure cache isn't malfunctioning
+
     def test_expand_route_not_found(self):
         expand = E(current_app.amqp.Queues(
                     current_app.conf.CELERY_QUEUES, False))
