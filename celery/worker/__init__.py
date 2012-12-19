@@ -21,8 +21,8 @@ import traceback
 from functools import partial
 
 from billiard.exceptions import WorkerLostError
+from billiard.util import Finalize
 from kombu.syn import detect_environment
-from kombu.utils.finalize import Finalize
 
 from celery import concurrency as _concurrency
 from celery import platforms
