@@ -31,10 +31,10 @@ class MockJob(object):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return bool(self.id == other.id \
-                    and self.name == other.name \
-                    and self.args == other.args \
-                    and self.kwargs == other.kwargs)
+            return bool(self.id == other.id
+                        and self.name == other.name
+                        and self.args == other.args
+                        and self.kwargs == other.kwargs)
         else:
             return self == other
 

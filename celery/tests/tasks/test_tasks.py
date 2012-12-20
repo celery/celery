@@ -707,7 +707,10 @@ class test_crontab_parser(Case):
         self.assertEqual(crontab_parser(8).parse('*/2'), set([0, 2, 4, 6]))
         self.assertEqual(crontab_parser().parse('2-9/5'), set([2, 7]))
         self.assertEqual(crontab_parser().parse('2-10/5'), set([2, 7]))
-        self.assertEqual(crontab_parser(min_=1).parse('55-5/3'), set([55, 58, 1, 4])) 
+        self.assertEqual(
+            crontab_parser(min_=1).parse('55-5/3'),
+            set([55, 58, 1, 4]),
+        )
         self.assertEqual(crontab_parser().parse('2-11/5,3'), set([2, 3, 7]))
         self.assertEqual(crontab_parser().parse('2-4/3,*/5,0-21/4'),
                 set([0, 2, 4, 5, 8, 10, 12, 15, 16,

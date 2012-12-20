@@ -53,8 +53,8 @@ class RedisBackend(KeyValueStoreBackend):
         conf = self.app.conf
         if self.redis is None:
             raise ImproperlyConfigured(
-                    'You need to install the redis library in order to use '
-                  + 'the Redis result store backend.')
+                'You need to install the redis library in order to use '
+                'the Redis result store backend.')
 
         # For compatibility with the old REDIS_* configuration keys.
         def _get(key):

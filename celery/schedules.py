@@ -197,7 +197,9 @@ class crontab_parser(object):
         if len(toks) > 1:
             to = self._expand_number(toks[1])
             if to < fr:  # Wrap around max_ if necessary
-                return range(fr, self.min_ + self.max_) + range(self.min_, to + 1)
+                return range(fr,
+                             self.min_ + self.max_) + range(self.min_,
+                                                            to + 1)
             return range(fr, to + 1)
         return [fr]
 
@@ -396,11 +398,11 @@ class crontab(schedule):
                 datedata.moy = 0
         roll_over()
 
-        while not (datetime(year=datedata.year,
-                            month=months_of_year[datedata.moy],
-                            day=days_of_month[datedata.dom]
-                           ).isoweekday() % 7
-                  ) in self.day_of_week:
+        while not datetime(
+                year=datedata.year,
+                month=months_of_year[datedata.moy],
+                day=days_of_month[datedata.dom]) \
+                    .isoweekday() % 7 in self.day_of_week:
             datedata.dom += 1
             roll_over()
 

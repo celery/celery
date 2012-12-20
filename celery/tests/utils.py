@@ -2,11 +2,11 @@ from __future__ import absolute_import
 from __future__ import with_statement
 
 try:
-    import unittest
+    import unittest  # noqa
     unittest.skip
     from unittest.util import safe_repr, unorderable_list_difference
 except AttributeError:
-    import unittest2 as unittest
+    import unittest2 as unittest  # noqa
     from unittest2.util import safe_repr, unorderable_list_difference  # noqa
 
 import importlib
@@ -110,7 +110,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
             if first_matching is None:
                 first_matching = w
             if (self.expected_regex is not None and
-                not self.expected_regex.search(str(w))):
+                    not self.expected_regex.search(str(w))):
                 continue
             # store warning for later retrieval
             self.warning = w
@@ -165,6 +165,7 @@ class Case(unittest.TestCase):
         self.fail(self._formatMessage(msg, standard_msg))
 
     def assertItemsEqual(self, expected_seq, actual_seq, msg=None):
+        missing = unexpected = None
         try:
             expected = sorted(expected_seq)
             actual = sorted(actual_seq)
@@ -179,11 +180,13 @@ class Case(unittest.TestCase):
 
         errors = []
         if missing:
-            errors.append('Expected, but missing:\n    %s' % (
-                           safe_repr(missing)))
+            errors.append(
+                'Expected, but missing:\n    %s' % (safe_repr(missing), ),
+            )
         if unexpected:
-            errors.append('Unexpected, but present:\n    %s' % (
-                           safe_repr(unexpected)))
+            errors.append(
+                'Unexpected, but present:\n    %s' % (safe_repr(unexpected), ),
+            )
         if errors:
             standardMsg = '\n'.join(errors)
             self.fail(self._formatMessage(msg, standardMsg))

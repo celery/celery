@@ -377,7 +377,8 @@ class AMQP(object):
     @property
     def producer_pool(self):
         if self._producer_pool is None:
-            self._producer_pool = ProducerPool(self.app.pool,
+            self._producer_pool = ProducerPool(
+                self.app.pool,
                 limit=self.app.pool.limit,
                 Producer=self.TaskProducer,
             )

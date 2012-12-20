@@ -139,7 +139,8 @@ class Worker(configurated):
             self.autoscale = [int(max_c), min_c and int(min_c) or 0]
         self._isatty = isatty(sys.stdout)
 
-        self.colored = app.log.colored(self.logfile,
+        self.colored = app.log.colored(
+            self.logfile,
             enabled=not no_color if no_color is not None else no_color
         )
 

@@ -28,11 +28,11 @@ from celery.utils.functional import maybe_list
 
 BUILTIN_MODULES = frozenset()
 
-ERROR_ENVVAR_NOT_SET = (
-"""The environment variable %r is not set,
+ERROR_ENVVAR_NOT_SET = """\
+The environment variable %r is not set,
 and as such the configuration could not be loaded.
 Please set this variable and make it point to
-a configuration module.""")
+a configuration module."""
 
 CONFIG_INVALID_NAME = """
 Error: Module '%(module)s' doesn't exist, or it's not a valid \

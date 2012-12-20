@@ -239,8 +239,8 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
 
         """
         assert getattr(target.im_self, target.__name__) == target, \
-               "method %s isn't available as the attribute %s of %s" % (
-                    target, target.__name__, target.im_self)
+            "method %s isn't available as the attribute %s of %s" % (
+            target, target.__name__, target.im_self)
         super(BoundNonDescriptorMethodWeakref, self).__init__(target,
                                                               on_delete)
 

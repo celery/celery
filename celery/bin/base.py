@@ -249,14 +249,14 @@ class Command(object):
         return parser.parse_args(arguments)
 
     def create_parser(self, prog_name, command=None):
-        return self.prepare_parser(self.Parser(prog=prog_name,
-                           usage=self.usage(command),
-                           version=self.version,
-                           epilog=self.epilog,
-                           formatter=HelpFormatter(),
-                           description=self.description,
-                           option_list=(self.preload_options +
-                                        self.get_options())))
+        return self.prepare_parser(self.Parser(
+            prog=prog_name,
+            usage=self.usage(command),
+            version=self.version,
+            epilog=self.epilog,
+            formatter=HelpFormatter(),
+            description=self.description,
+            option_list=(self.preload_options + self.get_options())))
 
     def prepare_parser(self, parser):
         docs = [self.parse_doc(doc) for doc in (self.doc, __doc__) if doc]

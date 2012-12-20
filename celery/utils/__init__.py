@@ -129,7 +129,7 @@ def fun_takes_kwargs(fun, kwlist=[]):
     """
     argspec = getattr(fun, 'argspec', getargspec(fun))
     args, _varargs, keywords, _defaults = argspec
-    if keywords != None:
+    if keywords is not None:
         return kwlist
     return filter(partial(operator.contains, args), kwlist)
 
@@ -189,8 +189,8 @@ def maybe_reraise():
 
 
 def strtobool(term, table={'false': False, 'no': False, '0': False,
-                             'true':  True, 'yes': True,  '1': True,
-                             'on':    True, 'off': False}):
+                           'true': True, 'yes': True, '1': True,
+                           'on': True, 'off': False}):
     if isinstance(term, basestring):
         try:
             return table[term.lower()]

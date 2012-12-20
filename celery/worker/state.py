@@ -12,6 +12,7 @@
 from __future__ import absolute_import
 
 import os
+import sys
 import platform
 import shelve
 
@@ -104,7 +105,6 @@ if C_BENCH:  # pragma: no cover
 
         return __reserved(request)
 
-    import sys
     def task_ready(request):  # noqa
         global all_count
         global bench_start

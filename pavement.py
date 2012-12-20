@@ -59,7 +59,7 @@ def verifyconfigref(options):
 def flake8(options):
     noerror = getattr(options, 'noerror', False)
     complexity = getattr(options, 'complexity', 22)
-    sh("""flake8 --ignore=E126,E127,E128 celery | perl -mstrict -mwarnings -nle'
+    sh("""flake8 --ignore=W602,E126,E127,E128 celery | perl -mstrict -mwarnings -nle'
         my $ignore = m/too complex \((\d+)\)/ && $1 le %s;
         if (! $ignore) { print STDERR; our $FOUND_FLAKE = 1 }
     }{exit $FOUND_FLAKE;

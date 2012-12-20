@@ -55,7 +55,8 @@ class Beat(configurated):
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
         self.no_color = no_color
-        self.colored = app.log.colored(self.logfile,
+        self.colored = app.log.colored(
+            self.logfile,
             enabled=not no_color if no_color is not None else no_color,
         )
         self.pidfile = pidfile

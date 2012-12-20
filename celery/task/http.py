@@ -108,8 +108,8 @@ class MutableURL(object):
         scheme, netloc, path, params, query, fragment = self.parts
         query = urlencode(utf8dict(self.query.items()))
         components = [scheme + '://', netloc, path or '/',
-                      ';%s' % params   if params   else '',
-                      '?%s' % query    if query    else '',
+                      ';%s' % params if params else '',
+                      '?%s' % query if query else '',
                       '#%s' % fragment if fragment else '']
         return ''.join(filter(None, components))
 
