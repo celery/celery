@@ -101,6 +101,33 @@ def maybe_patch_concurrency(argv, short_opts=None, long_opts=None):
         concurrency.get_implementation(pool)
 
 
+def maybe_patch_process_group():
+    """This patch gives capability to properly terminate worker with all
+    it's child processes. The patch is useful for Linux and may be OSx,
+    but not for Windows. Windows has this behaviour by design.
+
+    Seting process group per worker for future use killpg in terminate.
+    """
+    if IS_WINDOWS:
+        return
+    os.setpgrp()
+
+
+def maybe_patch_kill():
+    """This patch replace kill with kill process group. The patch is useful
+    for Linux and may be OSx. The patch in conjunction with
+    maybe_patch_process_group add posibility to terminate worker with all its
+    child processes.
+    """
+    if IS_WINDOWS:
+        return
+    import billiard.pool
+
+    def kill_killpg(pid, sign):
+        os.killpg(os.getpgid(pid), sign)
+    billiard.pool._kill = kill_killpg
+
+
 class LockFailed(Exception):
     """Raised if a pidlock can't be acquired."""
 

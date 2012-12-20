@@ -22,14 +22,21 @@ def maybe_patch_concurrency():
     maybe_patch_concurrency(sys.argv, ['-P'], ['--pool'])
 
 
+def maybe_patch_kill():
+    from celery.platforms import maybe_patch_kill
+    maybe_patch_kill()
+
+
 def main():
     maybe_patch_concurrency()
+    maybe_patch_kill()
     from celery.bin.celery import main
     main()
 
 
 def _compat_worker():
     maybe_patch_concurrency()
+    maybe_patch_kill()
     _warn_deprecated('celery worker')
     from celery.bin.worker import main
     main()
@@ -37,6 +44,7 @@ def _compat_worker():
 
 def _compat_multi():
     maybe_patch_concurrency()
+    maybe_patch_kill()
     _warn_deprecated('celery multi')
     from celery.bin.multi import main
     main()
@@ -44,6 +52,7 @@ def _compat_multi():
 
 def _compat_beat():
     maybe_patch_concurrency()
+    maybe_patch_kill()
     _warn_deprecated('celery beat')
     from celery.bin.beat import main
     main()
