@@ -165,8 +165,10 @@ class test_default_logger(AppCase):
         Logging._setup = False
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False, colorize=None)
-        self.assertIs(get_handlers(logger)[0].stream, sys.__stderr__,
-                'setup_logger logs to stderr without logfile argument.')
+        self.assertIs(
+            get_handlers(logger)[0].stream, sys.__stderr__,
+            'setup_logger logs to stderr without logfile argument.',
+        )
 
     def test_setup_logger_no_handlers_stream(self):
         l = self.get_logger()
@@ -175,7 +177,7 @@ class test_default_logger(AppCase):
         with override_stdouts() as outs:
             stdout, stderr = outs
             l = self.setup_logger(logfile=sys.stderr, loglevel=logging.INFO,
-                                root=False)
+                                  root=False)
             l.info('The quick brown fox...')
             self.assertIn('The quick brown fox...', stderr.getvalue())
 
@@ -196,7 +198,7 @@ class test_default_logger(AppCase):
                 logger.error('foo')
                 self.assertIn('foo', sio.getvalue())
                 log.redirect_stdouts_to_logger(logger, stdout=False,
-                        stderr=False)
+                                               stderr=False)
         finally:
             sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
@@ -222,7 +224,7 @@ class test_default_logger(AppCase):
 
     def test_logging_proxy_recurse_protection(self):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
-                root=False)
+                                   root=False)
         p = LoggingProxy(logger, loglevel=logging.ERROR)
         p._thread.recurse_protection = True
         try:

@@ -52,7 +52,7 @@ class TaskRegistry(dict):
 
     def filter_types(self, type):
         return dict((name, task) for name, task in self.iteritems()
-                                if getattr(task, 'type', 'regular') == type)
+                    if getattr(task, 'type', 'regular') == type)
 
 
 def _unpickle_task(name):

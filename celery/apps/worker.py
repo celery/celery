@@ -49,7 +49,7 @@ def active_thread_count():
     from threading import enumerate
     # must use .getName on Python 2.5
     return sum(1 for t in enumerate()
-        if not t.getName().startswith('Dummy-'))
+               if not t.getName().startswith('Dummy-'))
 
 
 def safe_say(msg):
@@ -107,9 +107,9 @@ class Worker(configurated):
     redirect_stdouts_level = from_config()
 
     def __init__(self, hostname=None, purge=False, beat=False,
-            queues=None, include=None, app=None, pidfile=None,
-            autoscale=None, autoreload=False, no_execv=False,
-            no_color=None, **kwargs):
+                 queues=None, include=None, app=None, pidfile=None,
+                 autoscale=None, autoreload=False, no_execv=False,
+                 no_color=None, **kwargs):
         self.app = app = app_or_default(app or self.app)
         self.hostname = hostname or socket.gethostname()
 
@@ -207,7 +207,7 @@ class Worker(configurated):
     def purge_messages(self):
         count = self.app.control.purge()
         print('purge: Erased %d %s from the queue.\n' % (
-                count, pluralize(count, 'message')))
+            count, pluralize(count, 'message')))
 
     def tasklist(self, include_builtins=True):
         tasks = self.app.tasks
@@ -260,13 +260,15 @@ class Worker(configurated):
         return '\n'.join(banner) + '\n'
 
     def run_worker(self):
-        worker = self.WorkController(app=self.app,
-                    hostname=self.hostname,
-                    ready_callback=self.on_consumer_ready, beat=self.beat,
-                    autoscale=self.autoscale, autoreload=self.autoreload,
-                    no_execv=self.no_execv,
-                    pidfile=self.pidfile,
-                    **self.confopts_as_dict())
+        worker = self.WorkController(
+            app=self.app,
+            hostname=self.hostname,
+            ready_callback=self.on_consumer_ready, beat=self.beat,
+            autoscale=self.autoscale, autoreload=self.autoreload,
+            no_execv=self.no_execv,
+            pidfile=self.pidfile,
+            **self.confopts_as_dict()
+        )
         self.install_platform_tweaks(worker)
         signals.worker_init.send(sender=worker)
         worker.start()
@@ -298,13 +300,15 @@ class Worker(configurated):
         os.environ.setdefault('celery_dummy_proxy', 'set_by_celeryd')
 
     def set_process_status(self, info):
-        return platforms.set_mp_process_title('celeryd',
-                info='%s (%s)' % (info, platforms.strargv(sys.argv)),
-                hostname=self.hostname)
+        return platforms.set_mp_process_title(
+            'celeryd',
+            info='%s (%s)' % (info, platforms.strargv(sys.argv)),
+            hostname=self.hostname,
+        )
 
 
-def _shutdown_handler(worker, sig='TERM', how='Warm', exc=SystemExit,
-        callback=None):
+def _shutdown_handler(worker, sig='TERM', how='Warm',
+                      exc=SystemExit, callback=None):
 
     def _handle_request(*args):
         set_in_sighandler(True)

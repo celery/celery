@@ -38,24 +38,27 @@ class test_subtask(Case):
         self.assertEqual(s.task, MockTask.name)
 
     def test_apply_async(self):
-        s = MockTask.subtask((2, 2), {'cache': True},
-                {'routing_key': 'CPU-bound'})
+        s = MockTask.subtask(
+            (2, 2), {'cache': True}, {'routing_key': 'CPU-bound'},
+        )
         args, kwargs, options = s.apply_async()
         self.assertTupleEqual(args, (2, 2))
         self.assertDictEqual(kwargs, {'cache': True})
         self.assertDictEqual(options, {'routing_key': 'CPU-bound'})
 
     def test_delay_argmerge(self):
-        s = MockTask.subtask((2, ), {'cache': True},
-                {'routing_key': 'CPU-bound'})
+        s = MockTask.subtask(
+            (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
+        )
         args, kwargs, options = s.delay(10, cache=False, other='foo')
         self.assertTupleEqual(args, (10, 2))
         self.assertDictEqual(kwargs, {'cache': False, 'other': 'foo'})
         self.assertDictEqual(options, {'routing_key': 'CPU-bound'})
 
     def test_apply_async_argmerge(self):
-        s = MockTask.subtask((2, ), {'cache': True},
-                {'routing_key': 'CPU-bound'})
+        s = MockTask.subtask(
+            (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
+        )
         args, kwargs, options = s.apply_async((10, ),
                                               {'cache': False, 'other': 'foo'},
                                               routing_key='IO-bound',
@@ -64,11 +67,12 @@ class test_subtask(Case):
         self.assertTupleEqual(args, (10, 2))
         self.assertDictEqual(kwargs, {'cache': False, 'other': 'foo'})
         self.assertDictEqual(options, {'routing_key': 'IO-bound',
-                                        'exchange': 'fast'})
+                                       'exchange': 'fast'})
 
     def test_apply_argmerge(self):
-        s = MockTask.subtask((2, ), {'cache': True},
-                {'routing_key': 'CPU-bound'})
+        s = MockTask.subtask(
+            (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
+        )
         args, kwargs, options = s.apply((10, ),
                                         {'cache': False, 'other': 'foo'},
                                         routing_key='IO-bound',
@@ -76,12 +80,14 @@ class test_subtask(Case):
 
         self.assertTupleEqual(args, (10, 2))
         self.assertDictEqual(kwargs, {'cache': False, 'other': 'foo'})
-        self.assertDictEqual(options, {'routing_key': 'IO-bound',
-                                        'exchange': 'fast'})
+        self.assertDictEqual(
+            options, {'routing_key': 'IO-bound', 'exchange': 'fast'},
+        )
 
     def test_is_JSON_serializable(self):
-        s = MockTask.subtask((2, ), {'cache': True},
-                {'routing_key': 'CPU-bound'})
+        s = MockTask.subtask(
+            (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
+        )
         s.args = list(s.args)                   # tuples are not preserved
                                                 # but this doesn't matter.
         self.assertEqual(s, subtask(anyjson.loads(anyjson.dumps(s))))
@@ -101,7 +107,7 @@ class test_TaskSet(Case):
 
     def test_task_arg_can_be_iterable__compat(self):
         ts = TaskSet([MockTask.subtask((i, i))
-                        for i in (2, 4, 8)])
+                      for i in (2, 4, 8)])
         self.assertEqual(len(ts), 3)
 
     def test_respects_ALWAYS_EAGER(self):
@@ -113,8 +119,9 @@ class test_TaskSet(Case):
             def apply(self, *args, **kwargs):
                 self.applied += 1
 
-        ts = MockTaskSet([MockTask.subtask((i, i))
-                        for i in (2, 4, 8)])
+        ts = MockTaskSet(
+            [MockTask.subtask((i, i)) for i in (2, 4, 8)],
+        )
         app.conf.CELERY_ALWAYS_EAGER = True
         try:
             ts.apply_async()
@@ -132,7 +139,7 @@ class test_TaskSet(Case):
                 applied[0] += 1
 
         ts = TaskSet([mocksubtask(MockTask, (i, i))
-                        for i in (2, 4, 8)])
+                      for i in (2, 4, 8)])
         ts.apply_async()
         self.assertEqual(applied[0], 3)
 
@@ -167,7 +174,7 @@ class test_TaskSet(Case):
                 applied[0] += 1
 
         ts = TaskSet([mocksubtask(MockTask, (i, i))
-                        for i in (2, 4, 8)])
+                      for i in (2, 4, 8)])
         ts.apply()
         self.assertEqual(applied[0], 3)
 

@@ -77,8 +77,9 @@ class Signal(object):  # pragma: no cover
                     lookup_key = (_make_id(receiver), _make_id(sender))
 
                 if weak:
-                    receiver = saferef.safe_ref(receiver,
-                                    on_delete=self._remove_receiver)
+                    receiver = saferef.safe_ref(
+                        receiver, on_delete=self._remove_receiver,
+                    )
 
                 for r_key, _ in self.receivers:
                     if r_key == lookup_key:
@@ -95,7 +96,7 @@ class Signal(object):  # pragma: no cover
         return _handle_options(*args, **kwargs)
 
     def disconnect(self, receiver=None, sender=None, weak=True,
-            dispatch_uid=None):
+                   dispatch_uid=None):
         """Disconnect receiver from sender for signal.
 
         If weak references are used, disconnect need not be called. The

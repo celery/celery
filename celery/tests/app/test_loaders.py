@@ -9,9 +9,9 @@ from mock import Mock, patch
 from celery import loaders
 from celery.app import app_or_default
 from celery.exceptions import (
-        NotConfigured,
-        ImproperlyConfigured,
-        CPendingDeprecationWarning,
+    NotConfigured,
+    ImproperlyConfigured,
+    CPendingDeprecationWarning,
 )
 from celery.loaders import base
 from celery.loaders import default
@@ -49,15 +49,17 @@ class test_loaders(AppCase):
     def test_get_loader_cls(self):
 
         self.assertEqual(loaders.get_loader_cls('default'),
-                          default.Loader)
+                         default.Loader)
 
     def test_current_loader(self):
-        with self.assertWarnsRegex(CPendingDeprecationWarning,
+        with self.assertWarnsRegex(
+                CPendingDeprecationWarning,
                 r'deprecation'):
             self.assertIs(loaders.current_loader(), self.app.loader)
 
     def test_load_settings(self):
-        with self.assertWarnsRegex(CPendingDeprecationWarning,
+        with self.assertWarnsRegex(
+                CPendingDeprecationWarning,
                 r'deprecation'):
             self.assertIs(loaders.load_settings(), self.app.conf)
 
@@ -102,12 +104,13 @@ class test_LoaderBase(Case):
 
     def test_import_default_modules(self):
         modnames = lambda l: [m.__name__ for m in l]
-        prev, self.app.conf.CELERY_IMPORTS = \
-                self.app.conf.CELERY_IMPORTS, ('os', 'sys')
+        prev, self.app.conf.CELERY_IMPORTS = (
+            self.app.conf.CELERY_IMPORTS, ('os', 'sys'))
         try:
-            self.assertEqual(sorted(modnames(
-                                self.loader.import_default_modules())),
-                            sorted(modnames([os, sys])))
+            self.assertEqual(
+                sorted(modnames(self.loader.import_default_modules())),
+                sorted(modnames([os, sys])),
+            )
         finally:
             self.app.conf.CELERY_IMPORTS = prev
 
@@ -263,8 +266,8 @@ class test_AppLoader(Case):
         self.assertEqual(self.loader.conf['BAR'], 20)
 
     def test_on_worker_init(self):
-        prev, self.app.conf.CELERY_IMPORTS = \
-                self.app.conf.CELERY_IMPORTS, ('subprocess', )
+        prev, self.app.conf.CELERY_IMPORTS = (
+            self.app.conf.CELERY_IMPORTS, ('subprocess', ))
         try:
             sys.modules.pop('subprocess', None)
             self.loader.init_worker()

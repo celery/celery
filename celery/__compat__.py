@@ -146,20 +146,20 @@ class MagicModule(ModuleType):
         return list(set(self.__all__) | DEFAULT_ATTRS)
 
 
-def create_module(name, attrs, cls_attrs=None, pkg=None, base=MagicModule,
-        prepare_attr=None):
+def create_module(name, attrs, cls_attrs=None, pkg=None,
+                  base=MagicModule, prepare_attr=None):
     fqdn = '.'.join([pkg.__name__, name]) if pkg else name
     cls_attrs = {} if cls_attrs is None else cls_attrs
 
     attrs = dict((attr_name, prepare_attr(attr) if prepare_attr else attr)
-                    for attr_name, attr in attrs.iteritems())
+                 for attr_name, attr in attrs.iteritems())
     module = sys.modules[fqdn] = type(name, (base, ), cls_attrs)(fqdn)
     module.__dict__.update(attrs)
     return module
 
 
 def recreate_module(name, compat_modules=(), by_module={}, direct={},
-        base=MagicModule, **attrs):
+                    base=MagicModule, **attrs):
     old_module = sys.modules[name]
     origins = get_origins(by_module)
     compat_modules = COMPAT_MODULES.get(name, ())
@@ -171,7 +171,7 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={},
                                 compat_modules, origins, direct, attrs])))))
     new_module = create_module(name, attrs, cls_attrs=cattrs, base=base)
     new_module.__dict__.update(dict((mod, get_compat_module(new_module, mod))
-                                     for mod in compat_modules))
+                               for mod in compat_modules))
     return old_module, new_module
 
 

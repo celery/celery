@@ -156,8 +156,8 @@ class test_div(AppCase):
 
     def setup(self):
         self.prev, beatapp.Beat = beatapp.Beat, MockBeat
-        self.ctx, celerybeat_bin.detached = \
-                celerybeat_bin.detached, MockDaemonContext
+        self.ctx, celerybeat_bin.detached = (
+            celerybeat_bin.detached, MockDaemonContext)
 
     def teardown(self):
         beatapp.Beat = self.prev

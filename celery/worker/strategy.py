@@ -20,7 +20,7 @@ def default(task, app, consumer):
 
     def task_message_handler(message, body, ack):
         handle(Req(body, on_ack=ack, app=app, hostname=hostname,
-                         eventer=eventer, task=task,
-                         connection_errors=connection_errors,
-                         delivery_info=message.delivery_info))
+                   eventer=eventer, task=task,
+                   connection_errors=connection_errors,
+                   delivery_info=message.delivery_info))
     return task_message_handler

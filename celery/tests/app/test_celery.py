@@ -14,5 +14,5 @@ class test_celery_package(Case):
 
     def test_meta(self):
         for m in ('__author__', '__contact__', '__homepage__',
-                '__docformat__'):
+                  '__docformat__'):
             self.assertTrue(getattr(celery, m, None))

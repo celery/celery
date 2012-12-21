@@ -187,17 +187,19 @@ class Component(StartStopComponent):
 
     def create(self, w):
         prefetch_count = w.concurrency * w.prefetch_multiplier
-        c = w.consumer = self.instantiate(self.Consumer(w),
-                w.ready_queue,
-                hostname=w.hostname,
-                send_events=w.send_events,
-                init_callback=w.ready_callback,
-                initial_prefetch_count=prefetch_count,
-                pool=w.pool,
-                timer=w.timer,
-                app=w.app,
-                controller=w,
-                hub=w.hub)
+        c = w.consumer = self.instantiate(
+            self.Consumer(w),
+            w.ready_queue,
+            hostname=w.hostname,
+            send_events=w.send_events,
+            init_callback=w.ready_callback,
+            initial_prefetch_count=prefetch_count,
+            pool=w.pool,
+            timer=w.timer,
+            app=w.app,
+            controller=w,
+            hub=w.hub,
+        )
         return c
 
 
@@ -317,10 +319,10 @@ class Consumer(object):
     _state = None
 
     def __init__(self, ready_queue,
-            init_callback=noop, send_events=False, hostname=None,
-            initial_prefetch_count=2, pool=None, app=None,
-            timer=None, controller=None, hub=None, amqheartbeat=None,
-            **kwargs):
+                 init_callback=noop, send_events=False, hostname=None,
+                 initial_prefetch_count=2, pool=None, app=None,
+                 timer=None, controller=None, hub=None, amqheartbeat=None,
+                 **kwargs):
         self.app = app_or_default(app)
         self.connection = None
         self.task_consumer = None
@@ -397,7 +399,7 @@ class Consumer(object):
         self.connection.transport.on_poll_init(hub.poller)
 
     def consume_messages(self, sleep=sleep, min=min, Empty=Empty,
-            hbrate=AMQHEARTBEAT_RATE):
+                         hbrate=AMQHEARTBEAT_RATE):
         """Consume messages forever (or until an exception is raised)."""
 
         with self.hub as hub:
@@ -496,7 +498,7 @@ class Consumer(object):
                     sleep(min(poll_timeout, 0.1))
 
     def on_task(self, task, task_reserved=task_reserved,
-            to_system_tz=timezone.to_system):
+                to_system_tz=timezone.to_system):
         """Handle received task.
 
         If the task has an `eta` we enter it into the ETA schedule,
@@ -510,12 +512,14 @@ class Consumer(object):
             info('Got task from broker: %s', task)
 
         if self.event_dispatcher.enabled:
-            self.event_dispatcher.send('task-received', uuid=task.id,
-                    name=task.name, args=safe_repr(task.args),
-                    kwargs=safe_repr(task.kwargs),
-                    retries=task.request_dict.get('retries', 0),
-                    eta=task.eta and task.eta.isoformat(),
-                    expires=task.expires and task.expires.isoformat())
+            self.event_dispatcher.send(
+                'task-received',
+                uuid=task.id, name=task.name,
+                args=safe_repr(task.args), kwargs=safe_repr(task.kwargs),
+                retries=task.request_dict.get('retries', 0),
+                eta=task.eta and task.eta.isoformat(),
+                expires=task.expires and task.expires.isoformat(),
+            )
 
         if task.eta:
             try:
@@ -609,8 +613,8 @@ class Consumer(object):
 
         if self.task_consumer:
             debug('Closing consumer channel...')
-            self.task_consumer = \
-                    self.maybe_conn_error(self.task_consumer.close)
+            self.task_consumer = self.maybe_conn_error(
+                self.task_consumer.close)
 
         self.stop_pidbox_node()
 
@@ -640,8 +644,8 @@ class Consumer(object):
 
         if self.event_dispatcher:
             debug('Shutting down event dispatcher...')
-            self.event_dispatcher = \
-                    self.maybe_conn_error(self.event_dispatcher.close)
+            self.event_dispatcher = self.maybe_conn_error(
+                self.event_dispatcher.close)
 
         debug('Cancelling broadcast consumer...')
         if join and self.broadcast_consumer:
@@ -680,7 +684,8 @@ class Consumer(object):
             return self.pool.spawn_n(self._green_pidbox_node)
         self.pidbox_node.channel = self.connection.channel()
         self.broadcast_consumer = self.pidbox_node.listen(
-                                        callback=self.on_control)
+            callback=self.on_control,
+        )
 
     def stop_pidbox_node(self):
         if self._pidbox_node_stopped:
@@ -705,7 +710,9 @@ class Consumer(object):
                 info('pidbox: Connected to %s.', conn.as_uri())
                 self.pidbox_node.channel = conn.default_channel
                 self.broadcast_consumer = self.pidbox_node.listen(
-                                            callback=self.on_control)
+                    callback=self.on_control,
+                )
+
                 with self.broadcast_consumer:
                     while not self._pidbox_node_shutdown.isSet():
                         try:
@@ -730,8 +737,9 @@ class Consumer(object):
         # Re-establish the broker connection and setup the task consumer.
         self.connection = self._open_connection()
         info('consumer: Connected to %s.', self.connection.as_uri())
-        self.task_consumer = self.app.amqp.TaskConsumer(self.connection,
-                                    on_decode_error=self.on_decode_error)
+        self.task_consumer = self.app.amqp.TaskConsumer(
+            self.connection, on_decode_error=self.on_decode_error,
+        )
         # QoS: Reset prefetch window.
         self.qos = QoS(self.task_consumer, self.initial_prefetch_count)
         self.qos.update()
@@ -741,9 +749,9 @@ class Consumer(object):
 
         # Flush events sent while connection was down.
         prev_event_dispatcher = self.event_dispatcher
-        self.event_dispatcher = self.app.events.Dispatcher(self.connection,
-                                                hostname=self.hostname,
-                                                enabled=self.send_events)
+        self.event_dispatcher = self.app.events.Dispatcher(
+            self.connection, hostname=self.hostname, enabled=self.send_events,
+        )
         if prev_event_dispatcher:
             self.event_dispatcher.copy_buffer(prev_event_dispatcher)
             self.event_dispatcher.flush()
@@ -791,9 +799,10 @@ class Consumer(object):
             conn.connect()
             return conn
 
-        return conn.ensure_connection(_error_handler,
-                    self.app.conf.BROKER_CONNECTION_MAX_RETRIES,
-                    callback=self.maybe_shutdown)
+        return conn.ensure_connection(
+            _error_handler, self.app.conf.BROKER_CONNECTION_MAX_RETRIES,
+            callback=self.maybe_shutdown,
+        )
 
     def stop(self):
         """Stop consuming.
@@ -818,7 +827,7 @@ class Consumer(object):
             raise SystemTerminate()
 
     def add_task_queue(self, queue, exchange=None, exchange_type=None,
-            routing_key=None, **options):
+                       routing_key=None, **options):
         cset = self.task_consumer
         queues = self.app.amqp.queues
         # Must use in' here, as __missing__ will automatically
@@ -829,7 +838,7 @@ class Consumer(object):
         else:
             exchange = queue if exchange is None else exchange
             exchange_type = ('direct' if exchange_type is None
-                                      else exchange_type)
+                             else exchange_type)
             q = queues.select_add(queue,
                                   exchange=exchange,
                                   exchange_type=exchange_type,

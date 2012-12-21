@@ -27,9 +27,10 @@ from celery.bin.base import daemon_options, Option
 logger = get_logger(__name__)
 
 OPTION_LIST = daemon_options(default_pidfile='celeryd.pid') + (
-                Option('--fake',
-                       default=False, action='store_true', dest='fake',
-                       help="Don't fork (for debugging purposes)"), )
+    Option('--fake',
+           default=False, action='store_true', dest='fake',
+           help="Don't fork (for debugging purposes)"),
+)
 
 
 def detach(path, argv, logfile=None, pidfile=None, uid=None,
@@ -76,7 +77,7 @@ class PartialOptionParser(OptionParser):
                         self.error('%s option requires an argument' % opt)
                     else:
                         self.error('%s option requires %d arguments' % (
-                                    opt, nargs))
+                            opt, nargs))
                 elif nargs == 1:
                     value = rargs.pop(0)
                 else:
@@ -143,7 +144,7 @@ class detached_celeryd(object):
         options, values, leftovers = self.parse_options(prog_name, argv[1:])
         sys.exit(detach(path=self.execv_path,
                  argv=self.execv_argv + leftovers + config,
-                  **vars(options)))
+                 **vars(options)))
 
 
 def main():

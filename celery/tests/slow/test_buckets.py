@@ -40,7 +40,7 @@ class MockJob(object):
 
     def __repr__(self):
         return '<MockJob: task:%s id:%s args:%s kwargs:%s' % (
-                self.name, self.id, self.args, self.kwargs)
+            self.name, self.id, self.args, self.kwargs)
 
 
 class test_TokenBucketQueue(Case):
@@ -105,9 +105,9 @@ class test_rate_limit_string(Case):
         self.assertEqual(timeutils.rate(999), 999)
         self.assertEqual(timeutils.rate('1456/s'), 1456)
         self.assertEqual(timeutils.rate('100/m'),
-                          100 / 60.0)
+                         100 / 60.0)
         self.assertEqual(timeutils.rate('10/h'),
-                          10 / 60.0 / 60.0)
+                         10 / 60.0 / 60.0)
 
         for zero in (0, None, '0', '0/m', '0/h', '0/s'):
             self.assertEqual(timeutils.rate(zero), 0)

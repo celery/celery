@@ -318,4 +318,4 @@ def maybe_make_aware(dt, tz=None):
     if is_naive(dt):
         dt = to_utc(dt)
     return localize(dt,
-        timezone.utc if tz is None else timezone.tz_or_local(tz))
+                    timezone.utc if tz is None else timezone.tz_or_local(tz))

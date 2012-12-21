@@ -42,7 +42,8 @@ if STATICA_HACK:
 # Lazy loading
 from .__compat__ import recreate_module
 
-old_module, new_module = recreate_module(__name__,  # pragma: no cover
+old_module, new_module = recreate_module(  # pragma: no cover
+    __name__,
     by_module={
         'celery.app': ['Celery', 'bugreport', 'shared_task'],
         'celery.app.task': ['Task'],

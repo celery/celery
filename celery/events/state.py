@@ -36,7 +36,7 @@ HEARTBEAT_EXPIRE_WINDOW = 200
 
 
 def heartbeat_expires(timestamp, freq=60,
-        expire_window=HEARTBEAT_EXPIRE_WINDOW):
+                      expire_window=HEARTBEAT_EXPIRE_WINDOW):
     return timestamp + freq * (expire_window / 1e2)
 
 
@@ -210,7 +210,7 @@ class State(object):
     task_count = 0
 
     def __init__(self, callback=None,
-            max_workers_in_memory=5000, max_tasks_in_memory=10000):
+                 max_workers_in_memory=5000, max_tasks_in_memory=10000):
         self.workers = LRUCache(limit=max_workers_in_memory)
         self.tasks = LRUCache(limit=max_tasks_in_memory)
         self.event_callback = callback
@@ -233,8 +233,9 @@ class State(object):
 
     def _clear_tasks(self, ready=True):
         if ready:
-            in_progress = dict((uuid, task) for uuid, task in self.itertasks()
-                                if task.state not in states.READY_STATES)
+            in_progress = dict(
+                (uuid, task) for uuid, task in self.itertasks()
+                if task.state not in states.READY_STATES)
             self.tasks.clear()
             self.tasks.update(in_progress)
         else:
@@ -257,7 +258,7 @@ class State(object):
             worker.update(kwargs)
         except KeyError:
             worker = self.workers[hostname] = Worker(
-                    hostname=hostname, **kwargs)
+                hostname=hostname, **kwargs)
         return worker
 
     def get_or_create_task(self, uuid):
@@ -329,9 +330,9 @@ class State(object):
         Returns a list of `(uuid, task)` tuples.
 
         """
-        sorted_tasks = self._sort_tasks_by_time((uuid, task)
-                for uuid, task in self.tasks.iteritems()
-                    if task.name == name)
+        sorted_tasks = self._sort_tasks_by_time(
+            (uuid, task) for uuid, task in self.tasks.iteritems()
+            if task.name == name)
 
         return sorted_tasks[0:limit or None]
 
@@ -341,9 +342,9 @@ class State(object):
         Returns a list of `(uuid, task)` tuples.
 
         """
-        return self._sort_tasks_by_time((uuid, task)
-                for uuid, task in self.itertasks(limit)
-                    if task.worker.hostname == hostname)
+        return self._sort_tasks_by_time(
+            (uuid, task) for uuid, task in self.itertasks(limit)
+            if task.worker.hostname == hostname)
 
     def task_types(self):
         """Returns a list of all seen task types."""

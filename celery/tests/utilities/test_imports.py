@@ -35,13 +35,17 @@ class test_import_utils(Case):
 
     def test_symbol_by_name_returns_default(self):
         default = object()
-        self.assertIs(symbol_by_name('xyz.ryx.qedoa.weq:foz',
-                        default=default), default)
+        self.assertIs(
+            symbol_by_name('xyz.ryx.qedoa.weq:foz', default=default),
+            default,
+        )
 
     def test_symbol_by_name_package(self):
         from celery.worker import WorkController
-        self.assertIs(symbol_by_name('.worker:WorkController',
-                    package='celery'), WorkController)
+        self.assertIs(
+            symbol_by_name('.worker:WorkController', package='celery'),
+            WorkController,
+        )
         self.assertTrue(symbol_by_name(':group', package='celery'))
 
     @patch('celery.utils.imports.reload')

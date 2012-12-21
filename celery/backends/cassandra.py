@@ -47,7 +47,7 @@ class CassandraBackend(BaseDictBackend):
     _retry_wait = 3
 
     def __init__(self, servers=None, keyspace=None, column_family=None,
-            cassandra_options=None, detailed_mode=False, **kwargs):
+                 cassandra_options=None, detailed_mode=False, **kwargs):
         """Initialize Cassandra backend.
 
         Raises :class:`celery.exceptions.ImproperlyConfigured` if
@@ -57,7 +57,7 @@ class CassandraBackend(BaseDictBackend):
         super(CassandraBackend, self).__init__(**kwargs)
 
         self.expires = kwargs.get('expires') or maybe_timedelta(
-                                    self.app.conf.CELERY_TASK_RESULT_EXPIRES)
+            self.app.conf.CELERY_TASK_RESULT_EXPIRES)
 
         if not pycassa:
             raise ImproperlyConfigured(
@@ -94,7 +94,7 @@ class CassandraBackend(BaseDictBackend):
 
         if not self.servers or not self.keyspace or not self.column_family:
             raise ImproperlyConfigured(
-                    'Cassandra backend not configured.')
+                'Cassandra backend not configured.')
 
         self._column_family = None
 
@@ -119,10 +119,11 @@ class CassandraBackend(BaseDictBackend):
             conn = pycassa.ConnectionPool(self.keyspace,
                                           server_list=self.servers,
                                           **self.cassandra_options)
-            self._column_family = \
-              pycassa.ColumnFamily(conn, self.column_family,
-                    read_consistency_level=self.read_consistency,
-                    write_consistency_level=self.write_consistency)
+            self._column_family = pycassa.ColumnFamily(
+                conn, self.column_family,
+                read_consistency_level=self.read_consistency,
+                write_consistency_level=self.write_consistency,
+            )
         return self._column_family
 
     def process_cleanup(self):

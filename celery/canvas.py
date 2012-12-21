@@ -82,7 +82,7 @@ class Signature(dict):
         return Signature(d)
 
     def __init__(self, task=None, args=None, kwargs=None, options=None,
-                type=None, subtask_type=None, immutable=False, **ex):
+                 type=None, subtask_type=None, immutable=False, **ex):
         init = dict.__init__
 
         if isinstance(task, dict):
@@ -96,11 +96,12 @@ class Signature(dict):
         else:
             self._type = task
 
-        init(self, task=task_name, args=tuple(args or ()),
-                                   kwargs=kwargs or {},
-                                   options=dict(options or {}, **ex),
-                                   subtask_type=subtask_type,
-                                   immutable=immutable)
+        init(self,
+             task=task_name, args=tuple(args or ()),
+             kwargs=kwargs or {},
+             options=dict(options or {}, **ex),
+             subtask_type=subtask_type,
+             immutable=immutable)
 
     def __call__(self, *partial_args, **partial_kwargs):
         return self.apply_async(partial_args, partial_kwargs)
@@ -172,9 +173,11 @@ class Signature(dict):
         return self.append_to_list_option('link_error', errback)
 
     def flatten_links(self):
-        return list(chain_from_iterable(_chain([[self]],
-                (link.flatten_links()
-                    for link in maybe_list(self.options.get('link')) or []))))
+        return list(chain_from_iterable(_chain(
+            [[self]],
+            (link.flatten_links()
+                for link in maybe_list(self.options.get('link')) or [])
+        )))
 
     def __or__(self, other):
         if not isinstance(self, chain) and isinstance(other, chain):
@@ -231,8 +234,9 @@ class chain(Signature):
 
     def __init__(self, *tasks, **options):
         tasks = tasks[0] if len(tasks) == 1 and is_list(tasks[0]) else tasks
-        Signature.__init__(self,
-            'celery.chain', (), {'tasks': tasks}, **options)
+        Signature.__init__(
+            self, 'celery.chain', (), {'tasks': tasks}, **options
+        )
         self.tasks = tasks
         self.subtask_type = 'chain'
 
@@ -257,14 +261,17 @@ class _basemap(Signature):
     _unpack_args = itemgetter('task', 'it')
 
     def __init__(self, task, it, **options):
-        Signature.__init__(self, self._task_name, (),
-                {'task': task, 'it': regen(it)}, immutable=True, **options)
+        Signature.__init__(
+            self, self._task_name, (),
+            {'task': task, 'it': regen(it)}, immutable=True, **options
+        )
 
     def apply_async(self, args=(), kwargs={}, **opts):
         # need to evaluate generators
         task, it = self._unpack_args(self.kwargs)
-        return self.type.apply_async((),
-                {'task': task, 'it': list(it)}, **opts)
+        return self.type.apply_async(
+            (), {'task': task, 'it': list(it)}, **opts
+        )
 
     @classmethod
     def from_dict(self, d):
@@ -293,9 +300,11 @@ class chunks(Signature):
     _unpack_args = itemgetter('task', 'it', 'n')
 
     def __init__(self, task, it, n, **options):
-        Signature.__init__(self, 'celery.chunks', (),
-                {'task': task, 'it': regen(it), 'n': n},
-                immutable=True, **options)
+        Signature.__init__(
+            self, 'celery.chunks', (),
+            {'task': task, 'it': regen(it), 'n': n},
+            immutable=True, **options
+        )
 
     @classmethod
     def from_dict(self, d):
@@ -331,8 +340,9 @@ class group(Signature):
     def __init__(self, *tasks, **options):
         if len(tasks) == 1:
             tasks = _maybe_group(tasks[0])
-        Signature.__init__(self,
-            'celery.group', (), {'tasks': tasks}, **options)
+        Signature.__init__(
+            self, 'celery.group', (), {'tasks': tasks}, **options
+        )
         self.tasks, self.subtask_type = tasks, 'group'
 
     @classmethod
@@ -345,8 +355,9 @@ class group(Signature):
         return group(tasks, **kwdict(d['options']))
 
     def __call__(self, *partial_args, **options):
-        tasks, result, gid, args = self.type.prepare(options,
-                    map(Signature.clone, self.tasks), partial_args)
+        tasks, result, gid, args = self.type.prepare(
+            options, map(Signature.clone, self.tasks), partial_args,
+        )
         return self.type(tasks, result, gid, args)
 
     def _freeze(self, _id=None):
@@ -381,9 +392,12 @@ class chord(Signature):
     Chord = Chord
 
     def __init__(self, header, body=None, task='celery.chord',
-            args=(), kwargs={}, **options):
-        Signature.__init__(self, task, args, dict(kwargs,
-            header=_maybe_group(header), body=maybe_subtask(body)), **options)
+                 args=(), kwargs={}, **options):
+        Signature.__init__(
+            self, task, args,
+            dict(kwargs, header=_maybe_group(header),
+                 body=maybe_subtask(body)), **options
+        )
         self.subtask_type = 'chord'
 
     @classmethod

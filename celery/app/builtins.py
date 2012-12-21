@@ -73,7 +73,7 @@ def add_unlock_chord_task(app):
     @app.task(name='celery.chord_unlock', max_retries=None,
               default_retry_delay=1, ignore_result=True, _force_evaluate=True)
     def unlock_chord(group_id, callback, interval=None, propagate=False,
-            max_retries=None, result=None):
+                     max_retries=None, result=None):
         if interval is None:
             interval = unlock_chord.default_retry_delay
         result = _res.GroupResult(group_id, map(_res.AsyncResult, result))
@@ -134,10 +134,12 @@ def add_group_task(app):
             result = from_serializable(result)
             # any partial args are added to all tasks in the group
             taskit = (subtask(task).clone(partial_args)
-                        for i, task in enumerate(tasks))
+                      for i, task in enumerate(tasks))
             if self.request.is_eager or app.conf.CELERY_ALWAYS_EAGER:
-                return app.GroupResult(result.id,
-                        [task.apply(group_id=group_id) for task in taskit])
+                return app.GroupResult(
+                    result.id,
+                    [task.apply(group_id=group_id) for task in taskit],
+                )
             with app.producer_or_acquire() as pub:
                 [task.apply_async(group_id=group_id, publisher=pub,
                                   add_to_parent=False) for task in taskit]
@@ -148,8 +150,8 @@ def add_group_task(app):
 
         def prepare(self, options, tasks, args, **kwargs):
             AsyncResult = self.AsyncResult
-            options['group_id'] = group_id = \
-                    options.setdefault('task_id', uuid())
+            options['group_id'] = group_id = (
+                options.setdefault('task_id', uuid()))
 
             def prepare_member(task):
                 task = maybe_subtask(task)
@@ -171,16 +173,18 @@ def add_group_task(app):
         def apply_async(self, partial_args=(), kwargs={}, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(partial_args, kwargs, **options)
-            tasks, result, gid, args = self.prepare(options,
-                                            args=partial_args, **kwargs)
-            super(Group, self).apply_async((list(tasks),
-                result.serializable(), gid, args), **options)
+            tasks, result, gid, args = self.prepare(
+                options, args=partial_args, **kwargs
+            )
+            super(Group, self).apply_async((
+                list(tasks), result.serializable(), gid, args), **options
+            )
             return result
 
         def apply(self, args=(), kwargs={}, **options):
             return super(Group, self).apply(
-                    self.prepare(options, args=args, **kwargs),
-                    **options).get()
+                self.prepare(options, args=args, **kwargs),
+                **options).get()
     return Group
 
 
@@ -229,7 +233,7 @@ def add_chain_task(app):
             return tasks, results
 
         def apply_async(self, args=(), kwargs={}, group_id=None, chord=None,
-                task_id=None, **options):
+                        task_id=None, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
             options.pop('publisher', None)
@@ -283,7 +287,7 @@ def add_chord_task(app):
                 return header.apply(args=partial_args, task_id=group_id)
 
             results = [AsyncResult(prepare_member(task, body, group_id))
-                            for task in header.tasks]
+                       for task in header.tasks]
 
             # - fallback implementations schedules the chord_unlock task here
             app.backend.on_chord_apply(group_id, body,
@@ -320,7 +324,7 @@ def add_chord_task(app):
                 body.set(chord=chord)
             callback_id = body.options.setdefault('task_id', task_id or uuid())
             parent = super(Chord, self).apply_async((header, body, args),
-                                                     kwargs, **options)
+                                                    kwargs, **options)
             body_result = self.AsyncResult(callback_id)
             body_result.parent = parent
             return body_result
@@ -330,5 +334,5 @@ def add_chord_task(app):
             res = super(Chord, self).apply(args, dict(kwargs, eager=True),
                                            **options)
             return maybe_subtask(body).apply(
-                        args=(res.get(propagate=propagate).get(), ))
+                args=(res.get(propagate=propagate).get(), ))
     return Chord

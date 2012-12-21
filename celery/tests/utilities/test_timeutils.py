@@ -53,7 +53,7 @@ class test_timeutils(Case):
             self.assertEqual(timeutils.humanize_seconds(seconds), human)
 
         self.assertEqual(timeutils.humanize_seconds(4, prefix='about '),
-                          'about 4.00 seconds')
+                         'about 4.00 seconds')
 
     def test_maybe_iso8601_datetime(self):
         now = datetime.now()
@@ -69,7 +69,7 @@ class test_timeutils(Case):
 
     def test_remaining_relative(self):
         timeutils.remaining(datetime.utcnow(), timedelta(hours=1),
-                relative=True)
+                            relative=True)
 
 
 class test_timezone(Case):

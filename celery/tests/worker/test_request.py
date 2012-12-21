@@ -83,8 +83,9 @@ def jail(task_id, name, args, kwargs):
     request = {'id': task_id}
     task = current_app.tasks[name]
     task.__trace__ = None  # rebuild
-    return trace_task(task,
-            task_id, args, kwargs, request=request, eager=False)
+    return trace_task(
+        task, task_id, args, kwargs, request=request, eager=False,
+    )
 
 
 def on_ack(*args, **kwargs):
@@ -134,8 +135,10 @@ class test_default_encode(Case):
 
     def test_cython(self):
         prev, sys.platform = sys.platform, 'darwin'
-        gfe, sys.getfilesystemencoding = sys.getfilesystemencoding, \
-                                         lambda: 'utf-8'
+        gfe, sys.getfilesystemencoding = (
+            sys.getfilesystemencoding,
+            lambda: 'utf-8',
+        )
         try:
             self.assertEqual(default_encode('foo'), 'foo')
         finally:
@@ -333,8 +336,10 @@ class test_TaskRequest(AppCase):
                          expires=datetime.utcnow() + timedelta(days=1))
         tw.revoked()
         self.assertNotIn(tw.id, revoked)
-        self.assertNotEqual(mytask.backend.get_status(tw.id),
-                         states.REVOKED)
+        self.assertNotEqual(
+            mytask.backend.get_status(tw.id),
+            states.REVOKED,
+        )
 
     def test_revoked_expires_ignore_result(self):
         mytask.ignore_result = True
@@ -621,8 +626,8 @@ class test_TaskRequest(AppCase):
         def raising():
             raise KeyError('baz')
 
-        with self.assertWarnsRegex(RuntimeWarning,
-                r'Exception raised outside'):
+        with self.assertWarnsRegex(
+                RuntimeWarning, r'Exception raised outside'):
             res = trace_task(raising, uuid(), [], {})
             self.assertIsInstance(res, ExceptionInfo)
 
@@ -666,15 +671,19 @@ class test_TaskRequest(AppCase):
 
     def test_task_wrapper_mail_attrs(self):
         tw = TaskRequest(mytask.name, uuid(), [], {})
-        x = tw.success_msg % {'name': tw.name,
-                              'id': tw.id,
-                              'return_value': 10,
-                              'runtime': 0.3641}
+        x = tw.success_msg % {
+            'name': tw.name,
+            'id': tw.id,
+            'return_value': 10,
+            'runtime': 0.3641,
+        }
         self.assertTrue(x)
-        x = tw.error_msg % {'name': tw.name,
-                           'id': tw.id,
-                           'exc': 'FOOBARBAZ',
-                           'traceback': 'foobarbaz'}
+        x = tw.error_msg % {
+            'name': tw.name,
+            'id': tw.id,
+            'exc': 'FOOBARBAZ',
+            'traceback': 'foobarbaz',
+        }
         self.assertTrue(x)
 
     def test_from_message(self):
@@ -682,8 +691,8 @@ class test_TaskRequest(AppCase):
         body = {'task': mytask.name, 'id': uuid(),
                 'args': [2], 'kwargs': {us: 'bar'}}
         m = Message(None, body=anyjson.dumps(body), backend='foo',
-                          content_type='application/json',
-                          content_encoding='utf-8')
+                    content_type='application/json',
+                    content_encoding='utf-8')
         tw = TaskRequest.from_message(m, m.decode())
         self.assertIsInstance(tw, Request)
         self.assertEqual(tw.name, body['task'])
@@ -697,8 +706,8 @@ class test_TaskRequest(AppCase):
     def test_from_message_empty_args(self):
         body = {'task': mytask.name, 'id': uuid()}
         m = Message(None, body=anyjson.dumps(body), backend='foo',
-                          content_type='application/json',
-                          content_encoding='utf-8')
+                    content_type='application/json',
+                    content_encoding='utf-8')
         tw = TaskRequest.from_message(m, m.decode())
         self.assertIsInstance(tw, Request)
         self.assertEquals(tw.args, [])
@@ -707,8 +716,8 @@ class test_TaskRequest(AppCase):
     def test_from_message_missing_required_fields(self):
         body = {}
         m = Message(None, body=anyjson.dumps(body), backend='foo',
-                          content_type='application/json',
-                          content_encoding='utf-8')
+                    content_type='application/json',
+                    content_encoding='utf-8')
         with self.assertRaises(KeyError):
             TaskRequest.from_message(m, m.decode())
 
@@ -716,8 +725,8 @@ class test_TaskRequest(AppCase):
         body = {'task': 'cu.mytask.doesnotexist', 'id': uuid(),
                 'args': [2], 'kwargs': {u'æØåveéðƒeæ': 'bar'}}
         m = Message(None, body=anyjson.dumps(body), backend='foo',
-                          content_type='application/json',
-                          content_encoding='utf-8')
+                    content_type='application/json',
+                    content_encoding='utf-8')
         with self.assertRaises(KeyError):
             TaskRequest.from_message(m, m.decode())
 
@@ -749,7 +758,7 @@ class test_TaskRequest(AppCase):
     def test_execute_ack(self):
         tid = uuid()
         tw = TaskRequest(mytask.name, tid, [4], {'f': 'x'},
-                        on_ack=on_ack)
+                         on_ack=on_ack)
         self.assertEqual(tw.execute(), 256)
         meta = mytask.backend.get_task_meta(tid)
         self.assertTrue(scratch['ACK'])
@@ -777,7 +786,7 @@ class test_TaskRequest(AppCase):
                 pass
 
             def apply_async(self, target, args=None, kwargs=None,
-                    *margs, **mkwargs):
+                            *margs, **mkwargs):
                 self.target = target
                 self.args = args
                 self.kwargs = kwargs
@@ -798,19 +807,19 @@ class test_TaskRequest(AppCase):
         tid = uuid()
         tw = TaskRequest(mytask.name, tid, [4], {'f': 'x'})
         self.assertDictEqual(
-                tw.extend_with_default_kwargs(), {
-                    'f': 'x',
-                    'logfile': None,
-                    'loglevel': None,
-                    'task_id': tw.id,
-                    'task_retries': 0,
-                    'task_is_eager': False,
-                    'delivery_info': {
-                        'exchange': None,
-                        'routing_key': None,
-                        'priority': None,
-                    },
-                    'task_name': tw.name})
+            tw.extend_with_default_kwargs(), {
+                'f': 'x',
+                'logfile': None,
+                'loglevel': None,
+                'task_id': tw.id,
+                'task_retries': 0,
+                'task_is_eager': False,
+                'delivery_info': {
+                    'exchange': None,
+                    'routing_key': None,
+                    'priority': None,
+                },
+                'task_name': tw.name})
 
     @patch('celery.worker.job.logger')
     def _test_on_failure(self, exception, logger):

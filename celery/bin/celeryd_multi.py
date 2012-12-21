@@ -109,7 +109,7 @@ from celery.utils import term
 from celery.utils.text import pluralize
 
 SIGNAMES = set(sig for sig in dir(signal)
-                        if sig.startswith('SIG') and '_' not in sig)
+               if sig.startswith('SIG') and '_' not in sig)
 SIGMAP = dict((getattr(signal, name), name) for name in SIGNAMES)
 
 USAGE = """\
@@ -141,7 +141,7 @@ class MultiTool(object):
     retcode = 0  # Final exit code.
 
     def __init__(self, env=None, fh=None, quiet=False, verbose=False,
-            no_color=False, nosplash=False):
+                 no_color=False, nosplash=False):
         self.fh = fh or sys.stderr
         self.env = env
         self.nosplash = nosplash
@@ -192,8 +192,9 @@ class MultiTool(object):
 
     def names(self, argv, cmd):
         p = NamespacedOptionParser(argv)
-        self.say('\n'.join(hostname
-                        for hostname, _, _ in multi_args(p, cmd)))
+        self.say('\n'.join(
+            hostname for hostname, _, _ in multi_args(p, cmd)),
+        )
 
     def get(self, argv, cmd):
         wanted = argv[0]
@@ -206,8 +207,9 @@ class MultiTool(object):
     def show(self, argv, cmd):
         p = NamespacedOptionParser(argv)
         self.note('> Starting nodes...')
-        self.say('\n'.join(' '.join(worker)
-                        for _, worker, _ in multi_args(p, cmd)))
+        self.say('\n'.join(
+            ' '.join(worker) for _, worker, _ in multi_args(p, cmd)),
+        )
 
     def start(self, argv, cmd):
         self.splash()
@@ -234,7 +236,7 @@ class MultiTool(object):
             if exc.errno != errno.ESRCH:
                 raise
             self.note('Could not signal %s (%s): No such process' % (
-                        nodename, pid))
+                nodename, pid))
             return False
         return True
 
@@ -248,7 +250,7 @@ class MultiTool(object):
         return True
 
     def shutdown_nodes(self, nodes, sig=signal.SIGTERM, retry=None,
-            callback=None):
+                       callback=None):
         if not nodes:
             return
         P = set(nodes)
@@ -433,7 +435,7 @@ def multi_args(p, cmd='celeryd', append='', prefix='', suffix=''):
     cmd = options.pop('--cmd', cmd)
     append = options.pop('--append', append)
     hostname = options.pop('--hostname',
-                   options.pop('-n', socket.gethostname()))
+                           options.pop('-n', socket.gethostname()))
     prefix = options.pop('--prefix', prefix) or ''
     suffix = options.pop('--suffix', suffix) or '.' + hostname
     if suffix in ('""', "''"):
@@ -451,7 +453,7 @@ def multi_args(p, cmd='celeryd', append='', prefix='', suffix=''):
                                 '%n': name})
         argv = ([expand(cmd)] +
                 [format_opt(opt, expand(value))
-                        for opt, value in p.optmerge(name, options).items()] +
+                 for opt, value in p.optmerge(name, options).items()] +
                 [passthrough])
         if append:
             argv.append(expand(append))

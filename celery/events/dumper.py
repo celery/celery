@@ -43,33 +43,32 @@ class Dumper(object):
     def say(self, msg):
         say(msg, out=self.out)
 
-    def on_event(self, event):
-        timestamp = datetime.utcfromtimestamp(event.pop('timestamp'))
-        type = event.pop('type').lower()
-        hostname = event.pop('hostname')
+    def on_event(self, ev):
+        timestamp = datetime.utcfromtimestamp(ev.pop('timestamp'))
+        type = ev.pop('type').lower()
+        hostname = ev.pop('hostname')
         if type.startswith('task-'):
-            uuid = event.pop('uuid')
+            uuid = ev.pop('uuid')
             if type in ('task-received', 'task-sent'):
                 task = TASK_NAMES[uuid] = '%s(%s) args=%s kwargs=%s' % (
-                        event.pop('name'), uuid,
-                        event.pop('args'),
-                        event.pop('kwargs'))
+                    ev.pop('name'), uuid,
+                    ev.pop('args'),
+                    ev.pop('kwargs'))
             else:
                 task = TASK_NAMES.get(uuid, '')
             return self.format_task_event(hostname, timestamp,
-                                          type, task, event)
-        fields = ', '.join('%s=%s' % (key, event[key])
-                        for key in sorted(event))
+                                          type, task, ev)
+        fields = ', '.join('%s=%s' % (key, ev[key]) for key in sorted(ev))
         sep = fields and ':' or ''
         self.say('%s [%s] %s%s %s' % (hostname, timestamp,
                                       humanize_type(type), sep, fields))
 
-    def format_task_event(self, hostname, timestamp, type, task, event):
-        fields = ', '.join('%s=%s' % (key, event[key])
-                        for key in sorted(event))
+    def format_task_event(self, hostname, timestamp, type, task, ev):
+        fields = ', '.join('%s=%s' % (key, ev[key]) for key in sorted(ev))
         sep = fields and ':' or ''
-        self.say('%s [%s] %s%s %s %s' % (hostname, timestamp,
-                    humanize_type(type), sep, task, fields))
+        self.say('%s [%s] %s%s %s %s' % (
+            hostname, timestamp, humanize_type(type), sep, task, fields,
+        ))
 
 
 def evdump(app=None, out=sys.stdout):

@@ -132,8 +132,9 @@ class test_Broadcast(Case):
 
     @with_mock_broadcast
     def test_broadcast_limit(self):
-        self.control.broadcast('foobarbaz1', arguments=[], limit=None,
-                destination=[1, 2, 3])
+        self.control.broadcast(
+            'foobarbaz1', arguments=[], limit=None, destination=[1, 2, 3],
+        )
         self.assertIn('foobarbaz1', MockMailbox.sent)
 
     @with_mock_broadcast
@@ -191,6 +192,6 @@ class test_Broadcast(Case):
     def test_revoke_from_resultset(self):
         r = self.app.GroupResult(uuid(),
                                  map(self.app.AsyncResult,
-                                        [uuid() for i in range(10)]))
+                                     [uuid() for i in range(10)]))
         r.revoke()
         self.assertIn('revoke', MockMailbox.sent)

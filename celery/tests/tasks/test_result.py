@@ -40,11 +40,13 @@ def save_result(task):
     if task['state'] == states.SUCCESS:
         app.backend.mark_as_done(task['id'], task['result'])
     elif task['state'] == states.RETRY:
-        app.backend.mark_as_retry(task['id'], task['result'],
-                traceback=traceback)
+        app.backend.mark_as_retry(
+            task['id'], task['result'], traceback=traceback,
+        )
     else:
-        app.backend.mark_as_failure(task['id'], task['result'],
-                traceback=traceback)
+        app.backend.mark_as_failure(
+            task['id'], task['result'], traceback=traceback,
+        )
 
 
 def make_mock_group(size=10):
@@ -178,16 +180,16 @@ class test_AsyncResult(AppCase):
         ok2_res = AsyncResult(self.task2['id'])
         nok_res = AsyncResult(self.task3['id'])
         self.assertEqual(repr(ok_res), '<AsyncResult: %s>' % (
-                self.task1['id']))
+            self.task1['id']))
         self.assertEqual(repr(ok2_res), '<AsyncResult: %s>' % (
-                self.task2['id']))
+            self.task2['id']))
         self.assertEqual(repr(nok_res), '<AsyncResult: %s>' % (
-                self.task3['id']))
+            self.task3['id']))
 
         pending_id = uuid()
         pending_res = AsyncResult(pending_id)
         self.assertEqual(repr(pending_res), '<AsyncResult: %s>' % (
-                pending_id))
+            pending_id))
 
     def test_hash(self):
         self.assertEqual(hash(AsyncResult('x0w991')),
@@ -413,7 +415,7 @@ class test_GroupResult(AppCase):
     def test_join_native(self):
         backend = SimpleBackend()
         subtasks = [AsyncResult(uuid(), backend=backend)
-                        for i in range(10)]
+                    for i in range(10)]
         ts = GroupResult(uuid(), subtasks)
         backend.ids = [subtask.id for subtask in subtasks]
         res = ts.join_native()
@@ -422,7 +424,7 @@ class test_GroupResult(AppCase):
     def test_iter_native(self):
         backend = SimpleBackend()
         subtasks = [AsyncResult(uuid(), backend=backend)
-                        for i in range(10)]
+                    for i in range(10)]
         ts = GroupResult(uuid(), subtasks)
         backend.ids = [subtask.id for subtask in subtasks]
         self.assertEqual(len(list(ts.iter_native())), 10)

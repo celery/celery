@@ -38,7 +38,8 @@ class module(MagicModule):
         return self.task(*args, **kwargs)
 
 
-old_module, new_module = recreate_module(__name__,  # pragma: no cover
+old_module, new_module = recreate_module(  # pragma: no cover
+    __name__,
     by_module={
         'celery.task.base': ['BaseTask', 'Task', 'PeriodicTask',
                              'task', 'periodic_task'],

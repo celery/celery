@@ -71,8 +71,8 @@ class EventDispatcher(object):
     """
 
     def __init__(self, connection=None, hostname=None, enabled=True,
-            channel=None, buffer_while_offline=True, app=None,
-            serializer=None):
+                 channel=None, buffer_while_offline=True, app=None,
+                 serializer=None):
         self.app = app_or_default(app or self.app)
         self.connection = connection
         self.channel = channel
@@ -128,7 +128,7 @@ class EventDispatcher(object):
         if self.enabled:
             with self.mutex:
                 event = Event(type, hostname=self.hostname,
-                                    clock=self.app.clock.forward(), **fields)
+                              clock=self.app.clock.forward(), **fields)
                 try:
                     self.publisher.publish(event,
                                            routing_key=type.replace('-', '.'))
@@ -168,7 +168,7 @@ class EventReceiver(object):
     handlers = {}
 
     def __init__(self, connection, handlers=None, routing_key='#',
-            node_id=None, app=None, queue_prefix='celeryev'):
+                 node_id=None, app=None, queue_prefix='celeryev'):
         self.app = app_or_default(app)
         self.connection = connection
         if handlers is not None:
@@ -255,7 +255,7 @@ class Events(object):
 
     @contextmanager
     def default_dispatcher(self, hostname=None, enabled=True,
-            buffer_while_offline=False):
+                           buffer_while_offline=False):
         with self.app.amqp.producer_pool.acquire(block=True) as pub:
             with self.Dispatcher(pub.connection, hostname, enabled,
                                  pub.channel, buffer_while_offline) as d:

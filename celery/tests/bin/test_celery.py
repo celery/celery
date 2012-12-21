@@ -50,7 +50,7 @@ class test_Command(AppCase):
         self.cmd.run_from_argv = Mock()
         self.assertEqual(self.cmd.show_help('foo'), EX_USAGE)
         self.cmd.run_from_argv.assert_called_with(
-                self.cmd.prog_name, ['foo', '--help']
+            self.cmd.prog_name, ['foo', '--help']
         )
 
     def test_error(self):
@@ -82,10 +82,14 @@ class test_Command(AppCase):
         self.assertIn('bar', self.cmd.prettify(['foo', 'bar'])[1])
 
     def test_prettify_dict(self):
-        self.assertIn('OK',
-            str(self.cmd.prettify({'ok': 'the quick brown fox'})[0]))
-        self.assertIn('ERROR',
-            str(self.cmd.prettify({'error': 'the quick brown fox'})[0]))
+        self.assertIn(
+            'OK',
+            str(self.cmd.prettify({'ok': 'the quick brown fox'})[0]),
+        )
+        self.assertIn(
+            'ERROR',
+            str(self.cmd.prettify({'error': 'the quick brown fox'})[0]),
+        )
 
     def test_prettify(self):
         self.assertIn('OK', str(self.cmd.prettify('the quick brown')))

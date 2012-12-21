@@ -114,7 +114,7 @@ if C_BENCH:  # pragma: no cover
             now = time()
             diff = now - bench_start
             print('- Time spent processing %s tasks (since first '
-                    'task received): ~%.4fs\n' % (bench_every, diff))
+                  'task received): ~%.4fs\n' % (bench_every, diff))
             sys.stdout.flush()
             bench_start = bench_last = now
             bench_sample.append(diff)

@@ -44,8 +44,10 @@ class test_functions(Case):
     def test_parse_ns_range(self):
         self.assertEqual(parse_ns_range('1-3', True), ['1', '2', '3'])
         self.assertEqual(parse_ns_range('1-3', False), ['1-3'])
-        self.assertEqual(parse_ns_range('1-3,10,11,20', True),
-                ['1', '2', '3', '10', '11', '20'])
+        self.assertEqual(parse_ns_range(
+            '1-3,10,11,20', True),
+            ['1', '2', '3', '10', '11', '20'],
+        )
 
     def test_format_opt(self):
         self.assertEqual(format_opt('--foo', None), '--foo')
@@ -79,62 +81,77 @@ class test_multi_args(Case):
 
     @patch('socket.gethostname')
     def test_parse(self, gethostname):
-        p = NamespacedOptionParser(['-c:jerry,elaine', '5',
-                                    '--loglevel:kramer=DEBUG',
-                                    '--flag',
-                                    '--logfile=foo', '-Q', 'bar', 'jerry',
-                                    'elaine', 'kramer',
-                                    '--', '.disable_rate_limits=1'])
+        p = NamespacedOptionParser([
+            '-c:jerry,elaine', '5',
+            '--loglevel:kramer=DEBUG',
+            '--flag',
+            '--logfile=foo', '-Q', 'bar', 'jerry',
+            'elaine', 'kramer',
+            '--', '.disable_rate_limits=1',
+        ])
         it = multi_args(p, cmd='COMMAND', append='*AP*',
-                prefix='*P*', suffix='*S*')
+                        prefix='*P*', suffix='*S*')
         names = list(it)
-        self.assertEqual(names[0][0:2], ('*P*jerry*S*',
-            [
+        self.assertEqual(
+            names[0][0:2],
+            ('*P*jerry*S*', [
                 'COMMAND', '-n *P*jerry*S*', '-Q bar',
                 '-c 5', '--flag', '--logfile=foo',
                 '-- .disable_rate_limits=1', '*AP*',
-            ]
-        ))
-        self.assertEqual(names[1][0:2], ('*P*elaine*S*',
-            [
+            ]),
+        )
+        self.assertEqual(
+            names[1][0:2],
+            ('*P*elaine*S*', [
                 'COMMAND', '-n *P*elaine*S*', '-Q bar',
                 '-c 5', '--flag', '--logfile=foo',
                 '-- .disable_rate_limits=1', '*AP*',
-            ]
-        ))
-        self.assertEqual(names[2][0:2], ('*P*kramer*S*',
-            [
+            ]),
+        )
+        self.assertEqual(
+            names[2][0:2],
+            ('*P*kramer*S*', [
                 'COMMAND', '--loglevel=DEBUG', '-n *P*kramer*S*',
                 '-Q bar', '--flag', '--logfile=foo',
                 '-- .disable_rate_limits=1', '*AP*',
-            ]
-        ))
+            ]),
+        )
         expand = names[0][2]
         self.assertEqual(expand('%h'), '*P*jerry*S*')
         self.assertEqual(expand('%n'), 'jerry')
         names2 = list(multi_args(p, cmd='COMMAND', append='',
-                prefix='*P*', suffix='*S*'))
+                      prefix='*P*', suffix='*S*'))
         self.assertEqual(names2[0][1][-1], '-- .disable_rate_limits=1')
 
         gethostname.return_value = 'example.com'
         p2 = NamespacedOptionParser(['10', '-c:1', '5'])
         names3 = list(multi_args(p2, cmd='COMMAND'))
         self.assertEqual(len(names3), 10)
-        self.assertEqual(names3[0][0:2], ('celery1.example.com',
-            ['COMMAND', '-n celery1.example.com', '-c 5', '']))
+        self.assertEqual(
+            names3[0][0:2],
+            ('celery1.example.com',
+             ['COMMAND', '-n celery1.example.com', '-c 5', '']),
+        )
         for i, worker in enumerate(names3[1:]):
-            self.assertEqual(worker[0:2], ('celery%s.example.com' % (i + 2),
-                ['COMMAND', '-n celery%s.example.com' % (i + 2), '']))
+            self.assertEqual(
+                worker[0:2],
+                ('celery%s.example.com' % (i + 2),
+                 ['COMMAND', '-n celery%s.example.com' % (i + 2), '']),
+            )
 
         names4 = list(multi_args(p2, cmd='COMMAND', suffix='""'))
         self.assertEqual(len(names4), 10)
-        self.assertEqual(names4[0][0:2], ('celery1',
-            ['COMMAND', '-n celery1', '-c 5', '']))
+        self.assertEqual(
+            names4[0][0:2],
+            ('celery1', ['COMMAND', '-n celery1', '-c 5', '']),
+        )
 
         p3 = NamespacedOptionParser(['foo', '-c:foo', '5'])
         names5 = list(multi_args(p3, cmd='COMMAND', suffix='""'))
-        self.assertEqual(names5[0][0:2], ('foo',
-            ['COMMAND', '-n foo', '-c 5', '']))
+        self.assertEqual(
+            names5[0][0:2],
+            ('foo', ['COMMAND', '-n foo', '-c 5', '']),
+        )
 
 
 class test_MultiTool(Case):
@@ -188,7 +205,7 @@ class test_MultiTool(Case):
         pipe.wait.return_value = 2
         self.assertEqual(self.t.waitexec(['-m', 'foo'], 'path'), 2)
         self.t.note.assert_called_with(
-                '* Child terminated with failure code 2')
+            '* Child terminated with failure code 2')
 
         pipe.wait.return_value = 0
         self.assertFalse(self.t.waitexec(['-m', 'foo', 'path']))
@@ -213,8 +230,9 @@ class test_MultiTool(Case):
 
     def test_expand(self):
         self.t.expand(['foo%n', 'ask', 'klask', 'dask'])
-        self.assertEqual(self.fh.getvalue(),
-                'fooask\nfooklask\nfoodask\n')
+        self.assertEqual(
+            self.fh.getvalue(), 'fooask\nfooklask\nfoodask\n',
+        )
 
     def test_restart(self):
         stop = self.t._stop_nodes = Mock()
@@ -287,10 +305,10 @@ class test_MultiTool(Case):
         nodes = self.t.getpids(p, 'celeryd', callback=callback)
         self.assertEqual(nodes, [
             ('foo.e.com',
-              ('celeryd', '--pidfile=celeryd@foo.pid', '-n foo.e.com', ''),
+             ('celeryd', '--pidfile=celeryd@foo.pid', '-n foo.e.com', ''),
              10),
             ('bar.e.com',
-              ('celeryd', '--pidfile=celeryd@bar.pid', '-n bar.e.com', ''),
+             ('celeryd', '--pidfile=celeryd@bar.pid', '-n bar.e.com', ''),
              11),
         ])
         self.assertTrue(callback.called)
@@ -411,8 +429,10 @@ class test_MultiTool(Case):
         self.t.execute_from_commandline(['multi', '-foo'])
         self.t.error.assert_called_with()
 
-        self.t.execute_from_commandline(['multi', 'start', 'foo',
-                '--nosplash', '--quiet', '-q', '--verbose', '--no-color'])
+        self.t.execute_from_commandline(
+            ['multi', 'start', 'foo',
+             '--nosplash', '--quiet', '-q', '--verbose', '--no-color'],
+        )
         self.assertTrue(self.t.nosplash)
         self.assertTrue(self.t.quiet)
         self.assertTrue(self.t.verbose)

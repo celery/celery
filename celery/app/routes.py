@@ -31,8 +31,8 @@ class MapRoute(object):
 
 class Router(object):
 
-    def __init__(self, routes=None, queues=None, create_missing=False,
-            app=None):
+    def __init__(self, routes=None, queues=None,
+                 create_missing=False, app=None):
         self.app = app
         self.queues = {} if queues is None else queues
         self.routes = [] if routes is None else routes

@@ -78,8 +78,8 @@ class EvCommand(Command):
         return evtop(app=self.app)
 
     def run_evcam(self, camera, logfile=None, pidfile=None, uid=None,
-            gid=None, umask=None, working_directory=None,
-            detach=False, **kwargs):
+                  gid=None, umask=None, working_directory=None,
+                  detach=False, **kwargs):
         from celery.events.snapshot import evcam
         workdir = working_directory
         self.set_process_status('cam')

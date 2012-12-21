@@ -59,10 +59,14 @@ class test_colored(Case):
         c._fold_no_color(u'fooå', s)
 
         c = colored().red(u'åfoo')
-        self.assertEqual(c._add(c, u'baræ'),
-            u'\x1b[1;31m\xe5foo\x1b[0mbar\xe6')
+        self.assertEqual(
+            c._add(c, u'baræ'),
+            u'\x1b[1;31m\xe5foo\x1b[0mbar\xe6',
+        )
 
         c2 = colored().blue(u'ƒƒz')
         c3 = c._add(c, c2)
-        self.assertEqual(c3,
-            u'\x1b[1;31m\xe5foo\x1b[0m\x1b[1;34m\u0192\u0192z\x1b[0m')
+        self.assertEqual(
+            c3,
+            u'\x1b[1;31m\xe5foo\x1b[0m\x1b[1;34m\u0192\u0192z\x1b[0m',
+        )

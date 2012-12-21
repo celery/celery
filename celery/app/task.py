@@ -357,9 +357,9 @@ class Task(object):
         return self.apply_async(args, kwargs)
 
     def apply_async(self, args=None, kwargs=None,
-            task_id=None, producer=None, connection=None, router=None,
-            link=None, link_error=None, publisher=None, add_to_parent=True,
-            **options):
+                    task_id=None, producer=None, connection=None, router=None,
+                    link=None, link_error=None, publisher=None,
+                    add_to_parent=True, **options):
         """Apply tasks asynchronously by sending a message.
 
         :keyword args: The positional arguments to pass on to the
@@ -484,7 +484,7 @@ class Task(object):
         return result
 
     def subtask_from_request(self, request=None, args=None, kwargs=None,
-            **extra_options):
+                             **extra_options):
 
         request = self.request if request is None else request
         args = request.args if args is None else args
@@ -500,7 +500,7 @@ class Task(object):
         return self.subtask(args, kwargs, options, type=self, **extra_options)
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
-            eta=None, countdown=None, max_retries=None, **options):
+              eta=None, countdown=None, max_retries=None, **options):
         """Retry the task.
 
         :param args: Positional arguments to retry with.
@@ -557,15 +557,17 @@ class Task(object):
         if not eta and countdown is None:
             countdown = self.default_retry_delay
 
-        S = self.subtask_from_request(request, args, kwargs,
-            countdown=countdown, eta=eta, retries=retries)
+        S = self.subtask_from_request(
+            request, args, kwargs,
+            countdown=countdown, eta=eta, retries=retries,
+        )
 
         if max_retries is not None and retries > max_retries:
             if exc:
                 maybe_reraise()
             raise self.MaxRetriesExceededError(
-                    """Can't retry %s[%s] args:%s kwargs:%s""" % (
-                        self.name, request.id, S.args, S.kwargs))
+                """Can't retry %s[%s] args:%s kwargs:%s""" % (
+                    self.name, request.id, S.args, S.kwargs))
 
         # If task was executed eagerly using apply(),
         # then the retry must also be executed eagerly.
@@ -620,8 +622,8 @@ class Task(object):
                               'delivery_info': {'is_eager': True}}
             supported_keys = fun_takes_kwargs(task.run, default_kwargs)
             extend_with = dict((key, val)
-                                    for key, val in default_kwargs.items()
-                                        if key in supported_keys)
+                               for key, val in default_kwargs.items()
+                               if key in supported_keys)
             kwargs.update(extend_with)
 
         tb = None
@@ -639,7 +641,7 @@ class Task(object):
 
         """
         return self._get_app().AsyncResult(task_id, backend=self.backend,
-                                                    task_name=self.name)
+                                           task_name=self.name)
 
     def subtask(self, *args, **kwargs):
         """Returns :class:`~celery.subtask` object for

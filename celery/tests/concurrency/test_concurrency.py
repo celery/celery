@@ -45,8 +45,8 @@ class test_BasePool(Case):
                      callback=gen_callback('callback'),
                      accept_callback=None)
         self.assertDictEqual(scratch,
-                              {'target': (3, (8, 16)),
-                               'callback': (4, (42, ))})
+                             {'target': (3, (8, 16)),
+                              'callback': (4, (42, ))})
 
     def test_does_not_debug(self):
         x = BasePool(10)

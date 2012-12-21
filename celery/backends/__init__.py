@@ -45,7 +45,7 @@ def get_backend_cls(backend=None, loader=None):
         return symbol_by_name(backend, aliases)
     except ValueError, exc:
         raise ValueError, ValueError(UNKNOWN_BACKEND % (
-                    backend, exc)), sys.exc_info()[2]
+            backend, exc)), sys.exc_info()[2]
 
 
 def get_backend_by_url(backend=None, loader=None):

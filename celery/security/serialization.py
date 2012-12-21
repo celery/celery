@@ -30,7 +30,7 @@ def b64decode(s):
 class SecureSerializer(object):
 
     def __init__(self, key=None, cert=None, cert_store=None,
-            digest='sha1', serializer='json'):
+                 digest='sha1', serializer='json'):
         self._key = key
         self._cert = cert
         self._cert_store = cert_store
@@ -43,7 +43,7 @@ class SecureSerializer(object):
         assert self._cert is not None
         with reraise_errors('Unable to serialize: %r', (Exception, )):
             content_type, content_encoding, body = encode(
-                    data, serializer=self._serializer)
+                data, serializer=self._serializer)
             # What we sign is the serialized body, not the body itself.
             # this way the receiver doesn't have to decode the contents
             # to verify the signature (and thus avoiding potential flaws
@@ -62,21 +62,21 @@ class SecureSerializer(object):
                                        payload['body'])
             self._cert_store[signer].verify(body, signature, self._digest)
         return decode(body, payload['content_type'],
-                            payload['content_encoding'], force=True)
+                      payload['content_encoding'], force=True)
 
     def _pack(self, body, content_type, content_encoding, signer, signature,
-            sep='\x00\x01'):
+              sep='\x00\x01'):
         return b64encode(sep.join([signer, signature,
                                    content_type, content_encoding, body]))
 
     def _unpack(self, payload, sep='\x00\x01',
-            fields=('signer', 'signature', 'content_type',
-                    'content_encoding', 'body')):
+                fields=('signer', 'signature', 'content_type',
+                        'content_encoding', 'body')):
         return dict(zip(fields, b64decode(payload).split(sep)))
 
 
 def register_auth(key=None, cert=None, store=None, digest='sha1',
-        serializer='json'):
+                  serializer='json'):
     """register security serializer"""
     s = SecureSerializer(key and PrivateKey(key),
                          cert and Certificate(cert),

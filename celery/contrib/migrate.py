@@ -45,10 +45,10 @@ class State(object):
 
 
 def republish(producer, message, exchange=None, routing_key=None,
-        remove_props=['application_headers',
-                      'content_type',
-                      'content_encoding',
-                      'headers']):
+              remove_props=['application_headers',
+                            'content_type',
+                            'content_encoding',
+                            'headers']):
     body = ensure_bytes(message.body)  # use raw message body.
     info, headers, props = (message.delivery_info,
                             message.headers, message.properties)
@@ -87,7 +87,7 @@ def filter_callback(callback, tasks):
 
 
 def migrate_tasks(source, dest, migrate=migrate_task, app=None,
-        queues=None, **kwargs):
+                  queues=None, **kwargs):
     app = app_or_default(app)
     queues = prepare_queues(queues)
     producer = app.amqp.TaskProducer(dest)
@@ -114,8 +114,8 @@ def _maybe_queue(app, q):
 
 
 def move(predicate, connection=None, exchange=None, routing_key=None,
-        source=None, app=None, callback=None, limit=None, transform=None,
-        **kwargs):
+         source=None, app=None, callback=None, limit=None, transform=None,
+         **kwargs):
     """Find tasks by filtering them and move the tasks to a new queue.
 
     :param predicate: Filter function used to decide which messages
@@ -191,7 +191,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
                 else:
                     ex, rk = expand_dest(ret, exchange, routing_key)
                 republish(producer, message,
-                        exchange=ex, routing_key=rk)
+                          exchange=ex, routing_key=rk)
                 message.ack()
 
                 state.filtered += 1
@@ -224,16 +224,16 @@ def prepare_queues(queues):
         queues = queues.split(',')
     if isinstance(queues, list):
         queues = dict(tuple(islice(cycle(q.split(':')), None, 2))
-                        for q in queues)
+                      for q in queues)
     if queues is None:
         queues = {}
     return queues
 
 
 def start_filter(app, conn, filter, limit=None, timeout=1.0,
-        ack_messages=False, tasks=None, queues=None,
-        callback=None, forever=False, on_declare_queue=None,
-        consume_from=None, state=None, **kwargs):
+                 ack_messages=False, tasks=None, queues=None,
+                 callback=None, forever=False, on_declare_queue=None,
+                 consume_from=None, state=None, **kwargs):
     state = state or State()
     queues = prepare_queues(queues)
     if isinstance(tasks, basestring):
@@ -352,4 +352,4 @@ move_direct_by_taskmap = partial(move_by_taskmap, transform=worker_direct)
 
 def filter_status(state, body, message):
     print('Moving task %s/%s: %s[%s]' % (
-            state.filtered, state.strtotal, body['task'], body['id']))
+        state.filtered, state.strtotal, body['task'], body['id']))

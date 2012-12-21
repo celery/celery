@@ -54,7 +54,7 @@ class ev_worker_heartbeats(replay):
     def setup(self):
         self.events = [
             Event('worker-heartbeat', hostname='utest1',
-                timestamp=time() - HEARTBEAT_EXPIRE_WINDOW * 2),
+                  timestamp=time() - HEARTBEAT_EXPIRE_WINDOW * 2),
             Event('worker-heartbeat', hostname='utest1'),
         ]
 
@@ -65,16 +65,16 @@ class ev_task_states(replay):
         tid = self.tid = uuid()
         self.events = [
             Event('task-received', uuid=tid, name='task1',
-                args='(2, 2)', kwargs="{'foo': 'bar'}",
-                retries=0, eta=None, hostname='utest1'),
+                  args='(2, 2)', kwargs="{'foo': 'bar'}",
+                  retries=0, eta=None, hostname='utest1'),
             Event('task-started', uuid=tid, hostname='utest1'),
             Event('task-revoked', uuid=tid, hostname='utest1'),
             Event('task-retried', uuid=tid, exception="KeyError('bar')",
-                traceback='line 2 at main', hostname='utest1'),
+                  traceback='line 2 at main', hostname='utest1'),
             Event('task-failed', uuid=tid, exception="KeyError('foo')",
-                traceback='line 1 at main', hostname='utest1'),
+                  traceback='line 1 at main', hostname='utest1'),
             Event('task-succeeded', uuid=tid, result='4',
-                runtime=0.1234, hostname='utest1'),
+                  runtime=0.1234, hostname='utest1'),
         ]
 
 
@@ -90,7 +90,7 @@ class ev_snapshot(replay):
             worker = not i % 2 and 'utest2' or 'utest1'
             type = not i % 2 and 'task2' or 'task1'
             self.events.append(Event('task-received', name=type,
-                          uuid=uuid(), hostname=worker))
+                               uuid=uuid(), hostname=worker))
 
 
 class test_Worker(Case):
@@ -123,10 +123,10 @@ class test_Task(Case):
                     routing_key='celery',
                     succeeded=time())
         self.assertEqual(sorted(list(task._info_fields)),
-                              sorted(task.info().keys()))
+                         sorted(task.info().keys()))
 
         self.assertEqual(sorted(list(task._info_fields + ('received', ))),
-                              sorted(task.info(extra=('received', ))))
+                         sorted(task.info(extra=('received', ))))
 
         self.assertEqual(sorted(['args', 'kwargs']),
                          sorted(task.info(['args', 'kwargs']).keys()))
@@ -203,7 +203,7 @@ class test_State(Case):
         # STARTED
         r.next()
         self.assertTrue(r.state.workers['utest1'].alive,
-                'any task event adds worker heartbeat')
+                        'any task event adds worker heartbeat')
         self.assertEqual(task.state, states.STARTED)
         self.assertTrue(task.started)
         self.assertEqual(task.timestamp, task.started)

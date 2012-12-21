@@ -75,8 +75,10 @@ class test_ControlPanel(Case):
         consumer.event_dispatcher.enabled = False
         panel.handle('enable_events')
         self.assertTrue(consumer.event_dispatcher.enable.call_count)
-        self.assertIn(('worker-online', ),
-                consumer.event_dispatcher.send.call_args)
+        self.assertIn(
+            ('worker-online', ),
+            consumer.event_dispatcher.send.call_args,
+        )
         consumer.event_dispatcher.enabled = True
         self.assertIn('already enabled', panel.handle('enable_events')['ok'])
 
@@ -240,23 +242,26 @@ class test_ControlPanel(Case):
         self.assertFalse(panel.handle('dump_schedule'))
         r = TaskRequest(mytask.name, 'CAFEBABE', (), {})
         consumer.timer.schedule.enter(
-                consumer.timer.Entry(lambda x: x, (r, )),
-                    datetime.now() + timedelta(seconds=10))
+            consumer.timer.Entry(lambda x: x, (r, )),
+            datetime.now() + timedelta(seconds=10))
         self.assertTrue(panel.handle('dump_schedule'))
 
     def test_dump_reserved(self):
         from celery.worker import state
         consumer = Consumer()
-        state.reserved_requests.add(TaskRequest(mytask.name,
-                uuid(), args=(2, 2), kwargs={}))
+        state.reserved_requests.add(
+            TaskRequest(mytask.name, uuid(), args=(2, 2), kwargs={}),
+        )
         try:
             panel = self.create_panel(consumer=consumer)
             response = panel.handle('dump_reserved', {'safe': True})
-            self.assertDictContainsSubset({'name': mytask.name,
-                                        'args': (2, 2),
-                                        'kwargs': {},
-                                        'hostname': socket.gethostname()},
-                                        response[0])
+            self.assertDictContainsSubset(
+                {'name': mytask.name,
+                 'args': (2, 2),
+                 'kwargs': {},
+                 'hostname': socket.gethostname()},
+                response[0],
+            )
             state.reserved_requests.clear()
             self.assertFalse(panel.handle('dump_reserved'))
         finally:
@@ -312,8 +317,8 @@ class test_ControlPanel(Case):
 
     def test_rate_limit_nonexistant_task(self):
         self.panel.handle('rate_limit', arguments={
-                                'task_name': 'xxxx.does.not.exist',
-                                'rate_limit': '1000/s'})
+            'task_name': 'xxxx.does.not.exist',
+            'rate_limit': '1000/s'})
 
     def test_unexposed_command(self):
         with self.assertRaises(KeyError):
@@ -439,8 +444,10 @@ class test_ControlPanel(Case):
 
         self.assertTrue(consumer.controller.pool.restart.called)
         self.assertFalse(_reload.called)
-        self.assertEqual([(('foo',), {}), (('bar',), {})],
-                          _import.call_args_list)
+        self.assertEqual(
+            [(('foo',), {}), (('bar',), {})],
+            _import.call_args_list,
+        )
 
     def test_pool_restart_relaod_modules(self):
         consumer = Consumer()

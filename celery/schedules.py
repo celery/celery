@@ -172,10 +172,11 @@ class crontab_parser(object):
         self.max_ = max_
         self.min_ = min_
         self.pats = (
-                (re.compile(self._range + self._steps), self._range_steps),
-                (re.compile(self._range), self._expand_range),
-                (re.compile(self._star + self._steps), self._star_steps),
-                (re.compile('^' + self._star + '$'), self._expand_star))
+            (re.compile(self._range + self._steps), self._range_steps),
+            (re.compile(self._range), self._expand_range),
+            (re.compile(self._star + self._steps), self._star_steps),
+            (re.compile('^' + self._star + '$'), self._expand_star),
+        )
 
     def parse(self, spec):
         acc = set()
@@ -339,17 +340,17 @@ class crontab(schedule):
             result = set(cronspec)
         else:
             raise TypeError(
-                    'Argument cronspec needs to be of any of the '
-                    'following types: int, basestring, or an iterable type. '
-                    "'%s' was given." % type(cronspec))
+                'Argument cronspec needs to be of any of the '
+                'following types: int, basestring, or an iterable type. '
+                "'%s' was given." % type(cronspec))
 
         # assure the result does not preceed the min or exceed the max
         for number in result:
             if number >= max_ + min_ or number < min_:
                 raise ValueError(
-                        'Invalid crontab pattern. Valid '
-                        "range is %d-%d. '%d' was found." %
-                        (min_, max_ - 1 + min_, number))
+                    'Invalid crontab pattern. Valid '
+                    "range is %d-%d. '%d' was found." % (
+                        min_, max_ - 1 + min_, number))
 
         return result
 
@@ -376,9 +377,9 @@ class crontab(schedule):
         def roll_over():
             while 1:
                 flag = (datedata.dom == len(days_of_month) or
-                            day_out_of_range(datedata.year,
-                                             months_of_year[datedata.moy],
-                                             days_of_month[datedata.dom]))
+                        day_out_of_range(datedata.year,
+                                         months_of_year[datedata.moy],
+                                         days_of_month[datedata.dom]))
                 if flag:
                     datedata.dom = 0
                     datedata.moy += 1
@@ -398,11 +399,12 @@ class crontab(schedule):
                 datedata.moy = 0
         roll_over()
 
-        while not datetime(
-                year=datedata.year,
-                month=months_of_year[datedata.moy],
-                day=days_of_month[datedata.dom]) \
-                    .isoweekday() % 7 in self.day_of_week:
+        while 1:
+            th = datetime(year=datedata.year,
+                          month=months_of_year[datedata.moy],
+                          day=days_of_month[datedata.dom])
+            if th.isoweekday() % 7 in self.day_of_week:
+                break
             datedata.dom += 1
             roll_over()
 
@@ -415,7 +417,7 @@ class crontab(schedule):
                              microsecond=0)
 
     def __init__(self, minute='*', hour='*', day_of_week='*',
-            day_of_month='*', month_of_year='*', nowfun=None):
+                 day_of_month='*', month_of_year='*', nowfun=None):
         self._orig_minute = minute
         self._orig_hour = hour
         self._orig_day_of_week = day_of_week
@@ -432,12 +434,13 @@ class crontab(schedule):
         return (self.nowfun or self.app.now)()
 
     def __repr__(self):
-        return ('<crontab: %s %s %s %s %s (m/h/d/dM/MY)>' %
-                        (_weak_bool(self._orig_minute) or '*',
-                         _weak_bool(self._orig_hour) or '*',
-                         _weak_bool(self._orig_day_of_week) or '*',
-                         _weak_bool(self._orig_day_of_month) or '*',
-                         _weak_bool(self._orig_month_of_year) or '*'))
+        return ('<crontab: %s %s %s %s %s (m/h/d/dM/MY)>' % (
+            _weak_bool(self._orig_minute) or '*',
+            _weak_bool(self._orig_hour) or '*',
+            _weak_bool(self._orig_day_of_week) or '*',
+            _weak_bool(self._orig_day_of_month) or '*',
+            _weak_bool(self._orig_month_of_year) or '*',
+        ))
 
     def __reduce__(self):
         return (self.__class__, (self._orig_minute,
@@ -453,27 +456,27 @@ class crontab(schedule):
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (last_run_at.month in self.month_of_year and
-                                last_run_at.day in self.day_of_month and
-                                    dow_num in self.day_of_week)
+                             last_run_at.day in self.day_of_month and
+                             dow_num in self.day_of_week)
 
         execute_this_hour = (execute_this_date and
-                                last_run_at.hour in self.hour and
-                                    last_run_at.minute < max(self.minute))
+                             last_run_at.hour in self.hour and
+                             last_run_at.minute < max(self.minute))
 
         if execute_this_hour:
             next_minute = min(minute for minute in self.minute
-                                        if minute > last_run_at.minute)
+                              if minute > last_run_at.minute)
             delta = relativedelta(minute=next_minute,
                                   second=0,
                                   microsecond=0)
         else:
             next_minute = min(self.minute)
             execute_today = (execute_this_date and
-                                last_run_at.hour < max(self.hour))
+                             last_run_at.hour < max(self.hour))
 
             if execute_today:
                 next_hour = min(hour for hour in self.hour
-                                        if hour > last_run_at.hour)
+                                if hour > last_run_at.hour)
                 delta = relativedelta(hour=next_hour,
                                       minute=next_minute,
                                       second=0,
@@ -481,11 +484,10 @@ class crontab(schedule):
             else:
                 next_hour = min(self.hour)
                 all_dom_moy = (self._orig_day_of_month == '*' and
-                                  self._orig_month_of_year == '*')
+                               self._orig_month_of_year == '*')
                 if all_dom_moy:
                     next_day = min([day for day in self.day_of_week
-                                        if day > dow_num] or
-                                self.day_of_week)
+                                    if day > dow_num] or self.day_of_week)
                     add_week = next_day == dow_num
 
                     delta = relativedelta(weeks=add_week and 1 or 0,

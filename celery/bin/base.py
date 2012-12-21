@@ -96,7 +96,7 @@ class HelpFormatter(IndentedHelpFormatter):
 
     def format_description(self, description):
         return text.ensure_2lines(text.fill_paragraphs(
-                text.dedent(description), self.width))
+            text.dedent(description), self.width))
 
 
 class Command(object):
@@ -222,8 +222,8 @@ class Command(object):
     def prepare_args(self, options, args):
         if options:
             options = dict((k, self.expanduser(v))
-                            for k, v in vars(options).iteritems()
-                                if not k.startswith('_'))
+                           for k, v in vars(options).iteritems()
+                           if not k.startswith('_'))
         args = map(self.expanduser, args)
         self.check_args(args)
         return options, args
@@ -356,8 +356,8 @@ class Command(object):
                     in_option = m.groups()[0].strip()
                 assert in_option, 'missing long opt'
             elif in_option and line.startswith(' ' * 4):
-                options[in_option].append(find_rst_ref.sub(r'\1',
-                    line.strip()).replace('`', ''))
+                options[in_option].append(
+                    find_rst_ref.sub(r'\1', line.strip()).replace('`', ''))
         return options
 
     def with_pool_option(self, argv):

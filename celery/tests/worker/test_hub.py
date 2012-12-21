@@ -165,8 +165,9 @@ class test_Hub(Case):
         entries[:] = [Mock() for _ in xrange(11)]
         keep = list(entries)
         self.assertEqual(hub.fire_timers(max_timers=10, min_delay=1.13), 1.13)
-        hub.timer.apply_entry.assert_has_calls(map(call,
-            reversed(keep[1:])))
+        hub.timer.apply_entry.assert_has_calls(
+            map(call, reversed(keep[1:])),
+        )
         self.assertEqual(hub.fire_timers(max_timers=10), 3.982)
         hub.timer.apply_entry.assert_has_calls(call(keep[0]))
 

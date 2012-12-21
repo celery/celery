@@ -67,7 +67,7 @@ except ImportError:                         # pragma: no cover
 
         fillers = itertools.repeat(fillvalue)
         iters = [itertools.chain(it, sentinel(), fillers)
-                    for it in args]
+                 for it in args]
         try:
             for tup in itertools.izip(*iters):
                 yield tup

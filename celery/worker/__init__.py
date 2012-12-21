@@ -65,8 +65,7 @@ class Namespace(bootsteps.Namespace):
                           'celery.worker.mediator')
 
     def modules(self):
-        return (self.builtin_boot_steps
-              + self.app.conf.CELERYD_BOOT_STEPS)
+        return self.builtin_boot_steps + self.app.conf.CELERYD_BOOT_STEPS
 
 
 class Pool(bootsteps.StartStopComponent):
@@ -86,8 +85,8 @@ class Pool(bootsteps.StartStopComponent):
     name = 'worker.pool'
     requires = ('queues', 'beat', )
 
-    def __init__(self, w, autoscale=None, autoreload=False,
-            no_execv=False, **kwargs):
+    def __init__(self, w,
+                 autoscale=None, autoreload=False, no_execv=False, **kwargs):
         w.autoscale = autoscale
         w.pool = None
         w.max_concurrency = None
@@ -153,18 +152,20 @@ class Pool(bootsteps.StartStopComponent):
             semaphore = w.semaphore = BoundedSemaphore(procs)
             max_restarts = 100
         allow_restart = self.autoreload_enabled or w.pool_restarts
-        pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
-                            initargs=(w.app, w.hostname),
-                            maxtasksperchild=w.max_tasks_per_child,
-                            timeout=w.task_time_limit,
-                            soft_timeout=w.task_soft_time_limit,
-                            putlocks=w.pool_putlocks and threaded,
-                            lost_worker_timeout=w.worker_lost_wait,
-                            threads=threaded,
-                            max_restarts=max_restarts,
-                            allow_restart=allow_restart,
-                            forking_enable=forking_enable,
-                            semaphore=semaphore)
+        pool = w.pool = self.instantiate(
+            w.pool_cls, w.min_concurrency,
+            initargs=(w.app, w.hostname),
+            maxtasksperchild=w.max_tasks_per_child,
+            timeout=w.task_time_limit,
+            soft_timeout=w.task_soft_time_limit,
+            putlocks=w.pool_putlocks and threaded,
+            lost_worker_timeout=w.worker_lost_wait,
+            threads=threaded,
+            max_restarts=max_restarts,
+            allow_restart=allow_restart,
+            forking_enable=forking_enable,
+            semaphore=semaphore,
+        )
         if w.hub:
             w.hub.on_init.append(partial(self.on_poll_init, pool))
         return pool
@@ -305,7 +306,7 @@ class WorkController(configurated):
     _running = 0
 
     def __init__(self, loglevel=None, hostname=None, ready_callback=noop,
-            queues=None, app=None, pidfile=None, **kwargs):
+                 queues=None, app=None, pidfile=None, **kwargs):
         self.app = app_or_default(app or self.app)
 
         self._shutdown_complete = Event()
@@ -324,7 +325,7 @@ class WorkController(configurated):
         # Update celery_include to have all known task modules, so that we
         # ensure all task modules are imported in case an execv happens.
         task_modules = set(task.__class__.__module__
-                            for task in self.app.tasks.itervalues())
+                           for task in self.app.tasks.itervalues())
         self.app.conf.CELERY_INCLUDE = tuple(
             set(self.app.conf.CELERY_INCLUDE) | task_modules,
         )

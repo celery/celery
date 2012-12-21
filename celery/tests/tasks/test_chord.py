@@ -88,7 +88,7 @@ class test_unlock_chord_task(AppCase):
             try:
                 callback = Mock()
                 unlock('group_id', callback, interval=10, max_retries=30,
-                            result=map(AsyncResult, [1, 2, 3]))
+                       result=map(AsyncResult, [1, 2, 3]))
                 self.assertFalse(callback.delay.call_count)
                 # did retry
                 unlock.retry.assert_called_with(countdown=10, max_retries=30)

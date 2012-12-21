@@ -44,9 +44,11 @@ def get_current_app():
     if default_app is None:
         #: creates the global fallback app instance.
         from celery.app import Celery
-        set_default_app(Celery('default',
+        set_default_app(Celery(
+            'default',
             loader=os.environ.get('CELERY_LOADER') or 'default',
-            set_as_current=False, accept_magic_kwargs=True))
+            set_as_current=False, accept_magic_kwargs=True,
+        ))
     return _tls.current_app or default_app
 
 

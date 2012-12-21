@@ -263,7 +263,7 @@ class DaemonContext(object):
     _is_open = False
 
     def __init__(self, pidfile=None, workdir=None, umask=None,
-            fake=False, after_chdir=None, **kwargs):
+                 fake=False, after_chdir=None, **kwargs):
         self.workdir = workdir or DAEMON_WORKDIR
         self.umask = DAEMON_UMASK if umask is None else umask
         self.fake = fake
@@ -448,7 +448,7 @@ def initgroups(uid, gid):
     if hasattr(os, 'initgroups'):  # Python 2.7+
         return os.initgroups(username, gid)
     groups = [gr.gr_gid for gr in grp.getgrall()
-                            if username in gr.gr_mem]
+              if username in gr.gr_mem]
     setgroups(groups)
 
 

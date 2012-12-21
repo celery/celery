@@ -149,20 +149,21 @@ def dump_schedule(panel, safe=False, **kwargs):
         logger.debug('--Empty schedule--')
         return []
 
-    formatitem = lambda (i, item): '%s. %s pri%s %r' % (i,
-            datetime.utcfromtimestamp(item['eta']),
-            item['priority'],
-            item['item'])
+    formatitem = lambda (i, item): '%s. %s pri%s %r' % (
+        i, datetime.utcfromtimestamp(item['eta']),
+        item['priority'], item['item'],
+    )
     info = map(formatitem, enumerate(schedule.info()))
     logger.debug('* Dump of current schedule:\n%s', '\n'.join(info))
     scheduled_tasks = []
     for info in schedule.info():
         item = info['item']
         if item.args and isinstance(item.args[0], Request):
-            scheduled_tasks.append({'eta': info['eta'],
-                                    'priority': info['priority'],
-                                    'request':
-                                        item.args[0].info(safe=safe)})
+            scheduled_tasks.append({
+                'eta': info['eta'],
+                'priority': info['priority'],
+                'request': item.args[0].info(safe=safe),
+            })
     return scheduled_tasks
 
 
@@ -180,8 +181,7 @@ def dump_reserved(panel, safe=False, **kwargs):
 
 @Panel.register
 def dump_active(panel, safe=False, **kwargs):
-    return [request.info(safe=safe)
-                for request in state.active_requests]
+    return [request.info(safe=safe) for request in state.active_requests]
 
 
 @Panel.register
@@ -206,16 +206,19 @@ def dump_tasks(panel, taskinfoitems=None, **kwargs):
     taskinfoitems = taskinfoitems or DEFAULT_TASK_INFO_ITEMS
 
     def _extract_info(task):
-        fields = dict((field, str(getattr(task, field, None)))
-                        for field in taskinfoitems
-                            if getattr(task, field, None) is not None)
+        fields = dict(
+            (field, str(getattr(task, field, None)))
+            for field in taskinfoitems
+            if getattr(task, field, None) is not None)
         info = map('='.join, fields.items())
         if not info:
             return task.name
         return '%s [%s]' % (task.name, ' '.join(info))
 
-    info = map(_extract_info, (tasks[task]
-                                    for task in sorted(tasks)))
+    info = map(
+        _extract_info,
+        (tasks[task] for task in sorted(tasks)),
+    )
     logger.debug('* Dump of currently registered tasks:\n%s', '\n'.join(info))
 
     return info
@@ -267,7 +270,7 @@ def shutdown(panel, msg='Got shutdown from remote', **kwargs):
 
 @Panel.register
 def add_consumer(panel, queue, exchange=None, exchange_type=None,
-        routing_key=None, **options):
+                 routing_key=None, **options):
     panel.consumer.add_task_queue(queue, exchange, exchange_type,
                                   routing_key, **options)
     return {'ok': 'add consumer %r' % (queue, )}
@@ -283,4 +286,4 @@ def cancel_consumer(panel, queue=None, **_):
 def active_queues(panel):
     """Returns the queues associated with each worker."""
     return [dict(queue.as_dict(recurse=True))
-                    for queue in panel.consumer.task_consumer.queues]
+            for queue in panel.consumer.task_consumer.queues]

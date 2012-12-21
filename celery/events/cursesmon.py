@@ -193,8 +193,10 @@ class CursesMonitor(object):  # pragma: no cover
         def callback(my, mx, xs):
             y = count(xs).next
             if not reply:
-                self.win.addstr(y(), 3, 'No replies received in 1s deadline.',
-                        curses.A_BOLD + curses.color_pair(2))
+                self.win.addstr(
+                    y(), 3, 'No replies received in 1s deadline.',
+                    curses.A_BOLD + curses.color_pair(2),
+                )
                 return
 
             for subreply in reply:
@@ -260,9 +262,10 @@ class CursesMonitor(object):  # pragma: no cover
                 self.win.addstr(curline, 3, keys, curses.A_BOLD)
                 wrapped = wrap(value, mx - 2)
                 if len(wrapped) == 1:
-                    self.win.addstr(curline, len(keys) + 3,
-                            abbr(wrapped[0],
-                                 self.screen_width - (len(keys) + 3)))
+                    self.win.addstr(
+                        curline, len(keys) + 3,
+                        abbr(wrapped[0],
+                             self.screen_width - (len(keys) + 3)))
                 else:
                     for subline in wrapped:
                         nexty = y()
@@ -270,12 +273,15 @@ class CursesMonitor(object):  # pragma: no cover
                             subline = ' ' * 4 + '[...]'
                         elif nexty >= my:
                             break
-                        self.win.addstr(nexty, 3,
-                                abbr(' ' * 4 + subline, self.screen_width - 4),
-                                curses.A_NORMAL)
+                        self.win.addstr(
+                            nexty, 3,
+                            abbr(' ' * 4 + subline, self.screen_width - 4),
+                            curses.A_NORMAL,
+                        )
 
-        return self.alert(alert_callback,
-                'Task details for %s' % self.selected_task)
+        return self.alert(
+            alert_callback, 'Task details for %s' % self.selected_task,
+        )
 
     def selection_traceback(self):
         if not self.selected_task:
@@ -289,8 +295,10 @@ class CursesMonitor(object):  # pragma: no cover
             for line in task.traceback.split('\n'):
                 self.win.addstr(y(), 3, line)
 
-        return self.alert(alert_callback,
-                'Task Exception Traceback for %s' % self.selected_task)
+        return self.alert(
+            alert_callback,
+            'Task Exception Traceback for %s' % self.selected_task,
+        )
 
     def selection_result(self):
         if not self.selected_task:
@@ -299,13 +307,14 @@ class CursesMonitor(object):  # pragma: no cover
         def alert_callback(my, mx, xs):
             y = count(xs).next
             task = self.state.tasks[self.selected_task]
-            result = getattr(task, 'result', None) or getattr(task,
-                    'exception', None)
+            result = (getattr(task, 'result', None)
+                      or getattr(task, 'exception', None))
             for line in wrap(result, mx - 2):
                 self.win.addstr(y(), 3, line)
 
-        return self.alert(alert_callback,
-                'Task Result for %s' % self.selected_task)
+        return self.alert(
+            alert_callback, 'Task Result for %s' % self.selected_task,
+        )
 
     def display_task_row(self, lineno, task):
         state_color = self.state_colors.get(task.state)
@@ -313,7 +322,8 @@ class CursesMonitor(object):  # pragma: no cover
         if task.uuid == self.selected_task:
             attr = curses.A_STANDOUT
         timestamp = datetime.utcfromtimestamp(
-                        task.timestamp or time.time())
+            task.timestamp or time.time(),
+        )
         timef = timestamp.strftime('%H:%M:%S')
         hostname = task.worker.hostname if task.worker else '*NONE*'
         line = self.format_row(task.uuid, task.name,
@@ -339,7 +349,7 @@ class CursesMonitor(object):  # pragma: no cover
         blank_line()
         win.addstr(y(), x, self.format_row('UUID', 'TASK',
                                            'WORKER', 'TIME', 'STATE'),
-                curses.A_BOLD | curses.A_UNDERLINE)
+                   curses.A_BOLD | curses.A_UNDERLINE)
         tasks = self.tasks
         if tasks:
             for row, (uuid, task) in enumerate(tasks):
@@ -369,8 +379,8 @@ class CursesMonitor(object):  # pragma: no cover
                     info['runtime'] = '%.2fs' % info['runtime']
                 if 'result' in info:
                     info['result'] = abbr(info['result'], 16)
-                info = ' '.join('%s=%s' % (key, value)
-                            for key, value in info.items())
+                info = ' '.join(
+                    '%s=%s' % (key, value) for key, value in info.items())
                 detail = '... -> key i'
             infowin = abbr(info,
                            self.screen_width - len(self.selected_str) - 2,
@@ -380,7 +390,7 @@ class CursesMonitor(object):  # pragma: no cover
             if detail in infowin:
                 detailpos = len(infowin) - len(detail)
                 win.addstr(my - 5, x + len(self.selected_str) + detailpos,
-                        detail, curses.A_BOLD)
+                           detail, curses.A_BOLD)
         else:
             win.addstr(my - 5, x, 'No task selected', curses.A_NORMAL)
 
@@ -388,19 +398,21 @@ class CursesMonitor(object):  # pragma: no cover
         if self.workers:
             win.addstr(my - 4, x, self.online_str, curses.A_BOLD)
             win.addstr(my - 4, x + len(self.online_str),
-                    ', '.join(sorted(self.workers)), curses.A_NORMAL)
+                       ', '.join(sorted(self.workers)), curses.A_NORMAL)
         else:
             win.addstr(my - 4, x, 'No workers discovered.')
 
         # Info
         win.addstr(my - 3, x, self.info_str, curses.A_BOLD)
-        win.addstr(my - 3, x + len(self.info_str),
-                'events:%s tasks:%s workers:%s/%s' % (
-                    self.state.event_count, self.state.task_count,
-                    len([w for w in self.state.workers.values()
-                            if w.alive]),
-                    len(self.state.workers)),
-                curses.A_DIM)
+        win.addstr(
+            my - 3, x + len(self.info_str),
+            'events:%s tasks:%s workers:%s/%s' % (
+                self.state.event_count, self.state.task_count,
+                len([w for w in self.state.workers.values()
+                     if w.alive]),
+                len(self.state.workers)),
+            curses.A_DIM,
+        )
 
         # Help
         self.safe_add_str(my - 2, x, self.help_title, curses.A_BOLD)
@@ -453,9 +465,8 @@ class CursesMonitor(object):  # pragma: no cover
 
     @property
     def workers(self):
-        return [hostname
-                    for hostname, w in self.state.workers.items()
-                        if w.alive]
+        return [hostname for hostname, w in self.state.workers.items()
+                if w.alive]
 
 
 class DisplayThread(threading.Thread):  # pragma: no cover

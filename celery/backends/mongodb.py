@@ -56,7 +56,7 @@ class MongoBackend(BaseDictBackend):
         """
         super(MongoBackend, self).__init__(*args, **kwargs)
         self.expires = kwargs.get('expires') or maybe_timedelta(
-                                    self.app.conf.CELERY_TASK_RESULT_EXPIRES)
+            self.app.conf.CELERY_TASK_RESULT_EXPIRES)
 
         if not pymongo:
             raise ImproperlyConfigured(
@@ -73,9 +73,9 @@ class MongoBackend(BaseDictBackend):
             self.mongodb_port = int(config.get('port', self.mongodb_port))
             self.mongodb_user = config.get('user', self.mongodb_user)
             self.mongodb_password = config.get(
-                    'password', self.mongodb_password)
+                'password', self.mongodb_password)
             self.mongodb_database = config.get(
-                    'database', self.mongodb_database)
+                'database', self.mongodb_database)
             self.mongodb_taskmeta_collection = config.get(
                 'taskmeta_collection', self.mongodb_taskmeta_collection)
             self.mongodb_max_pool_size = config.get(

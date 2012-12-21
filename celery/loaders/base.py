@@ -111,15 +111,19 @@ class BaseLoader(object):
         return importlib.import_module(module, package=package)
 
     def import_from_cwd(self, module, imp=None, package=None):
-        return import_from_cwd(module,
-                self.import_module if imp is None else imp,
-                package=package)
+        return import_from_cwd(
+            module,
+            self.import_module if imp is None else imp,
+            package=package,
+        )
 
     def import_default_modules(self):
-        return [self.import_task_module(m)
-            for m in set(maybe_list(self.app.conf.CELERY_IMPORTS))
-                   | set(maybe_list(self.app.conf.CELERY_INCLUDE))
-                   | self.builtin_modules]
+        return [
+            self.import_task_module(m) for m in (
+                set(maybe_list(self.app.conf.CELERY_IMPORTS))
+                | set(maybe_list(self.app.conf.CELERY_INCLUDE))
+                | self.builtin_modules)
+        ]
 
     def init_worker(self):
         if not self.worker_initialized:
@@ -162,25 +166,23 @@ class BaseLoader(object):
             self.find_module(name)
         except NotAPackage:
             if name.endswith('.py'):
-                raise NotAPackage, NotAPackage(
-                        CONFIG_WITH_SUFFIX % {
-                            'module': name,
-                            'suggest': name[:-3]}), sys.exc_info()[2]
+                raise NotAPackage, NotAPackage(CONFIG_WITH_SUFFIX % {
+                    'module': name, 'suggest': name[:-3]}), sys.exc_info()[2]
             raise NotAPackage, NotAPackage(
-                    CONFIG_INVALID_NAME % {
-                        'module': name}), sys.exc_info()[2]
+                CONFIG_INVALID_NAME % {'module': name}), sys.exc_info()[2]
         else:
             return self.import_from_cwd(name)
 
     def find_module(self, module):
         return find_module(module)
 
-    def cmdline_config_parser(self, args, namespace='celery',
-                re_type=re.compile(r'\((\w+)\)'),
-                extra_types={'json': anyjson.loads},
-                override_types={'tuple': 'json',
-                                'list': 'json',
-                                'dict': 'json'}):
+    def cmdline_config_parser(
+            self, args, namespace='celery',
+            re_type=re.compile(r'\((\w+)\)'),
+            extra_types={'json': anyjson.loads},
+            override_types={'tuple': 'json',
+                            'list': 'json',
+                            'dict': 'json'}):
         from celery.app.defaults import Option, NAMESPACES
         namespace = namespace.upper()
         typemap = dict(Option.typemap, **extra_types)
@@ -222,9 +224,9 @@ class BaseLoader(object):
         return dict(map(getarg, args))
 
     def mail_admins(self, subject, body, fail_silently=False,
-            sender=None, to=None, host=None, port=None,
-            user=None, password=None, timeout=None,
-            use_ssl=False, use_tls=False):
+                    sender=None, to=None, host=None, port=None,
+                    user=None, password=None, timeout=None,
+                    use_ssl=False, use_tls=False):
         message = self.mail.Message(sender=sender, to=to,
                                     subject=safe_str(subject),
                                     body=safe_str(body))

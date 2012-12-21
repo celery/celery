@@ -236,7 +236,7 @@ def mattrgetter(*attrs):
     """Like :func:`operator.itemgetter` but returns :const:`None` on missing
     attributes instead of raising :exc:`AttributeError`."""
     return lambda obj: dict((attr, getattr(obj, attr, None))
-                                for attr in attrs)
+                            for attr in attrs)
 
 
 def uniq(it):

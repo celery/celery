@@ -92,10 +92,10 @@ class Task(BaseTask):
                 ...
         """
         return self._get_app().connection(
-                connect_timeout=connect_timeout)
+            connect_timeout=connect_timeout)
 
     def get_publisher(self, connection=None, exchange=None,
-            connect_timeout=None, exchange_type=None, **options):
+                      connect_timeout=None, exchange_type=None, **options):
         """Deprecated method to get the task publisher (now called producer).
 
         Should be replaced with :class:`@amqp.TaskProducer`:
@@ -111,9 +111,11 @@ class Task(BaseTask):
         if exchange_type is None:
             exchange_type = self.exchange_type
         connection = connection or self.establish_connection(connect_timeout)
-        return self._get_app().amqp.TaskProducer(connection,
-                exchange=exchange and Exchange(exchange, exchange_type),
-                routing_key=self.routing_key, **options)
+        return self._get_app().amqp.TaskProducer(
+            connection,
+            exchange=exchange and Exchange(exchange, exchange_type),
+            routing_key=self.routing_key, **options
+        )
 
     @classmethod
     def get_consumer(self, connection=None, queues=None, **kwargs):
@@ -142,19 +144,19 @@ class PeriodicTask(Task):
     def __init__(self):
         if not hasattr(self, 'run_every'):
             raise NotImplementedError(
-                    'Periodic tasks must have a run_every attribute')
+                'Periodic tasks must have a run_every attribute')
         self.run_every = maybe_schedule(self.run_every, self.relative)
         super(PeriodicTask, self).__init__()
 
     @classmethod
     def on_bound(cls, app):
         app.conf.CELERYBEAT_SCHEDULE[cls.name] = {
-                'task': cls.name,
-                'schedule': cls.run_every,
-                'args': (),
-                'kwargs': {},
-                'options': cls.options or {},
-                'relative': cls.relative,
+            'task': cls.name,
+            'schedule': cls.run_every,
+            'args': (),
+            'kwargs': {},
+            'options': cls.options or {},
+            'relative': cls.relative,
         }
 
 

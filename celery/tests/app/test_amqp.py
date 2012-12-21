@@ -107,8 +107,8 @@ class test_PublisherPool(AppCase):
 class test_Queues(AppCase):
 
     def test_queues_format(self):
-        prev, self.app.amqp.queues._consume_from = \
-                self.app.amqp.queues._consume_from, {}
+        prev, self.app.amqp.queues._consume_from = (
+            self.app.amqp.queues._consume_from, {})
         try:
             self.assertEqual(self.app.amqp.queues.format(), '')
         finally:

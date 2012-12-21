@@ -39,7 +39,7 @@ class TaskSet(list):
         self.total = len(self)  # XXX compat
 
     def apply_async(self, connection=None, connect_timeout=None,
-            publisher=None, taskset_id=None):
+                    publisher=None, taskset_id=None):
         """Apply TaskSet."""
         app = self.app
 
@@ -59,7 +59,7 @@ class TaskSet(list):
 
     def _async_results(self, taskset_id, publisher):
         return [task.apply_async(taskset_id=taskset_id, publisher=publisher)
-                    for task in self]
+                for task in self]
 
     def apply(self, taskset_id=None):
         """Applies the TaskSet locally by blocking until all tasks return."""

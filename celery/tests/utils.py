@@ -119,14 +119,14 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
             return
         # Now we simply try to choose a helpful failure message
         if first_matching is not None:
-            raise self.failureException('%r does not match %r' %
-                     (self.expected_regex.pattern, str(first_matching)))
+            raise self.failureException(
+                '%r does not match %r' % (
+                    self.expected_regex.pattern, str(first_matching)))
         if self.obj_name:
-            raise self.failureException('%s not triggered by %s'
-                % (exc_name, self.obj_name))
+            raise self.failureException(
+                '%s not triggered by %s' % (exc_name, self.obj_name))
         else:
-            raise self.failureException('%s not triggered'
-                % exc_name)
+            raise self.failureException('%s not triggered' % exc_name)
 
 
 class Case(unittest.TestCase):

@@ -285,9 +285,9 @@ class test_Consumer(Case):
         to_timestamp.side_effect = OverflowError()
         l = MyKombuConsumer(self.ready_queue, timer=self.timer)
         m = create_message(Mock(), task=foo_task.name,
-                                   args=('2, 2'),
-                                   kwargs={},
-                                   eta=datetime.now().isoformat())
+                           args=('2, 2'),
+                           kwargs={},
+                           eta=datetime.now().isoformat())
         l.event_dispatcher = Mock()
         l.pidbox_node = MockNode()
         l.update_strategies()
@@ -350,7 +350,7 @@ class test_Consumer(Case):
                 raise SyntaxError('bar')
 
         l = MockConsumer(self.ready_queue, timer=self.timer,
-                             send_events=False, pool=BasePool())
+                         send_events=False, pool=BasePool())
         l.connection_errors = (KeyError, )
         with self.assertRaises(SyntaxError):
             l.start()
@@ -371,7 +371,7 @@ class test_Consumer(Case):
                 raise SyntaxError('bar')
 
         l = MockConsumer(self.ready_queue, timer=self.timer,
-                             send_events=False, pool=BasePool())
+                         send_events=False, pool=BasePool())
 
         l.channel_errors = (KeyError, )
         self.assertRaises(SyntaxError, l.start)
@@ -558,10 +558,11 @@ class test_Consumer(Case):
         l.event_dispatcher = Mock()
         l.event_dispatcher._outbound_buffer = deque()
         backend = Mock()
-        m = create_message(backend, task=foo_task.name,
-                           args=[2, 4, 8], kwargs={},
-                           eta=(datetime.now() +
-                               timedelta(days=1)).isoformat())
+        m = create_message(
+            backend, task=foo_task.name,
+            args=[2, 4, 8], kwargs={},
+            eta=(datetime.now() + timedelta(days=1)).isoformat(),
+        )
 
         l.reset_connection()
         p = l.app.conf.BROKER_CONNECTION_RETRY
@@ -808,8 +809,9 @@ class test_WorkController(AppCase):
         self.assertTrue(app.loader.init_worker.call_count)
         self.assertTrue(on_worker_process_init.called)
         self.assertIs(_tls.current_app, app)
-        set_mp_process_title.assert_called_with('celeryd',
-                        hostname='awesome.worker.com')
+        set_mp_process_title.assert_called_with(
+            'celeryd', hostname='awesome.worker.com',
+        )
 
     def test_with_rate_limits_disabled(self):
         worker = WorkController(concurrency=1, loglevel=0,
@@ -831,8 +833,10 @@ class test_WorkController(AppCase):
         self.assertIn(worker.beat, worker.components)
 
     def test_with_autoscaler(self):
-        worker = self.create_worker(autoscale=[10, 3], send_events=False,
-                                timer_cls='celery.utils.timer2.Timer')
+        worker = self.create_worker(
+            autoscale=[10, 3], send_events=False,
+            timer_cls='celery.utils.timer2.Timer',
+        )
         self.assertTrue(worker.autoscaler)
 
     def test_dont_stop_or_terminate(self):

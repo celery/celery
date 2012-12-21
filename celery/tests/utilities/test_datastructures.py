@@ -103,8 +103,9 @@ class test_ExceptionInfo(Case):
             einfo = ExceptionInfo()
             self.assertEqual(str(einfo), einfo.traceback)
             self.assertIsInstance(einfo.exception, LookupError)
-            self.assertTupleEqual(einfo.exception.args,
-                    ('The quick brown fox jumps...', ))
+            self.assertTupleEqual(
+                einfo.exception.args, ('The quick brown fox jumps...', ),
+            )
             self.assertTrue(einfo.traceback)
 
             r = repr(einfo)
@@ -284,9 +285,10 @@ class test_DependencyGraph(Case):
                              ['C', 'D'])
 
     def test_items(self):
-        self.assertDictEqual(dict(self.graph1().items()),
-                {'A': [], 'B': [],
-                 'C': ['A'], 'D': ['C', 'B']})
+        self.assertDictEqual(
+            dict(self.graph1().items()),
+            {'A': [], 'B': [], 'C': ['A'], 'D': ['C', 'B']},
+        )
 
     def test_to_dot(self):
         s = WhateverIO()

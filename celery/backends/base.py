@@ -30,9 +30,9 @@ from celery.exceptions import TimeoutError, TaskRevokedError
 from celery.result import from_serializable, GroupResult
 from celery.utils import timeutils
 from celery.utils.serialization import (
-        get_pickled_exception,
-        get_pickleable_exception,
-        create_exception_cls,
+    get_pickled_exception,
+    get_pickleable_exception,
+    create_exception_cls,
 )
 
 EXCEPTION_ABLE_CODECS = frozenset(['pickle', 'yaml'])
@@ -97,7 +97,7 @@ class BaseBackend(object):
     def store_result(self, task_id, result, status, traceback=None):
         """Store the result and status of a task."""
         raise NotImplementedError(
-                'store_result is not supported by this backend.')
+            'store_result is not supported by this backend.')
 
     def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
@@ -143,7 +143,7 @@ class BaseBackend(object):
 
     def forget(self, task_id):
         raise NotImplementedError('%s does not implement forget.' % (
-                    self.__class__))
+            self.__class__))
 
     def wait_for(self, task_id, timeout=None, propagate=True, interval=0.5):
         """Wait for task and return its result.
@@ -186,45 +186,45 @@ class BaseBackend(object):
     def get_status(self, task_id):
         """Get the status of a task."""
         raise NotImplementedError(
-                'get_status is not supported by this backend.')
+            'get_status is not supported by this backend.')
 
     def get_result(self, task_id):
         """Get the result of a task."""
         raise NotImplementedError(
-                'get_result is not supported by this backend.')
+            'get_result is not supported by this backend.')
 
     def get_children(self, task_id):
         raise NotImplementedError(
-                'get_children is not supported by this backend.')
+            'get_children is not supported by this backend.')
 
     def get_traceback(self, task_id):
         """Get the traceback for a failed task."""
         raise NotImplementedError(
-                'get_traceback is not supported by this backend.')
+            'get_traceback is not supported by this backend.')
 
     def save_group(self, group_id, result):
         """Store the result and status of a task."""
         raise NotImplementedError(
-                'save_group is not supported by this backend.')
+            'save_group is not supported by this backend.')
 
     def restore_group(self, group_id, cache=True):
         """Get the result of a group."""
         raise NotImplementedError(
-                'restore_group is not supported by this backend.')
+            'restore_group is not supported by this backend.')
 
     def delete_group(self, group_id):
         raise NotImplementedError(
-                'delete_group is not supported by this backend.')
+            'delete_group is not supported by this backend.')
 
     def reload_task_result(self, task_id):
         """Reload task result, even if it has been previously fetched."""
         raise NotImplementedError(
-                'reload_task_result is not supported by this backend.')
+            'reload_task_result is not supported by this backend.')
 
     def reload_group_result(self, task_id):
         """Reload group result, even if it has been previously fetched."""
         raise NotImplementedError(
-                'reload_group_result is not supported by this backend.')
+            'reload_group_result is not supported by this backend.')
 
     def on_chord_part_return(self, task, propagate=False):
         pass
@@ -249,7 +249,7 @@ class BaseDictBackend(BaseBackend):
     def __init__(self, *args, **kwargs):
         super(BaseDictBackend, self).__init__(*args, **kwargs)
         self._cache = LRUCache(limit=kwargs.get('max_cached_results') or
-                                 self.app.conf.CELERY_MAX_CACHED_RESULTS)
+                               self.app.conf.CELERY_MAX_CACHED_RESULTS)
 
     def store_result(self, task_id, result, status, traceback=None, **kwargs):
         """Store task result and status."""
@@ -263,7 +263,7 @@ class BaseDictBackend(BaseBackend):
 
     def _forget(self, task_id):
         raise NotImplementedError('%s does not implement forget.' % (
-                    self.__class__))
+            self.__class__))
 
     def get_status(self, task_id):
         """Get the status of a task."""
@@ -382,13 +382,13 @@ class KeyValueStoreBackend(BaseDictBackend):
         if hasattr(values, 'items'):
             # client returns dict so mapping preserved.
             return dict((self._strip_prefix(k), self.decode(v))
-                            for k, v in values.iteritems()
-                                if v is not None)
+                        for k, v in values.iteritems()
+                        if v is not None)
         else:
             # client returns list so need to recreate mapping.
             return dict((bytes_to_str(keys[i]), self.decode(value))
-                            for i, value in enumerate(values)
-                                if value is not None)
+                        for i, value in enumerate(values)
+                        if value is not None)
 
     def get_many(self, task_ids, timeout=None, interval=0.5):
         ids = set(task_ids)
@@ -408,7 +408,7 @@ class KeyValueStoreBackend(BaseDictBackend):
         while ids:
             keys = list(ids)
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
-                                                    for k in keys]), keys)
+                                                 for k in keys]), keys)
             self._cache.update(r)
             ids ^= set(map(bytes_to_str, r))
             for key, value in r.iteritems():
@@ -487,6 +487,7 @@ class DisabledBackend(BaseBackend):
         pass
 
     def _is_disabled(self, *args, **kwargs):
-        raise NotImplementedError('No result backend configured.  '
-                'Please see the documentation for more information.')
+        raise NotImplementedError(
+            'No result backend configured.  '
+            'Please see the documentation for more information.')
     wait_for = get_status = get_result = get_traceback = _is_disabled
