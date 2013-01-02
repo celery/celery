@@ -218,12 +218,12 @@ def remaining(start, ends_in, now=None, relative=False, debug=False):
 
 
 def rate(rate):
-    """Parses rate strings, such as `"100/m"` or `"2/h"`
+    """Parses rate strings, such as `"100/m"`, `"2/h"` or `"0.5/s"`
     and converts them to seconds."""
     if rate:
         if isinstance(rate, basestring):
             ops, _, modifier = rate.partition('/')
-            return RATE_MODIFIER_MAP[modifier or 's'](int(ops)) or 0
+            return RATE_MODIFIER_MAP[modifier or 's'](float(ops)) or 0
         return rate or 0
     return 0
 

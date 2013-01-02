@@ -425,7 +425,7 @@ General
     start.
 
     If this is :const:`None` no rate limit is in effect.
-    If it is an integer, it is interpreted as "tasks per second".
+    If it is an integer or float, it is interpreted as "tasks per second".
 
     The rate limits can be specified in seconds, minutes or hours
     by appending `"/s"`, `"/m"` or `"/h"` to the value.
