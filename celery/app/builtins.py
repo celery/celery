@@ -273,7 +273,7 @@ def add_chord_task(app):
         accept_magic_kwargs = False
         ignore_result = False
 
-        def run(self, header, body, partial_args=(), interval=1,
+        def run(self, header, body, partial_args=(), interval=1, countdown=1,
                 max_retries=None, propagate=False, eager=False, **kwargs):
             group_id = uuid()
             AsyncResult = self.app.AsyncResult
@@ -292,6 +292,7 @@ def add_chord_task(app):
             # - fallback implementations schedules the chord_unlock task here
             app.backend.on_chord_apply(group_id, body,
                                        interval=interval,
+                                       countdown=countdown,
                                        max_retries=max_retries,
                                        propagate=propagate,
                                        result=results)
