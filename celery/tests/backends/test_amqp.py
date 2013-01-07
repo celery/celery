@@ -169,7 +169,7 @@ class test_AMQPBackend(AppCase):
         r1 = backend.get_task_meta(uuid())
         self.assertDictContainsSubset({'status': states.FAILURE,
                                        'seq': 3}, r1,
-                                       'FFWDs to the last state')
+                                      'FFWDs to the last state')
 
         # Caches last known state.
         results.put(Message())
@@ -233,11 +233,11 @@ class test_AMQPBackend(AppCase):
 
         res = list(b.get_many(tids, timeout=1))
         expected_results = [(tid, {'status': states.SUCCESS,
-                                    'result': i,
-                                    'traceback': None,
-                                    'task_id': tid,
-                                    'children': None})
-                                for i, tid in enumerate(tids)]
+                                   'result': i,
+                                   'traceback': None,
+                                   'task_id': tid,
+                                   'children': None})
+                            for i, tid in enumerate(tids)]
         self.assertEqual(sorted(res), sorted(expected_results))
         self.assertDictEqual(b._cache[res[0][0]], res[0][1])
         cached_res = list(b.get_many(tids, timeout=1))

@@ -25,8 +25,8 @@ class _configurated(type):
 
     def __new__(cls, name, bases, attrs):
         attrs['__confopts__'] = dict((attr, spec.get_key(attr))
-                                          for attr, spec in items(attrs)
-                                              if isinstance(spec, from_config))
+                                     for attr, spec in items(attrs)
+                                     if isinstance(spec, from_config))
         inherit_from = attrs.get('inherit_confopts', ())
         for subcls in bases:
             try:
@@ -36,7 +36,7 @@ class _configurated(type):
         for subcls in inherit_from:
             attrs['__confopts__'].update(subcls.__confopts__)
         attrs = dict((k, v if not isinstance(v, from_config) else None)
-                        for k, v in items(attrs))
+                     for k, v in items(attrs))
         return super(_configurated, cls).__new__(cls, name, bases, attrs)
 
 

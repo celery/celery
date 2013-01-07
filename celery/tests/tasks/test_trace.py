@@ -26,7 +26,7 @@ def raises(exc):
 
 def trace(task, args=(), kwargs={}, propagate=False):
     return eager_trace_task(task, 'id-1', args, kwargs,
-                      propagate=propagate)
+                            propagate=propagate)
 
 
 class test_trace(Case):
@@ -81,5 +81,7 @@ class test_TraceInfo(Case):
         x = self.TI(states.FAILURE)
         x.handle_failure = Mock()
         x.handle_error_state(add_cast)
-        x.handle_failure.assert_called_with(add_cast,
-                store_errors=add_cast.store_errors_even_if_ignored)
+        x.handle_failure.assert_called_with(
+            add_cast,
+            store_errors=add_cast.store_errors_even_if_ignored,
+        )

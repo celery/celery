@@ -34,8 +34,8 @@ class Object(object):
 
 def _get_test_config():
     return dict((key, getattr(config, key))
-                    for key in dir(config)
-                        if key.isupper() and not key.startswith('_'))
+                for key in dir(config)
+                if key.isupper() and not key.startswith('_'))
 
 test_config = _get_test_config()
 
@@ -195,7 +195,7 @@ class test_App(Case):
 
         app = Celery(set_as_current=False)
         app.conf.CELERY_ANNOTATIONS = {
-                adX.name: {'@__call__': deco}
+            adX.name: {'@__call__': deco}
         }
         adX.bind(app)
         self.assertIs(adX.app, app)
@@ -275,8 +275,7 @@ class test_App(Case):
             def execute_from_commandline(self, argv):
                 return argv
 
-        prev, worker_bin.worker = \
-                worker_bin.worker, worker
+        prev, worker_bin.worker = worker_bin.worker, worker
         try:
             ret = self.app.worker_main(argv=['--version'])
             self.assertListEqual(ret, ['--version'])
@@ -378,16 +377,19 @@ class test_App(Case):
         self.assertTrue(self.app.mail_admins('Subject', 'Body'))
 
     def test_amqp_get_broker_info(self):
-        self.assertDictContainsSubset({'hostname': 'localhost',
-                                       'userid': 'guest',
-                                       'password': 'guest',
-                                       'virtual_host': '/'},
-                        self.app.connection('pyamqp://').info())
+        self.assertDictContainsSubset(
+            {'hostname': 'localhost',
+             'userid': 'guest',
+             'password': 'guest',
+             'virtual_host': '/'},
+            self.app.connection('pyamqp://').info(),
+        )
         self.app.conf.BROKER_PORT = 1978
         self.app.conf.BROKER_VHOST = 'foo'
-        self.assertDictContainsSubset({'port': 1978,
-                                       'virtual_host': 'foo'},
-        self.app.connection('pyamqp://:1978/foo').info())
+        self.assertDictContainsSubset(
+            {'port': 1978, 'virtual_host': 'foo'},
+            self.app.connection('pyamqp://:1978/foo').info(),
+        )
         conn = self.app.connection('pyamqp:////value')
         self.assertDictContainsSubset({'virtual_host': '/value'},
                                       conn.info())
@@ -440,8 +442,9 @@ class test_App(Case):
             chan.close()
         assert conn.transport_cls == 'memory'
 
-        prod = self.app.amqp.TaskProducer(conn,
-                exchange=Exchange('foo_exchange'))
+        prod = self.app.amqp.TaskProducer(
+            conn, exchange=Exchange('foo_exchange'),
+        )
 
         dispatcher = Dispatcher()
         self.assertTrue(prod.publish_task('footask', (), {},

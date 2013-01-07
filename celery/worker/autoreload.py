@@ -72,8 +72,8 @@ def file_hash(filename, algorithm='md5'):
 
 class BaseMonitor(object):
 
-    def __init__(self, files, on_change=None, shutdown_event=None,
-            interval=0.5):
+    def __init__(self, files,
+                 on_change=None, shutdown_event=None, interval=0.5):
         self.files = files
         self.interval = interval
         self._on_change = on_change
@@ -103,7 +103,7 @@ class StatMonitor(BaseMonitor):
     def start(self):
         while not self.shutdown_event.is_set():
             modified = dict((f, mt) for f, mt in self._mtimes()
-                                if self._maybe_modified(f, mt))
+                            if self._maybe_modified(f, mt))
             if modified:
                 self.on_change(modified)
                 self.modify_times.update(modified)
@@ -213,7 +213,7 @@ implementations = {'kqueue': KQueueMonitor,
                    'inotify': InotifyMonitor,
                    'stat': StatMonitor}
 Monitor = implementations[
-            os.environ.get('CELERYD_FSNOTIFY') or default_implementation()]
+    os.environ.get('CELERYD_FSNOTIFY') or default_implementation()]
 
 
 class Autoreloader(bgThread):
@@ -232,11 +232,12 @@ class Autoreloader(bgThread):
 
     def on_init(self):
         files = self.file_to_module
-        files.update(dict((module_file(sys.modules[m]), m)
-                        for m in self.modules))
+        files.update(dict(
+            (module_file(sys.modules[m]), m) for m in self.modules))
 
-        self._monitor = self.Monitor(files, self.on_change,
-                shutdown_event=self._is_shutdown, **self.options)
+        self._monitor = self.Monitor(
+            files, self.on_change,
+            shutdown_event=self._is_shutdown, **self.options)
         self._hashes = dict([(f, file_hash(f)) for f in files])
 
     def on_poll_init(self, hub):

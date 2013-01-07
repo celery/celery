@@ -78,13 +78,15 @@ class test_MapRoute(RouteCase):
     def test_route_for_task(self):
         expand = E(current_app.amqp.queues)
         route = routes.MapRoute({mytask.name: b_queue})
-        self.assertDictContainsSubset(b_queue,
-                             expand(route.route_for_task(mytask.name)))
+        self.assertDictContainsSubset(
+            b_queue,
+            expand(route.route_for_task(mytask.name)),
+        )
         self.assertIsNone(route.route_for_task('celery.awesome'))
 
     def test_expand_route_not_found(self):
         expand = E(current_app.amqp.Queues(
-                    current_app.conf.CELERY_QUEUES, False))
+            current_app.conf.CELERY_QUEUES, False))
         route = routes.MapRoute({'a': {'queue': 'x'}})
         with self.assertRaises(QueueNotFound):
             expand(route.route_for_task('a'))
@@ -134,9 +136,11 @@ class test_lookup_route(RouteCase):
                             {mytask.name: {'queue': 'foo'}}))
         router = Router(R, current_app.amqp.queues)
         self.assertEqual(router.route({}, mytask.name,
-                          args=[1, 2], kwargs={})['queue'].name, 'foo')
-        self.assertEqual(router.route({}, 'celery.poza')['queue'].name,
-                current_app.conf.CELERY_DEFAULT_QUEUE)
+                         args=[1, 2], kwargs={})['queue'].name, 'foo')
+        self.assertEqual(
+            router.route({}, 'celery.poza')['queue'].name,
+            current_app.conf.CELERY_DEFAULT_QUEUE,
+        )
 
 
 class test_prepare(Case):
@@ -145,8 +149,7 @@ class test_prepare(Case):
         from celery.datastructures import LRUCache
         o = object()
         R = [{'foo': 'bar'},
-                  'celery.datastructures.LRUCache',
-                  o]
+             'celery.datastructures.LRUCache', o]
         p = routes.prepare(R)
         self.assertIsInstance(p[0], routes.MapRoute)
         self.assertIsInstance(maybe_promise(p[1]), LRUCache)

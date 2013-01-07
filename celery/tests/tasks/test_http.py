@@ -79,8 +79,10 @@ class test_MutableURL(Case):
         url = 'https://e.com:808/foo/bar#zeta?x=10&y=20'
         url = http.MutableURL(url)
 
-        self.assertEqual(str(url).split('?')[0],
-            'https://e.com:808/foo/bar#zeta')
+        self.assertEqual(
+            str(url).split('?')[0],
+            'https://e.com:808/foo/bar#zeta',
+        )
 
     def test___repr__(self):
         url = http.MutableURL('http://e.com/foo/bar')
@@ -98,41 +100,41 @@ class test_HttpDispatch(Case):
     def test_dispatch_success(self):
         with mock_urlopen(success_response(100)):
             d = http.HttpDispatch('http://example.com/mul', 'GET', {
-                                    'x': 10, 'y': 10})
+                'x': 10, 'y': 10})
             self.assertEqual(d.dispatch(), 100)
 
     def test_dispatch_failure(self):
         with mock_urlopen(fail_response('Invalid moon alignment')):
             d = http.HttpDispatch('http://example.com/mul', 'GET', {
-                                    'x': 10, 'y': 10})
+                'x': 10, 'y': 10})
             with self.assertRaises(http.RemoteExecuteError):
                 d.dispatch()
 
     def test_dispatch_empty_response(self):
         with mock_urlopen(_response('')):
             d = http.HttpDispatch('http://example.com/mul', 'GET', {
-                                    'x': 10, 'y': 10})
+                'x': 10, 'y': 10})
             with self.assertRaises(http.InvalidResponseError):
                 d.dispatch()
 
     def test_dispatch_non_json(self):
         with mock_urlopen(_response("{'#{:'''")):
             d = http.HttpDispatch('http://example.com/mul', 'GET', {
-                                    'x': 10, 'y': 10})
+                'x': 10, 'y': 10})
             with self.assertRaises(http.InvalidResponseError):
                 d.dispatch()
 
     def test_dispatch_unknown_status(self):
         with mock_urlopen(unknown_response()):
             d = http.HttpDispatch('http://example.com/mul', 'GET', {
-                                    'x': 10, 'y': 10})
+                'x': 10, 'y': 10})
             with self.assertRaises(http.UnknownStatusError):
                 d.dispatch()
 
     def test_dispatch_POST(self):
         with mock_urlopen(success_response(100)):
             d = http.HttpDispatch('http://example.com/mul', 'POST', {
-                                    'x': 10, 'y': 10})
+                'x': 10, 'y': 10})
             self.assertEqual(d.dispatch(), 100)
 
 

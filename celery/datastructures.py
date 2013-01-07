@@ -60,7 +60,7 @@ class GraphFormatter(object):
     graph_scheme = {'bgcolor': 'mintcream'}
 
     def __init__(self, root=None, type=None, id=None,
-            indent=0, inw=' ' * 4, **scheme):
+                 indent=0, inw=' ' * 4, **scheme):
         self.id = id or 'dependencies'
         self.root = root
         self.type = type or 'digraph'
@@ -175,8 +175,8 @@ class DependencyGraph(object):
         components = self._tarjan72()
 
         NC = dict((node, component)
-                    for component in components
-                        for node in component)
+                  for component in components
+                  for node in component)
         for component in components:
             graph.add_arc(component)
         for node in self:

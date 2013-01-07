@@ -39,8 +39,7 @@ class test_TaskRegistry(Case):
 
     def test_task_registry(self):
         r = TaskRegistry()
-        self.assertIsInstance(r, dict,
-                'TaskRegistry is mapping')
+        self.assertIsInstance(r, dict, 'TaskRegistry is mapping')
 
         self.assertRegisterUnregisterCls(r, MockTask)
         self.assertRegisterUnregisterCls(r, MockPeriodicTask)
@@ -53,11 +52,11 @@ class test_TaskRegistry(Case):
         tasks = dict(r)
         self.assertIsInstance(tasks.get(MockTask.name), MockTask)
         self.assertIsInstance(tasks.get(MockPeriodicTask.name),
-                                   MockPeriodicTask)
+                              MockPeriodicTask)
 
         self.assertIsInstance(r[MockTask.name], MockTask)
         self.assertIsInstance(r[MockPeriodicTask.name],
-                                   MockPeriodicTask)
+                              MockPeriodicTask)
 
         r.unregister(MockTask)
         self.assertNotIn(MockTask.name, r)

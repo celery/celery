@@ -77,7 +77,7 @@ class test_Persistent(StateResetCase):
             self.assertIn(item, state.revoked)
 
     def test_sync(self, data1=['foo', 'bar', 'baz'],
-                        data2=['baz', 'ini', 'koz']):
+                  data2=['baz', 'ini', 'koz']):
         self.add_revoked(*data1)
         for item in data2:
             state.revoked.add(item)

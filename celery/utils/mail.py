@@ -33,8 +33,8 @@ class SendmailWarning(UserWarning):
 
 class Message(object):
 
-    def __init__(self, to=None, sender=None, subject=None, body=None,
-            charset='us-ascii'):
+    def __init__(self, to=None, sender=None, subject=None,
+                 body=None, charset='us-ascii'):
         self.to = maybe_list(to)
         self.sender = sender
         self.subject = subject
@@ -55,7 +55,7 @@ class Message(object):
 class Mailer(object):
 
     def __init__(self, host='localhost', port=0, user=None, password=None,
-            timeout=2, use_ssl=False, use_tls=False):
+                 timeout=2, use_ssl=False, use_tls=False):
         self.host = host
         self.port = port
         self.user = user

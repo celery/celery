@@ -202,8 +202,7 @@ class test_Worker(WorkerAppCase):
 
         # test when there are too few output lines
         # to draft the ascii art onto
-        prev, cd.ARTLINES = (cd.ARTLINES,
-            ['the quick brown fox'])
+        prev, cd.ARTLINES = cd.ARTLINES, ['the quick brown fox']
         self.assertTrue(worker.startup_info())
 
     @disable_stdouts
@@ -222,10 +221,10 @@ class test_Worker(WorkerAppCase):
         app = current_app
         c = app.conf
         p, app.amqp.queues = app.amqp.queues, app.amqp.Queues({
-                'celery': {'exchange': 'celery',
-                           'routing_key': 'celery'},
-                'video': {'exchange': 'video',
-                           'routing_key': 'video'}})
+            'celery': {'exchange': 'celery',
+                       'routing_key': 'celery'},
+            'video': {'exchange': 'video',
+                      'routing_key': 'video'}})
         try:
             worker = self.Worker()
             worker.setup_queues(['video'])
@@ -259,8 +258,10 @@ class test_Worker(WorkerAppCase):
         worker1 = self.Worker(include='some.module')
         self.assertListEqual(worker1.include, ['some.module'])
         worker2 = self.Worker(include='some.module,another.package')
-        self.assertListEqual(worker2.include,
-                ['some.module', 'another.package'])
+        self.assertListEqual(
+            worker2.include,
+            ['some.module', 'another.package'],
+        )
         self.Worker(include=['os', 'sys'])
 
     @disable_stdouts
@@ -280,7 +281,8 @@ class test_Worker(WorkerAppCase):
 
         prev, os.getuid = os.getuid, getuid
         try:
-            with self.assertWarnsRegex(RuntimeWarning,
+            with self.assertWarnsRegex(
+                    RuntimeWarning,
                     r'superuser privileges is discouraged'):
                 worker = self.Worker()
                 worker.on_start()
@@ -535,7 +537,7 @@ class test_signal_handlers(WorkerAppCase):
                 c.return_value = 3
                 worker = self._Worker()
                 handlers = self.psig(
-                        cd.install_worker_term_hard_handler, worker)
+                    cd.install_worker_term_hard_handler, worker)
                 try:
                     handlers['SIGQUIT']('SIGQUIT', object())
                     self.assertTrue(state.should_terminate)
@@ -545,7 +547,7 @@ class test_signal_handlers(WorkerAppCase):
                 c.return_value = 1
                 worker = self._Worker()
                 handlers = self.psig(
-                        cd.install_worker_term_hard_handler, worker)
+                    cd.install_worker_term_hard_handler, worker)
                 with self.assertRaises(SystemTerminate):
                     handlers['SIGQUIT']('SIGQUIT', object())
         finally:

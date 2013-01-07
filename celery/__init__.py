@@ -30,8 +30,8 @@ if os.environ.get('C_IMPDEBUG'):
     from .five import builtins
     real_import = builtins.__import__
 
-    def debug_import(name, locals=None, globals=None, fromlist=None,
-            level=-1):
+    def debug_import(name, locals=None, globals=None,
+                     fromlist=None, level=-1):
         glob = globals or getattr(sys, 'emarfteg_'[::-1])(1).f_globals
         importer_name = glob and glob.get('__name__') or 'unknown'
         print('-- {0} imports {1}'.format(importer_name, name))
@@ -56,7 +56,8 @@ if STATICA_HACK:
 # Lazy loading
 from .five import recreate_module
 
-old_module, new_module = recreate_module(__name__,  # pragma: no cover
+old_module, new_module = recreate_module(  # pragma: no cover
+    __name__,
     by_module={
         'celery.app': ['Celery', 'bugreport', 'shared_task'],
         'celery.app.task': ['Task'],

@@ -89,8 +89,10 @@ class test_ConfigurationView(Case):
         self.assertItemsEqual(list(iter(self.view)),
                               list(expected.keys()))
         self.assertItemsEqual(list(self.view.keys()), list(expected.keys()))
-        self.assertItemsEqual(list(self.view.values()),
-                list(expected.values()))
+        self.assertItemsEqual(
+            list(self.view.values()),
+            list(expected.values()),
+        )
 
 
 class test_ExceptionInfo(Case):
@@ -103,8 +105,9 @@ class test_ExceptionInfo(Case):
             einfo = ExceptionInfo()
             self.assertEqual(str(einfo), einfo.traceback)
             self.assertIsInstance(einfo.exception, LookupError)
-            self.assertTupleEqual(einfo.exception.args,
-                    ('The quick brown fox jumps...', ))
+            self.assertTupleEqual(
+                einfo.exception.args, ('The quick brown fox jumps...', ),
+            )
             self.assertTrue(einfo.traceback)
 
             r = repr(einfo)
@@ -280,13 +283,16 @@ class test_DependencyGraph(Case):
         self.assertLess(order.index('A'), order.index('C'))
 
     def test_edges(self):
-        self.assertItemsEqual(list(self.graph1().edges()),
-                             ['C', 'D'])
+        self.assertItemsEqual(
+            list(self.graph1().edges()),
+            ['C', 'D'],
+        )
 
     def test_items(self):
-        self.assertDictEqual(dict(items(self.graph1())),
-                {'A': [], 'B': [],
-                 'C': ['A'], 'D': ['C', 'B']})
+        self.assertDictEqual(
+            dict(items(self.graph1())),
+            {'A': [], 'B': [], 'C': ['A'], 'D': ['C', 'B']},
+        )
 
     def test_to_dot(self):
         s = WhateverIO()

@@ -112,7 +112,7 @@ class TraceInfo(object):
 
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
-        Info=TraceInfo, eager=False, propagate=False):
+                 Info=TraceInfo, eager=False, propagate=False):
     """Builts a function that tracing the tasks execution; catches all
     exceptions, and saves the state and result of the task execution
     to the result backend.
@@ -281,7 +281,7 @@ def _fast_trace_task(task, uuid, args, kwargs, request={}):
 def eager_trace_task(task, uuid, args, kwargs, request=None, **opts):
     opts.setdefault('eager', True)
     return build_tracer(task.name, task, **opts)(
-            uuid, args, kwargs, request)
+        uuid, args, kwargs, request)
 
 
 def report_internal_error(task, exc):

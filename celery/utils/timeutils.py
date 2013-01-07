@@ -202,12 +202,12 @@ def remaining(start, ends_in, now=None, relative=False):
 
 
 def rate(rate):
-    """Parses rate strings, such as `"100/m"` or `"2/h"`
+    """Parses rate strings, such as `"100/m"`, `"2/h"` or `"0.5/s"`
     and converts them to seconds."""
     if rate:
         if isinstance(rate, string_t):
             ops, _, modifier = rate.partition('/')
-            return RATE_MODIFIER_MAP[modifier or 's'](int(ops)) or 0
+            return RATE_MODIFIER_MAP[modifier or 's'](float(ops)) or 0
         return rate or 0
     return 0
 
@@ -301,15 +301,17 @@ def to_utc(dt):
 def maybe_make_aware(dt, tz=None):
     if is_naive(dt):
         dt = to_utc(dt)
-    return localize(dt,
-        timezone.utc if tz is None else timezone.tz_or_local(tz))
+    return localize(
+        dt, timezone.utc if tz is None else timezone.tz_or_local(tz),
+    )
 
 
 class ffwd(object):
     """Version of relativedelta that only supports addition."""
 
     def __init__(self, year=None, month=None, weeks=0, weekday=None, day=None,
-            hour=None, minute=None, second=None, microsecond=None, **kwargs):
+                 hour=None, minute=None, second=None, microsecond=None,
+                 **kwargs):
         self.year = year
         self.month = month
         self.weeks = weeks

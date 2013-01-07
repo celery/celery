@@ -59,8 +59,8 @@ class test_Schedule(Case):
     def test_sched(self):
         with mock_module(*gevent_modules):
             with patch_many('gevent.greenlet',
-                    'gevent.greenlet.GreenletExit') as (greenlet,
-                                                        GreenletExit):
+                            'gevent.greenlet.GreenletExit') as (greenlet,
+                                                                GreenletExit):
                 greenlet.Greenlet = object
                 x = Schedule()
                 greenlet.Greenlet = Mock()

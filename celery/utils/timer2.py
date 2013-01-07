@@ -54,7 +54,7 @@ class Entry(object):
 
     def __repr__(self):
         return '<TimerEntry: {0}(*{1!r}, **{2!r})'.format(
-                self.fun.__name__, self.args, self.kwargs)
+            self.fun.__name__, self.args, self.kwargs)
 
     if sys.version_info[0] == 3:  # pragma: no cover
 
@@ -201,7 +201,7 @@ class Schedule(object):
 
     def info(self):
         return ({'eta': eta, 'priority': priority, 'item': item}
-                    for eta, priority, item in self.queue)
+                for eta, priority, item in self.queue)
 
     def cancel(self, tref):
         tref.cancel()
@@ -228,7 +228,7 @@ class Timer(threading.Thread):
             super(Timer, self).start(*args, **kwargs)
 
     def __init__(self, schedule=None, on_error=None, on_tick=None,
-            max_interval=None, **kwargs):
+                 max_interval=None, **kwargs):
         self.schedule = schedule or self.Schedule(on_error=on_error,
                                                   max_interval=max_interval)
         self.on_tick = on_tick or self.on_tick

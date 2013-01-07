@@ -41,7 +41,7 @@ is_pypy = hasattr(sys, 'pypy_version_info')
 def active_thread_count():
     from threading import enumerate
     return sum(1 for t in enumerate()
-        if not t.name.startswith('Dummy-'))
+               if not t.name.startswith('Dummy-'))
 
 
 def safe_say(msg):
@@ -144,13 +144,15 @@ class Worker(WorkController):
     def setup_logging(self, colorize=None):
         if colorize is None and self.no_color is not None:
             colorize = not self.no_color
-        return self.app.log.setup(self.loglevel, self.logfile,
-                   redirect_stdouts=False, colorize=colorize)
+        return self.app.log.setup(
+            self.loglevel, self.logfile,
+            redirect_stdouts=False, colorize=colorize,
+        )
 
     def purge_messages(self):
         count = self.app.control.purge()
         print('purge: Erased {0} {1} from the queue.\n'.format(
-                count, pluralize(count, 'message')))
+            count, pluralize(count, 'message')))
 
     def tasklist(self, include_builtins=True):
         tasks = self.app.tasks
@@ -229,13 +231,15 @@ class Worker(WorkController):
         os.environ.setdefault('celery_dummy_proxy', 'set_by_celeryd')
 
     def set_process_status(self, info):
-        return platforms.set_mp_process_title('celeryd',
-                info='{0} ({1})'.format(info, platforms.strargv(sys.argv)),
-                hostname=self.hostname)
+        return platforms.set_mp_process_title(
+            'celeryd',
+            info='{0} ({1})'.format(info, platforms.strargv(sys.argv)),
+            hostname=self.hostname,
+        )
 
 
-def _shutdown_handler(worker, sig='TERM', how='Warm', exc=SystemExit,
-        callback=None):
+def _shutdown_handler(worker, sig='TERM', how='Warm',
+                      exc=SystemExit, callback=None):
 
     def _handle_request(signum, frame):
         with in_sighandler():

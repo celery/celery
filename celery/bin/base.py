@@ -145,7 +145,7 @@ class HelpFormatter(IndentedHelpFormatter):
 
     def format_description(self, description):
         return text.ensure_2lines(text.fill_paragraphs(
-                text.dedent(description), self.width))
+            text.dedent(description), self.width))
 
 
 class Command(object):
@@ -211,7 +211,7 @@ class Command(object):
     prog_name = 'celery'
 
     def __init__(self, app=None, get_app=None, no_color=False,
-            stdout=None, stderr=None, quiet=False):
+                 stdout=None, stderr=None, quiet=False):
         self.app = app
         self.get_app = get_app or self._get_default_app
         self.stdout = stdout or sys.stdout
@@ -298,8 +298,8 @@ class Command(object):
     def prepare_args(self, options, args):
         if options:
             options = dict((k, self.expanduser(v))
-                            for k, v in items(vars(options))
-                                if not k.startswith('_'))
+                           for k, v in items(vars(options))
+                           if not k.startswith('_'))
         args = [self.expanduser(arg) for arg in args]
         self.check_args(args)
         return options, args
@@ -338,8 +338,8 @@ class Command(object):
             epilog=self.epilog,
             formatter=HelpFormatter(),
             description=self.description,
-            option_list=(self.preload_options + self.get_options())),
-        )
+            option_list=(self.preload_options + self.get_options()),
+        ))
 
     def prepare_parser(self, parser):
         docs = [self.parse_doc(doc) for doc in (self.doc, __doc__) if doc]
@@ -399,7 +399,7 @@ class Command(object):
             except AttributeError:
                 if getattr(sym, '__path__', None):
                     return self.find_app('{0}.celery:'.format(
-                                app.replace(':', '')))
+                                         app.replace(':', '')))
                 raise
         return sym
 
@@ -448,8 +448,8 @@ class Command(object):
                     in_option = m.groups()[0].strip()
                 assert in_option, 'missing long opt'
             elif in_option and line.startswith(' ' * 4):
-                options[in_option].append(find_rst_ref.sub(r'\1',
-                    line.strip()).replace('`', ''))
+                options[in_option].append(
+                    find_rst_ref.sub(r'\1', line.strip()).replace('`', ''))
         return options
 
     def with_pool_option(self, argv):
@@ -477,8 +477,9 @@ class Command(object):
         c = self.colored
         if not n:
             return '- empty -'
-        return '\n'.join(str(c.reset(c.white('*'), ' {0}'.format(item)))
-                            for item in n)
+        return '\n'.join(
+            str(c.reset(c.white('*'), ' {0}'.format(item))) for item in n
+        )
 
     def pretty_dict_ok_error(self, n):
         c = self.colored

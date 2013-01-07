@@ -14,13 +14,23 @@ from celery.tests.utils import AppCase, Case, Mock
 
 
 def Message(body, exchange='exchange', routing_key='rkey',
-        compression=None, content_type='application/json',
-        content_encoding='utf-8'):
-    return Mock(attrs=dict(body=body,
-        delivery_info=dict(exchange=exchange, routing_key=routing_key),
-        headers=dict(compression=compression),
-        content_type=content_type, content_encoding=content_encoding,
-        properties={}))
+            compression=None, content_type='application/json',
+            content_encoding='utf-8'):
+    return Mock(
+        attrs={
+            'body': body,
+            'delivery_info': {
+                'exchange': exchange,
+                'routing_key': routing_key,
+            },
+            'headers': {
+                'compression': compression,
+            },
+            'content_type': content_type,
+            'content_encoding': content_encoding,
+            'properties': {}
+        },
+    )
 
 
 class test_State(Case):

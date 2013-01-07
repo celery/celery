@@ -86,8 +86,8 @@ class EventDispatcher(object):
     DISABLED_TRANSPORTS = set(['sql'])
 
     def __init__(self, connection=None, hostname=None, enabled=True,
-            channel=None, buffer_while_offline=True, app=None,
-            serializer=None, groups=None):
+                 channel=None, buffer_while_offline=True, app=None,
+                 serializer=None, groups=None):
         self.app = app_or_default(app or self.app)
         self.connection = connection
         self.channel = channel
@@ -140,7 +140,7 @@ class EventDispatcher(object):
                 callback()
 
     def send(self, type, utcoffset=utcoffset, blind=False,
-            Event=Event, **fields):
+             Event=Event, **fields):
         """Send event.
 
         :param type: Kind of event.
@@ -157,10 +157,11 @@ class EventDispatcher(object):
             clock = None if blind else self.clock.forward()
 
             with self.mutex:
-                event = Event(type, hostname=self.hostname,
-                                    clock=clock,
-                                    utcoffset=utcoffset(),
-                                    pid=self.pid, **fields)
+                event = Event(type,
+                              hostname=self.hostname,
+                              clock=clock,
+                              utcoffset=utcoffset(),
+                              pid=self.pid, **fields)
                 try:
                     self.publisher.publish(event,
                                            routing_key=type.replace('-', '.'),
@@ -200,7 +201,7 @@ class EventReceiver(ConsumerMixin):
     """
 
     def __init__(self, connection, handlers=None, routing_key='#',
-            node_id=None, app=None, queue_prefix='celeryev'):
+                 node_id=None, app=None, queue_prefix='celeryev'):
         self.app = app_or_default(app)
         self.connection = connection
         self.handlers = {} if handlers is None else handlers
@@ -228,7 +229,7 @@ class EventReceiver(ConsumerMixin):
                          callbacks=[self._receive], no_ack=True)]
 
     def on_consume_ready(self, connection, channel, consumers,
-            wakeup=True, **kwargs):
+                         wakeup=True, **kwargs):
         if wakeup:
             self.wakeup_workers(channel=channel)
 
@@ -290,7 +291,7 @@ class Events(object):
 
     @contextmanager
     def default_dispatcher(self, hostname=None, enabled=True,
-            buffer_while_offline=False):
+                           buffer_while_offline=False):
         with self.app.amqp.producer_pool.acquire(block=True) as pub:
             with self.Dispatcher(pub.connection, hostname, enabled,
                                  pub.channel, buffer_while_offline) as d:

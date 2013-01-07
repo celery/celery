@@ -45,7 +45,7 @@ def teardown():
     # Make sure there are no remaining threads at shutdown.
     import threading
     remaining_threads = [thread for thread in threading.enumerate()
-                            if thread.getName() != 'MainThread']
+                         if thread.getName() != 'MainThread']
     if remaining_threads:
         sys.stderr.write(
             '\n\n**WARNING**: Remaining threads at teardown: %r...\n' % (
@@ -69,7 +69,7 @@ def find_distribution_modules(name=__name__, file=__file__):
 
 
 def import_all_modules(name=__name__, file=__file__,
-        skip=['celery.decorators', 'celery.contrib.batches']):
+                       skip=['celery.decorators', 'celery.contrib.batches']):
     for module in find_distribution_modules(name, file):
         if module not in skip:
             try:

@@ -12,7 +12,7 @@ from celery.result import AsyncResult, GroupResult
 from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
 from celery.utils.serialization import \
-        find_nearest_pickleable_exception as fnpe
+    find_nearest_pickleable_exception as fnpe
 from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.utils.serialization import get_pickleable_exception as gpe
 
@@ -47,7 +47,7 @@ class test_serialization(Case):
     def test_create_exception_cls(self):
         self.assertTrue(serialization.create_exception_cls('FooError', 'm'))
         self.assertTrue(serialization.create_exception_cls('FooError', 'm',
-                                                            KeyError))
+                                                           KeyError))
 
 
 class test_BaseBackend_interface(Case):

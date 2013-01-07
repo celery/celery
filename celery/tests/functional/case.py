@@ -64,16 +64,20 @@ class Worker(object):
         return self.hostname in flatten_reply(r)
 
     def wait_until_started(self, timeout=10, interval=0.5):
-        try_while(lambda: self.is_alive(interval),
-                "Worker won't start (after %s secs.)" % timeout,
-                interval=interval, timeout=timeout)
+        try_while(
+            lambda: self.is_alive(interval),
+            "Worker won't start (after %s secs.)" % timeout,
+            interval=interval, timeout=timeout,
+        )
         say('--WORKER %s IS ONLINE--' % self.hostname)
 
     def ensure_shutdown(self, timeout=10, interval=0.5):
         os.kill(self.pid, signal.SIGTERM)
-        try_while(lambda: not self.is_alive(interval),
-                  "Worker won't shutdown (after %s secs.)" % timeout,
-                  timeout=10, interval=0.5)
+        try_while(
+            lambda: not self.is_alive(interval),
+            "Worker won't shutdown (after %s secs.)" % timeout,
+            timeout=10, interval=0.5,
+        )
         say('--WORKER %s IS SHUTDOWN--' % self.hostname)
         self._shutdown_called = True
 
@@ -96,8 +100,8 @@ class Worker(object):
         def _ensure_shutdown_once():
             if not worker._shutdown_called:
                 say('-- Found worker not stopped at shutdown: %s\n%s' % (
-                        worker.hostname,
-                        '\n'.join(stack)))
+                    worker.hostname,
+                    '\n'.join(stack)))
                 worker.ensure_shutdown()
 
         return worker
@@ -161,10 +165,10 @@ class WorkerCase(Case):
 
     def ensure_received(self, task_id, interval=0.5, timeout=10):
         return try_while(lambda: self.is_received(task_id, interval),
-                        'Task not receied within timeout',
-                        interval=0.5, timeout=10)
+                         'Task not receied within timeout',
+                         interval=0.5, timeout=10)
 
     def ensure_scheduled(self, task_id, interval=0.5, timeout=10):
         return try_while(lambda: self.is_scheduled(task_id, interval),
-                        'Task not scheduled within timeout',
-                        interval=0.5, timeout=10)
+                         'Task not scheduled within timeout',
+                         interval=0.5, timeout=10)

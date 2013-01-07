@@ -211,7 +211,7 @@ class Batches(Task):
 
     def flush(self, requests):
         return self.apply_buffer(requests, ([SimpleRequest.from_request(r)
-                                                for r in requests], ))
+                                             for r in requests], ))
 
     def _do_flush(self):
         logger.debug('Batches: Wake-up to flush buffer...')
@@ -237,7 +237,9 @@ class Batches(Task):
         def on_return(result):
             [req.acknowledge() for req in acks_late[True]]
 
-        return self._pool.apply_async(apply_batches_task,
-                    (self, args, 0, None),
-                    accept_callback=on_accepted,
-                    callback=acks_late[True] and on_return or noop)
+        return self._pool.apply_async(
+            apply_batches_task,
+            (self, args, 0, None),
+            accept_callback=on_accepted,
+            callback=acks_late[True] and on_return or noop,
+        )

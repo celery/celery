@@ -34,8 +34,8 @@ CELERY_MONGODB_BACKEND_SETTINGS = {
     'host': os.environ.get('MONGO_HOST') or 'localhost',
     'port': os.environ.get('MONGO_PORT') or 27017,
     'database': os.environ.get('MONGO_DB') or 'celery_unittests',
-    'taskmeta_collection': os.environ.get('MONGO_TASKMETA_COLLECTION') or
-        'taskmeta_collection',
+    'taskmeta_collection': (os.environ.get('MONGO_TASKMETA_COLLECTION')
+                            or 'taskmeta_collection'),
 }
 if os.environ.get('MONGO_USER'):
     CELERY_MONGODB_BACKEND_SETTINGS['user'] = os.environ.get('MONGO_USER')

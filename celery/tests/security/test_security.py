@@ -39,7 +39,7 @@ class test_security(SecurityCase):
         self.assertEqual(0, len(disabled))
 
         disable_untrusted_serializers(
-                ['application/json', 'application/x-python-serialize'])
+            ['application/json', 'application/x-python-serialize'])
         self.assertIn('application/x-yaml', disabled)
         self.assertNotIn('application/json', disabled)
         self.assertNotIn('application/x-python-serialize', disabled)

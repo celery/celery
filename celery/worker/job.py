@@ -151,9 +151,10 @@ class Request(object):
     @classmethod
     def from_message(cls, message, body, **kwargs):
         # should be deprecated
-        return Request(body,
-                       delivery_info=getattr(message, 'delivery_info', None),
-                       **kwargs)
+        return Request(
+            body,
+            delivery_info=getattr(message, 'delivery_info', None), **kwargs
+        )
 
     def extend_with_default_kwargs(self):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -280,8 +281,9 @@ class Request(object):
             expired = self.maybe_expire()
         if self.id in revoked_tasks:
             warn('Skipping revoked task: %s[%s]', self.name, self.id)
-            self._announce_revoked('expired' if expired else 'revoked',
-                                   False, None, expired)
+            self._announce_revoked(
+                'expired' if expired else 'revoked', False, None, expired,
+            )
             return True
         return False
 
@@ -338,10 +340,10 @@ class Request(object):
         if _does_info:
             now = now or time.time()
             runtime = self.time_start and (time.time() - self.time_start) or 0
-            info(self.success_msg.strip(),
-                 {'id': self.id, 'name': self.name,
-                  'return_value': self.repr_result(ret_value),
-                  'runtime': runtime})
+            info(self.success_msg.strip(), {
+                'id': self.id, 'name': self.name,
+                'return_value': self.repr_result(ret_value),
+                'runtime': runtime})
 
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
@@ -392,8 +394,9 @@ class Request(object):
         format = self.error_msg
         description = 'raised exception'
         severity = logging.ERROR
-        self.send_event('task-failed',
-                        exception=exception, traceback=traceback)
+        self.send_event(
+            'task-failed', exception=exception, traceback=traceback,
+        )
 
         if internal:
             if isinstance(einfo.exception, Ignore):

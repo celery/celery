@@ -86,8 +86,9 @@ class test_Command(AppCase):
         try:
             cmd = MockCommand()
             cmd.setup_app_from_commandline(['--broker=xyzza://'])
-            self.assertEqual(os.environ.get('CELERY_BROKER_URL'),
-                    'xyzza://')
+            self.assertEqual(
+                os.environ.get('CELERY_BROKER_URL'), 'xyzza://',
+            )
         finally:
             if prev:
                 os.environ['CELERY_BROKER_URL'] = prev

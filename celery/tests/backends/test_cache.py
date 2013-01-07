@@ -122,8 +122,8 @@ class MemcachedClient(DummyClient):
     def set(self, key, value, *args, **kwargs):
         if isinstance(key, text_t):
             raise MyMemcachedStringEncodingError(
-                    'Keys must be bytes, not string.  Convert your '
-                    'strings using mystring.encode(charset)!')
+                'Keys must be bytes, not string.  Convert your '
+                'strings using mystring.encode(charset)!')
         return super(MemcachedClient, self).set(key, value, *args, **kwargs)
 
 

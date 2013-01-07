@@ -33,7 +33,7 @@ class Loader(BaseLoader):
         """Read configuration from :file:`celeryconfig.py` and configure
         celery and Django so it can be used by regular Python."""
         configname = os.environ.get('CELERY_CONFIG_MODULE',
-                                     DEFAULT_CONFIG_MODULE)
+                                    DEFAULT_CONFIG_MODULE)
         try:
             usercfg = self._import_config_module(configname)
         except ImportError:

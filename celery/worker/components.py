@@ -84,7 +84,7 @@ class Pool(bootsteps.StartStopStep):
     requires = (Queues, )
 
     def __init__(self, w, autoscale=None, autoreload=None,
-            no_execv=False, **kwargs):
+                 no_execv=False, **kwargs):
         if isinstance(autoscale, string_t):
             max_c, _, min_c = autoscale.partition(',')
             autoscale = [int(max_c), min_c and int(min_c) or 0]
@@ -163,18 +163,20 @@ class Pool(bootsteps.StartStopStep):
             w._quick_release = w.semaphore.release
             max_restarts = 100
         allow_restart = self.autoreload_enabled or w.pool_restarts
-        pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
-                            initargs=(w.app, w.hostname),
-                            maxtasksperchild=w.max_tasks_per_child,
-                            timeout=w.task_time_limit,
-                            soft_timeout=w.task_soft_time_limit,
-                            putlocks=w.pool_putlocks and threaded,
-                            lost_worker_timeout=w.worker_lost_wait,
-                            threads=threaded,
-                            max_restarts=max_restarts,
-                            allow_restart=allow_restart,
-                            forking_enable=forking_enable,
-                            semaphore=semaphore)
+        pool = w.pool = self.instantiate(
+            w.pool_cls, w.min_concurrency,
+            initargs=(w.app, w.hostname),
+            maxtasksperchild=w.max_tasks_per_child,
+            timeout=w.task_time_limit,
+            soft_timeout=w.task_soft_time_limit,
+            putlocks=w.pool_putlocks and threaded,
+            lost_worker_timeout=w.worker_lost_wait,
+            threads=threaded,
+            max_restarts=max_restarts,
+            allow_restart=allow_restart,
+            forking_enable=forking_enable,
+            semaphore=semaphore,
+        )
         if w.hub:
             w.hub.on_init.append(partial(self.on_poll_init, pool))
         return pool
@@ -246,16 +248,17 @@ class Consumer(bootsteps.StartStopStep):
 
     def create(self, w):
         prefetch_count = w.concurrency * w.prefetch_multiplier
-        c = w.consumer = self.instantiate(w.consumer_cls,
-                w.ready_queue,
-                hostname=w.hostname,
-                send_events=w.send_events,
-                init_callback=w.ready_callback,
-                initial_prefetch_count=prefetch_count,
-                pool=w.pool,
-                timer=w.timer,
-                app=w.app,
-                controller=w,
-                hub=w.hub,
-                worker_options=w.options)
+        c = w.consumer = self.instantiate(
+            w.consumer_cls, w.ready_queue,
+            hostname=w.hostname,
+            send_events=w.send_events,
+            init_callback=w.ready_callback,
+            initial_prefetch_count=prefetch_count,
+            pool=w.pool,
+            timer=w.timer,
+            app=w.app,
+            controller=w,
+            hub=w.hub,
+            worker_options=w.options,
+        )
         return c

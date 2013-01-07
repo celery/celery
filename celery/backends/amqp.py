@@ -51,21 +51,21 @@ class AMQPBackend(BaseBackend):
     supports_native_join = True
 
     retry_policy = {
-            'max_retries': 20,
-            'interval_start': 0,
-            'interval_step': 1,
-            'interval_max': 1,
+        'max_retries': 20,
+        'interval_start': 0,
+        'interval_step': 1,
+        'interval_max': 1,
     }
 
     def __init__(self, connection=None, exchange=None, exchange_type=None,
-            persistent=None, serializer=None, auto_delete=True,
-            **kwargs):
+                 persistent=None, serializer=None, auto_delete=True,
+                 **kwargs):
         super(AMQPBackend, self).__init__(**kwargs)
         conf = self.app.conf
         self._connection = connection
         self.queue_arguments = {}
         self.persistent = (conf.CELERY_RESULT_PERSISTENT if persistent is None
-                                                         else persistent)
+                           else persistent)
         exchange = exchange or conf.CELERY_RESULT_EXCHANGE
         exchange_type = exchange_type or conf.CELERY_RESULT_EXCHANGE_TYPE
         self.exchange = self._create_exchange(exchange, exchange_type,
@@ -104,8 +104,9 @@ class AMQPBackend(BaseBackend):
         return task_id.replace('-', '')
 
     def _republish(self, channel, task_id, body, content_type,
-            content_encoding):
-        return Producer(channel).publish(body,
+                   content_encoding):
+        return Producer(channel).publish(
+            body,
             exchange=self.exchange,
             routing_key=self._routing_key(task_id),
             serializer=self.serializer,
@@ -134,7 +135,7 @@ class AMQPBackend(BaseBackend):
         return [self._create_binding(task_id)]
 
     def wait_for(self, task_id, timeout=None, cache=True, propagate=True,
-            **kwargs):
+                 **kwargs):
         cached_meta = self._cache.get(task_id)
         if cache and cached_meta and \
                 cached_meta['status'] in states.READY_STATES:
@@ -183,8 +184,8 @@ class AMQPBackend(BaseBackend):
                     return {'status': states.PENDING, 'result': None}
     poll = get_task_meta  # XXX compat
 
-    def drain_events(self, connection, consumer, timeout=None, now=time.time,
-            wait=None):
+    def drain_events(self, connection, consumer,
+                     timeout=None, now=time.time, wait=None):
         wait = wait or connection.drain_events
         results = {}
 
@@ -244,8 +245,8 @@ class AMQPBackend(BaseBackend):
                         self._cache[task_id] = meta
 
             bindings = self._many_bindings(task_ids)
-            with self.Consumer(channel, bindings, callbacks=[callback],
-                    no_ack=True):
+            with self.Consumer(channel, bindings,
+                               callbacks=[callback], no_ack=True):
                 wait = conn.drain_events
                 popleft = results.popleft
                 while ids:
@@ -259,31 +260,33 @@ class AMQPBackend(BaseBackend):
 
     def reload_task_result(self, task_id):
         raise NotImplementedError(
-                'reload_task_result is not supported by this backend.')
+            'reload_task_result is not supported by this backend.')
 
     def reload_group_result(self, task_id):
         """Reload group result, even if it has been previously fetched."""
         raise NotImplementedError(
-                'reload_group_result is not supported by this backend.')
+            'reload_group_result is not supported by this backend.')
 
     def save_group(self, group_id, result):
         raise NotImplementedError(
-                'save_group is not supported by this backend.')
+            'save_group is not supported by this backend.')
 
     def restore_group(self, group_id, cache=True):
         raise NotImplementedError(
-                'restore_group is not supported by this backend.')
+            'restore_group is not supported by this backend.')
 
     def delete_group(self, group_id):
         raise NotImplementedError(
-                'delete_group is not supported by this backend.')
+            'delete_group is not supported by this backend.')
 
     def __reduce__(self, args=(), kwargs={}):
-        kwargs.update(connection=self._connection,
-                      exchange=self.exchange.name,
-                      exchange_type=self.exchange.type,
-                      persistent=self.persistent,
-                      serializer=self.serializer,
-                      auto_delete=self.auto_delete,
-                      expires=self.expires)
+        kwargs.update(
+            connection=self._connection,
+            exchange=self.exchange.name,
+            exchange_type=self.exchange.type,
+            persistent=self.persistent,
+            serializer=self.serializer,
+            auto_delete=self.auto_delete,
+            expires=self.expires,
+        )
         return super(AMQPBackend, self).__reduce__(args, kwargs)

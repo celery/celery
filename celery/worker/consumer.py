@@ -138,10 +138,10 @@ class Consumer(object):
             self.restart(parent, 'Shutdown', 'shutdown')
 
     def __init__(self, ready_queue,
-            init_callback=noop, hostname=None,
-            pool=None, app=None,
-            timer=None, controller=None, hub=None, amqheartbeat=None,
-            worker_options=None, **kwargs):
+                 init_callback=noop, hostname=None,
+                 pool=None, app=None,
+                 timer=None, controller=None, hub=None, amqheartbeat=None,
+                 worker_options=None, **kwargs):
         self.app = app_or_default(app)
         self.controller = controller
         self.ready_queue = ready_queue
@@ -269,12 +269,13 @@ class Consumer(object):
             conn.connect()
             return conn
 
-        return conn.ensure_connection(_error_handler,
-                    self.app.conf.BROKER_CONNECTION_MAX_RETRIES,
-                    callback=maybe_shutdown)
+        return conn.ensure_connection(
+            _error_handler, self.app.conf.BROKER_CONNECTION_MAX_RETRIES,
+            callback=maybe_shutdown,
+        )
 
     def add_task_queue(self, queue, exchange=None, exchange_type=None,
-            routing_key=None, **options):
+                       routing_key=None, **options):
         cset = self.task_consumer
         queues = self.app.amqp.queues
         # Must use in' here, as __missing__ will automatically
@@ -285,7 +286,7 @@ class Consumer(object):
         else:
             exchange = queue if exchange is None else exchange
             exchange_type = ('direct' if exchange_type is None
-                                      else exchange_type)
+                             else exchange_type)
             q = queues.select_add(queue,
                                   exchange=exchange,
                                   exchange_type=exchange_type,
@@ -300,7 +301,7 @@ class Consumer(object):
         self.task_consumer.cancel_by_queue(queue)
 
     def on_task(self, task, task_reserved=task_reserved,
-            to_system_tz=timezone.to_system):
+                to_system_tz=timezone.to_system):
         """Handle received task.
 
         If the task has an `eta` we enter it into the ETA schedule,
@@ -314,12 +315,14 @@ class Consumer(object):
             info('Got task from broker: %s', task)
 
         if self.event_dispatcher.enabled:
-            self.event_dispatcher.send('task-received', uuid=task.id,
-                    name=task.name, args=safe_repr(task.args),
-                    kwargs=safe_repr(task.kwargs),
-                    retries=task.request_dict.get('retries', 0),
-                    eta=task.eta and task.eta.isoformat(),
-                    expires=task.expires and task.expires.isoformat())
+            self.event_dispatcher.send(
+                'task-received',
+                uuid=task.id, name=task.name,
+                args=safe_repr(task.args), kwargs=safe_repr(task.kwargs),
+                retries=task.request_dict.get('retries', 0),
+                eta=task.eta and task.eta.isoformat(),
+                expires=task.expires and task.expires.isoformat(),
+            )
 
         if task.eta:
             try:
@@ -556,7 +559,8 @@ class Gossip(bootsteps.ConsumerStep):
         id = event['id']
         self.dispatcher.send('worker-elect-ack', id=id)
         clock, hostname, pid, topic, action = self._cons_stamp_fields(event)
-        heappush(self.consensus_requests[id],
+        heappush(
+            self.consensus_requests[id],
             (clock, '%s.%s' % (hostname, pid), topic, action),
         )
 
@@ -615,10 +619,12 @@ class Gossip(bootsteps.ConsumerStep):
     def get_consumers(self, channel):
         self.register_timer()
         ev = self.Receiver(channel, routing_key='worker.#')
-        return [kombu.Consumer(channel,
-                    queues=[ev.queue],
-                    on_message=partial(self.on_message, ev.event_from_message),
-                    no_ack=True)]
+        return [kombu.Consumer(
+            channel,
+            queues=[ev.queue],
+            on_message=partial(self.on_message, ev.event_from_message),
+            no_ack=True
+        )]
 
     def on_message(self, prepare, message):
         _type = message.delivery_info['routing_key']

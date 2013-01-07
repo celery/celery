@@ -78,8 +78,7 @@ class test_CassandraBackend(AppCase):
             # no servers raises ImproperlyConfigured
             with self.assertRaises(ImproperlyConfigured):
                 app.conf.CASSANDRA_SERVERS = None
-                mod.CassandraBackend(app=app, keyspace='b',
-                        column_family='c')
+                mod.CassandraBackend(app=app, keyspace='b', column_family='c')
 
     def test_reduce(self):
         with mock_module('pycassa'):
@@ -98,12 +97,14 @@ class test_CassandraBackend(AppCase):
             Get_Column = x._get_column_family = Mock()
             get_column = Get_Column.return_value = Mock()
             get = get_column.get
-            META = get.return_value = {'task_id': 'task_id',
-                                'status': states.SUCCESS,
-                                'result': '1',
-                                'date_done': 'date',
-                                'traceback': '',
-                                'children': None}
+            META = get.return_value = {
+                'task_id': 'task_id',
+                'status': states.SUCCESS,
+                'result': '1',
+                'date_done': 'date',
+                'traceback': '',
+                'children': None,
+            }
             x.decode = Mock()
             x.detailed_mode = False
             meta = x._get_task_meta_for('task_id')

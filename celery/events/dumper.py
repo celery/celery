@@ -39,34 +39,37 @@ class Dumper(object):
     def say(self, msg):
         print(msg, file=self.out)
 
-    def on_event(self, event):
-        timestamp = datetime.utcfromtimestamp(event.pop('timestamp'))
-        type = event.pop('type').lower()
-        hostname = event.pop('hostname')
+    def on_event(self, ev):
+        timestamp = datetime.utcfromtimestamp(ev.pop('timestamp'))
+        type = ev.pop('type').lower()
+        hostname = ev.pop('hostname')
         if type.startswith('task-'):
-            uuid = event.pop('uuid')
+            uuid = ev.pop('uuid')
             if type in ('task-received', 'task-sent'):
                 task = TASK_NAMES[uuid] = '{0}({1}) args={2} kwargs={3}' \
-                    .format(
-                        event.pop('name'), uuid,
-                        event.pop('args'),
-                        event.pop('kwargs'))
+                    .format(ev.pop('name'), uuid,
+                            ev.pop('args'),
+                            ev.pop('kwargs'))
             else:
                 task = TASK_NAMES.get(uuid, '')
             return self.format_task_event(hostname, timestamp,
-                                          type, task, event)
-        fields = ', '.join('{0}={1}'.format(key, event[key])
-                        for key in sorted(event))
+                                          type, task, ev)
+        fields = ', '.join(
+            '{0}={1}'.format(key, ev[key]) for key in sorted(ev)
+        )
         sep = fields and ':' or ''
-        self.say('{0} [{1}] {2}{3} {4}'.format(hostname, timestamp,
-                                            humanize_type(type), sep, fields))
+        self.say('{0} [{1}] {2}{3} {4}'.format(
+            hostname, timestamp, humanize_type(type), sep, fields),
+        )
 
     def format_task_event(self, hostname, timestamp, type, task, event):
-        fields = ', '.join('{0}={1}'.format(key, event[key])
-                        for key in sorted(event))
+        fields = ', '.join(
+            '{0}={1}'.format(key, event[key]) for key in sorted(event)
+        )
         sep = fields and ':' or ''
-        self.say('{0} [{1}] {2}{3} {4} {5}'.format(hostname, timestamp,
-                    humanize_type(type), sep, task, fields))
+        self.say('{0} [{1}] {2}{3} {4} {5}'.format(
+            hostname, timestamp, humanize_type(type), sep, task, fields),
+        )
 
 
 def evdump(app=None, out=sys.stdout):

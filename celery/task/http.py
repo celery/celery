@@ -49,7 +49,7 @@ else:
         """With a dict's items() tuple return a new dict with any utf-8
         keys/values encoded."""
         return dict((key.encode('utf-8'), maybe_utf8(value))
-                        for key, value in tup)
+                    for key, value in tup)
 
 
 class InvalidResponseError(Exception):
@@ -72,7 +72,7 @@ def extract_response(raw_response, loads=anyjson.loads):
         payload = loads(raw_response)
     except ValueError as exc:
         reraise(InvalidResponseError, InvalidResponseError(
-                str(exc)), sys.exc_info()[2])
+            str(exc)), sys.exc_info()[2])
 
     status = payload['status']
     if status == 'success':

@@ -138,8 +138,10 @@ class test_RedisBackend(Case):
         self.assertEqual(b.expires, 60)
 
     def test_on_chord_apply(self):
-        self.Backend().on_chord_apply('group_id', {},
-                result=[AsyncResult(x) for x in [1, 2, 3]])
+        self.Backend().on_chord_apply(
+            'group_id', {},
+            result=[AsyncResult(x) for x in [1, 2, 3]],
+        )
 
     def test_mget(self):
         b = self.MockBackend()

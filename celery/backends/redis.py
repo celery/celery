@@ -52,7 +52,7 @@ class RedisBackend(KeyValueStoreBackend):
     implements_incr = True
 
     def __init__(self, host=None, port=None, db=None, password=None,
-            expires=None, max_connections=None, url=None, **kwargs):
+                 expires=None, max_connections=None, url=None, **kwargs):
         super(RedisBackend, self).__init__(**kwargs)
         conf = self.app.conf
         if self.redis is None:

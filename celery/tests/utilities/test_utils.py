@@ -31,18 +31,24 @@ class test_chunks(Case):
 
         # n == 2
         x = utils.chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 2)
-        self.assertListEqual(list(x),
-            [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10]])
+        self.assertListEqual(
+            list(x),
+            [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10]],
+        )
 
         # n == 3
         x = utils.chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 3)
-        self.assertListEqual(list(x),
-            [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10]])
+        self.assertListEqual(
+            list(x),
+            [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10]],
+        )
 
         # n == 2 (exact)
         x = utils.chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), 2)
-        self.assertListEqual(list(x),
-            [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]])
+        self.assertListEqual(
+            list(x),
+            [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]],
+        )
 
 
 class test_utils(Case):
@@ -54,14 +60,19 @@ class test_utils(Case):
             self.assertFalse(utils.is_iterable(b))
 
     def test_padlist(self):
-        self.assertListEqual(functional.padlist(
-                ['George', 'Costanza', 'NYC'], 3),
-                ['George', 'Costanza', 'NYC'])
-        self.assertListEqual(functional.padlist(['George', 'Costanza'], 3),
-                ['George', 'Costanza', None])
-        self.assertListEqual(functional.padlist(
-                ['George', 'Costanza', 'NYC'], 4, default='Earth'),
-                ['George', 'Costanza', 'NYC', 'Earth'])
+        self.assertListEqual(
+            functional.padlist(['George', 'Costanza', 'NYC'], 3),
+            ['George', 'Costanza', 'NYC'],
+        )
+        self.assertListEqual(
+            functional.padlist(['George', 'Costanza'], 3),
+            ['George', 'Costanza', None],
+        )
+        self.assertListEqual(
+            functional.padlist(['George', 'Costanza', 'NYC'], 4,
+                               default='Earth'),
+            ['George', 'Costanza', 'NYC', 'Earth'],
+        )
 
     def test_firstmethod_AttributeError(self):
         self.assertIsNone(functional.firstmethod('foo')([object()]))
@@ -109,10 +120,14 @@ class test_utils(Case):
 
     def test_abbrtask(self):
         self.assertEqual(text.abbrtask(None, 3), '???')
-        self.assertEqual(text.abbrtask('feeds.tasks.refresh', 10),
-                                        '[.]refresh')
-        self.assertEqual(text.abbrtask('feeds.tasks.refresh', 30),
-                                        'feeds.tasks.refresh')
+        self.assertEqual(
+            text.abbrtask('feeds.tasks.refresh', 10),
+            '[.]refresh',
+        )
+        self.assertEqual(
+            text.abbrtask('feeds.tasks.refresh', 30),
+            'feeds.tasks.refresh',
+        )
 
     def test_pretty(self):
         self.assertTrue(text.pretty(('a', 'b', 'c')))

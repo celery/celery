@@ -82,14 +82,15 @@ class Rdb(Pdb):
     _sock = None
 
     def __init__(self, host=CELERY_RDB_HOST, port=CELERY_RDB_PORT,
-            port_search_limit=100, port_skew=+0, out=sys.stdout):
+                 port_search_limit=100, port_skew=+0, out=sys.stdout):
         self.active = True
         self.out = out
 
         self._prev_handles = sys.stdin, sys.stdout
 
-        self._sock, this_port = self.get_avail_port(host, port,
-            port_search_limit, port_skew)
+        self._sock, this_port = self.get_avail_port(
+            host, port, port_search_limit, port_skew,
+        )
         self._sock.listen(1)
         self.ident = '{0}:{1}'.format(self.me, this_port)
         self.host = host
@@ -101,7 +102,7 @@ class Rdb(Pdb):
         self.say(SESSION_STARTED.format(self=self))
         self._handle = sys.stdin = sys.stdout = self._client.makefile('rw')
         Pdb.__init__(self, completekey='tab',
-                           stdin=self._handle, stdout=self._handle)
+                     stdin=self._handle, stdout=self._handle)
 
     def get_avail_port(self, host, port, search_limit=100, skew=+0):
         try:

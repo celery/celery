@@ -21,29 +21,45 @@ django_celery = Dist('django-celery', VERSION, **defaults)
 flask_celery = Dist('Flask-Celery', VERSION, **defaults)
 
 bundles = [
-    celery.Bundle('celery-with-redis',
+    celery.Bundle(
+        'celery-with-redis',
         'Bundle installing the dependencies for Celery and Redis',
-        requires=['redis>=2.4.4']),
-    celery.Bundle('celery-with-mongodb',
+        requires=['redis>=2.4.4'],
+    ),
+    celery.Bundle(
+        'celery-with-mongodb',
         'Bundle installing the dependencies for Celery and MongoDB',
-        requires=['pymongo']),
-    celery.Bundle('celery-with-couchdb',
+        requires=['pymongo'],
+    ),
+    celery.Bundle(
+        'celery-with-couchdb',
         'Bundle installing the dependencies for Celery and CouchDB',
-        requires=['couchdb']),
-    celery.Bundle('celery-with-beanstalk',
+        requires=['couchdb'],
+    ),
+    celery.Bundle(
+        'celery-with-beanstalk',
         'Bundle installing the dependencies for Celery and Beanstalk',
-        requires=['beanstalkc']),
+        requires=['beanstalkc'],
+    ),
 
-    django_celery.Bundle('django-celery-with-redis',
+    django_celery.Bundle(
+        'django-celery-with-redis',
         'Bundle installing the dependencies for Django-Celery and Redis',
-        requires=['redis>=2.4.4']),
-    django_celery.Bundle('django-celery-with-mongodb',
+        requires=['redis>=2.4.4'],
+    ),
+    django_celery.Bundle(
+        'django-celery-with-mongodb',
         'Bundle installing the dependencies for Django-Celery and MongoDB',
-        requires=['pymongo']),
-    django_celery.Bundle('django-celery-with-couchdb',
+        requires=['pymongo'],
+    ),
+    django_celery.Bundle(
+        'django-celery-with-couchdb',
         'Bundle installing the dependencies for Django-Celery and CouchDB',
-        requires=['couchdb']),
-    django_celery.Bundle('django-celery-with-beanstalk',
+        requires=['couchdb'],
+    ),
+    django_celery.Bundle(
+        'django-celery-with-beanstalk',
         'Bundle installing the dependencies for Django-Celery and Beanstalk',
-        requires=['beanstalkc']),
+        requires=['beanstalkc'],
+    ),
 ]

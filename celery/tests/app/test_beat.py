@@ -266,7 +266,7 @@ class test_Scheduler(Case):
         nums = [600, 300, 650, 120, 250, 36]
         s = dict(('test_ticks%s' % i,
                  {'schedule': mocked_schedule(False, j)})
-                    for i, j in enumerate(nums))
+                 for i, j in enumerate(nums))
         scheduler.update_from_dict(s)
         self.assertEqual(scheduler.tick(), min(nums))
 

@@ -66,8 +66,9 @@ class test_chunks(Case):
         def chunks_mul(l):
             return l
 
-        app.tasks['celery.chunks'](chunks_mul,
-                [(2, 2), (4, 4), (8, 8)], 1)
+        app.tasks['celery.chunks'](
+            chunks_mul, [(2, 2), (4, 4), (8, 8)], 1,
+        )
         self.assertTrue(apply_chunks.called)
 
 

@@ -127,7 +127,8 @@ class TaskPool(BasePool):
             self._pool.join()
 
     def on_apply(self, target, args=None, kwargs=None, callback=None,
-            accept_callback=None, timeout=None, timeout_callback=None, **_):
+                 accept_callback=None, timeout=None,
+                 timeout_callback=None, **_):
         timeout = self.timeout if timeout is None else timeout
         return self._quick_put(apply_timeout if timeout else apply_target,
                                target, args, kwargs, callback, accept_callback,

@@ -120,7 +120,7 @@ if not current_app.IS_WINDOWS:
         @patch('celery.platforms.setuid')
         @patch('celery.platforms.initgroups')
         def test_with_uid(self, initgroups, setuid, setgid,
-                getpwuid, parse_uid):
+                          getpwuid, parse_uid):
 
             class pw_struct(object):
                 pw_gid = 50001
@@ -139,7 +139,7 @@ if not current_app.IS_WINDOWS:
         @patch('celery.platforms.setuid')
         @patch('celery.platforms.initgroups')
         def test_with_guid(self, initgroups, setuid, setgid,
-                parse_gid, parse_uid):
+                           parse_gid, parse_uid):
             parse_uid.return_value = 5001
             parse_gid.return_value = 50001
             maybe_drop_privileges(uid='user', gid='group')
@@ -265,7 +265,7 @@ if not current_app.IS_WINDOWS:
         @patch('os.geteuid')
         @patch(open_fqdn)
         def test_default(self, open, geteuid, maybe_drop,
-                signals, pidlock):
+                         signals, pidlock):
             geteuid.return_value = 0
             context = detached(uid='user', gid='group')
             self.assertIsInstance(context, DaemonContext)
@@ -299,7 +299,7 @@ if not current_app.IS_WINDOWS:
         @patch('os.open')
         @patch('os.dup2')
         def test_open(self, dup2, open, close, closer, umask, chdir,
-                _exit, setsid, fork):
+                      _exit, setsid, fork):
             x = DaemonContext(workdir='/opt/workdir')
 
             fork.return_value = 0
@@ -522,7 +522,7 @@ if not current_app.IS_WINDOWS:
         @patch('os.fdopen')
         @patch(open_fqdn)
         def test_write_reread_fails(self, open_, fdopen,
-                osopen, getpid, fsync):
+                                    osopen, getpid, fsync):
             getpid.return_value = 1816
             osopen.return_value = 13
             w = fdopen.return_value = WhateverIO()

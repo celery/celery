@@ -49,14 +49,20 @@ class test_Signature(Case):
     def test_replace(self):
         x = Signature('TASK', ('A'), {})
         self.assertTupleEqual(x.replace(args=('B', )).args, ('B', ))
-        self.assertDictEqual(x.replace(kwargs={'FOO': 'BAR'}).kwargs,
-                {'FOO': 'BAR'})
-        self.assertDictEqual(x.replace(options={'task_id': '123'}).options,
-                {'task_id': '123'})
+        self.assertDictEqual(
+            x.replace(kwargs={'FOO': 'BAR'}).kwargs,
+            {'FOO': 'BAR'},
+        )
+        self.assertDictEqual(
+            x.replace(options={'task_id': '123'}).options,
+            {'task_id': '123'},
+        )
 
     def test_set(self):
-        self.assertDictEqual(Signature('TASK', x=1).set(task_id='2').options,
-                {'x': 1, 'task_id': '2'})
+        self.assertDictEqual(
+            Signature('TASK', x=1).set(task_id='2').options,
+            {'x': 1, 'task_id': '2'},
+        )
 
     def test_link(self):
         x = subtask(SIG)

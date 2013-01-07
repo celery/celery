@@ -26,7 +26,7 @@ class RPCBackend(amqp.AMQPBackend):
 
     def _create_exchange(self, name, type='direct', persistent=False):
         return self.Exchange('c.rep', type=type, delivery_mode=1,
-                durable=False, auto_delete=False)
+                             durable=False, auto_delete=False)
 
     def on_task_call(self, producer, task_id):
         maybe_declare(self.binding(producer.channel), retry=True)

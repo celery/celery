@@ -52,8 +52,11 @@ class test_TaskPool(Case):
             accept_callback = Mock()
             target = Mock()
             req = x.on_apply(target, args=(1, 2), kwargs={'a': 10},
-                callback=callback, accept_callback=accept_callback)
-            x.WorkRequest.assert_called_with(apply_target, (
-                target, (1, 2), {'a': 10}, callback, accept_callback))
+                             callback=callback,
+                             accept_callback=accept_callback)
+            x.WorkRequest.assert_called_with(
+                apply_target,
+                (target, (1, 2), {'a': 10}, callback, accept_callback),
+            )
             x._pool.putRequest.assert_called_with(req)
             x._pool._results_queue.queue.clear.assert_called_with()

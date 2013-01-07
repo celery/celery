@@ -51,7 +51,7 @@ warn = logger.warn
 
 
 def heartbeat_expires(timestamp, freq=60,
-        expire_window=HEARTBEAT_EXPIRE_WINDOW):
+                      expire_window=HEARTBEAT_EXPIRE_WINDOW):
     return timestamp + freq * (expire_window / 1e2)
 
 
@@ -275,7 +275,7 @@ class State(object):
     task_count = 0
 
     def __init__(self, callback=None,
-            max_workers_in_memory=5000, max_tasks_in_memory=10000):
+                 max_workers_in_memory=5000, max_tasks_in_memory=10000):
         self.max_workers_in_memory = max_workers_in_memory
         self.max_tasks_in_memory = 10000
         self.workers = LRUCache(limit=self.max_workers_in_memory)
@@ -303,8 +303,9 @@ class State(object):
 
     def _clear_tasks(self, ready=True):
         if ready:
-            in_progress = dict((uuid, task) for uuid, task in self.itertasks()
-                                if task.state not in states.READY_STATES)
+            in_progress = dict(
+                (uuid, task) for uuid, task in self.itertasks()
+                if task.state not in states.READY_STATES)
             self.tasks.clear()
             self.tasks.update(in_progress)
         else:
@@ -332,7 +333,7 @@ class State(object):
             return worker, False
         except KeyError:
             worker = self.workers[hostname] = Worker(
-                    hostname=hostname, **kwargs)
+                hostname=hostname, **kwargs)
             return worker, True
 
     def get_or_create_task(self, uuid):
@@ -416,17 +417,21 @@ class State(object):
         Returns a list of ``(uuid, Task)`` tuples.
 
         """
-        return islice(((uuid, task)
-                            for uuid, task in self.tasks_by_time()
-                                if task.name == name), 0, limit)
+        return islice(
+            ((uuid, task) for uuid, task in self.tasks_by_time()
+             if task.name == name),
+            0, limit,
+        )
 
     def tasks_by_worker(self, hostname, limit=None):
         """Get all tasks by worker.
 
         """
-        return islice(((uuid, task)
-                        for uuid, task in self.tasks_by_time()
-                            if task.worker.hostname == hostname), 0, limit)
+        return islice(
+            ((uuid, task) for uuid, task in self.tasks_by_time()
+             if task.worker.hostname == hostname),
+            0, limit,
+        )
 
     def task_types(self):
         """Returns a list of all seen task types."""
@@ -438,7 +443,7 @@ class State(object):
 
     def __repr__(self):
         return '<State: events={0.event_count} tasks={0.task_count}>' \
-                    .format(self)
+            .format(self)
 
 
 state = State()

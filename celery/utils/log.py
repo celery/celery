@@ -99,7 +99,7 @@ class ColorFormatter(logging.Formatter):
                 record.msg = safe_str(str_t(color(record.msg)))
             except Exception as exc:
                 record.msg = '<Unrepresentable {0!r}: {1!r}>'.format(
-                        type(record.msg), exc)
+                    type(record.msg), exc)
                 record.exc_info = True
 
         if not PY3 and 'processName' not in record.__dict__:
@@ -243,7 +243,7 @@ def _patch_logger_class():
                 def log(self, *args, **kwargs):
                     if _in_sighandler:
                         print('CANNOT LOG IN SIGHANDLER',  # noqa
-                                file=sys.__stderr__)
+                              file=sys.__stderr__)
                         return
                     return OldLoggerClass.log(self, *args, **kwargs)
             logging.setLoggerClass(SigSafeLogger)

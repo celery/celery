@@ -60,8 +60,8 @@ def worker_direct(hostname):
                  auto_delete=True)
 
 
-def warn_deprecated(description=None, deprecation=None, removal=None,
-        alternative=None):
+def warn_deprecated(description=None, deprecation=None,
+                    removal=None, alternative=None):
     ctx = {'description': description,
            'deprecation': deprecation, 'removal': removal,
            'alternative': alternative}
@@ -72,8 +72,8 @@ def warn_deprecated(description=None, deprecation=None, removal=None,
     warnings.warn(w)
 
 
-def deprecated(description=None, deprecation=None, removal=None,
-        alternative=None):
+def deprecated(description=None, deprecation=None,
+               removal=None, alternative=None):
 
     def _inner(fun):
 
@@ -264,8 +264,8 @@ def nodesplit(nodename):
 # > XXX Compat
 from .log import LOG_LEVELS     # noqa
 from .imports import (          # noqa
-        qualname as get_full_cls_name, symbol_by_name as get_cls_by_name,
-        instantiate, import_from_cwd
+    qualname as get_full_cls_name, symbol_by_name as get_cls_by_name,
+    instantiate, import_from_cwd
 )
 from .functional import chunks, noop                    # noqa
 from kombu.utils import cached_property, kwdict, uuid   # noqa

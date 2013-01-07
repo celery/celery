@@ -24,7 +24,7 @@ def get_loader_cls(loader):
 
 
 @deprecated(deprecation='2.5', removal='4.0',
-        alternative='celery.current_app.loader')
+            alternative='celery.current_app.loader')
 def current_loader():
     return current_app.loader
 

@@ -30,7 +30,7 @@ class Task(ResultModelBase):
     status = sa.Column(sa.String(50), default=states.PENDING)
     result = sa.Column(PickleType, nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
-                       onupdate=datetime.utcnow, nullable=True)
+                          onupdate=datetime.utcnow, nullable=True)
     traceback = sa.Column(sa.Text, nullable=True)
 
     def __init__(self, task_id):
@@ -53,11 +53,11 @@ class TaskSet(ResultModelBase):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = sa.Column(sa.Integer, sa.Sequence('taskset_id_sequence'),
-                autoincrement=True, primary_key=True)
+                   autoincrement=True, primary_key=True)
     taskset_id = sa.Column(sa.String(255), unique=True)
     result = sa.Column(sa.PickleType, nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
-                       nullable=True)
+                          nullable=True)
 
     def __init__(self, taskset_id, result):
         self.taskset_id = taskset_id

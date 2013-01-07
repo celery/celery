@@ -25,14 +25,14 @@ if not current_app.IS_WINDOWS:
             context.__exit__ = Mock()
 
             detach('/bin/boo', ['a', 'b', 'c'], logfile='/var/log',
-                    pidfile='/var/pid')
+                   pidfile='/var/pid')
             detached.assert_called_with('/var/log', '/var/pid', None, None, 0,
                                         None, False)
             execv.assert_called_with('/bin/boo', ['/bin/boo', 'a', 'b', 'c'])
 
             execv.side_effect = Exception('foo')
-            r = detach('/bin/boo', ['a', 'b', 'c'], logfile='/var/log',
-                    pidfile='/var/pid')
+            r = detach('/bin/boo', ['a', 'b', 'c'],
+                       logfile='/var/log', pidfile='/var/pid')
             context.__enter__.assert_called_with()
             self.assertTrue(logger.critical.called)
             setup_logs.assert_called_with('ERROR', '/var/log')
@@ -84,7 +84,8 @@ class test_Command(Case):
         x = detached_celeryd()
         x.execute_from_commandline(self.argv)
         self.assertTrue(exit.called)
-        detach.assert_called_with(path=x.execv_path, uid=None, gid=None,
+        detach.assert_called_with(
+            path=x.execv_path, uid=None, gid=None,
             umask=0, fake=False, logfile='/var/log', pidfile='celeryd.pid',
             argv=['-m', 'celery', 'worker', '-c', '1', '-lDEBUG',
                   '--logfile=/var/log', '--pidfile=celeryd.pid',

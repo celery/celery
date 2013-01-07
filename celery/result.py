@@ -31,8 +31,9 @@ def from_serializable(r):
         id = parent = None
         res, nodes = r
         if nodes:
-            return GroupResult(res,
-                        [from_serializable(child) for child in nodes])
+            return GroupResult(
+                res, [from_serializable(child) for child in nodes],
+            )
         if isinstance(res, (list, tuple)):
             id, parent = res[0], res[1]
         return AsyncResult(id, parent=parent)
@@ -65,7 +66,7 @@ class AsyncResult(ResultBase):
     parent = None
 
     def __init__(self, id, backend=None, task_name=None,
-            app=None, parent=None):
+                 app=None, parent=None):
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
@@ -123,8 +124,8 @@ class AsyncResult(ResultBase):
                 node.get(propagate=True, timeout=timeout, interval=interval)
 
         return self.backend.wait_for(self.id, timeout=timeout,
-                                              propagate=propagate,
-                                              interval=interval)
+                                     propagate=propagate,
+                                     interval=interval)
     wait = get  # deprecated alias to :meth:`get`.
 
     def _parents(self):
@@ -438,7 +439,7 @@ class ResultSet(ResultBase):
         """
         elapsed = 0.0
         results = OrderedDict((result.id, copy(result))
-                                for result in self.results)
+                              for result in self.results)
 
         while results:
             removed = set()
@@ -466,7 +467,7 @@ class ResultSet(ResultBase):
 
         """
         return (self.join_native if self.supports_native_join else self.join)(
-                    timeout=timeout, propagate=propagate, interval=interval)
+            timeout=timeout, propagate=propagate, interval=interval)
 
     def join(self, timeout=None, propagate=True, interval=0.5):
         """Gathers the results of all tasks as a list in order.

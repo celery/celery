@@ -29,9 +29,9 @@ from celery.five import items
 from celery.result import from_serializable, GroupResult
 from celery.utils import timeutils
 from celery.utils.serialization import (
-        get_pickled_exception,
-        get_pickleable_exception,
-        create_exception_cls,
+    get_pickled_exception,
+    get_pickleable_exception,
+    create_exception_cls,
 )
 
 EXCEPTION_ABLE_CODECS = frozenset(['pickle', 'yaml'])
@@ -58,16 +58,18 @@ class BaseBackend(object):
     #: If true the backend must implement :meth:`get_many`.
     supports_native_join = False
 
-    def __init__(self, app=None, serializer=None, max_cached_results=None,
-            **kwargs):
+    def __init__(self, app=None, serializer=None,
+                 max_cached_results=None, **kwargs):
         from celery.app import app_or_default
         self.app = app_or_default(app)
-        self.serializer = serializer or self.app.conf.CELERY_RESULT_SERIALIZER
+        conf = self.app.conf
+        self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         (self.content_type,
          self.content_encoding,
          self.encoder) = serialization.registry._encoders[self.serializer]
-        self._cache = LRUCache(limit=max_cached_results or
-                                      self.app.conf.CELERY_MAX_CACHED_RESULTS)
+        self._cache = LRUCache(
+            limit=max_cached_results or conf.CELERY_MAX_CACHED_RESULTS,
+        )
 
     def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
@@ -326,13 +328,13 @@ class KeyValueStoreBackend(BaseBackend):
         if hasattr(values, 'items'):
             # client returns dict so mapping preserved.
             return dict((self._strip_prefix(k), self.decode(v))
-                            for k, v in items(values)
-                                if v is not None)
+                        for k, v in items(values)
+                        if v is not None)
         else:
             # client returns list so need to recreate mapping.
             return dict((bytes_to_str(keys[i]), self.decode(value))
-                            for i, value in enumerate(values)
-                                if value is not None)
+                        for i, value in enumerate(values)
+                        if value is not None)
 
     def get_many(self, task_ids, timeout=None, interval=0.5):
         ids = set(task_ids)
@@ -352,7 +354,7 @@ class KeyValueStoreBackend(BaseBackend):
         while ids:
             keys = list(ids)
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
-                                                    for k in keys]), keys)
+                                                 for k in keys]), keys)
             self._cache.update(r)
             ids.difference_update(set(map(bytes_to_str, r)))
             for key, value in items(r):
@@ -431,6 +433,7 @@ class DisabledBackend(BaseBackend):
         pass
 
     def _is_disabled(self, *args, **kwargs):
-        raise NotImplementedError('No result backend configured.  '
-                'Please see the documentation for more information.')
+        raise NotImplementedError(
+            'No result backend configured.  '
+            'Please see the documentation for more information.')
     wait_for = get_status = get_result = get_traceback = _is_disabled

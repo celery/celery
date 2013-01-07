@@ -79,8 +79,8 @@ class ScheduleEntry(object):
     total_run_count = 0
 
     def __init__(self, name=None, task=None, last_run_at=None,
-            total_run_count=None, schedule=None, args=(), kwargs={},
-            options={}, relative=False):
+                 total_run_count=None, schedule=None, args=(), kwargs={},
+                 options={}, relative=False):
         self.name = name
         self.task = task
         self.args = args
@@ -96,9 +96,11 @@ class ScheduleEntry(object):
     def _next_instance(self, last_run_at=None):
         """Returns a new instance of the same class, but with
         its date and count fields updated."""
-        return self.__class__(**dict(self,
-                                last_run_at=last_run_at or self._default_now(),
-                                total_run_count=self.total_run_count + 1))
+        return self.__class__(**dict(
+            self,
+            last_run_at=last_run_at or self._default_now(),
+            total_run_count=self.total_run_count + 1,
+        ))
     __next__ = next = _next_instance  # for 2to3
 
     def update(self, other):
@@ -120,8 +122,10 @@ class ScheduleEntry(object):
         return iter(items(vars(self)))
 
     def __repr__(self):
-        return '<Entry: {0.name} {call} {0.schedule}'.format(self,
-            call=reprcall(self.task, self.args or (), self.kwargs or {}))
+        return '<Entry: {0.name} {call} {0.schedule}'.format(
+            self,
+            call=reprcall(self.task, self.args or (), self.kwargs or {}),
+        )
 
 
 class Scheduler(object):
@@ -148,12 +152,12 @@ class Scheduler(object):
     logger = logger  # compat
 
     def __init__(self, schedule=None, max_interval=None,
-            app=None, Publisher=None, lazy=False, **kwargs):
+                 app=None, Publisher=None, lazy=False, **kwargs):
         app = self.app = app_or_default(app)
         self.data = maybe_promise({} if schedule is None else schedule)
         self.max_interval = (max_interval
-                                or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
-                                or self.max_interval)
+                             or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
+                             or self.max_interval)
         self.Publisher = Publisher or app.amqp.TaskProducer
         if not lazy:
             self.setup_schedule()
@@ -163,9 +167,9 @@ class Scheduler(object):
         if self.app.conf.CELERY_TASK_RESULT_EXPIRES:
             if 'celery.backend_cleanup' not in data:
                 entries['celery.backend_cleanup'] = {
-                        'task': 'celery.backend_cleanup',
-                        'schedule': crontab('0', '4', '*'),
-                        'options': {'expires': 12 * 3600}}
+                    'task': 'celery.backend_cleanup',
+                    'schedule': crontab('0', '4', '*'),
+                    'options': {'expires': 12 * 3600}}
         self.update_from_dict(entries)
 
     def maybe_due(self, entry, publisher=None):
@@ -262,8 +266,9 @@ class Scheduler(object):
         return self.Entry(**dict(entry, name=name))
 
     def update_from_dict(self, dict_):
-        self.schedule.update(dict((name, self._maybe_entry(name, entry))
-                                for name, entry in items(dict_)))
+        self.schedule.update(dict(
+            (name, self._maybe_entry(name, entry))
+            for name, entry in items(dict_)))
 
     def merge_inplace(self, b):
         schedule = self.schedule
@@ -288,8 +293,9 @@ class Scheduler(object):
             error('beat: Connection error: %s. '
                   'Trying again in %s seconds...', exc, interval)
 
-        return self.connection.ensure_connection(_error_handler,
-                    self.app.conf.BROKER_CONNECTION_MAX_RETRIES)
+        return self.connection.ensure_connection(
+            _error_handler, self.app.conf.BROKER_CONNECTION_MAX_RETRIES
+        )
 
     def get_schedule(self):
         return self.data
@@ -365,8 +371,8 @@ class PersistentScheduler(Scheduler):
         self.install_default_entries(self.schedule)
         self._store.update(__version__=__version__, tz=tz, utc_enabled=utc)
         self.sync()
-        debug('Current schedule:\n' + '\n'.join(repr(entry)
-                                    for entry in values(entries)))
+        debug('Current schedule:\n' + '\n'.join(
+            repr(entry) for entry in values(entries)))
 
     def get_schedule(self):
         return self._store['entries']
@@ -392,13 +398,13 @@ class Service(object):
     scheduler_cls = PersistentScheduler
 
     def __init__(self, max_interval=None, schedule_filename=None,
-            scheduler_cls=None, app=None):
+                 scheduler_cls=None, app=None):
         app = self.app = app_or_default(app)
         self.max_interval = (max_interval
                              or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL)
         self.scheduler_cls = scheduler_cls or self.scheduler_cls
-        self.schedule_filename = schedule_filename or \
-                                    app.conf.CELERYBEAT_SCHEDULE_FILENAME
+        self.schedule_filename = (
+            schedule_filename or app.conf.CELERYBEAT_SCHEDULE_FILENAME)
 
         self._is_shutdown = Event()
         self._is_stopped = Event()

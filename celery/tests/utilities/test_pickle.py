@@ -35,8 +35,9 @@ class test_Pickle(Case):
 
         exc = None
         try:
-            raise ArgOverrideException('ArgOverrideException raised',
-                    status_code=100)
+            raise ArgOverrideException(
+                'ArgOverrideException raised', status_code=100,
+            )
         except ArgOverrideException as exc_:
             exc = exc_
 

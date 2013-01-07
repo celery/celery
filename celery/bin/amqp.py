@@ -90,8 +90,8 @@ class Spec(object):
             ('pobox', True)
 
         """
-        return tuple(self.coerce(index, value)
-                for index, value in enumerate(arglist))
+        return tuple(
+            self.coerce(index, value) for index, value in enumerate(arglist))
 
     def format_response(self, response):
         """Format the return value of this command in a human-friendly way."""
@@ -110,7 +110,7 @@ class Spec(object):
 
     def format_signature(self):
         return ' '.join(self.format_arg(*padlist(list(arg), 3))
-                            for arg in self.args)
+                        for arg in self.args)
 
 
 def dump_message(message):
@@ -256,11 +256,11 @@ class AMQShell(cmd.Cmd):
         """Return all commands starting with `text`, for tab-completion."""
         names = self.get_names()
         first = [cmd for cmd in names
-                        if cmd.startswith(text.replace('_', '.'))]
+                 if cmd.startswith(text.replace('_', '.'))]
         if first:
             return first
         return [cmd for cmd in names
-                    if cmd.partition('.')[2].startswith(text)]
+                if cmd.partition('.')[2].startswith(text)]
 
     def dispatch(self, cmd, argline):
         """Dispatch and execute the command.

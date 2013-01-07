@@ -144,9 +144,10 @@ class TaskPool(base.BasePool):
         signals.eventlet_pool_postshutdown.send(sender=self)
 
     def on_apply(self, target, args=None, kwargs=None, callback=None,
-            accept_callback=None, **_):
-        self._quick_apply_sig(sender=self,
-                target=target, args=args, kwargs=kwargs)
+                 accept_callback=None, **_):
+        self._quick_apply_sig(
+            sender=self, target=target, args=args, kwargs=kwargs,
+        )
         self._quick_put(apply_target, target, args, kwargs,
                         callback, accept_callback,
                         self.getpid)

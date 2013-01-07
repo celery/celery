@@ -58,7 +58,8 @@ class StepFormatter(GraphFormatter):
     }
 
     def label(self, step):
-        return step and '{0}{1}'.format(self._get_prefix(step),
+        return step and '{0}{1}'.format(
+            self._get_prefix(step),
             (step.label or _label(step)).encode('utf-8', 'ignore'),
         )
 
@@ -97,8 +98,8 @@ class Namespace(object):
     started = 0
     default_steps = set()
 
-    def __init__(self, steps=None, name=None, app=None, on_start=None,
-            on_close=None, on_stopped=None):
+    def __init__(self, steps=None, name=None, app=None,
+                 on_start=None, on_close=None, on_stopped=None):
         self.app = app
         self.name = name or self.name or qualname(type(self))
         self.types = set(steps or []) | set(self.default_steps)

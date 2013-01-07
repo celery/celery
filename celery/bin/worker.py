@@ -172,8 +172,8 @@ class worker(Command):
                 loglevel = mlevel(loglevel)
             except KeyError:  # pragma: no cover
                 self.die('Unknown level {0!r}. Please use one of {1}.'.format(
-                    loglevel, '|'.join(l for l in LOG_LEVELS
-                      if isinstance(l, string_t))))
+                    loglevel, '|'.join(
+                        l for l in LOG_LEVELS if isinstance(l, string_t))))
 
         return self.app.Worker(
             hostname=hostname, pool_cls=pool_cls, loglevel=loglevel, **kwargs
@@ -188,25 +188,25 @@ class worker(Command):
         conf = self.app.conf
         return (
             Option('-c', '--concurrency',
-                default=conf.CELERYD_CONCURRENCY, type='int'),
+                   default=conf.CELERYD_CONCURRENCY, type='int'),
             Option('-P', '--pool', default=conf.CELERYD_POOL, dest='pool_cls'),
             Option('--purge', '--discard', default=False, action='store_true'),
             Option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL),
             Option('-n', '--hostname'),
             Option('-B', '--beat', action='store_true'),
             Option('-s', '--schedule', dest='schedule_filename',
-                default=conf.CELERYBEAT_SCHEDULE_FILENAME),
+                   default=conf.CELERYBEAT_SCHEDULE_FILENAME),
             Option('--scheduler', dest='scheduler_cls'),
             Option('-S', '--statedb',
-                default=conf.CELERYD_STATE_DB, dest='state_db'),
+                   default=conf.CELERYD_STATE_DB, dest='state_db'),
             Option('-E', '--events', default=conf.CELERY_SEND_EVENTS,
-                action='store_true', dest='send_events'),
+                   action='store_true', dest='send_events'),
             Option('--time-limit', type='float', dest='task_time_limit',
-                default=conf.CELERYD_TASK_TIME_LIMIT),
+                   default=conf.CELERYD_TASK_TIME_LIMIT),
             Option('--soft-time-limit', dest='task_soft_time_limit',
-                default=conf.CELERYD_TASK_SOFT_TIME_LIMIT, type='float'),
+                   default=conf.CELERYD_TASK_SOFT_TIME_LIMIT, type='float'),
             Option('--maxtasksperchild', dest='max_tasks_per_child',
-                default=conf.CELERYD_MAX_TASKS_PER_CHILD, type='int'),
+                   default=conf.CELERYD_MAX_TASKS_PER_CHILD, type='int'),
             Option('--queues', '-Q', default=[]),
             Option('--include', '-I', default=[]),
             Option('--autoscale'),

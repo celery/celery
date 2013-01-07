@@ -48,7 +48,7 @@ class Queues(dict):
     _consume_from = None
 
     def __init__(self, queues=None, default_exchange=None,
-            create_missing=True, ha_policy=None):
+                 create_missing=True, ha_policy=None):
         dict.__init__(self)
         self.aliases = WeakValueDictionary()
         self.default_exchange = default_exchange
@@ -120,7 +120,7 @@ class Queues(dict):
         if not active:
             return ''
         info = [QUEUE_FORMAT.strip().format(q)
-                    for _, q in sorted(items(active))]
+                for _, q in sorted(items(active))]
         if indent_first:
             return textindent('\n'.join(info), indent)
         return info[0] + '\n' + textindent('\n'.join(info[1:]), indent)
@@ -167,22 +167,22 @@ class TaskProducer(Producer):
     def __init__(self, channel=None, exchange=None, *args, **kwargs):
         self.retry = kwargs.pop('retry', self.retry)
         self.retry_policy = kwargs.pop('retry_policy',
-                                        self.retry_policy or {})
+                                       self.retry_policy or {})
         exchange = exchange or self.exchange
         self.queues = self.app.amqp.queues  # shortcut
         self.default_queue = self.app.amqp.default_queue
         super(TaskProducer, self).__init__(channel, exchange, *args, **kwargs)
 
     def publish_task(self, task_name, task_args=None, task_kwargs=None,
-            countdown=None, eta=None, task_id=None, group_id=None,
-            taskset_id=None,  # compat alias to group_id
-            expires=None, exchange=None, exchange_type=None,
-            event_dispatcher=None, retry=None, retry_policy=None,
-            queue=None, now=None, retries=0, chord=None, callbacks=None,
-            errbacks=None, routing_key=None, serializer=None,
-            delivery_mode=None, compression=None, reply_to=None,
-            timeout=None, soft_timeout=None, timeouts=None,
-            declare=None, **kwargs):
+                     countdown=None, eta=None, task_id=None, group_id=None,
+                     taskset_id=None,  # compat alias to group_id
+                     expires=None, exchange=None, exchange_type=None,
+                     event_dispatcher=None, retry=None, retry_policy=None,
+                     queue=None, now=None, retries=0, chord=None,
+                     callbacks=None, errbacks=None, routing_key=None,
+                     serializer=None, delivery_mode=None, compression=None,
+                     reply_to=None, timeout=None, soft_timeout=None,
+                     timeouts=None, declare=None, **kwargs):
         """Send task message."""
         retry = self.retry if retry is None else retry
 
@@ -201,7 +201,7 @@ class TaskProducer(Producer):
         # merge default and custom policy
         retry = self.retry if retry is None else retry
         _rp = (dict(self.retry_policy, **retry_policy) if retry_policy
-                                                       else self.retry_policy)
+               else self.retry_policy)
         task_id = task_id or uuid()
         task_args = task_args or []
         task_kwargs = task_kwargs or {}
@@ -235,29 +235,33 @@ class TaskProducer(Producer):
             'chord': chord,
         }
 
-        self.publish(body,
-             exchange=exchange, routing_key=routing_key,
-             serializer=serializer or self.serializer,
-             compression=compression or self.compression,
-             retry=retry, retry_policy=_rp,
-             delivery_mode=delivery_mode, declare=declare,
-             **kwargs)
+        self.publish(
+            body,
+            exchange=exchange, routing_key=routing_key,
+            serializer=serializer or self.serializer,
+            compression=compression or self.compression,
+            retry=retry, retry_policy=_rp,
+            delivery_mode=delivery_mode, declare=declare,
+            **kwargs
+        )
 
         signals.task_sent.send(sender=task_name, **body)
         if event_dispatcher:
             exname = exchange or self.exchange
             if isinstance(exname, Exchange):
                 exname = exname.name
-            event_dispatcher.send('task-sent', uuid=task_id,
-                                               name=task_name,
-                                               args=safe_repr(task_args),
-                                               kwargs=safe_repr(task_kwargs),
-                                               retries=retries,
-                                               eta=eta,
-                                               expires=expires,
-                                               queue=qname,
-                                               exchange=exname,
-                                               routing_key=routing_key)
+            event_dispatcher.send(
+                'task-sent', uuid=task_id,
+                name=task_name,
+                args=safe_repr(task_args),
+                kwargs=safe_repr(task_kwargs),
+                retries=retries,
+                eta=eta,
+                expires=expires,
+                queue=qname,
+                exchange=exname,
+                routing_key=routing_key,
+            )
         return task_id
     delay_task = publish_task   # XXX Compat
 
@@ -269,7 +273,7 @@ class TaskPublisher(TaskProducer):
         self.app = app_or_default(kwargs.pop('app', self.app))
         self.retry = kwargs.pop('retry', self.retry)
         self.retry_policy = kwargs.pop('retry_policy',
-                                        self.retry_policy or {})
+                                       self.retry_policy or {})
         exchange = exchange or self.exchange
         if not isinstance(exchange, Exchange):
             exchange = Exchange(exchange,
@@ -283,9 +287,10 @@ class TaskConsumer(Consumer):
 
     def __init__(self, channel, queues=None, app=None, **kw):
         self.app = app or self.app
-        super(TaskConsumer, self).__init__(channel,
-                queues or list(self.app.amqp.queues.consume_from.values()),
-                **kw)
+        super(TaskConsumer, self).__init__(
+            channel,
+            queues or list(self.app.amqp.queues.consume_from.values()), **kw
+        )
 
 
 class AMQP(object):
@@ -344,15 +349,17 @@ class AMQP(object):
 
         """
         conf = self.app.conf
-        return self.app.subclass_with_self(TaskProducer,
-                reverse='amqp.TaskProducer',
-                exchange=self.default_exchange,
-                routing_key=conf.CELERY_DEFAULT_ROUTING_KEY,
-                serializer=conf.CELERY_TASK_SERIALIZER,
-                compression=conf.CELERY_MESSAGE_COMPRESSION,
-                retry=conf.CELERY_TASK_PUBLISH_RETRY,
-                retry_policy=conf.CELERY_TASK_PUBLISH_RETRY_POLICY,
-                utc=conf.CELERY_ENABLE_UTC)
+        return self.app.subclass_with_self(
+            TaskProducer,
+            reverse='amqp.TaskProducer',
+            exchange=self.default_exchange,
+            routing_key=conf.CELERY_DEFAULT_ROUTING_KEY,
+            serializer=conf.CELERY_TASK_SERIALIZER,
+            compression=conf.CELERY_MESSAGE_COMPRESSION,
+            retry=conf.CELERY_TASK_PUBLISH_RETRY,
+            retry_policy=conf.CELERY_TASK_PUBLISH_RETRY_POLICY,
+            utc=conf.CELERY_ENABLE_UTC,
+        )
     TaskPublisher = TaskProducer  # compat
 
     @cached_property

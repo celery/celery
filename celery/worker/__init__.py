@@ -112,7 +112,7 @@ class WorkController(configurated):
         self.setup_instance(**self.prepare_args(**kwargs))
 
     def setup_instance(self, queues=None, ready_callback=None,
-            pidfile=None, include=None, **kwargs):
+                       pidfile=None, include=None, **kwargs):
         self.pidfile = pidfile
         self.setup_defaults(kwargs, namespace='celeryd')
         self.setup_queues(queues)
@@ -174,7 +174,7 @@ class WorkController(configurated):
             self.app.select_queues(queues)
         except KeyError as exc:
             raise ImproperlyConfigured(
-                    UNKNOWN_QUEUE.format(queues, exc))
+                UNKNOWN_QUEUE.format(queues, exc))
         if self.app.conf.CELERY_WORKER_DIRECT:
             self.app.amqp.queues.select_add(worker_direct(self.hostname))
 
@@ -188,7 +188,7 @@ class WorkController(configurated):
             inc = self.app.conf.CELERY_INCLUDE = tuple(inc) + tuple(includes)
         self.include = includes
         task_modules = set(task.__class__.__module__
-                            for task in values(self.app.tasks))
+                           for task in values(self.app.tasks))
         self.app.conf.CELERY_INCLUDE = tuple(set(inc) | task_modules)
 
     def prepare_args(self, **kwargs):

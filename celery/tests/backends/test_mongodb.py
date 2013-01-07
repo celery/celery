@@ -250,8 +250,10 @@ class test_MongoBackend(AppCase):
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
         mock_collection.find_one.assert_called_once_with(
             {'_id': sentinel.taskset_id})
-        self.assertEquals(['date_done', 'result', 'task_id'],
-                list(ret_val.keys()))
+        self.assertEquals(
+            ['date_done', 'result', 'task_id'],
+            list(ret_val.keys()),
+        )
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_delete_group(self, mock_get_database):

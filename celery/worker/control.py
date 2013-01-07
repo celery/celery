@@ -199,8 +199,8 @@ def dump_tasks(panel, taskinfoitems=None, **kwargs):
 
     def _extract_info(task):
         fields = dict((field, str(getattr(task, field, None)))
-                            for field in taskinfoitems
-                                if getattr(task, field, None) is not None)
+                      for field in taskinfoitems
+                      if getattr(task, field, None) is not None)
         if fields:
             info = ['='.join(f) for f in items(fields)]
             return '{0} [{1}]'.format(task.name, ' '.join(info))
@@ -255,7 +255,7 @@ def shutdown(panel, msg='Got shutdown from remote', **kwargs):
 
 @Panel.register
 def add_consumer(panel, queue, exchange=None, exchange_type=None,
-        routing_key=None, **options):
+                 routing_key=None, **options):
     panel.consumer.add_task_queue(queue, exchange, exchange_type,
                                   routing_key, **options)
     return {'ok': 'add consumer {0}'.format(queue)}
@@ -271,7 +271,7 @@ def cancel_consumer(panel, queue=None, **_):
 def active_queues(panel):
     """Returns the queues associated with each worker."""
     return [dict(queue.as_dict(recurse=True))
-                    for queue in panel.consumer.task_consumer.queues]
+            for queue in panel.consumer.task_consumer.queues]
 
 
 @Panel.register

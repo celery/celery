@@ -70,10 +70,14 @@ class test_Command(AppCase):
         self.assertIn('bar', self.cmd.pretty(['foo', 'bar'])[1])
 
     def test_pretty_dict(self):
-        self.assertIn('OK',
-            str(self.cmd.pretty({'ok': 'the quick brown fox'})[0]))
-        self.assertIn('ERROR',
-            str(self.cmd.pretty({'error': 'the quick brown fox'})[0]))
+        self.assertIn(
+            'OK',
+            str(self.cmd.pretty({'ok': 'the quick brown fox'})[0]),
+        )
+        self.assertIn(
+            'ERROR',
+            str(self.cmd.pretty({'error': 'the quick brown fox'})[0]),
+        )
 
     def test_pretty(self):
         self.assertIn('OK', str(self.cmd.pretty('the quick brown')))

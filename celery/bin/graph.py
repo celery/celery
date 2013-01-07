@@ -135,7 +135,7 @@ class graph(Command):
             abbr = max and size > max
             if 'enumerate' in args:
                 l = ['{0}{1}'.format(name, subscript(i + 1))
-                        for i, obj in enumerate(l)]
+                     for i, obj in enumerate(l)]
             if abbr:
                 l = l[0:max - 1] + [l[size - 1]]
                 l[max - 2] = '{0}⎨…{1}⎬'.format(

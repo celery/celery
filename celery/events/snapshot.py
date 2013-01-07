@@ -35,7 +35,7 @@ class Polaroid(object):
     _ctref = None
 
     def __init__(self, state, freq=1.0, maxrate=None,
-            cleanup_freq=3600.0, timer=None, app=None):
+                 cleanup_freq=3600.0, timer=None, app=None):
         self.app = app_or_default(app)
         self.state = state
         self.freq = freq
@@ -86,7 +86,7 @@ class Polaroid(object):
 
 
 def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
-        logfile=None, pidfile=None, timer=None, app=None):
+          logfile=None, pidfile=None, timer=None, app=None):
     app = app_or_default(app)
 
     if pidfile:
@@ -95,7 +95,7 @@ def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
     app.log.setup_logging_subsystem(loglevel, logfile)
 
     print('-> evcam: Taking snapshots with {0} (every {1} secs.)'.format(
-                camera, freq))
+        camera, freq))
     state = app.events.State()
     cam = instantiate(camera, state, app=app, freq=freq,
                       maxrate=maxrate, timer=timer)

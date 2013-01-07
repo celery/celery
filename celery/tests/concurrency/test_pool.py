@@ -59,7 +59,7 @@ class test_TaskPool(Case):
         self.assertEqual(res.get(), 100)
         time.sleep(0.5)
         self.assertDictContainsSubset({'ret_value': 100},
-                                       scratchpad.get(0))
+                                      scratchpad.get(0))
 
         self.assertIsInstance(res2.get(), ExceptionInfo)
         self.assertTrue(scratchpad.get(1))
@@ -67,17 +67,17 @@ class test_TaskPool(Case):
         self.assertIsInstance(scratchpad[1]['ret_value'],
                               ExceptionInfo)
         self.assertEqual(scratchpad[1]['ret_value'].exception.args,
-                          ('FOO EXCEPTION', ))
+                         ('FOO EXCEPTION', ))
 
         self.assertEqual(res3.get(), 400)
         time.sleep(0.5)
         self.assertDictContainsSubset({'ret_value': 400},
-                                       scratchpad.get(2))
+                                      scratchpad.get(2))
 
         res3 = p.apply_async(do_something, args=[30], callback=mycallback)
 
         self.assertEqual(res3.get(), 900)
         time.sleep(0.5)
         self.assertDictContainsSubset({'ret_value': 900},
-                                       scratchpad.get(3))
+                                      scratchpad.get(3))
         p.stop()

@@ -62,11 +62,12 @@ class test_DatabaseBackend(Case):
 
     def test_missing_task_meta_is_dict_with_pending(self):
         tb = DatabaseBackend()
-        self.assertDictContainsSubset(
-            {'status': states.PENDING,
-             'task_id': 'xxx-does-not-exist-at-all',
-             'result': None,
-             'traceback': None}, tb.get_task_meta('xxx-does-not-exist-at-all'))
+        self.assertDictContainsSubset({
+            'status': states.PENDING,
+            'task_id': 'xxx-does-not-exist-at-all',
+            'result': None,
+            'traceback': None
+        }, tb.get_task_meta('xxx-does-not-exist-at-all'))
 
     def test_mark_as_done(self):
         tb = DatabaseBackend()

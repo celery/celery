@@ -21,7 +21,7 @@ logger = get_logger('celery.pool')
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,
-        accept_callback=None, pid=None, **_):
+                 accept_callback=None, pid=None, **_):
     if accept_callback:
         accept_callback(pid or os.getpid(), time.time())
     callback(target(*args, **kwargs))
@@ -56,8 +56,8 @@ class BasePool(object):
     #: only used by multiprocessing pool
     uses_semaphore = False
 
-    def __init__(self, limit=None, putlocks=True, forking_enable=True,
-            **options):
+    def __init__(self, limit=None, putlocks=True,
+                 forking_enable=True, **options):
         self.limit = limit
         self.putlocks = putlocks
         self.options = options
@@ -93,11 +93,11 @@ class BasePool(object):
 
     def terminate_job(self, pid):
         raise NotImplementedError(
-                '{0} does not implement kill_job'.format(type(self)))
+            '{0} does not implement kill_job'.format(type(self)))
 
     def restart(self):
         raise NotImplementedError(
-                '{0} does not implement restart'.format(type(self)))
+            '{0} does not implement restart'.format(type(self)))
 
     def stop(self):
         self.on_stop()

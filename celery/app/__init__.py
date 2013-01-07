@@ -15,10 +15,10 @@ from collections import Callable
 from celery.local import Proxy
 from celery import _state
 from celery._state import (  # noqa
-        set_default_app,
-        get_current_app as current_app,
-        get_current_task as current_task,
-        _get_active_apps,
+    set_default_app,
+    get_current_app as current_app,
+    get_current_task as current_task,
+    _get_active_apps,
 )
 from celery.utils import gen_task_name
 
@@ -126,8 +126,9 @@ def shared_task(*args, **kwargs):
             # apps task registry.
             def task_by_cons():
                 app = current_app()
-                return app.tasks[name or gen_task_name(app,
-                            fun.__name__, fun.__module__)]
+                return app.tasks[
+                    name or gen_task_name(app, fun.__name__, fun.__module__)
+                ]
             return Proxy(task_by_cons)
         return __inner
 

@@ -96,8 +96,9 @@ class Settings(datastructures.ConfigurationView):
     def humanize(self):
         """Returns a human readable string showing changes to the
         configuration."""
-        return '\n'.join('{0}: {1}'.format(key, pretty(value, width=50))
-                        for key, value in items(self.without_defaults()))
+        return '\n'.join(
+            '{0}: {1}'.format(key, pretty(value, width=50))
+            for key, value in items(self.without_defaults()))
 
 
 class AppPickler(object):
@@ -116,7 +117,7 @@ class AppPickler(object):
         return self.build_standard_kwargs(*args)
 
     def build_standard_kwargs(self, main, changes, loader, backend, amqp,
-            events, log, control, accept_magic_kwargs):
+                              events, log, control, accept_magic_kwargs):
         return dict(main=main, loader=loader, backend=backend, amqp=amqp,
                     changes=changes, events=events, log=log, control=control,
                     set_as_current=False,
