@@ -113,7 +113,7 @@ class AMQPBackend(BaseBackend):
             content_type=content_type,
             content_encoding=content_encoding,
             retry=True, retry_policy=self.retry_policy,
-            declare=[self.on_reply_declare(task_id)],
+            declare=self.on_reply_declare(task_id),
         )
 
     def _store_result(self, task_id, result, status, traceback=None):
