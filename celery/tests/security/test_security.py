@@ -77,7 +77,7 @@ class test_security(SecurityCase):
             store = Mock()
             setup_security(['json'], key, cert, store)
             dis.assert_called_with(['json'])
-            reg.assert_called_with('A', 'B', store)
+            reg.assert_called_with('A', 'B', store, 'sha1', 'json')
 
     def test_security_conf(self):
         current_app.conf.CELERY_TASK_SERIALIZER = 'auth'
