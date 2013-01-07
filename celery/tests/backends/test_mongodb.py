@@ -100,7 +100,7 @@ class test_MongoBackend(AppCase):
 
             connection = self.backend._get_connection()
             mock_Connection.assert_called_once_with(
-                MONGODB_HOST, MONGODB_PORT)
+                MONGODB_HOST, MONGODB_PORT, max_pool_size=10)
             self.assertEquals(sentinel.connection, connection)
 
     def test_get_connection_no_connection_mongodb_uri(self):
@@ -113,7 +113,8 @@ class test_MongoBackend(AppCase):
             mock_Connection.return_value = sentinel.connection
 
             connection = self.backend._get_connection()
-            mock_Connection.assert_called_once_with(mongodb_uri)
+            mock_Connection.assert_called_once_with(
+                mongodb_uri, max_pool_size=10)
             self.assertEquals(sentinel.connection, connection)
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
