@@ -13,7 +13,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.13
 ======
-:release-date: 2012-11-30 XX:XX:XX X.X UTC
+:release-date: 2013-01-07 04:00:00 P.M UTC
 
 - Now depends on Kombu 2.5
 
@@ -88,11 +88,27 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   (using ``result.ready()`` and friends, ``result.get()`` will not do this
   in this version).
 
+- Crontab schedule values can now "wrap around"
+
+    This means that values like ``11-1`` translates to ``[11, 12, 1]``.
+
+    Contributed by Loren Abrams.
+
+- multi stopwait command now shows the pid of processes.
+
+    Contributed by Loren Abrams.
+
 - Handling of ETA/countdown fixed when the :setting:`CELERY_ENABLE_UTC`
    setting is disabled (Issue #1065).
 
 - A number of uneeded properties were included in messages,
   caused by accidentally passing ``Queue.as_dict`` as message properties.
+
+- Rate limit values can now be float
+
+    This also extends the string format so that values like ``"0.5/s"`` works.
+
+    Contributed by Christoph Krybus
 
 - Fixed a typo in the broadcast routing documentation (Issue #1026).
 
@@ -111,6 +127,11 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Batches: Added example sending results to :mod:`celery.contrib.batches`.
 
     Contributed by Thomas Grainger.
+
+- Mongodb backend: Connection ``max_pool_size`` can now be set in
+  :setting:`CELERY_MONGODB_BACKEND_SETTINGS`.
+
+    Contributed by Craig Younkins.
 
 - Fixed problem when using earlier versions of :mod:`pytz`.
 
