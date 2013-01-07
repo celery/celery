@@ -1,23 +1,34 @@
-.. _changelog-3.0:
+.. _changelog:
 
 ================
  Change history
 ================
 
-This document contains change notes for bugfix releases in the 3.0.x series
-(Chiastic Slide), please see :ref:`whatsnew-3.0` for an overview of what's
-new in Celery 3.0.
-
-If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
-
 .. contents::
     :local:
+
+If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 .. _version-3.0.13:
 
 3.0.13
 ======
-:release-date: 2012-11-30 XX:XX:XX X.X UTC
+:release-date: 2013-01-07 04:00:00 P.M UTC
+
+- Now depends on Kombu 2.5
+
+    - py-amqp has replaced amqplib as the default transport,
+      gaining support for AMQP 0.9, and the RabbitMQ extensions
+      including Consumer Cancel Notifications and heartbeats.
+
+    - support for multiple connection URLs for failover.
+
+    - Read more in the `Kombu 2.5 changelog`_.
+
+    .. _`Kombu 2.5 changelog`:
+        http://kombu.readthedocs.org/en/latest/changelog.html#version-2-5-0
+
+- Now depends on billiard 2.7.3.19
 
 - Fixed a deadlock issue that could occur when the producer pool
   inherited the connection pool instance of the parent process.
@@ -41,7 +52,6 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
             4346501c-cb99-4ad8-8577-12256c7a22b1,
             b12ead10-a622-4d44-86e9-3193a778f345,
             26c7a420-11f3-4b33-8fac-66cd3b62abfd]>
-
 
 - Chains can now chain other chains and use partial arguments (Issue #1057).
 
@@ -78,11 +88,27 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   (using ``result.ready()`` and friends, ``result.get()`` will not do this
   in this version).
 
+- Crontab schedule values can now "wrap around"
+
+    This means that values like ``11-1`` translates to ``[11, 12, 1]``.
+
+    Contributed by Loren Abrams.
+
+- multi stopwait command now shows the pid of processes.
+
+    Contributed by Loren Abrams.
+
 - Handling of ETA/countdown fixed when the :setting:`CELERY_ENABLE_UTC`
    setting is disabled (Issue #1065).
 
 - A number of uneeded properties were included in messages,
   caused by accidentally passing ``Queue.as_dict`` as message properties.
+
+- Rate limit values can now be float
+
+    This also extends the string format so that values like ``"0.5/s"`` works.
+
+    Contributed by Christoph Krybus
 
 - Fixed a typo in the broadcast routing documentation (Issue #1026).
 
@@ -102,6 +128,11 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Contributed by Thomas Grainger.
 
+- Mongodb backend: Connection ``max_pool_size`` can now be set in
+  :setting:`CELERY_MONGODB_BACKEND_SETTINGS`.
+
+    Contributed by Craig Younkins.
+
 - Fixed problem when using earlier versions of :mod:`pytz`.
 
     Fix contributed by Vlad.
@@ -117,7 +148,6 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   the addition of new queues so that they survived connection failure
   (Issue #1079).
 
-.. _version-3.0.12:
 
 3.0.12
 ======
@@ -618,6 +648,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Fixed broken ``dump_request`` example in the tasks guide.
 
+
+
 .. _version-3.0.5:
 
 3.0.5
@@ -774,6 +806,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     - ``Celery.default_producer()``   ➠  :meth:`~@Celery.producer_or_acquire`.
 
     The old names still work for backward compatibility.
+
 
 .. _version-3.0.3:
 
