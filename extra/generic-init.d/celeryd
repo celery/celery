@@ -185,7 +185,7 @@ case "$1" in
 
     status)
         (
-            chdir "$CELERYD_CHDIR"
+            cd "$CELERYD_CHDIR"
             $CELERYCTL $CELERY_APP_ARG status $CELERYCTL_OPTS
         )
     ;;
