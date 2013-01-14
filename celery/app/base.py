@@ -18,6 +18,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
 
+from billiard import forking as _forking
 from billiard.util import register_after_fork
 from kombu.clocks import LamportClock
 from kombu.utils import cached_property
@@ -63,7 +64,8 @@ class Celery(object):
     def __init__(self, main=None, loader=None, backend=None,
                  amqp=None, events=None, log=None, control=None,
                  set_as_current=True, accept_magic_kwargs=False,
-                 tasks=None, broker=None, include=None, **kwargs):
+                 tasks=None, broker=None, include=None, changes=None,
+                 **kwargs):
         self.clock = LamportClock()
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
@@ -88,7 +90,7 @@ class Celery(object):
 
         # these options are moved to the config to
         # simplify pickling of the app object.
-        self._preconf = {}
+        self._preconf = changes or {}
         if broker:
             self._preconf['BROKER_URL'] = broker
         if include:
@@ -408,7 +410,14 @@ class Celery(object):
         )
 
     def __reduce_args__(self):
-        return (self.main, self.conf.changes, self.loader_cls,
+        # _pickleable_changes will also try to include keys from configuration
+        # modules which is necessary when multiprocessing execv/fork emulation
+        # is enabled.  There may be a better way to do this, but attempts
+        # at forcing the subprocess to import the modules did not work out,
+        # apparently some sys.path problem.  More at Issue 1126.
+        conf = (self.conf.changes if _forking._forking_is_enabled
+                else self.conf._pickleable_changes())
+        return (self.main, conf, self.loader_cls,
                 self.backend_cls, self.amqp_cls, self.events_cls,
                 self.log_cls, self.control_cls, self.accept_magic_kwargs)
 

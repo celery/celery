@@ -10,9 +10,10 @@ from __future__ import absolute_import
 
 import os
 import platform as _platform
+import types
 
-from celery import datastructures
 from celery import platforms
+from celery.datastructures import ConfigurationView, DictAttribute
 from celery.utils.text import pretty
 from celery.utils.imports import qualname
 
@@ -30,7 +31,7 @@ settings -> transport:%(transport)s results:%(results)s
 """
 
 
-class Settings(datastructures.ConfigurationView):
+class Settings(ConfigurationView):
     """Celery settings object."""
 
     @property
@@ -61,6 +62,20 @@ class Settings(datastructures.ConfigurationView):
         """Returns the current configuration, but without defaults."""
         # the last stash is the default settings, so just skip that
         return Settings({}, self._order[:-1])
+
+    def _pickleable_changes(self):
+        # attempt to include keys from configuration modules,
+        # to work with multiprocessing execv/fork emulation.
+        # see note at celery.app.base:Celery.__reduce_args__.
+        R = {}
+        for d in reversed(self._order[:-1]):
+            if isinstance(d, DictAttribute):
+                d = object.__getattribute__(d, 'obj')
+                if isinstance(d, types.ModuleType):
+                    d = dict((k, v) for k, v in vars(d).iteritems()
+                             if not k.startswith('__') and k.isupper())
+            R.update(d)
+        return R
 
     def find_option(self, name, namespace='celery'):
         """Search for option by name.
