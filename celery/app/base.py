@@ -18,6 +18,7 @@ from copy import deepcopy
 from functools import wraps
 from operator import attrgetter
 
+from billiard import forking as _forking
 from billiard.util import register_after_fork
 from kombu.clocks import LamportClock
 from kombu.utils import cached_property
@@ -446,7 +447,7 @@ class Celery(object):
         when unpickling."""
         return {
             'main': self.main,
-            'changes': self.conf.changes,
+            'changes': self.conf._prepare_pickleable_changes(),
             'loader': self.loader_cls,
             'backend': self.backend_cls,
             'amqp': self.amqp_cls,
@@ -459,9 +460,10 @@ class Celery(object):
 
     def __reduce_args__(self):
         """Deprecated method, please use :meth:`__reduce_keys__` instead."""
-        return (self.main, self.conf.changes, self.loader_cls,
-                self.backend_cls, self.amqp_cls, self.events_cls,
-                self.log_cls, self.control_cls, self.accept_magic_kwargs)
+        return (self.main, self.conf._prepare_pickleable_changes(),
+                self.loader_cls, self.backend_cls, self.amqp_cls,
+                self.events_cls, self.log_cls, self.control_cls,
+                self.accept_magic_kwargs)
 
     @cached_property
     def Worker(self):

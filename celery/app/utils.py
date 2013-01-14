@@ -10,10 +10,13 @@ from __future__ import absolute_import
 
 import os
 import platform as _platform
+import types
 
-from celery import datastructures
+from billiard import forking as _forking
+
 from celery import platforms
 from celery.five import items
+from celery.datastructures import ConfigurationView, DictAttribute
 from celery.utils.text import pretty
 from celery.utils.imports import qualname
 
@@ -31,7 +34,7 @@ settings -> transport:{transport} results:{results}
 """
 
 
-class Settings(datastructures.ConfigurationView):
+class Settings(ConfigurationView):
     """Celery settings object."""
 
     @property
@@ -62,6 +65,25 @@ class Settings(datastructures.ConfigurationView):
         """Returns the current configuration, but without defaults."""
         # the last stash is the default settings, so just skip that
         return Settings({}, self._order[:-1])
+
+    def _prepare_pickleable_changes(self):
+        # attempt to include keys from configuration modules,
+        # to work with multiprocessing execv/fork emulation.
+        # This is necessary when multiprocessing execv/fork emulation
+        # is enabled.  There may be a better way to do this, but attempts
+        # at forcing the subprocess to import the modules did not work out,
+        # because of some sys.path problem.  More at Issue #1126.
+        if _forking._forking_is_enabled:
+            return self.changes
+        R = {}
+        for d in reversed(self._order[:-1]):
+            if isinstance(d, DictAttribute):
+                d = object.__getattribute__(d, 'obj')
+                if isinstance(d, types.ModuleType):
+                    d = dict((k, v) for k, v in items(vars(d))
+                             if not k.startswith('__') and k.isupper())
+            R.update(d)
+        return R
 
     def find_option(self, name, namespace='celery'):
         """Search for option by name.
