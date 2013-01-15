@@ -229,10 +229,12 @@ class BaseBackend(object):
     def on_chord_part_return(self, task, propagate=False):
         pass
 
-    def fallback_chord_unlock(self, group_id, body, result=None, **kwargs):
+    def fallback_chord_unlock(self, group_id, body, result=None, countdown=1,
+                              **kwargs):
         kwargs['result'] = [r.id for r in result]
         self.app.tasks['celery.chord_unlock'].apply_async((group_id, body, ),
-                                                          kwargs, countdown=1)
+                                                          kwargs,
+                                                          countdown=countdown)
     on_chord_apply = fallback_chord_unlock
 
     def current_task_children(self):
