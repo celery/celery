@@ -91,7 +91,7 @@ class ScheduleEntry(object):
         self.total_run_count = total_run_count or 0
 
     def _default_now(self):
-        return current_app.now()
+        return self.schedule.now() if self.schedule else current_app.now()
 
     def _next_instance(self, last_run_at=None):
         """Returns a new instance of the same class, but with
