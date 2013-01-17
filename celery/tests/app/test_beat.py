@@ -132,6 +132,7 @@ class mocked_schedule(schedule):
         self._is_due = is_due
         self._next_run_at = next_run_at
         self.run_every = timedelta(seconds=1)
+        self.nowfun = datetime.utcnow
 
     def is_due(self, last_run_at):
         return self._is_due, self._next_run_at
