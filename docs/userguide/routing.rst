@@ -466,7 +466,7 @@ One for video, one for images and one default queue for everything else:
 
     CELERY_QUEUES = (
         Queue('default', default_exchange, routing_key='default'),
-        Queue('videos', media_exchange, routing_key='media.video')
+        Queue('videos', media_exchange, routing_key='media.video'),
         Queue('images', media_exchange, routing_key='media.image')
     )
     CELERY_DEFAULT_QUEUE = 'default'
