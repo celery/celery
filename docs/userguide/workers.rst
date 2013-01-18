@@ -837,6 +837,5 @@ Here's an example control command that restarts the broker connection:
 
     @Panel.register
     def reset_connection(panel):
-        panel.logger.critical('Connection reset by remote control.')
         panel.consumer.reset_connection()
         return {'ok': 'connection reset'}
