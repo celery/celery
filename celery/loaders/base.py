@@ -118,12 +118,17 @@ class BaseLoader(object):
         )
 
     def import_default_modules(self):
-        return [
+        preload = [
+            self.import_task_module(m) for m in (
+                set(maybe_list(self.app.conf.CELERY_IMPORTS)))
+        ]
+        remaining = [
             self.import_task_module(m) for m in (
                 set(maybe_list(self.app.conf.CELERY_IMPORTS))
                 | set(maybe_list(self.app.conf.CELERY_INCLUDE))
                 | self.builtin_modules)
         ]
+        return [preload[0] | remaining[0]]
 
     def init_worker(self):
         if not self.worker_initialized:
