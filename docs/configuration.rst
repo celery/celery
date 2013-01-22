@@ -1,4 +1,4 @@
-.' _configuration:
+.. _configuration:
 
 ============================
  Configuration and defaults
