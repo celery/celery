@@ -201,6 +201,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     state = SUCCESS
                 except Ignore as exc:
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
+                    state, retval = I.state, I.retval
                 except RetryTaskError as exc:
                     I = Info(RETRY, exc)
                     state, retval = I.state, I.retval
@@ -228,14 +229,15 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         send_success(sender=task, result=retval)
 
                 # -* POST *-
-                if task_request.chord:
-                    on_chord_part_return(task)
-                if task_after_return:
-                    task_after_return(state, retval, uuid, args, kwargs, None)
-                if postrun_receivers:
-                    send_postrun(sender=task, task_id=uuid, task=task,
-                                 args=args, kwargs=kwargs,
-                                 retval=retval, state=state)
+                if state not in [IGNORED, RETRY]:
+                    if task_request.chord:
+                        on_chord_part_return(task)
+                    if task_after_return:
+                        task_after_return(state, retval, uuid, args, kwargs, None)
+                    if postrun_receivers:
+                        send_postrun(sender=task, task_id=uuid, task=task,
+                                     args=args, kwargs=kwargs,
+                                     retval=retval, state=state)
             finally:
                 pop_task()
                 pop_request()
