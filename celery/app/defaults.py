@@ -68,6 +68,7 @@ NAMESPACES = {
         'CONNECTION_RETRY': Option(True, type='bool'),
         'CONNECTION_MAX_RETRIES': Option(100, type='int'),
         'HEARTBEAT': Option(10, type='int'),
+        'HEARTBEAT_CHECKRATE': Option(2.0, type='int'),
         'POOL_LIMIT': Option(10, type='int'),
         'INSIST': Option(False, type='bool',
                          deprecate_by='2.4', remove_by='4.0'),

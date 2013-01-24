@@ -103,9 +103,6 @@ from .heartbeat import Heart
 RUN = 0x1
 CLOSE = 0x2
 
-#: Heartbeat check is called every heartbeat_seconds' / rate'.
-AMQHEARTBEAT_RATE = 2.0
-
 #: Prefetch count can't exceed short.
 PREFETCH_COUNT_MAX = 0xFFFF
 
@@ -398,9 +395,9 @@ class Consumer(object):
         hub.update_readers(self.connection.eventmap)
         self.connection.transport.on_poll_init(hub.poller)
 
-    def consume_messages(self, sleep=sleep, min=min, Empty=Empty,
-                         hbrate=AMQHEARTBEAT_RATE):
+    def consume_messages(self, sleep=sleep, min=min, Empty=Empty):
         """Consume messages forever (or until an exception is raised)."""
+        hbrate = self.app.conf.BROKER_HEARTBEAT_CHECKRATE
 
         with self.hub as hub:
             qos = self.qos
