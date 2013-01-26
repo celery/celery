@@ -157,6 +157,7 @@ class Consumer(object):
 
         self._does_info = logger.isEnabledFor(logging.INFO)
         self._quick_put = self.ready_queue.put
+        self.amqheartbeat_rate = self.app.conf.BROKER_HEARTBEAT_CHECKRATE
 
         if hub:
             self.amqheartbeat = amqheartbeat
@@ -216,7 +217,7 @@ class Consumer(object):
                 self.strategies, self.namespace, self.hub, self.qos,
                 self.amqheartbeat, self.handle_unknown_message,
                 self.handle_unknown_task, self.handle_invalid_task,
-                self.app.clock)
+                self.app.clock, self.amqheartbeat_rate)
 
     def on_poll_init(self, hub):
         hub.update_readers(self.connection.eventmap)

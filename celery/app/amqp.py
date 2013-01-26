@@ -163,6 +163,7 @@ class TaskProducer(Producer):
     auto_declare = False
     retry = False
     retry_policy = None
+    utc = True
 
     def __init__(self, channel=None, exchange=None, *args, **kwargs):
         self.retry = kwargs.pop('retry', self.retry)

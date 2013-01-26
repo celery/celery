@@ -78,8 +78,8 @@ class Celery(object):
     def __init__(self, main=None, loader=None, backend=None,
                  amqp=None, events=None, log=None, control=None,
                  set_as_current=True, accept_magic_kwargs=False,
-                 tasks=None, broker=None, include=None, fixups=None,
-                 changes=None, **kwargs):
+                 tasks=None, broker=None, include=None, changes=None,
+                 fixups=None, **kwargs):
         self.clock = LamportClock()
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
@@ -193,6 +193,8 @@ class Celery(object):
 
     def _task_from_fun(self, fun, **options):
         base = options.pop('base', None) or self.Task
+
+        print('%r base is: %r' % (fun, base, ))
 
         T = type(fun.__name__, (base, ), dict({
             'app': self,

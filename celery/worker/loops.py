@@ -19,14 +19,11 @@ from celery.five import Empty
 
 from . import state
 
-#: Heartbeat check is called every heartbeat_seconds' / rate'.
-AMQHEARTBEAT_RATE = 2.0
-
 
 def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
              heartbeat, handle_unknown_message, handle_unknown_task,
-             handle_invalid_task, clock, sleep=sleep, min=min, Empty=Empty,
-             hbrate=AMQHEARTBEAT_RATE):
+             handle_invalid_task, clock, hbrate=2.0,
+             sleep=sleep, min=min, Empty=Empty):
     """Non-blocking eventloop consuming messages until connection is lost,
     or shutdown is requested."""
 
@@ -123,7 +120,7 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
 
 def synloop(obj, connection, consumer, strategies, ns, hub, qos,
             heartbeat, handle_unknown_message, handle_unknown_task,
-            handle_invalid_task, clock, **kwargs):
+            handle_invalid_task, clock, hbrate=2.0, **kwargs):
     """Fallback blocking eventloop for transports that doesn't support AIO."""
 
     def on_task_received(body, message):
