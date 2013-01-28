@@ -135,9 +135,11 @@ class MockCacheMixin(object):
         memcache.Client = MemcachedClient
         memcache.Client.__module__ = memcache.__name__
         prev, sys.modules['memcache'] = sys.modules.get('memcache'), memcache
-        yield True
-        if prev is not None:
-            sys.modules['memcache'] = prev
+        try:
+            yield True
+        finally:
+            if prev is not None:
+                sys.modules['memcache'] = prev
 
     @contextmanager
     def mock_pylibmc(self):
@@ -146,9 +148,11 @@ class MockCacheMixin(object):
         pylibmc.Client.__module__ = pylibmc.__name__
         prev = sys.modules.get('pylibmc')
         sys.modules['pylibmc'] = pylibmc
-        yield True
-        if prev is not None:
-            sys.modules['pylibmc'] = prev
+        try:
+            yield True
+        finally:
+            if prev is not None:
+                sys.modules['pylibmc'] = prev
 
 
 class test_get_best_memcache(Case, MockCacheMixin):

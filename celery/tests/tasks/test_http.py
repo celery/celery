@@ -30,9 +30,10 @@ def mock_urlopen(response_method):
 
     urllib2.urlopen = _mocked
 
-    yield True
-
-    urllib2.urlopen = urlopen
+    try:
+        yield True
+    finally:
+        urllib2.urlopen = urlopen
 
 
 def _response(res):

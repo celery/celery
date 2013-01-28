@@ -43,8 +43,10 @@ def patch_unlock_retry():
     unlock = current_app.tasks['celery.chord_unlock']
     retry = Mock()
     prev, unlock.retry = unlock.retry, retry
-    yield unlock, retry
-    unlock.retry = prev
+    try:
+        yield unlock, retry
+    finally:
+        unlock.retry = prev
 
 
 class test_unlock_chord_task(AppCase):
