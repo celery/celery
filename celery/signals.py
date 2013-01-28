@@ -23,6 +23,9 @@ task_postrun = Signal(providing_args=[
     'task_id', 'task', 'args', 'kwargs', 'retval',
 ])
 task_success = Signal(providing_args=['result'])
+task_retry = Signal(providing_args=[
+    'request', 'reason', 'einfo',
+])
 task_failure = Signal(providing_args=[
     'task_id', 'exception', 'args', 'kwargs', 'traceback', 'einfo',
 ])
