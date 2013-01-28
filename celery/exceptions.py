@@ -63,6 +63,15 @@ class MaxRetriesExceededError(Exception):
 class RetryTaskError(Exception):
     """The task is to be retried later."""
 
+    #: Optional message describing context of retry.
+    message = None
+
+    #: Exception (if any) that caused the retry to happen.
+    exc = None
+
+    #: Time of retry (ETA), either int or :class:`~datetime.datetime`.
+    when = None
+
     def __init__(self, message=None, exc=None, when=None, **kwargs):
         from kombu.utils.encoding import safe_repr
         self.message = message
