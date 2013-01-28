@@ -390,7 +390,7 @@ News
 * :func:`~celery.task.control.broadcast`: Added callback argument, this can be
   used to process replies immediately as they arrive.
 
-* celeryctl: New command-line utility to manage and inspect worker nodes,
+* celeryctl: New command line utility to manage and inspect worker nodes,
   apply tasks and inspect the results of tasks.
 
     .. seealso::
@@ -472,7 +472,7 @@ News
             stdouts = logging.getLogger("mystdoutslogger")
             log.redirect_stdouts_to_logger(stdouts, loglevel=logging.WARNING)
 
-* worker: Added command-line option :option:`-I`/:option:`--include`:
+* worker Added command line option :option:`-I`/:option:`--include`:
 
     A comma separated list of (task) modules to be imported.
 

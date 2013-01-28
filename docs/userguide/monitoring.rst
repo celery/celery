@@ -22,11 +22,9 @@ Workers
 
 .. _monitoring-control:
 
-
 Management Command-line Utilities (``inspect``/``control``)
 -----------------------------------------------------------
 
-.. versionadded:: 2.1
 
 :program:`celery` can also be used to inspect
 and manage worker nodes (and to some degree tasks).

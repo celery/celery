@@ -222,9 +222,10 @@ def wrap_logger(logger, loglevel=logging.ERROR):
     siohandler = logging.StreamHandler(sio)
     logger.handlers = [siohandler]
 
-    yield sio
-
-    logger.handlers = old_handlers
+    try:
+        yield sio
+    finally:
+        logger.handlers = old_handlers
 
 
 @contextmanager
@@ -233,10 +234,10 @@ def eager_tasks():
 
     prev = app.conf.CELERY_ALWAYS_EAGER
     app.conf.CELERY_ALWAYS_EAGER = True
-
-    yield True
-
-    app.conf.CELERY_ALWAYS_EAGER = prev
+    try:
+        yield True
+    finally:
+        app.conf.CELERY_ALWAYS_EAGER = prev
 
 
 def with_eager_tasks(fun):
@@ -374,8 +375,10 @@ def mask_modules(*modnames):
             return realimport(name, *args, **kwargs)
 
     builtins.__import__ = myimp
-    yield True
-    builtins.__import__ = realimport
+    try:
+        yield True
+    finally:
+        builtins.__import__ = realimport
 
 
 @contextmanager
@@ -386,10 +389,11 @@ def override_stdouts():
     sys.stdout = sys.__stdout__ = mystdout
     sys.stderr = sys.__stderr__ = mystderr
 
-    yield mystdout, mystderr
-
-    sys.stdout = sys.__stdout__ = prev_out
-    sys.stderr = sys.__stderr__ = prev_err
+    try:
+        yield mystdout, mystderr
+    finally:
+        sys.stdout = sys.__stdout__ = prev_out
+        sys.stderr = sys.__stderr__ = prev_err
 
 
 def patch(module, name, mocked):
@@ -420,14 +424,16 @@ def replace_module_value(module, name, value=None):
             delattr(module, name)
         except AttributeError:
             pass
-    yield
-    if prev is not None:
-        setattr(sys, name, prev)
-    if not has_prev:
-        try:
-            delattr(module, name)
-        except AttributeError:
-            pass
+    try:
+        yield
+    finally:
+        if prev is not None:
+            setattr(sys, name, prev)
+        if not has_prev:
+            try:
+                delattr(module, name)
+            except AttributeError:
+                pass
 pypy_version = partial(
     replace_module_value, sys, 'pypy_version_info',
 )
@@ -439,15 +445,19 @@ platform_pyimp = partial(
 @contextmanager
 def sys_platform(value):
     prev, sys.platform = sys.platform, value
-    yield
-    sys.platform = prev
+    try:
+        yield
+    finally:
+        sys.platform = prev
 
 
 @contextmanager
 def reset_modules(*modules):
     prev = dict((k, sys.modules.pop(k)) for k in modules if k in sys.modules)
-    yield
-    sys.modules.update(prev)
+    try:
+        yield
+    finally:
+        sys.modules.update(prev)
 
 
 @contextmanager
@@ -455,12 +465,14 @@ def patch_modules(*modules):
     prev = {}
     for mod in modules:
         prev[mod], sys.modules[mod] = sys.modules[mod], ModuleType(mod)
-    yield
-    for name, mod in items(prev):
-        if mod is None:
-            sys.modules.pop(name, None)
-        else:
-            sys.modules[name] = mod
+    try:
+        yield
+    finally:
+        for name, mod in items(prev):
+            if mod is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = mod
 
 
 @contextmanager
@@ -505,8 +517,10 @@ def mock_context(mock, typ=Mock):
             reraise(x[0], x[1], x[2])
     context.__exit__.side_effect = on_exit
     context.__enter__.return_value = context
-    yield context
-    context.reset()
+    try:
+        yield context
+    finally:
+        context.reset()
 
 
 @contextmanager
@@ -537,10 +551,11 @@ def patch_settings(app=None, **config):
             pass
         setattr(app.conf, key, value)
 
-    yield app.conf
-
-    for key, value in items(prev):
-        setattr(app.conf, key, value)
+    try:
+        yield app.conf
+    finally:
+        for key, value in items(prev):
+            setattr(app.conf, key, value)
 
 
 @contextmanager

@@ -360,7 +360,7 @@ Hands-on with the API
 ---------------------
 
 Celery comes with a tool called :program:`celery amqp`
-that is used for command-line access to the AMQP API, enabling access to
+that is used for command line access to the AMQP API, enabling access to
 administration tasks like creating/deleting queues and exchanges, purging
 queues or sending messages.  It can also be used for non-AMQP brokers,
 but different implementation may not implement all commands.

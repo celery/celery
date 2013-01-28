@@ -28,9 +28,10 @@ def mock_urlopen(response_method):
 
     http.urlopen = _mocked
 
-    yield True
-
-    http.urlopen = urlopen
+    try:
+        yield True
+    finally:
+        http.urlopen = urlopen
 
 
 def _response(res):
