@@ -163,7 +163,7 @@ class AMQPBackend(BaseBackend):
             binding.declare()
 
             prev = latest = acc = None
-            for i in range(backlog_limit):  ## spool ffwd
+            for i in range(backlog_limit):  # spool ffwd
                 prev, latest, acc = latest, acc, binding.get(no_ack=False)
                 if not acc:  # no more messages
                     break
