@@ -82,7 +82,7 @@ def _find_option_with_arg(argv, short_opts=None, long_opts=None):
 
 
 def maybe_patch_concurrency(argv, short_opts=None, long_opts=None):
-    """With short and long opt alternatives that specify the command-line
+    """With short and long opt alternatives that specify the command line
     option to set the pool, this makes sure that anything that needs
     to be patched is completed as early as possible.
     (e.g. eventlet/gevent monkey patches)."""

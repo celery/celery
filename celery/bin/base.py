@@ -193,7 +193,7 @@ class Command(object):
         pass
 
     def usage(self, command):
-        """Returns the command-line usage string for this app."""
+        """Returns the command line usage string for this app."""
         return '%%prog [options] %s' % (self.args, )
 
     def get_options(self):

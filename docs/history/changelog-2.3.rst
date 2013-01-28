@@ -360,7 +360,7 @@ Fixes
 * ``CELERY_TASK_ERROR_WHITE_LIST`` is now properly initialized
   in all loaders.
 
-* celeryd_detach now passes through command-line configuration.
+* celeryd_detach now passes through command line configuration.
 
 * Remote control command ``add_consumer`` now does nothing if the
   queue is already being consumed from.

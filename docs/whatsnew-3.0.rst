@@ -759,7 +759,7 @@ In Other News
         >>> import celery
         >>> print(celery.bugreport())
 
-    - Using the ``celery`` command-line program:
+    - Using the ``celery`` command line program:
 
         .. code-block:: bash
 
@@ -910,7 +910,7 @@ Internals
 
 - Renamed module ``celery.abstract`` -> :mod:`celery.worker.bootsteps`.
 
-- Command-line docs are now parsed from the module docstrings.
+- Command line docs are now parsed from the module docstrings.
 
 - Test suite directory has been reorganized.
 
