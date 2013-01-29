@@ -19,4 +19,5 @@ Documentation/
 .ropeproject/
 .project
 .pydevproject
+.idea/
 
