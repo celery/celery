@@ -41,6 +41,7 @@ DEFAULT_PID_FILE="/var/run/celery/${SCRIPT_NAME}/%n.pid"
 DEFAULT_LOG_FILE="/var/log/celery/${SCRIPT_NAME}/%n.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
+DEFAULT_CELERYD="-m celery worker --detach"
 
 CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/${SCRIPT_NAME}"}
 
@@ -181,6 +182,9 @@ _get_worker_pids() {
 
 
 start_workers () {
+    if [ -z "$CELERYD_ULIMIT" ]; then
+        ulimit $CELERYD_ULIMIT
+    fi
     $CELERYD_MULTI $* start $CELERYD_NODES $DAEMON_OPTS     \
                          --pidfile="$CELERYD_PID_FILE"      \
                          --logfile="$CELERYD_LOG_FILE"      \
