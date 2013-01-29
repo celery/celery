@@ -25,6 +25,7 @@ DEFAULT_LOG_FILE="/var/log/celery/%N.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
 DEFAULT_CELERYD="-m celery worker --detach"
+DEFAULT_ULIMIT="1024"
 
 # /etc/init.d/celeryd: start and stop the celery task worker daemon.
 
@@ -53,6 +54,9 @@ fi
 if [ -z "$CELERYD_LOG_FILE" ]; then
     CELERYD_LOG_FILE="$DEFAULT_LOG_FILE"
     CELERY_CREATE_LOGDIR=1
+fi
+if [ -z "$CELERYD_ULIMIT" ]; then
+    CELERYD_ULIMIT="$DEFAULT_ULIMIT"
 fi
 
 CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-${CELERYD_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
@@ -144,6 +148,7 @@ stop_workers () {
 
 
 start_workers () {
+    ulimit -n $CELERYD_ULIMIT
     $CELERYD_MULTI start $CELERYD_NODES $DAEMON_OPTS        \
                          --pidfile="$CELERYD_PID_FILE"      \
                          --logfile="$CELERYD_LOG_FILE"      \
