@@ -20,3 +20,4 @@ Celery supports several message transport alternatives.
     sqs
     couchdb
     beanstalk
+    ironmq
