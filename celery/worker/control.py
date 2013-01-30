@@ -8,7 +8,10 @@
 """
 from __future__ import absolute_import
 
+import os
+
 from datetime import datetime
+from future_builtins import map
 
 from kombu.utils.encoding import safe_repr
 
@@ -16,6 +19,7 @@ from celery.platforms import signals as _signals
 from celery.utils import timeutils
 from celery.utils.compat import UserDict
 from celery.utils.log import get_logger
+from celery.utils import jsonify
 
 from . import state
 from .state import revoked
@@ -192,7 +196,8 @@ def stats(panel, **kwargs):
     return {'total': state.total_count,
             'consumer': panel.consumer.info,
             'pool': panel.consumer.pool.info,
-            'autoscaler': asinfo}
+            'autoscaler': asinfo,
+            'pid': os.getpid()}
 
 
 @Panel.register
@@ -287,3 +292,8 @@ def active_queues(panel):
     """Returns the queues associated with each worker."""
     return [dict(queue.as_dict(recurse=True))
             for queue in panel.consumer.task_consumer.queues]
+
+
+@Panel.register
+def dump_conf(panel, **kwargs):
+    return jsonify(dict(panel.app.conf))

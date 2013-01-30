@@ -83,6 +83,8 @@ class Inspect(object):
     def active_queues(self):
         return self._request('active_queues')
 
+    def conf(self):
+        return self._request('dump_conf')
 
 class Control(object):
     Mailbox = Mailbox
