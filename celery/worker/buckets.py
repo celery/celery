@@ -6,7 +6,7 @@
     This module implements the rate limiting of tasks,
     by having a token bucket queue for each task type.
     When a task is allowed to be processed it's moved
-    over the the ``ready_queue``
+    over the ``ready_queue``
 
     The :mod:`celery.worker.mediator` is then responsible
     for moving tasks from the ``ready_queue`` to the worker pool.
