@@ -315,6 +315,8 @@ class Consumer(object):
     # Consumer state, can be RUN or CLOSE.
     _state = None
 
+    restart_count = -1  # first start is the same as a restart
+
     def __init__(self, ready_queue,
                  init_callback=noop, send_events=False, hostname=None,
                  initial_prefetch_count=2, pool=None, app=None,
@@ -384,6 +386,7 @@ class Consumer(object):
         self.init_callback(self)
 
         while self._state != CLOSE:
+            self.restart_count += 1
             self.maybe_shutdown()
             try:
                 self.reset_connection()

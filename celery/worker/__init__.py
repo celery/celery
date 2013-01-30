@@ -96,7 +96,7 @@ class Pool(bootsteps.StartStopComponent):
             w.max_concurrency, w.min_concurrency = w.autoscale
         self.autoreload_enabled = autoreload
 
-    def on_poll_init(self, pool, hub):
+    def on_poll_init(self, pool, w, hub):
         apply_after = hub.timer.apply_after
         apply_at = hub.timer.apply_at
         on_soft_timeout = pool.on_soft_timeout
@@ -106,7 +106,10 @@ class Pool(bootsteps.StartStopComponent):
         remove = hub.remove
         now = time.time
 
-        if not pool.did_start_ok():
+        # did_start_ok will verify that pool processes were able to start,
+        # but this will only work the first time we start, as
+        # maxtasksperchild will mess up metrics.
+        if not w.consumer.restart_count and not pool.did_start_ok():
             raise WorkerLostError('Could not start worker processes')
 
         # need to handle pool results before every task
@@ -167,7 +170,7 @@ class Pool(bootsteps.StartStopComponent):
             semaphore=semaphore,
         )
         if w.hub:
-            w.hub.on_init.append(partial(self.on_poll_init, pool))
+            w.hub.on_init.append(partial(self.on_poll_init, pool, w))
         return pool
 
 
