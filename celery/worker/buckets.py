@@ -67,7 +67,7 @@ class TaskBucket(object):
 
     def put(self, request):
         """Put a :class:`~celery.worker.job.Request` into
-        the appropiate bucket."""
+        the appropriate bucket."""
         if request.name not in self.buckets:
             self.add_bucket_for_type(request.name)
         self.buckets[request.name].put_nowait(request)
@@ -118,7 +118,7 @@ class TaskBucket(object):
             return min(remaining_times), None
 
     def get(self, block=True, timeout=None):
-        """Retrive the task from the first available bucket.
+        """Retrieve the task from the first available bucket.
 
         Available as in, there is an item in the queue and you can
         consume tokens from it.
