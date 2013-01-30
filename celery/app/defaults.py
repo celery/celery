@@ -240,7 +240,7 @@ def find_deprecated_settings(source):
             warn_deprecated(description='The %r setting' % (name, ),
                             deprecation=opt.deprecate_by,
                             removal=opt.remove_by,
-                            alternative=opt.alt)
+                            alternative='Use %s instead' % (opt.alt, ))
     return source
 
 
