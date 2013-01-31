@@ -729,3 +729,19 @@ class EagerResult(AsyncResult):
     @property
     def supports_native_join(self):
         return False
+
+
+def get_task_info(task_id):
+    """
+    Helper method for obtain a info (metadata)
+    asociated with task_id.
+    """
+    return current_app.backend.get_result(task_id)
+
+
+def get_task_state(task_id):
+    """
+    Helper method for obtain a state asociated
+    with a task_id.
+    """
+    return current_app.backend.get_status(task_id)
