@@ -530,6 +530,8 @@ class ResultSet(ResultBase):
         acc = [None for _ in xrange(len(self))]
         for task_id, meta in self.iter_native(timeout=timeout,
                                               interval=interval):
+            if propagate and meta['status'] in states.PROPAGATE_STATES:
+                raise meta['result']
             acc[results.index(task_id)] = meta['result']
         return acc
 
