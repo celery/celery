@@ -159,6 +159,14 @@ issue tracker.
 If you are unsure of the origin of the bug you can ask the
 :ref:`mailing-list`, or just use the Celery issue tracker.
 
+Contributors guide to the codebase
+==================================
+
+There's a seperate section for internal details,
+including details about the codebase and a style guide.
+
+Read :ref:`internals-guide` for more!
+
 .. _versions:
 
 Versions
