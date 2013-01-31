@@ -20,13 +20,14 @@ import sys
 
 from datetime import timedelta
 
+from billiard.einfo import ExceptionInfo
 from kombu import serialization
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
 
 from celery import states
 from celery.app import current_task
 from celery.datastructures import LRUCache
-from celery.exceptions import TimeoutError, TaskRevokedError
+from celery.exceptions import ChordError, TaskRevokedError, TimeoutError
 from celery.result import from_serializable, GroupResult
 from celery.utils import timeutils
 from celery.utils.serialization import (
@@ -111,6 +112,16 @@ class BaseBackend(object):
         """Mark task as executed with failure. Stores the execption."""
         return self.store_result(task_id, exc, status=states.FAILURE,
                                  traceback=traceback)
+
+    def fail_from_current_stack(self, task_id, exc=None):
+        type_, real_exc, tb = sys.exc_info()
+        try:
+            exc = real_exc if exc is None else exc
+            ei = ExceptionInfo((type_, exc, tb))
+            self.mark_as_failure(task_id, exc, ei.traceback)
+            return ei
+        finally:
+            del(tb)
 
     def mark_as_retry(self, task_id, exc, traceback=None):
         """Mark task as being retries. Stores the current
@@ -226,7 +237,7 @@ class BaseBackend(object):
         raise NotImplementedError(
             'reload_group_result is not supported by this backend.')
 
-    def on_chord_part_return(self, task, propagate=False):
+    def on_chord_part_return(self, task, propagate=True):
         pass
 
     def fallback_chord_unlock(self, group_id, body, result=None,
@@ -245,6 +256,9 @@ class BaseBackend(object):
     def __reduce__(self, args=(), kwargs={}):
         return (unpickle_backend, (self.__class__, args, kwargs))
 
+    def is_cached(self, task_id):
+        return False
+
 
 class BaseDictBackend(BaseBackend):
 
@@ -252,6 +266,9 @@ class BaseDictBackend(BaseBackend):
         super(BaseDictBackend, self).__init__(*args, **kwargs)
         self._cache = LRUCache(limit=kwargs.get('max_cached_results') or
                                self.app.conf.CELERY_MAX_CACHED_RESULTS)
+
+    def is_cached(self, task_id):
+        return task_id in self._cache
 
     def store_result(self, task_id, result, status, traceback=None, **kwargs):
         """Store task result and status."""
@@ -463,7 +480,7 @@ class KeyValueStoreBackend(BaseDictBackend):
         else:
             self.fallback_chord_unlock(group_id, body, result, **kwargs)
 
-    def on_chord_part_return(self, task, propagate=False):
+    def on_chord_part_return(self, task, propagate=True):
         if not self.implements_incr:
             return
         from celery import subtask
@@ -475,9 +492,21 @@ class KeyValueStoreBackend(BaseDictBackend):
         deps = GroupResult.restore(gid, backend=task.backend)
         val = self.incr(key)
         if val >= len(deps):
-            subtask(task.request.chord).delay(deps.join(propagate=propagate))
-            deps.delete()
-            self.client.delete(key)
+            j = deps.join_native if deps.supports_native_join else deps.join
+            callback = subtask(task.request.chord)
+            try:
+                ret = j(propagate=propagate)
+            except Exception, exc:
+                culprit = deps._failed_join_report().next()
+                self.app._tasks[callback.task].backend.fail_from_current_stack(
+                    callback.id, exc=ChordError('Dependency %s raised %r' % (
+                        culprit.id, exc))
+                )
+            else:
+                callback.delay(ret)
+            finally:
+                deps.delete()
+                self.client.delete(key)
         else:
             self.expire(key, 86400)
 

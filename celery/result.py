@@ -535,6 +535,12 @@ class ResultSet(ResultBase):
             acc[results.index(task_id)] = meta['result']
         return acc
 
+    def _failed_join_report(self):
+        for res in self.results:
+            if (res.backend.is_cached(res.id) and
+                    res.state in states.PROPAGATE_STATES):
+                yield res
+
     def __len__(self):
         return len(self.results)
 
