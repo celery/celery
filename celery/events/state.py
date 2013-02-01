@@ -356,5 +356,14 @@ class State(object):
         return '<ClusterState: events=%s tasks=%s>' % (self.event_count,
                                                        self.task_count)
 
+    def __getstate__(self):
+        d = dict(vars(self))
+        d.pop('_mutex')
+        return d
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self._mutex = threading.Lock()
+
 
 state = State()
