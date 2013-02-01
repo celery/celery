@@ -277,7 +277,7 @@ class State(object):
     def __init__(self, callback=None,
                  max_workers_in_memory=5000, max_tasks_in_memory=10000):
         self.max_workers_in_memory = max_workers_in_memory
-        self.max_tasks_in_memory = 10000
+        self.max_tasks_in_memory = max_tasks_in_memory
         self.workers = LRUCache(limit=self.max_workers_in_memory)
         self.tasks = LRUCache(limit=self.max_tasks_in_memory)
         self._taskheap = []
