@@ -445,5 +445,14 @@ class State(object):
         return '<State: events={0.event_count} tasks={0.task_count}>' \
             .format(self)
 
+    def __getstate__(self):
+        d = dict(vars(self))
+        d.pop('_mutex')
+        return d
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self._mutex = threading.Lock()
+
 
 state = State()
