@@ -196,7 +196,7 @@ case "$1" in
         check_paths
     ;;
     *)
-        echo "Usage: /etc/init.d/celeryd {start|stop|restart|kill|create_paths}"
+        echo "Usage: /etc/init.d/celeryd {start|stop|restart|kill|create-paths}"
         exit 64  # EX_USAGE
     ;;
 esac
