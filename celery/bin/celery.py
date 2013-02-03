@@ -86,9 +86,10 @@ class multi(Command):
     def get_options(self):
         return ()
 
-    def run_from_argv(self, prog_name, argv):
+    def run_from_argv(self, prog_name, argv, command=None):
         from celery.bin.multi import MultiTool
-        return MultiTool().execute_from_commandline(argv, prog_name)
+        argv.append("--cmd=%s worker --detach" % prog_name)
+        return MultiTool().execute_from_commandline([command] + argv, prog_name)
 
 
 class list_(Command):
