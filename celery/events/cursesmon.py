@@ -52,7 +52,7 @@ class CursesMonitor(object):  # pragma: no cover
     background = curses.COLOR_WHITE
     online_str = 'Workers online: '
     help_title = 'Keys: '
-    help = ('j:up k:down i:info t:traceback r:result c:revoke ^c: quit')
+    help = ('j:down k:up i:info t:traceback r:result c:revoke ^c: quit')
     greet = 'celery events {0}'.format(VERSION_BANNER)
     info_str = 'Info: '
 
