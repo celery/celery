@@ -68,6 +68,7 @@ class CursesMonitor(object):  # pragma: no cover
                           'I': self.selection_info,
                           'L': self.selection_rate_limit}
         self.keymap = dict(default_keymap, **self.keymap)
+        self.lock = threading.RLock()
 
     def format_row(self, uuid, task, worker, timestamp, state):
         mx = self.display_width
@@ -346,6 +347,7 @@ class CursesMonitor(object):  # pragma: no cover
                             task.state, state_color | attr)
 
     def draw(self):
+        self.lock.acquire()
         win = self.win
         self.handle_keypress()
         x = LEFT_BORDER_OFFSET
@@ -430,6 +432,7 @@ class CursesMonitor(object):  # pragma: no cover
         self.safe_add_str(my - 2, x + len(self.help_title), self.help,
                           curses.A_DIM)
         win.refresh()
+        self.lock.release()
 
     def safe_add_str(self, y, x, string, *args, **kwargs):
         if x + len(string) > self.screen_width:
@@ -437,6 +440,7 @@ class CursesMonitor(object):  # pragma: no cover
         self.win.addstr(y, x, string, *args, **kwargs)
 
     def init_screen(self):
+        self.lock.acquire()
         self.win = curses.initscr()
         self.win.nodelay(True)
         self.win.keypad(True)
@@ -460,12 +464,15 @@ class CursesMonitor(object):  # pragma: no cover
             self.state_colors[state] = curses.color_pair(2)
 
         curses.cbreak()
+        self.lock.release()
 
     def resetscreen(self):
+        self.lock.acquire()
         curses.nocbreak()
         self.win.keypad(False)
         curses.echo()
         curses.endwin()
+        self.lock.release()
 
     def nap(self):
         curses.napms(self.screen_delay)
