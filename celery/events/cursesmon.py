@@ -385,7 +385,7 @@ class CursesMonitor(object):  # pragma: no cover
             else:
                 info = selection.info()
                 if 'runtime' in info:
-                    info['runtime'] = '{0:.2fs}'.format(info['runtime'])
+                    info['runtime'] = '{0:.2f}'.format(info['runtime'])
                 if 'result' in info:
                     info['result'] = abbr(info['result'], 16)
                 info = ' '.join(
