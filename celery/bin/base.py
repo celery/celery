@@ -6,6 +6,9 @@
 Preload Options
 ---------------
 
+These options are supported by all commands,
+and usually parsed before command-specific arguments.
+
 .. cmdoption:: -A, --app
 
     app instance to use (e.g. module.attr_name)
@@ -26,6 +29,10 @@ Preload Options
 
 Daemon Options
 --------------
+
+These options are supported by commands that can detach
+into the background (daemon).  They will be present
+in any command that also has a `--detach` option.
 
 .. cmdoption:: -f, --logfile
 
