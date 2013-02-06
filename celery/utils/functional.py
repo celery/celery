@@ -88,6 +88,15 @@ class LRUCache(UserDict):
             self[key] = str(newval)
         return newval
 
+    def __getstate__(self):
+        d = dict(vars(self))
+        d.pop('mutex')
+        return d
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.mutex = threading.RLock()
+
 
 def is_list(l):
     """Returns true if object is list-like, but not a dict or string."""
