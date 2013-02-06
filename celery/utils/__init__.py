@@ -12,6 +12,7 @@ import os
 import sys
 import traceback
 import warnings
+import types
 import datetime
 
 from functools import partial, wraps
@@ -202,14 +203,14 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
 
 def jsonify(obj):
     """Transforms object making it suitable for json serialization"""
-    if isinstance(obj, (int, float, string_t, type(None))):
+    if isinstance(obj, (int, float, string_t, types.NoneType)):
         return obj
     elif isinstance(obj, (tuple, list)):
         return [jsonify(o) for o in obj]
     elif isinstance(obj, dict):
         return dict((k, jsonify(v)) for k, v in items(obj))
-    # See "Date Time String Format" in the ECMA-262 specification.
     elif isinstance(obj, datetime.datetime):
+        # See "Date Time String Format" in the ECMA-262 specification.
         r = obj.isoformat()
         if obj.microsecond:
             r = r[:23] + r[26:]
@@ -226,7 +227,7 @@ def jsonify(obj):
     elif isinstance(obj, datetime.timedelta):
         return str(obj)
     else:
-        raise ValueError('Unsupported type: {0}'.format(type(obj)))
+        raise ValueError('Unsupported type: {0!r}'.format(type(obj)))
 
 
 def gen_task_name(app, name, module_name):

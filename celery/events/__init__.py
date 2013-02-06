@@ -139,8 +139,26 @@ class EventDispatcher(object):
             for callback in self.on_disabled:
                 callback()
 
-    def send(self, type, utcoffset=utcoffset, blind=False,
-             Event=Event, **fields):
+    def publish(self, type, fields, producer, retry=False,
+                retry_policy=None, blind=False, utcoffset=utcoffset,
+                Event=Event):
+        with self.mutex:
+            clock = None if blind else self.clock.forward()
+            event = Event(type, hostname=self.hostname, utcoffset=utcoffset(),
+                          pid=self.pid, clock=clock, **fields)
+            exchange = get_exchange(producer.connection)
+            producer.publish(
+                event,
+                routing_key=type.replace('-', '.'),
+                exchange=exchange.name,
+                retry=retry,
+                retry_policy=retry_policy,
+                declare=[exchange],
+                serializer=self.serializer,
+                headers=self.headers,
+            )
+
+    def send(self, type, blind=False, **fields):
         """Send event.
 
         :param type: Kind of event.
@@ -153,23 +171,12 @@ class EventDispatcher(object):
             groups = self.groups
             if groups and group_from(type) not in groups:
                 return
-
-            clock = None if blind else self.clock.forward()
-
-            with self.mutex:
-                event = Event(type,
-                              hostname=self.hostname,
-                              clock=clock,
-                              utcoffset=utcoffset(),
-                              pid=self.pid, **fields)
-                try:
-                    self.publisher.publish(event,
-                                           routing_key=type.replace('-', '.'),
-                                           headers=self.headers)
-                except Exception as exc:
-                    if not self.buffer_while_offline:
-                        raise
-                    self._outbound_buffer.append((type, fields, exc))
+            try:
+                self._send(type, fields, self.producer, blind)
+            except Exception, exc:
+                if not self.buffer_while_offline:
+                    raise
+                self._outbound_buffer.append((type, fields, exc))
 
     def flush(self):
         while self._outbound_buffer:

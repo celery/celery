@@ -126,3 +126,7 @@ class CDeprecationWarning(DeprecationWarning):
 
 class IncompleteStream(Exception):
     """Found the end of a stream of data, but the data is not yet complete."""
+
+
+class ChordError(Exception):
+    """A task part of the chord raised an exception."""

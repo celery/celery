@@ -694,8 +694,8 @@ get the sum of the resulting numbers::
     >>> from celery import chord
     >>> from tasks import add, tsum
 
-    >>> chord(add.subtask((i, i))
-    ...     for i in xrange(100))(tsum.subtask()).get()
+    >>> chord(add.s(i, i)
+    ...       for i in xrange(100))(tsum.s()).get()
     9900
 
 
@@ -708,7 +708,9 @@ The synchronization step is costly, so you should avoid using chords as much
 as possible. Still, the chord is a powerful primitive to have in your toolbox
 as synchronization is a required step for many parallel algorithms.
 
-Let's break the chord expression down::
+Let's break the chord expression down:
+
+.. code-block:: python
 
     >>> callback = tsum.subtask()
     >>> header = [add.subtask((i, i)) for i in xrange(100)]
@@ -723,6 +725,42 @@ the return value of each task in the header.  The task id returned by
 :meth:`chord` is the id of the callback, so you can wait for it to complete
 and get the final return value (but remember to :ref:`never have a task wait
 for other tasks <task-synchronous-subtasks>`)
+
+Error handling
+~~~~~~~~~~~~~~
+
+.. versionadded:: 3.0.14
+
+So what happens if one of the tasks raises an exception?
+
+Errors will propagate to the callback, so the callback will not be executed
+instead the callback changes to failure state, and the error is set
+to the :exc:`~celery.exceptions.ChordError` exception:
+
+.. code-block:: python
+
+    >>> c = chord([add.s(4, 4), raising_task.s(), add.s(8, 8)])
+    >>> result = c()
+    >>> result.get()
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "*/celery/result.py", line 120, in get
+        interval=interval)
+      File "*/celery/backends/amqp.py", line 150, in wait_for
+        raise self.exception_to_python(meta['result'])
+    celery.exceptions.ChordError: Dependency 97de6f3f-ea67-4517-a21c-d867c61fcb47
+        raised ValueError('something something',)
+
+
+While the traceback may be different depending on which result backend is
+being used, you can see the error description includes the id of the task that failed
+and a string representation of the original exception.  You can also
+find the original traceback in ``result.traceback``.
+
+Note that the rest of the tasks will still execute, so the third task
+(``add.s(8, 8)``) is still executed even though the middle task failed.
+Also the :exc:`~celery.exceptions.ChordError` only shows the task that failed
+first (in time): it does not respect the ordering of the header group.
 
 .. _chord-important-notes:
 

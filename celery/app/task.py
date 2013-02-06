@@ -473,15 +473,9 @@ class Task(object):
         if connection:
             producer = app.amqp.TaskProducer(connection)
         with app.producer_or_acquire(producer) as P:
-            evd = None
-            if conf.CELERY_SEND_TASK_SENT_EVENT:
-                evd = app.events.Dispatcher(channel=P.channel,
-                                            buffer_while_offline=False)
-
             extra_properties = self.backend.on_task_call(P, task_id)
             task_id = P.publish_task(self.name, args, kwargs,
                                      task_id=task_id,
-                                     event_dispatcher=evd,
                                      callbacks=maybe_list(link),
                                      errbacks=maybe_list(link_error),
                                      **dict(options, **extra_properties))

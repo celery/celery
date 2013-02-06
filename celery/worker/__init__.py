@@ -44,7 +44,6 @@ If you want to automatically declare unknown queues you can
 enable the CELERY_CREATE_MISSING_QUEUES setting.
 """
 
-
 def default_nodename(hostname):
     name, host = nodesplit(hostname or '')
     return nodename(name or 'celery', host or socket.gethostname())

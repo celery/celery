@@ -126,3 +126,4 @@ Thomas Grainger, 2012/11/29
 Marius Gedminas, 2012/11/29
 Christoph Krybus, 2013/01/07
 Jun Sakai, 2013/01/16
+Vlad Frolov, 2013/01/23
