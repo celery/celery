@@ -118,6 +118,21 @@ class EventDispatcher(object):
             for callback in self.on_disabled:
                 callback()
 
+    def publish(self, type, fields, producer, retry=False, retry_policy=None):
+        with self.mutex:
+            event = Event(type, hostname=self.hostname,
+                          clock=self.app.clock.forward(), **fields)
+            exchange = get_exchange(producer.connection)
+            producer.publish(
+                event,
+                routing_key=type.replace('-', '.'),
+                exchange=exchange.name,
+                retry=retry,
+                retry_policy=retry_policy,
+                declare=[exchange],
+                serializer=self.serializer,
+            )
+
     def send(self, type, **fields):
         """Send event.
 
@@ -126,16 +141,12 @@ class EventDispatcher(object):
 
         """
         if self.enabled:
-            with self.mutex:
-                event = Event(type, hostname=self.hostname,
-                              clock=self.app.clock.forward(), **fields)
-                try:
-                    self.publisher.publish(event,
-                                           routing_key=type.replace('-', '.'))
-                except Exception, exc:
-                    if not self.buffer_while_offline:
-                        raise
-                    self._outbound_buffer.append((type, fields, exc))
+            try:
+                self._send(type, fields, self.producer)
+            except Exception, exc:
+                if not self.buffer_while_offline:
+                    raise
+                self._outbound_buffer.append((type, fields, exc))
 
     def flush(self):
         while self._outbound_buffer:
@@ -203,9 +214,16 @@ class EventReceiver(object):
             yield consumer
 
     def itercapture(self, limit=None, timeout=None, wakeup=True):
-        with self.consumer(wakeup=wakeup) as consumer:
+        consumer = self.consumer(wakeup=wakeup)
+        consumer.consume()
+        try:
             yield consumer
             self.drain_events(limit=limit, timeout=timeout)
+        finally:
+            try:
+                consumer.cancel()
+            except self.connection.connection_errors:
+                pass
 
     def capture(self, limit=None, timeout=None, wakeup=True):
         """Open up a consumer capturing events.
