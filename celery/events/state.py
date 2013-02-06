@@ -282,10 +282,6 @@ class State(object):
         self.tasks = LRUCache(limit=self.max_tasks_in_memory)
         self._taskheap = []
         self.event_callback = callback
-        self.group_handlers = {
-            'worker': self.worker_event,
-            'task': self.task_event,
-        }
         self._mutex = threading.Lock()
 
     def freeze_while(self, fun, *args, **kwargs):
@@ -390,7 +386,7 @@ class State(object):
         self.event_count += 1
         event = kwdict(event)
         group, _, subject = event.pop('type').partition('-')
-        self.group_handlers[group](subject, event)
+        getattr(self, group + '_event')(subject, event)
         if self.event_callback:
             self.event_callback(self, event)
 
