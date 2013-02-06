@@ -173,7 +173,7 @@ class test_RedisBackend(Case):
 
             b.client.incr.return_value = len(deps)
             b.on_chord_part_return(task)
-            deps.join.assert_called_with(propagate=False)
+            deps.join_native.assert_called_with(propagate=True)
             deps.delete.assert_called_with()
 
             self.assertTrue(b.client.expire.call_count)

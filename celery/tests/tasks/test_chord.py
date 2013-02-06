@@ -70,7 +70,8 @@ class test_unlock_chord_task(AppCase):
                 subtask, canvas.maybe_subtask = canvas.maybe_subtask, passthru
                 try:
                     unlock('group_id', callback_s,
-                           result=[AsyncResult(r) for r in [1, 2, 3]])
+                           result=[AsyncResult(r) for r in ['1', 2, 3]],
+                           GroupResult=AlwaysReady)
                 finally:
                     canvas.maybe_subtask = subtask
                 callback.apply_async.assert_called_with(([2, 4, 8, 6], ), {})
@@ -90,7 +91,8 @@ class test_unlock_chord_task(AppCase):
             try:
                 callback = Mock()
                 unlock('group_id', callback, interval=10, max_retries=30,
-                       result=[AsyncResult(x) for x in [1, 2, 3]])
+                       result=[AsyncResult(x) for x in ['1', '2', '3']],
+                       GroupResult=NeverReady)
                 self.assertFalse(callback.delay.call_count)
                 # did retry
                 unlock.retry.assert_called_with(countdown=10, max_retries=30)

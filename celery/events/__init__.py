@@ -94,7 +94,7 @@ class EventDispatcher(object):
         self.hostname = hostname or socket.gethostname()
         self.buffer_while_offline = buffer_while_offline
         self.mutex = threading.Lock()
-        self.publisher = None
+        self.producer = None
         self._outbound_buffer = deque()
         self.serializer = serializer or self.app.conf.CELERY_EVENT_SERIALIZER
         self.on_enabled = set()
@@ -125,9 +125,9 @@ class EventDispatcher(object):
             return get_exchange(self.channel.connection.client)
 
     def enable(self):
-        self.publisher = Producer(self.channel or self.connection,
-                                  exchange=self.get_exchange(),
-                                  serializer=self.serializer)
+        self.producer = Producer(self.channel or self.connection,
+                                 exchange=self.get_exchange(),
+                                 serializer=self.serializer)
         self.enabled = True
         for callback in self.on_enabled:
             callback()
@@ -172,7 +172,7 @@ class EventDispatcher(object):
             if groups and group_from(type) not in groups:
                 return
             try:
-                self._send(type, fields, self.producer, blind)
+                self.publish(type, fields, self.producer, blind)
             except Exception as exc:
                 if not self.buffer_while_offline:
                     raise
@@ -192,7 +192,14 @@ class EventDispatcher(object):
     def close(self):
         """Close the event dispatcher."""
         self.mutex.locked() and self.mutex.release()
-        self.publisher = None
+        self.producer = None
+
+    def _get_publisher(self):
+        return self.producer
+
+    def _set_publisher(self, producer):
+        self.producer = producer
+    publisher = property(_get_publisher, _set_publisher)  # XXX compat
 
 
 class EventReceiver(ConsumerMixin):

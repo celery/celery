@@ -128,6 +128,8 @@ class test_AMQPBackend(AppCase):
         results = Queue()
 
         class Message(object):
+            acked = 0
+            requeued = 0
 
             def __init__(self, **merge):
                 self.payload = dict({'status': states.STARTED,
@@ -135,6 +137,12 @@ class test_AMQPBackend(AppCase):
                 self.body = pickle.dumps(self.payload)
                 self.content_type = 'application/x-python-serialize'
                 self.content_encoding = 'binary'
+
+            def ack(self, *args, **kwargs):
+                self.acked += 1
+
+            def requeue(self, *args, **kwargs):
+                self.requeued += 1
 
         class MockBinding(object):
 
@@ -163,9 +171,13 @@ class test_AMQPBackend(AppCase):
         backend._republish = Mock()
 
         # FFWD's to the latest state.
-        results.put(Message(status=states.RECEIVED, seq=1))
-        results.put(Message(status=states.STARTED, seq=2))
-        results.put(Message(status=states.FAILURE, seq=3))
+        state_messages = [
+            Message(status=states.RECEIVED, seq=1),
+            Message(status=states.STARTED, seq=2),
+            Message(status=states.FAILURE, seq=3),
+        ]
+        for state_message in state_messages:
+            results.put(state_message)
         r1 = backend.get_task_meta(uuid())
         self.assertDictContainsSubset({'status': states.FAILURE,
                                        'seq': 3}, r1,
@@ -177,7 +189,7 @@ class test_AMQPBackend(AppCase):
         backend.get_task_meta(tid)
         self.assertIn(tid, backend._cache, 'Caches last known state')
 
-        self.assertTrue(backend._republish.called)
+        self.assertTrue(state_messages[-1].requeued)
 
         # Returns cache if no new states.
         results.queue.clear()
