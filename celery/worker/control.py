@@ -8,8 +8,6 @@
 """
 from __future__ import absolute_import
 
-import os
-
 from kombu.utils.encoding import safe_repr
 
 from celery.five import UserDict, items
