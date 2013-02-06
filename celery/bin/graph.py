@@ -160,7 +160,7 @@ class graph(Command):
             threads = threads[0:3] + [threads[-1]]
         for i, threads in enumerate(threads):
             threads_for[workers[i]] = maybe_abbr(
-                range(int(threads)), 'P', Tmax,
+                list(range(int(threads))), 'P', Tmax,
             )
 
         broker = Broker(args.get('broker', self.app.connection().as_uri()))

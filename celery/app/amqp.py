@@ -18,7 +18,7 @@ from kombu.utils import cached_property, uuid
 from kombu.utils.encoding import safe_repr
 
 from celery import signals
-from celery.five import items
+from celery.five import items, string_t
 from celery.utils.text import indent as textindent
 
 from . import app_or_default
@@ -195,7 +195,7 @@ class TaskProducer(Producer):
         if queue is None and exchange is None:
             queue = self.default_queue
         if queue is not None:
-            if isinstance(queue, basestring):
+            if isinstance(queue, string_t):
                 qname, queue = queue, self.queues[queue]
             else:
                 qname = queue.name

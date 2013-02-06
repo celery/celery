@@ -439,8 +439,8 @@ class KeyValueStoreBackend(BaseBackend):
             callback = subtask(task.request.chord)
             try:
                 ret = j(propagate=propagate)
-            except Exception, exc:
-                culprit = deps._failed_join_report().next()
+            except Exception as exc:
+                culprit = next(deps._failed_join_report())
                 self.app._tasks[callback.task].backend.fail_from_current_stack(
                     callback.id, exc=ChordError('Dependency %s raised %r' % (
                         culprit.id, exc))

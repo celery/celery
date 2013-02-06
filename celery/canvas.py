@@ -12,7 +12,7 @@
 from __future__ import absolute_import
 
 from copy import deepcopy
-from functools import partial as _partial
+from functools import partial as _partial, reduce
 from operator import itemgetter
 from itertools import chain as _chain
 

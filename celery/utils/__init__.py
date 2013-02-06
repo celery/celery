@@ -12,7 +12,6 @@ import os
 import sys
 import traceback
 import warnings
-import types
 import datetime
 
 from functools import partial, wraps
@@ -201,9 +200,9 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
     return term
 
 
-def jsonify(obj):
+def jsonify(obj, builtin_types=(int, float, string_t)):
     """Transforms object making it suitable for json serialization"""
-    if isinstance(obj, (int, float, string_t, types.NoneType)):
+    if obj is None or isinstance(obj, builtin_types):
         return obj
     elif isinstance(obj, (tuple, list)):
         return [jsonify(o) for o in obj]
@@ -247,7 +246,7 @@ def gen_task_name(app, name, module_name):
             module_name = '__main__'
     if module_name == '__main__' and app.main:
         return '.'.join([app.main, name])
-    return '.'.join(filter(None, [module_name, name]))
+    return '.'.join(p for p in [module_name, name] if p)
 
 
 def nodename(name, hostname):

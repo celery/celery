@@ -173,7 +173,7 @@ class EventDispatcher(object):
                 return
             try:
                 self._send(type, fields, self.producer, blind)
-            except Exception, exc:
+            except Exception as exc:
                 if not self.buffer_while_offline:
                     raise
                 self._outbound_buffer.append((type, fields, exc))

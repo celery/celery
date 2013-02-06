@@ -113,7 +113,7 @@ class Namespace(object):
         self.state = RUN
         if self.on_start:
             self.on_start()
-        for i, step in enumerate(filter(None, parent.steps)):
+        for i, step in enumerate(s for s in parent.steps if s is not None):
             self._debug('Starting %s', step.alias)
             self.started = i + 1
             step.start(parent)
