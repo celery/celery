@@ -79,7 +79,7 @@ class EventDispatcher(object):
         self.hostname = hostname or socket.gethostname()
         self.buffer_while_offline = buffer_while_offline
         self.mutex = threading.Lock()
-        self.publisher = None
+        self.producer = None
         self._outbound_buffer = deque()
         self.serializer = serializer or self.app.conf.CELERY_EVENT_SERIALIZER
         self.on_enabled = set()
@@ -104,9 +104,9 @@ class EventDispatcher(object):
             return get_exchange(self.channel.connection.client)
 
     def enable(self):
-        self.publisher = Producer(self.channel or self.connection,
-                                  exchange=self.get_exchange(),
-                                  serializer=self.serializer)
+        self.producer = Producer(self.channel or self.connection,
+                                 exchange=self.get_exchange(),
+                                 serializer=self.serializer)
         self.enabled = True
         for callback in self.on_enabled:
             callback()
@@ -142,7 +142,7 @@ class EventDispatcher(object):
         """
         if self.enabled:
             try:
-                self._send(type, fields, self.producer)
+                self.publish(type, fields, self.producer)
             except Exception, exc:
                 if not self.buffer_while_offline:
                     raise
@@ -162,7 +162,14 @@ class EventDispatcher(object):
     def close(self):
         """Close the event dispatcher."""
         self.mutex.locked() and self.mutex.release()
-        self.publisher = None
+        self.producer = None
+
+    def _get_publisher(self):
+        return self.producer
+
+    def _set_publisher(self, producer):
+        self.producer = producer
+    publisher = property(_get_publisher, _set_publisher)  # XXX compat
 
 
 class EventReceiver(object):
@@ -208,22 +215,21 @@ class EventReceiver(object):
         consumer = Consumer(self.connection,
                             queues=[self.queue], no_ack=True)
         consumer.register_callback(self._receive)
-        with consumer:
+        consumer.consume()
+        try:
             if wakeup:
                 self.wakeup_workers(channel=consumer.channel)
             yield consumer
-
-    def itercapture(self, limit=None, timeout=None, wakeup=True):
-        consumer = self.consumer(wakeup=wakeup)
-        consumer.consume()
-        try:
-            yield consumer
-            self.drain_events(limit=limit, timeout=timeout)
         finally:
             try:
                 consumer.cancel()
             except self.connection.connection_errors:
                 pass
+
+    def itercapture(self, limit=None, timeout=None, wakeup=True):
+        with self.consumer(wakeup=wakeup) as consumer:
+            yield consumer
+            self.drain_events(limit=limit, timeout=timeout)
 
     def capture(self, limit=None, timeout=None, wakeup=True):
         """Open up a consumer capturing events.

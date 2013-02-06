@@ -17,7 +17,6 @@ from celery.app import app_or_default
 from celery.datastructures import LRUCache
 from celery.utils.timeutils import humanize_seconds
 
-
 TASK_NAMES = LRUCache(limit=0xFFF)
 
 HUMAN_TYPES = {'worker-offline': 'shutdown',

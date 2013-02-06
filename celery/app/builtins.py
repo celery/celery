@@ -69,15 +69,22 @@ def add_unlock_chord_task(app):
     """
     from celery.canvas import subtask
     from celery.exceptions import ChordError
+    from celery.result import from_serializable
 
     @app.task(name='celery.chord_unlock', max_retries=None,
               default_retry_delay=1, ignore_result=True, _force_evaluate=True)
     def unlock_chord(group_id, callback, interval=None, propagate=True,
-                     max_retries=None, result=None):
+                     max_retries=None, result=None,
+                     Result=app.AsyncResult, GroupResult=app.GroupResult,
+                     from_serializable=from_serializable):
         if interval is None:
             interval = unlock_chord.default_retry_delay
-        deps = app.GroupResult(group_id, map(app.AsyncResult, result))
+        deps = GroupResult(
+            group_id,
+            [from_serializable(r, Result=Result) for r in result],
+        )
         j = deps.join_native if deps.supports_native_join else deps.join
+
         if deps.ready():
             callback = subtask(callback)
             try:

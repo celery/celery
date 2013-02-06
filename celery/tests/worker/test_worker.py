@@ -1073,6 +1073,7 @@ class test_WorkController(AppCase):
         P = w.pool_cls.return_value = Mock()
         P.timers = {Mock(): 30}
         w.use_eventloop = True
+        w.consumer.restart_count = -1
         pool = Pool(w)
         pool.create(w)
         self.assertIsInstance(w.semaphore, BoundedSemaphore)
@@ -1106,6 +1107,7 @@ class test_WorkController(AppCase):
         cbs['on_timeout_set'](result, None, 10)
         cbs['on_timeout_set'](result, None, None)
 
-        P.did_start_ok.return_value = False
         with self.assertRaises(WorkerLostError):
-            pool.on_poll_init(P, hub)
+            P.did_start_ok.return_value = False
+            w.consumer.restart_count = 0
+            pool.on_poll_init(P, w, hub)

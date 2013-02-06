@@ -431,7 +431,7 @@ class test_App(Case):
         class Dispatcher(object):
             sent = []
 
-            def send(self, type, **fields):
+            def publish(self, type, fields, *args, **kwargs):
                 self.sent.append((type, fields))
 
         conn = self.app.connection()
@@ -447,6 +447,7 @@ class test_App(Case):
 
         prod = self.app.amqp.TaskProducer(
             conn, exchange=Exchange('foo_exchange'),
+            send_sent_event=True,
         )
 
         dispatcher = Dispatcher()

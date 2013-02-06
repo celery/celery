@@ -334,7 +334,8 @@ class SimpleBackend(object):
             self.ids = ids
 
         def get_many(self, *args, **kwargs):
-            return ((id, {'result': i}) for i, id in enumerate(self.ids))
+            return ((id, {'result': i, 'status': states.SUCCESS})
+                    for i, id in enumerate(self.ids))
 
 
 class test_TaskSetResult(AppCase):

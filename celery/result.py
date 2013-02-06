@@ -25,17 +25,6 @@ from .datastructures import DependencyGraph
 from .exceptions import IncompleteStream, TimeoutError
 
 
-def from_serializable(r):
-    # earlier backends may just pickle, so check if
-    # result is already prepared.
-    if not isinstance(r, ResultBase):
-        id, nodes = r
-        if nodes:
-            return GroupResult(id, [AsyncResult(id) for id, _ in nodes])
-        return AsyncResult(id)
-    return r
-
-
 class ResultBase(object):
     """Base class for all results"""
 
@@ -198,7 +187,7 @@ class AsyncResult(ResultBase):
 
     def __str__(self):
         """`str(self) -> self.id`"""
-        return self.id
+        return str(self.id)
 
     def __hash__(self):
         """`hash(self) -> hash(self.id)`"""
@@ -717,3 +706,14 @@ class EagerResult(AsyncResult):
     @property
     def supports_native_join(self):
         return False
+
+
+def from_serializable(r, Result=AsyncResult):
+    # earlier backends may just pickle, so check if
+    # result is already prepared.
+    if not isinstance(r, ResultBase):
+        id, nodes = r
+        if nodes:
+            return GroupResult(id, [Result(id) for id, _ in nodes])
+        return AsyncResult(id)
+    return r
