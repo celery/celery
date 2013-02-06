@@ -6,7 +6,7 @@
     This module implements the rate limiting of tasks,
     by having a token bucket queue for each task type.
     When a task is allowed to be processed it's moved
-    over the the ``ready_queue``
+    over the ``ready_queue``
 
     The :mod:`celery.worker.mediator` is then responsible
     for moving tasks from the ``ready_queue`` to the worker pool.
@@ -67,7 +67,7 @@ class TaskBucket(object):
 
     def put(self, request):
         """Put a :class:`~celery.worker.job.Request` into
-        the appropiate bucket."""
+        the appropriate bucket."""
         if request.name not in self.buckets:
             self.add_bucket_for_type(request.name)
         self.buckets[request.name].put_nowait(request)
@@ -118,7 +118,7 @@ class TaskBucket(object):
             return min(remaining_times), None
 
     def get(self, block=True, timeout=None):
-        """Retrive the task from the first available bucket.
+        """Retrieve the task from the first available bucket.
 
         Available as in, there is an item in the queue and you can
         consume tokens from it.
