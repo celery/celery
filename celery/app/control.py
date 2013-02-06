@@ -86,6 +86,7 @@ class Inspect(object):
     def conf(self):
         return self._request('dump_conf')
 
+
 class Control(object):
     Mailbox = Mailbox
 

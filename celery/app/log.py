@@ -121,7 +121,6 @@ class Logging(object):
             # then setup the root task logger.
             self.setup_task_loggers(loglevel, logfile, colorize=colorize)
 
-
         # This is a hack for multiprocessing's fork+exec, so that
         # logging before Process.run works.
         logfile_name = logfile if isinstance(logfile, basestring) else ''

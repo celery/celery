@@ -96,7 +96,7 @@ def evdump(app=None, out=sys.stdout):
             recv.capture()
         except (KeyboardInterrupt, SystemExit):
             return conn and conn.close()
-        except conn.connection_errors + conn.channel_errors as exc:
+        except conn.connection_errors + conn.channel_errors:
             dumper.say('-> Connection lost, attempting reconnect')
 
 if __name__ == '__main__':  # pragma: no cover

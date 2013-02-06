@@ -208,7 +208,7 @@ def jsonify(obj):
     elif isinstance(obj, (tuple, list)):
         return map(jsonify, obj)
     elif isinstance(obj, dict):
-        return dict([(k,jsonify(v)) for k,v in obj.iteritems()])
+        return dict((k, jsonify(v)) for k, v in obj.iteritems())
     # See "Date Time String Format" in the ECMA-262 specification.
     elif isinstance(obj, datetime.datetime):
         r = obj.isoformat()

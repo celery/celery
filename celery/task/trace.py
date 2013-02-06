@@ -230,7 +230,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 except Ignore, exc:
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
-                except RetryTaskError,  exc:
+                except RetryTaskError, exc:
                     I = Info(RETRY, exc)
                     state, retval = I.state, I.retval
                     R = I.handle_error_state(task, eager=eager)
@@ -271,7 +271,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     if task_request.chord:
                         on_chord_part_return(task)
                     if task_after_return:
-                        task_after_return(state, retval, uuid, args, kwargs, None)
+                        task_after_return(
+                            state, retval, uuid, args, kwargs, None,
+                        )
                     if postrun_receivers:
                         send_postrun(sender=task, task_id=uuid, task=task,
                                      args=args, kwargs=kwargs,
