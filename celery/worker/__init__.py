@@ -150,7 +150,7 @@ class Pool(bootsteps.StartStopComponent):
     def create(self, w, semaphore=None, max_restarts=None):
         threaded = not w.use_eventloop
         procs = w.min_concurrency
-        forking_enable = not threaded or (w.no_execv or not w.force_execv)
+        forking_enable = w.no_execv or not w.force_execv
         if not threaded:
             semaphore = w.semaphore = BoundedSemaphore(procs)
             max_restarts = 100
