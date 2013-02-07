@@ -28,7 +28,7 @@ You have to specify IronMQ in the broker URL::
 
 where the URL format is::
 
-    ironmq://TOKEN:PROJECT_ID@
+    ironmq://project_id:token@
 
 you must *remember to include the "@" at the end*.
 
