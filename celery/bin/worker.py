@@ -146,8 +146,9 @@ class worker(Command):
     supports_args = False
 
     def run_from_argv(self, prog_name, argv=None, command=None):
-        argv = list(sys.argv) if argv is None else argv
-        self.maybe_detach(argv)
+        command = sys.argv[0] if command is None else command
+        argv = sys.argv[1:] if argv is None else argv
+        self.maybe_detach([command] + argv)
         return super(worker, self).run_from_argv(prog_name, argv, command)
 
     def maybe_detach(self, argv, dopts=['-D', '--detach']):

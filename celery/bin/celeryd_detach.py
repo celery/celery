@@ -139,6 +139,7 @@ class detached_celeryd(object):
                 if arg == '--':
                     seen_cargs = 1
                     config.append(arg)
+        self.execv_argv = [sys.argv[0]] + ['celery', 'worker']
         prog_name = os.path.basename(argv[0])
         options, values, leftovers = self.parse_options(prog_name, argv[1:])
         sys.exit(detach(path=self.execv_path,
