@@ -105,6 +105,8 @@ NAMESPACES = {
         'BROADCAST_EXCHANGE_TYPE': Option('fanout'),
         'CACHE_BACKEND': Option(),
         'CACHE_BACKEND_OPTIONS': Option({}, type='dict'),
+        # chord propagate will be True from v3.1
+        'CHORD_PROPAGATES': Option(False, type='bool'),
         'CREATE_MISSING_QUEUES': Option(True, type='bool'),
         'DEFAULT_RATE_LIMIT': Option(type='string'),
         'DISABLE_RATE_LIMITS': Option(False, type='bool'),

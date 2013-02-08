@@ -711,9 +711,13 @@ class EagerResult(AsyncResult):
 def from_serializable(r, Result=AsyncResult):
     # earlier backends may just pickle, so check if
     # result is already prepared.
+    print('R IS: %r' % (r, ))
     if not isinstance(r, ResultBase):
-        id, nodes = r
-        if nodes:
-            return GroupResult(id, [Result(id) for id, _ in nodes])
-        return AsyncResult(id)
+        if isinstance(r, (list, tuple)):
+            id, nodes = r
+            if nodes:
+                return GroupResult(id, [Result(id) for id, _ in nodes])
+            return AsyncResult(id)
+        else:
+            return AsyncResult(r)
     return r
