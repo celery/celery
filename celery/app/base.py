@@ -193,8 +193,6 @@ class Celery(object):
     def _task_from_fun(self, fun, **options):
         base = options.pop('base', None) or self.Task
 
-        print('%r base is: %r' % (fun, base, ))
-
         T = type(fun.__name__, (base, ), dict({
             'app': self,
             'accept_magic_kwargs': False,
