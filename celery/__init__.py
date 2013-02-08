@@ -8,7 +8,7 @@
 from __future__ import absolute_import
 
 SERIES = 'Chiastic Slide'
-VERSION = (3, 0, 13)
+VERSION = (3, 0, 14)
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
