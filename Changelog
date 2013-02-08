@@ -123,8 +123,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Multiprocessing logger is now configured with loglevel ``ERROR``
   by default.
 
-    You can still set the :envvar:`MP_LOG` environment variable
-    to set it to value of the `--loglevel` argument.
+    Since 3.0 the multiprocessing loggers were disabled by default
+    (only configured when the :envvar:`MP_LOG` environment variable was set).
 
 .. _version-3.0.13:
 

@@ -82,7 +82,7 @@ class test_CacheBackend(Case):
             self.assertFalse(deps.join_native.called)
 
             tb.on_chord_part_return(task)
-            deps.join_native.assert_called_with(propagate=True)
+            deps.join_native.assert_called_with(propagate=False)
             deps.delete.assert_called_with()
 
         finally:
