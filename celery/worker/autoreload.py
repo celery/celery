@@ -61,7 +61,7 @@ class WorkerComponent(StartStopComponent):
 def file_hash(filename, algorithm='md5'):
     hobj = hashlib.new(algorithm)
     with open(filename, 'rb') as f:
-        for chunk in iter(lambda: f.read(2 ** 20), ''):
+        for chunk in iter(lambda: f.read(1048576), ''):
             hobj.update(chunk)
     return hobj.digest()
 
