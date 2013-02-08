@@ -15,7 +15,9 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 ======
 :release-date: 2013-02-08 05:00:00 P.M UTC
 
-- Now depends on Kombu 2.5.5
+- Now depends on Kombu 2.5.6
+
+- Now depends on billiard 2.7.3.20
 
 - Fixed a bug with how chords handles failures in subtasks (Issue #1172).
 
