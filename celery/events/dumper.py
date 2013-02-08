@@ -3,8 +3,8 @@
     celery.events.dumper
     ~~~~~~~~~~~~~~~~~~~~
 
-    THis is a simple program that dumps events to the console
-    as they happen.  Think of it like a `tcpdump` for Celery events.
+    This is a simple program that dumps events to the console
+    as they happen. Think of it like a `tcpdump` for Celery events.
 
 """
 from __future__ import absolute_import

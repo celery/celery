@@ -214,8 +214,6 @@ class State(object):
         self.workers = LRUCache(limit=max_workers_in_memory)
         self.tasks = LRUCache(limit=max_tasks_in_memory)
         self.event_callback = callback
-        self.group_handlers = {'worker': self.worker_event,
-                               'task': self.task_event}
         self._mutex = threading.Lock()
 
     def freeze_while(self, fun, *args, **kwargs):
@@ -300,8 +298,8 @@ class State(object):
     def _dispatch_event(self, event):
         self.event_count += 1
         event = kwdict(event)
-        group, _, type = event.pop('type').partition('-')
-        self.group_handlers[group](type, event)
+        group, _, subject = event.pop('type').partition('-')
+        getattr(self, group + '_event')(subject, event)
         if self.event_callback:
             self.event_callback(self, event)
 
@@ -357,6 +355,15 @@ class State(object):
     def __repr__(self):
         return '<ClusterState: events=%s tasks=%s>' % (self.event_count,
                                                        self.task_count)
+
+    def __getstate__(self):
+        d = dict(vars(self))
+        d.pop('_mutex')
+        return d
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self._mutex = threading.Lock()
 
 
 state = State()
