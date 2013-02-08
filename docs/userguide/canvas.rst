@@ -724,6 +724,8 @@ the return value of each task in the header.  The task id returned by
 and get the final return value (but remember to :ref:`never have a task wait
 for other tasks <task-synchronous-subtasks>`)
 
+.. _chord-errors:
+
 Error handling
 ~~~~~~~~~~~~~~
 

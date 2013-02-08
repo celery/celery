@@ -9,6 +9,90 @@
 
 If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
+.. _version-3.0.14:
+
+3.0.14
+======
+:release-date: 2013-02-08 05:00:00 P.M UTC
+
+- Now depends on Kombu 2.5.5
+
+- Fixed a bug with how chords handles failures in subtasks (Issue #1172).
+
+    Before if a task part of a chord raised an exception,
+    that exception value would be included as part of the callback
+    argument.  This was not intended and the new behavior has been
+    documented in :ref:`chord-errors`.
+
+- ``execv`` is now disabled by default.
+
+    It was causing too many problems for users, you can still enable
+    it using the :setting:`CELERY_FORCE_EXECV` setting.
+
+- ``GroupResult.join_native`` now respects the ``propagate`` argument.
+
+- ``subtask.id`` added as an alias to ``subtask['options'].id``
+
+    .. code-block:: python
+
+        >>> s = add.s(2, 2)
+        >>> s.id = 'my-id'
+        >>> s['options']
+        {'task_id': 'my-id'}
+
+        >>> s.id
+        'my-id'
+
+- worker: Fixed error `Could not start worker processes` occurring
+  when restarting after connection failure (Issue #1118).
+
+- Adds new signal :signal:`task-retried` (Issue #1169).
+
+- `celery events --dumper` now handles connection loss.
+
+- Will now retry sending the task-sent event in case of connection failure.
+
+- amqp backend:  Now uses ``Message.requeue`` instead of republishing
+  the message after poll.
+
+- New :setting:`BROKER_HEARTBEAT_CHECKRATE` setting introduced to modify the
+  rate at which broker connection heartbeats are monitored.
+
+- The stats broadcast command now includes the workers pid.
+
+    Contributed by Mher Movsisyan.
+
+- New ``conf`` remote control command to get a workers current configuration.
+
+    Contributed by Mher Movsisyan.
+
+- Adds the ability to modify the chord unlock task's countdown
+  argument (Issue #1146).
+
+    Contributed by Jun Sakai
+
+- beat: The scheduler now uses the `now()`` method of the schedule,
+  so that schedules can provide a custom way to get the current date and time.
+
+    Contributed by Raphaël Slinckx
+
+- Fixed pickling of configuration modules on Windows or when execv is used
+  (Issue #1126).
+
+- Multiprocessing logger is now configured with loglevel ``ERROR``
+  by default.
+
+    You can still set the :envvar:`MP_LOG` environment variable
+    to set it to value of the `--loglevel` argument.e
+
+- worker: Fixes bug with ignored and retried tasks.
+
+    The ``on_chord_part_return`` and ``Task.after_return`` callbacks,
+    nor the ``task_postrun`` signal should be called when the task was
+    retried/ignored.
+
+    Fix contributed by Vlad.
+
 .. _version-3.0.13:
 
 3.0.13
