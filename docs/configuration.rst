@@ -362,9 +362,9 @@ Using multiple memcached servers:
 .. setting:: CELERY_CACHE_BACKEND_OPTIONS
 
 
-The "dummy" backend stores the cache in memory only:
+The "memory" backend stores the cache in memory only:
 
-    CELERY_CACHE_BACKEND = "dummy"
+    CELERY_CACHE_BACKEND = "memory"
 
 CELERY_CACHE_BACKEND_OPTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
