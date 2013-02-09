@@ -41,8 +41,10 @@ class test_EventDispatcher(AppCase):
 
     def test_send(self):
         producer = MockProducer()
-        eventer = self.app.events.Dispatcher(Mock(), enabled=False)
-        eventer.publisher = producer
+        producer.connection = self.app.connection()
+        eventer = self.app.events.Dispatcher(Mock(), enabled=False,
+                                             buffer_while_offline=False)
+        eventer.producer = producer
         eventer.enabled = True
         eventer.send('World War II', ended=True)
         self.assertTrue(producer.has_event('World War II'))
@@ -52,14 +54,14 @@ class test_EventDispatcher(AppCase):
 
         evs = ('Event 1', 'Event 2', 'Event 3')
         eventer.enabled = True
-        eventer.publisher.raise_on_publish = True
+        eventer.producer.raise_on_publish = True
         eventer.buffer_while_offline = False
         with self.assertRaises(KeyError):
             eventer.send('Event X')
         eventer.buffer_while_offline = True
         for ev in evs:
             eventer.send(ev)
-        eventer.publisher.raise_on_publish = False
+        eventer.producer.raise_on_publish = False
         eventer.flush()
         for ev in evs:
             self.assertTrue(producer.has_event(ev))
@@ -98,22 +100,30 @@ class test_EventDispatcher(AppCase):
                                                      enabled=True,
                                                      channel=channel)
             self.assertTrue(dispatcher.enabled)
-            self.assertTrue(dispatcher.publisher.channel)
-            self.assertEqual(dispatcher.publisher.serializer,
+            self.assertTrue(dispatcher.producer.channel)
+            self.assertEqual(dispatcher.producer.serializer,
                              self.app.conf.CELERY_EVENT_SERIALIZER)
 
-            created_channel = dispatcher.publisher.channel
+            created_channel = dispatcher.producer.channel
             dispatcher.disable()
-            dispatcher.disable()  # Disable with no active publisher
+            dispatcher.disable()  # Disable with no active producer
             dispatcher2.disable()
             self.assertFalse(dispatcher.enabled)
-            self.assertIsNone(dispatcher.publisher)
+            self.assertIsNone(dispatcher.producer)
             self.assertFalse(dispatcher2.channel.closed,
                              'does not close manually provided channel')
 
             dispatcher.enable()
             self.assertTrue(dispatcher.enabled)
-            self.assertTrue(dispatcher.publisher)
+            self.assertTrue(dispatcher.producer)
+
+            # XXX test compat attribute
+            self.assertIs(dispatcher.publisher, dispatcher.producer)
+            prev, dispatcher.publisher = dispatcher.producer, 42
+            try:
+                self.assertEqual(dispatcher.producer, 42)
+            finally:
+                dispatcher.producer = prev
         finally:
             channel.close()
             connection.close()

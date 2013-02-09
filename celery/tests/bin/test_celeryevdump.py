@@ -43,6 +43,5 @@ class test_Dumper(Case):
 
     @patch('celery.events.EventReceiver.capture')
     def test_evdump(self, capture):
-        evdump()
         capture.side_effect = KeyboardInterrupt()
         evdump()

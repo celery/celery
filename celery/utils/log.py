@@ -221,7 +221,7 @@ def ensure_process_aware_logger():
 
 
 def get_multiprocessing_logger():
-    return mputil.get_logger() if mputil and MP_LOG else None
+    return mputil.get_logger() if mputil else None
 
 
 def reset_multiprocessing_logger():

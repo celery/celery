@@ -18,7 +18,7 @@ from kombu.utils import cached_property, uuid
 from kombu.utils.encoding import safe_repr
 
 from celery import signals
-from celery.five import items
+from celery.five import items, string_t
 from celery.utils.text import indent as textindent
 
 from . import app_or_default
@@ -164,11 +164,15 @@ class TaskProducer(Producer):
     retry = False
     retry_policy = None
     utc = True
+    event_dispatcher = None
+    send_sent_event = False
 
     def __init__(self, channel=None, exchange=None, *args, **kwargs):
         self.retry = kwargs.pop('retry', self.retry)
         self.retry_policy = kwargs.pop('retry_policy',
                                        self.retry_policy or {})
+        self.send_sent_event = kwargs.pop('send_sent_event',
+                                          self.send_sent_event)
         exchange = exchange or self.exchange
         self.queues = self.app.amqp.queues  # shortcut
         self.default_queue = self.app.amqp.default_queue
@@ -191,7 +195,7 @@ class TaskProducer(Producer):
         if queue is None and exchange is None:
             queue = self.default_queue
         if queue is not None:
-            if isinstance(queue, basestring):
+            if isinstance(queue, string_t):
                 qname, queue = queue, self.queues[queue]
             else:
                 qname = queue.name
@@ -247,24 +251,35 @@ class TaskProducer(Producer):
         )
 
         signals.task_sent.send(sender=task_name, **body)
-        if event_dispatcher:
+        if self.send_sent_event:
+            evd = event_dispatcher or self.event_dispatcher
             exname = exchange or self.exchange
             if isinstance(exname, Exchange):
                 exname = exname.name
-            event_dispatcher.send(
-                'task-sent', uuid=task_id,
-                name=task_name,
-                args=safe_repr(task_args),
-                kwargs=safe_repr(task_kwargs),
-                retries=retries,
-                eta=eta,
-                expires=expires,
-                queue=qname,
-                exchange=exname,
-                routing_key=routing_key,
+            evd.publish(
+                'task-sent',
+                {
+                    'uuid': task_id,
+                    'name': task_name,
+                    'args': safe_repr(task_args),
+                    'kwargs': safe_repr(task_kwargs),
+                    'retries': retries,
+                    'eta': eta,
+                    'expires': expires,
+                    'queue': qname,
+                    'exchange': exname,
+                    'routing_key': routing_key,
+                },
+                self, retry=retry, retry_policy=retry_policy,
             )
         return task_id
     delay_task = publish_task   # XXX Compat
+
+    @cached_property
+    def event_dispatcher(self):
+        # We call Dispatcher.publish with a custom producer
+        # so don't need the dispatcher to be "enabled".
+        return self.app.events.Dispatcher(enabled=False)
 
 
 class TaskPublisher(TaskProducer):
@@ -359,6 +374,7 @@ class AMQP(object):
             compression=conf.CELERY_MESSAGE_COMPRESSION,
             retry=conf.CELERY_TASK_PUBLISH_RETRY,
             retry_policy=conf.CELERY_TASK_PUBLISH_RETRY_POLICY,
+            send_sent_event=conf.CELERY_SEND_TASK_SENT_EVENT,
             utc=conf.CELERY_ENABLE_UTC,
         )
     TaskPublisher = TaskProducer  # compat

@@ -45,6 +45,7 @@ IGNORED = states.IGNORED
 RETRY = states.RETRY
 FAILURE = states.FAILURE
 EXCEPTION_STATES = states.EXCEPTION_STATES
+IGNORE_STATES = frozenset([IGNORED, RETRY])
 
 #: set by :func:`setup_worker_optimizations`
 _tasks = None
@@ -82,11 +83,13 @@ class TraceInfo(object):
         req = task.request
         type_, _, tb = sys.exc_info()
         try:
-            pred = self.retval
-            einfo = ExceptionInfo((type_, pred, tb))
+            reason = self.retval
+            einfo = ExceptionInfo((type_, reason, tb))
             if store_errors:
-                task.backend.mark_as_retry(req.id, pred.exc, einfo.traceback)
-            task.on_retry(pred.exc, req.id, req.args, req.kwargs, einfo)
+                task.backend.mark_as_retry(req.id, reason.exc, einfo.traceback)
+            task.on_retry(reason.exc, req.id, req.args, req.kwargs, einfo)
+            signals.task_retry.send(sender=task, request=req,
+                                    reason=reason, einfo=einfo)
             return einfo
         finally:
             del(tb)
@@ -112,7 +115,8 @@ class TraceInfo(object):
 
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
-                 Info=TraceInfo, eager=False, propagate=False):
+                 Info=TraceInfo, eager=False, propagate=False,
+                 IGNORE_STATES=IGNORE_STATES):
     """Builts a function that tracing the tasks execution; catches all
     exceptions, and saves the state and result of the task execution
     to the result backend.
@@ -201,6 +205,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     state = SUCCESS
                 except Ignore as exc:
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
+                    state, retval = I.state, I.retval
                 except RetryTaskError as exc:
                     I = Info(RETRY, exc)
                     state, retval = I.state, I.retval
@@ -228,14 +233,17 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         send_success(sender=task, result=retval)
 
                 # -* POST *-
-                if task_request.chord:
-                    on_chord_part_return(task)
-                if task_after_return:
-                    task_after_return(state, retval, uuid, args, kwargs, None)
-                if postrun_receivers:
-                    send_postrun(sender=task, task_id=uuid, task=task,
-                                 args=args, kwargs=kwargs,
-                                 retval=retval, state=state)
+                if state not in IGNORE_STATES:
+                    if task_request.chord:
+                        on_chord_part_return(task)
+                    if task_after_return:
+                        task_after_return(
+                            state, retval, uuid, args, kwargs, None,
+                        )
+                    if postrun_receivers:
+                        send_postrun(sender=task, task_id=uuid, task=task,
+                                     args=args, kwargs=kwargs,
+                                     retval=retval, state=state)
             finally:
                 pop_task()
                 pop_request()

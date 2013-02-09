@@ -34,6 +34,8 @@ from celery.utils.term import colored
 
 PY3 = sys.version_info[0] == 3
 
+MP_LOG = os.environ.get('MP_LOG', False)
+
 
 class TaskFormatter(ColorFormatter):
 
@@ -99,23 +101,31 @@ class Logging(object):
             sender=None, loglevel=loglevel, logfile=logfile,
             format=format, colorize=colorize,
         )
+
         if not receivers:
             root = logging.getLogger()
 
             if self.app.conf.CELERYD_HIJACK_ROOT_LOGGER:
                 root.handlers = []
 
-            for logger in root, get_multiprocessing_logger():
-                if logger is not None:
-                    self.setup_handlers(logger, logfile, format,
-                                        colorize, **kwargs)
-                    if loglevel:
-                        logger.setLevel(loglevel)
-                    signals.after_setup_logger.send(
-                        sender=None, logger=logger,
-                        loglevel=loglevel, logfile=logfile,
-                        format=format, colorize=colorize,
-                    )
+            # Configure root logger
+            self._configure_logger(
+                root, logfile, loglevel, format, colorize, **kwargs
+            )
+
+            # Configure the multiprocessing logger
+            self._configure_logger(
+                get_multiprocessing_logger(),
+                logfile, loglevel if MP_LOG else logging.ERROR,
+                format, colorize, **kwargs
+            )
+
+            signals.after_setup_logger.send(
+                sender=None, logger=root,
+                loglevel=loglevel, logfile=logfile,
+                format=format, colorize=colorize,
+            )
+
             # then setup the root task logger.
             self.setup_task_loggers(loglevel, logfile, colorize=colorize)
 
@@ -126,6 +136,14 @@ class Logging(object):
                           _MP_FORK_LOGFILE_=logfile_name,
                           _MP_FORK_LOGFORMAT_=format)
         return receivers
+
+    def _configure_logger(self, logger, logfile, loglevel,
+                          format, colorize, **kwargs):
+        if logger is not None:
+            self.setup_handlers(logger, logfile, format,
+                                colorize, **kwargs)
+            if loglevel:
+                logger.setLevel(loglevel)
 
     def setup_task_loggers(self, loglevel=None, logfile=None, format=None,
                            colorize=None, propagate=False, **kwargs):

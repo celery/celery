@@ -66,18 +66,36 @@ def add_unlock_chord_task(app):
 
     """
     from celery.canvas import subtask
-    from celery import result as _res
+    from celery.exceptions import ChordError
+    from celery.result import from_serializable
 
     @app.task(name='celery.chord_unlock', max_retries=None,
               default_retry_delay=1, ignore_result=True, _force_evaluate=True)
-    def unlock_chord(group_id, callback, interval=None, propagate=False,
-                     max_retries=None, result=None, Result=_res.AsyncResult):
+    def unlock_chord(group_id, callback, interval=None, propagate=True,
+                     max_retries=None, result=None,
+                     Result=app.AsyncResult, GroupResult=app.GroupResult,
+                     from_serializable=from_serializable):
         if interval is None:
             interval = unlock_chord.default_retry_delay
-        result = _res.GroupResult(group_id, [Result(r) for r in result])
-        j = result.join_native if result.supports_native_join else result.join
-        if result.ready():
-            subtask(callback).delay(j(propagate=propagate))
+        deps = GroupResult(
+            group_id,
+            [from_serializable(r, Result=Result) for r in result],
+        )
+        j = deps.join_native if deps.supports_native_join else deps.join
+
+        if deps.ready():
+            callback = subtask(callback)
+            try:
+                ret = j(propagate=propagate)
+            except Exception as exc:
+                culprit = next(deps._failed_join_report())
+
+                app._tasks[callback.task].backend.fail_from_current_stack(
+                    callback.id, exc=ChordError('Dependency %s raised %r' % (
+                        culprit.id, exc)),
+                )
+            else:
+                callback.delay(ret)
         else:
             return unlock_chord.retry(countdown=interval,
                                       max_retries=max_retries)
@@ -281,7 +299,7 @@ def add_chord_task(app):
         ignore_result = False
 
         def run(self, header, body, partial_args=(), interval=1, countdown=1,
-                max_retries=None, propagate=False, eager=False, **kwargs):
+                max_retries=None, propagate=True, eager=False, **kwargs):
             group_id = uuid()
             AsyncResult = self.app.AsyncResult
             prepare_member = self._prepare_member

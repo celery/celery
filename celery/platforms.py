@@ -20,7 +20,7 @@ from billiard import current_process
 from contextlib import contextmanager
 
 from .local import try_import
-from .five import items, map, reraise, string_t
+from .five import items, map, range, reraise, string_t
 
 _setproctitle = try_import('setproctitle')
 resource = try_import('resource')

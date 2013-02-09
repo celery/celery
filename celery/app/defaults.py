@@ -161,7 +161,7 @@ NAMESPACES = {
         'CONCURRENCY': Option(0, type='int'),
         'TIMER': Option(type='string'),
         'TIMER_PRECISION': Option(1.0, type='float'),
-        'FORCE_EXECV': Option(True, type='bool'),
+        'FORCE_EXECV': Option(False, type='bool'),
         'HIJACK_ROOT_LOGGER': Option(True, type='bool'),
         'CONSUMER': Option('celery.worker.consumer:Consumer', type='string'),
         'LOG_FORMAT': Option(DEFAULT_PROCESS_LOG_FMT),
@@ -232,7 +232,7 @@ def find_deprecated_settings(source):
             warn_deprecated(description='The {0!r} setting'.format(name),
                             deprecation=opt.deprecate_by,
                             removal=opt.remove_by,
-                            alternative=opt.alt)
+                            alternative='Use %s instead' % (opt.alt, ))
     return source
 
 

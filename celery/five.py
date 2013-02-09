@@ -302,7 +302,7 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
     cls_attrs = {} if cls_attrs is None else cls_attrs
 
     attrs = dict((attr_name, prepare_attr(attr) if prepare_attr else attr)
-                 for attr_name, attr in attrs.items())
+                 for attr_name, attr in items(attrs))
     module = sys.modules[fqdn] = type(name, (base, ), cls_attrs)(fqdn)
     module.__dict__.update(attrs)
     return module
@@ -344,6 +344,6 @@ def get_compat_module(pkg, name):
 
 def get_origins(defs):
     origins = {}
-    for module, items in defs.items():
-        origins.update(dict((item, module) for item in items))
+    for module, attrs in items(defs):
+        origins.update(dict((attr, module) for attr in attrs))
     return origins

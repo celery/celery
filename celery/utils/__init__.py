@@ -200,16 +200,16 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
     return term
 
 
-def jsonify(obj):
+def jsonify(obj, builtin_types=(int, float, string_t)):
     """Transforms object making it suitable for json serialization"""
-    if isinstance(obj, (int, float, string_t, type(None))):
+    if obj is None or isinstance(obj, builtin_types):
         return obj
     elif isinstance(obj, (tuple, list)):
         return [jsonify(o) for o in obj]
     elif isinstance(obj, dict):
         return dict((k, jsonify(v)) for k, v in items(obj))
-    # See "Date Time String Format" in the ECMA-262 specification.
     elif isinstance(obj, datetime.datetime):
+        # See "Date Time String Format" in the ECMA-262 specification.
         r = obj.isoformat()
         if obj.microsecond:
             r = r[:23] + r[26:]
@@ -226,7 +226,7 @@ def jsonify(obj):
     elif isinstance(obj, datetime.timedelta):
         return str(obj)
     else:
-        raise ValueError('Unsupported type: {0}'.format(type(obj)))
+        raise ValueError('Unsupported type: {0!r}'.format(type(obj)))
 
 
 def gen_task_name(app, name, module_name):
@@ -246,7 +246,7 @@ def gen_task_name(app, name, module_name):
             module_name = '__main__'
     if module_name == '__main__' and app.main:
         return '.'.join([app.main, name])
-    return '.'.join(filter(None, [module_name, name]))
+    return '.'.join(p for p in [module_name, name] if p)
 
 
 def nodename(name, hostname):

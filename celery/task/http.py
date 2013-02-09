@@ -114,7 +114,7 @@ class MutableURL(object):
                       ';{0}'.format(params) if params else '',
                       '?{0}'.format(query) if query else '',
                       '#{0}'.format(fragment) if fragment else '']
-        return ''.join(filter(None, components))
+        return ''.join(c for c in components if c)
 
     def __repr__(self):
         return '<{0}: {1}>'.format(type(self).__name__, self)

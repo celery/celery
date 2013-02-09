@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from kombu.utils import cached_property
 
 from . import current_app
-from .five import string_t
+from .five import range, string_t
 from .utils import is_iterable
 from .utils.timeutils import (
     timedelta_seconds, weekday, maybe_timedelta, remaining,
@@ -208,10 +208,9 @@ class crontab_parser(object):
         if len(toks) > 1:
             to = self._expand_number(toks[1])
             if to < fr:  # Wrap around max_ if necessary
-                return range(fr,
-                             self.min_ + self.max_) + range(self.min_,
-                                                            to + 1)
-            return range(fr, to + 1)
+                return (list(range(fr, self.min_ + self.max_)) +
+                        list(range(self.min_, to + 1)))
+            return list(range(fr, to + 1))
         return [fr]
 
     def _range_steps(self, toks):
@@ -225,7 +224,7 @@ class crontab_parser(object):
         return self._expand_star()[::int(toks[0])]
 
     def _expand_star(self, *args):
-        return range(self.min_, self.max_ + self.min_)
+        return list(range(self.min_, self.max_ + self.min_))
 
     def _expand_number(self, s):
         if isinstance(s, string_t) and s[0] == '-':

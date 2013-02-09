@@ -384,25 +384,14 @@ class test_tasks(Case):
     def test_send_task_sent_event(self):
         T1 = self.createTask('c.unittest.t.t1')
         app = T1.app
-        conn = app.connection()
-        chan = conn.channel()
-        app.conf.CELERY_SEND_TASK_SENT_EVENT = True
-        dispatcher = [None]
-
-        class Prod(object):
-            channel = chan
-
-            def publish_task(self, *args, **kwargs):
-                dispatcher[0] = kwargs.get('event_dispatcher')
-
-        try:
-            T1.apply_async(producer=Prod())
-        finally:
-            app.conf.CELERY_SEND_TASK_SENT_EVENT = False
-            chan.close()
-            conn.close()
-
-        self.assertTrue(dispatcher[0])
+        with app.connection() as conn:
+            app.conf.CELERY_SEND_TASK_SENT_EVENT = True
+            del(app.amqp.__dict__['TaskProducer'])
+            try:
+                self.assertTrue(app.amqp.TaskProducer(conn).send_sent_event)
+            finally:
+                app.conf.CELERY_SEND_TASK_SENT_EVENT = False
+                del(app.amqp.__dict__['TaskProducer'])
 
     def test_get_publisher(self):
         connection = app_or_default().connection()
