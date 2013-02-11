@@ -22,6 +22,13 @@ As well as an [Iron.io account](http://www.iron.io). Sign up for free at [iron.i
 Configuration
 =============
 
+First, you'll need to import the iron_celery library right after you import Celery, for example::
+
+    from celery import Celery
+    import iron_celery
+
+    celery = Celery('mytasks', broker='ironmq://', backend='ironcache://')
+
 You have to specify IronMQ in the broker URL::
 
     BROKER_URL = 'ironmq://ABCDEFGHIJKLMNOPQRST:ZYXK7NiynGlTogH8Nj+P9nlE73sq3@'
