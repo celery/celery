@@ -9,6 +9,16 @@
 
 If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
+.. _version-3.0.15:
+
+3.0.15
+======
+:release-date: 2013-02-11 04:30:00 P.M UTC
+
+- Now depends on billiard 2.7.3.21 which fixed a syntax error crash.
+
+- Fixed bug with :setting:`CELERY_SEND_TASK_SENT_EVENT`.
+
 .. _version-3.0.14:
 
 3.0.14
