@@ -199,6 +199,10 @@ Can be one of the following:
     Use `Cassandra`_ to store the results.
     See :ref:`conf-cassandra-result-backend`.
 
+* ironcache
+    Use `IronCache`_ to store the results.
+    See :ref:`conf-ironcache-result-backend`.
+
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
@@ -585,6 +589,33 @@ Example configuration
         'timeout': 300,
         'max_retries': 10
     }
+
+
+.. _conf-ironcache-result-backend:
+
+IronCache backend settings
+--------------------------
+
+.. note::
+
+    The Cassandra backend requires the :mod:`iron_celery` library:
+    http://pypi.python.org/pypi/iron_celery
+
+    To install the iron_celery package use `pip` or `easy_install`:
+
+    .. code-block:: bash
+
+        $ pip install iron_celery
+
+IronCache is configured via the URL provided in :setting:`CELERY_RESULT_BACKEND`, for example::
+
+    CELERY_RESULT_BACKEND = 'ironcache://project_id:token@'
+
+Or to change the cache name::
+
+    ironcache:://project_id:token@/awesomecache
+
+For more information, see: https://github.com/iron-io/iron_celery
 
 .. _conf-messaging:
 
