@@ -219,13 +219,13 @@ class EventReceiver(ConsumerMixin):
         self.routing_key = routing_key
         self.node_id = node_id or uuid()
         self.queue_prefix = queue_prefix
+        self.exchange = get_exchange(self.connection or self.app.connection())
         self.queue = Queue('.'.join([self.queue_prefix, self.node_id]),
                            exchange=self.exchange,
                            routing_key=self.routing_key,
                            auto_delete=True,
                            durable=False)
         self.adjust_clock = self.app.clock.adjust
-        self.exchange = get_exchange(self.connection or self.app.connection())
 
     def process(self, type, event):
         """Process the received event by dispatching it to the appropriate
