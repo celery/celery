@@ -25,8 +25,8 @@ from .utils.timeutils import (
 from .datastructures import AttributeDict
 
 
-def _weak_bool(s):
-    return 0 if s == '0' else s
+def cronfield(s):
+    return '*' if s is None else s
 
 
 class ParseException(Exception):
@@ -418,11 +418,11 @@ class crontab(schedule):
 
     def __init__(self, minute='*', hour='*', day_of_week='*',
                  day_of_month='*', month_of_year='*', nowfun=None):
-        self._orig_minute = minute
-        self._orig_hour = hour
-        self._orig_day_of_week = day_of_week
-        self._orig_day_of_month = day_of_month
-        self._orig_month_of_year = month_of_year
+        self._orig_minute = cronfield(minute)
+        self._orig_hour = cronfield(hour)
+        self._orig_day_of_week = cronfield(day_of_week)
+        self._orig_day_of_month = cronfield(day_of_month)
+        self._orig_month_of_year = cronfield(month_of_year)
         self.hour = self._expand_cronspec(hour, 24)
         self.minute = self._expand_cronspec(minute, 60)
         self.day_of_week = self._expand_cronspec(day_of_week, 7)
@@ -434,13 +434,13 @@ class crontab(schedule):
         return (self.nowfun or self.app.now)()
 
     def __repr__(self):
-        return ('<crontab: %s %s %s %s %s (m/h/d/dM/MY)>' % (
-            _weak_bool(self._orig_minute) or '*',
-            _weak_bool(self._orig_hour) or '*',
-            _weak_bool(self._orig_day_of_week) or '*',
-            _weak_bool(self._orig_day_of_month) or '*',
-            _weak_bool(self._orig_month_of_year) or '*',
-        ))
+        return '<crontab: %s %s %s %s %s (m/h/d/dM/MY)>' % (
+            self._orig_minute,
+            self._orig_hour,
+            self._orig_day_of_week,
+            self._orig_day_of_month,
+            self._orig_month_of_year,
+        )
 
     def __reduce__(self):
         return (self.__class__, (self._orig_minute,
