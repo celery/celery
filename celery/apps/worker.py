@@ -21,6 +21,7 @@ import warnings
 from functools import partial
 
 from billiard import cpu_count, current_process
+from kombu.utils.encoding import safe_str
 
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import app_or_default
@@ -187,7 +188,7 @@ class Worker(configurated):
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
-        print('celery@%s ready.' % self.hostname)
+        print('celery@%s ready.' % safe_str(self.hostname))
 
     def init_queues(self):
         try:

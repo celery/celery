@@ -81,7 +81,7 @@ from time import sleep
 from Queue import Empty
 
 from kombu.syn import _detect_environment
-from kombu.utils.encoding import safe_repr
+from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.eventio import READ, WRITE, ERR
 
 from celery.app import app_or_default
@@ -340,9 +340,9 @@ class Consumer(object):
                                      hostname=self.hostname,
                                      listener=self,     # pre 2.2
                                      consumer=self)
-        self.pidbox_node = self.app.control.mailbox.Node(self.hostname,
-                                                         state=pidbox_state,
-                                                         handlers=Panel.data)
+        self.pidbox_node = self.app.control.mailbox.Node(
+            safe_str(self.hostname), state=pidbox_state, handlers=Panel.data,
+        )
         conninfo = self.app.connection()
         self.connection_errors = conninfo.connection_errors
         self.channel_errors = conninfo.channel_errors

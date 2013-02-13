@@ -19,6 +19,7 @@ import signal as _signal
 import sys
 
 from billiard import current_process
+from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
 from .local import try_import
@@ -611,7 +612,7 @@ def set_process_title(progname, info=None):
     proctitle = '[%s]' % progname
     proctitle = '%s %s' % (proctitle, info) if info else proctitle
     if _setproctitle:
-        _setproctitle.setproctitle(proctitle)
+        _setproctitle.setproctitle(safe_str(proctitle))
     return proctitle
 
 
