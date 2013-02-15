@@ -347,92 +347,92 @@ class CursesMonitor(object):  # pragma: no cover
                             task.state, state_color | attr)
 
     def draw(self):
-        self.lock.acquire()
-        win = self.win
-        self.handle_keypress()
-        x = LEFT_BORDER_OFFSET
-        y = blank_line = count(2)
-        my, mx = win.getmaxyx()
-        win.erase()
-        win.bkgd(' ', curses.color_pair(1))
-        win.border()
-        win.addstr(1, x, self.greet, curses.A_DIM | curses.color_pair(5))
-        next(blank_line)
-        win.addstr(next(y), x, self.format_row('UUID', 'TASK',
-                                               'WORKER', 'TIME', 'STATE'),
-                   curses.A_BOLD | curses.A_UNDERLINE)
-        tasks = self.tasks
-        if tasks:
-            for row, (uuid, task) in enumerate(tasks):
-                if row > self.display_height:
-                    break
+        with self.lock:
+            win = self.win
+            self.handle_keypress()
+            x = LEFT_BORDER_OFFSET
+            y = blank_line = count(2)
+            my, mx = win.getmaxyx()
+            win.erase()
+            win.bkgd(' ', curses.color_pair(1))
+            win.border()
+            win.addstr(1, x, self.greet, curses.A_DIM | curses.color_pair(5))
+            next(blank_line)
+            win.addstr(next(y), x, self.format_row('UUID', 'TASK',
+                                                   'WORKER', 'TIME', 'STATE'),
+                       curses.A_BOLD | curses.A_UNDERLINE)
+            tasks = self.tasks
+            if tasks:
+                for row, (uuid, task) in enumerate(tasks):
+                    if row > self.display_height:
+                        break
 
-                if task.uuid:
-                    lineno = next(y)
-                self.display_task_row(lineno, task)
+                    if task.uuid:
+                        lineno = next(y)
+                    self.display_task_row(lineno, task)
 
-        # -- Footer
-        next(blank_line)
-        win.hline(my - 6, x, curses.ACS_HLINE, self.screen_width - 4)
+            # -- Footer
+            next(blank_line)
+            win.hline(my - 6, x, curses.ACS_HLINE, self.screen_width - 4)
 
-        # Selected Task Info
-        if self.selected_task:
-            win.addstr(my - 5, x, self.selected_str, curses.A_BOLD)
-            info = 'Missing extended info'
-            detail = ''
-            try:
-                selection = self.state.tasks[self.selected_task]
-            except KeyError:
-                pass
+            # Selected Task Info
+            if self.selected_task:
+                win.addstr(my - 5, x, self.selected_str, curses.A_BOLD)
+                info = 'Missing extended info'
+                detail = ''
+                try:
+                    selection = self.state.tasks[self.selected_task]
+                except KeyError:
+                    pass
+                else:
+                    info = selection.info()
+                    if 'runtime' in info:
+                        info['runtime'] = '{0:.2f}'.format(info['runtime'])
+                    if 'result' in info:
+                        info['result'] = abbr(info['result'], 16)
+                    info = ' '.join(
+                        '{0}={1}'.format(key, value)
+                        for key, value in items(info)
+                    )
+                    detail = '... -> key i'
+                infowin = abbr(info,
+                               self.screen_width - len(self.selected_str) - 2,
+                               detail)
+                win.addstr(my - 5, x + len(self.selected_str), infowin)
+                # Make ellipsis bold
+                if detail in infowin:
+                    detailpos = len(infowin) - len(detail)
+                    win.addstr(my - 5, x + len(self.selected_str) + detailpos,
+                               detail, curses.A_BOLD)
             else:
-                info = selection.info()
-                if 'runtime' in info:
-                    info['runtime'] = '{0:.2f}'.format(info['runtime'])
-                if 'result' in info:
-                    info['result'] = abbr(info['result'], 16)
-                info = ' '.join(
-                    '{0}={1}'.format(key, value) for key, value in items(info)
-                )
-                detail = '... -> key i'
-            infowin = abbr(info,
-                           self.screen_width - len(self.selected_str) - 2,
-                           detail)
-            win.addstr(my - 5, x + len(self.selected_str), infowin)
-            # Make ellipsis bold
-            if detail in infowin:
-                detailpos = len(infowin) - len(detail)
-                win.addstr(my - 5, x + len(self.selected_str) + detailpos,
-                           detail, curses.A_BOLD)
-        else:
-            win.addstr(my - 5, x, 'No task selected', curses.A_NORMAL)
+                win.addstr(my - 5, x, 'No task selected', curses.A_NORMAL)
 
-        # Workers
-        if self.workers:
-            win.addstr(my - 4, x, self.online_str, curses.A_BOLD)
-            win.addstr(my - 4, x + len(self.online_str),
-                       ', '.join(sorted(self.workers)), curses.A_NORMAL)
-        else:
-            win.addstr(my - 4, x, 'No workers discovered.')
+            # Workers
+            if self.workers:
+                win.addstr(my - 4, x, self.online_str, curses.A_BOLD)
+                win.addstr(my - 4, x + len(self.online_str),
+                           ', '.join(sorted(self.workers)), curses.A_NORMAL)
+            else:
+                win.addstr(my - 4, x, 'No workers discovered.')
 
-        # Info
-        win.addstr(my - 3, x, self.info_str, curses.A_BOLD)
-        win.addstr(
-            my - 3, x + len(self.info_str),
-            STATUS_SCREEN.format(
-                s=self.state,
-                w_alive=len([w for w in values(self.state.workers)
-                             if w.alive]),
-                w_all=len(self.state.workers),
-            ),
-            curses.A_DIM,
-        )
+            # Info
+            win.addstr(my - 3, x, self.info_str, curses.A_BOLD)
+            win.addstr(
+                my - 3, x + len(self.info_str),
+                STATUS_SCREEN.format(
+                    s=self.state,
+                    w_alive=len([w for w in values(self.state.workers)
+                                if w.alive]),
+                    w_all=len(self.state.workers),
+                ),
+                curses.A_DIM,
+            )
 
-        # Help
-        self.safe_add_str(my - 2, x, self.help_title, curses.A_BOLD)
-        self.safe_add_str(my - 2, x + len(self.help_title), self.help,
-                          curses.A_DIM)
-        win.refresh()
-        self.lock.release()
+            # Help
+            self.safe_add_str(my - 2, x, self.help_title, curses.A_BOLD)
+            self.safe_add_str(my - 2, x + len(self.help_title), self.help,
+                              curses.A_DIM)
+            win.refresh()
 
     def safe_add_str(self, y, x, string, *args, **kwargs):
         if x + len(string) > self.screen_width:
@@ -440,39 +440,37 @@ class CursesMonitor(object):  # pragma: no cover
         self.win.addstr(y, x, string, *args, **kwargs)
 
     def init_screen(self):
-        self.lock.acquire()
-        self.win = curses.initscr()
-        self.win.nodelay(True)
-        self.win.keypad(True)
-        curses.start_color()
-        curses.init_pair(1, self.foreground, self.background)
-        # exception states
-        curses.init_pair(2, curses.COLOR_RED, self.background)
-        # successful state
-        curses.init_pair(3, curses.COLOR_GREEN, self.background)
-        # revoked state
-        curses.init_pair(4, curses.COLOR_MAGENTA, self.background)
-        # greeting
-        curses.init_pair(5, curses.COLOR_BLUE, self.background)
-        # started state
-        curses.init_pair(6, curses.COLOR_YELLOW, self.foreground)
+        with self.lock:
+            self.win = curses.initscr()
+            self.win.nodelay(True)
+            self.win.keypad(True)
+            curses.start_color()
+            curses.init_pair(1, self.foreground, self.background)
+            # exception states
+            curses.init_pair(2, curses.COLOR_RED, self.background)
+            # successful state
+            curses.init_pair(3, curses.COLOR_GREEN, self.background)
+            # revoked state
+            curses.init_pair(4, curses.COLOR_MAGENTA, self.background)
+            # greeting
+            curses.init_pair(5, curses.COLOR_BLUE, self.background)
+            # started state
+            curses.init_pair(6, curses.COLOR_YELLOW, self.foreground)
 
-        self.state_colors = {states.SUCCESS: curses.color_pair(3),
-                             states.REVOKED: curses.color_pair(4),
-                             states.STARTED: curses.color_pair(6)}
-        for state in states.EXCEPTION_STATES:
-            self.state_colors[state] = curses.color_pair(2)
+            self.state_colors = {states.SUCCESS: curses.color_pair(3),
+                                 states.REVOKED: curses.color_pair(4),
+                                 states.STARTED: curses.color_pair(6)}
+            for state in states.EXCEPTION_STATES:
+                self.state_colors[state] = curses.color_pair(2)
 
-        curses.cbreak()
-        self.lock.release()
+            curses.cbreak()
 
     def resetscreen(self):
-        self.lock.acquire()
-        curses.nocbreak()
-        self.win.keypad(False)
-        curses.echo()
-        curses.endwin()
-        self.lock.release()
+        with self.lock:
+            curses.nocbreak()
+            self.win.keypad(False)
+            curses.echo()
+            curses.endwin()
 
     def nap(self):
         curses.napms(self.screen_delay)
