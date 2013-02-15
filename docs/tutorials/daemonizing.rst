@@ -56,9 +56,6 @@ This is an example configuration for a Python project.
     # Extra arguments to celeryd
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
-    # Name of the celery config module.
-    CELERY_CONFIG_MODULE="celeryconfig"
-
     # %n will be replaced with the nodename.
     CELERYD_LOG_FILE="/var/log/celery/%n.log"
     CELERYD_PID_FILE="/var/run/celery/%n.pid"
@@ -91,9 +88,6 @@ This is an example configuration for those using `django-celery`::
     # Extra arguments to celeryd
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
-    # Name of the celery config module.
-    CELERY_CONFIG_MODULE="celeryconfig"
-
     # %n will be replaced with the nodename.
     CELERYD_LOG_FILE="/var/log/celery/%n.log"
     CELERYD_PID_FILE="/var/run/celery/%n.pid"
@@ -120,21 +114,18 @@ environment's python interpreter::
 
     # Where to chdir at start.
     CELERYD_CHDIR="/opt/Myproject/"
-    
+
     # Python interpreter from environment.
     ENV_PYTHON="$CELERYD_CHDIR/env/bin/python"
-    
+
     # How to call "manage.py celeryd_multi"
     CELERYD_MULTI="$ENV_PYTHON $CELERYD_CHDIR/manage.py celeryd_multi"
 
     # How to call "manage.py celeryctl"
     CELERYCTL="$ENV_PYTHON $CELERYD_CHDIR/manage.py celeryctl"
-    
+
     # Extra arguments to celeryd
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
-
-    # Name of the celery config module.
-    CELERY_CONFIG_MODULE="celeryconfig"
 
     # %n will be replaced with the nodename.
     CELERYD_LOG_FILE="/var/log/celery/%n.log"
@@ -206,9 +197,6 @@ This is an example configuration for a Python project:
 
     # Extra arguments to celerybeat
     CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
-
-    # Name of the celery config module.#
-    CELERY_CONFIG_MODULE="celeryconfig"
 
 .. _generic-initd-celerybeat-django-example:
 
