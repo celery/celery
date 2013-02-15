@@ -70,9 +70,6 @@ This is an example configuration for a Python project.
     # Extra command-line arguments to the worker
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
-    # Name of the celery config module.
-    CELERY_CONFIG_MODULE="celeryconfig"
-
     # %N will be replaced with the first part of the nodename.
     CELERYD_LOG_FILE="/var/log/celery/%N.log"
     CELERYD_PID_FILE="/var/run/celery/%N.pid"
@@ -141,9 +138,6 @@ environment's python interpreter:
 
     # Extra command-line arguments to the worker (see celery worker --help)
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
-
-    # Name of the celery config module.
-    CELERY_CONFIG_MODULE="celeryconfig"
 
     # %n will be replaced with the nodename.
     CELERYD_LOG_FILE="/var/log/celery/%n.log"
