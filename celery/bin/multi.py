@@ -105,6 +105,7 @@ from subprocess import Popen
 from time import sleep
 
 from kombu.utils import cached_property
+from kombu.utils.compat import OrderedDict
 from kombu.utils.encoding import from_utf8
 
 from celery import VERSION_BANNER
@@ -478,10 +479,10 @@ class NamespacedOptionParser(object):
 
     def __init__(self, args):
         self.args = args
-        self.options = {}
+        self.options = OrderedDict()
         self.values = []
         self.passthrough = ''
-        self.namespaces = defaultdict(lambda: {})
+        self.namespaces = defaultdict(lambda: OrderedDict())
 
         self.parse()
 
@@ -517,7 +518,7 @@ class NamespacedOptionParser(object):
     def optmerge(self, ns, defaults=None):
         if defaults is None:
             defaults = self.options
-        return dict(defaults, **self.namespaces[ns])
+        return OrderedDict(defaults, **self.namespaces[ns])
 
     def add_option(self, name, value, short=False, ns=None):
         prefix = short and '-' or '--'
