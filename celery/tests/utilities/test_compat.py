@@ -30,15 +30,7 @@ class test_MagicModule(Case):
         self.assertTrue(dir(celery.messaging))
 
     def test_direct(self):
-        import sys
-        prev_celery = sys.modules.pop('celery', None)
-        prev_task = sys.modules.pop('celery.task', None)
-        try:
-            import celery
-            self.assertTrue(celery.task)
-        finally:
-            sys.modules['celery'] = prev_celery
-            sys.modules['celery.task'] = prev_task
+        self.assertTrue(celery.task)
 
     def test_app_attrs(self):
         self.assertEqual(celery.task.control.broadcast,
