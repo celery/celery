@@ -39,6 +39,7 @@ CRON_REPR = """\
 {0._orig_day_of_month} {0._orig_month_of_year} (m/h/d/dM/MY)>\
 """
 
+
 def cronfield(s):
     return '*' if s is None else s
 
