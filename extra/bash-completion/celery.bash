@@ -3,14 +3,20 @@
 # to get tab completion. celery must be on your PATH for this to work.
 _celery()
 {
-    local cur basep opts base kval kkey
+    local cur basep opts base kval kkey loglevels prevp in_opt controlargs
+    local pools
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
+    prevp="${COMP_WORDS[COMP_CWORD-1]}"
     basep="${COMP_WORDS[1]}"
     opts="worker events beat shell multi amqp status
           inspect control purge list migrate call result report"
     fargs="--app= --broker= --loader= --config= --version"
     dopts="--detach --umask= --gid= --uid= --pidfile= --logfile= --loglevel="
+    controlargs="--timeout --destination"
+    pools="processes eventlet gevent threads solo"
+    loglevels="critical error warning info debug"
+    in_opt=0
 
     # find the current subcommand, store in basep'
     for index in $(seq 1 $((${#COMP_WORDS[@]} - 2)))
@@ -22,17 +28,41 @@ _celery()
     done
 
     if [ "${cur:0:2}" == "--" -a "$cur" != "${cur//=}" ]; then
+        in_opt=1
         kkey="${cur%=*}"
         kval="${cur#*=}"
+    elif [ "${prevp:0:1}" == "-" ]; then
+        in_opt=1
+        kkey="$prevp"
+        kval="$cur"
+    fi
+
+    if [ $in_opt -eq 1 ]; then
         case "${kkey}" in
-            --uid)
+            --uid|-u)
                 COMPREPLY=( $(compgen -u -- "$kval") )
                 return 0
             ;;
-            --gid)
+            --gid|-g)
                 COMPREPLY=( $(compgen -g -- "$kval") )
                 return 0
-                ;;
+            ;;
+            --pidfile|--logfile|-p|-f|--statedb|-S|-s|--schedule-filename)
+                COMPREPLY=( $(compgen -f -- "$kval") )
+                return 0
+            ;;
+            --workdir)
+                COMPREPLY=( $(compgen -d -- "$kval") )
+                return 0
+            ;;
+            --loglevel|-l)
+                COMPREPLY=( $(compgen -W "$loglevels" -- "$kval") )
+                return 0
+            ;;
+            --pool|-P)
+                COMPREPLY=( $(compgen -W "$pools" -- "$kval") )
+                return 0
+            ;;
             *)
             ;;
         esac
@@ -43,49 +73,49 @@ _celery()
         COMPREPLY=( $(compgen -W '--concurrency= --pool= --purge --logfile=
         --loglevel= --hostname= --beat --schedule= --scheduler= --statedb= --events
         --time-limit= --soft-time-limit= --maxtasksperchild= --queues=
-        --include= --pidfile= --autoscale= --autoreload --no-execv' -- ${cur} ) )
+        --include= --pidfile= --autoscale= --autoreload --no-execv $fargs' -- ${cur} ) )
         return 0
         ;;
     inspect)
         COMPREPLY=( $(compgen -W 'active active_queues ping registered report
-        reserved revoked scheduled stats --help' -- ${cur}) )
-            return 0
-            ;;
+        reserved revoked scheduled stats --help $controlargs $fargs' -- ${cur}) )
+        return 0
+        ;;
     control)
         COMPREPLY=( $(compgen -W 'add_consumer autoscale cancel_consumer
         disable_events enable_events pool_grow pool_shrink
-        rate_limit time_limit --help' -- ${cur}) )
-            return 0
-            ;;
+        rate_limit time_limit --help $controlargs $fargs' -- ${cur}) )
+        return 0
+        ;;
     multi)
         COMPREPLY=( $(compgen -W 'start restart stopwait stop show
         kill names expand get help --quiet --nosplash
-        --verbose --no-color --help' -- ${cur} ) )
+        --verbose --no-color --help $fargs' -- ${cur} ) )
         return 0
         ;;
     amqp)
         COMPREPLY=( $(compgen -W 'queue.declare queue.purge exchange.delete
         basic.publish exchange.declare queue.delete queue.bind
-        basic.get --help' -- ${cur} ))
+        basic.get --help $fargs' -- ${cur} ))
         return 0
         ;;
     list)
-        COMPREPLY=( $(compgen -W 'bindings' -- ${cur} ) )
+        COMPREPLY=( $(compgen -W 'bindings $fargs' -- ${cur} ) )
         return 0
         ;;
     shell)
         COMPREPLY=( $(compgen -W '--ipython --bpython --python
-        --without-tasks --eventlet --gevent' -- ${cur} ) )
+        --without-tasks --eventlet --gevent $fargs' -- ${cur} ) )
         return 0
         ;;
     beat)
         COMPREPLY=( $(compgen -W '--schedule= --scheduler=
-        --max-interval= $dopts' -- ${cur}  ))
+        --max-interval= $dopts $fargs' -- ${cur}  ))
         return 0
         ;;
     events)
         COMPREPLY=( $(compgen -W '--dump --camera= --freq=
-        --maxrate= $dopts' -- ${cur}))
+        --maxrate= $dopts $fargs' -- ${cur}))
         return 0
         ;;
     *)
