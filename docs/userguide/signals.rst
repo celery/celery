@@ -49,7 +49,7 @@ has been sent by providing the `sender` argument to
 Signals use the same implementation as django.core.dispatch. As a result other
 keyword parameters (e.g. signal) are passed to all signal handlers by default.
 
-The best practice for signal handlers is to accept arbitrary keyword arguments (**kwargs.
+The best practice for signal handlers is to accept arbitrary keyword arguments (i.e. **kwargs).
 That way new celery versions can add additional arguments without breaking user code.
 
 .. _signal-ref:
