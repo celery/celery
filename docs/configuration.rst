@@ -1387,11 +1387,10 @@ CELERYD_HIJACK_ROOT_LOGGER
 
 .. versionadded:: 2.2
 
-By default any previously configured logging options will be reset,
-because the Celery programs "hijacks" the root logger.
-
-If you want to customize your own logging then you can disable
-this behavior.
+By default any previously configured handlers on the root logger will be
+removed. If you want to customize your own logging handlers, then you
+can disable this behavior by setting
+`CELERYD_HIJACK_ROOT_LOGGER = False`.
 
 .. note::
 
