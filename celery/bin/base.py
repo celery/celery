@@ -407,6 +407,10 @@ class Command(object):
                 if getattr(sym, '__path__', None):
                     return self.find_app('{0}.celery:'.format(
                                          app.replace(':', '')))
+                from celery.app.base import Celery
+                for suspect in vars(sym).itervalues():
+                    if isinstance(suspect, Celery):
+                        return suspect
                 raise
         return sym
 
