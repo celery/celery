@@ -33,9 +33,17 @@ app.conf.update(BROKER_URL="memory://",
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.coverage',
               'sphinx.ext.pngmath',
+              'sphinx.ext.viewcode',
+              'sphinx.ext.coverage',
               'sphinx.ext.intersphinx',
               'sphinxcontrib.issuetracker',
               'celerydocs']
+
+def linkcode_resolve(domain, info):
+    if domain != 'py' or not info['module']:
+        return
+    filename = info['module'].replace('.', '/')
+    return 'http://github.com/celery/celery/tree/master/%s.py' % (filename, )
 
 html_show_sphinx = False
 
