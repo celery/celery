@@ -1,139 +1,223 @@
 #!/bin/sh
-### BEGIN INIT INFO
-# Provides: celeryd
-# Required-Start: $network $local_fs $remote_fs
-# Required-Stop: $network $local_fs $remote_fs
-# Default-Start: 2 3 4 5
-# Default-Stop: 0 1 6
-# Short-Description: celery task worker daemon
-### END INIT INFO
-#
 # ============================================
-# celeryd - Starts the Celery worker daemon.
+#  celeryd - Starts the Celery worker daemon.
 # ============================================
 #
-# :Usage: /etc/init.d/${basename $0} {start|stop|restart|status}
+# :Usage: /etc/init.d/celeryd {start|stop|restart|status}
 # :Configuration file: /etc/sysconfig/celeryd
 #
-# To implement separate init scripts, do NOT copy this script.  Instead,
-# symlink it.  I.e., if my new application, "little-worker" needs an init, I
-# should just use:
-#
-#   ln -s /etc/init.d/celeryd /etc/init.d/little-worker
-#
-# You can then configure this by manipulating /etc/sysconfig/little-worker.
-#
+# See http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html
 
-# Setting `prog` here allows you to symlink this init script, making it easy
-# to run multiple processes on the system.
-prog="$(basename $0)"
+### BEGIN INIT INFO
+# Provides:          celeryd
+# Required-Start:    $network $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: celery task worker daemon
+### END INIT INFO
 
-# Source the centos stuff
-. /etc/init.d/functions
+# Source the centos service helper functions
+source /etc/init.d/functions
+# NOTE: "set -e" does not work with CentOS functions, so DO NOT USE!
 
-# Also look at sysconfig; this is where environmental variables should be set
-# on RHEL systems.
-[ -f "/etc/sysconfig/$prog" ] && . /etc/sysconfig/$prog
+# the lock file is used by above elper functions (e.g., status)
+LOCK_FILE=/var/lock/subsys/celeryd
 
-CELERYD=${CELERYD:-"-m celery.bin.celeryd_detach"}
-CELERYD_MULTI=${CELERYD_MULTI:-"/usr/bin/celeryd-multi"}
-CELERYD_PID_FILE=${CELERYD_PID_FILE:-"/var/run/celeryd/$prog.pid"}
-CELERYD_LOG_FILE=${CELERYD_LOG_FILE:-"/var/log/celeryd/$prog.log"}
-CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-"INFO"}
+# some commands work asyncronously, so we'll wait this many seconds
+SLEEP_SECONDS=5
+
+DEFAULT_PID_FILE="/var/run/celery/%n.pid"
+DEFAULT_LOG_FILE="/var/log/celery/%n.log"
+DEFAULT_LOG_LEVEL="INFO"
+DEFAULT_NODES="celery"
+DEFAULT_CELERYD="-m celery.bin.celeryd_detach"
+
+CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/sysconfig/celeryd"}
+
+test -f "$CELERY_DEFAULTS" && . "$CELERY_DEFAULTS"
+
+# Set CELERY_CREATE_DIRS to always create log/pid dirs.
+CELERY_CREATE_DIRS=${CELERY_CREATE_DIRS:-0}
+CELERY_CREATE_RUNDIR=$CELERY_CREATE_DIRS
+CELERY_CREATE_LOGDIR=$CELERY_CREATE_DIRS
+if [ -z "$CELERYD_PID_FILE" ]; then
+    CELERYD_PID_FILE="$DEFAULT_PID_FILE"
+    CELERY_CREATE_RUNDIR=1
+fi
+if [ -z "$CELERYD_LOG_FILE" ]; then
+    CELERYD_LOG_FILE="$DEFAULT_LOG_FILE"
+    CELERY_CREATE_LOGDIR=1
+fi
+
+CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-${CELERYD_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
+CELERYD_MULTI=${CELERYD_MULTI:-"celeryd-multi"}
+CELERYD=${CELERYD:-$DEFAULT_CELERYD}
+CELERYCTL=${CELERYCTL:="celeryctl"}
+CELERYD_NODES=${CELERYD_NODES:-$DEFAULT_NODES}
 
 # This is used to change how Celery loads in the configs.  It does not need to
 # be set to be run.
 export CELERY_LOADER
 
-start_workers () {
-    CELERYD_LOG_DIR=$(dirname $CELERYD_LOG_FILE)
-    CELERYD_PID_DIR=$(dirname $CELERYD_PID_FILE)
-    # Ensure that the directories exist.
-    mkdir -p $CELERYD_LOG_DIR $CELERYD_PID_DIR
+if [ -n "$2" ]; then
+    CELERYD_OPTS="$CELERYD_OPTS $2"
+fi
 
-    # If we specified a user, and/or a group, chown as needed
-    if [ -n "$CELERYD_USER" ]; then
-        CHOWN_UG="${CELERYD_USER}"
+CELERYD_LOG_DIR=`dirname $CELERYD_LOG_FILE`
+CELERYD_PID_DIR=`dirname $CELERYD_PID_FILE`
 
-        # If the group is specified, also use that in the chown.
-        [ -n "$CELERYD_GROUP" ] && CHOWN_UG="$CHOWN_UG:$CELERYD_GROUP"
+# Extra start-stop-daemon options, like user/group.
+if [ -n "$CELERYD_USER" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --uid=$CELERYD_USER"
+fi
+if [ -n "$CELERYD_GROUP" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --gid=$CELERYD_GROUP"
+fi
 
-        # Execute the chown on the directory only
-        chown $CHOWN_UG $CELERYD_LOG_DIR $CELERYD_PID_DIR
+if [ -n "$CELERYD_CHDIR" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --workdir=\"$CELERYD_CHDIR\""
+fi
 
-        CELERYD_OPTS="$CELERYD_OPTS --uid=$CELERYD_USER"
+check_dev_null() {
+    if [ ! -c /dev/null ]; then
+        echo "/dev/null is not a character device!"
+        exit 75  # EX_TEMPFAIL
     fi
-
-    # If we need to be run from a specific location, cd to it before launch
-    if [ -n "$CELERYD_CHDIR" ]; then
-        cd $CELERYD_CHDIR
-    fi
-
-    echo -n $"Starting $prog: "
-    $CELERYD_MULTI start $prog \
-                               --pidfile=$CELERYD_PID_FILE \
-                               --logfile=$CELERYD_LOG_FILE \
-                               --loglevel=$CELERYD_LOG_LEVEL \
-                               --cmd="$CELERYD" \
-                                --quiet \
-                               $CELERYD_OPTS
-    RETVAL=$?
-
-    if [ "$RETVAL" == "0" ]; then
-        touch /var/lock/subsys/$prog
-        success
-    else
-        failure
-    fi
-    echo
 }
 
-stop_workers () {
-    echo -n $"Stopping $prog: "
 
-    # If we haven't ended, explicitly kill it!
-    if [ ! -f $CELERYD_PID_FILE ] || [ ! -e /proc/$(cat $CELERYD_PID_FILE) ]; then
-        failure
-    echo
-        return
+maybe_die() {
+    if [ $? -ne 0 ]; then
+        echo "Exiting: $* (errno $?)"
+        exit 77  # EX_NOPERM
+    fi
+}
+
+create_default_dir() {
+    if [ ! -d "$1" ]; then
+        echo "- Creating default directory: '$1'"
+        mkdir -p "$1"
+        maybe_die "Couldn't create directory $1"
+        echo "- Changing permissions of '$1' to 02755"
+        chmod 02755 "$1"
+        maybe_die "Couldn't change permissions for $1"
+        if [ -n "$CELERYD_USER" ]; then
+            echo "- Changing owner of '$1' to '$CELERYD_USER'"
+            chown "$CELERYD_USER" "$1"
+            maybe_die "Couldn't change owner of $1"
+        fi
+        if [ -n "$CELERYD_GROUP" ]; then
+            echo "- Changing group of '$1' to '$CELERYD_GROUP'"
+            chgrp "$CELERYD_GROUP" "$1"
+            maybe_die "Couldn't change group of $1"
+        fi
+    fi
+}
+
+
+check_paths() {
+    if [ $CELERY_CREATE_LOGDIR -eq 1 ]; then
+        create_default_dir "$CELERYD_LOG_DIR"
+    fi
+    if [ $CELERY_CREATE_RUNDIR -eq 1 ]; then
+        create_default_dir "$CELERYD_PID_DIR"
+    fi
+}
+
+create_paths() {
+    create_default_dir "$CELERYD_LOG_DIR"
+    create_default_dir "$CELERYD_PID_DIR"
+}
+
+export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
+
+
+stop_workers () {
+    # Configuration management packages sometimes issue a "stop" command
+    # in preparation for installing the software for the first time.
+    # In those cases we don't need celeryd-multi to tell us celeryd is
+    # not running.
+    if [ ! -f "$LOCK_FILE" ]; then
+        echo "celeryd is already stopped."
+        success
+        return 0
     fi
 
     # First, try to nicely shut it down.
-    $CELERYD_MULTI stop $prog --pidfile=$CELERYD_PID_FILE --quiet
+    $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE" --quiet
     RETVAL=$?
 
-    # SLeep a few seconds. (this was part of the original script; we can't
+    # Sleep a few seconds. (This was part of the original script; we can't
     # trust that it will end immediately, or that running the command will
-    # stop it.
-    sleep 3
+    # stop it.)
+    sleep $SLEEP_SECONDS
 
     # If we haven't ended, explicitly kill it!
-    if [ -f $CELERYD_PID_FILE ] && [ -e /proc/$(cat $CELERYD_PID_FILE) ]; then
-        $CELERYD_MULTI stop $prog -KILL --pidfile=$CELERYD_PID_FILE --quiet
+    if [ "$RETVAL" != "0" ] || [ -f "$CELERYD_PID_FILE" ]; then
+        $CELERYD_MULTI stop $CELERYD_NODES -KILL --pidfile="$CELERYD_PID_FILE" --quiet
+        RETVAL=$?
+        sleep $SLEEP_SECONDS
     fi
 
     if [ "$RETVAL" == "0" ]; then
-        rm -f /var/lock/sybsys/$prog
+        rm -f "$LOCK_FILE"
         success
     else
         failure
     fi
-    echo
+}
+
+start_workers () {
+    $CELERYD_MULTI start $CELERYD_NODES $DAEMON_OPTS        \
+                         --pidfile="$CELERYD_PID_FILE"      \
+                         --logfile="$CELERYD_LOG_FILE"      \
+                         --loglevel="$CELERYD_LOG_LEVEL"    \
+                         --cmd="$CELERYD"                   \
+                         --quiet \
+                         $CELERYD_OPTS
+    RETVAL=$?
+
+    if [ "$RETVAL" == "0" ]; then
+        touch "$LOCK_FILE"
+        success
+    else
+        failure
+    fi
+
+    # Sleep a few seconds to give Celery a chance to initialize itself.
+    # This is useful to prevent scripts following this one from trying to
+    # use Celery too early.
+    sleep $SLEEP_SECONDS
 }
 
 case "$1" in
     start)
-        start_workers ;;
+        check_dev_null
+        check_paths
+        start_workers
+    ;;
+
     stop)
-        stop_workers ;;
-    status)
-        status -p $CELERYD_PID_FILE $prog ;;
-    restart)
+        check_dev_null
+        check_paths
         stop_workers
-        start_workers ;;
+    ;;
+
+    status)
+        status -p $LOCK_FILE celeryd
+    ;;
+
+    restart)
+        check_dev_null
+        check_paths
+        stop_workers
+        start_workers
+    ;;
+
     *)
-        echo "Usage: /etc/init.d/$prog {start|stop|restart|status}"
-        exit 1
+        echo "Usage: /etc/init.d/celeryd {start|stop|restart|status}"
+        exit 64  # EX_USAGE
     ;;
 esac
 
