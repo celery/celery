@@ -40,6 +40,7 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
         drain_nowait = connection.drain_nowait
         on_task_callbacks = hub.on_task
         keep_draining = connection.transport.nb_keep_draining
+        errors = connection.connection_errors
 
         if heartbeat and connection.supports_heartbeats:
             hub.timer.apply_interval(
@@ -73,7 +74,7 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
 
             # fire any ready timers, this also returns
             # the number of seconds until we need to fire timers again.
-            poll_timeout = fire_timers() if scheduled else 1
+            poll_timeout = fire_timers(propagate=errors) if scheduled else 1
 
             # We only update QoS when there is no more messages to read.
             # This groups together qos calls, and makes sure that remote

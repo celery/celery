@@ -12,8 +12,10 @@ from kombu.utils import cached_property
 from kombu.utils import eventio
 
 from celery.five import items, range
+from celery.utils.log import get_logger
 from celery.utils.timer2 import Schedule
 
+logger = get_logger(__name__)
 READ, WRITE, ERR = eventio.READ, eventio.WRITE, eventio.ERR
 
 
@@ -144,14 +146,20 @@ class Hub(object):
         for callback in self.on_init:
             callback(self)
 
-    def fire_timers(self, min_delay=1, max_delay=10, max_timers=10):
+    def fire_timers(self, min_delay=1, max_delay=10, max_timers=10,
+                    propagate=()):
         delay = None
         if self.timer._queue:
             for i in range(max_timers):
                 delay, entry = next(self.scheduler)
                 if entry is None:
                     break
-                self.timer.apply_entry(entry)
+                try:
+                    entry()
+                except propagate:
+                    raise
+                except Exception, exc:
+                    logger.error('Error in timer: %r', exc, exc_info=1)
         return min(max(delay or 0, min_delay), max_delay)
 
     def add(self, fd, callback, flags):
