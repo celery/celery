@@ -280,7 +280,7 @@ class BaseBackend(object):
 
     def fallback_chord_unlock(self, group_id, body, result=None,
                               countdown=1, **kwargs):
-        kwargs['result'] = [r.id for r in result]
+        kwargs['result'] = [r.serializable() for r in result]
         self.app.tasks['celery.chord_unlock'].apply_async(
             (group_id, body, ), kwargs, countdown=countdown,
         )
