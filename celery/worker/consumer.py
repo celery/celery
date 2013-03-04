@@ -419,6 +419,7 @@ class Consumer(object):
             drain_nowait = connection.drain_nowait
             on_task_callbacks = hub.on_task
             keep_draining = connection.transport.nb_keep_draining
+            errors = connection.connection_errors
 
             if hb and connection.supports_heartbeats:
                 hub.timer.apply_interval(
@@ -437,7 +438,6 @@ class Consumer(object):
                     self.handle_unknown_task(body, message, exc)
                 except InvalidTaskError, exc:
                     self.handle_invalid_task(body, message, exc)
-                #fire_timers()
 
             self.task_consumer.callbacks = [on_task_received]
             self.task_consumer.consume()
@@ -453,7 +453,7 @@ class Consumer(object):
 
                 # fire any ready timers, this also returns
                 # the number of seconds until we need to fire timers again.
-                poll_timeout = fire_timers() if scheduled else 1
+                poll_timeout = fire_timers(propagate=errors) if scheduled else 1
 
                 # We only update QoS when there is no more messages to read.
                 # This groups together qos calls, and makes sure that remote
