@@ -96,7 +96,10 @@ class MongoBackend(BaseBackend):
             # This enables the use of replica sets and sharding.
             # See pymongo.Connection() for more info.
             args = [self.mongodb_host]
-            kwargs = {'max_pool_size': self.mongodb_max_pool_size}
+            kwargs = {
+                'max_pool_size': self.mongodb_max_pool_size,
+                'ssl': self.app.conf.BROKER_USE_SSL
+            }
             if isinstance(self.mongodb_host, string_t) \
                     and not self.mongodb_host.startswith('mongodb://'):
                 args.append(self.mongodb_port)
