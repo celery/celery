@@ -19,10 +19,8 @@
 
 # Source the centos service helper functions
 source /etc/init.d/functions
-# NOTE: "set -e" does not work with CentOS functions, so DO NOT USE!
-
-# the lock file is used by above elper functions (e.g., status)
-LOCK_FILE=/var/lock/subsys/celeryd
+# NOTE: "set -e" does not work with the above functions,
+# which use non-zero return codes as non-error return conditions
 
 # some commands work asyncronously, so we'll wait this many seconds
 SLEEP_SECONDS=5
@@ -66,6 +64,13 @@ fi
 
 CELERYD_LOG_DIR=`dirname $CELERYD_LOG_FILE`
 CELERYD_PID_DIR=`dirname $CELERYD_PID_FILE`
+
+# Starting the celeryd service can bring online multiple nodes, each of which running in
+# its own process with its own pid file. This is accomplished by means of including the
+# wildcard '%n' in the variable CELERYD_PID_FILE. Since CentOS services don't know how
+# to deal with a service that may spawn multiple pid files, we will create our own
+# single pid file that will contain all pids from worker node processes spawned by Celery.
+SERVICE_PID_FILE=${CELERYD_PID_DIR}/celeryd.pid
 
 # Extra start-stop-daemon options, like user/group.
 if [ -n "$CELERYD_USER" ]; then
@@ -133,92 +138,91 @@ create_paths() {
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
-stop_workers () {
+stop() {
+    echo -n $"Stopping celeryd: "
+
     # Configuration management packages sometimes issue a "stop" command
     # in preparation for installing the software for the first time.
     # In those cases we don't need celeryd-multi to tell us celeryd is
     # not running.
-    if [ ! -f "$LOCK_FILE" ]; then
-        echo "celeryd is already stopped."
-        success
+    if [ ! -f "$SERVICE_PID_FILE" ]; then
+        echo $"already stopped"
         return 0
     fi
 
-    # First, try to nicely shut it down.
-    $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE" --quiet
+    # killproc comes from 'functions' and brings two nice features:
+    #  1. sending TERM, sleeping, then sleeping more if needed, then sending KILL
+    #  2. handling 'success' and 'failure' output
+    killproc -p "$SERVICE_PID_FILE" -d "$SLEEP_SECONDS" celeryd
     RETVAL=$?
 
-    # Sleep a few seconds. (This was part of the original script; we can't
-    # trust that it will end immediately, or that running the command will
-    # stop it.)
-    sleep $SLEEP_SECONDS
-
-    # If we haven't ended, explicitly kill it!
-    if [ "$RETVAL" != "0" ] || [ -f "$CELERYD_PID_FILE" ]; then
-        $CELERYD_MULTI stop $CELERYD_NODES -KILL --pidfile="$CELERYD_PID_FILE" --quiet
-        RETVAL=$?
-        sleep $SLEEP_SECONDS
-    fi
-
-    if [ "$RETVAL" == "0" ]; then
-        rm -f "$LOCK_FILE"
-        success
-    else
-        failure
-    fi
+    [[ "$RETVAL" == "0" ]] && rm -f "$SERVICE_PID_FILE"
+    echo
 }
 
-start_workers () {
+start() {
+    echo -n $"Starting celeryd: "
+
+    # If Celery is already running, bail out
+    if [[ -f "$SERVICE_PID_FILE" ]]; then
+        echo -n $"already running. Use 'restart'."
+        failure
+        echo
+        return 1
+    fi
+
     $CELERYD_MULTI start $CELERYD_NODES $DAEMON_OPTS        \
                          --pidfile="$CELERYD_PID_FILE"      \
                          --logfile="$CELERYD_LOG_FILE"      \
                          --loglevel="$CELERYD_LOG_LEVEL"    \
                          --cmd="$CELERYD"                   \
-                         --quiet \
+                         --quiet                            \
                          $CELERYD_OPTS
     RETVAL=$?
 
-    if [ "$RETVAL" == "0" ]; then
-        touch "$LOCK_FILE"
-        success
-    else
-        failure
+    if [[ "$RETVAL" == "0" ]]; then
+	# Sleep a few seconds to give Celery a chance to initialize itself.
+	# This is useful to prevent scripts following this one from trying to
+	# use Celery (or its pid files) too early.
+	sleep $SLEEP_SECONDS
+
+        # Collect the pids of all nodes into one service pid file
+        # (this step will fail if no nodes have started yet)
+	cat "${CELERYD_PID_DIR}"/* > "$SERVICE_PID_FILE"
     fi
 
-    # Sleep a few seconds to give Celery a chance to initialize itself.
-    # This is useful to prevent scripts following this one from trying to
-    # use Celery too early.
-    sleep $SLEEP_SECONDS
+    [[ -f "$SERVICE_PID_FILE" ]] && success || failure
+    echo
 }
 
 case "$1" in
     start)
         check_dev_null
         check_paths
-        start_workers
+        start
     ;;
 
     stop)
         check_dev_null
         check_paths
-        stop_workers
+        stop
     ;;
 
     status)
-        status -p $LOCK_FILE celeryd
+        status -p $SERVICE_PID_FILE celeryd
     ;;
 
     restart)
         check_dev_null
         check_paths
-        stop_workers
-        start_workers
+        stop
+        start
     ;;
 
     *)
         echo "Usage: /etc/init.d/celeryd {start|stop|restart|status}"
-        exit 64  # EX_USAGE
+        exit 3
     ;;
 esac
 
-exit 0
+exit $RETVAL
