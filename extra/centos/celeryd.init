@@ -181,14 +181,14 @@ start() {
     RETVAL=$?
 
     if [[ "$RETVAL" == "0" ]]; then
-	# Sleep a few seconds to give Celery a chance to initialize itself.
-	# This is useful to prevent scripts following this one from trying to
-	# use Celery (or its pid files) too early.
-	sleep $SLEEP_SECONDS
+        # Sleep a few seconds to give Celery a chance to initialize itself.
+        # This is useful to prevent scripts following this one from trying to
+        # use Celery (or its pid files) too early.
+        sleep $SLEEP_SECONDS
 
         # Collect the pids of all nodes into one service pid file
         # (this step will fail if no nodes have started yet)
-	cat "${CELERYD_PID_DIR}"/* > "$SERVICE_PID_FILE"
+        cat "${CELERYD_PID_DIR}"/* > "$SERVICE_PID_FILE"
     fi
 
     [[ -f "$SERVICE_PID_FILE" ]] && success || failure
