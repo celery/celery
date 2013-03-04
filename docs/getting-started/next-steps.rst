@@ -175,7 +175,7 @@ or stop it:
 
 .. code-block:: bash
 
-    $ celery multi stop -w1 -A proj -l info
+    $ celery multi stop w1 -A proj -l info
 
 The ``stop`` command is asynchronous so it will not wait for the
 worker to shutdown.  You will probably want to use the ``stopwait`` command
@@ -183,7 +183,7 @@ instead which will ensure all currently executing tasks is completed:
 
 .. code-block:: bash
 
-    $ celery multi stopwait -w1 -A proj -l info
+    $ celery multi stopwait w1 -A proj -l info
 
 .. note::
 

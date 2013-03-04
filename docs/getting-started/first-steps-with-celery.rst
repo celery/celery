@@ -259,7 +259,7 @@ In case the task raised an exception, :meth:`~@AsyncResult.get` will
 re-raise the exception, but you can override this by specifying
 the ``propagate`` argument::
 
-    >>> result.get(propagate=True)
+    >>> result.get(propagate=False)
 
 
 If the task raised an exception you can also gain access to the
