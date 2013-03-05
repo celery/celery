@@ -98,10 +98,13 @@ def add_unlock_chord_task(app):
             try:
                 ret = j(propagate=propagate)
             except Exception, exc:
-                culprit = deps._failed_join_report().next()
+                try:
+                    culprit = deps._failed_join_report().next()
+                    reason = 'Dependency %s raised %r' % (culprit.id, exc)
+                except StopIteration:
+                    reason = repr(exc)
                 app._tasks[callback.task].backend.fail_from_current_stack(
-                    callback.id, exc=ChordError('Dependency %s raised %r' % (
-                        culprit.id, exc)),
+                    callback.id, exc=ChordError(reason),
                 )
             else:
                 try:
