@@ -123,6 +123,11 @@ create_paths() {
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
+_get_pid_files() {
+    [[ ! -d "$CELERYD_PID_DIR" ]] && return
+    echo $(find "$CELERYD_PID_DIR" -name "*.pid")
+}
+
 stop_workers () {
     $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
 }
@@ -135,7 +140,6 @@ start_workers () {
                          --loglevel="$CELERYD_LOG_LEVEL"    \
                          --cmd="$CELERYD"                   \
                          $CELERYD_OPTS
-    RETVAL=$?
 }
 
 
@@ -146,30 +150,31 @@ restart_workers () {
                            --loglevel="$CELERYD_LOG_LEVEL"  \
                            --cmd="$CELERYD"                 \
                            $CELERYD_OPTS
-    RETVAL=$?
 }
 
-echo_status () {
-    [[ ! -d "$CELERYD_PID_DIR" ]] && echo "celeryd is stopped" && exit 1
-    local pid_files=$(find "$CELERYD_PID_DIR" -name "*.pid")
-    [[ -z $pid_files ]] && echo "celeryd is stopped" && exit 1
-    local at_least_one_running=
+check_status () {
+    local pid_files=$(_get_pid_files)
+    [[ -z "$pid_files" ]] && echo "celeryd is stopped" && exit 1
+
+    local one_failed=
     for pid_file in $pid_files; do
-        pid=$(cat "$pid_file")
+        local node=$(basename "$pid_file" .pid)
+        local pid=$(cat "$pid_file")
         if [[ -z "$pid" ]] || [[ "${pid//[0-9]/}" ]]; then
             echo "bad pid file ($pid_file)"
         else
             local failed=
-            ps h $pid > /dev/null || failed=true  # we can't use $? here because of the earlier set -e
+            kill -0 $pid &> /dev/null || failed=true
             if [[ "$failed" ]]; then
-                echo "celeryd worker (pid $pid) is stopped, but pid file exists!"
+                echo "celeryd (node $node) (pid $pid) is stopped, but pid file exists!"
+                one_failed=true
             else
-                echo "celeryd worker (pid $pid) is running..."
-                at_least_one_running=true
+                echo "celeryd (node $node) (pid $pid) is running..."
             fi
         fi
     done
-    [[ "$at_least_one_running" ]] && RETVAL=0 || RETVAL=1
+
+    [[ "$one_failed" ]] && exit 1
 }
 
 
@@ -191,7 +196,7 @@ case "$1" in
     ;;
 
     status)
-        echo_status
+        check_status
     ;;
 
     restart)
@@ -218,4 +223,4 @@ case "$1" in
     ;;
 esac
 
-exit $RETVAL
+exit 0
