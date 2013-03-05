@@ -499,6 +499,8 @@ class ResultSet(ResultBase):
         result backends.
 
         """
+        if not self.results:
+            return iter([])
         backend = self.results[0].backend
         ids = [result.id for result in self.results]
         return backend.get_many(ids, timeout=timeout, interval=interval)
