@@ -51,7 +51,6 @@ fi
 CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-${CELERYD_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
 CELERYD_MULTI=${CELERYD_MULTI:-"celeryd-multi"}
 CELERYD=${CELERYD:-$DEFAULT_CELERYD}
-CELERYCTL=${CELERYCTL:="celeryctl"}
 CELERYD_NODES=${CELERYD_NODES:-$DEFAULT_NODES}
 
 # This is used to change how Celery loads in the configs.  It does not need to
