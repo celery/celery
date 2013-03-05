@@ -367,8 +367,10 @@ Signature.register_type(chunks)
 def _maybe_group(tasks):
     if isinstance(tasks, group):
         tasks = list(tasks.tasks)
+    elif isinstance(tasks, Signature):
+        tasks = [tasks]
     else:
-        tasks = regen(tasks if is_list(tasks) else tasks)
+        tasks = regen(tasks)
     return tasks
 
 
