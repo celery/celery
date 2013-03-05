@@ -336,7 +336,8 @@ if not is_jython:
         _shutdown_handler, sig='SIGQUIT', how='Cold', exc=SystemTerminate,
     )
 else:
-    install_worker_term_handler = lambda *a, **kw: None
+    install_worker_term_handler = \
+        install_worker_term_hard_handler = lambda *a, **kw: None
 
 
 def on_SIGINT(worker):

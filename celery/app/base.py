@@ -18,7 +18,10 @@ from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
 
-from billiard import forking as _forking
+try:
+    from billiard import forking as _forking
+except ImportError:
+    _forking = None
 from billiard.util import register_after_fork
 from kombu.clocks import LamportClock
 from kombu.utils import cached_property
@@ -415,7 +418,7 @@ class Celery(object):
         # is enabled.  There may be a better way to do this, but attempts
         # at forcing the subprocess to import the modules did not work out,
         # apparently some sys.path problem.  More at Issue 1126.
-        conf = (self.conf.changes if _forking._forking_is_enabled
+        conf = (self.conf.changes if _forking and _forking._forking_is_enabled
                 else self.conf._pickleable_changes())
         return (self.main, conf, self.loader_cls,
                 self.backend_cls, self.amqp_cls, self.events_cls,
