@@ -130,15 +130,18 @@ create_paths() {
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
+_get_pid_files() {
+    [[ ! -d "$CELERYD_PID_DIR" ]] && return
+    echo $(find "$CELERYD_PID_DIR" -name "*.pid")
+}
+
 stop() {
     # Configuration management packages sometimes issue a "stop" command
     # in preparation for installing the software for the first time.
     # In those cases we don't need celeryd-multi to tell us celeryd is
     # not running.
-    [[ ! -d "$CELERYD_PID_DIR" ]] && echo "celeryd is stopped" && exit 0
-
-    local pid_files=$(find "$CELERYD_PID_DIR" -name "*.pid")
-    [[ -z $pid_files ]] && echo "celeryd is stopped" && exit 0
+    local pid_files=$(_get_pid_files)
+    [[ -z "$pid_files" ]] && echo "celeryd is stopped" && exit 0
 
     local one_failed=
     for pid_file in $pid_files; do
@@ -153,7 +156,7 @@ stop() {
         echo
     done
 
-    [[ "$one_failed" ]] && RETVAL=1 || RETVAL=0
+    [[ "$one_failed" ]] && exit 1 || exit 0
 }
 
 start() {
@@ -175,9 +178,8 @@ start() {
                          --cmd="$CELERYD"                   \
                          --quiet                            \
                          $CELERYD_OPTS
-    RETVAL=$?
 
-    if [[ "$RETVAL" == "0" ]]; then
+    if [[ "$?" == "0" ]]; then
         # Sleep a few seconds to give Celery a chance to initialize itself.
         # This is useful to prevent scripts following this one from trying to
         # use Celery (or its pid files) too early.
@@ -185,30 +187,32 @@ start() {
         pid_files=$(find "$CELERYD_PID_DIR" -name "*.pid")
         if [[ "$pid_files" ]]; then
             for pid_file in $pid_files; do
+                local node=$(basename "$pid_file" .pid)
                 local pid=$(cat "$pid_file")
                 echo
-                echo -n "    Node (pid $pid):"
+                echo -n "    $node (pid $pid):"
                 success
             done
+            echo
+            exit 0
         else  # celeryd_multi succeeded but no pid files found
             failure
-            RETVAL=1
         fi
-    else
+    else  # celeryd_multi did not succeed
         failure
     fi
     echo
+    exit 1
 }
 
 check_status() {
-    [[ ! -d "$CELERYD_PID_DIR" ]] && echo "celeryd is stopped" && exit 1
-    local pid_files=$(find "$CELERYD_PID_DIR" -name "*.pid")
-    [[ -z $pid_files ]] && echo "celeryd is stopped" && exit 1
+    local pid_files=$(_get_pid_files)
+    [[ -z "$pid_files" ]] && echo "celeryd is stopped" && exit 1
     for pid_file in $pid_files; do
-        local pid_basename=$(basename "$pid_file")
-        status -p "$pid_file" $"celeryd ($pid_basename)" || return 1  # if one node is down celeryd is down
+        local node=$(basename "$pid_file" .pid)
+        status -p "$pid_file" $"celeryd (node $node)" || exit 1  # if one node is down celeryd is down
     done
-    return 0
+    exit 0
 }
 
 case "$1" in
@@ -241,4 +245,4 @@ case "$1" in
     ;;
 esac
 
-exit $RETVAL
+exit 1  # we should never get here
