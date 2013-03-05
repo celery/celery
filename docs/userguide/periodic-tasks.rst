@@ -91,7 +91,7 @@ Example: Run the `tasks.add` task every 30 seconds.
     from datetime import timedelta
 
     CELERYBEAT_SCHEDULE = {
-        'runs-every-30-seconds': {
+        'add-every-30-seconds': {
             'task': 'tasks.add',
             'schedule': timedelta(seconds=30),
             'args': (16, 16)
@@ -163,7 +163,7 @@ the :class:`~celery.schedules.crontab` schedule type:
 
     CELERYBEAT_SCHEDULE = {
         # Executes every Monday morning at 7:30 A.M
-        'every-monday-morning': {
+        'add-every-monday-morning': {
             'task': 'tasks.add',
             'schedule': crontab(hour=7, minute=30, day_of_week=1),
             'args': (16, 16),
