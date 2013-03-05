@@ -18,22 +18,15 @@
 # Short-Description: celery task worker daemon
 ### END INIT INFO
 
-#set -e
-
 DEFAULT_PID_FILE="/var/run/celery/%n.pid"
 DEFAULT_LOG_FILE="/var/log/celery/%n.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
 DEFAULT_CELERYD="-m celery.bin.celeryd_detach"
 
-# /etc/init.d/celeryd: start and stop the celery task worker daemon.
-
 CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/celeryd"}
 
 test -f "$CELERY_DEFAULTS" && . "$CELERY_DEFAULTS"
-if [ -f "/etc/default/celeryd" ]; then
-    . /etc/default/celeryd
-fi
 
 # Set CELERY_CREATE_DIRS to always create log/pid dirs.
 CELERY_CREATE_DIRS=${CELERY_CREATE_DIRS:-0}
@@ -142,6 +135,7 @@ start_workers () {
                          --loglevel="$CELERYD_LOG_LEVEL"    \
                          --cmd="$CELERYD"                   \
                          $CELERYD_OPTS
+    RETVAL=$?
 }
 
 
@@ -152,8 +146,31 @@ restart_workers () {
                            --loglevel="$CELERYD_LOG_LEVEL"  \
                            --cmd="$CELERYD"                 \
                            $CELERYD_OPTS
+    RETVAL=$?
 }
 
+echo_status () {
+    [[ ! -d "$CELERYD_PID_DIR" ]] && echo "celeryd is stopped" && exit 1
+    local pid_files=$(find "$CELERYD_PID_DIR" -name "*.pid")
+    [[ -z $pid_files ]] && echo "celeryd is stopped" && exit 1
+    local at_least_one_running=
+    for pid_file in $pid_files; do
+        pid=$(cat "$pid_file")
+        if [[ -z "$pid" ]] || [[ "${pid//[0-9]/}" ]]; then
+            echo "bad pid file ($pid_file)"
+        else
+            local failed=
+            ps h $pid > /dev/null || failed=true  # we can't use $? here because of the earlier set -e
+            if [[ "$failed" ]]; then
+                echo "celeryd worker (pid $pid) is stopped, but pid file exists!"
+            else
+                echo "celeryd worker (pid $pid) is running..."
+                at_least_one_running=true
+            fi
+        fi
+    done
+    [[ "$at_least_one_running" ]] && RETVAL=0 || RETVAL=1
+}
 
 
 case "$1" in
@@ -174,7 +191,7 @@ case "$1" in
     ;;
 
     status)
-        $CELERYCTL status $CELERYCTL_OPTS
+        echo_status
     ;;
 
     restart)
@@ -201,4 +218,4 @@ case "$1" in
     ;;
 esac
 
-exit 0
+exit $RETVAL
