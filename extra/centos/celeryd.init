@@ -64,13 +64,6 @@ fi
 CELERYD_LOG_DIR=`dirname $CELERYD_LOG_FILE`
 CELERYD_PID_DIR=`dirname $CELERYD_PID_FILE`
 
-# Starting the celeryd service can bring online multiple nodes, each of which running in
-# its own process with its own pid file. This is accomplished by means of including the
-# wildcard '%n' in the variable CELERYD_PID_FILE. Since CentOS services don't know how
-# to deal with a service that may spawn multiple pid files, we will create our own
-# single pid file that will contain all pids from worker node processes spawned by Celery.
-SERVICE_PID_FILE=${CELERYD_PID_DIR}/celeryd.pid
-
 # Extra start-stop-daemon options, like user/group.
 if [ -n "$CELERYD_USER" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --uid=$CELERYD_USER"
@@ -138,36 +131,41 @@ export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
 stop() {
-    echo -n $"Stopping celeryd: "
-
     # Configuration management packages sometimes issue a "stop" command
     # in preparation for installing the software for the first time.
     # In those cases we don't need celeryd-multi to tell us celeryd is
     # not running.
-    if [ ! -f "$SERVICE_PID_FILE" ]; then
-        echo $"already stopped"
-        return 0
-    fi
+    [[ ! -d "$CELERYD_PID_DIR" ]] && echo "celeryd is stopped" && exit 0
 
-    # killproc comes from 'functions' and brings two nice features:
-    #  1. sending TERM, sleeping, then sleeping more if needed, then sending KILL
-    #  2. handling 'success' and 'failure' output
-    killproc -p "$SERVICE_PID_FILE" -d "$SLEEP_SECONDS" celeryd
-    RETVAL=$?
+    local pid_files=$(find "$CELERYD_PID_DIR" -name "*.pid")
+    [[ -z $pid_files ]] && echo "celeryd is stopped" && exit 0
 
-    [[ "$RETVAL" == "0" ]] && rm -f "$SERVICE_PID_FILE"
-    echo
+    local one_failed=
+    for pid_file in $pid_files; do
+        local pid=$(cat "$pid_file")
+        echo -n $"Stopping celeryd (pid $pid): "
+
+        # killproc comes from 'functions' and brings three nice features:
+        #  1. sending TERM, sleeping, then sleeping more if needed, then sending KILL
+        #  2. handling 'success' and 'failure' output
+        #  3. removes stale pid files, if any remain
+        killproc -p "$pid_file" -d "$SLEEP_SECONDS" celeryd || one_failed=true
+        echo
+    done
+
+    [[ "$one_failed" ]] && RETVAL=1 || RETVAL=0
 }
 
 start() {
     echo -n $"Starting celeryd: "
 
     # If Celery is already running, bail out
-    if [[ -f "$SERVICE_PID_FILE" ]]; then
-        echo -n $"already running. Use 'restart'."
+    local pid_files=$(find "$CELERYD_PID_DIR" -name "*.pid")
+    if [[ "$pid_files" ]]; then
+        echo -n $"celeryd is already running. Use 'restart'."
         failure
         echo
-        return 1
+        exit 1
     fi
 
     $CELERYD_MULTI start $CELERYD_NODES $DAEMON_OPTS        \
@@ -184,14 +182,33 @@ start() {
         # This is useful to prevent scripts following this one from trying to
         # use Celery (or its pid files) too early.
         sleep $SLEEP_SECONDS
-
-        # Collect the pids of all nodes into one service pid file
-        # (this step will fail if no nodes have started yet)
-        cat "${CELERYD_PID_DIR}"/* > "$SERVICE_PID_FILE"
+        pid_files=$(find "$CELERYD_PID_DIR" -name "*.pid")
+        if [[ "$pid_files" ]]; then
+            for pid_file in $pid_files; do
+                local pid=$(cat "$pid_file")
+                echo
+                echo -n "    Node (pid $pid):"
+                success
+            done
+        else  # celeryd_multi succeeded but no pid files found
+            failure
+            RETVAL=1
+        fi
+    else
+        failure
     fi
-
-    [[ -f "$SERVICE_PID_FILE" ]] && success || failure
     echo
+}
+
+check_status() {
+    [[ ! -d "$CELERYD_PID_DIR" ]] && echo "celeryd is stopped" && exit 1
+    local pid_files=$(find "$CELERYD_PID_DIR" -name "*.pid")
+    [[ -z $pid_files ]] && echo "celeryd is stopped" && exit 1
+    for pid_file in $pid_files; do
+        local pid_basename=$(basename "$pid_file")
+        status -p "$pid_file" $"celeryd ($pid_basename)" || return 1  # if one node is down celeryd is down
+    done
+    return 0
 }
 
 case "$1" in
@@ -208,7 +225,7 @@ case "$1" in
     ;;
 
     status)
-        status -p $SERVICE_PID_FILE celeryd
+        check_status
     ;;
 
     restart)
