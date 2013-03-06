@@ -30,7 +30,7 @@ def add(x, y):
 
 @task()
 def make_request(id, url):
-    print('GET {0!r}'.format(url)
+    print('GET {0!r}'.format(url))
     return url
 
 
