@@ -162,7 +162,7 @@ Will retry using next failover.\
 task_reserved = state.task_reserved
 
 logger = get_logger(__name__)
-info, warn, error, crit = (logger.info, logger.warn,
+info, warn, error, crit = (logger.info, logger.warning,
                            logger.error, logger.critical)
 
 
