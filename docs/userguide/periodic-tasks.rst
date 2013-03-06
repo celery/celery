@@ -101,9 +101,16 @@ Example: Run the `tasks.add` task every 30 seconds.
     CELERY_TIMEZONE = 'UTC'
 
 Using a :class:`~datetime.timedelta` for the schedule means the task will
-be executed 30 seconds after `celery beat` starts, and then every 30 seconds
-after the last run.  A crontab like schedule also exists, see the section
-on `Crontab schedules`_.
+be sent in 30 second intervals (the first task will be sent 30 seconds
+after `celery beat` starts, and then every 30 seconds
+after the last run).
+
+A crontab like schedule also exists, see the section on `Crontab schedules`_.
+
+Like with ``cron``, the tasks may overlap if the first task does not complete
+before the next.  If that is a concern you should use a locking
+strategy to ensure only one instance can run at a time (see for example
+:ref:`cookbook-task-serial`).
 
 .. _beat-entry-fields:
 
