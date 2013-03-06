@@ -58,7 +58,7 @@ class test_CacheBackend(Case):
 
     def test_on_chord_apply(self):
         tb = CacheBackend(backend='memory://')
-        gid, res = uuid(), [AsyncResult(uuid()) for _ in xrange(3)]
+        gid, res = uuid(), [AsyncResult(uuid()) for _ in range(3)]
         tb.on_chord_apply(gid, {}, result=res)
 
     @patch('celery.result.GroupResult')
@@ -75,7 +75,7 @@ class test_CacheBackend(Case):
             current_app.tasks['foobarbaz'] = task
             task.request.chord = subtask(task)
 
-            gid, res = uuid(), [AsyncResult(uuid()) for _ in xrange(3)]
+            gid, res = uuid(), [AsyncResult(uuid()) for _ in range(3)]
             task.request.group = gid
             tb.on_chord_apply(gid, {}, result=res)
 
