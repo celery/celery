@@ -111,7 +111,7 @@ class CassandraBackend(BaseBackend):
                     Thrift.TException) as exc:
                 if time.time() > ts:
                     raise
-                logger.warn('Cassandra error: %r. Retrying...', exc)
+                logger.warning('Cassandra error: %r. Retrying...', exc)
                 time.sleep(self._retry_wait)
 
     def _get_column_family(self):

@@ -41,7 +41,7 @@ from . import state
 
 logger = get_logger(__name__)
 debug, info, warn, error = (logger.debug, logger.info,
-                            logger.warn, logger.error)
+                            logger.warning, logger.error)
 _does_info = False
 _does_debug = False
 

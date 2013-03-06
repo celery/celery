@@ -42,7 +42,7 @@ from .state import task_reserved, maybe_shutdown, revoked
 
 CLOSE = bootsteps.CLOSE
 logger = get_logger(__name__)
-debug, info, warn, error, crit = (logger.debug, logger.info, logger.warn,
+debug, info, warn, error, crit = (logger.debug, logger.info, logger.warning,
                                   logger.error, logger.critical)
 
 CONNECTION_RETRY = """\

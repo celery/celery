@@ -47,7 +47,7 @@ Substantial drift from %s may mean clocks are out of sync.  Current drift is
 """
 
 logger = get_logger(__name__)
-warn = logger.warn
+warn = logger.warning
 
 
 def heartbeat_expires(timestamp, freq=60,
