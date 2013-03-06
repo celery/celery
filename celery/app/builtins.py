@@ -112,7 +112,8 @@ def add_unlock_chord_task(app):
                 except Exception, exc:
                     app._tasks[callback.task].backend.fail_from_current_stack(
                         callback.id,
-                        exc=ChordError('Call callback error: %r' % (exc, )))
+                        exc=ChordError('Callback error: %r' % (exc, )),
+                    )
         else:
             return unlock_chord.retry(countdown=interval,
                                       max_retries=max_retries)

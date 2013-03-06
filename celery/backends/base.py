@@ -485,6 +485,7 @@ class KeyValueStoreBackend(BaseDictBackend):
             return
         from celery import subtask
         from celery.result import GroupResult
+        app = self.app
         if propagate is None:
             propagate = self.app.conf.CELERY_CHORD_PROPAGATES
         gid = task.request.group
@@ -499,13 +500,22 @@ class KeyValueStoreBackend(BaseDictBackend):
             try:
                 ret = j(propagate=propagate)
             except Exception, exc:
-                culprit = deps._failed_join_report().next()
-                self.app._tasks[callback.task].backend.fail_from_current_stack(
-                    callback.id, exc=ChordError('Dependency %s raised %r' % (
-                        culprit.id, exc))
+                try:
+                    culprit = deps._failed_join_report().next()
+                    reason = 'Dependency %s raised %r' % (culprit.id, exc)
+                except StopIteration:
+                    reason = repr(exc)
+                app._tasks[callback.task].backend.fail_from_current_stack(
+                    callback.id, exc=ChordError(reason),
                 )
             else:
-                callback.delay(ret)
+                try:
+                    callback.delay(ret)
+                except Exception, exc:
+                    app._tasks[callback.task].backend.fail_from_current_stack(
+                        callback.id,
+                        exc=ChordError('Callback error: %r' % (exc, )),
+                    )
             finally:
                 deps.delete()
                 self.client.delete(key)
