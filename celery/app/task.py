@@ -565,6 +565,7 @@ class Task(object):
         S = self.subtask_from_request(
             request, args, kwargs,
             countdown=countdown, eta=eta, retries=retries,
+            **options
         )
 
         if max_retries is not None and retries > max_retries:
