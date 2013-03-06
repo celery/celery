@@ -151,6 +151,7 @@ class Hub(object):
         if self.timer._queue:
             for i in range(max_timers):
                 delay, entry = self.scheduler.next()
+                print('D; %r, E; %r' % (delay, entry))
                 if entry is None:
                     break
                 try:

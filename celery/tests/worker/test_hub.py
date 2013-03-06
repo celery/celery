@@ -152,6 +152,8 @@ class test_Hub(Case):
         e1, e2, e3 = Mock(), Mock(), Mock()
         entries = [e1, e2, e3]
 
+        reset = lambda: [m.reset() for m in [e1, e2, e3]]
+
         def se():
             if entries:
                 return None, entries.pop()
@@ -160,16 +162,18 @@ class test_Hub(Case):
         hub.scheduler.next.side_effect = se
 
         self.assertEqual(hub.fire_timers(max_timers=10), 3.982)
-        hub.timer.apply_entry.assert_has_calls(map(call, [e3, e2, e1]))
+        for E in [e3, e2, e1]:
+            E.assert_called_with()
+        reset()
 
         entries[:] = [Mock() for _ in xrange(11)]
         keep = list(entries)
         self.assertEqual(hub.fire_timers(max_timers=10, min_delay=1.13), 1.13)
-        hub.timer.apply_entry.assert_has_calls(
-            map(call, reversed(keep[1:])),
-        )
+        for E in reversed(keep[1:]):
+            E.assert_called_with()
+        reset()
         self.assertEqual(hub.fire_timers(max_timers=10), 3.982)
-        hub.timer.apply_entry.assert_has_calls(call(keep[0]))
+        keep[0].assert_called_with()
 
     def test_update_readers(self):
         hub = Hub()
