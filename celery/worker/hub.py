@@ -158,7 +158,7 @@ class Hub(object):
                     entry()
                 except propagate:
                     raise
-                except Exception, exc:
+                except Exception as exc:
                     logger.error('Error in timer: %r', exc, exc_info=1)
         return min(max(delay or 0, min_delay), max_delay)
 

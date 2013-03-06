@@ -233,7 +233,7 @@ def find_deprecated_settings(source):
             warn_deprecated(description='The {0!r} setting'.format(name),
                             deprecation=opt.deprecate_by,
                             removal=opt.remove_by,
-                            alternative='Use %s instead' % (opt.alt, ))
+                            alternative='Use {0.alt} instead'.format(opt))
     return source
 
 
