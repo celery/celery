@@ -12,7 +12,10 @@ import os
 import platform as _platform
 import types
 
-from billiard import forking as _forking
+try:
+    from billiard import forking as _forking
+except ImportError:  # noqa
+    _forking = None
 
 from celery import platforms
 from celery.five import items
@@ -73,7 +76,7 @@ class Settings(ConfigurationView):
         # is enabled.  There may be a better way to do this, but attempts
         # at forcing the subprocess to import the modules did not work out,
         # because of some sys.path problem.  More at Issue #1126.
-        if _forking._forking_is_enabled:
+        if _forking and _forking._forking_is_enabled:
             return self.changes
         R = {}
         for d in reversed(self._order[:-1]):
