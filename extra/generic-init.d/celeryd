@@ -124,8 +124,8 @@ export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
 _get_pid_files() {
-    [[ ! -d "$CELERYD_PID_DIR" ]] && return
-    echo $(find "$CELERYD_PID_DIR" -name "*.pid")
+    [ ! -d "$CELERYD_PID_DIR" ] && return
+    echo `ls -1 "$CELERYD_PID_DIR"/*.pid 2> /dev/null`
 }
 
 stop_workers () {
@@ -153,19 +153,19 @@ restart_workers () {
 }
 
 check_status () {
-    local pid_files=$(_get_pid_files)
-    [[ -z "$pid_files" ]] && echo "celeryd is stopped" && exit 1
+    local pid_files=`_get_pid_files`
+    [ -z "$pid_files" ] && echo "celeryd is stopped" && exit 1
 
     local one_failed=
     for pid_file in $pid_files; do
-        local node=$(basename "$pid_file" .pid)
-        local pid=$(cat "$pid_file")
-        if [[ -z "$pid" ]] || [[ "${pid//[0-9]/}" ]]; then
+        local node=`basename "$pid_file" .pid`
+        local pid=`cat "$pid_file"`
+        if [ -z "$pid" ] || [ "${pid//[0-9]/}" ]; then
             echo "bad pid file ($pid_file)"
         else
             local failed=
-            kill -0 $pid &> /dev/null || failed=true
-            if [[ "$failed" ]]; then
+            kill -0 $pid 2> /dev/null || failed=true
+            if [ "$failed" ]; then
                 echo "celeryd (node $node) (pid $pid) is stopped, but pid file exists!"
                 one_failed=true
             else
@@ -174,7 +174,7 @@ check_status () {
         fi
     done
 
-    [[ "$one_failed" ]] && exit 1
+    [ "$one_failed" ] && exit 1 || exit 0
 }
 
 
