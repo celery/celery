@@ -512,6 +512,8 @@ class ResultSet(ResultBase):
         result backends.
 
         """
+        if not self.results:
+            return iter([])
         backend = self.results[0].backend
         ids = [result.id for result in self.results]
         return backend.get_many(ids, timeout=timeout, interval=interval)
@@ -538,10 +540,9 @@ class ResultSet(ResultBase):
         return acc
 
     def _failed_join_report(self):
-        for res in self.results:
-            if (res.backend.is_cached(res.id) and
-                    res.state in states.PROPAGATE_STATES):
-                yield res
+        return (res for res in self.results
+                if res.backend.is_cached(res.id) and
+                res.state in states.PROPAGATE_STATES)
 
     def __len__(self):
         return len(self.results)

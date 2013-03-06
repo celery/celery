@@ -288,6 +288,11 @@ class EventReceiver(ConsumerMixin):
     def itercapture(self, limit=None, timeout=None, wakeup=True):
         return self.consume(limit=limit, timeout=timeout, wakeup=wakeup)
 
+    def itercapture(self, limit=None, timeout=None, wakeup=True):
+        with self.consumer(wakeup=wakeup) as consumer:
+            yield consumer
+            self.drain_events(limit=limit, timeout=timeout)
+
     def capture(self, limit=None, timeout=None, wakeup=True):
         """Open up a consumer capturing events.
 

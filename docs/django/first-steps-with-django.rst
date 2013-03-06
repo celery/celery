@@ -77,8 +77,20 @@ of your Django project where ``manage.py`` is located and execute:
 
     $ python manage.py startapp celerytest
 
-After the new app has been created, define a task by creating
-a new file called ``celerytest/tasks.py``:
+Next you have to add the new app to ``INSTALLED_APPS`` so that your
+Django project recognizes it.  This setting is a tuple/list so just
+append ``celerytest`` as a new element at the end
+
+.. code-block:: python
+
+    INSTALLED_APPS = (
+        ...,
+        'djcelery',
+        'celerytest',
+    )
+
+After the new app has been created and added to ``INSTALLED_APPS``,
+you can define your tasks by creating a new file called ``celerytest/tasks.py``:
 
 .. code-block:: python
 

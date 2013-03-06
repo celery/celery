@@ -423,11 +423,13 @@ class KeyValueStoreBackend(BaseBackend):
         else:
             self.fallback_chord_unlock(group_id, body, result, **kwargs)
 
-    def on_chord_part_return(self, task, propagate=True):
+    def on_chord_part_return(self, task, propagate=None):
         if not self.implements_incr:
             return
         from celery import subtask
         from celery.result import GroupResult
+        if propagate is None:
+            propagate = self.app.conf.CELERY_CHORD_PROPAGATES
         gid = task.request.group
         if not gid:
             return

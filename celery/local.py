@@ -124,10 +124,11 @@ class Proxy(object):
         object behind the proxy at a time for performance reasons or because
         you want to pass the object into a different context.
         """
-        if not hasattr(self.__local, '__release_local__'):
-            return self.__local(*self.__args, **self.__kwargs)
+        loc = object.__getattribute__(self, '_Proxy__local')
+        if not hasattr(loc, '__release_local__'):
+            return loc(*self.__args, **self.__kwargs)
         try:
-            return getattr(self.__local, self.__name__)
+            return getattr(loc, self.__name__)
         except AttributeError:
             raise RuntimeError('no object bound to {0.__name__}'.format(self))
 

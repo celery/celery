@@ -20,6 +20,7 @@ import warnings
 from functools import partial
 
 from billiard import current_process
+from kombu.utils.encoding import safe_str
 
 from celery import VERSION_BANNER, platforms, signals
 from celery.app.abstract import from_config
@@ -139,7 +140,7 @@ class Worker(WorkController):
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
-        print('{0.hostname} ready.'.format(self))
+        print('{0} ready.'.format(safe_str(self.hostname), ))
 
     def setup_logging(self, colorize=None):
         if colorize is None and self.no_color is not None:
@@ -263,7 +264,8 @@ if not is_jython:
         _shutdown_handler, sig='SIGQUIT', how='Cold', exc=SystemTerminate,
     )
 else:
-    install_worker_term_handler = lambda *a, **kw: None
+    install_worker_term_handler = \
+        install_worker_term_hard_handler = lambda *a, **kw: None
 
 
 def on_SIGINT(worker):

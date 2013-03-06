@@ -69,14 +69,24 @@ def add_unlock_chord_task(app):
     from celery.exceptions import ChordError
     from celery.result import from_serializable
 
+    default_propagate = app.conf.CELERY_CHORD_PROPAGATES
+
     @app.task(name='celery.chord_unlock', max_retries=None,
               default_retry_delay=1, ignore_result=True, _force_evaluate=True)
-    def unlock_chord(group_id, callback, interval=None, propagate=True,
+    def unlock_chord(group_id, callback, interval=None, propagate=None,
                      max_retries=None, result=None,
                      Result=app.AsyncResult, GroupResult=app.GroupResult,
                      from_serializable=from_serializable):
+        # if propagate is disabled exceptions raised by chord tasks
+        # will be sent as part of the result list to the chord callback.
+        # Since 3.1 propagate will be enabled by default, and instead
+        # the chord callback changes state to FAILURE with the
+        # exception set to ChordError.
+        propagate = default_propagate if propagate is None else propagate
         if interval is None:
             interval = unlock_chord.default_retry_delay
+
+        # check if the task group is ready, and if so apply the callback.
         deps = GroupResult(
             group_id,
             [from_serializable(r, Result=Result) for r in result],
@@ -88,14 +98,24 @@ def add_unlock_chord_task(app):
             try:
                 ret = j(propagate=propagate)
             except Exception as exc:
-                culprit = next(deps._failed_join_report())
+                try:
+                    culprit = deps._failed_join_report().next()
+                    reason = 'Dependency {0.id} raised {1!r}'.format(
+                        culprit, exc,
+                    )
+                except StopIteration:
+                    reason = repr(exc)
 
                 app._tasks[callback.task].backend.fail_from_current_stack(
-                    callback.id, exc=ChordError('Dependency %s raised %r' % (
-                        culprit.id, exc)),
+                    callback.id, exc=ChordError(reason),
                 )
             else:
-                callback.delay(ret)
+                try:
+                    callback.delay(ret)
+                except Exception, exc:
+                    app._tasks[callback.task].backend.fail_from_current_stack(
+                        callback.id,
+                        exc=ChordError('Call callback error: %r' % (exc, )))
         else:
             return unlock_chord.retry(countdown=interval,
                                       max_retries=max_retries)
@@ -291,6 +311,7 @@ def add_chord_task(app):
     from celery import group
     from celery.canvas import maybe_subtask
     _app = app
+    default_propagate = app.conf.CELERY_CHORD_PROPAGATES
 
     class Chord(app.Task):
         app = _app
@@ -299,7 +320,8 @@ def add_chord_task(app):
         ignore_result = False
 
         def run(self, header, body, partial_args=(), interval=1, countdown=1,
-                max_retries=None, propagate=True, eager=False, **kwargs):
+                max_retries=None, propagate=None, eager=False, **kwargs):
+            propagate = default_propagate if propagate is None else propagate
             group_id = uuid()
             AsyncResult = self.app.AsyncResult
             prepare_member = self._prepare_member

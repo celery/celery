@@ -86,8 +86,8 @@ def flakes(options):
 
 @task
 def clean_readme(options):
-    path('README').unlink()
-    path('README.rst').unlink()
+    path('README').unlink_p()
+    path('README.rst').unlink_p()
 
 
 @task

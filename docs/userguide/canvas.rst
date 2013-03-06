@@ -726,14 +726,18 @@ the return value of each task in the header.  The task id returned by
 and get the final return value (but remember to :ref:`never have a task wait
 for other tasks <task-synchronous-subtasks>`)
 
+.. _chord-errors:
+
 Error handling
 ~~~~~~~~~~~~~~
 
-.. versionadded:: 3.0.14
-
 So what happens if one of the tasks raises an exception?
 
-Errors will propagate to the callback, so the callback will not be executed
+This was not documented for some time and before version 3.1
+the exception value will be forwarded to the chord callback.
+
+
+From 3.1 errors will propagate to the callback, so the callback will not be executed
 instead the callback changes to failure state, and the error is set
 to the :exc:`~celery.exceptions.ChordError` exception:
 
@@ -751,6 +755,10 @@ to the :exc:`~celery.exceptions.ChordError` exception:
     celery.exceptions.ChordError: Dependency 97de6f3f-ea67-4517-a21c-d867c61fcb47
         raised ValueError('something something',)
 
+If you're running 3.0.14 or later you can enable the new behavior via
+the :setting:`CELERY_CHORD_PROPAGATES` setting::
+
+    CELERY_CHORD_PROPAGATES = True
 
 While the traceback may be different depending on which result backend is
 being used, you can see the error description includes the id of the task that failed

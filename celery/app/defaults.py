@@ -70,7 +70,7 @@ NAMESPACES = {
         'CONNECTION_RETRY': Option(True, type='bool'),
         'CONNECTION_MAX_RETRIES': Option(100, type='int'),
         'HEARTBEAT': Option(10, type='int'),
-        'HEARTBEAT_CHECKRATE': Option(2.0, type='int'),
+        'HEARTBEAT_CHECKRATE': Option(3.0, type='int'),
         'POOL_LIMIT': Option(10, type='int'),
         'USE_SSL': Option(False, type='bool'),
         'TRANSPORT': Option(type='string'),
@@ -98,6 +98,8 @@ NAMESPACES = {
         'BROADCAST_EXCHANGE_TYPE': Option('fanout'),
         'CACHE_BACKEND': Option(),
         'CACHE_BACKEND_OPTIONS': Option({}, type='dict'),
+        # chord propagate will be True from v3.1
+        'CHORD_PROPAGATES': Option(False, type='bool'),
         'CREATE_MISSING_QUEUES': Option(True, type='bool'),
         'DEFAULT_RATE_LIMIT': Option(type='string'),
         'DISABLE_RATE_LIMITS': Option(False, type='bool'),
