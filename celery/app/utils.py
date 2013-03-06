@@ -14,8 +14,8 @@ import types
 
 try:
     from billiard import forking as _forking
-except ImportError:  # noqa
-    _forking = None
+except ImportError:  # pragma: no cover
+    _forking = None  # noqa
 
 from celery import platforms
 from celery.five import items
