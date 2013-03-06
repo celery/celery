@@ -6,4 +6,4 @@ python:
     - 3.3
 install:
     - pip install --use-mirrors tox
-script: TOXENV=py$(echo $TRAVIS_PYTHON_VERSION | tr -d .) tox
+script: TOXENV=py$(echo $TRAVIS_PYTHON_VERSION | tr -d .) tox -v
