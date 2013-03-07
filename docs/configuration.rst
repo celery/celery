@@ -808,15 +808,10 @@ manner using TCP/IP alone, so AMQP defines something called heartbeats
 that's is used both by the client and the broker to detect if
 a connection was closed.
 
-Heartbeats are currently only supported by the ``pyamqp://`` transport,
-and this requires the :mod:`amqp` module:
+Hartbeats are disabled by default.
 
-.. code-block:: bash
-
-    $ pip install amqp
-
-The default heartbeat value is 10 seconds,
-the heartbeat will then be monitored at the interval specified
+If the heartbeat value is 10 seconds, then
+the heartbeat will be monitored at the interval specified
 by the :setting:`BROKER_HEARTBEAT_CHECKRATE` setting, which by default is
 double the rate of the heartbeat value
 (so for the default 10 seconds, the heartbeat is checked every 5 seconds).

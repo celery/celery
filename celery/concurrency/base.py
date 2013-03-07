@@ -57,11 +57,12 @@ class BasePool(object):
     uses_semaphore = False
 
     def __init__(self, limit=None, putlocks=True,
-                 forking_enable=True, **options):
+                 forking_enable=True, callbacks_propagate=(), **options):
         self.limit = limit
         self.putlocks = putlocks
         self.options = options
         self.forking_enable = forking_enable
+        self.callbacks_propagate = callbacks_propagate
         self._does_debug = logger.isEnabledFor(logging.DEBUG)
 
     def on_start(self):
@@ -134,6 +135,7 @@ class BasePool(object):
 
         return self.on_apply(target, args, kwargs,
                              waitforslot=self.putlocks,
+                             callbacks_propagate=self.callbacks_propagate,
                              **options)
 
     def _get_info(self):

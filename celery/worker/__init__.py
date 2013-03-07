@@ -128,6 +128,8 @@ class WorkController(configurated):
         # Options
         self.loglevel = mlevel(self.loglevel)
         self.ready_callback = ready_callback or self.on_consumer_ready
+        # this connection is not established, only used for params
+        self._conninfo = self.app.connection()
         self.use_eventloop = self.should_use_eventloop()
         self.options = kwargs
 
@@ -236,7 +238,7 @@ class WorkController(configurated):
 
     def should_use_eventloop(self):
         return (detect_environment() == 'default' and
-                self.app.connection().is_evented and not self.app.IS_WINDOWS)
+                self._conninfo.is_evented and not self.app.IS_WINDOWS)
 
     def stop(self, in_sighandler=False):
         """Graceful shutdown of the worker server."""

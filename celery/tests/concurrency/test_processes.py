@@ -12,7 +12,6 @@ from celery.utils.functional import noop
 from celery.tests.utils import Case
 try:
     from celery.concurrency import processes as mp
-    from billiard.pool import safe_apply_callback
 except ImportError:
 
     class _mp(object):
@@ -33,7 +32,6 @@ except ImportError:
             def apply_async(self, *args, **kwargs):
                 pass
     mp = _mp()  # noqa
-    safe_apply_callback = None  # noqa
 
 
 class Object(object):   # for writeable attributes.
@@ -134,25 +132,6 @@ class test_TaskPool(Case):
         pool.terminate()
         pool.terminate()
         self.assertTrue(_pool.terminated)
-
-    def test_safe_apply_callback(self):
-        if safe_apply_callback is None:
-            raise SkipTest('multiprocessig not supported')
-        _good_called = [0]
-        _evil_called = [0]
-
-        def good(x):
-            _good_called[0] = 1
-            return x
-
-        def evil(x):
-            _evil_called[0] = 1
-            raise KeyError(x)
-
-        self.assertIsNone(safe_apply_callback(good, 10))
-        self.assertIsNone(safe_apply_callback(evil, 10))
-        self.assertTrue(_good_called[0])
-        self.assertTrue(_evil_called[0])
 
     def test_apply_async(self):
         pool = TaskPool(10)

@@ -9,6 +9,57 @@
 
 If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
+.. _version-3.0.16:
+
+3.0.16
+======
+:release-date: 2013-03-07 XX:XX:XX X.X UTC
+
+- AMQP heartbeats are now disabled by default.
+
+    Some users experiences issues with heartbeats enabled,
+    and it's not strictly necessary to use them.
+
+    If you're experiencing problems detecting connection failures,
+    you can re-enable heartbeats by configuring the :setting:`BROKER_HEARTBEAT`
+    setting.
+
+- Worker: Now propagates connection errors occurring in multiprocessing
+  callbacks, so that the connection can be reset (Issue #1226).
+
+- Worker: Now propagates connection errors occurring in timer callbacks,
+  so that the connection can be reset.
+
+- New bash completion for ``celery`` available in the git repository:
+
+    https://github.com/celery/celery/tree/3.0/extra/bash-completion
+
+    You can source this file or put it in ``bash_completion.d`` to
+    get auto-completion for the ``celery`` command-line utility.
+
+- The node name of a worker can now include unicode characters (Issue #1186).
+
+- The repr of a ``crontab`` object now displays correctly (Issue #972).
+
+- ``events.State`` no longer modifies the original event dictionary.
+
+- No longer uses ``Logger.warn`` deprecated in Python 3.
+
+- Cache Backend: Now works with chords again (Issue #1094).
+
+- Chord unlock now handles errors occurring while calling the callback.
+
+- ``ResultSet.join`` now always works with empty result set (Issue #1219).
+
+- A ``group`` consisting of a single task is now supported (Issue #1219).
+
+- Now supports the ``pycallgraph`` program (Issue #1051).
+
+- Fixed Jython compatibility problems.
+
+- Django tutorial: Now mentions that the example app must be added to
+  ``INSTALLED_APPS`` (Issue #1192).
+
 .. _version-3.0.15:
 
 3.0.15
