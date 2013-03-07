@@ -168,6 +168,9 @@ class Pool(bootsteps.StartStopComponent):
             allow_restart=allow_restart,
             forking_enable=forking_enable,
             semaphore=semaphore,
+            callbacks_propagate=(
+                w._conninfo.connection_errors + w._conninfo.channel_errors
+            ),
         )
         if w.hub:
             w.hub.on_init.append(partial(self.on_poll_init, pool, w))
@@ -323,6 +326,8 @@ class WorkController(configurated):
         self._finalize = Finalize(self, self.stop, exitpriority=1)
         self.pidfile = pidfile
         self.pidlock = None
+        # this connection is not established, only used for params
+        self._conninfo = self.app.connection()
         self.use_eventloop = self.should_use_eventloop()
 
         # Update celery_include to have all known task modules, so that we
@@ -393,7 +398,7 @@ class WorkController(configurated):
 
     def should_use_eventloop(self):
         return (detect_environment() == 'default' and
-                self.app.connection().is_evented and not self.app.IS_WINDOWS)
+                self._conninfo.is_evented and not self.app.IS_WINDOWS)
 
     def stop(self, in_sighandler=False):
         """Graceful shutdown of the worker server."""
