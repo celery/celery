@@ -1059,6 +1059,7 @@ class test_WorkController(AppCase):
 
     def test_Pool_crate_threaded(self):
         w = Mock()
+        w._conninfo.connection_errors = w._conninfo.channel_errors = ()
         w.pool_cls = Mock()
         w.use_eventloop = False
         pool = Pool(w)
@@ -1067,6 +1068,7 @@ class test_WorkController(AppCase):
     def test_Pool_create(self):
         from celery.worker.hub import BoundedSemaphore
         w = Mock()
+        w._conninfo.connection_errors = w._conninfo.channel_errors = ()
         w.hub = Mock()
         w.hub.on_init = []
         w.pool_cls = Mock()
