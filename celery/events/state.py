@@ -355,8 +355,8 @@ class State(object):
 
     def task_event(self, type, fields):
         """Process task event."""
-        uuid = fields.pop('uuid')
-        hostname = fields.pop('hostname')
+        uuid = fields['uuid']
+        hostname = fields['hostname']
         worker, _ = self.get_or_create_worker(hostname)
         task, created = self.get_or_create_task(uuid)
         task.worker = worker
@@ -385,7 +385,7 @@ class State(object):
     def _dispatch_event(self, event):
         self.event_count += 1
         event = kwdict(event)
-        group, _, subject = event.pop('type').partition('-')
+        group, _, subject = event['type'].partition('-')
         getattr(self, group + '_event')(subject, event)
         if self.event_callback:
             self.event_callback(self, event)
