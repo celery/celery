@@ -18,6 +18,9 @@
 # Short-Description: celery task worker daemon
 ### END INIT INFO
 
+# some commands work asyncronously, so we'll wait this many seconds
+SLEEP_SECONDS=5
+
 DEFAULT_PID_FILE="/var/run/celery/%n.pid"
 DEFAULT_LOG_FILE="/var/log/celery/%n.log"
 DEFAULT_LOG_LEVEL="INFO"
@@ -44,7 +47,6 @@ fi
 CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-${CELERYD_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
 CELERYD_MULTI=${CELERYD_MULTI:-"celeryd-multi"}
 CELERYD=${CELERYD:-$DEFAULT_CELERYD}
-CELERYCTL=${CELERYCTL:="celeryctl"}
 CELERYD_NODES=${CELERYD_NODES:-$DEFAULT_NODES}
 
 export CELERY_LOADER
@@ -130,6 +132,7 @@ _get_pid_files() {
 
 stop_workers () {
     $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
+    sleep $SLEEP_SECONDS
 }
 
 
@@ -140,6 +143,7 @@ start_workers () {
                          --loglevel="$CELERYD_LOG_LEVEL"    \
                          --cmd="$CELERYD"                   \
                          $CELERYD_OPTS
+    sleep $SLEEP_SECONDS
 }
 
 
@@ -150,6 +154,7 @@ restart_workers () {
                            --loglevel="$CELERYD_LOG_LEVEL"  \
                            --cmd="$CELERYD"                 \
                            $CELERYD_OPTS
+    sleep $SLEEP_SECONDS
 }
 
 check_status () {
