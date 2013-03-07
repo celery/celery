@@ -1,6 +1,6 @@
 #!/bin/sh
 # ============================================
-#  celeryd - Starts the Celery worker daemon.
+# celeryd - Starts the Celery worker daemon.
 # ============================================
 #
 # :Usage: /etc/init.d/celeryd {start|stop|restart|status}
@@ -132,14 +132,10 @@ export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 _get_pid_files() {
     [[ ! -d "$CELERYD_PID_DIR" ]] && return
-    echo $(find "$CELERYD_PID_DIR" -name "*.pid")
+    echo $(ls -1 "$CELERYD_PID_DIR"/*.pid 2> /dev/null)
 }
 
 stop() {
-    # Configuration management packages sometimes issue a "stop" command
-    # in preparation for installing the software for the first time.
-    # In those cases we don't need celeryd-multi to tell us celeryd is
-    # not running.
     local pid_files=$(_get_pid_files)
     [[ -z "$pid_files" ]] && echo "celeryd is stopped" && exit 0
 
@@ -163,7 +159,7 @@ start() {
     echo -n $"Starting celeryd: "
 
     # If Celery is already running, bail out
-    local pid_files=$(find "$CELERYD_PID_DIR" -name "*.pid")
+    local pid_files=$(_get_pid_files)
     if [[ "$pid_files" ]]; then
         echo -n $"celeryd is already running. Use 'restart'."
         failure
@@ -184,7 +180,7 @@ start() {
         # This is useful to prevent scripts following this one from trying to
         # use Celery (or its pid files) too early.
         sleep $SLEEP_SECONDS
-        pid_files=$(find "$CELERYD_PID_DIR" -name "*.pid")
+        pid_files=$(_get_pid_files)
         if [[ "$pid_files" ]]; then
             for pid_file in $pid_files; do
                 local node=$(basename "$pid_file" .pid)
