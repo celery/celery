@@ -1,22 +1,24 @@
 # In CentOS, contents should be placed in the file /etc/sysconfig/celeryd
 
-# Name of nodes to start (space-separated)
-CELERYD_NODES="my_application-node_1"
+# Names of nodes to start (space-separated)
+#CELERYD_NODES="my_application-node_1"
 
 # Where to chdir at start. This could be the root of a virtualenv.
-CELERYD_CHDIR="/path/to/my_application"
+#CELERYD_CHDIR="/path/to/my_application"
 
 # How to call celeryd-multi
-CELERYD_MULTI="$CELERYD_CHDIR/bin/celeryd-multi"
+#CELERYD_MULTI="$CELERYD_CHDIR/bin/celeryd-multi"
 
 # Extra arguments
-CELERYD_OPTS="--app=my_application.path.to.worker --time-limit=300 --concurrency=8 --loglevel=DEBUG"
+#CELERYD_OPTS="--app=my_application.path.to.worker --time-limit=300 --concurrency=8 --loglevel=DEBUG"
+
+# Create log/pid dirs, if they don't already exist
+#CELERY_CREATE_DIRS=1
 
 # %n will be replaced with the nodename
-CELERY_CREATE_DIRS=1
-CELERYD_LOG_FILE="/path/to/my_application/log/%n.log"
-CELERYD_PID_FILE="/var/run/celery/%n.pid"
+#CELERYD_LOG_FILE="/path/to/my_application/log/%n.log"
+#CELERYD_PID_FILE="/var/run/celery/%n.pid"
 
-# Workers should run as an unprivileged user
-CELERYD_USER=celery
-CELERYD_GROUP=celery
+# Workers run as an unprivileged user
+#CELERYD_USER=celery
+#CELERYD_GROUP=celery
