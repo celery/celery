@@ -137,7 +137,7 @@ _get_pid_files() {
 
 stop() {
     local pid_files=$(_get_pid_files)
-    [[ -z "$pid_files" ]] && echo "celeryd is stopped" && exit 0
+    [[ -z "$pid_files" ]] && echo "celeryd is stopped" && return 0
 
     local one_failed=
     for pid_file in $pid_files; do
@@ -152,7 +152,7 @@ stop() {
         echo
     done
 
-    [[ "$one_failed" ]] && exit 1 || exit 0
+    [[ "$one_failed" ]] && return 1 || return 0
 }
 
 start() {
@@ -164,7 +164,7 @@ start() {
         echo -n $"celeryd is already running. Use 'restart'."
         failure
         echo
-        exit 1
+        return 1
     fi
 
     $CELERYD_MULTI start $CELERYD_NODES $DAEMON_OPTS        \
@@ -190,7 +190,7 @@ start() {
                 success
             done
             echo
-            exit 0
+            return 0
         else  # celeryd_multi succeeded but no pid files found
             failure
         fi
@@ -198,17 +198,17 @@ start() {
         failure
     fi
     echo
-    exit 1
+    return 1
 }
 
 check_status() {
     local pid_files=$(_get_pid_files)
-    [[ -z "$pid_files" ]] && echo "celeryd is stopped" && exit 1
+    [[ -z "$pid_files" ]] && echo "celeryd is stopped" && return 1
     for pid_file in $pid_files; do
         local node=$(basename "$pid_file" .pid)
-        status -p "$pid_file" $"celeryd (node $node)" || exit 1  # if one node is down celeryd is down
+        status -p "$pid_file" $"celeryd (node $node)" || return 1  # if one node is down celeryd is down
     done
-    exit 0
+    return 0
 }
 
 case "$1" in
@@ -231,8 +231,7 @@ case "$1" in
     restart)
         check_dev_null
         check_paths
-        stop
-        start
+        stop && start
     ;;
 
     *)
@@ -241,4 +240,4 @@ case "$1" in
     ;;
 esac
 
-exit 1  # we should never get here
+exit $?
