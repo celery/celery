@@ -15,6 +15,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 ======
 :release-date: 2013-03-07 XX:XX:XX X.X UTC
 
+- Now depends on :mod:`billiard` version 2.7.3.22
+
 - AMQP heartbeats are now disabled by default.
 
     Some users experiences issues with heartbeats enabled,
