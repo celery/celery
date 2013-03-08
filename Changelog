@@ -13,7 +13,17 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.16
 ======
-:release-date: 2013-03-07 XX:XX:XX X.X UTC
+:release-date: 2013-03-07 04:00:00 P.M UTC
+
+- Happy International Women's Day!
+
+    We have a long way to go, so this is a chance for you to get involved in one
+    of the organizations working for making our communities more
+    diverse.
+
+     - PyLadies — http://pyladies.com
+     - Girls Who Code — http://www.girlswhocode.com
+     - Women Who Code — http://www.meetup.com/Women-Who-Code-SF/
 
 - Now depends on :mod:`kombu` version 2.5.7
 
