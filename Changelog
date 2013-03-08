@@ -34,6 +34,14 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Worker: Now propagates connection errors occurring in timer callbacks,
   so that the connection can be reset.
 
+- The modules in :setting:`CELERY_IMPORTS` and :setting:`CELERY_INCLUDE`
+  are now imported in the original order (Issue #1161).
+
+    The modules in :setting:`CELERY_IMPORTS` will be imported first,
+    then continued by :setting:`CELERY_INCLUDE`.
+
+    Thanks to Joey Wilhelm.
+
 - New bash completion for ``celery`` available in the git repository:
 
     https://github.com/celery/celery/tree/3.0/extra/bash-completion
