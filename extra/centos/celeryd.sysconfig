@@ -1,21 +1,24 @@
-# Passed into celeryd multi
-#CELERYD="-m celery.bin.celeryd_detach"
+# In CentOS, contents should be placed in the file /etc/sysconfig/celeryd
 
-# Path to the celerd multi
-#CELERYD_MULTI="/usr/bin/celeryd-multi"
+# Names of nodes to start (space-separated)
+#CELERYD_NODES="my_application-node_1"
 
-# Sets the verbosity of the celeryd logging.
-#CELERYD_LOG_LEVEL="INFO"
+# Where to chdir at start. This could be the root of a virtualenv.
+#CELERYD_CHDIR="/path/to/my_application"
 
-# Define the loader that celeryd should use for loading in configs.
-#CELERY_LOADER=""
+# How to call celeryd-multi
+#CELERYD_MULTI="$CELERYD_CHDIR/bin/celeryd-multi"
 
-# User and group information for directories
-#CELERYD_USER="celery"
-#CELERYD_GROUP="celery"
+# Extra arguments
+#CELERYD_OPTS="--app=my_application.path.to.worker --time-limit=300 --concurrency=8 --loglevel=DEBUG"
 
-# Default arguments to be passed into celeryd.
-#CELERYD_OPTS=""
+# Create log/pid dirs, if they don't already exist
+#CELERY_CREATE_DIRS=1
 
-# Change to this directory first before launching celeryd.
-#CELERYD_CHDIR=""
+# %n will be replaced with the nodename
+#CELERYD_LOG_FILE="/path/to/my_application/log/%n.log"
+#CELERYD_PID_FILE="/var/run/celery/%n.pid"
+
+# Workers run as an unprivileged user
+#CELERYD_USER=celery
+#CELERYD_GROUP=celery
