@@ -211,7 +211,7 @@ Can be one of the following:
 .. _`SQLAlchemy`: http://sqlalchemy.org
 .. _`memcached`: http://memcached.org
 .. _`MongoDB`: http://mongodb.org
-.. _`Redis`: http://code.google.com/p/redis/
+.. _`Redis`: http://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
 
 .. setting:: CELERY_RESULT_SERIALIZER
