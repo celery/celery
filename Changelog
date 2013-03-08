@@ -53,6 +53,11 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Chord unlock now handles errors occurring while calling the callback.
 
+- Generic worker init.d script: Status check is now performed by
+  querying the pid of the instance instead of sending messages.
+
+    Contributed by Milen Pavlov.
+
 - Improved init scripts for CentOS.
 
     - Updated to support celery 3.x conventions.
@@ -61,7 +66,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     - Standard color-coded CentOS service-init output.
     - A test suite.
 
-    Contributed by Milen Pavlov
+    Contributed by Milen Pavlov.
 
 - ``ResultSet.join`` now always works with empty result set (Issue #1219).
 
