@@ -28,8 +28,6 @@ from celery.utils.imports import (
     import_from_cwd, symbol_by_name, NotAPackage, find_module,
 )
 
-BUILTIN_MODULES = frozenset()
-
 ERROR_ENVVAR_NOT_SET = """\
 The environment variable {0!r} is not set,
 and as such the configuration could not be loaded.
@@ -66,7 +64,7 @@ class BaseLoader(object):
         * What modules are imported to find tasks?
 
     """
-    builtin_modules = BUILTIN_MODULES
+    builtin_modules = frozenset()
     configured = False
     error_envvar_not_set = ERROR_ENVVAR_NOT_SET
     override_backends = {}
@@ -123,9 +121,10 @@ class BaseLoader(object):
     def import_default_modules(self):
         return [
             self.import_task_module(m) for m in (
-                set(maybe_list(self.app.conf.CELERY_IMPORTS))
-                | set(maybe_list(self.app.conf.CELERY_INCLUDE))
-                | self.builtin_modules)
+                tuple(self.builtin_modules) +
+                tuple(maybe_list(self.app.conf.CELERY_IMPORTS)) +
+                tuple(maybe_list(self.app.conf.CELERY_INCLUDE))
+            )
         ]
 
     def init_worker(self):

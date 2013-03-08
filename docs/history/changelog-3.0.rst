@@ -13,7 +13,21 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.16
 ======
-:release-date: 2013-03-07 XX:XX:XX X.X UTC
+:release-date: 2013-03-07 04:00:00 P.M UTC
+
+- Happy International Women's Day!
+
+    We have a long way to go, so this is a chance for you to get involved in one
+    of the organizations working for making our communities more
+    diverse.
+
+     - PyLadies — http://pyladies.com
+     - Girls Who Code — http://www.girlswhocode.com
+     - Women Who Code — http://www.meetup.com/Women-Who-Code-SF/
+
+- Now depends on :mod:`kombu` version 2.5.7
+
+- Now depends on :mod:`billiard` version 2.7.3.22
 
 - AMQP heartbeats are now disabled by default.
 
@@ -29,6 +43,14 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Worker: Now propagates connection errors occurring in timer callbacks,
   so that the connection can be reset.
+
+- The modules in :setting:`CELERY_IMPORTS` and :setting:`CELERY_INCLUDE`
+  are now imported in the original order (Issue #1161).
+
+    The modules in :setting:`CELERY_IMPORTS` will be imported first,
+    then continued by :setting:`CELERY_INCLUDE`.
+
+    Thanks to Joey Wilhelm.
 
 - New bash completion for ``celery`` available in the git repository:
 
@@ -48,6 +70,21 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Cache Backend: Now works with chords again (Issue #1094).
 
 - Chord unlock now handles errors occurring while calling the callback.
+
+- Generic worker init.d script: Status check is now performed by
+  querying the pid of the instance instead of sending messages.
+
+    Contributed by Milen Pavlov.
+
+- Improved init scripts for CentOS.
+
+    - Updated to support celery 3.x conventions.
+    - Now uses CentOS built-in ``status`` and ``killproc``
+    - Support for multi-node / multi-pid worker services.
+    - Standard color-coded CentOS service-init output.
+    - A test suite.
+
+    Contributed by Milen Pavlov.
 
 - ``ResultSet.join`` now always works with empty result set (Issue #1219).
 

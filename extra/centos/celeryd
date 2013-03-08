@@ -1,13 +1,12 @@
-#!/bin/sh -e
+#!/bin/sh
 # ============================================
-#  celeryd - Starts the Celery worker daemon.
+# celeryd - Starts the Celery worker daemon.
 # ============================================
 #
-# :Usage: /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}
-# :Configuration file: /etc/default/celeryd
+# :Usage: /etc/init.d/celeryd {start|stop|restart|status}
+# :Configuration file: /etc/sysconfig/celeryd
 #
-# See http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html#generic-init-scripts
-
+# See http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html
 
 ### BEGIN INIT INFO
 # Provides:          celeryd
@@ -18,25 +17,23 @@
 # Short-Description: celery task worker daemon
 ### END INIT INFO
 
+# Source the centos service helper functions
+source /etc/init.d/functions
+# NOTE: "set -e" does not work with the above functions,
+# which use non-zero return codes as non-error return conditions
+
 # some commands work asyncronously, so we'll wait this many seconds
 SLEEP_SECONDS=5
 
-DEFAULT_PID_FILE="/var/run/celery/%N.pid"
-DEFAULT_LOG_FILE="/var/log/celery/%N.log"
+DEFAULT_PID_FILE="/var/run/celery/%n.pid"
+DEFAULT_LOG_FILE="/var/log/celery/%n.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
-DEFAULT_CELERYD="-m celery worker --detach"
+DEFAULT_CELERYD="-m celery.bin.celeryd_detach"
 
-CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/celeryd"}
+CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/sysconfig/celeryd"}
 
 test -f "$CELERY_DEFAULTS" && . "$CELERY_DEFAULTS"
-
-# Sets --app argument for CELERY_BIN
-CELERY_APP_ARG=""
-if [ ! -z "$CELERY_APP" ]; then
-    CELERY_APP_ARG="--app=$CELERY_APP"
-fi
-
 
 # Set CELERY_CREATE_DIRS to always create log/pid dirs.
 CELERY_CREATE_DIRS=${CELERY_CREATE_DIRS:-0}
@@ -52,11 +49,12 @@ if [ -z "$CELERYD_LOG_FILE" ]; then
 fi
 
 CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-${CELERYD_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
-CELERY_BIN=${CELERY_BIN:-"celery"}
-CELERYD_MULTI=${CELERYD_MULTI:-"$CELERY_BIN multi"}
+CELERYD_MULTI=${CELERYD_MULTI:-"celeryd-multi"}
 CELERYD=${CELERYD:-$DEFAULT_CELERYD}
 CELERYD_NODES=${CELERYD_NODES:-$DEFAULT_NODES}
 
+# This is used to change how Celery loads in the configs.  It does not need to
+# be set to be run.
 export CELERY_LOADER
 
 if [ -n "$2" ]; then
@@ -77,7 +75,6 @@ fi
 if [ -n "$CELERYD_CHDIR" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --workdir=\"$CELERYD_CHDIR\""
 fi
-
 
 check_dev_null() {
     if [ ! -c /dev/null ]; then
@@ -134,80 +131,97 @@ export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
 _get_pid_files() {
-    [ ! -d "$CELERYD_PID_DIR" ] && return
-    echo `ls -1 "$CELERYD_PID_DIR"/*.pid 2> /dev/null`
+    [[ ! -d "$CELERYD_PID_DIR" ]] && return
+    echo $(ls -1 "$CELERYD_PID_DIR"/*.pid 2> /dev/null)
 }
 
-stop_workers () {
-    $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
-    sleep $SLEEP_SECONDS
+stop() {
+    local pid_files=$(_get_pid_files)
+    [[ -z "$pid_files" ]] && echo "celeryd is stopped" && return 0
+
+    local one_failed=
+    for pid_file in $pid_files; do
+        local pid=$(cat "$pid_file")
+        echo -n $"Stopping celeryd (pid $pid): "
+
+        # killproc comes from 'functions' and brings three nice features:
+        #  1. sending TERM, sleeping, then sleeping more if needed, then sending KILL
+        #  2. handling 'success' and 'failure' output
+        #  3. removes stale pid files, if any remain
+        killproc -p "$pid_file" -d "$SLEEP_SECONDS" celeryd || one_failed=true
+        echo
+    done
+
+    [[ "$one_failed" ]] && return 1 || return 0
 }
 
+start() {
+    echo -n $"Starting celeryd: "
 
-start_workers () {
+    # If Celery is already running, bail out
+    local pid_files=$(_get_pid_files)
+    if [[ "$pid_files" ]]; then
+        echo -n $"celeryd is already running. Use 'restart'."
+        failure
+        echo
+        return 1
+    fi
+
     $CELERYD_MULTI start $CELERYD_NODES $DAEMON_OPTS        \
                          --pidfile="$CELERYD_PID_FILE"      \
                          --logfile="$CELERYD_LOG_FILE"      \
                          --loglevel="$CELERYD_LOG_LEVEL"    \
                          --cmd="$CELERYD"                   \
-                         $CELERY_APP_ARG                    \
+                         --quiet                            \
                          $CELERYD_OPTS
-    sleep $SLEEP_SECONDS
-}
 
-
-restart_workers () {
-    $CELERYD_MULTI restart $CELERYD_NODES $DAEMON_OPTS      \
-                           --pidfile="$CELERYD_PID_FILE"    \
-                           --logfile="$CELERYD_LOG_FILE"    \
-                           --loglevel="$CELERYD_LOG_LEVEL"  \
-                           --cmd="$CELERYD"                 \
-                           $CELERY_APP_ARG                  \
-                           $CELERYD_OPTS
-    sleep $SLEEP_SECONDS
-}
-
-check_status () {
-    local pid_files=`_get_pid_files`
-    [ -z "$pid_files" ] && echo "celeryd is stopped" && exit 1
-
-    local one_failed=
-    for pid_file in $pid_files; do
-        local node=`basename "$pid_file" .pid`
-        local pid=`cat "$pid_file"`
-        if [ -z "$pid" ] || [ "${pid//[0-9]/}" ]; then
-            echo "bad pid file ($pid_file)"
-        else
-            local failed=
-            kill -0 $pid 2> /dev/null || failed=true
-            if [ "$failed" ]; then
-                echo "celeryd (node $node) (pid $pid) is stopped, but pid file exists!"
-                one_failed=true
-            else
-                echo "celeryd (node $node) (pid $pid) is running..."
-            fi
+    if [[ "$?" == "0" ]]; then
+        # Sleep a few seconds to give Celery a chance to initialize itself.
+        # This is useful to prevent scripts following this one from trying to
+        # use Celery (or its pid files) too early.
+        sleep $SLEEP_SECONDS
+        pid_files=$(_get_pid_files)
+        if [[ "$pid_files" ]]; then
+            for pid_file in $pid_files; do
+                local node=$(basename "$pid_file" .pid)
+                local pid=$(cat "$pid_file")
+                echo
+                echo -n "    $node (pid $pid):"
+                success
+            done
+            echo
+            return 0
+        else  # celeryd_multi succeeded but no pid files found
+            failure
         fi
-    done
-
-    [ "$one_failed" ] && exit 1 || exit 0
+    else  # celeryd_multi did not succeed
+        failure
+    fi
+    echo
+    return 1
 }
 
+check_status() {
+    local pid_files=$(_get_pid_files)
+    [[ -z "$pid_files" ]] && echo "celeryd is stopped" && return 1
+    for pid_file in $pid_files; do
+        local node=$(basename "$pid_file" .pid)
+        status -p "$pid_file" $"celeryd (node $node)" || return 1  # if one node is down celeryd is down
+    done
+    return 0
+}
 
 case "$1" in
     start)
         check_dev_null
         check_paths
-        start_workers
+        start
     ;;
 
     stop)
         check_dev_null
         check_paths
-        stop_workers
-    ;;
-
-    reload|force-reload)
-        echo "Use restart"
+        stop
     ;;
 
     status)
@@ -217,25 +231,13 @@ case "$1" in
     restart)
         check_dev_null
         check_paths
-        restart_workers
+        stop && start
     ;;
-    try-restart)
-        check_dev_null
-        check_paths
-        restart_workers
-    ;;
-    create-paths)
-        check_dev_null
-        create_paths
-    ;;
-    check-paths)
-        check_dev_null
-        check_paths
-    ;;
+
     *)
-        echo "Usage: /etc/init.d/celeryd {start|stop|restart|kill|create-paths}"
-        exit 64  # EX_USAGE
+        echo "Usage: /etc/init.d/celeryd {start|stop|restart|status}"
+        exit 3
     ;;
 esac
 
-exit 0
+exit $?

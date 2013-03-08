@@ -1103,6 +1103,8 @@ A sequence of modules to import when the worker starts.
 This is used to specify the task modules to import, but also
 to import signal handlers and additional remote control commands, etc.
 
+The modules will be imported in the original order.
+
 .. setting:: CELERY_INCLUDE
 
 CELERY_INCLUDE
@@ -1110,6 +1112,9 @@ CELERY_INCLUDE
 
 Exact same semantics as :setting:`CELERY_IMPORTS`, but can be used as a means
 to have different import categories.
+
+The modules in this setting are imported after the modules in
+:setting:`CELERY_IMPORTS`.
 
 .. setting:: CELERYD_FORCE_EXECV
 
