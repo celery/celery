@@ -53,6 +53,16 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Chord unlock now handles errors occurring while calling the callback.
 
+- Improved init scripts for CentOS.
+
+    - Updated to support celery 3.x conventions.
+    - Now uses CentOS built-in ``status`` and ``killproc``
+    - Support for multi-node / multi-pid worker services.
+    - Standard color-coded CentOS service-init output.
+    - A test suite.
+
+    Contributed by Milen Pavlov
+
 - ``ResultSet.join`` now always works with empty result set (Issue #1219).
 
 - A ``group`` consisting of a single task is now supported (Issue #1219).
