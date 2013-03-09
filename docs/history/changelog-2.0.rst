@@ -956,7 +956,7 @@ News
         $ celeryd-multi start 3 -c 3
         celeryd -n celeryd1.myhost -c 3
         celeryd -n celeryd2.myhost -c 3
-        celeryd- n celeryd3.myhost -c 3
+        celeryd -n celeryd3.myhost -c 3
 
         # start 3 named workers
         $ celeryd-multi start image video data -c 3
