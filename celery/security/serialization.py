@@ -67,7 +67,7 @@ class SecureSerializer(object):
     def _pack(self, body, content_type, content_encoding, signer, signature,
               sep=str_to_bytes('\x00\x01')):
         fields = sep.join(
-            ensure_bytes(s) for s in [signer, signature, content_type,
+            ensure_bytes(s) for s in [signer, b64encode(signature), content_type,
                                       content_encoding, body]
         )
         return b64encode(fields)
@@ -76,11 +76,13 @@ class SecureSerializer(object):
         values = b64decode(ensure_bytes(payload)).split(sep)
         return {
             'signer': bytes_to_str(values[0]),
-            'signature': ensure_bytes(values[1]),
+            'signature': ensure_bytes(b64decode(values[1])),
             'content_type': bytes_to_str(values[2]),
             'content_encoding': bytes_to_str(values[3]),
             'body': ensure_bytes(values[4]),
         }
+
+
 
 
 def register_auth(key=None, cert=None, store=None, digest='sha1',
@@ -93,3 +95,5 @@ def register_auth(key=None, cert=None, store=None, digest='sha1',
     registry.register('auth', s.serialize, s.deserialize,
                       content_type='application/data',
                       content_encoding='utf-8')
+
+    registry._set_default_serializer('auth')
