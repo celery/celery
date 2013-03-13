@@ -10,6 +10,7 @@ from celery.security.key import PrivateKey
 from . import CERT1, CERT2, KEY1, KEY2
 from .case import SecurityCase
 
+import os,base64
 
 class test_SecureSerializer(SecurityCase):
 
@@ -53,3 +54,9 @@ class test_SecureSerializer(SecurityCase):
     def test_register_auth(self):
         register_auth(KEY1, CERT1, '')
         self.assertIn('application/data', registry._decoders)
+
+    def test_lots_of_sign(self):
+        for i in range(1000):
+            rdata = base64.urlsafe_b64encode(os.urandom(265))
+            s = self._get_s(KEY1, CERT1, [CERT1])
+            self.assertEqual(s.deserialize(s.serialize(rdata)), rdata)
