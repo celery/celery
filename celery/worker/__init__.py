@@ -310,6 +310,7 @@ class WorkController(configurated):
 
     _state = None
     _running = 0
+    pool = None
 
     def __init__(self, loglevel=None, hostname=None, ready_callback=noop,
                  queues=None, app=None, pidfile=None, **kwargs):

@@ -374,7 +374,11 @@ class Request(object):
             # time to write the result.
             if self.store_errors:
                 if isinstance(exc, exceptions.WorkerLostError):
-                    self.task.backend.mark_as_failure(self.id, exc)
+                    print('+++ WRITE RESULT')
+                    try:
+                        self.task.backend.mark_as_failure(self.id, exc)
+                    finally:
+                        print('--- WRITE RESULT')
                 elif isinstance(exc, exceptions.Terminated):
                     self._announce_revoked('terminated', True, str(exc), False)
             # (acks_late) acknowledge after result stored.
