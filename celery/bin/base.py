@@ -538,4 +538,5 @@ def daemon_options(default_pidfile=None, default_logfile=None):
         Option('--uid', default=None),
         Option('--gid', default=None),
         Option('--umask', default=0, type='int'),
+        Option('--workdir', default=None, dest='working_directory'),
     )
