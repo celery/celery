@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 import os
 import platform as _platform
+import re
 import types
 
 try:
@@ -36,6 +37,10 @@ settings -> transport:{transport} results:{results}
 {human_settings}
 """
 
+HIDDEN_SETTINGS = re.compile(
+    'API|TOKEN|KEY|SECRET|PASS|PROFANITIES_LIST|SIGNATURE|DATABASE',
+    re.IGNORECASE,
+)
 
 class Settings(ConfigurationView):
     """Celery settings object."""
@@ -84,7 +89,7 @@ class Settings(ConfigurationView):
                 d = object.__getattribute__(d, 'obj')
                 if isinstance(d, types.ModuleType):
                     d = dict((k, v) for k, v in items(vars(d))
-                             if not k.startswith('__') and k.isupper())
+                             if not k.startswith('_') and k.isupper())
             R.update(d)
         return R
 
@@ -123,7 +128,9 @@ class Settings(ConfigurationView):
         configuration."""
         return '\n'.join(
             '{0}: {1}'.format(key, pretty(value, width=50))
-            for key, value in items(self.without_defaults()))
+            for key, value in items(filter_hidden_settings(dict(
+                (k, v) for k, v in items(self.without_defaults())
+                if k.isupper() and not k.startswith('_')))))
 
 
 class AppPickler(object):
@@ -161,6 +168,14 @@ def _unpickle_app_v2(cls, kwargs):
     """Rebuild app for versions 3.1+"""
     kwargs['set_as_current'] = False
     return cls(**kwargs)
+
+
+def filter_hidden_settings(conf):
+
+    def maybe_censor(key, value):
+        return '********' if HIDDEN_SETTINGS.search(key) else value
+
+    return dict((k, maybe_censor(k, v)) for k, v in items(conf))
 
 
 def bugreport(app):
