@@ -8,22 +8,31 @@ import warnings
 
 from importlib import import_module
 
-config_module = os.environ.setdefault('CELERY_TEST_CONFIG_MODULE',
-                                      'celery.tests.config')
-
-os.environ.setdefault('CELERY_CONFIG_MODULE', config_module)
-os.environ['CELERY_LOADER'] = 'default'
-os.environ['EVENTLET_NOPATCH'] = 'yes'
-os.environ['GEVENT_NOPATCH'] = 'yes'
-os.environ['KOMBU_DISABLE_LIMIT_PROTECTION'] = 'yes'
-os.environ['CELERY_BROKER_URL'] = 'memory://'
-
 try:
     WindowsError = WindowsError  # noqa
 except NameError:
 
     class WindowsError(Exception):
         pass
+
+
+def setup():
+    config_module = os.environ.setdefault(
+        'CELERY_TEST_CONFIG_MODULE', 'celery.tests.config',
+    )
+
+    os.environ.setdefault('CELERY_CONFIG_MODULE', config_module)
+    os.environ['CELERY_LOADER'] = 'default'
+    os.environ['EVENTLET_NOPATCH'] = 'yes'
+    os.environ['GEVENT_NOPATCH'] = 'yes'
+    os.environ['KOMBU_DISABLE_LIMIT_PROTECTION'] = 'yes'
+    os.environ['CELERY_BROKER_URL'] = 'memory://'
+
+    if os.environ.get('COVER_ALL_MODULES') or '--with-coverage3' in sys.argv:
+        from celery.tests.utils import catch_warnings
+        with catch_warnings(record=True):
+            import_all_modules()
+        warnings.resetwarnings()
 
 
 def teardown():
@@ -77,10 +86,3 @@ def import_all_modules(name=__name__, file=__file__,
                 import_module(module)
             except ImportError:
                 pass
-
-
-if os.environ.get('COVER_ALL_MODULES') or '--with-coverage3' in sys.argv:
-    from celery.tests.utils import catch_warnings
-    with catch_warnings(record=True):
-        import_all_modules()
-    warnings.resetwarnings()
