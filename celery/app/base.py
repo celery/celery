@@ -418,8 +418,11 @@ class Celery(object):
         # is enabled.  There may be a better way to do this, but attempts
         # at forcing the subprocess to import the modules did not work out,
         # apparently some sys.path problem.  More at Issue 1126.
-        conf = (self.conf.changes if _forking and _forking._forking_is_enabled
-                else self.conf._pickleable_changes())
+        if self.IS_WINDOWS:
+            conf = {}
+        else:
+            conf = (self.conf.changes if _forking and _forking._forking_is_enabled
+                    else self.conf._pickleable_changes())
         return (self.main, conf, self.loader_cls,
                 self.backend_cls, self.amqp_cls, self.events_cls,
                 self.log_cls, self.control_cls, self.accept_magic_kwargs)
