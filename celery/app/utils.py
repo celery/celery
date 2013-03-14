@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 import os
 import platform as _platform
+import re
 
 from celery import platforms
 from celery.datastructures import ConfigurationView
@@ -29,6 +30,10 @@ settings -> transport:%(transport)s results:%(results)s
 %(human_settings)s
 """
 
+HIDDEN_SETTINGS = re.compile(
+    'API|TOKEN|KEY|SECRET|PASS|PROFANITIES_LIST|SIGNATURE|DATABASE',
+    re.IGNORECASE,
+)
 
 class Settings(ConfigurationView):
     """Celery settings object."""
@@ -96,8 +101,10 @@ class Settings(ConfigurationView):
         """Returns a human readable string showing changes to the
         configuration."""
         return '\n'.join(
-            '%s %s' % (key + ':', pretty(value, width=50))
-            for key, value in self.without_defaults().iteritems())
+            '%s: %s' % (key, pretty(value, width=50))
+            for key, value in filter_hidden_settings(dict(
+                (k, v) for k, v in self.without_defaults().iteritems()
+                if k.isupper() and not k.startswith('_'))).iteritems())
 
 
 class AppPickler(object):
@@ -130,6 +137,14 @@ class AppPickler(object):
 
 def _unpickle_app(cls, pickler, *args):
     return pickler()(cls, *args)
+
+
+def filter_hidden_settings(conf):
+
+    def maybe_censor(key, value):
+        return '********' if HIDDEN_SETTINGS.search(key) else value
+
+    return dict((k, maybe_censor(k, v)) for k, v in conf.iteritems())
 
 
 def bugreport(app):
