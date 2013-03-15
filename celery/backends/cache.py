@@ -115,7 +115,7 @@ class CacheBackend(KeyValueStoreBackend):
 
     def on_chord_apply(self, group_id, body, result=None, **kwargs):
         self.client.set(self.get_key_for_chord(group_id), '0', time=86400)
-        self.app.GroupResult(group_id, result).save()
+        self.save_group(group_id, self.app.GroupResult(group_id, result))
 
     def incr(self, key):
         return self.client.incr(key)

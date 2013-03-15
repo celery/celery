@@ -215,8 +215,9 @@ class BaseBackend(object):
 
     def save_group(self, group_id, result):
         """Store the result and status of a task."""
+
         raise NotImplementedError(
-            'save_group is not supported by this backend.')
+            'save_group is not supported by %s.' % (type(self).__name__, ))
 
     def restore_group(self, group_id, cache=True):
         """Get the result of a group."""
@@ -476,7 +477,7 @@ class KeyValueStoreBackend(BaseDictBackend):
 
     def on_chord_apply(self, group_id, body, result=None, **kwargs):
         if self.implements_incr:
-            self.app.GroupResult(group_id, result).save()
+            self.save_group(group_id, self.app.GroupResult(group_id, result))
         else:
             self.fallback_chord_unlock(group_id, body, result, **kwargs)
 
