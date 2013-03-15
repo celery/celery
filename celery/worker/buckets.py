@@ -38,9 +38,7 @@ class AsyncTaskBucket(object):
         self.callback = callback
         self.worker = worker
         self.buckets = {}
-
-        for name in self.task_registry.iterkeys():
-            self.add_task_type(name)
+        self.refresh()
 
     def cont(self, request, bucket, tokens):
         if not bucket.can_consume(tokens):
@@ -70,7 +68,13 @@ class AsyncTaskBucket(object):
         return bucket
 
     def clear(self):
+        # called by the worker when the connection is lost,
+        # but this also clears out the timer so we be good.
         pass
+
+    def refresh(self):
+        for name in self.task_registry:
+            self.add_task_type(name)
 
 
 class TaskBucket(object):
