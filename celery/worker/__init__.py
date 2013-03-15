@@ -208,7 +208,8 @@ class Queues(bootsteps.Component):
         BucketType = TaskBucket
         w.start_mediator = True
         if not w.pool_cls.rlimit_safe:
-            w.disable_rate_limits = True
+            w.start_mediator = False
+            BucketType = AsyncTaskBucket
         process_task = w.process_task
         if w.use_eventloop:
             BucketType = AsyncTaskBucket
