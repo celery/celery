@@ -26,7 +26,7 @@ to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
 language.  So far there's RCelery_ for the Ruby programming language,
-node-celery_ for Node.js and a `PHP client`, but language interoperability can also be achieved
+node-celery_ for Node.js and a `PHP client`_, but language interoperability can also be achieved
 by :ref:`using webhooks <guide-webhooks>`.
 
 .. _RCelery: http://leapfrogdevelopment.github.com/rcelery/
