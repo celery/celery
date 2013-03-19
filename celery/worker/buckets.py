@@ -43,8 +43,9 @@ class AsyncTaskBucket(object):
     def cont(self, request, bucket, tokens):
         if not bucket.can_consume(tokens):
             hold = bucket.expected_time(tokens)
-            self.worker.timer.apply_after(hold * 1000.0,
-                self.cont, (request, bucket, tokens))
+            self.worker.timer.apply_after(
+                hold * 1000.0, self.cont, (request, bucket, tokens),
+            )
         else:
             self.callback(request)
 
