@@ -106,6 +106,7 @@ class CassandraBackend(BaseDictBackend):
             except (pycassa.InvalidRequestException,
                     pycassa.TimedOutException,
                     pycassa.UnavailableException,
+                    pycassa.AllServersUnavailable,
                     socket.error,
                     socket.timeout,
                     Thrift.TException), exc:

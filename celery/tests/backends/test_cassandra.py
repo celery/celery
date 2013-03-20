@@ -34,11 +34,15 @@ def install_exceptions(mod):
     class TimedOutException(Exception):
         pass
 
+    class AllServersUnavailable(Exception):
+        pass
+
     mod.NotFoundException = NotFoundException
     mod.TException = TException
     mod.InvalidRequestException = InvalidRequestException
     mod.TimedOutException = TimedOutException
     mod.UnavailableException = UnavailableException
+    mod.AllServersUnavailable = AllServersUnavailable
 
 
 class test_CassandraBackend(AppCase):
