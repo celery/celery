@@ -175,7 +175,8 @@ check_status () {
     for pid_file in $pid_files; do
         local node=`basename "$pid_file" .pid`
         local pid=`cat "$pid_file"`
-        if [ -z "$pid" ] || [ "${pid//[0-9]/}" ]; then
+        local cleaned_pid=`echo "$pid" | sed -e 's/[^0-9]//g'`
+        if [ -z "$pid" ] || [ "$cleaned_pid" != "$pid" ]; then
             echo "bad pid file ($pid_file)"
         else
             local failed=
