@@ -41,12 +41,12 @@ def process_initializer(app, hostname):
     # This is for Windows and other platforms not supporting
     # fork(). Note that init_worker makes sure it's only
     # run once per process.
+    app.loader.init_worker()
+    app.loader.init_worker_process()
     app.log.setup(int(os.environ.get('CELERY_LOG_LEVEL', 0)),
                   os.environ.get('CELERY_LOG_FILE') or None,
                   bool(os.environ.get('CELERY_LOG_REDIRECT', False)),
                   str(os.environ.get('CELERY_LOG_REDIRECT_LEVEL')))
-    app.loader.init_worker()
-    app.loader.init_worker_process()
     if os.environ.get('FORKED_BY_MULTIPROCESSING'):
         # pool did execv after fork
         trace.setup_worker_optimizations(app)
