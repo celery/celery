@@ -206,12 +206,13 @@ class Queues(bootsteps.Component):
 
     def create(self, w):
         BucketType = TaskBucket
-        w.start_mediator = True
+        w.start_mediator = not w.disable_rate_limits
         if not w.pool_cls.rlimit_safe:
             w.start_mediator = False
             BucketType = AsyncTaskBucket
         process_task = w.process_task
         if w.use_eventloop:
+            w.start_mediator = False
             BucketType = AsyncTaskBucket
             if w.pool_putlocks and w.pool_cls.uses_semaphore:
                 process_task = w.process_task_sem
@@ -312,7 +313,8 @@ class WorkController(configurated):
     _running = 0
 
     def __init__(self, loglevel=None, hostname=None, ready_callback=noop,
-                 queues=None, app=None, pidfile=None, **kwargs):
+                 queues=None, app=None, pidfile=None, use_eventloop=None,
+                 **kwargs):
         self.app = app_or_default(app or self.app)
 
         self._shutdown_complete = Event()
@@ -328,7 +330,10 @@ class WorkController(configurated):
         self.pidlock = None
         # this connection is not established, only used for params
         self._conninfo = self.app.connection()
-        self.use_eventloop = self.should_use_eventloop()
+        self.use_eventloop = (
+            self.should_use_eventloop() if use_eventloop is None
+            else use_eventloop
+        )
 
         # Update celery_include to have all known task modules, so that we
         # ensure all task modules are imported in case an execv happens.

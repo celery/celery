@@ -24,7 +24,7 @@ from celery.task import task as task_dec
 from celery.task import periodic_task as periodic_task_dec
 from celery.utils import uuid
 from celery.worker import WorkController, Queues, Timers, EvLoop, Pool
-from celery.worker.buckets import FastQueue
+from celery.worker.buckets import FastQueue, AsyncTaskBucket
 from celery.worker.job import Request
 from celery.worker.consumer import BlockingConsumer
 from celery.worker.consumer import QoS, RUN, PREFETCH_COUNT_MAX, CLOSE
@@ -959,15 +959,28 @@ class test_WorkController(AppCase):
         self.assertIsNone(worker.mediator)
         self.assertEqual(worker.ready_queue.put, worker.process_task)
 
+    def test_enable_rate_limits_eventloop(self):
+        try:
+            worker = self.create_worker(disable_rate_limits=False,
+                                        use_eventloop=True,
+                                        pool_cls='processes')
+        except ImportError:
+            raise SkipTest('multiprocessing not supported')
+        self.assertIsInstance(worker.ready_queue, AsyncTaskBucket)
+        self.assertFalse(worker.mediator)
+        self.assertNotEqual(worker.ready_queue.put, worker.process_task)
+
+
     def test_disable_rate_limits_processes(self):
         try:
             worker = self.create_worker(disable_rate_limits=True,
+                                        use_eventloop=False,
                                         pool_cls='processes')
         except ImportError:
             raise SkipTest('multiprocessing not supported')
         self.assertIsInstance(worker.ready_queue, FastQueue)
-        self.assertTrue(worker.mediator)
-        self.assertNotEqual(worker.ready_queue.put, worker.process_task)
+        self.assertFalse(worker.mediator)
+        self.assertEqual(worker.ready_queue.put, worker.process_task)
 
     def test_process_task_sem(self):
         worker = self.worker

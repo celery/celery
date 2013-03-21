@@ -214,6 +214,7 @@ class EventReceiver(object):
                             queues=[self.queue], no_ack=True)
         consumer.register_callback(self._receive)
         consumer.consume()
+
         try:
             if wakeup:
                 self.wakeup_workers(channel=consumer.channel)
