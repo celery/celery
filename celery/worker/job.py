@@ -49,6 +49,7 @@ _does_debug = False
 
 
 def __optimize__():
+    # this is also called by celery.task.trace.setup_worker_optimizations
     global _does_debug
     global _does_info
     _does_debug = logger.isEnabledFor(logging.DEBUG)

@@ -24,7 +24,7 @@ from .state import task_reserved
 
 def default(task, app, consumer,
             info=logger.info, error=logger.error, task_reserved=task_reserved,
-            to_timestamp=to_timestamp, to_system_tz=timezone.to_system):
+            to_system_tz=timezone.to_system):
     hostname = consumer.hostname
     eventer = consumer.event_dispatcher
     Req = Request
@@ -39,7 +39,7 @@ def default(task, app, consumer,
     handle = consumer.handle_task
     limit_task = consumer._limit_task
 
-    def task_message_handler(message, body, ack):
+    def task_message_handler(message, body, ack, to_timestamp=to_timestamp):
         req = Req(body, on_ack=ack, app=app, hostname=hostname,
                   eventer=eventer, task=task,
                   connection_errors=connection_errors,
