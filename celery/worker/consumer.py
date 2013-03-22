@@ -35,8 +35,8 @@ from celery.task.trace import build_tracer
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
-from celery.utils.timer2 import default_timer, to_timestamp
-from celery.utils.timeutils import humanize_seconds, timezone, rate
+from celery.utils.timer2 import default_timer
+from celery.utils.timeutils import humanize_seconds, rate
 
 from . import heartbeat, loops, pidbox
 from .state import task_reserved, maybe_shutdown, revoked
@@ -197,7 +197,6 @@ class Consumer(object):
         self.task_buckets.update(
             (n, self.bucket_for_task(t)) for n, t in items(self.app.tasks)
         )
-        print('BUCKETS: %r' % (self.task_buckets, ))
 
     def _limit_task(self, request, bucket, tokens):
         if not bucket.can_consume(tokens):
@@ -206,6 +205,7 @@ class Consumer(object):
                 hold * 1000.0, self._limit_task, (request, bucket, tokens),
             )
         else:
+            task_reserved(request)
             self.handle_task(request)
 
     def start(self):
@@ -324,56 +324,6 @@ class Consumer(object):
     def cancel_task_queue(self, queue):
         self.app.amqp.queues.select_remove(queue)
         self.task_consumer.cancel_by_queue(queue)
-
-    def on_task(self, task, task_reserved=task_reserved,
-                to_system_tz=timezone.to_system):
-        """Handle received task.
-
-        If the task has an `eta` we enter it into the ETA schedule,
-        otherwise we move it the ready queue for immediate processing.
-
-        """
-        if task.revoked():
-            return
-
-        if self._does_info:
-            info('Got task from broker: %s', task)
-
-        if self.event_dispatcher.enabled:
-            self.event_dispatcher.send(
-                'task-received',
-                uuid=task.id, name=task.name,
-                args=safe_repr(task.args), kwargs=safe_repr(task.kwargs),
-                retries=task.request_dict.get('retries', 0),
-                eta=task.eta and task.eta.isoformat(),
-                expires=task.expires and task.expires.isoformat(),
-            )
-
-        if task.eta:
-            try:
-                if task.utc:
-                    eta = to_timestamp(to_system_tz(task.eta))
-                else:
-                    eta = to_timestamp(task.eta, timezone.local)
-            except OverflowError as exc:
-                error("Couldn't convert eta %s to timestamp: %r. Task: %r",
-                      task.eta, exc, task.info(safe=True), exc_info=True)
-                task.acknowledge()
-            else:
-                self.qos.increment_eventually()
-                self.timer.apply_at(
-                    eta, self.apply_eta_task, (task, ), priority=6,
-                )
-        else:
-            task_reserved(task)
-            if not self.disable_rate_limits:
-                bucket = self.task_buckets[task.name]
-                if bucket:
-                    self._limit_task(task, bucket, 1)
-                else:
-                    self.handle_task(task)
-            else:
-                self.handle_task(task)
 
     def apply_eta_task(self, task):
         """Method called by the timer to apply a task with an

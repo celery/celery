@@ -319,7 +319,7 @@ class test_Consumer(Case):
         callback(m.decode(), m)
         self.assertTrue(warn.call_count)
 
-    @patch('celery.worker.consumer.to_timestamp')
+    @patch('celery.worker.strategy.to_timestamp')
     def test_receive_message_eta_OverflowError(self, to_timestamp):
         to_timestamp.side_effect = OverflowError()
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer)
@@ -340,6 +340,7 @@ class test_Consumer(Case):
     @patch('celery.worker.consumer.error')
     def test_receive_message_InvalidTaskError(self, error):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l.event_dispatcher = Mock()
         l.steps.pop()
         m = create_message(Mock(), task=foo_task.name,
                            args=(1, 2), kwargs='foobarbaz', id=1)
@@ -379,6 +380,7 @@ class test_Consumer(Case):
 
     def test_receieve_message(self):
         l = Consumer(self.buffer.put, timer=self.timer)
+        l.event_dispatcher = Mock()
         m = create_message(Mock(), task=foo_task.name,
                            args=[2, 4, 8], kwargs={})
         l.update_strategies()
@@ -803,22 +805,6 @@ class test_Consumer(Case):
         l.steps.pop()
         self.assertEqual(None, l.pool)
         l.namespace.start(l)
-
-    def test_on_task_revoked(self):
-        l = Consumer(self.buffer.put, timer=self.timer)
-        task = Mock()
-        task.revoked.return_value = True
-        l.on_task(task)
-
-    def test_on_task_no_events(self):
-        l = Consumer(self.buffer.put, timer=self.timer)
-        task = Mock()
-        task.revoked.return_value = False
-        l.event_dispatcher = Mock()
-        l.event_dispatcher.enabled = False
-        task.eta = None
-        l._does_info = False
-        l.on_task(task)
 
 
 class test_WorkController(AppCase):

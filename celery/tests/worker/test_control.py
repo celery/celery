@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import sys
 import socket
 
+from collections import defaultdict
 from datetime import datetime, timedelta
 
 from kombu import pidbox
@@ -42,7 +43,7 @@ class Consumer(consumer.Consumer):
 
     def __init__(self):
         self.buffer = FastQueue()
-        self.handle_task = self.buffer.put()
+        self.handle_task = self.buffer.put
         self.timer = Timer()
         self.app = current_app
         self.event_dispatcher = Mock()
@@ -51,6 +52,7 @@ class Consumer(consumer.Consumer):
 
         from celery.concurrency.base import BasePool
         self.pool = BasePool(10)
+        self.task_buckets = defaultdict(lambda: None)
 
 
 class test_ControlPanel(Case):
@@ -256,21 +258,6 @@ class test_ControlPanel(Case):
             self.assertFalse(panel.handle('dump_reserved'))
         finally:
             state.reserved_requests.clear()
-
-    def test_rate_limit_when_disabled(self):
-        app = current_app
-        app.conf.CELERY_DISABLE_RATE_LIMITS = True
-        try:
-            e = self.panel.handle(
-                'rate_limit',
-                arguments={
-                    'task_name': mytask.name,
-                    'rate_limit': '100/m'
-                },
-            )
-            self.assertIn('rate limits disabled', e.get('error'))
-        finally:
-            app.conf.CELERY_DISABLE_RATE_LIMITS = False
 
     def test_rate_limit_invalid_rate_limit_string(self):
         e = self.panel.handle('rate_limit', arguments=dict(
