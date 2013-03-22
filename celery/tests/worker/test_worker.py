@@ -1073,12 +1073,6 @@ class test_WorkController(AppCase):
         for step in worker.steps:
             self.assertTrue(step.terminate.call_count)
 
-    def test_Queues_pool_not_rlimit_safe(self):
-        w = Mock()
-        w.pool_cls.rlimit_safe = False
-        components.Queues(w).create(w)
-        self.assertTrue(w.disable_rate_limits)
-
     def test_Queues_pool_no_sem(self):
         w = Mock()
         w.pool_cls.uses_semaphore = False

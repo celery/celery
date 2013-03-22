@@ -107,7 +107,6 @@ class TaskPool(BasePool):
     Timer = Timer
 
     signal_safe = False
-    rlimit_safe = False
     is_green = True
 
     def __init__(self, *args, **kwargs):
