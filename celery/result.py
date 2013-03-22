@@ -400,7 +400,7 @@ class ResultSet(ResultBase):
         with self.app.connection_or_acquire(connection) as conn:
             for result in self.results:
                 result.revoke(
-                    connection=conn, terminate=terminate, revoke=revoke,
+                    connection=conn, terminate=terminate, signal=signal,
                 )
 
     def __iter__(self):
