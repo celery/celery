@@ -37,7 +37,7 @@ class WorkerComponent(StartStopStep):
         w.mediator = None
 
     def include_if(self, w):
-        return w.start_mediator
+        return w.start_mediator and not w.use_eventloop
 
     def create(self, w):
         m = w.mediator = self.instantiate(w.mediator_cls, w.ready_queue,

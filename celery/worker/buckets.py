@@ -30,6 +30,53 @@ class RateLimitExceeded(Exception):
     """The token buckets rate limit has been exceeded."""
 
 
+class AsyncTaskBucket(object):
+
+    def __init__(self, task_registry, callback=None, worker=None):
+        self.task_registry = task_registry
+        self.callback = callback
+        self.worker = worker
+        self.buckets = {}
+        self.refresh()
+
+    def cont(self, request, bucket, tokens):
+        if not bucket.can_consume(tokens):
+            hold = bucket.expected_time(tokens)
+            self.worker.timer.apply_after(
+                hold * 1000.0, self.cont, (request, bucket, tokens),
+            )
+        else:
+            self.callback(request)
+
+    def put(self, request):
+        name = request.name
+        try:
+            bucket = self.buckets[name]
+        except KeyError:
+            bucket = self.add_bucket_for_type(name)
+        if not bucket:
+            return self.callback(request)
+        return self.cont(request, bucket, 1)
+
+    def add_task_type(self, name):
+        task_type = self.task_registry[name]
+        limit = getattr(task_type, 'rate_limit', None)
+        limit = timeutils.rate(limit)
+        bucket = self.buckets[name] = (
+            TokenBucket(limit, capacity=1) if limit else None
+        )
+        return bucket
+
+    def clear(self):
+        # called by the worker when the connection is lost,
+        # but this also clears out the timer so we be good.
+        pass
+
+    def refresh(self):
+        for name in self.task_registry:
+            self.add_task_type(name)
+
+
 class TaskBucket(object):
     """This is a collection of token buckets, each task type having
     its own token bucket.  If the task type doesn't have a rate limit,
@@ -57,13 +104,15 @@ class TaskBucket(object):
 
     """
 
-    def __init__(self, task_registry):
+    def __init__(self, task_registry, callback=None, worker=None):
         self.task_registry = task_registry
         self.buckets = {}
         self.init_with_registry()
         self.immediate = deque()
         self.mutex = threading.Lock()
         self.not_empty = threading.Condition(self.mutex)
+        self.callback = callback
+        self.worker = worker
 
     def put(self, request):
         """Put a :class:`~celery.worker.job.Request` into

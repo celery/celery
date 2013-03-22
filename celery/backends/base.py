@@ -414,12 +414,12 @@ class KeyValueStoreBackend(BaseBackend):
             meta = self.decode(meta)
             result = meta['result']
             if isinstance(result, (list, tuple)):
-                return {'result': from_serializable(result)}
+                return {'result': from_serializable(result, self.app)}
             return meta
 
     def on_chord_apply(self, group_id, body, result=None, **kwargs):
         if self.implements_incr:
-            self.app.GroupResult(group_id, result).save()
+            self.save_group(group_id, self.app.GroupResult(group_id, result))
         else:
             self.fallback_chord_unlock(group_id, body, result, **kwargs)
 

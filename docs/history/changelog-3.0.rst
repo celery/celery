@@ -9,6 +9,65 @@
 
 If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
+.. _version-3.0.17:
+
+3.0.17
+======
+:release-date: 2013-03-22 04:00:00 P.M UTC
+
+- Now depends on kombu 2.5.8
+
+- Now depends on billiard 2.7.3.23
+
+- RabbitMQ/Redis: thread-less and lock-free rate-limit implementation.
+
+    This means that rate limits pose minimal overhead when used with
+    RabbitMQ/Redis or future transports using the eventloop,
+    and that the rate-limit implementation is now thread-less and lock-free.
+
+    The thread-based transports will still use the old implementation for
+    now, but the plan is to use the timer also for other
+    broker transports in Celery 3.1.
+
+- Rate limits now works with eventlet/gevent if using RabbitMQ/Redis as the
+  broker.
+
+- A regression caused ``task.retry`` to ignore additional keyword arguments.
+
+    Extra keyword arguments are now used as execution options again.
+    Fix contributed by Simon Engledew.
+
+- Windows: Fixed problem with the worker trying to pickle the Django settings
+  module at worker startup.
+
+- generic-init.d:  No longer double quotes ``$CELERYD_CHDIR`` (Issue #1235).
+
+- generic-init.d: Removes bash-specific syntax.
+
+    Fix contributed by Pär Wieslander.
+
+- Cassandra Result Backend: Now handles the
+  :exc:`~pycassa.AllServersUnavailable` error (Issue #1010).
+
+    Fix contributed by Jared Biel.
+
+- Result: Now properly forwards apps to GroupResults when deserializing
+  (Issue #1249).
+
+    Fix contributed by Charles-Axel Dein.
+
+- ``GroupResult.revoke`` now supports the ``terminate`` and ``signal``
+  keyword arguments.
+
+- Worker: Multiprocessing pool workers now import task modules/configuration
+  before setting up the logging system so that logging signals can be
+  connected before they're dispatched.
+
+- chord:  The ``AsyncResult`` instance returned now has its ``parent``
+  attribute set to the header ``GroupResult``.
+
+    This is consistent with how ``chain`` works.
+
 .. _version-3.0.16:
 
 3.0.16

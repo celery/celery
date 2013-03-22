@@ -18,6 +18,7 @@ from datetime import datetime
 from functools import wraps
 from itertools import count
 from time import time, sleep
+from weakref import proxy as weakrefproxy
 
 from celery.five import THREAD_TIMEOUT_MAX, map
 from celery.utils.timeutils import timedelta_seconds, timezone
@@ -33,24 +34,34 @@ __docformat__ = 'restructuredtext'
 DEFAULT_MAX_INTERVAL = 2
 TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
 EPOCH = datetime.utcfromtimestamp(0).replace(tzinfo=timezone.utc)
+IS_PYPY = hasattr(sys, 'pypy_version_info')
 
 logger = get_logger('timer2')
 
 
 class Entry(object):
-    cancelled = False
+    if not IS_PYPY:
+        __slots__ = (
+            'fun', 'args', 'kwargs', 'tref', 'cancelled',
+            '_last_run', '__weakref__',
+        )
 
     def __init__(self, fun, args=None, kwargs=None):
         self.fun = fun
         self.args = args or []
         self.kwargs = kwargs or {}
-        self.tref = self
+        self.tref = weakrefproxy(self)
+        self._last_run = None
+        self.cancelled = False
 
     def __call__(self):
         return self.fun(*self.args, **self.kwargs)
 
     def cancel(self):
-        self.tref.cancelled = True
+        try:
+            self.tref.cancelled = True
+        except ReferenceError:
+            pass
 
     def __repr__(self):
         return '<TimerEntry: {0}(*{1!r}, **{2!r})'.format(
@@ -131,7 +142,7 @@ class Schedule(object):
     def apply_at(self, eta, fun, args=(), kwargs={}, priority=0):
         return self.enter(self.Entry(fun, args, kwargs), eta, priority)
 
-    def enter_after(self, msecs, entry, priority=0):
+    def enter_after(self, msecs, entry, priority=0, time=time):
         return self.enter(entry, time() + (msecs / 1000.0), priority)
 
     def apply_after(self, msecs, fun, args=(), kwargs={}, priority=0):
@@ -163,12 +174,9 @@ class Schedule(object):
     def schedule(self):
         return self
 
-    def __iter__(self):
+    def __iter__(self, min=min, nowfun=time, pop=heapq.heappop,
+                 push=heapq.heappush):
         """The iterator yields the time to sleep for between runs."""
-
-        # localize variable access
-        nowfun = time
-        pop = heapq.heappop
         max_interval = self.max_interval
         queue = self._queue
 
@@ -187,7 +195,7 @@ class Schedule(object):
                             yield None, entry
                         continue
                     else:
-                        heapq.heappush(queue, event)
+                        push(queue, event)
             else:
                 yield None, None
 

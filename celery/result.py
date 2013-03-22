@@ -236,7 +236,7 @@ class AsyncResult(ResultBase):
     def children(self):
         children = self.backend.get_children(self.id)
         if children:
-            return [from_serializable(child) for child in children]
+            return [from_serializable(child, self.app) for child in children]
 
     @property
     def result(self):
@@ -401,11 +401,20 @@ class ResultSet(ResultBase):
         for result in self.results:
             result.forget()
 
-    def revoke(self, connection=None):
-        """Revoke all tasks in the set."""
+    def revoke(self, connection=None, terminate=False, signal=None):
+        """Send revoke signal to all workers for all tasks in the set.
+
+        :keyword terminate: Also terminate the process currently working
+            on the task (if any).
+        :keyword signal: Name of signal to send to process if terminate.
+            Default is TERM.
+
+        """
         with self.app.connection_or_acquire(connection) as conn:
             for result in self.results:
-                result.revoke(connection=conn)
+                result.revoke(
+                    connection=conn, terminate=terminate, signal=signal,
+                )
 
     def __iter__(self):
         return self.iterate()
@@ -697,7 +706,7 @@ class EagerResult(AsyncResult):
     def forget(self):
         pass
 
-    def revoke(self):
+    def revoke(self, *args, **kwargs):
         self._state = states.REVOKED
 
     def __repr__(self):
@@ -724,15 +733,17 @@ class EagerResult(AsyncResult):
         return False
 
 
-def from_serializable(r, Result=AsyncResult):
+def from_serializable(r, app=None):
     # earlier backends may just pickle, so check if
     # result is already prepared.
+    app = app_or_default(app)
+    Result = app.AsyncResult
     if not isinstance(r, ResultBase):
         id = parent = None
         res, nodes = r
         if nodes:
-            return GroupResult(
-                res, [from_serializable(child, Result) for child in nodes],
+            return app.GroupResult(
+                res, [from_serializable(child, app) for child in nodes],
             )
         if isinstance(res, (list, tuple)):
             id, parent = res[0], res[1]

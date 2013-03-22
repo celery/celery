@@ -21,7 +21,7 @@ from celery.utils.log import worker_logger as logger
 from celery.utils.timer2 import Schedule
 
 from . import hub
-from .buckets import TaskBucket, FastQueue
+from .buckets import AsyncTaskBucket, TaskBucket, FastQueue
 
 
 class Hub(bootsteps.StartStopStep):
@@ -48,23 +48,22 @@ class Queues(bootsteps.Step):
         w.start_mediator = False
 
     def create(self, w):
+        BucketType = TaskBucket
         w.start_mediator = True
         if not w.pool_cls.rlimit_safe:
             w.disable_rate_limits = True
+        process_task = w.process_task
+        if w.use_eventloop:
+            BucketType = AsyncTaskBucket
+            if w.pool_putlocks and w.pool_cls.uses_semaphore:
+                process_task = w.process_task_sem
         if w.disable_rate_limits:
             w.ready_queue = FastQueue()
-            if w.use_eventloop:
-                w.start_mediator = False
-                if w.pool_putlocks and w.pool_cls.uses_semaphore:
-                    w.ready_queue.put = w.process_task_sem
-                else:
-                    w.ready_queue.put = w.process_task
-            elif not w.pool_cls.requires_mediator:
-                # just send task directly to pool, skip the mediator.
-                w.ready_queue.put = w.process_task
-                w.start_mediator = False
+            w.ready_queue.put = process_task
         else:
-            w.ready_queue = TaskBucket(task_registry=w.app.tasks)
+            w.ready_queue = BucketType(
+                task_registry=w.app.tasks, callback=process_task, worker=w,
+            )
 
 
 class Pool(bootsteps.StartStopStep):

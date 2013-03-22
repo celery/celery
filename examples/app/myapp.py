@@ -10,9 +10,10 @@ Usage:
    32
 
 
-You can also specify the app to use with the celery command:
+You can also specify the app to use with the `celery` command,
+using the `-A` / `--app` option::
 
-    $ celery worker -l info --app=myapp
+    $ celery -A myapp worker -l info
 
 """
 from celery import Celery

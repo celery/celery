@@ -640,14 +640,14 @@ class Task(object):
         state = states.SUCCESS if info is None else info.state
         return EagerResult(task_id, retval, state, traceback=tb)
 
-    def AsyncResult(self, task_id):
+    def AsyncResult(self, task_id, **kwargs):
         """Get AsyncResult instance for this kind of task.
 
         :param task_id: Task id to get result for.
 
         """
         return self._get_app().AsyncResult(task_id, backend=self.backend,
-                                           task_name=self.name)
+                                           task_name=self.name, **kwargs)
 
     def subtask(self, *args, **kwargs):
         """Returns :class:`~celery.subtask` object for

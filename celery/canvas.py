@@ -473,8 +473,7 @@ class chord(Signature):
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
             return self.apply((), kwargs)
         callback_id = body.options.setdefault('task_id', uuid())
-        _chord(**kwargs)
-        return _chord.AsyncResult(callback_id)
+        return _chord.AsyncResult(callback_id, parent=_chord(**kwargs))
 
     def clone(self, *args, **kwargs):
         s = Signature.clone(self, *args, **kwargs)

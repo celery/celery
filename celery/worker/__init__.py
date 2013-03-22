@@ -111,8 +111,8 @@ class WorkController(configurated):
         self._finalize = Finalize(self, self.stop, exitpriority=1)
         self.setup_instance(**self.prepare_args(**kwargs))
 
-    def setup_instance(self, queues=None, ready_callback=None,
-                       pidfile=None, include=None, **kwargs):
+    def setup_instance(self, queues=None, ready_callback=None, pidfile=None,
+                       include=None, use_eventloop=None, **kwargs):
         self.pidfile = pidfile
         self.setup_defaults(kwargs, namespace='celeryd')
         self.setup_queues(queues)
@@ -130,7 +130,10 @@ class WorkController(configurated):
         self.ready_callback = ready_callback or self.on_consumer_ready
         # this connection is not established, only used for params
         self._conninfo = self.app.connection()
-        self.use_eventloop = self.should_use_eventloop()
+        self.use_eventloop = (
+            self.should_use_eventloop() if use_eventloop is None
+            else use_eventloop
+        )
         self.options = kwargs
 
         signals.worker_init.send(sender=self)

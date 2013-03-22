@@ -18,7 +18,7 @@ try:
 except ImportError:  # pragma: no cover
     _forking = None  # noqa
 
-from celery import platforms
+from celery.platforms import pyimplementation, IS_WINDOWS
 from celery.five import items
 from celery.datastructures import ConfigurationView, DictAttribute
 from celery.utils.text import pretty
@@ -41,6 +41,7 @@ HIDDEN_SETTINGS = re.compile(
     'API|TOKEN|KEY|SECRET|PASS|PROFANITIES_LIST|SIGNATURE|DATABASE',
     re.IGNORECASE,
 )
+
 
 class Settings(ConfigurationView):
     """Celery settings object."""
@@ -81,6 +82,8 @@ class Settings(ConfigurationView):
         # is enabled.  There may be a better way to do this, but attempts
         # at forcing the subprocess to import the modules did not work out,
         # because of some sys.path problem.  More at Issue #1126.
+        if IS_WINDOWS:
+            return {}  # Django Settings object is not pickleable
         if _forking and _forking._forking_is_enabled:
             return self.changes
         R = {}
@@ -195,7 +198,7 @@ def bugreport(app):
     return BUGREPORT_INFO.format(
         system=_platform.system(),
         arch=', '.join(x for x in _platform.architecture() if x),
-        py_i=platforms.pyimplementation(),
+        py_i=pyimplementation(),
         celery_v=celery.VERSION_BANNER,
         kombu_v=kombu.__version__,
         billiard_v=billiard.__version__,
