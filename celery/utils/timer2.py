@@ -14,6 +14,7 @@ import heapq
 import os
 import sys
 import threading
+import weakref
 
 from datetime import datetime
 from functools import wraps
@@ -34,24 +35,34 @@ __docformat__ = 'restructuredtext'
 DEFAULT_MAX_INTERVAL = 2
 TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
 EPOCH = datetime.utcfromtimestamp(0).replace(tzinfo=timezone.utc)
+IS_PYPY = hasattr(sys, 'pypy_version_info')
 
 logger = get_logger('timer2')
 
 
 class Entry(object):
-    cancelled = False
+    if not IS_PYPY:
+        __slots__ = (
+            'fun', 'args', 'kwargs', 'tref', 'cancelled',
+            '_last_run', '__weakref__',
+        )
 
     def __init__(self, fun, args=None, kwargs=None):
         self.fun = fun
         self.args = args or []
         self.kwargs = kwargs or {}
-        self.tref = self
+        self.tref = weakref.proxy(self)
+        self.cancelled = False
+        self._last_run = None
 
     def __call__(self):
         return self.fun(*self.args, **self.kwargs)
 
     def cancel(self):
-        self.tref.cancelled = True
+        try:
+            self.tref.cancelled = True
+        except ReferenceError:
+            pass
 
     def __repr__(self):
         return '<TimerEntry: %s(*%r, **%r)' % (
