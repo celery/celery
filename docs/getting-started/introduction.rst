@@ -25,12 +25,13 @@ A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
-language.  So far there's RCelery_ for the Ruby programming language, and a
-`PHP client`, but language interoperability can also be achieved
+language.  So far there's RCelery_ for the Ruby programming language,
+node-celery_ for Node.js and a `PHP client`_, but language interoperability can also be achieved
 by :ref:`using webhooks <guide-webhooks>`.
 
 .. _RCelery: http://leapfrogdevelopment.github.com/rcelery/
 .. _`PHP client`: https://github.com/gjedeer/celery-php
+.. _node-celery: https://github.com/mher/node-celery
 
 What do I need?
 ===============
