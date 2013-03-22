@@ -38,6 +38,8 @@ from celery.utils.timeutils import maybe_iso8601, timezone, maybe_make_aware
 
 from . import state
 
+IS_PYPY = hasattr(sys, 'pypy_version_info')
+
 logger = get_logger(__name__)
 debug, info, warn, error = (logger.debug, logger.info,
                             logger.warning, logger.error)
@@ -66,14 +68,15 @@ NEEDS_KWDICT = sys.version_info <= (2, 6)
 
 class Request(object):
     """A request for task execution."""
-    __slots__ = ('app', 'name', 'id', 'args', 'kwargs',
-                 'on_ack', 'delivery_info', 'hostname',
-                 'eventer', 'connection_errors',
-                 'task', 'eta', 'expires',
-                 'request_dict', 'acknowledged', 'success_msg',
-                 'error_msg', 'retry_msg', 'ignore_msg', 'utc',
-                 'time_start', 'worker_pid', '_already_revoked',
-                 '_terminate_on_ack', '_tzlocal')
+    if not IS_PYPY:
+        __slots__ = (
+            'app', 'name', 'id', 'args', 'kwargs', 'on_ack', 'delivery_info',
+            'hostname', 'eventer', 'connection_errors', 'task', 'eta',
+            'expires', 'request_dict', 'acknowledged', 'success_msg',
+            'error_msg', 'retry_msg', 'ignore_msg', 'utc', 'time_start',
+            'worker_pid', '_already_revoked', '_terminate_on_ack',
+            '_tzlocal', '__weakref__',
+        )
 
     #: Format string used to log task success.
     success_msg = """\
