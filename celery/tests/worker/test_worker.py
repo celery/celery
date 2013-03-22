@@ -970,7 +970,6 @@ class test_WorkController(AppCase):
         self.assertFalse(worker.mediator)
         self.assertNotEqual(worker.ready_queue.put, worker.process_task)
 
-
     def test_disable_rate_limits_processes(self):
         try:
             worker = self.create_worker(disable_rate_limits=True,
