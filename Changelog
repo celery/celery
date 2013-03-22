@@ -17,6 +17,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on kombu 2.5.8
 
+- Now depends on billiard 2.7.3.23
+
 - RabbitMQ/Redis: thread-less and lock-free rate-limit implementation.
 
     This means that rate limits pose minimal overhead when used with
