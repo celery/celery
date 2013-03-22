@@ -98,7 +98,6 @@ class WorkController(configurated):
             'celery.worker.components:Consumer',
             'celery.worker.autoscale:WorkerComponent',
             'celery.worker.autoreload:WorkerComponent',
-            'celery.worker.mediator:WorkerComponent',
 
         ])
 

@@ -106,11 +106,7 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
                      task_name, exc_info=True)
         return {'error': 'unknown task'}
 
-    if not hasattr(panel.consumer.ready_queue, 'refresh'):
-        logger.error('Rate limit attempt, but rate limits disabled.')
-        return {'error': 'rate limits disabled'}
-
-    panel.consumer.ready_queue.refresh()
+    panel.consumer.reset_rate_limits()
 
     if not rate_limit:
         logger.info('Rate limits disabled for tasks of type %s', task_name)

@@ -262,5 +262,6 @@ class Consumer(bootsteps.StartStopStep):
             controller=w,
             hub=w.hub,
             worker_options=w.options,
+            disable_rate_limits=w.disable_rate_limits,
         )
         return c

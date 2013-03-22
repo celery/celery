@@ -25,6 +25,7 @@ from billiard.exceptions import RestartFreqExceeded
 from kombu.common import QoS, ignore_errors
 from kombu.syn import _detect_environment
 from kombu.utils.encoding import safe_repr
+from kombu.utils.limits import TokenBucket
 
 from celery import bootsteps
 from celery.app import app_or_default
@@ -35,7 +36,7 @@ from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
 from celery.utils.timer2 import default_timer, to_timestamp
-from celery.utils.timeutils import humanize_seconds, timezone
+from celery.utils.timeutils import humanize_seconds, timezone, rate
 
 from . import heartbeat, loops, pidbox
 from .state import task_reserved, maybe_shutdown, revoked
@@ -143,7 +144,7 @@ class Consumer(object):
                  init_callback=noop, hostname=None,
                  pool=None, app=None,
                  timer=None, controller=None, hub=None, amqheartbeat=None,
-                 worker_options=None, **kwargs):
+                 worker_options=None, disable_rate_limits=False, **kwargs):
         self.app = app_or_default(app)
         self.controller = controller
         self.ready_queue = ready_queue
@@ -160,6 +161,12 @@ class Consumer(object):
         self._does_info = logger.isEnabledFor(logging.INFO)
         self._quick_put = self.ready_queue.put
         self.amqheartbeat_rate = self.app.conf.BROKER_HEARTBEAT_CHECKRATE
+        self.disable_rate_limits = disable_rate_limits
+
+        # this contains a tokenbucket for each task type by name, used for
+        # rate limits, or None if rate limits are disabled for that task.
+        self.task_buckets = defaultdict(lambda: None)
+        self.reset_rate_limits()
 
         if hub:
             self.amqheartbeat = amqheartbeat
@@ -185,6 +192,24 @@ class Consumer(object):
             app=self.app, on_close=self.on_close,
         )
         self.namespace.apply(self, **dict(worker_options or {}, **kwargs))
+
+    def bucket_for_task(self, type):
+        limit = rate(getattr(type, 'rate_limit', None))
+        return TokenBucket(limit, capacity=1) if limit else None
+
+    def reset_rate_limits(self):
+        self.task_buckets.update(
+            (n, self.bucket_for_task(t)) for n, t in items(self.app._tasks)
+        )
+
+    def _limit_task(self, request, bucket, tokens):
+        if not bucket.can_consume(tokens):
+            hold = bucket.expected_time(tokens)
+            self.timer.apply_after(
+                hold * 1000.0, self._limit_task, (request, bucket, tokens),
+            )
+        else:
+            self._quick_put(request)
 
     def start(self):
         ns, loop = self.namespace, self.loop
@@ -345,6 +370,10 @@ class Consumer(object):
                 )
         else:
             task_reserved(task)
+            if not self.disable_rate_limits:
+                bucket = self.task_buckets[task.name]
+                if bucket:
+                    self._limit_task(task, bucket, 1)
             self._quick_put(task)
 
     def apply_eta_task(self, task):
