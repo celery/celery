@@ -19,16 +19,11 @@ with two data structures: the ready queue and the ETA schedule.
 Data structures
 ===============
 
-ready_queue
------------
+timer
+-----
 
-The ready queue is either an instance of :class:`Queue.Queue`, or
-:class:`celery.buckets.TaskBucket`.  The latter if rate limiting is enabled.
-
-eta_schedule
-------------
-
-The ETA schedule is a heap queue sorted by time.
+The timer uses :mod:`heapq` to schedule internal functions.
+It's very efficient and can handle hundred of thousands of entries.
 
 
 Components
@@ -44,22 +39,15 @@ Receives messages from the broker using `Kombu`_.
 When a message is received it's converted into a
 :class:`celery.worker.job.TaskRequest` object.
 
-Tasks with an ETA are entered into the `eta_schedule`, messages that can
-be immediately processed are moved directly to the `ready_queue`.
+Tasks with an ETA, or rate-limit are entered into the `timer`,
+messages that can be immediately processed are sent to the execution pool.
 
-ScheduleController
-------------------
+Timer
+-----
 
-The schedule controller is running the `eta_schedule`.
-If the scheduled tasks eta has passed it is moved to the `ready_queue`,
-otherwise the thread sleeps until the eta is met (remember that the schedule
-is sorted by time).
-
-Mediator
---------
-The mediator simply moves tasks in the `ready_queue` over to the
-task pool for execution using
-:meth:`celery.worker.job.TaskRequest.execute_using_pool`.
+The timer schedules internal functions, like cleanup and internal monitoring,
+but also it schedules ETA tasks and rate limited tasks.
+If the scheduled tasks eta has passed it is moved to the execution pool.
 
 TaskPool
 --------

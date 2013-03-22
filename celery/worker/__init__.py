@@ -59,7 +59,6 @@ class WorkController(configurated):
     send_events = from_config()
     pool_cls = from_config('pool')
     consumer_cls = from_config('consumer')
-    mediator_cls = from_config('mediator')
     timer_cls = from_config('timer')
     timer_precision = from_config('timer_precision')
     autoscaler_cls = from_config('autoscaler')
@@ -210,10 +209,10 @@ class WorkController(configurated):
         except (KeyboardInterrupt, SystemExit):
             self.stop()
 
-    def process_task_sem(self, req):
-        return self._quick_acquire(self.process_task, req)
+    def _process_task_sem(self, req):
+        return self._quick_acquire(self._process_task, req)
 
-    def process_task(self, req):
+    def _process_task(self, req):
         """Process task by sending it to the pool of workers."""
         try:
             req.execute_using_pool(self.pool)

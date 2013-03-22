@@ -3,15 +3,23 @@ from __future__ import absolute_import
 from datetime import datetime, timedelta
 
 from celery.utils import timeutils
-from celery.utils.timeutils import timezone
+from celery.utils.timeutils import (
+    delta_resolution,
+    humanize_seconds,
+    maybe_iso8601,
+    maybe_timedelta,
+    timedelta_seconds,
+    timezone,
+    rate,
+    remaining,
+)
 from celery.tests.utils import Case
 
 
 class test_timeutils(Case):
 
     def test_delta_resolution(self):
-        D = timeutils.delta_resolution
-
+        D = delta_resolution
         dt = datetime(2010, 3, 30, 11, 50, 58, 41065)
         deltamap = ((timedelta(days=2), datetime(2010, 3, 30, 0, 0)),
                     (timedelta(hours=2), datetime(2010, 3, 30, 11, 0)),
@@ -27,11 +35,11 @@ class test_timeutils(Case):
                     (timedelta(hours=4), 4 * 60 * 60),
                     (timedelta(days=3), 3 * 86400))
         for delta, seconds in deltamap:
-            self.assertEqual(timeutils.timedelta_seconds(delta), seconds)
+            self.assertEqual(timedelta_seconds(delta), seconds)
 
     def test_timedelta_seconds_returns_0_on_negative_time(self):
         delta = timedelta(days=-2)
-        self.assertEqual(timeutils.timedelta_seconds(delta), 0)
+        self.assertEqual(timedelta_seconds(delta), 0)
 
     def test_humanize_seconds(self):
         t = ((4 * 60 * 60 * 24, '4.00 days'),
@@ -46,17 +54,17 @@ class test_timeutils(Case):
              (0, 'now'))
 
         for seconds, human in t:
-            self.assertEqual(timeutils.humanize_seconds(seconds), human)
+            self.assertEqual(humanize_seconds(seconds), human)
 
-        self.assertEqual(timeutils.humanize_seconds(4, prefix='about '),
+        self.assertEqual(humanize_seconds(4, prefix='about '),
                          'about 4.00 seconds')
 
     def test_maybe_iso8601_datetime(self):
         now = datetime.now()
-        self.assertIs(timeutils.maybe_iso8601(now), now)
+        self.assertIs(maybe_iso8601(now), now)
 
     def test_maybe_timedelta(self):
-        D = timeutils.maybe_timedelta
+        D = maybe_timedelta
 
         for i in (30, 30.6):
             self.assertEqual(D(i), timedelta(seconds=i))
@@ -64,11 +72,26 @@ class test_timeutils(Case):
         self.assertEqual(D(timedelta(days=2)), timedelta(days=2))
 
     def test_remaining_relative(self):
-        timeutils.remaining(datetime.utcnow(), timedelta(hours=1),
-                            relative=True)
+        remaining(datetime.utcnow(), timedelta(hours=1), relative=True)
 
 
 class test_timezone(Case):
 
     def test_get_timezone_with_pytz(self):
         self.assertTrue(timezone.get_timezone('UTC'))
+
+
+class test_rate_limit_string(Case):
+
+    def test_conversion(self):
+        self.assertEqual(rate(999), 999)
+        self.assertEqual(rate(7.5), 7.5)
+        self.assertEqual(rate('2.5/s'), 2.5)
+        self.assertEqual(rate('1456/s'), 1456)
+        self.assertEqual(rate('100/m'),
+                         100 / 60.0)
+        self.assertEqual(rate('10/h'),
+                         10 / 60.0 / 60.0)
+
+        for zero in (0, None, '0', '0/m', '0/h', '0/s', '0.0/s'):
+            self.assertEqual(rate(zero), 0)

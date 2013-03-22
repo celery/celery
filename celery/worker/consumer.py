@@ -107,9 +107,6 @@ def dump_body(m, body):
 
 class Consumer(object):
 
-    #: Intra-queue for tasks ready to be handled
-    ready_queue = None
-
     #: Optional callback called the first time the worker
     #: is ready to receive tasks.
     init_callback = None
@@ -140,14 +137,13 @@ class Consumer(object):
         def shutdown(self, parent):
             self.restart(parent, 'Shutdown', 'shutdown')
 
-    def __init__(self, ready_queue,
+    def __init__(self, handle_task,
                  init_callback=noop, hostname=None,
                  pool=None, app=None,
                  timer=None, controller=None, hub=None, amqheartbeat=None,
                  worker_options=None, disable_rate_limits=False, **kwargs):
         self.app = app_or_default(app)
         self.controller = controller
-        self.ready_queue = ready_queue
         self.init_callback = init_callback
         self.hostname = hostname or socket.gethostname()
         self.pool = pool
@@ -159,7 +155,7 @@ class Consumer(object):
         self._restart_state = restart_state(maxR=5, maxT=1)
 
         self._does_info = logger.isEnabledFor(logging.INFO)
-        self._quick_put = self.ready_queue.put
+        self.handle_task = handle_task
         self.amqheartbeat_rate = self.app.conf.BROKER_HEARTBEAT_CHECKRATE
         self.disable_rate_limits = disable_rate_limits
 
@@ -199,8 +195,9 @@ class Consumer(object):
 
     def reset_rate_limits(self):
         self.task_buckets.update(
-            (n, self.bucket_for_task(t)) for n, t in items(self.app._tasks)
+            (n, self.bucket_for_task(t)) for n, t in items(self.app.tasks)
         )
+        print('BUCKETS: %r' % (self.task_buckets, ))
 
     def _limit_task(self, request, bucket, tokens):
         if not bucket.can_consume(tokens):
@@ -209,7 +206,7 @@ class Consumer(object):
                 hold * 1000.0, self._limit_task, (request, bucket, tokens),
             )
         else:
-            self._quick_put(request)
+            self.handle_task(request)
 
     def start(self):
         ns, loop = self.namespace, self.loop
@@ -271,7 +268,6 @@ class Consumer(object):
         # Clear internal queues to get rid of old messages.
         # They can't be acked anyway, as a delivery tag is specific
         # to the current channel.
-        self.ready_queue.clear()
         self.timer.clear()
 
     def connect(self):
@@ -374,13 +370,16 @@ class Consumer(object):
                 bucket = self.task_buckets[task.name]
                 if bucket:
                     self._limit_task(task, bucket, 1)
-            self._quick_put(task)
+                else:
+                    self.handle_task(task)
+            else:
+                self.handle_task(task)
 
     def apply_eta_task(self, task):
         """Method called by the timer to apply a task with an
         ETA/countdown."""
         task_reserved(task)
-        self._quick_put(task)
+        self.handle_task(task)
         self.qos.decrement_eventually()
 
     def _message_report(self, body, message):

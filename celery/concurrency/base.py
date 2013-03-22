@@ -43,10 +43,6 @@ class BasePool(object):
     #: the necessary timers).
     rlimit_safe = True
 
-    #: set to true if pool requires the use of a mediator
-    #: thread (e.g. if applying new items can block the current thread).
-    requires_mediator = False
-
     #: set to true if pool uses greenlets.
     is_green = False
 

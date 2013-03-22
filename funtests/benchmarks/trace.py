@@ -19,9 +19,8 @@ P = TaskPool()
 hostname = socket.gethostname()
 task = {'task': T.name, 'args': (), 'kwargs': {}, 'id': tid, 'flags': 0}
 app = current_app._get_current_object()
-ready_queue = Queue()
 
-def on_put(req):
+def on_task(req):
     req.execute_using_pool(P)
 
 def on_ack(*a): pass
@@ -29,8 +28,7 @@ def on_ack(*a): pass
 
 m = Message(None, {}, {}, task)
 
-ready_queue.put = on_put
-x = Consumer(ready_queue, hostname=hostname, app=app)
+x = Consumer(on_task, hostname=hostname, app=app)
 x.update_strategies()
 name = T.name
 ts = time()
