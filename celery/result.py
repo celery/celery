@@ -388,11 +388,20 @@ class ResultSet(ResultBase):
         for result in self.results:
             result.forget()
 
-    def revoke(self, connection=None):
-        """Revoke all tasks in the set."""
+    def revoke(self, connection=None, terminate=False, signal=None):
+        """Send revoke signal to all workers for all tasks in the set.
+
+        :keyword terminate: Also terminate the process currently working
+            on the task (if any).
+        :keyword signal: Name of signal to send to process if terminate.
+            Default is TERM.
+
+        """
         with self.app.connection_or_acquire(connection) as conn:
             for result in self.results:
-                result.revoke(connection=conn)
+                result.revoke(
+                    connection=conn, terminate=terminate, revoke=revoke,
+                )
 
     def __iter__(self):
         return self.iterate()
@@ -682,7 +691,7 @@ class EagerResult(AsyncResult):
     def forget(self):
         pass
 
-    def revoke(self):
+    def revoke(self, *args, **kwargs):
         self._state = states.REVOKED
 
     def __repr__(self):
