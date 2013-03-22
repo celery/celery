@@ -225,7 +225,7 @@ class AsyncResult(ResultBase):
     def children(self):
         children = self.backend.get_children(self.id)
         if children:
-            return map(from_serializable, children)
+            return [from_serializable(r, self.app) for r in children]
 
     @property
     def result(self):
@@ -718,15 +718,17 @@ class EagerResult(AsyncResult):
         return False
 
 
-def from_serializable(r, Result=AsyncResult):
+def from_serializable(r, app=None):
     # earlier backends may just pickle, so check if
     # result is already prepared.
+    app = app_or_default(app)
+    Result = app.AsyncResult
     if not isinstance(r, ResultBase):
         if isinstance(r, (list, tuple)):
             id, nodes = r
             if nodes:
-                return GroupResult(id, [Result(id) for id, _ in nodes])
-            return AsyncResult(id)
+                return app.GroupResult(id, [Result(id) for id, _ in nodes])
+            return Result(id)
         else:
-            return AsyncResult(r)
+            return Result(r)
     return r

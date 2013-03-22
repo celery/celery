@@ -89,7 +89,7 @@ def add_unlock_chord_task(app):
         # check if the task group is ready, and if so apply the callback.
         deps = GroupResult(
             group_id,
-            [from_serializable(r, Result=Result) for r in result],
+            [from_serializable(r, app=app) for r in result],
         )
         j = deps.join_native if deps.supports_native_join else deps.join
 
@@ -165,7 +165,7 @@ def add_group_task(app):
 
         def run(self, tasks, result, group_id, partial_args):
             app = self.app
-            result = from_serializable(result)
+            result = from_serializable(result, app)
             # any partial args are added to all tasks in the group
             taskit = (subtask(task).clone(partial_args)
                       for i, task in enumerate(tasks))

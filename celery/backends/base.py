@@ -472,7 +472,7 @@ class KeyValueStoreBackend(BaseDictBackend):
             meta = self.decode(meta)
             result = meta['result']
             if isinstance(result, (list, tuple)):
-                return {'result': from_serializable(result)}
+                return {'result': from_serializable(result, self.app)}
             return meta
 
     def on_chord_apply(self, group_id, body, result=None, **kwargs):
