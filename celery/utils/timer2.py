@@ -46,14 +46,14 @@ class Entry(object):
             'fun', 'args', 'kwargs', 'tref', 'cancelled',
             '_last_run', '__weakref__',
         )
-    _last_run = None
-    cancelled = False
 
     def __init__(self, fun, args=None, kwargs=None):
         self.fun = fun
         self.args = args or []
         self.kwargs = kwargs or {}
         self.tref = weakrefproxy(self)
+        self._last_run = None
+        self.cancelled = False
 
     def __call__(self):
         return self.fun(*self.args, **self.kwargs)
