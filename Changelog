@@ -26,8 +26,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     and that the rate-limit implementation is now thread-less and lock-free.
 
     The thread-based transports will still use the old implementation for
-    now, but the plan is to use the timer also for thread-based
-    implementations in Celery 3.1.
+    now, but the plan is to use the timer also for other
+    broker transports in Celery 3.1.
 
 - Rate limits now works with eventlet/gevent if using RabbitMQ/Redis as the
   broker.
