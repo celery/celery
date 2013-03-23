@@ -423,19 +423,19 @@ Results
 How do I get the result of a task if I have the ID that points there?
 ----------------------------------------------------------------------
 
-**Answer**: Use `Task.AsyncResult`::
+**Answer**: Use `task.AsyncResult`::
 
-    >>> result = MyTask.AsyncResult(task_id)
+    >>> result = my_task.AsyncResult(task_id)
     >>> result.get()
 
-This will give you a :class:`~celery.result.BaseAsyncResult` instance
+This will give you a :class:`~celery.result.AsyncResult` instance
 using the tasks current result backend.
 
-If you need to specify a custom result backend you should use
-:class:`celery.result.BaseAsyncResult` directly::
+If you need to specify a custom result backend, or you want to use
+the current application's default backend you can use
+:class:`@Celery.AsyncResult`:
 
-    >>> from celery.result import BaseAsyncResult
-    >>> result = BaseAsyncResult(task_id, backend=...)
+    >>> result = app.AsyncResult(task_id)
     >>> result.get()
 
 .. _faq-security:
