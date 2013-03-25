@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 from datetime import datetime, timedelta
 
-from celery.utils import timeutils
 from celery.utils.timeutils import (
     delta_resolution,
     humanize_seconds,

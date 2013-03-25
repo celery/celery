@@ -12,7 +12,6 @@ from kombu.common import QoS, PREFETCH_COUNT_MAX, ignore_errors
 from kombu.exceptions import StdChannelError
 from kombu.transport.base import Message
 from mock import Mock, patch
-from nose import SkipTest
 
 from celery import current_app
 from celery.app.defaults import DEFAULTS
