@@ -74,6 +74,7 @@ class Rdb(Pdb):
         self._sock, this_port = self.get_avail_port(
             host, port, port_search_limit, port_skew,
         )
+        self._sock.setblocking(1)
         self._sock.listen(1)
         me = '%s:%s' % (self.me, this_port)
         context = self.context = {'me': me, 'host': host, 'port': this_port}
@@ -82,6 +83,7 @@ class Rdb(Pdb):
         self.say('%(me)s: Waiting for client...' % context)
 
         self._client, address = self._sock.accept()
+        self._client.setblocking(1)
         context['remote_addr'] = ':'.join(str(v) for v in address)
         self.say('%(me)s: In session with %(remote_addr)s' % context)
         self._handle = sys.stdin = sys.stdout = self._client.makefile('rw')
