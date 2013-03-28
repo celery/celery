@@ -288,7 +288,7 @@ class chain(Signature):
 
     @property
     def type(self):
-        return self._type or self.tasks[0].type
+        return self._type or self.tasks[0].type.app.tasks['celery.chain']
 
     def __repr__(self):
         return ' | '.join(map(repr, self.tasks))
@@ -459,10 +459,10 @@ class chord(Signature):
 
     @property
     def type(self):
-        return self._type or self.tasks[0].type
+        return self._type or self.tasks[0].type.app.tasks['celery.chord']
 
     def __call__(self, body=None, **kwargs):
-        _chord = self.type.app.tasks['celery.chord']
+        _chord = self.type
         body = (body or self.kwargs['body']).clone()
         kwargs = dict(self.kwargs, body=body, **kwargs)
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
