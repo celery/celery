@@ -11,7 +11,6 @@ from __future__ import absolute_import
 from __future__ import with_statement
 
 from collections import deque
-from itertools import starmap
 
 from celery._state import get_current_worker_task
 from celery.utils import uuid
@@ -127,7 +126,7 @@ def add_map_task(app):
     @app.task(name='celery.map', _force_evaluate=True)
     def xmap(task, it):
         task = subtask(task).type
-        return list(map(task, it))
+        return [task(value) for value in it]
     return xmap
 
 
@@ -138,7 +137,7 @@ def add_starmap_task(app):
     @app.task(name='celery.starmap', _force_evaluate=True)
     def xstarmap(task, it):
         task = subtask(task).type
-        return list(starmap(task, it))
+        return [task(*args) for args in it]
     return xstarmap
 
 

@@ -9,7 +9,6 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-import operator
 import os
 import sys
 import traceback
@@ -17,7 +16,7 @@ import warnings
 import types
 import datetime
 
-from functools import partial, wraps
+from functools import wraps
 from inspect import getargspec
 from pprint import pprint
 
@@ -133,7 +132,7 @@ def fun_takes_kwargs(fun, kwlist=[]):
     args, _varargs, keywords, _defaults = argspec
     if keywords is not None:
         return kwlist
-    return filter(partial(operator.contains, args), kwlist)
+    return [kw for kw in kwlist if kw in args]
 
 
 def isatty(fh):
