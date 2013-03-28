@@ -91,6 +91,7 @@ class Rdb(Pdb):
         self._sock, this_port = self.get_avail_port(
             host, port, port_search_limit, port_skew,
         )
+        self._sock.setblocking(1)
         self._sock.listen(1)
         self.ident = '{0}:{1}'.format(self.me, this_port)
         self.host = host
@@ -98,6 +99,7 @@ class Rdb(Pdb):
         self.say(BANNER.format(self=self))
 
         self._client, address = self._sock.accept()
+        self._client.setblocking(1)
         self.remote_addr = ':'.join(str(v) for v in address)
         self.say(SESSION_STARTED.format(self=self))
         self._handle = sys.stdin = sys.stdout = self._client.makefile('rw')

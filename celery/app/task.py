@@ -13,6 +13,7 @@ import sys
 from celery import current_app
 from celery import states
 from celery._state import get_current_worker_task, _task_stack
+from celery.canvas import subtask
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.five import class_property, items, with_metaclass
@@ -649,12 +650,11 @@ class Task(object):
         return self._get_app().AsyncResult(task_id, backend=self.backend,
                                            task_name=self.name, **kwargs)
 
-    def subtask(self, *args, **kwargs):
+    def subtask(self, args=None, *starargs, **starkwargs):
         """Returns :class:`~celery.subtask` object for
         this task, wrapping arguments and execution options
         for a single task invocation."""
-        from celery.canvas import subtask
-        return subtask(self, *args, **kwargs)
+        return subtask(self, args, *starargs, **starkwargs)
 
     def s(self, *args, **kwargs):
         """``.s(*a, **k) -> .subtask(a, k)``"""
@@ -790,6 +790,8 @@ class Task(object):
 
     def __repr__(self):
         """`repr(task)`"""
+        if self.__self__:
+            return '<bound task {0.name} of {0.__self__}>'.format(self)
         return '<@task: {0.name}>'.format(self)
 
     def _get_request(self):
