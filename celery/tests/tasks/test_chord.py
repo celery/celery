@@ -132,7 +132,7 @@ class test_chord(AppCase):
         m = Mock()
         m.app.conf.CELERY_ALWAYS_EAGER = False
         m.AsyncResult = AsyncResult
-        prev, chord.Chord = chord.Chord, m
+        prev, chord._type = chord._type, m
         try:
             x = chord(add.s(i, i) for i in xrange(10))
             body = add.s(2)
@@ -141,9 +141,9 @@ class test_chord(AppCase):
             # does not modify original subtask
             with self.assertRaises(KeyError):
                 body.options['task_id']
-            self.assertTrue(chord.Chord.called)
+            self.assertTrue(chord._type.called)
         finally:
-            chord.Chord = prev
+            chord._type = prev
 
 
 class test_Chord_task(AppCase):
