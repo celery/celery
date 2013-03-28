@@ -20,7 +20,7 @@ _first_match_any = firstmethod('annotate_any')
 
 
 def resolve_all(anno, task):
-    return filter(None, (_first_match(anno, task), _first_match_any(anno)))
+    return (r for r in (_first_match(anno, task), _first_match_any(anno)) if r)
 
 
 class MapAnnotation(dict):
@@ -52,4 +52,4 @@ def prepare(annotations):
         return ()
     elif not isinstance(annotations, (list, tuple)):
         annotations = (annotations, )
-    return map(expand_annotation, annotations)
+    return [expand_annotation(anno) for anno in annotations]

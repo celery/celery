@@ -291,7 +291,7 @@ class chain(Signature):
         return self._type or self.tasks[0].type.app.tasks['celery.chain']
 
     def __repr__(self):
-        return ' | '.join(map(repr, self.tasks))
+        return ' | '.join(repr(t) for t in self.tasks)
 Signature.register_type(chain)
 
 

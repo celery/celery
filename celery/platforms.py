@@ -56,9 +56,9 @@ def pyimplementation():
     elif sys.platform.startswith('java'):
         return 'Jython ' + sys.platform
     elif hasattr(sys, 'pypy_version_info'):
-        v = '.'.join(map(str, sys.pypy_version_info[:3]))
+        v = '.'.join(str(p) for p in sys.pypy_version_info[:3])
         if sys.pypy_version_info[3:]:
-            v += '-' + ''.join(map(str, sys.pypy_version_info[3:]))
+            v += '-' + ''.join(str(p) for p in sys.pypy_version_info[3:])
         return 'PyPy ' + v
     else:
         return 'CPython'

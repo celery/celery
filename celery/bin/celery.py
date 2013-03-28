@@ -515,7 +515,7 @@ class _RemoteControl(Command):
         destination = kwargs.get('destination')
         timeout = kwargs.get('timeout') or self.choices[method][0]
         if destination and isinstance(destination, basestring):
-            destination = map(str.strip, destination.split(','))
+            destination = [str.strip(v) for v in destination.split(',')]
 
         try:
             handler = getattr(self, method)

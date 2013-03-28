@@ -144,7 +144,7 @@ class LoggingProxy(object):
 
             handler.handleError = WithSafeHandleError().handleError
 
-        return map(wrap_handler, self.logger.handlers)
+        return [wrap_handler(h) for h in self.logger.handlers]
 
     def write(self, data):
         """Write message to logging object."""

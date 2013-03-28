@@ -11,7 +11,7 @@ from __future__ import with_statement
 
 import threading
 
-from functools import partial, wraps
+from functools import wraps
 from itertools import islice
 
 from kombu.utils import cached_property

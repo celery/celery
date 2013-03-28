@@ -13,7 +13,6 @@ import time
 
 from collections import deque
 from copy import copy
-from itertools import imap
 
 from kombu.utils import cached_property
 from kombu.utils.compat import OrderedDict
@@ -381,7 +380,7 @@ class ResultSet(ResultBase):
         :returns: the number of tasks completed.
 
         """
-        return sum(imap(int, (result.successful() for result in self.results)))
+        return sum(int(result.successful()) for result in self.results)
 
     def forget(self):
         """Forget about (and possible remove the result of) all the tasks."""

@@ -41,7 +41,7 @@ def memdump(samples=10):
     if ps() is None:
         print('- rss: (psutil not installed).')
         return
-    if filter(None, _mem_sample):
+    if any(_mem_sample):
         print('- rss (sample):')
         for mem in sample(_mem_sample, samples):
             print('-    > %s,' % mem)

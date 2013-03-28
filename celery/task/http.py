@@ -111,7 +111,7 @@ class MutableURL(object):
                       ';%s' % params if params else '',
                       '?%s' % query if query else '',
                       '#%s' % fragment if fragment else '']
-        return ''.join(filter(None, components))
+        return ''.join(c for c in components if c)
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, str(self))

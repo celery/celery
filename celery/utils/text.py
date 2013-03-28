@@ -18,7 +18,7 @@ def dedent_initial(s, n=4):
 
 
 def dedent(s, n=4, sep='\n'):
-    return sep.join(map(dedent_initial, s.splitlines()))
+    return sep.join(dedent_initial(l) for l in s.splitlines())
 
 
 def fill_paragraphs(s, width, sep='\n'):
@@ -26,7 +26,7 @@ def fill_paragraphs(s, width, sep='\n'):
 
 
 def join(l, sep='\n'):
-    return sep.join(v for v in l if v))
+    return sep.join(v for v in l if v)
 
 
 def ensure_2lines(s, sep='\n'):

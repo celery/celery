@@ -430,7 +430,7 @@ class KeyValueStoreBackend(BaseDictBackend):
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
                                                  for k in keys]), keys)
             self._cache.update(r)
-            ids ^= set(map(bytes_to_str, r))
+            ids ^= set(bytes_to_str(v) for v in r)
             for key, value in r.iteritems():
                 yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:

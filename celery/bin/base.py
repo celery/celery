@@ -231,7 +231,7 @@ class Command(object):
             options = dict((k, self.expanduser(v))
                            for k, v in vars(options).iteritems()
                            if not k.startswith('_'))
-        args = map(self.expanduser, args)
+        args = [self.expanduser(v) for v in args]
         self.check_args(args)
         return options, args
 

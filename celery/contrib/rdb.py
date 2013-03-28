@@ -82,7 +82,7 @@ class Rdb(Pdb):
         self.say('%(me)s: Waiting for client...' % context)
 
         self._client, address = self._sock.accept()
-        context['remote_addr'] = ':'.join(map(str, address))
+        context['remote_addr'] = ':'.join(str(v) for v in address)
         self.say('%(me)s: In session with %(remote_addr)s' % context)
         self._handle = sys.stdin = sys.stdout = self._client.makefile('rw')
         Pdb.__init__(self, completekey='tab',

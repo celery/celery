@@ -26,7 +26,7 @@ from celery.utils.timeutils import timedelta_seconds, timezone
 from kombu.log import get_logger
 
 VERSION = (1, 0, 0)
-__version__ = '.'.join(map(str, VERSION))
+__version__ = '.'.join(str(p) for p in VERSION)
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://github.com/ask/timer2/'
@@ -71,8 +71,9 @@ class Entry(object):
     if sys.version_info[0] == 3:  # pragma: no cover
 
         def __hash__(self):
-            return hash('|'.join(map(repr, (self.fun, self.args,
-                                            self.kwargs))))
+            return hash('|'.join(
+                repr(v) for v in (self.fun, self.args, self.kwargs)
+            ))
 
         def __lt__(self, other):
             return hash(self) < hash(other)
@@ -217,9 +218,10 @@ class Schedule(object):
         tref.cancel()
 
     @property
-    def queue(self):
+    def queue(self, _pop=heapq.heappop):
+        """Snapshot of underlying datastructure."""
         events = list(self._queue)
-        return map(heapq.heappop, [events] * len(events))
+        return [_pop(i) for i in [events] * len(events)]
 
 
 class Timer(threading.Thread):

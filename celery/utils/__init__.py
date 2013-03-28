@@ -205,7 +205,7 @@ def jsonify(obj):
     if isinstance(obj, (int, float, basestring, types.NoneType)):
         return obj
     elif isinstance(obj, (tuple, list)):
-        return map(jsonify, obj)
+        return [jsonify(v) for v in obj]
     elif isinstance(obj, dict):
         return dict((k, jsonify(v)) for k, v in obj.iteritems())
     # See "Date Time String Format" in the ECMA-262 specification.
@@ -246,7 +246,7 @@ def gen_task_name(app, name, module_name):
             module_name = '__main__'
     if module_name == '__main__' and app.main:
         return '.'.join([app.main, name])
-    return '.'.join(filter(None, [module_name, name]))
+    return '.'.join(p for p in (module_name, name) if p)
 
 # ------------------------------------------------------------------------ #
 # > XXX Compat

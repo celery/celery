@@ -164,11 +164,15 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={},
     origins = get_origins(by_module)
     compat_modules = COMPAT_MODULES.get(name, ())
 
-    cattrs = dict(_compat_modules=compat_modules,
-                  _all_by_module=by_module, _direct=direct,
-                  _object_origins=origins,
-                  __all__=tuple(set(reduce(operator.add, map(tuple, [
-                                compat_modules, origins, direct, attrs])))))
+    cattrs = dict(
+        _compat_modules=compat_modules,
+        _all_by_module=by_module, _direct=direct,
+        _object_origins=origins,
+        __all__=tuple(set(reduce(
+            operator.add,
+            [tuple(v) for v in [compat_modules, origins, direct, attrs]],
+        ))),
+    )
     new_module = create_module(name, attrs, cls_attrs=cattrs, base=base)
     new_module.__dict__.update(dict((mod, get_compat_module(new_module, mod))
                                for mod in compat_modules))

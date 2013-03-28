@@ -184,8 +184,9 @@ py-celery at %%(hostname)s.
     def should_send(self, context, exc):
         """Returns true or false depending on if a task error mail
         should be sent for this type of error."""
-        allow_classes = tuple(map(symbol_by_name, self.error_whitelist))
-        return not self.error_whitelist or isinstance(exc, allow_classes)
+        return not self.error_whitelist or isinstance(
+            exc, tuple(symbol_by_name(n) for n in self.error_whitelist),
+        )
 
     def format_subject(self, context):
         return self.subject.strip() % context

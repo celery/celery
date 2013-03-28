@@ -210,11 +210,11 @@ class Worker(configurated):
         print('purge: Erased %d %s from the queue.\n' % (
             count, pluralize(count, 'message')))
 
-    def tasklist(self, include_builtins=True):
-        tasks = self.app.tasks
-        if not include_builtins:
-            tasks = filter(lambda s: not s.startswith('celery.'), tasks)
-        return '\n'.join('  . %s' % task for task in sorted(tasks))
+    def tasklist(self, include_builtins=True, sep='\n', int_='celery.'):
+        return sep.join(
+            '  . %s' % task for task in sorted(self.app.tasks)
+            if (not task.startswith(int_) if not include_builtins else task)
+        )
 
     def extra_info(self):
         if self.loglevel <= logging.INFO:
