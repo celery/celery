@@ -404,7 +404,6 @@ class group(Signature):
         # consolidate tasks with the same app and apply them in
         # batches.
         type = tasks[0].type.app.tasks[self['task']]
-        tasks, result, gid, args = type.prepare(options, tasks, partial_args)
         return type(*type.prepare(options, tasks, partial_args))
 
     def _freeze(self, _id=None):
