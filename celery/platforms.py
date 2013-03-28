@@ -21,7 +21,7 @@ from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
 from .local import try_import
-from .five import items, map, range, reraise, string_t
+from .five import items, range, reraise, string_t
 
 _setproctitle = try_import('setproctitle')
 resource = try_import('resource')
@@ -61,9 +61,9 @@ def pyimplementation():
     elif sys.platform.startswith('java'):
         return 'Jython ' + sys.platform
     elif hasattr(sys, 'pypy_version_info'):
-        v = '.'.join(map(str, sys.pypy_version_info[:3]))
+        v = '.'.join(str(p) for p in sys.pypy_version_info[:3])
         if sys.pypy_version_info[3:]:
-            v += '-' + ''.join(map(str, sys.pypy_version_info[3:]))
+            v += '-' + ''.join(str(p) for p in sys.pypy_version_info[3:])
         return 'PyPy ' + v
     else:
         return 'CPython'

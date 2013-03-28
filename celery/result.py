@@ -21,7 +21,7 @@ from . import states
 from .app import app_or_default
 from .datastructures import DependencyGraph, GraphFormatter
 from .exceptions import IncompleteStream, TimeoutError
-from .five import items, map, range, string_t
+from .five import items, range, string_t
 
 
 class ResultBase(object):
@@ -394,7 +394,7 @@ class ResultSet(ResultBase):
         :returns: the number of tasks completed.
 
         """
-        return sum(map(int, (result.successful() for result in self.results)))
+        return sum(int(result.successful()) for result in self.results)
 
     def forget(self):
         """Forget about (and possible remove the result of) all the tasks."""

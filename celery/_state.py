@@ -9,9 +9,10 @@
     This module shouldn't be used directly.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import os
+import sys
 import threading
 import weakref
 
@@ -40,7 +41,7 @@ def set_default_app(app):
     default_app = app
 
 
-def get_current_app():
+def _get_current_app():
     if default_app is None:
         #: creates the global fallback app instance.
         from celery.app import Celery
@@ -50,6 +51,16 @@ def get_current_app():
             set_as_current=False, accept_magic_kwargs=True,
         ))
     return _tls.current_app or default_app
+
+C_STRICT_APP = os.environ.get('C_STRICT_APP')
+if os.environ.get('C_STRICT_APP'):
+    def get_current_app():
+        import traceback
+        print('-- USES CURRENT_APP', file=sys.stderr)  # noqa+
+        traceback.print_stack(file=sys.stderr)
+        return _get_current_app()
+else:
+    get_current_app = _get_current_app
 
 
 def get_current_task():

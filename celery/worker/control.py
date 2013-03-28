@@ -8,6 +8,8 @@
 """
 from __future__ import absolute_import
 
+import logging
+
 from kombu.utils.encoding import safe_repr
 
 from celery.five import UserDict, items
@@ -161,10 +163,10 @@ def dump_reserved(panel, safe=False, **kwargs):
     if not reserved:
         logger.debug('--Empty queue--')
         return []
-    logger.debug('* Dump of currently reserved tasks:\n%s',
-                 '\n'.join(safe_repr(id) for id in reserved))
-    return [request.info(safe=safe)
-            for request in reserved]
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug('* Dump of currently reserved tasks:\n%s',
+                     '\n'.join(safe_repr(id) for id in reserved))
+    return [request.info(safe=safe) for request in reserved]
 
 
 @Panel.register

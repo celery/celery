@@ -155,11 +155,11 @@ class Worker(WorkController):
         print('purge: Erased {0} {1} from the queue.\n'.format(
             count, pluralize(count, 'message')))
 
-    def tasklist(self, include_builtins=True):
-        tasks = self.app.tasks
-        if not include_builtins:
-            tasks = (t for t in tasks if not t.startswith('celery.'))
-        return '\n'.join('  . {0}'.format(task) for task in sorted(tasks))
+    def tasklist(self, include_builtins=True, sep='\n', int_='celery.'):
+        return sep.join(
+            '  . {0}'.format(task) for task in sorted(self.app.tasks)
+            if (not task.startswith(int_) if not include_builtins else task)
+        )
 
     def extra_info(self):
         if self.loglevel <= logging.INFO:

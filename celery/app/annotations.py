@@ -53,4 +53,4 @@ def prepare(annotations):
         return ()
     elif not isinstance(annotations, (list, tuple)):
         annotations = (annotations, )
-    return [expand_annotation(a) for a in annotations]
+    return [expand_annotation(anno) for anno in annotations]

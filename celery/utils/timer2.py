@@ -20,12 +20,12 @@ from itertools import count
 from time import time, sleep
 from weakref import proxy as weakrefproxy
 
-from celery.five import THREAD_TIMEOUT_MAX, map
+from celery.five import THREAD_TIMEOUT_MAX
 from celery.utils.timeutils import timedelta_seconds, timezone
 from kombu.log import get_logger
 
 VERSION = (1, 0, 0)
-__version__ = '.'.join(map(str, VERSION))
+__version__ = '.'.join(str(p) for p in VERSION)
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://github.com/ask/timer2/'
@@ -215,9 +215,10 @@ class Schedule(object):
         tref.cancel()
 
     @property
-    def queue(self):
+    def queue(self, _pop=heapq.heappop):
+        """Snapshot of underlying datastructure."""
         events = list(self._queue)
-        return [heapq.heappop(x) for x in [events] * len(events)]
+        return [_pop(v) for v in [events] * len(events)]
 
 
 class Timer(threading.Thread):

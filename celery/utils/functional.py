@@ -8,10 +8,9 @@
 """
 from __future__ import absolute_import
 
-import operator
 import threading
 
-from functools import partial, wraps
+from functools import wraps
 from itertools import islice
 
 from kombu.utils import cached_property
@@ -21,7 +20,6 @@ from kombu.utils.compat import OrderedDict
 from celery.five import UserDict, UserList, items, keys, string_t
 
 KEYWORD_MARK = object()
-is_not_None = partial(operator.is_not, None)
 
 
 class LRUCache(UserDict):
@@ -172,13 +170,17 @@ def noop(*args, **kwargs):
     pass
 
 
-def first(predicate, iterable):
+def first(predicate, it):
     """Returns the first element in `iterable` that `predicate` returns a
-    :const:`True` value for."""
-    predicate = predicate or is_not_None
-    for item in iterable:
-        if predicate(item):
-            return item
+    :const:`True` value for.
+
+    If `predicate` is None it will return the first item that is not None.
+
+    """
+    return next(
+        (v for v in it if (predicate(v) if predicate else v is not None)),
+        None,
+    )
 
 
 def firstmethod(method):

@@ -205,7 +205,7 @@ def jsonify(obj, builtin_types=(int, float, string_t)):
     if obj is None or isinstance(obj, builtin_types):
         return obj
     elif isinstance(obj, (tuple, list)):
-        return [jsonify(o) for o in obj]
+        return [jsonify(v) for v in obj]
     elif isinstance(obj, dict):
         return dict((k, jsonify(v)) for k, v in items(obj))
     elif isinstance(obj, datetime.datetime):
@@ -246,7 +246,7 @@ def gen_task_name(app, name, module_name):
             module_name = '__main__'
     if module_name == '__main__' and app.main:
         return '.'.join([app.main, name])
-    return '.'.join(p for p in [module_name, name] if p)
+    return '.'.join(p for p in (module_name, name) if p)
 
 
 def nodename(name, hostname):

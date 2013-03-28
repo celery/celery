@@ -17,21 +17,21 @@ def dedent_initial(s, n=4):
     return s[n:] if s[:n] == ' ' * n else s
 
 
-def dedent(s, n=4):
-    return '\n'.join(dedent_initial(p) for p in s.splitlines())
+def dedent(s, n=4, sep='\n'):
+    return sep.join(dedent_initial(l) for l in s.splitlines())
 
 
-def fill_paragraphs(s, width):
-    return '\n'.join(fill(p, width) for p in s.split('\n'))
+def fill_paragraphs(s, width, sep='\n'):
+    return sep.join(fill(p, width) for p in s.split(sep))
 
 
-def join(l):
-    return '\n'.join(part for part in l if part)
+def join(l, sep='\n'):
+    return sep.join(v for v in l if v)
 
 
-def ensure_2lines(s):
+def ensure_2lines(s, sep='\n'):
     if len(s.splitlines()) <= 2:
-        return s + '\n'
+        return s + sep
     return s
 
 
@@ -53,9 +53,9 @@ def abbrtask(S, max):
     return S
 
 
-def indent(t, indent=0):
+def indent(t, indent=0, sep='\n'):
     """Indent text."""
-    return '\n'.join(' ' * indent + p for p in t.split('\n'))
+    return sep.join(' ' * indent + p for p in t.split(sep))
 
 
 def truncate(text, maxlen=128, suffix='...'):
@@ -71,10 +71,12 @@ def pluralize(n, text, suffix='s'):
     return text
 
 
-def pretty(value, width=80, nl_width=80, **kw):
+def pretty(value, width=80, nl_width=80, sep='\n', **kw):
     if isinstance(value, dict):
-        return '{{\n {0}'.format(pformat(value, 4, nl_width)[1:])
+        return '{{{0} {1}'.format(sep, pformat(value, 4, nl_width)[1:])
     elif isinstance(value, tuple):
-        return '\n{0}{1}'.format(' ' * 4, pformat(value, width=nl_width, **kw))
+        return '{0}{1}{2}'.format(
+            sep, ' ' * 4, pformat(value, width=nl_width, **kw),
+        )
     else:
         return pformat(value, width=width, **kw)

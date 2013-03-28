@@ -372,7 +372,7 @@ class KeyValueStoreBackend(BaseBackend):
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
                                                  for k in keys]), keys)
             self._cache.update(r)
-            ids.difference_update(set(map(bytes_to_str, r)))
+            ids.difference_update(set(bytes_to_str(v) for v in r))
             for key, value in items(r):
                 yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:

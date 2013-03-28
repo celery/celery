@@ -177,11 +177,11 @@ class Hub(object):
     def add_writer(self, fd, callback):
         return self.add(fd, callback, WRITE)
 
-    def update_readers(self, map):
-        [self.add_reader(*x) for x in items(map)]
+    def update_readers(self, readers):
+        [self.add_reader(*x) for x in items(readers)]
 
-    def update_writers(self, map):
-        [self.add_writer(*x) for x in items(map)]
+    def update_writers(self, writers):
+        [self.add_writer(*x) for x in items(writers)]
 
     def _unregister(self, fd):
         try:

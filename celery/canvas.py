@@ -19,15 +19,12 @@ from itertools import chain as _chain
 from kombu.utils import cached_property, fxrange, kwdict, reprcall, uuid
 
 from celery import current_app
-from celery.local import Proxy
 from celery.result import AsyncResult, GroupResult
 from celery.utils.functional import (
     maybe_list, is_list, regen,
     chunks as _chunks,
 )
 from celery.utils.text import truncate
-
-Chord = Proxy(lambda: current_app.tasks['celery.chord'])
 
 
 class _getitem_property(object):
@@ -292,7 +289,8 @@ class chain(Signature):
         self.subtask_type = 'chain'
 
     def __call__(self, *args, **kwargs):
-        return self.apply_async(args, kwargs)
+        if self.tasks:
+            return self.apply_async(args, kwargs)
 
     @classmethod
     def from_dict(self, d):
@@ -302,8 +300,12 @@ class chain(Signature):
             tasks[0]['args'] = d['args'] + tasks[0]['args']
         return chain(*d['kwargs']['tasks'], **kwdict(d['options']))
 
+    @property
+    def type(self):
+        return self._type or self.tasks[0].type.app.tasks['celery.chain']
+
     def __repr__(self):
-        return ' | '.join(map(repr, self.tasks))
+        return ' | '.join(repr(t) for t in self.tasks)
 Signature.register_type(chain)
 
 
@@ -410,10 +412,15 @@ class group(Signature):
         return group(tasks, **kwdict(d['options']))
 
     def __call__(self, *partial_args, **options):
-        tasks, result, gid, args = self.type.prepare(
-            options, [Signature.clone(t) for t in self.tasks], partial_args,
-        )
-        return self.type(tasks, result, gid, args)
+        tasks = [task.clone() for task in self.tasks]
+        if not tasks:
+            return
+        # taking the app from the first task in the list,
+        # there may be a better solution to this, e.g.
+        # consolidate tasks with the same app and apply them in
+        # batches.
+        type = tasks[0].type.app.tasks[self['task']]
+        return type(*type.prepare(options, tasks, partial_args))
 
     def _freeze(self, _id=None):
         opts = self.options
@@ -444,7 +451,6 @@ Signature.register_type(group)
 
 
 class chord(Signature):
-    Chord = Chord
 
     def __init__(self, header, body=None, task='celery.chord',
                  args=(), kwargs={}, **options):
@@ -466,8 +472,12 @@ class chord(Signature):
         # than manually popping things off.
         return (header, body), kwargs
 
+    @property
+    def type(self):
+        return self._type or self.tasks[0].type.app.tasks['celery.chord']
+
     def __call__(self, body=None, **kwargs):
-        _chord = self.Chord
+        _chord = self.type
         body = (body or self.kwargs['body']).clone()
         kwargs = dict(self.kwargs, body=body, **kwargs)
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
@@ -497,13 +507,8 @@ class chord(Signature):
             return self.body.reprcall(self.tasks)
         return '<chord without body: {0.tasks!r}>'.format(self)
 
-    @property
-    def tasks(self):
-        return self.kwargs['header']
-
-    @property
-    def body(self):
-        return self.kwargs.get('body')
+    tasks = _getitem_property('kwargs.header')
+    body = _getitem_property('kwargs.body')
 Signature.register_type(chord)
 
 

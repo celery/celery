@@ -223,7 +223,6 @@ class BaseLoader(object):
                     # display key name in error message.
                     raise ValueError('{0!r}: {1}'.format(ns_key, exc))
             return ns_key, value
-
         return dict(getarg(arg) for arg in args)
 
     def mail_admins(self, subject, body, fail_silently=False,
