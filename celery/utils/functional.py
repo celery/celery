@@ -53,6 +53,22 @@ class LRUCache(UserDict):
     def items(self):
         return list(self._iterate_items())
 
+    def update(self, *args, **kwargs):
+        with self.mutex:
+            self.data.update(*args, **kwargs)
+
+            if not self.limit:
+                return
+
+            # pop additional items if dict growed too much
+            i = iter(self.data)  # start from bottom (LRU)
+            overflow = len(self.data) - self.limit
+
+            # negative overflow will lead to an empty list
+            to_pop = [next(i) for _ in xrange(overflow)]
+            for item in to_pop:
+                self.data.pop(item)
+
     def __setitem__(self, key, value):
         # remove least recently used key.
         with self.mutex:
