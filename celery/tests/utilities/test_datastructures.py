@@ -182,6 +182,15 @@ class test_LRUCache(Case):
             x[i] = i
         self.assertListEqual(list(x.keys()), list(slots[limit:]))
 
+    def test_update_expires(self):
+        limit = 100
+        x = LRUCache(limit=limit)
+        slots = list(xrange(limit * 2))
+        for i in slots:
+            x.update({i: i})
+
+        self.assertListEqual(list(x.keys()), list(slots[limit:]))
+
     def test_least_recently_used(self):
         x = LRUCache(3)
 
