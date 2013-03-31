@@ -253,7 +253,7 @@ You can wait for the result to complete, but this is rarely used
 since it turns the asynchronous call into a synchronous one::
 
     >>> result.get(timeout=1)
-    4
+    8
 
 In case the task raised an exception, :meth:`~@AsyncResult.get` will
 re-raise the exception, but you can override this by specifying
