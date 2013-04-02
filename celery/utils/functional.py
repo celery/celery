@@ -52,6 +52,16 @@ class LRUCache(UserDict):
     def items(self):
         return list(self._iterate_items())
 
+    def update(self, *args, **kwargs):
+        with self.mutex:
+            data, limit = self.data, self.limit
+            data.update(*args, **kwargs)
+            if limit and len(data) > limit:
+                # pop additional items in case limit exceeded
+                # negative overflow will lead to an empty list
+                for item in islice(iter(data), len(data) - limit):
+                    data.pop(item)
+
     def __setitem__(self, key, value):
         # remove least recently used key.
         with self.mutex:
