@@ -234,10 +234,27 @@ Running the flower command will start a web-server that you can visit:
 
     $ celery flower
 
-The default port is http://localhost:5555, but you can change this using the
-:option:`--port` argument::
+The default port is http://localhost:5555, but you can change this using the `--port` argument:
+
+.. code-block:: bash
+
+    $ celery flower --port=5555
+
+Broker URL can also be passed through the `--broker` argument :
+
+.. code-block:: bash
+
+    $ celery flower --broker=amqp://guest:guest@localhost:5672//
+    or
+    $ celery flower --broker=redis://guest:guest@localhost:6379/0
+
+Then, you can visit flower in your web browser :
+
+.. code-block:: bash
 
     $ open http://localhost:5555
+
+
 
 .. _monitoring-celeryev:
 
