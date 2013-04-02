@@ -251,10 +251,11 @@ class Autoreloader(bgThread):
             self._monitor.start()
 
     def _maybe_modified(self, f):
-        digest = file_hash(f)
-        if digest != self._hashes[f]:
-            self._hashes[f] = digest
-            return True
+        if os.path.exists(f):
+            digest = file_hash(f)
+            if digest != self._hashes[f]:
+                self._hashes[f] = digest
+                return True
         return False
 
     def on_change(self, files):
