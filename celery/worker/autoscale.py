@@ -14,6 +14,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+import os
 import threading
 
 from functools import partial
@@ -28,6 +29,8 @@ from .hub import DummyLock
 
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error
+
+AUTOSCALE_KEEPALIVE = int(os.environ.get('AUTOSCALE_KEEPALIVE', 30))
 
 
 class WorkerComponent(StartStopComponent):
@@ -65,7 +68,7 @@ class WorkerComponent(StartStopComponent):
 class Autoscaler(bgThread):
 
     def __init__(self, pool, max_concurrency,
-                 min_concurrency=0, keepalive=30, mutex=None):
+                 min_concurrency=0, keepalive=AUTOSCALE_KEEPALIVE, mutex=None):
         super(Autoscaler, self).__init__()
         self.pool = pool
         self.mutex = mutex or threading.Lock()
