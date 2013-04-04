@@ -13,7 +13,13 @@ import sys
 import time
 
 from collections import defaultdict
+from collections import defaultdict, MutableMapping
 from itertools import chain
+
+try:
+    from collections import MutableMapping
+except ImportError:        # pragma: no cover
+    MutableMapping = None  # noqa
 
 from billiard.einfo import ExceptionInfo  # noqa
 from kombu.utils.limits import TokenBucket  # noqa
@@ -295,11 +301,11 @@ class DictAttribute(object):
 class ConfigurationView(AttributeDictMixin):
     """A view over an applications configuration dicts.
 
-    If the key does not exist in ``changes``, the ``defaults`` dict
-    is consulted.
+    If the key does not exist in ``changes``, the ``defaults`` dicts
+    are consulted.
 
     :param changes:  Dict containing changes to the configuration.
-    :param defaults: Dict containing the default configuration.
+    :param defaults: List of dicts containing the default configuration.
 
     """
     changes = None
@@ -356,6 +362,11 @@ class ConfigurationView(AttributeDictMixin):
     def __iter__(self):
         return self._iterate_keys()
 
+    def __len__(self):
+        # The logic for iterating keys includes uniq(),
+        # so to be safe we count by explicitly iterating
+        return len(self.keys())
+
     def _iter(self, op):
         # defaults must be first in the stream, so values in
         # changes takes precedence.
@@ -381,6 +392,8 @@ class ConfigurationView(AttributeDictMixin):
 
     def values(self):
         return list(self._iterate_values())
+if MutableMapping:
+    MutableMapping.register(ConfigurationView)
 
 
 class LimitedSet(object):
