@@ -11,7 +11,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import sys
 import time
 
-from collections import defaultdict
+from collections import defaultdict, MutableMapping
 from functools import partial
 from itertools import chain
 from operator import itemgetter
@@ -419,11 +419,11 @@ class DictAttribute(object):
 class ConfigurationView(AttributeDictMixin):
     """A view over an applications configuration dicts.
 
-    If the key does not exist in ``changes``, the ``defaults`` dict
-    is consulted.
+    If the key does not exist in ``changes``, the ``defaults`` dicts
+    are consulted.
 
     :param changes:  Dict containing changes to the configuration.
-    :param defaults: Dict containing the default configuration.
+    :param defaults: List of dicts containing the default configuration.
 
     """
     changes = None
@@ -480,6 +480,11 @@ class ConfigurationView(AttributeDictMixin):
     def __iter__(self):
         return self._iterate_keys()
 
+    def __len__(self):
+        # The logic for iterating keys includes uniq(),
+        # so to be safe we count by explicitly iterating
+        return len(self.keys())
+
     def _iter(self, op):
         # defaults must be first in the stream, so values in
         # changes takes precedence.
@@ -505,6 +510,9 @@ class ConfigurationView(AttributeDictMixin):
 
     def values(self):
         return list(self._iterate_values())
+
+
+MutableMapping.register(ConfigurationView)
 
 
 class LimitedSet(object):
