@@ -511,7 +511,6 @@ class ConfigurationView(AttributeDictMixin):
     def values(self):
         return list(self._iterate_values())
 
-
 MutableMapping.register(ConfigurationView)
 
 
