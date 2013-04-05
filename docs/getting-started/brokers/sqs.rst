@@ -37,6 +37,12 @@ The login credentials can also be set using the environment variables
 :envvar:`AWS_ACCESS_KEY_ID` and :envvar:`AWS_SECRET_ACCESS_KEY`,
 in that case the broker url may only be ``sqs://``.
 
+.. note::
+
+    If you're are including your AWS credentials in the SQS URL, keep in mind
+    that the `aws_secret_access_key` can contain unsafe characters that will need to be
+    URL encoded.
+
 Options
 =======
 
