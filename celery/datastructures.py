@@ -13,7 +13,6 @@ import sys
 import time
 
 from collections import defaultdict
-from collections import defaultdict, MutableMapping
 from itertools import chain
 
 try:
