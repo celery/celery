@@ -710,6 +710,7 @@ Mher Movsisyan
 ~~~~~~~~~~~~~~
 
 :github: https://github.com/mher
+:twitter: http://twitter.com/#!/movsm
 
 Steeve Morin
 ~~~~~~~~~~~~

@@ -201,7 +201,6 @@ class InotifyMonitor(_ProcessEvent):
 
 
 def default_implementation():
-    # kqueue monitor not working properly at this time.
     if hasattr(select, 'kqueue'):
         return 'kqueue'
     if sys.platform.startswith('linux') and pyinotify:
