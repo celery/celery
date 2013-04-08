@@ -18,6 +18,7 @@ import shelve
 
 from collections import defaultdict
 
+from kombu.serialization import pickle_protocol
 from kombu.utils import cached_property
 
 from celery import __version__
@@ -130,6 +131,7 @@ class Persistent(object):
 
     """
     storage = shelve
+    protocol = pickle_protocol
     _is_open = False
 
     def __init__(self, filename):
@@ -152,7 +154,9 @@ class Persistent(object):
         return d
 
     def open(self):
-        return self.storage.open(self.filename, writeback=True)
+        return self.storage.open(
+            self.filename, protocol=self.protocol, writeback=True,
+        )
 
     def close(self):
         if self._is_open:
