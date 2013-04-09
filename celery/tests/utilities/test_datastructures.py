@@ -92,6 +92,14 @@ class test_ConfigurationView(Case):
         self.assertItemsEqual(self.view.keys(), expected.keys())
         self.assertItemsEqual(self.view.values(), expected.values())
 
+    def test_isa_mapping(self):
+        from collections import Mapping
+        self.assertTrue(issubclass(ConfigurationView, Mapping))
+
+    def test_isa_mutable_mapping(self):
+        from collections import MutableMapping
+        self.assertTrue(issubclass(ConfigurationView, MutableMapping))
+
 
 class test_ExceptionInfo(Case):
 
