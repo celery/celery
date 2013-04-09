@@ -236,8 +236,11 @@ def pool_shrink(panel, n=1, **kwargs):
 
 @Panel.register
 def pool_restart(panel, modules=None, reload=False, reloader=None, **kwargs):
-    panel.consumer.controller.reload(modules, reload, reloader=reloader)
-    return {'ok': 'reload started'}
+    if panel.app.conf.CELERYD_POOL_RESTARTS:
+        panel.consumer.controller.reload(modules, reload, reloader=reloader)
+        return {'ok': 'reload started'}
+    else:
+        raise ValueError('Pool restarts not enabled')
 
 
 @Panel.register
