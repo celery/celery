@@ -769,19 +769,6 @@ class Task(object):
                 not getattr(self, 'disable_error_emails', None):
             self.ErrorMail(self, **kwargs).send(context, exc)
 
-    def execute(self, request, pool, loglevel, logfile, **kwargs):
-        """The method the worker calls to execute the task.
-
-        :param request: A :class:`~celery.worker.job.Request`.
-        :param pool: A task pool.
-        :param loglevel: Current loglevel.
-        :param logfile: Name of the currently used logfile.
-
-        :keyword consumer: The :class:`~celery.worker.consumer.Consumer`.
-
-        """
-        request.execute_using_pool(pool, loglevel, logfile)
-
     def push_request(self, *args, **kwargs):
         self.request_stack.push(Context(*args, **kwargs))
 

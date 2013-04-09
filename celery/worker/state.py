@@ -154,15 +154,20 @@ class Persistent(object):
         self.close()
 
     def merge(self, d):
-        revoked.update(d.get('revoked') or {})
+        saved = d.get('revoked') or LimitedSet()
+        if isinstance(saved, LimitedSet):
+            revoked.update(saved)
+        else:
+            # (pre 3.0.18) used to be stored as dict
+            for item in saved:
+                revoked.add(item)
         if self.clock:
             d['clock'] = self.clock.adjust(d.get('clock') or 0)
         return d
 
     def sync(self, d):
-        prev = d.get('revoked') or {}
-        prev.update(revoked.as_dict())
-        d['revoked'] = prev
+        revoked.purge()
+        d['revoked'] = revoked
         if self.clock:
             d['clock'] = self.clock.forward()
         return d

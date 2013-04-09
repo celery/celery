@@ -1,3 +1,3 @@
 pytz
-billiard>=2.7.3.23
-kombu>=2.5.8
+billiard>=2.7.3.25
+kombu>=2.5.9
