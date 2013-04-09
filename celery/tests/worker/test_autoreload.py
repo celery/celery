@@ -223,7 +223,9 @@ class test_Autoreloader(AppCase):
         x.body()
 
     @patch('celery.worker.autoreload.file_hash')
-    def test_maybe_modified(self, fhash):
+    @patch('os.path.exists')
+    def test_maybe_modified(self, exists, fhash):
+        exists.return_value = True
         fhash.return_value = 'abcd'
         x = Autoreloader(Mock(), modules=[__name__])
         x._hashes = {}

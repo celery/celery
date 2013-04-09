@@ -472,7 +472,6 @@ class LimitedSet(object):
             self._data.pop(item[1])
             i += 1
 
-
     def update(self, other, heappush=heappush):
         if isinstance(other, self.__class__):
             self._data.update(other._data)

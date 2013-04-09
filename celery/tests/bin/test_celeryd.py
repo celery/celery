@@ -638,7 +638,8 @@ class test_signal_handlers(WorkerAppCase):
     @disable_stdouts
     @patch('atexit.register')
     @patch('os.fork')
-    def test_worker_restart_handler(self, fork, register):
+    @patch('os.close')
+    def test_worker_restart_handler(self, _close, fork, register):
         fork.return_value = 0
         if getattr(os, 'execv', None) is None:
             raise SkipTest('platform does not have excv')
