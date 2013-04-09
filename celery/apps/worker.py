@@ -353,6 +353,9 @@ else:
 
 def _clone_current_worker():
     if os.fork() == 0:
+        platforms.close_open_fds([
+            sys.__stdin__, sys.__stdout__, sys.__stderr__,
+        ])
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
 

@@ -254,10 +254,20 @@ def _create_pidlock(pidfile):
 
 def fileno(f):
     """Get object fileno, or :const:`None` if not defined."""
+    if isinstance(f, int):
+        return f
     try:
         return f.fileno()
     except AttributeError:
         pass
+
+
+def close_open_fds(keep=None):
+    keep = [fileno(f) for f in keep if fileno(f)] if keep else []
+    for fd in reversed(range(get_fdmax(default=2048))):
+        if fd not in keep:
+            with ignore_errno(errno.EBADF):
+                os.close(fd)
 
 
 class DaemonContext(object):
@@ -287,12 +297,7 @@ class DaemonContext(object):
             if self.after_chdir:
                 self.after_chdir()
 
-            preserve = [fileno(f) for f in self.stdfds if fileno(f)]
-            for fd in reversed(range(get_fdmax(default=2048))):
-                if fd not in preserve:
-                    with ignore_errno(errno.EBADF):
-                        os.close(fd)
-
+            close_open_fds(self.stdfds)
             for fd in self.stdfds:
                 self.redirect_to_null(fileno(fd))
 
