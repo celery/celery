@@ -9,6 +9,34 @@
 
 If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
+.. _version-3.0.18:
+
+3.0.18
+======
+:release-date: 2013-04-09 04:00:00 P.M BST
+
+- Now depends on :mod:`billiard` 2.7.3.25.
+
+- Now depends on :mod:`kombu` 2.5.9.
+
+- Worker/statedb: Now uses pickle protocol 2 (Py2.5+)
+
+- :class:`~celery.app.utils.ConfigurationView` is now a ``MutableMapping``.
+
+    Contributed by Aaron Harnly.
+
+- Fixed memory leak in LRU cache implementation.
+
+    Fix contributed by Romuald Brunet.
+
+- ``celery.contrib.rdb``: Now works when sockets are in non-blocking mode.
+
+    Fix contributed by Theo Spears.
+
+- Canvas list operations now takes application instance from the first
+  task in the list, instead of depending on the ``current_app`` (Issue #1249).
+
+
 .. _version-3.0.17:
 
 3.0.17
