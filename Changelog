@@ -15,7 +15,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 ======
 :release-date: 2013-04-09 04:00:00 P.M BST
 
-- Now depends on :mod:`billiard` 2.7.3.25.
+- Now depends on :mod:`billiard` 2.7.3.26.
 
 - Now depends on :mod:`kombu` 2.5.9.
 
