@@ -500,9 +500,16 @@ class Task(object):
 
         :param args: Positional arguments to retry with.
         :param kwargs: Keyword arguments to retry with.
-        :keyword exc: Optional exception to raise instead of
-                      :exc:`~celery.exceptions.MaxRetriesExceededError`
-                      when the max restart limit has been exceeded.
+        :keyword exc: Custom exception to report when the max restart
+            limit has been exceeded (default:
+            :exc:`~celery.exceptions.MaxRetriesExceededError`).
+
+            If this argument is set and retry is called while
+            an exception was raised (``sys.exc_info()`` is set)
+            it will attempt to reraise the current exception.
+
+            If no exception was raised it will raise the ``exc``
+            argument provided.
         :keyword countdown: Time in seconds to delay the retry for.
         :keyword eta: Explicit time and date to run the retry at
                       (must be a :class:`~datetime.datetime` instance).

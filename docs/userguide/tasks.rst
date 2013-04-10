@@ -327,10 +327,6 @@ Here's an example using ``retry``:
         except (Twitter.FailWhaleError, Twitter.LoginError), exc:
             raise send_twitter_status.retry(exc=exc)
 
-Here the `exc` argument was used to pass the current exception to
-:meth:`~@Task.retry`.  Both the exception and the traceback will
-be available in the task state (if a result backend is enabled).
-
 .. note::
 
     The :meth:`~@Task.retry` call will raise an exception so any code after the retry
@@ -341,6 +337,31 @@ be available in the task state (if a result backend is enabled).
 
     This is normal operation and always happens unless the
     ``throw`` argument to retry is set to :const:`False`.
+
+The ``exc`` method is used to pass exception information that is
+used in logs, and when storing task results.
+Both the exception and the traceback will
+be available in the task state (if a result backend is enabled).
+
+If the task has a ``max_retries`` value the current exception
+will be re-raised if the max number of retries has been exceeded,
+but this will not happen if:
+
+- An ``exc`` argument was not given.
+
+    In this case the :exc:`celery.exceptions.MaxRetriesExceeded`
+    exception will be raised.
+
+- There is no current exception
+
+    If there's no original exception to re-raise the ``exc``
+    argument will be used instead, so:
+
+    .. code-block:: python
+
+        send_twitter_status.retry(exc=Twitter.LoginError())
+
+    will raise the ``exc`` argument given.
 
 .. _task-retry-custom-delay:
 
