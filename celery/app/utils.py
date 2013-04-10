@@ -10,10 +10,9 @@ from __future__ import absolute_import
 
 import os
 import platform as _platform
-import types
 
 from celery import platforms
-from celery.datastructures import ConfigurationView, DictAttribute
+from celery.datastructures import ConfigurationView
 from celery.utils.text import pretty
 from celery.utils.imports import qualname
 
