@@ -94,6 +94,14 @@ class test_ConfigurationView(Case):
             list(expected.values()),
         )
 
+    def test_isa_mapping(self):
+        from collections import Mapping
+        self.assertTrue(issubclass(ConfigurationView, Mapping))
+
+    def test_isa_mutable_mapping(self):
+        from collections import MutableMapping
+        self.assertTrue(issubclass(ConfigurationView, MutableMapping))
+
 
 class test_ExceptionInfo(Case):
 

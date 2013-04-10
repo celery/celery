@@ -1,5 +1,8 @@
 from __future__ import absolute_import
 
+import os
+import base64
+
 from kombu.serialization import registry
 
 from celery.exceptions import SecurityError
@@ -10,7 +13,6 @@ from celery.security.key import PrivateKey
 from . import CERT1, CERT2, KEY1, KEY2
 from .case import SecurityCase
 
-import os,base64
 
 class test_SecureSerializer(SecurityCase):
 

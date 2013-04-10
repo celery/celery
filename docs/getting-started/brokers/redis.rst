@@ -97,3 +97,9 @@ Caveats
 
     The value must be an int describing the number of seconds.
 
+
+- Monitoring events (as used by flower and other tools) are global
+  and is not affected by the virtual host setting.
+
+    This is caused by a limitation in Redis.  The Redis PUB/SUB channels
+    are global and not affected by the database number.

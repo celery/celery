@@ -11,16 +11,15 @@ from __future__ import absolute_import
 import os
 import platform as _platform
 import re
-import types
 
 try:
     from billiard import forking as _forking
 except ImportError:  # pragma: no cover
     _forking = None  # noqa
 
-from celery.platforms import pyimplementation, IS_WINDOWS
+from celery.platforms import pyimplementation
 from celery.five import items
-from celery.datastructures import ConfigurationView, DictAttribute
+from celery.datastructures import ConfigurationView
 from celery.utils.text import pretty
 from celery.utils.imports import qualname
 
@@ -74,27 +73,6 @@ class Settings(ConfigurationView):
         """Returns the current configuration, but without defaults."""
         # the last stash is the default settings, so just skip that
         return Settings({}, self._order[:-1])
-
-    def _prepare_pickleable_changes(self):
-        # attempt to include keys from configuration modules,
-        # to work with multiprocessing execv/fork emulation.
-        # This is necessary when multiprocessing execv/fork emulation
-        # is enabled.  There may be a better way to do this, but attempts
-        # at forcing the subprocess to import the modules did not work out,
-        # because of some sys.path problem.  More at Issue #1126.
-        if IS_WINDOWS:
-            return {}  # Django Settings object is not pickleable
-        if _forking and _forking._forking_is_enabled:
-            return self.changes
-        R = {}
-        for d in reversed(self._order[:-1]):
-            if isinstance(d, DictAttribute):
-                d = object.__getattribute__(d, 'obj')
-                if isinstance(d, types.ModuleType):
-                    d = dict((k, v) for k, v in items(vars(d))
-                             if not k.startswith('_') and k.isupper())
-            R.update(d)
-        return R
 
     def find_option(self, name, namespace='celery'):
         """Search for option by name.
@@ -152,11 +130,13 @@ class AppPickler(object):
         return self.build_standard_kwargs(*args)
 
     def build_standard_kwargs(self, main, changes, loader, backend, amqp,
-                              events, log, control, accept_magic_kwargs):
+                              events, log, control, accept_magic_kwargs,
+                              config_source=None):
         return dict(main=main, loader=loader, backend=backend, amqp=amqp,
                     changes=changes, events=events, log=log, control=control,
                     set_as_current=False,
-                    accept_magic_kwargs=accept_magic_kwargs)
+                    accept_magic_kwargs=accept_magic_kwargs,
+                    config_source=config_source)
 
     def construct(self, cls, **kwargs):
         return cls(**kwargs)

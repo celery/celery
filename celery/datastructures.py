@@ -15,7 +15,6 @@ from collections import defaultdict, MutableMapping
 from heapq import heapify, heappush, heappop
 from functools import partial
 from itertools import chain
-from operator import itemgetter
 
 from billiard.einfo import ExceptionInfo  # noqa
 from kombu.utils.encoding import safe_str

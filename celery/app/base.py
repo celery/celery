@@ -24,7 +24,7 @@ from kombu.utils import cached_property
 
 from celery import platforms
 from celery._state import _task_stack, _tls, get_current_app, _register_app
-from celery.exceptions import AlwaysEagerIgnored
+from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
 from celery.five import items, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
@@ -78,7 +78,7 @@ class Celery(object):
                  amqp=None, events=None, log=None, control=None,
                  set_as_current=True, accept_magic_kwargs=False,
                  tasks=None, broker=None, include=None, changes=None,
-                 fixups=None, **kwargs):
+                 config_source=None, fixups=None, **kwargs):
         self.clock = LamportClock()
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
@@ -123,6 +123,14 @@ class Celery(object):
 
         if self.set_as_current:
             self.set_current()
+
+        # See Issue #1126
+        # this is used when pickling the app object so that configuration
+        # is reread without having to pickle the contents
+        # (which is often unpickleable anyway)
+        if self._config_source:
+            self.config_from_object(self._config_source)
+
         self.on_init()
         _register_app(self)
 
@@ -225,11 +233,16 @@ class Celery(object):
 
     def config_from_object(self, obj, silent=False):
         del(self.conf)
+        self._config_source = obj
         return self.loader.config_from_object(obj, silent=silent)
 
     def config_from_envvar(self, variable_name, silent=False):
-        del(self.conf)
-        return self.loader.config_from_envvar(variable_name, silent=silent)
+        module_name = os.environ.get(variable_name)
+        if not module_name:
+            if silent:
+                return False
+            raise ImproperlyConfigured(self.error_envvar_not_set % module_name)
+        return self.config_from_object(module_name, silent=silent)
 
     def config_from_cmdline(self, argv, namespace='celery'):
         self.conf.update(self.loader.cmdline_config_parser(argv, namespace))
@@ -455,14 +468,15 @@ class Celery(object):
             'control': self.control_cls,
             'accept_magic_kwargs': self.accept_magic_kwargs,
             'fixups': self.fixups,
+            'config_source': self._config_source,
         }
 
     def __reduce_args__(self):
         """Deprecated method, please use :meth:`__reduce_keys__` instead."""
-        return (self.main, self.conf._prepare_pickleable_changes(),
+        return (self.main, self.conf.changes,
                 self.loader_cls, self.backend_cls, self.amqp_cls,
                 self.events_cls, self.log_cls, self.control_cls,
-                self.accept_magic_kwargs)
+                self.accept_magic_kwargs, self._config_source)
 
     @cached_property
     def Worker(self):
