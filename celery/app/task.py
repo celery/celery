@@ -461,6 +461,7 @@ class Task(object):
         app = self._get_app()
         router = router or self.app.amqp.router
         conf = app.conf
+        options = options or self.options
 
         # add 'self' if this is a bound method.
         if self.__self__ is not None:
