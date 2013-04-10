@@ -12,11 +12,6 @@ import os
 import platform as _platform
 import re
 
-try:
-    from billiard import forking as _forking
-except ImportError:  # pragma: no cover
-    _forking = None  # noqa
-
 from celery.platforms import pyimplementation
 from celery.five import items
 from celery.datastructures import ConfigurationView
