@@ -308,6 +308,11 @@ Available options
 * CELERY_CREATE_LOGDIR
     Always create logfile directory.  By default only enable when no custom
     logfile location set.
+    
+.. _daemon-systemd-generic:
+
+Usage systemd
+====================
 
 .. _generic-systemd-celery:
 
