@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=forking
-User=anarchist
+User=user
 Group=users
 EnvironmentFile=-/etc/conf.d/celery
 WorkingDirectory=/opt/Myproject/
