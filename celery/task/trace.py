@@ -135,7 +135,7 @@ class TraceInfo(object):
             signals.task_failure.send(sender=task, task_id=req.id,
                                       exception=exc, args=req.args,
                                       kwargs=req.kwargs,
-                                      traceback=einfo.tb,
+                                      traceback=tb,
                                       einfo=einfo)
             return einfo
         finally:
