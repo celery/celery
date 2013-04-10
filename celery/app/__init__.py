@@ -133,4 +133,4 @@ def shared_task(*args, **kwargs):
 
     if len(args) == 1 and callable(args[0]):
         return create_shared_task(**kwargs)(args[0])
-    return create_shared_task(**kwargs)
+    return create_shared_task(*args, **kwargs)

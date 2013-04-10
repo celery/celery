@@ -172,6 +172,9 @@ class Celery(object):
 
         if len(args) == 1 and callable(args[0]):
             return inner_create_task_cls(**opts)(*args)
+        if args:
+            raise TypeError(
+                'task() takes no arguments (%s given)' % (len(args, )))
         return inner_create_task_cls(**opts)
 
     def _task_from_fun(self, fun, **options):
