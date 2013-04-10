@@ -135,7 +135,7 @@ class KVBackend(KeyValueStoreBackend):
         if self.mget_returns_dict:
             return dict((key, self.get(key)) for key in keys)
         else:
-            return [self.get(key) for key in keys]
+            return [self.get(k) for k in keys]
 
     def delete(self, key):
         self.db.pop(key, None)
