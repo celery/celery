@@ -63,20 +63,6 @@ class Settings(ConfigurationView):
         # the last stash is the default settings, so just skip that
         return Settings({}, self._order[:-1])
 
-    def _pickleable_changes(self):
-        # attempt to include keys from configuration modules,
-        # to work with multiprocessing execv/fork emulation.
-        # see note at celery.app.base:Celery.__reduce_args__.
-        R = {}
-        for d in reversed(self._order[:-1]):
-            if isinstance(d, DictAttribute):
-                d = object.__getattribute__(d, 'obj')
-                if isinstance(d, types.ModuleType):
-                    d = dict((k, v) for k, v in vars(d).iteritems()
-                             if not k.startswith('__') and k.isupper())
-            R.update(d)
-        return R
-
     def find_option(self, name, namespace='celery'):
         """Search for option by name.
 
@@ -131,11 +117,13 @@ class AppPickler(object):
         return self.build_standard_kwargs(*args)
 
     def build_standard_kwargs(self, main, changes, loader, backend, amqp,
-                              events, log, control, accept_magic_kwargs):
+                              events, log, control, accept_magic_kwargs,
+                              config_source=None):
         return dict(main=main, loader=loader, backend=backend, amqp=amqp,
                     changes=changes, events=events, log=log, control=control,
                     set_as_current=False,
-                    accept_magic_kwargs=accept_magic_kwargs)
+                    accept_magic_kwargs=accept_magic_kwargs,
+                    config_source=config_source)
 
     def construct(self, cls, **kwargs):
         return cls(**kwargs)
