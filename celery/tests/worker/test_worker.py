@@ -984,6 +984,7 @@ class test_WorkController(AppCase):
     def test_process_task_sem(self):
         worker = self.worker
         worker.semaphore = Mock()
+        worker._quick_acquire = worker.semaphore.acquire
 
         req = Mock()
         worker.process_task_sem(req)
