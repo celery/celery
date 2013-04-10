@@ -4,12 +4,13 @@ After=network.target
 
 [Service]
 Type=forking
-User=user
+User=anarchist
 Group=users
 EnvironmentFile=-/etc/conf.d/celery
-ExecStart=/usr/bin/python2 ${CELERYD_CHDIR}/manage.py ${CELERYD_MULTI} start $CELERYD_NODES --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} $CELERYD_OPTS 
-ExecStop=/usr/bin/python2 ${CELERYD_CHDIR}/manage.py ${CELERYD_MULTI} stopwait $CELERYD_NODES --pidfile=${CELERYD_PID_FILE}
-ExecReload=/usr/bin/python2 ${CELERYD_CHDIR}/manage.py ${CELERYD_MULTI} restart $CELERYD_NODES --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} $CELERYD_OPTS 
+WorkingDirectory=/opt/Myproject/
+ExecStart=/usr/bin/python2 ${CELERYD_BIN}/manage.py multi start $CELERYD_NODES --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel="INFO" $CELERYD_OPTS 
+ExecStop=/usr/bin/python2 ${CELERYD_BIN}/manage.py multi stopwait $CELERYD_NODES --pidfile=${CELERYD_PID_FILE}
+ExecReload=/usr/bin/python2 ${CELERYD_BIN}/manage.py multi restart $CELERYD_NODES --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel="INFO" $CELERYD_OPTS 
 
 [Install]
 WantedBy=multi-user.target

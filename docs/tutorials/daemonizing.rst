@@ -309,6 +309,45 @@ Available options
     Always create logfile directory.  By default only enable when no custom
     logfile location set.
 
+.. _generic-systemd-celery:
+
+Service file: celery.service
+----------------------------
+:Configuration file: /etc/conf.d/celery
+:Usage: `systemctl {start|stop|restart|status} celery.service`
+
+To create a temporary folder for the log and pid files change user and group in 
+/usr/lib/tmpfiles.d/celery.conf.
+Setting WorkingDirectory in /usr/lib/systemd/system/celery.service defines chdir.
+
+.. _generic-systemd-celery-example:
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+This is an example configuration for a Python project:
+
+:file:`/etc/conf.d/celery`:
+
+.. code-block:: bash
+
+    # Name of nodes to start
+    # here we have a single node
+    CELERYD_NODES="w1"
+    # or we could have three nodes:
+    #CELERYD_NODES="w1 w2 w3"
+
+    # Absolute or relative path to the 'celery' command:
+    CELERY_BIN="/usr/local/bin/celery"
+    #CELERY_BIN="/virtualenvs/def/bin/celery"
+
+    # Extra command-line arguments to the worker
+    CELERYD_OPTS="--time-limit=300 --concurrency=8"
+
+    # %N will be replaced with the first part of the nodename.
+    CELERYD_LOG_FILE="/var/log/celery/%N.log"
+    CELERYD_PID_FILE="/var/run/celery/%N.pid"
+
 .. _generic-initd-troubleshooting:
 
 Troubleshooting
