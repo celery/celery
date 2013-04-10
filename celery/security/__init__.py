@@ -9,6 +9,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+from kombu import disable_insecure_serializers
 from kombu.serialization import registry
 
 from celery import current_app
@@ -35,8 +36,7 @@ Please see the configuration reference for more information.
 
 
 def disable_untrusted_serializers(whitelist=None):
-    for name in set(registry._decoders) - set(whitelist or []):
-        registry.disable(name)
+    disable_insecure_serializers(whitelist)
 
 
 def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
