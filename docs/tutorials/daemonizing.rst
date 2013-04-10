@@ -318,8 +318,9 @@ Usage systemd
 
 Service file: celery.service
 ----------------------------
-:Configuration file: /etc/conf.d/celery
+
 :Usage: `systemctl {start|stop|restart|status} celery.service`
+:Configuration file: /etc/conf.d/celery
 
 To create a temporary folder for the log and pid files change user and group in 
 /usr/lib/tmpfiles.d/celery.conf.
