@@ -80,14 +80,15 @@ class SecureSerializer(object):
         signer_cert = self._cert_store[signer]
 
         sig_len = signer_cert._cert.get_pubkey().bits() >> 3
-        signature = raw_payload[first_sep+len(sep):first_sep+len(sep)+sig_len]
-        end_of_sig = first_sep+len(sep)+sig_len+len(sep)
-        
+        signature = raw_payload[
+            first_sep + len(sep):first_sep + len(sep) + sig_len
+        ]
+        end_of_sig = first_sep + len(sep) + sig_len+len(sep)
+
         v = raw_payload[end_of_sig:].split(sep)
 
         values = [bytes_to_str(signer), bytes_to_str(signature),
                   bytes_to_str(v[0]), bytes_to_str(v[1]), bytes_to_str(v[2])]
-                  
 
         return {
             'signer': values[0],
@@ -96,8 +97,6 @@ class SecureSerializer(object):
             'content_encoding': values[3],
             'body': values[4],
         }
-
-
 
 
 def register_auth(key=None, cert=None, store=None, digest='sha1',
@@ -110,5 +109,3 @@ def register_auth(key=None, cert=None, store=None, digest='sha1',
     registry.register('auth', s.serialize, s.deserialize,
                       content_type='application/data',
                       content_encoding='utf-8')
-
-    registry._set_default_serializer('auth')

@@ -84,3 +84,4 @@ def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
     with open(key) as kf:
         with open(cert) as cf:
             register_auth(kf.read(), cf.read(), store, digest, serializer)
+    registry._set_default_serializer('auth')
