@@ -18,10 +18,6 @@ from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
 
-try:
-    from billiard import forking as _forking
-except ImportError:  # pragma: no cover
-    _forking = None  # noqa
 from billiard.util import register_after_fork
 from kombu.clocks import LamportClock
 from kombu.utils import cached_property

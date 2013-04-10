@@ -726,7 +726,7 @@ def from_serializable(r, app=None):
         if isinstance(r, (list, tuple)):
             id, nodes = r
             if nodes:
-                return app.GroupResult(id, [Result(id) for id, _ in nodes])
+                return app.GroupResult(id, [Result(sid) for sid, _ in nodes])
             return Result(id)
         else:
             return Result(r)
