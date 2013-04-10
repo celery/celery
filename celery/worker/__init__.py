@@ -153,6 +153,8 @@ class Pool(bootsteps.StartStopComponent):
         forking_enable = w.no_execv or not w.force_execv
         if not threaded:
             semaphore = w.semaphore = BoundedSemaphore(procs)
+            w._quick_acquire = w.semaphore.acquire
+            w._quick_release = w.semaphore.release
             max_restarts = 100
         allow_restart = self.autoreload_enabled or w.pool_restarts
         pool = w.pool = self.instantiate(
@@ -374,7 +376,7 @@ class WorkController(configurated):
         self._shutdown_complete.wait()
 
     def process_task_sem(self, req):
-        return self.semaphore.acquire(self.process_task, req)
+        return self._quick_acquire(self.process_task, req)
 
     def process_task(self, req):
         """Process task by sending it to the pool of workers."""
