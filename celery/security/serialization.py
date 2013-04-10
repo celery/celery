@@ -73,14 +73,31 @@ class SecureSerializer(object):
         return b64encode(fields)
 
     def _unpack(self, payload, sep=str_to_bytes('\x00\x01')):
-        values = b64decode(ensure_bytes(payload)).split(sep)
+        raw_payload = b64decode(ensure_bytes(payload))
+        first_sep = raw_payload.find(sep)
+
+        signer = raw_payload[:first_sep]
+        signer_cert = self._cert_store[signer]
+
+        sig_len = signer_cert._cert.get_pubkey().bits() >> 3
+        signature = raw_payload[first_sep+len(sep):first_sep+len(sep)+sig_len]
+        end_of_sig = first_sep+len(sep)+sig_len+len(sep)
+        
+        v = raw_payload[end_of_sig:].split(sep)
+
+        values = [bytes_to_str(signer), bytes_to_str(signature),
+                  bytes_to_str(v[0]), bytes_to_str(v[1]), bytes_to_str(v[2])]
+                  
+
         return {
-            'signer': bytes_to_str(values[0]),
-            'signature': ensure_bytes(values[1]),
-            'content_type': bytes_to_str(values[2]),
-            'content_encoding': bytes_to_str(values[3]),
-            'body': ensure_bytes(values[4]),
+            'signer': values[0],
+            'signature': values[1],
+            'content_type': values[2],
+            'content_encoding': values[3],
+            'body': values[4],
         }
+
+
 
 
 def register_auth(key=None, cert=None, store=None, digest='sha1',
@@ -93,3 +110,5 @@ def register_auth(key=None, cert=None, store=None, digest='sha1',
     registry.register('auth', s.serialize, s.deserialize,
                       content_type='application/data',
                       content_encoding='utf-8')
+
+    registry._set_default_serializer('auth')
