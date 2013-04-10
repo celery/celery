@@ -1521,26 +1521,6 @@ The directory containing X.509 certificates used for
 Custom Component Classes (advanced)
 -----------------------------------
 
-.. setting:: CELERYD_BOOTSTEPS
-
-CELERYD_BOOTSTEPS
-~~~~~~~~~~~~~~~~~
-
-This setting enables you to add additional components to the worker process.
-It should be a list of module names with
-:class:`celery.bootsteps.Step`
-classes, that augments functionality in the worker.
-
-.. setting:: CELERYD_CONSUMER_BOOTSTEPS
-
-CELERYD_CONSUMER_BOOTSTEPS
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This setting enables you to add additional components to the workers consumer.
-It should be a list of module names with
-:class:`celery.bootsteps.Step`` classes, that augments
-functionality in the consumer.
-
 .. setting:: CELERYD_POOL
 
 CELERYD_POOL

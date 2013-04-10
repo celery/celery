@@ -157,8 +157,6 @@ NAMESPACES = {
         'AGENT': Option(None, type='string'),
         'AUTOSCALER': Option('celery.worker.autoscale:Autoscaler'),
         'AUTORELOADER': Option('celery.worker.autoreload:Autoreloader'),
-        'BOOTSTEPS': Option((), type='tuple'),
-        'CONSUMER_BOOTSTEPS': Option((), type='tuple'),
         'CONCURRENCY': Option(0, type='int'),
         'TIMER': Option(type='string'),
         'TIMER_PRECISION': Option(1.0, type='float'),

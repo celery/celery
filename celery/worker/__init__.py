@@ -80,13 +80,7 @@ class WorkController(configurated):
     pidlock = None
 
     class Namespace(bootsteps.Namespace):
-        """This is the bootstep namespace for the
-        :class:`WorkController` class.
-
-        It loads modules from :setting:`CELERYD_BOOTSTEPS`, and its
-        own set of built-in bootsteps.
-
-        """
+        """Worker bootstep namespace."""
         name = 'Worker'
         default_steps = set([
             'celery.worker.components:Hub',
