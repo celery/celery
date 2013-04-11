@@ -15,6 +15,47 @@ from __future__ import absolute_import
 import importlib
 import sys
 
+__module__ = __name__  # used by Proxy class body
+
+
+def _default_cls_attr(name, type_, cls_value):
+    # Proxy uses properties to forward the standard
+    # class attributes __module__, __name__ and __doc__ to the real
+    # object, but these needs to be a string when accessed from
+    # the Proxy class directly.  This is a hack to make that work.
+    # -- See Issue #1087.
+
+    def __new__(cls, getter):
+        instance = type_.__new__(cls, cls_value)
+        instance.__getter = getter
+        return instance
+
+    def __get__(self, obj, cls=None):
+        return self.__getter(obj) if obj is not None else self
+
+    def __set__(self, obj, value):
+        raise AttributeError('readonly attribute')
+
+    return type(name, (type_, ), {
+        '__new__': __new__, '__get__': __get__, '__set__': __set__,
+    })
+
+
+class _cls_spec(str):
+
+    def __new__(cls, getter):
+        s = str.__new__(cls, getter.__module__)
+        s.__getter = getter
+        return s
+
+    def __get__(self, obj, cls=None):
+        if obj is not None:
+            return self.__getter(obj)
+        return self
+
+    def __set__(self, obj, value):
+        raise AttributeError('cannot set attribute')
+
 
 def symbol_by_name(name, aliases={}, imp=None, package=None,
                    sep='.', default=None, **kwargs):
@@ -97,18 +138,18 @@ class Proxy(object):
         if name is not None:
             object.__setattr__(self, '__custom_name__', name)
 
-    @property
+    @_default_cls_attr('name', str, __name__)
     def __name__(self):
         try:
             return self.__custom_name__
         except AttributeError:
             return self._get_current_object().__name__
 
-    @property
+    @_default_cls_attr('module', str, __module__)
     def __module__(self):
         return self._get_current_object().__module__
 
-    @property
+    @_default_cls_attr('doc', str, __doc__)
     def __doc__(self):
         return self._get_current_object().__doc__
 

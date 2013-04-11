@@ -22,6 +22,11 @@ class test_try_import(Case):
 
 class test_Proxy(Case):
 
+    def test_std_class_attributes(self):
+        self.assertEqual(Proxy.__name__, 'Proxy')
+        self.assertEqual(Proxy.__module__, 'celery.local')
+        self.assertIsInstance(Proxy.__doc__, str)
+
     def test_name(self):
 
         def real():
