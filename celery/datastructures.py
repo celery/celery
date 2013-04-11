@@ -11,7 +11,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import sys
 import time
 
-from collections import defaultdict, MutableMapping
+from collections import defaultdict, Mapping, MutableMapping
 from heapq import heapify, heappush, heappop
 from functools import partial
 from itertools import chain
@@ -435,6 +435,8 @@ class ConfigurationView(AttributeDictMixin):
                              _order=[changes] + defaults)
 
     def add_defaults(self, d):
+        if not isinstance(d, Mapping):
+            d = DictAttribute(d)
         self.defaults.insert(0, d)
         self._order.insert(1, d)
 
