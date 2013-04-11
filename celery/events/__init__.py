@@ -211,7 +211,8 @@ class EventReceiver(object):
     def consumer(self, wakeup=True):
         """Create event consumer."""
         consumer = Consumer(self.connection,
-                            queues=[self.queue], no_ack=True)
+                            queues=[self.queue], no_ack=True,
+                            accept=['application/json'])
         consumer.register_callback(self._receive)
         consumer.consume()
 

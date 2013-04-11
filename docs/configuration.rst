@@ -790,6 +790,28 @@ persistent messages.
 Broker Settings
 ---------------
 
+.. setting:: CELERY_ACCEPT_CONTENT
+
+CELERY_ACCEPT_CONTENT
+~~~~~~~~~~~~~~~~~~~~~
+
+A whitelist of content-types/serializers to allow.
+
+If a message is received that is not in this list then
+the message will be discarded with an error.
+
+By default any content type is enabled (including pickle and yaml)
+so make sure untrusted parties do not have access to your broker.
+See :ref:`guide-security` for more.
+
+Example::
+
+    # using serializer name
+    CELERY_ACCEPT_CONTENT = ['json']
+
+    # or the actual content-type (MIME)
+    CELERY_ACCEPT_CONTENT = ['application/json']
+
 .. setting:: BROKER_TRANSPORT
 
 BROKER_TRANSPORT

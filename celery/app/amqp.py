@@ -300,11 +300,15 @@ class TaskPublisher(TaskProducer):
 class TaskConsumer(Consumer):
     app = None
 
-    def __init__(self, channel, queues=None, app=None, **kw):
+    def __init__(self, channel, queues=None, app=None, accept=None, **kw):
         self.app = app or self.app
+        if accept is None:
+            accept = self.app.conf.CELERY_ACCEPT_CONTENT
         super(TaskConsumer, self).__init__(
             channel,
-            queues or self.app.amqp.queues.consume_from.values(), **kw
+            queues or self.app.amqp.queues.consume_from.values(),
+            accept=accept,
+            **kw
         )
 
 
