@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from mock import Mock, call, patch
 from nose import SkipTest
 
+from celery import current_app
 from celery import beat
 from celery import task
 from celery.result import AsyncResult
@@ -221,11 +222,21 @@ class test_Scheduler(Case):
             s = mScheduler()
             s.install_default_entries({})
             self.assertNotIn('celery.backend_cleanup', s.data)
+        current_app.backend.supports_autoexpire = False
         with patch_settings(CELERY_TASK_RESULT_EXPIRES=30,
                             CELERYBEAT_SCHEDULE={}):
             s = mScheduler()
             s.install_default_entries({})
             self.assertIn('celery.backend_cleanup', s.data)
+        current_app.backend.supports_autoexpire = True
+        try:
+            with patch_settings(CELERY_TASK_RESULT_EXPIRES=31,
+                                CELERYBEAT_SCHEDULE={}):
+                s = mScheduler()
+                s.install_default_entries({})
+                self.assertNotIn('celery.backend_cleanup', s.data)
+        finally:
+            current_app.backend.supports_autoexpire = False
 
     def test_due_tick(self):
         scheduler = mScheduler()

@@ -47,6 +47,8 @@ class MongoBackend(BaseDictBackend):
     mongodb_taskmeta_collection = 'celery_taskmeta'
     mongodb_max_pool_size = 10
 
+    supports_autoexpire = False
+
     def __init__(self, *args, **kwargs):
         """Initialize MongoDB backend instance.
 

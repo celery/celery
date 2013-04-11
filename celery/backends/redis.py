@@ -44,6 +44,7 @@ class RedisBackend(KeyValueStoreBackend):
     #: Maximium number of connections in the pool.
     max_connections = None
 
+    supports_autoexpire = True
     supports_native_join = True
     implements_incr = True
 

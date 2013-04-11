@@ -45,6 +45,7 @@ class CassandraBackend(BaseDictBackend):
     detailed_mode = False
     _retry_timeout = 300
     _retry_wait = 3
+    supports_autoexpire = True
 
     def __init__(self, servers=None, keyspace=None, column_family=None,
                  cassandra_options=None, detailed_mode=False, **kwargs):

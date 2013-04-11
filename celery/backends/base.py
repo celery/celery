@@ -61,6 +61,11 @@ class BaseBackend(object):
     #: If true the backend must implement :meth:`get_many`.
     supports_native_join = False
 
+    #: If true the backend must automatically expire results.
+    #: The daily backend_cleanup periodic task will not be triggered
+    #: in this case.
+    supports_autoexpire = False
+
     def __init__(self, *args, **kwargs):
         from celery.app import app_or_default
         self.app = app_or_default(kwargs.get('app'))
