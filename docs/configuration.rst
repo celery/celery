@@ -1,4 +1,4 @@
-.' _configuration:
+.. _configuration:
 
 ============================
  Configuration and defaults
@@ -227,6 +227,7 @@ Can be one of the following:
 .. _`MongoDB`: http://mongodb.org
 .. _`Redis`: http://code.google.com/p/redis/
 .. _`Cassandra`: http://cassandra.apache.org/
+.. _`IronCache`: http://www.iron.io/cache
 
 .. setting:: CELERY_RESULT_SERIALIZER
 

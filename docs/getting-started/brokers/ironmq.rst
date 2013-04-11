@@ -46,14 +46,14 @@ And in this case the broker url may only be::
     ironmq://
 
 Clouds
------
+------
 
 The default cloud/region is ``AWS us-east-1``. You can choose the IronMQ Rackspace cloud by changing the URL to::
 
     ironmq://project_id:token@mq-rackspace-dfw.iron.io
 
 Results
-======
+=======
 
 You can store results in IronCache with the same Iron.io credentials, just set the results URL with the same syntax
 as the broker URL, but changing the start to ``ironcache``::
@@ -65,6 +65,6 @@ This will default to a cache named "Celery", if you want to change that::
     ironcache:://project_id:token@/awesomecache
 
 More Information
-===============
+================
 
 You can find more information in the [iron_celery README](http://github.com/iron-io/iron_celery).
