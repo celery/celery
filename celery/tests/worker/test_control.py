@@ -425,10 +425,17 @@ class test_ControlPanel(Case):
         _import = panel.app.loader.import_from_cwd = Mock()
         _reload = Mock()
 
-        panel.handle('pool_restart', {'reloader': _reload})
-        self.assertTrue(consumer.controller.pool.restart.called)
-        self.assertFalse(_reload.called)
-        self.assertFalse(_import.called)
+        with self.assertRaises(ValueError):
+            panel.handle('pool_restart', {'reloader': _reload})
+
+        current_app.conf.CELERYD_POOL_RESTARTS = True
+        try:
+            panel.handle('pool_restart', {'reloader': _reload})
+            self.assertTrue(consumer.controller.pool.restart.called)
+            self.assertFalse(_reload.called)
+            self.assertFalse(_import.called)
+        finally:
+            current_app.conf.CELERYD_POOL_RESTARTS = False
 
     def test_pool_restart_import_modules(self):
         consumer = Consumer()
@@ -439,15 +446,18 @@ class test_ControlPanel(Case):
         _import = consumer.controller.app.loader.import_from_cwd = Mock()
         _reload = Mock()
 
-        panel.handle('pool_restart', {'modules': ['foo', 'bar'],
-                                      'reloader': _reload})
-
-        self.assertTrue(consumer.controller.pool.restart.called)
-        self.assertFalse(_reload.called)
-        self.assertEqual(
-            [(('foo',), {}), (('bar',), {})],
-            _import.call_args_list,
-        )
+        current_app.conf.CELERYD_POOL_RESTARTS = True
+        try:
+            panel.handle('pool_restart', {'modules': ['foo', 'bar'],
+                                          'reloader': _reload})
+            self.assertTrue(consumer.controller.pool.restart.called)
+            self.assertFalse(_reload.called)
+            self.assertEqual(
+                [(('foo',), {}), (('bar',), {})],
+                _import.call_args_list,
+            )
+        finally:
+            current_app.conf.CELERYD_POOL_RESTARTS = False
 
     def test_pool_restart_relaod_modules(self):
         consumer = Consumer()
@@ -458,23 +468,27 @@ class test_ControlPanel(Case):
         _import = panel.app.loader.import_from_cwd = Mock()
         _reload = Mock()
 
-        with patch.dict(sys.modules, {'foo': None}):
-            panel.handle('pool_restart', {'modules': ['foo'],
-                                          'reload': False,
-                                          'reloader': _reload})
+        current_app.conf.CELERYD_POOL_RESTARTS = True
+        try:
+            with patch.dict(sys.modules, {'foo': None}):
+                panel.handle('pool_restart', {'modules': ['foo'],
+                                              'reload': False,
+                                              'reloader': _reload})
 
-            self.assertTrue(consumer.controller.pool.restart.called)
-            self.assertFalse(_reload.called)
-            self.assertFalse(_import.called)
+                self.assertTrue(consumer.controller.pool.restart.called)
+                self.assertFalse(_reload.called)
+                self.assertFalse(_import.called)
 
-            _import.reset_mock()
-            _reload.reset_mock()
-            consumer.controller.pool.restart.reset_mock()
+                _import.reset_mock()
+                _reload.reset_mock()
+                consumer.controller.pool.restart.reset_mock()
 
-            panel.handle('pool_restart', {'modules': ['foo'],
-                                          'reload': True,
-                                          'reloader': _reload})
+                panel.handle('pool_restart', {'modules': ['foo'],
+                                              'reload': True,
+                                              'reloader': _reload})
 
-            self.assertTrue(consumer.controller.pool.restart.called)
-            self.assertTrue(_reload.called)
-            self.assertFalse(_import.called)
+                self.assertTrue(consumer.controller.pool.restart.called)
+                self.assertTrue(_reload.called)
+                self.assertFalse(_import.called)
+        finally:
+            current_app.conf.CELERYD_POOL_RESTARTS = False
