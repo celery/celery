@@ -13,7 +13,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.18
 ======
-:release-date: 2013-04-09 04:00:00 P.M BST
+:release-date: 2013-04-11 XX:XX:XX P.M BST
 
 - Now depends on :mod:`billiard` 2.7.3.26.
 
