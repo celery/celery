@@ -17,9 +17,10 @@ from heapq import heapify, heappush, heappop
 from itertools import chain
 
 try:
-    from collections import MutableMapping
+    from collections import Mapping, MutableMapping
 except ImportError:        # pragma: no cover
     MutableMapping = None  # noqa
+    Mapping = dict         # noqa
 
 from billiard.einfo import ExceptionInfo  # noqa
 from kombu.utils.limits import TokenBucket  # noqa
@@ -317,6 +318,8 @@ class ConfigurationView(AttributeDictMixin):
                              _order=[changes] + defaults)
 
     def add_defaults(self, d):
+        if not isinstance(d, Mapping):
+            d = DictAttribute(d)
         self.defaults.insert(0, d)
         self._order.insert(1, d)
 
