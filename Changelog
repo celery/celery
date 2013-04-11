@@ -96,9 +96,6 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - The ``@task`` decorator silently ignored positional arguments,
   it now raises the expected :exc:`TypeError` instead (Issue #1125).
 
-- Worker: ``--statedb`` will now force enable pickle protocol 2
-  when writing the database.
-
 - The worker will now properly handle messages with invalid
   eta/expires fields (Issue #1232).
 
