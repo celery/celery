@@ -17,7 +17,7 @@ import traceback
 from billiard import current_process, util as mputil
 from kombu.log import get_logger as _get_logger, LOG_LEVELS
 
-from .encoding import safe_str
+from .encoding import safe_str, str_t
 from .term import colored
 
 _process_aware = False
@@ -87,7 +87,15 @@ class ColorFormatter(logging.Formatter):
 
         if self.use_color and color:
             try:
-                record.msg = safe_str(color(record.msg))
+                msg = record.msg
+                # safe_str will repr the color object
+                # and color will both on non-string objects
+                # so need to reorder calls based on type.
+                # Issue #427
+                if isinstance(msg, basestring):
+                    record.msg = str_t(color(safe_str(msg)))
+                else:
+                    record.msg = safe_str(color(msg))
             except Exception, exc:
                 record.msg = '<Unrepresentable %r: %r>' % (
                     type(record.msg), exc)
