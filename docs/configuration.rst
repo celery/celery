@@ -485,6 +485,12 @@ This is a dict supporting the following keys:
     than max_pool_size, sockets will be closed when they are released.
     Defaults to 10.
 
+* options
+
+    Additional keyword arguments to pass to the mongodb connection
+    constructor.  See the :mod:`pymongo` docs to see a list of arguments
+    supported.
+
 .. _example-mongodb-result-config:
 
 Example configuration
