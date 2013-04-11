@@ -75,9 +75,9 @@ class Request(object):
         __slots__ = (
             'app', 'name', 'id', 'args', 'kwargs', 'on_ack', 'delivery_info',
             'hostname', 'eventer', 'connection_errors', 'task', 'eta',
-            'expires', 'request_dict', 'acknowledged', 'success_msg',
-            'error_msg', 'retry_msg', 'ignore_msg', 'utc', 'time_start',
-            'worker_pid', '_already_revoked', '_terminate_on_ack',
+            'expires', 'request_dict', 'acknowledged',
+            'utc', 'time_start', 'worker_pid', '_already_revoked',
+            '_terminate_on_ack',
             '_tzlocal', '__weakref__',
         )
 

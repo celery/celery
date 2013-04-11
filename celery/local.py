@@ -15,6 +15,8 @@ from __future__ import absolute_import
 import importlib
 import sys
 
+PY3 = sys.version_info[0] == 3
+
 __module__ = __name__  # used by Proxy class body
 
 
@@ -129,7 +131,9 @@ class Proxy(object):
     """Proxy to another object."""
 
     # Code stolen from werkzeug.local.Proxy.
-    __slots__ = ('__local', '__args', '__kwargs', '__dict__', '__name__')
+    __slots__ = ('__local', '__args', '__kwargs', '__dict__')
+    if not PY3:
+        __slots__ += ('__name__', )
 
     def __init__(self, local, args=None, kwargs=None, name=None):
         object.__setattr__(self, '_Proxy__local', local)
