@@ -92,6 +92,7 @@ class Celery(object):
         self.registry_cls = symbol_by_name(self.registry_cls)
         self.accept_magic_kwargs = accept_magic_kwargs
         self.user_options = defaultdict(set)
+        self._config_source = config_source
         self.steps = defaultdict(set)
 
         self.configured = False
@@ -462,7 +463,7 @@ class Celery(object):
         when unpickling."""
         return {
             'main': self.main,
-            'changes': self.conf._prepare_pickleable_changes(),
+            'changes': self.conf.changes,
             'loader': self.loader_cls,
             'backend': self.backend_cls,
             'amqp': self.amqp_cls,
