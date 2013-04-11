@@ -312,7 +312,7 @@ Available options
 .. _daemon-systemd-generic:
 
 Usage systemd
-====================
+=============
 
 .. _generic-systemd-celery:
 
@@ -324,7 +324,8 @@ Service file: celery.service
 
 To create a temporary folders for the log and pid files change user and group in 
 /usr/lib/tmpfiles.d/celery.conf.
-Setting WorkingDirectory in /usr/lib/systemd/system/celery.service defines chdir.
+To configure user, group, chdir change settings User, Group and WorkingDirectory defines 
+in /usr/lib/systemd/system/celery.service. 
 
 .. _generic-systemd-celery-example:
 
@@ -346,6 +347,37 @@ This is an example configuration for a Python project:
     # Absolute or relative path to the 'celery' command:
     CELERY_BIN="/usr/local/bin/celery"
     #CELERY_BIN="/virtualenvs/def/bin/celery"
+    
+    # How to call manage.py
+    CELERYD_MULTI="multi"
+
+    # Extra command-line arguments to the worker
+    CELERYD_OPTS="--time-limit=300 --concurrency=8"
+
+    # %N will be replaced with the first part of the nodename.
+    CELERYD_LOG_FILE="/var/log/celery/%N.log"
+    CELERYD_PID_FILE="/var/run/celery/%N.pid"
+
+.. _generic-systemd-celeryd-django-example:
+
+Example Django configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is an example configuration for those using `django-celery`:
+
+.. code-block:: bash
+
+    # Name of nodes to start
+    # here we have a single node
+    CELERYD_NODES="w1"
+    # or we could have three nodes:
+    #CELERYD_NODES="w1 w2 w3"
+
+    # Absolute path to "manage.py"
+    CELERY_BIN="/opt/Myproject/manage.py"
+    
+    # How to call manage.py
+    CELERYD_MULTI="celery multi"
 
     # Extra command-line arguments to the worker
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
