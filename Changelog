@@ -17,7 +17,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on :mod:`billiard` 2.7.3.26.
 
-- Now depends on :mod:`kombu` 2.5.9.
+- Now depends on :mod:`kombu` 2.5.10.
 
 - Worker/statedb: Now uses pickle protocol 2 (Py2.5+)
 
