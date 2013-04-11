@@ -8,9 +8,9 @@ User=user
 Group=users
 EnvironmentFile=-/etc/conf.d/celery
 WorkingDirectory=/opt/Myproject/
-ExecStart=/usr/bin/python2 ${CELERYD_BIN}/manage.py multi start $CELERYD_NODES --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel="INFO" $CELERYD_OPTS 
-ExecStop=/usr/bin/python2 ${CELERYD_BIN}/manage.py multi stopwait $CELERYD_NODES --pidfile=${CELERYD_PID_FILE}
-ExecReload=/usr/bin/python2 ${CELERYD_BIN}/manage.py multi restart $CELERYD_NODES --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel="INFO" $CELERYD_OPTS 
+ExecStart=/usr/bin/python2 ${CELERY_BIN}/manage.py celeryd_multi start $CELERYD_NODES --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel="INFO" $CELERYD_OPTS 
+ExecStop=/usr/bin/python2 ${CELERY_BIN}/manage.py celeryd_multi stopwait $CELERYD_NODES --pidfile=${CELERYD_PID_FILE}
+ExecReload=/usr/bin/python2 ${CELERY_BIN}/manage.py celeryd_multi restart $CELERYD_NODES --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel="INFO" $CELERYD_OPTS 
 
 [Install]
 WantedBy=multi-user.target
