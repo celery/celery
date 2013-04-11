@@ -72,6 +72,7 @@ class MongoBackend(BaseDictBackend):
             self.mongodb_host = config.get('host', self.mongodb_host)
             self.mongodb_port = int(config.get('port', self.mongodb_port))
             self.mongodb_user = config.get('user', self.mongodb_user)
+            self.mongodb_options = config.get('options', {})
             self.mongodb_password = config.get(
                 'password', self.mongodb_password)
             self.mongodb_database = config.get(
@@ -100,7 +101,9 @@ class MongoBackend(BaseDictBackend):
                     and not self.mongodb_host.startswith('mongodb://'):
                 args.append(self.mongodb_port)
 
-            self._connection = Connection(*args, **kwargs)
+            self._connection = Connection(
+                *args, **dict(kwargs, self.mongodb_options)
+            )
 
         return self._connection
 
