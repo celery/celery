@@ -20,6 +20,7 @@ from operator import attrgetter
 
 from billiard.util import register_after_fork
 from kombu.clocks import LamportClock
+from kombu.serialization import enable_insecure_serializers
 from kombu.utils import cached_property
 
 from celery import platforms
@@ -115,6 +116,8 @@ class Celery(object):
             self._preconf['BROKER_URL'] = broker
         if include:
             self._preconf['CELERY_IMPORTS'] = include
+
+        enable_insecure_serializers()
 
         # Apply fixups.
         self.fixups = set(fixups or ())
