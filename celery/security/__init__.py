@@ -36,7 +36,7 @@ Please see the configuration reference for more information.
 
 def disable_untrusted_serializers(whitelist=None):
     for name in set(registry._decoders) - set(whitelist or []):
-        registry.disable(name)whitelist)
+        registry.disable(name)
 
 
 def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
