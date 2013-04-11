@@ -89,7 +89,7 @@ class ColorFormatter(logging.Formatter):
             try:
                 msg = record.msg
                 # safe_str will repr the color object
-                # and color will both on non-string objects
+                # and color will break on non-string objects
                 # so need to reorder calls based on type.
                 # Issue #427
                 if isinstance(msg, basestring):
