@@ -75,11 +75,11 @@ exclude_trees = ['.build']
 add_function_parentheses = True
 
 intersphinx_mapping = {
-        "http://docs.python.org/dev": None,
-        "http://kombu.readthedocs.org/en/latest/": None,
-        "http://django-celery.readthedocs.org/en/latest": None,
-        "http://cyme.readthedocs.org/en/latest": None,
-        "http://amqp.readthedocs.org/en/latest": None,
+    'python': ('http://docs.python.org/dev', None),
+    'kombu': ('http://kombu.readthedocs.org/en/latest/', None),
+    'djcelery': ('http://django-celery.readthedocs.org/en/latest', None),
+    'cyme': ('http://cyme.readthedocs.org/en/latest', None),
+    'amqp': ('http://amqp.readthedocs.org/en/latest', None),
 }
 
 # The name of the Pygments (syntax highlighting) style to use.

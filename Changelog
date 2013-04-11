@@ -325,10 +325,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     - support for multiple connection URLs for failover.
 
-    - Read more in the `Kombu 2.5 changelog`_.
-
-    .. _`Kombu 2.5 changelog`:
-        http://kombu.readthedocs.org/en/latest/changelog.html#version-2-5-0
+    - Read more in the :ref:`Kombu 2.5 changelog <kombu:version-2.5.0>`.
 
 - Now depends on billiard 2.7.3.19
 
@@ -1008,17 +1005,14 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     - If the broker heartbeat is set to 10 seconds, the heartbeats will be
       monitored every 5 seconds (double the hertbeat rate).
 
-    See the `Kombu 2.3 changelog`_ for more information.
-
-.. _`Kombu 2.3 changelog`:
-    http://kombu.readthedocs.org/en/latest/changelog.html#version-2-3-0
+    See the :ref:`Kombu 2.3 changelog <kombu:version-2.3.0>` for more information.
 
 - Now supports RabbitMQ Consumer Cancel Notifications, using the ``pyamqp://``
   transport.
 
     This is essential when running RabbitMQ in a cluster.
 
-    See the `Kombu 2.3 changelog`_ for more information.
+    See the :ref:`Kombu 2.3 changelog <kombu:version-2.3.0>` for more information.
 
 - Delivery info is no longer passed directly through.
 

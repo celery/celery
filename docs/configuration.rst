@@ -816,7 +816,8 @@ default is ``amqp``, which uses ``librabbitmq`` by default or falls back to
 ``couchdb``.
 It can also be a fully qualified path to your own transport implementation.
 
-See the Kombu documentation for more information about broker URLs.
+See :ref:`kombu:connection-urls` in the Kombu documentation for more
+information.
 
 .. setting:: BROKER_HEARTBEAT
 

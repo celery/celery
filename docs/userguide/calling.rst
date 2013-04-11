@@ -318,10 +318,7 @@ or for each individual task, or even per message.
 
 There's built-in support for :mod:`pickle`, `JSON`, `YAML`
 and `msgpack`, and you can also add your own custom serializers by registering
-them into the Kombu serializer registry (see `Kombu: Serialization of Data`_).
-
-.. _`Kombu: Serialization of Data`:
-    http://packages.python.org/kombu/introduction.html#serialization-of-data
+them into the Kombu serializer registry (see ref:`kombu:guide-serialization`).
 
 Each option has its advantages and disadvantages.
 
