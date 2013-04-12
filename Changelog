@@ -13,29 +13,48 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.18
 ======
-:release-date: 2013-04-12 XX:XX:XX P.M BST
+:release-date: 2013-04-12 05:00:00 P.M BST
 
 - Now depends on :mod:`kombu` 2.5.10.
 
-    See the :ref:`changelog <kombu:version-2.5.10>`.
+    See the :ref:`kombu changelog <kombu:version-2.5.10>`.
 
 - Now depends on :mod:`billiard` 2.7.3.26.
 
-- Fixed deadlock in the multiprocessing pool that was caused by the
-  semaphore not being released at shutdown.
+- Can now specify a whitelist of accepted serializers using
+  the new :setting:`CELERY_ACCEPT_CONTENT` setting.
+
+    This means that you can force the worker to discard messages
+    serialized with pickle and other untrusted serializers.
+    For example to only allow JSON serialized messages use::
+
+        CELERY_ACCEPT_CONTENT = ['json']
+
+    you can also specify MIME types in the whitelist::
+
+        CELERY_ACCEPT_CONTENT = ['application/json']
+
+- Fixed deadlock in multiprocessing's pool caused by the
+  semaphore not being released when terminated by signal.
 
 - Processes Pool: It's now possible to debug pool processes using GDB.
+
+- ``celery report`` now censors possibly secret settings, like passwords
+  and secret tokens.
+
+    You should still check the output before pasting anything
+    on the internet.
 
 - Connection URLs now ignore multiple '+' tokens.
 
 - Worker/statedb: Now uses pickle protocol 2 (Py2.5+)
 
-- Many Python 3 compatibility fixes.
+- Fixed Python 3 compatibility issues.
 
 - Worker:  A warning is now given if a worker is started with the
   same node name as an existing worker.
 
-- Fixed a deadlock that could occur while revoking tasks (Issue #1297).
+- Worker: Fixed a deadlock that could occur while revoking tasks (Issue #1297).
 
 - Worker: The :sig:`HUP` handler now closes all open file descriptors
   before restarting to ensure file descriptors does not leak (Issue #1270).
@@ -57,19 +76,6 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Fixed AsyncResult pickling error.
 
     Fix contributed by Thomas Minor.
-
-- Can now specify a whitelist of accepted serializers using
-  the :setting:`CELERY_ACCEPT_CONTENT` setting.
-
-    This means that you can force the worker to discard messages
-    serialized with pickle and other untrusted serializers.
-    For example to only allow JSON serialized messages use::
-
-        CELERY_ACCEPT_CONTENT = ['json']
-
-    you can also use MIME types in the whitelist::
-
-        CELERY_ACCEPT_CONTENT = ['application/json']
 
 - Fixed handling of Unicode in logging output when using log colors
   (Issue #427).
@@ -104,7 +110,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - ``celery.conf.add_defaults`` can now be used with non-dict objects.
 
-- Fixed compatability problems in the Proxy class (Issue #1087).
+- Fixed compatibility problems in the Proxy class (Issue #1087).
 
     The class attributes ``__module__``, ``__name__`` and ``__doc__``
     are now meaningful string objects.
@@ -123,6 +129,11 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Worker: Message decoding error log message now includes traceback
   information.
+
+- Worker: The startup banner now includes system platform.
+
+- ``celery inspect|status|control`` now gives an error if used
+  with an SQL based broker transport.
 
 .. _version-3.0.17:
 
