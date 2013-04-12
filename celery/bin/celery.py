@@ -63,6 +63,11 @@ def determine_exit_status(ret):
     return EX_OK if ret else EX_FAILURE
 
 
+def ensure_broadcast_supported(app):
+    if app.connection().transport.driver_type == 'sql':
+        raise Error('SQL broker transports does not support broadcast')
+
+
 def main(argv=None):
     # Fix for setuptools generated scripts, so that it will
     # work with multiprocessing fork emulation.
@@ -304,6 +309,8 @@ class _RemoteControl(Command):
             raise Error("Did you mean '{0.name} --help'?".format(self))
         if method not in self.choices:
             raise Error('Unknown {0.name} method {1}'.format(self, method))
+
+        ensure_broadcast_supported(self.app)
 
         destination = kwargs.get('destination')
         timeout = kwargs.get('timeout') or self.choices[method][0]
@@ -674,7 +681,7 @@ class CeleryCommand(Command):
             return cls(app=self.app).run_from_argv(
                 self.prog_name, argv[1:], command=argv[0],
             )
-        except Error:
+        except (TypeError, Error):
             return self.execute('help', argv)
 
     def remove_options_at_beginning(self, argv, index=0):
