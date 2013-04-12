@@ -21,7 +21,10 @@ from celery.utils.log import worker_logger as logger
 from celery.utils.timer2 import Schedule
 
 from . import hub
-from .buckets import AsyncTaskBucket, TaskBucket, FastQueue
+
+
+class Object(object):  # XXX
+    pass
 
 
 class Hub(bootsteps.StartStopStep):
@@ -44,26 +47,11 @@ class Queues(bootsteps.Step):
     label = 'Queues (intra)'
     requires = (Hub, )
 
-    def __init__(self, w, **kwargs):
-        w.start_mediator = False
-
     def create(self, w):
-        BucketType = TaskBucket
-        w.start_mediator = True
-        if not w.pool_cls.rlimit_safe:
-            w.disable_rate_limits = True
-        process_task = w.process_task
+        w.process_task = w._process_task
         if w.use_eventloop:
-            BucketType = AsyncTaskBucket
             if w.pool_putlocks and w.pool_cls.uses_semaphore:
-                process_task = w.process_task_sem
-        if w.disable_rate_limits:
-            w.ready_queue = FastQueue()
-            w.ready_queue.put = process_task
-        else:
-            w.ready_queue = BucketType(
-                task_registry=w.app.tasks, callback=process_task, worker=w,
-            )
+                w.process_task = w._process_task_sem
 
 
 class Pool(bootsteps.StartStopStep):
@@ -251,7 +239,7 @@ class Consumer(bootsteps.StartStopStep):
     def create(self, w):
         prefetch_count = w.concurrency * w.prefetch_multiplier
         c = w.consumer = self.instantiate(
-            w.consumer_cls, w.ready_queue,
+            w.consumer_cls, w.process_task,
             hostname=w.hostname,
             send_events=w.send_events,
             init_callback=w.ready_callback,
@@ -262,5 +250,6 @@ class Consumer(bootsteps.StartStopStep):
             controller=w,
             hub=w.hub,
             worker_options=w.options,
+            disable_rate_limits=w.disable_rate_limits,
         )
         return c

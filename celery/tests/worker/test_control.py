@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import sys
 import socket
 
+from collections import defaultdict
 from datetime import datetime, timedelta
 
 from kombu import pidbox
@@ -17,7 +18,7 @@ from celery.worker import WorkController as _WC
 from celery.worker import consumer
 from celery.worker import control
 from celery.worker import state
-from celery.worker.buckets import FastQueue
+from celery.five import Queue as FastQueue
 from celery.worker.job import TaskRequest
 from celery.worker.state import revoked
 from celery.worker.control import Panel
@@ -41,7 +42,8 @@ class WorkController(object):
 class Consumer(consumer.Consumer):
 
     def __init__(self):
-        self.ready_queue = FastQueue()
+        self.buffer = FastQueue()
+        self.handle_task = self.buffer.put
         self.timer = Timer()
         self.app = current_app
         self.event_dispatcher = Mock()
@@ -50,6 +52,7 @@ class Consumer(consumer.Consumer):
 
         from celery.concurrency.base import BasePool
         self.pool = BasePool(10)
+        self.task_buckets = defaultdict(lambda: None)
 
 
 class test_ControlPanel(Case):
@@ -256,21 +259,6 @@ class test_ControlPanel(Case):
         finally:
             state.reserved_requests.clear()
 
-    def test_rate_limit_when_disabled(self):
-        app = current_app
-        app.conf.CELERY_DISABLE_RATE_LIMITS = True
-        try:
-            e = self.panel.handle(
-                'rate_limit',
-                arguments={
-                    'task_name': mytask.name,
-                    'rate_limit': '100/m'
-                },
-            )
-            self.assertIn('rate limits disabled', e.get('error'))
-        finally:
-            app.conf.CELERY_DISABLE_RATE_LIMITS = False
-
     def test_rate_limit_invalid_rate_limit_string(self):
         e = self.panel.handle('rate_limit', arguments=dict(
             task_name='tasks.add', rate_limit='x1240301#%!'))
@@ -279,15 +267,10 @@ class test_ControlPanel(Case):
     def test_rate_limit(self):
 
         class Consumer(object):
+            reset = False
 
-            class ReadyQueue(object):
-                fresh = False
-
-                def refresh(self):
-                    self.fresh = True
-
-            def __init__(self):
-                self.ready_queue = self.ReadyQueue()
+            def reset_rate_limits(self):
+                self.reset = True
 
         consumer = Consumer()
         panel = self.create_panel(app=current_app, consumer=consumer)
@@ -298,12 +281,12 @@ class test_ControlPanel(Case):
             panel.handle('rate_limit', arguments=dict(task_name=task.name,
                                                       rate_limit='100/m'))
             self.assertEqual(task.rate_limit, '100/m')
-            self.assertTrue(consumer.ready_queue.fresh)
-            consumer.ready_queue.fresh = False
+            self.assertTrue(consumer.reset)
+            consumer.reset = False
             panel.handle('rate_limit', arguments=dict(task_name=task.name,
                                                       rate_limit=0))
             self.assertEqual(task.rate_limit, 0)
-            self.assertTrue(consumer.ready_queue.fresh)
+            self.assertTrue(consumer.reset)
         finally:
             task.rate_limit = old_rate_limit
 

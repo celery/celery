@@ -25,6 +25,7 @@ from billiard.exceptions import RestartFreqExceeded
 from kombu.common import QoS, ignore_errors
 from kombu.syn import _detect_environment
 from kombu.utils.encoding import safe_repr
+from kombu.utils.limits import TokenBucket
 
 from celery import bootsteps
 from celery.app import app_or_default
@@ -34,8 +35,8 @@ from celery.task.trace import build_tracer
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
-from celery.utils.timer2 import default_timer, to_timestamp
-from celery.utils.timeutils import humanize_seconds, timezone
+from celery.utils.timer2 import default_timer
+from celery.utils.timeutils import humanize_seconds, rate
 
 from . import heartbeat, loops, pidbox
 from .state import task_reserved, maybe_shutdown, revoked
@@ -106,9 +107,6 @@ def dump_body(m, body):
 
 class Consumer(object):
 
-    #: Intra-queue for tasks ready to be handled
-    ready_queue = None
-
     #: Optional callback called the first time the worker
     #: is ready to receive tasks.
     init_callback = None
@@ -139,14 +137,13 @@ class Consumer(object):
         def shutdown(self, parent):
             self.restart(parent, 'Shutdown', 'shutdown')
 
-    def __init__(self, ready_queue,
+    def __init__(self, handle_task,
                  init_callback=noop, hostname=None,
                  pool=None, app=None,
                  timer=None, controller=None, hub=None, amqheartbeat=None,
-                 worker_options=None, **kwargs):
+                 worker_options=None, disable_rate_limits=False, **kwargs):
         self.app = app_or_default(app)
         self.controller = controller
-        self.ready_queue = ready_queue
         self.init_callback = init_callback
         self.hostname = hostname or socket.gethostname()
         self.pool = pool
@@ -158,8 +155,14 @@ class Consumer(object):
         self._restart_state = restart_state(maxR=5, maxT=1)
 
         self._does_info = logger.isEnabledFor(logging.INFO)
-        self._quick_put = self.ready_queue.put
+        self.handle_task = handle_task
         self.amqheartbeat_rate = self.app.conf.BROKER_HEARTBEAT_CHECKRATE
+        self.disable_rate_limits = disable_rate_limits
+
+        # this contains a tokenbucket for each task type by name, used for
+        # rate limits, or None if rate limits are disabled for that task.
+        self.task_buckets = defaultdict(lambda: None)
+        self.reset_rate_limits()
 
         if hub:
             self.amqheartbeat = amqheartbeat
@@ -185,6 +188,25 @@ class Consumer(object):
             app=self.app, on_close=self.on_close,
         )
         self.namespace.apply(self, **dict(worker_options or {}, **kwargs))
+
+    def bucket_for_task(self, type):
+        limit = rate(getattr(type, 'rate_limit', None))
+        return TokenBucket(limit, capacity=1) if limit else None
+
+    def reset_rate_limits(self):
+        self.task_buckets.update(
+            (n, self.bucket_for_task(t)) for n, t in items(self.app.tasks)
+        )
+
+    def _limit_task(self, request, bucket, tokens):
+        if not bucket.can_consume(tokens):
+            hold = bucket.expected_time(tokens)
+            self.timer.apply_after(
+                hold * 1000.0, self._limit_task, (request, bucket, tokens),
+            )
+        else:
+            task_reserved(request)
+            self.handle_task(request)
 
     def start(self):
         ns, loop = self.namespace, self.loop
@@ -246,7 +268,6 @@ class Consumer(object):
         # Clear internal queues to get rid of old messages.
         # They can't be acked anyway, as a delivery tag is specific
         # to the current channel.
-        self.ready_queue.clear()
         self.timer.clear()
 
     def connect(self):
@@ -304,54 +325,11 @@ class Consumer(object):
         self.app.amqp.queues.select_remove(queue)
         self.task_consumer.cancel_by_queue(queue)
 
-    def on_task(self, task, task_reserved=task_reserved,
-                to_system_tz=timezone.to_system):
-        """Handle received task.
-
-        If the task has an `eta` we enter it into the ETA schedule,
-        otherwise we move it the ready queue for immediate processing.
-
-        """
-        if task.revoked():
-            return
-
-        if self._does_info:
-            info('Got task from broker: %s', task)
-
-        if self.event_dispatcher.enabled:
-            self.event_dispatcher.send(
-                'task-received',
-                uuid=task.id, name=task.name,
-                args=safe_repr(task.args), kwargs=safe_repr(task.kwargs),
-                retries=task.request_dict.get('retries', 0),
-                eta=task.eta and task.eta.isoformat(),
-                expires=task.expires and task.expires.isoformat(),
-            )
-
-        if task.eta:
-            try:
-                if task.utc:
-                    eta = to_timestamp(to_system_tz(task.eta))
-                else:
-                    eta = to_timestamp(task.eta, timezone.local)
-            except OverflowError as exc:
-                error("Couldn't convert eta %s to timestamp: %r. Task: %r",
-                      task.eta, exc, task.info(safe=True), exc_info=True)
-                task.acknowledge()
-            else:
-                self.qos.increment_eventually()
-                self.timer.apply_at(
-                    eta, self.apply_eta_task, (task, ), priority=6,
-                )
-        else:
-            task_reserved(task)
-            self._quick_put(task)
-
     def apply_eta_task(self, task):
         """Method called by the timer to apply a task with an
         ETA/countdown."""
         task_reserved(task)
-        self._quick_put(task)
+        self.handle_task(task)
         self.qos.decrement_eventually()
 
     def _message_report(self, body, message):

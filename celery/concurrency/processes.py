@@ -66,7 +66,6 @@ class TaskPool(BasePool):
     """Multiprocessing Pool implementation."""
     Pool = Pool
 
-    requires_mediator = True
     uses_semaphore = True
 
     def on_start(self):

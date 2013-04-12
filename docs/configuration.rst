@@ -1602,14 +1602,6 @@ CELERYD_CONSUMER
 Name of the consumer class used by the worker.
 Default is :class:`celery.worker.consumer.Consumer`
 
-.. setting:: CELERYD_MEDIATOR
-
-CELERYD_MEDIATOR
-~~~~~~~~~~~~~~~~
-
-Name of the mediator class used by the worker.
-Default is :class:`celery.worker.controllers.Mediator`.
-
 .. setting:: CELERYD_TIMER
 
 CELERYD_TIMER

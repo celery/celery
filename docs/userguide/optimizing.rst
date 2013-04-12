@@ -151,20 +151,3 @@ You can enable this behavior by using the following configuration options:
 
     CELERY_ACKS_LATE = True
     CELERYD_PREFETCH_MULTIPLIER = 1
-
-.. optimizing-rate-limits:
-
-Rate Limits
------------
-
-The system responsible for enforcing rate limits introduces some overhead,
-so if you're not using rate limits it may be a good idea to
-disable them completely.  This will disable one thread, and it won't
-spend as many CPU cycles when the queue is inactive.
-
-Set the :setting:`CELERY_DISABLE_RATE_LIMITS` setting to disable
-the rate limit subsystem:
-
-.. code-block:: python
-
-    CELERY_DISABLE_RATE_LIMITS = True
