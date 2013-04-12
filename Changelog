@@ -19,7 +19,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     See the :ref:`kombu changelog <kombu:version-2.5.10>`.
 
-- Now depends on :mod:`billiard` 2.7.3.26.
+- Now depends on :mod:`billiard` 2.7.3.27.
 
 - Can now specify a whitelist of accepted serializers using
   the new :setting:`CELERY_ACCEPT_CONTENT` setting.
