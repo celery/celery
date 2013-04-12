@@ -25,7 +25,7 @@ from . import routes as _routes
 
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
-. %(name)s exchange:%(exchange)s(%(exchange_type)s) binding:%(routing_key)s
+.> %(name)s exchange:%(exchange)s(%(exchange_type)s) binding:%(routing_key)s
 """
 
 

@@ -35,6 +35,7 @@ HIDDEN_SETTINGS = re.compile(
     re.IGNORECASE,
 )
 
+
 class Settings(ConfigurationView):
     """Celery settings object."""
 

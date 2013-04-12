@@ -32,8 +32,8 @@ QUEUES = {
 }
 
 
-QUEUE_FORMAT1 = """. queue1:      exchange:exchange1(type1) binding:bind1"""
-QUEUE_FORMAT2 = """. queue2:      exchange:exchange2(type2) binding:bind2"""
+QUEUE_FORMAT1 = """.> queue1:      exchange:exchange1(type1) binding:bind1"""
+QUEUE_FORMAT2 = """.> queue2:      exchange:exchange2(type2) binding:bind2"""
 
 
 class test_Info(Case):

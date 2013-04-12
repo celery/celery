@@ -14,6 +14,7 @@ from __future__ import absolute_import
 
 import logging
 import os
+import platform as _platform
 import socket
 import sys
 import warnings
@@ -74,13 +75,15 @@ ARTLINES = [
 BANNER = """\
 celery@%(hostname)s v%(version)s
 
-[Configuration]
-. broker:      %(conninfo)s
-. app:         %(app)s
-. concurrency: %(concurrency)s
-. events:      %(events)s
+%(platform)s
 
-[Queues]
+[config]
+.> broker:      %(conninfo)s
+.> app:         %(app)s
+.> concurrency: %(concurrency)s
+.> events:      %(events)s
+
+[queues]
 %(queues)s
 """
 
@@ -248,6 +251,7 @@ class Worker(configurated):
             'version': VERSION_BANNER,
             'conninfo': self.app.connection().as_uri(),
             'concurrency': concurrency,
+            'platform': _platform.platform(),
             'events': events,
             'queues': app.amqp.queues.format(indent=0, indent_first=False),
         }).splitlines()
