@@ -386,8 +386,8 @@ This is an example configuration for those using `django-celery`:
     CELERYD_LOG_FILE="/var/log/celery/%N.log"
     CELERYD_PID_FILE="/var/run/celery/%N.pid"
 
-    To add an environment variable such as DJANGO_SETTINGS_MODULE use the 
-    Environment in celery.service.
+To add an environment variable such as DJANGO_SETTINGS_MODULE use the 
+Environment in celery.service.
 
 .. _generic-initd-troubleshooting:
 
