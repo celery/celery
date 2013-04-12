@@ -52,6 +52,11 @@ def _get_extension_classes():
     return extensions
 
 
+def ensure_broadcast_supported(app):
+    if app.connection().transport.driver_type == 'sql':
+        raise Error('SQL broker transports does not support broadcast')
+
+
 class Error(Exception):
 
     def __init__(self, reason, status=EX_FAILURE):
@@ -512,6 +517,8 @@ class _RemoteControl(Command):
         if method not in self.choices:
             raise Error('Unknown %s method %s' % (self.name, method))
 
+        ensure_broadcast_supported(self.app)
+
         destination = kwargs.get('destination')
         timeout = kwargs.get('timeout') or self.choices[method][0]
         if destination and isinstance(destination, basestring):
@@ -859,7 +866,7 @@ class CeleryCommand(BaseCommand):
         cls = self.commands.get(command) or self.commands['help']
         try:
             return cls(app=self.app).run_from_argv(self.prog_name, argv)
-        except Error:
+        except (TypeError, Error):
             return self.execute('help', argv)
 
     def remove_options_at_beginning(self, argv, index=0):
