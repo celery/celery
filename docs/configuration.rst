@@ -213,6 +213,7 @@ Can be one of the following:
 .. _`MongoDB`: http://mongodb.org
 .. _`Redis`: http://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
+.. _`IronCache`: http://www.iron.io/cache
 
 .. setting:: CELERY_RESULT_SERIALIZER
 
@@ -775,6 +776,28 @@ persistent messages.
 Broker Settings
 ---------------
 
+.. setting:: CELERY_ACCEPT_CONTENT
+
+CELERY_ACCEPT_CONTENT
+~~~~~~~~~~~~~~~~~~~~~
+
+A whitelist of content-types/serializers to allow.
+
+If a message is received that is not in this list then
+the message will be discarded with an error.
+
+By default any content type is enabled (including pickle and yaml)
+so make sure untrusted parties do not have access to your broker.
+See :ref:`guide-security` for more.
+
+Example::
+
+    # using serializer name
+    CELERY_ACCEPT_CONTENT = ['json']
+
+    # or the actual content-type (MIME)
+    CELERY_ACCEPT_CONTENT = ['application/json']
+
 .. setting:: BROKER_TRANSPORT
 
 BROKER_TRANSPORT
@@ -801,7 +824,8 @@ default is ``amqp``, which uses ``librabbitmq`` by default or falls back to
 ``couchdb``.
 It can also be a fully qualified path to your own transport implementation.
 
-See the Kombu documentation for more information about broker URLs.
+See :ref:`kombu:connection-urls` in the Kombu documentation for more
+information.
 
 .. setting:: BROKER_HEARTBEAT
 

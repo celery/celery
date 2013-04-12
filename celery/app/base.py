@@ -177,6 +177,7 @@ class Celery(object):
             return proxies_to_curapp(*args, **opts)
 
         def inner_create_task_cls(shared=True, filter=None, **opts):
+            _filt = filter  # stupid 2to3
 
             def _create_task_cls(fun):
                 if shared:
@@ -192,14 +193,17 @@ class Celery(object):
                 # return a proxy object that is only evaluated when first used
                 promise = PromiseProxy(self._task_from_fun, (fun, ), opts)
                 self._pending.append(promise)
-                if filter:
-                    return filter(promise)
+                if _filt:
+                    return _filt(promise)
                 return promise
 
             return _create_task_cls
 
         if len(args) == 1 and isinstance(args[0], Callable):
             return inner_create_task_cls(**opts)(*args)
+        if args:
+            raise TypeError(
+                'task() takes no arguments (%s given)' % (len(args, )))
         return inner_create_task_cls(**opts)
 
     def _task_from_fun(self, fun, **options):

@@ -20,6 +20,7 @@ from celery.local import Proxy
 from celery.five import THREAD_TIMEOUT_MAX, items
 
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
+PY3 = sys.version_info[0] == 3
 
 
 class bgThread(threading.Thread):

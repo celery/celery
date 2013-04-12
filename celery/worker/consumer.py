@@ -239,7 +239,7 @@ class Consumer(object):
         """
         crit("Can't decode message body: %r (type:%r encoding:%r raw:%r')",
              exc, message.content_type, message.content_encoding,
-             dump_body(message, message.body))
+             dump_body(message, message.body), exc_info=1)
         message.ack()
 
     def on_close(self):

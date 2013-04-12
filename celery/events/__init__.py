@@ -278,7 +278,8 @@ class EventReceiver(ConsumerMixin):
 
     def get_consumers(self, Consumer, channel):
         return [Consumer(queues=[self.queue],
-                         callbacks=[self._receive], no_ack=True)]
+                         callbacks=[self._receive], no_ack=True,
+                         accept=['application/json'])]
 
     def on_consume_ready(self, connection, channel, consumers,
                          wakeup=True, **kwargs):

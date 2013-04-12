@@ -18,6 +18,8 @@ from contextlib import contextmanager
 from billiard import current_process, util as mputil
 from kombu.log import get_logger as _get_logger, LOG_LEVELS
 
+from celery.five import string_t
+
 from .encoding import safe_str, str_t
 from .term import colored
 
@@ -95,11 +97,19 @@ class ColorFormatter(logging.Formatter):
         color = self.colors.get(levelname)
 
         if self.use_color and color:
+            msg = record.msg
             try:
-                record.msg = safe_str(str_t(color(record.msg)))
+                # safe_str will repr the color object
+                # and color will break on non-string objects
+                # so need to reorder calls based on type.
+                # Issue #427
+                if isinstance(msg, string_t):
+                    record.msg = str_t(color(safe_str(msg)))
+                else:
+                    record.msg = safe_str(color(msg))
             except Exception as exc:
                 record.msg = '<Unrepresentable {0!r}: {1!r}>'.format(
-                    type(record.msg), exc)
+                    type(msg), exc)
                 record.exc_info = True
 
         if not PY3 and 'processName' not in record.__dict__:

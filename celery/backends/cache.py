@@ -81,6 +81,7 @@ backends = {'memcache': lambda: get_best_memcache,
 
 class CacheBackend(KeyValueStoreBackend):
     servers = None
+    supports_autoexpire = True
     supports_native_join = True
     implements_incr = True
 

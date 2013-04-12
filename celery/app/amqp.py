@@ -26,7 +26,7 @@ from . import routes as _routes
 
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
-. {0.name:<16} exchange={0.exchange.name}({0.exchange.type}) \
+.> {0.name:<16} exchange={0.exchange.name}({0.exchange.type}) \
 key={0.routing_key}
 """
 
@@ -301,11 +301,15 @@ class TaskPublisher(TaskProducer):
 class TaskConsumer(Consumer):
     app = None
 
-    def __init__(self, channel, queues=None, app=None, **kw):
+    def __init__(self, channel, queues=None, app=None, accept=None, **kw):
         self.app = app or self.app
+        if accept is None:
+            accept = self.app.conf.CELERY_ACCEPT_CONTENT
         super(TaskConsumer, self).__init__(
             channel,
-            queues or list(self.app.amqp.queues.consume_from.values()), **kw
+            queues or list(self.app.amqp.queues.consume_from.values()),
+            accept=accept,
+            **kw
         )
 
 

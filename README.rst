@@ -8,7 +8,7 @@
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
-:Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis,
+:Keywords: task queue, job queue, asynchronous, async, rabbitmq, amqp, redis,
   python, webhooks, queue, distributed
 
 --
@@ -127,7 +127,7 @@ It supports...
         - RabbitMQ_, Redis_,
         - MongoDB_, Beanstalk_,
         - CouchDB_, SQLAlchemy_,
-        - Django ORM, Amazon SQS,
+        - Django ORM, Amazon SQS, `IronMQ`_
         - and more...
 
     - **Concurrency**
@@ -139,7 +139,7 @@ It supports...
         - AMQP, Redis
         - memcached, MongoDB
         - SQLAlchemy, Django ORM
-        - Apache Cassandra
+        - Apache Cassandra, IronCache
 
     - **Serialization**
 
@@ -156,6 +156,7 @@ It supports...
 .. _Beanstalk: http://kr.github.com/beanstalkd
 .. _CouchDB: http://couchdb.apache.org
 .. _SQLAlchemy: http://sqlalchemy.org
+.. _`IronMQ`: http://iron.io
 
 Framework Integration
 =====================

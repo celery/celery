@@ -164,7 +164,8 @@ class Scheduler(object):
 
     def install_default_entries(self, data):
         entries = {}
-        if self.app.conf.CELERY_TASK_RESULT_EXPIRES:
+        if self.app.conf.CELERY_TASK_RESULT_EXPIRES and \
+                not self.app.backend.supports_autoexpire:
             if 'celery.backend_cleanup' not in data:
                 entries['celery.backend_cleanup'] = {
                     'task': 'celery.backend_cleanup',

@@ -100,7 +100,23 @@ unauthenticated.
 
 .. [*] http://nadiana.com/python-pickle-insecure
 
-Celery comes with a special `auth` serializer that validates
+You can disable untrusted content by specifying
+a whitelist of accepted content-types in the :setting:`CELERY_ACCEPT_CONTENT`
+setting:
+
+.. code-block:: python
+
+    CELERY_ACCEPT_CONTENT = ['json']
+
+
+This accepts a list of serializer names and content-types, so you could
+also specify the content type for json:
+
+.. code-block:: python
+
+    CELERY_ACCEPT_CONTENT = ['application/json']
+
+Celery also comes with a special `auth` serializer that validates
 communication between Celery clients and workers, making sure
 that messages originates from trusted sources.
 Using `Public-key cryptography` the `auth` serializer can verify the

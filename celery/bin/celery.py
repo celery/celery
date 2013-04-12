@@ -312,6 +312,8 @@ class _RemoteControl(Command):
 
         ensure_broadcast_supported(self.app)
 
+        ensure_broadcast_supported(self.app)
+
         destination = kwargs.get('destination')
         timeout = kwargs.get('timeout') or self.choices[method][0]
         if destination and isinstance(destination, string_t):

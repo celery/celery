@@ -14,6 +14,7 @@ from __future__ import absolute_import, print_function
 
 import logging
 import os
+import platform as _platform
 import sys
 import warnings
 
@@ -66,6 +67,7 @@ ARTLINES = [
 BANNER = """\
 {hostname} v{version}
 
+<<<<<<< HEAD
 [Configuration]
 . broker:      {conninfo}
 . app:         {app}
@@ -74,6 +76,18 @@ BANNER = """\
 
 [Queues]
 {queues}
+=======
+%(platform)s
+
+[config]
+.> broker:      %(conninfo)s
+.> app:         %(app)s
+.> concurrency: %(concurrency)s
+.> events:      %(events)s
+
+[queues]
+%(queues)s
+>>>>>>> 3.0
 """
 
 EXTRA_INFO_FMT = """
@@ -193,6 +207,7 @@ class Worker(WorkController):
             version=VERSION_BANNER,
             conninfo=self.app.connection().as_uri(),
             concurrency=concurrency,
+            platform=_platform.platform(),
             events=events,
             queues=app.amqp.queues.format(indent=0, indent_first=False),
         ).splitlines()

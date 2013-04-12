@@ -13,13 +13,72 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.18
 ======
-:release-date: 2013-04-09 04:00:00 P.M BST
+:release-date: 2013-04-12 05:00:00 P.M BST
+
+- Now depends on :mod:`kombu` 2.5.10.
+
+    See the :ref:`kombu changelog <kombu:version-2.5.10>`.
 
 - Now depends on :mod:`billiard` 2.7.3.26.
 
-- Now depends on :mod:`kombu` 2.5.9.
+- Can now specify a whitelist of accepted serializers using
+  the new :setting:`CELERY_ACCEPT_CONTENT` setting.
+
+    This means that you can force the worker to discard messages
+    serialized with pickle and other untrusted serializers.
+    For example to only allow JSON serialized messages use::
+
+        CELERY_ACCEPT_CONTENT = ['json']
+
+    you can also specify MIME types in the whitelist::
+
+        CELERY_ACCEPT_CONTENT = ['application/json']
+
+- Fixed deadlock in multiprocessing's pool caused by the
+  semaphore not being released when terminated by signal.
+
+- Processes Pool: It's now possible to debug pool processes using GDB.
+
+- ``celery report`` now censors possibly secret settings, like passwords
+  and secret tokens.
+
+    You should still check the output before pasting anything
+    on the internet.
+
+- Connection URLs now ignore multiple '+' tokens.
 
 - Worker/statedb: Now uses pickle protocol 2 (Py2.5+)
+
+- Fixed Python 3 compatibility issues.
+
+- Worker:  A warning is now given if a worker is started with the
+  same node name as an existing worker.
+
+- Worker: Fixed a deadlock that could occur while revoking tasks (Issue #1297).
+
+- Worker: The :sig:`HUP` handler now closes all open file descriptors
+  before restarting to ensure file descriptors does not leak (Issue #1270).
+
+- Worker: Optimized storing/loading the revoked tasks list (Issue #1289).
+
+    After this change the ``--statedb`` file will take up more disk space,
+    but loading from and storing the revoked tasks will be considerably
+    faster (what before took 5 minutes will now take less than a second).
+
+- Celery will now suggest alternatives if there's a typo in the
+  broker transport name (e.g. ``ampq`` -> ``amqp``).
+
+- Worker: The auto-reloader would cause a crash if a monitored file
+  was unlinked.
+
+    Fix contributed by Agris Ameriks.
+
+- Fixed AsyncResult pickling error.
+
+    Fix contributed by Thomas Minor.
+
+- Fixed handling of Unicode in logging output when using log colors
+  (Issue #427).
 
 - :class:`~celery.app.utils.ConfigurationView` is now a ``MutableMapping``.
 
@@ -33,9 +92,48 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Fix contributed by Theo Spears.
 
+- The `inspect reserved` remote control command included active (started) tasks
+  with the reserved tasks (Issue #1030).
+
+- The :signal:`task_failure` signal received a modified traceback object
+  meant for pickling purposes, this has been fixed so that it now
+  receives the real traceback instead.
+
+- The ``@task`` decorator silently ignored positional arguments,
+  it now raises the expected :exc:`TypeError` instead (Issue #1125).
+
+- The worker will now properly handle messages with invalid
+  eta/expires fields (Issue #1232).
+
+- The ``pool_restart`` remote control command now reports
+  an error if the :setting:`CELERYD_POOL_RESTARTS` setting is not set.
+
+- ``celery.conf.add_defaults`` can now be used with non-dict objects.
+
+- Fixed compatibility problems in the Proxy class (Issue #1087).
+
+    The class attributes ``__module__``, ``__name__`` and ``__doc__``
+    are now meaningful string objects.
+
+    Thanks to Marius Gedminas.
+
+- MongoDB Backend: The :setting:`MONGODB_BACKEND_SETTINGS` setting
+  now accepts a ``option`` key that lets you forward arbitrary kwargs
+  to the underlying ``pymongo.Connection` object (Issue #1015).
+
+- Beat: The daily backend cleanup task is no longer enabled
+  for result backends that support automatic result expiration (Issue #1031).
+
 - Canvas list operations now takes application instance from the first
   task in the list, instead of depending on the ``current_app`` (Issue #1249).
 
+- Worker: Message decoding error log message now includes traceback
+  information.
+
+- Worker: The startup banner now includes system platform.
+
+- ``celery inspect|status|control`` now gives an error if used
+  with an SQL based broker transport.
 
 .. _version-3.0.17:
 

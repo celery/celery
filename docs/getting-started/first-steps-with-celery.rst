@@ -97,16 +97,11 @@ robust system in production.
 Other brokers
 -------------
 
-In addition to the above, there are other transport implementations
-to choose from, including
+In addition to the above, there are other experimental transport implementations
+to choose from, including :ref:`Amazon SQS <broker-sqs>`, :ref:`broker-mongodb`
+and :ref:`IronMQ <broker-ironmq>`.
 
-* :ref:`Amazon SQS <broker-sqs>`
-* :ref:`broker-mongodb`
-* :ref:`IronMQ <broker-ironmq>`
-
-See also `Transport Comparison`_.
-
-.. _`Transport Comparison`: http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison
+See :ref:`broker-overview` for a full list.
 
 .. _celerytut-installation:
 

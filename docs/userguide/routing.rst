@@ -7,11 +7,8 @@
 .. note::
 
     Alternate routing concepts like topic and fanout may not be
-    available for all transports, please consult the `transport comparison table`_.
-
-.. _`transport comparison table`:
-    http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison
-
+    available for all transports, please consult the
+    :ref:`transport comparison table <kombu:transport-comparison>`.
 
 .. contents::
     :local:
