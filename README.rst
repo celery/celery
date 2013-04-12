@@ -4,12 +4,12 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-:Version: 3.0.17 (Chiastic Slide)
+:Version: 3.0.18 (Chiastic Slide)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
 :Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis,
-  python, webhooks, queue, distributed, ironmq, ironcache
+  python, webhooks, queue, distributed
 
 --
 
@@ -128,7 +128,6 @@ It supports...
         - MongoDB_, Beanstalk_,
         - CouchDB_, SQLAlchemy_,
         - Django ORM, Amazon SQS,
-        - IronMQ_
         - and more...
 
     - **Concurrency**
@@ -141,7 +140,6 @@ It supports...
         - memcached, MongoDB
         - SQLAlchemy, Django ORM
         - Apache Cassandra
-        - IronCache_
 
     - **Serialization**
 
@@ -158,8 +156,6 @@ It supports...
 .. _Beanstalk: http://kr.github.com/beanstalkd
 .. _CouchDB: http://couchdb.apache.org
 .. _SQLAlchemy: http://sqlalchemy.org
-.. _IronMQ: http://iron.io/mq
-.. _IronCache: http://iron.io/cache
 
 Framework Integration
 =====================
