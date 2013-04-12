@@ -78,6 +78,7 @@ class WorkController(configurated):
     worker_lost_wait = from_config()
 
     pidlock = None
+    namespace = None
 
     class Namespace(bootsteps.Namespace):
         """Worker bootstep namespace."""
@@ -250,8 +251,11 @@ class WorkController(configurated):
             self._shutdown(warm=False)
 
     def _shutdown(self, warm=True):
-        self.namespace.stop(self, terminate=not warm)
-        self.namespace.join()
+        # if namespace does not exist it means that we had an
+        # error before the bootsteps could be initialized.
+        if self.namespace is not None:
+            self.namespace.stop(self, terminate=not warm)
+            self.namespace.join()
 
     def reload(self, modules=None, reload=False, reloader=None):
         modules = self.app.loader.task_modules if modules is None else modules
