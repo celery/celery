@@ -46,6 +46,7 @@ class MongoBackend(BaseDictBackend):
     mongodb_database = 'celery'
     mongodb_taskmeta_collection = 'celery_taskmeta'
     mongodb_max_pool_size = 10
+    mongodb_options = None
 
     supports_autoexpire = False
 
@@ -104,7 +105,7 @@ class MongoBackend(BaseDictBackend):
                 args.append(self.mongodb_port)
 
             self._connection = Connection(
-                *args, **dict(kwargs, self.mongodb_options)
+                *args, **dict(kwargs, self.mongodb_options or {})
             )
 
         return self._connection
