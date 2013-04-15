@@ -67,31 +67,20 @@ ARTLINES = [
 BANNER = """\
 {hostname} v{version}
 
-<<<<<<< HEAD
-[Configuration]
-. broker:      {conninfo}
-. app:         {app}
-. concurrency: {concurrency}
-. events:      {events}
-
-[Queues]
-{queues}
-=======
-%(platform)s
+{platform}
 
 [config]
-.> broker:      %(conninfo)s
-.> app:         %(app)s
-.> concurrency: %(concurrency)s
-.> events:      %(events)s
+.> broker:      {conninfo}
+.> app:         {app}
+.> concurrency: {concurrency}
+.> events:      {events}
 
 [queues]
-%(queues)s
->>>>>>> 3.0
+{queues}
 """
 
 EXTRA_INFO_FMT = """
-[Tasks]
+[tasks]
 {tasks}
 """
 

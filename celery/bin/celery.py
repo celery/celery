@@ -683,7 +683,8 @@ class CeleryCommand(Command):
             return cls(app=self.app).run_from_argv(
                 self.prog_name, argv[1:], command=argv[0],
             )
-        except (TypeError, Error):
+        except (TypeError, Error), exc:
+            raise
             return self.execute('help', argv)
 
     def remove_options_at_beginning(self, argv, index=0):
