@@ -13,7 +13,7 @@ from operator import itemgetter
 from celery.datastructures import DependencyGraph, GraphFormatter
 from celery.five import items
 
-from .base import Command, Error
+from .base import Command
 
 
 class graph(Command):
@@ -26,7 +26,7 @@ class graph(Command):
         map = {'bootsteps': self.bootsteps, 'workers': self.workers}
         not what and self.exit_help('graph')
         if what not in map:
-            raise Error('no graph {0} in {1}'.format(what, '|'.join(map)))
+            raise self.Error('no graph {0} in {1}'.format(what, '|'.join(map)))
         return map[what](*args, **kwargs)
 
     def bootsteps(self, *args, **kwargs):

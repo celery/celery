@@ -73,6 +73,7 @@ import warnings
 
 from collections import defaultdict
 from heapq import heappush
+from inspect import getargspec
 from optparse import OptionParser, IndentedHelpFormatter, make_option as Option
 from pprint import pformat
 from types import ModuleType
@@ -104,14 +105,20 @@ find_sformat = re.compile(r'%(\w)')
 
 
 class Error(Exception):
+    status = EX_FAILURE
 
-    def __init__(self, reason, status=EX_FAILURE):
+    def __init__(self, reason, status=None):
         self.reason = reason
-        self.status = status
+        self.status = status if status is not None else self.status
         super(Error, self).__init__(reason, status)
 
     def __str__(self):
         return self.reason
+    __unicode__ = __str__
+
+
+class UsageError(Error):
+    status = EX_USAGE
 
 
 class Extensions(object):
@@ -162,6 +169,8 @@ class Command(object):
     :keyword get_app: Callable returning the current app if no app provided.
 
     """
+    Error = Error
+    UsageError = UsageError
     Parser = OptionParser
 
     #: Arg list used in help.
@@ -218,7 +227,8 @@ class Command(object):
     prog_name = 'celery'
 
     def __init__(self, app=None, get_app=None, no_color=False,
-                 stdout=None, stderr=None, quiet=False):
+                 stdout=None, stderr=None, quiet=False, on_error=None,
+                 on_usage_error=None):
         self.app = app
         self.get_app = get_app or self._get_default_app
         self.stdout = stdout or sys.stdout
@@ -228,19 +238,46 @@ class Command(object):
         self.quiet = quiet
         if not self.description:
             self.description = self.__doc__
-
-    def __call__(self, *args, **kwargs):
-        try:
-            ret = self.run(*args, **kwargs)
-        except Error as exc:
-            self.error(self.colored.red('Error: {0}'.format(exc)))
-            return exc.status
-
-        return ret if ret is not None else EX_OK
+        if on_error:
+            self.on_error = on_error
+        if on_usage_error:
+            self.on_usage_error = on_usage_error
 
     def run(self, *args, **options):
         """This is the body of the command called by :meth:`handle_argv`."""
         raise NotImplementedError('subclass responsibility')
+
+    def on_error(self, exc):
+        self.error(self.colored.red('Error: {0}'.format(exc)))
+
+    def on_usage_error(self, exc):
+        self.handle_error(exc)
+
+    def on_concurrency_setup(self):
+        pass
+
+    def __call__(self, *args, **kwargs):
+        self.verify_args(args)
+        try:
+            ret = self.run(*args, **kwargs)
+            return ret if ret is not None else EX_OK
+        except self.UsageError as exc:
+            self.on_usage_error(exc)
+            return exc.status
+        except self.Error as exc:
+            self.on_error(exc)
+            return exc.status
+
+    def verify_args(self, given, _index=0):
+        S = getargspec(self.run)
+        _index = 1 if S.args and S.args[0] == 'self' else _index
+        required = S.args[_index:-len(S.defaults) if S.defaults else None]
+        missing = required[len(given):]
+        if missing:
+            raise self.UsageError('Missing required {0}: {1}'.format(
+                text.pluralize(len(missing), 'argument'),
+                ', '.join(missing)
+            ))
 
     def execute_from_commandline(self, argv=None):
         """Execute application from command-line.
@@ -271,9 +308,6 @@ class Command(object):
         if pool_option:
             maybe_patch_concurrency(argv, *pool_option)
             short_opts, long_opts = pool_option
-
-    def on_concurrency_setup(self):
-        pass
 
     def usage(self, command):
         return '%prog {0} [options] {self.args}'.format(command, self=self)
