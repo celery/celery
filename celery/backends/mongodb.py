@@ -108,7 +108,7 @@ class MongoBackend(BaseBackend):
                 args.append(self.mongodb_port)
 
             self._connection = Connection(
-                *args, **dict(kwargs, self.mongodb_options)
+                *args, **dict(kwargs, **self.mongodb_options or {})
             )
 
         return self._connection
