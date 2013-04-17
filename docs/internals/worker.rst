@@ -14,8 +14,6 @@ The worker consists of 4 main components: the consumer, the scheduler,
 the mediator and the task pool. All these components runs in parallel working
 with two data structures: the ready queue and the ETA schedule.
 
-.. image:: ../images/Celery1.0-inside-worker.jpg
-
 Data structures
 ===============
 

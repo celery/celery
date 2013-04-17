@@ -7,9 +7,9 @@ include TODO
 include setup.cfg
 include setup.py
 recursive-include celery *.py
-recursive-include funtests *.py
 recursive-include docs *
 recursive-include extra *
 recursive-include examples *
 recursive-include requirements *.txt
 prune *.pyc
+prune *.sw*
