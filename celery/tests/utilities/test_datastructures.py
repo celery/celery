@@ -193,7 +193,7 @@ class test_LRUCache(Case):
     def test_update_expires(self):
         limit = 100
         x = LRUCache(limit=limit)
-        slots = list(xrange(limit * 2))
+        slots = list(range(limit * 2))
         for i in slots:
             x.update({i: i})
 

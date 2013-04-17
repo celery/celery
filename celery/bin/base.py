@@ -80,7 +80,7 @@ from types import ModuleType
 
 import celery
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
-from celery.five import items, string, string_t
+from celery.five import items, string, string_t, values
 from celery.platforms import (
     EX_FAILURE, EX_OK, EX_USAGE,
     maybe_patch_concurrency,
@@ -442,7 +442,7 @@ class Command(object):
                     return self.find_app('{0}.celery:'.format(
                                          app.replace(':', '')))
                 from celery.app.base import Celery
-                for suspect in vars(sym).itervalues():
+                for suspect in values(vars(sym)):
                     if isinstance(suspect, Celery):
                         return suspect
                 raise

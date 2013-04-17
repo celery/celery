@@ -135,9 +135,9 @@ class Request(object):
         if eta is not None:
             try:
                 self.eta = maybe_iso8601(eta)
-            except (AttributeError, ValueError), exc:
+            except (AttributeError, ValueError) as exc:
                 raise InvalidTaskError(
-                    'invalid eta value %r: %s' % (eta, exc, ))
+                    'invalid eta value {0!r}: {1}'.format(eta, exc))
             if utc:
                 self.eta = maybe_make_aware(self.eta, self.tzlocal)
         else:
@@ -145,9 +145,9 @@ class Request(object):
         if expires is not None:
             try:
                 self.expires = maybe_iso8601(expires)
-            except (AttributeError, ValueError), exc:
+            except (AttributeError, ValueError) as exc:
                 raise InvalidTaskError(
-                    'invalid expires value %r: %s' % (expires, exc, ))
+                    'invalid expires value {0!r}: {1}'.format(expires, exc))
             if utc:
                 self.expires = maybe_make_aware(self.expires, self.tzlocal)
         else:
