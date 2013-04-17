@@ -47,6 +47,7 @@ class MongoBackend(BaseBackend):
     mongodb_database = 'celery'
     mongodb_taskmeta_collection = 'celery_taskmeta'
     mongodb_max_pool_size = 10
+    mongodb_options = None
 
     supports_autoexpire = False
 

@@ -24,7 +24,7 @@ from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.common import QoS, ignore_errors
 from kombu.syn import _detect_environment
-from kombu.utils.encoding import safe_repr
+from kombu.utils.encoding import safe_repr, bytes_t
 from kombu.utils.limits import TokenBucket
 
 from celery import bootsteps
@@ -101,6 +101,8 @@ body: {0} {{content_type:{1} content_encoding:{2} delivery_info:{3}}}\
 
 
 def dump_body(m, body):
+    if isinstance(body, buffer):
+        body = bytes_t(buffer)
     return '{0} ({1}b)'.format(truncate(safe_repr(body), 1024),
                                len(m.body))
 
