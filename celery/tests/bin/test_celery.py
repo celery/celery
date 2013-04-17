@@ -6,9 +6,9 @@ from mock import Mock, patch
 
 from celery import task
 from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
+from celery.bin.base import Error
 from celery.bin.celery import (
     Command,
-    Error,
     list_,
     call,
     purge,
@@ -54,11 +54,16 @@ class test_Command(AppCase):
         self.cmd.out('foo', f)
 
     def test_call(self):
-        self.cmd.run = Mock()
-        self.cmd.run.return_value = None
+
+        def ok_run():
+            pass
+
+        self.cmd.run = ok_run
         self.assertEqual(self.cmd(), EX_OK)
 
-        self.cmd.run.side_effect = Error('error', EX_FAILURE)
+        def error_run():
+            raise Error('error', EX_FAILURE)
+        self.cmd.run = error_run
         self.assertEqual(self.cmd(), EX_FAILURE)
 
     def test_run_from_argv(self):
@@ -184,7 +189,7 @@ class test_migrate(AppCase):
     def test_run(self, migrate_tasks):
         out = WhateverIO()
         m = migrate(app=self.app, stdout=out, stderr=WhateverIO())
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(TypeError):
             m.run()
         self.assertFalse(migrate_tasks.called)
 
@@ -276,7 +281,7 @@ class test_CeleryCommand(AppCase):
             x.prog_name, [], command='dummy',
         )
         help.run_from_argv.assert_called_with(
-            x.prog_name, [], command='dummy',
+            x.prog_name, [], command='help',
         )
 
 
