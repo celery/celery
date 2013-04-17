@@ -81,7 +81,7 @@ from time import sleep
 from Queue import Empty
 
 from kombu.syn import _detect_environment
-from kombu.utils.encoding import safe_repr, safe_str
+from kombu.utils.encoding import safe_repr, safe_str, bytes_t
 from kombu.utils.eventio import READ, WRITE, ERR
 
 from celery.app import app_or_default
@@ -171,6 +171,8 @@ def debug(msg, *args, **kwargs):
 
 
 def dump_body(m, body):
+    if isinstance(body, buffer):
+        body = bytes_t(body)
     return "%s (%sb)" % (text.truncate(safe_repr(body), 1024), len(m.body))
 
 
