@@ -9,6 +9,46 @@
 
 If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
+.. _version-3.0.19:
+
+3.0.19
+======
+:release-date: 2013-04-17 04:30:00 P.M BST
+
+- Now depends on :mod:`billiard` 2.7.3.28
+
+- A Python 3 related fix managed to disable the deadlock fix
+  announced in 3.0.18.
+
+    Tests have been added to make sure this does not happen again.
+
+- Task retry policy:  Default max_retries is now 3.
+
+    This ensures clients will not be hanging while the broker is down.
+
+    .. note::
+
+        You can set a longer retry for the worker by
+        using the :signal:`celeryd_after_setup` signal:
+
+        .. code-block:: python
+
+                from celery.signals import celeryd_after_setup
+
+                @celeryd_after_setup.connect
+                def configure_worker(instance, conf, **kwargs):
+                    conf.CELERY_TASK_PUBLISH_RETRY_POLICY = {
+                        'max_retries': 100,
+                        'interval_start': 0,
+                        'interval_max': 1,
+                        'interval_step': 0.2,
+                    }
+
+- Worker: Will now properly display message body in error messages
+  even if the body is a buffer instance.
+
+- 3.0.18 broke the MongoDB result backend (Issue #1303).
+
 .. _version-3.0.18:
 
 3.0.18
