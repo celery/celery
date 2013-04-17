@@ -4,11 +4,11 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-:Version: 3.0.18 (Chiastic Slide)
+:Version: 3.0.19 (Chiastic Slide)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
-:Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis,
+:Keywords: task queue, job queue, asynchronous, async, rabbitmq, amqp, redis,
   python, webhooks, queue, distributed
 
 --
