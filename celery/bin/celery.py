@@ -495,8 +495,8 @@ class migrate(Command):
         from kombu import Connection
         from celery.contrib.migrate import migrate_tasks
 
-        migrate_tasks(Connection(args[0]),
-                      Connection(args[1]),
+        migrate_tasks(Connection(source),
+                      Connection(destination),
                       callback=self.on_migrate_task,
                       **kwargs)
 
