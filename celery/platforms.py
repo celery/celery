@@ -253,17 +253,21 @@ def _create_pidlock(pidfile):
 
 
 def fileno(f):
-    """Get object fileno, or :const:`None` if not defined."""
-    if isinstance(f, int):
+    if isinstance(f, (int, long)):
         return f
+    return f.fileno()
+
+
+def maybe_fileno(f):
+    """Get object fileno, or :const:`None` if not defined."""
     try:
-        return f.fileno()
+        return fileno(f)
     except AttributeError:
         pass
 
 
 def close_open_fds(keep=None):
-    keep = [fileno(f) for f in keep if fileno(f)] if keep else []
+    keep = [maybe_fileno(f) for f in keep if maybe_fileno(f)] if keep else []
     for fd in reversed(range(get_fdmax(default=2048))):
         if fd not in keep:
             with ignore_errno(errno.EBADF):
@@ -299,7 +303,7 @@ class DaemonContext(object):
 
             close_open_fds(self.stdfds)
             for fd in self.stdfds:
-                self.redirect_to_null(fileno(fd))
+                self.redirect_to_null(maybe_fileno(fd))
 
             self._is_open = True
     __enter__ = open
