@@ -866,7 +866,7 @@ class CeleryCommand(BaseCommand):
         cls = self.commands.get(command) or self.commands['help']
         try:
             return cls(app=self.app).run_from_argv(self.prog_name, argv)
-        except (TypeError, Error):
+        except Error:
             return self.execute('help', argv)
 
     def remove_options_at_beginning(self, argv, index=0):
