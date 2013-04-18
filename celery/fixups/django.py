@@ -7,8 +7,13 @@ import warnings
 from datetime import datetime
 
 from celery import signals
+from celery.exceptions import FixupWarning
 
 SETTINGS_MODULE = os.environ.get('DJANGO_SETTINGS_MODULE')
+ERR_NOT_INSTALLED = """\
+Environment variable DJANGO_SETTINGS_MODULE is defined
+but Django is not installed.  Will not apply Django fixups!
+"""
 
 
 def _maybe_close_fd(fh):
@@ -21,6 +26,10 @@ def _maybe_close_fd(fh):
 
 def fixup(app):
     if SETTINGS_MODULE:
+        try:
+            import django
+        except ImportError:
+            warnings.warn(FixupWarning(ERR_NOT_INSTALLED))
         return DjangoFixup(app).install()
 
 
