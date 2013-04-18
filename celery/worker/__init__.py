@@ -157,7 +157,7 @@ class Pool(bootsteps.StartStopComponent):
             import _billiard
         except ImportError:
             # billiard C extension not installed
-            if w.maxtasksperchild:
+            if w.max_tasks_per_child:
                 logger.warning(MAXTASKS_NO_BILLIARD)
         _quick_put = pool._pool._quick_put
         def quick_put(obj):
