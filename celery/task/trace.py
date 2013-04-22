@@ -208,9 +208,11 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     def trace_task(uuid, args, kwargs, request=None):
         R = I = None
         kwargs = kwdict(kwargs)
+        request = request or {}
+        root_id = request.get('root_id', None)
         try:
             push_task(task)
-            task_request = Context(request or {}, args=args,
+            task_request = Context(request, args=args,
                                    called_directly=False, kwargs=kwargs)
             push_request(task_request)
             try:
@@ -240,7 +242,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I = Info(FAILURE, exc)
                     state, retval = I.state, I.retval
                     R = I.handle_error_state(task, eager=eager)
-                    [subtask(errback).apply_async((uuid, ))
+                    options = {}
+                    if root_id:
+                        options['root_id'] = root_id
+                    [subtask(errback).apply_async((uuid, ), options=options)
                         for errback in task_request.errbacks or []]
                 except BaseException, exc:
                     raise
@@ -252,7 +257,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I = Info(FAILURE, None)
                     state, retval = I.state, I.retval
                     R = I.handle_error_state(task, eager=eager)
-                    [subtask(errback).apply_async((uuid, ))
+                    options = {}
+                    if root_id:
+                        options['root_id'] = root_id
+                    [subtask(errback).apply_async((uuid, ), options=options)
                         for errback in task_request.errbacks or []]
                 else:
                     # callback tasks must be applied before the result is

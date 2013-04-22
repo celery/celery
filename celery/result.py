@@ -43,6 +43,8 @@ class AsyncResult(ResultBase):
     #: The task's UUID.
     id = None
 
+    root_id = None
+
     #: The task result backend to use.
     backend = None
 
@@ -50,12 +52,13 @@ class AsyncResult(ResultBase):
     parent = None
 
     def __init__(self, id, backend=None, task_name=None,
-                 app=None, parent=None):
+                 app=None, parent=None, root_id=None):
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
         self.task_name = task_name
         self.parent = parent
+        self.root_id = root_id
 
     def serializable(self):
         return self.id, None
@@ -578,11 +581,14 @@ class GroupResult(ResultSet):
     #: The UUID of the group.
     id = None
 
+    root_id = None
+
     #: List/iterator of results in the group
     results = None
 
-    def __init__(self, id=None, results=None, **kwargs):
+    def __init__(self, id=None, results=None, root_id=None, **kwargs):
         self.id = id
+        self.root_id = root_id
         ResultSet.__init__(self, results, **kwargs)
 
     def save(self, backend=None):
@@ -631,12 +637,12 @@ class GroupResult(ResultSet):
 class TaskSetResult(GroupResult):
     """Deprecated version of :class:`GroupResult`"""
 
-    def __init__(self, taskset_id, results=None, **kwargs):
+    def __init__(self, taskset_id, results=None, root_id=None, **kwargs):
         # XXX supports the taskset_id kwarg.
         # XXX previously the "results" arg was named "subtasks".
         if 'subtasks' in kwargs:
             results = kwargs['subtasks']
-        GroupResult.__init__(self, taskset_id, results, **kwargs)
+        GroupResult.__init__(self, taskset_id, results, root_id, **kwargs)
 
     def itersubtasks(self):
         """Deprecated.   Use ``iter(self.results)`` instead."""
@@ -659,11 +665,12 @@ class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
     task_name = None
 
-    def __init__(self, id, ret_value, state, traceback=None):
+    def __init__(self, id, ret_value, state, traceback=None, root_id=None):
         self.id = id
         self._result = ret_value
         self._state = state
         self._traceback = traceback
+        self.root_id = root_id
 
     def __reduce__(self):
         return self.__class__, self.__reduce_args__()
@@ -717,7 +724,7 @@ class EagerResult(AsyncResult):
         return False
 
 
-def from_serializable(r, app=None):
+def from_serializable(r, app=None, root_id=None):
     # earlier backends may just pickle, so check if
     # result is already prepared.
     app = app_or_default(app)
@@ -726,8 +733,9 @@ def from_serializable(r, app=None):
         if isinstance(r, (list, tuple)):
             id, nodes = r
             if nodes:
-                return app.GroupResult(id, [Result(sid) for sid, _ in nodes])
-            return Result(id)
+                return app.GroupResult(id, [Result(sid) for sid, _ in nodes],
+                                       root_id)
+            return Result(id, root_id=root_id)
         else:
-            return Result(r)
+            return Result(r, root_id=root_id)
     return r

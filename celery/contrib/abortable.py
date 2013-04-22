@@ -143,9 +143,10 @@ class AbortableTask(Task):
     """
 
     @classmethod
-    def AsyncResult(cls, task_id):
+    def AsyncResult(cls, task_id, root_id=None):
         """Returns the accompanying AbortableAsyncResult instance."""
-        return AbortableAsyncResult(task_id, backend=cls.backend)
+        return AbortableAsyncResult(task_id, backend=cls.backend,
+                                    root_id=root_id)
 
     def is_aborted(self, **kwargs):
         """Checks against the backend whether this
@@ -161,7 +162,8 @@ class AbortableTask(Task):
 
         """
         task_id = kwargs.get('task_id', self.request.id)
-        result = self.AsyncResult(task_id)
+        root_id = kwargs.get('root_id', self.request.root_id)
+        result = self.AsyncResult(task_id, root_id=root_id)
         if not isinstance(result, AbortableAsyncResult):
             return False
         return result.is_aborted()

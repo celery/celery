@@ -86,9 +86,11 @@ def add_unlock_chord_task(app):
         propagate = default_propagate if propagate is None else propagate
 
         # check if the task group is ready, and if so apply the callback.
+        root_id = callback.options.get('root_id', None)
         deps = GroupResult(
             group_id,
-            [from_serializable(r, app=app) for r in result],
+            [from_serializable(r, app=app, root_id=root_id) for r in result],
+            root_id,
         )
         j = deps.join_native if deps.supports_native_join else deps.join
 
@@ -172,6 +174,7 @@ def add_group_task(app):
                 return app.GroupResult(
                     result.id,
                     [stask.apply(group_id=group_id) for stask in taskit],
+                    result.root_id,
                 )
             with app.producer_or_acquire() as pub:
                 [stask.apply_async(group_id=group_id, publisher=pub,
@@ -185,6 +188,7 @@ def add_group_task(app):
             AsyncResult = self.AsyncResult
             options['group_id'] = group_id = (
                 options.setdefault('task_id', uuid()))
+            root_id = options.get('root_id', None)
 
             def prepare_member(task):
                 task = maybe_subtask(task)
@@ -194,13 +198,17 @@ def add_group_task(app):
                     tid = opts['task_id']
                 except KeyError:
                     tid = opts['task_id'] = uuid()
-                return task, AsyncResult(tid)
+                try:
+                    rid = opts['root_id']
+                except KeyError:
+                    rid = root_id
+                return task, AsyncResult(tid, root_id=rid)
 
             try:
                 tasks, results = zip(*[prepare_member(task) for task in tasks])
             except ValueError:  # tasks empty
                 tasks, results = [], []
-            return (tasks, self.app.GroupResult(group_id, results),
+            return (tasks, self.app.GroupResult(group_id, results, root_id),
                     group_id, args)
 
         def apply_async(self, partial_args=(), kwargs={}, **options):
@@ -231,7 +239,8 @@ def add_chain_task(app):
         name = 'celery.chain'
         accept_magic_kwargs = False
 
-        def prepare_steps(self, args, tasks):
+        def prepare_steps(self, options, args, tasks):
+            root_id = options.get('root_id', None)
             steps = deque(tasks)
             next_step = prev_task = prev_res = None
             tasks, results = [], []
@@ -239,6 +248,8 @@ def add_chain_task(app):
             while steps:
                 # First task get partial args from chain.
                 task = maybe_subtask(steps.popleft())
+                if root_id:
+                    task.options['root_id'] = root_id
                 task = task.clone() if i else task.clone(args)
                 res = task._freeze()
                 i += 1
@@ -250,7 +261,8 @@ def add_chain_task(app):
                         # for chords we freeze by pretending it's a normal
                         # task instead of a group.
                         res = Signature._freeze(task)
-                        task = chord(task, body=next_step, task_id=res.task_id)
+                        task = chord(task, body=next_step, task_id=res.task_id,
+                                     root_id=root_id)
                     except IndexError:
                         pass
                 if prev_task:
@@ -270,7 +282,7 @@ def add_chain_task(app):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
             options.pop('publisher', None)
-            tasks, results = self.prepare_steps(args, kwargs['tasks'])
+            tasks, results = self.prepare_steps(options, args, kwargs['tasks'])
             result = results[-1]
             if group_id:
                 tasks[-1].set(group_id=group_id)
@@ -278,14 +290,17 @@ def add_chain_task(app):
                 tasks[-1].set(chord=chord)
             if task_id:
                 tasks[-1].set(task_id=task_id)
-                result = tasks[-1].type.AsyncResult(task_id)
+                root_id = options.get('root_id', None)
+                result = tasks[-1].type.AsyncResult(task_id, root_id=root_id)
             tasks[0].apply_async()
             return result
 
         def apply(self, args=(), kwargs={}, subtask=maybe_subtask, **options):
+            root_id = options.get('root_id', None)
             last, fargs = None, args  # fargs passed to first task only
             for task in kwargs['tasks']:
-                res = subtask(task).clone(fargs).apply(last and (last.get(), ))
+                res = subtask(task).clone(fargs).apply(last and (last.get(), ),
+                                                       root_id=root_id)
                 res.parent, last, fargs = last, res, None
             return last
     return Chain
@@ -311,17 +326,23 @@ def add_chord_task(app):
                 max_retries=None, propagate=None, eager=False, **kwargs):
             propagate = default_propagate if propagate is None else propagate
             group_id = uuid()
+            root_id = None
+            if hasattr(body, 'options'):
+                root_id = body.options.get('root_id', None)
             AsyncResult = self.app.AsyncResult
             prepare_member = self._prepare_member
 
             # - convert back to group if serialized
             tasks = header.tasks if isinstance(header, group) else header
-            header = group([maybe_subtask(s).clone() for s in tasks])
+            header = group([maybe_subtask(s).clone() for s in tasks],
+                           root_id=root_id)
             # - eager applies the group inline
             if eager:
-                return header.apply(args=partial_args, task_id=group_id)
+                return header.apply(args=partial_args, task_id=group_id,
+                                    root_id=root_id)
 
-            results = [AsyncResult(prepare_member(task, body, group_id))
+            results = [AsyncResult(prepare_member(task, body, group_id),
+                                   root_id=root_id)
                        for task in header.tasks]
 
             # - fallback implementations schedules the chord_unlock task here
@@ -333,7 +354,10 @@ def add_chord_task(app):
                                        result=results)
             # - call the header group, returning the GroupResult.
             # XXX Python 2.5 doesn't allow kwargs after star-args.
-            return header(*partial_args, **{'task_id': group_id})
+            header_opts = {'task_id': group_id}
+            if root_id:
+                header_opts['root_id'] = root_id
+            return header(*partial_args, **header_opts)
 
         def _prepare_member(self, task, body, group_id):
             opts = task.options
@@ -342,13 +366,20 @@ def add_chord_task(app):
                 task_id = opts['task_id']
             except KeyError:
                 task_id = opts['task_id'] = uuid()
-            opts.update(chord=body, group_id=group_id)
+            try:
+                root_id = opts['root_id']
+            except KeyError:
+                root_id = None
+                if hasattr(body, 'options'):
+                    root_id = body.options.get('root_id', None)
+            opts.update(chord=body, group_id=group_id, root_id=root_id)
             return task_id
 
         def apply_async(self, args=(), kwargs={}, task_id=None, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
             group_id = options.pop('group_id', None)
+            root_id = options.get('root_id', None)
             chord = options.pop('chord', None)
             header = kwargs.pop('header')
             body = kwargs.pop('body')
@@ -359,14 +390,19 @@ def add_chord_task(app):
             if chord:
                 body.set(chord=chord)
             callback_id = body.options.setdefault('task_id', task_id or uuid())
+            if root_id:
+                body.options['root_id'] = root_id
             parent = super(Chord, self).apply_async((header, body, args),
                                                     kwargs, **options)
-            body_result = self.AsyncResult(callback_id)
+            body_result = self.AsyncResult(callback_id, root_id=root_id)
             body_result.parent = parent
             return body_result
 
         def apply(self, args=(), kwargs={}, propagate=True, **options):
             body = kwargs['body']
+            root_id = options.get('root_id', None)
+            if root_id:
+                body.options['root_id'] = root_id
             res = super(Chord, self).apply(args, dict(kwargs, eager=True),
                                            **options)
             return maybe_subtask(body).apply(
