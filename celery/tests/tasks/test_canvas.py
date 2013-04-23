@@ -134,6 +134,11 @@ class test_chain(Case):
         self.assertEqual(res.parent.parent.get(), 8)
         self.assertIsNone(res.parent.parent.parent)
 
+    def test_accepts_generator_argument(self):
+        x = chain(add.s(i) for i in range(10))
+        self.assertTrue(x.tasks[0].type, add)
+        self.assertTrue(x.type)
+
 
 class test_group(Case):
 
