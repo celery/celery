@@ -162,7 +162,7 @@ Available options
     Absolute or relative path to the :program:`celery` program.
     Examples:
 
-        * :file:`celery``
+        * :file:`celery`
         * :file:`/usr/local/bin/celery`
         * :file:`/virtualenvs/proj/bin/celery`
         * :file:`/virtualenvs/proj/bin/python -m celery`
