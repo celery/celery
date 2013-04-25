@@ -242,6 +242,7 @@ def start_filter(app, conn, filter, limit=None, timeout=1.0,
                  consume_from=None, state=None, **kwargs):
     state = state or State()
     queues = prepare_queues(queues)
+    consume_from = [_maybe_queue(app, q) for q in consume_from or queues.keys()]
     if isinstance(tasks, string_t):
         tasks = set(tasks.split(','))
     if tasks is None:

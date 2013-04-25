@@ -271,6 +271,7 @@ class Consumer(object):
         # They can't be acked anyway, as a delivery tag is specific
         # to the current channel.
         self.timer.clear()
+        state.reserved_requests.clear()
 
     def connect(self):
         """Establish the broker connection.
