@@ -51,8 +51,6 @@ def app_has_custom(app, attr):
     return mro_lookup(app.__class__, attr, stop=(Celery, object),
                       monkey_patched=[__name__])
 
-_EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
-
 
 def _unpickle_appattr(reverse_name, args):
     """Given an attribute name and a list of args, gets
