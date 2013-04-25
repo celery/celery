@@ -48,6 +48,12 @@ PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
 PIDLOCKED = """ERROR: Pidfile (%s) already exists.
 Seems we're already running? (pid: %s)"""
 
+try:
+    from io import UnsupportedOperation
+    FILENO_ERRORS = (AttributeError, UnsupportedOperation)
+except ImportError:  # Py2
+    FILENO_ERRORS = (AttributeError, )  # noqa
+
 
 def pyimplementation():
     """Returns string identifying the current Python implementation."""
@@ -262,7 +268,7 @@ def maybe_fileno(f):
     """Get object fileno, or :const:`None` if not defined."""
     try:
         return fileno(f)
-    except AttributeError:
+    except FILENO_ERRORS:
         pass
 
 
