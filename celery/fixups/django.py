@@ -27,7 +27,7 @@ def _maybe_close_fd(fh):
 def fixup(app):
     if SETTINGS_MODULE:
         try:
-            import django
+            import django  # noqa
         except ImportError:
             warnings.warn(FixupWarning(ERR_NOT_INSTALLED))
         return DjangoFixup(app).install()

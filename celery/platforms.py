@@ -266,13 +266,8 @@ def fileno(f):
 def maybe_fileno(f):
     """Get object fileno, or :const:`None` if not defined."""
     try:
-<<<<<<< HEAD
-        return f.fileno()
-    except FILENO_ERRORS:
-=======
         return fileno(f)
-    except AttributeError:
->>>>>>> 3.0
+    except FILENO_ERRORS:
         pass
 
 

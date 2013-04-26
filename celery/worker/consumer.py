@@ -39,7 +39,7 @@ from celery.utils.timer2 import default_timer
 from celery.utils.timeutils import humanize_seconds, rate
 
 from . import heartbeat, loops, pidbox
-from .state import task_reserved, maybe_shutdown, revoked
+from .state import task_reserved, maybe_shutdown, revoked, reserved_requests
 
 CLOSE = bootsteps.CLOSE
 logger = get_logger(__name__)
@@ -271,7 +271,7 @@ class Consumer(object):
         # They can't be acked anyway, as a delivery tag is specific
         # to the current channel.
         self.timer.clear()
-        state.reserved_requests.clear()
+        reserved_requests.clear()
 
     def connect(self):
         """Establish the broker connection.
