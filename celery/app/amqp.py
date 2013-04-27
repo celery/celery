@@ -81,11 +81,17 @@ class Queues(dict):
     def add(self, queue, **kwargs):
         """Add new queue.
 
-        :param queue: Name of the queue.
-        :keyword exchange: Name of the exchange.
-        :keyword routing_key: Binding key.
-        :keyword exchange_type: Type of exchange.
-        :keyword \*\*options: Additional declaration options.
+        The first argument can either be a :class:`kombu.Queue` instance,
+        or the name of a queue.  If the former the rest of the keyword
+        arguments are ignored, and options are simply taken from the queue
+        instance.
+
+
+        :param queue: :class:`kombu.Queue` instance or name of the queue.
+        :keyword exchange: (if named) specifies exchange name.
+        :keyword routing_key: (if named) specifies binding key.
+        :keyword exchange_type: (if named) specifies type of exchange.
+        :keyword \*\*options: (if named) Additional declaration options.
 
         """
         if not isinstance(queue, Queue):
