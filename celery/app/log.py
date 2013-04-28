@@ -32,8 +32,6 @@ from celery.utils.log import (
 )
 from celery.utils.term import colored
 
-PY3 = sys.version_info[0] == 3
-
 MP_LOG = os.environ.get('MP_LOG', False)
 
 
@@ -95,8 +93,7 @@ class Logging(object):
         format = format or self.format
         colorize = self.supports_color(colorize, logfile)
         reset_multiprocessing_logger()
-        if not PY3:
-            ensure_process_aware_logger()
+        ensure_process_aware_logger()
         receivers = signals.setup_logging.send(
             sender=None, loglevel=loglevel, logfile=logfile,
             format=format, colorize=colorize,
