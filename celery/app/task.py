@@ -28,10 +28,9 @@ from .registry import _unpickle_task_v2
 
 #: extracts attributes related to publishing a message from an object.
 extract_exec_options = mattrgetter(
-    'queue', 'routing_key', 'exchange',
-    'immediate', 'mandatory', 'priority', 'expires',
-    'serializer', 'delivery_mode', 'compression',
-    'timeout', 'soft_timeout',
+    'queue', 'routing_key', 'exchange', 'priority', 'expires',
+    'serializer', 'delivery_mode', 'compression', 'timeout', 'soft_timeout',
+    'immediate', 'mandatory',  # imm+man is deprecated
 )
 
 
@@ -60,19 +59,10 @@ class Context(object):
     _protected = 0
 
     def __init__(self, *args, **kwargs):
-        self.update(*args, **kwargs)
-
-    def update(self, *args, **kwargs):
-        self.__dict__.update(*args, **kwargs)
-
-    def clear(self):
-        self.__dict__.clear()
-
-    def get(self, key, default=None):
-        try:
-            return getattr(self, key)
-        except AttributeError:
-            return default
+        self.get = self.__dict__.get
+        self.clear = self.__dict__.clear
+        update = self.update = self.__dict__.update
+        update(*args, **kwargs)
 
     def __repr__(self):
         return '<Context: {0!r}>'.format(vars(self))
@@ -88,11 +78,11 @@ class Context(object):
 class TaskType(type):
     """Meta class for tasks.
 
-    Automatically registers the task in the task registry, except
-    if the `abstract` attribute is set.
+    Automatically registers the task in the task registry (except
+    if the :attr:`Task.abstract`` attribute is set).
 
-    If no `name` attribute is provided, then no name is automatically
-    set to the name of the module it was defined in, and the class name.
+    If no :attr:`Task.name` attribute is provided, then the name is generated
+    from the module and class name.
 
     """
 
@@ -378,14 +368,12 @@ class Task(object):
 
         :keyword countdown: Number of seconds into the future that the
                             task should execute. Defaults to immediate
-                            execution (do not confuse with the
-                            `immediate` flag, as they are unrelated).
+                            execution.
 
         :keyword eta: A :class:`~datetime.datetime` object describing
                       the absolute time and date of when the task should
                       be executed.  May not be specified if `countdown`
-                      is also supplied.  (Do not confuse this with the
-                      `immediate` flag, as they are unrelated).
+                      is also supplied.
 
         :keyword expires: Either a :class:`int`, describing the number of
                           seconds, or a :class:`~datetime.datetime` object
@@ -553,7 +541,7 @@ class Task(object):
             ...         raise tweet.retry(countdown=60 * 5, exc=exc)
 
         Although the task will never return above as `retry` raises an
-        exception to notify the worker, we use `return` in front of the retry
+        exception to notify the worker, we use `raise` in front of the retry
         to convey that the rest of the block will not be executed.
 
         """

@@ -11,7 +11,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import sys
 import time
 
-from collections import defaultdict, Mapping, MutableMapping
+from collections import defaultdict, Mapping, MutableMapping, MutableSet
 from heapq import heapify, heappush, heappop
 from functools import partial
 from itertools import chain
@@ -188,7 +188,7 @@ class DependencyGraph(object):
         return [t[0] for t in graph._khan62()]
 
     def valency_of(self, obj):
-        """Returns the velency (degree) of a vertex in the graph."""
+        """Returns the valency (degree) of a vertex in the graph."""
         try:
             l = [len(self[obj])]
         except KeyError:
@@ -354,6 +354,7 @@ class DictAttribute(object):
     """Dict interface to attributes.
 
     `obj[k] -> obj.k`
+    `obj[k] = val -> obj.k = val`
 
     """
     obj = None
@@ -414,6 +415,7 @@ class DictAttribute(object):
 
         def items(self):
             return list(self._iterate_items())
+MutableMapping.register(DictAttribute)
 
 
 class ConfigurationView(AttributeDictMixin):
@@ -512,7 +514,6 @@ class ConfigurationView(AttributeDictMixin):
 
     def values(self):
         return list(self._iterate_values())
-
 MutableMapping.register(ConfigurationView)
 
 
@@ -520,8 +521,7 @@ class LimitedSet(object):
     """Kind-of Set with limitations.
 
     Good for when you need to test for membership (`a in set`),
-    but the list might become to big, so you want to limit it so it doesn't
-    consume too much resources.
+    but the list might become to big.
 
     :keyword maxlen: Maximum number of members before we start
                      evicting expired members.
@@ -536,6 +536,8 @@ class LimitedSet(object):
         self._data = {} if data is None else data
         self._heap = [] if heap is None else heap
         self.__len__ = self._data.__len__
+        self.__contains__ = self._data.__contains__
+        self.__iter__ = self._data.__iter__
 
     def add(self, value):
         """Add a new member."""
@@ -570,9 +572,6 @@ class LimitedSet(object):
         """Hunt down and remove an expired item."""
         self.purge(1)
 
-    def __contains__(self, value):
-        return value in self._data
-
     def purge(self, limit=None):
         H, maxlen = self._heap, self.maxlen
         if not maxlen:
@@ -604,9 +603,6 @@ class LimitedSet(object):
     def as_dict(self):
         return self._data
 
-    def __iter__(self):
-        return iter(self._data)
-
     def __repr__(self):
         return 'LimitedSet(%s)' % (repr(list(self._data))[:100], )
 
@@ -618,3 +614,4 @@ class LimitedSet(object):
     def first(self):
         """Get the oldest member."""
         return self._heap[0][1]
+MutableSet.register(LimitedSet)
