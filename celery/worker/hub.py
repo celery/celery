@@ -8,15 +8,42 @@
 """
 from __future__ import absolute_import
 
+from functools import wraps
+
 from kombu.utils import cached_property
 from kombu.utils import eventio
+from kombu.utils.eventio import READ, WRITE, ERR
 
 from celery.five import items, range
+from celery.platforms import fileno
+from celery.utils.functional import maybe_list
 from celery.utils.log import get_logger
 from celery.utils.timer2 import Schedule
 
 logger = get_logger(__name__)
-READ, WRITE, ERR = eventio.READ, eventio.WRITE, eventio.ERR
+
+
+def repr_flag(flag):
+    return '{0}{1}{2}'.format('R' if flag & READ else '',
+                              'W' if flag & WRITE else '',
+                              '!' if flag & ERR else '')
+
+
+def _rcb(obj):
+    if isinstance(obj, str):
+        return obj
+    return obj.__name__
+
+
+def coroutine(gen):
+
+    @wraps(gen)
+    def advances(*args, **kwargs):
+        it = gen(*args, **kwargs)
+        next(it)
+        return it
+
+    return advances
 
 
 class BoundedSemaphore(object):
@@ -32,7 +59,7 @@ class BoundedSemaphore(object):
         >>> x = BoundedSemaphore(2)
 
         >>> def callback(i):
-        ...     print('HELLO {0!r}'.format(i))
+        ...     say('HELLO {0!r}'.format(i))
 
         >>> x.acquire(callback, 1)
         HELLO 1
@@ -133,6 +160,33 @@ class Hub(object):
         self.on_init = []
         self.on_close = []
         self.on_task = []
+        self.coros = {}
+
+        self.trampoline = self._trampoline()
+
+    @coroutine
+    def _trampoline(self):
+        coros = self.coros
+        add = self.add_coro
+        remove_self = self.remove
+        pop = self.coros.pop
+
+        while 1:
+            fd, events = (yield)
+            remove_self(fd)
+            try:
+                gen = coros[fd]
+            except KeyError:
+                pass
+            else:
+                try:
+                    next(gen)
+                    add(fd, gen, WRITE)
+                except StopIteration:
+                    pop(fd, None)
+                except Exception:
+                    pop(fd, None)
+                    raise
 
     def start(self):
         """Called by Hub bootstep at worker startup."""
@@ -162,20 +216,36 @@ class Hub(object):
                     logger.error('Error in timer: %r', exc, exc_info=1)
         return min(max(delay or 0, min_delay), max_delay)
 
-    def add(self, fd, callback, flags):
+    def _add(self, fd, cb, flags):
         self.poller.register(fd, flags)
-        if not isinstance(fd, int):
-            fd = fd.fileno()
-        if flags & READ:
-            self.readers[fd] = callback
-        if flags & WRITE:
-            self.writers[fd] = callback
+        (self.readers if flags & READ else self.writers)[fileno(fd)] = cb
 
-    def add_reader(self, fd, callback):
-        return self.add(fd, callback, READ | ERR)
+    def add(self, fds, callback, flags):
+        for fd in maybe_list(fds, None):
+            try:
+                self._add(fd, callback, flags)
+            except ValueError:
+                self._discard(fd)
 
-    def add_writer(self, fd, callback):
-        return self.add(fd, callback, WRITE)
+    def remove(self, fd):
+        fd = fileno(fd)
+        self._unregister(fd)
+        self._discard(fd)
+
+    def add_coro(self, fds, coro, flags):
+        for fd in (fileno(f) for f in maybe_list(fds, None)):
+            self._add(fd, self.trampoline, flags)
+            self.coros[fd] = coro
+
+    def remove_coro(self, fds):
+        for fd in maybe_list(fds, None):
+            self.coros.pop(fileno(fd), None)
+
+    def add_reader(self, fds, callback):
+        return self.add(fds, callback, READ | ERR)
+
+    def add_writer(self, fds, callback):
+        return self.add(fds, callback, WRITE)
 
     def update_readers(self, readers):
         [self.add_reader(*x) for x in items(readers)]
@@ -189,11 +259,10 @@ class Hub(object):
         except (KeyError, OSError):
             pass
 
-    def remove(self, fd):
-        fileno = fd.fileno() if not isinstance(fd, int) else fd
-        self.readers.pop(fileno, None)
-        self.writers.pop(fileno, None)
-        self._unregister(fd)
+    def _discard(self, fd):
+        fd = fileno(fd)
+        self.readers.pop(fd, None)
+        self.writers.pop(fd, None)
 
     def __enter__(self):
         self.init()
@@ -207,6 +276,37 @@ class Hub(object):
         for callback in self.on_close:
             callback(self)
     __exit__ = close
+
+    def _repr_readers(self):
+        return ['{0}->{1}->{2!r}'.format(_rcb(cb), repr_flag(READ | ERR, fd))
+                for fd, cb in items(self.readers)]
+
+    def _repr_writers(self):
+        return ['{0}->{1}->{2!r}'.format(_rcb(cb), repr_flag(WRITE, fd))
+                for fd, cb in items(self.writers)]
+
+    def repr_active(self):
+        return ', '.join(self._repr_readers() + self._repr_writers())
+
+    def repr_events(self, events):
+        return ', '.join(
+            '{0}->{1}' % (
+                _rcb(self._callback_for(fd, fl, '{0!r}(GONE)'.format(fd))),
+                repr_flag(fl)
+            )
+            for fd, fl in events
+        )
+
+    def _callback_for(self, fd, flag, *default):
+        try:
+            if flag & READ:
+                return self.readers[fileno(fd)]
+            if flag & WRITE:
+                return self.writers[fileno(fd)]
+        except KeyError:
+            if default:
+                return default[0]
+            raise
 
     @cached_property
     def scheduler(self):

@@ -226,6 +226,10 @@ class Consumer(object):
                     sleep(1)
                 if ns.state != CLOSE and self.connection:
                     warn(CONNECTION_RETRY, exc_info=True)
+                    try:
+                        self.connection.close()
+                    except Exception:
+                        pass
                     ns.restart(self)
 
     def shutdown(self):
@@ -270,8 +274,11 @@ class Consumer(object):
         # Clear internal queues to get rid of old messages.
         # They can't be acked anyway, as a delivery tag is specific
         # to the current channel.
+        if self.controller.semaphore:
+            self.controller.semaphore.clear()
         self.timer.clear()
         reserved_requests.clear()
+        self.pool.flush()
 
     def connect(self):
         """Establish the broker connection.

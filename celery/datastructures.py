@@ -528,7 +528,6 @@ class LimitedSet(object):
     :keyword expires: Time in seconds, before a membership expires.
 
     """
-    __slots__ = ('maxlen', 'expires', '_data', '__len__', '_heap')
 
     def __init__(self, maxlen=None, expires=None, data=None, heap=None):
         self.maxlen = maxlen
@@ -537,7 +536,9 @@ class LimitedSet(object):
         self._heap = [] if heap is None else heap
         self.__len__ = self._data.__len__
         self.__contains__ = self._data.__contains__
-        self.__iter__ = self._data.__iter__
+
+    def __iter__(self):
+        return iter(self._data)
 
     def add(self, value):
         """Add a new member."""

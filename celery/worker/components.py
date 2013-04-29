@@ -9,14 +9,11 @@
 from __future__ import absolute_import
 
 import atexit
-import time
 
 from functools import partial
 
-from billiard.exceptions import WorkerLostError
-
 from celery import bootsteps
-from celery.five import items, string_t
+from celery.five import string_t
 from celery.utils.log import worker_logger as logger
 from celery.utils.timer2 import Schedule
 
@@ -92,57 +89,6 @@ class Pool(bootsteps.StartStopStep):
         if w.pool:
             w.pool.terminate()
 
-    def on_poll_init(self, pool, w, hub):
-        apply_after = hub.timer.apply_after
-        apply_at = hub.timer.apply_at
-        on_soft_timeout = pool.on_soft_timeout
-        on_hard_timeout = pool.on_hard_timeout
-        maintain_pool = pool.maintain_pool
-        add_reader = hub.add_reader
-        remove = hub.remove
-        now = time.time
-
-        # did_start_ok will verify that pool processes were able to start,
-        # but this will only work the first time we start, as
-        # maxtasksperchild will mess up metrics.
-        if not w.consumer.restart_count and not pool.did_start_ok():
-            raise WorkerLostError('Could not start worker processes')
-
-        # need to handle pool results before every task
-        # since multiple tasks can be received in a single poll()
-        hub.on_task.append(pool.maybe_handle_result)
-
-        hub.update_readers(pool.readers)
-        for handler, interval in items(pool.timers):
-            hub.timer.apply_interval(interval * 1000.0, handler)
-
-        def on_timeout_set(R, soft, hard):
-
-            def _on_soft_timeout():
-                if hard:
-                    R._tref = apply_at(now() + (hard - soft),
-                                       on_hard_timeout, (R, ))
-                on_soft_timeout(R)
-            if soft:
-                R._tref = apply_after(soft * 1000.0, _on_soft_timeout)
-            elif hard:
-                R._tref = apply_after(hard * 1000.0,
-                                      on_hard_timeout, (R, ))
-
-        def on_timeout_cancel(result):
-            try:
-                result._tref.cancel()
-                delattr(result, '_tref')
-            except AttributeError:
-                pass
-
-        pool.init_callbacks(
-            on_process_up=lambda w: add_reader(w.sentinel, maintain_pool),
-            on_process_down=lambda w: remove(w.sentinel),
-            on_timeout_set=on_timeout_set,
-            on_timeout_cancel=on_timeout_cancel,
-        )
-
     def create(self, w, semaphore=None, max_restarts=None):
         threaded = not w.use_eventloop
         procs = w.min_concurrency
@@ -168,7 +114,7 @@ class Pool(bootsteps.StartStopStep):
             semaphore=semaphore,
         )
         if w.hub:
-            w.hub.on_init.append(partial(self.on_poll_init, pool, w))
+            w.hub.on_init.append(partial(pool.on_poll_init, w))
         return pool
 
     def info(self, w):

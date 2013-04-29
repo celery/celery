@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import socket
 
 from time import sleep
+from types import GeneratorType as generator
 
 from kombu.utils.eventio import READ, WRITE, ERR
 
@@ -35,12 +36,14 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
         fire_timers = hub.fire_timers
         scheduled = hub.timer._queue
         hbtick = connection.heartbeat_check
-        on_poll_start = connection.transport.on_poll_start
-        on_poll_empty = connection.transport.on_poll_empty
+        conn_poll_start = connection.transport.on_poll_start
+        conn_poll_empty = connection.transport.on_poll_empty
+        pool_poll_start = obj.pool.on_poll_start
         drain_nowait = connection.drain_nowait
         on_task_callbacks = hub.on_task
         keep_draining = connection.transport.nb_keep_draining
         errors = connection.connection_errors
+        hub_add, hub_remove = hub.add, hub.remove
 
         if heartbeat and connection.supports_heartbeats:
             hub.timer.apply_interval(
@@ -82,7 +85,8 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
             if qos.prev != qos.value:
                 update_qos()
 
-            update_readers(on_poll_start())
+            update_readers(conn_poll_start())
+            pool_poll_start(hub)
             if readers or writers:
                 connection.more_to_read = True
                 while connection.more_to_read:
@@ -91,19 +95,20 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
                     except ValueError:  # Issue 882
                         return
                     if not events:
-                        on_poll_empty()
+                        conn_poll_empty()
                     for fileno, event in events or ():
                         try:
                             if event & READ:
-                                readers[fileno](fileno, event)
-                            if event & WRITE:
-                                writers[fileno](fileno, event)
-                            if event & ERR:
-                                for handlermap in readers, writers:
-                                    try:
-                                        handlermap[fileno](fileno, event)
-                                    except KeyError:
-                                        pass
+                                cb = readers[fileno]
+                            elif event & WRITE:
+                                cb = writers[fileno]
+                            elif event & ERR:
+                                cb = (readers.get(fileno) or
+                                      writers.get(fileno))
+                            if isinstance(cb, generator):
+                                cb.send((fileno, event))
+                            else:
+                                cb(fileno, event)
                         except (KeyError, Empty):
                             continue
                         except socket.error:

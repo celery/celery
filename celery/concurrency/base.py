@@ -62,6 +62,9 @@ class BasePool(object):
     def did_start_ok(self):
         return True
 
+    def flush(self):
+        pass
+
     def on_stop(self):
         pass
 

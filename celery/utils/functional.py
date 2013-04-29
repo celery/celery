@@ -106,14 +106,14 @@ class LRUCache(UserDict):
         self.mutex = threading.RLock()
 
 
-def is_list(l):
+def is_list(l, scalars=(dict, string_t)):
     """Returns true if object is list-like, but not a dict or string."""
-    return hasattr(l, '__iter__') and not isinstance(l, (dict, string_t))
+    return hasattr(l, '__iter__') and not isinstance(l, scalars or ())
 
 
-def maybe_list(l):
+def maybe_list(l, scalars=(dict, string_t)):
     """Returns list of one element if ``l`` is a scalar."""
-    return l if l is None or is_list(l) else [l]
+    return l if l is None or is_list(l, scalars) else [l]
 
 
 def memoize(maxsize=None, Cache=LRUCache):
