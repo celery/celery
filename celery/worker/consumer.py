@@ -108,6 +108,8 @@ def dump_body(m, body):
 
 
 class Consumer(object):
+    #: set when consumer is shutting down.
+    in_shutdown = False
 
     #: Optional callback called the first time the worker
     #: is ready to receive tasks.
@@ -137,7 +139,7 @@ class Consumer(object):
         ]
 
         def shutdown(self, parent):
-            self.restart(parent, 'Shutdown', 'shutdown')
+            self.send_all(parent, 'shutdown')
 
     def __init__(self, handle_task,
                  init_callback=noop, hostname=None,
@@ -227,12 +229,13 @@ class Consumer(object):
                 if ns.state != CLOSE and self.connection:
                     warn(CONNECTION_RETRY, exc_info=True)
                     try:
-                        self.connection.close()
+                        self.connection.collect()
                     except Exception:
                         pass
                     ns.restart(self)
 
     def shutdown(self):
+        self.in_shutdown = True
         self.namespace.shutdown(self)
 
     def stop(self):

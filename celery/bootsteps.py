@@ -128,17 +128,19 @@ class Namespace(object):
     def close(self, parent):
         if self.on_close:
             self.on_close()
-        for step in parent.steps:
-            close = getattr(step, 'close', None)
-            if close:
-                close(parent)
+        self.send_all(parent, 'close', 'Closing', reverse=False)
 
-    def restart(self, parent, description='Restarting', attr='stop'):
+    def restart(self, parent, method='stop', description='Restarting'):
+        self.send_all(parent, method, description)
+
+    def send_all(self, parent, method, description=None, reverse=True):
+        description = description or method.capitalize()
+        steps = reversed(parent.steps) if reverse else parent.steps
         with default_socket_timeout(SHUTDOWN_SOCKET_TIMEOUT):  # Issue 975
-            for step in reversed(parent.steps):
+            for step in steps:
                 if step:
                     self._debug('%s %s...', description, step.alias)
-                    fun = getattr(step, attr, None)
+                    fun = getattr(step, method, None)
                     if fun:
                         fun(parent)
 
@@ -147,13 +149,12 @@ class Namespace(object):
         if self.state in (CLOSE, TERMINATE):
             return
 
-        self.close(parent)
-
         if self.state != RUN or self.started != len(parent.steps):
             # Not fully started, can safely exit.
             self.state = TERMINATE
             self.shutdown_complete.set()
             return
+        self.close(parent)
         self.state = CLOSE
         self.restart(parent, what, 'terminate' if terminate else 'stop')
 
