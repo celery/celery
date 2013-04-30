@@ -18,9 +18,10 @@ from celery.utils.compat import THREAD_TIMEOUT_MAX
 
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
 PY3 = sys.version_info[0] == 3
+NEW_EVENT = (sys.version_info[0] == 3) and (sys.version_info[1] >= 3)
 
 _Thread = threading.Thread
-_Event = threading.Event if PY3 else threading._Event
+_Event = threading.Event if NEW_EVENT else threading._Event
 active_count = (getattr(threading, 'active_count', None) or
                 threading.activeCount)
 
