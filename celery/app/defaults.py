@@ -143,6 +143,8 @@ NAMESPACES = {
             'interval_step': 0.2}, type='dict'),
         'TASK_RESULT_EXPIRES': Option(timedelta(days=1), type='float'),
         'TASK_SERIALIZER': Option('pickle'),
+        'TASK_SOFT_TIME_LIMIT': Option(type='float'),
+        'TASK_TIME_LIMIT': Option(type='float'),
         'TIMEZONE': Option(type='string'),
         'TRACK_STARTED': Option(False, type='bool'),
         'REDIRECT_STDOUTS': Option(True, type='bool'),

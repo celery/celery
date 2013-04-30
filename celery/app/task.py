@@ -246,6 +246,8 @@ class Task(object):
         ('ignore_result', 'CELERY_IGNORE_RESULT'),
         ('store_errors_even_if_ignored',
             'CELERY_STORE_ERRORS_EVEN_IF_IGNORED'),
+        ('time_limit', 'CELERY_TASK_TIME_LIMIT'),
+        ('soft_time_limit', 'CELERY_TASK_SOFT_TIME_LIMIT'),
     )
 
     __bound__ = False
