@@ -240,7 +240,7 @@ class AsynPool(_pool.Pool):
 
     def on_job_process_down(self, job):
         if not job._accepted and job._write_to:
-            self.on_partial_reaad(job, job._write_to)
+            self.on_partial_read(job, job._write_to)
 
     def on_job_process_lost(self, job, pid, exitcode):
         self.mark_as_worker_lost(job, exitcode)
