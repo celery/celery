@@ -53,6 +53,12 @@ try:
 except ImportError:  # Py2
     FILENO_ERRORS = (AttributeError, )  # noqa
 
+try:
+    from io import UnsupportedOperation
+    FILENO_ERRORS = (AttributeError, UnsupportedOperation)
+except ImportError:  # Py2
+    FILENO_ERRORS = (AttributeError, )  # noqa
+
 
 def pyimplementation():
     """Returns string identifying the current Python implementation."""
