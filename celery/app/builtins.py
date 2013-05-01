@@ -20,18 +20,19 @@ _shared_tasks = []
 
 
 def shared_task(constructor):
-    """Decorator that specifies that the decorated function is a function
-    that generates a built-in task.
+    """Decorator that specifies a function that generates a built-in task.
 
     The function will then be called for every new app instance created
     (lazily, so more exactly when the task registry for that app is needed).
+
+    The function must take a single ``app`` argument.
     """
     _shared_tasks.append(constructor)
     return constructor
 
 
 def load_shared_tasks(app):
-    """Loads the built-in tasks for an app instance."""
+    """Create built-in tasks for an app instance."""
     for constructor in _shared_tasks:
         constructor(app)
 
@@ -41,16 +42,11 @@ def add_backend_cleanup_task(app):
     """The backend cleanup task can be used to clean up the default result
     backend.
 
-    This task is also added do the periodic task schedule so that it is
-    run every day at midnight, but :program:`celery beat` must be running
-    for this to be effective.
-
-    Note that not all backends do anything for this, what needs to be
-    done at cleanup is up to each backend, and some backends
-    may even clean up in realtime so that a periodic cleanup is not necessary.
+    If the configured backend requires periodic cleanup this task is also
+    automatically configured to run every day at midnight (requires
+    :program:`celery beat` to be running).
 
     """
-
     @app.task(name='celery.backend_cleanup', _force_evaluate=True)
     def backend_cleanup():
         app.backend.cleanup()
@@ -59,10 +55,9 @@ def add_backend_cleanup_task(app):
 
 @shared_task
 def add_unlock_chord_task(app):
-    """The unlock chord task is used by result backends that doesn't
-    have native chord support.
+    """This task is used by result backends without native chord support.
 
-    It creates a task chain polling the header for completion.
+    It joins chords by creating a task chain polling the header for completion.
 
     """
     from celery.canvas import subtask

@@ -155,11 +155,6 @@ class DependencyGraph(object):
         (``A`` depends on ``B``)."""
         self[A].append(B)
 
-    def find_last(self, g):
-        for obj in g.adjacent:
-            if obj.last:
-                return obj
-
     def connect(self, graph):
         """Add nodes from another graph."""
         self.adjacent.update(graph.adjacent)

@@ -53,7 +53,7 @@ class _getitem_property(object):
         10
 
         >>> me.deep_thing = 42
-        >>> me.deep_thinge
+        >>> me.deep_thing
         42
         >>> me.deep:
         defaultdict(<type 'dict'>, {'thing': 42})

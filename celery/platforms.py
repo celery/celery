@@ -21,7 +21,7 @@ from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
 from .local import try_import
-from .five import items, range, reraise, string_t
+from .five import items, range, reraise, string_t, int_types
 
 _setproctitle = try_import('setproctitle')
 resource = try_import('resource')
@@ -258,7 +258,7 @@ def _create_pidlock(pidfile):
 
 
 def fileno(f):
-    if isinstance(f, (int, long)):
+    if isinstance(f, int_types):
         return f
     return f.fileno()
 
@@ -390,7 +390,7 @@ def parse_uid(uid):
     """Parse user id.
 
     uid can be an integer (uid) or a string (user name), if a user name
-    the uid is taken from the password file.
+    the uid is taken from the system user registry.
 
     """
     try:
@@ -406,7 +406,7 @@ def parse_gid(gid):
     """Parse group id.
 
     gid can be an integer (gid) or a string (group name), if a group name
-    the gid is taken from the password file.
+    the gid is taken from the system group registry.
 
     """
     try:

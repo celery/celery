@@ -9,7 +9,6 @@
 from __future__ import absolute_import, unicode_literals
 
 from collections import deque
-from importlib import import_module
 from threading import Event
 
 from kombu.common import ignore_errors
@@ -175,10 +174,14 @@ class Namespace(object):
         """Apply the steps in this namespace to an object.
 
         This will apply the ``__init__`` and ``include`` methods
-        of each steps with the object as argument.
+        of each step, with the object as argument::
+
+            step = Step(obj)
+            ...
+            step.include(obj)
 
         For :class:`StartStopStep` the services created
-        will also be added the the objects ``steps`` attribute.
+        will also be added to the objects ``steps`` attribute.
 
         """
         self._debug('Preparing bootsteps.')
@@ -199,9 +202,6 @@ class Namespace(object):
     def connect_with(self, other):
         self.graph.adjacent.update(other.graph.adjacent)
         self.graph.add_edge(type(other.order[0]), type(self.order[-1]))
-
-    def import_module(self, module):
-        return import_module(module)
 
     def __getitem__(self, name):
         return self.steps[name]
