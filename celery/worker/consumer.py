@@ -277,11 +277,13 @@ class Consumer(object):
         # Clear internal queues to get rid of old messages.
         # They can't be acked anyway, as a delivery tag is specific
         # to the current channel.
-        if self.controller.semaphore:
+        if self.controller and self.controller.semaphore:
             self.controller.semaphore.clear()
-        self.timer.clear()
+        if self.timer:
+            self.timer.clear()
         reserved_requests.clear()
-        self.pool.flush()
+        if self.pool:
+            self.pool.flush()
 
     def connect(self):
         """Establish the broker connection.

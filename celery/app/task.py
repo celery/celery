@@ -59,10 +59,16 @@ class Context(object):
     _protected = 0
 
     def __init__(self, *args, **kwargs):
-        self.get = self.__dict__.get
-        self.clear = self.__dict__.clear
-        update = self.update = self.__dict__.update
-        update(*args, **kwargs)
+        self.update(*args, **kwargs)
+
+    def update(self, *args, **kwargs):
+        return self.__dict__.update(*args, **kwargs)
+
+    def clear(self):
+        return self.__dict__.clear()
+
+    def get(self, key, default=None):
+        return getattr(self, key, default)
 
     def __repr__(self):
         return '<Context: {0!r}>'.format(vars(self))

@@ -155,7 +155,7 @@ class Namespace(object):
             return
         self.close(parent)
         self.state = CLOSE
-        self.restart(parent, what, 'terminate' if terminate else 'stop')
+        self.restart(parent, 'terminate' if terminate else 'stop', what)
 
         if self.on_stopped:
             self.on_stopped()

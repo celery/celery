@@ -11,7 +11,7 @@ from kombu import Connection
 from kombu.common import QoS, PREFETCH_COUNT_MAX, ignore_errors
 from kombu.exceptions import StdChannelError
 from kombu.transport.base import Message
-from mock import Mock, patch
+from mock import call, Mock, patch
 
 from celery import current_app
 from celery.app.defaults import DEFAULTS
@@ -25,9 +25,10 @@ from celery.task import periodic_task as periodic_task_dec
 from celery.utils import uuid
 from celery.worker import WorkController
 from celery.worker import components
-from celery.worker.job import Request
 from celery.worker import consumer
 from celery.worker.consumer import Consumer as __Consumer
+from celery.worker.hub import READ, ERR
+from celery.worker.job import Request
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 
@@ -38,7 +39,7 @@ def MockStep(step=None):
     step = Mock() if step is None else step
     step.namespace = Mock()
     step.namespace.name = 'MockNS'
-    step.name = 'MockStep'
+    step.name = 'MockStep(%s)' % (id(step), )
     return step
 
 
@@ -1026,14 +1027,17 @@ class test_WorkController(AppCase):
         worker.namespace.started = 4
         for w in worker.steps:
             w.start = Mock()
+            w.close = Mock()
             w.stop = Mock()
 
         worker.start()
         for w in worker.steps:
             self.assertTrue(w.start.call_count)
+        worker.consumer = Mock()
         worker.stop()
-        for w in worker.steps:
-            self.assertTrue(w.stop.call_count)
+        for stopstep in worker.steps:
+            self.assertTrue(stopstep.close.call_count)
+            self.assertTrue(stopstep.stop.call_count)
 
         # Doesn't close pool if no pool.
         worker.start()
@@ -1099,45 +1103,67 @@ class test_WorkController(AppCase):
         w._conninfo.connection_errors = w._conninfo.channel_errors = ()
         w.hub = Mock()
         w.hub.on_init = []
-        w.pool_cls = Mock()
-        P = w.pool_cls.return_value = Mock()
-        P.timers = {Mock(): 30}
+
+        PoolImp = Mock()
+        poolimp = PoolImp.return_value = Mock()
+        poolimp._pool = [Mock(), Mock()]
+        poolimp._cache = {}
+        poolimp._fileno_to_inq = {}
+        poolimp._fileno_to_outq = {}
+
+        from celery.concurrency.processes import TaskPool as _TaskPool
+
+        class TaskPool(_TaskPool):
+            Pool = PoolImp
+
+            @property
+            def timers(self):
+                return {Mock(): 30}
+
+        w.pool_cls = TaskPool
         w.use_eventloop = True
         w.consumer.restart_count = -1
         pool = components.Pool(w)
         pool.create(w)
         self.assertIsInstance(w.semaphore, BoundedSemaphore)
         self.assertTrue(w.hub.on_init)
+        P = w.pool
+        P.start()
 
         hub = Mock()
         w.hub.on_init[0](hub)
 
-        cbs = w.pool.init_callbacks.call_args[1]
         w = Mock()
-        cbs['on_process_up'](w)
-        hub.add_reader.assert_called_with(w.sentinel, P.maintain_pool)
+        poolimp.on_process_up(w)
+        hub.add.assert_has_calls([
+            call(w.sentinel, P.maintain_pool, READ | ERR),
+            call(w.outqR_fd, P.handle_result_event, READ | ERR),
+        ])
 
-        cbs['on_process_down'](w)
-        hub.remove.assert_called_with(w.sentinel)
+        poolimp.on_process_down(w)
+        hub.remove.assert_has_calls([
+            call(w.sentinel), call(w.outqR_fd),
+        ])
 
         result = Mock()
         tref = result._tref
 
-        cbs['on_timeout_cancel'](result)
+        poolimp.on_timeout_cancel(result)
         tref.cancel.assert_called_with()
-        cbs['on_timeout_cancel'](result)  # no more tref
+        poolimp.on_timeout_cancel(result)  # no more tref
 
-        cbs['on_timeout_set'](result, 10, 20)
+        poolimp.on_timeout_set(result, 10, 20)
         tsoft, callback = hub.timer.apply_after.call_args[0]
         callback()
 
-        cbs['on_timeout_set'](result, 10, None)
+        poolimp.on_timeout_set(result, 10, None)
         tsoft, callback = hub.timer.apply_after.call_args[0]
         callback()
-        cbs['on_timeout_set'](result, None, 10)
-        cbs['on_timeout_set'](result, None, None)
+        poolimp.on_timeout_set(result, None, 10)
+        poolimp.on_timeout_set(result, None, None)
 
         with self.assertRaises(WorkerLostError):
-            P.did_start_ok.return_value = False
+            P._pool.did_start_ok = Mock()
+            P._pool.did_start_ok.return_value = False
             w.consumer.restart_count = 0
-            pool.on_poll_init(P, w, hub)
+            P.on_poll_init(w, hub)

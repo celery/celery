@@ -324,7 +324,8 @@ class AsynPool(_pool.Pool):
 
 class TaskPool(BasePool):
     """Multiprocessing Pool implementation."""
-    Pool = _pool.Pool
+    Pool = AsynPool
+    BlockingPool = _pool.Pool
 
     uses_semaphore = True
 
@@ -343,7 +344,8 @@ class TaskPool(BasePool):
                 warning(MAXTASKS_NO_BILLIARD)
 
         forking_enable(self.forking_enable)
-        Pool = self.Pool if self.options.get('threads', True) else AsynPool
+        Pool = (self.BlockingPool if self.options.get('threads', True)
+                else self.Pool)
         P = self._pool = Pool(processes=self.limit,
                               initializer=process_initializer,
                               **self.options)

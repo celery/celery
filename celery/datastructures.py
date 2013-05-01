@@ -529,11 +529,19 @@ class LimitedSet(object):
         self.expires = expires
         self._data = {} if data is None else data
         self._heap = [] if heap is None else heap
+        # make shortcuts
+        self.__iter__ = self._data.__iter__
         self.__len__ = self._data.__len__
         self.__contains__ = self._data.__contains__
 
     def __iter__(self):
         return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __contains__(self, key):
+        return key in self._data
 
     def add(self, value):
         """Add a new member."""

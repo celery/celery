@@ -67,7 +67,8 @@ class MockPool(object):
         self.maintain_pool = Mock()
         self._state = mp.RUN
         self._processes = kwargs.get('processes')
-        self._pool = [Object(pid=i) for i in range(self._processes)]
+        self._pool = [Object(pid=i, inqW_fd=1, outqR_fd=2)
+                      for i in range(self._processes)]
         self._current_proc = cycle(range(self._processes))
 
     def close(self):
@@ -79,6 +80,15 @@ class MockPool(object):
 
     def terminate(self):
         self.terminated = True
+
+    def terminate_job(self, *args, **kwargs):
+        pass
+
+    def restart(self, *args, **kwargs):
+        pass
+
+    def handle_result_event(self, *args, **kwargs):
+        pass
 
     def grow(self, n=1):
         self._processes += n
@@ -100,11 +110,11 @@ class ExeMockPool(MockPool):
 
 
 class TaskPool(mp.TaskPool):
-    Pool = MockPool
+    Pool = BlockingPool = MockPool
 
 
 class ExeMockTaskPool(mp.TaskPool):
-    Pool = ExeMockPool
+    Pool = BlockingPool = ExeMockPool
 
 
 class test_TaskPool(Case):
@@ -138,12 +148,6 @@ class test_TaskPool(Case):
         pool.start()
         pool.apply_async(lambda x: x, (2, ), {})
 
-    def test_terminate_job(self):
-        pool = TaskPool(10)
-        pool._pool = Mock()
-        pool.terminate_job(1341)
-        pool._pool.terminate_job.assert_called_with(1341, None)
-
     def test_grow_shrink(self):
         pool = TaskPool(10)
         pool.start()
@@ -169,12 +173,6 @@ class test_TaskPool(Case):
         pool = TaskPool(7)
         pool.start()
         self.assertEqual(pool.num_processes, 7)
-
-    def test_restart_pool(self):
-        pool = TaskPool()
-        pool._pool = Mock()
-        pool.restart()
-        pool._pool.restart.assert_called_with()
 
     def test_restart(self):
         raise SkipTest('functional test')

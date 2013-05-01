@@ -198,7 +198,7 @@ class test_Hub(Case):
         hub.remove(File(11))
         self.assertNotIn(11, hub.readers)
         P.unregister.assert_has_calls([
-            call(10), call(File(11)),
+            call(10), call(11),
         ])
 
     def test_can_remove_unknown_fds(self):
@@ -235,7 +235,7 @@ class test_Hub(Case):
         hub.remove(File(21))
         self.assertNotIn(21, hub.writers)
         P.unregister.assert_has_calls([
-            call(20), call(File(21)),
+            call(20), call(21),
         ])
 
     def test_enter__exit(self):
