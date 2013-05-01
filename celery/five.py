@@ -43,6 +43,7 @@ if PY3:
     long_t = int
     text_t = str
     range = range
+    int_types = (int, )
 
     open_fqdn = 'builtins.open'
 
@@ -82,6 +83,7 @@ else:
     text_t = unicode
     long_t = long                   # noqa
     range = xrange
+    int_types = (int, long)
 
     open_fqdn = '__builtin__.open'
 
