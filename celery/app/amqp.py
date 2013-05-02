@@ -189,7 +189,7 @@ class TaskProducer(Producer):
                      queue=None, now=None, retries=0, chord=None,
                      callbacks=None, errbacks=None, routing_key=None,
                      serializer=None, delivery_mode=None, compression=None,
-                     declare=None, **kwargs):
+                     declare=None, root_id=None, **kwargs):
         """Send task message."""
 
         qname = queue
@@ -227,6 +227,7 @@ class TaskProducer(Producer):
         body = {
             'task': task_name,
             'id': task_id,
+            'root_id': root_id,
             'args': task_args,
             'kwargs': task_kwargs,
             'retries': retries or 0,
@@ -259,6 +260,7 @@ class TaskProducer(Producer):
                 'task-sent',
                 {
                     'uuid': task_id,
+                    'root_id': root_id,
                     'name': task_name,
                     'args': safe_repr(task_args),
                     'kwargs': safe_repr(task_kwargs),

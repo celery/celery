@@ -812,6 +812,7 @@ class test_TaskRequest(AppCase):
                 'logfile': None,
                 'loglevel': None,
                 'task_id': tw.id,
+                'root_id': None,
                 'task_retries': 0,
                 'task_is_eager': False,
                 'delivery_info': {

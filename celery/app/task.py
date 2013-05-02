@@ -39,6 +39,7 @@ class Context(object):
     loglevel = None
     hostname = None
     id = None
+    root_id = None
     args = None
     kwargs = None
     retries = 0
@@ -360,7 +361,7 @@ class Task(object):
     def apply_async(self, args=None, kwargs=None,
                     task_id=None, producer=None, connection=None, router=None,
                     link=None, link_error=None, publisher=None,
-                    add_to_parent=True, **options):
+                    add_to_parent=True, root_id=None, **options):
         """Apply tasks asynchronously by sending a message.
 
         :keyword args: The positional arguments to pass on to the
@@ -439,6 +440,10 @@ class Task(object):
             is applied while executing another task, then the result
             will be appended to the parent tasks ``request.children``
             attribute.
+        :keyword root_id: A custom id that will be automatically associated with
+                          request contexts for this task and all descendant
+                          tasks. This id can then later be used to track the
+                          status of associated tasks.
         :keyword publisher: Deprecated alias to ``producer``.
 
         Also supports all keyword arguments supported by
@@ -459,7 +464,8 @@ class Task(object):
             args = (self.__self__, ) + tuple(args)
 
         if conf.CELERY_ALWAYS_EAGER:
-            return self.apply(args, kwargs, task_id=task_id, **options)
+            return self.apply(args, kwargs, task_id=task_id, root_id=root_id,
+                              **options)
         options = dict(extract_exec_options(self), **options)
         options = router.route(options, self.name, args, kwargs)
 
@@ -468,10 +474,11 @@ class Task(object):
         with app.producer_or_acquire(producer) as P:
             task_id = P.publish_task(self.name, args, kwargs,
                                      task_id=task_id,
+                                     root_id=root_id,
                                      callbacks=maybe_list(link),
                                      errbacks=maybe_list(link_error),
                                      **options)
-        result = self.AsyncResult(task_id)
+        result = self.AsyncResult(task_id, root_id=root_id)
         if add_to_parent:
             parent = get_current_worker_task()
             if parent:
@@ -487,6 +494,7 @@ class Task(object):
         delivery_info = request.delivery_info or {}
         options = {
             'task_id': request.id,
+            'root_id': request.root_id,
             'link': request.callbacks,
             'link_error': request.errbacks,
             'exchange': delivery_info.get('exchange'),
@@ -602,6 +610,7 @@ class Task(object):
             args = (self.__self__, ) + tuple(args)
         kwargs = kwargs or {}
         task_id = options.get('task_id') or uuid()
+        root_id = options.get('root_id', None)
         retries = options.get('retries', 0)
         throw = app.either('CELERY_EAGER_PROPAGATES_EXCEPTIONS',
                            options.pop('throw', None))
@@ -610,6 +619,7 @@ class Task(object):
         task = app._tasks[self.name]
 
         request = {'id': task_id,
+                   'root_id': root_id,
                    'retries': retries,
                    'is_eager': True,
                    'logfile': options.get('logfile'),
@@ -618,6 +628,7 @@ class Task(object):
         if self.accept_magic_kwargs:
             default_kwargs = {'task_name': task.name,
                               'task_id': task_id,
+                              'root_id': root_id,
                               'task_retries': retries,
                               'task_is_eager': True,
                               'logfile': options.get('logfile'),
@@ -635,16 +646,18 @@ class Task(object):
         if isinstance(retval, ExceptionInfo):
             retval, tb = retval.exception, retval.traceback
         state = states.SUCCESS if info is None else info.state
-        return EagerResult(task_id, retval, state, traceback=tb)
+        return EagerResult(task_id, retval, state, traceback=tb,
+                           root_id=root_id)
 
-    def AsyncResult(self, task_id, **kwargs):
+    def AsyncResult(self, task_id, root_id=None, **kwargs):
         """Get AsyncResult instance for this kind of task.
 
         :param task_id: Task id to get result for.
 
         """
         return self._get_app().AsyncResult(task_id, backend=self.backend,
-                                           task_name=self.name, **kwargs)
+                                           task_name=self.name, root_id=root_id,
+                                           **kwargs)
 
     def subtask(self, args=None, *starargs, **starkwargs):
         """Returns :class:`~celery.subtask` object for

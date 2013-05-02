@@ -170,7 +170,8 @@ class Signature(dict):
             tid = opts['task_id']
         except KeyError:
             tid = opts['task_id'] = _id or uuid()
-        return self.AsyncResult(tid)
+        rid = opts.get('root_id', None)
+        return self.AsyncResult(tid, root_id=rid)
 
     def replace(self, args=None, kwargs=None, options=None):
         s = self.clone()
@@ -256,6 +257,7 @@ class Signature(dict):
         except KeyError:
             return _partial(current_app.send_task, self['task'])
     id = _getitem_property('options.task_id')
+    root_id = _getitem_property('options.root_id')
     task = _getitem_property('task')
     args = _getitem_property('args')
     kwargs = _getitem_property('kwargs')
@@ -413,13 +415,16 @@ class group(Signature):
             gid = opts['group']
         except KeyError:
             gid = opts['group'] = uuid()
+        rid = opts.get('root_id', None)
         new_tasks, results = [], []
         for task in self.tasks:
             task = maybe_subtask(task).clone()
+            if rid:
+                task.options['root_id'] = rid
             results.append(task._freeze())
             new_tasks.append(task)
         self.tasks = self.kwargs['tasks'] = new_tasks
-        return GroupResult(gid, results)
+        return GroupResult(gid, results, root_id=rid)
 
     def skew(self, start=1.0, stop=None, step=1.0):
         _next_skew = fxrange(start, stop, step, repeatlast=True).next
@@ -468,7 +473,11 @@ class chord(Signature):
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
             return self.apply((), kwargs)
         callback_id = body.options.setdefault('task_id', uuid())
-        return _chord.AsyncResult(callback_id, parent=_chord(**kwargs))
+        root_id = self.options.get('root_id', None)
+        if root_id:
+            body.options.setdefault('root_id', root_id)
+        return _chord.AsyncResult(callback_id, parent=_chord(**kwargs),
+                                  root_id=root_id)
 
     def clone(self, *args, **kwargs):
         s = Signature.clone(self, *args, **kwargs)

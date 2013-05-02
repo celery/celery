@@ -75,7 +75,7 @@ class Request(object):
         __slots__ = (
             'app', 'name', 'id', 'args', 'kwargs', 'on_ack', 'delivery_info',
             'hostname', 'eventer', 'connection_errors', 'task', 'eta',
-            'expires', 'request_dict', 'acknowledged',
+            'expires', 'request_dict', 'acknowledged', 'root_id',
             'utc', 'time_start', 'worker_pid', '_already_revoked',
             '_terminate_on_ack',
             '_tzlocal', '__weakref__',
@@ -110,6 +110,7 @@ class Request(object):
         self.app = app or app_or_default(app)
         name = self.name = body['task']
         self.id = body['id']
+        self.root_id = body.get('root_id', None)
         self.args = body.get('args', [])
         self.kwargs = body.get('kwargs', {})
         try:
@@ -190,6 +191,7 @@ class Request(object):
         default_kwargs = {'logfile': None,   # deprecated
                           'loglevel': None,  # deprecated
                           'task_id': self.id,
+                          'root_id': self.root_id,
                           'task_name': self.name,
                           'task_retries': self.request_dict.get('retries', 0),
                           'task_is_eager': False,

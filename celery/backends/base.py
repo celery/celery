@@ -249,8 +249,11 @@ class BaseBackend(object):
     def fallback_chord_unlock(self, group_id, body, result=None,
                               countdown=1, **kwargs):
         kwargs['result'] = [r.id for r in result]
+        root_id = None
+        if hasattr(body, 'options'):
+            root_id = body.options.get('root_id', None)
         self.app.tasks['celery.chord_unlock'].apply_async(
-            (group_id, body, ), kwargs, countdown=countdown,
+            (group_id, body, ), kwargs, countdown=countdown, root_id=root_id,
         )
     on_chord_apply = fallback_chord_unlock
 
