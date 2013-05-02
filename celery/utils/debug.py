@@ -33,7 +33,7 @@ def _on_blocking(signum, frame):
 
 
 @contextmanager
-def blocking_detection(timeout):
+def blockdetection(timeout):
     if not timeout:
         yield
     else:
