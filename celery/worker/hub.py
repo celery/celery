@@ -278,11 +278,11 @@ class Hub(object):
     __exit__ = close
 
     def _repr_readers(self):
-        return ['{0}->{1}->{2!r}'.format(_rcb(cb), repr_flag(READ | ERR, fd))
+        return ['{0}->{1}'.format(_rcb(cb), repr_flag(READ | ERR, fd))
                 for fd, cb in items(self.readers)]
 
     def _repr_writers(self):
-        return ['{0}->{1}->{2!r}'.format(_rcb(cb), repr_flag(WRITE, fd))
+        return ['{0}->{1}'.format(_rcb(cb), repr_flag(WRITE, fd))
                 for fd, cb in items(self.writers)]
 
     def repr_active(self):
@@ -290,15 +290,17 @@ class Hub(object):
 
     def repr_events(self, events):
         return ', '.join(
-            '{0}->{1}' % (
+            '{0}->{1}'.format(
                 _rcb(self._callback_for(fd, fl, '{0!r}(GONE)'.format(fd))),
-                repr_flag(fl)
+                repr_flag(fl),
             )
             for fd, fl in events
         )
 
     def _callback_for(self, fd, flag, *default):
         try:
+            if fd in self.coros:
+                return self.coros[fd]
             if flag & READ:
                 return self.readers[fileno(fd)]
             if flag & WRITE:
