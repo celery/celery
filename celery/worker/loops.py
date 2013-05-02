@@ -92,6 +92,7 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
                 while connection.more_to_read:
                     try:
                         events = poll(poll_timeout)
+                        #print('EVENTS: %r' % (hub.repr_events(events), ))
                     except ValueError:  # Issue 882
                         return
                     if not events:
