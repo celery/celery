@@ -46,6 +46,12 @@ BUILTIN_FIXUPS = frozenset([
     'celery.fixups.django:fixup',
 ])
 
+ERROR_ENVVAR_NOT_SET = """\
+The environment variable {0!r} is not set,
+and as such the configuration could not be loaded.
+Please set this variable and make it point to
+a configuration module."""
+
 
 def app_has_custom(app, attr):
     return mro_lookup(app.__class__, attr, stop=(Celery, object),
@@ -247,7 +253,7 @@ class Celery(object):
         if not module_name:
             if silent:
                 return False
-            raise ImproperlyConfigured(self.error_envvar_not_set % module_name)
+            raise ImproperlyConfigured(ERROR_ENVVAR_NOT_SET % module_name)
         return self.config_from_object(module_name, silent=silent)
 
     def config_from_cmdline(self, argv, namespace='celery'):
