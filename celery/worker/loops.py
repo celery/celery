@@ -105,6 +105,8 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
                             elif event & ERR:
                                 cb = (readers.get(fileno) or
                                       writers.get(fileno))
+                                if cb is None:
+                                    continue
                             if isinstance(cb, generator):
                                 cb.send((fileno, event))
                             else:
