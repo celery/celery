@@ -284,7 +284,7 @@ class chain(Signature):
         tasks = d['kwargs']['tasks']
         if d['args'] and tasks:
             # partial args passed on to first task in chain (Issue #1057).
-            tasks[0]['args'] = d['args'] + tasks[0]['args']
+            tasks[0]['args'] = tasks[0]._merge(d['args'])[0]
         return chain(*d['kwargs']['tasks'], **kwdict(d['options']))
 
     @property
@@ -393,7 +393,7 @@ class group(Signature):
         if d['args'] and tasks:
             # partial args passed on to all tasks in the group (Issue #1057).
             for task in tasks:
-                task['args'] = d['args'] + task['args']
+                task['args'] = task._merge(d['args'])[0]
         return group(tasks, **kwdict(d['options']))
 
     def __call__(self, *partial_args, **options):
