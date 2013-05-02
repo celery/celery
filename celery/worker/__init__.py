@@ -78,6 +78,7 @@ class WorkController(configurated):
 
     pidlock = None
     namespace = None
+    pool = None
 
     class Namespace(bootsteps.Namespace):
         """Worker bootstep namespace."""

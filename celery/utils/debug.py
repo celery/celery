@@ -10,7 +10,10 @@ from __future__ import absolute_import
 
 import os
 
+from contextlib import contextmanager
+
 from celery.five import format_d, range
+from celery.platforms import signals
 
 try:
     from psutil import Process
@@ -19,6 +22,31 @@ except ImportError:
 
 _process = None
 _mem_sample = []
+
+
+def _on_blocking(signum, frame):
+    import inspect
+    raise RuntimeError(
+        'Blocking detection timed-out at: %s' % (
+            inspect.getframeinfo(frame), ))
+
+
+@contextmanager
+def blockdetection(timeout):
+    if not timeout:
+        yield
+    else:
+        old_handler = signals['ALRM']
+        old_handler = None if old_handler == _on_blocking else old_handler
+
+        signals['ALRM'] = _on_blocking
+
+        try:
+            yield signals.arm_alarm(timeout)
+        finally:
+            if old_handler:
+                signals['ALRM'] = old_handler
+            signals.reset_alarm()
 
 
 def sample_mem():

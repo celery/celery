@@ -11,6 +11,7 @@ from __future__ import absolute_import, print_function
 
 import atexit
 import errno
+import math
 import os
 import platform as _platform
 import signal as _signal
@@ -551,6 +552,25 @@ class Signals(object):
 
     ignored = _signal.SIG_IGN
     default = _signal.SIG_DFL
+
+    if hasattr(_signal, 'setitimer'):
+
+        def arm_alarm(self, seconds):
+            _signal.setitimer(_signal.ITIMER_REAL, seconds)
+    else:
+        try:
+            from itimer import alarm as _itimer_alarm  # noqa
+        except ImportError:
+
+            def arm_alarm(self, seconds):  # noqa
+                _signal.alarm(math.ceil(seconds))
+        else:
+
+            def arm_alarm(self, seconds):      # noqa
+                return _itimer_alarm(seconds)  # noqa
+
+    def reset_alarm(self):
+        return _signal.alarm(0)
 
     def supported(self, signal_name):
         """Returns true value if ``signal_name`` exists on this platform."""
