@@ -417,7 +417,7 @@ class ResultSet(ResultBase):
                 )
 
     def __iter__(self):
-        return self.iterate()
+        return iter(self.results)
 
     def __getitem__(self, index):
         """`res[i] -> res.results[i]`"""
