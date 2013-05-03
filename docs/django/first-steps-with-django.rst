@@ -106,7 +106,7 @@ parts of the Celery documentation.
 
 .. admonition:: Relative Imports
 
-    You have to consistent in how you import the task module, e.g. if
+    You have to be consistent in how you import the task module, e.g. if
     you have ``project.app`` in ``INSTALLED_APPS`` then you also
     need to import the tasks ``from project.app`` or else the names
     of the tasks will be different.
