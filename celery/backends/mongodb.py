@@ -124,7 +124,7 @@ class MongoBackend(BaseDictBackend):
                 'date_done': datetime.utcnow(),
                 'traceback': Binary(self.encode(traceback)),
                 'children': Binary(self.encode(self.current_task_children()))}
-        self.collection.save(meta, safe=True)
+        self.collection.save(meta)
 
         return result
 
@@ -151,7 +151,7 @@ class MongoBackend(BaseDictBackend):
         meta = {'_id': group_id,
                 'result': Binary(self.encode(result)),
                 'date_done': datetime.utcnow()}
-        self.collection.save(meta, safe=True)
+        self.collection.save(meta)
 
         return result
 
@@ -183,7 +183,7 @@ class MongoBackend(BaseDictBackend):
         # By using safe=True, this will wait until it receives a response from
         # the server.  Likewise, it will raise an OperationsError if the
         # response was unable to be completed.
-        self.collection.remove({'_id': task_id}, safe=True)
+        self.collection.remove({'_id': task_id})
 
     def cleanup(self):
         """Delete expired metadata."""
