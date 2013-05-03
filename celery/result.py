@@ -364,7 +364,7 @@ class ResultSet(ResultBase):
     def failed(self):
         """Did any of the tasks fail?
 
-        :returns: :const:`True` if any of the tasks failed.
+        :returns: :const:`True` if one of the tasks failed.
             (i.e., raised an exception)
 
         """
@@ -373,7 +373,7 @@ class ResultSet(ResultBase):
     def waiting(self):
         """Are any of the tasks incomplete?
 
-        :returns: :const:`True` if any of the tasks is still
+        :returns: :const:`True` if one of the tasks are still
             waiting for execution.
 
         """
@@ -382,7 +382,7 @@ class ResultSet(ResultBase):
     def ready(self):
         """Did all of the tasks complete? (either by success of failure).
 
-        :returns: :const:`True` if all of the tasks been
+        :returns: :const:`True` if all of the tasks has been
             executed.
 
         """
