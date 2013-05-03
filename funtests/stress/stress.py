@@ -99,7 +99,8 @@ class Stresstests(object):
                 raise
             finally:
                 print('{0} {1} iterations in {2}s'.format(
-                    'failed after' if failed else 'completed', i, time() - t
+                    'failed after' if failed else 'completed',
+                    i + 1, time() - t,
                 ))
 
     def termbysig(self):

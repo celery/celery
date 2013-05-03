@@ -21,7 +21,6 @@ from kombu.utils import cached_property
 from kombu.utils.encoding import safe_str
 
 from celery.datastructures import DictAttribute
-from celery.exceptions import ImproperlyConfigured
 from celery.five import reraise, string_t
 from celery.utils.functional import maybe_list
 from celery.utils.imports import (
