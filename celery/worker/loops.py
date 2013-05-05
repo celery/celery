@@ -34,6 +34,8 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
         readers, writers = hub.readers, hub.writers
         poll = hub.poller.poll
         fire_timers = hub.fire_timers
+        hub_add = hub.add
+        hub_remove = hub.remove
         scheduled = hub.timer._queue
         hbtick = connection.heartbeat_check
         conn_poll_start = connection.transport.on_poll_start
@@ -98,18 +100,26 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
                     if not events:
                         conn_poll_empty()
                     for fileno, event in events or ():
+                        cb = flags = None
                         try:
                             if event & READ:
-                                cb = readers[fileno]
+                                cb, flags = readers[fileno], READ | ERR
                             elif event & WRITE:
-                                cb = writers[fileno]
+                                cb, flags = writers[fileno], WRITE
                             elif event & ERR:
-                                cb = (readers.get(fileno) or
+                                cb, flags = (readers.get(fileno) or
                                       writers.get(fileno))
                                 if cb is None:
                                     continue
                             if isinstance(cb, generator):
-                                cb.send((fileno, event))
+                                try:
+                                    next(cb)
+                                    hub_add(fileno, cb, WRITE)
+                                except StopIteration:
+                                    hub_remove(fileno)
+                                except Exception:
+                                    hub_remove(fileno)
+                                    raise
                             else:
                                 cb(fileno, event)
                         except (KeyError, Empty):

@@ -435,7 +435,6 @@ class TaskPool(BasePool):
         fileno_to_outq = pool._fileno_to_outq
         all_inqueues = pool._all_inqueues
         active_writes = self._active_writes
-        add_coro = hub.add_coro
         diff = all_inqueues.difference
         hub_add, hub_remove = hub.add, hub.remove
         mark_write_fd_as_active = active_writes.add
@@ -543,7 +542,7 @@ class TaskPool(BasePool):
                     mark_write_gen_as_active(cor)
                     mark_write_fd_as_active(ready_fd)
                     callback.args = (cor, )  # tricky as we need to pass ref
-                    add_coro((ready_fd, ), cor, WRITE)
+                    hub_add((ready_fd, ), cor, WRITE)
 
         def on_poll_start(hub):
             if outbound:

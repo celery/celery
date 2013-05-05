@@ -160,33 +160,6 @@ class Hub(object):
         self.on_init = []
         self.on_close = []
         self.on_task = []
-        self.coros = {}
-
-        self.trampoline = self._trampoline()
-
-    @coroutine
-    def _trampoline(self):
-        coros = self.coros
-        add = self.add_coro
-        remove_self = self.remove
-        pop = self.coros.pop
-
-        while 1:
-            fd, events = (yield)
-            remove_self(fd)
-            try:
-                gen = coros[fd]
-            except KeyError:
-                pass
-            else:
-                try:
-                    next(gen)
-                    add(fd, gen, WRITE)
-                except StopIteration:
-                    pop(fd, None)
-                except Exception:
-                    pop(fd, None)
-                    raise
 
     def start(self):
         """Called by Hub bootstep at worker startup."""
@@ -231,15 +204,6 @@ class Hub(object):
         fd = fileno(fd)
         self._unregister(fd)
         self._discard(fd)
-
-    def add_coro(self, fds, coro, flags):
-        for fd in (fileno(f) for f in maybe_list(fds, None)):
-            self._add(fd, self.trampoline, flags)
-            self.coros[fd] = coro
-
-    def remove_coro(self, fds):
-        for fd in maybe_list(fds, None):
-            self.coros.pop(fileno(fd), None)
 
     def add_reader(self, fds, callback):
         return self.add(fds, callback, READ | ERR)
@@ -299,8 +263,6 @@ class Hub(object):
 
     def _callback_for(self, fd, flag, *default):
         try:
-            if fd in self.coros:
-                return self.coros[fd]
             if flag & READ:
                 return self.readers[fileno(fd)]
             if flag & WRITE:
