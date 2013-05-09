@@ -117,23 +117,22 @@ class TraceInfo(object):
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                  Info=TraceInfo, eager=False, propagate=False,
                  IGNORE_STATES=IGNORE_STATES):
-    """Builts a function that tracing the tasks execution; catches all
-    exceptions, and saves the state and result of the task execution
-    to the result backend.
+    """Returns a function that traces task execution; catches all
+    exceptions and updates result backend with the state and result
 
     If the call was successful, it saves the result to the task result
     backend, and sets the task status to `"SUCCESS"`.
 
     If the call raises :exc:`~celery.exceptions.RetryTaskError`, it extracts
-    the original exception, uses that as the result and sets the task status
+    the original exception, uses that as the result and sets the task state
     to `"RETRY"`.
 
     If the call results in an exception, it saves the exception as the task
-    result, and sets the task status to `"FAILURE"`.
+    result, and sets the task state to `"FAILURE"`.
 
     Returns a function that takes the following arguments:
 
-        :param uuid: The unique id of the task.
+        :param uuid: The id of the task.
         :param args: List of positional args to pass on to the function.
         :param kwargs: Keyword arguments mapping to pass on to the function.
         :keyword request: Request dict.
