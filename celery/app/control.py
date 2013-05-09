@@ -91,6 +91,12 @@ class Inspect(object):
     def hello(self):
         return self._request('hello')
 
+    def memsample(self):
+        return self._request('memsample')
+
+    def memdump(self, samples=10):
+        return self._request('memdump', samples=samples)
+
 
 class Control(object):
     Mailbox = Mailbox

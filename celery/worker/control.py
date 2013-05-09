@@ -12,7 +12,7 @@ import logging
 
 from kombu.utils.encoding import safe_repr
 
-from celery.five import UserDict, items
+from celery.five import UserDict, items, StringIO
 from celery.platforms import signals as _signals
 from celery.utils import timeutils
 from celery.utils.log import get_logger
@@ -173,6 +173,20 @@ def dump_active(panel, safe=False, **kwargs):
 @Panel.register
 def stats(panel, **kwargs):
     return panel.consumer.controller.stats()
+
+
+@Panel.register
+def memsample(panel, **kwargs):
+    from celery.utils.debug import sample_mem
+    return sample_mem()
+
+
+@Panel.register
+def memdump(panel, samples=10, **kwargs):
+    from celery.utils.debug import memdump
+    out = StringIO()
+    memdump(file=out)
+    return out.getvalue()
 
 
 @Panel.register

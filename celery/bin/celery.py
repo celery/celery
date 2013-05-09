@@ -365,7 +365,9 @@ class inspect(_RemoteControl):
         'ping': (0.2, 'ping worker(s)'),
         'clock': (1.0, 'get value of logical clock'),
         'conf': (1.0, 'dump worker configuration'),
-        'report': (1.0, 'get bugreport info')
+        'report': (1.0, 'get bugreport info'),
+        'memsample': (1.0, 'sample memory (requires psutil)'),
+        'memdump': (1.0, 'dump memory samples (requires psutil)'),
     }
 
     def call(self, method, *args, **options):
