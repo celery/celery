@@ -198,11 +198,11 @@ class Task(object):
     serializer = None
 
     #: Hard time limit.
-    #: Defaults to the :setting:`CELERY_TASK_TIME_LIMIT` setting.
+    #: Defaults to the :setting:`CELERYD_TASK_TIME_LIMIT` setting.
     time_limit = None
 
     #: Soft time limit.
-    #: Defaults to the :setting:`CELERY_TASK_SOFT_TIME_LIMIT` setting.
+    #: Defaults to the :setting:`CELERYD_TASK_SOFT_TIME_LIMIT` setting.
     soft_time_limit = None
 
     #: The result store backend used for this task.
