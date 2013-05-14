@@ -26,6 +26,7 @@ from kombu.syn import detect_environment
 
 from celery import concurrency as _concurrency
 from celery import platforms
+from celery import signals
 from celery.app import app_or_default
 from celery.app.abstract import configurated, from_config
 from celery.exceptions import SystemTerminate, TaskRevokedError
@@ -327,7 +328,10 @@ class WorkController(configurated):
         self.loglevel = loglevel or self.loglevel
         self.hostname = hostname or socket.gethostname()
         self.ready_callback = ready_callback
-        self._finalize = Finalize(self, self.stop, exitpriority=1)
+        self._finalize = [
+            Finalize(self, self.stop, exitpriority=1),
+            Finalize(self, self._send_worker_shutdown, exitpriority=10),
+        ]
         self.pidfile = pidfile
         self.pidlock = None
         # this connection is not established, only used for params
@@ -349,6 +353,9 @@ class WorkController(configurated):
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
         self.components = []
         self.namespace = Namespace(app=self.app).apply(self, **kwargs)
+
+    def _send_worker_shutdown(self):
+        signals.worker_shutdown.send(sender=self)
 
     def start(self):
         """Starts the workers main loop."""
