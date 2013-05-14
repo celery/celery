@@ -58,6 +58,11 @@ def kill(sig=signal.SIGKILL):
 
 
 @celery.task
+def sleeping(i):
+    sleep(i)
+
+
+@celery.task
 def segfault():
     import ctypes
     ctypes.memset(0, 0, 1)
