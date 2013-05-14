@@ -80,6 +80,7 @@ class WorkController(configurated):
     pidlock = None
     namespace = None
     pool = None
+    semaphore = None
 
     class Namespace(bootsteps.Namespace):
         """Worker bootstep namespace."""
@@ -295,7 +296,6 @@ class WorkController(configurated):
             'nvcsw': s.ru_nvcsw,
             'nivcsw': s.ru_nivcsw,
         }
-
 
     def stats(self):
         info = self.info()

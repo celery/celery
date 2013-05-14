@@ -435,6 +435,7 @@ class TaskPool(BasePool):
         apply_at = hub.timer.apply_at
         maintain_pool = self.maintain_pool
         on_soft_timeout = self.on_soft_timeout
+        on_hard_timeout = self.on_hard_timeout
         fileno_to_inq = pool._fileno_to_inq
         fileno_to_outq = pool._fileno_to_outq
         fileno_to_synq = pool._fileno_to_synq

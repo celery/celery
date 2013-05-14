@@ -100,14 +100,14 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
                     if not events:
                         conn_poll_empty()
                     for fileno, event in events or ():
-                        cb = flags = None
+                        cb = None
                         try:
                             if event & READ:
-                                cb, flags = readers[fileno], READ | ERR
+                                cb = readers[fileno]
                             elif event & WRITE:
-                                cb, flags = writers[fileno], WRITE
+                                cb = writers[fileno]
                             elif event & ERR:
-                                cb, flags = (readers.get(fileno) or
+                                cb = (readers.get(fileno) or
                                       writers.get(fileno))
                                 if cb is None:
                                     continue
