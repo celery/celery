@@ -30,6 +30,7 @@ if sys.version_info > (3, 3):
             obj = obj.__class__
         return '.'.join((obj.__module__,
                          getattr(obj, '__qualname__', None) or obj.__name__))
+
 else:
     def qualname(obj):  # noqa
         if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
