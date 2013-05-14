@@ -24,10 +24,17 @@ class NotAPackage(Exception):
     pass
 
 
-def qualname(obj):  # noqa
-    if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
-        obj = obj.__class__
-    return '%s.%s' % (obj.__module__, obj.__name__)
+if sys.version_info > (3, 3):
+    def qualname(obj):
+        if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
+            obj = obj.__class__
+        return '.'.join((obj.__module__,
+                         getattr(obj, '__qualname__', None) or obj.__name__))
+else:
+    def qualname(obj):  # noqa
+        if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
+            obj = obj.__class__
+        return '.'.join((obj.__module__, obj.__name__))
 
 
 def instantiate(name, *args, **kwargs):
