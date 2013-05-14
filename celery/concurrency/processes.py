@@ -37,7 +37,7 @@ from celery import platforms
 from celery import signals
 from celery._state import set_default_app
 from celery.concurrency.base import BasePool
-from celery.five import items
+from celery.five import items, values
 from celery.task import trace
 from celery.utils.log import get_logger
 from celery.worker.hub import READ, WRITE, ERR
@@ -642,9 +642,9 @@ class TaskPool(BasePool):
 
     def flush(self):
         # cancel all tasks that have not been accepted to that NACK is sent.
-        for job in values(self._pool._pool):
+        for job in values(self._pool._cache):
             if not job._accepted:
-                job.cancel()
+                job._cancel()
 
         # clear the outgoing buffer as the tasks will be redelivered by
         # the broker anyway.

@@ -30,7 +30,7 @@ BIG = 'x' * 2 ** 20 * 8
 SMALL = 'e' * 1024
 
 celery = Celery(
-    'stress', broker='amqp://', backend='redis://',
+    'stress', broker='pyamqp://', backend='redis://',
     set_as_current=False,
 )
 
