@@ -1,3 +1,3 @@
-https://github.com/celery/py-amqp/zipball/master#egg=amqp
-https://github.com/celery/billiard/zipball/master#egg=billiard
-https://github.com/celery/kombu/zipball/master#egg=kombu
+https://github.com/celery/py-amqp/zipball/master
+https://github.com/celery/billiard/zipball/master
+https://github.com/celery/kombu/zipball/master

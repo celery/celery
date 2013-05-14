@@ -28,7 +28,7 @@ os.environ['CELERY_BROKER_URL'] = 'memory://'
 
 def setup():
     if os.environ.get('COVER_ALL_MODULES') or '--with-coverage3' in sys.argv:
-        from celery.tests.utils import catch_warnings
+        from warnings import catch_warnings
         with catch_warnings(record=True):
             import_all_modules()
         warnings.resetwarnings()
