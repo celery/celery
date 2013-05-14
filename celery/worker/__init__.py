@@ -12,6 +12,7 @@
 from __future__ import absolute_import
 
 import os
+import resource
 import socket
 import sys
 import traceback
@@ -274,10 +275,33 @@ class WorkController(configurated):
                 'pid': os.getpid(),
                 'clock': str(self.app.clock)}
 
+    def rusage(self):
+        s = resource.getrusage(resource.RUSAGE_SELF)
+        return {
+            'utime': s.ru_utime,
+            'stime': s.ru_stime,
+            'maxrss': s.ru_maxrss,
+            'ixrss': s.ru_ixrss,
+            'idrss': s.ru_idrss,
+            'isrss': s.ru_isrss,
+            'minflt': s.ru_minflt,
+            'majflt': s.ru_majflt,
+            'nswap': s.ru_nswap,
+            'inblock': s.ru_inblock,
+            'oublock': s.ru_oublock,
+            'msgsnd': s.ru_msgsnd,
+            'msgrcv': s.ru_msgrcv,
+            'nsignals': s.ru_nsignals,
+            'nvcsw': s.ru_nvcsw,
+            'nivcsw': s.ru_nivcsw,
+        }
+
+
     def stats(self):
         info = self.info()
         info.update(self.namespace.info(self))
         info.update(self.consumer.namespace.info(self.consumer))
+        info.update(rusage=self.rusage())
         return info
 
     @property
