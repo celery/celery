@@ -68,6 +68,9 @@ class BasePool(object):
     def on_stop(self):
         pass
 
+    def on_poll_init(self, w, hub):
+        pass
+
     def on_apply(self, *args, **kwargs):
         pass
 
