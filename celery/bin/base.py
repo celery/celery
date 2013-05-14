@@ -70,6 +70,7 @@ import re
 import socket
 import sys
 import warnings
+import json
 
 from collections import defaultdict
 from heapq import heappush
@@ -551,6 +552,8 @@ class Command(object):
         if isinstance(n, dict):
             if 'ok' in n or 'error' in n:
                 return self.pretty_dict_ok_error(n)
+            else:
+                return OK, json.dumps(n, sort_keys=True, indent=4)
         if isinstance(n, string_t):
             return OK, string(n)
         return OK, pformat(n)
