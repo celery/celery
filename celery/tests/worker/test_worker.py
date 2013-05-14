@@ -1113,14 +1113,14 @@ class test_WorkController(AppCase):
 
         from celery.concurrency.processes import TaskPool as _TaskPool
 
-        class TaskPool(_TaskPool):
+        class MockTaskPool(_TaskPool):
             Pool = PoolImp
 
             @property
             def timers(self):
                 return {Mock(): 30}
 
-        w.pool_cls = TaskPool
+        w.pool_cls = MockTaskPool
         w.use_eventloop = True
         w.consumer.restart_count = -1
         pool = components.Pool(w)

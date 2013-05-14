@@ -381,7 +381,7 @@ class test_GroupResult(AppCase):
     def test_iterate_raises(self):
         ar = MockAsyncResultFailure(uuid())
         ts = GroupResult(uuid(), [ar])
-        it = iter(ts)
+        it = ts.iterate()
         with self.assertRaises(KeyError):
             next(it)
 
@@ -434,7 +434,7 @@ class test_GroupResult(AppCase):
         ar = MockAsyncResultSuccess(uuid())
         ar2 = MockAsyncResultSuccess(uuid())
         ts = GroupResult(uuid(), [ar, ar2])
-        it = iter(ts)
+        it = ts.iterate()
         self.assertEqual(next(it), 42)
         self.assertEqual(next(it), 42)
 
@@ -442,7 +442,7 @@ class test_GroupResult(AppCase):
         ar1 = EagerResult(uuid(), 42, states.SUCCESS)
         ar2 = EagerResult(uuid(), 42, states.SUCCESS)
         ts = GroupResult(uuid(), [ar1, ar2])
-        it = iter(ts)
+        it = ts.iterate()
         self.assertEqual(next(it), 42)
         self.assertEqual(next(it), 42)
 
@@ -454,10 +454,13 @@ class test_GroupResult(AppCase):
         with self.assertRaises(TimeoutError):
             ts.join(timeout=0.0000001)
 
-    def test___iter__(self):
-        it = iter(self.ts)
+    def test_iterate_simple(self):
+        it = self.ts.iterate()
         results = sorted(list(it))
         self.assertListEqual(results, list(range(self.size)))
+
+    def test___iter__(self):
+        self.assertListEqual(list(iter(self.ts)), self.ts.results)
 
     def test_join(self):
         joined = self.ts.join()
@@ -501,8 +504,8 @@ class test_failed_AsyncResult(test_GroupResult):
     def test_completed_count(self):
         self.assertEqual(self.ts.completed_count(), len(self.ts) - 1)
 
-    def test___iter__(self):
-        it = iter(self.ts)
+    def test_iterate_simple(self):
+        it = self.ts.iterate()
 
         def consume():
             return list(it)
