@@ -104,7 +104,10 @@ class WorkController(configurated):
         self.app.loader.init_worker()
         self.on_before_init(**kwargs)
 
-        self._finalize = Finalize(self, self.stop, exitpriority=1)
+        self._finalize = [
+            Finalize(self, self.stop, exitpriority=1),
+            Finalize(self, self._send_worker_shutdown, exitpriority=10),
+        ]
         self.setup_instance(**self.prepare_args(**kwargs))
 
     def setup_instance(self, queues=None, ready_callback=None, pidfile=None,
@@ -124,6 +127,7 @@ class WorkController(configurated):
         # Options
         self.loglevel = mlevel(self.loglevel)
         self.ready_callback = ready_callback or self.on_consumer_ready
+
         # this connection is not established, only used for params
         self._conninfo = self.app.connection()
         self.use_eventloop = (
@@ -194,6 +198,9 @@ class WorkController(configurated):
 
     def prepare_args(self, **kwargs):
         return kwargs
+
+    def _send_worker_shutdown(self):
+        signals.worker_shutdown.send(sender=self)
 
     def start(self):
         """Starts the workers main loop."""
