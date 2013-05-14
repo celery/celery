@@ -696,14 +696,11 @@ becomes::
     w1.example.com.dq
 
 Then you can route the task to the task by specifying the hostname
-as the routung key and the ``C.dq`` exchange::
+as the routing key and the ``C.dq`` exchange::
 
     CELERY_ROUTES = {
         'tasks.add': {'exchange': 'C.dq', 'routing_key': 'w1.example.com'}
     }
-
-This setting is mandatory if you want to use the ``move_to_worker`` features
-of :mod:`celery.contrib.migrate`.
 
 .. setting:: CELERY_CREATE_MISSING_QUEUES
 
