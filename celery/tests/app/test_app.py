@@ -11,6 +11,7 @@ from celery import Celery
 from celery import app as _app
 from celery import _state
 from celery.app import defaults
+from celery.exceptions import ImproperlyConfigured
 from celery.five import items
 from celery.loaders.base import BaseLoader
 from celery.platforms import pyimplementation
@@ -23,6 +24,13 @@ from celery.utils import uuid
 from celery.utils.mail import ErrorMail
 
 THIS_IS_A_KEY = 'this is a value'
+
+class ObjectConfig(object):
+    FOO = 1
+    BAR = 2
+
+object_config = ObjectConfig()
+dict_config = dict(FOO=10, BAR=20)
 
 
 class Object(object):
@@ -357,6 +365,27 @@ class test_App(Case):
         r = loads(dumps(x))
         # not set as current, so ends up as default app after reduce
         self.assertIs(r.app, _state.default_app)
+
+    def test_config_from_envvar_more(self, key='CELERY_HARNESS_CFG1'):
+        self.assertFalse(self.app.config_from_envvar('HDSAJIHWIQHEWQU',
+                                                     silent=True))
+        with self.assertRaises(ImproperlyConfigured):
+            self.app.config_from_envvar('HDSAJIHWIQHEWQU', silent=False)
+        os.environ[key] = __name__ + '.object_config'
+        self.assertTrue(self.app.config_from_envvar(key))
+        self.assertEqual(self.app.conf['FOO'], 1)
+        self.assertEqual(self.app.conf['BAR'], 2)
+
+        os.environ[key] = 'unknown_asdwqe.asdwqewqe'
+        with self.assertRaises(ImportError):
+            self.app.config_from_envvar(key, silent=False)
+        self.assertFalse(self.app.config_from_envvar(key, silent=True))
+
+        os.environ[key] = __name__ + '.dict_config'
+        self.assertTrue(self.app.config_from_envvar(key))
+        self.assertEqual(self.app.conf['FOO'], 10)
+        self.assertEqual(self.app.conf['BAR'], 20)
+
 
     @patch('celery.bin.celery.CeleryCommand.execute_from_commandline')
     def test_start(self, execute):

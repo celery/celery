@@ -10,7 +10,6 @@ from celery import loaders
 from celery.app import app_or_default
 from celery.exceptions import (
     NotConfigured,
-    ImproperlyConfigured,
     CPendingDeprecationWarning,
 )
 from celery.five import items
@@ -21,21 +20,6 @@ from celery.utils.imports import NotAPackage
 from celery.utils.mail import SendmailWarning
 
 from celery.tests.utils import AppCase, Case
-
-
-class ObjectConfig(object):
-    FOO = 1
-    BAR = 2
-
-object_config = ObjectConfig()
-dict_config = dict(FOO=10, BAR=20)
-
-
-class Object(object):
-
-    def __init__(self, **kwargs):
-        for k, v in items(kwargs):
-            setattr(self, k, v)
 
 
 class DummyLoader(base.BaseLoader):
@@ -244,26 +228,6 @@ class test_AppLoader(Case):
     def setUp(self):
         self.app = app_or_default()
         self.loader = AppLoader(app=self.app)
-
-    def test_config_from_envvar(self, key='CELERY_HARNESS_CFG1'):
-        self.assertFalse(self.loader.config_from_envvar('HDSAJIHWIQHEWQU',
-                                                        silent=True))
-        with self.assertRaises(ImproperlyConfigured):
-            self.loader.config_from_envvar('HDSAJIHWIQHEWQU', silent=False)
-        os.environ[key] = __name__ + '.object_config'
-        self.assertTrue(self.loader.config_from_envvar(key))
-        self.assertEqual(self.loader.conf['FOO'], 1)
-        self.assertEqual(self.loader.conf['BAR'], 2)
-
-        os.environ[key] = 'unknown_asdwqe.asdwqewqe'
-        with self.assertRaises(ImportError):
-            self.loader.config_from_envvar(key, silent=False)
-        self.assertFalse(self.loader.config_from_envvar(key, silent=True))
-
-        os.environ[key] = __name__ + '.dict_config'
-        self.assertTrue(self.loader.config_from_envvar(key))
-        self.assertEqual(self.loader.conf['FOO'], 10)
-        self.assertEqual(self.loader.conf['BAR'], 20)
 
     def test_on_worker_init(self):
         prev, self.app.conf.CELERY_IMPORTS = (
