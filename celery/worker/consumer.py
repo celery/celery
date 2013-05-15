@@ -99,6 +99,8 @@ MESSAGE_REPORT = """\
 body: {0} {{content_type:{1} content_encoding:{2} delivery_info:{3}}}\
 """
 
+MINGLE_GET_FIELDS = itemgetter('clock', 'revoked')
+
 
 def dump_body(m, body):
     if isinstance(body, buffer):
@@ -503,8 +505,12 @@ class Mingle(bootsteps.StartStopStep):
         replies = I.hello()
         if replies:
             for reply in values(replies):
-                c.app.clock.adjust(reply['clock'])
-                revoked.update(reply['revoked'])
+                try:
+                    other_clock, other_revoked = MINGLE_GET_FIELDS(reply)
+                except KeyError:  # reply from pre-3.1 worker
+                    pass
+                c.app.clock.adjust(other_clock)
+                revoked.update(other_revoked)
             info('mingle: synced with %s', ', '.join(replies))
         else:
             info('mingle: no one here')
