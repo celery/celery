@@ -234,6 +234,7 @@ class Consumer(object):
                         self.connection.collect()
                     except Exception:
                         pass
+                    self.on_close()
                     ns.restart(self)
 
     def shutdown(self):
