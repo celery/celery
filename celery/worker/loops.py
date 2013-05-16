@@ -87,6 +87,8 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
             if qos.prev != qos.value:
                 update_qos()
 
+            #print('REG: %s' % (hub.repr_active(), ))
+
             update_readers(conn_poll_start())
             pool_poll_start(hub)
             if readers or writers:
@@ -94,7 +96,7 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
                 while connection.more_to_read:
                     try:
                         events = poll(poll_timeout)
-                        #print('EVENTS: %r' % (hub.repr_events(events), ))
+                        #print('EVENTS: %s' % (hub.repr_events(events), ))
                     except ValueError:  # Issue 882
                         return
                     if not events:
@@ -109,12 +111,15 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
                             elif event & ERR:
                                 cb = (readers.get(fileno) or
                                       writers.get(fileno))
-                                if cb is None:
-                                    continue
+                        except (KeyError, Empty):
+                            continue
+                        if cb is None:
+                            continue
+                        try:
                             if isinstance(cb, generator):
                                 try:
                                     next(cb)
-                                    hub_add(fileno, cb, WRITE)
+                                    hub_add(fileno, cb, WRITE|ERR)
                                 except StopIteration:
                                     hub_remove(fileno)
                                 except Exception:
@@ -122,8 +127,6 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
                                     raise
                             else:
                                 cb(fileno, event)
-                        except (KeyError, Empty):
-                            continue
                         except socket.error:
                             if ns.state != CLOSE:  # pragma: no cover
                                 raise

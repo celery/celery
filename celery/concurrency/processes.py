@@ -275,9 +275,11 @@ class AsynPool(_pool.Pool):
         self._fileno_to_synq[proc.synqW_fd] = proc
         self._all_inqueues.add(proc.inqW_fd)
 
-    def on_job_process_down(self, job):
+    def on_job_process_down(self, job, pid_gone):
         if job._write_to:
             self.on_partial_read(job, job._write_to)
+        elif job._scheduled_for:
+            self._put_back(job)
 
     def on_job_process_lost(self, job, pid, exitcode):
         self.mark_as_worker_lost(job, exitcode)
@@ -314,12 +316,13 @@ class AsynPool(_pool.Pool):
         self._inqueue = self._outqueue = \
             self._quick_put = self._quick_get = self._poll_result = None
 
-    def on_partial_read(self, job, proc):
+    def process_flush_queues(self, proc):
         resq = proc.outq._reader
-        # empty result queue buffer
-        while resq.poll(0):
-            self.handle_result_event(resq.fileno())
+        if not resq.closed:
+            while resq.poll(0):
+                self.handle_result_event(resq.fileno())
 
+    def on_partial_read(self, job, proc):
         # worker terminated by signal:
         # we cannot reuse the sockets again, because we don't know if
         # the process wrote/read anything frmo them, and if so we cannot
@@ -333,9 +336,11 @@ class AsynPool(_pool.Pool):
                 if conn:
                     for sock in (conn._reader, conn._writer):
                         if not sock.closed:
-                            os.close(sock.fileno())
-            self._queues[(proc.inq, proc.outq, proc.synq)] = \
-                self._queues[self.create_process_queues()] = None
+                            sock.close()
+                            #os.close(sock.fileno())
+            self._queues.pop((proc.inq, proc.outq, proc.synq))
+            self._queues[self.create_process_queues()] = None
+            self.on_inqueue_close(proc.inqW_fd)
 
     @classmethod
     def _set_result_sentinel(cls, _outqueue, _pool):
@@ -588,6 +593,11 @@ class TaskPool(BasePool):
                     callback()
                 active_writes.discard(fd)
 
+        def on_inqueue_close(fd):
+            active_writes.discard(fd)
+            all_inqueues.discard(fd)
+        self._pool.on_inqueue_close = on_inqueue_close
+
         def schedule_writes(ready_fd, events):
             if ready_fd in active_writes:
                 return
@@ -599,11 +609,16 @@ class TaskPool(BasePool):
             else:
                 if not job._accepted:
                     callback = promise(write_generator_gone)
+                    try:
+                        job._scheduled_for = fileno_to_inq[ready_fd]
+                    except KeyError:
+                        # process gone since scheduled, put back
+                        return put_message(job)
                     cor = _write_job(ready_fd, job, callback=callback)
                     mark_write_gen_as_active(cor)
                     mark_write_fd_as_active(ready_fd)
                     callback.args = (cor, )  # tricky as we need to pass ref
-                    hub_add((ready_fd, ), cor, WRITE)
+                    hub_add((ready_fd, ), cor, WRITE|ERR)
 
         def _create_payload(type_, args):
             body = dumps((type_, args), protocol=protocol)
@@ -621,12 +636,12 @@ class TaskPool(BasePool):
             mark_write_gen_as_active(cor)
             mark_write_fd_as_active(fd)
             callback.args = (cor, )
-            hub_add((fd, ), cor, WRITE)
+            hub_add((fd, ), cor, WRITE|ERR)
         self._pool.send_ack = send_ack
 
         def on_poll_start(hub):
             if outbound:
-                hub_add(diff(active_writes), schedule_writes, hub.WRITE)
+                hub_add(diff(active_writes), schedule_writes, WRITE|ERR)
         self.on_poll_start = on_poll_start
 
         def quick_put(tup):

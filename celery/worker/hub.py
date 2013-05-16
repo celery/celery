@@ -242,11 +242,11 @@ class Hub(object):
     __exit__ = close
 
     def _repr_readers(self):
-        return ['{0}->{1}'.format(_rcb(cb), repr_flag(READ | ERR))
+        return ['({0}){1}->{2}'.format(fd, _rcb(cb), repr_flag(READ | ERR))
                 for fd, cb in items(self.readers)]
 
     def _repr_writers(self):
-        return ['{0}->{1}'.format(_rcb(cb), repr_flag(WRITE))
+        return ['({0}){1}->{2}'.format(fd, _rcb(cb), repr_flag(WRITE))
                 for fd, cb in items(self.writers)]
 
     def repr_active(self):

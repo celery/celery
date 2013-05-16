@@ -33,6 +33,9 @@ celery = Celery(
     'stress', broker='pyamqp://', backend='redis://',
     set_as_current=False,
 )
+celery.conf.update(
+    CELERYD_PREFETCH_MULTIPLIER=1,
+)
 
 
 @celery.task
@@ -77,7 +80,7 @@ class Stresstests(object):
         self.block_timeout = block_timeout
 
     def run(self, n=50):
-        tests = [self.manyshort,
+        tests = [#self.manyshort,
                  self.termbysig,
                  self.bigtasks,
                  self.smalltasks,
