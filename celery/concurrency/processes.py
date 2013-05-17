@@ -148,9 +148,9 @@ class ResultHandler(_pool.ResultHandler):
 
     def __init__(self, *args, **kwargs):
         self.fileno_to_outq = kwargs.pop('fileno_to_outq')
-        self.on_worker_alive = kwargs.pop('on_worker_alive')
+        self.on_process_alive = kwargs.pop('on_process_alive')
         super(ResultHandler, self).__init__(*args, **kwargs)
-        self.state_handlers[WORKER_UP] = self.on_worker_alive
+        self.state_handlers[WORKER_UP] = self.on_process_alive
 
     def _process_result(self):
         fileno_to_outq = self.fileno_to_outq
@@ -258,6 +258,23 @@ class AsynPool(_pool.Pool):
         return next(q for q, owner in items(self._queues)
                     if owner is None)
 
+    def on_grow(self, n):
+        self._queues.update(
+            dict((self.create_process_queues(), None)
+                for _ in range(self._processes - len(self._queues)))
+        )
+
+    def on_shrink(self, n):
+        queues = self._queues
+        for i in range(n):
+            if len(queues) > self._processes:
+                try:
+                    queues.pop(next(
+                        q for q, owner in items(queues) if owner is None
+                    ), None)
+                except StopIteration:
+                    break
+
     def create_process_queues(self):
         inq, outq, synq = _SimpleQueue(), _SimpleQueue(), None
         inq._writer.setblocking(0)
@@ -266,7 +283,7 @@ class AsynPool(_pool.Pool):
             synq._writer.setblocking(0)
         return inq, outq, synq
 
-    def on_worker_alive(self, pid):
+    def on_process_alive(self, pid):
         try:
             proc = next(w for w in self._pool if w.pid == pid)
         except StopIteration:
@@ -299,7 +316,7 @@ class AsynPool(_pool.Pool):
     def create_result_handler(self):
         return super(AsynPool, self).create_result_handler(
             fileno_to_outq=self._fileno_to_outq,
-            on_worker_alive=self.on_worker_alive,
+            on_process_alive=self.on_process_alive,
         )
 
     def _process_register_queues(self, proc, queues):
@@ -338,7 +355,7 @@ class AsynPool(_pool.Pool):
                         if not sock.closed:
                             sock.close()
                             #os.close(sock.fileno())
-            self._queues.pop((proc.inq, proc.outq, proc.synq))
+            self._queues.pop((proc.inq, proc.outq, proc.synq), None)
             self._queues[self.create_process_queues()] = None
             self.on_inqueue_close(proc.inqW_fd)
 
@@ -567,9 +584,9 @@ class TaskPool(BasePool):
                 except KeyError:
                     put_message(job)
                     raise StopIteration()
-                send_offset = proc.inq._writer.send_offset
                 # job result keeps track of what process the job is sent to.
                 job._write_to = proc
+                send_offset = proc.inq._writer.send_offset
 
                 Hw = Bw = 0
                 while Hw < 4:

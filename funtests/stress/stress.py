@@ -8,7 +8,7 @@ import sys
 from time import time, sleep
 
 from celery import Celery, group
-from celery.exceptions import TimeoutError
+from celery.exceptions import TimeoutError, SoftTimeLimitExceeded
 from celery.five import range
 from celery.utils.debug import blockdetection
 
@@ -39,6 +39,11 @@ celery.conf.update(
 
 
 @celery.task
+def _marker(s, sep='-'):
+    print('{0} {1} {2}'.format(sep * 3, s, sep * 3))
+
+
+@celery.task
 def add(x, y):
     return x + y
 
@@ -66,10 +71,23 @@ def sleeping(i):
 
 
 @celery.task
+def sleeping_ignore_limits(i):
+    try:
+        sleep(i)
+    except SoftTimeLimitExceeded:
+        sleep(i)
+
+
+@celery.task
 def segfault():
     import ctypes
     ctypes.memset(0, 0, 1)
     assert False, 'should not get here'
+
+
+def marker(s, sep='-'):
+    print('{0}{1}'.format(sep, s))
+    _marker.delay(s, sep)
 
 
 class Stresstests(object):
@@ -80,14 +98,18 @@ class Stresstests(object):
         self.block_timeout = block_timeout
 
     def run(self, n=50):
-        tests = [#self.manyshort,
+        marker('Stresstest suite start', '+')
+        tests = [self.manyshort,
                  self.termbysig,
                  self.bigtasks,
                  self.smalltasks,
                  self.revoketermfast,
+                 self.timelimits,
+                 self.timelimits_soft,
                  self.revoketermslow]
         for test in tests:
             self.runtest(test, n)
+        marker('Stresstest suite end', '+')
 
     def manyshort(self):
         self.join(group(add.s(i, i) for i in xrange(1000))())
@@ -97,7 +119,7 @@ class Stresstests(object):
             t = time()
             i = 0
             failed = False
-            print('-%s(%s)' % (fun.__name__, n))
+            marker('{0}({1})'.format(fun.__name__, n))
             try:
                 for i in range(n):
                     print(i)
@@ -117,9 +139,18 @@ class Stresstests(object):
     def termbysegfault(self):
         self._evil_groupmember(segfault)
 
-    def _evil_groupmember(self, evil_t):
-        g1 = group(add.s(2, 2), evil_t.s(), add.s(4, 4), add.s(8, 8))
-        g2 = group(add.s(3, 3), add.s(5, 5), evil_t.s(), add.s(7, 7))
+    def timelimits(self):
+        self._evil_groupmember(sleeping, 2, timeout=1)
+
+    def timelimits_soft(self):
+        self._evil_groupmember(sleeping_ignore_limits, 2,
+                               soft_timeout=1, timeout=1.1)
+
+    def _evil_groupmember(self, evil_t, *eargs, **opts):
+        g1 = group(add.s(2, 2).set(**opts), evil_t.s(*eargs).set(**opts),
+                   add.s(4, 4).set(**opts), add.s(8, 8).set(**opts))
+        g2 = group(add.s(3, 3).set(**opts), add.s(5, 5).set(**opts),
+                   evil_t.s(*eargs).set(**opts), add.s(7, 7).set(**opts))
         self.join(g1(), timeout=10)
         self.join(g2(), timeout=10)
 
