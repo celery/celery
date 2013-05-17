@@ -618,7 +618,7 @@ class TaskPool(BasePool):
                     mark_write_gen_as_active(cor)
                     mark_write_fd_as_active(ready_fd)
                     callback.args = (cor, )  # tricky as we need to pass ref
-                    hub_add((ready_fd, ), cor, WRITE|ERR)
+                    hub_add((ready_fd, ), cor, WRITE | ERR)
 
         def _create_payload(type_, args):
             body = dumps((type_, args), protocol=protocol)
@@ -636,12 +636,12 @@ class TaskPool(BasePool):
             mark_write_gen_as_active(cor)
             mark_write_fd_as_active(fd)
             callback.args = (cor, )
-            hub_add((fd, ), cor, WRITE|ERR)
+            hub_add((fd, ), cor, WRITE | ERR)
         self._pool.send_ack = send_ack
 
         def on_poll_start(hub):
             if outbound:
-                hub_add(diff(active_writes), schedule_writes, WRITE|ERR)
+                hub_add(diff(active_writes), schedule_writes, WRITE | ERR)
         self.on_poll_start = on_poll_start
 
         def quick_put(tup):

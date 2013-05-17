@@ -12,7 +12,6 @@ from celery.exceptions import (
     NotConfigured,
     CPendingDeprecationWarning,
 )
-from celery.five import items
 from celery.loaders import base
 from celery.loaders import default
 from celery.loaders.app import AppLoader

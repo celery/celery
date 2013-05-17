@@ -25,6 +25,7 @@ from celery.utils.mail import ErrorMail
 
 THIS_IS_A_KEY = 'this is a value'
 
+
 class ObjectConfig(object):
     FOO = 1
     BAR = 2
@@ -385,7 +386,6 @@ class test_App(Case):
         self.assertTrue(self.app.config_from_envvar(key))
         self.assertEqual(self.app.conf['FOO'], 10)
         self.assertEqual(self.app.conf['BAR'], 20)
-
 
     @patch('celery.bin.celery.CeleryCommand.execute_from_commandline')
     def test_start(self, execute):
