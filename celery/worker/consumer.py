@@ -10,6 +10,7 @@ up and running.
 """
 from __future__ import absolute_import
 
+import errno
 import kombu
 import logging
 import socket
@@ -24,6 +25,7 @@ from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.common import QoS, ignore_errors
 from kombu.syn import _detect_environment
+from kombu.utils.compat import get_errno
 from kombu.utils.encoding import safe_repr, bytes_t
 from kombu.utils.limits import TokenBucket
 
@@ -228,7 +230,9 @@ class Consumer(object):
             maybe_shutdown()
             try:
                 ns.start(self)
-            except self.connection_errors:
+            except self.connection_errors as exc:
+                if isinstance(exc, OSError) and get_errno(exc) == errno.EMFILE:
+                    raise  # Too many open files
                 maybe_shutdown()
                 try:
                     self._restart_state.step()
