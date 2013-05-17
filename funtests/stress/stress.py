@@ -103,9 +103,9 @@ class Stresstests(object):
                  self.termbysig,
                  self.bigtasks,
                  self.smalltasks,
-                 self.revoketermfast,
                  self.timelimits,
                  self.timelimits_soft,
+                 self.revoketermfast,
                  self.revoketermslow]
         for test in tests:
             self.runtest(test, n)
