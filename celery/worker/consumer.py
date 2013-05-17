@@ -100,6 +100,13 @@ from .bootsteps import StartStopComponent
 from .control import Panel
 from .heartbeat import Heart
 
+try:
+    buffer_t = buffer
+except NameError:  # pragma: no cover
+
+    class buffer_t(object):  # noqa
+        pass
+
 RUN = 0x1
 CLOSE = 0x2
 
@@ -171,7 +178,7 @@ def debug(msg, *args, **kwargs):
 
 
 def dump_body(m, body):
-    if isinstance(body, buffer):
+    if isinstance(body, buffer_t):
         body = bytes_t(body)
     return "%s (%sb)" % (text.truncate(safe_repr(body), 1024), len(m.body))
 
