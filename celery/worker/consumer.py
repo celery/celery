@@ -41,6 +41,13 @@ from celery.utils.timeutils import humanize_seconds, rate
 from . import heartbeat, loops, pidbox
 from .state import task_reserved, maybe_shutdown, revoked, reserved_requests
 
+try:
+    buffer_t = buffer
+except NameError:  # pragma: no cover
+
+    class buffer_t(object):  # noqa
+        pass
+
 CLOSE = bootsteps.CLOSE
 logger = get_logger(__name__)
 debug, info, warn, error, crit = (logger.debug, logger.info, logger.warning,
@@ -103,7 +110,7 @@ MINGLE_GET_FIELDS = itemgetter('clock', 'revoked')
 
 
 def dump_body(m, body):
-    if isinstance(body, buffer):
+    if isinstance(body, buffer_t):
         body = bytes_t(buffer)
     return '{0} ({1}b)'.format(truncate(safe_repr(body), 1024),
                                len(m.body))
