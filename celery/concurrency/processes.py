@@ -158,7 +158,10 @@ class ResultHandler(_pool.ResultHandler):
 
         while 1:
             fileno = (yield)
-            proc = fileno_to_outq[fileno]
+            try:
+                proc = fileno_to_outq[fileno]
+            except KeyError:
+                continue
             reader = proc.outq._reader
 
             try:
@@ -552,6 +555,7 @@ class TaskPool(BasePool):
         self._pool.on_process_up = on_process_up
 
         def on_process_down(proc):
+            pool.process_flush_queues(proc)
             fileno_to_outq.pop(proc.outqR_fd, None)
             fileno_to_inq.pop(proc.inqW_fd, None)
             fileno_to_synq.pop(proc.synqW_fd, None)
