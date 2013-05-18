@@ -76,7 +76,7 @@ def process_initializer(app, hostname):
     # run once per process.
     app.loader.init_worker()
     app.loader.init_worker_process()
-    app.log.setup(int(os.environ.get('CELERY_LOG_LEVEL', 0)),
+    app.log.setup(int(os.environ.get('CELERY_LOG_LEVEL') or 0),
                   os.environ.get('CELERY_LOG_FILE') or None,
                   bool(os.environ.get('CELERY_LOG_REDIRECT', False)),
                   str(os.environ.get('CELERY_LOG_REDIRECT_LEVEL')))

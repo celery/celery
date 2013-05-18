@@ -112,12 +112,6 @@ class ColorFormatter(logging.Formatter):
                     type(msg), exc)
                 record.exc_info = True
 
-        if not PY3 and 'processName' not in record.__dict__:
-            # Very ugly, but have to make sure processName is supported
-            # by foreign logger instances.
-            # (processName is always supported by Python 2.7)
-            process_name = current_process and current_process()._name or ''
-            record.__dict__['processName'] = process_name
         return safe_str(logging.Formatter.format(self, record))
 
 
