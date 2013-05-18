@@ -98,6 +98,7 @@ class WorkController(configurated):
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app_or_default(app or self.app)
         self.hostname = default_nodename(hostname)
+        self.on_before_init_worker(**kwargs)
         self.app.loader.init_worker()
         self.on_before_init(**kwargs)
 
@@ -142,6 +143,9 @@ class WorkController(configurated):
         self.namespace.apply(self, **kwargs)
 
     def on_init_namespace(self):
+        pass
+
+    def on_before_init_worker(self, **kwargs):
         pass
 
     def on_before_init(self, **kwargs):

@@ -89,6 +89,9 @@ class Worker(WorkController):
     redirect_stdouts = from_config()
     redirect_stdouts_level = from_config()
 
+    def on_before_init_worker(self, **kwargs):
+        self._custom_logging = self.setup_logging(**kwargs)
+
     def on_before_init(self, purge=False, no_color=None, **kwargs):
         # apply task execution optimizations
         trace.setup_worker_optimizations(self.app)
@@ -100,7 +103,6 @@ class Worker(WorkController):
             sender=self.hostname, instance=self, conf=conf,
         )
         self.purge = purge
-        self.no_color = no_color
         self._isatty = isatty(sys.stdout)
         self.colored = self.app.log.colored(
             self.logfile,
@@ -108,7 +110,6 @@ class Worker(WorkController):
         )
 
     def on_init_namespace(self):
-        self._custom_logging = self.setup_logging()
         # apply task execution optimizations
         trace.setup_worker_optimizations(self.app)
 
@@ -145,9 +146,9 @@ class Worker(WorkController):
         signals.worker_ready.send(sender=consumer)
         print('{0} ready.'.format(safe_str(self.hostname), ))
 
-    def setup_logging(self, colorize=None):
-        if colorize is None and self.no_color is not None:
-            colorize = not self.no_color
+    def setup_logging(self, **kwargs):
+        no_color = kwargs.get('no_color')
+        colorize = not no_color if no_color is not None else no_color
         return self.app.log.setup(
             self.loglevel, self.logfile,
             redirect_stdouts=False, colorize=colorize,
