@@ -251,7 +251,7 @@ class Worker(configurated):
             'version': VERSION_BANNER,
             'conninfo': self.app.connection().as_uri(),
             'concurrency': concurrency,
-            'platform': _platform.platform(),
+            'platform': safe_str(_platform.platform()),
             'events': events,
             'queues': app.amqp.queues.format(indent=0, indent_first=False),
         }).splitlines()
