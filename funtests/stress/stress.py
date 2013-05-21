@@ -47,11 +47,11 @@ Celery stress-suite v{version}
 """
 
 app = Celery(
-    'stress', broker='pyamqp://', backend='redis://',
+    'stress', broker='amqp://', backend='redis://',
     set_as_current=False,
 )
 app.conf.update(
-    CELERYD_PREFETCH_MULTIPLIER=1,
+    CELERYD_PREFETCH_MULTIPLIER=10,
 )
 
 
