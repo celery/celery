@@ -166,7 +166,7 @@ class test_TaskPool(Case):
                             soft_timeout=5)
         info = pool.info
         self.assertEqual(info['max-concurrency'], pool.limit)
-        self.assertIsNone(info['max-tasks-per-child'])
+        self.assertEqual(info['max-tasks-per-child'], 'N/A')
         self.assertEqual(info['timeouts'], (5, 10))
 
     def test_num_processes(self):

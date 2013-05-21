@@ -17,7 +17,7 @@ import select
 import socket
 import struct
 
-from collections import Counter, deque, namedtuple
+from collections import deque, namedtuple
 from pickle import HIGHEST_PROTOCOL
 from time import sleep, time
 
@@ -37,7 +37,7 @@ from celery import platforms
 from celery import signals
 from celery._state import set_default_app
 from celery.concurrency.base import BasePool
-from celery.five import items, values
+from celery.five import Counter, items, values
 from celery.task import trace
 from celery.utils.log import get_logger
 from celery.worker.hub import READ, WRITE, ERR

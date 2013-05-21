@@ -10,6 +10,14 @@
 """
 from __future__ import absolute_import
 
+try:
+    from collections import Counter
+except ImportError:
+    from collections import defaultdict
+
+    def Counter():
+        return defaultdict(int)
+
 ############## py3k #########################################################
 import sys
 PY3 = sys.version_info[0] == 3
