@@ -126,7 +126,10 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
                                     hub_remove(fileno)
                                     raise
                             else:
-                                cb(fileno, event)
+                                try:
+                                    cb(fileno, event)
+                                except Empty:
+                                    continue
                         except socket.error:
                             if ns.state != CLOSE:  # pragma: no cover
                                 raise
