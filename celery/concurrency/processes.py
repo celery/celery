@@ -665,8 +665,8 @@ class TaskPool(BasePool):
         def on_not_recovering(proc):
             # XXX Theoretically a possibility, but maybe terminate the
             # process in this case to attempt to recover that way.
-            print('<<<<<<<<<< PROCESS IS NOT RECOVERING :(')
-            raise Exception('Contact support' % (proc, ))
+            raise Exception(
+                'Process writable but cannot write. Contact support!')
 
         def _write_job(fd, job, callback=None):
             # writes job to the worker process.
