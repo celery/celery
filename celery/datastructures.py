@@ -416,6 +416,8 @@ MutableMapping.register(DictAttribute)
 class ConfigurationView(AttributeDictMixin):
     """A view over an applications configuration dicts.
 
+    Custom (but older) version of :class:`collections.ChainMap`.
+
     If the key does not exist in ``changes``, the ``defaults`` dicts
     are consulted.
 
@@ -457,6 +459,10 @@ class ConfigurationView(AttributeDictMixin):
         except KeyError:
             return default
 
+    def clear(self):
+        """Removes all changes, but keeps defaults."""
+        self.changes.clear()
+
     def setdefault(self, key, default):
         try:
             return self[key]
@@ -468,10 +474,10 @@ class ConfigurationView(AttributeDictMixin):
         return self.changes.update(*args, **kwargs)
 
     def __contains__(self, key):
-        for d in self._order:
-            if key in d:
-                return True
-        return False
+        return any(key in m for m in self._order)
+
+    def __bool__(self):
+        return any(self._order)
 
     def __repr__(self):
         return repr(dict(items(self)))
@@ -482,7 +488,7 @@ class ConfigurationView(AttributeDictMixin):
     def __len__(self):
         # The logic for iterating keys includes uniq(),
         # so to be safe we count by explicitly iterating
-        return len(self.keys())
+        return len(set().union(*self._order))
 
     def _iter(self, op):
         # defaults must be first in the stream, so values in
