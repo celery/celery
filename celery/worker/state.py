@@ -16,7 +16,7 @@ import sys
 import platform
 import shelve
 
-from collections import defaultdict
+from collections import Counter
 
 from kombu.serialization import pickle_protocol
 from kombu.utils import cached_property
@@ -44,7 +44,7 @@ reserved_requests = set()
 active_requests = set()
 
 #: count of tasks accepted by the worker, sorted by type.
-total_count = defaultdict(int)
+total_count = Counter()
 
 #: the list of currently revoked tasks.  Persistent if statedb set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
