@@ -18,9 +18,12 @@ from . import app_or_default
 def flatten_reply(reply):
     nodes = {}
     for item in reply:
-        nodes.update(item)
+        for (k, v) in item.iteritems():
+            if k not in nodes:
+                nodes[k] = v
+            else:
+                nodes[k] += v
     return nodes
-
 
 class Inspect(object):
     app = None
