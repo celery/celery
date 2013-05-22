@@ -563,7 +563,7 @@ class TaskPool(BasePool):
             for job in values(pool._cache):
                 if job._write_to and job._write_to.inqW_fd == infd:
                     job._write_to = proc
-                elif job._scheduled_for and job._scheduled_for.inqW_fd == infd:
+                if job._scheduled_for and job._scheduled_for.inqW_fd == infd:
                     job._scheduled_for = proc
             fileno_to_outq[proc.outqR_fd] = proc
             hub_add(proc.sentinel, maintain_pool, READ | ERR)
