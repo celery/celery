@@ -182,7 +182,10 @@ class Suite(object):
             )
             for j, test in enumerate(tests):
                 self.runtest(test, iterations, j + 1)
-            marker('Stresstest suite end', '+')
+            marker(
+                'Stresstest suite end (repetition {0})'.format(i + 1),
+                '+',
+            )
 
     def filtertests(self, names):
         try:
