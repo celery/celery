@@ -41,14 +41,16 @@ You need four simple steps to use celery with your Django project.
 By default Celery uses `RabbitMQ`_ as the broker, but there are several
 alternatives to choose from, see :ref:`celerytut-broker`.
 
-All settings mentioned in the Celery documentation should be added
-to your Django project's ``settings.py`` module. For example
-you can configure the :setting:`BROKER_URL` setting to specify
-what broker to use::
+In place of a ``celeryconfig.py`` configuration file, django-celery's settings should be added
+to your Django project's ``settings.py`` module. 
+
+Initially, configure the :setting:`BROKER_URL` setting to specify
+what broker to use, and include :setting:`CELERY_IMPORTS` to identify where your tasks are located for import::
 
     BROKER_URL = 'amqp://guest:guest@localhost:5672/'
+    CELERY_IMPORTS = ('myproject.app.module_containing_tasks',)
 
-That's it.
+That's all you need for initial setup.
 
 .. _`RabbitMQ`: http://www.rabbitmq.com/
 
@@ -193,6 +195,31 @@ raised by the task.
 
 Where to go from here
 =====================
+
+Celery init.d
+-----------------
+
+From here you'll want to easily be able to start, stop and restart Celery processes in the background. 
+Celery provides a very useful default `extra/generic-init.d/`_ script to enable this.
+
+.. _`extra/generic-init.d/`:
+    http://github.com/celery/celery/tree/3.0/extra/generic-init.d/
+
+
+Copy that file as is and place it in :file:`/etc/init.d/celeryd`.
+
+Celery config
+--------------
+
+Next, you want to create the :file:`/etc/default/celeryd` that contains your default Celery settings that are picked up by the :file:`init.d` script.
+
+See :ref:`generic-initd-celeryd-django-example` for a django-celery sample.
+
+
+What's Next?
+=============
+
+Review :ref:`daemonizing`, and make sure that you're running celery as an unprivileged user.
 
 To learn more you should read the `Celery User Guide`_, and the
 `Celery Documentation`_ in general.
