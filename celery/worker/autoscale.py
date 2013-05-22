@@ -30,7 +30,7 @@ from .hub import DummyLock
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error
 
-AUTOSCALE_KEEPALIVE = int(os.environ.get('AUTOSCALE_KEEPALIVE', 30))
+AUTOSCALE_KEEPALIVE = float(os.environ.get('AUTOSCALE_KEEPALIVE', 30))
 
 
 class WorkerComponent(bootsteps.StartStopStep):
