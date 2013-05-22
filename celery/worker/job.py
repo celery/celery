@@ -412,6 +412,8 @@ class Request(object):
         )
 
         if internal:
+            if isinstance(einfo.exception, MemoryError):
+                raise MemoryError('Process got: %s' % (einfo.exception, ))
             if isinstance(einfo.exception, Ignore):
                 format = self.ignored_msg
                 description = 'ignored'
