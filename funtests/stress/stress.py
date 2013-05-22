@@ -9,6 +9,7 @@ import sys
 
 from time import time, sleep
 
+from kombu import Exchange, Queue
 from kombu.utils.compat import OrderedDict
 
 from celery import Celery, group, VERSION_BANNER
@@ -47,12 +48,22 @@ Celery stress-suite v{version}
 {toc}
 """
 
+CSTRESS_QUEUE = os.environ.get('CSTRESS_QUEUE_NAME', 'c.stress')
+CSTRESS_BACKEND = os.environ.get('CSTRESS_BACKEND', 'redis://')
+
 app = Celery(
-    'stress', broker='amqp://', backend='redis://',
+    'stress', broker='amqp://', backend=CSTRESS_BACKEND,
     set_as_current=False,
 )
 app.conf.update(
     CELERYD_PREFETCH_MULTIPLIER=10,
+    CELERY_DEFAULT_QUEUE=CSTRESS_QUEUE,
+    CELERY_QUEUES=(
+        Queue(CSTRESS_QUEUE,
+              exchange=Exchange(CSTRESS_QUEUE, durable=False),
+              routing_key=CSTRESS_QUEUE,
+              durable=False, auto_delete=True),
+    ),
 )
 
 
