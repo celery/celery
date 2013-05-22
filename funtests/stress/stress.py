@@ -7,6 +7,7 @@ import random
 import signal
 import sys
 
+from itertools import count
 from time import time, sleep
 
 from kombu import Exchange, Queue
@@ -17,7 +18,7 @@ from celery.bin.base import Command, Option
 from celery.exceptions import TimeoutError, SoftTimeLimitExceeded
 from celery.five import range, values
 from celery.utils.debug import blockdetection
-from celery.utils.text import indent, pluralize
+from celery.utils.text import pluralize
 
 # Should be run with workers running using these options:
 #
@@ -123,8 +124,9 @@ class Stress(Command):
 
     def run(self, *names, **options):
         try:
-            return Suite(self.app,
-                         block_timeout=options.get('block_timeout'),
+            return Suite(
+                self.app,
+                block_timeout=options.get('block_timeout'),
             ).run(names, **options)
         except KeyboardInterrupt:
             pass
@@ -140,6 +142,8 @@ class Stress(Command):
             Option('--block-timeout', type='int', default=30 * 60),
             Option('-l', '--list', action='store_true', dest='list_all',
                    help='List all tests'),
+            Option('-r', '--repeat', type='float', default=0,
+                   help='Number of times to repeat the test suite'),
         )
 
 
@@ -165,16 +169,20 @@ class Suite(object):
         )
 
     def run(self, names=None, iterations=50, offset=0,
-            numtests=None, list_all=False, **kw):
+            numtests=None, list_all=False, repeat=0, **kw):
         tests = self.filtertests(names)[offset:numtests or None]
         if list_all:
             return print(self.testlist(tests))
         print(self.banner(tests))
-        marker('Stresstest suite start', '+')
-        for i, test in enumerate(tests):
-            self.runtest(test, iterations, i + 1)
-        marker('Stresstest suite end', '+')
-
+        it = count() if repeat == float('Inf') else range(int(repeat) + 1)
+        for i in it:
+            marker(
+                'Stresstest suite start (repetition {0})'.format(i + 1),
+                '+',
+            )
+            for j, test in enumerate(tests):
+                self.runtest(test, iterations, j + 1)
+            marker('Stresstest suite end', '+')
 
     def filtertests(self, names):
         try:
@@ -212,7 +220,7 @@ class Suite(object):
             marker('{0}: {1}({2})'.format(index, fun.__name__, n))
             try:
                 for i in range(n):
-                    print(i)
+                    print('{0} ({1})'.format(i, fun.__name__))
                     fun()
             except Exception:
                 failed = True
@@ -275,9 +283,9 @@ class Suite(object):
             try:
                 return r.get(propagate=False, **kwargs)
             except TimeoutError as exc:
-                print('join timed out: %s' % (exc, ))
+                marker('join timed out: {0!r}'.format(exc), '!')
             except self.connerrors as exc:
-                print('join: connection lost: %r' % (exc, ))
+                marker('join: connection lost: {0!r}'.format(exc), '!')
 
 
 if __name__ == '__main__':
