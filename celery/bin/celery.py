@@ -368,6 +368,7 @@ class inspect(_RemoteControl):
         'report': (1.0, 'get bugreport info'),
         'memsample': (1.0, 'sample memory (requires psutil)'),
         'memdump': (1.0, 'dump memory samples (requires psutil)'),
+        'objgraph': (4.0, 'create object graph (requires objgraph)'),
     }
 
     def call(self, method, *args, **options):

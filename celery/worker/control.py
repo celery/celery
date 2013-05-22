@@ -9,6 +9,7 @@
 from __future__ import absolute_import
 
 import logging
+import tempfile
 
 from kombu.utils.encoding import safe_repr
 
@@ -173,6 +174,23 @@ def dump_active(panel, safe=False, **kwargs):
 @Panel.register
 def stats(panel, **kwargs):
     return panel.consumer.controller.stats()
+
+
+@Panel.register
+def objgraph(panel, num=200, max_depth=10, ):
+    try:
+        import objgraph
+    except ImportError:
+        raise ImportError('Requires the objgraph library')
+    with tempfile.NamedTemporaryFile(prefix='cobjg',
+                                     suffix='.png', delete=False) as fh:
+        objects = objgraph.by_type('Request')[:num]
+        objgraph.show_backrefs(
+            objects,
+            max_depth=max_depth, highlight=lambda v: v in objects,
+            filename=fh.name,
+        )
+        return {'filename': fh.name}
 
 
 @Panel.register

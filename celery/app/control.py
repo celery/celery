@@ -97,6 +97,9 @@ class Inspect(object):
     def memdump(self, samples=10):
         return self._request('memdump', samples=samples)
 
+    def objgraph(self, n=200, max_depth=10):
+        return self._request('objgraph', num=n, max_depth=max_depth)
+
 
 class Control(object):
     Mailbox = Mailbox
