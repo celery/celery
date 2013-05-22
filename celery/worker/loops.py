@@ -119,7 +119,6 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
                             if isinstance(cb, generator):
                                 try:
                                     next(cb)
-                                    hub_add(fileno, cb, WRITE | ERR)
                                 except StopIteration:
                                     hub_remove(fileno)
                                 except Exception:

@@ -353,6 +353,9 @@ class AsynPool(_pool.Pool):
             # job was not acked, so find another worker to send it to.
             if not job._accepted:
                 self._put_back(job)
+            writer = getattr(job, '_writer')
+            if writer:
+                self._active_writers.discard(writer)
 
             # Replace queues to avoid reuse
             before = len(self._queues)
@@ -595,11 +598,14 @@ class TaskPool(BasePool):
         hub_add, hub_remove = hub.add, hub.remove
         mark_write_fd_as_active = active_writes.add
         mark_write_gen_as_active = self._active_writers.add
-        write_generator_done = self._active_writers.discard
+        _write_generator_done = self._active_writers.discard
         get_job = pool._cache.__getitem__
         pool._put_back = put_message
         precalc = {ACK: pool._create_payload(ACK, (0, )),
                    NACK: pool._create_payload(NACK, (0, ))}
+
+        def write_generator_done(gen):
+            _write_generator_done(gen)
 
         def on_poll_start(hub):
             # called for every eventloop iteration, and if there
@@ -648,6 +654,7 @@ class TaskPool(BasePool):
                         # process gone since scheduled, put it back
                         return put_message(job)
                     cor = _write_job(ready_fd, job, callback=callback)
+                    job._writer = cor
                     mark_write_gen_as_active(cor)
                     mark_write_fd_as_active(ready_fd)
                     callback.args = (cor, )  # tricky as we need to pass ref
@@ -781,6 +788,7 @@ class TaskPool(BasePool):
 
     def on_poll_init(self, w, hub):
         pool = self._pool
+        pool._active_writers = self._active_writers
 
         self._create_timelimit_handlers(hub)
         self._create_process_handlers(hub)

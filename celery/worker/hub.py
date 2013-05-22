@@ -190,6 +190,10 @@ class Hub(object):
         return min(max(delay or 0, min_delay), max_delay)
 
     def _add(self, fd, cb, flags):
+        #if flags & WRITE:
+        #    ex = self.writers.get(fd)
+        #    if ex and ex.__name__ == '_write_job':
+        #        assert not ex.gi_frame or ex.gi_frame == -1
         self.poller.register(fd, flags)
         (self.readers if flags & READ else self.writers)[fileno(fd)] = cb
 
