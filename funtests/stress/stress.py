@@ -34,8 +34,10 @@ from celery.utils.text import pluralize
 #
 #  7) celery -A stress worker -c1 --maxtasksperchild=1 -- celery.acks_late=1
 
-BIG = 'x' * 2 ** 20 * 8
-SMALL = 'e' * 1024
+from stress_data import Data
+
+BIG = Data("BIG", 'x' * 2 ** 20 * 8)
+SMALL = Data("SMALL", 'e' * 1024)
 
 BANNER = """\
 Celery stress-suite v{version}
@@ -117,7 +119,11 @@ def segfault():
 
 def marker(s, sep='-'):
     print('{0}{1}'.format(sep, s))
-    _marker.delay(s, sep)
+    while True:
+        try:
+            return _marker.delay(s, sep)
+        except Exception as exc:
+            print("Retrying marker.delay(). It failed to start: %s" % exc)
 
 
 class Stress(Command):
@@ -223,8 +229,12 @@ class Suite(object):
             marker('{0}: {1}({2})'.format(index, fun.__name__, n))
             try:
                 for i in range(n):
-                    print('{0} ({1})'.format(i, fun.__name__))
-                    fun()
+                    print('{0} ({1})'.format(i, fun.__name__), end=' ')
+                    try:
+                        fun()
+                        print('-> done')
+                    except Exception as exc:
+                        print('-> {}'.format(exc))
             except Exception:
                 failed = True
                 raise
@@ -279,7 +289,7 @@ class Suite(object):
             if joindelay:
                 sleep(random.choice(range(4)))
             r.revoke(terminate=True)
-        self.join(r, timeout=100)
+        self.join(r, timeout=5)
 
     def join(self, r, propagate=False, **kwargs):
         while 1:
