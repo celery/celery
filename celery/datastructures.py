@@ -472,7 +472,10 @@ class LimitedSet(object):
                 if time.time() < item[0] + self.expires:
                     heappush(H, item)
                     break
-            self._data.pop(item[1])
+            try:
+                self._data.pop(item[1])
+            except KeyError:  # out of sync with heap
+                pass
             i += 1
 
     def update(self, other, heappush=heappush):
