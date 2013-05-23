@@ -611,6 +611,7 @@ class TaskPool(BasePool):
             # are messages pending this will schedule writing one message
             # by registering the 'schedule_writes' function for all currently
             # inactive inqueues (not already being written to)
+            print('NUMJOBS: %r' % (len(self._pool._cache), ))
             if outbound:
                 hub_add(diff(active_writes), schedule_writes, WRITE | ERR)
         self.on_poll_start = on_poll_start
@@ -828,7 +829,7 @@ class TaskPool(BasePool):
                     writers = list(self._active_writers)
                     for gen in writers:
                         if (gen.__name__ == '_write_job' and
-                                gen.gi_frame.f_lasti != -1):
+                                gen.gi_frame and gen.gi_frame.f_lasti != -1):
                             # has not started writing the job so can
                             # safely discard
                             self._active_writers.discard(gen)
