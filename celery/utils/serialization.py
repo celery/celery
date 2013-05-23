@@ -50,7 +50,8 @@ else:
         return type(name, (parent,), {'__module__': module})
 
 
-def find_nearest_pickleable_exception(exc):
+def find_pickleable_exception(exc, loads=pickle.loads,
+                              dumps=pickle.dumps):
     """With an exception instance, iterate over its super classes (by mro)
     and find the first super exception that is pickleable.  It does
     not go below :exc:`Exception` (i.e. it skips :exc:`Exception`,
@@ -65,7 +66,19 @@ def find_nearest_pickleable_exception(exc):
     :rtype :exc:`Exception`:
 
     """
-    cls = exc.__class__
+    exc_args = getattr(exc, 'args', [])
+    for supercls in itermro(exc.__class__, unwanted_base_classes):
+        try:
+            superexc = supercls(*exc_args)
+            loads(dumps(superexc))
+        except:
+            pass
+        else:
+            return superexc
+find_nearest_pickleable_exception = find_pickleable_exception  # XXX compat
+
+
+def itermro(cls, stop):
     getmro_ = getattr(cls, 'mro', None)
 
     # old-style classes doesn't have mro()
@@ -77,18 +90,11 @@ def find_nearest_pickleable_exception(exc):
         getmro_ = lambda: inspect.getmro(cls)
 
     for supercls in getmro_():
-        if supercls in unwanted_base_classes:
+        if supercls in stop:
             # only BaseException and object, from here on down,
             # we don't care about these.
             return
-        try:
-            exc_args = getattr(exc, 'args', [])
-            superexc = supercls(*exc_args)
-            pickle.loads(pickle.dumps(superexc))
-        except:
-            pass
-        else:
-            return superexc
+        yield
 
 
 def create_exception_cls(name, module, parent=None):
@@ -169,6 +175,13 @@ def get_pickleable_exception(exc):
     if nearest:
         return nearest
     return UnpickleableExceptionWrapper.from_exception(exc)
+
+
+def get_pickleable_etype(cls, loads=pickle.loads, dumps=pickle.dumps):
+    try:
+        loads(dumps(cls))
+    except:
+        return Exception
 
 
 def get_pickled_exception(exc):

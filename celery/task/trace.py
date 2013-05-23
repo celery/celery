@@ -30,7 +30,10 @@ from celery.app import set_default_app
 from celery.app.task import Task as BaseTask, Context
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import Ignore, RetryTaskError
-from celery.utils.serialization import get_pickleable_exception
+from celery.utils.serialization import (
+    get_pickleable_exception,
+    get_pickleable_etype,
+)
 from celery.utils.log import get_logger
 
 _logger = get_logger(__name__)
@@ -128,7 +131,9 @@ class TraceInfo(object):
         type_, _, tb = sys.exc_info()
         try:
             exc = self.retval
-            einfo = ExceptionInfo((type_, get_pickleable_exception(exc), tb))
+            einfo = ExceptionInfo()
+            einfo.exception = get_pickleable_exception(einfo.exception)
+            einfo.type = get_pickleable_etype(einfo.type)
             if store_errors:
                 task.backend.mark_as_failure(req.id, exc, einfo.traceback)
             task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
