@@ -17,8 +17,9 @@ from celery import Celery, group, VERSION_BANNER
 from celery.bin.base import Command, Option
 from celery.exceptions import TimeoutError, SoftTimeLimitExceeded
 from celery.five import range, values
-from celery.utils.debug import blockdetection
+from celery.utils.debug import blockdetection, humanbytes
 from celery.utils.text import pluralize
+from celery.utils.timeutils import humanize_seconds
 
 # Should be run with workers running using these options:
 #
@@ -34,7 +35,17 @@ from celery.utils.text import pluralize
 #
 #  7) celery -A stress worker -c1 --maxtasksperchild=1 -- celery.acks_late=1
 
-from stress_data import Data
+class Data(object):
+
+    def __init__(self, label, data):
+        self.label = label
+        self.data = data
+
+    def __str__(self):
+        return '<Data: {0} {1}>'.format(
+            self.label, humanbytes(len(self.data)),
+        )
+    __unicode__ = __repr__ = __str__
 
 BIG = Data("BIG", 'x' * 2 ** 20 * 8)
 SMALL = Data("SMALL", 'e' * 1024)
@@ -241,7 +252,7 @@ class Suite(object):
             finally:
                 print('{0} {1} iterations in {2}s'.format(
                     'failed after' if failed else 'completed',
-                    i + 1, time() - t,
+                    i + 1, humanize_seconds(time() - t),
                 ))
 
     def termbysig(self):

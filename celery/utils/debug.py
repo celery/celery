@@ -106,8 +106,25 @@ def sample(x, n, k=0):
         k += j
 
 
+UNITS = (
+    (2 ** 40.0, 'TB'),
+    (2 ** 30.0, 'GB'),
+    (2 ** 20.0, 'MB'),
+    (2 ** 10.0, 'kB'),
+    (0.0, '{0!d}b'),
+)
+
+
+def hfloat(f, p=5):
+    i = int(f)
+    return i if i == f else '{0:.{p}}'.format(f, p=p)
+
+
 def humanbytes(s):
-    return '{0}MB'.format(format_d(s // 1024))
+    return next(
+        hfloat(s / div if div else s) + unit
+        for div, unit in UNITS if s >= div
+    )
 
 
 def mem_rss():
