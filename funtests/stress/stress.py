@@ -213,7 +213,7 @@ class Suite(object):
         )
 
     def manyshort(self):
-        self.join(group(add.s(i, i) for i in xrange(1000))())
+        self.join(group(add.s(i, i) for i in xrange(1000))(), propagate=True)
 
     def runtest(self, fun, n=50, index=0):
         with blockdetection(self.block_timeout):
@@ -281,10 +281,10 @@ class Suite(object):
             r.revoke(terminate=True)
         self.join(r, timeout=100)
 
-    def join(self, r, **kwargs):
+    def join(self, r, propagate=False, **kwargs):
         while 1:
             try:
-                return r.get(propagate=False, **kwargs)
+                return r.get(propagate=propagate, **kwargs)
             except TimeoutError as exc:
                 marker('join timed out: {0!r}'.format(exc), '!')
             except self.connerrors as exc:
