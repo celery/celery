@@ -71,18 +71,18 @@ Running the client
 After the worker is running you can start the client to run the complete test
 suite::
 
-    $ python stress.py
+    $ python -m stress
 
 You can also specify which tests to run:
 
-    $ python stress.py revoketermfast revoketermslow
+    $ python -m stress revoketermfast revoketermslow
 
 Or you can start from an offset, e.g. to skip the two first tests use
 ``--offset=2``::
 
-    $ python stress.py --offset=2
+    $ python -m stress --offset=2
 
-See ``python stress.py --help`` for a list of all available options.
+See ``python -m stress --help`` for a list of all available options.
 
 
 Options
@@ -95,7 +95,7 @@ You can set the environment variable ``CSTRESS_BACKEND`` to change
 the result backend used::
 
     $ CSTRESS_BACKEND='amqp://' celery -A stress worker #...
-    $ CSTRESS_BACKEND='amqp://' python stress.py
+    $ CSTRESS_BACKEND='amqp://' python -m stress
 
 Using a custom queue
 --------------------
