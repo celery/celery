@@ -148,8 +148,11 @@ class worker(Command):
     def run_from_argv(self, prog_name, argv=None, command=None):
         command = sys.argv[0] if command is None else command
         argv = sys.argv[1:] if argv is None else argv
+        # parse options before detaching so errors can be handled.
+        options, args = self.prepare_args(
+            *self.parse_options(prog_name, argv, command))
         self.maybe_detach([command] + argv)
-        return super(worker, self).run_from_argv(prog_name, argv, command)
+        return self(*args, **options)
 
     def maybe_detach(self, argv, dopts=['-D', '--detach']):
         if any(arg in argv for arg in dopts):

@@ -89,7 +89,6 @@ class multi(Command):
 
     def run_from_argv(self, prog_name, argv, command=None):
         from celery.bin.multi import MultiTool
-        argv.append("--cmd=%s worker --detach" % prog_name)
         return MultiTool().execute_from_commandline(
             [command] + argv, prog_name,
         )
@@ -712,8 +711,13 @@ class CeleryCommand(Command):
                 index += 1
         return []
 
+    def prepare_prog_name(self, name):
+        if name == '__main__.py':
+            return sys.modules['__main__'].__file__
+        return name
+
     def handle_argv(self, prog_name, argv):
-        self.prog_name = prog_name
+        self.prog_name = self.prepare_prog_name(prog_name)
         argv = self.remove_options_at_beginning(argv)
         _, argv = self.prepare_args(None, argv)
         try:
