@@ -80,6 +80,11 @@ release = celery.__version__
 
 exclude_trees = ['.build']
 
+unused_docs = [
+    'xreftest.rst',
+    'tutorials/otherqueues',
+]
+
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = True
 
@@ -100,6 +105,9 @@ pygments_style = 'colorful'
 html_static_path = ['.static']
 
 html_use_smartypants = True
+
+add_module_names = True
+highlight_language = 'python3'
 
 # If false, no module index is generated.
 html_use_modindex = True

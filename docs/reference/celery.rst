@@ -1,17 +1,33 @@
-========
- celery
-========
+===========================================
+ :mod:`celery` --- Distributed processing
+===========================================
 
 .. currentmodule:: celery
-
 .. module:: celery
+    :synopsis: Distributed processing
+.. moduleauthor:: Ask Solem <ask@celeryproject.org>
+.. sectionauthor:: Ask Solem <ask@celeryproject.org>
 
+--------------
 
-.. contents::
-    :local:
+This module is the main entry-point for the Celery API.
+It includes commonly needed things for calling tasks,
+and creating Celery applications.
 
-Application
------------
+===================== ===================================================
+:class:`Celery`       celery application instance
+:class:`group`        group tasks together
+:class:`chain`        chain tasks together
+:class:`chord`        chords enable callbacks for groups
+:class:`subtask`      task signatures
+:data:`current_app`   proxy to the current application instance
+:data:`current_task`  proxy to the currently executing task
+===================== ===================================================
+
+:class:`Celery` application objects
+-----------------------------------
+
+.. versionadded:: 2.5
 
 .. class:: Celery(main='__main__', broker='amqp://localhost//', ...)
 
@@ -309,8 +325,10 @@ Application
 
         Helper class used to pickle this application.
 
-Grouping Tasks
---------------
+Canvas primitives
+-----------------
+
+See :ref:`guide-canvas` for more about creating task workflows.
 
 .. class:: group(task1[, task2[, task3[,... taskN]]])
 
@@ -318,11 +336,14 @@ Grouping Tasks
 
     Example::
 
-        >>> res = group([add.s(2, 2), add.s(4, 4)]).apply_async()
+        >>> res = group([add.s(2, 2), add.s(4, 4)])()
         >>> res.get()
         [4, 8]
 
-    The ``apply_async`` method returns :class:`~@GroupResult`.
+    A group is lazy so you must call it to take action and evaluate
+    the group.
+
+    Calling the group returns :class:`~@GroupResult`.
 
 .. class:: chain(task1[, task2[, task3[,... taskN]]])
 
@@ -334,7 +355,7 @@ Grouping Tasks
 
     Example::
 
-        >>> res = chain(add.s(2, 2), add.s(4)).apply_async()
+        >>> res = chain(add.s(2, 2), add.s(4))()
 
     is effectively :math:`(2 + 2) + 4)`::
 
