@@ -13,7 +13,7 @@ import os
 from contextlib import contextmanager
 from functools import partial
 
-from celery.five import format_d, range
+from celery.five import range
 from celery.platforms import signals
 
 try:

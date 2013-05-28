@@ -26,7 +26,6 @@ from celery import concurrency as _concurrency
 from celery import platforms
 from celery import signals
 from celery.app import app_or_default
-from celery.app.abstract import configurated, from_config
 from celery.exceptions import (
     ImproperlyConfigured, SystemTerminate, TaskRevokedError,
 )
@@ -51,31 +50,9 @@ def default_nodename(hostname):
     return nodename(name or 'celery', host or socket.gethostname())
 
 
-class WorkController(configurated):
+class WorkController(object):
     """Unmanaged worker instance."""
     app = None
-    concurrency = from_config()
-    loglevel = from_config('log_level')
-    logfile = from_config('log_file')
-    send_events = from_config()
-    pool_cls = from_config('pool')
-    consumer_cls = from_config('consumer')
-    timer_cls = from_config('timer')
-    timer_precision = from_config('timer_precision')
-    autoscaler_cls = from_config('autoscaler')
-    autoreloader_cls = from_config('autoreloader')
-    schedule_filename = from_config()
-    scheduler_cls = from_config('celerybeat_scheduler')
-    task_time_limit = from_config()
-    task_soft_time_limit = from_config()
-    max_tasks_per_child = from_config()
-    pool_putlocks = from_config()
-    pool_restarts = from_config()
-    force_execv = from_config()
-    prefetch_multiplier = from_config()
-    state_db = from_config()
-    disable_rate_limits = from_config()
-    worker_lost_wait = from_config()
 
     pidlock = None
     namespace = None
@@ -103,6 +80,8 @@ class WorkController(configurated):
         self.hostname = default_nodename(hostname)
         self.app.loader.init_worker()
         self.on_before_init(**kwargs)
+        self.setup_defaults(**kwargs)
+        self.on_after_init(**kwargs)
 
         self._finalize = [
             Finalize(self, self.stop, exitpriority=1),
@@ -113,7 +92,6 @@ class WorkController(configurated):
     def setup_instance(self, queues=None, ready_callback=None, pidfile=None,
                        include=None, use_eventloop=None, **kwargs):
         self.pidfile = pidfile
-        self.setup_defaults(kwargs, namespace='celeryd')
         self.setup_queues(queues)
         self.setup_includes(include)
 
@@ -152,6 +130,9 @@ class WorkController(configurated):
         pass
 
     def on_before_init(self, **kwargs):
+        pass
+
+    def on_after_init(self, **kwargs):
         pass
 
     def on_start(self):
@@ -318,3 +299,57 @@ class WorkController(configurated):
     @property
     def state(self):
         return state
+
+    def setup_defaults(self, concurrency=None, loglevel=None, logfile=None,
+                       send_events=None, pool_cls=None, consumer_cls=None,
+                       timer_cls=None, timer_precision=None,
+                       autoscaler_cls=None, autoreloader_cls=None,
+                       pool_putlocks=None, pool_restarts=None,
+                       force_execv=None, state_db=None,
+                       schedule_filename=None, scheduler_cls=None,
+                       task_time_limit=None, task_soft_time_limit=None,
+                       max_tasks_per_child=None, prefetch_multiplier=None,
+                       disable_rate_limits=None, worker_lost_wait=None, **_kw):
+        self.concurrency = self._getopt('concurrency', concurrency)
+        self.loglevel = self._getopt('log_level', loglevel)
+        self.logfile = self._getopt('log_file', logfile)
+        self.send_events = self._getopt('send_events', send_events)
+        self.pool_cls = self._getopt('pool', pool_cls)
+        self.consumer_cls = self._getopt('consumer', consumer_cls)
+        self.timer_cls = self._getopt('timer', timer_cls)
+        self.timer_precision = self._getopt('timer_precision', timer_precision)
+        self.autoscaler_cls = self._getopt('autoscaler', autoscaler_cls)
+        self.autoreloader_cls = self._getopt('autoreloader', autoreloader_cls)
+        self.pool_putlocks = self._getopt('pool_putlocks', pool_putlocks)
+        self.pool_restarts = self._getopt('pool_restarts', pool_restarts)
+        self.force_execv = self._getopt('force_execv', force_execv)
+        self.state_db = self._getopt('state_db', state_db)
+        self.schedule_filename = self._getopt(
+            'schedule_filename', schedule_filename,
+        )
+        self.scheduler_cls = self._getopt(
+            'celerybeat_scheduler', scheduler_cls,
+        )
+        self.task_time_limit = self._getopt(
+            'task_time_limit', task_time_limit,
+        )
+        self.task_soft_time_limit = self._getopt(
+            'task_soft_time_limit', task_soft_time_limit,
+        )
+        self.max_tasks_per_child = self._getopt(
+            'max_tasks_per_child', max_tasks_per_child,
+        )
+        self.prefetch_multiplier = self._getopt(
+            'prefetch_multiplier', prefetch_multiplier,
+        )
+        self.disable_rate_limits = self._getopt(
+            'disable_rate_limits', disable_rate_limits,
+        )
+        self.worker_lost_wait = self._getopt(
+            'worker_lost_wait', worker_lost_wait,
+        )
+
+    def _getopt(self, key, value):
+        if value is not None:
+            return value
+        return self.app.conf.find_value_for_key(key, namespace='celeryd')

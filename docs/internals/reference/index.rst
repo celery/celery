@@ -41,7 +41,6 @@
     celery.backends.redis
     celery.backends.cassandra
     celery.task.trace
-    celery.app.abstract
     celery.app.annotations
     celery.app.routes
     celery.security.certificate

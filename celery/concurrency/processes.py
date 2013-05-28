@@ -654,8 +654,9 @@ class TaskPool(BasePool):
                     try:
                         proc = fileno_to_inq[ready_fd]
                     except KeyError:
-                        # write was scheduled for this fd but the process has since
-                        # exited and the message must be sent to another process.
+                        # write was scheduled for this fd but the process
+                        # has since exited and the message must be sent to
+                        # another process.
                         return put_message(job)
                     cor = _write_job(proc, ready_fd, job)
                     job._writer = ref(cor)

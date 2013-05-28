@@ -17,7 +17,6 @@ import sys
 
 from celery import VERSION_BANNER, platforms, beat
 from celery.app import app_or_default
-from celery.app.abstract import configurated, from_config
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
 from celery.utils.timeutils import humanize_seconds
@@ -35,22 +34,27 @@ Configuration ->
 logger = get_logger('celery.beat')
 
 
-class Beat(configurated):
+class Beat(object):
     Service = beat.Service
-
     app = None
-    loglevel = from_config('log_level')
-    logfile = from_config('log_file')
-    schedule = from_config('schedule_filename')
-    scheduler_cls = from_config('scheduler')
-    redirect_stdouts = from_config()
-    redirect_stdouts_level = from_config()
 
     def __init__(self, max_interval=None, app=None,
-                 socket_timeout=30, pidfile=None, no_color=None, **kwargs):
+                 socket_timeout=30, pidfile=None, no_color=None,
+                 loglevel=None, logfile=None, schedule=None,
+                 scheduler_cls=None, redirect_stdouts=None,
+                 redirect_stdouts_level=None, **kwargs):
         """Starts the beat task scheduler."""
         self.app = app = app_or_default(app or self.app)
-        self.setup_defaults(kwargs, namespace='celerybeat')
+        self.loglevel = self._getopt('log_level', loglevel)
+        self.logfile = self._getopt('log_file', logfile)
+        self.schedule = self._getopt('schedule_filename', schedule)
+        self.scheduler_cls = self._getopt('scheduler', scheduler_cls)
+        self.redirect_stdouts = self._getopt(
+            'redirect_stdouts', redirect_stdouts,
+        )
+        self.redirect_stdouts_level = self._getopt(
+            'redirect_stdouts_level', redirect_stdouts_level,
+        )
 
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
@@ -63,6 +67,11 @@ class Beat(configurated):
 
         if not isinstance(self.loglevel, int):
             self.loglevel = LOG_LEVELS[self.loglevel.upper()]
+
+    def _getopt(self, key, value):
+        if value is not None:
+            return value
+        return self.app.conf.find_value_for_key(key, namespace='celerybeat')
 
     def run(self):
         print(str(self.colored.cyan(
