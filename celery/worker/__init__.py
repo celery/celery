@@ -339,9 +339,9 @@ class WorkController(object):
         self.max_tasks_per_child = self._getopt(
             'max_tasks_per_child', max_tasks_per_child,
         )
-        self.prefetch_multiplier = self._getopt(
+        self.prefetch_multiplier = int(self._getopt(
             'prefetch_multiplier', prefetch_multiplier,
-        )
+        ))
         self.disable_rate_limits = self._getopt(
             'disable_rate_limits', disable_rate_limits,
         )
