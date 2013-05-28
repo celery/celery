@@ -517,9 +517,11 @@ class test_Consumer(Case):
     def test_receieve_message_eta_isoformat(self):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer)
         l.steps.pop()
-        m = create_message(Mock(), task=foo_task.name,
-                           eta=datetime.now().isoformat(),
-                           args=[2, 4, 8], kwargs={})
+        m = create_message(
+            Mock(), task=foo_task.name,
+            eta=(datetime.now() + timedelta(days=1)).isoformat(),
+            args=[2, 4, 8], kwargs={},
+        )
 
         l.task_consumer = Mock()
         l.qos = QoS(l.task_consumer.qos, 1)
