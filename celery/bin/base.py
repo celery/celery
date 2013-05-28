@@ -440,8 +440,11 @@ class Command(object):
                 return sym.celery
             except AttributeError:
                 if getattr(sym, '__path__', None):
-                    return self.find_app('{0}.celery:'.format(
-                                         app.replace(':', '')))
+                    try:
+                        return self.find_app('{0}.celery:'.format(
+                                             app.replace(':', '')))
+                    except ImportError:
+                        pass
                 from celery.app.base import Celery
                 for suspect in values(vars(sym)):
                     if isinstance(suspect, Celery):
