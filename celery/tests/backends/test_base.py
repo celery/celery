@@ -11,8 +11,7 @@ from celery import current_app
 from celery.result import AsyncResult, GroupResult
 from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
-from celery.utils.serialization import \
-    find_nearest_pickleable_exception as fnpe
+from celery.utils.serialization import find_pickleable_exception as fnpe
 from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.utils.serialization import get_pickleable_exception as gpe
 
