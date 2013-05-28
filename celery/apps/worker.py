@@ -253,7 +253,7 @@ class Worker(WorkController):
 def _shutdown_handler(worker, sig='TERM', how='Warm',
                       exc=SystemExit, callback=None):
 
-    def _handle_request(signum, frame):
+    def _handle_request(*args):
         with in_sighandler():
             from celery.worker import state
             if current_process()._name == 'MainProcess':
