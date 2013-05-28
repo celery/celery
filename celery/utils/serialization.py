@@ -73,7 +73,7 @@ def itermro(cls, stop):
             # only BaseException and object, from here on down,
             # we don't care about these.
             return
-        yield
+        yield supercls
 
 
 def create_exception_cls(name, module, parent=None):
@@ -150,7 +150,7 @@ def get_pickleable_exception(exc):
         pass
     else:
         return exc
-    nearest = find_nearest_pickleable_exception(exc)
+    nearest = find_pickleable_exception(exc)
     if nearest:
         return nearest
     return UnpickleableExceptionWrapper.from_exception(exc)
