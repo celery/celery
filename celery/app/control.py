@@ -9,15 +9,31 @@
 """
 from __future__ import absolute_import
 
+import warnings
+
 from kombu.pidbox import Mailbox
 from kombu.utils import cached_property
 
+from celery.exceptions import DuplicateNodenameWarning
+
 from . import app_or_default
+
+W_DUPNODE = """\
+Received multiple replies from node name {0!r}.
+Please make sure you give each node a unique nodename using the `-n` option.\
+"""
 
 
 def flatten_reply(reply):
     nodes = {}
+    seen = set()
     for item in reply:
+        dup = next((nodename in seen for nodename in item), None)
+        if dup:
+            warnings.warn(DuplicateNodenameWarning(
+                W_DUPNODE.format(dup),
+            ))
+        seen.update(item)
         nodes.update(item)
     return nodes
 

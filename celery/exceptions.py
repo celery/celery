@@ -134,3 +134,7 @@ class IncompleteStream(Exception):
 
 class ChordError(Exception):
     """A task part of the chord raised an exception."""
+
+
+class DuplicateNodenameWarning(UserWarning):
+    """Multiple workers are using the same nodename."""
