@@ -3,7 +3,7 @@
     celery.bootsteps
     ~~~~~~~~~~~~~~~~
 
-    The bootsteps!
+    A directed acyclic graph of reusable components.
 
 """
 from __future__ import absolute_import, unicode_literals
@@ -47,10 +47,11 @@ def _label(s):
 
 
 class StepFormatter(GraphFormatter):
+    """Graph formatter for :class:`Blueprint`."""
 
-    namespace_prefix = '⧉'
+    blueprint_prefix = '⧉'
     conditional_prefix = '∘'
-    namespace_scheme = {
+    blueprint_scheme = {
         'shape': 'parallelogram',
         'color': 'slategray4',
         'fillcolor': 'slategray3',
@@ -64,13 +65,13 @@ class StepFormatter(GraphFormatter):
 
     def _get_prefix(self, step):
         if step.last:
-            return self.namespace_prefix
+            return self.blueprint_prefix
         if step.conditional:
             return self.conditional_prefix
         return ''
 
     def node(self, obj, **attrs):
-        scheme = self.namespace_scheme if obj.last else self.node_scheme
+        scheme = self.blueprint_scheme if obj.last else self.node_scheme
         return self.draw_node(obj, scheme, attrs)
 
     def edge(self, a, b, **attrs):
@@ -79,15 +80,15 @@ class StepFormatter(GraphFormatter):
         return self.draw_edge(a, b, self.edge_scheme, attrs)
 
 
-class Namespace(object):
-    """A namespace containing bootsteps.
+class Blueprint(object):
+    """Blueprint containing bootsteps that can be applied to objects.
 
     :keyword steps: List of steps.
-    :keyword name: Set explicit name for this namespace.
-    :keyword app: Set the Celery app for this namespace.
-    :keyword on_start: Optional callback applied after namespace start.
-    :keyword on_close: Optional callback applied before namespace close.
-    :keyword on_stopped: Optional callback applied after namespace stopped.
+    :keyword name: Set explicit name for this blueprint.
+    :keyword app: Set the Celery app for this blueprint.
+    :keyword on_start: Optional callback applied after blueprint start.
+    :keyword on_close: Optional callback applied before blueprint close.
+    :keyword on_stopped: Optional callback applied after blueprint stopped.
 
     """
     GraphFormatter = StepFormatter
@@ -171,7 +172,7 @@ class Namespace(object):
             pass
 
     def apply(self, parent, **kwargs):
-        """Apply the steps in this namespace to an object.
+        """Apply the steps in this blueprint to an object.
 
         This will apply the ``__init__`` and ``include`` methods
         of each step, with the object as argument::
@@ -295,13 +296,13 @@ class Step(object):
     conditional = False
 
     #: List of other steps that that must be started before this step.
-    #: Note that all dependencies must be in the same namespace.
+    #: Note that all dependencies must be in the same blueprint.
     requires = ()
 
     #: This flag is reserved for the workers Consumer,
     #: since it is required to always be started last.
-    #: There can only be one object marked with lsat
-    #: in every namespace.
+    #: There can only be one object marked last
+    #: in every blueprint.
     last = False
 
     #: This provides the default for :meth:`include_if`.

@@ -33,11 +33,11 @@ class graph(Command):
         worker = self.app.WorkController()
         include = set(arg.lower() for arg in args or ['worker', 'consumer'])
         if 'worker' in include:
-            graph = worker.namespace.graph
+            graph = worker.blueprint.graph
             if 'consumer' in include:
-                worker.namespace.connect_with(worker.consumer.namespace)
+                worker.blueprint.connect_with(worker.consumer.blueprint)
         else:
-            graph = worker.consumer.namespace.graph
+            graph = worker.consumer.blueprint.graph
         graph.to_dot(self.stdout)
 
     def workers(self, *args, **kwargs):

@@ -55,12 +55,12 @@ class WorkController(object):
     app = None
 
     pidlock = None
-    namespace = None
+    blueprint = None
     pool = None
     semaphore = None
 
-    class Namespace(bootsteps.Namespace):
-        """Worker bootstep namespace."""
+    class Blueprint(bootsteps.Blueprint):
+        """Worker bootstep blueprint."""
         name = 'Worker'
         default_steps = set([
             'celery.worker.components:Hub',
@@ -119,14 +119,14 @@ class WorkController(object):
         # Initialize bootsteps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
         self.steps = []
-        self.on_init_namespace()
-        self.namespace = self.Namespace(app=self.app,
+        self.on_init_blueprint()
+        self.blueprint = self.Blueprint(app=self.app,
                                         on_start=self.on_start,
                                         on_close=self.on_close,
                                         on_stopped=self.on_stopped)
-        self.namespace.apply(self, **kwargs)
+        self.blueprint.apply(self, **kwargs)
 
-    def on_init_namespace(self):
+    def on_init_blueprint(self):
         pass
 
     def on_before_init(self, **kwargs):
@@ -186,7 +186,7 @@ class WorkController(object):
     def start(self):
         """Starts the workers main loop."""
         try:
-            self.namespace.start(self)
+            self.blueprint.start(self)
         except SystemTerminate:
             self.terminate()
         except Exception as exc:
@@ -240,11 +240,11 @@ class WorkController(object):
             self._shutdown(warm=False)
 
     def _shutdown(self, warm=True):
-        # if namespace does not exist it means that we had an
+        # if blueprint does not exist it means that we had an
         # error before the bootsteps could be initialized.
-        if self.namespace is not None:
-            self.namespace.stop(self, terminate=not warm)
-            self.namespace.join()
+        if self.blueprint is not None:
+            self.blueprint.stop(self, terminate=not warm)
+            self.blueprint.join()
 
     def reload(self, modules=None, reload=False, reloader=None):
         modules = self.app.loader.task_modules if modules is None else modules
@@ -287,14 +287,14 @@ class WorkController(object):
 
     def stats(self):
         info = self.info()
-        info.update(self.namespace.info(self))
-        info.update(self.consumer.namespace.info(self.consumer))
+        info.update(self.blueprint.info(self))
+        info.update(self.consumer.blueprint.info(self.consumer))
         info.update(rusage=self.rusage())
         return info
 
     @property
     def _state(self):
-        return self.namespace.state
+        return self.blueprint.state
 
     @property
     def state(self):

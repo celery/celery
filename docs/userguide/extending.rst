@@ -17,18 +17,17 @@ Bootsteps
 
 .. _extending-worker-bootsteps:
 
-Worker Bootsteps
-================
+Worker bootsteps
+----------------
 
-.. figure:: ../images/worker_graph.png
-   :width: 700px
+Blablah
 
+.. _extending-consumer-bootsteps:
 
-Consumer Bootsteps
-==================
+Consumer bootsteps
+------------------
 
-.. figure:: ../images/consumer_graph.png
-   :width: 700px
+blahblah
 
 
 .. _extending-programs:

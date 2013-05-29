@@ -135,7 +135,7 @@ class Consumer(object):
 
     restart_count = -1  # first start is the same as a restart
 
-    class Namespace(bootsteps.Namespace):
+    class Blueprint(bootsteps.Blueprint):
         name = 'Consumer'
         default_steps = [
             'celery.worker.consumer:Connection',
@@ -199,10 +199,10 @@ class Consumer(object):
             self.app.conf.BROKER_CONNECTION_TIMEOUT = None
 
         self.steps = []
-        self.namespace = self.Namespace(
+        self.blueprint = self.Blueprint(
             app=self.app, on_close=self.on_close,
         )
-        self.namespace.apply(self, **dict(worker_options or {}, **kwargs))
+        self.blueprint.apply(self, **dict(worker_options or {}, **kwargs))
 
     def bucket_for_task(self, type):
         limit = rate(getattr(type, 'rate_limit', None))
@@ -224,12 +224,12 @@ class Consumer(object):
             self.handle_task(request)
 
     def start(self):
-        ns, loop = self.namespace, self.loop
-        while ns.state != CLOSE:
+        blueprint, loop = self.blueprint, self.loop
+        while blueprint.state != CLOSE:
             self.restart_count += 1
             maybe_shutdown()
             try:
-                ns.start(self)
+                blueprint.start(self)
             except self.connection_errors as exc:
                 if isinstance(exc, OSError) and get_errno(exc) == errno.EMFILE:
                     raise  # Too many open files
@@ -239,21 +239,21 @@ class Consumer(object):
                 except RestartFreqExceeded as exc:
                     crit('Frequent restarts detected: %r', exc, exc_info=1)
                     sleep(1)
-                if ns.state != CLOSE and self.connection:
+                if blueprint.state != CLOSE and self.connection:
                     warn(CONNECTION_RETRY, exc_info=True)
                     try:
                         self.connection.collect()
                     except Exception:
                         pass
                     self.on_close()
-                    ns.restart(self)
+                    blueprint.restart(self)
 
     def shutdown(self):
         self.in_shutdown = True
-        self.namespace.shutdown(self)
+        self.blueprint.shutdown(self)
 
     def stop(self):
-        self.namespace.stop(self)
+        self.blueprint.stop(self)
 
     def on_ready(self):
         callback, self.init_callback = self.init_callback, None
@@ -262,7 +262,7 @@ class Consumer(object):
 
     def loop_args(self):
         return (self, self.connection, self.task_consumer,
-                self.strategies, self.namespace, self.hub, self.qos,
+                self.strategies, self.blueprint, self.hub, self.qos,
                 self.amqheartbeat, self.handle_unknown_message,
                 self.handle_unknown_task, self.handle_invalid_task,
                 self.app.clock, self.amqheartbeat_rate)

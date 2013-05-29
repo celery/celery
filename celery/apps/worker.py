@@ -113,7 +113,7 @@ class Worker(WorkController):
             enabled=not no_color if no_color is not None else no_color
         )
 
-    def on_init_namespace(self):
+    def on_init_blueprint(self):
         self._custom_logging = self.setup_logging()
         # apply task execution optimizations
         # -- This will finalize the app!

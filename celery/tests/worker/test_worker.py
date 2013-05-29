@@ -37,8 +37,8 @@ from celery.tests.utils import AppCase, Case
 
 def MockStep(step=None):
     step = Mock() if step is None else step
-    step.namespace = Mock()
-    step.namespace.name = 'MockNS'
+    step.blueprint = Mock()
+    step.blueprint.name = 'MockNS'
     step.name = 'MockStep(%s)' % (id(step), )
     return step
 
@@ -48,7 +48,7 @@ class PlaceHolder(object):
 
 
 def find_step(obj, typ):
-    return obj.namespace.steps[typ.name]
+    return obj.blueprint.steps[typ.name]
 
 
 class Consumer(__Consumer):
@@ -257,28 +257,28 @@ class test_Consumer(Case):
 
     def test_start_when_closed(self):
         l = MyKombuConsumer(self.buffer.put, timer=self.timer)
-        l.namespace.state = CLOSE
+        l.blueprint.state = CLOSE
         l.start()
 
     def test_connection(self):
         l = MyKombuConsumer(self.buffer.put, timer=self.timer)
 
-        l.namespace.start(l)
+        l.blueprint.start(l)
         self.assertIsInstance(l.connection, Connection)
 
-        l.namespace.state = RUN
+        l.blueprint.state = RUN
         l.event_dispatcher = None
-        l.namespace.restart(l)
+        l.blueprint.restart(l)
         self.assertTrue(l.connection)
 
-        l.namespace.state = RUN
+        l.blueprint.state = RUN
         l.shutdown()
         self.assertIsNone(l.connection)
         self.assertIsNone(l.task_consumer)
 
-        l.namespace.start(l)
+        l.blueprint.start(l)
         self.assertIsInstance(l.connection, Connection)
-        l.namespace.restart(l)
+        l.blueprint.restart(l)
 
         l.stop()
         l.shutdown()
@@ -287,7 +287,7 @@ class test_Consumer(Case):
 
     def test_close_connection(self):
         l = MyKombuConsumer(self.buffer.put, timer=self.timer)
-        l.namespace.state = RUN
+        l.blueprint.state = RUN
         step = find_step(l, consumer.Connection)
         conn = l.connection = Mock()
         step.shutdown(l)
@@ -298,7 +298,7 @@ class test_Consumer(Case):
         eventer = l.event_dispatcher = Mock()
         eventer.enabled = True
         heart = l.heart = MockHeart()
-        l.namespace.state = RUN
+        l.blueprint.state = RUN
         Events = find_step(l, consumer.Events)
         Events.shutdown(l)
         Heart = find_step(l, consumer.Heart)
@@ -455,7 +455,7 @@ class test_Consumer(Case):
                 raise socket.error('foo')
 
         l = Consumer(self.buffer.put, timer=self.timer)
-        l.namespace.state = RUN
+        l.blueprint.state = RUN
         c = l.connection = Connection()
         l.connection.obj = l
         l.task_consumer = Mock()
@@ -463,7 +463,7 @@ class test_Consumer(Case):
         with self.assertRaises(socket.error):
             l.loop(*l.loop_args())
 
-        l.namespace.state = CLOSE
+        l.blueprint.state = CLOSE
         l.connection = c
         l.loop(*l.loop_args())
 
@@ -622,14 +622,14 @@ class test_Consumer(Case):
             eta=(datetime.now() + timedelta(days=1)).isoformat(),
         )
 
-        l.namespace.start(l)
+        l.blueprint.start(l)
         p = l.app.conf.BROKER_CONNECTION_RETRY
         l.app.conf.BROKER_CONNECTION_RETRY = False
         try:
-            l.namespace.start(l)
+            l.blueprint.start(l)
         finally:
             l.app.conf.BROKER_CONNECTION_RETRY = p
-        l.namespace.restart(l)
+        l.blueprint.restart(l)
         l.event_dispatcher = Mock()
         callback = self._get_on_message(l)
         callback(m.decode(), m)
@@ -806,7 +806,7 @@ class test_Consumer(Case):
         l = Consumer(self.buffer.put, timer=self.timer)
         l.steps.pop()
         self.assertEqual(None, l.pool)
-        l.namespace.start(l)
+        l.blueprint.start(l)
 
 
 class test_WorkController(AppCase):
@@ -826,7 +826,7 @@ class test_WorkController(AppCase):
 
     def create_worker(self, **kw):
         worker = self.app.WorkController(concurrency=1, loglevel=0, **kw)
-        worker.namespace.shutdown_complete.set()
+        worker.blueprint.shutdown_complete.set()
         return worker
 
     @patch('celery.platforms.create_pidlock')
@@ -892,17 +892,17 @@ class test_WorkController(AppCase):
     def test_dont_stop_or_terminate(self):
         worker = WorkController(concurrency=1, loglevel=0)
         worker.stop()
-        self.assertNotEqual(worker.namespace.state, CLOSE)
+        self.assertNotEqual(worker.blueprint.state, CLOSE)
         worker.terminate()
-        self.assertNotEqual(worker.namespace.state, CLOSE)
+        self.assertNotEqual(worker.blueprint.state, CLOSE)
 
         sigsafe, worker.pool.signal_safe = worker.pool.signal_safe, False
         try:
-            worker.namespace.state = RUN
+            worker.blueprint.state = RUN
             worker.stop(in_sighandler=True)
-            self.assertNotEqual(worker.namespace.state, CLOSE)
+            self.assertNotEqual(worker.blueprint.state, CLOSE)
             worker.terminate(in_sighandler=True)
-            self.assertNotEqual(worker.namespace.state, CLOSE)
+            self.assertNotEqual(worker.blueprint.state, CLOSE)
         finally:
             worker.pool.signal_safe = sigsafe
 
@@ -945,10 +945,10 @@ class test_WorkController(AppCase):
                            kwargs={})
         task = Request.from_message(m, m.decode())
         worker.steps = []
-        worker.namespace.state = RUN
+        worker.blueprint.state = RUN
         with self.assertRaises(KeyboardInterrupt):
             worker._process_task(task)
-        self.assertEqual(worker.namespace.state, TERMINATE)
+        self.assertEqual(worker.blueprint.state, TERMINATE)
 
     def test_process_task_raise_SystemTerminate(self):
         worker = self.worker
@@ -959,10 +959,10 @@ class test_WorkController(AppCase):
                            kwargs={})
         task = Request.from_message(m, m.decode())
         worker.steps = []
-        worker.namespace.state = RUN
+        worker.blueprint.state = RUN
         with self.assertRaises(SystemExit):
             worker._process_task(task)
-        self.assertEqual(worker.namespace.state, TERMINATE)
+        self.assertEqual(worker.blueprint.state, TERMINATE)
 
     def test_process_task_raise_regular(self):
         worker = self.worker
@@ -1023,10 +1023,10 @@ class test_WorkController(AppCase):
 
     def test_start__stop(self):
         worker = self.worker
-        worker.namespace.shutdown_complete.set()
+        worker.blueprint.shutdown_complete.set()
         worker.steps = [MockStep(StartStopStep(self)) for _ in range(4)]
-        worker.namespace.state = RUN
-        worker.namespace.started = 4
+        worker.blueprint.state = RUN
+        worker.blueprint.started = 4
         for w in worker.steps:
             w.start = Mock()
             w.close = Mock()
@@ -1065,15 +1065,15 @@ class test_WorkController(AppCase):
 
     def test_start__terminate(self):
         worker = self.worker
-        worker.namespace.shutdown_complete.set()
-        worker.namespace.started = 5
-        worker.namespace.state = RUN
+        worker.blueprint.shutdown_complete.set()
+        worker.blueprint.started = 5
+        worker.blueprint.state = RUN
         worker.steps = [MockStep() for _ in range(5)]
         worker.start()
         for w in worker.steps[:3]:
             self.assertTrue(w.start.call_count)
-        self.assertTrue(worker.namespace.started, len(worker.steps))
-        self.assertEqual(worker.namespace.state, RUN)
+        self.assertTrue(worker.blueprint.started, len(worker.steps))
+        self.assertEqual(worker.blueprint.state, RUN)
         worker.terminate()
         for step in worker.steps:
             self.assertTrue(step.terminate.call_count)

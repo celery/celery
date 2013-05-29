@@ -15,16 +15,16 @@ class test_Step(Case):
     def setUp(self):
         self.steps = []
 
-    def test_namespace_name(self, ns='test_namespace_name'):
+    def test_blueprint_name(self, bp='test_blueprint_name'):
 
         class X(bootsteps.Step):
-            namespace = ns
+            blueprint = bp
             name = 'X'
         self.assertEqual(X.name, 'X')
 
         class Y(bootsteps.Step):
-            name = '%s.Y' % ns
-        self.assertEqual(Y.name, '%s.Y' % ns)
+            name = '%s.Y' % bp
+        self.assertEqual(Y.name, '%s.Y' % bp)
 
     def test_init(self):
         self.assertTrue(self.Def(self))
@@ -103,38 +103,38 @@ class test_StartStopStep(Case):
         x.obj.stop.assert_called_with()
 
 
-class test_Namespace(AppCase):
+class test_Blueprint(AppCase):
 
-    class NS(bootsteps.Namespace):
-        name = 'test_Namespace'
+    class Blueprint(bootsteps.Blueprint):
+        name = 'test_Blueprint'
 
     def test_steps_added_to_unclaimed(self):
 
         class tnA(bootsteps.Step):
-            name = 'test_Namespace.A'
+            name = 'test_Blueprint.A'
 
         class tnB(bootsteps.Step):
-            name = 'test_Namespace.B'
+            name = 'test_Blueprint.B'
 
         class xxA(bootsteps.Step):
             name = 'xx.A'
 
-        class NS(self.NS):
+        class Blueprint(self.Blueprint):
             default_steps = [tnA, tnB]
-        ns = NS(app=self.app)
+        blueprint = Blueprint(app=self.app)
 
-        self.assertIn(tnA, ns._all_steps())
-        self.assertIn(tnB, ns._all_steps())
-        self.assertNotIn(xxA, ns._all_steps())
+        self.assertIn(tnA, blueprint._all_steps())
+        self.assertIn(tnB, blueprint._all_steps())
+        self.assertNotIn(xxA, blueprint._all_steps())
 
     def test_init(self):
-        ns = self.NS(app=self.app)
-        self.assertIs(ns.app, self.app)
-        self.assertEqual(ns.name, 'test_Namespace')
+        blueprint = self.Blueprint(app=self.app)
+        self.assertIs(blueprint.app, self.app)
+        self.assertEqual(blueprint.name, 'test_Blueprint')
 
     def test_apply(self):
 
-        class MyNS(bootsteps.Namespace):
+        class MyBlueprint(bootsteps.Blueprint):
             name = 'test_apply'
 
             def modules(self):
@@ -155,7 +155,7 @@ class test_Namespace(AppCase):
             name = 'test_apply.D'
             last = True
 
-        x = MyNS([A, D], app=self.app)
+        x = MyBlueprint([A, D], app=self.app)
         x.apply(self)
 
         self.assertIsInstance(x.order[0], B)
@@ -167,9 +167,9 @@ class test_Namespace(AppCase):
 
     def test_find_last_but_no_steps(self):
 
-        class MyNS(bootsteps.Namespace):
+        class MyBlueprint(bootsteps.Blueprint):
             name = 'qwejwioqjewoqiej'
 
-        x = MyNS(app=self.app)
+        x = MyBlueprint(app=self.app)
         x.apply(self)
         self.assertIsNone(x._find_last())
