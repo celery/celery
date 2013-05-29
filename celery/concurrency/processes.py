@@ -516,7 +516,7 @@ class TaskPool(BasePool):
 
         return {
             'total': total,
-            'avg': per(total / len(self.write_stats), total),
+            'avg': per(total / len(self.write_stats) if total else 0, total),
             'all': ', '.join(per(v, total) for v in vals)
         }
 
