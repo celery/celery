@@ -8,18 +8,10 @@
 .. toctree::
     :maxdepth: 1
 
-    celery.worker
     celery.worker.components
-    celery.worker.consumer
     celery.worker.loops
-    celery.worker.job
-    celery.worker.mediator
-    celery.worker.buckets
     celery.worker.heartbeat
-    celery.worker.hub
     celery.worker.control
-    celery.worker.state
-    celery.worker.strategy
     celery.worker.pidbox
     celery.worker.autoreload
     celery.worker.autoscale
