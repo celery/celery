@@ -13,6 +13,112 @@
 Bootsteps
 =========
 
+Blahblah blah, example bootstep:
+
+.. code-block:: python
+
+    from celery import Celery
+    from celery import bootsteps
+
+    class InfoStep(bootsteps.Step):
+
+        def __init__(self, parent, **kwargs):
+            # here we can prepare the Worker/Consumer object
+            # in any way we want, set attribute defaults and so on.
+            print('{0!r} is in init'.format(parent))
+
+        def start(self, parent):
+            # our step is started together with all other Worker/Consumer
+            # bootsteps.
+            print('{0!r} is starting'.format(parent))
+
+        def stop(self, parent):
+            # the Consumer calls stop every time the consumer is restarted
+            # (i.e. connection is lost) and also at shutdown.  The Worker
+            # will call stop at shutdown only.
+            print('{0!r} is stopping'.format(parent))
+
+        def shutdown(self, parent):
+            # shutdown is called by the Consumer at shutdown, it's not
+            # called by Worker.
+            print('{0!r} is shutting down'.format(parent))
+
+        app = Celery(broker='amqp://')
+        app.steps['worker'].add(InfoStep)
+        app.steps['consumer'].add(InfoStep)
+
+Starting the worker with this step installed will give us the following
+logs::
+
+    <celery.apps.worker.Worker object at 0x101ad8410> is in init
+    <celery.worker.consumer.Consumer object at 0x101c2d790> is in init
+    [2013-05-29 16:18:20,544: WARNING/MainProcess]
+        <celery.apps.worker.Worker object at 0x101ad8410> is starting
+    [2013-05-29 16:18:21,577: WARNING/MainProcess]
+        <celery.worker.consumer.Consumer object at 0x101c2d8d0> is starting
+    <celery.worker.consumer.Consumer object at 0x101c2d790> is stopping
+    <celery.apps.worker.Worker object at 0x101ad8410> is stopping
+    <celery.worker.consumer.Consumer object at 0x101c2d790> is shutting down
+
+The ``print`` statements will be redirected to the logging subsystem after
+the worker has been initialized, so the "is starting" lines are timestamped.
+You may notice that this does no longer happen at shutdown, this is because
+the ``stop`` and ``shutdown`` methods are called inside a *signal handler*,
+and it's not safe to use logging inside such a handler.
+Logging with the Python logging module is not :term:`reentrant`,
+which means that you cannot interrupt the function and
+call it again later.  It's important that the ``stop`` and ``shutdown`` methods
+you write is also :term:`reentrant`.
+
+Starting the worker with ``--loglevel=debug`` will show us more
+information about the boot process::
+
+    [2013-05-29 16:18:20,509: DEBUG/MainProcess] | Worker: Preparing bootsteps.
+    [2013-05-29 16:18:20,511: DEBUG/MainProcess] | Worker: Building graph...
+    <celery.apps.worker.Worker object at 0x101ad8410> is in init
+    [2013-05-29 16:18:20,511: DEBUG/MainProcess] | Worker: New boot order:
+        {Hub, Queues (intra), Pool, Autoreloader, Timer, StateDB,
+         Autoscaler, InfoStep, Beat, Consumer}
+    [2013-05-29 16:18:20,514: DEBUG/MainProcess] | Consumer: Preparing bootsteps.
+    [2013-05-29 16:18:20,514: DEBUG/MainProcess] | Consumer: Building graph...
+    <celery.worker.consumer.Consumer object at 0x101c2d8d0> is in init
+    [2013-05-29 16:18:20,515: DEBUG/MainProcess] | Consumer: New boot order:
+        {Connection, Mingle, Events, Gossip, InfoStep, Agent,
+         Heart, Control, Tasks, event loop}
+    [2013-05-29 16:18:20,522: DEBUG/MainProcess] | Worker: Starting Hub
+    [2013-05-29 16:18:20,522: DEBUG/MainProcess] ^-- substep ok
+    [2013-05-29 16:18:20,522: DEBUG/MainProcess] | Worker: Starting Pool
+    [2013-05-29 16:18:20,542: DEBUG/MainProcess] ^-- substep ok
+    [2013-05-29 16:18:20,543: DEBUG/MainProcess] | Worker: Starting InfoStep
+    [2013-05-29 16:18:20,544: WARNING/MainProcess]
+        <celery.apps.worker.Worker object at 0x101ad8410> is starting
+    [2013-05-29 16:18:20,544: DEBUG/MainProcess] ^-- substep ok
+    [2013-05-29 16:18:20,544: DEBUG/MainProcess] | Worker: Starting Consumer
+    [2013-05-29 16:18:20,544: DEBUG/MainProcess] | Consumer: Starting Connection
+    [2013-05-29 16:18:20,559: INFO/MainProcess] Connected to amqp://guest@127.0.0.1:5672//
+    [2013-05-29 16:18:20,560: DEBUG/MainProcess] ^-- substep ok
+    [2013-05-29 16:18:20,560: DEBUG/MainProcess] | Consumer: Starting Mingle
+    [2013-05-29 16:18:20,560: INFO/MainProcess] mingle: searching for neighbors
+    [2013-05-29 16:18:21,570: INFO/MainProcess] mingle: no one here
+    [2013-05-29 16:18:21,570: DEBUG/MainProcess] ^-- substep ok
+    [2013-05-29 16:18:21,571: DEBUG/MainProcess] | Consumer: Starting Events
+    [2013-05-29 16:18:21,572: DEBUG/MainProcess] ^-- substep ok
+    [2013-05-29 16:18:21,572: DEBUG/MainProcess] | Consumer: Starting Gossip
+    [2013-05-29 16:18:21,577: DEBUG/MainProcess] ^-- substep ok
+    [2013-05-29 16:18:21,577: DEBUG/MainProcess] | Consumer: Starting InfoStep
+    [2013-05-29 16:18:21,577: WARNING/MainProcess]
+        <celery.worker.consumer.Consumer object at 0x101c2d8d0> is starting
+    [2013-05-29 16:18:21,578: DEBUG/MainProcess] ^-- substep ok
+    [2013-05-29 16:18:21,578: DEBUG/MainProcess] | Consumer: Starting Heart
+    [2013-05-29 16:18:21,579: DEBUG/MainProcess] ^-- substep ok
+    [2013-05-29 16:18:21,579: DEBUG/MainProcess] | Consumer: Starting Control
+    [2013-05-29 16:18:21,583: DEBUG/MainProcess] ^-- substep ok
+    [2013-05-29 16:18:21,583: DEBUG/MainProcess] | Consumer: Starting Tasks
+    [2013-05-29 16:18:21,606: DEBUG/MainProcess] basic.qos: prefetch_count->80
+    [2013-05-29 16:18:21,606: DEBUG/MainProcess] ^-- substep ok
+    [2013-05-29 16:18:21,606: DEBUG/MainProcess] | Consumer: Starting event loop
+    [2013-05-29 16:18:21,608: WARNING/MainProcess] celery@example.com ready.
+
 .. figure:: ../images/worker_graph_full.png
 
 .. _extending-worker-bootsteps:

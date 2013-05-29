@@ -58,3 +58,12 @@ Glossary
         describes a function that will have the same effect, and give the same
         result, even if called zero or multiple times (side-effect free).
         A stronger version of :term:`idempotent`.
+
+    reentrant
+        describes a function that can be interrupted in the middle of
+        execution (e.g. by hardware interrupt or signal) and then safely
+        called again later.  Reentrancy is not the same as
+        :term:`idempotence <idempotent>` as the return value does not have to
+        be the same given the same inputs, and a reentrant function may have
+        side effects as long as it can be interrupted;  An idempotent function
+        is always reentrant, but the reverse may not be true.
