@@ -31,6 +31,7 @@ from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils.functional import first
 from celery.utils.imports import instantiate, symbol_by_name
+from celery.utils.log import ensure_process_aware_logger
 from celery.utils.objects import mro_lookup
 
 from .annotations import prepare as prepare_annotations
@@ -260,6 +261,12 @@ class Celery(object):
         self.conf.update(self.loader.cmdline_config_parser(argv, namespace))
 
     def autodiscover_tasks(self, packages, related_name='tasks'):
+        if self.conf.CELERY_FORCE_BILLIARD_LOGGING:
+            # we'll use billiard's processName instead of
+            # multiprocessing's one in all the loggers
+            # created after this call
+            ensure_process_aware_logger()
+
         self.loader.autodiscover_tasks(packages, related_name)
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
