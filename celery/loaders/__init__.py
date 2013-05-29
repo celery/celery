@@ -11,7 +11,7 @@ from __future__ import absolute_import
 
 from celery._state import current_app
 from celery.utils import deprecated
-from celery.utils.imports import symbol_by_name
+from celery.utils.imports import symbol_by_name, import_from_cwd
 
 LOADER_ALIASES = {'app': 'celery.loaders.app:AppLoader',
                   'default': 'celery.loaders.default:Loader',
@@ -20,7 +20,7 @@ LOADER_ALIASES = {'app': 'celery.loaders.app:AppLoader',
 
 def get_loader_cls(loader):
     """Get loader class by name/alias"""
-    return symbol_by_name(loader, LOADER_ALIASES)
+    return symbol_by_name(loader, LOADER_ALIASES, imp=import_from_cwd)
 
 
 @deprecated(deprecation='2.5', removal='4.0',
