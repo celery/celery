@@ -558,7 +558,7 @@ Combining these you can easily process events in real-time:
 
             print('Workers online: %r' % ', '.join(
                 worker for worker in state.workers if worker.alive
-            )
+            ))
 
         with app.connection() as connection:
             recv = app.events.Receiver(connection, handlers={'*': on_event})
