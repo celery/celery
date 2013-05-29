@@ -158,8 +158,9 @@ restart_workers () {
 }
 
 check_status () {
-    local pid_files=`_get_pid_files`
-    [ -z "$pid_files" ] && echo "celeryd is stopped" && exit 1
+    local pid_files=
+    pid_files=`_get_pid_files`
+    [ -z "$pid_files" ] && echo "celeryd not running (no pidfile)" && exit 1
 
     local one_failed=
     for pid_file in $pid_files; do
