@@ -19,7 +19,7 @@ app = Celery(
     set_as_current=False,
 )
 app.conf.update(
-    CELERYD_PREFETCH_MULTIPLIER=10,
+    CELERYD_PREFETCH_MULTIPLIER=1,
     CELERY_DEFAULT_QUEUE=CSTRESS_QUEUE,
     CELERY_QUEUES=(
         Queue(CSTRESS_QUEUE,
