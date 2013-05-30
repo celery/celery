@@ -80,10 +80,10 @@ release = celery.__version__
 
 exclude_trees = ['.build']
 
-unused_docs = [
-    'xreftest.rst',
-    'tutorials/otherqueues',
-]
+#unused_docs = [
+#    'xreftest.rst',
+#    'tutorials/otherqueues',
+#]
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = True
