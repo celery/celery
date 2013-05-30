@@ -172,11 +172,16 @@ class Suite(object):
             r.revoke(terminate=True)
         self.join(r, timeout=5)
 
+    def missing_results(self, r):
+        return [result.id for result in r if result.id not in result.backend._cache]
+
     def join(self, r, propagate=False, **kwargs):
         while 1:
             try:
                 return r.get(propagate=propagate, **kwargs)
             except TimeoutError as exc:
-                marker('join timed out: {0!r}'.format(exc), '!')
+                marker(
+                    'Still waiting for {0!r}: {1!r}'.format(
+                        self.missing_results(r), exc), '!')
             except self.connerrors as exc:
                 marker('join: connection lost: {0!r}'.format(exc), '!')
