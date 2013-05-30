@@ -87,7 +87,7 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
             if qos.prev != qos.value:
                 update_qos()
 
-            #print('REG: %s' % (hub.repr_active(), ))
+            #print('[[[HUB]]]: %s' % (hub.repr_active(), ))
 
             update_readers(conn_poll_start())
             pool_poll_start(hub)
@@ -96,7 +96,7 @@ def asynloop(obj, connection, consumer, strategies, ns, hub, qos,
                 while connection.more_to_read:
                     try:
                         events = poll(poll_timeout)
-                        #print('EVENTS: %s' % (hub.repr_events(events), ))
+                        #print('[[[EV]]]: %s' % (hub.repr_events(events), ))
                     except ValueError:  # Issue 882
                         return
                     if not events:

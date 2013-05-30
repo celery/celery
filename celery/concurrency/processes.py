@@ -69,6 +69,11 @@ warning, debug = logger.warning, logger.debug
 Ack = namedtuple('Ack', ('id', 'fd', 'payload'))
 
 
+def gen_not_started(gen):
+    # gi_frame is None when generator stopped.
+    return gen.gi_frame and gen.gi_frame.f_lasti == -1
+
+
 def process_initializer(app, hostname):
     """Pool child process initializer."""
     platforms.signals.reset(*WORKER_SIGRESET)
@@ -828,9 +833,18 @@ class TaskPool(BasePool):
                     writers = list(self._active_writers)
                     for gen in writers:
                         if (gen.__name__ == '_write_job' and
-                                gen.gi_frame and gen.gi_frame.f_lasti != -1):
+                                gen_not_started(gen)):
                             # has not started writing the job so can
-                            # safely discard
+                            # discard the task, but we must also remove
+                            # it from the Pool._cache.
+                            job_to_discard = None
+                            for job in values(self._pool._cache):
+                                if job._writer() is gen:  # _writer is saferef
+                                    # removes from Pool._cache
+                                    job_to_discard = job
+                                    break
+                            if job_to_discard:
+                                job_to_discard.discard()
                             self._active_writers.discard(gen)
                         else:
                             try:
