@@ -122,7 +122,7 @@ def hfloat(f, p=5):
 
 def humanbytes(s):
     return next(
-        hfloat(s / div if div else s) + unit
+        '{0}{1}'.format(hfloat(s / div if div else s), unit)
         for div, unit in UNITS if s >= div
     )
 

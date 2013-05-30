@@ -11,7 +11,7 @@ class Data(object):
         self.data = data
 
     def __str__(self):
-        return '<Data: {0} {1}>'.format(
+        return '<Data: {0} ({1})>'.format(
             self.label, humanbytes(len(self.data)),
         )
 
