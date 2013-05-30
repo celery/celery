@@ -160,6 +160,10 @@ workers, note that the first worker to start will receive four times the
 number of messages initially.  Thus the tasks may not be fairly distributed
 to the workers.
 
+.. note::
+
+    Tasks with ETA/countdown are not affected by prefetch limits.
+
 .. _conf-result-backend:
 
 Task result backend settings
