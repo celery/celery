@@ -521,8 +521,9 @@ class Mingle(bootsteps.StartStopStep):
                     other_clock, other_revoked = MINGLE_GET_FIELDS(reply)
                 except KeyError:  # reply from pre-3.1 worker
                     pass
-                c.app.clock.adjust(other_clock)
-                revoked.update(other_revoked)
+                else:
+                    c.app.clock.adjust(other_clock)
+                    revoked.update(other_revoked)
             info('mingle: synced with %s', ', '.join(replies))
         else:
             info('mingle: no one here')
