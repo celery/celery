@@ -79,6 +79,12 @@ class DjangoFixup(object):
         except ImportError:
             _oracle_database_errors = ()  # noqa
 
+        try:
+            from django.db import close_old_connections
+            self._close_old_connections = close_old_connections
+        except ImportError:
+            self._close_old_connections = None
+
         self.app = app
         self.db_reuse_max = self.app.conf.get('CELERY_DB_REUSE_MAX', None)
         self._cache = cache
@@ -161,6 +167,8 @@ class DjangoFixup(object):
         self.close_cache()
 
     def close_database(self, **kwargs):
+        if self.close_old_connections:
+            return self.close_old_connections()  # Django 1.6
         if not self.db_reuse_max:
             return self._close_database()
         if self._db_recycles >= self.db_reuse_max * 2:
