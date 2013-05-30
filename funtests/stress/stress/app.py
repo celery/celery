@@ -23,9 +23,8 @@ app.conf.update(
     CELERY_DEFAULT_QUEUE=CSTRESS_QUEUE,
     CELERY_QUEUES=(
         Queue(CSTRESS_QUEUE,
-              exchange=Exchange(CSTRESS_QUEUE, durable=False),
-              routing_key=CSTRESS_QUEUE,
-              durable=False, auto_delete=True),
+              exchange=Exchange(CSTRESS_QUEUE),
+              routing_key=CSTRESS_QUEUE),
     ),
 )
 
