@@ -78,7 +78,7 @@ class Suite(object):
         if list_all:
             return print(self.testlist(tests))
         print(self.banner(tests))
-        it = count() if repeat == float('Inf') else range(int(repeat) + 1)
+        it = count() if repeat == float('Inf') else range(int(repeat))
         for i in it:
             marker(
                 'Stresstest suite start (repetition {0})'.format(i + 1),
