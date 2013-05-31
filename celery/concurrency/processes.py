@@ -823,6 +823,8 @@ class TaskPool(BasePool):
             hub.timer.apply_interval(interval * 1000.0, handler)
 
     def flush(self):
+        if self._pool._state == TERMINATE:
+            return
         # cancel all tasks that have not been accepted so that NACK is sent.
         for job in values(self._pool._cache):
             if not job._accepted:
