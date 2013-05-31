@@ -229,7 +229,7 @@ def weekday(name):
         raise KeyError(name)
 
 
-def humanize_seconds(secs, prefix='', sep=''):
+def humanize_seconds(secs, prefix='', sep='', now='now'):
     """Show seconds in human form, e.g. 60 is "1 minute", 7200 is "2
     hours".
 
@@ -243,7 +243,7 @@ def humanize_seconds(secs, prefix='', sep=''):
             w = secs / divider
             return '{0}{1}{2} {3}'.format(prefix, sep, formatter(w),
                                           pluralize(w, unit))
-    return 'now'
+    return now
 
 
 def maybe_iso8601(dt):
