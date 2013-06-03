@@ -209,19 +209,18 @@ class Queues(bootsteps.Component):
 
     def create(self, w):
         BucketType = TaskBucket
-        w.start_mediator = not w.disable_rate_limits
+        w.start_mediator = True
         if not w.pool_cls.rlimit_safe:
             w.start_mediator = False
             BucketType = AsyncTaskBucket
         process_task = w.process_task
         if w.use_eventloop:
-            w.start_mediator = False
+            w.start_mediator = True  # Need async write, fixed in 3.1
             BucketType = AsyncTaskBucket
             if w.pool_putlocks and w.pool_cls.uses_semaphore:
                 process_task = w.process_task_sem
         if w.disable_rate_limits:
             w.ready_queue = FastQueue()
-            w.ready_queue.put = process_task
         else:
             w.ready_queue = BucketType(
                 task_registry=w.app.tasks, callback=process_task, worker=w,

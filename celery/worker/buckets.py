@@ -39,6 +39,12 @@ class AsyncTaskBucket(object):
         self.worker = worker
         self.buckets = {}
         self.refresh()
+        self._queue = Queue()
+        self._quick_put = self._queue.put
+        self.get = self._queue.get
+
+    def get(self, *args, **kwargs):
+        return self._queue.get(*args, **kwargs)
 
     def cont(self, request, bucket, tokens):
         if not bucket.can_consume(tokens):
@@ -47,7 +53,7 @@ class AsyncTaskBucket(object):
                 hold * 1000.0, self.cont, (request, bucket, tokens),
             )
         else:
-            self.callback(request)
+            self._quick_put(request)
 
     def put(self, request):
         name = request.name
@@ -56,7 +62,7 @@ class AsyncTaskBucket(object):
         except KeyError:
             bucket = self.add_bucket_for_type(name)
         if not bucket:
-            return self.callback(request)
+            return self._quick_put(request)
         return self.cont(request, bucket, 1)
 
     def add_task_type(self, name):
