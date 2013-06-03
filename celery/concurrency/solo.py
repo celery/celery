@@ -15,6 +15,7 @@ from .base import BasePool, apply_target
 
 class TaskPool(BasePool):
     """Solo task pool (blocking, inline, fast)."""
+    no_threads = True
 
     def __init__(self, *args, **kwargs):
         super(TaskPool, self).__init__(*args, **kwargs)

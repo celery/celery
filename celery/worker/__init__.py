@@ -221,6 +221,9 @@ class Queues(bootsteps.Component):
                 process_task = w.process_task_sem
         if w.disable_rate_limits:
             w.ready_queue = FastQueue()
+            if getattr(w.pool_cls, 'no_threads', False):  # temp fix
+                w.ready_queue.put = process_task
+                w.start_mediator = False
         else:
             w.ready_queue = BucketType(
                 task_registry=w.app.tasks, callback=process_task, worker=w,
