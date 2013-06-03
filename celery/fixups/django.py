@@ -167,8 +167,8 @@ class DjangoFixup(object):
         self.close_cache()
 
     def close_database(self, **kwargs):
-        if self.close_old_connections:
-            return self.close_old_connections()  # Django 1.6
+        if self._close_old_connections:
+            return self._close_old_connections()  # Django 1.6
         if not self.db_reuse_max:
             return self._close_database()
         if self._db_recycles >= self.db_reuse_max * 2:
