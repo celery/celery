@@ -270,11 +270,11 @@ def _shutdown_handler(worker, sig='TERM', how='Warm',
 install_worker_term_handler = partial(
     _shutdown_handler, sig='SIGTERM', how='Warm', exc=SystemExit,
 )
-if not is_jython:
+if not is_jython:  # pragma: no cover
     install_worker_term_hard_handler = partial(
         _shutdown_handler, sig='SIGQUIT', how='Cold', exc=SystemTerminate,
     )
-else:
+else:  # pragma: no cover
     install_worker_term_handler = \
         install_worker_term_hard_handler = lambda *a, **kw: None
 
@@ -282,11 +282,11 @@ else:
 def on_SIGINT(worker):
     safe_say('worker: Hitting Ctrl+C again will terminate all running tasks!')
     install_worker_term_hard_handler(worker, sig='SIGINT')
-if not is_jython:
+if not is_jython:  # pragma: no cover
     install_worker_int_handler = partial(
         _shutdown_handler, sig='SIGINT', callback=on_SIGINT
     )
-else:
+else:  # pragma: no cover
     install_worker_int_handler = lambda *a, **kw: None
 
 

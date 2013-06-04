@@ -271,6 +271,7 @@ class test_Worker(WorkerAppCase):
         worker1 = self.Worker(loglevel=0xFFFF)
         self.assertEqual(worker1.loglevel, 0xFFFF)
 
+    @disable_stdouts
     def test_warns_if_running_as_privileged_user(self):
         app = current_app
         if app.IS_WINDOWS:
@@ -294,6 +295,31 @@ class test_Worker(WorkerAppCase):
         self.Worker(redirect_stdouts=False)
         with self.assertRaises(AttributeError):
             sys.stdout.logger
+
+    @disable_stdouts
+    def test_on_start_custom_logging(self):
+        prev, self.app.log.redirect_stdouts = (
+            self.app.log.redirect_stdouts, Mock(),
+        )
+        try:
+            worker = self.Worker(redirect_stoutds=True)
+            worker._custom_logging = True
+            worker.on_start()
+            self.assertFalse(self.app.log.redirect_stdouts.called)
+        finally:
+            self.app.log.redirect_stdouts = prev
+
+    def test_setup_logging_no_color(self):
+        worker = self.Worker(redirect_stdouts=False, no_color=True)
+        prev, self.app.log.setup = self.app.log.setup, Mock()
+        worker.setup_logging()
+        self.assertFalse(self.app.log.setup.call_args[1]['colorize'])
+
+    @disable_stdouts
+    def test_startup_info_pool_is_str(self):
+        worker = self.Worker(redirect_stdouts=False)
+        worker.pool_cls = 'foo'
+        worker.startup_info()
 
     def test_redirect_stdouts_already_handled(self):
         logging_setup = [False]
