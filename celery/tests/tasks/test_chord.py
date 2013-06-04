@@ -6,8 +6,9 @@ from contextlib import contextmanager
 from celery import canvas
 from celery import current_app
 from celery import result
+from celery.exceptions import ChordError
 from celery.five import range
-from celery.result import AsyncResult, GroupResult
+from celery.result import AsyncResult, GroupResult, EagerResult
 from celery.task import task, TaskSet
 from celery.tests.utils import AppCase, Mock
 
@@ -31,11 +32,24 @@ class TSR(GroupResult):
     def ready(self):
         return self.is_ready
 
-    def join(self, **kwargs):
+    def join(self, propagate=True, **kwargs):
+        if propagate:
+            for value in self.value:
+                if isinstance(value, Exception):
+                    raise value
         return self.value
+    join_native = join
 
-    def join_native(self, **kwargs):
-        return self.value
+    def _failed_join_report(self):
+        for value in self.value:
+            if isinstance(value, Exception):
+                yield EagerResult('some_id', value, 'FAILURE')
+
+
+class TSRNoReport(TSR):
+
+    def _failed_join_report(self):
+        return iter([])
 
 
 @contextmanager
@@ -58,46 +72,105 @@ class test_unlock_chord_task(AppCase):
             is_ready = True
             value = [2, 4, 8, 6]
 
-        @task()
-        def callback(*args, **kwargs):
-            pass
+        with self._chord_context(AlwaysReady) as (cb, retry, _):
+            cb.type.apply_async.assert_called_with(
+                ([2, 4, 8, 6], ), {}, task_id=cb.id,
+            )
+            # did not retry
+            self.assertFalse(retry.call_count)
 
-        pts, result.GroupResult = result.GroupResult, AlwaysReady
-        callback.apply_async = Mock()
-        callback_s = callback.s()
-        try:
-            with patch_unlock_retry() as (unlock, retry):
-                subtask, canvas.maybe_subtask = canvas.maybe_subtask, passthru
-                try:
-                    unlock('group_id', callback_s,
-                           result=[AsyncResult(r) for r in ['1', 2, 3]],
-                           GroupResult=AlwaysReady)
-                finally:
-                    canvas.maybe_subtask = subtask
-                callback.apply_async.assert_called_with(([2, 4, 8, 6], ), {})
-                # did not retry
-                self.assertFalse(retry.call_count)
-        finally:
-            result.GroupResult = pts
+    def test_callback_fails(self):
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4, 8, 6]
+
+        def setup(callback):
+            callback.apply_async.side_effect = IOError()
+
+        with self._chord_context(AlwaysReady, setup) as (cb, retry, fail):
+            self.assertTrue(fail.called)
+            self.assertEqual(
+                fail.call_args[0][0], cb.id,
+            )
+            self.assertIsInstance(
+                fail.call_args[1]['exc'], ChordError,
+            )
+
+    def test_unlock_ready_failed(self):
+
+        class Failed(TSR):
+            is_ready = True
+            value = [2, KeyError('foo'), 8, 6]
+
+        with self._chord_context(Failed) as (cb, retry, fail_current):
+            self.assertFalse(cb.type.apply_async.called)
+            # did not retry
+            self.assertFalse(retry.call_count)
+            self.assertTrue(fail_current.called)
+            self.assertEqual(
+                fail_current.call_args[0][0], cb.id,
+            )
+            self.assertIsInstance(
+                fail_current.call_args[1]['exc'], ChordError,
+            )
+            self.assertIn('some_id', str(fail_current.call_args[1]['exc']))
+
+    def test_unlock_ready_failed_no_culprit(self):
+        class Failed(TSRNoReport):
+            is_ready = True
+            value = [2, KeyError('foo'), 8, 6]
+
+        with self._chord_context(Failed) as (cb, retry, fail_current):
+            self.assertTrue(fail_current.called)
+            self.assertEqual(
+                fail_current.call_args[0][0], cb.id,
+            )
+            self.assertIsInstance(
+                fail_current.call_args[1]['exc'], ChordError,
+            )
+
+    @contextmanager
+    def _chord_context(self, ResultCls, setup=None, **kwargs):
+        with patch('celery.result.GroupResult'):
+
+            @task()
+            def callback(*args, **kwargs):
+                pass
+
+            pts, result.GroupResult = result.GroupResult, ResultCls
+            callback.apply_async = Mock()
+            callback_s = callback.s()
+            callback_s.id = 'callback_id'
+            fail_current = self.app.backend.fail_from_current_stack = Mock()
+            try:
+                with patch_unlock_retry() as (unlock, retry):
+                    subtask, canvas.maybe_subtask = (
+                        canvas.maybe_subtask, passthru,
+                    )
+                    if setup:
+                        setup(callback)
+                    try:
+                        unlock(
+                            'group_id', callback_s,
+                            result=[AsyncResult(r) for r in ['1', 2, 3]],
+                            GroupResult=ResultCls, **kwargs
+                        )
+                    finally:
+                        canvas.maybe_subtask = subtask
+                    yield callback_s, retry, fail_current
+            finally:
+                result.GroupResult = pts
 
     @patch('celery.result.GroupResult')
     def test_when_not_ready(self, GroupResult):
-        with patch_unlock_retry() as (unlock, retry):
+        class NeverReady(TSR):
+            is_ready = False
 
-            class NeverReady(TSR):
-                is_ready = False
-
-            pts, result.GroupResult = result.GroupResult, NeverReady
-            try:
-                callback = Mock()
-                unlock('group_id', callback, interval=10, max_retries=30,
-                       result=[AsyncResult(x) for x in ['1', '2', '3']],
-                       GroupResult=NeverReady)
-                self.assertFalse(callback.delay.call_count)
-                # did retry
-                unlock.retry.assert_called_with(countdown=10, max_retries=30)
-            finally:
-                result.GroupResult = pts
+        with self._chord_context(NeverReady, interval=10, max_retries=30) \
+                as (cb, retry, _):
+            self.assertFalse(cb.type.apply_async.called)
+            # did retry
+            retry.assert_called_with(countdown=10, max_retries=30)
 
     def test_is_in_registry(self):
         self.assertIn('celery.chord_unlock', current_app.tasks)

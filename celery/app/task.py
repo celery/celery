@@ -25,6 +25,7 @@ from celery.utils.mail import ErrorMail
 
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
+from .utils import appstr
 
 #: extracts attributes related to publishing a message from an object.
 extract_exec_options = mattrgetter(
@@ -32,6 +33,29 @@ extract_exec_options = mattrgetter(
     'serializer', 'delivery_mode', 'compression', 'timeout', 'soft_timeout',
     'immediate', 'mandatory',  # imm+man is deprecated
 )
+
+# We take __repr__ very seriously around here ;)
+R_BOUND_TASK = '<class {0.__name__} of {app}{flags}>'
+R_UNBOUND_TASK = '<unbound {0.__name__}{flags}>'
+R_SELF_TASK = '<@task {0.name} bound to other {0.__self__}>'
+R_INSTANCE = '<@task: {0.name} of {app}{flags}>'
+
+
+def _strflags(flags, default=''):
+    if flags:
+        return ' ({0})'.format(', '.join(flags))
+    return default
+
+
+def _reprtask(task, fmt=None, flags=None):
+    flags = list(flags) if flags is not None else []
+    flags.append('v2 compatible') if task.__v2_compat__ else None
+    if not fmt:
+        fmt = R_BOUND_TASK if task._app else R_UNBOUND_TASK
+    return fmt.format(
+        task, flags=_strflags(flags),
+        app=appstr(task._app) if task._app else None,
+    )
 
 
 class Context(object):
@@ -124,11 +148,7 @@ class TaskType(type):
         return instance.__class__
 
     def __repr__(cls):
-        if cls._app:
-            return '<class {0.__name__} of {0._app}>'.format(cls)
-        if cls.__v2_compat__:
-            return '<unbound {0.__name__} (v2 compatible)>'.format(cls)
-        return '<unbound {0.__name__}>'.format(cls)
+        return _reprtask(cls)
 
 
 @with_metaclass(TaskType)
@@ -782,9 +802,7 @@ class Task(object):
 
     def __repr__(self):
         """`repr(task)`"""
-        if self.__self__:
-            return '<bound task {0.name} of {0.__self__}>'.format(self)
-        return '<@task: {0.name}>'.format(self)
+        return _reprtask(self, R_SELF_TASK if self.__self__ else R_INSTANCE)
 
     def _get_request(self):
         """Get current request object."""

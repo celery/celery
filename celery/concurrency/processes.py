@@ -352,7 +352,7 @@ class AsynPool(_pool.Pool):
                 task = resq.recv()
             except (IOError, EOFError) as exc:
                 debug('got %r while flushing process %r',
-                        exc, proc, exc_info=1)
+                      exc, proc, exc_info=1)
                 break
             else:
                 if task is not None:

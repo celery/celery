@@ -63,13 +63,8 @@ class Router(object):
             try:
                 Q = self.queues[queue]  # noqa
             except KeyError:
-                if not self.create_missing:
-                    raise QueueNotFound(
-                        'Queue {0!r} missing from CELERY_QUEUES'.format(queue))
-                for key in 'exchange', 'routing_key':
-                    if route.get(key) is None:
-                        route[key] = queue
-                Q = self.app.amqp.queues.add(queue, **route)
+                raise QueueNotFound(
+                    'Queue {0!r} missing from CELERY_QUEUES'.format(queue))
             # needs to be declared by publisher
             route['queue'] = Q
         return route

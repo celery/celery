@@ -5,6 +5,8 @@ import sys
 from importlib import import_module
 from mock import Mock, patch
 
+from celery.app.defaults import NAMESPACES
+
 from celery.tests.utils import Case, pypy_version, sys_platform
 
 
@@ -16,6 +18,9 @@ class test_defaults(Case):
     def tearDown(self):
         if self._prev:
             sys.modules['celery.app.defaults'] = self._prev
+
+    def test_option_repr(self):
+        self.assertTrue(repr(NAMESPACES['BROKER']['URL']))
 
     def test_any(self):
         val = object()

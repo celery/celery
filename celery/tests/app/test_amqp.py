@@ -35,6 +35,38 @@ class test_TaskProducer(AppCase):
         prod.publish_task('tasks.add', (2, 2), {}, retry=False, chord=123)
         self.assertFalse(prod.connection.ensure.call_count)
 
+    def test_publish_custom_queue(self):
+        prod = self.app.amqp.TaskProducer(Mock())
+        self.app.amqp.queues['some_queue'] = Queue(
+            'xxx', Exchange('yyy'), 'zzz',
+        )
+        prod.channel.connection.client.declared_entities = set()
+        prod.publish = Mock()
+        prod.publish_task('tasks.add', (8, 8), {}, retry=False,
+                          queue='some_queue')
+        self.assertEqual(prod.publish.call_args[1]['exchange'], 'yyy')
+        self.assertEqual(prod.publish.call_args[1]['routing_key'], 'zzz')
+
+    def test_event_dispatcher(self):
+        prod = self.app.amqp.TaskProducer(Mock())
+        self.assertTrue(prod.event_dispatcher)
+        self.assertFalse(prod.event_dispatcher.enabled)
+
+
+class test_TaskConsumer(AppCase):
+
+    def test_accept_content(self):
+        with self.app.pool.acquire(block=True) as conn:
+            self.app.conf.CELERY_ACCEPT_CONTENT = ['application/json']
+            self.assertEqual(
+                self.app.amqp.TaskConsumer(conn).accept,
+                set(['application/json'])
+            )
+            self.assertEqual(
+                self.app.amqp.TaskConsumer(conn, accept=['json']).accept,
+                set(['application/json']),
+            )
+
 
 class test_compat_TaskPublisher(AppCase):
 
@@ -122,6 +154,49 @@ class test_Queues(AppCase):
         self.assertIn('foo', q)
         self.assertIsInstance(q['foo'], Queue)
         self.assertEqual(q['foo'].routing_key, 'rk')
+
+    def test_with_ha_policy(self):
+        qn = Queues(ha_policy=None, create_missing=False)
+        qn.add('xyz')
+        self.assertIsNone(qn['xyz'].queue_arguments)
+
+        qn.add('xyx', queue_arguments={'x-foo': 'bar'})
+        self.assertEqual(qn['xyx'].queue_arguments, {'x-foo': 'bar'})
+
+        q = Queues(ha_policy='all', create_missing=False)
+        q.add(Queue('foo'))
+        self.assertEqual(q['foo'].queue_arguments, {'x-ha-policy': 'all'})
+
+        qq = Queue('xyx2', queue_arguments={'x-foo': 'bari'})
+        q.add(qq)
+        self.assertEqual(q['xyx2'].queue_arguments, {
+            'x-ha-policy': 'all',
+            'x-foo': 'bari',
+        })
+
+        q2 = Queues(ha_policy=['A', 'B', 'C'], create_missing=False)
+        q2.add(Queue('foo'))
+        self.assertEqual(q2['foo'].queue_arguments, {
+            'x-ha-policy': 'nodes',
+            'x-ha-policy-params': ['A', 'B', 'C'],
+        })
+
+    def test_select_add(self):
+        q = Queues()
+        q.select_subset(['foo', 'bar'])
+        q.select_add('baz')
+        self.assertItemsEqual(q._consume_from.keys(), ['foo', 'bar', 'baz'])
+
+    def test_select_remove(self):
+        q = Queues()
+        q.select_subset(['foo', 'bar'])
+        q.select_remove('bar')
+        self.assertItemsEqual(q._consume_from.keys(), ['foo'])
+
+    def test_with_ha_policy_compat(self):
+        q = Queues(ha_policy='all')
+        q.add('bar')
+        self.assertEqual(q['bar'].queue_arguments, {'x-ha-policy': 'all'})
 
     def test_add_default_exchange(self):
         ex = Exchange('fff', 'fanout')

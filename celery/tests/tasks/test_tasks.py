@@ -232,7 +232,6 @@ class test_tasks(Case):
         @task
         def xxx():
             pass
-
         self.assertIs(pickle.loads(pickle.dumps(xxx)), xxx.app.tasks[xxx.name])
 
     def createTask(self, name):
@@ -338,6 +337,21 @@ class test_tasks(Case):
 
         publisher = T1.get_publisher()
         self.assertTrue(publisher.exchange)
+
+    def test_repr_v2_compat(self):
+        task = type(self.createTask('c.unittest.v2c'))
+        task.__v2_compat__ = True
+        self.assertIn('v2 compatible', repr(task))
+
+    def test_apply_with_self(self):
+
+        @task(__self__=42)
+        def tawself(self):
+            return self
+
+        self.assertEqual(tawself.apply().get(), 42)
+
+        self.assertEqual(tawself(), 42)
 
     def test_context_get(self):
         task = self.createTask('c.unittest.t.c.g')

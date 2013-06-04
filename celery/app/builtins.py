@@ -252,7 +252,7 @@ def add_chain_task(app):
                         res = Signature._freeze(task)
                         task = chord(task, body=next_step, task_id=res.task_id)
                     except IndexError:
-                        pass
+                        pass  # no callback, so keep as group
                 if prev_task:
                     # link previous task to this task.
                     prev_task.link(task)
@@ -352,7 +352,8 @@ def add_chord_task(app):
             opts.update(chord=body, group_id=group_id)
             return task_id
 
-        def apply_async(self, args=(), kwargs={}, task_id=None, **options):
+        def apply_async(self, args=(), kwargs={}, task_id=None,
+                        group_id=None, chord=None, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
             header = kwargs.pop('header')
@@ -360,10 +361,10 @@ def add_chord_task(app):
             header, body = (list(maybe_subtask(header)),
                             maybe_subtask(body))
             # forward certain options to body
-            for opt_name in ['group_id', 'chord']:
-                opt_value = options.pop(opt_name, None)
-                if opt_value:
-                    body.set(**{opt_name: opt_value})
+            if chord is not None:
+                body.options['chord'] = chord
+            if group_id is not None:
+                body.options['group_id'] = group_id
             [body.link(s) for s in options.pop('link', [])]
             [body.link_error(s) for s in options.pop('link_error', [])]
             callback_id = body.options.setdefault('task_id', task_id or uuid())

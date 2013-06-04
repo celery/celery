@@ -1,8 +1,13 @@
 from __future__ import absolute_import
 
-from celery.app.registry import TaskRegistry
+from celery import Celery
+from celery.app.registry import (
+    TaskRegistry,
+    _unpickle_task,
+    _unpickle_task_v2,
+)
 from celery.task import Task, PeriodicTask
-from celery.tests.utils import Case
+from celery.tests.utils import AppCase, Case
 
 
 class MockTask(Task):
@@ -18,6 +23,21 @@ class MockPeriodicTask(PeriodicTask):
 
     def run(self, **kwargs):
         return True
+
+
+class test_unpickle_task(AppCase):
+
+    def setup(self):
+        self.app = Celery(set_as_current=True)
+
+    def test_unpickle_v1(self):
+        self.app.tasks['txfoo'] = 'bar'
+        self.assertEqual(_unpickle_task('txfoo'), 'bar')
+
+    def test_unpickle_v2(self):
+        self.app.tasks['txfoo1'] = 'bar1'
+        self.assertEqual(_unpickle_task_v2('txfoo1'), 'bar1')
+        self.assertEqual(_unpickle_task_v2('txfoo1', module='celery'), 'bar1')
 
 
 class test_TaskRegistry(Case):

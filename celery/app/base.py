@@ -39,7 +39,7 @@ from .builtins import shared_task, load_shared_tasks
 from .defaults import DEFAULTS, find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import (
-    AppPickler, Settings, bugreport, _unpickle_app, _unpickle_app_v2,
+    AppPickler, Settings, bugreport, _unpickle_app, _unpickle_app_v2, appstr,
 )
 
 _EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
@@ -456,8 +456,7 @@ class Celery(object):
         return attrgetter(path)(self)
 
     def __repr__(self):
-        return '<{0} {1}:0x{2:x}>'.format(
-            type(self).__name__, self.main or '__main__', id(self))
+        return '<{0} {1}>'.format(type(self).__name__, appstr(self))
 
     def __reduce__(self):
         if self._using_v1_reduce:

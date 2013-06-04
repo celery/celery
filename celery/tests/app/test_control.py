@@ -1,14 +1,15 @@
 from __future__ import absolute_import
 
+import warnings
+
 from functools import wraps
 
 from kombu.pidbox import Mailbox
 
-from celery.app import app_or_default
 from celery.app import control
 from celery.task import task
 from celery.utils import uuid
-from celery.tests.utils import Case
+from celery.tests.utils import AppCase, Case
 
 
 @task()
@@ -45,12 +46,29 @@ def with_mock_broadcast(fun):
     return _resets
 
 
-class test_inspect(Case):
+class test_flatten_reply(Case):
 
-    def setUp(self):
-        app = self.app = app_or_default()
-        self.c = Control(app=app)
-        self.prev, app.control = app.control, self.c
+    def test_flatten_reply(self):
+        reply = [
+            {'foo@example.com': {'hello': 10}},
+            {'foo@example.com': {'hello': 20}},
+            {'bar@example.com': {'hello': 30}}
+        ]
+        with warnings.catch_warnings(record=True) as w:
+            nodes = control.flatten_reply(reply)
+            self.assertIn(
+                'multiple replies',
+                str(w[-1].message),
+            )
+            self.assertIn('foo@example.com', nodes)
+            self.assertIn('bar@example.com', nodes)
+
+
+class test_inspect(AppCase):
+
+    def setup(self):
+        self.c = Control(app=self.app)
+        self.prev, self.app.control = self.app.control, self.c
         self.i = self.c.inspect()
 
     def tearDown(self):
@@ -69,6 +87,36 @@ class test_inspect(Case):
     def test_active(self):
         self.i.active()
         self.assertIn('dump_active', MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_clock(self):
+        self.i.clock()
+        self.assertIn('clock', MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_conf(self):
+        self.i.conf()
+        self.assertIn('dump_conf', MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_hello(self):
+        self.i.hello()
+        self.assertIn('hello', MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_memsample(self):
+        self.i.memsample()
+        self.assertIn('memsample', MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_memdump(self):
+        self.i.memdump()
+        self.assertIn('memdump', MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_objgraph(self):
+        self.i.objgraph()
+        self.assertIn('objgraph', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_scheduled(self):
@@ -111,10 +159,9 @@ class test_inspect(Case):
         self.assertIn('report', MockMailbox.sent)
 
 
-class test_Broadcast(Case):
+class test_Broadcast(AppCase):
 
-    def setUp(self):
-        self.app = app_or_default()
+    def setup(self):
         self.control = Control(app=self.app)
         self.app.control = self.control
 
@@ -181,6 +228,21 @@ class test_Broadcast(Case):
     def test_ping(self):
         self.control.ping()
         self.assertIn('ping', MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_election(self):
+        self.control.election('some_id', 'topic', 'action')
+        self.assertIn('election', MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_pool_grow(self):
+        self.control.pool_grow(2)
+        self.assertIn('pool_grow', MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_pool_shrink(self):
+        self.control.pool_shrink(2)
+        self.assertIn('pool_shrink', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_revoke_from_result(self):

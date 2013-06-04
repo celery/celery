@@ -4,6 +4,7 @@ from mock import Mock, patch
 
 from celery import current_app as app, group, task, chord
 from celery.app import builtins
+from celery.canvas import Signature
 from celery.five import range
 from celery._state import _task_stack
 from celery.tests.utils import Case
@@ -100,6 +101,13 @@ class test_group(Case):
         x = group([add.s(4, 4), add.s(8, 8)])
         x.apply_async()
 
+    def test_apply_empty(self):
+        x = group()
+        x.apply()
+        res = x.apply_async()
+        self.assertFalse(res)
+        self.assertFalse(res.results)
+
     def test_apply_async_with_parent(self):
         _task_stack.push(add)
         try:
@@ -133,6 +141,49 @@ class test_chain(Case):
         self.assertTrue(result.parent.parent)
         self.assertIsNone(result.parent.parent.parent)
 
+    def test_group_to_chord(self):
+        c = (
+            group(add.s(i, i) for i in range(5)) |
+            add.s(10) |
+            add.s(20) |
+            add.s(30)
+        )
+        tasks, _ = c.type.prepare_steps((), c.tasks)
+        self.assertIsInstance(tasks[0], chord)
+        self.assertTrue(tasks[0].body.options['link'])
+        self.assertTrue(tasks[0].body.options['link'][0].options['link'])
+
+        c2 = add.s(2, 2) | group(add.s(i, i) for i in range(10))
+        tasks2, _ = c2.type.prepare_steps((), c2.tasks)
+        self.assertIsInstance(tasks2[1], group)
+
+    def test_apply_options(self):
+
+        class static(Signature):
+
+            def clone(self, *args, **kwargs):
+                return self
+
+        def s(*args, **kwargs):
+            return static(add.name, args, kwargs)
+
+        c = s(2, 2) | s(4, 4) | s(8, 8)
+        r1 = c.apply_async(task_id='some_id')
+        self.assertEqual(r1.id, 'some_id')
+
+        c.apply_async(group_id='some_group_id')
+        self.assertEqual(c.tasks[-1].options['group_id'], 'some_group_id')
+
+        c.apply_async(chord='some_chord_id')
+        self.assertEqual(c.tasks[-1].options['chord'], 'some_chord_id')
+
+        c.apply_async(link=[s(32)])
+        self.assertListEqual(c.tasks[-1].options['link'], [s(32)])
+
+        c.apply_async(link_error=[s('error')])
+        for task in c.tasks:
+            self.assertListEqual(task.options['link_error'], [s('error')])
+
 
 class test_chord(Case):
 
@@ -151,6 +202,15 @@ class test_chord(Case):
 
     def test_run_header_not_group(self):
         self.task([add.s(i, i) for i in range(10)], xsum.s())
+
+    def test_forward_options(self):
+        body = xsum.s()
+        x = chord([add.s(i, i) for i in range(10)], body=body)
+        x.apply_async(group_id='some_group_id')
+        self.assertEqual(body.options['group_id'], 'some_group_id')
+        x2 = chord([add.s(i, i) for i in range(10)], body=body)
+        x2.apply_async(chord='some_chord_id')
+        self.assertEqual(body.options['chord'], 'some_chord_id')
 
     def test_apply_eager(self):
         app.conf.CELERY_ALWAYS_EAGER = True

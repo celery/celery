@@ -77,7 +77,7 @@ class test_migrate_tasks(AppCase):
         self.assertTrue(x.default_channel.queues)
         self.assertFalse(y.default_channel.queues)
 
-        migrate_tasks(x, y)
+        migrate_tasks(x, y, accept=['text/plain'])
 
         yq = q(y.default_channel)
         self.assertEqual(yq.get().body, ensure_bytes('foo'))
@@ -86,11 +86,12 @@ class test_migrate_tasks(AppCase):
 
         Producer(x).publish('foo', exchange=name, routing_key=name)
         callback = Mock()
-        migrate_tasks(x, y, callback=callback)
+        migrate_tasks(x, y, callback=callback, accept=['text/plain'])
         self.assertTrue(callback.called)
         migrate = Mock()
         Producer(x).publish('baz', exchange=name, routing_key=name)
-        migrate_tasks(x, y, callback=callback, migrate=migrate)
+        migrate_tasks(x, y, callback=callback,
+                      migrate=migrate, accept=['text/plain'])
         self.assertTrue(migrate.called)
 
         with patch('kombu.transport.virtual.Channel.queue_declare') as qd:
@@ -106,5 +107,5 @@ class test_migrate_tasks(AppCase):
         x.default_channel.queues = {}
         y.default_channel.queues = {}
         callback = Mock()
-        migrate_tasks(x, y, callback=callback)
+        migrate_tasks(x, y, callback=callback, accept=['text/plain'])
         self.assertFalse(callback.called)

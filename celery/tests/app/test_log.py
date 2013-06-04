@@ -125,11 +125,21 @@ class test_default_logger(AppCase):
 
     def test_setup_logging_subsystem_misc(self):
         log.setup_logging_subsystem(loglevel=None)
+
+    def test_setup_logging_subsystem_misc2(self):
         self.app.conf.CELERYD_HIJACK_ROOT_LOGGER = True
         try:
             log.setup_logging_subsystem()
         finally:
             self.app.conf.CELERYD_HIJACK_ROOT_LOGGER = False
+
+    def test_get_default_logger(self):
+        self.assertTrue(self.app.log.get_default_logger())
+
+    def test_configure_logger(self):
+        logger = self.app.log.get_default_logger()
+        self.app.log._configure_logger(logger, sys.stderr, None, '', False)
+        logger.handlers[:] = []
 
     def test_setup_logging_subsystem_colorize(self):
         log.setup_logging_subsystem(colorize=None)

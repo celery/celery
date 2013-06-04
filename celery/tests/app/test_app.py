@@ -7,9 +7,10 @@ from pickle import loads, dumps
 
 from kombu import Exchange
 
-from celery import Celery
+from celery import Celery, shared_task, current_app
 from celery import app as _app
 from celery import _state
+from celery.app import base as _appbase
 from celery.app import defaults
 from celery.exceptions import ImproperlyConfigured
 from celery.five import items
@@ -18,8 +19,13 @@ from celery.platforms import pyimplementation
 from celery.utils.serialization import pickle
 
 from celery.tests import config
-from celery.tests.utils import (Case, mask_modules, platform_pyimp,
-                                sys_platform, pypy_version)
+from celery.tests.utils import (
+    Case,
+    mask_modules,
+    platform_pyimp,
+    sys_platform,
+    pypy_version,
+)
 from celery.utils import uuid
 from celery.utils.mail import ErrorMail
 
@@ -74,6 +80,100 @@ class test_App(Case):
         task = app.task(fun)
         self.assertEqual(task.name, app.main + '.fun')
 
+    def test_with_config_source(self):
+        app = Celery(set_as_current=False, config_source=ObjectConfig)
+        self.assertEqual(app.conf.FOO, 1)
+        self.assertEqual(app.conf.BAR, 2)
+
+    def test_task_windows_execv(self):
+        app = Celery(set_as_current=False)
+
+        prev, _appbase._EXECV = _appbase._EXECV, True
+        try:
+
+            @app.task()
+            def foo():
+                pass
+
+            self.assertTrue(foo._get_current_object())  # is proxy
+
+        finally:
+            _appbase._EXECV = prev
+        assert not _appbase._EXECV
+
+    def test_task_takes_no_args(self):
+        app = Celery(set_as_current=False)
+
+        with self.assertRaises(TypeError):
+            @app.task(1)
+            def foo():
+                pass
+
+    def test_add_defaults(self):
+        app = Celery(set_as_current=False)
+
+        self.assertFalse(app.configured)
+        _conf = {'FOO': 300}
+        conf = lambda: _conf
+        app.add_defaults(conf)
+        self.assertIn(conf, app._pending_defaults)
+        self.assertFalse(app.configured)
+        self.assertEqual(app.conf.FOO, 300)
+        self.assertTrue(app.configured)
+        self.assertFalse(app._pending_defaults)
+
+        # defaults not pickled
+        appr = loads(dumps(app))
+        with self.assertRaises(AttributeError):
+            appr.conf.FOO
+
+        # add more defaults after configured
+        conf2 = {'FOO': 'BAR'}
+        app.add_defaults(conf2)
+        self.assertEqual(app.conf.FOO, 'BAR')
+
+        self.assertIn(_conf, app.conf.defaults)
+        self.assertIn(conf2, app.conf.defaults)
+
+    def test_connection_or_acquire(self):
+
+        with self.app.connection_or_acquire(block=True):
+            self.assertTrue(self.app.pool._dirty)
+
+        with self.app.connection_or_acquire(pool=False):
+            self.assertFalse(self.app.pool._dirty)
+
+    def test_maybe_close_pool(self):
+        cpool = self.app._pool = Mock()
+        ppool = self.app.amqp._producer_pool = Mock()
+        self.app._maybe_close_pool()
+        cpool.force_close_all.assert_called_with()
+        ppool.force_close_all.assert_called_with()
+        self.assertIsNone(self.app._pool)
+        self.assertIsNone(self.app.amqp._producer_pool)
+
+        self.app._pool = Mock()
+        self.app._maybe_close_pool()
+        self.app._maybe_close_pool()
+
+    def test_using_v1_reduce(self):
+        self.app._using_v1_reduce = True
+        self.assertTrue(loads(dumps(self.app)))
+
+    def test_autodiscover_tasks(self):
+        self.app.conf.CELERY_FORCE_BILLIARD_LOGGING = True
+        with patch('celery.app.base.ensure_process_aware_logger') as ep:
+            self.app.loader.autodiscover_tasks = Mock()
+            self.app.autodiscover_tasks(['proj.A', 'proj.B'])
+            ep.assert_called_with()
+            self.app.loader.autodiscover_tasks.assert_called_with(
+                ['proj.A', 'proj.B'], 'tasks',
+            )
+        with patch('celery.app.base.ensure_process_aware_logger') as ep:
+            self.app.conf.CELERY_FORCE_BILLIARD_LOGGING = False
+            self.app.autodiscover_tasks(['proj.A', 'proj.B'])
+            self.assertFalse(ep.called)
+
     def test_with_broker(self):
         prev = os.environ.get('CELERY_BROKER_URL')
         os.environ.pop('CELERY_BROKER_URL', None)
@@ -117,13 +217,13 @@ class test_App(Case):
             _state._task_stack.pop()
 
     def test_task_not_shared(self):
-        with patch('celery.app.base.shared_task') as shared_task:
+        with patch('celery.app.base.shared_task') as sh:
             app = Celery(set_as_current=False)
 
             @app.task(shared=False)
             def foo():
                 pass
-            self.assertFalse(shared_task.called)
+            self.assertFalse(sh.called)
 
     def test_task_compat_with_filter(self):
         app = Celery(set_as_current=False, accept_magic_kwargs=True)
@@ -145,6 +245,8 @@ class test_App(Case):
         def filter(task):
             check(task)
             return task
+
+        assert not _appbase._EXECV
 
         @app.task(filter=filter)
         def foo():
@@ -367,6 +469,18 @@ class test_App(Case):
         # not set as current, so ends up as default app after reduce
         self.assertIs(r.app, _state.default_app)
 
+    def test_get_active_apps(self):
+        self.assertTrue(list(_state._get_active_apps()))
+
+        app1 = Celery(set_as_current=False)
+        appid = id(app1)
+        self.assertIn(app1, _state._get_active_apps())
+        del(app1)
+
+        # weakref removed from list when app goes out of scope.
+        with self.assertRaises(StopIteration):
+            next(app for app in _state._get_active_apps() if id(app) == appid)
+
     def test_config_from_envvar_more(self, key='CELERY_HARNESS_CFG1'):
         self.assertFalse(self.app.config_from_envvar('HDSAJIHWIQHEWQU',
                                                      silent=True))
@@ -543,3 +657,38 @@ class test_pyimplementation(Case):
             with sys_platform('darwin'):
                 with pypy_version():
                     self.assertEqual('CPython', pyimplementation())
+
+
+class test_shared_task(Case):
+
+    def setUp(self):
+        self._restore_app = current_app._get_current_object()
+
+    def tearDown(self):
+        self._restore_app.set_current()
+
+    def test_registers_to_all_apps(self):
+        xproj = Celery('xproj')
+        xproj.finalize()
+
+        @shared_task
+        def foo():
+            return 42
+
+        @shared_task()
+        def bar():
+            return 84
+
+        self.assertIs(foo.app, xproj)
+        self.assertIs(bar.app, xproj)
+        self.assertTrue(foo._get_current_object())
+
+        yproj = Celery('yproj')
+        self.assertIs(foo.app, yproj)
+        self.assertIs(bar.app, yproj)
+
+        @shared_task()
+        def baz():
+            return 168
+
+        self.assertIs(baz.app, yproj)

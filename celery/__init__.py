@@ -25,7 +25,7 @@ VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
 # -eof meta-
 
 import os
-if os.environ.get('C_IMPDEBUG'):
+if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
     import sys
     from .five import builtins
     real_import = builtins.__import__
@@ -40,7 +40,7 @@ if os.environ.get('C_IMPDEBUG'):
 
 STATICA_HACK = True
 globals()['kcah_acitats'[::-1].upper()] = False
-if STATICA_HACK:
+if STATICA_HACK:  # pragma: no cover
     # This is never executed, but tricks static analyzers (PyDev, PyCharm,
     # pylint, etc.) into knowing the types of these symbols, and what
     # they contain.

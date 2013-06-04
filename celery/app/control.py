@@ -269,7 +269,7 @@ class Control(object):
         Supports the same arguments as :meth:`broadcast`.
 
         """
-        return self.broadcast('pool_grow', {}, destination, **kwargs)
+        return self.broadcast('pool_grow', {'n': n}, destination, **kwargs)
 
     def pool_shrink(self, n=1, destination=None, **kwargs):
         """Tell all (or specific) workers to shrink the pool by ``n``.
@@ -277,7 +277,7 @@ class Control(object):
         Supports the same arguments as :meth:`broadcast`.
 
         """
-        return self.broadcast('pool_shrink', {}, destination, **kwargs)
+        return self.broadcast('pool_shrink', {'n': n}, destination, **kwargs)
 
     def broadcast(self, command, arguments=None, destination=None,
                   connection=None, reply=False, timeout=1, limit=None,

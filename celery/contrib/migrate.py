@@ -239,7 +239,7 @@ def prepare_queues(queues):
 def start_filter(app, conn, filter, limit=None, timeout=1.0,
                  ack_messages=False, tasks=None, queues=None,
                  callback=None, forever=False, on_declare_queue=None,
-                 consume_from=None, state=None, **kwargs):
+                 consume_from=None, state=None, accept=None, **kwargs):
     state = state or State()
     queues = prepare_queues(queues)
     consume_from = [_maybe_queue(app, q)
@@ -257,7 +257,7 @@ def start_filter(app, conn, filter, limit=None, timeout=1.0,
     def ack_message(body, message):
         message.ack()
 
-    consumer = app.amqp.TaskConsumer(conn, queues=consume_from)
+    consumer = app.amqp.TaskConsumer(conn, queues=consume_from, accept=accept)
 
     if tasks:
         filter = filter_callback(filter, tasks)
