@@ -2,7 +2,7 @@
 *.pyc
 *$py.class
 *~
-.*.sw[po]
+.*.sw[pon]
 dist/
 *.egg-info
 *.egg
@@ -20,4 +20,4 @@ Documentation/
 .project
 .pydevproject
 .idea/
-
+celery/tests/cover/
