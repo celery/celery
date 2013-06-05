@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import os
 import socket
 
 from collections import deque
@@ -868,6 +869,14 @@ class test_WorkController(AppCase):
         set_mp_process_title.assert_called_with(
             'celeryd', hostname='awesome.worker.com',
         )
+
+        with patch('celery.task.trace.setup_worker_optimizations') as swo:
+            os.environ['FORKED_BY_MULTIPROCESSING'] = "1"
+            try:
+                process_initializer(app, 'luke.worker.com')
+                swo.assert_called_with(app)
+            finally:
+                os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
 
     def test_attrs(self):
         worker = self.worker

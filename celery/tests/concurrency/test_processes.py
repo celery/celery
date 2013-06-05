@@ -1,15 +1,17 @@
 from __future__ import absolute_import
 
+import errno
+import socket
 import time
 
 from itertools import cycle
 
-from mock import Mock
+from mock import Mock, call, patch
 from nose import SkipTest
 
 from celery.five import items, range
 from celery.utils.functional import noop
-from celery.tests.utils import Case
+from celery.tests.utils import AppCase
 try:
     from celery.concurrency import processes as mp
 except ImportError:
@@ -117,13 +119,154 @@ class ExeMockTaskPool(mp.TaskPool):
     Pool = BlockingPool = ExeMockPool
 
 
-class test_TaskPool(Case):
+class PoolCase(AppCase):
 
-    def setUp(self):
+    def setup(self):
         try:
             import multiprocessing  # noqa
         except ImportError:
             raise SkipTest('multiprocessing not supported')
+
+
+class test_AsynPool(PoolCase):
+
+    def test_gen_not_started(self):
+
+        def gen():
+            yield 1
+            yield 2
+        g = gen()
+        self.assertTrue(mp.gen_not_started(g))
+        next(g)
+        self.assertFalse(mp.gen_not_started(g))
+        list(g)
+        self.assertFalse(mp.gen_not_started(g))
+
+    def test_select(self):
+        ebadf = socket.error()
+        ebadf.errno = errno.EBADF
+        with patch('select.select') as select:
+            select.return_value = ([3], [], [])
+            self.assertEqual(
+                mp._select(set([3])),
+                ([3], [], 0),
+            )
+
+            select.return_value = ([], [], [3])
+            self.assertEqual(
+                mp._select(set([3]), None, set([3])),
+                ([3], [], 0),
+            )
+
+            eintr = socket.error()
+            eintr.errno = errno.EINTR
+            select.side_effect = eintr
+
+            readers = set([3])
+            self.assertEqual(mp._select(readers), ([], [], 1))
+            self.assertIn(3, readers)
+
+        with patch('select.select') as select:
+            select.side_effect = ebadf
+            readers = set([3])
+            self.assertEqual(mp._select(readers), ([], [], 1))
+            select.assert_has_calls([call([3], [], [], 0)])
+            self.assertNotIn(3, readers)
+
+        with patch('select.select') as select:
+            select.side_effect = MemoryError()
+            with self.assertRaises(MemoryError):
+                mp._select(set([1]))
+
+        with patch('select.select') as select:
+
+            def se(*args):
+                select.side_effect = MemoryError()
+                raise ebadf
+            select.side_effect = se
+            with self.assertRaises(MemoryError):
+                mp._select(set([3]))
+
+        with patch('select.select') as select:
+
+            def se(*args):
+                select.side_effect = socket.error()
+                select.side_effect.errno = 1321
+                raise ebadf
+            select.side_effect = se
+            with self.assertRaises(socket.error):
+                mp._select(set([3]))
+
+        with patch('select.select') as select:
+
+            select.side_effect = socket.error()
+            select.side_effect.errno = 34134
+            with self.assertRaises(socket.error):
+                mp._select(set([3]))
+
+    def test_promise(self):
+        fun = Mock()
+        x = mp.promise(fun, 1, foo=1)
+        x()
+        self.assertTrue(x.ready)
+        fun.assert_called_with(1, foo=1)
+
+    def test_Worker(self):
+        w = mp.Worker(Mock(), Mock())
+        w.on_loop_start(1234)
+        w.outq.put.assert_called_with((mp.WORKER_UP, (1234, )))
+
+
+class test_ResultHandler(PoolCase):
+
+    def test_process_result(self):
+        x = mp.ResultHandler(
+            Mock(), Mock(), {}, Mock(),
+            Mock(), Mock(), Mock(), Mock(),
+            fileno_to_outq={},
+            on_process_alive=Mock(),
+        )
+        self.assertTrue(x)
+        x.on_state_change = Mock()
+        proc = x.fileno_to_outq[3] = Mock()
+        reader = proc.outq._reader
+        reader.poll.return_value = False
+        x.handle_event(6)  # KeyError
+        x.handle_event(3)
+        reader.poll.assert_called_with(0)
+        self.assertFalse(x.on_state_change.called)
+
+        reader.poll.reset()
+        reader.poll.return_value = True
+        task = reader.recv.return_value = (1, (2, 3))
+        x.handle_event(3)
+        reader.poll.assert_called_with(0)
+        reader.recv.assert_called_with()
+        x.on_state_change.assert_called_with(task)
+        self.assertTrue(x._it)
+
+        reader.recv.return_value = None
+        x.handle_event(3)
+        self.assertIsNone(x._it)
+
+        x._state = mp.TERMINATE
+        it = x._process_result()
+        next(it)
+        with self.assertRaises(mp.CoroStop):
+            it.send(3)
+        x.handle_event(3)
+        self.assertIsNone(x._it)
+        x._state == mp.RUN
+
+        reader.recv.side_effect = EOFError()
+        it = x._process_result()
+        next(it)
+        with self.assertRaises(mp.CoroStop):
+            it.send(3)
+        reader.recv.side_effect = None
+
+
+class test_TaskPool(PoolCase):
 
     def test_start(self):
         pool = TaskPool(10)
@@ -187,3 +330,4 @@ class test_TaskPool(Case):
         tp.restart()
         time.sleep(0.5)
         self.assertEqual(pids, get_pids(tp))
+

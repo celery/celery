@@ -84,7 +84,7 @@ def process_initializer(app, hostname):
     # run once per process.
     app.loader.init_worker()
     app.loader.init_worker_process()
-    app.log.setup(int(os.environ.get('CELERY_LOG_LEVEL', 0)),
+    app.log.setup(int(os.environ.get('CELERY_LOG_LEVEL', 0) or 0),
                   os.environ.get('CELERY_LOG_FILE') or None,
                   bool(os.environ.get('CELERY_LOG_REDIRECT', False)),
                   str(os.environ.get('CELERY_LOG_REDIRECT_LEVEL')))
@@ -102,15 +102,14 @@ def process_initializer(app, hostname):
     signals.worker_process_init.send(sender=None)
 
 
-def _select(self, readers=None, writers=None, err=None, timeout=0):
+def _select(readers=None, writers=None, err=None, timeout=0):
     readers = set() if readers is None else readers
     writers = set() if writers is None else writers
     err = set() if err is None else err
     try:
         r, w, e = select.select(readers, writers, err, timeout)
         if e:
-            seen = set()
-            r = r | set(f for f in r + e if f not in seen and not seen.add(f))
+            r = list(set(r) | set(e))
         return r, w, 0
     except (select.error, socket.error) as exc:
         if get_errno(exc) == errno.EINTR:
@@ -442,7 +441,7 @@ class AsynPool(_pool.Pool):
             if not readable:
                 break
             for fd in readable:
-                fileno_to_proc[fd]._reader.recv()
+                fileno_to_proc[fd].inq._reader.recv()
             sleep(0)
 
 
