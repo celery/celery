@@ -1,10 +1,56 @@
 from __future__ import absolute_import
 
-from mock import Mock
+from mock import Mock, patch
 
 from celery import bootsteps
 
 from celery.tests.utils import AppCase, Case
+
+
+class test_StepFormatter(Case):
+
+    def test_get_prefix(self):
+        f = bootsteps.StepFormatter()
+        s = Mock()
+        s.last = True
+        self.assertEqual(f._get_prefix(s), f.blueprint_prefix)
+
+        s2 = Mock()
+        s2.last = False
+        s2.conditional = True
+        self.assertEqual(f._get_prefix(s2), f.conditional_prefix)
+
+        s3 = Mock()
+        s3.last = s3.conditional = False
+        self.assertEqual(f._get_prefix(s3), '')
+
+    def test_node(self):
+        f = bootsteps.StepFormatter()
+        f.draw_node = Mock()
+        step = Mock()
+        step.last = False
+        f.node(step, x=3)
+        f.draw_node.assert_called_with(step, f.node_scheme, {'x': 3})
+
+        step.last = True
+        f.node(step, x=3)
+        f.draw_node.assert_called_with(step, f.blueprint_scheme, {'x': 3})
+
+    def test_edge(self):
+        f = bootsteps.StepFormatter()
+        f.draw_edge = Mock()
+        a, b = Mock(), Mock()
+        a.last = True
+        f.edge(a, b, x=6)
+        f.draw_edge.assert_called_with(a, b, f.edge_scheme, {
+            'x': 6, 'arrowhead': 'none', 'color': 'darkseagreen3',
+        })
+
+        a.last = False
+        f.edge(a, b, x=6)
+        f.draw_edge.assert_called_with(a, b, f.edge_scheme, {
+            'x': 6,
+        })
 
 
 class test_Step(Case):
@@ -61,6 +107,51 @@ class test_Step(Case):
         self.assertFalse(x.include(self))
         self.assertFalse(x.create.call_count)
 
+    def test_repr(self):
+        x = self.Def(self)
+        self.assertTrue(repr(x))
+
+
+class test_ConsumerStep(AppCase):
+
+    def test_interface(self):
+        step = bootsteps.ConsumerStep(self)
+        with self.assertRaises(NotImplementedError):
+            step.get_consumers(self)
+
+    def test_start_stop_shutdown(self):
+        consumer = Mock()
+        conn = self.connection = Mock()
+
+        class Step(bootsteps.ConsumerStep):
+
+            def get_consumers(self, c):
+                return [consumer]
+
+        step = Step(self)
+        self.assertEqual(step.get_consumers(self), [consumer])
+
+        step.start(self)
+        consumer.consume.assert_called_with()
+        step.stop(self)
+        consumer.cancel.assert_called_with()
+
+        step.shutdown(self)
+        consumer.channel.close.assert_called_with()
+
+    def test_start_no_consumers(self):
+        self.connection = Mock()
+
+        class Step(bootsteps.ConsumerStep):
+
+            def get_consumers(self, c):
+                return ()
+
+        step = Step(self)
+        step.start(self)
+
+
+
 
 class test_StartStopStep(Case):
 
@@ -86,6 +177,9 @@ class test_StartStopStep(Case):
 
         x.stop(self)
         x.obj.stop.assert_called_with()
+
+        x.obj = None
+        self.assertIsNone(x.start(self))
 
     def test_include_when_disabled(self):
         x = self.Def(self)
@@ -131,6 +225,79 @@ class test_Blueprint(AppCase):
         blueprint = self.Blueprint(app=self.app)
         self.assertIs(blueprint.app, self.app)
         self.assertEqual(blueprint.name, 'test_Blueprint')
+
+    def test_close__on_close_is_None(self):
+        blueprint = self.Blueprint(app=self.app)
+        blueprint.on_close = None
+        blueprint.send_all = Mock()
+        blueprint.close(1)
+        blueprint.send_all.assert_called_with(
+            1, 'close', 'Closing', reverse=False,
+        )
+
+    def test_send_all_with_None_steps(self):
+        parent = Mock()
+        blueprint = self.Blueprint(app=self.app)
+        parent.steps = [None, None, None]
+        blueprint.send_all(parent, 'close', 'Closing', reverse=False)
+
+    def test_join_raises_IGNORE_ERRORS(self):
+        prev, bootsteps.IGNORE_ERRORS = bootsteps.IGNORE_ERRORS, (KeyError, )
+        try:
+            blueprint = self.Blueprint(app=self.app)
+            blueprint.shutdown_complete = Mock()
+            blueprint.shutdown_complete.wait.side_effect = KeyError('luke')
+            blueprint.join(timeout=10)
+            blueprint.shutdown_complete.wait.assert_called_with(timeout=10)
+        finally:
+            bootsteps.IGNORE_ERRORS = prev
+
+    def test_connect_with(self):
+
+        class b1s1(bootsteps.Step):
+            pass
+
+        class b1s2(bootsteps.Step):
+            last = True
+
+        class b2s1(bootsteps.Step):
+            pass
+
+        class b2s2(bootsteps.Step):
+            last = True
+
+        b1 = self.Blueprint([b1s1, b1s2], app=self.app)
+        b2 = self.Blueprint([b2s1, b2s2], app=self.app)
+        b1.apply(Mock())
+        b2.apply(Mock())
+        b1.connect_with(b2)
+
+        self.assertIn(b1s1, b1.graph)
+        self.assertIn(b2s1, b1.graph)
+        self.assertIn(b2s2, b1.graph)
+
+        self.assertTrue(repr(b1s1))
+        self.assertTrue(str(b1s1))
+
+    def test_topsort_raises_KeyError(self):
+
+        class Step(bootsteps.Step):
+            requires = ('xyxxx.fsdasewe.Unknown', )
+
+        b = self.Blueprint([Step], app=self.app)
+        b.steps = b.claim_steps()
+        with self.assertRaises(ImportError):
+            b._finalize_steps(b.steps)
+        Step.requires = ()
+
+        b.steps = b.claim_steps()
+        b._finalize_steps(b.steps)
+
+        with patch('celery.bootsteps.DependencyGraph') as Dep:
+            g = Dep.return_value = Mock()
+            g.topsort.side_effect = KeyError('foo')
+            with self.assertRaises(KeyError):
+                b._finalize_steps(b.steps)
 
     def test_apply(self):
 

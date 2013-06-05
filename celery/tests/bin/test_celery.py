@@ -23,6 +23,7 @@ from celery.bin.celery import (
     report,
     CeleryCommand,
     determine_exit_status,
+    multi,
     main as mainfun,
 )
 
@@ -204,17 +205,22 @@ class test_purge(AppCase):
 
 class test_result(AppCase):
 
-    @patch('celery.result.AsyncResult.get')
-    def test_run(self, get):
-        out = WhateverIO()
-        r = result(app=self.app, stdout=out)
-        get.return_value = 'Jerry'
-        r.run('id')
-        self.assertIn('Jerry', out.getvalue())
+    def test_run(self):
+        with patch('celery.result.AsyncResult.get') as get:
+            out = WhateverIO()
+            r = result(app=self.app, stdout=out)
+            get.return_value = 'Jerry'
+            r.run('id')
+            self.assertIn('Jerry', out.getvalue())
 
-        get.return_value = 'Elaine'
-        r.run('id', task=add.name)
-        self.assertIn('Elaine', out.getvalue())
+            get.return_value = 'Elaine'
+            r.run('id', task=add.name)
+            self.assertIn('Elaine', out.getvalue())
+
+            with patch('celery.result.AsyncResult.traceback') as tb:
+                r.run('id', task=add.name, traceback=True)
+                self.assertIn(str(tb), out.getvalue())
+
 
 
 class test_status(AppCase):
@@ -374,10 +380,32 @@ class test_inspect(AppCase):
         self.assertFalse(out.getvalue())
 
 
+class test_multi(AppCase):
+
+    def test_get_options(self):
+        self.assertTupleEqual(multi(app=self.app).get_options(), ())
+
+    def test_run_from_argv(self):
+        with patch('celery.bin.multi.MultiTool') as MultiTool:
+            m = MultiTool.return_value = Mock()
+            multi(self.app).run_from_argv('celery', ['arg'], command='multi')
+            m.execute_from_commandline.assert_called_with(
+                ['multi', 'arg'], 'celery',
+            )
+
+
 class test_main(AppCase):
 
     @patch('celery.bin.celery.CeleryCommand')
     def test_main(self, Command):
         command = Command.return_value = Mock()
+        mainfun()
+        command.execute_from_commandline.assert_called_with(None)
+
+
+    @patch('celery.bin.celery.CeleryCommand')
+    def test_main_KeyboardInterrupt(self, Command):
+        command = Command.return_value = Mock()
+        command.execute_from_commandline.side_effect = KeyboardInterrupt()
         mainfun()
         command.execute_from_commandline.assert_called_with(None)

@@ -96,9 +96,7 @@ class Spec(object):
     def format_response(self, response):
         """Format the return value of this command in a human-friendly way."""
         if not self.returns:
-            if response is None:
-                return 'ok.'
-            return response
+            return 'ok.' if response is None else response
         if isinstance(self.returns, Callable):
             return self.returns(response)
         return self.returns.format(response)
@@ -296,20 +294,15 @@ class AMQShell(cmd.Cmd):
         cmd, arg, line = self.parseline(line)
         if not line:
             return self.emptyline()
-        if cmd is None:
-            return self.default(line)
         self.lastcmd = line
-        if cmd == '':
-            return self.default(line)
-        else:
-            self.counter = next(self.inc_counter)
-            try:
-                self.respond(self.dispatch(cmd, arg))
-            except (AttributeError, KeyError) as exc:
-                self.default(line)
-            except Exception as exc:
-                self.say(exc)
-                self.needs_reconnect = True
+        self.counter = next(self.inc_counter)
+        try:
+            self.respond(self.dispatch(cmd, arg))
+        except (AttributeError, KeyError) as exc:
+            self.default(line)
+        except Exception as exc:
+            self.say(exc)
+            self.needs_reconnect = True
 
     def respond(self, retval):
         """What to do with the return value of a command."""

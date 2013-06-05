@@ -52,7 +52,7 @@ command_classes = [
     ('Remote Control', ['status', 'inspect', 'control'], 'blue'),
     ('Utils', ['purge', 'list', 'migrate', 'call', 'result', 'report'], None),
 ]
-if DEBUG:
+if DEBUG:  # pragma: no cover
     command_classes.append(
         ('Debug', ['graph'], 'red'),
     )

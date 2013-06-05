@@ -136,7 +136,7 @@ class Extensions(object):
     def load(self):
         try:
             from pkg_resources import iter_entry_points
-        except ImportError:
+        except ImportError:  # pragma: no cover
             return
 
         for ep in iter_entry_points(self.namespace):
@@ -470,21 +470,29 @@ class Command(object):
         opts = {}
         for opt in self.preload_options:
             for t in (opt._long_opts, opt._short_opts):
-                opts.update(dict(zip(t, [opt.dest] * len(t))))
+                opts.update(dict(zip(t, [opt] * len(t))))
         index = 0
         length = len(args)
         while index < length:
             arg = args[index]
-            if arg.startswith('--') and '=' in arg:
-                key, value = arg.split('=', 1)
-                dest = opts.get(key)
-                if dest:
-                    acc[dest] = value
+            if arg.startswith('--'):
+                if '=' in arg:
+                    key, value = arg.split('=', 1)
+                    opt = opts.get(key)
+                    if opt:
+                        acc[opt.dest] = value
+                else:
+                    opt = opts.get(arg)
+                    if opt and opt.action == 'store_true':
+                        acc[opt.dest] = True
             elif arg.startswith('-'):
-                dest = opts.get(arg)
-                if dest:
-                    acc[dest] = args[index + 1]
-                    index += 1
+                opt = opts.get(arg)
+                if opt:
+                    if opt.takes_value():
+                        acc[opt.dest] = args[index + 1]
+                        index += 1
+                    elif opt.action == 'store_true':
+                        acc[opt.dest] = True
             index += 1
         return acc
 
@@ -517,6 +525,7 @@ class Command(object):
             name, _, domain = host.partition('.')
             keys = dict({'%': '%', 'h': host, 'n': name, 'd': domain}, **keys)
             return match.sub(lambda m: keys[m.expand(expand)], s)
+        return s
 
     def _get_default_app(self, *args, **kwargs):
         from celery._state import get_current_app
