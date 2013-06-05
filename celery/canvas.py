@@ -328,8 +328,8 @@ class _basemap(Signature):
         )
 
     @classmethod
-    def from_dict(self, d):
-        return chunks(*self._unpack_args(d['kwargs']), **d['options'])
+    def from_dict(cls, d):
+        return cls(*cls._unpack_args(d['kwargs']), **d['options'])
 
 
 class xmap(_basemap):

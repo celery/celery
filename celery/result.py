@@ -27,6 +27,9 @@ from .five import items, range, string_t
 class ResultBase(object):
     """Base class for all results"""
 
+    #: Parent result (if part of a chain)
+    parent = None
+
 
 class AsyncResult(ResultBase):
     """Query task state.
@@ -45,9 +48,6 @@ class AsyncResult(ResultBase):
 
     #: The task result backend to use.
     backend = None
-
-    #: Parent result (if part of a chain)
-    parent = None
 
     def __init__(self, id, backend=None, task_name=None,
                  app=None, parent=None):
