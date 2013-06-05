@@ -22,6 +22,7 @@ from pickle import HIGHEST_PROTOCOL
 from time import sleep, time
 from weakref import ref
 
+from amqp.utils import promise
 from billiard import forking_enable
 from billiard import pool as _pool
 from billiard.exceptions import WorkerLostError
@@ -127,22 +128,6 @@ def _select(readers=None, writers=None, err=None, timeout=0):
             return [], [], 1
         else:
             raise
-
-
-class promise(object):
-
-    def __init__(self, fun, *partial_args, **partial_kwargs):
-        self.fun = fun
-        self.args = partial_args
-        self.kwargs = partial_kwargs
-        self.ready = False
-
-    def __call__(self, *args, **kwargs):
-        try:
-            return self.fun(*tuple(self.args) + tuple(args),
-                            **dict(self.kwargs, **kwargs))
-        finally:
-            self.ready = True
 
 
 class Worker(_pool.Worker):
