@@ -5,6 +5,7 @@ import errno
 from datetime import datetime, timedelta
 from mock import Mock, call, patch
 from nose import SkipTest
+from pickle import dumps, loads
 
 from celery import current_app
 from celery import beat
@@ -362,6 +363,18 @@ class test_PersistentScheduler(Case):
         s._store = {'__version__': 1}
         s.setup_schedule()
 
+        s._store.clear = Mock()
+        op = s.persistence.open = Mock()
+        op.return_value = s._store
+        s._store['tz'] = 'FUNKY'
+        s.setup_schedule()
+        op.assert_called_with(s.schedule_filename, writeback=True)
+        s._store.clear.assert_called_with()
+        s._store['utc_enabled'] = False
+        s._store.clear = Mock()
+        s.setup_schedule()
+        s._store.clear.assert_called_with()
+
     def test_get_schedule(self):
         s = create_persistent_scheduler()[0](schedule_filename='schedule')
         s._store = {'entries': {}}
@@ -375,6 +388,10 @@ class test_Service(Case):
     def get_service(self):
         Scheduler, mock_shelve = create_persistent_scheduler()
         return beat.Service(scheduler_cls=Scheduler), mock_shelve
+
+    def test_pickleable(self):
+        s = beat.Service(scheduler_cls=Mock)
+        self.assertTrue(loads(dumps(s)))
 
     def test_start(self):
         s, sh = self.get_service()
