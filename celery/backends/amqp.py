@@ -15,6 +15,7 @@ import threading
 import time
 
 from collections import deque
+from operator import itemgetter
 
 from kombu import Exchange, Queue, Producer, Consumer
 
@@ -104,19 +105,6 @@ class AMQPBackend(BaseBackend):
     def _routing_key(self, task_id):
         return task_id.replace('-', '')
 
-    def _republish(self, channel, task_id, body, content_type,
-                   content_encoding):
-        return Producer(channel).publish(
-            body,
-            exchange=self.exchange,
-            routing_key=self._routing_key(task_id),
-            serializer=self.serializer,
-            content_type=content_type,
-            content_encoding=content_encoding,
-            retry=True, retry_policy=self.retry_policy,
-            declare=self.on_reply_declare(task_id),
-        )
-
     def _store_result(self, task_id, result, status, traceback=None):
         """Send task return value and status."""
         with self.mutex:
@@ -136,10 +124,12 @@ class AMQPBackend(BaseBackend):
         return [self._create_binding(task_id)]
 
     def wait_for(self, task_id, timeout=None, cache=True, propagate=True,
+                 READY_STATES=states.READY_STATES,
+                 PROPAGATE_STATES=states.PROPAGATE_STATES,
                  **kwargs):
         cached_meta = self._cache.get(task_id)
         if cache and cached_meta and \
-                cached_meta['status'] in states.READY_STATES:
+                cached_meta['status'] in READY_STATES:
             meta = cached_meta
         else:
             try:
@@ -147,15 +137,10 @@ class AMQPBackend(BaseBackend):
             except socket.timeout:
                 raise TimeoutError('The operation timed out.')
 
-        state = meta['status']
-        if state == states.SUCCESS:
-            return meta['result']
-        elif state in states.PROPAGATE_STATES:
-            if propagate:
-                raise self.exception_to_python(meta['result'])
-            return meta['result']
-        else:
-            return self.wait_for(task_id, timeout, cache)
+        if meta['status'] in PROPAGATE_STATES and propagate:
+            raise self.exception_to_python(meta['result'])
+        # consume() always returns READY_STATE.
+        return meta['result']
 
     def get_task_meta(self, task_id, backlog_limit=1000):
         # Polling and using basic_get
@@ -224,43 +209,47 @@ class AMQPBackend(BaseBackend):
     def _many_bindings(self, ids):
         return [self._create_binding(task_id) for task_id in ids]
 
-    def get_many(self, task_ids, timeout=None, now=time.time, **kwargs):
+    def get_many(self, task_ids, timeout=None,
+                 now=time.time, getfields=itemgetter('status', 'task_id'),
+                 READY_STATES=states.READY_STATES, **kwargs):
         with self.app.pool.acquire_channel(block=True) as (conn, channel):
             ids = set(task_ids)
             cached_ids = set()
+            mark_cached = cached_ids.add
             for task_id in ids:
                 try:
                     cached = self._cache[task_id]
                 except KeyError:
                     pass
                 else:
-                    if cached['status'] in states.READY_STATES:
+                    if cached['status'] in READY_STATES:
                         yield task_id, cached
-                        cached_ids.add(task_id)
+                        mark_cached(task_id)
             ids.difference_update(cached_ids)
             results = deque()
+            push_result = results.append
+            push_cache = self._cache.__setitem__
 
-            def callback(meta, message):
-                if meta['status'] in states.READY_STATES:
-                    task_id = meta['task_id']
-                    if task_id in task_ids:
-                        results.append(meta)
-                    else:
-                        self._cache[task_id] = meta
+            def on_message(message):
+                body = message.decode()
+                state, uid = getfields(body)
+                if state in READY_STATES:
+                    push_result(body) \
+                        if uid in task_ids else push_cache(uid, body)
 
             bindings = self._many_bindings(task_ids)
             with self.Consumer(channel, bindings,
-                               callbacks=[callback], no_ack=True):
+                               on_message=on_message, no_ack=True):
                 wait = conn.drain_events
                 popleft = results.popleft
                 while ids:
                     wait(timeout=timeout)
                     while results:
-                        meta = popleft()
-                        task_id = meta['task_id']
+                        state = popleft()
+                        task_id = state['task_id']
                         ids.discard(task_id)
-                        self._cache[task_id] = meta
-                        yield task_id, meta
+                        push_cache(task_id, state)
+                        yield task_id, state
 
     def reload_task_result(self, task_id):
         raise NotImplementedError(

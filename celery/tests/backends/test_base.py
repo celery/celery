@@ -3,10 +3,14 @@ from __future__ import absolute_import
 import sys
 import types
 
-from mock import Mock
+from contextlib import contextmanager
+from mock import Mock, patch
 from nose import SkipTest
 
+from billiard.einfo import Traceback
+
 from celery import current_app
+from celery.exceptions import ChordError
 from celery.five import items, range
 from celery.result import AsyncResult, GroupResult
 from celery.utils import serialization
@@ -23,7 +27,7 @@ from celery.backends.base import (
 )
 from celery.utils import uuid
 
-from celery.tests.utils import Case
+from celery.tests.utils import AppCase, Case
 
 
 class wrapobject(object):
@@ -203,10 +207,31 @@ class test_BaseBackend_dict(Case):
         self.b.reload_task_result('task-exists')
         self.b._cache['task-exists'] = {'result': 'task'}
 
+    def test_fail_from_current_stack(self):
+        self.b.mark_as_failure = Mock()
+        try:
+            raise KeyError('foo')
+        except KeyError as exc:
+            self.b.fail_from_current_stack('task_id')
+            self.assertTrue(self.b.mark_as_failure.called)
+            args = self.b.mark_as_failure.call_args[0]
+            self.assertEqual(args[0], 'task_id')
+            self.assertIs(args[1], exc)
+            self.assertTrue(args[2])
 
-class test_KeyValueStoreBackend(Case):
+    def test_prepare_value_serializes_group_result(self):
+        g = GroupResult('group_id', [AsyncResult('foo')])
+        self.assertIsInstance(self.b.prepare_value(g), (list, tuple))
 
-    def setUp(self):
+    def test_is_cached(self):
+        self.b._cache['foo'] = 1
+        self.assertTrue(self.b.is_cached('foo'))
+        self.assertFalse(self.b.is_cached('false'))
+
+
+class test_KeyValueStoreBackend(AppCase):
+
+    def setup(self):
         self.b = KVBackend()
 
     def test_on_chord_part_return(self):
@@ -237,6 +262,106 @@ class test_KeyValueStoreBackend(Case):
                 self.assertEqual(got_state['result'], ids[got_id])
             self.assertEqual(i, 9)
             self.assertTrue(list(self.b.get_many(list(ids))))
+
+    def test_get_many_times_out(self):
+        tasks = [uuid() for _ in range(4)]
+        self.b._cache[tasks[1]] = {'status': 'PENDING'}
+        with self.assertRaises(self.b.TimeoutError):
+            list(self.b.get_many(tasks, timeout=0.01, interval=0.01))
+
+    def test_chord_part_return_no_gid(self):
+        self.b.implements_incr = True
+        task = Mock()
+        task.request.group = None
+        self.b.get_key_for_chord = Mock()
+        self.b.get_key_for_chord.side_effect = AssertionError(
+            'should not get here',
+        )
+        self.assertIsNone(self.b.on_chord_part_return(task))
+
+    @contextmanager
+    def _chord_part_context(self, b):
+
+        @self.app.task()
+        def callback(result):
+            pass
+
+        b.implements_incr = True
+        b.client = Mock()
+        with patch('celery.result.GroupResult') as GR:
+            deps = GR.restore.return_value = Mock()
+            deps.__len__ = Mock()
+            deps.__len__.return_value = 10
+            b.incr = Mock()
+            b.incr.return_value = 10
+            b.expire = Mock()
+            task = Mock()
+            task.request.group = 'grid'
+            cb = task.request.chord = callback.s()
+            task.request.chord._freeze()
+            callback.backend = b
+            callback.backend.fail_from_current_stack = Mock()
+            yield task, deps, cb
+
+    def test_chord_part_return_propagate_set(self):
+        with self._chord_part_context(self.b) as (task, deps, _):
+            self.b.on_chord_part_return(task, propagate=True)
+            self.assertFalse(self.b.expire.called)
+            deps.delete.assert_called_with()
+            deps.join_native.assert_called_with(propagate=True)
+
+    def test_chord_part_return_propagate_default(self):
+        with self._chord_part_context(self.b) as (task, deps, _):
+            self.b.on_chord_part_return(task, propagate=None)
+            self.assertFalse(self.b.expire.called)
+            deps.delete.assert_called_with()
+            deps.join_native.assert_called_with(
+                propagate=self.b.app.conf.CELERY_CHORD_PROPAGATES,
+            )
+
+    def test_chord_part_return_join_raises_internal(self):
+        with self._chord_part_context(self.b) as (task, deps, callback):
+            deps._failed_join_report = lambda: iter([])
+            deps.join_native.side_effect = KeyError('foo')
+            self.b.on_chord_part_return(task)
+            self.assertTrue(self.b.fail_from_current_stack.called)
+            args = self.b.fail_from_current_stack.call_args
+            exc = args[1]['exc']
+            self.assertIsInstance(exc, ChordError)
+            self.assertIn('foo', str(exc))
+
+    def test_chord_part_return_join_raises_task(self):
+        with self._chord_part_context(self.b) as (task, deps, callback):
+            deps._failed_join_report = lambda: iter([AsyncResult('culprit')])
+            deps.join_native.side_effect = KeyError('foo')
+            self.b.on_chord_part_return(task)
+            self.assertTrue(self.b.fail_from_current_stack.called)
+            args = self.b.fail_from_current_stack.call_args
+            exc = args[1]['exc']
+            self.assertIsInstance(exc, ChordError)
+            self.assertIn('Dependency culprit raised', str(exc))
+
+    def test_restore_group_from_json(self):
+        b = KVBackend(serializer='json')
+        g = GroupResult('group_id', [AsyncResult('a'), AsyncResult('b')])
+        b._save_group(g.id, g)
+        g2 = b._restore_group(g.id)['result']
+        self.assertEqual(g2, g)
+
+    def test_restore_group_from_pickle(self):
+        b = KVBackend(serializer='pickle')
+        g = GroupResult('group_id', [AsyncResult('a'), AsyncResult('b')])
+        b._save_group(g.id, g)
+        g2 = b._restore_group(g.id)['result']
+        self.assertEqual(g2, g)
+
+    def test_chord_apply_fallback(self):
+        self.b.implements_incr = False
+        self.b.fallback_chord_unlock = Mock()
+        self.b.on_chord_apply('group_id', 'body', 'result', foo=1)
+        self.b.fallback_chord_unlock.assert_called_with(
+            'group_id', 'body', 'result', foo=1,
+        )
 
     def test_get_missing_meta(self):
         self.assertIsNone(self.b.get_result('xxx-missing'))

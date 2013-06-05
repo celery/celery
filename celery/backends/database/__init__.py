@@ -40,11 +40,11 @@ def retry(fun):
     def _inner(*args, **kwargs):
         max_retries = kwargs.pop('max_retries', 3)
 
-        for retries in range(max_retries + 1):
+        for retries in range(max_retries):
             try:
                 return fun(*args, **kwargs)
             except (DatabaseError, OperationalError):
-                if retries + 1 > max_retries:
+                if retries + 1 >= max_retries:
                     raise
 
     return _inner

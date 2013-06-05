@@ -1,0 +1,808 @@
+<!doctype html PUBLIC "-//W3C//DTD html 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    
+    
+    <meta http-equiv='X-UA-Compatible' content='IE=emulateIE7' />
+    <title>Coverage for celery.contrib.migrate: 60%</title>
+    <link rel='stylesheet' href='style.css' type='text/css'>
+    
+    <script type='text/javascript' src='jquery-1.4.3.min.js'></script>
+    <script type='text/javascript' src='jquery.hotkeys.js'></script>
+    <script type='text/javascript' src='jquery.isonscreen.js'></script>
+    <script type='text/javascript' src='coverage_html.js'></script>
+    <script type='text/javascript' charset='utf-8'>
+        jQuery(document).ready(coverage.pyfile_ready);
+    </script>
+</head>
+<body id='pyfile'>
+
+<div id='header'>
+    <div class='content'>
+        <h1>Coverage for <b>celery.contrib.migrate</b> :
+            <span class='pc_cov'>60%</span>
+        </h1>
+        <img id='keyboard_icon' src='keybd_closed.png'>
+        <h2 class='stats'>
+            169 statements &nbsp;
+            <span class='run hide_run shortkey_r button_toggle_run'>108 run</span>
+            <span class='mis shortkey_m button_toggle_mis'>61 missing</span>
+            <span class='exc shortkey_x button_toggle_exc'>1 excluded</span>
+            
+                <span class='par run hide_run shortkey_p button_toggle_par'>10 partial</span>
+            
+        </h2>
+    </div>
+</div>
+
+<div class='help_panel'>
+    <img id='panel_icon' src='keybd_open.png'>
+<p class='legend'>Hot-keys on this page</p>
+    <div>
+<p class='keyhelp'>
+        <span class='key'>r</span>
+        <span class='key'>m</span>
+        <span class='key'>x</span>
+        <span class='key'>p</span> &nbsp; toggle line displays
+    </p>
+<p class='keyhelp'>
+        <span class='key'>j</span>
+        <span class='key'>k</span> &nbsp; next/prev highlighted chunk
+    </p>
+<p class='keyhelp'>
+        <span class='key'>0</span> &nbsp; (zero) top of page
+    </p>
+<p class='keyhelp'>
+        <span class='key'>1</span> &nbsp; (one) first highlighted chunk
+    </p>
+    </div>
+</div>
+
+<div id='source'>
+    <table cellspacing='0' cellpadding='0'>
+        <tr>
+            <td class='linenos' valign='top'>
+<p id='n1' class='pln'><a href='#n1'>1</a></p>
+<p id='n2' class='stm run hide_run'><a href='#n2'>2</a></p>
+<p id='n3' class='pln'><a href='#n3'>3</a></p>
+<p id='n4' class='pln'><a href='#n4'>4</a></p>
+<p id='n5' class='pln'><a href='#n5'>5</a></p>
+<p id='n6' class='pln'><a href='#n6'>6</a></p>
+<p id='n7' class='pln'><a href='#n7'>7</a></p>
+<p id='n8' class='pln'><a href='#n8'>8</a></p>
+<p id='n9' class='stm run hide_run'><a href='#n9'>9</a></p>
+<p id='n10' class='pln'><a href='#n10'>10</a></p>
+<p id='n11' class='stm run hide_run'><a href='#n11'>11</a></p>
+<p id='n12' class='pln'><a href='#n12'>12</a></p>
+<p id='n13' class='stm run hide_run'><a href='#n13'>13</a></p>
+<p id='n14' class='stm run hide_run'><a href='#n14'>14</a></p>
+<p id='n15' class='pln'><a href='#n15'>15</a></p>
+<p id='n16' class='stm run hide_run'><a href='#n16'>16</a></p>
+<p id='n17' class='stm run hide_run'><a href='#n17'>17</a></p>
+<p id='n18' class='stm run hide_run'><a href='#n18'>18</a></p>
+<p id='n19' class='stm run hide_run'><a href='#n19'>19</a></p>
+<p id='n20' class='pln'><a href='#n20'>20</a></p>
+<p id='n21' class='stm run hide_run'><a href='#n21'>21</a></p>
+<p id='n22' class='stm run hide_run'><a href='#n22'>22</a></p>
+<p id='n23' class='stm run hide_run'><a href='#n23'>23</a></p>
+<p id='n24' class='pln'><a href='#n24'>24</a></p>
+<p id='n25' class='pln'><a href='#n25'>25</a></p>
+<p id='n26' class='stm run hide_run'><a href='#n26'>26</a></p>
+<p id='n27' class='pln'><a href='#n27'>27</a></p>
+<p id='n28' class='pln'><a href='#n28'>28</a></p>
+<p id='n29' class='pln'><a href='#n29'>29</a></p>
+<p id='n30' class='pln'><a href='#n30'>30</a></p>
+<p id='n31' class='pln'><a href='#n31'>31</a></p>
+<p id='n32' class='stm run hide_run'><a href='#n32'>32</a></p>
+<p id='n33' class='stm run hide_run'><a href='#n33'>33</a></p>
+<p id='n34' class='pln'><a href='#n34'>34</a></p>
+<p id='n35' class='pln'><a href='#n35'>35</a></p>
+<p id='n36' class='stm run hide_run'><a href='#n36'>36</a></p>
+<p id='n37' class='stm run hide_run'><a href='#n37'>37</a></p>
+<p id='n38' class='stm run hide_run'><a href='#n38'>38</a></p>
+<p id='n39' class='stm run hide_run'><a href='#n39'>39</a></p>
+<p id='n40' class='pln'><a href='#n40'>40</a></p>
+<p id='n41' class='stm run hide_run'><a href='#n41'>41</a></p>
+<p id='n42' class='pln'><a href='#n42'>42</a></p>
+<p id='n43' class='stm run hide_run'><a href='#n43'>43</a></p>
+<p id='n44' class='stm run hide_run'><a href='#n44'>44</a></p>
+<p id='n45' class='stm run hide_run'><a href='#n45'>45</a></p>
+<p id='n46' class='pln'><a href='#n46'>46</a></p>
+<p id='n47' class='stm run hide_run'><a href='#n47'>47</a></p>
+<p id='n48' class='stm mis'><a href='#n48'>48</a></p>
+<p id='n49' class='stm mis'><a href='#n49'>49</a></p>
+<p id='n50' class='stm mis'><a href='#n50'>50</a></p>
+<p id='n51' class='pln'><a href='#n51'>51</a></p>
+<p id='n52' class='pln'><a href='#n52'>52</a></p>
+<p id='n53' class='stm run hide_run'><a href='#n53'>53</a></p>
+<p id='n54' class='pln'><a href='#n54'>54</a></p>
+<p id='n55' class='pln'><a href='#n55'>55</a></p>
+<p id='n56' class='pln'><a href='#n56'>56</a></p>
+<p id='n57' class='pln'><a href='#n57'>57</a></p>
+<p id='n58' class='stm run hide_run'><a href='#n58'>58</a></p>
+<p id='n59' class='stm run hide_run'><a href='#n59'>59</a></p>
+<p id='n60' class='pln'><a href='#n60'>60</a></p>
+<p id='n61' class='stm run hide_run'><a href='#n61'>61</a></p>
+<p id='n62' class='stm run hide_run'><a href='#n62'>62</a></p>
+<p id='n63' class='stm run hide_run'><a href='#n63'>63</a></p>
+<p id='n64' class='pln'><a href='#n64'>64</a></p>
+<p id='n65' class='pln'><a href='#n65'>65</a></p>
+<p id='n66' class='stm run hide_run'><a href='#n66'>66</a></p>
+<p id='n67' class='pln'><a href='#n67'>67</a></p>
+<p id='n68' class='stm run hide_run'><a href='#n68'>68</a></p>
+<p id='n69' class='stm run hide_run'><a href='#n69'>69</a></p>
+<p id='n70' class='pln'><a href='#n70'>70</a></p>
+<p id='n71' class='stm run hide_run'><a href='#n71'>71</a></p>
+<p id='n72' class='pln'><a href='#n72'>72</a></p>
+<p id='n73' class='pln'><a href='#n73'>73</a></p>
+<p id='n74' class='pln'><a href='#n74'>74</a></p>
+<p id='n75' class='pln'><a href='#n75'>75</a></p>
+<p id='n76' class='pln'><a href='#n76'>76</a></p>
+<p id='n77' class='stm run hide_run'><a href='#n77'>77</a></p>
+<p id='n78' class='stm run hide_run'><a href='#n78'>78</a></p>
+<p id='n79' class='stm run hide_run'><a href='#n79'>79</a></p>
+<p id='n80' class='stm run hide_run'><a href='#n80'>80</a></p>
+<p id='n81' class='pln'><a href='#n81'>81</a></p>
+<p id='n82' class='pln'><a href='#n82'>82</a></p>
+<p id='n83' class='pln'><a href='#n83'>83</a></p>
+<p id='n84' class='pln'><a href='#n84'>84</a></p>
+<p id='n85' class='stm run hide_run'><a href='#n85'>85</a></p>
+<p id='n86' class='pln'><a href='#n86'>86</a></p>
+<p id='n87' class='stm mis'><a href='#n87'>87</a></p>
+<p id='n88' class='stm mis'><a href='#n88'>88</a></p>
+<p id='n89' class='stm mis'><a href='#n89'>89</a></p>
+<p id='n90' class='pln'><a href='#n90'>90</a></p>
+<p id='n91' class='stm mis'><a href='#n91'>91</a></p>
+<p id='n92' class='stm mis'><a href='#n92'>92</a></p>
+<p id='n93' class='pln'><a href='#n93'>93</a></p>
+<p id='n94' class='pln'><a href='#n94'>94</a></p>
+<p id='n95' class='stm run hide_run'><a href='#n95'>95</a></p>
+<p id='n96' class='pln'><a href='#n96'>96</a></p>
+<p id='n97' class='stm run hide_run'><a href='#n97'>97</a></p>
+<p id='n98' class='stm run hide_run'><a href='#n98'>98</a></p>
+<p id='n99' class='stm run hide_run'><a href='#n99'>99</a></p>
+<p id='n100' class='stm run hide_run'><a href='#n100'>100</a></p>
+<p id='n101' class='pln'><a href='#n101'>101</a></p>
+<p id='n102' class='stm run hide_run'><a href='#n102'>102</a></p>
+<p id='n103' class='stm run hide_run'><a href='#n103'>103</a></p>
+<p id='n104' class='stm run hide_run'><a href='#n104'>104</a></p>
+<p id='n105' class='stm run hide_run'><a href='#n105'>105</a></p>
+<p id='n106' class='stm run hide_run'><a href='#n106'>106</a></p>
+<p id='n107' class='pln'><a href='#n107'>107</a></p>
+<p id='n108' class='stm run hide_run'><a href='#n108'>108</a></p>
+<p id='n109' class='stm run hide_run'><a href='#n109'>109</a></p>
+<p id='n110' class='stm run hide_run'><a href='#n110'>110</a></p>
+<p id='n111' class='pln'><a href='#n111'>111</a></p>
+<p id='n112' class='stm run hide_run'><a href='#n112'>112</a></p>
+<p id='n113' class='pln'><a href='#n113'>113</a></p>
+<p id='n114' class='pln'><a href='#n114'>114</a></p>
+<p id='n115' class='pln'><a href='#n115'>115</a></p>
+<p id='n116' class='stm run hide_run'><a href='#n116'>116</a></p>
+<p id='n117' class='stm mis'><a href='#n117'>117</a></p>
+<p id='n118' class='stm mis'><a href='#n118'>118</a></p>
+<p id='n119' class='stm mis'><a href='#n119'>119</a></p>
+<p id='n120' class='pln'><a href='#n120'>120</a></p>
+<p id='n121' class='pln'><a href='#n121'>121</a></p>
+<p id='n122' class='stm run hide_run'><a href='#n122'>122</a></p>
+<p id='n123' class='pln'><a href='#n123'>123</a></p>
+<p id='n124' class='pln'><a href='#n124'>124</a></p>
+<p id='n125' class='pln'><a href='#n125'>125</a></p>
+<p id='n126' class='pln'><a href='#n126'>126</a></p>
+<p id='n127' class='pln'><a href='#n127'>127</a></p>
+<p id='n128' class='pln'><a href='#n128'>128</a></p>
+<p id='n129' class='pln'><a href='#n129'>129</a></p>
+<p id='n130' class='pln'><a href='#n130'>130</a></p>
+<p id='n131' class='pln'><a href='#n131'>131</a></p>
+<p id='n132' class='pln'><a href='#n132'>132</a></p>
+<p id='n133' class='pln'><a href='#n133'>133</a></p>
+<p id='n134' class='pln'><a href='#n134'>134</a></p>
+<p id='n135' class='pln'><a href='#n135'>135</a></p>
+<p id='n136' class='pln'><a href='#n136'>136</a></p>
+<p id='n137' class='pln'><a href='#n137'>137</a></p>
+<p id='n138' class='pln'><a href='#n138'>138</a></p>
+<p id='n139' class='pln'><a href='#n139'>139</a></p>
+<p id='n140' class='pln'><a href='#n140'>140</a></p>
+<p id='n141' class='pln'><a href='#n141'>141</a></p>
+<p id='n142' class='pln'><a href='#n142'>142</a></p>
+<p id='n143' class='pln'><a href='#n143'>143</a></p>
+<p id='n144' class='pln'><a href='#n144'>144</a></p>
+<p id='n145' class='pln'><a href='#n145'>145</a></p>
+<p id='n146' class='pln'><a href='#n146'>146</a></p>
+<p id='n147' class='pln'><a href='#n147'>147</a></p>
+<p id='n148' class='pln'><a href='#n148'>148</a></p>
+<p id='n149' class='pln'><a href='#n149'>149</a></p>
+<p id='n150' class='pln'><a href='#n150'>150</a></p>
+<p id='n151' class='pln'><a href='#n151'>151</a></p>
+<p id='n152' class='pln'><a href='#n152'>152</a></p>
+<p id='n153' class='pln'><a href='#n153'>153</a></p>
+<p id='n154' class='pln'><a href='#n154'>154</a></p>
+<p id='n155' class='pln'><a href='#n155'>155</a></p>
+<p id='n156' class='pln'><a href='#n156'>156</a></p>
+<p id='n157' class='pln'><a href='#n157'>157</a></p>
+<p id='n158' class='pln'><a href='#n158'>158</a></p>
+<p id='n159' class='pln'><a href='#n159'>159</a></p>
+<p id='n160' class='pln'><a href='#n160'>160</a></p>
+<p id='n161' class='pln'><a href='#n161'>161</a></p>
+<p id='n162' class='pln'><a href='#n162'>162</a></p>
+<p id='n163' class='pln'><a href='#n163'>163</a></p>
+<p id='n164' class='pln'><a href='#n164'>164</a></p>
+<p id='n165' class='pln'><a href='#n165'>165</a></p>
+<p id='n166' class='pln'><a href='#n166'>166</a></p>
+<p id='n167' class='pln'><a href='#n167'>167</a></p>
+<p id='n168' class='pln'><a href='#n168'>168</a></p>
+<p id='n169' class='pln'><a href='#n169'>169</a></p>
+<p id='n170' class='pln'><a href='#n170'>170</a></p>
+<p id='n171' class='pln'><a href='#n171'>171</a></p>
+<p id='n172' class='pln'><a href='#n172'>172</a></p>
+<p id='n173' class='pln'><a href='#n173'>173</a></p>
+<p id='n174' class='pln'><a href='#n174'>174</a></p>
+<p id='n175' class='pln'><a href='#n175'>175</a></p>
+<p id='n176' class='pln'><a href='#n176'>176</a></p>
+<p id='n177' class='pln'><a href='#n177'>177</a></p>
+<p id='n178' class='pln'><a href='#n178'>178</a></p>
+<p id='n179' class='pln'><a href='#n179'>179</a></p>
+<p id='n180' class='pln'><a href='#n180'>180</a></p>
+<p id='n181' class='pln'><a href='#n181'>181</a></p>
+<p id='n182' class='pln'><a href='#n182'>182</a></p>
+<p id='n183' class='stm mis'><a href='#n183'>183</a></p>
+<p id='n184' class='stm mis'><a href='#n184'>184</a></p>
+<p id='n185' class='stm mis'><a href='#n185'>185</a></p>
+<p id='n186' class='stm mis'><a href='#n186'>186</a></p>
+<p id='n187' class='stm mis'><a href='#n187'>187</a></p>
+<p id='n188' class='pln'><a href='#n188'>188</a></p>
+<p id='n189' class='stm mis'><a href='#n189'>189</a></p>
+<p id='n190' class='stm mis'><a href='#n190'>190</a></p>
+<p id='n191' class='stm mis'><a href='#n191'>191</a></p>
+<p id='n192' class='stm mis'><a href='#n192'>192</a></p>
+<p id='n193' class='stm mis'><a href='#n193'>193</a></p>
+<p id='n194' class='stm mis'><a href='#n194'>194</a></p>
+<p id='n195' class='stm mis'><a href='#n195'>195</a></p>
+<p id='n196' class='stm mis'><a href='#n196'>196</a></p>
+<p id='n197' class='pln'><a href='#n197'>197</a></p>
+<p id='n198' class='stm mis'><a href='#n198'>198</a></p>
+<p id='n199' class='stm mis'><a href='#n199'>199</a></p>
+<p id='n200' class='pln'><a href='#n200'>200</a></p>
+<p id='n201' class='stm mis'><a href='#n201'>201</a></p>
+<p id='n202' class='pln'><a href='#n202'>202</a></p>
+<p id='n203' class='stm mis'><a href='#n203'>203</a></p>
+<p id='n204' class='stm mis'><a href='#n204'>204</a></p>
+<p id='n205' class='stm mis'><a href='#n205'>205</a></p>
+<p id='n206' class='stm mis'><a href='#n206'>206</a></p>
+<p id='n207' class='stm mis'><a href='#n207'>207</a></p>
+<p id='n208' class='pln'><a href='#n208'>208</a></p>
+<p id='n209' class='stm mis'><a href='#n209'>209</a></p>
+<p id='n210' class='pln'><a href='#n210'>210</a></p>
+<p id='n211' class='pln'><a href='#n211'>211</a></p>
+<p id='n212' class='stm run hide_run'><a href='#n212'>212</a></p>
+<p id='n213' class='stm mis'><a href='#n213'>213</a></p>
+<p id='n214' class='stm mis'><a href='#n214'>214</a></p>
+<p id='n215' class='stm mis'><a href='#n215'>215</a></p>
+<p id='n216' class='stm mis'><a href='#n216'>216</a></p>
+<p id='n217' class='stm mis'><a href='#n217'>217</a></p>
+<p id='n218' class='pln'><a href='#n218'>218</a></p>
+<p id='n219' class='pln'><a href='#n219'>219</a></p>
+<p id='n220' class='stm run hide_run'><a href='#n220'>220</a></p>
+<p id='n221' class='stm mis'><a href='#n221'>221</a></p>
+<p id='n222' class='pln'><a href='#n222'>222</a></p>
+<p id='n223' class='pln'><a href='#n223'>223</a></p>
+<p id='n224' class='stm run hide_run'><a href='#n224'>224</a></p>
+<p id='n225' class='stm mis'><a href='#n225'>225</a></p>
+<p id='n226' class='pln'><a href='#n226'>226</a></p>
+<p id='n227' class='pln'><a href='#n227'>227</a></p>
+<p id='n228' class='stm run hide_run'><a href='#n228'>228</a></p>
+<p id='n229' class='stm par run hide_run'><a href='#n229'>229</a></p>
+<p id='n230' class='stm mis'><a href='#n230'>230</a></p>
+<p id='n231' class='stm par run hide_run'><a href='#n231'>231</a></p>
+<p id='n232' class='stm mis'><a href='#n232'>232</a></p>
+<p id='n233' class='pln'><a href='#n233'>233</a></p>
+<p id='n234' class='stm run hide_run'><a href='#n234'>234</a></p>
+<p id='n235' class='stm run hide_run'><a href='#n235'>235</a></p>
+<p id='n236' class='stm run hide_run'><a href='#n236'>236</a></p>
+<p id='n237' class='pln'><a href='#n237'>237</a></p>
+<p id='n238' class='pln'><a href='#n238'>238</a></p>
+<p id='n239' class='stm run hide_run'><a href='#n239'>239</a></p>
+<p id='n240' class='pln'><a href='#n240'>240</a></p>
+<p id='n241' class='pln'><a href='#n241'>241</a></p>
+<p id='n242' class='pln'><a href='#n242'>242</a></p>
+<p id='n243' class='stm run hide_run'><a href='#n243'>243</a></p>
+<p id='n244' class='stm run hide_run'><a href='#n244'>244</a></p>
+<p id='n245' class='stm run hide_run'><a href='#n245'>245</a></p>
+<p id='n246' class='pln'><a href='#n246'>246</a></p>
+<p id='n247' class='stm par run hide_run'><a href='#n247'>247</a></p>
+<p id='n248' class='stm mis'><a href='#n248'>248</a></p>
+<p id='n249' class='stm par run hide_run'><a href='#n249'>249</a></p>
+<p id='n250' class='stm run hide_run'><a href='#n250'>250</a></p>
+<p id='n251' class='pln'><a href='#n251'>251</a></p>
+<p id='n252' class='stm run hide_run'><a href='#n252'>252</a></p>
+<p id='n253' class='stm run hide_run'><a href='#n253'>253</a></p>
+<p id='n254' class='stm par run hide_run'><a href='#n254'>254</a></p>
+<p id='n255' class='stm mis'><a href='#n255'>255</a></p>
+<p id='n256' class='pln'><a href='#n256'>256</a></p>
+<p id='n257' class='stm run hide_run'><a href='#n257'>257</a></p>
+<p id='n258' class='stm mis'><a href='#n258'>258</a></p>
+<p id='n259' class='pln'><a href='#n259'>259</a></p>
+<p id='n260' class='stm run hide_run'><a href='#n260'>260</a></p>
+<p id='n261' class='pln'><a href='#n261'>261</a></p>
+<p id='n262' class='stm par run hide_run'><a href='#n262'>262</a></p>
+<p id='n263' class='stm mis'><a href='#n263'>263</a></p>
+<p id='n264' class='stm mis'><a href='#n264'>264</a></p>
+<p id='n265' class='stm mis'><a href='#n265'>265</a></p>
+<p id='n266' class='pln'><a href='#n266'>266</a></p>
+<p id='n267' class='stm run hide_run'><a href='#n267'>267</a></p>
+<p id='n268' class='stm run hide_run'><a href='#n268'>268</a></p>
+<p id='n269' class='stm par run hide_run'><a href='#n269'>269</a></p>
+<p id='n270' class='stm mis'><a href='#n270'>270</a></p>
+<p id='n271' class='stm run hide_run'><a href='#n271'>271</a></p>
+<p id='n272' class='stm run hide_run'><a href='#n272'>272</a></p>
+<p id='n273' class='stm par run hide_run'><a href='#n273'>273</a></p>
+<p id='n274' class='stm mis'><a href='#n274'>274</a></p>
+<p id='n275' class='stm run hide_run'><a href='#n275'>275</a></p>
+<p id='n276' class='pln'><a href='#n276'>276</a></p>
+<p id='n277' class='pln'><a href='#n277'>277</a></p>
+<p id='n278' class='stm run hide_run'><a href='#n278'>278</a></p>
+<p id='n279' class='stm par run hide_run'><a href='#n279'>279</a></p>
+<p id='n280' class='stm mis'><a href='#n280'>280</a></p>
+<p id='n281' class='stm par run hide_run'><a href='#n281'>281</a></p>
+<p id='n282' class='stm run hide_run'><a href='#n282'>282</a></p>
+<p id='n283' class='stm run hide_run'><a href='#n283'>283</a></p>
+<p id='n284' class='stm run hide_run'><a href='#n284'>284</a></p>
+<p id='n285' class='stm run hide_run'><a href='#n285'>285</a></p>
+<p id='n286' class='stm run hide_run'><a href='#n286'>286</a></p>
+<p id='n287' class='stm run hide_run'><a href='#n287'>287</a></p>
+<p id='n288' class='stm run hide_run'><a href='#n288'>288</a></p>
+<p id='n289' class='pln'><a href='#n289'>289</a></p>
+<p id='n290' class='pln'><a href='#n290'>290</a></p>
+<p id='n291' class='stm run hide_run'><a href='#n291'>291</a></p>
+<p id='n292' class='stm run hide_run'><a href='#n292'>292</a></p>
+<p id='n293' class='exc'><a href='#n293'>293</a></p>
+<p id='n294' class='pln'><a href='#n294'>294</a></p>
+<p id='n295' class='stm run hide_run'><a href='#n295'>295</a></p>
+<p id='n296' class='stm run hide_run'><a href='#n296'>296</a></p>
+<p id='n297' class='stm run hide_run'><a href='#n297'>297</a></p>
+<p id='n298' class='stm mis'><a href='#n298'>298</a></p>
+<p id='n299' class='stm mis'><a href='#n299'>299</a></p>
+<p id='n300' class='stm run hide_run'><a href='#n300'>300</a></p>
+<p id='n301' class='pln'><a href='#n301'>301</a></p>
+<p id='n302' class='pln'><a href='#n302'>302</a></p>
+<p id='n303' class='stm run hide_run'><a href='#n303'>303</a></p>
+<p id='n304' class='pln'><a href='#n304'>304</a></p>
+<p id='n305' class='pln'><a href='#n305'>305</a></p>
+<p id='n306' class='pln'><a href='#n306'>306</a></p>
+<p id='n307' class='pln'><a href='#n307'>307</a></p>
+<p id='n308' class='pln'><a href='#n308'>308</a></p>
+<p id='n309' class='pln'><a href='#n309'>309</a></p>
+<p id='n310' class='pln'><a href='#n310'>310</a></p>
+<p id='n311' class='pln'><a href='#n311'>311</a></p>
+<p id='n312' class='stm mis'><a href='#n312'>312</a></p>
+<p id='n313' class='pln'><a href='#n313'>313</a></p>
+<p id='n314' class='pln'><a href='#n314'>314</a></p>
+<p id='n315' class='stm run hide_run'><a href='#n315'>315</a></p>
+<p id='n316' class='pln'><a href='#n316'>316</a></p>
+<p id='n317' class='pln'><a href='#n317'>317</a></p>
+<p id='n318' class='pln'><a href='#n318'>318</a></p>
+<p id='n319' class='pln'><a href='#n319'>319</a></p>
+<p id='n320' class='pln'><a href='#n320'>320</a></p>
+<p id='n321' class='pln'><a href='#n321'>321</a></p>
+<p id='n322' class='pln'><a href='#n322'>322</a></p>
+<p id='n323' class='pln'><a href='#n323'>323</a></p>
+<p id='n324' class='pln'><a href='#n324'>324</a></p>
+<p id='n325' class='pln'><a href='#n325'>325</a></p>
+<p id='n326' class='pln'><a href='#n326'>326</a></p>
+<p id='n327' class='pln'><a href='#n327'>327</a></p>
+<p id='n328' class='stm mis'><a href='#n328'>328</a></p>
+<p id='n329' class='stm mis'><a href='#n329'>329</a></p>
+<p id='n330' class='pln'><a href='#n330'>330</a></p>
+<p id='n331' class='pln'><a href='#n331'>331</a></p>
+<p id='n332' class='pln'><a href='#n332'>332</a></p>
+<p id='n333' class='stm mis'><a href='#n333'>333</a></p>
+<p id='n334' class='pln'><a href='#n334'>334</a></p>
+<p id='n335' class='pln'><a href='#n335'>335</a></p>
+<p id='n336' class='stm run hide_run'><a href='#n336'>336</a></p>
+<p id='n337' class='pln'><a href='#n337'>337</a></p>
+<p id='n338' class='pln'><a href='#n338'>338</a></p>
+<p id='n339' class='pln'><a href='#n339'>339</a></p>
+<p id='n340' class='pln'><a href='#n340'>340</a></p>
+<p id='n341' class='pln'><a href='#n341'>341</a></p>
+<p id='n342' class='pln'><a href='#n342'>342</a></p>
+<p id='n343' class='pln'><a href='#n343'>343</a></p>
+<p id='n344' class='pln'><a href='#n344'>344</a></p>
+<p id='n345' class='pln'><a href='#n345'>345</a></p>
+<p id='n346' class='pln'><a href='#n346'>346</a></p>
+<p id='n347' class='pln'><a href='#n347'>347</a></p>
+<p id='n348' class='pln'><a href='#n348'>348</a></p>
+<p id='n349' class='stm mis'><a href='#n349'>349</a></p>
+<p id='n350' class='stm mis'><a href='#n350'>350</a></p>
+<p id='n351' class='pln'><a href='#n351'>351</a></p>
+<p id='n352' class='stm mis'><a href='#n352'>352</a></p>
+<p id='n353' class='pln'><a href='#n353'>353</a></p>
+<p id='n354' class='pln'><a href='#n354'>354</a></p>
+<p id='n355' class='stm run hide_run'><a href='#n355'>355</a></p>
+<p id='n356' class='stm mis'><a href='#n356'>356</a></p>
+<p id='n357' class='pln'><a href='#n357'>357</a></p>
+<p id='n358' class='pln'><a href='#n358'>358</a></p>
+<p id='n359' class='stm run hide_run'><a href='#n359'>359</a></p>
+<p id='n360' class='stm run hide_run'><a href='#n360'>360</a></p>
+<p id='n361' class='stm run hide_run'><a href='#n361'>361</a></p>
+<p id='n362' class='stm run hide_run'><a href='#n362'>362</a></p>
+                
+            </td>
+            <td class='text' valign='top'>
+<p id='t1' class='pln'><span class='com'># -*- coding: utf-8 -*-</span><span class='strut'>&nbsp;</span></p>
+<p id='t2' class='stm run hide_run'><span class='str'>&quot;&quot;&quot;</span><span class='strut'>&nbsp;</span></p>
+<p id='t3' class='pln'><span class='str'>&nbsp; &nbsp; celery.contrib.migrate</span><span class='strut'>&nbsp;</span></p>
+<p id='t4' class='pln'><span class='str'>&nbsp; &nbsp; ~~~~~~~~~~~~~~~~~~~~~~</span><span class='strut'>&nbsp;</span></p>
+<p id='t5' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t6' class='pln'><span class='str'>&nbsp; &nbsp; Migration tools.</span><span class='strut'>&nbsp;</span></p>
+<p id='t7' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t8' class='pln'><span class='str'>&quot;&quot;&quot;</span><span class='strut'>&nbsp;</span></p>
+<p id='t9' class='stm run hide_run'><span class='key'>from</span> <span class='nam'>__future__</span> <span class='key'>import</span> <span class='nam'>absolute_import</span><span class='op'>,</span> <span class='nam'>print_function</span><span class='op'>,</span> <span class='nam'>unicode_literals</span><span class='strut'>&nbsp;</span></p>
+<p id='t10' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t11' class='stm run hide_run'><span class='key'>import</span> <span class='nam'>socket</span><span class='strut'>&nbsp;</span></p>
+<p id='t12' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t13' class='stm run hide_run'><span class='key'>from</span> <span class='nam'>functools</span> <span class='key'>import</span> <span class='nam'>partial</span><span class='strut'>&nbsp;</span></p>
+<p id='t14' class='stm run hide_run'><span class='key'>from</span> <span class='nam'>itertools</span> <span class='key'>import</span> <span class='nam'>cycle</span><span class='op'>,</span> <span class='nam'>islice</span><span class='strut'>&nbsp;</span></p>
+<p id='t15' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t16' class='stm run hide_run'><span class='key'>from</span> <span class='nam'>kombu</span> <span class='key'>import</span> <span class='nam'>eventloop</span><span class='op'>,</span> <span class='nam'>Queue</span><span class='strut'>&nbsp;</span></p>
+<p id='t17' class='stm run hide_run'><span class='key'>from</span> <span class='nam'>kombu</span><span class='op'>.</span><span class='nam'>common</span> <span class='key'>import</span> <span class='nam'>maybe_declare</span><span class='strut'>&nbsp;</span></p>
+<p id='t18' class='stm run hide_run'><span class='key'>from</span> <span class='nam'>kombu</span><span class='op'>.</span><span class='nam'>exceptions</span> <span class='key'>import</span> <span class='nam'>StdChannelError</span><span class='strut'>&nbsp;</span></p>
+<p id='t19' class='stm run hide_run'><span class='key'>from</span> <span class='nam'>kombu</span><span class='op'>.</span><span class='nam'>utils</span><span class='op'>.</span><span class='nam'>encoding</span> <span class='key'>import</span> <span class='nam'>ensure_bytes</span><span class='strut'>&nbsp;</span></p>
+<p id='t20' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t21' class='stm run hide_run'><span class='key'>from</span> <span class='nam'>celery</span><span class='op'>.</span><span class='nam'>app</span> <span class='key'>import</span> <span class='nam'>app_or_default</span><span class='strut'>&nbsp;</span></p>
+<p id='t22' class='stm run hide_run'><span class='key'>from</span> <span class='nam'>celery</span><span class='op'>.</span><span class='nam'>five</span> <span class='key'>import</span> <span class='nam'>string</span><span class='op'>,</span> <span class='nam'>string_t</span><span class='strut'>&nbsp;</span></p>
+<p id='t23' class='stm run hide_run'><span class='key'>from</span> <span class='nam'>celery</span><span class='op'>.</span><span class='nam'>utils</span> <span class='key'>import</span> <span class='nam'>worker_direct</span><span class='strut'>&nbsp;</span></p>
+<p id='t24' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t25' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t26' class='stm run hide_run'><span class='nam'>MOVING_PROGRESS_FMT</span> <span class='op'>=</span> <span class='str'>&quot;&quot;&quot;\</span><span class='strut'>&nbsp;</span></p>
+<p id='t27' class='pln'><span class='str'>Moving task {state.filtered}/{state.strtotal}: \</span><span class='strut'>&nbsp;</span></p>
+<p id='t28' class='pln'><span class='str'>{body[task]}[{body[id]}]\</span><span class='strut'>&nbsp;</span></p>
+<p id='t29' class='pln'><span class='str'>&quot;&quot;&quot;</span><span class='strut'>&nbsp;</span></p>
+<p id='t30' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t31' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t32' class='stm run hide_run'><span class='key'>class</span> <span class='nam'>StopFiltering</span><span class='op'>(</span><span class='nam'>Exception</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t33' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>pass</span><span class='strut'>&nbsp;</span></p>
+<p id='t34' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t35' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t36' class='stm run hide_run'><span class='key'>class</span> <span class='nam'>State</span><span class='op'>(</span><span class='nam'>object</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t37' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>count</span> <span class='op'>=</span> <span class='num'>0</span><span class='strut'>&nbsp;</span></p>
+<p id='t38' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>filtered</span> <span class='op'>=</span> <span class='num'>0</span><span class='strut'>&nbsp;</span></p>
+<p id='t39' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>total_apx</span> <span class='op'>=</span> <span class='num'>0</span><span class='strut'>&nbsp;</span></p>
+<p id='t40' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t41' class='stm run hide_run'>&nbsp; &nbsp; <span class='op'>@</span><span class='nam'>property</span><span class='strut'>&nbsp;</span></p>
+<p id='t42' class='pln'>&nbsp; &nbsp; <span class='key'>def</span> <span class='nam'>strtotal</span><span class='op'>(</span><span class='nam'>self</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t43' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='key'>not</span> <span class='nam'>self</span><span class='op'>.</span><span class='nam'>total_apx</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t44' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>return</span> <span class='str'>&#39;?&#39;</span><span class='strut'>&nbsp;</span></p>
+<p id='t45' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>string</span><span class='op'>(</span><span class='nam'>self</span><span class='op'>.</span><span class='nam'>total_apx</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t46' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t47' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>def</span> <span class='nam'>__repr__</span><span class='op'>(</span><span class='nam'>self</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t48' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>self</span><span class='op'>.</span><span class='nam'>filtered</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t49' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>return</span> <span class='str'>&#39;^{0.filtered}&#39;</span><span class='op'>.</span><span class='nam'>format</span><span class='op'>(</span><span class='nam'>self</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t50' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>return</span> <span class='str'>&#39;{0.count}/{0.strtotal}&#39;</span><span class='op'>.</span><span class='nam'>format</span><span class='op'>(</span><span class='nam'>self</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t51' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t52' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t53' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>republish</span><span class='op'>(</span><span class='nam'>producer</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>,</span> <span class='nam'>exchange</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='nam'>routing_key</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t54' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>remove_props</span><span class='op'>=</span><span class='op'>[</span><span class='str'>&#39;application_headers&#39;</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t55' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='str'>&#39;content_type&#39;</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t56' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='str'>&#39;content_encoding&#39;</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t57' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='str'>&#39;headers&#39;</span><span class='op'>]</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t58' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>body</span> <span class='op'>=</span> <span class='nam'>ensure_bytes</span><span class='op'>(</span><span class='nam'>message</span><span class='op'>.</span><span class='nam'>body</span><span class='op'>)</span>&nbsp; <span class='com'># use raw message body.</span><span class='strut'>&nbsp;</span></p>
+<p id='t59' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>info</span><span class='op'>,</span> <span class='nam'>headers</span><span class='op'>,</span> <span class='nam'>props</span> <span class='op'>=</span> <span class='op'>(</span><span class='nam'>message</span><span class='op'>.</span><span class='nam'>delivery_info</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t60' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>message</span><span class='op'>.</span><span class='nam'>headers</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>.</span><span class='nam'>properties</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t61' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>exchange</span> <span class='op'>=</span> <span class='nam'>info</span><span class='op'>[</span><span class='str'>&#39;exchange&#39;</span><span class='op'>]</span> <span class='key'>if</span> <span class='nam'>exchange</span> <span class='key'>is</span> <span class='nam'>None</span> <span class='key'>else</span> <span class='nam'>exchange</span><span class='strut'>&nbsp;</span></p>
+<p id='t62' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>routing_key</span> <span class='op'>=</span> <span class='nam'>info</span><span class='op'>[</span><span class='str'>&#39;routing_key&#39;</span><span class='op'>]</span> <span class='key'>if</span> <span class='nam'>routing_key</span> <span class='key'>is</span> <span class='nam'>None</span> <span class='key'>else</span> <span class='nam'>routing_key</span><span class='strut'>&nbsp;</span></p>
+<p id='t63' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>ctype</span><span class='op'>,</span> <span class='nam'>enc</span> <span class='op'>=</span> <span class='nam'>message</span><span class='op'>.</span><span class='nam'>content_type</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>.</span><span class='nam'>content_encoding</span><span class='strut'>&nbsp;</span></p>
+<p id='t64' class='pln'>&nbsp; &nbsp; <span class='com'># remove compression header, as this will be inserted again</span><span class='strut'>&nbsp;</span></p>
+<p id='t65' class='pln'>&nbsp; &nbsp; <span class='com'># when the message is recompressed.</span><span class='strut'>&nbsp;</span></p>
+<p id='t66' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>compression</span> <span class='op'>=</span> <span class='nam'>headers</span><span class='op'>.</span><span class='nam'>pop</span><span class='op'>(</span><span class='str'>&#39;compression&#39;</span><span class='op'>,</span> <span class='nam'>None</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t67' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t68' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>for</span> <span class='nam'>key</span> <span class='key'>in</span> <span class='nam'>remove_props</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t69' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>props</span><span class='op'>.</span><span class='nam'>pop</span><span class='op'>(</span><span class='nam'>key</span><span class='op'>,</span> <span class='nam'>None</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t70' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t71' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>producer</span><span class='op'>.</span><span class='nam'>publish</span><span class='op'>(</span><span class='nam'>ensure_bytes</span><span class='op'>(</span><span class='nam'>body</span><span class='op'>)</span><span class='op'>,</span> <span class='nam'>exchange</span><span class='op'>=</span><span class='nam'>exchange</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t72' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <span class='nam'>routing_key</span><span class='op'>=</span><span class='nam'>routing_key</span><span class='op'>,</span> <span class='nam'>compression</span><span class='op'>=</span><span class='nam'>compression</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t73' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <span class='nam'>headers</span><span class='op'>=</span><span class='nam'>headers</span><span class='op'>,</span> <span class='nam'>content_type</span><span class='op'>=</span><span class='nam'>ctype</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t74' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <span class='nam'>content_encoding</span><span class='op'>=</span><span class='nam'>enc</span><span class='op'>,</span> <span class='op'>**</span><span class='nam'>props</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t75' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t76' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t77' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>migrate_task</span><span class='op'>(</span><span class='nam'>producer</span><span class='op'>,</span> <span class='nam'>body_</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>,</span> <span class='nam'>queues</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t78' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>info</span> <span class='op'>=</span> <span class='nam'>message</span><span class='op'>.</span><span class='nam'>delivery_info</span><span class='strut'>&nbsp;</span></p>
+<p id='t79' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>queues</span> <span class='op'>=</span> <span class='op'>{</span><span class='op'>}</span> <span class='key'>if</span> <span class='nam'>queues</span> <span class='key'>is</span> <span class='nam'>None</span> <span class='key'>else</span> <span class='nam'>queues</span><span class='strut'>&nbsp;</span></p>
+<p id='t80' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>republish</span><span class='op'>(</span><span class='nam'>producer</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t81' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>exchange</span><span class='op'>=</span><span class='nam'>queues</span><span class='op'>.</span><span class='nam'>get</span><span class='op'>(</span><span class='nam'>info</span><span class='op'>[</span><span class='str'>&#39;exchange&#39;</span><span class='op'>]</span><span class='op'>)</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t82' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>routing_key</span><span class='op'>=</span><span class='nam'>queues</span><span class='op'>.</span><span class='nam'>get</span><span class='op'>(</span><span class='nam'>info</span><span class='op'>[</span><span class='str'>&#39;routing_key&#39;</span><span class='op'>]</span><span class='op'>)</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t83' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t84' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t85' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>filter_callback</span><span class='op'>(</span><span class='nam'>callback</span><span class='op'>,</span> <span class='nam'>tasks</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t86' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t87' class='stm mis'>&nbsp; &nbsp; <span class='key'>def</span> <span class='nam'>filtered</span><span class='op'>(</span><span class='nam'>body</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t88' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>tasks</span> <span class='key'>and</span> <span class='nam'>message</span><span class='op'>.</span><span class='nam'>payload</span><span class='op'>[</span><span class='str'>&#39;task&#39;</span><span class='op'>]</span> <span class='key'>not</span> <span class='key'>in</span> <span class='nam'>tasks</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t89' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>return</span><span class='strut'>&nbsp;</span></p>
+<p id='t90' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t91' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>callback</span><span class='op'>(</span><span class='nam'>body</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t92' class='stm mis'>&nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>filtered</span><span class='strut'>&nbsp;</span></p>
+<p id='t93' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t94' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t95' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>migrate_tasks</span><span class='op'>(</span><span class='nam'>source</span><span class='op'>,</span> <span class='nam'>dest</span><span class='op'>,</span> <span class='nam'>migrate</span><span class='op'>=</span><span class='nam'>migrate_task</span><span class='op'>,</span> <span class='nam'>app</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t96' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>queues</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='op'>**</span><span class='nam'>kwargs</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t97' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>app</span> <span class='op'>=</span> <span class='nam'>app_or_default</span><span class='op'>(</span><span class='nam'>app</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t98' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>queues</span> <span class='op'>=</span> <span class='nam'>prepare_queues</span><span class='op'>(</span><span class='nam'>queues</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t99' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>producer</span> <span class='op'>=</span> <span class='nam'>app</span><span class='op'>.</span><span class='nam'>amqp</span><span class='op'>.</span><span class='nam'>TaskProducer</span><span class='op'>(</span><span class='nam'>dest</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t100' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>migrate</span> <span class='op'>=</span> <span class='nam'>partial</span><span class='op'>(</span><span class='nam'>migrate</span><span class='op'>,</span> <span class='nam'>producer</span><span class='op'>,</span> <span class='nam'>queues</span><span class='op'>=</span><span class='nam'>queues</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t101' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t102' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>def</span> <span class='nam'>on_declare_queue</span><span class='op'>(</span><span class='nam'>queue</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t103' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>new_queue</span> <span class='op'>=</span> <span class='nam'>queue</span><span class='op'>(</span><span class='nam'>producer</span><span class='op'>.</span><span class='nam'>channel</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t104' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>new_queue</span><span class='op'>.</span><span class='nam'>name</span> <span class='op'>=</span> <span class='nam'>queues</span><span class='op'>.</span><span class='nam'>get</span><span class='op'>(</span><span class='nam'>queue</span><span class='op'>.</span><span class='nam'>name</span><span class='op'>,</span> <span class='nam'>queue</span><span class='op'>.</span><span class='nam'>name</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t105' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>new_queue</span><span class='op'>.</span><span class='nam'>routing_key</span> <span class='op'>==</span> <span class='nam'>queue</span><span class='op'>.</span><span class='nam'>name</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t106' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>new_queue</span><span class='op'>.</span><span class='nam'>routing_key</span> <span class='op'>=</span> <span class='nam'>queues</span><span class='op'>.</span><span class='nam'>get</span><span class='op'>(</span><span class='nam'>queue</span><span class='op'>.</span><span class='nam'>name</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t107' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <span class='nam'>new_queue</span><span class='op'>.</span><span class='nam'>routing_key</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t108' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>new_queue</span><span class='op'>.</span><span class='nam'>exchange</span><span class='op'>.</span><span class='nam'>name</span> <span class='op'>==</span> <span class='nam'>queue</span><span class='op'>.</span><span class='nam'>name</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t109' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>new_queue</span><span class='op'>.</span><span class='nam'>exchange</span><span class='op'>.</span><span class='nam'>name</span> <span class='op'>=</span> <span class='nam'>queues</span><span class='op'>.</span><span class='nam'>get</span><span class='op'>(</span><span class='nam'>queue</span><span class='op'>.</span><span class='nam'>name</span><span class='op'>,</span> <span class='nam'>queue</span><span class='op'>.</span><span class='nam'>name</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t110' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>new_queue</span><span class='op'>.</span><span class='nam'>declare</span><span class='op'>(</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t111' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t112' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>start_filter</span><span class='op'>(</span><span class='nam'>app</span><span class='op'>,</span> <span class='nam'>source</span><span class='op'>,</span> <span class='nam'>migrate</span><span class='op'>,</span> <span class='nam'>queues</span><span class='op'>=</span><span class='nam'>queues</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t113' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>on_declare_queue</span><span class='op'>=</span><span class='nam'>on_declare_queue</span><span class='op'>,</span> <span class='op'>**</span><span class='nam'>kwargs</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t114' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t115' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t116' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>_maybe_queue</span><span class='op'>(</span><span class='nam'>app</span><span class='op'>,</span> <span class='nam'>q</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t117' class='stm mis'>&nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>isinstance</span><span class='op'>(</span><span class='nam'>q</span><span class='op'>,</span> <span class='nam'>string_t</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t118' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>app</span><span class='op'>.</span><span class='nam'>amqp</span><span class='op'>.</span><span class='nam'>queues</span><span class='op'>[</span><span class='nam'>q</span><span class='op'>]</span><span class='strut'>&nbsp;</span></p>
+<p id='t119' class='stm mis'>&nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>q</span><span class='strut'>&nbsp;</span></p>
+<p id='t120' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t121' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t122' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>move</span><span class='op'>(</span><span class='nam'>predicate</span><span class='op'>,</span> <span class='nam'>connection</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='nam'>exchange</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='nam'>routing_key</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t123' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <span class='nam'>source</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='nam'>app</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='nam'>callback</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='nam'>limit</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='nam'>transform</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t124' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <span class='op'>**</span><span class='nam'>kwargs</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t125' class='pln'>&nbsp; &nbsp; <span class='str'>&quot;&quot;&quot;Find tasks by filtering them and move the tasks to a new queue.</span><span class='strut'>&nbsp;</span></p>
+<p id='t126' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t127' class='pln'><span class='str'>&nbsp; &nbsp; :param predicate: Filter function used to decide which messages</span><span class='strut'>&nbsp;</span></p>
+<p id='t128' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; to move.&nbsp; Must accept the standard signature of ``(body, message)``</span><span class='strut'>&nbsp;</span></p>
+<p id='t129' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; used by Kombu consumer callbacks. If the predicate wants the message</span><span class='strut'>&nbsp;</span></p>
+<p id='t130' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; to be moved it must return either:</span><span class='strut'>&nbsp;</span></p>
+<p id='t131' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t132' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 1) a tuple of ``(exchange, routing_key)``, or</span><span class='strut'>&nbsp;</span></p>
+<p id='t133' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t134' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 2) a :class:`~kombu.entity.Queue` instance, or</span><span class='strut'>&nbsp;</span></p>
+<p id='t135' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t136' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 3) any other true value which means the specified</span><span class='strut'>&nbsp;</span></p>
+<p id='t137' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; ``exchange`` and ``routing_key`` arguments will be used.</span><span class='strut'>&nbsp;</span></p>
+<p id='t138' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t139' class='pln'><span class='str'>&nbsp; &nbsp; :keyword connection: Custom connection to use.</span><span class='strut'>&nbsp;</span></p>
+<p id='t140' class='pln'><span class='str'>&nbsp; &nbsp; :keyword source: Optional list of source queues to use instead of the</span><span class='strut'>&nbsp;</span></p>
+<p id='t141' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; default (which is the queues in :setting:`CELERY_QUEUES`).</span><span class='strut'>&nbsp;</span></p>
+<p id='t142' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; This list can also contain new :class:`~kombu.entity.Queue` instances.</span><span class='strut'>&nbsp;</span></p>
+<p id='t143' class='pln'><span class='str'>&nbsp; &nbsp; :keyword exchange: Default destination exchange.</span><span class='strut'>&nbsp;</span></p>
+<p id='t144' class='pln'><span class='str'>&nbsp; &nbsp; :keyword routing_key: Default destination routing key.</span><span class='strut'>&nbsp;</span></p>
+<p id='t145' class='pln'><span class='str'>&nbsp; &nbsp; :keyword limit: Limit number of messages to filter.</span><span class='strut'>&nbsp;</span></p>
+<p id='t146' class='pln'><span class='str'>&nbsp; &nbsp; :keyword callback: Callback called after message moved,</span><span class='strut'>&nbsp;</span></p>
+<p id='t147' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; with signature ``(state, body, message)``.</span><span class='strut'>&nbsp;</span></p>
+<p id='t148' class='pln'><span class='str'>&nbsp; &nbsp; :keyword transform: Optional function to transform the return</span><span class='strut'>&nbsp;</span></p>
+<p id='t149' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; value (destination) of the filter function.</span><span class='strut'>&nbsp;</span></p>
+<p id='t150' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t151' class='pln'><span class='str'>&nbsp; &nbsp; Also supports the same keyword arguments as :func:`start_filter`.</span><span class='strut'>&nbsp;</span></p>
+<p id='t152' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t153' class='pln'><span class='str'>&nbsp; &nbsp; To demonstrate, the :func:`move_task_by_id` operation can be implemented</span><span class='strut'>&nbsp;</span></p>
+<p id='t154' class='pln'><span class='str'>&nbsp; &nbsp; like this:</span><span class='strut'>&nbsp;</span></p>
+<p id='t155' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t156' class='pln'><span class='str'>&nbsp; &nbsp; .. code-block:: python</span><span class='strut'>&nbsp;</span></p>
+<p id='t157' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t158' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; def is_wanted_task(body, message):</span><span class='strut'>&nbsp;</span></p>
+<p id='t159' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; if body[&#39;id&#39;] == wanted_id:</span><span class='strut'>&nbsp;</span></p>
+<p id='t160' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return Queue(&#39;foo&#39;, exchange=Exchange(&#39;foo&#39;),</span><span class='strut'>&nbsp;</span></p>
+<p id='t161' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; routing_key=&#39;foo&#39;)</span><span class='strut'>&nbsp;</span></p>
+<p id='t162' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t163' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; move(is_wanted_task)</span><span class='strut'>&nbsp;</span></p>
+<p id='t164' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t165' class='pln'><span class='str'>&nbsp; &nbsp; or with a transform:</span><span class='strut'>&nbsp;</span></p>
+<p id='t166' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t167' class='pln'><span class='str'>&nbsp; &nbsp; .. code-block:: python</span><span class='strut'>&nbsp;</span></p>
+<p id='t168' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t169' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; def transform(value):</span><span class='strut'>&nbsp;</span></p>
+<p id='t170' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; if isinstance(value, string_t):</span><span class='strut'>&nbsp;</span></p>
+<p id='t171' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return Queue(value, Exchange(value), value)</span><span class='strut'>&nbsp;</span></p>
+<p id='t172' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return value</span><span class='strut'>&nbsp;</span></p>
+<p id='t173' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t174' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; move(is_wanted_task, transform=transform)</span><span class='strut'>&nbsp;</span></p>
+<p id='t175' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t176' class='pln'><span class='str'>&nbsp; &nbsp; The predicate may also return a tuple of ``(exchange, routing_key)``</span><span class='strut'>&nbsp;</span></p>
+<p id='t177' class='pln'><span class='str'>&nbsp; &nbsp; to specify the destination to where the task should be moved,</span><span class='strut'>&nbsp;</span></p>
+<p id='t178' class='pln'><span class='str'>&nbsp; &nbsp; or a :class:`~kombu.entitiy.Queue` instance.</span><span class='strut'>&nbsp;</span></p>
+<p id='t179' class='pln'><span class='str'>&nbsp; &nbsp; Any other true value means that the task will be moved to the</span><span class='strut'>&nbsp;</span></p>
+<p id='t180' class='pln'><span class='str'>&nbsp; &nbsp; default exchange/routing_key.</span><span class='strut'>&nbsp;</span></p>
+<p id='t181' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t182' class='pln'><span class='str'>&nbsp; &nbsp; &quot;&quot;&quot;</span><span class='strut'>&nbsp;</span></p>
+<p id='t183' class='stm mis'>&nbsp; &nbsp; <span class='nam'>app</span> <span class='op'>=</span> <span class='nam'>app_or_default</span><span class='op'>(</span><span class='nam'>app</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t184' class='stm mis'>&nbsp; &nbsp; <span class='nam'>queues</span> <span class='op'>=</span> <span class='op'>[</span><span class='nam'>_maybe_queue</span><span class='op'>(</span><span class='nam'>app</span><span class='op'>,</span> <span class='nam'>queue</span><span class='op'>)</span> <span class='key'>for</span> <span class='nam'>queue</span> <span class='key'>in</span> <span class='nam'>source</span> <span class='key'>or</span> <span class='op'>[</span><span class='op'>]</span><span class='op'>]</span> <span class='key'>or</span> <span class='nam'>None</span><span class='strut'>&nbsp;</span></p>
+<p id='t185' class='stm mis'>&nbsp; &nbsp; <span class='key'>with</span> <span class='nam'>app</span><span class='op'>.</span><span class='nam'>connection_or_acquire</span><span class='op'>(</span><span class='nam'>connection</span><span class='op'>,</span> <span class='nam'>pool</span><span class='op'>=</span><span class='nam'>False</span><span class='op'>)</span> <span class='key'>as</span> <span class='nam'>conn</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t186' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>producer</span> <span class='op'>=</span> <span class='nam'>app</span><span class='op'>.</span><span class='nam'>amqp</span><span class='op'>.</span><span class='nam'>TaskProducer</span><span class='op'>(</span><span class='nam'>conn</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t187' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>state</span> <span class='op'>=</span> <span class='nam'>State</span><span class='op'>(</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t188' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t189' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>def</span> <span class='nam'>on_task</span><span class='op'>(</span><span class='nam'>body</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t190' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>ret</span> <span class='op'>=</span> <span class='nam'>predicate</span><span class='op'>(</span><span class='nam'>body</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t191' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>ret</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t192' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>transform</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t193' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>ret</span> <span class='op'>=</span> <span class='nam'>transform</span><span class='op'>(</span><span class='nam'>ret</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t194' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>isinstance</span><span class='op'>(</span><span class='nam'>ret</span><span class='op'>,</span> <span class='nam'>Queue</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t195' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>maybe_declare</span><span class='op'>(</span><span class='nam'>ret</span><span class='op'>,</span> <span class='nam'>conn</span><span class='op'>.</span><span class='nam'>default_channel</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t196' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>ex</span><span class='op'>,</span> <span class='nam'>rk</span> <span class='op'>=</span> <span class='nam'>ret</span><span class='op'>.</span><span class='nam'>exchange</span><span class='op'>.</span><span class='nam'>name</span><span class='op'>,</span> <span class='nam'>ret</span><span class='op'>.</span><span class='nam'>routing_key</span><span class='strut'>&nbsp;</span></p>
+<p id='t197' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>else</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t198' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>ex</span><span class='op'>,</span> <span class='nam'>rk</span> <span class='op'>=</span> <span class='nam'>expand_dest</span><span class='op'>(</span><span class='nam'>ret</span><span class='op'>,</span> <span class='nam'>exchange</span><span class='op'>,</span> <span class='nam'>routing_key</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t199' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>republish</span><span class='op'>(</span><span class='nam'>producer</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t200' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>exchange</span><span class='op'>=</span><span class='nam'>ex</span><span class='op'>,</span> <span class='nam'>routing_key</span><span class='op'>=</span><span class='nam'>rk</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t201' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>message</span><span class='op'>.</span><span class='nam'>ack</span><span class='op'>(</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t202' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t203' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>state</span><span class='op'>.</span><span class='nam'>filtered</span> <span class='op'>+=</span> <span class='num'>1</span><span class='strut'>&nbsp;</span></p>
+<p id='t204' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>callback</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t205' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>callback</span><span class='op'>(</span><span class='nam'>state</span><span class='op'>,</span> <span class='nam'>body</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t206' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>limit</span> <span class='key'>and</span> <span class='nam'>state</span><span class='op'>.</span><span class='nam'>filtered</span> <span class='op'>&gt;=</span> <span class='nam'>limit</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t207' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>raise</span> <span class='nam'>StopFiltering</span><span class='op'>(</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t208' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t209' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>start_filter</span><span class='op'>(</span><span class='nam'>app</span><span class='op'>,</span> <span class='nam'>conn</span><span class='op'>,</span> <span class='nam'>on_task</span><span class='op'>,</span> <span class='nam'>consume_from</span><span class='op'>=</span><span class='nam'>queues</span><span class='op'>,</span> <span class='op'>**</span><span class='nam'>kwargs</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t210' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t211' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t212' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>expand_dest</span><span class='op'>(</span><span class='nam'>ret</span><span class='op'>,</span> <span class='nam'>exchange</span><span class='op'>,</span> <span class='nam'>routing_key</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t213' class='stm mis'>&nbsp; &nbsp; <span class='key'>try</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t214' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>ex</span><span class='op'>,</span> <span class='nam'>rk</span> <span class='op'>=</span> <span class='nam'>ret</span><span class='strut'>&nbsp;</span></p>
+<p id='t215' class='stm mis'>&nbsp; &nbsp; <span class='key'>except</span> <span class='op'>(</span><span class='nam'>TypeError</span><span class='op'>,</span> <span class='nam'>ValueError</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t216' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>ex</span><span class='op'>,</span> <span class='nam'>rk</span> <span class='op'>=</span> <span class='nam'>exchange</span><span class='op'>,</span> <span class='nam'>routing_key</span><span class='strut'>&nbsp;</span></p>
+<p id='t217' class='stm mis'>&nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>ex</span><span class='op'>,</span> <span class='nam'>rk</span><span class='strut'>&nbsp;</span></p>
+<p id='t218' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t219' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t220' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>task_id_eq</span><span class='op'>(</span><span class='nam'>task_id</span><span class='op'>,</span> <span class='nam'>body</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t221' class='stm mis'>&nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>body</span><span class='op'>[</span><span class='str'>&#39;id&#39;</span><span class='op'>]</span> <span class='op'>==</span> <span class='nam'>task_id</span><span class='strut'>&nbsp;</span></p>
+<p id='t222' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t223' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t224' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>task_id_in</span><span class='op'>(</span><span class='nam'>ids</span><span class='op'>,</span> <span class='nam'>body</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t225' class='stm mis'>&nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>body</span><span class='op'>[</span><span class='str'>&#39;id&#39;</span><span class='op'>]</span> <span class='key'>in</span> <span class='nam'>ids</span><span class='strut'>&nbsp;</span></p>
+<p id='t226' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t227' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t228' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>prepare_queues</span><span class='op'>(</span><span class='nam'>queues</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t229' class='stm par run hide_run'><span class='annotate' title='no jump to this line number'>230</span>&nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>isinstance</span><span class='op'>(</span><span class='nam'>queues</span><span class='op'>,</span> <span class='nam'>string_t</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t230' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>queues</span> <span class='op'>=</span> <span class='nam'>queues</span><span class='op'>.</span><span class='nam'>split</span><span class='op'>(</span><span class='str'>&#39;,&#39;</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t231' class='stm par run hide_run'><span class='annotate' title='no jump to this line number'>232</span>&nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>isinstance</span><span class='op'>(</span><span class='nam'>queues</span><span class='op'>,</span> <span class='nam'>list</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t232' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>queues</span> <span class='op'>=</span> <span class='nam'>dict</span><span class='op'>(</span><span class='nam'>tuple</span><span class='op'>(</span><span class='nam'>islice</span><span class='op'>(</span><span class='nam'>cycle</span><span class='op'>(</span><span class='nam'>q</span><span class='op'>.</span><span class='nam'>split</span><span class='op'>(</span><span class='str'>&#39;:&#39;</span><span class='op'>)</span><span class='op'>)</span><span class='op'>,</span> <span class='nam'>None</span><span class='op'>,</span> <span class='num'>2</span><span class='op'>)</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t233' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>for</span> <span class='nam'>q</span> <span class='key'>in</span> <span class='nam'>queues</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t234' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>queues</span> <span class='key'>is</span> <span class='nam'>None</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t235' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>queues</span> <span class='op'>=</span> <span class='op'>{</span><span class='op'>}</span><span class='strut'>&nbsp;</span></p>
+<p id='t236' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>queues</span><span class='strut'>&nbsp;</span></p>
+<p id='t237' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t238' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t239' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>start_filter</span><span class='op'>(</span><span class='nam'>app</span><span class='op'>,</span> <span class='nam'>conn</span><span class='op'>,</span> <span class='nam'>filter</span><span class='op'>,</span> <span class='nam'>limit</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='nam'>timeout</span><span class='op'>=</span><span class='num'>1.0</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t240' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <span class='nam'>ack_messages</span><span class='op'>=</span><span class='nam'>False</span><span class='op'>,</span> <span class='nam'>tasks</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='nam'>queues</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t241' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <span class='nam'>callback</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='nam'>forever</span><span class='op'>=</span><span class='nam'>False</span><span class='op'>,</span> <span class='nam'>on_declare_queue</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span><span class='strut'>&nbsp;</span></p>
+<p id='t242' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <span class='nam'>consume_from</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='nam'>state</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='nam'>accept</span><span class='op'>=</span><span class='nam'>None</span><span class='op'>,</span> <span class='op'>**</span><span class='nam'>kwargs</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t243' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>state</span> <span class='op'>=</span> <span class='nam'>state</span> <span class='key'>or</span> <span class='nam'>State</span><span class='op'>(</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t244' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>queues</span> <span class='op'>=</span> <span class='nam'>prepare_queues</span><span class='op'>(</span><span class='nam'>queues</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t245' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>consume_from</span> <span class='op'>=</span> <span class='op'>[</span><span class='nam'>_maybe_queue</span><span class='op'>(</span><span class='nam'>app</span><span class='op'>,</span> <span class='nam'>q</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t246' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>for</span> <span class='nam'>q</span> <span class='key'>in</span> <span class='nam'>consume_from</span> <span class='key'>or</span> <span class='nam'>queues</span><span class='op'>.</span><span class='nam'>keys</span><span class='op'>(</span><span class='op'>)</span><span class='op'>]</span><span class='strut'>&nbsp;</span></p>
+<p id='t247' class='stm par run hide_run'><span class='annotate' title='no jump to this line number'>248</span>&nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>isinstance</span><span class='op'>(</span><span class='nam'>tasks</span><span class='op'>,</span> <span class='nam'>string_t</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t248' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>tasks</span> <span class='op'>=</span> <span class='nam'>set</span><span class='op'>(</span><span class='nam'>tasks</span><span class='op'>.</span><span class='nam'>split</span><span class='op'>(</span><span class='str'>&#39;,&#39;</span><span class='op'>)</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t249' class='stm par run hide_run'><span class='annotate' title='no jump to this line number'>252</span>&nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>tasks</span> <span class='key'>is</span> <span class='nam'>None</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t250' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>tasks</span> <span class='op'>=</span> <span class='nam'>set</span><span class='op'>(</span><span class='op'>[</span><span class='op'>]</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t251' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t252' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>def</span> <span class='nam'>update_state</span><span class='op'>(</span><span class='nam'>body</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t253' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>state</span><span class='op'>.</span><span class='nam'>count</span> <span class='op'>+=</span> <span class='num'>1</span><span class='strut'>&nbsp;</span></p>
+<p id='t254' class='stm par run hide_run'><span class='annotate' title='no jump to this line number'>255</span>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>limit</span> <span class='key'>and</span> <span class='nam'>state</span><span class='op'>.</span><span class='nam'>count</span> <span class='op'>&gt;=</span> <span class='nam'>limit</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t255' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>raise</span> <span class='nam'>StopFiltering</span><span class='op'>(</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t256' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t257' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>def</span> <span class='nam'>ack_message</span><span class='op'>(</span><span class='nam'>body</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t258' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>message</span><span class='op'>.</span><span class='nam'>ack</span><span class='op'>(</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t259' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t260' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>consumer</span> <span class='op'>=</span> <span class='nam'>app</span><span class='op'>.</span><span class='nam'>amqp</span><span class='op'>.</span><span class='nam'>TaskConsumer</span><span class='op'>(</span><span class='nam'>conn</span><span class='op'>,</span> <span class='nam'>queues</span><span class='op'>=</span><span class='nam'>consume_from</span><span class='op'>,</span> <span class='nam'>accept</span><span class='op'>=</span><span class='nam'>accept</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t261' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t262' class='stm par run hide_run'><span class='annotate' title='no jump to this line number'>263</span>&nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>tasks</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t263' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>filter</span> <span class='op'>=</span> <span class='nam'>filter_callback</span><span class='op'>(</span><span class='nam'>filter</span><span class='op'>,</span> <span class='nam'>tasks</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t264' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>update_state</span> <span class='op'>=</span> <span class='nam'>filter_callback</span><span class='op'>(</span><span class='nam'>update_state</span><span class='op'>,</span> <span class='nam'>tasks</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t265' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>ack_message</span> <span class='op'>=</span> <span class='nam'>filter_callback</span><span class='op'>(</span><span class='nam'>ack_message</span><span class='op'>,</span> <span class='nam'>tasks</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t266' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t267' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>consumer</span><span class='op'>.</span><span class='nam'>register_callback</span><span class='op'>(</span><span class='nam'>filter</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t268' class='stm run hide_run'>&nbsp; &nbsp; <span class='nam'>consumer</span><span class='op'>.</span><span class='nam'>register_callback</span><span class='op'>(</span><span class='nam'>update_state</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t269' class='stm par run hide_run'><span class='annotate' title='no jump to this line number'>270</span>&nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>ack_messages</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t270' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>consumer</span><span class='op'>.</span><span class='nam'>register_callback</span><span class='op'>(</span><span class='nam'>ack_message</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t271' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>callback</span> <span class='key'>is</span> <span class='key'>not</span> <span class='nam'>None</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t272' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>callback</span> <span class='op'>=</span> <span class='nam'>partial</span><span class='op'>(</span><span class='nam'>callback</span><span class='op'>,</span> <span class='nam'>state</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t273' class='stm par run hide_run'><span class='annotate' title='no jump to this line number'>274</span>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>tasks</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t274' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>callback</span> <span class='op'>=</span> <span class='nam'>filter_callback</span><span class='op'>(</span><span class='nam'>callback</span><span class='op'>,</span> <span class='nam'>tasks</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t275' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>consumer</span><span class='op'>.</span><span class='nam'>register_callback</span><span class='op'>(</span><span class='nam'>callback</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t276' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t277' class='pln'>&nbsp; &nbsp; <span class='com'># declare all queues on the new broker.</span><span class='strut'>&nbsp;</span></p>
+<p id='t278' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>for</span> <span class='nam'>queue</span> <span class='key'>in</span> <span class='nam'>consumer</span><span class='op'>.</span><span class='nam'>queues</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t279' class='stm par run hide_run'><span class='annotate' title='no jump to this line number'>280</span>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>queues</span> <span class='key'>and</span> <span class='nam'>queue</span><span class='op'>.</span><span class='nam'>name</span> <span class='key'>not</span> <span class='key'>in</span> <span class='nam'>queues</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t280' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>continue</span><span class='strut'>&nbsp;</span></p>
+<p id='t281' class='stm par run hide_run'><span class='annotate' title='no jump to this line number'>283</span>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>on_declare_queue</span> <span class='key'>is</span> <span class='key'>not</span> <span class='nam'>None</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t282' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>on_declare_queue</span><span class='op'>(</span><span class='nam'>queue</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t283' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>try</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t284' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>_</span><span class='op'>,</span> <span class='nam'>mcount</span><span class='op'>,</span> <span class='nam'>_</span> <span class='op'>=</span> <span class='nam'>queue</span><span class='op'>(</span><span class='nam'>consumer</span><span class='op'>.</span><span class='nam'>channel</span><span class='op'>)</span><span class='op'>.</span><span class='nam'>queue_declare</span><span class='op'>(</span><span class='nam'>passive</span><span class='op'>=</span><span class='nam'>True</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t285' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>if</span> <span class='nam'>mcount</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t286' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='nam'>state</span><span class='op'>.</span><span class='nam'>total_apx</span> <span class='op'>+=</span> <span class='nam'>mcount</span><span class='strut'>&nbsp;</span></p>
+<p id='t287' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>except</span> <span class='nam'>conn</span><span class='op'>.</span><span class='nam'>channel_errors</span> <span class='op'>+</span> <span class='op'>(</span><span class='nam'>StdChannelError</span><span class='op'>,</span> <span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t288' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>pass</span><span class='strut'>&nbsp;</span></p>
+<p id='t289' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t290' class='pln'>&nbsp; &nbsp; <span class='com'># start migrating messages.</span><span class='strut'>&nbsp;</span></p>
+<p id='t291' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>with</span> <span class='nam'>consumer</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t292' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>try</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t293' class='exc'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>for</span> <span class='nam'>_</span> <span class='key'>in</span> <span class='nam'>eventloop</span><span class='op'>(</span><span class='nam'>conn</span><span class='op'>,</span>&nbsp; <span class='com'># pragma: no cover</span><span class='strut'>&nbsp;</span></p>
+<p id='t294' class='pln'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <span class='nam'>timeout</span><span class='op'>=</span><span class='nam'>timeout</span><span class='op'>,</span> <span class='nam'>ignore_timeouts</span><span class='op'>=</span><span class='nam'>forever</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t295' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>pass</span><span class='strut'>&nbsp;</span></p>
+<p id='t296' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>except</span> <span class='nam'>socket</span><span class='op'>.</span><span class='nam'>timeout</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t297' class='stm run hide_run'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>pass</span><span class='strut'>&nbsp;</span></p>
+<p id='t298' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>except</span> <span class='nam'>StopFiltering</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t299' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>pass</span><span class='strut'>&nbsp;</span></p>
+<p id='t300' class='stm run hide_run'>&nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>state</span><span class='strut'>&nbsp;</span></p>
+<p id='t301' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t302' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t303' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>move_task_by_id</span><span class='op'>(</span><span class='nam'>task_id</span><span class='op'>,</span> <span class='nam'>dest</span><span class='op'>,</span> <span class='op'>**</span><span class='nam'>kwargs</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t304' class='pln'>&nbsp; &nbsp; <span class='str'>&quot;&quot;&quot;Find a task by id and move it to another queue.</span><span class='strut'>&nbsp;</span></p>
+<p id='t305' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t306' class='pln'><span class='str'>&nbsp; &nbsp; :param task_id: Id of task to move.</span><span class='strut'>&nbsp;</span></p>
+<p id='t307' class='pln'><span class='str'>&nbsp; &nbsp; :param dest: Destination queue.</span><span class='strut'>&nbsp;</span></p>
+<p id='t308' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t309' class='pln'><span class='str'>&nbsp; &nbsp; Also supports the same keyword arguments as :func:`move`.</span><span class='strut'>&nbsp;</span></p>
+<p id='t310' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t311' class='pln'><span class='str'>&nbsp; &nbsp; &quot;&quot;&quot;</span><span class='strut'>&nbsp;</span></p>
+<p id='t312' class='stm mis'>&nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>move_by_idmap</span><span class='op'>(</span><span class='op'>{</span><span class='nam'>task_id</span><span class='op'>:</span> <span class='nam'>dest</span><span class='op'>}</span><span class='op'>,</span> <span class='op'>**</span><span class='nam'>kwargs</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t313' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t314' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t315' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>move_by_idmap</span><span class='op'>(</span><span class='nam'>map</span><span class='op'>,</span> <span class='op'>**</span><span class='nam'>kwargs</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t316' class='pln'>&nbsp; &nbsp; <span class='str'>&quot;&quot;&quot;Moves tasks by matching from a ``task_id: queue`` mapping,</span><span class='strut'>&nbsp;</span></p>
+<p id='t317' class='pln'><span class='str'>&nbsp; &nbsp; where ``queue`` is a queue to move the task to.</span><span class='strut'>&nbsp;</span></p>
+<p id='t318' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t319' class='pln'><span class='str'>&nbsp; &nbsp; Example::</span><span class='strut'>&nbsp;</span></p>
+<p id='t320' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t321' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &gt;&gt;&gt; reroute_idmap({</span><span class='strut'>&nbsp;</span></p>
+<p id='t322' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; ...&nbsp; &nbsp;&nbsp; &#39;5bee6e82-f4ac-468e-bd3d-13e8600250bc&#39;: Queue(...),</span><span class='strut'>&nbsp;</span></p>
+<p id='t323' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; ...&nbsp; &nbsp;&nbsp; &#39;ada8652d-aef3-466b-abd2-becdaf1b82b3&#39;: Queue(...),</span><span class='strut'>&nbsp;</span></p>
+<p id='t324' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; ...&nbsp; &nbsp;&nbsp; &#39;3a2b140d-7db1-41ba-ac90-c36a0ef4ab1f&#39;: Queue(...)},</span><span class='strut'>&nbsp;</span></p>
+<p id='t325' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; ...&nbsp;&nbsp; queues=[&#39;hipri&#39;])</span><span class='strut'>&nbsp;</span></p>
+<p id='t326' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t327' class='pln'><span class='str'>&nbsp; &nbsp; &quot;&quot;&quot;</span><span class='strut'>&nbsp;</span></p>
+<p id='t328' class='stm mis'>&nbsp; &nbsp; <span class='key'>def</span> <span class='nam'>task_id_in_map</span><span class='op'>(</span><span class='nam'>body</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t329' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>map</span><span class='op'>.</span><span class='nam'>get</span><span class='op'>(</span><span class='nam'>body</span><span class='op'>[</span><span class='str'>&#39;id&#39;</span><span class='op'>]</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t330' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t331' class='pln'>&nbsp; &nbsp; <span class='com'># adding the limit means that we don&#39;t have to consume any more</span><span class='strut'>&nbsp;</span></p>
+<p id='t332' class='pln'>&nbsp; &nbsp; <span class='com'># when we&#39;ve found everything.</span><span class='strut'>&nbsp;</span></p>
+<p id='t333' class='stm mis'>&nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>move</span><span class='op'>(</span><span class='nam'>task_id_in_map</span><span class='op'>,</span> <span class='nam'>limit</span><span class='op'>=</span><span class='nam'>len</span><span class='op'>(</span><span class='nam'>map</span><span class='op'>)</span><span class='op'>,</span> <span class='op'>**</span><span class='nam'>kwargs</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t334' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t335' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t336' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>move_by_taskmap</span><span class='op'>(</span><span class='nam'>map</span><span class='op'>,</span> <span class='op'>**</span><span class='nam'>kwargs</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t337' class='pln'>&nbsp; &nbsp; <span class='str'>&quot;&quot;&quot;Moves tasks by matching from a ``task_name: queue`` mapping,</span><span class='strut'>&nbsp;</span></p>
+<p id='t338' class='pln'><span class='str'>&nbsp; &nbsp; where ``queue`` is the queue to move the task to.</span><span class='strut'>&nbsp;</span></p>
+<p id='t339' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t340' class='pln'><span class='str'>&nbsp; &nbsp; Example::</span><span class='strut'>&nbsp;</span></p>
+<p id='t341' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t342' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; &gt;&gt;&gt; reroute_idmap({</span><span class='strut'>&nbsp;</span></p>
+<p id='t343' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; ...&nbsp; &nbsp;&nbsp; &#39;tasks.add&#39;: Queue(...),</span><span class='strut'>&nbsp;</span></p>
+<p id='t344' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; ...&nbsp; &nbsp;&nbsp; &#39;tasks.mul&#39;: Queue(...),</span><span class='strut'>&nbsp;</span></p>
+<p id='t345' class='pln'><span class='str'>&nbsp; &nbsp; &nbsp; &nbsp; ... })</span><span class='strut'>&nbsp;</span></p>
+<p id='t346' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t347' class='pln'><span class='str'>&nbsp; &nbsp; &quot;&quot;&quot;</span><span class='strut'>&nbsp;</span></p>
+<p id='t348' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t349' class='stm mis'>&nbsp; &nbsp; <span class='key'>def</span> <span class='nam'>task_name_in_map</span><span class='op'>(</span><span class='nam'>body</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t350' class='stm mis'>&nbsp; &nbsp; &nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>map</span><span class='op'>.</span><span class='nam'>get</span><span class='op'>(</span><span class='nam'>body</span><span class='op'>[</span><span class='str'>&#39;task&#39;</span><span class='op'>]</span><span class='op'>)</span>&nbsp; <span class='com'># &lt;- name of task</span><span class='strut'>&nbsp;</span></p>
+<p id='t351' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t352' class='stm mis'>&nbsp; &nbsp; <span class='key'>return</span> <span class='nam'>move</span><span class='op'>(</span><span class='nam'>task_name_in_map</span><span class='op'>,</span> <span class='op'>**</span><span class='nam'>kwargs</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t353' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t354' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t355' class='stm run hide_run'><span class='key'>def</span> <span class='nam'>filter_status</span><span class='op'>(</span><span class='nam'>state</span><span class='op'>,</span> <span class='nam'>body</span><span class='op'>,</span> <span class='nam'>message</span><span class='op'>,</span> <span class='op'>**</span><span class='nam'>kwargs</span><span class='op'>)</span><span class='op'>:</span><span class='strut'>&nbsp;</span></p>
+<p id='t356' class='stm mis'>&nbsp; &nbsp; <span class='key'>print</span><span class='op'>(</span><span class='nam'>MOVING_PROGRESS_FMT</span><span class='op'>.</span><span class='nam'>format</span><span class='op'>(</span><span class='nam'>state</span><span class='op'>=</span><span class='nam'>state</span><span class='op'>,</span> <span class='nam'>body</span><span class='op'>=</span><span class='nam'>body</span><span class='op'>,</span> <span class='op'>**</span><span class='nam'>kwargs</span><span class='op'>)</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t357' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t358' class='pln'><span class='strut'>&nbsp;</span></p>
+<p id='t359' class='stm run hide_run'><span class='nam'>move_direct</span> <span class='op'>=</span> <span class='nam'>partial</span><span class='op'>(</span><span class='nam'>move</span><span class='op'>,</span> <span class='nam'>transform</span><span class='op'>=</span><span class='nam'>worker_direct</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t360' class='stm run hide_run'><span class='nam'>move_direct_by_id</span> <span class='op'>=</span> <span class='nam'>partial</span><span class='op'>(</span><span class='nam'>move_task_by_id</span><span class='op'>,</span> <span class='nam'>transform</span><span class='op'>=</span><span class='nam'>worker_direct</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t361' class='stm run hide_run'><span class='nam'>move_direct_by_idmap</span> <span class='op'>=</span> <span class='nam'>partial</span><span class='op'>(</span><span class='nam'>move_by_idmap</span><span class='op'>,</span> <span class='nam'>transform</span><span class='op'>=</span><span class='nam'>worker_direct</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+<p id='t362' class='stm run hide_run'><span class='nam'>move_direct_by_taskmap</span> <span class='op'>=</span> <span class='nam'>partial</span><span class='op'>(</span><span class='nam'>move_by_taskmap</span><span class='op'>,</span> <span class='nam'>transform</span><span class='op'>=</span><span class='nam'>worker_direct</span><span class='op'>)</span><span class='strut'>&nbsp;</span></p>
+                
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div id='footer'>
+    <div class='content'>
+        <p>
+            <a class='nav' href='index.html'>&#xab; index</a> &nbsp; &nbsp; <a class='nav' href='http://nedbatchelder.com/code/coverage'>coverage.py v3.6</a>
+        </p>
+    </div>
+</div>
+
+</body>
+</html>

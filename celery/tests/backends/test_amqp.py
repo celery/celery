@@ -3,7 +3,9 @@ from __future__ import absolute_import
 import pickle
 import socket
 
+from contextlib import contextmanager
 from datetime import timedelta
+from pickle import dumps, loads
 
 from mock import patch
 
@@ -42,6 +44,9 @@ class test_AMQPBackend(AppCase):
         self.assertEqual(tb2.get_result(tid), 42)
         self.assertTrue(tb2._cache.get(tid))
         self.assertTrue(tb2.get_result(tid), 42)
+
+    def test_pickleable(self):
+        self.assertTrue(loads(dumps(self.create_backend())))
 
     def test_revive(self):
         tb = self.create_backend()
@@ -123,8 +128,8 @@ class test_AMQPBackend(AppCase):
         b = self.create_backend()
         self.assertState(b.get_task_meta(uuid()), states.PENDING)
 
-    def test_poll_result(self):
-
+    @contextmanager
+    def _result_context(self):
         results = Queue()
 
         class Message(object):
@@ -170,33 +175,45 @@ class test_AMQPBackend(AppCase):
         backend = MockBackend()
         backend._republish = Mock()
 
-        # FFWD's to the latest state.
-        state_messages = [
-            Message(status=states.RECEIVED, seq=1),
-            Message(status=states.STARTED, seq=2),
-            Message(status=states.FAILURE, seq=3),
-        ]
-        for state_message in state_messages:
-            results.put(state_message)
-        r1 = backend.get_task_meta(uuid())
-        self.assertDictContainsSubset({'status': states.FAILURE,
-                                       'seq': 3}, r1,
-                                      'FFWDs to the last state')
+        yield results, backend, Message
 
-        # Caches last known state.
-        results.put(Message())
-        tid = uuid()
-        backend.get_task_meta(tid)
-        self.assertIn(tid, backend._cache, 'Caches last known state')
+    def test_backlog_limit_exceeded(self):
+        with self._result_context() as (results, backend, Message):
+            for i in range(1001):
+                results.put(Message(status=states.RECEIVED))
+            with self.assertRaises(backend.BacklogLimitExceeded):
+                backend.get_task_meta('id')
 
-        self.assertTrue(state_messages[-1].requeued)
+    def test_poll_result(self):
+        with self._result_context() as (results, backend, Message):
+            # FFWD's to the latest state.
+            state_messages = [
+                Message(status=states.RECEIVED, seq=1),
+                Message(status=states.STARTED, seq=2),
+                Message(status=states.FAILURE, seq=3),
+            ]
+            for state_message in state_messages:
+                results.put(state_message)
+            r1 = backend.get_task_meta(uuid())
+            self.assertDictContainsSubset(
+                {'status': states.FAILURE, 'seq': 3}, r1,
+                'FFWDs to the last state',
+            )
 
-        # Returns cache if no new states.
-        results.queue.clear()
-        assert not results.qsize()
-        backend._cache[tid] = 'hello'
-        self.assertEqual(backend.get_task_meta(tid), 'hello',
-                         'Returns cache if no new states')
+            # Caches last known state.
+            results.put(Message())
+            tid = uuid()
+            backend.get_task_meta(tid)
+            self.assertIn(tid, backend._cache, 'Caches last known state')
+
+            self.assertTrue(state_messages[-1].requeued)
+
+            # Returns cache if no new states.
+            results.queue.clear()
+            assert not results.qsize()
+            backend._cache[tid] = 'hello'
+            self.assertEqual(backend.get_task_meta(tid), 'hello',
+                            'Returns cache if no new states')
 
     def test_wait_for(self):
         b = self.create_backend()
@@ -219,6 +236,10 @@ class test_AMQPBackend(AppCase):
         b.store_result(tid, KeyError('foo'), states.FAILURE)
         with self.assertRaises(KeyError):
             b.wait_for(tid, timeout=1, cache=False)
+        self.assertTrue(b.wait_for(tid, timeout=1, propagate=False))
+        b.store_result(tid, KeyError('foo'), states.PENDING)
+        with self.assertRaises(TimeoutError):
+            b.wait_for(tid, timeout=0.01, cache=False)
 
     def test_drain_events_remaining_timeouts(self):
 
@@ -254,11 +275,19 @@ class test_AMQPBackend(AppCase):
         self.assertDictEqual(b._cache[res[0][0]], res[0][1])
         cached_res = list(b.get_many(tids, timeout=1))
         self.assertEqual(sorted(cached_res), sorted(expected_results))
+
+        # times out when not ready in cache (this shouldn't happen)
         b._cache[res[0][0]]['status'] = states.RETRY
         with self.assertRaises(socket.timeout):
             list(b.get_many(tids, timeout=0.01))
 
-    def test_test_get_many_raises_outer_block(self):
+        # times out when result not yet ready
+        with self.assertRaises(socket.timeout):
+            tids = [uuid()]
+            b.store_result(tids[0], i, states.PENDING)
+            list(b.get_many(tids, timeout=0.01))
+
+    def test_get_many_raises_outer_block(self):
 
         class Backend(AMQPBackend):
 
@@ -269,12 +298,23 @@ class test_AMQPBackend(AppCase):
         with self.assertRaises(KeyError):
             next(b.get_many(['id1']))
 
-    def test_test_get_many_raises_inner_block(self):
+    def test_get_many_raises_inner_block(self):
         with patch('kombu.connection.Connection.drain_events') as drain:
             drain.side_effect = KeyError('foo')
             b = AMQPBackend()
             with self.assertRaises(KeyError):
                 next(b.get_many(['id1']))
+
+    def test_consume_raises_inner_block(self):
+        with patch('kombu.connection.Connection.drain_events') as drain:
+
+            def se(*args, **kwargs):
+                drain.side_effect = ValueError()
+                raise KeyError('foo')
+            drain.side_effect = se
+            b = AMQPBackend()
+            with self.assertRaises(ValueError):
+                next(b.consume('id1'))
 
     def test_no_expires(self):
         b = self.create_backend(expires=None)

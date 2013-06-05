@@ -17,7 +17,7 @@ from celery.result import AsyncResult
 from celery.task import subtask
 from celery.utils import uuid
 
-from celery.tests.utils import Case, mask_modules, reset_modules
+from celery.tests.utils import AppCase, mask_modules, reset_modules
 
 
 class SomeClass(object):
@@ -26,11 +26,21 @@ class SomeClass(object):
         self.data = data
 
 
-class test_CacheBackend(Case):
+class test_CacheBackend(AppCase):
 
-    def setUp(self):
-        self.tb = CacheBackend(backend='memory://')
+    def setup(self):
+        self.tb = CacheBackend(backend='memory://', app=self.app)
         self.tid = uuid()
+
+    def test_no_backend(self):
+        prev, self.app.conf.CELERY_CACHE_BACKEND = (
+            self.app.conf.CELERY_CACHE_BACKEND, None,
+        )
+        try:
+            with self.assertRaises(ImproperlyConfigured):
+                tb = CacheBackend(backend=None, app=self.app)
+        finally:
+            self.app.conf.CELERY_CACHE_BACKEND = prev
 
     def test_mark_as_done(self):
         self.assertEqual(self.tb.get_status(self.tid), states.PENDING)
@@ -157,7 +167,7 @@ class MockCacheMixin(object):
                 sys.modules['pylibmc'] = prev
 
 
-class test_get_best_memcache(Case, MockCacheMixin):
+class test_get_best_memcache(AppCase, MockCacheMixin):
 
     def test_pylibmc(self):
         with self.mock_pylibmc():
@@ -199,7 +209,7 @@ class test_get_best_memcache(Case, MockCacheMixin):
             self.assertTrue(fun())
 
 
-class test_memcache_key(Case, MockCacheMixin):
+class test_memcache_key(AppCase, MockCacheMixin):
 
     def test_memcache_unicode_key(self):
         with self.mock_memcache():
