@@ -212,8 +212,10 @@ class test_AMQPBackend(AppCase):
             results.queue.clear()
             assert not results.qsize()
             backend._cache[tid] = 'hello'
-            self.assertEqual(backend.get_task_meta(tid), 'hello',
-                            'Returns cache if no new states')
+            self.assertEqual(
+                backend.get_task_meta(tid), 'hello',
+                'Returns cache if no new states',
+            )
 
     def test_wait_for(self):
         b = self.create_backend()

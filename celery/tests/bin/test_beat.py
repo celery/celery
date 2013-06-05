@@ -79,7 +79,6 @@ class test_Beat(AppCase):
         self.assertTrue(app.log.setup.called)
         self.assertEqual(app.log.setup.call_args[1]['colorize'], False)
 
-
     def test_init_loader(self):
         b = beatapp.Beat()
         b.init_loader()

@@ -38,7 +38,7 @@ class test_CacheBackend(AppCase):
         )
         try:
             with self.assertRaises(ImproperlyConfigured):
-                tb = CacheBackend(backend=None, app=self.app)
+                CacheBackend(backend=None, app=self.app)
         finally:
             self.app.conf.CELERY_CACHE_BACKEND = prev
 

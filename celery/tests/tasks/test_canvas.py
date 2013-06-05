@@ -163,7 +163,7 @@ class test_xmap_xstarmap(AppCase):
 
             s.apply_async(foo=1)
             s.type.apply_async.assert_called_with(
-                    (), {'task': add.s(), 'it': args}, foo=1,
+                (), {'task': add.s(), 'it': args}, foo=1,
             )
 
             self.assertEqual(type.from_dict(dict(s)), s)

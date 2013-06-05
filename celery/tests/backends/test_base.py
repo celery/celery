@@ -7,8 +7,6 @@ from contextlib import contextmanager
 from mock import Mock, patch
 from nose import SkipTest
 
-from billiard.einfo import Traceback
-
 from celery import current_app
 from celery.exceptions import ChordError
 from celery.five import items, range

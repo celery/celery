@@ -222,7 +222,6 @@ class test_result(AppCase):
                 self.assertIn(str(tb), out.getvalue())
 
 
-
 class test_status(AppCase):
 
     @patch('celery.bin.celery.inspect')
@@ -401,7 +400,6 @@ class test_main(AppCase):
         command = Command.return_value = Mock()
         mainfun()
         command.execute_from_commandline.assert_called_with(None)
-
 
     @patch('celery.bin.celery.CeleryCommand')
     def test_main_KeyboardInterrupt(self, Command):

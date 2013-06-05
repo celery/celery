@@ -121,7 +121,7 @@ class test_ConsumerStep(AppCase):
 
     def test_start_stop_shutdown(self):
         consumer = Mock()
-        conn = self.connection = Mock()
+        self.connection = Mock()
 
         class Step(bootsteps.ConsumerStep):
 
@@ -149,8 +149,6 @@ class test_ConsumerStep(AppCase):
 
         step = Step(self)
         step.start(self)
-
-
 
 
 class test_StartStopStep(Case):

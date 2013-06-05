@@ -330,4 +330,3 @@ class test_TaskPool(PoolCase):
         tp.restart()
         time.sleep(0.5)
         self.assertEqual(pids, get_pids(tp))
-
