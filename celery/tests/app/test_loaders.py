@@ -7,7 +7,6 @@ import warnings
 from mock import Mock, patch
 
 from celery import loaders
-from celery.app import app_or_default
 from celery.exceptions import (
     NotConfigured,
     CPendingDeprecationWarning,
@@ -47,7 +46,7 @@ class test_loaders(AppCase):
             self.assertIs(loaders.load_settings(), self.app.conf)
 
 
-class test_LoaderBase(Case):
+class test_LoaderBase(AppCase):
     message_options = {'subject': 'Subject',
                        'body': 'Body',
                        'sender': 'x@x.com',
@@ -58,9 +57,8 @@ class test_LoaderBase(Case):
                       'password': 'qwerty',
                       'timeout': 3}
 
-    def setUp(self):
-        self.loader = DummyLoader()
-        self.app = app_or_default()
+    def setup(self):
+        self.loader = DummyLoader(app=self.app)
 
     def test_handlers_pass(self):
         self.loader.on_task_init('foo.task', 'feedface-cafebabe')
@@ -222,10 +220,9 @@ class test_DefaultLoader(Case):
         self.assertTrue(context_executed[0])
 
 
-class test_AppLoader(Case):
+class test_AppLoader(AppCase):
 
-    def setUp(self):
-        self.app = app_or_default()
+    def setup(self):
         self.loader = AppLoader(app=self.app)
 
     def test_on_worker_init(self):

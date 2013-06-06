@@ -2,93 +2,97 @@ from __future__ import absolute_import
 
 from mock import Mock, patch
 
-from celery import current_app as app, group, task, chord
+from celery import group, shared_task, chord
 from celery.app import builtins
 from celery.canvas import Signature
 from celery.five import range
 from celery._state import _task_stack
-from celery.tests.utils import Case
+from celery.tests.utils import AppCase
 
 
-@task()
+@shared_task()
 def add(x, y):
     return x + y
 
 
-@task()
+@shared_task()
 def xsum(x):
     return sum(x)
 
 
-class test_backend_cleanup(Case):
+class test_backend_cleanup(AppCase):
 
     def test_run(self):
-        prev = app.backend
-        app.backend.cleanup = Mock()
-        app.backend.cleanup.__name__ = 'cleanup'
+        prev = self.app.backend
+        self.app.backend.cleanup = Mock()
+        self.app.backend.cleanup.__name__ = 'cleanup'
         try:
-            cleanup_task = builtins.add_backend_cleanup_task(app)
+            cleanup_task = builtins.add_backend_cleanup_task(self.app)
             cleanup_task()
-            self.assertTrue(app.backend.cleanup.called)
+            self.assertTrue(self.app.backend.cleanup.called)
         finally:
-            app.backend = prev
+            self.app.backend = prev
 
 
-class test_map(Case):
+class test_map(AppCase):
 
     def test_run(self):
 
-        @app.task()
+        @self.app.task()
         def map_mul(x):
             return x[0] * x[1]
 
-        res = app.tasks['celery.map'](map_mul, [(2, 2), (4, 4), (8, 8)])
+        res = self.app.tasks['celery.map'](
+            map_mul, [(2, 2), (4, 4), (8, 8)],
+        )
         self.assertEqual(res, [4, 16, 64])
 
 
-class test_starmap(Case):
+class test_starmap(AppCase):
 
     def test_run(self):
 
-        @app.task()
+        @self.app.task()
         def smap_mul(x, y):
             return x * y
 
-        res = app.tasks['celery.starmap'](smap_mul, [(2, 2), (4, 4), (8, 8)])
+        res = self.app.tasks['celery.starmap'](
+            smap_mul, [(2, 2), (4, 4), (8, 8)],
+        )
         self.assertEqual(res, [4, 16, 64])
 
 
-class test_chunks(Case):
+class test_chunks(AppCase):
 
     @patch('celery.canvas.chunks.apply_chunks')
     def test_run(self, apply_chunks):
 
-        @app.task()
+        @self.app.task()
         def chunks_mul(l):
             return l
 
-        app.tasks['celery.chunks'](
+        self.app.tasks['celery.chunks'](
             chunks_mul, [(2, 2), (4, 4), (8, 8)], 1,
         )
         self.assertTrue(apply_chunks.called)
 
 
-class test_group(Case):
+class test_group(AppCase):
 
-    def setUp(self):
-        self.prev = app.tasks.get('celery.group')
-        self.task = builtins.add_group_task(app)()
+    def setup(self):
+        self.prev = self.app.tasks.get('celery.group')
+        self.task = builtins.add_group_task(self.app)()
 
-    def tearDown(self):
-        app.tasks['celery.group'] = self.prev
+    def teardown(self):
+        self.app.tasks['celery.group'] = self.prev
 
     def test_apply_async_eager(self):
         self.task.apply = Mock()
-        app.conf.CELERY_ALWAYS_EAGER = True
+        self.app.conf.CELERY_ALWAYS_EAGER = True
         try:
             self.task.apply_async()
         finally:
-            app.conf.CELERY_ALWAYS_EAGER = False
+            self.app.conf.CELERY_ALWAYS_EAGER = False
         self.assertTrue(self.task.apply.called)
 
     def test_apply(self):
@@ -125,14 +129,14 @@ class test_group(Case):
             _task_stack.pop()
 
 
-class test_chain(Case):
+class test_chain(AppCase):
 
-    def setUp(self):
-        self.prev = app.tasks.get('celery.chain')
-        self.task = builtins.add_chain_task(app)()
+    def setup(self):
+        self.prev = self.app.tasks.get('celery.chain')
+        self.task = builtins.add_chain_task(self.app)()
 
-    def tearDown(self):
-        app.tasks['celery.chain'] = self.prev
+    def teardown(self):
+        self.app.tasks['celery.chain'] = self.prev
 
     def test_apply_async(self):
         c = add.s(2, 2) | add.s(4) | add.s(8)
@@ -185,14 +189,14 @@ class test_chain(Case):
             self.assertListEqual(task.options['link_error'], [s('error')])
 
 
-class test_chord(Case):
+class test_chord(AppCase):
 
-    def setUp(self):
-        self.prev = app.tasks.get('celery.chord')
-        self.task = builtins.add_chord_task(app)()
+    def setup(self):
+        self.prev = self.app.tasks.get('celery.chord')
+        self.task = builtins.add_chord_task(self.app)()
 
-    def tearDown(self):
-        app.tasks['celery.chord'] = self.prev
+    def teardown(self):
+        self.app.tasks['celery.chord'] = self.prev
 
     def test_apply_async(self):
         x = chord([add.s(i, i) for i in range(10)], body=xsum.s())
@@ -213,11 +217,10 @@ class test_chord(Case):
         self.assertEqual(body.options['chord'], 'some_chord_id')
 
     def test_apply_eager(self):
-        app.conf.CELERY_ALWAYS_EAGER = True
+        self.app.conf.CELERY_ALWAYS_EAGER = True
         try:
             x = chord([add.s(i, i) for i in range(10)], body=xsum.s())
             r = x.apply_async()
             self.assertEqual(r.get(), 90)
-
         finally:
-            app.conf.CELERY_ALWAYS_EAGER = False
+            self.app.conf.CELERY_ALWAYS_EAGER = False

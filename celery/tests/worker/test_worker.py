@@ -14,7 +14,6 @@ from kombu.exceptions import StdChannelError
 from kombu.transport.base import Message
 from mock import call, Mock, patch
 
-from celery import current_app
 from celery.app.defaults import DEFAULTS
 from celery.bootsteps import RUN, CLOSE, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
@@ -233,13 +232,13 @@ class test_QoS(Case):
         qos.set(qos.prev)
 
 
-class test_Consumer(Case):
+class test_Consumer(AppCase):
 
-    def setUp(self):
+    def setup(self):
         self.buffer = FastQueue()
         self.timer = Timer()
 
-    def tearDown(self):
+    def teardown(self):
         self.timer.stop()
 
     def test_info(self):
@@ -432,7 +431,7 @@ class test_Consumer(Case):
 
     def test_loop_ignores_socket_timeout(self):
 
-        class Connection(current_app.connection().__class__):
+        class Connection(self.app.connection().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
@@ -448,7 +447,7 @@ class test_Consumer(Case):
 
     def test_loop_when_socket_error(self):
 
-        class Connection(current_app.connection().__class__):
+        class Connection(self.app.connection().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
@@ -470,7 +469,7 @@ class test_Consumer(Case):
 
     def test_loop(self):
 
-        class Connection(current_app.connection().__class__):
+        class Connection(self.app.connection().__class__):
             obj = None
 
             def drain_events(self, **kwargs):

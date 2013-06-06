@@ -7,7 +7,6 @@ import signal
 
 from mock import Mock, patch
 
-from celery import current_app
 from celery import platforms
 from celery.five import open_fqdn
 from celery.platforms import (
@@ -97,7 +96,7 @@ class test_Signals(Case):
         signals['INT'] = lambda *a: a
 
 
-if not current_app.IS_WINDOWS:
+if not platforms.IS_WINDOWS:
 
     class test_get_fdmax(Case):
 
