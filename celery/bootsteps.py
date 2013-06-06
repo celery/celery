@@ -208,9 +208,7 @@ class Blueprint(object):
         return self.steps[name]
 
     def _find_last(self):
-        for C in values(self.steps):
-            if C.last:
-                return C
+        return next((C for C in values(self.steps) if C.last), None)
 
     def _firstpass(self, steps):
         stream = deque(step.requires for step in values(steps))
@@ -312,7 +310,7 @@ class Step(object):
         pass
 
     def include_if(self, parent):
-        """An optional predicate that decided whether this
+        """An optional predicate that decides whether this
         step should be created."""
         return self.enabled
 

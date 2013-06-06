@@ -162,7 +162,7 @@ class ResultHandler(_pool.ResultHandler):
                 else:
                     ready, task = False, None
             except (IOError, EOFError) as exc:
-                debug('result handler got %r -- exiting' % (exc, ))
+                debug('result handler got %r -- exiting', exc)
                 raise CoroStop()
 
             if self._state:
@@ -646,12 +646,7 @@ class TaskPool(BasePool):
                     try:
                         # keep track of what process the write operation
                         # was scheduled for.
-                        job._scheduled_for = fileno_to_inq[ready_fd]
-                    except KeyError:
-                        # process gone since scheduled, put it back
-                        return put_message(job)
-                    try:
-                        proc = fileno_to_inq[ready_fd]
+                        proc = job._scheduled_for = fileno_to_inq[ready_fd]
                     except KeyError:
                         # write was scheduled for this fd but the process
                         # has since exited and the message must be sent to
