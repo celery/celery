@@ -1,6 +1,10 @@
 from __future__ import absolute_import
 
+from mock import Mock, patch
+from time import time
+
 from celery.datastructures import LimitedSet
+from celery.exceptions import SystemTerminate
 from celery.worker import state
 from celery.tests.utils import Case
 
@@ -47,6 +51,23 @@ class MyPersistent(state.Persistent):
     storage = MockShelve()
 
 
+class test_maybe_shutdown(Case):
+
+    def tearDown(self):
+        state.should_stop = False
+        state.should_terminate = False
+
+    def test_should_stop(self):
+        state.should_stop = True
+        with self.assertRaises(SystemExit):
+            state.maybe_shutdown()
+
+    def test_should_terminate(self):
+        state.should_terminate = True
+        with self.assertRaises(SystemTerminate):
+            state.maybe_shutdown()
+
+
 class test_Persistent(StateResetCase):
 
     def on_setup(self):
@@ -75,6 +96,25 @@ class test_Persistent(StateResetCase):
         self.p.merge(self.p.db)
         for item in data:
             self.assertIn(item, state.revoked)
+
+    def test_merge_dict(self):
+        self.p.clock = Mock()
+        self.p.clock.adjust.return_value = 626
+        d = {'revoked': {'abc': time()}, 'clock': 313}
+        self.p.merge(d)
+        self.p.clock.adjust.assert_called_with(313)
+        self.assertEqual(d['clock'], 626)
+        self.assertIn('abc', state.revoked)
+
+    def test_sync_clock_and_purge(self):
+        with patch('celery.worker.state.revoked') as revoked:
+            d = {'clock': 0}
+            self.p.clock = Mock()
+            self.p.clock.forward.return_value = 627
+            self.p.sync(d)
+            revoked.purge.assert_called_with()
+            self.assertEqual(d['clock'], 627)
+            self.assertIs(d['revoked'], revoked)
 
     def test_sync(self, data1=['foo', 'bar', 'baz'],
                   data2=['baz', 'ini', 'koz']):
