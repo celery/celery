@@ -232,10 +232,6 @@ class Hub(object):
         self.readers.pop(fd, None)
         self.writers.pop(fd, None)
 
-    def __enter__(self):
-        self.init()
-        return self
-
     def close(self, *args):
         [self._unregister(fd) for fd in self.readers]
         self.readers.clear()
@@ -243,7 +239,6 @@ class Hub(object):
         self.writers.clear()
         for callback in self.on_close:
             callback(self)
-    __exit__ = close
 
     def _repr_readers(self):
         return ['({0}){1}->{2}'.format(fd, _rcb(cb), repr_flag(READ | ERR))

@@ -22,7 +22,7 @@ from celery.worker.job import TaskRequest
 from celery.worker.state import revoked
 from celery.worker.control import Panel
 from celery.worker.pidbox import Pidbox, gPidbox
-from celery.tests.utils import AppCase, Case
+from celery.tests.utils import AppCase
 
 hostname = socket.gethostname()
 
@@ -60,14 +60,14 @@ class test_Pidbox(AppCase):
     def test_shutdown(self):
         with patch('celery.worker.pidbox.ignore_errors') as eig:
             parent = Mock()
-            pidbox = Pidbox(parent)
-            pidbox._close_channel = Mock()
-            self.assertIs(pidbox.c, parent)
-            pconsumer = pidbox.consumer = Mock()
+            pbox = Pidbox(parent)
+            pbox._close_channel = Mock()
+            self.assertIs(pbox.c, parent)
+            pconsumer = pbox.consumer = Mock()
             cancel = pconsumer.cancel
-            pidbox.shutdown(parent)
+            pbox.shutdown(parent)
             eig.assert_called_with(parent, cancel)
-            pidbox._close_channel.assert_called_with(parent)
+            pbox._close_channel.assert_called_with(parent)
 
 
 class test_Pidbox_green(AppCase):

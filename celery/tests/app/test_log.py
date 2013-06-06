@@ -22,7 +22,6 @@ from celery.tests.utils import (
 )
 
 
-
 class test_TaskFormatter(Case):
 
     def test_no_task(self):

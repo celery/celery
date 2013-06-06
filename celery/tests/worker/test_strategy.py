@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 from collections import defaultdict
 from contextlib import contextmanager
-from datetime import timedelta
 from mock import Mock, patch
 
 from kombu.utils.limits import TokenBucket
@@ -11,28 +10,7 @@ from celery import Celery
 from celery.worker import state
 from celery.utils.timeutils import rate
 
-from celery.tests.utils import AppCase
-
-
-def body_from_sig(app, sig, utc=True):
-    sig._freeze()
-    callbacks = sig.options.pop('link', None)
-    errbacks = sig.options.pop('link_error', None)
-    countdown = sig.options.pop('countdown', None)
-    if countdown:
-        sig.options['eta'] = app.now() + timedelta(seconds=countdown)
-    eta = sig.options.pop('eta', None)
-    eta = eta.isoformat() if eta else None
-    return {
-        'task': sig.task,
-        'id': sig.id,
-        'args': sig.args,
-        'kwargs': sig.kwargs,
-        'callbacks': [dict(s) for s in callbacks] if callbacks else None,
-        'errbacks': [dict(s) for s in errbacks] if errbacks else None,
-        'eta': eta,
-        'utc': utc,
-    }
+from celery.tests.utils import AppCase, body_from_sig
 
 
 class test_default_strategy(AppCase):

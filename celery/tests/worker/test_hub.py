@@ -246,7 +246,8 @@ class test_Hub(Case):
         on_close = Mock()
         hub.on_close.append(on_close)
 
-        with hub:
+        hub.init()
+        try:
             hub.init.assert_called_with()
 
             read_A = Mock()
@@ -257,6 +258,8 @@ class test_Hub(Case):
             hub.update_writers({20: write_A, File(21): write_B})
             self.assertTrue(hub.readers)
             self.assertTrue(hub.writers)
+        finally:
+            hub.close()
         self.assertFalse(hub.readers)
         self.assertFalse(hub.writers)
 

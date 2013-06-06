@@ -18,6 +18,7 @@ import time
 import warnings
 
 from contextlib import contextmanager
+from datetime import timedelta
 from functools import partial, wraps
 from types import ModuleType
 
@@ -588,3 +589,24 @@ def skip_if_jython(fun):
             raise SkipTest('does not work on Jython')
         return fun(*args, **kwargs)
     return _inner
+
+
+def body_from_sig(app, sig, utc=True):
+    sig._freeze()
+    callbacks = sig.options.pop('link', None)
+    errbacks = sig.options.pop('link_error', None)
+    countdown = sig.options.pop('countdown', None)
+    if countdown:
+        sig.options['eta'] = app.now() + timedelta(seconds=countdown)
+    eta = sig.options.pop('eta', None)
+    eta = eta.isoformat() if eta else None
+    return {
+        'task': sig.task,
+        'id': sig.id,
+        'args': sig.args,
+        'kwargs': sig.kwargs,
+        'callbacks': [dict(s) for s in callbacks] if callbacks else None,
+        'errbacks': [dict(s) for s in errbacks] if errbacks else None,
+        'eta': eta,
+        'utc': utc,
+    }

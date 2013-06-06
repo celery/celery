@@ -206,7 +206,7 @@ class test_AsynPool(PoolCase):
 
     def test_promise(self):
         fun = Mock()
-        x = mp.promise(fun, 1, foo=1)
+        x = mp.promise(fun, (1, ), {'foo': 1})
         x()
         self.assertTrue(x.ready)
         fun.assert_called_with(1, foo=1)
