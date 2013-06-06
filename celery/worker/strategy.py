@@ -76,6 +76,7 @@ def default(task, app, consumer,
                     eta, apply_eta_task, (req, ), priority=6,
                 )
         else:
+            print('BUCKET: %r' % (bucket, ))
             if rate_limits_enabled:
                 if bucket:
                     return limit_task(req, bucket, 1)

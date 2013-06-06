@@ -566,7 +566,7 @@ class LimitedSet(object):
         self._data.clear()
         self._heap[:] = []
 
-    def pop_value(self, value):
+    def discard(self, value):
         """Remove membership by finding value."""
         try:
             itime = self._data[value]
@@ -577,6 +577,7 @@ class LimitedSet(object):
         except ValueError:
             pass
         self._data.pop(value, None)
+    pop_value = discard  # XXX compat
 
     def _expire_item(self):
         """Hunt down and remove an expired item."""

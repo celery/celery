@@ -364,8 +364,8 @@ class Task(object):
         """The body of the task executed by workers."""
         raise NotImplementedError('Tasks must define the run method.')
 
-    def start_strategy(self, app, consumer):
-        return instantiate(self.Strategy, self, app, consumer)
+    def start_strategy(self, app, consumer, **kwargs):
+        return instantiate(self.Strategy, self, app, consumer, **kwargs)
 
     def delay(self, *args, **kwargs):
         """Star argument version of :meth:`apply_async`.
