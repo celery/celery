@@ -14,7 +14,12 @@ from __future__ import absolute_import
 import operator
 import sys
 
-from functools import reduce
+# import fails in python 2.5. fallback to reduce in stdlib
+try:
+    from functools import reduce
+except ImportError:
+    pass
+
 from importlib import import_module
 from types import ModuleType
 
