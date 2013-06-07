@@ -293,10 +293,6 @@ class WorkController(object):
         return info
 
     @property
-    def _state(self):
-        return self.blueprint.state
-
-    @property
     def state(self):
         return state
 
