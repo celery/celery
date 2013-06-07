@@ -65,6 +65,7 @@ class test_WorkerComponent(AppCase):
         w.create_ev(parent)
         self.assertTrue(hub.on_init)
 
+
 class test_Autoscaler(AppCase):
 
     def setup(self):

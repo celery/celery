@@ -13,6 +13,7 @@ from __future__ import absolute_import
 import errno
 import kombu
 import logging
+import os
 import socket
 
 from collections import defaultdict
@@ -161,6 +162,7 @@ class Consumer(object):
         self.controller = controller
         self.init_callback = init_callback
         self.hostname = hostname or socket.gethostname()
+        self.pid = os.getpid()
         self.pool = pool
         self.timer = timer or default_timer
         self.strategies = {}
@@ -533,7 +535,7 @@ class Gossip(bootsteps.ConsumerStep):
     label = 'Gossip'
     requires = (Events, )
     _cons_stamp_fields = itemgetter(
-        'clock', 'hostname', 'pid', 'topic', 'action',
+        'id', 'clock', 'hostname', 'pid', 'topic', 'action', 'cver',
     )
 
     def __init__(self, c, enable_gossip=True, interval=5.0, **kwargs):
@@ -542,6 +544,7 @@ class Gossip(bootsteps.ConsumerStep):
         c.gossip = self
         self.Receiver = c.app.events.Receiver
         self.hostname = c.hostname
+        self.full_hostname = '.'.join([self.hostname, str(c.pid)])
 
         self.timer = c.timer
         self.state = c.app.events.State()
@@ -562,7 +565,10 @@ class Gossip(bootsteps.ConsumerStep):
 
     def election(self, id, topic, action=None):
         self.consensus_replies[id] = []
-        self.dispatcher.send('worker-elect', id=id, topic=topic, action=action)
+        self.dispatcher.send(
+            'worker-elect',
+            id=id, topic=topic, action=action, cver=1,
+        )
 
     def call_task(self, task):
         try:
@@ -572,13 +578,16 @@ class Gossip(bootsteps.ConsumerStep):
             error('Could not call task: %r', exc, exc_info=1)
 
     def on_elect(self, event):
-        id = event['id']
-        self.dispatcher.send('worker-elect-ack', id=id)
-        clock, hostname, pid, topic, action = self._cons_stamp_fields(event)
+        try:
+            (id_, clock, hostname, pid,
+             topic, action, _) = self._cons_stamp_fields(event)
+        except KeyError as exc:
+            return error('election request missing field %s', exc, exc_info=1)
         heappush(
-            self.consensus_requests[id],
+            self.consensus_requests[id_],
             (clock, '%s.%s' % (hostname, pid), topic, action),
         )
+        self.dispatcher.send('worker-elect-ack', id=id_)
 
     def start(self, c):
         super(Gossip, self).start(c)
@@ -589,15 +598,15 @@ class Gossip(bootsteps.ConsumerStep):
         try:
             replies = self.consensus_replies[id]
         except KeyError:
-            return
+            return  # not for us
         alive_workers = self.state.alive_workers()
         replies.append(event['hostname'])
 
         if len(replies) >= len(alive_workers):
-            _, leader, topic, action = self.lock.sort_heap(
+            _, leader, topic, action = self.clock.sort_heap(
                 self.consensus_requests[id],
             )
-            if leader == self.hostname:
+            if leader == self.full_hostname:
                 info('I won the election %r', id)
                 try:
                     handler = self.election_handlers[topic]
@@ -622,15 +631,18 @@ class Gossip(bootsteps.ConsumerStep):
     def register_timer(self):
         if self._tref is not None:
             self._tref.cancel()
-        self.timer.apply_interval(self.interval * 1000.0, self.periodic)
+        self._tref = self.timer.apply_interval(
+            self.interval * 1000.0, self.periodic,
+        )
 
     def periodic(self):
+        dirty = set()
         for worker in values(self.state.workers):
             if not worker.alive:
-                try:
-                    self.on_node_lost(worker)
-                finally:
-                    self.state.workers.pop(worker.hostname, None)
+                dirty.add(worker)
+                self.on_node_lost(worker)
+        for worker in dirty:
+            self.state.workers.pop(worker.hostname, None)
 
     def get_consumers(self, channel):
         self.register_timer()
