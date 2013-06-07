@@ -30,20 +30,11 @@ def repr_flag(flag):
 
 
 def _rcb(obj):
+    if obj is None:
+        return '<missing>'
     if isinstance(obj, str):
         return obj
     return obj.__name__
-
-
-def coroutine(gen):
-
-    @wraps(gen)
-    def advances(*args, **kwargs):
-        it = gen(*args, **kwargs)
-        next(it)
-        return it
-
-    return advances
 
 
 class BoundedSemaphore(object):
