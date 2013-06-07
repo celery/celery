@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import pytz
+
 from datetime import datetime, timedelta
 
 from celery.utils.timeutils import (
@@ -12,7 +14,23 @@ from celery.utils.timeutils import (
     rate,
     remaining,
 )
+from celery.utils.iso8601 import parse_iso8601
 from celery.tests.utils import Case
+
+
+class test_iso8601(Case):
+
+    def test_parse_with_timezone(self):
+        d = datetime.utcnow().replace(tzinfo=pytz.utc)
+        self.assertEqual(parse_iso8601(d.isoformat()), d)
+        # 2013-06-07T20:12:51.775877+00:00
+        iso = d.isoformat()
+        iso1 = iso.replace('+00:00', '-01:00')
+        d1 = parse_iso8601(iso1)
+        self.assertEqual(d1.tzinfo._minutes, -60)
+        iso2 = iso.replace('+00:00', '+01:00')
+        d2 = parse_iso8601(iso2)
+        self.assertEqual(d2.tzinfo._minutes, +60)
 
 
 class test_timeutils(Case):
