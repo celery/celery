@@ -18,7 +18,7 @@ import time
 import warnings
 
 from contextlib import contextmanager
-from datetime import timedelta
+from datetime import datetime, timedelta
 from functools import partial, wraps
 from types import ModuleType
 
@@ -597,9 +597,16 @@ def body_from_sig(app, sig, utc=True):
     errbacks = sig.options.pop('link_error', None)
     countdown = sig.options.pop('countdown', None)
     if countdown:
-        sig.options['eta'] = app.now() + timedelta(seconds=countdown)
-    eta = sig.options.pop('eta', None)
-    eta = eta.isoformat() if eta else None
+        eta = app.now() + timedelta(seconds=countdown)
+    else:
+        eta = sig.options.pop('eta', None)
+    if eta and isinstance(eta, datetime):
+        eta = eta.isoformat()
+    expires = sig.options.pop('expires', None)
+    if expires and isinstance(expires, int):
+        expires = app.now() + timedelta(seconds=expires)
+    if expires and isinstance(expires, datetime):
+        expires = expires.isoformat()
     return {
         'task': sig.task,
         'id': sig.id,
@@ -609,4 +616,5 @@ def body_from_sig(app, sig, utc=True):
         'errbacks': [dict(s) for s in errbacks] if errbacks else None,
         'eta': eta,
         'utc': utc,
+        'expires': expires,
     }
