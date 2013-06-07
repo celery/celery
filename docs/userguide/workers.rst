@@ -836,6 +836,6 @@ Here's an example control command that restarts the broker connection:
     from celery.worker.control import Panel
 
     @Panel.register
-    def reset_connection(panel):
-        panel.consumer.reset_connection()
+    def reset_connection(state):
+        state.consumer.reset_connection()
         return {'ok': 'connection reset'}

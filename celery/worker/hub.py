@@ -8,8 +8,6 @@
 """
 from __future__ import absolute_import
 
-from functools import wraps
-
 from kombu.utils import cached_property
 from kombu.utils import eventio
 from kombu.utils.eventio import READ, WRITE, ERR

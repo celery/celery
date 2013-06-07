@@ -200,14 +200,23 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
     return term
 
 
-def jsonify(obj, builtin_types=(int, float, string_t)):
+def jsonify(obj,
+            builtin_types=(int, float, string_t), key=None,
+            keyfilter=None):
     """Transforms object making it suitable for json serialization"""
+    from kombu.abstract import Object as KombuDictType
+
+    if isinstance(obj, KombuDictType):
+        obj = obj.as_dict(recurse=True)
+
     if obj is None or isinstance(obj, builtin_types):
         return obj
     elif isinstance(obj, (tuple, list)):
         return [jsonify(v) for v in obj]
     elif isinstance(obj, dict):
-        return dict((k, jsonify(v)) for k, v in items(obj))
+        return dict((k, jsonify(v, key=k))
+                    for k, v in items(obj)
+                    if (keyfilter(k) if keyfilter else 1))
     elif isinstance(obj, datetime.datetime):
         # See "Date Time String Format" in the ECMA-262 specification.
         r = obj.isoformat()
@@ -226,7 +235,9 @@ def jsonify(obj, builtin_types=(int, float, string_t)):
     elif isinstance(obj, datetime.timedelta):
         return str(obj)
     else:
-        raise ValueError('Unsupported type: {0!r}'.format(type(obj)))
+        raise ValueError(
+            'Unsupported type: {0!r} {1!r} (parent: {2})'.format(
+                type(obj), obj, key))
 
 
 def gen_task_name(app, name, module_name):

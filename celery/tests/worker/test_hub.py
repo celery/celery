@@ -238,7 +238,7 @@ class test_Hub(Case):
         self.assertTrue(hub.repr_events([
             (6, READ),
             (7, ERR),
-            (8, READ|ERR),
+            (8, READ | ERR),
             (9, WRITE),
             (10, 13213),
         ]))

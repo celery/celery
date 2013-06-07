@@ -283,8 +283,8 @@ Remote control commands
         from celery.task.control import Panel
 
         @Panel.register
-        def reset_broker_connection(panel, **kwargs):
-            panel.consumer.reset_connection()
+        def reset_broker_connection(state, **kwargs):
+            state.consumer.reset_connection()
             return {"ok": "connection re-established"}
 
     With this module imported in the worker, you can launch the command

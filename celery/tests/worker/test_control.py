@@ -16,7 +16,7 @@ from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC
 from celery.worker import consumer
 from celery.worker import control
-from celery.worker import state
+from celery.worker import state as worker_state
 from celery.five import Queue as FastQueue
 from celery.worker.job import TaskRequest
 from celery.worker.state import revoked
@@ -36,7 +36,7 @@ class WorkController(object):
     autoscaler = None
 
     def stats(self):
-        return {'total': state.total_count}
+        return {'total': worker_state.total_count}
 
 
 class Consumer(consumer.Consumer):
@@ -152,6 +152,41 @@ class test_ControlPanel(AppCase):
         self.assertNotIn('task', evd.groups)
         self.assertIn('already disabled', panel.handle('disable_events')['ok'])
 
+    def test_clock(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        panel.state.app.clock.value = 313
+        x = panel.handle('clock')
+        self.assertEqual(x['clock'], 313)
+
+    def test_hello(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        panel.state.app.clock.value = 313
+        worker_state.revoked.add('revoked1')
+        try:
+            x = panel.handle('hello')
+            self.assertIn('revoked1', x['revoked'])
+            self.assertEqual(x['clock'], 314)  # incremented
+        finally:
+            worker_state.revoked.discard('revoked1')
+
+    def test_conf(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        self.app.conf.SOME_KEY6 = 'hello world'
+        x = panel.handle('dump_conf')
+        self.assertIn('SOME_KEY6', x)
+
+    def test_election(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        consumer.gossip = Mock()
+        panel.handle(
+            'election', {'id': 'id', 'topic': 'topic', 'action': 'action'},
+        )
+        consumer.gossip.election.assert_called_with('id', 'topic', 'action')
+
     def test_heartbeat(self):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
@@ -201,23 +236,23 @@ class test_ControlPanel(AppCase):
         self.assertIn('rate_limit=200', info)
 
     def test_stats(self):
-        prev_count, state.total_count = state.total_count, 100
+        prev_count, worker_state.total_count = worker_state.total_count, 100
         try:
             self.assertDictContainsSubset({'total': 100},
                                           self.panel.handle('stats'))
         finally:
-            state.total_count = prev_count
+            worker_state.total_count = prev_count
 
     def test_report(self):
         self.panel.handle('report')
 
     def test_active(self):
         r = TaskRequest(mytask.name, 'do re mi', (), {})
-        state.active_requests.add(r)
+        worker_state.active_requests.add(r)
         try:
             self.assertTrue(self.panel.handle('dump_active'))
         finally:
-            state.active_requests.discard(r)
+            worker_state.active_requests.discard(r)
 
     def test_pool_grow(self):
 
@@ -280,15 +315,15 @@ class test_ControlPanel(AppCase):
         self.assertIn('MyQueue', consumer.task_consumer.cancelled)
 
     def test_revoked(self):
-        state.revoked.clear()
-        state.revoked.add('a1')
-        state.revoked.add('a2')
+        worker_state.revoked.clear()
+        worker_state.revoked.add('a1')
+        worker_state.revoked.add('a2')
 
         try:
             self.assertEqual(sorted(self.panel.handle('dump_revoked')),
                              ['a1', 'a2'])
         finally:
-            state.revoked.clear()
+            worker_state.revoked.clear()
 
     def test_dump_schedule(self):
         consumer = Consumer(self.app)
@@ -298,12 +333,14 @@ class test_ControlPanel(AppCase):
         consumer.timer.schedule.enter(
             consumer.timer.Entry(lambda x: x, (r, )),
             datetime.now() + timedelta(seconds=10))
+        consumer.timer.schedule.enter(
+            consumer.timer.Entry(lambda x: x, (object(), )),
+            datetime.now() + timedelta(seconds=10))
         self.assertTrue(panel.handle('dump_schedule'))
 
     def test_dump_reserved(self):
-        from celery.worker import state
         consumer = Consumer(self.app)
-        state.reserved_requests.add(
+        worker_state.reserved_requests.add(
             TaskRequest(mytask.name, uuid(), args=(2, 2), kwargs={}),
         )
         try:
@@ -316,10 +353,10 @@ class test_ControlPanel(AppCase):
                  'hostname': socket.gethostname()},
                 response[0],
             )
-            state.reserved_requests.clear()
+            worker_state.reserved_requests.clear()
             self.assertFalse(panel.handle('dump_reserved'))
         finally:
-            state.reserved_requests.clear()
+            worker_state.reserved_requests.clear()
 
     def test_rate_limit_invalid_rate_limit_string(self):
         e = self.panel.handle('rate_limit', arguments=dict(
@@ -396,7 +433,7 @@ class test_ControlPanel(AppCase):
     def test_revoke_terminate(self):
         request = Mock()
         request.id = tid = uuid()
-        state.reserved_requests.add(request)
+        worker_state.reserved_requests.add(request)
         try:
             r = control.revoke(Mock(), tid, terminate=True)
             self.assertIn(tid, revoked)
@@ -406,7 +443,7 @@ class test_ControlPanel(AppCase):
             r = control.revoke(Mock(), uuid(), terminate=True)
             self.assertIn('not found', r['ok'])
         finally:
-            state.reserved_requests.discard(request)
+            worker_state.reserved_requests.discard(request)
 
     def test_autoscale(self):
         self.panel.state.consumer = Mock()
