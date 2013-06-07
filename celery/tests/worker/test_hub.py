@@ -225,7 +225,7 @@ class test_Hub(Case):
         hub = Hub()
         hub.readers = {1: Mock(), 2: Mock()}
         hub.writers = {3: Mock(), 4: Mock()}
-        for value in hub.readers.values() + hub.writers.values():
+        for value in list(hub.readers.values()) + list(hub.writers.values()):
             value.__name__ = 'mock'
         self.assertTrue(hub.repr_active())
 
@@ -233,7 +233,7 @@ class test_Hub(Case):
         hub = Hub()
         hub.readers = {6: Mock(), 7: Mock(), 8: Mock()}
         hub.writers = {9: Mock()}
-        for value in hub.readers.values() + hub.writers.values():
+        for value in list(hub.readers.values()) + list(hub.writers.values()):
             value.__name__ = 'mock'
         self.assertTrue(hub.repr_events([
             (6, READ),
