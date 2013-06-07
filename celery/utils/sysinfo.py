@@ -13,8 +13,8 @@ if hasattr(os, 'getloadavg'):
     def load_average():
         return tuple(ceil(l * 1e2) / 1e2 for l in os.getloadavg())
 
-else:  # Windows doesn't have getloadavg
-
+else:  # pragma: no cover
+    # Windows doesn't have getloadavg
     def load_average():  # noqa
         return (0.0, 0.0, 0.0)
 
