@@ -387,6 +387,26 @@ class Consumer(object):
             self.strategies[name] = task.start_strategy(self.app, self)
             task.__trace__ = build_tracer(name, task, loader, self.hostname)
 
+    def create_task_handler(self, strategies, callbacks,
+            on_unknown_message, on_unknown_task, on_invalid_task):
+
+        def on_task_received(body, message):
+            if callbacks:
+                [callback() for callback in callbacks]
+            try:
+                name = body['task']
+            except (KeyError, TypeError):
+                return on_unknown_message(body, message)
+
+            try:
+                strategies[name](message, body, message.ack_log_error)
+            except KeyError as exc:
+                on_unknown_task(body, message, exc)
+            except InvalidTaskError as exc:
+                on_invalid_task(body, message, exc)
+
+        return on_task_received
+
 
 class Connection(bootsteps.StartStopStep):
 

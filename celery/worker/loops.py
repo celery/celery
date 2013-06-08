@@ -51,20 +51,9 @@ def asynloop(obj, connection, consumer, strategies, blueprint, hub, qos,
     errors = connection.connection_errors
     hub_add, hub_remove = hub.add, hub.remove
 
-    def on_task_received(body, message):
-        if on_task_callbacks:
-            [callback() for callback in on_task_callbacks]
-        try:
-            name = body['task']
-        except (KeyError, TypeError):
-            return handle_unknown_message(body, message)
-
-        try:
-            strategies[name](message, body, message.ack_log_error)
-        except KeyError as exc:
-            handle_unknown_task(body, message, exc)
-        except InvalidTaskError as exc:
-            handle_invalid_task(body, message, exc)
+    on_task_received = obj.create_task_handler(
+        strategies, on_task_callbacks, handle_unknown_message,
+        handle_unknown_task, handle_invalid_task)
 
     if heartbeat and connection.supports_heartbeats:
         hub.timer.apply_interval(
@@ -160,19 +149,9 @@ def synloop(obj, connection, consumer, strategies, blueprint, hub, qos,
             handle_invalid_task, clock, hbrate=2.0, **kwargs):
     """Fallback blocking eventloop for transports that doesn't support AIO."""
 
-    def on_task_received(body, message):
-        try:
-            name = body['task']
-        except (KeyError, TypeError):
-            return handle_unknown_message(body, message)
-
-        try:
-            strategies[name](message, body, message.ack_log_error)
-        except KeyError as exc:
-            handle_unknown_task(body, message, exc)
-        except InvalidTaskError as exc:
-            handle_invalid_task(body, message, exc)
-
+    on_task_received = obj.create_task_handler(
+        strategies, [], handle_unknown_message,
+        handle_unknown_task, handle_invalid_task)
     consumer.register_callback(on_task_received)
     consumer.consume()
 

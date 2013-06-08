@@ -460,11 +460,11 @@ the error callbacks take the id of the parent task as argument instead:
 
     from __future__ import print_function
     import os
-    from proj.celery import celery
+    from proj.celery import app
 
-    @celery.task
+    @app.task
     def log_error(task_id):
-        result = celery.AsyncResult(task_id)
+        result = app.AsyncResult(task_id)
         result.get(propagate=False)  # make sure result written.
         with open(os.path.join('/var/errors', task_id), 'a') as fh:
             print('--\n\n{0} {1} {2}'.format(

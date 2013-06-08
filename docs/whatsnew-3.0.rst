@@ -673,14 +673,14 @@ The :option:`--app` option now 'auto-detects'
       and get the celery attribute from that module.
 
 E.g. if you have a project named 'proj' where the
-celery app is located in 'from proj.celery import celery',
+celery app is located in 'from proj.celery import app',
 then the following will be equivalent:
 
 .. code-block:: bash
 
         $ celery worker --app=proj
         $ celery worker --app=proj.celery:
-        $ celery worker --app=proj.celery:celery
+        $ celery worker --app=proj.celery:app
 
 In Other News
 -------------

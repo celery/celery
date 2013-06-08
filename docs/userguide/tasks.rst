@@ -51,7 +51,7 @@ the :meth:`~@Celery.task` decorator:
 
     from .models import User
 
-    @celery.task
+    @app.task
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
@@ -61,15 +61,15 @@ these can be specified as arguments to the decorator:
 
 .. code-block:: python
 
-    @celery.task(serializer='json')
+    @app.task(serializer='json')
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
 
 
-.. sidebar:: How do I import the task decorator?
+.. sidebar:: How do I import the task decorator? And what is "app"?
 
-    The task decorator is available on your :class:`@Celery` instance,
+    The task decorator is available on your :class:`@Celery` application instance,
     if you don't know what that is then please read :ref:`first-steps`.
 
     If you're using Django or are still using the "old" module based celery API,
@@ -90,7 +90,7 @@ these can be specified as arguments to the decorator:
 
     .. code-block:: python
 
-        @celery.task
+        @app.task
         @decorator2
         @decorator1
         def add(x, y):
@@ -108,7 +108,7 @@ For example:
 
 .. code-block:: python
 
-    >>> @celery.task(name='sum-of-two-numbers')
+    >>> @app.task(name='sum-of-two-numbers')
     >>> def add(x, y):
     ...     return x + y
 
@@ -121,7 +121,7 @@ defined in another module.
 
 .. code-block:: python
 
-    >>> @celery.task(name='tasks.add')
+    >>> @app.task(name='tasks.add')
     >>> def add(x, y):
     ...     return x + y
 
@@ -137,7 +137,7 @@ if the module name is "tasks.py":
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     def add(x, y):
         return x + y
 
@@ -245,7 +245,7 @@ An example task accessing information in the context is:
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     def dump_context(x, y):
         print('Executing task id {0.id}, args: {0.args!r} kwargs: {0.kwargs!r}'.format(
                 dump_context.request))
@@ -257,7 +257,7 @@ An example task accessing information in the context is:
 
     from celery import current_task
 
-    @celery.task
+    @app.task
     def dump_context(x, y):
         print('Executing task id {0.id}, args: {0.args!r} kwargs: {0.kwargs!r}'.format(
                 current_task.request))
@@ -283,7 +283,7 @@ for all of your tasks at the top of your module:
 
     logger = get_task_logger(__name__)
 
-    @celery.task
+    @app.task
     def add(x, y):
         logger.info('Adding {0} + {1}'.format(x, y))
         return x + y
@@ -316,7 +316,7 @@ Here's an example using ``retry``:
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     def send_twitter_status(oauth, tweet):
         try:
             twitter = Twitter(oauth)
@@ -376,7 +376,7 @@ override this default.
 
 .. code-block:: python
 
-    @celery.task(default_retry_delay=30 * 60)  # retry in 30 minutes.
+    @app.task(default_retry_delay=30 * 60)  # retry in 30 minutes.
     def add(x, y):
         try:
             ...
@@ -727,7 +727,7 @@ Use :meth:`~@Task.update_state` to update a task's state::
 
     from celery import current_task
 
-    @celery.task
+    @app.task
     def upload_files(filenames):
         for i, file in enumerate(filenames):
             current_task.update_state(state='PROGRESS',
@@ -809,7 +809,7 @@ As an example, the following code,
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     def add(x, y):
         return x + y
 
@@ -818,7 +818,7 @@ will do roughly this behind the scenes:
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     class AddTask(Task):
 
         def run(self, x, y):
@@ -879,7 +879,7 @@ that can be added to tasks like this:
 .. code-block:: python
 
 
-    @celery.task(base=DatabaseTask)
+    @app.task(base=DatabaseTask)
     def process_rows():
         for row in process_rows.db.table.all():
             ...
@@ -904,7 +904,7 @@ base class for new task types.
             print('Task returned: {0!r}'.format(self.request)
 
 
-    @celery.task(base=DebugTask)
+    @app.task(base=DebugTask)
     def add(x, y):
         return x + y
 
@@ -1038,7 +1038,7 @@ wastes time and resources.
 
 .. code-block:: python
 
-    @celery.task(ignore_result=True)
+    @app.task(ignore_result=True)
     def mytask(...)
         something()
 
@@ -1078,21 +1078,21 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     def update_page_info(url):
         page = fetch_page.delay(url).get()
         info = parse_page.delay(url, page).get()
         store_page_info.delay(url, info)
 
-    @celery.task
+    @app.task
     def fetch_page(url):
         return myhttplib.get(url)
 
-    @celery.task
+    @app.task
     def parse_page(url, page):
         return myparser.parse_document(page)
 
-    @celery.task
+    @app.task
     def store_page_info(url, info):
         return PageInfo.objects.create(url, info)
 
@@ -1106,15 +1106,15 @@ Make your design asynchronous instead, for example by using *callbacks*.
         chain = fetch_page.s() | parse_page.s() | store_page_info.s(url)
         chain()
 
-    @celery.task()
+    @app.task()
     def fetch_page(url):
         return myhttplib.get(url)
 
-    @celery.task()
+    @app.task()
     def parse_page(page):
         return myparser.parse_document(page)
 
-    @celery.task(ignore_result=True)
+    @app.task(ignore_result=True)
     def store_page_info(info, url):
         PageInfo.objects.create(url=url, info=info)
 
@@ -1209,7 +1209,7 @@ that automatically expands some abbreviations in it:
         title = models.CharField()
         body = models.TextField()
 
-    @celery.task
+    @app.task
     def expand_abbreviations(article):
         article.body.replace('MyCorp', 'My Corporation')
         article.save()
@@ -1230,7 +1230,7 @@ re-fetch the article in the task body:
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     def expand_abbreviations(article_id):
         article = Article.objects.get(id=article_id)
         article.body.replace('MyCorp', 'My Corporation')
@@ -1381,7 +1381,7 @@ blog/tasks.py
 
 .. code-block:: python
 
-    import celery
+    from celery import Celery
 
     from akismet import Akismet
 
@@ -1391,7 +1391,10 @@ blog/tasks.py
     from blog.models import Comment
 
 
-    @celery.task
+    app = Celery(broker='amqp://')
+
+
+    @app.task
     def spam_filter(comment_id, remote_addr=None):
         logger = spam_filter.get_logger()
         logger.info('Running spam filter for comment %s', comment_id)
