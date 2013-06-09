@@ -142,6 +142,8 @@ class AbortableTask(Task):
 
     """
 
+    abstract = True
+
     @classmethod
     def AsyncResult(cls, task_id):
         """Returns the accompanying AbortableAsyncResult instance."""
