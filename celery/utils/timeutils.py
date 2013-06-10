@@ -195,7 +195,7 @@ def remaining(start, ends_in, now=None, relative=False):
     if relative:
         end_date = delta_resolution(end_date, ends_in)
     ret = end_date - now
-    if C_REMDEBUG:
+    if C_REMDEBUG:  # pragma: no cover
         print('rem: NOW:%r START:%r ENDS_IN:%r END_DATE:%s REM:%s' % (
             now, start, ends_in, end_date, ret))
     return ret

@@ -1,8 +1,11 @@
 from __future__ import absolute_import
 
 import pytz
+import time
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, tzinfo
+from mock import Mock, patch
+from pytz import AmbiguousTimeError
 
 from celery.utils.timeutils import (
     delta_resolution,
@@ -13,9 +16,44 @@ from celery.utils.timeutils import (
     timezone,
     rate,
     remaining,
+    make_aware,
+    maybe_make_aware,
+    localize,
+    LocalTimezone,
+    ffwd,
+    utcoffset,
 )
 from celery.utils.iso8601 import parse_iso8601
 from celery.tests.utils import Case
+
+
+class test_LocalTimezone(Case):
+
+    def test_daylight(self):
+        with patch('celery.utils.timeutils._time') as time:
+            time.timezone = 3600
+            time.daylight = False
+            x = LocalTimezone()
+            self.assertEqual(x.STDOFFSET, timedelta(seconds=-3600))
+            self.assertEqual(x.DSTOFFSET, x.STDOFFSET)
+            time.daylight = True
+            time.altzone = 3600
+            y = LocalTimezone()
+            self.assertEqual(y.STDOFFSET, timedelta(seconds=-3600))
+            self.assertEqual(y.DSTOFFSET, timedelta(seconds=-3600))
+
+            self.assertTrue(repr(y))
+
+            y._isdst = Mock()
+            y._isdst.return_value = True
+            self.assertTrue(y.utcoffset(datetime.now()))
+            self.assertFalse(y.dst(datetime.now()))
+            y._isdst.return_value = False
+            self.assertTrue(y.utcoffset(datetime.now()))
+            self.assertFalse(y.dst(datetime.now()))
+
+            self.assertTrue(y.tzname(datetime.now()))
+
 
 
 class test_iso8601(Case):
@@ -97,6 +135,94 @@ class test_timezone(Case):
     def test_get_timezone_with_pytz(self):
         self.assertTrue(timezone.get_timezone('UTC'))
 
+    def test_tz_or_local(self):
+        self.assertEqual(timezone.tz_or_local(), timezone.local)
+        self.assertTrue(timezone.tz_or_local(timezone.utc))
+
+    def test_to_local(self):
+        self.assertTrue(
+            timezone.to_local(make_aware(datetime.utcnow(), timezone.utc)),
+        )
+        self.assertTrue(
+            timezone.to_local(datetime.utcnow())
+        )
+
+    def test_to_local_fallback(self):
+        self.assertTrue(
+            timezone.to_local_fallback(
+                make_aware(datetime.utcnow(), timezone.utc)),
+        )
+        self.assertTrue(
+            timezone.to_local_fallback(datetime.utcnow())
+        )
+
+
+class test_make_aware(Case):
+
+    def test_tz_without_localize(self):
+        tz = tzinfo()
+        self.assertFalse(hasattr(tz, 'localize'))
+        wtz = make_aware(datetime.utcnow(), tz)
+        self.assertEqual(wtz.tzinfo, tz)
+
+    def test_when_has_localize(self):
+        class tzz(tzinfo):
+            raises = False
+            def localize(self, dt, is_dst=None):
+                self.localized = True
+                if self.raises and is_dst is None:
+                    self.raised = True
+                    raise AmbiguousTimeError()
+
+        tz = tzz()
+        wtz = make_aware(datetime.utcnow(), tz)
+        self.assertTrue(tz.localized)
+
+        tz2 = tzz()
+        tz2.raises = True
+        wtz = make_aware(datetime.utcnow(), tz2)
+        self.assertTrue(tz2.localized)
+        self.assertTrue(tz2.raised)
+
+    def test_maybe_make_aware(self):
+        aware = datetime.utcnow().replace(tzinfo=timezone.utc)
+        self.assertTrue(maybe_make_aware(aware), timezone.utc)
+        naive = datetime.utcnow()
+        self.assertTrue(maybe_make_aware(naive))
+
+
+class test_localize(Case):
+
+    def test_tz_without_normalize(self):
+        tz = tzinfo()
+        self.assertFalse(hasattr(tz, 'normalize'))
+        self.assertTrue(localize(make_aware(datetime.utcnow(), tz), tz))
+
+    def test_when_has_nornalize(self):
+        class tzz(tzinfo):
+            raises = None
+            def normalize(self, dt, **kwargs):
+                self.normalized = True
+                if self.raises and kwargs and kwargs.get('is_dst') is None:
+                    self.raised = True
+                    raise self.raises
+
+        tz = tzz()
+        wtz = localize(make_aware(datetime.utcnow(), tz), tz)
+        self.assertTrue(tz.normalized)
+
+        tz2 = tzz()
+        tz2.raises = AmbiguousTimeError()
+        wtz = localize(make_aware(datetime.utcnow(), tz2), tz2)
+        self.assertTrue(tz2.normalized)
+        self.assertTrue(tz2.raised)
+
+        tz3 = tzz()
+        tz3.raises = TypeError()
+        wtz = localize(make_aware(datetime.utcnow(), tz3), tz3)
+        self.assertTrue(tz3.normalized)
+        self.assertTrue(tz3.raised)
+
 
 class test_rate_limit_string(Case):
 
@@ -112,3 +238,25 @@ class test_rate_limit_string(Case):
 
         for zero in (0, None, '0', '0/m', '0/h', '0/s', '0.0/s'):
             self.assertEqual(rate(zero), 0)
+
+
+class test_ffwd(Case):
+
+    def test_repr(self):
+        x = ffwd(year=2012)
+        self.assertTrue(repr(x))
+
+    def test_radd_with_unknown_gives_NotImplemented(self):
+        x = ffwd(year=2012)
+        with self.assertRaises(TypeError):
+            x.__radd__(object())
+
+
+class test_utcoffset(Case):
+
+    def test_utcoffset(self):
+        with patch('celery.utils.timeutils._time') as _time:
+            _time.daylight = True
+            self.assertIsNotNone(utcoffset())
+            _time.daylight = False
+            self.assertIsNotNone(utcoffset())

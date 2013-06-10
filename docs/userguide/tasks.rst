@@ -195,7 +195,7 @@ The request defines the following attributes:
 
 :id: The unique id of the executing task.
 
-:taskset: The unique id of the taskset this task is a member of (if any).
+:group: The unique id a group, if this task is a member.
 
 :chord: The unique id of the chord this task belongs to (if the task
         is part of the header).
@@ -292,9 +292,9 @@ Celery uses the standard Python logger library,
 for which documentation can be found in the :mod:`logging`
 module.
 
-You can also simply use :func:`print`, as anything written to standard
-out/-err will be redirected to the workers logs by default (see
-:setting:`CELERY_REDIRECT_STDOUTS`).
+You can also use :func:`print`, as anything written to standard
+out/-err will be redirected to logging system (you can disable this,
+see :setting:`CELERY_REDIRECT_STDOUTS`).
 
 .. _task-retry:
 
