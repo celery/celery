@@ -213,11 +213,12 @@ class Celery(object):
 
     def _task_from_fun(self, fun, **options):
         base = options.pop('base', None) or self.Task
+        bind = options.pop('bind', False)
 
         T = type(fun.__name__, (base, ), dict({
             'app': self,
             'accept_magic_kwargs': False,
-            'run': staticmethod(fun),
+            'run': fun if bind else staticmethod(fun),
             '__doc__': fun.__doc__,
             '__module__': fun.__module__}, **options))()
         task = self._tasks[T.name]  # return global instance.

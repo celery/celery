@@ -245,22 +245,14 @@ An example task accessing information in the context is:
 
 .. code-block:: python
 
-    @app.task
-    def dump_context(x, y):
+    @app.task(bind=True)
+    def dump_context(self, x, y):
         print('Executing task id {0.id}, args: {0.args!r} kwargs: {0.kwargs!r}'.format(
-                dump_context.request))
+                self.request))
 
 
-:data:`~celery.current_task` can also be used:
-
-.. code-block:: python
-
-    from celery import current_task
-
-    @app.task
-    def dump_context(x, y):
-        print('Executing task id {0.id}, args: {0.args!r} kwargs: {0.kwargs!r}'.format(
-                current_task.request))
+The ``bind`` argument means that the function will be a "bound method" so
+that you can access attributes and methods on the task type instance.
 
 .. _task-logging:
 
@@ -316,13 +308,13 @@ Here's an example using ``retry``:
 
 .. code-block:: python
 
-    @app.task
-    def send_twitter_status(oauth, tweet):
+    @app.task(bind=True)
+    def send_twitter_status(self, oauth, tweet):
         try:
             twitter = Twitter(oauth)
             twitter.update_status(tweet)
         except (Twitter.FailWhaleError, Twitter.LoginError) as exc:
-            raise send_twitter_status.retry(exc=exc)
+            raise self.retry(exc=exc)
 
 .. note::
 
@@ -334,6 +326,9 @@ Here's an example using ``retry``:
 
     This is normal operation and always happens unless the
     ``throw`` argument to retry is set to :const:`False`.
+
+The bind argument to the task decorator will give access to ``self`` (the
+task type instance).
 
 The ``exc`` method is used to pass exception information that is
 used in logs, and when storing task results.
@@ -356,7 +351,7 @@ but this will not happen if:
 
     .. code-block:: python
 
-        send_twitter_status.retry(exc=Twitter.LoginError())
+        self.retry(exc=Twitter.LoginError())
 
     will raise the ``exc`` argument given.
 
@@ -376,13 +371,13 @@ override this default.
 
 .. code-block:: python
 
-    @app.task(default_retry_delay=30 * 60)  # retry in 30 minutes.
+    @app.task(bind=True, default_retry_delay=30 * 60)  # retry in 30 minutes.
     def add(x, y):
         try:
             ...
         except Exception as exc:
-            raise add.retry(exc=exc, countdown=60)  # override the default and
-                                                    # retry in 1 minute
+            raise self.retry(exc=exc, countdown=60)  # override the default and
+                                                     # retry in 1 minute
 
 .. _task-options:
 
@@ -725,12 +720,10 @@ which defines its own custom :state:`ABORTED` state.
 
 Use :meth:`~@Task.update_state` to update a task's state::
 
-    from celery import current_task
-
-    @app.task
+    @app.task(bind=True)
     def upload_files(filenames):
         for i, file in enumerate(filenames):
-            current_task.update_state(state='PROGRESS',
+            self.update_state(state='PROGRESS',
                 meta={'current': i, 'total': len(filenames)})
 
 

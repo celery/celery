@@ -807,10 +807,11 @@ Example implementation:
 
 .. code-block:: python
 
-    def unlock_chord(taskset, callback, interval=1, max_retries=None):
+    @app.task(bind=True)
+    def unlock_chord(self, taskset, callback, interval=1, max_retries=None):
         if taskset.ready():
             return subtask(callback).delay(taskset.join())
-        raise unlock_chord.retry(countdown=interval, max_retries=max_retries)
+        raise self.retry(countdown=interval, max_retries=max_retries)
 
 
 This is used by all result backends except Redis and Memcached, which
