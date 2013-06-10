@@ -504,11 +504,27 @@ def maybe_drop_privileges(uid=None, gid=None):
             gid = pwd.getpwuid(uid).pw_gid
         # Must set the GID before initgroups(), as setgid()
         # is known to zap the group list on some platforms.
+
+        # setgid must happen before setuid (otherwise the setgid operation
+        # may fail because of insufficient privileges and possibly stay
+        # in a privileged group).
         setgid(gid)
         initgroups(uid, gid)
 
         # at last:
         setuid(uid)
+        # ... and make sure privileges cannot be restored:
+        try:
+            setuid(0)
+        except OSError:
+            if get_errno(exc) != errno.EPERM:
+                raise
+            pass  # Can not restore privileges.
+        else:
+            if uid:
+                raise RuntimeError(
+                    'non-root user able to restore privileges after setuid.')
+
     else:
         gid and setgid(gid)
 
