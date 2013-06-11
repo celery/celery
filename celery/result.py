@@ -58,7 +58,7 @@ class AsyncResult(ResultBase):
         self.parent = parent
 
     def serializable(self):
-        return [self.id, self.parent and self.parent.id], None
+        return [self.id, self.parent and self.parent.serializable()], None
 
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
@@ -437,6 +437,7 @@ class ResultSet(ResultBase):
         while results:
             removed = set()
             for task_id, result in items(results):
+                print("READY IS: %r" % result.ready)
                 if result.ready():
                     yield result.get(timeout=timeout and timeout - elapsed,
                                      propagate=propagate)
@@ -739,13 +740,14 @@ def from_serializable(r, app=None):
     app = app_or_default(app)
     Result = app.AsyncResult
     if not isinstance(r, ResultBase):
-        id = parent = None
         res, nodes = r
         if nodes:
             return app.GroupResult(
                 res, [from_serializable(child, app) for child in nodes],
             )
-        if isinstance(res, (list, tuple)):
-            id, parent = res[0], res[1]
+        # previously did not include parent
+        id, parent = res if isinstance(res, (list, tuple)) else (res, None)
+        if parent:
+            parent = from_serializable(parent, app)
         return Result(id, parent=parent)
     return r
