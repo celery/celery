@@ -486,3 +486,24 @@ class test_EmbeddedService(AppCase):
 
         s.stop()
         self.assertTrue(s.service.stopped)
+
+
+class test_schedule(AppCase):
+
+    def test_maybe_make_aware(self):
+        x = schedule(10)
+        x.utc_enabled = True
+        d = x.maybe_make_aware(datetime.utcnow())
+        self.assertTrue(d.tzinfo)
+        x.utc_enabled = False
+        d2 = x.maybe_make_aware(datetime.utcnow())
+        self.assertIsNone(d2.tzinfo)
+
+    def test_to_local(self):
+        x = schedule(10)
+        x.utc_enabled = True
+        d = x.to_local(datetime.utcnow())
+        self.assertIsNone(d.tzinfo)
+        x.utc_enabled = False
+        d = x.to_local(datetime.utcnow())
+        self.assertTrue(d.tzinfo)
