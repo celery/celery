@@ -80,3 +80,27 @@ class test_FastLocalStack(Case):
         self.assertIsNone(x.top)
 
 
+class test_LocalManager(Case):
+
+    def test_init(self):
+        x = LocalManager()
+        self.assertListEqual(x.locals, [])
+        self.assertTrue(x.ident_func)
+
+        ident = lambda: 1
+        loc = Local()
+        x = LocalManager([loc], ident_func=ident)
+        self.assertListEqual(x.locals, [loc])
+        x = LocalManager(loc, ident_func=ident)
+        self.assertListEqual(x.locals, [loc])
+        self.assertIs(x.ident_func, ident)
+        self.assertIs(x.locals[0].__ident_func__, ident)
+        self.assertEqual(x.get_ident(), 1)
+
+        with patch('celery.utils.threads.release_local') as release:
+            x.cleanup()
+            release.assert_called_with(loc)
+
+        self.assertTrue(repr(x))
+
+
