@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import pytz
-import time
 
 from datetime import datetime, timedelta, tzinfo
 from mock import Mock, patch
@@ -53,7 +52,6 @@ class test_LocalTimezone(Case):
             self.assertFalse(y.dst(datetime.now()))
 
             self.assertTrue(y.tzname(datetime.now()))
-
 
 
 class test_iso8601(Case):
@@ -166,8 +164,10 @@ class test_make_aware(Case):
         self.assertEqual(wtz.tzinfo, tz)
 
     def test_when_has_localize(self):
+
         class tzz(tzinfo):
             raises = False
+
             def localize(self, dt, is_dst=None):
                 self.localized = True
                 if self.raises and is_dst is None:
@@ -175,12 +175,12 @@ class test_make_aware(Case):
                     raise AmbiguousTimeError()
 
         tz = tzz()
-        wtz = make_aware(datetime.utcnow(), tz)
+        make_aware(datetime.utcnow(), tz)
         self.assertTrue(tz.localized)
 
         tz2 = tzz()
         tz2.raises = True
-        wtz = make_aware(datetime.utcnow(), tz2)
+        make_aware(datetime.utcnow(), tz2)
         self.assertTrue(tz2.localized)
         self.assertTrue(tz2.raised)
 
@@ -199,8 +199,10 @@ class test_localize(Case):
         self.assertTrue(localize(make_aware(datetime.utcnow(), tz), tz))
 
     def test_when_has_nornalize(self):
+
         class tzz(tzinfo):
             raises = None
+
             def normalize(self, dt, **kwargs):
                 self.normalized = True
                 if self.raises and kwargs and kwargs.get('is_dst') is None:
@@ -208,18 +210,18 @@ class test_localize(Case):
                     raise self.raises
 
         tz = tzz()
-        wtz = localize(make_aware(datetime.utcnow(), tz), tz)
+        localize(make_aware(datetime.utcnow(), tz), tz)
         self.assertTrue(tz.normalized)
 
         tz2 = tzz()
         tz2.raises = AmbiguousTimeError()
-        wtz = localize(make_aware(datetime.utcnow(), tz2), tz2)
+        localize(make_aware(datetime.utcnow(), tz2), tz2)
         self.assertTrue(tz2.normalized)
         self.assertTrue(tz2.raised)
 
         tz3 = tzz()
         tz3.raises = TypeError()
-        wtz = localize(make_aware(datetime.utcnow(), tz3), tz3)
+        localize(make_aware(datetime.utcnow(), tz3), tz3)
         self.assertTrue(tz3.normalized)
         self.assertTrue(tz3.raised)
 

@@ -1,15 +1,21 @@
 from __future__ import absolute_import
 
-from kombu.utils.functional import promise
+import pytz
 
-from mock import patch
+from datetime import datetime, date, time, timedelta
+from mock import Mock, patch
 
-from celery import utils
-from celery.five import nextfun, range
-from celery.utils import text
-from celery.utils import functional
-from celery.utils.functional import mpromise, maybe_list
-from celery.utils.threads import bgThread
+from kombu import Queue
+
+from celery.utils import (
+    chunks,
+    is_iterable,
+    cached_property,
+    warn_deprecated,
+    worker_direct,
+    gen_task_name,
+    jsonify,
+)
 from celery.tests.utils import Case
 
 
@@ -17,12 +23,40 @@ def double(x):
     return x * 2
 
 
-class test_bgThread_interface(Case):
+class test_worker_direct(Case):
 
-    def test_body(self):
-        x = bgThread()
-        with self.assertRaises(NotImplementedError):
-            x.body()
+    def test_returns_if_queue(self):
+        q = Queue('foo')
+        self.assertIs(worker_direct(q), q)
+
+
+class test_gen_task_name(Case):
+
+    def test_no_module(self):
+        app = Mock()
+        app.name == '__main__'
+        self.assertTrue(gen_task_name(app, 'foo', 'axsadaewe'))
+
+
+class test_jsonify(Case):
+
+    def test_simple(self):
+        self.assertTrue(jsonify(Queue('foo')))
+        self.assertTrue(jsonify(['foo', 'bar', 'baz']))
+        self.assertTrue(jsonify({'foo': 'bar'}))
+        self.assertTrue(jsonify(datetime.utcnow()))
+        self.assertTrue(jsonify(datetime.utcnow().replace(tzinfo=pytz.utc)))
+        self.assertTrue(jsonify(datetime.utcnow().replace(microsecond=0)))
+        self.assertTrue(jsonify(date(2012, 1, 1)))
+        self.assertTrue(jsonify(time(hour=1, minute=30)))
+        self.assertTrue(jsonify(time(hour=1, minute=30, microsecond=3)))
+        self.assertTrue(jsonify(timedelta(seconds=30)))
+        self.assertTrue(jsonify(10))
+        self.assertTrue(jsonify(10.3))
+        self.assertTrue(jsonify('hello'))
+
+        with self.assertRaises(ValueError):
+            jsonify(object())
 
 
 class test_chunks(Case):
@@ -30,21 +64,21 @@ class test_chunks(Case):
     def test_chunks(self):
 
         # n == 2
-        x = utils.chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 2)
+        x = chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 2)
         self.assertListEqual(
             list(x),
             [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10]],
         )
 
         # n == 3
-        x = utils.chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 3)
+        x = chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 3)
         self.assertListEqual(
             list(x),
             [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10]],
         )
 
         # n == 2 (exact)
-        x = utils.chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), 2)
+        x = chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), 2)
         self.assertListEqual(
             list(x),
             [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]],
@@ -55,111 +89,21 @@ class test_utils(Case):
 
     def test_is_iterable(self):
         for a in 'f', ['f'], ('f', ), {'f': 'f'}:
-            self.assertTrue(utils.is_iterable(a))
+            self.assertTrue(is_iterable(a))
         for b in object(), 1:
-            self.assertFalse(utils.is_iterable(b))
-
-    def test_padlist(self):
-        self.assertListEqual(
-            functional.padlist(['George', 'Costanza', 'NYC'], 3),
-            ['George', 'Costanza', 'NYC'],
-        )
-        self.assertListEqual(
-            functional.padlist(['George', 'Costanza'], 3),
-            ['George', 'Costanza', None],
-        )
-        self.assertListEqual(
-            functional.padlist(['George', 'Costanza', 'NYC'], 4,
-                               default='Earth'),
-            ['George', 'Costanza', 'NYC', 'Earth'],
-        )
-
-    def test_firstmethod_AttributeError(self):
-        self.assertIsNone(functional.firstmethod('foo')([object()]))
-
-    def test_firstmethod_promises(self):
-
-        class A(object):
-
-            def __init__(self, value=None):
-                self.value = value
-
-            def m(self):
-                return self.value
-
-        self.assertEqual('four', functional.firstmethod('m')([
-            A(), A(), A(), A('four'), A('five')]))
-        self.assertEqual('four', functional.firstmethod('m')([
-            A(), A(), A(), promise(lambda: A('four')), A('five')]))
-
-    def test_first(self):
-        iterations = [0]
-
-        def predicate(value):
-            iterations[0] += 1
-            if value == 5:
-                return True
-            return False
-
-        self.assertEqual(5, functional.first(predicate, range(10)))
-        self.assertEqual(iterations[0], 6)
-
-        iterations[0] = 0
-        self.assertIsNone(functional.first(predicate, range(10, 20)))
-        self.assertEqual(iterations[0], 10)
-
-    def test_truncate_text(self):
-        self.assertEqual(text.truncate('ABCDEFGHI', 3), 'ABC...')
-        self.assertEqual(text.truncate('ABCDEFGHI', 10), 'ABCDEFGHI')
-
-    def test_abbr(self):
-        self.assertEqual(text.abbr(None, 3), '???')
-        self.assertEqual(text.abbr('ABCDEFGHI', 6), 'ABC...')
-        self.assertEqual(text.abbr('ABCDEFGHI', 20), 'ABCDEFGHI')
-        self.assertEqual(text.abbr('ABCDEFGHI', 6, None), 'ABCDEF')
-
-    def test_abbrtask(self):
-        self.assertEqual(text.abbrtask(None, 3), '???')
-        self.assertEqual(
-            text.abbrtask('feeds.tasks.refresh', 10),
-            '[.]refresh',
-        )
-        self.assertEqual(
-            text.abbrtask('feeds.tasks.refresh', 30),
-            'feeds.tasks.refresh',
-        )
-
-    def test_pretty(self):
-        self.assertTrue(text.pretty(('a', 'b', 'c')))
+            self.assertFalse(is_iterable(b))
 
     def test_cached_property(self):
 
         def fun(obj):
             return fun.value
 
-        x = utils.cached_property(fun)
+        x = cached_property(fun)
         self.assertIs(x.__get__(None), x)
         self.assertIs(x.__set__(None, None), x)
         self.assertIs(x.__delete__(None), x)
 
-    def test_maybe_list(self):
-        self.assertEqual(maybe_list(1), [1])
-        self.assertEqual(maybe_list([1]), [1])
-        self.assertIsNone(maybe_list(None))
-
     @patch('warnings.warn')
     def test_warn_deprecated(self, warn):
-        utils.warn_deprecated('Foo')
+        warn_deprecated('Foo')
         self.assertTrue(warn.called)
-
-
-class test_mpromise(Case):
-
-    def test_is_memoized(self):
-
-        it = iter(range(20, 30))
-        p = mpromise(nextfun(it))
-        self.assertEqual(p(), 20)
-        self.assertTrue(p.evaluated)
-        self.assertEqual(p(), 20)
-        self.assertEqual(repr(p), '20')

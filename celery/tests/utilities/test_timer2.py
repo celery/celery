@@ -30,7 +30,7 @@ class test_Entry(Case):
         self.assertTrue(tref.cancelled)
 
     def test_repr(self):
-        tref = timer2.Entry(lambda x: x (1, ), {})
+        tref = timer2.Entry(lambda x: x(1, ), {})
         self.assertTrue(repr(tref))
 
 
@@ -45,7 +45,6 @@ class test_Schedule(Case):
         tref.cancel.assert_called_with()
 
         self.assertIs(x.schedule, x)
-
 
     def test_handle_error(self):
         from datetime import datetime

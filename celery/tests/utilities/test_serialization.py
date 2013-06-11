@@ -10,7 +10,6 @@ from celery.utils.serialization import (
 from celery.tests.utils import Case, mask_modules
 
 
-
 class test_AAPickle(Case):
 
     def test_no_cpickle(self):

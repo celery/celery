@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import os
 
-from mock import Mock, patch
+from mock import patch
 from nose import SkipTest
 
 from celery.utils.sysinfo import load_average, df
@@ -26,7 +26,7 @@ class test_df(Case):
 
     def test_df(self):
         try:
-            from posix import statvfs_result
+            from posix import statvfs_result  # noqa
         except ImportError:
             raise SkipTest('statvfs not available')
         x = df('/')

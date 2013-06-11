@@ -1,7 +1,14 @@
 from __future__ import absolute_import
 
 from celery import Celery
-from celery.utils.text import indent, ensure_2lines
+from celery.utils.text import (
+    indent,
+    ensure_2lines,
+    abbr,
+    truncate,
+    abbrtask,
+    pretty,
+)
 from celery.tests.utils import Case
 
 RANDTEXT = """\
@@ -54,3 +61,30 @@ class test_Info(Case):
         self.assertEqual(
             len(ensure_2lines('foo\nbar').splitlines()), 2,
         )
+
+
+class test_utils(Case):
+
+    def test_truncate_text(self):
+        self.assertEqual(truncate('ABCDEFGHI', 3), 'ABC...')
+        self.assertEqual(truncate('ABCDEFGHI', 10), 'ABCDEFGHI')
+
+    def test_abbr(self):
+        self.assertEqual(abbr(None, 3), '???')
+        self.assertEqual(abbr('ABCDEFGHI', 6), 'ABC...')
+        self.assertEqual(abbr('ABCDEFGHI', 20), 'ABCDEFGHI')
+        self.assertEqual(abbr('ABCDEFGHI', 6, None), 'ABCDEF')
+
+    def test_abbrtask(self):
+        self.assertEqual(abbrtask(None, 3), '???')
+        self.assertEqual(
+            abbrtask('feeds.tasks.refresh', 10),
+            '[.]refresh',
+        )
+        self.assertEqual(
+            abbrtask('feeds.tasks.refresh', 30),
+            'feeds.tasks.refresh',
+        )
+
+    def test_pretty(self):
+        self.assertTrue(pretty(('a', 'b', 'c')))

@@ -2,8 +2,17 @@ from __future__ import absolute_import
 
 import pickle
 
-from celery.five import THREAD_TIMEOUT_MAX, items, range
-from celery.utils.functional import LRUCache
+from kombu.utils.functional import promise
+
+from celery.five import THREAD_TIMEOUT_MAX, items, range, nextfun
+from celery.utils.functional import (
+    LRUCache,
+    firstmethod,
+    first,
+    mpromise,
+    padlist,
+    maybe_list,
+)
 
 from celery.tests.utils import Case
 
@@ -101,3 +110,71 @@ class test_LRUCache(Case):
         c = LRUCache()
         c.update(a=1, b=2, c=3)
         self.assertTrue(list(items(c)))
+
+
+class test_utils(Case):
+
+    def test_padlist(self):
+        self.assertListEqual(
+            padlist(['George', 'Costanza', 'NYC'], 3),
+            ['George', 'Costanza', 'NYC'],
+        )
+        self.assertListEqual(
+            padlist(['George', 'Costanza'], 3),
+            ['George', 'Costanza', None],
+        )
+        self.assertListEqual(
+            padlist(['George', 'Costanza', 'NYC'], 4, default='Earth'),
+            ['George', 'Costanza', 'NYC', 'Earth'],
+        )
+
+    def test_firstmethod_AttributeError(self):
+        self.assertIsNone(firstmethod('foo')([object()]))
+
+    def test_firstmethod_promises(self):
+
+        class A(object):
+
+            def __init__(self, value=None):
+                self.value = value
+
+            def m(self):
+                return self.value
+
+        self.assertEqual('four', firstmethod('m')([
+            A(), A(), A(), A('four'), A('five')]))
+        self.assertEqual('four', firstmethod('m')([
+            A(), A(), A(), promise(lambda: A('four')), A('five')]))
+
+    def test_first(self):
+        iterations = [0]
+
+        def predicate(value):
+            iterations[0] += 1
+            if value == 5:
+                return True
+            return False
+
+        self.assertEqual(5, first(predicate, range(10)))
+        self.assertEqual(iterations[0], 6)
+
+        iterations[0] = 0
+        self.assertIsNone(first(predicate, range(10, 20)))
+        self.assertEqual(iterations[0], 10)
+
+    def test_maybe_list(self):
+        self.assertEqual(maybe_list(1), [1])
+        self.assertEqual(maybe_list([1]), [1])
+        self.assertIsNone(maybe_list(None))
+
+
+class test_mpromise(Case):
+
+    def test_is_memoized(self):
+
+        it = iter(range(20, 30))
+        p = mpromise(nextfun(it))
+        self.assertEqual(p(), 20)
+        self.assertTrue(p.evaluated)
+        self.assertEqual(p(), 20)
+        self.assertEqual(repr(p), '20')

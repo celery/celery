@@ -123,6 +123,7 @@ if not platforms.IS_WINDOWS:
 
             class pw_struct(object):
                 pw_gid = 50001
+
             def raise_on_second_call(*args, **kwargs):
                 setuid.side_effect = OSError()
                 setuid.side_effect.errno = errno.EPERM

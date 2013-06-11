@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from mock import Mock, patch
+from mock import patch
 
 from celery.utils.threads import (
     _LocalStack,
@@ -29,6 +29,11 @@ class test_bgThread(Case):
                 with self.assertRaises(ValueError):
                     t.run()
                 _exit.assert_called_with(1)
+
+    def test_interface(self):
+        x = bgThread()
+        with self.assertRaises(NotImplementedError):
+            x.body()
 
 
 class test_Local(Case):
@@ -102,5 +107,3 @@ class test_LocalManager(Case):
             release.assert_called_with(loc)
 
         self.assertTrue(repr(x))
-
-
