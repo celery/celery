@@ -8,7 +8,8 @@
 """
 from __future__ import absolute_import
 
-import inspect
+from inspect import getmro
+from itertools import takewhile
 
 try:
     import cPickle as pickle
@@ -21,7 +22,7 @@ from .encoding import safe_repr
 #: List of base classes we probably don't want to reduce to.
 try:
     unwanted_base_classes = (StandardError, Exception, BaseException, object)
-except NameError:
+except NameError:  # pragma: no cover
     unwanted_base_classes = (Exception, BaseException, object)  # py3k
 
 
@@ -58,22 +59,7 @@ find_nearest_pickleable_exception = find_pickleable_exception  # XXX compat
 
 
 def itermro(cls, stop):
-    getmro_ = getattr(cls, 'mro', None)
-
-    # old-style classes doesn't have mro()
-    if not getmro_:  # pragma: no cover
-        # all Py2.4 exceptions has a baseclass.
-        if not getattr(cls, '__bases__', ()):
-            return
-        # Use inspect.getmro() to traverse bases instead.
-        getmro_ = lambda: inspect.getmro(cls)
-
-    for supercls in getmro_():
-        if supercls in stop:
-            # only BaseException and object, from here on down,
-            # we don't care about these.
-            return
-        yield supercls
+    return takewhile(lambda sup: sup not in stop, getmro(cls))
 
 
 def create_exception_cls(name, module, parent=None):

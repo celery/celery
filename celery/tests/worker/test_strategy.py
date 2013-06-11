@@ -94,7 +94,7 @@ class test_default_strategy(AppCase):
             C()
             self.assertTrue(C.was_reserved())
             req = C.get_request()
-            C.consumer.handle_task.assert_called_with(req)
+            C.consumer.on_task.assert_called_with(req)
             self.assertTrue(C.event_sent())
 
     def test_when_events_disabled(self):

@@ -79,7 +79,7 @@ class test_exception_pickle(Case):
     def test_oldstyle(self):
         if Oldstyle is None:
             raise SkipTest('py3k does not support old style classes')
-        self.assertIsNone(fnpe(Oldstyle()))
+        self.assertTrue(fnpe(Oldstyle()))
 
     def test_BaseException(self):
         self.assertIsNone(fnpe(Exception()))

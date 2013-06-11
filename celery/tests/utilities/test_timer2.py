@@ -30,7 +30,7 @@ class test_Entry(Case):
         self.assertTrue(tref.cancelled)
 
     def test_repr(self):
-        tref = tiemr2.Entry(lambda x: x (1, ), {})
+        tref = timer2.Entry(lambda x: x (1, ), {})
         self.assertTrue(repr(tref))
 
 

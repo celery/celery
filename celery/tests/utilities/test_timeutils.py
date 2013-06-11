@@ -248,8 +248,7 @@ class test_ffwd(Case):
 
     def test_radd_with_unknown_gives_NotImplemented(self):
         x = ffwd(year=2012)
-        with self.assertRaises(TypeError):
-            x.__radd__(object())
+        self.assertEqual(x.__radd__(object()), NotImplemented)
 
 
 class test_utcoffset(Case):

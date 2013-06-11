@@ -15,7 +15,7 @@ from types import GeneratorType as generator
 from kombu.utils.eventio import READ, WRITE, ERR
 
 from celery.bootsteps import CLOSE
-from celery.exceptions import InvalidTaskError, SystemTerminate
+from celery.exceptions import SystemTerminate
 from celery.five import Empty
 from celery.utils.log import get_logger
 
@@ -25,9 +25,8 @@ logger = get_logger(__name__)
 error = logger.error
 
 
-def asynloop(obj, connection, consumer, strategies, blueprint, hub, qos,
-             heartbeat, handle_unknown_message, handle_unknown_task,
-             handle_invalid_task, clock, hbrate=2.0,
+def asynloop(obj, connection, consumer, blueprint, hub, qos,
+             heartbeat, clock, hbrate=2.0,
              sleep=sleep, min=min, Empty=Empty):
     """Non-blocking eventloop consuming messages until connection is lost,
     or shutdown is requested."""
@@ -51,9 +50,7 @@ def asynloop(obj, connection, consumer, strategies, blueprint, hub, qos,
     errors = connection.connection_errors
     hub_add, hub_remove = hub.add, hub.remove
 
-    on_task_received = obj.create_task_handler(
-        strategies, on_task_callbacks, handle_unknown_message,
-        handle_unknown_task, handle_invalid_task)
+    on_task_received = obj.create_task_handler(on_task_callbacks)
 
     if heartbeat and connection.supports_heartbeats:
         hub.timer.apply_interval(
@@ -144,14 +141,11 @@ def asynloop(obj, connection, consumer, strategies, blueprint, hub, qos,
             )
 
 
-def synloop(obj, connection, consumer, strategies, blueprint, hub, qos,
-            heartbeat, handle_unknown_message, handle_unknown_task,
-            handle_invalid_task, clock, hbrate=2.0, **kwargs):
+def synloop(obj, connection, consumer, blueprint, hub, qos,
+            heartbeat, clock, hbrate=2.0, **kwargs):
     """Fallback blocking eventloop for transports that doesn't support AIO."""
 
-    on_task_received = obj.create_task_handler(
-        strategies, [], handle_unknown_message,
-        handle_unknown_task, handle_invalid_task)
+    on_task_received = obj.create_task_handler([])
     consumer.register_callback(on_task_received)
     consumer.consume()
 

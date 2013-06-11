@@ -28,7 +28,7 @@ class test_Consumer(AppCase):
 
     def get_consumer(self, no_hub=False, **kwargs):
         consumer = Consumer(
-            handle_task=Mock(),
+            on_task=Mock(),
             init_callback=Mock(),
             pool=Mock(),
             app=self.app,
@@ -91,7 +91,7 @@ class test_Consumer(AppCase):
             c._limit_task(request, bucket, 3)
             bucket.can_consume.assert_called_with(3)
             reserved.assert_called_with(request)
-            c.handle_task.assert_called_with(request)
+            c.on_task.assert_called_with(request)
 
         with patch('celery.worker.consumer.task_reserved') as reserved:
             bucket.can_consume.return_value = False

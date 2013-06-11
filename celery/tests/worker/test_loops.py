@@ -7,6 +7,7 @@ from mock import Mock
 from celery.exceptions import InvalidTaskError, SystemTerminate
 from celery.five import Empty
 from celery.worker import state
+from celery.worker.consumer import Consumer
 from celery.worker.loops import asynloop, synloop, CLOSE, READ, WRITE, ERR
 
 from celery.tests.utils import AppCase, body_from_sig
@@ -19,29 +20,22 @@ class X(object):
             self.obj,
             self.connection,
             self.consumer,
-            self.strategies,
             self.blueprint,
             self.hub,
             self.qos,
             self.heartbeat,
-            self.handle_unknown_message,
-            self.handle_unknown_task,
-            self.handle_invalid_task,
             self.clock,
         ) = self.args = [Mock(name='obj'),
                          Mock(name='connection'),
                          Mock(name='consumer'),
-                         {},
                          Mock(name='blueprint'),
                          Mock(name='Hub'),
                          Mock(name='qos'),
                          heartbeat,
-                         Mock(name='handle_unknown_message'),
-                         Mock(name='handle_unknown_task'),
-                         Mock(name='handle_invalid_task'),
                          Mock(name='clock')]
         self.connection.supports_heartbeats = True
         self.consumer.callbacks = []
+        self.obj.strategies = {}
         self.connection.connection_errors = (socket.error, )
         #hent = self.Hub.__enter__ = Mock(name='Hub.__enter__')
         #self.Hub.__exit__ = Mock(name='Hub.__exit__')
@@ -51,6 +45,23 @@ class X(object):
         self.hub.writers = {}
         self.hub.fire_timers.return_value = 1.7
         self.Hub = self.hub
+        # need this for create_task_handler
+        _consumer = Consumer(Mock(), timer=Mock())
+        self.obj.create_task_handler = _consumer.create_task_handler
+        self.on_unknown_message = self.obj.on_unknown_message = Mock(
+            name='on_unknown_message',
+        )
+        _consumer.on_unknown_message = self.on_unknown_message
+        self.on_unknown_task = self.obj.on_unknown_task = Mock(
+            name='on_unknown_task',
+        )
+        _consumer.on_unknown_task = self.on_unknown_task
+        self.on_invalid_task = self.obj.on_invalid_task = Mock(
+            name='on_invalid_task',
+        )
+        _consumer.on_invalid_task = self.on_invalid_task
+        _consumer.strategies = self.obj.strategies
+
 
     def timeout_then_error(self, mock):
 
@@ -107,7 +118,7 @@ class test_asynloop(AppCase):
         x, on_task = get_task_callback(**kwargs)
         body = body_from_sig(self.app, sig)
         message = Mock()
-        strategy = x.strategies[sig.task] = Mock()
+        strategy = x.obj.strategies[sig.task] = Mock()
         return x, on_task, body, message, strategy
 
     def test_on_task_received(self):
@@ -127,19 +138,19 @@ class test_asynloop(AppCase):
         x, on_task, body, msg, strategy = self.task_context(self.add.s(2, 2))
         body.pop('task')
         on_task(body, msg)
-        x.handle_unknown_message.assert_called_with(body, msg)
+        x.on_unknown_message.assert_called_with(body, msg)
 
     def test_on_task_not_registered(self):
         x, on_task, body, msg, strategy = self.task_context(self.add.s(2, 2))
         exc = strategy.side_effect = KeyError(self.add.name)
         on_task(body, msg)
-        x.handle_unknown_task.assert_called_with(body, msg, exc)
+        x.on_unknown_task.assert_called_with(body, msg, exc)
 
     def test_on_task_InvalidTaskError(self):
         x, on_task, body, msg, strategy = self.task_context(self.add.s(2, 2))
         exc = strategy.side_effect = InvalidTaskError()
         on_task(body, msg)
-        x.handle_invalid_task.assert_called_with(body, msg, exc)
+        x.on_invalid_task.assert_called_with(body, msg, exc)
 
     def test_should_terminate(self):
         x = X()
