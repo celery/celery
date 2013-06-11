@@ -465,7 +465,8 @@ def reset_modules(*modules):
 def patch_modules(*modules):
     prev = {}
     for mod in modules:
-        prev[mod], sys.modules[mod] = sys.modules[mod], ModuleType(mod)
+        prev[mod] = sys.modules.get(mod)
+        sys.modules[mod] = ModuleType(mod)
     try:
         yield
     finally:
