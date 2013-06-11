@@ -26,11 +26,39 @@ from celery.platforms import (
     Pidfile,
     LockFailed,
     setgroups,
-    _setgroups_hack
+    _setgroups_hack,
+    _find_option_with_arg,
+    close_open_fds,
 )
 
 from celery.tests.utils import Case, WhateverIO, override_stdouts, mock_open
 
+
+class test_find_option_with_arg(Case):
+
+    def test_long_opt(self):
+        self.assertEqual(
+            _find_option_with_arg(['--foo=bar'], long_opts=['--foo']),
+            'bar'
+        )
+
+    def test_short_opt(self):
+        self.assertEqual(
+            _find_option_with_arg(['-f', 'bar'], short_opts=['-f']),
+            'bar'
+        )
+
+class test_close_open_fds(Case):
+
+    def test_closes(self):
+        with patch('os.close') as _close:
+            with patch('celery.platforms.get_fdmax') as fdmax:
+                fdmax.return_value = 3
+                close_open_fds()
+                _close.assert_has_calls([call(2), call(1), call(0)])
+                _close.side_effect = OSError()
+                _close.side_effect.errno = errno.EBADF
+                close_open_fds()
 
 class test_ignore_errno(Case):
 
@@ -68,6 +96,17 @@ class test_Signals(Case):
     def test_supported(self):
         self.assertTrue(signals.supported('INT'))
         self.assertFalse(signals.supported('SIGIMAGINARY'))
+
+    def test_reset_alarm(self):
+        with patch('signal.alarm') as _alarm:
+            signals.reset_alarm()
+            _alarm.assert_called_with(0)
+
+    def test_arm_alarm(self):
+        if hasattr(signal, 'setitimer'):
+            with patch('signal.setitimer', create=True) as seti:
+                signals.arm_alarm(30)
+                self.assertTrue(seti.called)
 
     def test_signum(self):
         self.assertEqual(signals.signum(13), 13)
@@ -345,6 +384,11 @@ if not platforms.IS_WINDOWS:
             with x:
                 pass
             self.assertFalse(x._detach.called)
+
+            x.after_chdir = Mock()
+            with x:
+                pass
+            x.after_chdir.assert_called_with()
 
     class test_Pidfile(Case):
 

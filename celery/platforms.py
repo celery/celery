@@ -52,13 +52,15 @@ Seems we're already running? (pid: {1})"""
 try:
     from io import UnsupportedOperation
     FILENO_ERRORS = (AttributeError, UnsupportedOperation)
-except ImportError:  # Py2
+except ImportError:  # pragma: no cover
+    # Py2
     FILENO_ERRORS = (AttributeError, )  # noqa
 
 try:
     from io import UnsupportedOperation
     FILENO_ERRORS = (AttributeError, UnsupportedOperation)
-except ImportError:  # Py2
+except ImportError:  # pragma: no cover
+    # Py2
     FILENO_ERRORS = (AttributeError, )  # noqa
 
 
@@ -522,9 +524,8 @@ def maybe_drop_privileges(uid=None, gid=None):
                 raise
             pass  # Good: cannot restore privileges.
         else:
-            if uid:
-                raise RuntimeError(
-                    'non-root user able to restore privileges after setuid.')
+            raise RuntimeError(
+                'non-root user able to restore privileges after setuid.')
 
     else:
         gid and setgid(gid)
@@ -574,14 +575,14 @@ class Signals(object):
 
         def arm_alarm(self, seconds):
             _signal.setitimer(_signal.ITIMER_REAL, seconds)
-    else:
+    else:  # pragma: no cover
         try:
             from itimer import alarm as _itimer_alarm  # noqa
         except ImportError:
 
             def arm_alarm(self, seconds):  # noqa
                 _signal.alarm(math.ceil(seconds))
-        else:
+        else:  # pragma: no cover
 
             def arm_alarm(self, seconds):      # noqa
                 return _itimer_alarm(seconds)  # noqa
