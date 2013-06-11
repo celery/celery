@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from celery import Celery
-from celery.utils.text import indent
+from celery.utils.text import indent, ensure_2lines
 from celery.tests.utils import Case
 
 RANDTEXT = """\
@@ -46,3 +46,11 @@ class test_Info(Case):
         celery.amqp.queues = celery.amqp.Queues(QUEUES)
         self.assertEqual(sorted(celery.amqp.queues.format().split('\n')),
                          sorted([QUEUE_FORMAT1, QUEUE_FORMAT2]))
+
+    def test_ensure_2lines(self):
+        self.assertEqual(
+            len(ensure_2lines('foo\nbar\nbaz\n').splitlines()), 3,
+        )
+        self.assertEqual(
+            len(ensure_2lines('foo\nbar').splitlines()), 2,
+        )
