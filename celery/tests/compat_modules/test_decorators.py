@@ -13,6 +13,11 @@ def add(x, y):
 
 class test_decorators(Case):
 
+    def test_task_alias(self):
+        from celery import task
+        self.assertTrue(task.__file__)
+        self.assertTrue(task(add))
+
     def setUp(self):
         with warnings.catch_warnings(record=True):
             from celery import decorators

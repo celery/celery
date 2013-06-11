@@ -12,7 +12,7 @@ from __future__ import absolute_import
 
 try:
     from collections import Counter
-except ImportError:
+except ImportError:  # pragma: no cover
     from collections import defaultdict
 
     def Counter():
@@ -38,7 +38,7 @@ except ImportError:                         # pragma: no cover
     from collections import UserDict        # noqa
 
 
-if PY3:
+if PY3:  # pragma: no cover
     import builtins
 
     from queue import Queue, Empty
