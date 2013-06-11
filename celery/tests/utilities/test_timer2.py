@@ -29,6 +29,10 @@ class test_Entry(Case):
         tref.cancel()
         self.assertTrue(tref.cancelled)
 
+    def test_repr(self):
+        tref = tiemr2.Entry(lambda x: x (1, ), {})
+        self.assertTrue(repr(tref))
+
 
 class test_Schedule(Case):
 
@@ -39,6 +43,9 @@ class test_Schedule(Case):
         tref = Mock()
         x.cancel(tref)
         tref.cancel.assert_called_with()
+
+        self.assertIs(x.schedule, x)
+
 
     def test_handle_error(self):
         from datetime import datetime

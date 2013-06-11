@@ -40,7 +40,7 @@ logger = get_logger('timer2')
 
 
 class Entry(object):
-    if not IS_PYPY:
+    if not IS_PYPY:  # pragma: no cover
         __slots__ = (
             'fun', 'args', 'kwargs', 'tref', 'cancelled',
             '_last_run', '__weakref__',
@@ -60,7 +60,7 @@ class Entry(object):
     def cancel(self):
         try:
             self.tref.cancelled = True
-        except ReferenceError:
+        except ReferenceError:  # pragma: no cover
             pass
 
     def __repr__(self):
