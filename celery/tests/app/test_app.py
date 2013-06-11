@@ -609,6 +609,14 @@ class test_App(Case):
                                  'hostname': 'lana'}
         self.assertTrue(x)
 
+    def test_error_mail_disabled(self):
+        task = Mock()
+        x = ErrorMail(task)
+        x.should_send = Mock()
+        x.should_send.return_value = False
+        x.send(Mock(), Mock())
+        self.assertFalse(task.app.mail_admins.called)
+
 
 class test_defaults(Case):
 

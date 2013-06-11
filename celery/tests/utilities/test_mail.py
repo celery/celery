@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import socket
+
 from mock import Mock, patch
 
 from celery.utils.mail import Message, Mailer
@@ -49,3 +51,7 @@ class test_Mailer(Case):
         mailer._send(msg)
 
         client.sendmail.assert_called_With(msg.sender, msg.to, str(msg))
+
+        client.quit.side_effect = socket.sslerror()
+        mailer._send(msg)
+        client.close.assert_called_with()
