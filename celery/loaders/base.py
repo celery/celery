@@ -221,9 +221,9 @@ class BaseLoader(object):
                                   use_tls=use_tls)
         mailer.send(message, fail_silently=fail_silently)
 
-    def read_configuration(self):
+    def read_configuration(self, env='CELERY_CONFIG_MODULE'):
         try:
-            custom_config = os.environ['CELERY_CONFIG_MODULE']
+            custom_config = os.environ[env]
         except KeyError:
             pass
         else:

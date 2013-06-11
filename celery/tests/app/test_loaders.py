@@ -64,6 +64,24 @@ class test_LoaderBase(AppCase):
         self.loader.on_task_init('foo.task', 'feedface-cafebabe')
         self.loader.on_worker_init()
 
+    def test_now(self):
+        self.assertTrue(self.loader.now(utc=True))
+        self.assertTrue(self.loader.now(utc=False))
+
+    def test_read_configuration_no_env(self):
+        self.assertDictEqual(
+            base.BaseLoader().read_configuration('FOO_X_S_WE_WQ_Q_WE'),
+            {},
+        )
+
+    def test_autodiscovery(self):
+        with patch('celery.loaders.base.autodiscover_tasks') as auto:
+            auto.return_value = [Mock()]
+            auto.return_value[0].__name__ = 'moo'
+            self.loader.autodiscover_tasks(['A', 'B'])
+            self.assertIn('moo', self.loader.task_modules)
+            self.loader.task_modules.discard('moo')
+
     def test_import_task_module(self):
         self.assertEqual(sys, self.loader.import_task_module('sys'))
 
@@ -164,6 +182,8 @@ class test_DefaultLoader(Case):
         l = default.Loader()
         with self.assertWarnsRegex(NotConfigured, r'make sure it exists'):
             l.read_configuration()
+        default.C_WNOCONF = False
+        l.read_configuration()
 
     def test_read_configuration(self):
         from types import ModuleType
@@ -187,6 +207,7 @@ class test_DefaultLoader(Case):
         finally:
             if prevconfig:
                 sys.modules[configname] = prevconfig
+
 
     def test_import_from_cwd(self):
         l = default.Loader()
@@ -234,3 +255,31 @@ class test_AppLoader(AppCase):
             self.assertIn('subprocess', sys.modules)
         finally:
             self.app.conf.CELERY_IMPORTS = prev
+
+
+class test_autodiscovery(Case):
+
+    def test_autodiscover_tasks(self):
+        base._RACE_PROTECTION = True
+        try:
+            base.autodiscover_tasks(['foo'])
+        finally:
+            base._RACE_PROTECTION = False
+        with patch('celery.loaders.base.find_related_module') as frm:
+            base.autodiscover_tasks(['foo'])
+            self.assertTrue(frm.called)
+
+    def test_find_related_module(self):
+        with patch('importlib.import_module') as imp:
+            with patch('imp.find_module') as find:
+                imp.return_value = Mock()
+                imp.return_value.__path__ = 'foo'
+                base.find_related_module(base, 'tasks')
+
+                imp.side_effect = AttributeError()
+                base.find_related_module(base, 'tasks')
+                imp.side_effect = None
+
+                find.side_effect = ImportError()
+                base.find_related_module(base, 'tasks')
+
