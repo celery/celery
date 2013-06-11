@@ -5,7 +5,7 @@ import os
 import resource
 import signal
 
-from mock import Mock, patch
+from mock import Mock, patch, call
 
 from celery import platforms
 from celery.five import open_fqdn
@@ -123,6 +123,10 @@ if not platforms.IS_WINDOWS:
 
             class pw_struct(object):
                 pw_gid = 50001
+            def raise_on_second_call(*args, **kwargs):
+                setuid.side_effect = OSError()
+                setuid.side_effect.errno = errno.EPERM
+            setuid.side_effect = raise_on_second_call
             getpwuid.return_value = pw_struct()
             parse_uid.return_value = 5001
             maybe_drop_privileges(uid='user')
@@ -130,7 +134,7 @@ if not platforms.IS_WINDOWS:
             getpwuid.assert_called_with(5001)
             setgid.assert_called_with(50001)
             initgroups.assert_called_with(5001, 50001)
-            setuid.assert_called_with(5001)
+            setuid.assert_has_calls([call(5001), call(0)])
 
         @patch('celery.platforms.parse_uid')
         @patch('celery.platforms.parse_gid')
@@ -139,6 +143,11 @@ if not platforms.IS_WINDOWS:
         @patch('celery.platforms.initgroups')
         def test_with_guid(self, initgroups, setuid, setgid,
                            parse_gid, parse_uid):
+
+            def raise_on_second_call(*args, **kwargs):
+                setuid.side_effect = OSError()
+                setuid.side_effect.errno = errno.EPERM
+            setuid.side_effect = raise_on_second_call
             parse_uid.return_value = 5001
             parse_gid.return_value = 50001
             maybe_drop_privileges(uid='user', gid='group')
@@ -146,7 +155,15 @@ if not platforms.IS_WINDOWS:
             parse_gid.assert_called_with('group')
             setgid.assert_called_with(50001)
             initgroups.assert_called_with(5001, 50001)
-            setuid.assert_called_with(5001)
+            setuid.assert_has_calls([call(5001), call(0)])
+
+            setuid.side_effect = None
+            with self.assertRaises(RuntimeError):
+                maybe_drop_privileges(uid='user', gid='group')
+            setuid.side_effect = OSError()
+            setuid.side_effect.errno = errno.EINVAL
+            with self.assertRaises(OSError):
+                maybe_drop_privileges(uid='user', gid='group')
 
         @patch('celery.platforms.setuid')
         @patch('celery.platforms.setgid')

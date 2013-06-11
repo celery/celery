@@ -18,6 +18,7 @@ import signal as _signal
 import sys
 
 from billiard import current_process
+from kombu.utils.compat import get_errno
 from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
@@ -516,10 +517,10 @@ def maybe_drop_privileges(uid=None, gid=None):
         # ... and make sure privileges cannot be restored:
         try:
             setuid(0)
-        except OSError:
+        except OSError as exc:
             if get_errno(exc) != errno.EPERM:
                 raise
-            pass  # Can not restore privileges.
+            pass  # Good: cannot restore privileges.
         else:
             if uid:
                 raise RuntimeError(
@@ -690,7 +691,7 @@ else:
             '{0}:{1}'.format(progname, current_process().name), info=info)
 
 
-def get_errno(n):
+def get_errno_name(n):
     """Get errno for string, e.g. ``ENOENT``."""
     if isinstance(n, string_t):
         return getattr(errno, n)
@@ -715,7 +716,7 @@ def ignore_errno(*errnos, **kwargs):
                     defaults to :exc:`Exception`.
     """
     types = kwargs.get('types') or (Exception, )
-    errnos = [get_errno(errno) for errno in errnos]
+    errnos = [get_errno_name(errno) for errno in errnos]
     try:
         yield
     except types as exc:
