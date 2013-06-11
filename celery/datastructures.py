@@ -507,14 +507,21 @@ class ConfigurationView(AttributeDictMixin):
         return (self[key] for key in self)
     itervalues = _iterate_values
 
-    def keys(self):
-        return list(self._iterate_keys())
+    if sys.version_info[0] == 3:  # pragma: no cover
+        keys = _iterate_keys
+        items = _iterate_items
+        values = _iterate_values
 
-    def items(self):
-        return list(self._iterate_items())
+    else:  # noqa
+        def keys(self):
+            return list(self._iterate_keys())
 
-    def values(self):
-        return list(self._iterate_values())
+        def items(self):
+            return list(self._iterate_items())
+
+        def values(self):
+            return list(self._iterate_values())
+
 MutableMapping.register(ConfigurationView)
 
 

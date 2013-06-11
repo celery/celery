@@ -8,6 +8,7 @@
 """
 from __future__ import absolute_import
 
+import sys
 import threading
 
 from functools import wraps
@@ -41,16 +42,6 @@ class LRUCache(UserDict):
         with self.mutex:
             value = self[key] = self.data.pop(key)
         return value
-
-    def keys(self):
-        # userdict.keys in py3k calls __getitem__
-        return keys(self.data)
-
-    def values(self):
-        return list(self._iterate_values())
-
-    def items(self):
-        return list(self._iterate_items())
 
     def update(self, *args, **kwargs):
         with self.mutex:
@@ -88,6 +79,11 @@ class LRUCache(UserDict):
                 pass
     itervalues = _iterate_values
 
+    def _iterate_keys(self):
+        # userdict.keys in py3k calls __getitem__
+        return keys(self.data)
+    iterkeys = _iterate_keys
+
     def incr(self, key, delta=1):
         with self.mutex:
             # this acts as memcached does- store as a string, but return a
@@ -104,6 +100,21 @@ class LRUCache(UserDict):
     def __setstate__(self, state):
         self.__dict__ = state
         self.mutex = threading.RLock()
+
+    if sys.version_info[0] == 3:  # pragma: no cover
+        keys = _iterate_keys
+        values = _iterate_values
+        items = _iterate_items
+    else:  # noqa
+
+        def keys(self):
+            return list(self._iterate_keys())
+
+        def values(self):
+            return list(self._iterate_values())
+
+        def items(self):
+            return list(self._iterate_items())
 
 
 def is_list(l, scalars=(dict, string_t)):
