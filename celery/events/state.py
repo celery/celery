@@ -62,7 +62,7 @@ class _lamportinfo(tuple):
         return tuple.__new__(cls, (clock, timestamp, id, obj))
 
     def __repr__(self):
-        return '_lamport(clock={0}, timestamp={1}, id={2} {3!r}'.format(*self)
+        return '_lamport(clock={0}, timestamp={1}, id={2} {3!r})'.format(*self)
 
     def __getnewargs__(self):
         return tuple(self)
@@ -74,7 +74,7 @@ class _lamportinfo(tuple):
             # uses logical clock value first
             if A and B:  # use logical clock if available
                 if A == B:  # equal clocks use lower process id
-                    return self[3] < other[3]
+                    return self[2] < other[2]
                 return A < B
             return self[1] < other[1]  # ... or use timestamp
         except IndexError:
