@@ -13,7 +13,7 @@ from celery.task.trace import (
     setup_worker_optimizations,
     reset_worker_optimizations,
 )
-from celery.tests.utils import AppCase
+from celery.tests.case import AppCase
 
 
 def trace(task, args=(), kwargs={}, propagate=False, **opts):

@@ -31,7 +31,7 @@ from celery.platforms import (
     close_open_fds,
 )
 
-from celery.tests.utils import Case, WhateverIO, override_stdouts, mock_open
+from celery.tests.case import Case, WhateverIO, override_stdouts, mock_open
 
 
 class test_find_option_with_arg(Case):

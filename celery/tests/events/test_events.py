@@ -6,7 +6,7 @@ from mock import Mock
 
 from celery import Celery
 from celery import events
-from celery.tests.utils import AppCase
+from celery.tests.case import AppCase
 
 
 class MockProducer(object):

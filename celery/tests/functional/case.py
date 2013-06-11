@@ -15,7 +15,7 @@ from celery.exceptions import TimeoutError
 from celery.task.control import ping, flatten_reply, inspect
 from celery.utils.imports import qualname
 
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 HOSTNAME = socket.gethostname()
 

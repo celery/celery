@@ -12,7 +12,7 @@ from celery.worker.hub import (
 from mock import Mock, call, patch
 
 from celery.five import range
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class File(object):

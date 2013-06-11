@@ -11,7 +11,7 @@ from celery.worker.components import (
     Pool,
 )
 
-from celery.tests.utils import AppCase
+from celery.tests.case import AppCase
 
 
 class test_Queues(AppCase):

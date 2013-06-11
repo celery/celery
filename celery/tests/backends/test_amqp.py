@@ -18,7 +18,7 @@ from celery.exceptions import TimeoutError
 from celery.five import Empty, Queue, range
 from celery.utils import uuid
 
-from celery.tests.utils import AppCase, sleepdeprived, Mock
+from celery.tests.case import AppCase, sleepdeprived, Mock
 
 
 class SomeClass(object):

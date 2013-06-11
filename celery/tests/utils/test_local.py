@@ -9,7 +9,7 @@ from celery.local import (
     maybe_evaluate,
     try_import,
 )
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_try_import(Case):

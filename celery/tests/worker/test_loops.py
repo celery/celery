@@ -10,7 +10,7 @@ from celery.worker import state
 from celery.worker.consumer import Consumer
 from celery.worker.loops import asynloop, synloop, CLOSE, READ, WRITE, ERR
 
-from celery.tests.utils import AppCase, body_from_sig
+from celery.tests.case import AppCase, body_from_sig
 
 
 class X(object):

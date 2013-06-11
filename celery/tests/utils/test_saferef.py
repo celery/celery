@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from celery.five import range
 from celery.utils.dispatch.saferef import safe_ref
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class Class1(object):

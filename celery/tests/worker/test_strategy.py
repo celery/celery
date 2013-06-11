@@ -10,7 +10,7 @@ from celery import Celery
 from celery.worker import state
 from celery.utils.timeutils import rate
 
-from celery.tests.utils import AppCase, body_from_sig
+from celery.tests.case import AppCase, body_from_sig
 
 
 class test_default_strategy(AppCase):

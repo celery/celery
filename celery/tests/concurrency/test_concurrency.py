@@ -6,7 +6,7 @@ from itertools import count
 from mock import Mock
 
 from celery.concurrency.base import apply_target, BasePool
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_BasePool(Case):

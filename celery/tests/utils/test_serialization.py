@@ -7,7 +7,7 @@ from celery.utils.serialization import (
     get_pickleable_etype,
 )
 
-from celery.tests.utils import Case, mask_modules
+from celery.tests.case import Case, mask_modules
 
 
 class test_AAPickle(Case):

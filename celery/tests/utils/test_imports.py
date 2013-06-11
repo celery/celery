@@ -10,7 +10,7 @@ from celery.utils.imports import (
     NotAPackage,
 )
 
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_import_utils(Case):

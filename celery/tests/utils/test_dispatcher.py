@@ -6,7 +6,7 @@ import sys
 import time
 
 from celery.utils.dispatch import Signal
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 if sys.platform.startswith('java'):

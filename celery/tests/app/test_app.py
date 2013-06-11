@@ -19,7 +19,7 @@ from celery.platforms import pyimplementation
 from celery.utils.serialization import pickle
 
 from celery.tests import config
-from celery.tests.utils import (
+from celery.tests.case import (
     Case,
     mask_modules,
     platform_pyimp,

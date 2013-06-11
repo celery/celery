@@ -8,7 +8,7 @@ from kombu.utils.functional import maybe_promise
 from celery.app import routes
 from celery.exceptions import QueueNotFound
 from celery.task import task
-from celery.tests.utils import AppCase
+from celery.tests.case import AppCase
 
 
 def Router(app, *args, **kwargs):

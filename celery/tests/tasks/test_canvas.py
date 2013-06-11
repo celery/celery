@@ -17,7 +17,7 @@ from celery.canvas import (
 )
 from celery.result import EagerResult
 
-from celery.tests.utils import AppCase
+from celery.tests.case import AppCase
 
 SIG = Signature({'task': 'TASK',
                  'args': ('A1', ),

@@ -9,7 +9,7 @@ from kombu.pidbox import Mailbox
 from celery.app import control
 from celery.task import task
 from celery.utils import uuid
-from celery.tests.utils import AppCase, Case
+from celery.tests.case import AppCase, Case
 
 
 @task()

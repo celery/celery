@@ -27,7 +27,7 @@ from celery.schedules import crontab, crontab_parser, ParseException
 from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601, timedelta_seconds
 
-from celery.tests.utils import Case, with_eager_tasks, WhateverIO
+from celery.tests.case import Case, with_eager_tasks, WhateverIO
 
 
 def now():

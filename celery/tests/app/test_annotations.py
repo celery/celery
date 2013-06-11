@@ -4,7 +4,7 @@ from celery.app.annotations import MapAnnotation, prepare
 from celery.task import task
 from celery.utils.imports import qualname
 
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 @task()

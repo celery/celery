@@ -16,7 +16,7 @@ from celery.result import AsyncResult
 from celery.task import subtask
 from celery.utils.timeutils import timedelta_seconds
 
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class Redis(object):

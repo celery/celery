@@ -4,7 +4,7 @@ from mock import Mock, patch
 
 from celery import bootsteps
 
-from celery.tests.utils import AppCase, Case
+from celery.tests.case import AppCase, Case
 
 
 class test_StepFormatter(Case):

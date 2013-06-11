@@ -17,7 +17,7 @@ from celery.loaders.app import AppLoader
 from celery.utils.imports import NotAPackage
 from celery.utils.mail import SendmailWarning
 
-from celery.tests.utils import AppCase, Case
+from celery.tests.case import AppCase, Case
 
 
 class DummyLoader(base.BaseLoader):

@@ -4,7 +4,7 @@ import warnings
 
 from celery.task import base
 
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 def add(x, y):

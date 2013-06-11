@@ -6,7 +6,7 @@ from time import time
 from celery.datastructures import LimitedSet
 from celery.exceptions import SystemTerminate
 from celery.worker import state
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class StateResetCase(Case):

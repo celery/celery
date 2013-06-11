@@ -4,7 +4,7 @@ import operator
 
 from celery.concurrency import solo
 from celery.utils.functional import noop
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_solo_TaskPool(Case):

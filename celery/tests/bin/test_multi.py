@@ -19,7 +19,7 @@ from celery.bin.multi import (
     __doc__ as doc,
 )
 
-from celery.tests.utils import Case, WhateverIO
+from celery.tests.case import Case, WhateverIO
 
 
 class test_functions(Case):

@@ -23,7 +23,7 @@ from celery.utils.timeutils import (
     utcoffset,
 )
 from celery.utils.iso8601 import parse_iso8601
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_LocalTimezone(Case):

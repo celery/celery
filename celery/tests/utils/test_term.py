@@ -4,7 +4,7 @@ from __future__ import absolute_import, unicode_literals
 from celery.utils import term
 from celery.utils.term import colored, fg
 
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_colored(Case):

@@ -9,7 +9,7 @@ from celery.utils.text import (
     abbrtask,
     pretty,
 )
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 RANDTEXT = """\
 The quick brown

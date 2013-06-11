@@ -10,7 +10,7 @@ from celery.utils.threads import (
     bgThread,
 )
 
-from celery.tests.utils import Case, override_stdouts
+from celery.tests.case import Case, override_stdouts
 
 
 class test_bgThread(Case):

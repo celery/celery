@@ -11,7 +11,7 @@ from celery.bin.amqp import (
     main,
 )
 
-from celery.tests.utils import AppCase, WhateverIO
+from celery.tests.case import AppCase, WhateverIO
 
 
 class test_AMQShell(AppCase):

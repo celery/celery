@@ -27,7 +27,7 @@ from kombu.serialization import registry
 
 from .case import SecurityCase
 
-from celery.tests.utils import mock_open
+from celery.tests.case import mock_open
 
 
 class test_security(SecurityCase):

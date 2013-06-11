@@ -8,7 +8,7 @@ from pickle import loads, dumps
 from celery import Celery
 from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.tests.utils import AppCase, mock_module
+from celery.tests.case import AppCase, mock_module
 
 
 class Object(object):

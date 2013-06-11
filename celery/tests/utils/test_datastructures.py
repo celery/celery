@@ -9,7 +9,7 @@ from celery.datastructures import (
     DependencyGraph,
 )
 from celery.five import items
-from celery.tests.utils import Case, WhateverIO
+from celery.tests.case import Case, WhateverIO
 
 
 class Object(object):

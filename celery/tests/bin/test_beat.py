@@ -14,7 +14,7 @@ from celery.app import app_or_default
 from celery.bin import beat as beat_bin
 from celery.apps import beat as beatapp
 
-from celery.tests.utils import AppCase, Mock
+from celery.tests.case import AppCase, Mock
 
 
 class MockedShelveModule(object):

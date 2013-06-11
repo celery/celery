@@ -8,7 +8,7 @@ from mock import Mock, patch
 
 import celery.utils.timer2 as timer2
 
-from celery.tests.utils import Case, skip_if_quick
+from celery.tests.case import Case, skip_if_quick
 
 
 class test_Entry(Case):

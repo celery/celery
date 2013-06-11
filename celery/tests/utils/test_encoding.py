@@ -6,7 +6,7 @@ from nose import SkipTest
 
 from celery.five import string
 from celery.utils import encoding
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_encoding(Case):

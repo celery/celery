@@ -9,7 +9,7 @@ from mock import Mock, patch
 from celery.concurrency.base import BasePool
 from celery.worker import state
 from celery.worker import autoscale
-from celery.tests.utils import AppCase, sleepdeprived
+from celery.tests.case import AppCase, sleepdeprived
 
 
 class Object(object):

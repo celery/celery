@@ -9,7 +9,7 @@ from celery.events.dumper import (
     evdump,
 )
 
-from celery.tests.utils import Case, WhateverIO
+from celery.tests.case import Case, WhateverIO
 
 
 class test_Dumper(Case):

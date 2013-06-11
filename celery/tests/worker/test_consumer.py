@@ -21,7 +21,7 @@ from celery.worker.consumer import (
     CLOSE,
 )
 
-from celery.tests.utils import AppCase
+from celery.tests.case import AppCase
 
 
 class test_Consumer(AppCase):

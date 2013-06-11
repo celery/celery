@@ -10,7 +10,7 @@ from celery.contrib.migrate import (
     migrate_tasks,
 )
 from celery.utils.encoding import bytes_t, ensure_bytes
-from celery.tests.utils import AppCase, Case, Mock
+from celery.tests.case import AppCase, Case, Mock
 
 
 def Message(body, exchange='exchange', routing_key='rkey',

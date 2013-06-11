@@ -17,7 +17,7 @@ from celery.utils.log import (
     logger as base_logger,
     get_task_logger,
 )
-from celery.tests.utils import (
+from celery.tests.case import (
     AppCase, Case, override_stdouts, wrap_logger, get_handlers,
 )
 

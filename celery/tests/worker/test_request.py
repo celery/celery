@@ -45,7 +45,7 @@ from celery.worker import job as module
 from celery.worker.job import Request, TaskRequest, logger as req_logger
 from celery.worker.state import revoked
 
-from celery.tests.utils import (
+from celery.tests.case import (
     AppCase,
     Case,
     assert_signal_called,

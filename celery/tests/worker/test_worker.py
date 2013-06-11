@@ -33,7 +33,7 @@ from celery.utils import worker_direct
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 
-from celery.tests.utils import AppCase, Case
+from celery.tests.case import AppCase, Case
 
 
 def MockStep(step=None):

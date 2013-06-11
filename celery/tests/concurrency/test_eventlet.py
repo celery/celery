@@ -14,7 +14,7 @@ from celery.concurrency.eventlet import (
     TaskPool,
 )
 
-from celery.tests.utils import Case, mock_module, patch_many, skip_if_pypy
+from celery.tests.case import Case, mock_module, patch_many, skip_if_pypy
 
 
 class EventletCase(Case):

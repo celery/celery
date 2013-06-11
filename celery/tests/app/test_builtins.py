@@ -7,7 +7,7 @@ from celery.app import builtins
 from celery.canvas import Signature
 from celery.five import range
 from celery._state import _task_stack
-from celery.tests.utils import AppCase
+from celery.tests.case import AppCase
 
 
 @shared_task()

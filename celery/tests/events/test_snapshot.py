@@ -5,7 +5,7 @@ from mock import patch
 from celery.app import app_or_default
 from celery.events import Events
 from celery.events.snapshot import Polaroid, evcam
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class TRef(object):

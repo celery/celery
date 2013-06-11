@@ -22,7 +22,7 @@ from celery.worker.job import TaskRequest
 from celery.worker.state import revoked
 from celery.worker.control import Panel
 from celery.worker.pidbox import Pidbox, gPidbox
-from celery.tests.utils import AppCase
+from celery.tests.case import AppCase
 
 hostname = socket.gethostname()
 

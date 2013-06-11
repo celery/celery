@@ -13,7 +13,7 @@ from celery.five import keys, string_t
 from celery.result import AsyncResult
 from celery.schedules import schedule
 from celery.utils import uuid
-from celery.tests.utils import AppCase, patch_settings
+from celery.tests.case import AppCase, patch_settings
 
 
 class Object(object):

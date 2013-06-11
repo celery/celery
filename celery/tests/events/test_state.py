@@ -8,7 +8,7 @@ from celery import states
 from celery.events import Event
 from celery.events.state import State, Worker, Task, HEARTBEAT_EXPIRE_WINDOW
 from celery.utils import uuid
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class replay(object):

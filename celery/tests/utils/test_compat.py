@@ -5,7 +5,7 @@ import celery
 from celery.app.task import Task as ModernTask
 from celery.task.base import Task as CompatTask
 
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_MagicModule(Case):

@@ -19,8 +19,8 @@ from celery.task.base import Task
 from celery.utils import uuid
 from celery.utils.serialization import pickle
 
-from celery.tests.utils import AppCase
-from celery.tests.utils import skip_if_quick
+from celery.tests.case import AppCase
+from celery.tests.case import skip_if_quick
 
 
 @task()

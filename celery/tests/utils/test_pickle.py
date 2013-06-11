@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from celery.utils.serialization import pickle
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class RegularException(Exception):

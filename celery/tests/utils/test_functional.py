@@ -14,7 +14,7 @@ from celery.utils.functional import (
     maybe_list,
 )
 
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_LRUCache(Case):

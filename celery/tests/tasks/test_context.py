@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from collections import Callable
 
 from celery.task.base import Context
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 # Retreive the values of all context attributes as a

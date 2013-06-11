@@ -12,7 +12,7 @@ from celery.concurrency.gevent import (
     TaskPool,
 )
 
-from celery.tests.utils import Case, mock_module, patch_many, skip_if_pypy
+from celery.tests.case import Case, mock_module, patch_many, skip_if_pypy
 gevent_modules = (
     'gevent',
     'gevent.monkey',

@@ -9,7 +9,7 @@ from celery.task import Task
 from celery.task.sets import subtask, TaskSet
 from celery.canvas import Signature
 
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class MockTask(Task):

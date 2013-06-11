@@ -5,7 +5,7 @@ from mock import patch
 from celery.backends.rpc import RPCBackend
 from celery._state import _task_stack
 
-from celery.tests.utils import AppCase, Mock
+from celery.tests.case import AppCase, Mock
 
 
 class test_RPCBackend(AppCase):

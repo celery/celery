@@ -17,7 +17,7 @@ from celery.result import AsyncResult
 from celery.task import subtask
 from celery.utils import uuid
 
-from celery.tests.utils import AppCase, mask_modules, reset_modules
+from celery.tests.case import AppCase, mask_modules, reset_modules
 
 
 class SomeClass(object):

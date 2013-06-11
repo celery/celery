@@ -23,7 +23,7 @@ from celery.task import trace
 from celery.utils.log import ensure_process_aware_logger
 from celery.worker import state
 
-from celery.tests.utils import (
+from celery.tests.case import (
     AppCase,
     WhateverIO,
     skip_if_pypy,

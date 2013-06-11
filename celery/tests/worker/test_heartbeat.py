@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from celery.worker.heartbeat import Heart
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class MockDispatcher(object):

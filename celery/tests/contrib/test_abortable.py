@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from celery.contrib.abortable import AbortableTask, AbortableAsyncResult
 from celery.result import AsyncResult
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class MyAbortableTask(AbortableTask):

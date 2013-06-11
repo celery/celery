@@ -25,7 +25,7 @@ from celery.backends.base import (
 )
 from celery.utils import uuid
 
-from celery.tests.utils import AppCase, Case
+from celery.tests.case import AppCase, Case
 
 
 class wrapobject(object):

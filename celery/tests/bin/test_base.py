@@ -10,7 +10,7 @@ from celery.bin.base import (
     Extensions,
     HelpFormatter,
 )
-from celery.tests.utils import AppCase, Case, override_stdouts
+from celery.tests.case import AppCase, Case, override_stdouts
 
 
 class Object(object):

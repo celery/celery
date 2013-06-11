@@ -8,7 +8,7 @@ from mock import Mock, patch
 from . import CERT1, CERT2, KEY1
 from .case import SecurityCase
 
-from celery.tests.utils import mock_open
+from celery.tests.case import mock_open
 
 
 class test_Certificate(SecurityCase):

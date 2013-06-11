@@ -27,7 +27,7 @@ from celery.bin.celery import (
     main as mainfun,
 )
 
-from celery.tests.utils import AppCase, Case, WhateverIO, override_stdouts
+from celery.tests.case import AppCase, Case, WhateverIO, override_stdouts
 
 
 @task()

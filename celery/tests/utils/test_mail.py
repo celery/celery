@@ -6,7 +6,7 @@ from mock import Mock, patch
 
 from celery.utils.mail import Message, Mailer
 
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 msg = Message(to='george@vandelay.com', sender='elaine@pendant.com',

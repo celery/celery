@@ -11,7 +11,7 @@ from nose import SkipTest
 
 from celery.five import items, range
 from celery.utils.functional import noop
-from celery.tests.utils import AppCase
+from celery.tests.case import AppCase
 try:
     from celery.concurrency import processes as mp
 except ImportError:

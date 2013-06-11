@@ -6,7 +6,7 @@ from celery import current_app
 from celery import backends
 from celery.backends.amqp import AMQPBackend
 from celery.backends.cache import CacheBackend
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_backends(Case):

@@ -7,7 +7,7 @@ from nose import SkipTest
 
 from celery.utils.sysinfo import load_average, df
 
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_load_average(Case):

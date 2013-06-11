@@ -16,7 +16,7 @@ from celery.utils import (
     gen_task_name,
     jsonify,
 )
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 def double(x):
