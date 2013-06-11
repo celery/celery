@@ -5,7 +5,6 @@ from mock import Mock, patch
 from celery import uuid
 from celery import signals
 from celery import states
-from celery.app.task import Task as BaseTask
 from celery.exceptions import RetryTaskError, Ignore
 from celery.task.trace import (
     TraceInfo,
@@ -14,7 +13,7 @@ from celery.task.trace import (
     setup_worker_optimizations,
     reset_worker_optimizations,
 )
-from celery.tests.utils import AppCase, Mock
+from celery.tests.utils import AppCase
 
 
 def trace(task, args=(), kwargs={}, propagate=False, **opts):

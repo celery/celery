@@ -46,6 +46,7 @@ class test_subtask(Case):
         self.assertTupleEqual(args, (2, 2))
         self.assertDictEqual(kwargs, {'cache': True})
         self.assertDictEqual(options, {'routing_key': 'CPU-bound'})
+
     def test_delay_argmerge(self):
         s = MockTask.subtask(
             (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
@@ -135,9 +136,7 @@ class test_TaskSet(Case):
             ts.apply_async()
             self.assertTrue(parent.request.children)
 
-
     def test_apply_async(self):
-
         applied = [0]
 
         class mocksubtask(Signature):

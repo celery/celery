@@ -437,7 +437,6 @@ class ResultSet(ResultBase):
         while results:
             removed = set()
             for task_id, result in items(results):
-                print("READY IS: %r" % result.ready)
                 if result.ready():
                     yield result.get(timeout=timeout and timeout - elapsed,
                                      propagate=propagate)

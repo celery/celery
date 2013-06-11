@@ -291,7 +291,7 @@ class test_tasks(Case):
             consumer.receive('foo', 'foo')
         consumer.purge()
         self.assertIsNone(consumer.queues[0].get())
-        consumer2 = T1.get_consumer(queues=[Queue('foo')])
+        T1.get_consumer(queues=[Queue('foo')])
 
         # Without arguments.
         presult = T1.delay()

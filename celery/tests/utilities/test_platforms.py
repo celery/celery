@@ -48,6 +48,7 @@ class test_find_option_with_arg(Case):
             'bar'
         )
 
+
 class test_close_open_fds(Case):
 
     def test_closes(self):
@@ -59,6 +60,7 @@ class test_close_open_fds(Case):
                 _close.side_effect = OSError()
                 _close.side_effect.errno = errno.EBADF
                 close_open_fds()
+
 
 class test_ignore_errno(Case):
 

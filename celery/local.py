@@ -14,7 +14,7 @@ from __future__ import absolute_import
 
 import importlib
 
-from .five import long_t, string, string_t
+from .five import long_t, string
 
 __module__ = __name__  # used by Proxy class body
 

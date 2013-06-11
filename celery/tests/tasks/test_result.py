@@ -334,7 +334,7 @@ class test_ResultSet(AppCase):
         r1.ready.return_value = False
         x = ResultSet([r1])
         with self.dummy_copy():
-            with patch('celery.result.time') as _time:
+            with patch('celery.result.time'):
                 with self.assertRaises(TimeoutError):
                     list(x.iterate(timeout=1))
 

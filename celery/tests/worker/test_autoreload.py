@@ -130,6 +130,7 @@ class test_KQueueMontior(Case):
             hub.poller.on_file_change,
             x.handle_event,
         )
+
     def test_on_poll_close(self):
         x = KQueueMonitor(['a', 'b'])
         x.close = Mock()
@@ -246,9 +247,11 @@ class test_Autoreloader(AppCase):
         hub = Mock()
         x._monitor = None
         x.on_init = Mock()
+
         def se(*args, **kwargs):
             x._monitor = Mock()
         x.on_init.side_effect = se
+
         x.on_poll_init(hub)
         x.on_init.assert_called_with()
         x._monitor.on_poll_init.assert_called_with(hub)

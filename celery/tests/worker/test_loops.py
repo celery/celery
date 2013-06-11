@@ -62,7 +62,6 @@ class X(object):
         _consumer.on_invalid_task = self.on_invalid_task
         _consumer.strategies = self.obj.strategies
 
-
     def timeout_then_error(self, mock):
 
         def first(*args, **kwargs):

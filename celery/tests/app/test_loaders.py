@@ -208,7 +208,6 @@ class test_DefaultLoader(Case):
             if prevconfig:
                 sys.modules[configname] = prevconfig
 
-
     def test_import_from_cwd(self):
         l = default.Loader()
         old_path = list(sys.path)
@@ -282,4 +281,3 @@ class test_autodiscovery(Case):
 
                 find.side_effect = ImportError()
                 base.find_related_module(base, 'tasks')
-
