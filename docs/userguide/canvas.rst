@@ -565,7 +565,7 @@ The :class:`~celery.group` function takes a list of subtasks::
     (proj.tasks.add(2, 2), proj.tasks.add(4, 4))
 
 If you **call** the group, the tasks will be applied
-one after one in the current process, and a :class:`~@TaskSetResult`
+one after one in the current process, and a :class:`~celery.result.GroupResult`
 instance is returned which can be used to keep track of the results,
 or tell how many tasks are ready and so on::
 
@@ -667,7 +667,7 @@ Chords
 
 .. versionadded:: 2.3
 
-A chord is a task that only executes after all of the tasks in a taskset have
+A chord is a task that only executes after all of the tasks in a group have
 finished executing.
 
 
@@ -800,7 +800,7 @@ Example decorated task:
         do_something()
 
 By default the synchronization step is implemented by having a recurring task
-poll the completion of the taskset every second, calling the subtask when
+poll the completion of the group every second, calling the subtask when
 ready.
 
 Example implementation:
@@ -808,9 +808,9 @@ Example implementation:
 .. code-block:: python
 
     @app.task(bind=True)
-    def unlock_chord(self, taskset, callback, interval=1, max_retries=None):
-        if taskset.ready():
-            return subtask(callback).delay(taskset.join())
+    def unlock_chord(self, group, callback, interval=1, max_retries=None):
+        if group.ready():
+            return subtask(callback).delay(group.join())
         raise self.retry(countdown=interval, max_retries=max_retries)
 
 
