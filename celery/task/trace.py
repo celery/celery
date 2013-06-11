@@ -260,6 +260,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     except Exception as exc:
                         _logger.error('Process cleanup failed: %r', exc,
                                       exc_info=True)
+        except MemoryError:
+            raise
         except Exception as exc:
             if eager:
                 raise
@@ -333,13 +335,9 @@ def setup_worker_optimizations(app):
     _tasks = app._tasks
 
     trace_task_ret = _fast_trace_task
-    try:
-        job = sys.modules['celery.worker.job']
-    except KeyError:
-        pass
-    else:
-        job.trace_task_ret = _fast_trace_task
-        job.__optimize__()
+    from celery.worker import job as job_module
+    job_module.trace_task_ret = _fast_trace_task
+    job_module.__optimize__()
 
 
 def reset_worker_optimizations():
@@ -353,10 +351,8 @@ def reset_worker_optimizations():
         BaseTask.__call__ = _patched.pop('BaseTask.__call__')
     except KeyError:
         pass
-    try:
-        sys.modules['celery.worker.job'].trace_task_ret = _trace_task_ret
-    except KeyError:
-        pass
+    from celery.worker import job as job_module
+    job_module.trace_task_ret = _trace_task_ret
 
 
 def _install_stack_protection():
