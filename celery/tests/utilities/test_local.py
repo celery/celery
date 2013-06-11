@@ -1,7 +1,14 @@
 from __future__ import absolute_import, unicode_literals
 
+from mock import Mock
+
 from celery.five import string, long_t
-from celery.local import Proxy, PromiseProxy, maybe_evaluate, try_import
+from celery.local import (
+    Proxy,
+    PromiseProxy,
+    maybe_evaluate,
+    try_import,
+)
 from celery.tests.utils import Case
 
 
@@ -39,6 +46,12 @@ class test_Proxy(Case):
         self.assertEqual(x.__class__, type(real))
         self.assertEqual(x.__dict__, real.__dict__)
         self.assertEqual(repr(x), repr(real))
+        self.assertTrue(x.__module__)
+
+    def test_get_current_local(self):
+        x = Proxy(lambda: 10)
+        object.__setattr__(x, '_Proxy_local', Mock())
+        self.assertTrue(x._get_current_object())
 
     def test_bool(self):
 
@@ -144,6 +157,40 @@ class test_Proxy(Case):
         self.assertIn(10, x)
         self.assertEqual(len(x), 3)
         self.assertTrue(iter(x))
+        x[0:2] = [1, 2]
+        del(x[0:2])
+        self.assertTrue(str(x))
+        self.assertEqual(x.__cmp__(object()), -1)
+
+    def test_complex_cast(self):
+
+        class O(object):
+
+            def __complex__(self):
+                return 10.333
+
+        o = Proxy(O)
+        self.assertEqual(o.__complex__(), 10.333)
+
+    def test_index(self):
+
+        class O(object):
+
+            def __index__(self):
+                return 1
+
+        o = Proxy(O)
+        self.assertEqual(o.__index__(), 1)
+
+    def test_coerce(self):
+
+        class O(object):
+
+            def __coerce__(self, other):
+                return self, other
+
+        o = Proxy(O)
+        self.assertTrue(o.__coerce__(3))
 
     def test_int(self):
         self.assertEqual(Proxy(lambda: 10) + 1, Proxy(lambda: 11))
@@ -166,6 +213,9 @@ class test_Proxy(Case):
         self.assertTrue(Proxy(lambda: 10) <= Proxy(lambda: 10))
         self.assertTrue(Proxy(lambda: 10) == Proxy(lambda: 10))
         self.assertTrue(Proxy(lambda: 20) != Proxy(lambda: 10))
+        self.assertTrue(Proxy(lambda: 100).__divmod__(30))
+        self.assertTrue(Proxy(lambda: 100).__truediv__(30))
+        self.assertTrue(abs(Proxy(lambda: -100)))
 
         x = Proxy(lambda: 10)
         x -= 1
@@ -277,7 +327,9 @@ class test_PromiseProxy(Case):
 
     def test_maybe_evaluate(self):
         x = PromiseProxy(lambda: 30)
+        self.assertFalse(x.__evaluated__())
         self.assertEqual(maybe_evaluate(x), 30)
         self.assertEqual(maybe_evaluate(x), 30)
 
         self.assertEqual(maybe_evaluate(30), 30)
+        self.assertTrue(x.__evaluated__())
