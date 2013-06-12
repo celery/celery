@@ -21,6 +21,7 @@ import sys
 
 from warnings import warn
 
+from billiard.einfo import ExceptionInfo
 from kombu.utils import kwdict
 
 from celery import current_app
@@ -28,7 +29,6 @@ from celery import states, signals
 from celery._state import _task_stack
 from celery.app import set_default_app
 from celery.app.task import Task as BaseTask, Context
-from celery.datastructures import ExceptionInfo
 from celery.exceptions import Ignore, RetryTaskError
 from celery.utils.log import get_logger
 from celery.utils.objects import mro_lookup

@@ -9,19 +9,20 @@ from datetime import datetime, timedelta
 from kombu import pidbox
 from mock import Mock, patch, call
 
-from celery.datastructures import AttributeDict
+from celery.five import Queue as FastQueue
 from celery.task import task
 from celery.utils import uuid
+from celery.utils.datastructures import AttributeDict
 from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC
 from celery.worker import consumer
 from celery.worker import control
 from celery.worker import state as worker_state
-from celery.five import Queue as FastQueue
 from celery.worker.job import TaskRequest
 from celery.worker.state import revoked
 from celery.worker.control import Panel
 from celery.worker.pidbox import Pidbox, gPidbox
+
 from celery.tests.case import AppCase
 
 hostname = socket.gethostname()

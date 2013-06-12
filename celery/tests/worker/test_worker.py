@@ -17,7 +17,6 @@ from mock import call, Mock, patch
 from celery.app.defaults import DEFAULTS
 from celery.bootsteps import RUN, CLOSE, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
-from celery.datastructures import AttributeDict
 from celery.exceptions import SystemTerminate, TaskRevokedError
 from celery.five import Empty, range, Queue as FastQueue
 from celery.task import task as task_dec
@@ -30,6 +29,7 @@ from celery.worker.consumer import Consumer as __Consumer
 from celery.worker.hub import READ, ERR
 from celery.worker.job import Request
 from celery.utils import worker_direct
+from celery.utils.datastructures import AttributeDict
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 

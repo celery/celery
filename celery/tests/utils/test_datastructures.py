@@ -1,14 +1,16 @@
 from __future__ import absolute_import
 
-from celery.datastructures import (
-    ExceptionInfo,
+from billiard.einfo import ExceptionInfo
+
+from celery.five import items
+from celery.utils.datastructures import (
     LimitedSet,
     AttributeDict,
     DictAttribute,
     ConfigurationView,
     DependencyGraph,
 )
-from celery.five import items
+
 from celery.tests.case import Case, WhateverIO
 
 

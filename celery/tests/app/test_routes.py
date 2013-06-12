@@ -8,6 +8,8 @@ from kombu.utils.functional import maybe_promise
 from celery.app import routes
 from celery.exceptions import QueueNotFound
 from celery.task import task
+from celery.utils.functional import LRUCache
+
 from celery.tests.case import AppCase
 
 
@@ -149,10 +151,9 @@ class test_lookup_route(RouteCase):
 class test_prepare(AppCase):
 
     def test_prepare(self):
-        from celery.datastructures import LRUCache
         o = object()
         R = [{'foo': 'bar'},
-             'celery.datastructures.LRUCache', o]
+             'celery.utils.functional.LRUCache', o]
         p = routes.prepare(R)
         self.assertIsInstance(p[0], routes.MapRoute)
         self.assertIsInstance(maybe_promise(p[1]), LRUCache)

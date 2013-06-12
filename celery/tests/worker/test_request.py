@@ -10,6 +10,7 @@ import time
 
 from datetime import datetime, timedelta
 
+from billiard.einfo import ExceptionInfo
 from kombu.transport.base import Message
 from kombu.utils.encoding import from_utf8, default_encode
 from mock import Mock, patch
@@ -17,7 +18,6 @@ from nose import SkipTest
 
 from celery import states
 from celery.concurrency.base import BasePool
-from celery.datastructures import ExceptionInfo
 from celery.exceptions import (
     RetryTaskError,
     WorkerLostError,

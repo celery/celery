@@ -6,7 +6,7 @@ import threading
 from kombu.common import ignore_errors
 from kombu.utils.encoding import safe_str
 
-from celery.datastructures import AttributeDict
+from celery.utils.datastructures import AttributeDict
 from celery.utils.log import get_logger
 
 from . import control

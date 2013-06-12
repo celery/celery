@@ -22,7 +22,7 @@ from .utils.timeutils import (
     timedelta_seconds, weekday, maybe_timedelta, remaining,
     humanize_seconds, timezone, maybe_make_aware, ffwd
 )
-from .datastructures import AttributeDict
+from .utils.datastructures import AttributeDict
 
 CRON_PATTERN_INVALID = """\
 Invalid crontab pattern. Valid range is {min}-{max}. \

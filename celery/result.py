@@ -19,9 +19,9 @@ from kombu.utils.compat import OrderedDict
 from . import current_app
 from . import states
 from .app import app_or_default
-from .datastructures import DependencyGraph, GraphFormatter
 from .exceptions import IncompleteStream, TimeoutError
 from .five import items, range, string_t
+from .utils.datastructures import DependencyGraph, GraphFormatter
 
 
 class ResultBase(object):

@@ -28,8 +28,9 @@ from time import time
 from kombu.utils import kwdict
 
 from celery import states
-from celery.datastructures import AttributeDict, LRUCache
 from celery.five import items, values
+from celery.utils.datastructures import AttributeDict
+from celery.utils.functional import LRUCache
 from celery.utils.log import get_logger
 
 # The window (in percentage) is added to the workers heartbeat

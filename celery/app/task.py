@@ -10,11 +10,12 @@ from __future__ import absolute_import
 
 import sys
 
+from billiard.einfo import ExceptionInfo
+
 from celery import current_app
 from celery import states
 from celery._state import get_current_worker_task, _task_stack
 from celery.canvas import subtask
-from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.five import class_property, items, with_metaclass
 from celery.result import EagerResult
@@ -744,7 +745,7 @@ class Task(object):
         :param args: Original arguments for the retried task.
         :param kwargs: Original keyword arguments for the retried task.
 
-        :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
+        :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
                         instance, containing the traceback.
 
         The return value of this handler is ignored.
@@ -763,7 +764,7 @@ class Task(object):
         :param kwargs: Original keyword arguments for the task
                        that failed.
 
-        :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
+        :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
                         instance, containing the traceback.
 
         The return value of this handler is ignored.
@@ -781,7 +782,7 @@ class Task(object):
         :param kwargs: Original keyword arguments for the task
                        that failed.
 
-        :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
+        :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
                         instance, containing the traceback (if any).
 
         The return value of this handler is ignored.

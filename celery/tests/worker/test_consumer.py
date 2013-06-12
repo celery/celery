@@ -8,7 +8,7 @@ from nose import SkipTest
 
 from billiard.exceptions import RestartFreqExceeded
 
-from celery.datastructures import LimitedSet
+from celery.utils.datastructures import LimitedSet
 from celery.worker import state as worker_state
 from celery.worker.consumer import (
     Consumer,

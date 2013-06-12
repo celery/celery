@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.datastructures
-    ~~~~~~~~~~~~~~~~~~~~~
+    celery.utils.datastructures
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Custom types and data structures.
 
@@ -20,8 +20,9 @@ from billiard.einfo import ExceptionInfo  # noqa
 from kombu.utils.encoding import safe_str
 from kombu.utils.limits import TokenBucket  # noqa
 
-from .five import items
-from .utils.functional import LRUCache, first, uniq  # noqa
+from celery.five import items
+
+from .functional import LRUCache, first, uniq  # noqa
 
 DOT_HEAD = """
 {IN}{type} {id} {{
@@ -626,10 +627,6 @@ class LimitedSet(object):
 
     def __repr__(self):
         return 'LimitedSet(%s)' % (repr(list(self._data))[:100], )
-
-    @property
-    def chronologically(self):
-        return [value for _, value in self._heap]
 
     @property
     def first(self):

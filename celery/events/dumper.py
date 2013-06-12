@@ -14,7 +14,7 @@ import sys
 from datetime import datetime
 
 from celery.app import app_or_default
-from celery.datastructures import LRUCache
+from celery.utils.functional import LRUCache
 from celery.utils.timeutils import humanize_seconds
 
 TASK_NAMES = LRUCache(limit=0xFFF)

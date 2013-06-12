@@ -10,10 +10,10 @@ from kombu.utils import cached_property, uuid
 
 from celery import current_app
 from celery import states
-from celery.datastructures import AttributeDict
 from celery.exceptions import ImproperlyConfigured
 from celery.result import AsyncResult
 from celery.task import subtask
+from celery.utils.datastructures import AttributeDict
 from celery.utils.timeutils import timedelta_seconds
 
 from celery.tests.case import Case

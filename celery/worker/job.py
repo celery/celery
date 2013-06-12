@@ -14,6 +14,7 @@ import time
 import socket
 import sys
 
+from billiard.einfo import ExceptionInfo
 from datetime import datetime
 
 from kombu.utils import kwdict, reprcall
@@ -21,7 +22,6 @@ from kombu.utils.encoding import safe_repr, safe_str
 
 from celery import signals
 from celery.app import app_or_default
-from celery.datastructures import ExceptionInfo
 from celery.exceptions import (
     Ignore, TaskRevokedError, InvalidTaskError,
     SoftTimeLimitExceeded, TimeLimitExceeded,

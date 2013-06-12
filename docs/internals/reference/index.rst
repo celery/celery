@@ -39,13 +39,13 @@
     celery.security.key
     celery.security.serialization
     celery.security.utils
-    celery.datastructures
     celery.events.snapshot
     celery.events.cursesmon
     celery.events.dumper
     celery.backends.database.models
     celery.backends.database.session
     celery.utils
+    celery.utils.datastructures
     celery.utils.functional
     celery.utils.objects
     celery.utils.term
