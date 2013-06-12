@@ -1,6 +1,10 @@
 from __future__ import absolute_import
 
+import pickle
+
 from billiard.einfo import ExceptionInfo
+from mock import Mock, patch
+from time import time
 
 from celery.five import items
 from celery.utils.datastructures import (
@@ -20,7 +24,7 @@ class Object(object):
 
 class test_DictAttribute(Case):
 
-    def test_get_set(self):
+    def test_get_set_keys_values_items(self):
         x = DictAttribute(Object())
         x['foo'] = 'The quick brown fox'
         self.assertEqual(x['foo'], 'The quick brown fox')
@@ -29,6 +33,14 @@ class test_DictAttribute(Case):
         self.assertIsNone(x.get('bar'))
         with self.assertRaises(KeyError):
             x['bar']
+        x.foo = 'The quick yellow fox'
+        self.assertEqual(x['foo'], 'The quick yellow fox')
+        self.assertIn(
+            ('foo', 'The quick yellow fox'),
+            list(x.items()),
+        )
+        self.assertIn('foo', list(x.keys()))
+        self.assertIn('The quick yellow fox', x.values())
 
     def test_setdefault(self):
         x = DictAttribute(Object())
@@ -94,6 +106,37 @@ class test_ConfigurationView(Case):
             list(self.view.values()),
             list(expected.values()),
         )
+        self.assertIn('changed_key', list(self.view.keys()))
+        self.assertIn(2, list(self.view.values()))
+        self.assertIn(('both', 2), list(self.view.items()))
+
+    def test_add_defaults_dict(self):
+        defaults = {'foo': 10}
+        self.view.add_defaults(defaults)
+        self.assertEqual(self.view.foo, 10)
+
+    def test_add_defaults_object(self):
+        defaults = Object()
+        defaults.foo = 10
+        self.view.add_defaults(defaults)
+        self.assertEqual(self.view.foo, 10)
+
+    def test_clear(self):
+        self.view.clear()
+        self.assertEqual(self.view.both, 1)
+        self.assertNotIn('changed_key', self.view)
+
+    def test_bool(self):
+        self.assertTrue(bool(self.view))
+        self.view._order[:] = []
+        self.assertFalse(bool(self.view))
+
+    def test_len(self):
+        self.assertEqual(len(self.view), 3)
+        self.view.KEY = 33
+        self.assertEqual(len(self.view), 4)
+        self.view.clear()
+        self.assertEqual(len(self.view), 2)
 
     def test_isa_mapping(self):
         from collections import Mapping
@@ -136,14 +179,61 @@ class test_LimitedSet(Case):
             self.assertIn(n, s)
         self.assertNotIn('foo', s)
 
-    def test_iter(self):
+    def test_purge(self):
+        s = LimitedSet(maxlen=None)
+        [s.add(i) for i in range(10)]
+        s.maxlen = 2
+        s.purge(1)
+        self.assertEqual(len(s), 9)
+        s.purge(None)
+        self.assertEqual(len(s), 2)
+
+        # expired
+        s = LimitedSet(maxlen=None, expires=1)
+        [s.add(i) for i in range(10)]
+        s.maxlen = 2
+        s.purge(1, now=lambda: time() + 100)
+        self.assertEqual(len(s), 9)
+        s.purge(None, now=lambda: time() + 100)
+        self.assertEqual(len(s), 2)
+
+        # not expired
+        s = LimitedSet(maxlen=None, expires=1)
+        [s.add(i) for i in range(10)]
+        s.maxlen = 2
+        s.purge(1, now=lambda: time() - 100)
+        self.assertEqual(len(s), 10)
+        s.purge(None, now=lambda: time() - 100)
+        self.assertEqual(len(s), 10)
+
+        s = LimitedSet(maxlen=None)
+        [s.add(i) for i in range(10)]
+        s.maxlen = 2
+        with patch('celery.utils.datastructures.heappop') as hp:
+            hp.side_effect = IndexError()
+            s.purge()
+            hp.assert_called_with(s._heap)
+        with patch('celery.utils.datastructures.heappop') as hp:
+            s._data = dict((i * 2, i * 2) for i in range(10))
+            s.purge()
+            self.assertEqual(hp.call_count, 10)
+
+    def test_pickleable(self):
         s = LimitedSet(maxlen=2)
-        items = 'foo', 'bar'
+        s.add('foo')
+        s.add('bar')
+        self.assertEqual(pickle.loads(pickle.dumps(s)), s)
+
+    def test_iter(self):
+        s = LimitedSet(maxlen=3)
+        items = ['foo', 'bar', 'baz', 'xaz']
         for item in items:
             s.add(item)
         l = list(iter(s))
-        for item in items:
+        for item in items[1:]:
             self.assertIn(item, l)
+        self.assertNotIn('foo', l)
+        self.assertListEqual(l, items[1:], 'order by insertion time')
 
     def test_repr(self):
         s = LimitedSet(maxlen=2)
@@ -151,6 +241,13 @@ class test_LimitedSet(Case):
         for item in items:
             s.add(item)
         self.assertIn('LimitedSet(', repr(s))
+
+    def test_discard(self):
+        s = LimitedSet(maxlen=2)
+        s.add('foo')
+        s.discard('foo')
+        self.assertNotIn('foo', s)
+        s.discard('foo')
 
     def test_clear(self):
         s = LimitedSet(maxlen=2)
@@ -220,11 +317,32 @@ class test_DependencyGraph(Case):
             ['C', 'D'],
         )
 
+    def test_connect(self):
+        x, y = self.graph1(), self.graph1()
+        x.connect(y)
+
+    def test_valency_of_when_missing(self):
+        x = self.graph1()
+        self.assertEqual(x.valency_of('foobarbaz'), 0)
+
+    def test_format(self):
+        x = self.graph1()
+        x.formatter = Mock()
+        obj = Mock()
+        self.assertTrue(x.format(obj))
+        x.formatter.assert_called_with(obj)
+        x.formatter = None
+        self.assertIs(x.format(obj), obj)
+
     def test_items(self):
         self.assertDictEqual(
             dict(items(self.graph1())),
             {'A': [], 'B': [], 'C': ['A'], 'D': ['C', 'B']},
         )
+
+    def test_repr_node(self):
+        x = self.graph1()
+        self.assertTrue(x.repr_node('fasdswewqewq'))
 
     def test_to_dot(self):
         s = WhateverIO()

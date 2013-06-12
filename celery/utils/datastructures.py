@@ -401,6 +401,11 @@ class DictAttribute(object):
             yield key, getattr(self.obj, key)
     iteritems = _iterate_items
 
+    def _iterate_values(self):
+        for key in self._iterate_keys():
+            yield getattr(self.obj, key)
+    itervalues = _iterate_values
+
     if sys.version_info[0] == 3:  # pragma: no cover
         items = _iterate_items
         keys = _iterate_keys
@@ -411,6 +416,9 @@ class DictAttribute(object):
 
         def items(self):
             return list(self._iterate_items())
+
+        def values(self):
+            return list(self._iterate_values())
 MutableMapping.register(DictAttribute)
 
 
@@ -479,6 +487,7 @@ class ConfigurationView(AttributeDictMixin):
 
     def __bool__(self):
         return any(self._order)
+    __nonzero__  = __bool__  # Py2
 
     def __repr__(self):
         return repr(dict(items(self)))
@@ -548,26 +557,15 @@ class LimitedSet(object):
         self.__len__ = self._data.__len__
         self.__contains__ = self._data.__contains__
 
-    def __iter__(self):
-        return iter(self._data)
-
-    def __len__(self):
-        return len(self._data)
-
-    def __contains__(self, key):
-        return key in self._data
-
-    def add(self, value):
+    def add(self, value, now=time.time):
         """Add a new member."""
-        self.purge(1)
-        now = time.time()
-        self._data[value] = now
-        heappush(self._heap, (now, value))
-
-    def __reduce__(self):
-        return self.__class__, (
-            self.maxlen, self.expires, self._data, self._heap,
-        )
+        # offset is there to modify the length of the list,
+        # this way we can expire an item before inserting the value,
+        # and it will end up in correct order.
+        self.purge(1, offset=1)
+        inserted = now()
+        self._data[value] = inserted
+        heappush(self._heap, (inserted, value))
 
     def clear(self):
         """Remove all members"""
@@ -587,24 +585,27 @@ class LimitedSet(object):
         self._data.pop(value, None)
     pop_value = discard  # XXX compat
 
-    def _expire_item(self):
-        """Hunt down and remove an expired item."""
-        self.purge(1)
-
-    def purge(self, limit=None):
+    def purge(self, limit=None, offset=0, now=time.time):
+        """Purge expired items."""
         H, maxlen = self._heap, self.maxlen
         if not maxlen:
             return
+
+        # If the data/heap gets corrupted and limit is None
+        # this will go into an infinite loop, so limit must
+        # have a value to guard the loop.
+        limit = len(self) + offset if limit is None else limit
+
         i = 0
-        while len(self) >= maxlen:
-            if limit and i > limit:
+        while len(self) + offset > maxlen:
+            if i >= limit:
                 break
             try:
                 item = heappop(H)
             except IndexError:
                 break
             if self.expires:
-                if time.time() < item[0] + self.expires:
+                if now() < item[0] + self.expires:
                     heappush(H, item)
                     break
             try:
@@ -625,11 +626,22 @@ class LimitedSet(object):
     def as_dict(self):
         return self._data
 
-    def __repr__(self):
-        return 'LimitedSet(%s)' % (repr(list(self._data))[:100], )
+    def __eq__(self, other):
+        return self._heap == other._heap
 
-    @property
-    def first(self):
-        """Get the oldest member."""
-        return self._heap[0][1]
-MutableSet.register(LimitedSet)
+    def __repr__(self):
+        return 'LimitedSet({0})'.format(len(self))
+
+    def __iter__(self):
+        return (item[1] for item in self._heap)
+
+    def __len__(self):
+        return len(self._heap)
+
+    def __contains__(self, key):
+        return key in self._data
+
+    def __reduce__(self):
+        return self.__class__, (
+            self.maxlen, self.expires, self._data, self._heap,
+        )
