@@ -81,16 +81,16 @@ def evdump(app=None, out=sys.stdout):
     app = app_or_default(app)
     dumper = Dumper(out=out)
     dumper.say('-> evdump: starting capture...')
-    conn = app.connection()
+    conn = app.connection().clone()
 
     def _error_handler(exc, interval):
         dumper.say(CONNECTION_ERROR % (
             conn.as_uri(), exc, humanize_seconds(interval, 'in', ' ')
         ))
 
+
     while 1:
         try:
-            conn = conn.clone()
             conn.ensure_connection(_error_handler)
             recv = app.events.Receiver(conn, handlers={'*': dumper.on_event})
             recv.capture()
