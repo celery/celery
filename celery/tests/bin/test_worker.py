@@ -103,6 +103,26 @@ class test_Worker(WorkerAppCase):
         with self.assertRaises(ImportError):
             x.execute_from_commandline(['worker', '-P', 'xyzybox'])
 
+    def test_run_from_argv_basic(self):
+        x = worker(app=self.app)
+        x.run = Mock()
+        x.maybe_detach = Mock()
+
+        def run(*args, **kwargs):
+            pass
+        x.run = run
+        x.run_from_argv('celery', [])
+        self.assertTrue(x.maybe_detach.called)
+
+    def test_maybe_detach(self):
+        x = worker(app=self.app)
+        with patch('celery.bin.worker.detached_celeryd') as detached:
+            x.maybe_detach([])
+            self.assertFalse(detached.called)
+            with self.assertRaises(SystemExit):
+                x.maybe_detach(['--detach'])
+            self.assertTrue(detached.called)
+
     @disable_stdouts
     def test_invalid_loglevel_gives_error(self):
         x = worker(app=Celery(set_as_current=False))
