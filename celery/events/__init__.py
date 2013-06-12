@@ -303,7 +303,9 @@ class EventReceiver(ConsumerMixin):
                                    connection=self.connection,
                                    channel=channel)
 
-    def event_from_message(self, body, localize=True, now=time.time):
+    def event_from_message(self, body, localize=True,
+                           now=time.time, tzfields=_TZGETTER,
+                           adjust_timestamp=adjust_timestamp):
         type = body.get('type', '').lower()
         clock = body.get('clock')
         if clock:
@@ -311,7 +313,7 @@ class EventReceiver(ConsumerMixin):
 
         if localize:
             try:
-                offset, timestamp = _TZGETTER(body)
+                offset, timestamp = tzfields(body)
             except KeyError:
                 pass
             else:
