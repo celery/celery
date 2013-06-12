@@ -88,7 +88,6 @@ def evdump(app=None, out=sys.stdout):
             conn.as_uri(), exc, humanize_seconds(interval, 'in', ' ')
         ))
 
-
     while 1:
         try:
             conn.ensure_connection(_error_handler)

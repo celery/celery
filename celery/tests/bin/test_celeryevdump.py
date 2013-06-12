@@ -49,7 +49,7 @@ class test_Dumper(Case):
     def test_evdump_error_handler(self):
         app = Mock(name='app')
         with patch('celery.events.dumper.Dumper') as Dumper:
-            dumper = Dumper.return_value = Mock(name='dumper')
+            Dumper.return_value = Mock(name='dumper')
             recv = app.events.Receiver.return_value = Mock()
 
             def se(*_a, **_k):

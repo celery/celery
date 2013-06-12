@@ -216,14 +216,13 @@ class test_EventReceiver(AppCase):
         r.adjust_clock = Mock()
         ts_adjust = Mock()
 
-        e = r.event_from_message(
+        r.event_from_message(
             {'type': 'worker-online', 'clock': 313},
             localize=False,
             adjust_timestamp=ts_adjust,
         )
         self.assertFalse(ts_adjust.called)
         r.adjust_clock.assert_called_with(313)
-
 
     def test_itercapture_limit(self):
         connection = self.app.connection()

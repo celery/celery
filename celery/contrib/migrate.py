@@ -85,7 +85,7 @@ def migrate_task(producer, body_, message, queues=None):
 def filter_callback(callback, tasks):
 
     def filtered(body, message):
-        if tasks and message.payload['task'] not in tasks:
+        if tasks and body['task'] not in tasks:
             return
 
         return callback(body, message)

@@ -487,7 +487,7 @@ class ConfigurationView(AttributeDictMixin):
 
     def __bool__(self):
         return any(self._order)
-    __nonzero__  = __bool__  # Py2
+    __nonzero__ = __bool__  # Py2
 
     def __repr__(self):
         return repr(dict(items(self)))
@@ -645,3 +645,4 @@ class LimitedSet(object):
         return self.__class__, (
             self.maxlen, self.expires, self._data, self._heap,
         )
+MutableSet.register(LimitedSet)
