@@ -22,7 +22,10 @@ from datetime import datetime, timedelta
 from functools import partial, wraps
 from types import ModuleType
 
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 from nose import SkipTest
 from kombu.log import NullHandler
 from kombu.utils import nested
@@ -33,6 +36,9 @@ from celery.five import (
     string_t, values, open_fqdn,
 )
 from celery.utils.functional import noop
+
+patch = mock.patch
+call = mock.call
 
 
 class Mock(mock.Mock):
@@ -397,7 +403,7 @@ def override_stdouts():
         sys.stderr = sys.__stderr__ = prev_err
 
 
-def patch(module, name, mocked):
+def _old_patch(module, name, mocked):
     module = importlib.import_module(module)
 
     def _patch(fun):
@@ -527,7 +533,7 @@ def mock_context(mock, typ=Mock):
 
 @contextmanager
 def mock_open(typ=WhateverIO, side_effect=None):
-    with mock.patch(open_fqdn) as open_:
+    with patch(open_fqdn) as open_:
         with mock_context(open_) as context:
             if side_effect is not None:
                 context.__enter__.side_effect = side_effect
@@ -537,7 +543,7 @@ def mock_open(typ=WhateverIO, side_effect=None):
 
 
 def patch_many(*targets):
-    return nested(*[mock.patch(target) for target in targets])
+    return nested(*[patch(target) for target in targets])
 
 
 @contextmanager
