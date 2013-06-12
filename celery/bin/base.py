@@ -220,7 +220,7 @@ class Command(object):
     #: Set to true if this command doesn't have subcommands
     leaf = True
 
-    # used by :meth:`say_remote_control_reply`.
+    # used by :meth:`say_remote_command_reply`.
     show_body = True
     # used by :meth:`say_chat`.
     show_reply = True

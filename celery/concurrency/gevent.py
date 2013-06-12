@@ -16,8 +16,8 @@ if not os.environ.get('GEVENT_NOPATCH') and not PATCHED[0]:
     from gevent import monkey, version_info
     monkey.patch_all()
     if version_info[0] == 0:  # pragma: no cover
-        # Signals are not working along gevent in version prior 1.0
-        # and they are not monkey patch by monkey.patch_all()
+        # Signals aren't working in gevent versions <1.0,
+        # and are not monkey patched by patch_all()
         from gevent import signal as _gevent_signal
         _signal = __import__('signal')
         _signal.signal = _gevent_signal

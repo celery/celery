@@ -93,10 +93,9 @@ class ColorFormatter(logging.Formatter):
         return r
 
     def format(self, record):
-        levelname = record.levelname
-        color = self.colors.get(levelname)
+        color = self.colors.get(record.levelname)
 
-        if self.use_color and color:
+        if color and self.use_color:
             msg = record.msg
             try:
                 # safe_str will repr the color object
@@ -161,7 +160,7 @@ class LoggingProxy(object):
     def write(self, data):
         """Write message to logging object."""
         if _in_sighandler:
-            print(safe_str(data), file=sys.__stderr__)
+            return print(safe_str(data), file=sys.__stderr__)
         if getattr(self._thread, 'recurse_protection', False):
             # Logger is logging back to this file, so stop recursing.
             return
