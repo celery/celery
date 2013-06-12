@@ -20,7 +20,7 @@ from __future__ import absolute_import
 
 import threading
 
-from heapq import heappush
+from heapq import heappush, heappop
 from itertools import islice
 from operator import itemgetter
 from time import time
@@ -123,7 +123,7 @@ class Worker(Element):
     def update_heartbeat(self, received, timestamp):
         if not received or not timestamp:
             return
-        drift = received - timestamp
+        drift = abs(received - timestamp)
         if drift > HEARTBEAT_DRIFT_MAX:
             warn(DRIFT_WARNING, self.hostname, drift)
         heartbeats, hbmax = self.heartbeats, self.heartbeat_max
@@ -361,14 +361,14 @@ class State(object):
         worker, _ = self.get_or_create_worker(hostname)
         task, created = self.get_or_create_task(uuid)
         task.worker = worker
+        maxtasks = self.max_tasks_in_memory * 2
 
         taskheap = self._taskheap
         timestamp = fields.get('timestamp') or 0
         clock = 0 if type == 'sent' else fields.get('clock')
         heappush(taskheap, _lamportinfo(clock, timestamp, worker.id, task))
-        curcount = len(self.tasks)
-        if len(taskheap) > self.max_tasks_in_memory * 2:
-            taskheap[:] = taskheap[curcount:]
+        if len(taskheap) > maxtasks:
+            heappop(taskheap)
 
         handler = getattr(task, 'on_' + type, None)
         if type == 'received':

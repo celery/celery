@@ -70,12 +70,13 @@ class X(object):
             raise socket.timeout()
         mock.side_effect = first
 
-    def close_then_error(self, mock):
+    def close_then_error(self, mock, mod=0):
 
         def first(*args, **kwargs):
-            self.close()
-            self.connection.more_to_read = False
-            raise socket.error()
+            if not mod or mock.call_count > mod:
+                self.close()
+                self.connection.more_to_read = False
+                raise socket.error()
         mock.side_effect = first
 
     def close(self, *args, **kwargs):
@@ -210,7 +211,7 @@ class test_asynloop(AppCase):
     def test_poll_readable(self):
         x = X()
         x.hub.readers = {6: Mock()}
-        x.close_then_error(x.connection.drain_nowait)
+        x.close_then_error(x.connection.drain_nowait, mod=4)
         x.hub.poller.poll.return_value = [(6, READ)]
         with self.assertRaises(socket.error):
             asynloop(*x.args)

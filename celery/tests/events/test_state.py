@@ -4,7 +4,7 @@ import pickle
 
 from time import time
 from itertools import count
-from mock import Mock
+from mock import Mock, patch
 
 from celery import states
 from celery.events import Event
@@ -13,6 +13,7 @@ from celery.events.state import (
     Worker,
     Task,
     HEARTBEAT_EXPIRE_WINDOW,
+    HEARTBEAT_DRIFT_MAX,
     _lamportinfo
 )
 from celery.utils import uuid
@@ -116,6 +117,20 @@ class test_Worker(Case):
     def test_repr(self):
         self.assertTrue(repr(Worker(hostname='foo')))
 
+    def test_drift_warning(self):
+        worker = Worker(hostname='foo')
+        with patch('celery.events.state.warn') as warn:
+            worker.update_heartbeat(time(), time() + (HEARTBEAT_DRIFT_MAX * 2))
+            self.assertTrue(warn.called)
+            self.assertIn('Substantial drift', warn.call_args[0][0])
+
+    def test_update_heartbeat(self):
+        worker = Worker(hostname='foo')
+        worker.update_heartbeat(time(), time())
+        self.assertEqual(len(worker.heartbeats), 1)
+        worker.update_heartbeat(time() - 10, time())
+        self.assertEqual(len(worker.heartbeats), 1)
+
 
 class test_Task(Case):
 
@@ -129,6 +144,7 @@ class test_Task(Case):
                     eta=1,
                     runtime=0.0001,
                     expires=1,
+                    foo=None,
                     exception=1,
                     received=time() - 10,
                     started=time() - 8,
@@ -143,6 +159,7 @@ class test_Task(Case):
 
         self.assertEqual(sorted(['args', 'kwargs']),
                          sorted(task.info(['args', 'kwargs']).keys()))
+        self.assertFalse(list(task.info('foo')))
 
     def test_ready(self):
         task = Task(uuid='abcdefg',
@@ -351,6 +368,29 @@ class test_State(Case):
         s.task_event('task-unknown-event-xxx', {'foo': 'bar',
                                                 'uuid': 'x',
                                                 'hostname': 'y'})
+
+    def test_limits_maxtasks(self):
+        s = State()
+        s.max_tasks_in_memory = 1
+        s.task_event('task-unknown-event-xxx', {'foo': 'bar',
+                                                'uuid': 'x',
+                                                'hostname': 'y',
+                                                'clock': 3})
+        s.task_event('task-unknown-event-xxx', {'foo': 'bar',
+                                                'uuid': 'y',
+                                                'hostname': 'y',
+                                                'clock': 4})
+
+        s.task_event('task-unknown-event-xxx', {'foo': 'bar',
+                                                'uuid': 'z',
+                                                'hostname': 'y',
+                                                'clock': 5})
+        self.assertEqual(len(s._taskheap), 2)
+        self.assertEqual(s._taskheap[0].clock, 4)
+        self.assertEqual(s._taskheap[1].clock, 5)
+
+        s._taskheap.append(s._taskheap[0])
+        self.assertTrue(list(s.tasks_by_time()))
 
     def test_callback(self):
         scratch = {}

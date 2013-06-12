@@ -103,6 +103,13 @@ class test_Timer(Case):
         t.exit_after(300, priority=10)
         t.apply_after.assert_called_with(300, sys.exit, 10)
 
+    def test_ensure_started_not_started(self):
+        t = timer2.Timer()
+        t.running = True
+        t.start = Mock()
+        t.ensure_started()
+        self.assertFalse(t.start.called)
+
     def test_apply_interval(self):
         t = timer2.Timer()
         try:
