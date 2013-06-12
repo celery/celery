@@ -330,15 +330,6 @@ class _RemoteControl(Command):
                              status=EX_UNAVAILABLE)
         return replies
 
-    def say(self, direction, title, body=''):
-        c = self.colored
-        if direction == '<-' and self.quiet:
-            return
-        dirstr = not self.quiet and c.bold(c.white(direction), ' ') or ''
-        self.out(c.reset(dirstr, title))
-        if body and self.show_body:
-            self.out(body)
-
 
 class inspect(_RemoteControl):
     """Inspect the worker at runtime.
@@ -763,7 +754,7 @@ class CeleryCommand(Command):
         return '\n'.join(ret).strip()
 
     def with_pool_option(self, argv):
-        if len(argv) > 1 and argv[1] == 'worker':
+        if len(argv) > 1 and 'worker' in argv[0:3]:
             # this command supports custom pools
             # that may have to be loaded as early as possible.
             return (['-P'], ['--pool'])
