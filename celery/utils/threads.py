@@ -121,7 +121,7 @@ class Local(object):
         object.__setattr__(self, '__ident_func__', get_ident)
 
     def __iter__(self):
-        return items(self.__storage__)
+        return iter(items(self.__storage__))
 
     def __call__(self, proxy):
         """Create a proxy for a name."""

@@ -409,6 +409,7 @@ class DictAttribute(object):
     if sys.version_info[0] == 3:  # pragma: no cover
         items = _iterate_items
         keys = _iterate_keys
+        values = _iterate_values
     else:
 
         def keys(self):

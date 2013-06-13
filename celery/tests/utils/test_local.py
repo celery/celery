@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
+import sys
+
 from mock import Mock
 
 from celery.five import string, long_t
@@ -160,7 +162,8 @@ class test_Proxy(Case):
         x[0:2] = [1, 2]
         del(x[0:2])
         self.assertTrue(str(x))
-        self.assertEqual(x.__cmp__(object()), -1)
+        if sys.version_info[0] < 3:
+            self.assertEqual(x.__cmp__(object()), -1)
 
     def test_complex_cast(self):
 

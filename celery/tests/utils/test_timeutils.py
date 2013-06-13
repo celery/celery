@@ -173,6 +173,7 @@ class test_make_aware(Case):
                 if self.raises and is_dst is None:
                     self.raised = True
                     raise AmbiguousTimeError()
+                return 1  # needed by min() in Python 3 (None not hashable)
 
         tz = tzz()
         make_aware(datetime.utcnow(), tz)
@@ -198,7 +199,7 @@ class test_localize(Case):
         self.assertFalse(hasattr(tz, 'normalize'))
         self.assertTrue(localize(make_aware(datetime.utcnow(), tz), tz))
 
-    def test_when_has_nornalize(self):
+    def test_when_has_normalize(self):
 
         class tzz(tzinfo):
             raises = None
@@ -208,6 +209,7 @@ class test_localize(Case):
                 if self.raises and kwargs and kwargs.get('is_dst') is None:
                     self.raised = True
                     raise self.raises
+                return 1  # needed by min() in Python 3 (None not hashable)
 
         tz = tzz()
         localize(make_aware(datetime.utcnow(), tz), tz)
