@@ -122,10 +122,9 @@ environment's python interpreter:
 
 .. code-block:: bash
 
-    # Name of nodes to start, here we have a single node
-    CELERYD_NODES="w1"
-    # or we could have three nodes:
-    #CELERYD_NODES="w1 w2 w3"
+    # Name of nodes to start, here we start three nodes (worker1, 
+    # worker2, and worker3)
+    CELERYD_NODES="worker1 worker2 worker3"
 
     # Where to chdir at start.
     CELERYD_CHDIR="/opt/Myproject/"
@@ -134,6 +133,7 @@ environment's python interpreter:
     ENV_PYTHON="$CELERYD_CHDIR/env/bin/python"
 
     # How to call "manage.py celery"
+    CELERYD_MULTI="$CELERYD_CHDIR/env/bin/celeryd-multi"
     CELERY_BIN="$ENV_PYTHON $CELERYD_CHDIR/manage.py celery"
 
     # Extra command-line arguments to the worker (see celery worker --help)
@@ -166,6 +166,13 @@ Available options
         * :file:`/usr/local/bin/celery`
         * :file:`/virtualenvs/proj/bin/celery`
         * :file:`/virtualenvs/proj/bin/python -m celery`
+
+* CELERYD_MULTI
+    Absolute or relative path to the program `celeryd-multi`, which is used to start multiple celeryd instances,
+    Examples:
+
+        * :file:`celeryd-multi`
+        * :file:`/virtualenvs/proj/bin/celeryd-multi`
 
 * CELERYD_NODES
     Node names to start.
@@ -246,7 +253,9 @@ Example Django configuration
 
 This is an example configuration for those using `django-celery`
 
-`/etc/default/celerybeat`::
+`/etc/default/celerybeat`:
+
+.. code-block:: bash
 
     # Where the Django project is.
     CELERYBEAT_CHDIR="/opt/Project/"
@@ -255,7 +264,36 @@ This is an example configuration for those using `django-celery`
     export DJANGO_SETTINGS_MODULE="settings"
 
     # Path to celery command
-    CELERY_BIN="/opt/Project/manage.py celery"
+    CELERBEAT="/opt/Project/manage.py celery beat"
+
+    # Extra arguments to celerybeat
+    CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
+
+    # Overrider default log and/or PID file locations
+    CELERYBEAT_LOG_FILE="/var/log/celerybeat.log"
+    CELERYBEAT_PID_FILE="/var/run/celerybeat.pid"
+
+.. _generic-initd-celerybeat-django-width-env-example:
+
+Example Django configuration Using Virtualenv
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In case you are using virtualenv, you should add the path to your
+environment's python interpreter:
+
+`/etc/default/celerybeat`:
+
+.. code-block:: bash
+
+    # Where the Django project is.
+    CELERYBEAT_CHDIR="/opt/Project"
+
+    # Name of the projects settings module.
+    export DJANGO_SETTINGS_MODULE="settings"
+
+    # Path to celery command
+    ENV_PYTHON="$CELERYD_CHDIR/env/bin/python"
+    CELERYBEAT="$ENV_PYTHON $CELERYBEAT_CHDIR/manage.py celery beat"
 
     # Extra arguments to celerybeat
     CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
@@ -268,15 +306,15 @@ Available options
 * CELERY_APP
     App instance to use (value for ``--app`` argument).
 
-* CELERY_BIN
-    Absolute or relative path to the :program:`celery` program.
+* CELERYBEAT
+    Absolute or relative path to the :program:`celery beat` program.
     Examples:
 
-        * :file:`celery``
-        * :file:`/usr/local/bin/celery`
-        * :file:`/virtualenvs/proj/bin/celery`
-        * :file:`/virtualenvs/proj/bin/python -m celery`
-
+        * :file:`celerybeat`
+        * :file:`/usr/local/bin/celerybeat`
+        * :file:`/virtualenvs/proj/bin/celerybeat`
+        * :file:`/opt/Project/manage.py celery beat`
+        * :file:`/virtualenvs/proj/bin/python -m celerybeat`
 
 * CELERYBEAT_OPTS
     Additional arguments to celerybeat, see `celerybeat --help` for a
