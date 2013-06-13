@@ -132,6 +132,8 @@ NAMESPACES = {
         'REDIS_MAX_CONNECTIONS': Option(type='int'),
         'RESULT_BACKEND': Option(type='string'),
         'RESULT_DB_SHORT_LIVED_SESSIONS': Option(False, type='bool'),
+        'RESULT_DB_TASK_TABLENAME': Option('celery_taskmeta'),
+        'RESULT_DB_TASKSET_TABLENAME': Option('celery_tasksetmeta'),
         'RESULT_DBURI': Option(),
         'RESULT_ENGINE_OPTIONS': Option(type='dict'),
         'RESULT_EXCHANGE': Option('celeryresults'),
