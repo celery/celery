@@ -17,6 +17,7 @@ class test_RPCBackend(AppCase):
         oid = self.b.oid
         oid2 = self.b.oid
         self.assertEqual(oid, oid2)
+        self.assertEqual(oid, self.app.oid)
 
     def test_interface(self):
         self.b.on_reply_declare('task_id')
@@ -47,19 +48,10 @@ class test_RPCBackend(AppCase):
     def test_create_binding(self):
         self.assertEqual(self.b._create_binding('id'), self.b.binding)
 
-    def test_extra_properties(self):
-        self.assertDictEqual(
-            self.b.extra_properties,
-            {'reply_to': self.b.oid},
-        )
-
     def test_on_task_call(self):
         with patch('celery.backends.rpc.maybe_declare') as md:
             with self.app.amqp.producer_pool.acquire() as prod:
-                self.assertEqual(
-                    self.b.on_task_call(prod, 'task_id'),
-                    self.b.extra_properties,
-                )
+                self.b.on_task_call(prod, 'task_id'),
                 md.assert_called_with(
                     self.b.binding(prod.channel),
                     retry=True,

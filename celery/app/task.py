@@ -384,7 +384,7 @@ class Task(object):
     def apply_async(self, args=None, kwargs=None,
                     task_id=None, producer=None, connection=None, router=None,
                     link=None, link_error=None, publisher=None,
-                    add_to_parent=True, **options):
+                    add_to_parent=True, reply_to=None, **options):
         """Apply tasks asynchronously by sending a message.
 
         :keyword args: The positional arguments to pass on to the
@@ -490,12 +490,13 @@ class Task(object):
         if connection:
             producer = app.amqp.TaskProducer(connection)
         with app.producer_or_acquire(producer) as P:
-            extra_properties = self.backend.on_task_call(P, task_id)
+            self.backend.on_task_call(P, task_id)
             task_id = P.publish_task(self.name, args, kwargs,
                                      task_id=task_id,
                                      callbacks=maybe_list(link),
                                      errbacks=maybe_list(link_error),
-                                     **dict(options, **extra_properties))
+                                     reply_to=reply_to or self.app.oid,
+                                     **options)
         result = self.AsyncResult(task_id)
         if add_to_parent:
             parent = get_current_worker_task()

@@ -28,7 +28,6 @@ class RPCBackend(amqp.AMQPBackend):
 
     def on_task_call(self, producer, task_id):
         maybe_declare(self.binding(producer.channel), retry=True)
-        return self.extra_properties
 
     def _create_binding(self, task_id):
         return self.binding
@@ -50,8 +49,3 @@ class RPCBackend(amqp.AMQPBackend):
     @cached_property
     def oid(self):
         return self.app.oid
-
-    @cached_property
-    def extra_properties(self):
-        return {'reply_to': self.oid}
-

@@ -18,7 +18,7 @@ from itertools import chain as _chain
 
 from kombu.utils import cached_property, fxrange, kwdict, reprcall, uuid
 
-from celery._state import current_app, get_current_worker_task
+from celery._state import current_app
 from celery.result import AsyncResult, GroupResult
 from celery.utils.functional import (
     maybe_list, is_list, regen,
@@ -170,11 +170,7 @@ class Signature(dict):
         except KeyError:
             tid = opts['task_id'] = _id or uuid()
         if 'reply_to' not in opts:
-            curtask = get_current_worker_task()
-            if curtask:
-                opts['repy_to'] = curtask.request.reply_to
-            else:
-                opts['reply_to'] = self.type.app.oid
+            opts['reply_to'] = self.type.app.oid
         return self.AsyncResult(tid)
     _freeze = freeze
 
