@@ -66,11 +66,16 @@ CELERY_TIMEZONE
 ---------------
 
 Configure Celery to use a custom time zone.
-The timezone value can be any time zone supported by the :mod:`pytz`
+The timezone value can be any time zone supported by the `pytz`_
 library.
 
-If not set then the UTC timezone is used if :setting:`CELERY_ENABLE_UTC` is
-enabled, otherwise it falls back to the local timezone.
+If not set the UTC timezone is used.  For backwards compatibility
+there is also a :setting:`CELERY_ENABLE_UTC` setting, and this is set
+to false the system local timezone is used instead.
+
+.. _`pytz`: http://pypi.python.org/pypi/pytz/
+
+
 
 .. _conf-tasks:
 

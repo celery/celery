@@ -178,6 +178,14 @@ The ``celeryconfig`` module may then look like this:
 Example 2: Using a configuration module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. tip::
+
+    Using the name of a module is recomended
+    as this means that the module doesn't need to be serialized
+    when the multiprocessing pool is used.  If you're
+    experiencing configuration pickle errors then please try using
+    the name of a module instead.
+
 .. code-block:: python
 
     from celery import Celery
