@@ -20,6 +20,7 @@ from operator import attrgetter
 
 from billiard.util import register_after_fork
 from kombu.clocks import LamportClock
+from kombu.common import oid_from
 from kombu.serialization import enable_insecure_serializers
 from kombu.utils import cached_property
 
@@ -544,6 +545,10 @@ class Celery(object):
     @property
     def current_task(self):
         return _task_stack.top
+
+    @cached_property
+    def oid(self):
+        return oid_from(self)
 
     @cached_property
     def amqp(self):

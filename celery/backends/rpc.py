@@ -10,16 +10,14 @@ from __future__ import absolute_import
 
 import kombu
 
-from threading import local
-
-from kombu.common import maybe_declare, oid_from
+from kombu.common import maybe_declare
+from kombu.utils import cached_property
 
 from celery import current_task
 from celery.backends import amqp
 
 
 class RPCBackend(amqp.AMQPBackend):
-    _tls = local()
 
     class Consumer(kombu.Consumer):
         auto_declare = False
@@ -31,10 +29,6 @@ class RPCBackend(amqp.AMQPBackend):
     def on_task_call(self, producer, task_id):
         maybe_declare(self.binding(producer.channel), retry=True)
         return self.extra_properties
-
-    @property
-    def extra_properties(self):
-        return {'reply_to': self.oid}
 
     def _create_binding(self, task_id):
         return self.binding
@@ -53,10 +47,11 @@ class RPCBackend(amqp.AMQPBackend):
         return self.Queue(self.oid, self.exchange, self.oid,
                           durable=False, auto_delete=False)
 
-    @property
+    @cached_property
     def oid(self):
-        try:
-            return self._tls.OID
-        except AttributeError:
-            oid = self._tls.OID = oid_from(self)
-            return oid
+        return self.app.oid
+
+    @cached_property
+    def extra_properties(self):
+        return {'reply_to': self.oid}
+

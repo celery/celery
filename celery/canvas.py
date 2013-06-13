@@ -18,7 +18,7 @@ from itertools import chain as _chain
 
 from kombu.utils import cached_property, fxrange, kwdict, reprcall, uuid
 
-from celery._state import current_app
+from celery._state import current_app, get_current_worker_task
 from celery.result import AsyncResult, GroupResult
 from celery.utils.functional import (
     maybe_list, is_list, regen,
@@ -163,13 +163,20 @@ class Signature(dict):
         return s
     partial = clone
 
-    def _freeze(self, _id=None):
+    def freeze(self, _id=None):
         opts = self.options
         try:
             tid = opts['task_id']
         except KeyError:
             tid = opts['task_id'] = _id or uuid()
+        if 'reply_to' not in opts:
+            curtask = get_current_worker_task()
+            if curtask:
+                opts['repy_to'] = curtask.request.reply_to
+            else:
+                opts['reply_to'] = self.type.app.oid
         return self.AsyncResult(tid)
+    _freeze = freeze
 
     def replace(self, args=None, kwargs=None, options=None):
         s = self.clone()
@@ -423,7 +430,7 @@ class group(Signature):
         type = tasks[0].type.app.tasks[self['task']]
         return type(*type.prepare(options, tasks, partial_args))
 
-    def _freeze(self, _id=None):
+    def freeze(self, _id=None):
         opts = self.options
         try:
             gid = opts['group']
@@ -436,6 +443,7 @@ class group(Signature):
             new_tasks.append(task)
         self.tasks = self.kwargs['tasks'] = new_tasks
         return GroupResult(gid, results)
+    _freeze = freeze
 
     def skew(self, start=1.0, stop=None, step=1.0):
         it = fxrange(start, stop, step, repeatlast=True)
