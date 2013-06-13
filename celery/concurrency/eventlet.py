@@ -34,7 +34,8 @@ if not EVENTLET_NOPATCH and not PATCHED[0]:
     import eventlet
     import eventlet.debug
     eventlet.monkey_patch()
-    eventlet.debug.hub_blocking_detection(EVENTLET_DBLOCK)
+    if EVENTLET_DBLOCK:
+        eventlet.debug.hub_blocking_detection(EVENTLET_DBLOCK)
 
 from time import time
 
