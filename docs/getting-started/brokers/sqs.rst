@@ -91,7 +91,7 @@ setting::
 
 Very frequent polling intervals can cause *busy loops*, which results in the
 worker using a lot of CPU time.  If you need sub-millisecond precision you
-should consider using another transport, like `RabbitMQ <broker-amqp`,
+should consider using another transport, like `RabbitMQ <broker-amqp>`,
 or `Redis <broker-redis>`.
 
 Queue Prefix
