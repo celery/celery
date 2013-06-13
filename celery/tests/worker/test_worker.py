@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import os
 import socket
 
 from collections import deque
@@ -13,12 +14,10 @@ from kombu.exceptions import StdChannelError
 from kombu.transport.base import Message
 from mock import call, Mock, patch
 
-from celery import current_app
 from celery.app.defaults import DEFAULTS
 from celery.bootsteps import RUN, CLOSE, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
-from celery.datastructures import AttributeDict
-from celery.exceptions import SystemTerminate
+from celery.exceptions import SystemTerminate, TaskRevokedError
 from celery.five import Empty, range, Queue as FastQueue
 from celery.task import task as task_dec
 from celery.task import periodic_task as periodic_task_dec
@@ -29,10 +28,12 @@ from celery.worker import consumer
 from celery.worker.consumer import Consumer as __Consumer
 from celery.worker.hub import READ, ERR
 from celery.worker.job import Request
+from celery.utils import worker_direct
+from celery.utils.datastructures import AttributeDict
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 
-from celery.tests.utils import AppCase, Case
+from celery.tests.case import AppCase, Case
 
 
 def MockStep(step=None):
@@ -232,13 +233,13 @@ class test_QoS(Case):
         qos.set(qos.prev)
 
 
-class test_Consumer(Case):
+class test_Consumer(AppCase):
 
-    def setUp(self):
+    def setup(self):
         self.buffer = FastQueue()
         self.timer = Timer()
 
-    def tearDown(self):
+    def teardown(self):
         self.timer.stop()
 
     def test_info(self):
@@ -431,7 +432,7 @@ class test_Consumer(Case):
 
     def test_loop_ignores_socket_timeout(self):
 
-        class Connection(current_app.connection().__class__):
+        class Connection(self.app.connection().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
@@ -447,7 +448,7 @@ class test_Consumer(Case):
 
     def test_loop_when_socket_error(self):
 
-        class Connection(current_app.connection().__class__):
+        class Connection(self.app.connection().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
@@ -469,7 +470,7 @@ class test_Consumer(Case):
 
     def test_loop(self):
 
-        class Connection(current_app.connection().__class__):
+        class Connection(self.app.connection().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
@@ -829,6 +830,40 @@ class test_WorkController(AppCase):
         worker.blueprint.shutdown_complete.set()
         return worker
 
+    def test_on_consumer_ready(self):
+        self.worker.on_consumer_ready(Mock())
+
+    def test_setup_queues_worker_direct(self):
+        self.app.conf.CELERY_WORKER_DIRECT = True
+        _qs, self.app.amqp.__dict__['queues'] = self.app.amqp.queues, Mock()
+        try:
+            self.worker.setup_queues({})
+            self.app.amqp.queues.select_add.assert_called_with(
+                worker_direct(self.worker.hostname),
+            )
+        finally:
+            self.app.amqp.queues = _qs
+            self.app.conf.CELERY_WORKER_DIRECT = False
+
+    def test_send_worker_shutdown(self):
+        with patch('celery.signals.worker_shutdown') as ws:
+            self.worker._send_worker_shutdown()
+            ws.send.assert_called_with(sender=self.worker)
+
+    def test_process_task_revoked_release_semaphore(self):
+        self.worker._quick_release = Mock()
+        req = Mock()
+        req.execute_using_pool.side_effect = TaskRevokedError
+        self.worker._process_task(req)
+        self.worker._quick_release.assert_called_with()
+
+        delattr(self.worker, '_quick_release')
+        self.worker._process_task(req)
+
+    def test_shutdown_no_blueprint(self):
+        self.worker.blueprint = None
+        self.worker._shutdown()
+
     @patch('celery.platforms.create_pidlock')
     def test_use_pidfile(self, create_pidlock):
         create_pidlock.return_value = Mock()
@@ -868,6 +903,14 @@ class test_WorkController(AppCase):
         set_mp_process_title.assert_called_with(
             'celeryd', hostname='awesome.worker.com',
         )
+
+        with patch('celery.task.trace.setup_worker_optimizations') as swo:
+            os.environ['FORKED_BY_MULTIPROCESSING'] = "1"
+            try:
+                process_initializer(app, 'luke.worker.com')
+                swo.assert_called_with(app)
+            finally:
+                os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
 
     def test_attrs(self):
         worker = self.worker

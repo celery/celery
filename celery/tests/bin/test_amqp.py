@@ -11,7 +11,7 @@ from celery.bin.amqp import (
     main,
 )
 
-from celery.tests.utils import AppCase, WhateverIO
+from celery.tests.case import AppCase, WhateverIO
 
 
 class test_AMQShell(AppCase):
@@ -36,6 +36,11 @@ class test_AMQShell(AppCase):
     def RV(self):
         raise Exception(self.fh.getvalue())
 
+    def test_spec_format_response(self):
+        spec = self.shell.amqp['exchange.declare']
+        self.assertEqual(spec.format_response(None), 'ok.')
+        self.assertEqual(spec.format_response('NO'), 'NO')
+
     def test_missing_namespace(self):
         self.shell.onecmd('ns.cmd arg')
         self.assertIn('unknown syntax', self.fh.getvalue())
@@ -51,6 +56,15 @@ class test_AMQShell(AppCase):
     def test_help_unknown_command(self):
         self.shell.onecmd('help foo.baz')
         self.assertIn('unknown syntax', self.fh.getvalue())
+
+    def test_onecmd_error(self):
+        self.shell.dispatch = Mock()
+        self.shell.dispatch.side_effect = MemoryError()
+        self.shell.say = Mock()
+        self.assertFalse(self.shell.needs_reconnect)
+        self.shell.onecmd('hello')
+        self.assertTrue(self.shell.say.called)
+        self.assertTrue(self.shell.needs_reconnect)
 
     def test_exit(self):
         with self.assertRaises(SystemExit):

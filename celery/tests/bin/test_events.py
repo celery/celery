@@ -6,7 +6,7 @@ from mock import patch as mpatch
 from celery.app import app_or_default
 from celery.bin import events
 
-from celery.tests.utils import Case, patch
+from celery.tests.case import Case, _old_patch as patch
 
 
 class MockCommand(object):

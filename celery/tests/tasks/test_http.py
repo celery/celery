@@ -13,7 +13,7 @@ from kombu.utils.encoding import from_utf8
 
 from celery.five import StringIO, items
 from celery.task import http
-from celery.tests.utils import Case, eager_tasks
+from celery.tests.case import Case, eager_tasks
 
 
 @contextmanager

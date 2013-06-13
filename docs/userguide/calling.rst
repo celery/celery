@@ -87,7 +87,7 @@ called `add`, returning the sum of two arguments:
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     def add(x, y):
         return x + y
 
@@ -144,7 +144,7 @@ This is an example error callback:
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     def error_handler(uuid):
         result = AsyncResult(uuid)
         exc = result.get(propagate=False)

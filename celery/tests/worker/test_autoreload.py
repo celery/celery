@@ -19,7 +19,7 @@ from celery.worker.autoreload import (
     Autoreloader,
 )
 
-from celery.tests.utils import AppCase, Case, mock_open
+from celery.tests.case import AppCase, Case, mock_open
 
 
 class test_WorkerComponent(AppCase):
@@ -97,6 +97,12 @@ class test_StatMonitor(Case):
         stat.side_effect = OSError()
         x.start()
 
+    @patch('os.stat')
+    def test_mtime_stat_raises(self, stat):
+        stat.side_effect = ValueError()
+        x = StatMonitor(['a', 'b'])
+        x._mtime('a')
+
 
 class test_KQueueMontior(Case):
 
@@ -113,6 +119,35 @@ class test_KQueueMontior(Case):
         close.side_effect = OSError()
         close.side_effect.errno = errno.EBADF
         x.stop()
+
+    def test_on_poll_init(self):
+        x = KQueueMonitor(['a', 'b'])
+        hub = Mock()
+        x.add_events = Mock()
+        x.on_poll_init(hub)
+        x.add_events.assert_called_with(hub.poller)
+        self.assertEqual(
+            hub.poller.on_file_change,
+            x.handle_event,
+        )
+
+    def test_on_poll_close(self):
+        x = KQueueMonitor(['a', 'b'])
+        x.close = Mock()
+        hub = Mock()
+        x.on_poll_close(hub)
+        x.close.assert_called_with(hub.poller)
+
+    def test_handle_event(self):
+        x = KQueueMonitor(['a', 'b'])
+        x.on_change = Mock()
+        eA = Mock()
+        eA.ident = 'a'
+        eB = Mock()
+        eB.ident = 'b'
+        x.fdmap = {'a': 'A', 'b': 'B'}
+        x.handle_event([eA, eB])
+        x.on_change.assert_called_with(['A', 'B'])
 
     @patch('kombu.utils.eventio.kqueue', create=True)
     @patch('kombu.utils.eventio.kevent', create=True)
@@ -207,6 +242,33 @@ class test_default_implementation(Case):
 
 class test_Autoreloader(AppCase):
 
+    def test_on_poll_init(self):
+        x = Autoreloader(Mock(), modules=[__name__])
+        hub = Mock()
+        x._monitor = None
+        x.on_init = Mock()
+
+        def se(*args, **kwargs):
+            x._monitor = Mock()
+        x.on_init.side_effect = se
+
+        x.on_poll_init(hub)
+        x.on_init.assert_called_with()
+        x._monitor.on_poll_init.assert_called_with(hub)
+
+        x._monitor.on_poll_init.reset_mock()
+        x.on_poll_init(hub)
+        x._monitor.on_poll_init.assert_called_with(hub)
+
+    def test_on_poll_close(self):
+        x = Autoreloader(Mock(), modules=[__name__])
+        hub = Mock()
+        x._monitor = Mock()
+        x.on_poll_close(hub)
+        x._monitor.on_poll_close.assert_called_with(hub)
+        x._monitor = None
+        x.on_poll_close(hub)
+
     @patch('celery.worker.autoreload.file_hash')
     def test_start(self, fhash):
         x = Autoreloader(Mock(), modules=[__name__])
@@ -231,6 +293,8 @@ class test_Autoreloader(AppCase):
         x._hashes[__name__] = 'dcba'
         self.assertTrue(x._maybe_modified(__name__))
         x._hashes[__name__] = 'abcd'
+        self.assertFalse(x._maybe_modified(__name__))
+        exists.return_value = False
         self.assertFalse(x._maybe_modified(__name__))
 
     def test_on_change(self):

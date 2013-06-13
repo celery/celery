@@ -61,8 +61,6 @@ schedule manually.
         >>> from djcelery.models import PeriodicTask
         >>> PeriodicTask.objects.update(last_run_at=None)
 
-.. _`pytz`: http://pypi.python.org/pypi/pytz/
-
 .. _beat-entries:
 
 Entries

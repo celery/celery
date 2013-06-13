@@ -12,7 +12,7 @@ from __future__ import absolute_import
 
 try:
     from collections import Counter
-except ImportError:
+except ImportError:  # pragma: no cover
     from collections import defaultdict
 
     def Counter():
@@ -38,7 +38,7 @@ except ImportError:                         # pragma: no cover
     from collections import UserDict        # noqa
 
 
-if PY3:
+if PY3:  # pragma: no cover
     import builtins
 
     from queue import Queue, Empty
@@ -107,7 +107,7 @@ else:
     def nextfun(it):                # noqa
         return it.next
 
-    def exec_(code, globs=None, locs=None):
+    def exec_(code, globs=None, locs=None):  # pragma: no cover
         """Execute code in a namespace."""
         if globs is None:
             frame = sys._getframe(1)
@@ -296,7 +296,7 @@ class MagicModule(ModuleType):
             for item in self._all_by_module[module.__name__]:
                 setattr(self, item, getattr(module, item))
             return getattr(module, name)
-        elif name in self._direct:
+        elif name in self._direct:  # pragma: no cover
             module = __import__(self._direct[name], None, None, [name])
             setattr(self, name, module)
             return module

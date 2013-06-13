@@ -241,7 +241,7 @@ and creating Celery applications.
 
     .. attribute:: Celery.GroupResult
 
-        Create new taskset result instance.
+        Create new group result instance.
         See :class:`~celery.result.GroupResult`.
 
     .. method:: Celery.worker_main(argv=None)

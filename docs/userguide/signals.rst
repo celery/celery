@@ -90,7 +90,8 @@ Provides arguments:
     The time to execute the task.
 
 * taskset
-    Id of the taskset this task is part of (if any).
+    Id of the group this task is part of (if any).
+    (named taskset for historial reasons)
 
 .. signal:: task_prerun
 

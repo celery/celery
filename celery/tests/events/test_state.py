@@ -1,14 +1,23 @@
 from __future__ import absolute_import
 
-from time import time
+import pickle
 
+from time import time
 from itertools import count
+from mock import Mock, patch
 
 from celery import states
 from celery.events import Event
-from celery.events.state import State, Worker, Task, HEARTBEAT_EXPIRE_WINDOW
+from celery.events.state import (
+    State,
+    Worker,
+    Task,
+    HEARTBEAT_EXPIRE_WINDOW,
+    HEARTBEAT_DRIFT_MAX,
+    _lamportinfo
+)
 from celery.utils import uuid
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class replay(object):
@@ -108,6 +117,20 @@ class test_Worker(Case):
     def test_repr(self):
         self.assertTrue(repr(Worker(hostname='foo')))
 
+    def test_drift_warning(self):
+        worker = Worker(hostname='foo')
+        with patch('celery.events.state.warn') as warn:
+            worker.update_heartbeat(time(), time() + (HEARTBEAT_DRIFT_MAX * 2))
+            self.assertTrue(warn.called)
+            self.assertIn('Substantial drift', warn.call_args[0][0])
+
+    def test_update_heartbeat(self):
+        worker = Worker(hostname='foo')
+        worker.update_heartbeat(time(), time())
+        self.assertEqual(len(worker.heartbeats), 1)
+        worker.update_heartbeat(time() - 10, time())
+        self.assertEqual(len(worker.heartbeats), 1)
+
 
 class test_Task(Case):
 
@@ -121,6 +144,7 @@ class test_Task(Case):
                     eta=1,
                     runtime=0.0001,
                     expires=1,
+                    foo=None,
                     exception=1,
                     received=time() - 10,
                     started=time() - 8,
@@ -135,6 +159,7 @@ class test_Task(Case):
 
         self.assertEqual(sorted(['args', 'kwargs']),
                          sorted(task.info(['args', 'kwargs']).keys()))
+        self.assertFalse(list(task.info('foo')))
 
     def test_ready(self):
         task = Task(uuid='abcdefg',
@@ -169,6 +194,9 @@ class test_State(Case):
 
     def test_repr(self):
         self.assertTrue(repr(State()))
+
+    def test_pickleable(self):
+        self.assertTrue(pickle.loads(pickle.dumps(State())))
 
     def test_worker_online_offline(self):
         r = ev_worker_online_offline(State())
@@ -341,6 +369,29 @@ class test_State(Case):
                                                 'uuid': 'x',
                                                 'hostname': 'y'})
 
+    def test_limits_maxtasks(self):
+        s = State()
+        s.max_tasks_in_memory = 1
+        s.task_event('task-unknown-event-xxx', {'foo': 'bar',
+                                                'uuid': 'x',
+                                                'hostname': 'y',
+                                                'clock': 3})
+        s.task_event('task-unknown-event-xxx', {'foo': 'bar',
+                                                'uuid': 'y',
+                                                'hostname': 'y',
+                                                'clock': 4})
+
+        s.task_event('task-unknown-event-xxx', {'foo': 'bar',
+                                                'uuid': 'z',
+                                                'hostname': 'y',
+                                                'clock': 5})
+        self.assertEqual(len(s._taskheap), 2)
+        self.assertEqual(s._taskheap[0].clock, 4)
+        self.assertEqual(s._taskheap[1].clock, 5)
+
+        s._taskheap.append(s._taskheap[0])
+        self.assertTrue(list(s.tasks_by_time()))
+
     def test_callback(self):
         scratch = {}
 
@@ -350,3 +401,48 @@ class test_State(Case):
         s = State(callback=callback)
         s.event({'type': 'worker-online'})
         self.assertTrue(scratch.get('recv'))
+
+
+class test_lamportinfo(Case):
+
+    def test_repr(self):
+        x = _lamportinfo(133, time(), 'id', Mock())
+        self.assertTrue(repr(x))
+
+    def test_pickleable(self):
+        x = _lamportinfo(133, time(), 'id', 'obj')
+        self.assertEqual(pickle.loads(pickle.dumps(x)), tuple(x))
+
+    def test_order(self):
+        t1 = time()
+        a = _lamportinfo(133, t1, 'A', 'obj')
+        b = _lamportinfo(140, t1, 'A', 'obj')
+        self.assertTrue(a.__getnewargs__())
+        self.assertEqual(a.clock, 133)
+        self.assertEqual(a.timestamp, t1)
+        self.assertEqual(a.id, 'A')
+        self.assertEqual(a.obj, 'obj')
+        self.assertTrue(
+            a <= b,
+        )
+        self.assertTrue(
+            b >= a,
+        )
+
+        self.assertEqual(
+            _lamportinfo(134, time(), 'A', 'obj').__lt__(tuple()),
+            NotImplemented,
+        )
+        self.assertGreater(
+            _lamportinfo(134, time(), 'A', 'obj'),
+            _lamportinfo(133, time(), 'A', 'obj'),
+        )
+        self.assertGreater(
+            _lamportinfo(134, t1, 'B', 'obj'),
+            _lamportinfo(134, t1, 'A', 'obj'),
+        )
+
+        self.assertGreater(
+            _lamportinfo(None, time(), 'B', 'obj'),
+            _lamportinfo(None, t1, 'A', 'obj'),
+        )

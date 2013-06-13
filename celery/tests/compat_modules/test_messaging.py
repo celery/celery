@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from celery import messaging
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_compat_messaging_module(Case):

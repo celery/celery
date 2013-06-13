@@ -2,10 +2,15 @@ from __future__ import absolute_import
 
 import os
 
-from mock import patch
+from mock import Mock, patch
 
-from celery.bin.base import Command, Option
-from celery.tests.utils import AppCase, override_stdouts
+from celery.bin.base import (
+    Command,
+    Option,
+    Extensions,
+    HelpFormatter,
+)
+from celery.tests.case import AppCase, Case, override_stdouts
 
 
 class Object(object):
@@ -31,12 +36,95 @@ class MockCommand(Command):
         return args, kwargs
 
 
+class test_Extensions(Case):
+
+    def test_load(self):
+        with patch('pkg_resources.iter_entry_points') as iterep:
+            with patch('celery.bin.base.symbol_by_name') as symbyname:
+                ep = Mock()
+                ep.name = 'ep'
+                ep.module_name = 'foo'
+                ep.attrs = ['bar', 'baz']
+                iterep.return_value = [ep]
+                cls = symbyname.return_value = Mock()
+                register = Mock()
+                e = Extensions('unit', register)
+                e.load()
+                symbyname.assert_called_with('foo:bar')
+                register.assert_called_with(cls, name='ep')
+
+            with patch('celery.bin.base.symbol_by_name') as symbyname:
+                symbyname.side_effect = SyntaxError()
+                with patch('warnings.warn') as warn:
+                    e.load()
+                    self.assertTrue(warn.called)
+
+            with patch('celery.bin.base.symbol_by_name') as symbyname:
+                symbyname.side_effect = KeyError('foo')
+                with self.assertRaises(KeyError):
+                    e.load()
+
+
+class test_HelpFormatter(Case):
+
+    def test_format_epilog(self):
+        f = HelpFormatter()
+        self.assertTrue(f.format_epilog('hello'))
+        self.assertFalse(f.format_epilog(''))
+
+    def test_format_description(self):
+        f = HelpFormatter()
+        self.assertTrue(f.format_description('hello'))
+
+
 class test_Command(AppCase):
 
     def test_get_options(self):
         cmd = Command()
         cmd.option_list = (1, 2, 3)
         self.assertTupleEqual(cmd.get_options(), (1, 2, 3))
+
+    def test_custom_description(self):
+
+        class C(Command):
+            description = 'foo'
+
+        c = C()
+        self.assertEqual(c.description, 'foo')
+
+    def test_register_callbacks(self):
+        c = Command(on_error=8, on_usage_error=9)
+        self.assertEqual(c.on_error, 8)
+        self.assertEqual(c.on_usage_error, 9)
+
+    def test_run_raises_UsageError(self):
+        cb = Mock()
+        c = Command(on_usage_error=cb)
+        c.verify_args = Mock()
+        c.run = Mock()
+        exc = c.run.side_effect = c.UsageError('foo', status=3)
+
+        self.assertEqual(c(), exc.status)
+        cb.assert_called_with(exc)
+        c.verify_args.assert_called_with(())
+
+    def test_default_on_usage_error(self):
+        cmd = Command()
+        cmd.handle_error = Mock()
+        exc = Exception()
+        cmd.on_usage_error(exc)
+        cmd.handle_error.assert_called_with(exc)
+
+    def test_verify_args_missing(self):
+        c = Command()
+
+        def run(a, b, c):
+            pass
+        c.run = run
+
+        with self.assertRaises(c.UsageError):
+            c.verify_args((1, ))
+        c.verify_args((1, 2, 3))
 
     def test_run_interface(self):
         with self.assertRaises(NotImplementedError):
@@ -101,6 +189,92 @@ class test_Command(AppCase):
         cmd.setup_app_from_commandline(['--app=%s' % (app, ),
                                         '--loglevel=INFO'])
         self.assertIs(cmd.app, APP)
+        cmd.setup_app_from_commandline(['-A', app,
+                                        '--loglevel=INFO'])
+        self.assertIs(cmd.app, APP)
+
+    def test_setup_app_sets_quiet(self):
+        cmd = MockCommand()
+        cmd.setup_app_from_commandline(['-q'])
+        self.assertTrue(cmd.quiet)
+        cmd2 = MockCommand()
+        cmd2.setup_app_from_commandline(['--quiet'])
+        self.assertTrue(cmd2.quiet)
+
+    def test_setup_app_sets_chdir(self):
+        with patch('os.chdir') as chdir:
+            cmd = MockCommand()
+            cmd.setup_app_from_commandline(['--workdir=/opt'])
+            chdir.assert_called_with('/opt')
+
+    def test_setup_app_sets_loader(self):
+        prev = os.environ.get('CELERY_LOADER')
+        try:
+            cmd = MockCommand()
+            cmd.setup_app_from_commandline(['--loader=X.Y:Z'])
+            self.assertEqual(os.environ['CELERY_LOADER'], 'X.Y:Z')
+        finally:
+            if prev is not None:
+                os.environ['CELERY_LOADER'] = prev
+
+    def test_setup_app_no_respect(self):
+        cmd = MockCommand()
+        cmd.respects_app_option = False
+        with patch('celery.Celery') as cp:
+            cmd.setup_app_from_commandline(['--app=x.y:z'])
+            self.assertTrue(cp.called)
+
+    def test_setup_app_custom_app(self):
+        cmd = MockCommand()
+        app = cmd.app = Mock()
+        cmd.setup_app_from_commandline([])
+        self.assertEqual(cmd.app, app)
+
+    def test_find_app_suspects(self):
+        cmd = MockCommand()
+        self.assertTrue(cmd.find_app('celery.tests.bin.proj.app'))
+        self.assertTrue(cmd.find_app('celery.tests.bin.proj'))
+        self.assertTrue(cmd.find_app('celery.tests.bin.proj:hello'))
+        self.assertTrue(cmd.find_app('celery.tests.bin.proj.app:app'))
+
+        with self.assertRaises(AttributeError):
+            cmd.find_app(__name__)
+
+    def test_simple_format(self):
+        cmd = MockCommand()
+        with patch('socket.gethostname') as hn:
+            hn.return_value = 'blacktron.example.com'
+            self.assertEqual(cmd.simple_format(''), '')
+            self.assertEqual(
+                cmd.simple_format('celery@%h'),
+                'celery@blacktron.example.com',
+            )
+            self.assertEqual(
+                cmd.simple_format('celery@%d'),
+                'celery@example.com',
+            )
+            self.assertEqual(
+                cmd.simple_format('celery@%n'),
+                'celery@blacktron',
+            )
+
+    def test_say_chat_quiet(self):
+        cmd = MockCommand()
+        cmd.quiet = True
+        self.assertIsNone(cmd.say_chat('<-', 'foo', 'foo'))
+
+    def test_say_chat_show_body(self):
+        cmd = MockCommand()
+        cmd.out = Mock()
+        cmd.show_body = True
+        cmd.say_chat('->', 'foo', 'body')
+        cmd.out.assert_called_with('body')
+
+    def test_say_chat_no_body(self):
+        cmd = MockCommand()
+        cmd.out = Mock()
+        cmd.show_body = False
+        cmd.say_chat('->', 'foo', 'body')
 
     def test_with_cmdline_config(self):
         cmd = MockCommand()

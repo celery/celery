@@ -4,7 +4,7 @@ from kombu import Exchange, Queue
 from mock import Mock
 
 from celery.app.amqp import Queues, TaskPublisher
-from celery.tests.utils import AppCase
+from celery.tests.case import AppCase
 
 
 class test_TaskProducer(AppCase):

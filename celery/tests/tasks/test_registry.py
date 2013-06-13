@@ -7,7 +7,7 @@ from celery.app.registry import (
     _unpickle_task_v2,
 )
 from celery.task import Task, PeriodicTask
-from celery.tests.utils import AppCase, Case
+from celery.tests.case import AppCase, Case
 
 
 class MockTask(Task):

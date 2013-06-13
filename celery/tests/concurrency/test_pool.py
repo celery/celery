@@ -5,8 +5,9 @@ import itertools
 
 from nose import SkipTest
 
-from celery.datastructures import ExceptionInfo
-from celery.tests.utils import Case
+from billiard.einfo import ExceptionInfo
+
+from celery.tests.case import Case
 
 
 def do_something(i):

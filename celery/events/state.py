@@ -20,7 +20,7 @@ from __future__ import absolute_import
 
 import threading
 
-from heapq import heappush
+from heapq import heappush, heappop
 from itertools import islice
 from operator import itemgetter
 from time import time
@@ -28,8 +28,9 @@ from time import time
 from kombu.utils import kwdict
 
 from celery import states
-from celery.datastructures import AttributeDict, LRUCache
 from celery.five import items, values
+from celery.utils.datastructures import AttributeDict
+from celery.utils.functional import LRUCache
 from celery.utils.log import get_logger
 
 # The window (in percentage) is added to the workers heartbeat
@@ -62,7 +63,7 @@ class _lamportinfo(tuple):
         return tuple.__new__(cls, (clock, timestamp, id, obj))
 
     def __repr__(self):
-        return '_lamport(clock={0}, timestamp={1}, id={2} {3!r}'.format(*self)
+        return '_lamport(clock={0}, timestamp={1}, id={2} {3!r})'.format(*self)
 
     def __getnewargs__(self):
         return tuple(self)
@@ -74,7 +75,7 @@ class _lamportinfo(tuple):
             # uses logical clock value first
             if A and B:  # use logical clock if available
                 if A == B:  # equal clocks use lower process id
-                    return self[3] < other[3]
+                    return self[2] < other[2]
                 return A < B
             return self[1] < other[1]  # ... or use timestamp
         except IndexError:
@@ -122,7 +123,7 @@ class Worker(Element):
     def update_heartbeat(self, received, timestamp):
         if not received or not timestamp:
             return
-        drift = received - timestamp
+        drift = abs(received - timestamp)
         if drift > HEARTBEAT_DRIFT_MAX:
             warn(DRIFT_WARNING, self.hostname, drift)
         heartbeats, hbmax = self.heartbeats, self.heartbeat_max
@@ -360,14 +361,14 @@ class State(object):
         worker, _ = self.get_or_create_worker(hostname)
         task, created = self.get_or_create_task(uuid)
         task.worker = worker
+        maxtasks = self.max_tasks_in_memory * 2
 
         taskheap = self._taskheap
         timestamp = fields.get('timestamp') or 0
         clock = 0 if type == 'sent' else fields.get('clock')
         heappush(taskheap, _lamportinfo(clock, timestamp, worker.id, task))
-        curcount = len(self.tasks)
-        if len(taskheap) > self.max_tasks_in_memory * 2:
-            taskheap[:] = taskheap[curcount:]
+        if len(taskheap) > maxtasks:
+            heappop(taskheap)
 
         handler = getattr(task, 'on_' + type, None)
         if type == 'received':

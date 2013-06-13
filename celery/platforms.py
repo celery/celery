@@ -18,6 +18,7 @@ import signal as _signal
 import sys
 
 from billiard import current_process
+from kombu.utils.compat import get_errno
 from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
@@ -51,13 +52,15 @@ Seems we're already running? (pid: {1})"""
 try:
     from io import UnsupportedOperation
     FILENO_ERRORS = (AttributeError, UnsupportedOperation)
-except ImportError:  # Py2
+except ImportError:  # pragma: no cover
+    # Py2
     FILENO_ERRORS = (AttributeError, )  # noqa
 
 try:
     from io import UnsupportedOperation
     FILENO_ERRORS = (AttributeError, UnsupportedOperation)
-except ImportError:  # Py2
+except ImportError:  # pragma: no cover
+    # Py2
     FILENO_ERRORS = (AttributeError, )  # noqa
 
 
@@ -504,11 +507,26 @@ def maybe_drop_privileges(uid=None, gid=None):
             gid = pwd.getpwuid(uid).pw_gid
         # Must set the GID before initgroups(), as setgid()
         # is known to zap the group list on some platforms.
+
+        # setgid must happen before setuid (otherwise the setgid operation
+        # may fail because of insufficient privileges and possibly stay
+        # in a privileged group).
         setgid(gid)
         initgroups(uid, gid)
 
         # at last:
         setuid(uid)
+        # ... and make sure privileges cannot be restored:
+        try:
+            setuid(0)
+        except OSError as exc:
+            if get_errno(exc) != errno.EPERM:
+                raise
+            pass  # Good: cannot restore privileges.
+        else:
+            raise RuntimeError(
+                'non-root user able to restore privileges after setuid.')
+
     else:
         gid and setgid(gid)
 
@@ -557,14 +575,14 @@ class Signals(object):
 
         def arm_alarm(self, seconds):
             _signal.setitimer(_signal.ITIMER_REAL, seconds)
-    else:
+    else:  # pragma: no cover
         try:
             from itimer import alarm as _itimer_alarm  # noqa
         except ImportError:
 
             def arm_alarm(self, seconds):  # noqa
                 _signal.alarm(math.ceil(seconds))
-        else:
+        else:  # pragma: no cover
 
             def arm_alarm(self, seconds):      # noqa
                 return _itimer_alarm(seconds)  # noqa
@@ -674,7 +692,7 @@ else:
             '{0}:{1}'.format(progname, current_process().name), info=info)
 
 
-def get_errno(n):
+def get_errno_name(n):
     """Get errno for string, e.g. ``ENOENT``."""
     if isinstance(n, string_t):
         return getattr(errno, n)
@@ -699,7 +717,7 @@ def ignore_errno(*errnos, **kwargs):
                     defaults to :exc:`Exception`.
     """
     types = kwargs.get('types') or (Exception, )
-    errnos = [get_errno(errno) for errno in errnos]
+    errnos = [get_errno_name(errno) for errno in errnos]
     try:
         yield
     except types as exc:

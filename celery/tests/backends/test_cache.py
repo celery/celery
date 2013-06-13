@@ -17,7 +17,7 @@ from celery.result import AsyncResult
 from celery.task import subtask
 from celery.utils import uuid
 
-from celery.tests.utils import AppCase, mask_modules, reset_modules
+from celery.tests.case import AppCase, mask_modules, reset_modules
 
 
 class SomeClass(object):
@@ -38,7 +38,7 @@ class test_CacheBackend(AppCase):
         )
         try:
             with self.assertRaises(ImproperlyConfigured):
-                tb = CacheBackend(backend=None, app=self.app)
+                CacheBackend(backend=None, app=self.app)
         finally:
             self.app.conf.CELERY_CACHE_BACKEND = prev
 

@@ -225,14 +225,14 @@ it must be in the form of ``module.path:celery``, where the part before the colo
 is the name of the module, and the attribute name comes last.
 If a package name is specified instead it will automatically
 try to find a ``celery`` module in that package, and if the name
-is a module it will try to find a ``celery`` attribute in that module.
+is a module it will try to find an app in that module.
 This means that these are all equal:
 
 .. code-block:: bash
 
     $ celery --app=proj
     $ celery --app=proj.celery:
-    $ celery --app=proj.celery:celery
+    $ celery --app=proj.celery:app
 
 
 .. _calling-tasks:
@@ -345,9 +345,9 @@ The pending state is actually not a recorded state, but rather
 the default state for any task id that is unknown, which you can see
 from this example::
 
-    >>> from proj.celery import celery
+    >>> from proj.celery import app
 
-    >>> res = celery.AsyncResult('this-id-does-not-exist')
+    >>> res = app.AsyncResult('this-id-does-not-exist')
     >>> res.state
     'PENDING'
 
@@ -563,7 +563,7 @@ but it also supports simple routing where messages are sent to named queues.
 The :setting:`CELERY_ROUTES` setting enables you to route tasks by name
 and keep everything centralized in one location::
 
-    celery.conf.update(
+    app.conf.update(
         CELERY_ROUTES = {
             'proj.tasks.add': {'queue': 'hipri'},
         },
@@ -685,7 +685,7 @@ converts that UTC time to local time.  If you wish to use
 a different timezone than the system timezone then you must
 configure that using the :setting:`CELERY_TIMEZONE` setting::
 
-    celery.conf.CELERY_TIMEZONE = 'Europe/London'
+    app.conf.CELERY_TIMEZONE = 'Europe/London'
 
 Optimization
 ============

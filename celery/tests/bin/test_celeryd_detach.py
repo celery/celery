@@ -9,7 +9,7 @@ from celery.bin.celeryd_detach import (
     main,
 )
 
-from celery.tests.utils import Case, override_stdouts
+from celery.tests.case import Case, override_stdouts
 
 
 if not current_app.IS_WINDOWS:

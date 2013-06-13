@@ -12,7 +12,7 @@ from celery import states
 from celery.backends import mongodb as module
 from celery.backends.mongodb import MongoBackend, Bunch, pymongo
 from celery.exceptions import ImproperlyConfigured
-from celery.tests.utils import AppCase
+from celery.tests.case import AppCase
 
 COLLECTION = 'taskmeta_celery'
 TASK_ID = str(uuid.uuid1())

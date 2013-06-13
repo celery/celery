@@ -14,7 +14,7 @@ import sys
 from datetime import datetime
 
 from celery.app import app_or_default
-from celery.datastructures import LRUCache
+from celery.utils.functional import LRUCache
 from celery.utils.timeutils import humanize_seconds
 
 TASK_NAMES = LRUCache(limit=0xFFF)
@@ -81,7 +81,7 @@ def evdump(app=None, out=sys.stdout):
     app = app_or_default(app)
     dumper = Dumper(out=out)
     dumper.say('-> evdump: starting capture...')
-    conn = app.connection()
+    conn = app.connection().clone()
 
     def _error_handler(exc, interval):
         dumper.say(CONNECTION_ERROR % (
@@ -90,7 +90,6 @@ def evdump(app=None, out=sys.stdout):
 
     while 1:
         try:
-            conn = conn.clone()
             conn.ensure_connection(_error_handler)
             recv = app.events.Receiver(conn, handlers={'*': dumper.on_event})
             recv.capture()

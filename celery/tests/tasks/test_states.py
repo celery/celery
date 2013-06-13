@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from celery.states import state
 from celery import states
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_state_precedence(Case):

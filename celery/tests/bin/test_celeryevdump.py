@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from mock import patch
+from mock import Mock, patch
 from time import time
 
 from celery.events.dumper import (
@@ -9,7 +9,7 @@ from celery.events.dumper import (
     evdump,
 )
 
-from celery.tests.utils import Case, WhateverIO
+from celery.tests.case import Case, WhateverIO
 
 
 class test_Dumper(Case):
@@ -45,3 +45,25 @@ class test_Dumper(Case):
     def test_evdump(self, capture):
         capture.side_effect = KeyboardInterrupt()
         evdump()
+
+    def test_evdump_error_handler(self):
+        app = Mock(name='app')
+        with patch('celery.events.dumper.Dumper') as Dumper:
+            Dumper.return_value = Mock(name='dumper')
+            recv = app.events.Receiver.return_value = Mock()
+
+            def se(*_a, **_k):
+                recv.capture.side_effect = SystemExit()
+                raise KeyError()
+            recv.capture.side_effect = se
+
+            Conn = app.connection.return_value = Mock(name='conn')
+            conn = Conn.clone.return_value = Mock(name='cloned_conn')
+            conn.connection_errors = (KeyError, )
+            conn.channel_errors = ()
+
+            evdump(app)
+            self.assertTrue(conn.ensure_connection.called)
+            errback = conn.ensure_connection.call_args[0][0]
+            errback(KeyError(), 1)
+            self.assertTrue(conn.as_uri.called)

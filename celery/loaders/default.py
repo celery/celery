@@ -11,9 +11,9 @@ from __future__ import absolute_import
 import os
 import warnings
 
-from celery.datastructures import DictAttribute
 from celery.exceptions import NotConfigured
 from celery.utils import strtobool
+from celery.utils.datastructures import DictAttribute
 
 from .base import BaseLoader
 

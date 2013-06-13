@@ -15,16 +15,16 @@ if not os.environ.get('GEVENT_NOPATCH') and not PATCHED[0]:
     PATCHED[0] += 1
     from gevent import monkey, version_info
     monkey.patch_all()
-    if version_info[0] == 0:
-        # Signals are not working along gevent in version prior 1.0
-        # and they are not monkey patch by monkey.patch_all()
+    if version_info[0] == 0:  # pragma: no cover
+        # Signals aren't working in gevent versions <1.0,
+        # and are not monkey patched by patch_all()
         from gevent import signal as _gevent_signal
         _signal = __import__('signal')
         _signal.signal = _gevent_signal
 
 try:
     from gevent import Timeout
-except ImportError:
+except ImportError:  # pragma: no cover
     Timeout = None  # noqa
 
 from time import time
@@ -36,7 +36,8 @@ from .base import apply_target, BasePool
 
 def apply_timeout(target, args=(), kwargs={}, callback=None,
                   accept_callback=None, pid=None, timeout=None,
-                  timeout_callback=None, **rest):
+                  timeout_callback=None, Timeout=Timeout,
+                  apply_target=apply_target, **rest):
     try:
         with Timeout(timeout):
             return apply_target(target, args, kwargs, callback,
@@ -51,9 +52,7 @@ class Schedule(timer2.Schedule):
         from gevent.greenlet import Greenlet, GreenletExit
 
         class _Greenlet(Greenlet):
-
-            def cancel(self):
-                self.kill()
+            cancel = Greenlet.kill
 
         self._Greenlet = _Greenlet
         self._GreenletExit = GreenletExit

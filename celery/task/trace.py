@@ -21,6 +21,7 @@ import sys
 
 from warnings import warn
 
+from billiard.einfo import ExceptionInfo
 from kombu.utils import kwdict
 
 from celery import current_app
@@ -28,7 +29,6 @@ from celery import states, signals
 from celery._state import _task_stack
 from celery.app import set_default_app
 from celery.app.task import Task as BaseTask, Context
-from celery.datastructures import ExceptionInfo
 from celery.exceptions import Ignore, RetryTaskError
 from celery.utils.log import get_logger
 from celery.utils.objects import mro_lookup
@@ -260,6 +260,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     except Exception as exc:
                         _logger.error('Process cleanup failed: %r', exc,
                                       exc_info=True)
+        except MemoryError:
+            raise
         except Exception as exc:
             if eager:
                 raise
@@ -333,13 +335,9 @@ def setup_worker_optimizations(app):
     _tasks = app._tasks
 
     trace_task_ret = _fast_trace_task
-    try:
-        job = sys.modules['celery.worker.job']
-    except KeyError:
-        pass
-    else:
-        job.trace_task_ret = _fast_trace_task
-        job.__optimize__()
+    from celery.worker import job as job_module
+    job_module.trace_task_ret = _fast_trace_task
+    job_module.__optimize__()
 
 
 def reset_worker_optimizations():
@@ -353,10 +351,8 @@ def reset_worker_optimizations():
         BaseTask.__call__ = _patched.pop('BaseTask.__call__')
     except KeyError:
         pass
-    try:
-        sys.modules['celery.worker.job'].trace_task_ret = _trace_task_ret
-    except KeyError:
-        pass
+    from celery.worker import job as job_module
+    job_module.trace_task_ret = _trace_task_ret
 
 
 def _install_stack_protection():

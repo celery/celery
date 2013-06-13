@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 import celery
 

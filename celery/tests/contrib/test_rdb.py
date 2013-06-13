@@ -10,7 +10,7 @@ from celery.contrib.rdb import (
     debugger,
     set_trace,
 )
-from celery.tests.utils import Case, WhateverIO, skip_if_pypy
+from celery.tests.case import Case, WhateverIO, skip_if_pypy
 
 
 class SockErr(socket.error):

@@ -17,6 +17,13 @@ from email.mime.text import MIMEText
 
 from .functional import maybe_list
 
+try:
+    from ssl import SSLError
+except ImportError:  # pragma: no cover
+    class SSLError(Exception):  # noqa
+        """fallback used when ssl module not compiled."""
+
+
 _local_hostname = None
 
 
@@ -92,7 +99,7 @@ class Mailer(object):
         client.sendmail(message.sender, message.to, str(message))
         try:
             client.quit()
-        except socket.sslerror:
+        except SSLError:
             client.close()
 
 

@@ -23,7 +23,7 @@ You can start the worker in the foreground by executing the command:
 
 .. code-block:: bash
 
-    $ celery worker --app=app -l info
+    $ celery --app=app worker -l info
 
 For a full list of available command-line options see
 :mod:`~celery.bin.worker`, or simply do:
@@ -196,14 +196,14 @@ Some remote control commands also have higher-level interfaces using
 
 Sending the :control:`rate_limit` command and keyword arguments::
 
-    >>> celery.control.broadcast('rate_limit',
+    >>> app.control.broadcast('rate_limit',
     ...                          arguments={'task_name': 'myapp.mytask',
     ...                                     'rate_limit': '200/m'})
 
 This will send the command asynchronously, without waiting for a reply.
 To request a reply you have to use the `reply` argument::
 
-    >>> celery.control.broadcast('rate_limit', {
+    >>> app.control.broadcast('rate_limit', {
     ...     'task_name': 'myapp.mytask', 'rate_limit': '200/m'}, reply=True)
     [{'worker1.example.com': 'New rate limit set successfully'},
      {'worker2.example.com': 'New rate limit set successfully'},
@@ -212,7 +212,7 @@ To request a reply you have to use the `reply` argument::
 Using the `destination` argument you can specify a list of workers
 to receive the command::
 
-    >>> celery.control.broadcast('rate_limit', {
+    >>> app.control.broadcast('rate_limit', {
     ...     'task_name': 'myapp.mytask',
     ...     'rate_limit': '200/m'}, reply=True,
     ...                             destination=['worker1.example.com'])
@@ -249,13 +249,13 @@ Terminating a task also revokes it.
 
 ::
 
-    >>> celery.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed')
+    >>> app.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed')
 
-    >>> celery.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed',
-    ...                       terminate=True)
+    >>> app.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed',
+    ...                    terminate=True)
 
-    >>> celery.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed',
-    ...                       terminate=True, signal='SIGKILL')
+    >>> app.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed',
+    ...                    terminate=True, signal='SIGKILL')
 
 .. _worker-persistent-revokes:
 
@@ -303,10 +303,10 @@ time limit kills it:
 
 .. code-block:: python
 
-    from myapp import celery
+    from myapp import app
     from celery.exceptions import SoftTimeLimitExceeded
 
-    @celery.task
+    @app.task
     def mytask():
         try:
             do_work()
@@ -335,8 +335,8 @@ Example changing the time limit for the ``tasks.crawl_the_web`` task
 to have a soft time limit of one minute, and a hard time limit of
 two minutes::
 
-    >>> celery.control.time_limit('tasks.crawl_the_web',
-                                  soft=60, hard=120, reply=True)
+    >>> app.control.time_limit('tasks.crawl_the_web',
+                               soft=60, hard=120, reply=True)
     [{'worker1.example.com': {'ok': 'time limits set successfully'}}]
 
 Only tasks that starts executing after the time limit change will be affected.
@@ -354,12 +354,12 @@ Changing rate-limits at runtime
 Example changing the rate limit for the `myapp.mytask` task to accept
 200 tasks a minute on all servers::
 
-    >>> celery.control.rate_limit('myapp.mytask', '200/m')
+    >>> app.control.rate_limit('myapp.mytask', '200/m')
 
 Example changing the rate limit on a single host by specifying the
 destination host name::
 
-    >>> celery.control.rate_limit('myapp.mytask', '200/m',
+    >>> app.control.rate_limit('myapp.mytask', '200/m',
     ...            destination=['worker1.example.com'])
 
 .. warning::
@@ -633,23 +633,23 @@ being imported by the worker processes:
 
 .. code-block:: python
 
-    >>> celery.control.broadcast('pool_restart',
-    ...                          arguments={'modules': ['foo', 'bar']})
+    >>> app.control.broadcast('pool_restart',
+    ...                       arguments={'modules': ['foo', 'bar']})
 
 Use the ``reload`` argument to reload modules it has already imported:
 
 .. code-block:: python
 
-    >>> celery.control.broadcast('pool_restart',
-    ...                          arguments={'modules': ['foo'],
-    ...                                     'reload': True})
+    >>> app.control.broadcast('pool_restart',
+    ...                       arguments={'modules': ['foo'],
+    ...                                  'reload': True})
 
 If you don't specify any modules then all known tasks modules will
 be imported/reloaded:
 
 .. code-block:: python
 
-    >>> celery.control.broadcast('pool_restart', arguments={'reload': True})
+    >>> app.control.broadcast('pool_restart', arguments={'reload': True})
 
 The ``modules`` argument is a list of modules to modify. ``reload``
 specifies whether to reload modules if they have previously been imported.
@@ -684,14 +684,14 @@ and it supports the same commands as the :class:`@Celery.control` interface.
 .. code-block:: python
 
     # Inspect all nodes.
-    >>> i = celery.control.inspect()
+    >>> i = app.control.inspect()
 
     # Specify multiple nodes to inspect.
-    >>> i = celery.control.inspect(['worker1.example.com',
-                                    'worker2.example.com'])
+    >>> i = app.control.inspect(['worker1.example.com',
+                                'worker2.example.com'])
 
     # Specify a single node to inspect.
-    >>> i = celery.control.inspect('worker1.example.com')
+    >>> i = app.control.inspect('worker1.example.com')
 
 .. _worker-inspect-registered-tasks:
 
@@ -776,8 +776,8 @@ Remote shutdown
 
 This command will gracefully shut down the worker remotely::
 
-    >>> celery.control.broadcast('shutdown') # shutdown all workers
-    >>> celery.control.broadcast('shutdown, destination='worker1.example.com')
+    >>> app.control.broadcast('shutdown') # shutdown all workers
+    >>> app.control.broadcast('shutdown, destination='worker1.example.com')
 
 .. control:: ping
 
@@ -789,7 +789,7 @@ The workers reply with the string 'pong', and that's just about it.
 It will use the default one second timeout for replies unless you specify
 a custom timeout::
 
-    >>> celery.control.ping(timeout=0.5)
+    >>> app.control.ping(timeout=0.5)
     [{'worker1.example.com': 'pong'},
      {'worker2.example.com': 'pong'},
      {'worker3.example.com': 'pong'}]
@@ -815,8 +815,8 @@ a worker using :program:`celery events`/:program:`celerymon`.
 
 .. code-block:: python
 
-    >>> celery.control.enable_events()
-    >>> celery.control.disable_events()
+    >>> app.control.enable_events()
+    >>> app.control.disable_events()
 
 .. _worker-custom-control-commands:
 
@@ -836,6 +836,6 @@ Here's an example control command that restarts the broker connection:
     from celery.worker.control import Panel
 
     @Panel.register
-    def reset_connection(panel):
-        panel.consumer.reset_connection()
+    def reset_connection(state):
+        state.consumer.reset_connection()
         return {'ok': 'connection reset'}

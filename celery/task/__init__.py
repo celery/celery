@@ -23,7 +23,7 @@ __all__ = [
 
 STATICA_HACK = True
 globals()['kcah_acitats'[::-1].upper()] = False
-if STATICA_HACK:
+if STATICA_HACK:  # pragma: no cover
     # This is never executed, but tricks static analyzers (PyDev, PyCharm,
     # pylint, etc.) into knowing the types of these symbols, and what
     # they contain.

@@ -104,9 +104,9 @@ should be rewritten into::
 
     from celery import task
 
-    @task()
-    def add(x, y):
-        print("My task id is {0.request.id}".format(add))
+    @task(bind=True)
+    def add(self, x, y):
+        print("My task id is {0.request.id}".format(self))
 
 
 Task attributes

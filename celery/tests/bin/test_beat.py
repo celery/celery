@@ -14,7 +14,7 @@ from celery.app import app_or_default
 from celery.bin import beat as beat_bin
 from celery.apps import beat as beatapp
 
-from celery.tests.utils import AppCase, Mock
+from celery.tests.case import AppCase, Mock
 
 
 class MockedShelveModule(object):
@@ -78,7 +78,6 @@ class test_Beat(AppCase):
         b.setup_logging()
         self.assertTrue(app.log.setup.called)
         self.assertEqual(app.log.setup.call_args[1]['colorize'], False)
-
 
     def test_init_loader(self):
         b = beatapp.Beat()

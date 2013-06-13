@@ -2,12 +2,10 @@ from __future__ import absolute_import
 
 from mock import patch
 
-from celery import states
 from celery.backends.rpc import RPCBackend
-from celery.utils import uuid
 from celery._state import _task_stack
 
-from celery.tests.utils import AppCase, Mock
+from celery.tests.case import AppCase, Mock
 
 
 class test_RPCBackend(AppCase):
@@ -75,4 +73,3 @@ class test_RPCBackend(AppCase):
         self.assertEqual(ex.delivery_mode, 1)
         self.assertFalse(ex.durable)
         self.assertFalse(ex.auto_delete)
-

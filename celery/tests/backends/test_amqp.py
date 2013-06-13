@@ -7,18 +7,18 @@ from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
 
+from billiard.einfo import ExceptionInfo
 from mock import patch
 
 from celery import current_app
 from celery import states
 from celery.app import app_or_default
 from celery.backends.amqp import AMQPBackend
-from celery.datastructures import ExceptionInfo
 from celery.exceptions import TimeoutError
 from celery.five import Empty, Queue, range
 from celery.utils import uuid
 
-from celery.tests.utils import AppCase, sleepdeprived, Mock
+from celery.tests.case import AppCase, sleepdeprived, Mock
 
 
 class SomeClass(object):
@@ -212,8 +212,10 @@ class test_AMQPBackend(AppCase):
             results.queue.clear()
             assert not results.qsize()
             backend._cache[tid] = 'hello'
-            self.assertEqual(backend.get_task_meta(tid), 'hello',
-                            'Returns cache if no new states')
+            self.assertEqual(
+                backend.get_task_meta(tid), 'hello',
+                'Returns cache if no new states',
+            )
 
     def test_wait_for(self):
         b = self.create_backend()

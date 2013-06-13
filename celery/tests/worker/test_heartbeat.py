@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from celery.worker.heartbeat import Heart
-from celery.tests.utils import Case, sleepdeprived
+from celery.tests.case import Case
 
 
 class MockDispatcher(object):
@@ -47,7 +47,7 @@ class MockTimer(object):
 
 class test_Heart(Case):
 
-    def test_stop(self):
+    def test_start_stop(self):
         timer = MockTimer()
         eventer = MockDispatcher()
         h = Heart(timer, eventer, interval=1)
@@ -57,16 +57,17 @@ class test_Heart(Case):
         self.assertIsNone(h.tref)
         h.stop()
 
-    @sleepdeprived
-    def test_run_manages_cycle(self):
+    def test_start_when_disabled(self):
+        timer = MockTimer()
         eventer = MockDispatcher()
-        heart = Heart(MockTimer(), eventer, interval=0.1)
-        eventer.heart = heart
-        heart.start()
-        msecs, fun, args, kwargs = tref = heart.tref
-        self.assertEqual(msecs, 0.1 * 1000)
-        self.assertEqual(tref.fun, eventer.send)
-        self.assertTrue(tref.args)
-        self.assertTrue(tref.kwargs)
-        heart.stop()
-        self.assertTrue(tref.cancelled)
+        eventer.enabled = False
+        h = Heart(timer, eventer)
+        h.start()
+        self.assertFalse(h.tref)
+
+    def test_stop_when_disabled(self):
+        timer = MockTimer()
+        eventer = MockDispatcher()
+        eventer.enabled = False
+        h = Heart(timer, eventer)
+        h.stop()

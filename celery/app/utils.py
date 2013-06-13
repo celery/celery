@@ -14,7 +14,7 @@ import re
 
 from celery.platforms import pyimplementation
 from celery.five import items
-from celery.datastructures import ConfigurationView
+from celery.utils.datastructures import ConfigurationView
 from celery.utils.text import pretty
 from celery.utils.imports import qualname
 

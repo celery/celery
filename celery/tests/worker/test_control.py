@@ -9,20 +9,21 @@ from datetime import datetime, timedelta
 from kombu import pidbox
 from mock import Mock, patch, call
 
-from celery import current_app
-from celery.datastructures import AttributeDict
+from celery.five import Queue as FastQueue
 from celery.task import task
 from celery.utils import uuid
+from celery.utils.datastructures import AttributeDict
 from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC
 from celery.worker import consumer
 from celery.worker import control
-from celery.worker import state
-from celery.five import Queue as FastQueue
+from celery.worker import state as worker_state
 from celery.worker.job import TaskRequest
 from celery.worker.state import revoked
 from celery.worker.control import Panel
-from celery.tests.utils import Case
+from celery.worker.pidbox import Pidbox, gPidbox
+
+from celery.tests.case import AppCase
 
 hostname = socket.gethostname()
 
@@ -36,16 +37,16 @@ class WorkController(object):
     autoscaler = None
 
     def stats(self):
-        return {'total': state.total_count}
+        return {'total': worker_state.total_count}
 
 
 class Consumer(consumer.Consumer):
 
-    def __init__(self):
+    def __init__(self, app):
+        self.app = app
         self.buffer = FastQueue()
         self.handle_task = self.buffer.put
         self.timer = Timer()
-        self.app = current_app
         self.event_dispatcher = Mock()
         self.controller = WorkController()
         self.task_consumer = Mock()
@@ -55,11 +56,73 @@ class Consumer(consumer.Consumer):
         self.task_buckets = defaultdict(lambda: None)
 
 
-class test_ControlPanel(Case):
+class test_Pidbox(AppCase):
 
-    def setUp(self):
-        self.app = current_app
-        self.panel = self.create_panel(consumer=Consumer())
+    def test_shutdown(self):
+        with patch('celery.worker.pidbox.ignore_errors') as eig:
+            parent = Mock()
+            pbox = Pidbox(parent)
+            pbox._close_channel = Mock()
+            self.assertIs(pbox.c, parent)
+            pconsumer = pbox.consumer = Mock()
+            cancel = pconsumer.cancel
+            pbox.shutdown(parent)
+            eig.assert_called_with(parent, cancel)
+            pbox._close_channel.assert_called_with(parent)
+
+
+class test_Pidbox_green(AppCase):
+
+    def test_stop(self):
+        parent = Mock()
+        g = gPidbox(parent)
+        stopped = g._node_stopped = Mock()
+        shutdown = g._node_shutdown = Mock()
+        close_chan = g._close_channel = Mock()
+
+        g.stop(parent)
+        shutdown.set.assert_called_with()
+        stopped.wait.assert_called_with()
+        close_chan.assert_called_with(parent)
+        self.assertIsNone(g._node_stopped)
+        self.assertIsNone(g._node_shutdown)
+
+        close_chan.reset()
+        g.stop(parent)
+        close_chan.assert_called_with(parent)
+
+    def test_resets(self):
+        parent = Mock()
+        g = gPidbox(parent)
+        g._resets = 100
+        g.reset()
+        self.assertEqual(g._resets, 101)
+
+    def test_loop(self):
+        parent = Mock()
+        conn = parent.connect.return_value = self.app.connection()
+        drain = conn.drain_events = Mock()
+        g = gPidbox(parent)
+        parent.connection = Mock()
+        do_reset = g._do_reset = Mock()
+
+        call_count = [0]
+
+        def se(*args, **kwargs):
+            if call_count[0] > 2:
+                g._node_shutdown.set()
+            g.reset()
+            call_count[0] += 1
+        drain.side_effect = se
+        g.loop(parent)
+
+        self.assertEqual(do_reset.call_count, 4)
+
+
+class test_ControlPanel(AppCase):
+
+    def setup(self):
+        self.panel = self.create_panel(consumer=Consumer(self.app))
 
     def create_state(self, **kwargs):
         kwargs.setdefault('app', self.app)
@@ -71,7 +134,7 @@ class test_ControlPanel(Case):
                                              handlers=Panel.data)
 
     def test_enable_events(self):
-        consumer = Consumer()
+        consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
         evd = consumer.event_dispatcher
         evd.groups = set()
@@ -81,7 +144,7 @@ class test_ControlPanel(Case):
         self.assertIn('already enabled', panel.handle('enable_events')['ok'])
 
     def test_disable_events(self):
-        consumer = Consumer()
+        consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
         evd = consumer.event_dispatcher
         evd.enabled = True
@@ -90,8 +153,44 @@ class test_ControlPanel(Case):
         self.assertNotIn('task', evd.groups)
         self.assertIn('already disabled', panel.handle('disable_events')['ok'])
 
+    def test_clock(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        panel.state.app.clock.value = 313
+        x = panel.handle('clock')
+        self.assertEqual(x['clock'], 313)
+
+    def test_hello(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        panel.state.app.clock.value = 313
+        worker_state.revoked.add('revoked1')
+        try:
+            x = panel.handle('hello')
+            self.assertIn('revoked1', x['revoked'])
+            self.assertEqual(x['clock'], 314)  # incremented
+        finally:
+            worker_state.revoked.discard('revoked1')
+
+    def test_conf(self):
+        return
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        self.app.conf.SOME_KEY6 = 'hello world'
+        x = panel.handle('dump_conf')
+        self.assertIn('SOME_KEY6', x)
+
+    def test_election(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        consumer.gossip = Mock()
+        panel.handle(
+            'election', {'id': 'id', 'topic': 'topic', 'action': 'action'},
+        )
+        consumer.gossip.election.assert_called_with('id', 'topic', 'action')
+
     def test_heartbeat(self):
-        consumer = Consumer()
+        consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
         consumer.event_dispatcher.enabled = True
         panel.handle('heartbeat')
@@ -122,7 +221,7 @@ class test_ControlPanel(Case):
     def test_active_queues(self):
         import kombu
 
-        x = kombu.Consumer(current_app.connection(),
+        x = kombu.Consumer(self.app.connection(),
                            [kombu.Queue('foo', kombu.Exchange('foo'), 'foo'),
                             kombu.Queue('bar', kombu.Exchange('bar'), 'bar')],
                            auto_declare=False)
@@ -139,23 +238,23 @@ class test_ControlPanel(Case):
         self.assertIn('rate_limit=200', info)
 
     def test_stats(self):
-        prev_count, state.total_count = state.total_count, 100
+        prev_count, worker_state.total_count = worker_state.total_count, 100
         try:
             self.assertDictContainsSubset({'total': 100},
                                           self.panel.handle('stats'))
         finally:
-            state.total_count = prev_count
+            worker_state.total_count = prev_count
 
     def test_report(self):
         self.panel.handle('report')
 
     def test_active(self):
         r = TaskRequest(mytask.name, 'do re mi', (), {})
-        state.active_requests.add(r)
+        worker_state.active_requests.add(r)
         try:
             self.assertTrue(self.panel.handle('dump_active'))
         finally:
-            state.active_requests.discard(r)
+            worker_state.active_requests.discard(r)
 
     def test_pool_grow(self):
 
@@ -170,7 +269,7 @@ class test_ControlPanel(Case):
             def shrink(self, n=1):
                 self.size -= n
 
-        consumer = Consumer()
+        consumer = Consumer(self.app)
         consumer.pool = MockPool()
         panel = self.create_panel(consumer=consumer)
 
@@ -206,7 +305,7 @@ class test_ControlPanel(Case):
             def consuming_from(self, queue):
                 return queue in self.queues
 
-        consumer = Consumer()
+        consumer = Consumer(self.app)
         consumer.task_consumer = MockConsumer()
         panel = self.create_panel(consumer=consumer)
 
@@ -218,30 +317,32 @@ class test_ControlPanel(Case):
         self.assertIn('MyQueue', consumer.task_consumer.cancelled)
 
     def test_revoked(self):
-        state.revoked.clear()
-        state.revoked.add('a1')
-        state.revoked.add('a2')
+        worker_state.revoked.clear()
+        worker_state.revoked.add('a1')
+        worker_state.revoked.add('a2')
 
         try:
             self.assertEqual(sorted(self.panel.handle('dump_revoked')),
                              ['a1', 'a2'])
         finally:
-            state.revoked.clear()
+            worker_state.revoked.clear()
 
     def test_dump_schedule(self):
-        consumer = Consumer()
+        consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
         self.assertFalse(panel.handle('dump_schedule'))
         r = TaskRequest(mytask.name, 'CAFEBABE', (), {})
         consumer.timer.schedule.enter(
             consumer.timer.Entry(lambda x: x, (r, )),
             datetime.now() + timedelta(seconds=10))
+        consumer.timer.schedule.enter(
+            consumer.timer.Entry(lambda x: x, (object(), )),
+            datetime.now() + timedelta(seconds=10))
         self.assertTrue(panel.handle('dump_schedule'))
 
     def test_dump_reserved(self):
-        from celery.worker import state
-        consumer = Consumer()
-        state.reserved_requests.add(
+        consumer = Consumer(self.app)
+        worker_state.reserved_requests.add(
             TaskRequest(mytask.name, uuid(), args=(2, 2), kwargs={}),
         )
         try:
@@ -254,10 +355,10 @@ class test_ControlPanel(Case):
                  'hostname': socket.gethostname()},
                 response[0],
             )
-            state.reserved_requests.clear()
+            worker_state.reserved_requests.clear()
             self.assertFalse(panel.handle('dump_reserved'))
         finally:
-            state.reserved_requests.clear()
+            worker_state.reserved_requests.clear()
 
     def test_rate_limit_invalid_rate_limit_string(self):
         e = self.panel.handle('rate_limit', arguments=dict(
@@ -266,16 +367,16 @@ class test_ControlPanel(Case):
 
     def test_rate_limit(self):
 
-        class Consumer(object):
+        class xConsumer(object):
             reset = False
 
             def reset_rate_limits(self):
                 self.reset = True
 
-        consumer = Consumer()
-        panel = self.create_panel(app=current_app, consumer=consumer)
+        consumer = xConsumer()
+        panel = self.create_panel(app=self.app, consumer=consumer)
 
-        task = current_app.tasks[mytask.name]
+        task = self.app.tasks[mytask.name]
         old_rate_limit = task.rate_limit
         try:
             panel.handle('rate_limit', arguments=dict(task_name=task.name,
@@ -334,7 +435,7 @@ class test_ControlPanel(Case):
     def test_revoke_terminate(self):
         request = Mock()
         request.id = tid = uuid()
-        state.reserved_requests.add(request)
+        worker_state.reserved_requests.add(request)
         try:
             r = control.revoke(Mock(), tid, terminate=True)
             self.assertIn(tid, revoked)
@@ -344,7 +445,7 @@ class test_ControlPanel(Case):
             r = control.revoke(Mock(), uuid(), terminate=True)
             self.assertIn('not found', r['ok'])
         finally:
-            state.reserved_requests.discard(request)
+            worker_state.reserved_requests.discard(request)
 
     def test_autoscale(self):
         self.panel.state.consumer = Mock()
@@ -383,7 +484,7 @@ class test_ControlPanel(Case):
                 replies.append(data)
 
         panel = _Node(hostname=hostname,
-                      state=self.create_state(consumer=Consumer()),
+                      state=self.create_state(consumer=Consumer(self.app)),
                       handlers=Panel.data,
                       mailbox=self.app.control.mailbox)
         r = panel.dispatch('ping', reply_to={'exchange': 'x',
@@ -392,8 +493,8 @@ class test_ControlPanel(Case):
         self.assertDictEqual(replies[0], {panel.hostname: {'ok': 'pong'}})
 
     def test_pool_restart(self):
-        consumer = Consumer()
-        consumer.controller = _WC(app=current_app)
+        consumer = Consumer(self.app)
+        consumer.controller = _WC(app=self.app)
         consumer.controller.pool.restart = Mock()
         panel = self.create_panel(consumer=consumer)
         panel.app = self.app
@@ -403,25 +504,25 @@ class test_ControlPanel(Case):
         with self.assertRaises(ValueError):
             panel.handle('pool_restart', {'reloader': _reload})
 
-        current_app.conf.CELERYD_POOL_RESTARTS = True
+        self.app.conf.CELERYD_POOL_RESTARTS = True
         try:
             panel.handle('pool_restart', {'reloader': _reload})
             self.assertTrue(consumer.controller.pool.restart.called)
             self.assertFalse(_reload.called)
             self.assertFalse(_import.called)
         finally:
-            current_app.conf.CELERYD_POOL_RESTARTS = False
+            self.app.conf.CELERYD_POOL_RESTARTS = False
 
     def test_pool_restart_import_modules(self):
-        consumer = Consumer()
-        consumer.controller = _WC(app=current_app)
+        consumer = Consumer(self.app)
+        consumer.controller = _WC(app=self.app)
         consumer.controller.pool.restart = Mock()
         panel = self.create_panel(consumer=consumer)
         panel.app = self.app
         _import = consumer.controller.app.loader.import_from_cwd = Mock()
         _reload = Mock()
 
-        current_app.conf.CELERYD_POOL_RESTARTS = True
+        self.app.conf.CELERYD_POOL_RESTARTS = True
         try:
             panel.handle('pool_restart', {'modules': ['foo', 'bar'],
                                           'reloader': _reload})
@@ -433,18 +534,18 @@ class test_ControlPanel(Case):
                 _import.call_args_list,
             )
         finally:
-            current_app.conf.CELERYD_POOL_RESTARTS = False
+            self.app.conf.CELERYD_POOL_RESTARTS = False
 
     def test_pool_restart_reload_modules(self):
-        consumer = Consumer()
-        consumer.controller = _WC(app=current_app)
+        consumer = Consumer(self.app)
+        consumer.controller = _WC(app=self.app)
         consumer.controller.pool.restart = Mock()
         panel = self.create_panel(consumer=consumer)
         panel.app = self.app
         _import = panel.app.loader.import_from_cwd = Mock()
         _reload = Mock()
 
-        current_app.conf.CELERYD_POOL_RESTARTS = True
+        self.app.conf.CELERYD_POOL_RESTARTS = True
         try:
             with patch.dict(sys.modules, {'foo': None}):
                 panel.handle('pool_restart', {'modules': ['foo'],
@@ -467,4 +568,4 @@ class test_ControlPanel(Case):
                 self.assertTrue(_reload.called)
                 self.assertFalse(_import.called)
         finally:
-            current_app.conf.CELERYD_POOL_RESTARTS = False
+            self.app.conf.CELERYD_POOL_RESTARTS = False

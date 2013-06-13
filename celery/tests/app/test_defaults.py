@@ -7,7 +7,7 @@ from mock import Mock, patch
 
 from celery.app.defaults import NAMESPACES
 
-from celery.tests.utils import Case, pypy_version, sys_platform
+from celery.tests.case import Case, pypy_version, sys_platform
 
 
 class test_defaults(Case):

@@ -11,7 +11,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.result import AsyncResult
 from celery.utils import uuid
 
-from celery.tests.utils import (
+from celery.tests.case import (
     Case,
     mask_modules,
     skip_if_pypy,

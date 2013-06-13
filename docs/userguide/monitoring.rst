@@ -514,8 +514,8 @@ Or you can use it programmatically like this:
                 recv.capture(limit=None, timeout=None)
 
     if __name__ == '__main__':
-        celery = Celery(broker='amqp://guest@localhost//')
-        main(celery)
+        app = Celery(broker='amqp://guest@localhost//')
+        main(app)
 
 .. _event-real-time-example:
 
@@ -569,8 +569,8 @@ Combining these you can easily process events in real-time:
             recv.capture(limit=None, timeout=None, wakeup=True)
 
     if __name__ == '__main__':
-        celery = Celery(broker='amqp://guest@localhost//')
-        my_monitor(celery)
+        app = Celery(broker='amqp://guest@localhost//')
+        my_monitor(app)
 
 .. note::
 
@@ -590,31 +590,22 @@ You can listen to specific events by specifying the handlers:
 
         def announce_failed_tasks(event):
             state.event(event)
-            task_id = event['uuid']
+            # task name is sent only with -received event, and state
+            # will keep track of this for us.
+            task = state.tasks.get(event['uuid'])
 
             print('TASK FAILED: %s[%s] %s' % (
-                event['name'], task_id, state[task_id].info(), ))
-
-        def announce_dead_workers(event):
-            state.event(event)
-            hostname = event['hostname']
-
-            if not state.workers[hostname].alive:
-                print('Worker %s missed heartbeats' % (hostname, ))
-
+                task.name, task.uuid, task.info(), ))
 
         with app.connection() as connection:
             recv = app.events.Receiver(connection, handlers={
                     'task-failed': announce_failed_tasks,
-                    'worker-heartbeat': announce_dead_workers,
             })
             recv.capture(limit=None, timeout=None, wakeup=True)
 
     if __name__ == '__main__':
-        celery = Celery(broker='amqp://guest@localhost//')
-        my_monitor(celery)
-
-
+        app = Celery(broker='amqp://guest@localhost//')
+        my_monitor(app)
 
 .. _event-reference:
 

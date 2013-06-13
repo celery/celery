@@ -133,9 +133,9 @@ Let's create the file :file:`tasks.py`:
 
     from celery import Celery
 
-    celery = Celery('tasks', broker='amqp://guest@localhost//')
+    app = Celery('tasks', broker='amqp://guest@localhost//')
 
-    @celery.task
+    @app.task
     def add(x, y):
         return x + y
 
@@ -223,12 +223,12 @@ as messages.  The backend is specified via the ``backend`` argument to
 :class:`@Celery`, (or via the :setting:`CELERY_RESULT_BACKEND` setting if
 you choose to use a configuration module)::
 
-    celery = Celery('tasks', backend='amqp', broker='amqp://')
+    app = Celery('tasks', backend='amqp', broker='amqp://')
 
 or if you want to use Redis as the result backend, but still use RabbitMQ as
 the message broker (a popular combination)::
 
-    celery = Celery('tasks', backend='redis://localhost', broker='amqp://')
+    app = Celery('tasks', backend='redis://localhost', broker='amqp://')
 
 To read more about result backends please see :ref:`task-result-backends`.
 
@@ -288,14 +288,15 @@ task payloads by changing the :setting:`CELERY_TASK_SERIALIZER` setting:
 
 .. code-block:: python
 
-    celery.conf.CELERY_TASK_SERIALIZER = 'json'
+    app.conf.CELERY_TASK_SERIALIZER = 'json'
 
 If you are configuring many settings at once you can use ``update``:
 
 .. code-block:: python
 
-    celery.conf.update(
+    app.conf.update(
         CELERY_TASK_SERIALIZER='json',
+        CELERY_ACCEPT_CONTENT='json',  # Ignore other content
         CELERY_RESULT_SERIALIZER='json',
         CELERY_TIMEZONE='Europe/Oslo',
         CELERY_ENABLE_UTC=True,
@@ -314,7 +315,7 @@ by calling the :meth:`~@Celery.config_from_object` method:
 
 .. code-block:: python
 
-    celery.config_from_object('celeryconfig')
+    app.config_from_object('celeryconfig')
 
 This module is often called "``celeryconfig``", but you can use any
 module name.
@@ -331,6 +332,7 @@ current directory or on the Python path, it could look like this:
 
     CELERY_TASK_SERIALIZER = 'json'
     CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_ACCEPT_CONTENT='json'
     CELERY_TIMEZONE = 'Europe/Oslo'
     CELERY_ENABLE_UTC = True
 

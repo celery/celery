@@ -9,7 +9,7 @@ from mock import Mock, patch
 from celery.concurrency.base import BasePool
 from celery.worker import state
 from celery.worker import autoscale
-from celery.tests.utils import Case, sleepdeprived
+from celery.tests.case import AppCase, sleepdeprived
 
 
 class Object(object):
@@ -40,9 +40,35 @@ class MockPool(BasePool):
         return self._pool._processes
 
 
-class test_Autoscaler(Case):
+class test_WorkerComponent(AppCase):
 
-    def setUp(self):
+    def test_on_poll_init(self):
+        parent = Mock()
+        parent.autoscale = True
+        w = autoscale.WorkerComponent(parent)
+        self.assertIsNone(parent.autoscaler)
+        self.assertTrue(w.enabled)
+
+        hub = Mock()
+        hub.on_task = []
+        scaler = Mock()
+        scaler.keepalive = 10
+        w.on_poll_init(scaler, hub)
+        self.assertIn(scaler.maybe_scale, hub.on_task)
+        hub.timer.apply_interval.assert_called_with(
+            10 * 1000.0, scaler.maybe_scale,
+        )
+
+        parent.hub = hub
+        hub.on_init = []
+        w.instantiate = Mock()
+        w.create_ev(parent)
+        self.assertTrue(hub.on_init)
+
+
+class test_Autoscaler(AppCase):
+
+    def setup(self):
         self.pool = MockPool(3)
 
     def test_stop(self):

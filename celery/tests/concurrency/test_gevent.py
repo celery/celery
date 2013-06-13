@@ -10,9 +10,13 @@ from celery.concurrency.gevent import (
     Schedule,
     Timer,
     TaskPool,
+    apply_timeout,
 )
 
-from celery.tests.utils import Case, mock_module, patch_many, skip_if_pypy
+from celery.tests.case import (
+    Case, mock_module, patch_many, skip_if_pypy,
+)
+
 gevent_modules = (
     'gevent',
     'gevent.monkey',
@@ -80,6 +84,9 @@ class test_Schedule(Case):
                 g.kill.side_effect = KeyError()
                 x.clear()
 
+                g = x._Greenlet()
+                g.cancel()
+
 
 class test_TasKPool(Case):
 
@@ -118,3 +125,37 @@ class test_Timer(Case):
             x.start()
             x.stop()
             x.schedule.clear.assert_called_with()
+
+
+class test_apply_timeout(Case):
+
+    def test_apply_timeout(self):
+
+            class Timeout(Exception):
+                value = None
+
+                def __init__(self, value):
+                    self.__class__.value = value
+
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *exc_info):
+                    pass
+            timeout_callback = Mock(name='timeout_callback')
+            apply_target = Mock(name='apply_target')
+            apply_timeout(
+                Mock(), timeout=10, callback=Mock(name='callback'),
+                timeout_callback=timeout_callback,
+                apply_target=apply_target, Timeout=Timeout,
+            )
+            self.assertEqual(Timeout.value, 10)
+            self.assertTrue(apply_target.called)
+
+            apply_target.side_effect = Timeout(10)
+            apply_timeout(
+                Mock(), timeout=10, callback=Mock(),
+                timeout_callback=timeout_callback,
+                apply_target=apply_target, Timeout=Timeout,
+            )
+            timeout_callback.assert_called_with(False, 10)

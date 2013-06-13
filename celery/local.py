@@ -14,7 +14,7 @@ from __future__ import absolute_import
 
 import importlib
 
-from .five import long_t, string, string_t
+from .five import long_t, string
 
 __module__ = __name__  # used by Proxy class body
 
@@ -34,86 +34,9 @@ def _default_cls_attr(name, type_, cls_value):
     def __get__(self, obj, cls=None):
         return self.__getter(obj) if obj is not None else self
 
-    def __set__(self, obj, value):
-        raise AttributeError('readonly attribute')
-
     return type(name, (type_, ), {
-        '__new__': __new__, '__get__': __get__, '__set__': __set__,
+        '__new__': __new__, '__get__': __get__,
     })
-
-
-class _cls_spec(str):
-
-    def __new__(cls, getter):
-        s = str.__new__(cls, getter.__module__)
-        s.__getter = getter
-        return s
-
-    def __get__(self, obj, cls=None):
-        if obj is not None:
-            return self.__getter(obj)
-        return self
-
-    def __set__(self, obj, value):
-        raise AttributeError('cannot set attribute')
-
-
-def symbol_by_name(name, aliases={}, imp=None, package=None,
-                   sep='.', default=None, **kwargs):
-    """Get symbol by qualified name.
-
-    The name should be the full dot-separated path to the class::
-
-        modulename.ClassName
-
-    Example::
-
-        celery.concurrency.processes.TaskPool
-                                    ^- class name
-
-    or using ':' to separate module and symbol::
-
-        celery.concurrency.processes:TaskPool
-
-    If `aliases` is provided, a dict containing short name/long name
-    mappings, the name is looked up in the aliases first.
-
-    Examples:
-
-        >>> symbol_by_name('celery.concurrency.processes.TaskPool')
-        <class 'celery.concurrency.processes.TaskPool'>
-
-        >>> symbol_by_name('default', {
-        ...     'default': 'celery.concurrency.processes.TaskPool'})
-        <class 'celery.concurrency.processes.TaskPool'>
-
-        # Does not try to look up non-string names.
-        >>> from celery.concurrency.processes import TaskPool
-        >>> symbol_by_name(TaskPool) is TaskPool
-        True
-
-    """
-    if imp is None:
-        imp = importlib.import_module
-
-    if not isinstance(name, string_t):
-        return name                                 # already a class
-
-    name = aliases.get(name) or name
-    sep = ':' if ':' in name else sep
-    module_name, _, cls_name = name.rpartition(sep)
-    if not module_name:
-        cls_name, module_name = None, package if package else cls_name
-    try:
-        try:
-            module = imp(module_name, package=package, **kwargs)
-        except ValueError as exc:
-            raise ValueError("Couldn't import %r: %s" % (name, exc))
-        return getattr(module, cls_name) if cls_name else module
-    except (ImportError, AttributeError):
-        if default is None:
-            raise
-    return default
 
 
 def try_import(module, default=None):
@@ -265,7 +188,7 @@ class Proxy(object):
     __oct__ = lambda x: oct(x._get_current_object())
     __hex__ = lambda x: hex(x._get_current_object())
     __index__ = lambda x: x._get_current_object().__index__()
-    __coerce__ = lambda x, o: x.__coerce__(x, o)
+    __coerce__ = lambda x, o: x._get_current_object().__coerce__(o)
     __enter__ = lambda x: x._get_current_object().__enter__()
     __exit__ = lambda x, *a, **kw: x._get_current_object().__exit__(*a, **kw)
     __reduce__ = lambda x: x._get_current_object().__reduce__()
@@ -307,7 +230,8 @@ class PromiseProxy(Proxy):
             for attr in _clean:
                 try:
                     object.__delattr__(self, attr)
-                except AttributeError:  # May mask errors so ignore
+                except AttributeError:  # pragma: no cover
+                    # May mask errors so ignore
                     pass
 
 

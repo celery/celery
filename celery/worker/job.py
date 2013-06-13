@@ -14,6 +14,7 @@ import time
 import socket
 import sys
 
+from billiard.einfo import ExceptionInfo
 from datetime import datetime
 
 from kombu.utils import kwdict, reprcall
@@ -21,7 +22,6 @@ from kombu.utils.encoding import safe_repr, safe_str
 
 from celery import signals
 from celery.app import app_or_default
-from celery.datastructures import ExceptionInfo
 from celery.exceptions import (
     Ignore, TaskRevokedError, InvalidTaskError,
     SoftTimeLimitExceeded, TimeLimitExceeded,
@@ -70,7 +70,7 @@ NEEDS_KWDICT = sys.version_info <= (2, 6)
 
 class Request(object):
     """A request for task execution."""
-    if not IS_PYPY:
+    if not IS_PYPY:  # pragma: no cover
         __slots__ = (
             'app', 'name', 'id', 'args', 'kwargs', 'on_ack', 'delivery_info',
             'hostname', 'eventer', 'connection_errors', 'task', 'eta',
@@ -135,7 +135,7 @@ class Request(object):
         if eta is not None:
             try:
                 self.eta = maybe_iso8601(eta)
-            except (AttributeError, ValueError) as exc:
+            except (AttributeError, ValueError, TypeError) as exc:
                 raise InvalidTaskError(
                     'invalid eta value {0!r}: {1}'.format(eta, exc))
             if utc:
@@ -145,7 +145,7 @@ class Request(object):
         if expires is not None:
             try:
                 self.expires = maybe_iso8601(expires)
-            except (AttributeError, ValueError) as exc:
+            except (AttributeError, ValueError, TypeError) as exc:
                 raise InvalidTaskError(
                     'invalid expires value {0!r}: {1}'.format(expires, exc))
             if utc:
@@ -375,6 +375,7 @@ class Request(object):
     def on_failure(self, exc_info):
         """Handler called if the task raised an exception."""
         task_ready(self)
+        send_failed_event = True
 
         if not exc_info.internal:
             exc = exc_info.exception
@@ -389,12 +390,13 @@ class Request(object):
                     self.task.backend.mark_as_failure(self.id, exc)
                 elif isinstance(exc, Terminated):
                     self._announce_revoked('terminated', True, str(exc), False)
+                    send_failed_event = False  # already sent revoked event
             # (acks_late) acknowledge after result stored.
             if self.task.acks_late:
                 self.acknowledge()
-        self._log_error(exc_info)
+        self._log_error(exc_info, send_failed_event=send_failed_event)
 
-    def _log_error(self, einfo):
+    def _log_error(self, einfo, send_failed_event=True):
         einfo.exception = get_pickled_exception(einfo.exception)
         exception, traceback, exc_info, internal, sargs, skwargs = (
             safe_repr(einfo.exception),
@@ -407,9 +409,10 @@ class Request(object):
         format = self.error_msg
         description = 'raised exception'
         severity = logging.ERROR
-        self.send_event(
-            'task-failed', exception=exception, traceback=traceback,
-        )
+        if send_failed_event:
+            self.send_event(
+                'task-failed', exception=exception, traceback=traceback,
+            )
 
         if internal:
             if isinstance(einfo.exception, MemoryError):

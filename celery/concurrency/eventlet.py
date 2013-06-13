@@ -22,19 +22,20 @@ RACE_MODS = ('billiard.', 'celery.', 'kombu.')
 #: Warn if we couldn't patch early enough,
 #: and thread/socket depending celery modules have already been loaded.
 for mod in (mod for mod in sys.modules if mod.startswith(RACE_MODS)):
-    for side in ('thread', 'threading', 'socket'):
+    for side in ('thread', 'threading', 'socket'):  # pragma: no cover
         if getattr(mod, side, None):
             import warnings
             warnings.warn(RuntimeWarning(W_RACE % side))
 
 
 PATCHED = [0]
-if not EVENTLET_NOPATCH and not PATCHED[0]:
+if not EVENTLET_NOPATCH and not PATCHED[0]:  # pragma: no cover
     PATCHED[0] += 1
     import eventlet
     import eventlet.debug
     eventlet.monkey_patch()
-    eventlet.debug.hub_blocking_detection(EVENTLET_DBLOCK)
+    if EVENTLET_DBLOCK:
+        eventlet.debug.hub_blocking_detection(EVENTLET_DBLOCK)
 
 from time import time
 

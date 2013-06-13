@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from nose import SkipTest
 
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class MockWindow(object):

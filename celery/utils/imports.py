@@ -24,7 +24,7 @@ class NotAPackage(Exception):
     pass
 
 
-if sys.version_info > (3, 3):
+if sys.version_info > (3, 3):  # pragma: no cover
     def qualname(obj):
         if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
             obj = obj.__class__

@@ -8,8 +8,6 @@
 """
 from __future__ import absolute_import
 
-from functools import wraps
-
 from kombu.utils import cached_property
 from kombu.utils import eventio
 from kombu.utils.eventio import READ, WRITE, ERR
@@ -30,20 +28,11 @@ def repr_flag(flag):
 
 
 def _rcb(obj):
+    if obj is None:
+        return '<missing>'
     if isinstance(obj, str):
         return obj
     return obj.__name__
-
-
-def coroutine(gen):
-
-    @wraps(gen)
-    def advances(*args, **kwargs):
-        it = gen(*args, **kwargs)
-        next(it)
-        return it
-
-    return advances
 
 
 class BoundedSemaphore(object):
@@ -232,10 +221,6 @@ class Hub(object):
         self.readers.pop(fd, None)
         self.writers.pop(fd, None)
 
-    def __enter__(self):
-        self.init()
-        return self
-
     def close(self, *args):
         [self._unregister(fd) for fd in self.readers]
         self.readers.clear()
@@ -243,7 +228,6 @@ class Hub(object):
         self.writers.clear()
         for callback in self.on_close:
             callback(self)
-    __exit__ = close
 
     def _repr_readers(self):
         return ['({0}){1}->{2}'.format(fd, _rcb(cb), repr_flag(READ | ERR))

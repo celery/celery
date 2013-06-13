@@ -36,7 +36,7 @@ def default(task, app, consumer,
     apply_eta_task = consumer.apply_eta_task
     rate_limits_enabled = not consumer.disable_rate_limits
     bucket = consumer.task_buckets[task.name]
-    handle = consumer.handle_task
+    handle = consumer.on_task
     limit_task = consumer._limit_task
 
     def task_message_handler(message, body, ack, to_timestamp=to_timestamp):

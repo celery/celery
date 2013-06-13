@@ -6,6 +6,8 @@ from functools import wraps
 from mock import patch
 from pickle import loads, dumps
 
+from kombu import Queue
+
 from celery.task import (
     current,
     task,
@@ -25,7 +27,7 @@ from celery.schedules import crontab, crontab_parser, ParseException
 from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601, timedelta_seconds
 
-from celery.tests.utils import Case, with_eager_tasks, WhateverIO
+from celery.tests.case import Case, with_eager_tasks, WhateverIO
 
 
 def now():
@@ -289,6 +291,7 @@ class test_tasks(Case):
             consumer.receive('foo', 'foo')
         consumer.purge()
         self.assertIsNone(consumer.queues[0].get())
+        T1.get_consumer(queues=[Queue('foo')])
 
         # Without arguments.
         presult = T1.delay()

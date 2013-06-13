@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from celery.worker import state
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 class test_revoked(Case):

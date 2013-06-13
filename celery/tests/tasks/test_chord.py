@@ -10,7 +10,7 @@ from celery.exceptions import ChordError
 from celery.five import range
 from celery.result import AsyncResult, GroupResult, EagerResult
 from celery.task import task, TaskSet
-from celery.tests.utils import AppCase, Mock
+from celery.tests.case import AppCase, Mock
 
 passthru = lambda x: x
 

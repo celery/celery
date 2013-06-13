@@ -4,7 +4,7 @@ import warnings
 
 from celery.task import base
 
-from celery.tests.utils import Case
+from celery.tests.case import Case
 
 
 def add(x, y):
@@ -12,6 +12,11 @@ def add(x, y):
 
 
 class test_decorators(Case):
+
+    def test_task_alias(self):
+        from celery import task
+        self.assertTrue(task.__file__)
+        self.assertTrue(task(add))
 
     def setUp(self):
         with warnings.catch_warnings(record=True):

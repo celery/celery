@@ -7,7 +7,6 @@ from tempfile import mktemp
 from mock import patch, Mock
 from nose import SkipTest
 
-from celery import current_app
 from celery import signals
 from celery.app.log import Logging, TaskFormatter
 from celery.utils.log import LoggingProxy
@@ -17,12 +16,12 @@ from celery.utils.log import (
     ColorFormatter,
     logger as base_logger,
     get_task_logger,
+    in_sighandler,
+    _patch_logger_class,
 )
-from celery.tests.utils import (
+from celery.tests.case import (
     AppCase, Case, override_stdouts, wrap_logger, get_handlers,
 )
-
-log = current_app.log
 
 
 class test_TaskFormatter(Case):
@@ -63,6 +62,15 @@ class test_ColorFormatter(Case):
         self.assertTrue(x.formatException(value))
         if sys.version_info[0] == 2:
             self.assertTrue(safe_str.called)
+
+    @patch('logging.Formatter.format')
+    def test_format_object(self, _format):
+        x = ColorFormatter(object())
+        x.use_color = True
+        record = Mock()
+        record.levelname = 'ERROR'
+        record.msg = object()
+        self.assertTrue(x.format(record))
 
     @patch('celery.utils.log.safe_str')
     def test_format_raises(self, safe_str):
@@ -110,7 +118,7 @@ class test_ColorFormatter(Case):
 class test_default_logger(AppCase):
 
     def setup(self):
-        self.setup_logger = log.setup_logger
+        self.setup_logger = self.app.log.setup_logger
         self.get_logger = lambda n=None: get_logger(n) if n else logging.root
         signals.setup_logging.receivers[:] = []
         Logging._setup = False
@@ -124,12 +132,12 @@ class test_default_logger(AppCase):
         self.assertIs(logger.parent, logging.root)
 
     def test_setup_logging_subsystem_misc(self):
-        log.setup_logging_subsystem(loglevel=None)
+        self.app.log.setup_logging_subsystem(loglevel=None)
 
     def test_setup_logging_subsystem_misc2(self):
         self.app.conf.CELERYD_HIJACK_ROOT_LOGGER = True
         try:
-            log.setup_logging_subsystem()
+            self.app.log.setup_logging_subsystem()
         finally:
             self.app.conf.CELERYD_HIJACK_ROOT_LOGGER = False
 
@@ -142,14 +150,14 @@ class test_default_logger(AppCase):
         logger.handlers[:] = []
 
     def test_setup_logging_subsystem_colorize(self):
-        log.setup_logging_subsystem(colorize=None)
-        log.setup_logging_subsystem(colorize=True)
+        self.app.log.setup_logging_subsystem(colorize=None)
+        self.app.log.setup_logging_subsystem(colorize=True)
 
     def test_setup_logging_subsystem_no_mputil(self):
         from celery.utils import log as logtools
         mputil, logtools.mputil = logtools.mputil, None
         try:
-            log.setup_logging_subsystem()
+            self.app.log.setup_logging_subsystem()
         finally:
             logtools.mputil = mputil
 
@@ -203,11 +211,14 @@ class test_default_logger(AppCase):
                                    root=False)
         try:
             with wrap_logger(logger) as sio:
-                log.redirect_stdouts_to_logger(logger, loglevel=logging.ERROR)
+                self.app.log.redirect_stdouts_to_logger(
+                    logger, loglevel=logging.ERROR,
+                )
                 logger.error('foo')
                 self.assertIn('foo', sio.getvalue())
-                log.redirect_stdouts_to_logger(logger, stdout=False,
-                                               stderr=False)
+                self.app.log.redirect_stdouts_to_logger(
+                    logger, stdout=False, stderr=False,
+                )
         finally:
             sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
@@ -231,6 +242,11 @@ class test_default_logger(AppCase):
             p.close()
             self.assertFalse(p.isatty())
 
+            with override_stdouts() as (stdout, stderr):
+                with in_sighandler():
+                    p.write('foo')
+                    self.assertTrue(stderr.getvalue())
+
     def test_logging_proxy_recurse_protection(self):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False)
@@ -250,7 +266,7 @@ class test_task_logger(test_default_logger):
         logging.root.manager.loggerDict.pop(logger.name, None)
         self.uid = uuid()
 
-        @current_app.task
+        @self.app.task
         def test_task():
             pass
         self.get_logger().handlers = []
@@ -263,10 +279,22 @@ class test_task_logger(test_default_logger):
         _task_stack.pop()
 
     def setup_logger(self, *args, **kwargs):
-        return log.setup_task_loggers(*args, **kwargs)
+        return self.app.log.setup_task_loggers(*args, **kwargs)
 
     def get_logger(self, *args, **kwargs):
         return get_task_logger("test_task_logger")
+
+
+class test_patch_logger_cls(Case):
+
+    def test_patches(self):
+        _patch_logger_class()
+        self.assertTrue(logging.getLoggerClass()._signal_safe)
+        _patch_logger_class()
+        self.assertTrue(logging.getLoggerClass()._signal_safe)
+
+        with in_sighandler():
+            logging.getLoggerClass().log(get_logger('test'))
 
 
 class MockLogger(logging.Logger):

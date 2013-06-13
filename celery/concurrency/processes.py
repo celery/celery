@@ -22,6 +22,7 @@ from pickle import HIGHEST_PROTOCOL
 from time import sleep, time
 from weakref import ref
 
+from amqp.utils import promise
 from billiard import forking_enable
 from billiard import pool as _pool
 from billiard.exceptions import WorkerLostError
@@ -84,7 +85,7 @@ def process_initializer(app, hostname):
     # run once per process.
     app.loader.init_worker()
     app.loader.init_worker_process()
-    app.log.setup(int(os.environ.get('CELERY_LOG_LEVEL', 0)),
+    app.log.setup(int(os.environ.get('CELERY_LOG_LEVEL', 0) or 0),
                   os.environ.get('CELERY_LOG_FILE') or None,
                   bool(os.environ.get('CELERY_LOG_REDIRECT', False)),
                   str(os.environ.get('CELERY_LOG_REDIRECT_LEVEL')))
@@ -102,15 +103,14 @@ def process_initializer(app, hostname):
     signals.worker_process_init.send(sender=None)
 
 
-def _select(self, readers=None, writers=None, err=None, timeout=0):
+def _select(readers=None, writers=None, err=None, timeout=0):
     readers = set() if readers is None else readers
     writers = set() if writers is None else writers
     err = set() if err is None else err
     try:
         r, w, e = select.select(readers, writers, err, timeout)
         if e:
-            seen = set()
-            r = r | set(f for f in r + e if f not in seen and not seen.add(f))
+            r = list(set(r) | set(e))
         return r, w, 0
     except (select.error, socket.error) as exc:
         if get_errno(exc) == errno.EINTR:
@@ -128,22 +128,6 @@ def _select(self, readers=None, writers=None, err=None, timeout=0):
             return [], [], 1
         else:
             raise
-
-
-class promise(object):
-
-    def __init__(self, fun, *partial_args, **partial_kwargs):
-        self.fun = fun
-        self.args = partial_args
-        self.kwargs = partial_kwargs
-        self.ready = False
-
-    def __call__(self, *args, **kwargs):
-        try:
-            return self.fun(*tuple(self.args) + tuple(args),
-                            **dict(self.kwargs, **kwargs))
-        finally:
-            self.ready = True
 
 
 class Worker(_pool.Worker):
@@ -178,7 +162,7 @@ class ResultHandler(_pool.ResultHandler):
                 else:
                     ready, task = False, None
             except (IOError, EOFError) as exc:
-                debug('result handler got %r -- exiting' % (exc, ))
+                debug('result handler got %r -- exiting', exc)
                 raise CoroStop()
 
             if self._state:
@@ -442,7 +426,7 @@ class AsynPool(_pool.Pool):
             if not readable:
                 break
             for fd in readable:
-                fileno_to_proc[fd]._reader.recv()
+                fileno_to_proc[fd].inq._reader.recv()
             sleep(0)
 
 
@@ -662,12 +646,7 @@ class TaskPool(BasePool):
                     try:
                         # keep track of what process the write operation
                         # was scheduled for.
-                        job._scheduled_for = fileno_to_inq[ready_fd]
-                    except KeyError:
-                        # process gone since scheduled, put it back
-                        return put_message(job)
-                    try:
-                        proc = fileno_to_inq[ready_fd]
+                        proc = job._scheduled_for = fileno_to_inq[ready_fd]
                     except KeyError:
                         # write was scheduled for this fd but the process
                         # has since exited and the message must be sent to

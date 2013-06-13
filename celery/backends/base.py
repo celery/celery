@@ -24,11 +24,11 @@ from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
 
 from celery import states
 from celery.app import current_task
-from celery.datastructures import LRUCache
 from celery.exceptions import ChordError, TimeoutError, TaskRevokedError
 from celery.five import items
 from celery.result import from_serializable, GroupResult
 from celery.utils import timeutils
+from celery.utils.functional import LRUCache
 from celery.utils.serialization import (
     get_pickled_exception,
     get_pickleable_exception,

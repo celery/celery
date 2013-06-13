@@ -4,26 +4,27 @@ from __future__ import absolute_import, unicode_literals
 import anyjson
 import os
 import signal
+import socket
 import sys
 import time
 
 from datetime import datetime, timedelta
 
+from billiard.einfo import ExceptionInfo
 from kombu.transport.base import Message
 from kombu.utils.encoding import from_utf8, default_encode
 from mock import Mock, patch
 from nose import SkipTest
 
-from celery import current_app
 from celery import states
-from celery.app import app_or_default
 from celery.concurrency.base import BasePool
-from celery.datastructures import ExceptionInfo
 from celery.exceptions import (
     RetryTaskError,
     WorkerLostError,
     InvalidTaskError,
     TaskRevokedError,
+    Terminated,
+    Ignore,
 )
 from celery.five import keys
 from celery.task.trace import (
@@ -41,10 +42,15 @@ from celery.task import task as task_dec
 from celery.task.base import Task
 from celery.utils import uuid
 from celery.worker import job as module
-from celery.worker.job import Request, TaskRequest
+from celery.worker.job import Request, TaskRequest, logger as req_logger
 from celery.worker.state import revoked
 
-from celery.tests.utils import AppCase, Case, assert_signal_called
+from celery.tests.case import (
+    AppCase,
+    Case,
+    assert_signal_called,
+    body_from_sig,
+)
 
 scratch = {'ACK': False}
 some_kwargs_scratchpad = {}
@@ -79,9 +85,9 @@ class test_mro_lookup(Case):
         self.assertIsNone(mro_lookup(D, 'x'))
 
 
-def jail(task_id, name, args, kwargs):
+def jail(app, task_id, name, args, kwargs):
     request = {'id': task_id}
-    task = current_app.tasks[name]
+    task = app.tasks[name]
     task.__trace__ = None  # rebuild
     return trace_task(
         task, task_id, args, kwargs, request=request, eager=False,
@@ -120,9 +126,9 @@ def mytask_raising(i):
     raise KeyError(i)
 
 
-class test_default_encode(Case):
+class test_default_encode(AppCase):
 
-    def setUp(self):
+    def setup(self):
         if sys.version_info >= (3, 0):
             raise SkipTest('py3k: not relevant')
 
@@ -146,7 +152,7 @@ class test_default_encode(Case):
             sys.getfilesystemencoding = gfe
 
 
-class test_RetryTaskError(Case):
+class test_RetryTaskError(AppCase):
 
     def test_retry_task_error(self):
         try:
@@ -156,7 +162,7 @@ class test_RetryTaskError(Case):
             self.assertEqual(ret.exc, exc)
 
 
-class test_trace_task(Case):
+class test_trace_task(AppCase):
 
     @patch('celery.task.trace._logger')
     def test_process_cleanup_fails(self, _logger):
@@ -165,7 +171,7 @@ class test_trace_task(Case):
         mytask.backend.process_cleanup = Mock(side_effect=KeyError())
         try:
             tid = uuid()
-            ret = jail(tid, mytask.name, [2], {})
+            ret = jail(self.app, tid, mytask.name, [2], {})
             self.assertEqual(ret, 4)
             mytask.backend.store_result.assert_called_with(tid, 4,
                                                            states.SUCCESS)
@@ -180,12 +186,12 @@ class test_trace_task(Case):
         mytask.backend.process_cleanup = Mock(side_effect=SystemExit())
         try:
             with self.assertRaises(SystemExit):
-                jail(uuid(), mytask.name, [2], {})
+                jail(self.app, uuid(), mytask.name, [2], {})
         finally:
             mytask.backend = backend
 
     def test_execute_jail_success(self):
-        ret = jail(uuid(), mytask.name, [2], {})
+        ret = jail(self.app, uuid(), mytask.name, [2], {})
         self.assertEqual(ret, 4)
 
     def test_marked_as_started(self):
@@ -202,12 +208,12 @@ class test_trace_task(Case):
 
         try:
             tid = uuid()
-            jail(tid, mytask.name, [2], {})
+            jail(self.app, tid, mytask.name, [2], {})
             self.assertIn(tid, Backend._started)
 
             mytask.ignore_result = True
             tid = uuid()
-            jail(tid, mytask.name, [2], {})
+            jail(self.app, tid, mytask.name, [2], {})
             self.assertNotIn(tid, Backend._started)
         finally:
             mytask.backend = prev
@@ -215,14 +221,14 @@ class test_trace_task(Case):
             mytask.ignore_result = False
 
     def test_execute_jail_failure(self):
-        ret = jail(uuid(), mytask_raising.name,
+        ret = jail(self.app, uuid(), mytask_raising.name,
                    [4], {})
         self.assertIsInstance(ret, ExceptionInfo)
         self.assertTupleEqual(ret.exception.args, (4, ))
 
     def test_execute_ignore_result(self):
         task_id = uuid()
-        ret = jail(task_id, MyTaskIgnoreResult.name, [4], {})
+        ret = jail(self.app, task_id, MyTaskIgnoreResult.name, [4], {})
         self.assertEqual(ret, 256)
         self.assertFalse(AsyncResult(task_id).ready())
 
@@ -237,7 +243,111 @@ class MockEventDispatcher(object):
         self.sent.append(event)
 
 
-class test_TaskRequest(AppCase):
+class test_Request(AppCase):
+
+    def setup(self):
+
+        @self.app.task()
+        def add(x, y, **kw_):
+            return x + y
+
+        self.add = add
+
+    def get_request(self, sig, Request=Request, **kwargs):
+        return Request(
+            body_from_sig(self.app, sig),
+            on_ack=Mock(),
+            eventer=Mock(),
+            app=self.app,
+            connection_errors=(socket.error, ),
+            task=sig.type,
+            **kwargs
+        )
+
+    def test_invalid_eta_raises_InvalidTaskError(self):
+        with self.assertRaises(InvalidTaskError):
+            self.get_request(self.add.s(2, 2).set(eta='12345'))
+
+    def test_invalid_expires_raises_InvalidTaskError(self):
+        with self.assertRaises(InvalidTaskError):
+            self.get_request(self.add.s(2, 2).set(expires='12345'))
+
+    def test_valid_expires_with_utc_makes_aware(self):
+        with patch('celery.worker.job.maybe_make_aware') as mma:
+            self.get_request(self.add.s(2, 2).set(expires=10))
+            self.assertTrue(mma.called)
+
+    def test_maybe_expire_when_expires_is_None(self):
+        req = self.get_request(self.add.s(2, 2))
+        self.assertFalse(req.maybe_expire())
+
+    def test_on_retry_acks_if_late(self):
+        self.add.acks_late = True
+        try:
+            req = self.get_request(self.add.s(2, 2))
+            req.on_retry(Mock())
+            req.on_ack.assert_called_with(req_logger, req.connection_errors)
+        finally:
+            self.add.acks_late = False
+
+    def test_on_failure_Termianted(self):
+        einfo = None
+        try:
+            raise Terminated('9')
+        except Terminated:
+            einfo = ExceptionInfo()
+        self.assertIsNotNone(einfo)
+        req = self.get_request(self.add.s(2, 2))
+        req.on_failure(einfo)
+        req.eventer.send.assert_called_with(
+            'task-revoked',
+            uuid=req.id, terminated=True, signum='9', expired=False,
+        )
+
+    def test_log_error_propagates_MemoryError(self):
+        einfo = None
+        try:
+            raise MemoryError()
+        except MemoryError:
+            einfo = ExceptionInfo(internal=True)
+        self.assertIsNotNone(einfo)
+        req = self.get_request(self.add.s(2, 2))
+        with self.assertRaises(MemoryError):
+            req._log_error(einfo)
+
+    def test_log_error_when_Ignore(self):
+        einfo = None
+        try:
+            raise Ignore()
+        except Ignore:
+            einfo = ExceptionInfo(internal=True)
+        self.assertIsNotNone(einfo)
+        req = self.get_request(self.add.s(2, 2))
+        req._log_error(einfo)
+        req.on_ack.assert_called_with(req_logger, req.connection_errors)
+
+    def test_tzlocal_is_cached(self):
+        req = self.get_request(self.add.s(2, 2))
+        req._tzlocal = 'foo'
+        self.assertEqual(req.tzlocal, 'foo')
+
+    def test_execute_magic_kwargs(self):
+        task = self.add.s(2, 2)
+        task._freeze()
+        req = self.get_request(task)
+        self.add.accept_magic_kwargs = True
+        try:
+            pool = Mock()
+            req.execute_using_pool(pool)
+            self.assertTrue(pool.apply_async.called)
+            args = pool.apply_async.call_args[1]['args']
+            self.assertEqual(args[0], task.task)
+            self.assertEqual(args[1], task.id)
+            self.assertEqual(args[2], task.args)
+            kwargs = args[3]
+            self.assertEqual(kwargs.get('task_name'), task.task)
+        finally:
+            self.add.accept_magic_kwargs = False
 
     def test_task_wrapper_repr(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {'f': 'x'})
@@ -355,7 +465,7 @@ class test_TaskRequest(AppCase):
             mytask.ignore_result = False
 
     def test_send_email(self):
-        app = app_or_default()
+        app = self.app
         old_mail_admins = app.mail_admins
         old_enable_mails = mytask.send_error_emails
         mail_sent = [False]
@@ -814,7 +924,7 @@ class test_TaskRequest(AppCase):
 
     @patch('celery.worker.job.logger')
     def _test_on_failure(self, exception, logger):
-        app = app_or_default()
+        app = self.app
         tid = uuid()
         tw = TaskRequest(mytask.name, tid, [4], {'f': 'x'})
         try:

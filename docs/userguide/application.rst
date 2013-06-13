@@ -20,8 +20,8 @@ Let's create one now:
 .. code-block:: python
 
     >>> from celery import Celery
-    >>> celery = Celery()
-    >>> celery
+    >>> app = Celery()
+    >>> app
     <Celery __main__:0x100469fd0>
 
 The last line shows the textual representation of the application,
@@ -45,7 +45,7 @@ Whenever you define a task, that task will also be added to the local registry:
 
 .. code-block:: python
 
-    >>> @celery.task
+    >>> @app.task
     ... def add(x, y):
     ...     return x + y
 
@@ -55,7 +55,7 @@ Whenever you define a task, that task will also be added to the local registry:
     >>> add.name
     __main__.add
 
-    >>> celery.tasks['__main__.add']
+    >>> app.tasks['__main__.add']
     <@task: __main__.add>
 
 and there you see that ``__main__`` again; whenever Celery is not able
@@ -74,16 +74,16 @@ For example here, where the tasks module is also used to start a worker:
 .. code-block:: python
 
     from celery import Celery
-    celery = Celery()
+    app = Celery()
 
-    @celery.task
+    @app.task
     def add(x, y): return x + y
 
     if __name__ == '__main__':
-        celery.worker_main()
+        app.worker_main()
 
 When this module is executed the tasks will be named starting with "``__main__``",
-but when it the module is imported by another process, say to call a task,
+but when the module is imported by another process, say to call a task,
 the tasks will be named starting with "``tasks``" (the real name of the module)::
 
     >>> from tasks import add
@@ -94,11 +94,11 @@ You can specify another name for the main module:
 
 .. code-block:: python
 
-    >>> celery = Celery('tasks')
-    >>> celery.main
+    >>> app = Celery('tasks')
+    >>> app.main
     'tasks'
 
-    >>> @celery.task
+    >>> @app.task
     ... def add(x, y):
     ...     return x + y
 
@@ -116,16 +116,16 @@ or you can use a dedicated configuration module.
 
 The configuration is available as :attr:`@Celery.conf`::
 
-    >>> celery.conf.CELERY_TIMEZONE
+    >>> app.conf.CELERY_TIMEZONE
     'Europe/London'
 
 where you can set configuration values directly::
 
-    >>> celery.conf.CELERY_ENABLE_UTC = True
+    >>> app.conf.CELERY_ENABLE_UTC = True
 
 or you can update several keys at once by using the ``update`` method::
 
-    >>> celery.conf.update(
+    >>> app.conf.update(
     ...     CELERY_ENABLE_UTC=True,
     ...     CELERY_TIMEZONE='Europe/London',
     ...)
@@ -162,8 +162,8 @@ Example 1: Using the name of a module
 
     from celery import Celery
 
-    celery = Celery()
-    celery.config_from_object('celeryconfig')
+    app = Celery()
+    app.config_from_object('celeryconfig')
 
 
 The ``celeryconfig`` module may then look like this:
@@ -178,13 +178,21 @@ The ``celeryconfig`` module may then look like this:
 Example 2: Using a configuration module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. tip::
+
+    Using the name of a module is recomended
+    as this means that the module doesn't need to be serialized
+    when the multiprocessing pool is used.  If you're
+    experiencing configuration pickle errors then please try using
+    the name of a module instead.
+
 .. code-block:: python
 
     from celery import Celery
 
-    celery = Celery()
+    app = Celery()
     import celeryconfig
-    celery.config_from_object(celeryconfig)
+    app.config_from_object(celeryconfig)
 
 Example 3:  Using a configuration class/object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -193,13 +201,13 @@ Example 3:  Using a configuration class/object
 
     from celery import Celery
 
-    celery = Celery()
+    app = Celery()
 
     class Config:
         CELERY_ENABLE_UTC = True
         CELERY_TIMEZONE = 'Europe/London'
 
-    celery.config_from_object(Config)
+    app.config_from_object(Config)
 
 ``config_from_envvar``
 ----------------------
@@ -218,8 +226,8 @@ environment variable named :envvar:`CELERY_CONFIG_MODULE`:
     #: Set default configuration module name
     os.environ.setdefault('CELERY_CONFIG_MODULE', 'celeryconfig')
 
-    celery = Celery()
-    celery.config_from_envvar('CELERY_CONFIG_MODULE')
+    app = Celery()
+    app.config_from_envvar('CELERY_CONFIG_MODULE')
 
 You can then specify the configuration module to use via the environment:
 
@@ -251,7 +259,7 @@ you use the task, or access an attribute (in this case :meth:`repr`):
 
 .. code-block:: python
 
-    >>> @celery.task
+    >>> @app.task
     >>> def add(x, y):
     ...    return x + y
 
@@ -422,7 +430,7 @@ You can specify a different base class with the ``base`` argument:
 
 .. code-block:: python
 
-    @celery.task(base=OtherTask):
+    @app.task(base=OtherTask):
     def add(x, y):
         return x + y
 
@@ -437,7 +445,7 @@ class: :class:`celery.Task`.
         abstract = True
 
         def __call__(self, *args, **kwargs):
-            print('TASK STARTING: {0.name}[{0.request.id}].format(self))
+            print('TASK STARTING: {0.name}[{0.request.id}]'.format(self))
             return self.run(*args, **kwargs)
 
 
@@ -455,14 +463,14 @@ by changing its :meth:`@Celery.Task` attribute:
 
     >>> from celery import Celery, Task
 
-    >>> celery = Celery()
+    >>> app = Celery()
 
     >>> class MyBaseTask(Task):
     ...    abstract = True
     ...    send_error_emails = True
 
-    >>> celery.Task = MyBaseTask
-    >>> celery.Task
+    >>> app.Task = MyBaseTask
+    >>> app.Task
     <unbound MyBaseTask>
 
     >>> @x.task

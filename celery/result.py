@@ -19,13 +19,16 @@ from kombu.utils.compat import OrderedDict
 from . import current_app
 from . import states
 from .app import app_or_default
-from .datastructures import DependencyGraph, GraphFormatter
 from .exceptions import IncompleteStream, TimeoutError
 from .five import items, range, string_t
+from .utils.datastructures import DependencyGraph, GraphFormatter
 
 
 class ResultBase(object):
     """Base class for all results"""
+
+    #: Parent result (if part of a chain)
+    parent = None
 
 
 class AsyncResult(ResultBase):
@@ -46,9 +49,6 @@ class AsyncResult(ResultBase):
     #: The task result backend to use.
     backend = None
 
-    #: Parent result (if part of a chain)
-    parent = None
-
     def __init__(self, id, backend=None, task_name=None,
                  app=None, parent=None):
         self.app = app_or_default(app or self.app)
@@ -58,7 +58,7 @@ class AsyncResult(ResultBase):
         self.parent = parent
 
     def serializable(self):
-        return [self.id, self.parent and self.parent.id], None
+        return [self.id, self.parent and self.parent.serializable()], None
 
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
@@ -739,13 +739,14 @@ def from_serializable(r, app=None):
     app = app_or_default(app)
     Result = app.AsyncResult
     if not isinstance(r, ResultBase):
-        id = parent = None
         res, nodes = r
         if nodes:
             return app.GroupResult(
                 res, [from_serializable(child, app) for child in nodes],
             )
-        if isinstance(res, (list, tuple)):
-            id, parent = res[0], res[1]
+        # previously did not include parent
+        id, parent = res if isinstance(res, (list, tuple)) else (res, None)
+        if parent:
+            parent = from_serializable(parent, app)
         return Result(id, parent=parent)
     return r

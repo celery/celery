@@ -119,9 +119,6 @@ class BasePool(object):
     def on_close(self):
         pass
 
-    def init_callbacks(self, **kwargs):
-        pass
-
     def apply_async(self, target, args=[], kwargs={}, **options):
         """Equivalent of the :func:`apply` built-in function.
 
@@ -152,15 +149,3 @@ class BasePool(object):
     @property
     def num_processes(self):
         return self.limit
-
-    @property
-    def readers(self):
-        return {}
-
-    @property
-    def writers(self):
-        return {}
-
-    @property
-    def timers(self):
-        return {}

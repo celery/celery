@@ -13,11 +13,18 @@ import atexit
 from functools import partial
 
 from celery import bootsteps
+from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t
+from celery.utils.imports import qualname
 from celery.utils.log import worker_logger as logger
 from celery.utils.timer2 import Schedule
 
 from . import hub
+
+ERR_B_GREEN = """\
+-B option doesn't work with eventlet/gevent pools: \
+use standalone beat instead.\
+"""
 
 
 class Object(object):  # XXX
@@ -137,6 +144,8 @@ class Beat(bootsteps.StartStopStep):
 
     def create(self, w):
         from celery.beat import EmbeddedService
+        if w.pool_cls.__module__.endswith(('gevent', 'eventlet')):
+            raise ImproperlyConfigured(ERR_B_GREEN)
         b = w.beat = EmbeddedService(app=w.app,
                                      schedule_filename=w.schedule_filename,
                                      scheduler_cls=w.scheduler_cls)

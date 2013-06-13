@@ -5,16 +5,15 @@ import errno
 from datetime import datetime, timedelta
 from mock import Mock, call, patch
 from nose import SkipTest
+from pickle import dumps, loads
 
-from celery import current_app
 from celery import beat
 from celery import task
 from celery.five import keys, string_t
 from celery.result import AsyncResult
 from celery.schedules import schedule
-from celery.task.base import Task
 from celery.utils import uuid
-from celery.tests.utils import Case, patch_settings
+from celery.tests.case import AppCase, patch_settings
 
 
 class Object(object):
@@ -46,7 +45,7 @@ class MockService(object):
         self.stopped = True
 
 
-class test_ScheduleEntry(Case):
+class test_ScheduleEntry(AppCase):
     Entry = beat.ScheduleEntry
 
     def create_entry(self, **kwargs):
@@ -112,7 +111,7 @@ class mScheduler(beat.Scheduler):
                           'args': args,
                           'kwargs': kwargs,
                           'options': options})
-        return AsyncResult(uuid())
+        return AsyncResult(uuid(), app=self.app)
 
 
 class mSchedulerSchedulingError(mScheduler):
@@ -143,17 +142,17 @@ always_due = mocked_schedule(True, 1)
 always_pending = mocked_schedule(False, 1)
 
 
-class test_Scheduler(Case):
+class test_Scheduler(AppCase):
 
     def test_custom_schedule_dict(self):
         custom = {'foo': 'bar'}
-        scheduler = mScheduler(schedule=custom, lazy=True)
+        scheduler = mScheduler(app=self.app, schedule=custom, lazy=True)
         self.assertIs(scheduler.data, custom)
 
     def test_apply_async_uses_registered_task_instances(self):
         through_task = [False]
 
-        class MockTask(Task):
+        class MockTask(self.app.Task):
 
             @classmethod
             def apply_async(cls, *args, **kwargs):
@@ -161,7 +160,7 @@ class test_Scheduler(Case):
 
         assert MockTask.name in MockTask._get_app().tasks
 
-        scheduler = mScheduler()
+        scheduler = mScheduler(app=self.app)
         scheduler.apply_async(scheduler.Entry(task=MockTask.name))
         self.assertTrue(through_task[0])
 
@@ -172,7 +171,7 @@ class test_Scheduler(Case):
             pass
         not_sync.apply_async = Mock()
 
-        s = mScheduler()
+        s = mScheduler(app=self.app)
         s._do_sync = Mock()
         s.should_sync = Mock()
         s.should_sync.return_value = True
@@ -186,16 +185,16 @@ class test_Scheduler(Case):
 
     @patch('celery.app.base.Celery.send_task')
     def test_send_task(self, send_task):
-        b = beat.Scheduler()
+        b = beat.Scheduler(app=self.app)
         b.send_task('tasks.add', countdown=10)
         send_task.assert_called_with('tasks.add', countdown=10)
 
     def test_info(self):
-        scheduler = mScheduler()
+        scheduler = mScheduler(app=self.app)
         self.assertIsInstance(scheduler.info, string_t)
 
     def test_maybe_entry(self):
-        s = mScheduler()
+        s = mScheduler(app=self.app)
         entry = s.Entry(name='add every', task='tasks.add')
         self.assertIs(s._maybe_entry(entry.name, entry), entry)
         self.assertTrue(s._maybe_entry('add every', {
@@ -203,13 +202,13 @@ class test_Scheduler(Case):
         }))
 
     def test_set_schedule(self):
-        s = mScheduler()
+        s = mScheduler(app=self.app)
         s.schedule = {'foo': 'bar'}
         self.assertEqual(s.data, {'foo': 'bar'})
 
     @patch('kombu.connection.Connection.ensure_connection')
     def test_ensure_connection_error_handler(self, ensure):
-        s = mScheduler()
+        s = mScheduler(app=self.app)
         self.assertTrue(s._ensure_connected())
         self.assertTrue(ensure.called)
         callback = ensure.call_args[0][0]
@@ -217,29 +216,32 @@ class test_Scheduler(Case):
         callback(KeyError(), 5)
 
     def test_install_default_entries(self):
-        with patch_settings(CELERY_TASK_RESULT_EXPIRES=None,
+        with patch_settings(self.app,
+                            CELERY_TASK_RESULT_EXPIRES=None,
                             CELERYBEAT_SCHEDULE={}):
-            s = mScheduler()
+            s = mScheduler(app=self.app)
             s.install_default_entries({})
             self.assertNotIn('celery.backend_cleanup', s.data)
-        current_app.backend.supports_autoexpire = False
-        with patch_settings(CELERY_TASK_RESULT_EXPIRES=30,
+        self.app.backend.supports_autoexpire = False
+        with patch_settings(self.app,
+                            CELERY_TASK_RESULT_EXPIRES=30,
                             CELERYBEAT_SCHEDULE={}):
-            s = mScheduler()
+            s = mScheduler(app=self.app)
             s.install_default_entries({})
             self.assertIn('celery.backend_cleanup', s.data)
-        current_app.backend.supports_autoexpire = True
+        self.app.backend.supports_autoexpire = True
         try:
-            with patch_settings(CELERY_TASK_RESULT_EXPIRES=31,
+            with patch_settings(self.app,
+                                CELERY_TASK_RESULT_EXPIRES=31,
                                 CELERYBEAT_SCHEDULE={}):
-                s = mScheduler()
+                s = mScheduler(app=self.app)
                 s.install_default_entries({})
                 self.assertNotIn('celery.backend_cleanup', s.data)
         finally:
-            current_app.backend.supports_autoexpire = False
+            self.app.backend.supports_autoexpire = False
 
     def test_due_tick(self):
-        scheduler = mScheduler()
+        scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_due_tick',
                       schedule=always_due,
                       args=(1, 2),
@@ -248,33 +250,33 @@ class test_Scheduler(Case):
 
     @patch('celery.beat.error')
     def test_due_tick_SchedulingError(self, error):
-        scheduler = mSchedulerSchedulingError()
+        scheduler = mSchedulerSchedulingError(app=self.app)
         scheduler.add(name='test_due_tick_SchedulingError',
                       schedule=always_due)
         self.assertEqual(scheduler.tick(), 1)
         self.assertTrue(error.called)
 
     def test_due_tick_RuntimeError(self):
-        scheduler = mSchedulerRuntimeError()
+        scheduler = mSchedulerRuntimeError(app=self.app)
         scheduler.add(name='test_due_tick_RuntimeError',
                       schedule=always_due)
         self.assertEqual(scheduler.tick(), scheduler.max_interval)
 
     def test_pending_tick(self):
-        scheduler = mScheduler()
+        scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_pending_tick',
                       schedule=always_pending)
         self.assertEqual(scheduler.tick(), 1)
 
     def test_honors_max_interval(self):
-        scheduler = mScheduler()
+        scheduler = mScheduler(app=self.app)
         maxi = scheduler.max_interval
         scheduler.add(name='test_honors_max_interval',
                       schedule=mocked_schedule(False, maxi * 4))
         self.assertEqual(scheduler.tick(), maxi)
 
     def test_ticks(self):
-        scheduler = mScheduler()
+        scheduler = mScheduler(app=self.app)
         nums = [600, 300, 650, 120, 250, 36]
         s = dict(('test_ticks%s' % i,
                  {'schedule': mocked_schedule(False, j)})
@@ -283,20 +285,20 @@ class test_Scheduler(Case):
         self.assertEqual(scheduler.tick(), min(nums))
 
     def test_schedule_no_remain(self):
-        scheduler = mScheduler()
+        scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_schedule_no_remain',
                       schedule=mocked_schedule(False, None))
         self.assertEqual(scheduler.tick(), scheduler.max_interval)
 
     def test_interface(self):
-        scheduler = mScheduler()
+        scheduler = mScheduler(app=self.app)
         scheduler.sync()
         scheduler.setup_schedule()
         scheduler.close()
 
     def test_merge_inplace(self):
-        a = mScheduler()
-        b = mScheduler()
+        a = mScheduler(app=self.app)
+        b = mScheduler(app=self.app)
         a.update_from_dict({'foo': {'schedule': mocked_schedule(True, 10)},
                             'bar': {'schedule': mocked_schedule(True, 20)}})
         b.update_from_dict({'bar': {'schedule': mocked_schedule(True, 40)},
@@ -329,11 +331,12 @@ def create_persistent_scheduler(shelv=None):
     return MockPersistentScheduler, shelv
 
 
-class test_PersistentScheduler(Case):
+class test_PersistentScheduler(AppCase):
 
     @patch('os.remove')
     def test_remove_db(self, remove):
-        s = create_persistent_scheduler()[0](schedule_filename='schedule')
+        s = create_persistent_scheduler()[0](app=self.app,
+                                             schedule_filename='schedule')
         s._remove_db()
         remove.assert_has_calls(
             [call('schedule' + suffix) for suffix in s.known_suffixes]
@@ -347,7 +350,8 @@ class test_PersistentScheduler(Case):
             s._remove_db()
 
     def test_setup_schedule(self):
-        s = create_persistent_scheduler()[0](schedule_filename='schedule')
+        s = create_persistent_scheduler()[0](app=self.app,
+                                             schedule_filename='schedule')
         opens = s.persistence.open = Mock()
         s._remove_db = Mock()
 
@@ -362,6 +366,18 @@ class test_PersistentScheduler(Case):
         s._store = {'__version__': 1}
         s.setup_schedule()
 
+        s._store.clear = Mock()
+        op = s.persistence.open = Mock()
+        op.return_value = s._store
+        s._store['tz'] = 'FUNKY'
+        s.setup_schedule()
+        op.assert_called_with(s.schedule_filename, writeback=True)
+        s._store.clear.assert_called_with()
+        s._store['utc_enabled'] = False
+        s._store.clear = Mock()
+        s.setup_schedule()
+        s._store.clear.assert_called_with()
+
     def test_get_schedule(self):
         s = create_persistent_scheduler()[0](schedule_filename='schedule')
         s._store = {'entries': {}}
@@ -370,11 +386,15 @@ class test_PersistentScheduler(Case):
         self.assertDictEqual(s._store['entries'], s.schedule)
 
 
-class test_Service(Case):
+class test_Service(AppCase):
 
     def get_service(self):
         Scheduler, mock_shelve = create_persistent_scheduler()
-        return beat.Service(scheduler_cls=Scheduler), mock_shelve
+        return beat.Service(app=self.app, scheduler_cls=Scheduler), mock_shelve
+
+    def test_pickleable(self):
+        s = beat.Service(app=self.app, scheduler_cls=Mock)
+        self.assertTrue(loads(dumps(s)))
 
     def test_start(self):
         s, sh = self.get_service()
@@ -425,7 +445,7 @@ class test_Service(Case):
         self.assertTrue(s._is_shutdown.isSet())
 
 
-class test_EmbeddedService(Case):
+class test_EmbeddedService(AppCase):
 
     def test_start_stop_process(self):
         try:
@@ -466,3 +486,24 @@ class test_EmbeddedService(Case):
 
         s.stop()
         self.assertTrue(s.service.stopped)
+
+
+class test_schedule(AppCase):
+
+    def test_maybe_make_aware(self):
+        x = schedule(10)
+        x.utc_enabled = True
+        d = x.maybe_make_aware(datetime.utcnow())
+        self.assertTrue(d.tzinfo)
+        x.utc_enabled = False
+        d2 = x.maybe_make_aware(datetime.utcnow())
+        self.assertIsNone(d2.tzinfo)
+
+    def test_to_local(self):
+        x = schedule(10)
+        x.utc_enabled = True
+        d = x.to_local(datetime.utcnow())
+        self.assertIsNone(d.tzinfo)
+        x.utc_enabled = False
+        d = x.to_local(datetime.utcnow())
+        self.assertTrue(d.tzinfo)

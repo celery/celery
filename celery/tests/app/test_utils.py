@@ -5,7 +5,7 @@ from collections import Mapping, MutableMapping
 from celery import Celery
 from celery.app.utils import Settings, bugreport
 
-from celery.tests.utils import AppCase, Case, Mock
+from celery.tests.case import AppCase, Case, Mock
 
 
 class TestSettings(Case):

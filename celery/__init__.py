@@ -2,7 +2,7 @@
 """Distributed Task Queue"""
 # :copyright: (c) 2009 - 2012 Ask Solem and individual contributors,
 #                 All rights reserved.
-# :copyright: (c) 2012 VMware, Inc., All rights reserved.
+# :copyright: (c) 2012-2013 GoPivotal, Inc., All rights reserved.
 # :license:   BSD (3 Clause), see LICENSE for more details.
 
 from __future__ import absolute_import
@@ -66,7 +66,8 @@ old_module, new_module = recreate_module(  # pragma: no cover
                           'subtask', 'xmap', 'xstarmap'],
         'celery.utils': ['uuid'],
     },
-    direct={'task': 'celery.task'},
+    direct={'task': 'celery.task',
+            'datastructures': 'celery.utils.datastructures'},
     __package__='celery', __file__=__file__,
     __path__=__path__, __doc__=__doc__, __version__=__version__,
     __author__=__author__, __contact__=__contact__,
