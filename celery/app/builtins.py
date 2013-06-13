@@ -367,8 +367,7 @@ def add_chord_task(app):
                 body.options['group_id'] = group_id
             [body.link(s) for s in options.pop('link', [])]
             [body.link_error(s) for s in options.pop('link_error', [])]
-            callback_id = body.options.get('task_id') or task_id or uuid()
-            body_result = body._freeze(callback_id)
+            body_result = body._freeze(task_id)
             parent = super(Chord, self).apply_async((header, body, args),
                                                     kwargs, **options)
             body_result.parent = parent

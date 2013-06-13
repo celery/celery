@@ -477,14 +477,13 @@ class chord(Signature):
     def type(self):
         return self._type or self.tasks[0].type.app.tasks['celery.chord']
 
-    def __call__(self, body=None, **kwargs):
+    def __call__(self, body=None, task_id=None, **kwargs):
         _chord = self.type
         body = (body or self.kwargs['body']).clone()
         kwargs = dict(self.kwargs, body=body, **kwargs)
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
             return self.apply((), kwargs)
-        callback_id = body.options.get('task_id') or uuid()
-        res = body._freeze(callback_id)
+        res = body._freeze(task_id)
         parent = _chord(**kwargs)
         res.parent = parent
         return res
