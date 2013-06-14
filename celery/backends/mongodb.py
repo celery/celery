@@ -114,6 +114,8 @@ class MongoBackend(BaseDictBackend):
         if self._connection is not None:
             # MongoDB connection will be closed automatically when object
             # goes out of scope
+            del(self.collection)
+            del(self.database)
             self._connection = None
 
     def _store_result(self, task_id, result, status, traceback=None):
