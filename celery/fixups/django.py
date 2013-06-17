@@ -89,7 +89,7 @@ class DjangoFixup(object):
             self._close_old_connections = symbol_by_name(
                 'django.db:close_old_connections',
             )
-        except ImportError:
+        except (ImportError, AttributeError):
             self._close_old_connections = None
         self.database_errors = (
             (DatabaseError, ) +
