@@ -70,8 +70,9 @@ class DatabaseBackend(BaseBackend):
             conf.CELERY_RESULT_DB_SHORT_LIVED_SESSIONS,
         )
 
-        Task.__table__.name = conf.CELERY_RESULT_DB_TASK_TABLENAME
-        TaskSet.__table__.name = conf.CELERY_RESULT_DB_TASKSET_TABLENAME
+        tablenames = conf.CELERY_RESULT_DB_TABLENAMES
+        Task.__table__.name = tablenames.get('task', 'celery_taskmeta')
+        TaskSet.__table__.name = tablenames.get('group', 'celery_tasksetmeta')
 
         if not self.dburi:
             raise ImproperlyConfigured(

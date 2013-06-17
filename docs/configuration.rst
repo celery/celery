@@ -264,6 +264,12 @@ To use this backend you need to configure it with an
 See `Connection String`_ for more information about connection
 strings.
 
+.. _`Supported Databases`:
+    http://www.sqlalchemy.org/docs/core/engines.html#supported-databases
+
+.. _`Connection String`:
+    http://www.sqlalchemy.org/docs/core/engines.html#database-urls
+
 .. setting:: CELERY_RESULT_ENGINE_OPTIONS
 
 CELERY_RESULT_ENGINE_OPTIONS
@@ -289,23 +295,19 @@ short lived sessions.  This option only affects the database backend.
 Specifying Table Names
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. setting:: CELERY_RESULT_DB_TASK_TABLENAME
-
-.. setting:: CELERY_RESULT_DB_TASKSET_TABLENAME
+.. setting:: CELERY_RESULT_DB_TABLENAMES
 
 When SQLAlchemy is configured as the result backend, Celery automatically
-creates two tables to store result metadata for tasks.  These settings allow
-you to customize the table names::
+creates two tables to store result metadata for tasks.  This setting allows
+you to customize the table names:
 
-    # use custom table names
-    CELERY_RESULT_DB_TASK_TABLENAME = "myapp_taskmeta"
-    CELERY_RESULT_DB_TASKSET_TABLENAME = "myapp_tasksetmeta"
+.. code-block:: python
 
-.. _`Supported Databases`:
-    http://www.sqlalchemy.org/docs/core/engines.html#supported-databases
-
-.. _`Connection String`:
-    http://www.sqlalchemy.org/docs/core/engines.html#database-urls
+    # use custom table names for the database result backend.
+    CELERY_RESULT_DB_TABLENAMES = {
+        'task': 'myapp_taskmeta',
+        'group': 'myapp_groupmeta',
+    }
 
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
