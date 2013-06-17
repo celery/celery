@@ -70,7 +70,7 @@ class DatabaseBackend(BaseBackend):
             conf.CELERY_RESULT_DB_SHORT_LIVED_SESSIONS,
         )
 
-        tablenames = conf.CELERY_RESULT_DB_TABLENAMES
+        tablenames = conf.CELERY_RESULT_DB_TABLENAMES or {}
         Task.__table__.name = tablenames.get('task', 'celery_taskmeta')
         TaskSet.__table__.name = tablenames.get('group', 'celery_tasksetmeta')
 
