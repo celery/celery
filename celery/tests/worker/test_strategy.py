@@ -129,7 +129,7 @@ class test_default_strategy(AppCase):
 
     def test_when_revoked(self):
         task = self.add.s(2, 2)
-        task._freeze()
+        task.freeze()
         state.revoked.add(task.id)
         try:
             with self._context(task) as C:

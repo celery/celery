@@ -135,7 +135,7 @@ class test_Signature(AppCase):
 
     def test_election(self):
         x = add.s(2, 2)
-        x._freeze('foo')
+        x.freeze('foo')
         prev, x.type.app.control = x.type.app.control, Mock()
         try:
             r = x.election()

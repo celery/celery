@@ -296,7 +296,7 @@ class test_KeyValueStoreBackend(AppCase):
             task = Mock()
             task.request.group = 'grid'
             cb = task.request.chord = callback.s()
-            task.request.chord._freeze()
+            task.request.chord.freeze()
             callback.backend = b
             callback.backend.fail_from_current_stack = Mock()
             yield task, deps, cb

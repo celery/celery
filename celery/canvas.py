@@ -65,7 +65,7 @@ class _getitem_property(object):
         self.path = path.split('.') if path else None
 
     def _path(self, obj):
-        return (reduce(lambda d, k: d[k], [obj] + self.path) if self.path
+        return (reduce(lambda d, k: d[k], obj, self.path) if self.path
                 else obj)
 
     def __get__(self, obj, type=None):
@@ -487,7 +487,7 @@ class chord(Signature):
         kwargs = dict(self.kwargs, body=body, **kwargs)
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
             return self.apply((), kwargs)
-        res = body._freeze(task_id)
+        res = body.freeze(task_id)
         parent = _chord(**kwargs)
         res.parent = parent
         return res

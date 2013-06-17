@@ -333,7 +333,7 @@ class test_Request(AppCase):
 
     def test_execute_magic_kwargs(self):
         task = self.add.s(2, 2)
-        task._freeze()
+        task.freeze()
         req = self.get_request(task)
         self.add.accept_magic_kwargs = True
         try:

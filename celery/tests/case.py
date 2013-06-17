@@ -599,7 +599,7 @@ def skip_if_jython(fun):
 
 
 def body_from_sig(app, sig, utc=True):
-    sig._freeze()
+    sig.freeze()
     callbacks = sig.options.pop('link', None)
     errbacks = sig.options.pop('link_error', None)
     countdown = sig.options.pop('countdown', None)

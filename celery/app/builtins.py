@@ -240,7 +240,7 @@ def add_chain_task(app):
                 # First task get partial args from chain.
                 task = maybe_subtask(steps.popleft())
                 task = task.clone() if i else task.clone(args)
-                res = task._freeze()
+                res = task.freeze()
                 i += 1
 
                 if isinstance(task, group):
@@ -249,7 +249,7 @@ def add_chain_task(app):
                         next_step = steps.popleft()
                         # for chords we freeze by pretending it's a normal
                         # task instead of a group.
-                        res = Signature._freeze(task)
+                        res = Signature.freeze(task)
                         task = chord(task, body=next_step, task_id=res.task_id)
                     except IndexError:
                         pass  # no callback, so keep as group
@@ -367,7 +367,7 @@ def add_chord_task(app):
                 body.options['group_id'] = group_id
             [body.link(s) for s in options.pop('link', [])]
             [body.link_error(s) for s in options.pop('link_error', [])]
-            body_result = body._freeze(task_id)
+            body_result = body.freeze(task_id)
             parent = super(Chord, self).apply_async((header, body, args),
                                                     kwargs, **options)
             body_result.parent = parent
