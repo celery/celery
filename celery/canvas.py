@@ -306,7 +306,10 @@ class chain(Signature):
 
     @property
     def type(self):
-        return self._type or self.tasks[0].type.app.tasks['celery.chain']
+        try:
+            return self._type or self.tasks[0].type.app.tasks['celery.chain']
+        except NotRegistered:
+            return current_app.tasks['celery.chain']
 
     def __repr__(self):
         return ' | '.join(repr(t) for t in self.tasks)
