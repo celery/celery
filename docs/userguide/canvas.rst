@@ -494,7 +494,7 @@ and return the result of the last task in the chain::
     640
 
 And calling ``apply_async`` will create a dedicated
-task so that the act of calling the chain happens
+task so that the act of sending the messages for the chain happens
 in a worker::
 
     >>> res = chain(add.s(4, 4), mul.s(8), mul.s(10)).apply_async()
@@ -908,8 +908,8 @@ To create a chunks subtask you can use :meth:`@Task.chunks`:
 
     >>> add.chunks(zip(range(100), range(100)), 10)
 
-As with :class:`~celery.group` the act of **calling**
-the chunks will call the tasks in the current process:
+As with :class:`~celery.group` the act of sending the messages for
+the chunks will happen in the current process when called:
 
 .. code-block:: python
 
