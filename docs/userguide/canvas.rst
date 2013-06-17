@@ -225,9 +225,11 @@ The Primitives
 
         Chunking splits a long list of arguments into parts, e.g the operation::
 
-            >>> add.chunks(zip(xrange(1000), xrange(1000), 10))
+            >>> items = zip(xrange(1000), xrange(1000))  # 1000 items
+            >>> add.chunks(items, 10))
 
-        will create 10 tasks that apply 100 items each.
+        will split the list of items into chunks of 10, resulting in 100
+        tasks (each processing 10 items in sequence).
 
 
 The primitives are also subtasks themselves, so that they can be combined
