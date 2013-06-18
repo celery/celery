@@ -614,7 +614,7 @@ class control(_RemoteControl):
     def call(self, method, *args, **options):
         # XXX Python 2.5 doesn't support X(*args, reply=True, **kwargs)
         return getattr(self.app.control, method)(
-            *args, **dict(options, retry=True))
+            *args, **dict(options, reply=True))
 
     def pool_grow(self, method, n=1, **kwargs):
         """[N=1]"""
