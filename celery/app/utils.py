@@ -12,9 +12,9 @@ import os
 import platform as _platform
 import re
 
-from celery.platforms import pyimplementation
+from celery.datastructures import ConfigurationView
 from celery.five import items
-from celery.utils.datastructures import ConfigurationView
+from celery.platforms import pyimplementation
 from celery.utils.text import pretty
 from celery.utils.imports import qualname
 

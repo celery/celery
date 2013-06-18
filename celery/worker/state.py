@@ -20,9 +20,9 @@ from kombu.serialization import pickle_protocol
 from kombu.utils import cached_property
 
 from celery import __version__
+from celery.datastructures import LimitedSet
 from celery.exceptions import SystemTerminate
 from celery.five import Counter
-from celery.utils.datastructures import LimitedSet
 
 #: Worker software/platform information.
 SOFTWARE_INFO = {'sw_ident': 'py-celery',

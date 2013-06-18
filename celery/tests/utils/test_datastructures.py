@@ -6,14 +6,14 @@ from billiard.einfo import ExceptionInfo
 from mock import Mock, patch
 from time import time
 
-from celery.five import items
-from celery.utils.datastructures import (
+from celery.datastructures import (
     LimitedSet,
     AttributeDict,
     DictAttribute,
     ConfigurationView,
     DependencyGraph,
 )
+from celery.five import items
 
 from celery.tests.case import Case, WhateverIO
 
@@ -209,11 +209,11 @@ class test_LimitedSet(Case):
         s = LimitedSet(maxlen=None)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        with patch('celery.utils.datastructures.heappop') as hp:
+        with patch('celery.datastructures.heappop') as hp:
             hp.side_effect = IndexError()
             s.purge()
             hp.assert_called_with(s._heap)
-        with patch('celery.utils.datastructures.heappop') as hp:
+        with patch('celery.datastructures.heappop') as hp:
             s._data = dict((i * 2, i * 2) for i in range(10))
             s.purge()
             self.assertEqual(hp.call_count, 10)

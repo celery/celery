@@ -9,10 +9,10 @@ from datetime import datetime, timedelta
 from kombu import pidbox
 from mock import Mock, patch, call
 
+from celery.datastructures import AttributeDict
 from celery.five import Queue as FastQueue
 from celery.task import task
 from celery.utils import uuid
-from celery.utils.datastructures import AttributeDict
 from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC
 from celery.worker import consumer

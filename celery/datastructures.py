@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.utils.datastructures
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    celery.datastructures
+    ~~~~~~~~~~~~~~~~~~~~~
 
     Custom types and data structures.
 
@@ -21,8 +21,7 @@ from kombu.utils.encoding import safe_str
 from kombu.utils.limits import TokenBucket  # noqa
 
 from celery.five import items
-
-from .functional import LRUCache, first, uniq  # noqa
+from celery.utils.functional import LRUCache, first, uniq  # noqa
 
 DOT_HEAD = """
 {IN}{type} {id} {{
