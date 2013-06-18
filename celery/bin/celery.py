@@ -399,7 +399,7 @@ class control(_RemoteControl):
     }
 
     def call(self, method, *args, **options):
-        return getattr(self.app.control, method)(*args, retry=True, **options)
+        return getattr(self.app.control, method)(*args, reply=True, **options)
 
     def pool_grow(self, method, n=1, **kwargs):
         """[N=1]"""
