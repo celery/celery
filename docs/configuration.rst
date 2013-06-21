@@ -633,7 +633,7 @@ IronCache backend settings
 
 .. note::
 
-    The Cassandra backend requires the :mod:`iron_celery` library:
+    The IronCache backend requires the :mod:`iron_celery` library:
     http://pypi.python.org/pypi/iron_celery
 
     To install the iron_celery package use `pip` or `easy_install`:
