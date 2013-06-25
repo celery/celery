@@ -358,12 +358,15 @@ class inspect(_RemoteControl):
         'report': (1.0, 'get bugreport info'),
         'memsample': (1.0, 'sample memory (requires psutil)'),
         'memdump': (1.0, 'dump memory samples (requires psutil)'),
-        'objgraph': (4.0, 'create object graph (requires objgraph)'),
+        'objgraph': (60.0, 'create object graph (requires objgraph)'),
     }
 
     def call(self, method, *args, **options):
         i = self.app.control.inspect(**options)
         return getattr(i, method)(*args)
+
+    def objgraph(self, type_='Request', *args, **kwargs):
+        return self.call('objgraph', type_)
 
 
 class control(_RemoteControl):

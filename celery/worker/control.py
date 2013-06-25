@@ -171,14 +171,15 @@ def stats(state, **kwargs):
 
 
 @Panel.register
-def objgraph(state, num=200, max_depth=10, ):  # pragma: no cover
+def objgraph(state, num=200, max_depth=10, type='Request'):  # pragma: no cover
     try:
         import objgraph
     except ImportError:
         raise ImportError('Requires the objgraph library')
+    print('Dumping graph for type %r' % (type, ))
     with tempfile.NamedTemporaryFile(prefix='cobjg',
                                      suffix='.png', delete=False) as fh:
-        objects = objgraph.by_type('Request')[:num]
+        objects = objgraph.by_type(type)[:num]
         objgraph.show_backrefs(
             objects,
             max_depth=max_depth, highlight=lambda v: v in objects,
