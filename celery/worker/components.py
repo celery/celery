@@ -15,7 +15,6 @@ from functools import partial
 from celery import bootsteps
 from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t
-from celery.utils.imports import qualname
 from celery.utils.log import worker_logger as logger
 from celery.utils.timer2 import Schedule
 
