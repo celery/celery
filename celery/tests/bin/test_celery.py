@@ -487,7 +487,7 @@ class test_control(AppCase):
     def test_call(self):
         i = self.control(False)
         i.call('foo', 1, kw=2)
-        i.app.control.foo.assert_called_with(1, kw=2, retry=True)
+        i.app.control.foo.assert_called_with(1, kw=2, reply=True)
 
     def test_pool_grow(self):
         i = self.control(True)
