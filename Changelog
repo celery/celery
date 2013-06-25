@@ -13,7 +13,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.20
 ======
-:release-date: TBA
+:release-date: 2013-06-26 16:00 P.M BST
 
 - Now depends on :ref:`Kombu 2.5.11 <kombu:version-2.5.11>`.
 
