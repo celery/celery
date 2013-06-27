@@ -213,7 +213,7 @@ class TaskProducer(Producer):
         retry = self.retry if retry is None else retry
         _rp = (dict(self.retry_policy, **retry_policy) if retry_policy
                else self.retry_policy)
-        task_id = task_id or uuid()
+        task_id = task_id or self.app.tasks[task_name].generate_task_id() # is this valid?
         task_args = task_args or []
         task_kwargs = task_kwargs or {}
         if not isinstance(task_args, (list, tuple)):
