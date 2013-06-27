@@ -388,6 +388,15 @@ class Task(object):
         Make sure it returns a unique id, as the behavior for two tasks existing with the same id is undefined.
         """
         return uuid()
+    
+    
+    def generate_group_id(self):
+        """This method generates the id for a group of tasks [see celery.canvas].
+        
+        Subclasses may override this method.
+        Make sure it returns a unique id, as the behavior for two tasks existing with the same id is undefined.
+        """
+        return self.generate_task_id()
 
     def apply_async(self, args=None, kwargs=None,
                     task_id=None, producer=None, connection=None, router=None,
