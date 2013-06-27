@@ -1,11 +1,12 @@
-# This is a zsh completion script for celery
-# You can use it like this:
+# This is a zsh completion script for Celery
+# It has to be installed as follows:
 #
-#   a.  copy it to your zsh sit-functions directory (My system default:
-#       /usr/share/zsh/site-functions) and rename _celery
+#   Alternative A) Copy the script to your zsh site-functions directory (often
+#       ``/usr/share/zsh/site-functions``) and name the script ``_celery``
 #
-#   b. Or, use this file as a oh-my-zsh plugin(also rename _celery). and Add it to .zshrc e.g. plugins=(celery git osx ruby)
-# 
+#   Alternative B). Or, use this file as a oh-my-zsh plugin (rename the script
+#   to ``_celery``), and add it to .zshrc e.g. plugins=(celery git osx ruby)
+#
 
 _celery () {
 local -a _1st_arguments ifargs dopts controlargs
@@ -131,4 +132,3 @@ case "$words[1]" in
         ;;
     esac
 }
-
