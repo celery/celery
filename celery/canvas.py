@@ -16,7 +16,7 @@ from functools import partial as _partial, reduce
 from operator import itemgetter
 from itertools import chain as _chain
 
-from kombu.utils import cached_property, fxrange, kwdict, reprcall, uuid
+from kombu.utils import cached_property, fxrange, kwdict, reprcall
 
 from celery._state import current_app
 from celery.exceptions import NotRegistered
@@ -166,12 +166,13 @@ class Signature(dict):
 
     def freeze(self, _id=None):
         opts = self.options
+        type = self.type
         try:
             tid = opts['task_id']
         except KeyError:
-            tid = opts['task_id'] = _id or uuid()
+            tid = opts['task_id'] = _id or type.generate_task_id()
         if 'reply_to' not in opts:
-            opts['reply_to'] = self.type.app.oid
+            opts['reply_to'] = type.app.oid
         return self.AsyncResult(tid)
     _freeze = freeze
 
@@ -245,7 +246,7 @@ class Signature(dict):
     def election(self):
         type = self.type
         app = type.app
-        tid = self.options.get('task_id') or uuid()
+        tid = self.options.get('task_id') or type.generate_task_id()
 
         with app.producer_or_acquire(None) as P:
             props = type.backend.on_task_call(P, tid)
@@ -429,13 +430,16 @@ class group(Signature):
         # batches.
         type = tasks[0].type.app.tasks[self['task']]
         return type(*type.prepare(options, tasks, partial_args))
+        
+    def generate_group_id(self):
+        return self.type.generate_group_id()
 
     def freeze(self, _id=None):
         opts = self.options
         try:
             gid = opts['group']
         except KeyError:
-            gid = opts['group'] = uuid()
+            gid = opts['group'] = self.generate_group_id()
         new_tasks, results = [], []
         for task in self.tasks:
             task = maybe_subtask(task).clone()
