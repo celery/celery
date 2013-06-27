@@ -380,6 +380,14 @@ class Task(object):
 
         """
         return self.apply_async(args, kwargs)
+    
+    def generate_task_id(self):
+        """This method generates the id for each task that was created without specifying a task_id.
+        
+        Subclasses may override this method.
+        Make sure it returns a unique id, as the behavior for two tasks existing with the same id is undefined.
+        """
+        return uuid()
 
     def apply_async(self, args=None, kwargs=None,
                     task_id=None, producer=None, connection=None, router=None,
@@ -471,7 +479,7 @@ class Task(object):
             be replaced by a local :func:`apply` call instead.
 
         """
-        task_id = task_id or uuid()
+        task_id = task_id or self.generate_task_id()
         producer = producer or publisher
         app = self._get_app()
         router = router or self.app.amqp.router
@@ -630,7 +638,7 @@ class Task(object):
         if self.__self__ is not None:
             args = (self.__self__, ) + tuple(args)
         kwargs = kwargs or {}
-        task_id = options.get('task_id') or uuid()
+        task_id = options.get('task_id') or self.generate_task_id()
         retries = options.get('retries', 0)
         throw = app.either('CELERY_EAGER_PROPAGATES_EXCEPTIONS',
                            options.pop('throw', None))
