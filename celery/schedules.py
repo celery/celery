@@ -111,6 +111,9 @@ class schedule(object):
             return self.run_every == other.run_every
         return self.run_every == other
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def seconds(self):
         return timedelta_seconds(self.run_every)
@@ -527,6 +530,9 @@ class crontab(schedule):
                     other.hour == self.hour and
                     other.minute == self.minute)
         return other is self
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 def maybe_schedule(s, relative=False):

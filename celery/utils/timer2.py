@@ -81,6 +81,9 @@ class Entry(object):
         def __eq__(self, other):
             return hash(self) == hash(other)
 
+        def __ne__(self, other):
+            return not self.__eq__(other)
+
 
 def to_timestamp(d, default_timezone=timezone.utc):
     if isinstance(d, datetime):

@@ -629,6 +629,9 @@ class LimitedSet(object):
     def __eq__(self, other):
         return self._heap == other._heap
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __repr__(self):
         return 'LimitedSet({0})'.format(len(self))
 

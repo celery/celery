@@ -214,6 +214,9 @@ class AsyncResult(ResultBase):
             return other == self.id
         return NotImplemented
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __copy__(self):
         r = self.__reduce__()
         return r[0](*r[1])
@@ -561,6 +564,9 @@ class ResultSet(ResultBase):
             return other.results == self.results
         return NotImplemented
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __repr__(self):
         return '<{0}: [{1}]>'.format(type(self).__name__,
                                      ', '.join(r.id for r in self.results))
@@ -624,6 +630,9 @@ class GroupResult(ResultSet):
         if isinstance(other, GroupResult):
             return other.id == self.id and other.results == self.results
         return NotImplemented
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __repr__(self):
         return '<{0}: {1} [{2}]>'.format(type(self).__name__, self.id,
