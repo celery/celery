@@ -95,19 +95,38 @@ class _lamportinfo(tuple):
     obj = property(itemgetter(3))
 
 
-class Element(AttributeDict):
-    """Base class for worker state elements."""
+def with_unique_field(attr):
+
+    def _decorate_cls(cls):
+
+        def __eq__(this, other):
+            if isinstance(other, this.__class__):
+                return getattr(this, attr) == getattr(other, attr)
+            return NotImplemented
+        cls.__eq__ = __eq__
+
+        def __ne__(this, other):
+            return not this.__eq__(other)
+        cls.__ne__ = __ne__
+
+        def __hash__(this):
+            return hash(getattr(this, attr))
+        cls.__hash__ = __hash__
+
+        return cls
+    return _decorate_cls
 
 
-class Worker(Element):
+@with_unique_field('hostname')
+class Worker(AttributeDict):
     """Worker State."""
     heartbeat_max = 4
     expire_window = HEARTBEAT_EXPIRE_WINDOW
     pid = None
+    _defaults = {'hostname': None, 'pid': None, 'freq': 60}
 
     def __init__(self, **fields):
-        fields.setdefault('freq', 60)
-        super(Worker, self).__init__(**fields)
+        dict.__init__(self, self._defaults, **fields)
         self.heartbeats = []
 
     def on_online(self, timestamp=None, local_received=None, **kwargs):
@@ -158,7 +177,8 @@ class Worker(Element):
         return '{0.hostname}.{0.pid}'.format(self)
 
 
-class Task(Element):
+@with_unique_field('uuid')
+class Task(AttributeDict):
     """Task State."""
 
     #: How to merge out of order events.
@@ -188,7 +208,7 @@ class Task(Element):
                      clock=0)
 
     def __init__(self, **fields):
-        super(Task, self).__init__(**dict(self._defaults, **fields))
+        dict.__init__(self, self._defaults, **fields)
 
     def update(self, state, timestamp, fields):
         """Update state from new event.

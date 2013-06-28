@@ -109,6 +109,21 @@ class ev_snapshot(replay):
 
 class test_Worker(Case):
 
+    def test_equality(self):
+        self.assertEqual(Worker(hostname='foo').hostname, 'foo')
+        self.assertEqual(
+            Worker(hostname='foo'), Worker(hostname='foo'),
+        )
+        self.assertNotEqual(
+            Worker(hostname='foo'), Worker(hostname='bar'),
+        )
+        self.assertEqual(
+            hash(Worker(hostname='foo')), hash(Worker(hostname='foo')),
+        )
+        self.assertNotEqual(
+            hash(Worker(hostname='foo')), hash(Worker(hostname='bar')),
+        )
+
     def test_survives_missing_timestamp(self):
         worker = Worker(hostname='foo')
         worker.on_heartbeat(timestamp=None)
@@ -133,6 +148,21 @@ class test_Worker(Case):
 
 
 class test_Task(Case):
+
+    def test_equality(self):
+        self.assertEqual(Task(uuid='foo').uuid, 'foo')
+        self.assertEqual(
+            Task(uuid='foo'), Task(uuid='foo'),
+        )
+        self.assertNotEqual(
+            Task(uuid='foo'), Task(uuid='bar'),
+        )
+        self.assertEqual(
+            hash(Task(uuid='foo')), hash(Task(uuid='foo')),
+        )
+        self.assertNotEqual(
+            hash(Task(uuid='foo')), hash(Task(uuid='bar')),
+        )
 
     def test_info(self):
         task = Task(uuid='abcdefg',

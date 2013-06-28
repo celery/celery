@@ -658,13 +658,14 @@ class Gossip(bootsteps.ConsumerStep):
         )
 
     def periodic(self):
+        workers = self.state.workers
         dirty = set()
-        for worker in values(self.state.workers):
+        for worker in values(workers):
             if not worker.alive:
                 dirty.add(worker)
                 self.on_node_lost(worker)
         for worker in dirty:
-            self.state.workers.pop(worker.hostname, None)
+            workers.pop(worker.hostname, None)
 
     def get_consumers(self, channel):
         self.register_timer()
