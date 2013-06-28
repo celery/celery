@@ -672,7 +672,7 @@ class TaskPool(BasePool):
             header = pack('>I', body_size)
             # index 1,0 is the job ID.
             job = get_job(tup[1][0])
-            job._payload = header, buffer(body), body_size
+            job._payload = header, body, body_size
             put_message(job)
         self._pool._quick_put = send_job
 
