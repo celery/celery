@@ -13,7 +13,11 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.20
 ======
-:release-date: 2013-06-26 16:00 P.M BST
+:release-date: 2013-06-28 16:00 P.M BST
+
+- Contains workaround for deadlock problems.
+
+    A better solution will be part of Celery 3.1.
 
 - Now depends on :ref:`Kombu 2.5.12 <kombu:version-2.5.12>`.
 
@@ -25,7 +29,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - [Worker] Fixed memory leak when restarting after connection lost
   (Issue #1325).
 
-- [Worker] Fixed unicode decode error at startup (Issue #1373).
+- [Worker] Fixed UnicodeDecodeError at startup (Issue #1373).
 
     Fix contributed by Jessica Tallon.
 
@@ -42,7 +46,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   (Issue #1336).
 
 - [Worker] The :signal:`worker-shutdown` signal was no longer being dispatched
-  (Issue #1339).
+  (Issue #1339)j
 
 - [Python 3] Fixed problem with threading.Event.
 
@@ -51,9 +55,15 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - [Python 3] Now handles ``io.UnsupportedOperation`` that may be raised
   by ``file.fileno()`` in Python 3.
 
+- [Python 3] Fixed problem with qualname.
+
+- [events.State] Now ignores unknown event-groups.
+
 - [MongoDB backend] No longer uses deprecated ``safe`` parameter.
 
     Fix contributed by rfkrocktk
+
+- The eventlet pool now imports on Windows.
 
 - [Canvas] Fixed regression where immutable chord members may receive
   arguments (Issue #1340).
@@ -66,7 +76,6 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   specified.
 
     Fix contributed by John Watson.
-
 
 .. _version-3.0.19:
 
