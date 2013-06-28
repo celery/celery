@@ -15,9 +15,10 @@ import os
 import socket
 import sys
 import traceback
-
-if sys.platform != 'win32':
+try:
     import resource
+except ImportError:  # pragma: no cover
+    resource = None  # noqa
 
 from billiard import cpu_count
 from billiard.util import Finalize
@@ -266,34 +267,37 @@ class WorkController(object):
                 'pid': os.getpid(),
                 'clock': str(self.app.clock)}
 
-    if sys.platform != 'win32':
-        def rusage(self):
-            s = resource.getrusage(resource.RUSAGE_SELF)
-            return {
-                'utime': s.ru_utime,
-                'stime': s.ru_stime,
-                'maxrss': s.ru_maxrss,
-                'ixrss': s.ru_ixrss,
-                'idrss': s.ru_idrss,
-                'isrss': s.ru_isrss,
-                'minflt': s.ru_minflt,
-                'majflt': s.ru_majflt,
-                'nswap': s.ru_nswap,
-                'inblock': s.ru_inblock,
-                'oublock': s.ru_oublock,
-                'msgsnd': s.ru_msgsnd,
-                'msgrcv': s.ru_msgrcv,
-                'nsignals': s.ru_nsignals,
-                'nvcsw': s.ru_nvcsw,
-                'nivcsw': s.ru_nivcsw,
-            }
+    def rusage(self):
+        if resource is None:
+            raise NotImplementedError('rusage not supported by this platform')
+        s = resource.getrusage(resource.RUSAGE_SELF)
+        return {
+            'utime': s.ru_utime,
+            'stime': s.ru_stime,
+            'maxrss': s.ru_maxrss,
+            'ixrss': s.ru_ixrss,
+            'idrss': s.ru_idrss,
+            'isrss': s.ru_isrss,
+            'minflt': s.ru_minflt,
+            'majflt': s.ru_majflt,
+            'nswap': s.ru_nswap,
+            'inblock': s.ru_inblock,
+            'oublock': s.ru_oublock,
+            'msgsnd': s.ru_msgsnd,
+            'msgrcv': s.ru_msgrcv,
+            'nsignals': s.ru_nsignals,
+            'nvcsw': s.ru_nvcsw,
+            'nivcsw': s.ru_nivcsw,
+        }
 
     def stats(self):
         info = self.info()
         info.update(self.blueprint.info(self))
         info.update(self.consumer.blueprint.info(self.consumer))
-        if sys.platform != 'win32':
-            info.update(rusage=self.rusage())
+        try:
+            info['rusage'] = self.rusage()
+        except NotImplementedError:
+            info['rusage'] = 'N/A'
         return info
 
     @property

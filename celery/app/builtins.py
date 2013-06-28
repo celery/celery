@@ -315,8 +315,9 @@ def add_chord_task(app):
         accept_magic_kwargs = False
         ignore_result = False
 
-        def run(self, header, body, partial_args=(), interval=None, countdown=1,
-                max_retries=None, propagate=None, eager=False, **kwargs):
+        def run(self, header, body, partial_args=(), interval=None,
+                countdown=1, max_retries=None, propagate=None,
+                eager=False, **kwargs):
             propagate = default_propagate if propagate is None else propagate
             group_id = uuid()
             AsyncResult = self.app.AsyncResult
