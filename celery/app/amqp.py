@@ -86,7 +86,6 @@ class Queues(dict):
         arguments are ignored, and options are simply taken from the queue
         instance.
 
-
         :param queue: :class:`kombu.Queue` instance or name of the queue.
         :keyword exchange: (if named) specifies exchange name.
         :keyword routing_key: (if named) specifies binding key.
