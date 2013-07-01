@@ -147,7 +147,7 @@ class Worker(AttributeDict):
     def update_heartbeat(self, received, timestamp):
         if not received or not timestamp:
             return
-        drift = abs(received - timestamp)
+        drift = int(received) - int(timestamp)
         if drift > HEARTBEAT_DRIFT_MAX:
             warn(DRIFT_WARNING, self.hostname, drift)
         heartbeats, hbmax = self.heartbeats, self.heartbeat_max
