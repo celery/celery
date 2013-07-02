@@ -157,7 +157,10 @@ class Signature(dict):
 
     def clone(self, args=(), kwargs={}, **opts):
         # need to deepcopy options so origins links etc. is not modified.
-        args, kwargs, opts = self._merge(args, kwargs, opts)
+        if args or kwargs or opts:
+            args, kwargs, opts = self._merge(args, kwargs, opts)
+        else:
+            args, kwargs, opts = self.args, self.kwargs, self.options
         s = Signature.from_dict({'task': self.task, 'args': tuple(args),
                                  'kwargs': kwargs, 'options': deepcopy(opts),
                                  'subtask_type': self.subtask_type,
@@ -195,7 +198,10 @@ class Signature(dict):
 
     def apply_async(self, args=(), kwargs={}, **options):
         # For callbacks: extra args are prepended to the stored args.
-        args, kwargs, options = self._merge(args, kwargs, options)
+        if args or kwargs or options:
+            args, kwargs, options = self._merge(args, kwargs, options)
+        else:
+            args, kwargs, options = self.args, self.kwargs, self.options
         return self._apply_async(args, kwargs, **options)
 
     def append_to_list_option(self, key, value):
@@ -219,7 +225,7 @@ class Signature(dict):
 
     def __or__(self, other):
         if not isinstance(self, chain) and isinstance(other, chain):
-            return chain((self,) + other.tasks)
+            return chain((self, ) + other.tasks)
         elif isinstance(other, chain):
             return chain(*self.tasks + other.tasks)
         elif isinstance(other, Signature):
