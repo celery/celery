@@ -115,7 +115,7 @@ class Settings(ConfigurationView):
 
 
 class AppPickler(object):
-    """Old application pickler/unpickler (<= 3.0)."""
+    """Old application pickler/unpickler (< 3.1)."""
 
     def __call__(self, cls, *args):
         kwargs = self.build_kwargs(*args)

@@ -66,6 +66,7 @@ def _unpickle_appattr(reverse_name, args):
 
 
 class Celery(object):
+    #: This is deprecated, use :meth:`reduce_keys` instead
     Pickler = AppPickler
 
     SYSTEM = platforms.SYSTEM
