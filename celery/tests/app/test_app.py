@@ -541,16 +541,6 @@ class test_App(Case):
         self.assertEqual(self.app.conf.BROKER_BACKEND,
                          self.app.conf.BROKER_TRANSPORT)
 
-    def test_with_default_connection(self):
-
-        @self.app.with_default_connection
-        def handler(connection=None, foo=None):
-            return connection, foo
-
-        connection, foo = handler(foo=42)
-        self.assertEqual(foo, 42)
-        self.assertTrue(connection)
-
     def test_after_fork(self):
         p = self.app._pool = Mock()
         self.app._after_fork(self.app)

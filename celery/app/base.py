@@ -15,7 +15,6 @@ import warnings
 from collections import Callable, defaultdict, deque
 from contextlib import contextmanager
 from copy import deepcopy
-from functools import wraps
 from operator import attrgetter
 
 from billiard.util import register_after_fork
@@ -179,8 +178,7 @@ class Celery(object):
             # the task instance from the current app.
             # Really need a better solution for this :(
             from . import shared_task as proxies_to_curapp
-            opts['_force_evaluate'] = True  # XXX Py2.5
-            return proxies_to_curapp(*args, **opts)
+            return proxies_to_curapp(*args, _force_evaluate=True, **opts)
 
         def inner_create_task_cls(shared=True, filter=None, **opts):
             _filt = filter  # stupid 2to3
@@ -335,26 +333,6 @@ class Celery(object):
             with self.amqp.producer_pool.acquire(block=True) as producer:
                 yield producer
     default_producer = producer_or_acquire  # XXX compat
-
-    def with_default_connection(self, fun):
-        """With any function accepting a `connection`
-        keyword argument, establishes a default connection if one is
-        not already passed to it.
-
-        Any automatically established connection will be closed after
-        the function returns.
-
-        **Deprecated**
-
-        Use ``with app.connection_or_acquire(connection)`` instead.
-
-        """
-        @wraps(fun)
-        def _inner(*args, **kwargs):
-            connection = kwargs.pop('connection', None)
-            with self.connection_or_acquire(connection) as c:
-                return fun(*args, connection=c, **kwargs)
-        return _inner
 
     def prepare_config(self, c):
         """Prepare configuration before it is merged with the defaults."""
