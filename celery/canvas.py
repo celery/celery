@@ -467,7 +467,7 @@ class group(Signature):
         return repr(self.tasks)
 
 
-Signature.register_type
+@Signature.register_type
 class chord(Signature):
 
     def __init__(self, header, body=None, task='celery.chord',
