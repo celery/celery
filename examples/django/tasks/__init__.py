@@ -9,6 +9,6 @@ celery.config_from_object(settings)
 celery.autodiscover_tasks(settings.INSTALLED_APPS)
 
 
-@celery.task
-def debug_task():
-    print(repr(debug_task.request))
+@celery.task(bind=True)
+def debug_task(self):
+    print(repr(self.request))
