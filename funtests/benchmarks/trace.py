@@ -33,7 +33,7 @@ x.update_strategies()
 name = T.name
 ts = time()
 from celery.datastructures import AttributeDict
-from celery.task.trace import trace_task_ret
+from celery.app.trace import trace_task_ret
 request = AttributeDict(
                 {'called_directly': False,
                  'callbacks': [],

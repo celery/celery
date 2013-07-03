@@ -6,7 +6,7 @@ from celery import uuid
 from celery import signals
 from celery import states
 from celery.exceptions import RetryTaskError, Ignore
-from celery.task.trace import (
+from celery.app.trace import (
     TraceInfo,
     eager_trace_task,
     trace_task,
@@ -144,8 +144,8 @@ class test_trace(TraceCase):
         with self.assertRaises(KeyError):
             trace(self.raises, (KeyError('foo'), ), {}, propagate=True)
 
-    @patch('celery.task.trace.build_tracer')
-    @patch('celery.task.trace.report_internal_error')
+    @patch('celery.app.trace.build_tracer')
+    @patch('celery.app.trace.report_internal_error')
     def test_outside_body_error(self, report_internal_error, build_tracer):
         tracer = Mock()
         tracer.side_effect = KeyError('foo')

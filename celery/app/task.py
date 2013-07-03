@@ -622,7 +622,7 @@ class Task(object):
 
         """
         # trace imports Task, so need to import inline.
-        from celery.task.trace import eager_trace_task
+        from celery.app.trace import eager_trace_task
 
         app = self._get_app()
         args = args or ()

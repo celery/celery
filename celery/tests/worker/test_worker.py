@@ -904,7 +904,7 @@ class test_WorkController(AppCase):
             'celeryd', hostname='awesome.worker.com',
         )
 
-        with patch('celery.task.trace.setup_worker_optimizations') as swo:
+        with patch('celery.app.trace.setup_worker_optimizations') as swo:
             os.environ['FORKED_BY_MULTIPROCESSING'] = "1"
             try:
                 process_initializer(app, 'luke.worker.com')

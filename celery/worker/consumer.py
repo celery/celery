@@ -32,10 +32,10 @@ from kombu.utils.limits import TokenBucket
 
 from celery import bootsteps
 from celery.app import app_or_default
+from celery.app.trace import build_tracer
 from celery.canvas import subtask
 from celery.exceptions import InvalidTaskError
 from celery.five import items, values
-from celery.task.trace import build_tracer
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate

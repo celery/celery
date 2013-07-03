@@ -38,9 +38,9 @@ from kombu.utils.eventio import SELECT_BAD_FD
 from celery import platforms
 from celery import signals
 from celery._state import set_default_app
+from celery.app import trace
 from celery.concurrency.base import BasePool
 from celery.five import Counter, items, values
-from celery.task import trace
 from celery.utils.log import get_logger
 from celery.worker.hub import READ, WRITE, ERR
 
@@ -97,7 +97,7 @@ def process_initializer(app, hostname):
         set_default_app(app)
         app.finalize()
         trace._tasks = app._tasks  # enables fast_trace_task optimization.
-    from celery.task.trace import build_tracer
+    from celery.app.trace import build_tracer
     for name, task in items(app.tasks):
         task.__trace__ = build_tracer(name, task, app.loader, hostname)
     signals.worker_process_init.send(sender=None)

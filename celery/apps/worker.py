@@ -27,7 +27,7 @@ from celery import VERSION_BANNER, platforms, signals
 from celery.exceptions import SystemTerminate
 from celery.five import string, string_t
 from celery.loaders.app import AppLoader
-from celery.task import trace
+from celery.app import trace
 from celery.utils import cry, isatty
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler

@@ -22,6 +22,7 @@ from kombu.utils.encoding import safe_repr, safe_str
 
 from celery import signals
 from celery.app import app_or_default
+from celery.app.trace import trace_task, trace_task_ret
 from celery.exceptions import (
     Ignore, TaskRevokedError, InvalidTaskError,
     SoftTimeLimitExceeded, TimeLimitExceeded,
@@ -29,7 +30,6 @@ from celery.exceptions import (
 )
 from celery.five import items
 from celery.platforms import signals as _signals
-from celery.task.trace import trace_task, trace_task_ret
 from celery.utils import fun_takes_kwargs
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
@@ -49,7 +49,7 @@ _does_debug = False
 
 
 def __optimize__():
-    # this is also called by celery.task.trace.setup_worker_optimizations
+    # this is also called by celery.app.trace.setup_worker_optimizations
     global _does_debug
     global _does_info
     _does_debug = logger.isEnabledFor(logging.DEBUG)
@@ -232,7 +232,7 @@ class Request(object):
         return result
 
     def execute(self, loglevel=None, logfile=None):
-        """Execute the task in a :func:`~celery.task.trace.trace_task`.
+        """Execute the task in a :func:`~celery.app.trace.trace_task`.
 
         :keyword loglevel: The loglevel used by the task.
         :keyword logfile: The logfile used by the task.

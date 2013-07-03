@@ -17,6 +17,15 @@ from mock import Mock, patch
 from nose import SkipTest
 
 from celery import states
+from celery.app.trace import (
+    trace_task,
+    _trace_task_ret,
+    TraceInfo,
+    mro_lookup,
+    build_tracer,
+    setup_worker_optimizations,
+    reset_worker_optimizations,
+)
 from celery.concurrency.base import BasePool
 from celery.exceptions import (
     RetryTaskError,
@@ -27,15 +36,6 @@ from celery.exceptions import (
     Ignore,
 )
 from celery.five import keys
-from celery.task.trace import (
-    trace_task,
-    _trace_task_ret,
-    TraceInfo,
-    mro_lookup,
-    build_tracer,
-    setup_worker_optimizations,
-    reset_worker_optimizations,
-)
 from celery.result import AsyncResult
 from celery.signals import task_revoked
 from celery.task import task as task_dec
@@ -164,7 +164,7 @@ class test_RetryTaskError(AppCase):
 
 class test_trace_task(AppCase):
 
-    @patch('celery.task.trace._logger')
+    @patch('celery.app.trace._logger')
     def test_process_cleanup_fails(self, _logger):
         backend = mytask.backend
         mytask.backend = Mock()
@@ -689,7 +689,7 @@ class test_Request(AppCase):
             mytask.ignore_result = False
 
     def test_fast_trace_task(self):
-        from celery.task import trace
+        from celery.app import trace
         setup_worker_optimizations(self.app)
         self.assertIs(trace.trace_task_ret, trace._fast_trace_task)
         try:

@@ -16,10 +16,10 @@ from celery import Celery
 from celery import platforms
 from celery import signals
 from celery import current_app
+from celery.app import trace
 from celery.apps import worker as cd
 from celery.bin.worker import worker, main as worker_main
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
-from celery.task import trace
 from celery.utils.log import ensure_process_aware_logger
 from celery.worker import state
 
