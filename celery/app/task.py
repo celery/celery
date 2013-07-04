@@ -31,8 +31,8 @@ from .utils import appstr
 #: extracts attributes related to publishing a message from an object.
 extract_exec_options = mattrgetter(
     'queue', 'routing_key', 'exchange', 'priority', 'expires',
-    'serializer', 'delivery_mode', 'compression', 'timeout', 'soft_timeout',
-    'immediate', 'mandatory',  # imm+man is deprecated
+    'serializer', 'delivery_mode', 'compression', 'time_limit',
+    'soft_time_limit', 'immediate', 'mandatory',  # imm+man is deprecated
 )
 
 # We take __repr__ very seriously around here ;)
@@ -79,7 +79,7 @@ class Context(object):
     called_directly = True
     callbacks = None
     errbacks = None
-    timeouts = None
+    timelimit = None
     _children = None   # see property
     _protected = 0
 
@@ -510,13 +510,15 @@ class Task(object):
         request = self.request if request is None else request
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
+        limit_hard, limit_soft = request.timelimit or (None, None)
         options = dict({
             'task_id': request.id,
             'link': request.callbacks,
             'link_error': request.errbacks,
             'group_id': request.taskset,
             'chord': request.chord,
-            'timeouts': request.timeouts,
+            'soft_time_limit': limit_soft,
+            'time_limit': limit_hard,
         }, **request.delivery_info or {})
         return self.subtask(args, kwargs, options, type=self, **extra_options)
 
@@ -540,8 +542,9 @@ class Task(object):
         :keyword eta: Explicit time and date to run the retry at
                       (must be a :class:`~datetime.datetime` instance).
         :keyword max_retries: If set, overrides the default retry limit.
-        :keyword timeout: If set, overrides the default timeout.
-        :keyword soft_timeout: If set, overrides the default soft timeout.
+        :keyword time_limit: If set, overrides the default time limit.
+        :keyword soft_time_limit: If set, overrides the default soft
+                                  time limit.
         :keyword \*\*options: Any extra options to pass on to
                               meth:`apply_async`.
         :keyword throw: If this is :const:`False`, do not raise the

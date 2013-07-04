@@ -217,7 +217,7 @@ class Request(object):
         request.update({'hostname': hostname, 'is_eager': False,
                         'delivery_info': self.delivery_info,
                         'group': self.request_dict.get('taskset')})
-        timeout, soft_timeout = request.get('timeouts', (None, None))
+        timeout, soft_timeout = request.get('timelimit', (None, None))
         timeout = timeout or task.time_limit
         soft_timeout = soft_timeout or task.soft_time_limit
         result = pool.apply_async(trace_task_ret,

@@ -99,13 +99,18 @@ to process it.
 
     A list of subtasks to apply if an error occurs while executing the task.
 
-* timeouts
-    :`tuple`:
+* timelimit
+    :`<tuple>(float, float)`:
 
     .. versionadded:: 3.1
 
-    Task execution timeouts. This is a tuple of hard and soft timeouts.
-    Timeout values are `int` or `float`.
+    Task execution time limit settings. This is a tuple of hard and soft time
+    limit value (`int`/`float` or :const:`None` for no limit).
+
+    Example value specifying a soft time limit of 3 seconds, and a hard time
+    limt of 10 seconds::
+
+        {'timelimit': (3.0, 10.0)}
 
 
 Example message

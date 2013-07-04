@@ -191,8 +191,8 @@ class TaskProducer(Producer):
                      queue=None, now=None, retries=0, chord=None,
                      callbacks=None, errbacks=None, routing_key=None,
                      serializer=None, delivery_mode=None, compression=None,
-                     reply_to=None, timeout=None, soft_timeout=None,
-                     timeouts=None, declare=None, **kwargs):
+                     reply_to=None, time_limit=None, soft_time_limit=None,
+                     declare=None, **kwargs):
         """Send task message."""
         retry = self.retry if retry is None else retry
 
@@ -240,7 +240,7 @@ class TaskProducer(Producer):
             'callbacks': callbacks,
             'errbacks': errbacks,
             'reply_to': reply_to,
-            'timeouts': timeouts or (timeout, soft_timeout),
+            'timelimit': (time_limit, soft_time_limit),
             'taskset': group_id or taskset_id,
             'chord': chord,
         }
