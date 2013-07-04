@@ -202,9 +202,13 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
 
 def jsonify(obj,
             builtin_types=(int, float, string_t), key=None,
-            keyfilter=None):
+            keyfilter=None,
+            unknown_type_filter=None):
     """Transforms object making it suitable for json serialization"""
     from kombu.abstract import Object as KombuDictType
+    _jsonify = partial(jsonify, builtin_types=builtin_types, key=key,
+                       keyfilter=keyfilter,
+                       unknown_type_filter=unknown_type_filter)
 
     if isinstance(obj, KombuDictType):
         obj = obj.as_dict(recurse=True)
@@ -212,9 +216,9 @@ def jsonify(obj,
     if obj is None or isinstance(obj, builtin_types):
         return obj
     elif isinstance(obj, (tuple, list)):
-        return [jsonify(v) for v in obj]
+        return [_jsonify(v) for v in obj]
     elif isinstance(obj, dict):
-        return dict((k, jsonify(v, key=k))
+        return dict((k, _jsonify(v, key=k))
                     for k, v in items(obj)
                     if (keyfilter(k) if keyfilter else 1))
     elif isinstance(obj, datetime.datetime):
@@ -235,9 +239,11 @@ def jsonify(obj,
     elif isinstance(obj, datetime.timedelta):
         return str(obj)
     else:
-        raise ValueError(
-            'Unsupported type: {0!r} {1!r} (parent: {2})'.format(
-                type(obj), obj, key))
+        if unknown_type_filter is None:
+            raise ValueError(
+                'Unsupported type: {0!r} {1!r} (parent: {2})'.format(
+                    type(obj), obj, key))
+        return unknown_type_filter(obj)
 
 
 def gen_task_name(app, name, module_name):

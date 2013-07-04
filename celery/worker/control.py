@@ -10,6 +10,8 @@ from __future__ import absolute_import
 
 import tempfile
 
+from kombu.utils.encoding import safe_repr
+
 from celery.five import UserDict, items, StringIO
 from celery.platforms import signals as _signals
 from celery.utils import timeutils
@@ -309,7 +311,9 @@ def _wanted_config_key(key):
 
 @Panel.register
 def dump_conf(state, **kwargs):
-    return jsonify(dict(state.app.conf), keyfilter=_wanted_config_key)
+    return jsonify(dict(state.app.conf),
+                   keyfilter=_wanted_config_key,
+                   unknown_type_filter=safe_repr)
 
 
 @Panel.register
