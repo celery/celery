@@ -272,8 +272,8 @@ class Task(AttributeDict):
         self.revoked = timestamp
         self.update(states.REVOKED, timestamp, fields)
 
-    def on_unknown_event(self, type, timestamp=None, **fields):
-        self.update(type.upper(), timestamp, fields)
+    def on_unknown_event(self, shortype, timestamp=None, **fields):
+        self.update(shortype.upper(), timestamp, fields)
 
     def info(self, fields=None, extra=[]):
         """Information about this task suitable for on-screen display."""
