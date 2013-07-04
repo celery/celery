@@ -59,14 +59,30 @@ or even serialized and sent across the wire.
         >>> s.options
         {'countdown': 10}
 
-- It supports the "Calling API" which means it takes the same arguments
-  as the :meth:`~@Task.apply_async` method::
+- It supports the "Calling API" which means it supports ``delay`` and
+  ``apply_async`` or being called directly.
 
-    >>> add.apply_async(args, kwargs, **options)
-    >>> add.subtask(args, kwargs, **options).apply_async()
+    Calling the subtask will execute the task inline in the current process::
 
-    >>> add.apply_async((2, 2), countdown=1)
-    >>> add.subtask((2, 2), countdown=1).apply_async()
+        >>> add(2, 2)
+        4
+        >>> add.s(2, 2)()
+        4
+
+  ``delay`` is our beloved shortcut to ``apply_async`` taking star-arguments::
+
+        >>> result = add.delay(2, 2)
+        >>> result.get()
+        4
+
+    ``apply_async`` takes the same arguments
+    as the :meth:`Task.apply_async <@Task.apply_async>` method::
+
+        >>> add.apply_async(args, kwargs, **options)
+        >>> add.subtask(args, kwargs, **options).apply_async()
+
+        >>> add.apply_async((2, 2), countdown=1)
+        >>> add.subtask((2, 2), countdown=1).apply_async()
 
 - You can't define options with :meth:`~@Task.s`, but a chaining
   ``set`` call takes care of that::
@@ -77,10 +93,15 @@ or even serialized and sent across the wire.
 Partials
 --------
 
-A subtask can be applied too::
+You can execute the subtask in a worker::
 
     >>> add.s(2, 2).delay()
     >>> add.s(2, 2).apply_async(countdown=1)
+
+Or you can call it directly in the current process::
+
+    >>> add.s(2, 2)()
+    4
 
 Specifying additional args, kwargs or options to ``apply_async``/``delay``
 creates partials:
@@ -104,7 +125,7 @@ creates partials:
     >>> s = add.subtask((2, 2), countdown=10)
     >>> s.apply_async(countdown=1)  # countdown is now 1
 
-You can also clone subtasks to augment these::
+You can also clone subtasks to create derivates:
 
     >>> s = add.s(2)
     proj.tasks.add(2)

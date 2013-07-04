@@ -139,8 +139,11 @@ class Signature(dict):
              immutable=immutable)
 
     def __call__(self, *partial_args, **partial_kwargs):
+        args, kwargs, _ = self._merge(partial_args, partial_kwargs, None)
+        return self.type(*args, **kwargs)
+
+    def delay(self, *partial_args, **partial_kwargs):
         return self.apply_async(partial_args, partial_kwargs)
-    delay = __call__
 
     def apply(self, args=(), kwargs={}, **options):
         """Apply this task locally."""
@@ -150,7 +153,8 @@ class Signature(dict):
 
     def _merge(self, args=(), kwargs={}, options={}):
         if self.immutable:
-            return self.args, self.kwargs, dict(self.options, **options)
+            return (self.args, self.kwargs,
+                    dict(self.options, **options) if options else self.options)
         return (tuple(args) + tuple(self.args) if args else self.args,
                 dict(self.kwargs, **kwargs) if kwargs else self.kwargs,
                 dict(self.options, **options) if options else self.options)
