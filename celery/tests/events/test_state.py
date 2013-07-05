@@ -95,10 +95,11 @@ class ev_task_states(replay):
                   runtime=0.1234, hostname='utest1'),
         ]
 
+
 def QTEV(type, uuid, hostname, clock, timestamp=None):
     """Quick task event."""
     return Event('task-{0}'.format(type), uuid=uuid, hostname=hostname,
-            clock=clock, timestamp=timestamp or time())
+                 clock=clock, timestamp=timestamp or time())
 
 
 class ev_logical_clock_ordering(replay):

@@ -9,6 +9,23 @@
 
 If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
+.. _version-3.0.21:
+
+3.0.21
+======
+:release-date: 2013-07-05 16:30 P.M BST
+
+- Now depends on :mod:`billiard` 2.7.3.31.
+
+    This version fixed a bug when running without the billiard C extension.
+
+- 3.0.20 broke eventlet/gevent support (worker not starting).
+
+- Fixed memory leak problem when MongoDB result backend was used with the
+  gevent pool.
+
+    Fix contributed by Ross Lawley.
+
 .. _version-3.0.20:
 
 3.0.20

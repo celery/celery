@@ -32,7 +32,6 @@ if sys.version_info > (3, 3):  # pragma: no cover
         if '.' not in q:
             q = '.'.join((obj.__module__, q))
         return q
-
 else:
     def qualname(obj):  # noqa
         if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
