@@ -138,11 +138,39 @@ _get_pid_files() {
     echo `ls -1 "$CELERYD_PID_DIR"/*.pid 2> /dev/null`
 }
 
+kill_workers() {
+    if [ -n "$CELERYD_KILL_DELAY" ]; then
+        for node in $CELERYD_NODES; do
+            if [ -e ${CELERYD_PID_FILE/\%n/$node} ]; then
+                pid=`cat ${CELERYD_PID_FILE/\%n/$node}`
+                pids="$pids $pid"
+            fi
+        done
+        sleep $CELERYD_KILL_DELAY
+        for node in $CELERYD_NODES; do
+            if [ -e ${CELERYD_PID_FILE/\%n/$node} ]; then
+                pid=`cat ${CELERYD_PID_FILE/\%n/$node}`
+                if [ "${pids#*$pid}" != "$pids" ]; then
+                    kpids="$kpids $pid"
+                    files="$files ${CELERYD_PID_FILE/\%n/$node}"
+                fi
+            fi
+        done
+        if [ -n "$kpids" ]; then
+            echo -e "\nKilling hanging worker(s): " $kpids
+            ret=`kill -9 $kpids`
+            if [ "$ret" == "0" ]; then
+                rm -f $files
+            fi
+        fi
+    fi
+}
+
 stop_workers () {
+    kill_workers &
     $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
     sleep $SLEEP_SECONDS
 }
-
 
 start_workers () {
     $CELERYD_MULTI start $CELERYD_NODES $DAEMON_OPTS        \
@@ -157,6 +185,7 @@ start_workers () {
 
 
 restart_workers () {
+    kill_workers &
     $CELERYD_MULTI restart $CELERYD_NODES $DAEMON_OPTS      \
                            --pidfile="$CELERYD_PID_FILE"    \
                            --logfile="$CELERYD_LOG_FILE"    \
