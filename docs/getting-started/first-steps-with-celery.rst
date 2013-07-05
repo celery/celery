@@ -296,7 +296,7 @@ If you are configuring many settings at once you can use ``update``:
 
     app.conf.update(
         CELERY_TASK_SERIALIZER='json',
-        CELERY_ACCEPT_CONTENT='json',  # Ignore other content
+        CELERY_ACCEPT_CONTENT=['json'],  # Ignore other content
         CELERY_RESULT_SERIALIZER='json',
         CELERY_TIMEZONE='Europe/Oslo',
         CELERY_ENABLE_UTC=True,
@@ -332,7 +332,7 @@ current directory or on the Python path, it could look like this:
 
     CELERY_TASK_SERIALIZER = 'json'
     CELERY_RESULT_SERIALIZER = 'json'
-    CELERY_ACCEPT_CONTENT='json'
+    CELERY_ACCEPT_CONTENT=['json']
     CELERY_TIMEZONE = 'Europe/Oslo'
     CELERY_ENABLE_UTC = True
 

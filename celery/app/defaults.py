@@ -90,7 +90,7 @@ NAMESPACES = {
         'WRITE_CONSISTENCY': Option(type='string'),
     },
     'CELERY': {
-        'ACCEPT_CONTENT': Option(None, type='any'),
+        'ACCEPT_CONTENT': Option(None, type='list'),
         'ACKS_LATE': Option(False, type='bool'),
         'ALWAYS_EAGER': Option(False, type='bool'),
         'ANNOTATIONS': Option(type='any'),
