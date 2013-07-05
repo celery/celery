@@ -1140,10 +1140,13 @@ overhead may not be worth it in the end.
 
 .. seealso::
 
-    The book `Art of Concurrency`_ has a whole section dedicated to the topic
-    of task granularity.
+    The book `Art of Concurrency`_ has a section dedicated to the topic
+    of task granularity [AOC1]_.
 
 .. _`Art of Concurrency`: http://oreilly.com/catalog/9780596521547
+
+.. [AOC1] Breshears, Clay. Section 2.2.1, "The Art of Concurrency".
+   O'Reilly Media, Inc. May 15, 2009.  ISBN-13 978-0-596-52153-0.
 
 .. _task-data-locality:
 
