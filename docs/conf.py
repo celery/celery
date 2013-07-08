@@ -58,7 +58,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Celery'
-copyright = u'2009-2012, Ask Solem & Contributors'
+copyright = u'2009-2013, Ask Solem & Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -124,7 +124,7 @@ if False:
 epub_title = 'Celery Manual, Version 3.0'
 epub_author = 'Ask Solem'
 epub_publisher = 'Celery Project'
-epub_copyright = '2009-2012'
+epub_copyright = '2009-2013'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.
