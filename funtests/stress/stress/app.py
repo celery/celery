@@ -13,7 +13,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 
 CSTRESS_QUEUE = os.environ.get('CSTRESS_QUEUE_NAME', 'c.stress')
 CSTRESS_BROKER = os.environ.get('CSTRESS_BROKER', 'amqp://')
-CSTRESS_BACKEND = os.environ.get('CSTRESS_BACKEND', 'redis://')
+CSTRESS_BACKEND = os.environ.get('CSTRESS_BACKEND', 'redis://127.0.0.1')
 CSTRESS_PREFETCH = int(os.environ.get('CSTRESS_PREFETCH', 1))
 
 app = Celery(
