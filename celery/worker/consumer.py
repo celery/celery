@@ -448,7 +448,7 @@ class Events(bootsteps.StartStopStep):
             enabled=self.send_events, groups=self.groups,
         )
         if prev:
-            dis.copy_buffer(prev)
+            dis.extend_buffer(prev)
             dis.flush()
 
     def stop(self, c):
