@@ -480,4 +480,3 @@ class State(object):
             self.event_callback, self.workers, self.tasks, self._taskheap,
             self.max_workers_in_memory, self.max_tasks_in_memory,
         )
-state = State()
