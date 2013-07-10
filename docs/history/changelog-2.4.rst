@@ -155,7 +155,7 @@ Important Notes
     The old :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting has been
     deprecated and will be removed in version 4.0.
 
-    Note that this means that the result backend requires RabbitMQ 1.1.0 or
+    Note that this means that the result backend requires RabbitMQ 2.1.0 or
     higher, and that you have to disable expiration if you are running
     with an older version.  You can do so by disabling the
     :setting:`CELERY_TASK_RESULT_EXPIRES` setting::
