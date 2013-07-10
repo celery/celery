@@ -308,6 +308,7 @@ class Celery(object):
             connect_timeout=self.either(
                 'BROKER_CONNECTION_TIMEOUT', connect_timeout),
             heartbeat=heartbeat,
+            login_method=self.either('BROKER_LOGIN_METHOD', None),
             transport_options=dict(conf.BROKER_TRANSPORT_OPTIONS,
                                    **transport_options or {}))
     broker_connection = connection
