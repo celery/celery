@@ -944,6 +944,13 @@ If this is set to :const:`0` or :const:`None`, we will retry forever.
 
 Default is 100 retries.
 
+.. setting:: BROKER_LOGIN_METHOD
+
+BROKER_LOGIN_METHOD
+~~~~~~~~~~~~~~~~~~~
+
+Set custom amqp login method, default is ``AMQPLAIN``.
+
 .. setting:: BROKER_TRANSPORT_OPTIONS
 
 BROKER_TRANSPORT_OPTIONS

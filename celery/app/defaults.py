@@ -71,6 +71,7 @@ NAMESPACES = {
         'CONNECTION_MAX_RETRIES': Option(100, type='int'),
         'HEARTBEAT': Option(None, type='int'),
         'HEARTBEAT_CHECKRATE': Option(3.0, type='int'),
+        'LOGIN_METHOD': Option(None, type='string'),
         'POOL_LIMIT': Option(10, type='int'),
         'USE_SSL': Option(False, type='bool'),
         'TRANSPORT': Option(type='string'),
