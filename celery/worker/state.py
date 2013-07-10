@@ -15,8 +15,9 @@ import os
 import sys
 import platform
 import shelve
+import zlib
 
-from kombu.serialization import pickle_protocol
+from kombu.serialization import pickle, pickle_protocol
 from kombu.utils import cached_property
 
 from celery import __version__
@@ -30,11 +31,11 @@ SOFTWARE_INFO = {'sw_ident': 'py-celery',
                  'sw_sys': platform.system()}
 
 #: maximum number of revokes to keep in memory.
-REVOKES_MAX = 10000
+REVOKES_MAX = 50000
 
 #: how many seconds a revoke will be active before
 #: being expired when the max limit has been exceeded.
-REVOKE_EXPIRES = 3600
+REVOKE_EXPIRES = 10800
 
 #: set of all reserved :class:`~celery.worker.job.Request`'s.
 reserved_requests = set()
@@ -140,49 +141,87 @@ class Persistent(object):
     """
     storage = shelve
     protocol = pickle_protocol
+    compress = zlib.compress
+    decompress = zlib.decompress
     _is_open = False
 
-    def __init__(self, filename, clock=None):
+    def __init__(self, state, filename, clock=None):
+        self.state = state
         self.filename = filename
         self.clock = clock
-        self._load()
-
-    def save(self):
-        self.sync(self.db)
-        self.db.sync()
-        self.close()
-
-    def merge(self, d):
-        saved = d.get('revoked') or LimitedSet()
-        if isinstance(saved, LimitedSet):
-            revoked.update(saved)
-        else:
-            # (pre 3.0.18) used to be stored as dict
-            for item in saved:
-                revoked.add(item)
-        if self.clock:
-            d['clock'] = self.clock.adjust(d.get('clock') or 0)
-        return d
-
-    def sync(self, d):
-        revoked.purge()
-        d['revoked'] = revoked
-        if self.clock:
-            d['clock'] = self.clock.forward()
-        return d
+        self.merge()
 
     def open(self):
         return self.storage.open(
             self.filename, protocol=self.protocol, writeback=True,
         )
 
+    def merge(self):
+        self._merge_with(self.db)
+
+    def sync(self):
+        self._sync_with(self.db)
+        self.db.sync()
+
     def close(self):
         if self._is_open:
             self.db.close()
             self._is_open = False
 
-    def _load(self):
-        self.merge(self.db)
+    def save(self):
+        self.sync()
+        self.close()
+
+    def _merge_with(self, d):
+        self._merge_revoked(d)
+        self._merge_clock(d)
+        return d
+
+    def _sync_with(self, d):
+        self._revoked_tasks.purge()
+        d.update(
+            __proto__=3,
+            zrevoked=self.compress(self._dumps(self._revoked_tasks)),
+            clock=self.clock.forward() if self.clock else 0,
+        )
+        return d
+
+    def _merge_clock(self, d):
+        if self.clock:
+            d['clock'] = self.clock.adjust(d.get('clock') or 0)
+
+    def _merge_revoked(self, d):
+        try:
+            self._merge_revoked_v3(d['zrevoked'])
+        except KeyError:
+            try:
+                self._merge_revoked_v2(d.pop('revoked'))
+            except KeyError:
+                pass
+        # purge expired items at boot
+        self._revoked_tasks.purge()
+
+    def _merge_revoked_v3(self, zrevoked):
+        if zrevoked:
+            self._revoked_tasks.update(pickle.loads(self.decompress(zrevoked)))
+
+    def _merge_revoked_v2(self, saved):
+        if not isinstance(saved, LimitedSet):
+            # (pre 3.0.18) used to be stored as a dict
+            return self._merge_revoked_v1(saved)
+        self._revoked_tasks.update(saved)
+
+    def _merge_revoked_v1(self, saved):
+        add = self._revoked_tasks.add
+        for item in saved:
+            add(item)
+
+    def _dumps(self, obj):
+        return pickle.dumps(obj, protocol=self.protocol)
+
+    @property
+    def _revoked_tasks(self):
+        return self.state.revoked
 
     @cached_property
     def db(self):

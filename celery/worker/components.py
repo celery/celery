@@ -183,7 +183,7 @@ class StateDB(bootsteps.Step):
         w._persistence = None
 
     def create(self, w):
-        w._persistence = w.state.Persistent(w.state_db, w.app.clock)
+        w._persistence = w.state.Persistent(w.state, w.state_db, w.app.clock)
         atexit.register(w._persistence.save)
 
 

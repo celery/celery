@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import pickle
+
 from mock import Mock, patch
 from time import time
 
@@ -72,7 +74,7 @@ class test_maybe_shutdown(Case):
 class test_Persistent(StateResetCase):
 
     def on_setup(self):
-        self.p = MyPersistent(filename='celery-state')
+        self.p = MyPersistent(state, filename='celery-state')
 
     def test_close_twice(self):
         self.p._is_open = False
@@ -94,7 +96,7 @@ class test_Persistent(StateResetCase):
 
     def test_merge(self, data=['foo', 'bar', 'baz']):
         self.add_revoked(*data)
-        self.p.merge(self.p.db)
+        self.p.merge()
         for item in data:
             self.assertIn(item, state.revoked)
 
@@ -102,30 +104,39 @@ class test_Persistent(StateResetCase):
         self.p.clock = Mock()
         self.p.clock.adjust.return_value = 626
         d = {'revoked': {'abc': time()}, 'clock': 313}
-        self.p.merge(d)
+        self.p._merge_with(d)
         self.p.clock.adjust.assert_called_with(313)
         self.assertEqual(d['clock'], 626)
         self.assertIn('abc', state.revoked)
 
     def test_sync_clock_and_purge(self):
+        passthrough = Mock()
+        passthrough.side_effect = lambda x: x
         with patch('celery.worker.state.revoked') as revoked:
             d = {'clock': 0}
             self.p.clock = Mock()
             self.p.clock.forward.return_value = 627
-            self.p.sync(d)
+            self.p._dumps = passthrough
+            self.p.compress = passthrough
+            self.p._sync_with(d)
             revoked.purge.assert_called_with()
             self.assertEqual(d['clock'], 627)
-            self.assertIs(d['revoked'], revoked)
+            self.assertNotIn('revoked', d)
+            self.assertIs(d['zrevoked'], revoked)
 
     def test_sync(self, data1=['foo', 'bar', 'baz'],
                   data2=['baz', 'ini', 'koz']):
         self.add_revoked(*data1)
         for item in data2:
             state.revoked.add(item)
-        self.p.sync(self.p.db)
+        self.p.sync()
 
+        self.assertTrue(self.p.db['zrevoked'])
+        pickled = self.p.decompress(self.p.db['zrevoked'])
+        self.assertTrue(pickled)
+        saved = pickle.loads(pickled)
         for item in data2:
-            self.assertIn(item, self.p.db['revoked'])
+            self.assertIn(item, saved)
 
 
 class SimpleReq(object):
