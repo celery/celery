@@ -24,8 +24,9 @@ class graph(Command):
 
     def run(self, what=None, *args, **kwargs):
         map = {'bootsteps': self.bootsteps, 'workers': self.workers}
-        not what and self.exit_help('graph')
-        if what not in map:
+        if not what:
+            raise self.UsageError('missing type')
+        elif what not in map:
             raise self.Error('no graph {0} in {1}'.format(what, '|'.join(map)))
         return map[what](*args, **kwargs)
 
