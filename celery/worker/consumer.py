@@ -120,6 +120,8 @@ def dump_body(m, body):
 
 
 class Consumer(object):
+    Strategies = dict
+
     #: set when consumer is shutting down.
     in_shutdown = False
 
@@ -165,7 +167,7 @@ class Consumer(object):
         self.pid = os.getpid()
         self.pool = pool
         self.timer = timer or default_timer
-        self.strategies = {}
+        self.strategies = self.Strategies()
         conninfo = self.app.connection()
         self.connection_errors = conninfo.connection_errors
         self.channel_errors = conninfo.channel_errors
