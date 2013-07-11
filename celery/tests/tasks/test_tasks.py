@@ -1276,10 +1276,9 @@ class test_crontab_is_due(AppCase):
         due, remaining = monthly_moy.run_every.is_due(
             datetime(2013, 6, 28, 22, 14))
         self.assertFalse(due)
-        attempt = (
-            time.mktime(datetime(2014, 2, 26, 22, 0).timetuple()) -
-            time.mktime(datetime(2013, 6, 28, 14, 30).timetuple()) -
-            60 * 60
+        attempt = (time.mktime(datetime(2014, 2, 26, 22, 0).timetuple())
+                   - time.mktime(datetime(2013, 6, 28, 14, 30).timetuple())
+                   - 60 * 60
         )
         self.assertEqual(remaining, attempt)
 
