@@ -31,7 +31,6 @@ from kombu.utils.encoding import safe_repr, bytes_t
 from kombu.utils.limits import TokenBucket
 
 from celery import bootsteps
-from celery.app import app_or_default
 from celery.app.trace import build_tracer
 from celery.canvas import subtask
 from celery.exceptions import InvalidTaskError
@@ -159,7 +158,7 @@ class Consumer(object):
                  pool=None, app=None,
                  timer=None, controller=None, hub=None, amqheartbeat=None,
                  worker_options=None, disable_rate_limits=False, **kwargs):
-        self.app = app_or_default(app)
+        self.app = app
         self.controller = controller
         self.init_callback = init_callback
         self.hostname = hostname or socket.gethostname()
