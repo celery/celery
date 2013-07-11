@@ -21,7 +21,6 @@ from kombu.utils import kwdict, reprcall
 from kombu.utils.encoding import safe_repr, safe_str
 
 from celery import signals
-from celery.app import app_or_default
 from celery.app.trace import trace_task, trace_task_ret
 from celery.exceptions import (
     Ignore, TaskRevokedError, InvalidTaskError,
@@ -106,7 +105,7 @@ class Request(object):
                  hostname=None, eventer=None, app=None,
                  connection_errors=None, request_dict=None,
                  delivery_info=None, task=None, **opts):
-        self.app = app or app_or_default(app)
+        self.app = app
         name = self.name = body['task']
         self.id = body['id']
         self.args = body.get('args', [])
