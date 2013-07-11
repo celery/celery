@@ -10,7 +10,6 @@ from mock import patch
 
 from celery import beat
 from celery import platforms
-from celery.app import app_or_default
 from celery.bin import beat as beat_bin
 from celery.apps import beat as beatapp
 
@@ -64,10 +63,10 @@ class MockBeat3(beatapp.Beat):
 class test_Beat(AppCase):
 
     def test_loglevel_string(self):
-        b = beatapp.Beat(loglevel='DEBUG')
+        b = beatapp.Beat(app=self.app, loglevel='DEBUG')
         self.assertEqual(b.loglevel, logging.DEBUG)
 
-        b2 = beatapp.Beat(loglevel=logging.DEBUG)
+        b2 = beatapp.Beat(app=self.app, loglevel=logging.DEBUG)
         self.assertEqual(b2.loglevel, logging.DEBUG)
 
     def test_colorize(self):
@@ -80,15 +79,15 @@ class test_Beat(AppCase):
         self.assertEqual(app.log.setup.call_args[1]['colorize'], False)
 
     def test_init_loader(self):
-        b = beatapp.Beat()
+        b = beatapp.Beat(app=self.app)
         b.init_loader()
 
     def test_process_title(self):
-        b = beatapp.Beat()
+        b = beatapp.Beat(app=self.app)
         b.set_process_title()
 
     def test_run(self):
-        b = MockBeat2()
+        b = MockBeat2(app=self.app)
         MockService.started = False
         b.run()
         self.assertTrue(MockService.started)
@@ -109,8 +108,8 @@ class test_Beat(AppCase):
             platforms.signals = p
 
     def test_install_sync_handler(self):
-        b = beatapp.Beat()
-        clock = MockService()
+        b = beatapp.Beat(app=self.app)
+        clock = MockService(app=self.app)
         MockService.in_sync = False
         handlers = self.psig(b.install_sync_handler, clock)
         with self.assertRaises(SystemExit):
@@ -124,7 +123,7 @@ class test_Beat(AppCase):
             delattr(sys.stdout, 'logger')
         except AttributeError:
             pass
-        b = beatapp.Beat()
+        b = beatapp.Beat(app=self.app)
         b.redirect_stdouts = False
         b.app.log.__class__._setup = False
         b.setup_logging()
@@ -134,14 +133,15 @@ class test_Beat(AppCase):
     @redirect_stdouts
     @patch('celery.apps.beat.logger')
     def test_logs_errors(self, logger, stdout, stderr):
-        b = MockBeat3(socket_timeout=None)
+        b = MockBeat3(app=self.app, socket_timeout=None)
         b.start_scheduler()
         self.assertTrue(logger.critical.called)
 
     @redirect_stdouts
     @patch('celery.platforms.create_pidlock')
     def test_use_pidfile(self, create_pidlock, stdout, stderr):
-        b = MockBeat2(pidfile='pidfilelockfilepid', socket_timeout=None)
+        b = MockBeat2(app=self.app, pidfile='pidfilelockfilepid',
+                      socket_timeout=None)
         b.start_scheduler()
         self.assertTrue(create_pidlock.called)
 
@@ -184,13 +184,13 @@ class test_div(AppCase):
 
     def test_detach(self):
         cmd = beat_bin.beat()
-        cmd.app = app_or_default()
+        cmd.app = self.app
         cmd.run(detach=True)
         self.assertTrue(MockDaemonContext.opened)
         self.assertTrue(MockDaemonContext.closed)
 
     def test_parse_options(self):
         cmd = beat_bin.beat()
-        cmd.app = app_or_default()
+        cmd.app = self.app
         options, args = cmd.parse_options('celery beat', ['-s', 'foo'])
         self.assertEqual(options.schedule, 'foo')

@@ -15,7 +15,6 @@ from kombu import Exchange, Queue
 from celery import Celery
 from celery import platforms
 from celery import signals
-from celery import current_app
 from celery.app import trace
 from celery.apps import worker as cd
 from celery.bin.worker import worker, main as worker_main
@@ -152,7 +151,7 @@ class test_Worker(WorkerAppCase):
 
     @disable_stdouts
     def test_loglevel_string(self):
-        worker = self.Worker(loglevel='INFO')
+        worker = self.Worker(app=self.app, loglevel='INFO')
         self.assertEqual(worker.loglevel, logging.INFO)
 
     def test_run_worker(self):
@@ -166,14 +165,14 @@ class test_Worker(WorkerAppCase):
         p = platforms.signals
         platforms.signals = Signals()
         try:
-            w = self.Worker()
+            w = self.Worker(app=self.app)
             w._isatty = False
             w.on_start()
             for sig in 'SIGINT', 'SIGHUP', 'SIGTERM':
                 self.assertIn(sig, handlers)
 
             handlers.clear()
-            w = self.Worker()
+            w = self.Worker(app=self.app)
             w._isatty = True
             w.on_start()
             for sig in 'SIGINT', 'SIGTERM':
@@ -184,7 +183,7 @@ class test_Worker(WorkerAppCase):
 
     @disable_stdouts
     def test_startup_info(self):
-        worker = self.Worker()
+        worker = self.Worker(app=self.app)
         worker.on_start()
         self.assertTrue(worker.startup_info())
         worker.loglevel = logging.DEBUG
@@ -211,7 +210,7 @@ class test_Worker(WorkerAppCase):
             app.loader = prev
 
         from celery.loaders.app import AppLoader
-        prev, app.loader = app.loader, AppLoader()
+        prev, app.loader = app.loader, AppLoader(app=self.app)
         try:
             self.assertTrue(worker.startup_info())
         finally:
@@ -227,18 +226,18 @@ class test_Worker(WorkerAppCase):
 
     @disable_stdouts
     def test_run(self):
-        self.Worker().on_start()
-        self.Worker(purge=True).on_start()
-        worker = self.Worker()
+        self.Worker(app=self.app).on_start()
+        self.Worker(app=self.app, purge=True).on_start()
+        worker = self.Worker(app=self.app)
         worker.on_start()
 
     @disable_stdouts
     def test_purge_messages(self):
-        self.Worker().purge_messages()
+        self.Worker(app=self.app).purge_messages()
 
     @disable_stdouts
     def test_init_queues(self):
-        app = current_app
+        app = self.app
         c = app.conf
         p, app.amqp.queues = app.amqp.queues, app.amqp.Queues({
             'celery': {'exchange': 'celery',
@@ -246,7 +245,7 @@ class test_Worker(WorkerAppCase):
             'video': {'exchange': 'video',
                       'routing_key': 'video'}})
         try:
-            worker = self.Worker()
+            worker = self.Worker(app=self.app)
             worker.setup_queues(['video'])
             self.assertIn('video', app.amqp.queues)
             self.assertIn('video', app.amqp.queues.consume_from)
@@ -256,10 +255,10 @@ class test_Worker(WorkerAppCase):
             c.CELERY_CREATE_MISSING_QUEUES = False
             del(app.amqp.queues)
             with self.assertRaises(ImproperlyConfigured):
-                self.Worker().setup_queues(['image'])
+                self.Worker(app=self.app).setup_queues(['image'])
             del(app.amqp.queues)
             c.CELERY_CREATE_MISSING_QUEUES = True
-            worker = self.Worker()
+            worker = self.Worker(app=self.app)
             worker.setup_queues(queues=['image'])
             self.assertIn('image', app.amqp.queues.consume_from)
             self.assertEqual(Queue('image', Exchange('image'),
@@ -269,31 +268,32 @@ class test_Worker(WorkerAppCase):
 
     @disable_stdouts
     def test_autoscale_argument(self):
-        worker1 = self.Worker(autoscale='10,3')
+        worker1 = self.Worker(app=self.app, autoscale='10,3')
         self.assertListEqual(worker1.autoscale, [10, 3])
-        worker2 = self.Worker(autoscale='10')
+        worker2 = self.Worker(app=self.app, autoscale='10')
         self.assertListEqual(worker2.autoscale, [10, 0])
 
     def test_include_argument(self):
-        worker1 = self.Worker(include='some.module')
+        worker1 = self.Worker(app=self.app, include='some.module')
         self.assertListEqual(worker1.include, ['some.module'])
-        worker2 = self.Worker(include='some.module,another.package')
+        worker2 = self.Worker(app=self.app,
+                              include='some.module,another.package')
         self.assertListEqual(
             worker2.include,
             ['some.module', 'another.package'],
         )
-        self.Worker(include=['os', 'sys'])
+        self.Worker(app=self.app, include=['os', 'sys'])
 
     @disable_stdouts
     def test_unknown_loglevel(self):
         with self.assertRaises(SystemExit):
             worker(app=self.app).run(loglevel='ALIEN')
-        worker1 = self.Worker(loglevel=0xFFFF)
+        worker1 = self.Worker(app=self.app, loglevel=0xFFFF)
         self.assertEqual(worker1.loglevel, 0xFFFF)
 
     @disable_stdouts
     def test_warns_if_running_as_privileged_user(self):
-        app = current_app
+        app = self.app
         if app.IS_WINDOWS:
             raise SkipTest('Not applicable on Windows')
 
@@ -305,14 +305,14 @@ class test_Worker(WorkerAppCase):
             with self.assertWarnsRegex(
                     RuntimeWarning,
                     r'superuser privileges is discouraged'):
-                worker = self.Worker()
+                worker = self.Worker(app=self.app)
                 worker.on_start()
         finally:
             os.getuid = prev
 
     @disable_stdouts
     def test_redirect_stdouts(self):
-        self.Worker(redirect_stdouts=False)
+        self.Worker(app=self.app, redirect_stdouts=False)
         with self.assertRaises(AttributeError):
             sys.stdout.logger
 
@@ -322,7 +322,7 @@ class test_Worker(WorkerAppCase):
             self.app.log.redirect_stdouts, Mock(),
         )
         try:
-            worker = self.Worker(redirect_stoutds=True)
+            worker = self.Worker(app=self.app, redirect_stoutds=True)
             worker._custom_logging = True
             worker.on_start()
             self.assertFalse(self.app.log.redirect_stdouts.called)
@@ -330,14 +330,16 @@ class test_Worker(WorkerAppCase):
             self.app.log.redirect_stdouts = prev
 
     def test_setup_logging_no_color(self):
-        worker = self.Worker(redirect_stdouts=False, no_color=True)
+        worker = self.Worker(
+            app=self.app, redirect_stdouts=False, no_color=True,
+        )
         prev, self.app.log.setup = self.app.log.setup, Mock()
         worker.setup_logging()
         self.assertFalse(self.app.log.setup.call_args[1]['colorize'])
 
     @disable_stdouts
     def test_startup_info_pool_is_str(self):
-        worker = self.Worker(redirect_stdouts=False)
+        worker = self.Worker(app=self.app, redirect_stdouts=False)
         worker.pool_cls = 'foo'
         worker.startup_info()
 
@@ -349,7 +351,7 @@ class test_Worker(WorkerAppCase):
             logging_setup[0] = True
 
         try:
-            worker = self.Worker(redirect_stdouts=False)
+            worker = self.Worker(app=self.app, redirect_stdouts=False)
             worker.app.log.__class__._setup = False
             worker.setup_logging()
             self.assertTrue(logging_setup[0])
@@ -367,7 +369,7 @@ class test_Worker(WorkerAppCase):
             def osx_proxy_detection_workaround(self):
                 self.proxy_workaround_installed = True
 
-        worker = OSXWorker(redirect_stdouts=False)
+        worker = OSXWorker(app=self.app, redirect_stdouts=False)
 
         def install_HUP_nosupport(controller):
             controller.hup_not_supported_installed = True
@@ -400,7 +402,7 @@ class test_Worker(WorkerAppCase):
         prev = cd.install_worker_restart_handler
         cd.install_worker_restart_handler = install_worker_restart_handler
         try:
-            worker = self.Worker()
+            worker = self.Worker(app=self.app)
             worker.app.IS_OSX = False
             worker.install_platform_tweaks(Controller())
             self.assertTrue(restart_worker_handler_installed[0])
@@ -415,7 +417,7 @@ class test_Worker(WorkerAppCase):
         def on_worker_ready(**kwargs):
             worker_ready_sent[0] = True
 
-        self.Worker().on_consumer_ready(object())
+        self.Worker(app=self.app).on_consumer_ready(object())
         self.assertTrue(worker_ready_sent[0])
 
 
@@ -430,7 +432,7 @@ class test_funs(WorkerAppCase):
             __import__('setproctitle')
         except ImportError:
             raise SkipTest('setproctitle not installed')
-        worker = Worker(hostname='xyzza')
+        worker = Worker(app=self.app, hostname='xyzza')
         prev1, sys.argv = sys.argv, ['Arg0']
         try:
             st = worker.set_process_status('Running')
@@ -452,7 +454,7 @@ class test_funs(WorkerAppCase):
     @disable_stdouts
     def test_parse_options(self):
         cmd = worker()
-        cmd.app = current_app
+        cmd.app = self.app
         opts, args = cmd.parse_options('worker', ['--concurrency=512'])
         self.assertEqual(opts.concurrency, 512)
 

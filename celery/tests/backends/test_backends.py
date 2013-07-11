@@ -2,21 +2,22 @@ from __future__ import absolute_import
 
 from mock import patch
 
-from celery import current_app
 from celery import backends
 from celery.backends.amqp import AMQPBackend
 from celery.backends.cache import CacheBackend
-from celery.tests.case import Case
+from celery.tests.case import AppCase
 
 
-class test_backends(Case):
+class test_backends(AppCase):
 
     def test_get_backend_aliases(self):
         expects = [('amqp', AMQPBackend),
                    ('cache', CacheBackend)]
         for expect_name, expect_cls in expects:
-            self.assertIsInstance(backends.get_backend_cls(expect_name)(),
-                                  expect_cls)
+            self.assertIsInstance(
+                backends.get_backend_cls(expect_name)(app=self.app),
+                expect_cls,
+            )
 
     def test_get_backend_cache(self):
         backends.get_backend_cls.clear()
@@ -32,7 +33,7 @@ class test_backends(Case):
             backends.get_backend_cls('fasodaopjeqijwqe')
 
     def test_default_backend(self):
-        self.assertEqual(backends.default_backend, current_app.backend)
+        self.assertEqual(backends.default_backend, self.app.backend)
 
     def test_backend_by_url(self, url='redis://localhost/1'):
         from celery.backends.redis import RedisBackend

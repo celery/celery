@@ -8,7 +8,6 @@ from pickle import loads, dumps
 
 from kombu.utils import cached_property, uuid
 
-from celery import current_app
 from celery import states
 from celery.datastructures import AttributeDict
 from celery.exceptions import ImproperlyConfigured
@@ -16,7 +15,7 @@ from celery.result import AsyncResult
 from celery.task import subtask
 from celery.utils.timeutils import timedelta_seconds
 
-from celery.tests.case import Case
+from celery.tests.case import AppCase
 
 
 class Redis(object):
@@ -65,7 +64,7 @@ class redis(object):
             pass
 
 
-class test_RedisBackend(Case):
+class test_RedisBackend(AppCase):
 
     def get_backend(self):
         from celery.backends import redis
@@ -75,7 +74,7 @@ class test_RedisBackend(Case):
 
         return RedisBackend
 
-    def setUp(self):
+    def setup(self):
         self.Backend = self.get_backend()
 
         class MockBackend(self.Backend):
@@ -89,7 +88,7 @@ class test_RedisBackend(Case):
     def test_reduce(self):
         try:
             from celery.backends.redis import RedisBackend
-            x = RedisBackend()
+            x = RedisBackend(app=self.app)
             self.assertTrue(loads(dumps(x)))
         except ImportError:
             raise SkipTest('redis not installed')
@@ -97,10 +96,10 @@ class test_RedisBackend(Case):
     def test_no_redis(self):
         self.MockBackend.redis = None
         with self.assertRaises(ImproperlyConfigured):
-            self.MockBackend()
+            self.MockBackend(app=self.app)
 
     def test_url(self):
-        x = self.MockBackend('redis://foobar//1')
+        x = self.MockBackend('redis://foobar//1', app=self.app)
         self.assertEqual(x.host, 'foobar')
         self.assertEqual(x.db, '1')
 
@@ -108,54 +107,54 @@ class test_RedisBackend(Case):
         conf = AttributeDict({'CELERY_RESULT_SERIALIZER': 'json',
                               'CELERY_MAX_CACHED_RESULTS': 1,
                               'CELERY_TASK_RESULT_EXPIRES': None})
-        prev, current_app.conf = current_app.conf, conf
+        prev, self.app.conf = self.app.conf, conf
         try:
-            self.MockBackend()
+            self.MockBackend(app=self.app)
         finally:
-            current_app.conf = prev
+            self.app.conf = prev
 
     def test_expires_defaults_to_config(self):
-        conf = current_app.conf
+        conf = self.app.conf
         prev = conf.CELERY_TASK_RESULT_EXPIRES
         conf.CELERY_TASK_RESULT_EXPIRES = 10
         try:
-            b = self.Backend(expires=None)
+            b = self.Backend(expires=None, app=self.app)
             self.assertEqual(b.expires, 10)
         finally:
             conf.CELERY_TASK_RESULT_EXPIRES = prev
 
     def test_expires_is_int(self):
-        b = self.Backend(expires=48)
+        b = self.Backend(expires=48, app=self.app)
         self.assertEqual(b.expires, 48)
 
     def test_expires_is_None(self):
-        b = self.Backend(expires=None)
+        b = self.Backend(expires=None, app=self.app)
         self.assertEqual(b.expires, timedelta_seconds(
-            current_app.conf.CELERY_TASK_RESULT_EXPIRES))
+            self.app.conf.CELERY_TASK_RESULT_EXPIRES))
 
     def test_expires_is_timedelta(self):
-        b = self.Backend(expires=timedelta(minutes=1))
+        b = self.Backend(expires=timedelta(minutes=1), app=self.app)
         self.assertEqual(b.expires, 60)
 
     def test_on_chord_apply(self):
-        self.Backend().on_chord_apply(
+        self.Backend(app=self.app).on_chord_apply(
             'group_id', {},
             result=[AsyncResult(x) for x in [1, 2, 3]],
         )
 
     def test_mget(self):
-        b = self.MockBackend()
+        b = self.MockBackend(app=self.app)
         self.assertTrue(b.mget(['a', 'b', 'c']))
         b.client.mget.assert_called_with(['a', 'b', 'c'])
 
     def test_set_no_expire(self):
-        b = self.MockBackend()
+        b = self.MockBackend(app=self.app)
         b.expires = None
         b.set('foo', 'bar')
 
     @patch('celery.result.GroupResult')
     def test_on_chord_part_return(self, setresult):
-        b = self.MockBackend()
+        b = self.MockBackend(app=self.app)
         deps = Mock()
         deps.__len__ = Mock()
         deps.__len__.return_value = 10
@@ -164,7 +163,7 @@ class test_RedisBackend(Case):
         task = Mock()
         task.name = 'foobarbaz'
         try:
-            current_app.tasks['foobarbaz'] = task
+            self.app.tasks['foobarbaz'] = task
             task.request.chord = subtask(task)
             task.request.group = 'group_id'
 
@@ -178,13 +177,13 @@ class test_RedisBackend(Case):
 
             self.assertTrue(b.client.expire.call_count)
         finally:
-            current_app.tasks.pop('foobarbaz')
+            self.app.tasks.pop('foobarbaz')
 
     def test_process_cleanup(self):
-        self.Backend().process_cleanup()
+        self.Backend(app=self.app).process_cleanup()
 
     def test_get_set_forget(self):
-        b = self.Backend()
+        b = self.Backend(app=self.app)
         tid = uuid()
         b.store_result(tid, 42, states.SUCCESS)
         self.assertEqual(b.get_status(tid), states.SUCCESS)
@@ -193,7 +192,7 @@ class test_RedisBackend(Case):
         self.assertEqual(b.get_status(tid), states.PENDING)
 
     def test_set_expires(self):
-        b = self.Backend(expires=512)
+        b = self.Backend(expires=512, app=self.app)
         tid = uuid()
         key = b.get_key_for_task(tid)
         b.store_result(tid, 42, states.SUCCESS)

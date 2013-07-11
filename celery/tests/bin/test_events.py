@@ -3,10 +3,9 @@ from __future__ import absolute_import
 from nose import SkipTest
 from mock import patch as mpatch
 
-from celery.app import app_or_default
 from celery.bin import events
 
-from celery.tests.case import Case, _old_patch as patch
+from celery.tests.case import AppCase, _old_patch as patch
 
 
 class MockCommand(object):
@@ -21,10 +20,9 @@ def proctitle(prog, info=None):
 proctitle.last = ()
 
 
-class test_events(Case):
+class test_events(AppCase):
 
-    def setUp(self):
-        self.app = app_or_default()
+    def setup(self):
         self.ev = events.events(app=self.app)
 
     @patch('celery.events.dumper', 'evdump', lambda **kw: 'me dumper, you?')

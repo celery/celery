@@ -17,8 +17,6 @@ from celery.task import (
     periodic_task,
     PeriodicTask
 )
-from celery import current_app
-from celery.app import app_or_default
 from celery.exceptions import RetryTaskError
 from celery.execute import send_task
 from celery.five import items, range, string_t
@@ -27,11 +25,7 @@ from celery.schedules import crontab, crontab_parser, ParseException
 from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601, timedelta_seconds
 
-from celery.tests.case import Case, with_eager_tasks, WhateverIO
-
-
-def now():
-    return current_app.now()
+from celery.tests.case import AppCase, eager_tasks, WhateverIO
 
 
 def return_True(*args, **kwargs):
@@ -124,7 +118,7 @@ def retry_task_customexc(arg1, arg2, kwarg=1, **kwargs):
             raise current.retry(countdown=0, exc=exc)
 
 
-class test_task_retries(Case):
+class test_task_retries(AppCase):
 
     def test_retry(self):
         retry_task.__class__.max_retries = 3
@@ -207,7 +201,7 @@ class test_task_retries(Case):
         self.assertEqual(retry_task.iterations, 2)
 
 
-class test_canvas_utils(Case):
+class test_canvas_utils(AppCase):
 
     def test_si(self):
         self.assertTrue(retry_task.si())
@@ -226,7 +220,10 @@ class test_canvas_utils(Case):
         retry_task.on_success(1, 1, (), {})
 
 
-class test_tasks(Case):
+class test_tasks(AppCase):
+
+    def now(self):
+        return self.app.now()
 
     def test_unpickle_task(self):
         import pickle
@@ -312,8 +309,8 @@ class test_tasks(Case):
         # With eta.
         presult2 = T1.apply_async(
             kwargs=dict(name='George Costanza'),
-            eta=now() + timedelta(days=1),
-            expires=now() + timedelta(days=2),
+            eta=self.now() + timedelta(days=1),
+            expires=self.now() + timedelta(days=2),
         )
         self.assertNextTaskDataEqual(
             consumer, presult2, T1.name,
@@ -411,7 +408,7 @@ class test_tasks(Case):
                 del(app.amqp.__dict__['TaskProducer'])
 
     def test_get_publisher(self):
-        connection = app_or_default().connection()
+        connection = self.app.connection()
         p = increment_counter.get_publisher(connection, auto_declare=False,
                                             exchange='foo')
         self.assertEqual(p.exchange.name, 'foo')
@@ -471,14 +468,14 @@ class test_tasks(Case):
             t1.pop_request()
 
 
-class test_TaskSet(Case):
+class test_TaskSet(AppCase):
 
-    @with_eager_tasks
     def test_function_taskset(self):
-        subtasks = [return_True_task.s(i) for i in range(1, 6)]
-        ts = TaskSet(subtasks)
-        res = ts.apply_async()
-        self.assertListEqual(res.join(), [True, True, True, True, True])
+        with eager_tasks(self.app):
+            subtasks = [return_True_task.s(i) for i in range(1, 6)]
+            ts = TaskSet(subtasks)
+            res = ts.apply_async()
+            self.assertListEqual(res.join(), [True, True, True, True, True])
 
     def test_counter_taskset(self):
         increment_counter.count = 0
@@ -518,7 +515,7 @@ class test_TaskSet(Case):
         self.assertTrue(res.taskset_id.startswith(prefix))
 
 
-class test_apply_task(Case):
+class test_apply_task(AppCase):
 
     def test_apply_throw(self):
         with self.assertRaises(KeyError):
@@ -569,7 +566,10 @@ def my_periodic():
     pass
 
 
-class test_periodic_tasks(Case):
+class test_periodic_tasks(AppCase):
+
+    def now(self):
+        return self.app.now()
 
     def test_must_have_run_every(self):
         with self.assertRaises(NotImplementedError):
@@ -578,11 +578,11 @@ class test_periodic_tasks(Case):
     def test_remaining_estimate(self):
         s = my_periodic.run_every
         self.assertIsInstance(
-            s.remaining_estimate(s.maybe_make_aware(now())),
+            s.remaining_estimate(s.maybe_make_aware(self.now())),
             timedelta)
 
     def test_is_due_not_due(self):
-        due, remaining = my_periodic.run_every.is_due(now())
+        due, remaining = my_periodic.run_every.is_due(self.now())
         self.assertFalse(due)
         # This assertion may fail if executed in the
         # first minute of an hour, thus 59 instead of 60
@@ -591,7 +591,8 @@ class test_periodic_tasks(Case):
     def test_is_due(self):
         p = my_periodic
         due, remaining = p.run_every.is_due(
-            now() - p.run_every.run_every)
+            self.now() - p.run_every.run_every,
+        )
         self.assertTrue(due)
         self.assertEqual(remaining,
                          timedelta_seconds(p.run_every.run_every))
@@ -660,7 +661,7 @@ def patch_crontab_nowfun(cls, retval):
     return create_patcher
 
 
-class test_crontab_parser(Case):
+class test_crontab_parser(AppCase):
 
     def test_crontab_reduce(self):
         self.assertTrue(loads(dumps(crontab('*'))))
@@ -810,7 +811,7 @@ class test_crontab_parser(Case):
         self.assertFalse(crontab(minute='1') == object())
 
 
-class test_crontab_remaining_estimate(Case):
+class test_crontab_remaining_estimate(AppCase):
 
     def next_ocurrance(self, crontab, now):
         crontab.nowfun = lambda: now
@@ -982,10 +983,13 @@ class test_crontab_remaining_estimate(Case):
         self.assertEqual(next, datetime(2010, 5, 29, 0, 5))
 
 
-class test_crontab_is_due(Case):
+class test_crontab_is_due(AppCase):
 
-    def setUp(self):
-        self.now = now()
+    def getnow(self):
+        return self.app.now()
+
+    def setup(self):
+        self.now = self.getnow()
         self.next_minute = 60 - self.now.second - 1e-6 * self.now.microsecond
 
     def test_default_crontab_spec(self):

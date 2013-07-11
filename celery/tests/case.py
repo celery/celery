@@ -30,7 +30,6 @@ from nose import SkipTest
 from kombu.log import NullHandler
 from kombu.utils import nested
 
-from celery.app import app_or_default
 from celery.five import (
     WhateverIO, builtins, items, reraise,
     string_t, values, open_fqdn,
@@ -236,28 +235,13 @@ def wrap_logger(logger, loglevel=logging.ERROR):
 
 
 @contextmanager
-def eager_tasks():
-    app = app_or_default()
-
+def eager_tasks(app):
     prev = app.conf.CELERY_ALWAYS_EAGER
     app.conf.CELERY_ALWAYS_EAGER = True
     try:
         yield True
     finally:
         app.conf.CELERY_ALWAYS_EAGER = prev
-
-
-def with_eager_tasks(fun):
-
-    @wraps(fun)
-    def _inner(*args, **kwargs):
-        app = app_or_default()
-        prev = app.conf.CELERY_ALWAYS_EAGER
-        app.conf.CELERY_ALWAYS_EAGER = True
-        try:
-            return fun(*args, **kwargs)
-        finally:
-            app.conf.CELERY_ALWAYS_EAGER = prev
 
 
 def with_environ(env_name, env_value):
@@ -547,7 +531,7 @@ def patch_many(*targets):
 
 
 @contextmanager
-def patch_settings(app=None, **config):
+def patch_settings(app, **config):
     if app is None:
         from celery import current_app
         app = current_app

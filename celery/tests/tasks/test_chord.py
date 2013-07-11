@@ -3,26 +3,25 @@ from __future__ import absolute_import
 from mock import patch
 from contextlib import contextmanager
 
+from celery import group
 from celery import canvas
-from celery import current_app
 from celery import result
 from celery.exceptions import ChordError
 from celery.five import range
 from celery.result import AsyncResult, GroupResult, EagerResult
-from celery.task import task, TaskSet
 from celery.tests.case import AppCase, Mock
 
 passthru = lambda x: x
 
 
-@current_app.task
-def add(x, y):
-    return x + y
+class ChordCase(AppCase):
 
+    def setup(self):
 
-@current_app.task
-def callback(r):
-    return r
+        @self.app.task
+        def add(x, y):
+            return x + y
+        self.add = add
 
 
 class TSR(GroupResult):
@@ -53,8 +52,8 @@ class TSRNoReport(TSR):
 
 
 @contextmanager
-def patch_unlock_retry():
-    unlock = current_app.tasks['celery.chord_unlock']
+def patch_unlock_retry(app):
+    unlock = app.tasks['celery.chord_unlock']
     retry = Mock()
     prev, unlock.retry = unlock.retry, retry
     try:
@@ -63,7 +62,7 @@ def patch_unlock_retry():
         unlock.retry = prev
 
 
-class test_unlock_chord_task(AppCase):
+class test_unlock_chord_task(ChordCase):
 
     @patch('celery.result.GroupResult')
     def test_unlock_ready(self, GroupResult):
@@ -133,7 +132,7 @@ class test_unlock_chord_task(AppCase):
     def _chord_context(self, ResultCls, setup=None, **kwargs):
         with patch('celery.result.GroupResult'):
 
-            @task()
+            @self.app.task()
             def callback(*args, **kwargs):
                 pass
 
@@ -143,7 +142,7 @@ class test_unlock_chord_task(AppCase):
             callback_s.id = 'callback_id'
             fail_current = self.app.backend.fail_from_current_stack = Mock()
             try:
-                with patch_unlock_retry() as (unlock, retry):
+                with patch_unlock_retry(self.app) as (unlock, retry):
                     subtask, canvas.maybe_subtask = (
                         canvas.maybe_subtask, passthru,
                     )
@@ -173,19 +172,19 @@ class test_unlock_chord_task(AppCase):
             retry.assert_called_with(countdown=10, max_retries=30)
 
     def test_is_in_registry(self):
-        self.assertIn('celery.chord_unlock', current_app.tasks)
+        self.assertIn('celery.chord_unlock', self.app.tasks)
 
 
-class test_chord(AppCase):
+class test_chord(ChordCase):
 
     def test_eager(self):
         from celery import chord
 
-        @task()
+        @self.app.task()
         def addX(x, y):
             return x + y
 
-        @task()
+        @self.app.task()
         def sumX(n):
             return sum(n)
 
@@ -207,8 +206,8 @@ class test_chord(AppCase):
         m.AsyncResult = AsyncResult
         prev, chord._type = chord._type, m
         try:
-            x = chord(add.s(i, i) for i in range(10))
-            body = add.s(2)
+            x = chord(self.add.s(i, i) for i in range(10))
+            body = self.add.s(2)
             result = x(body)
             self.assertTrue(result.id)
             # does not modify original subtask
@@ -219,18 +218,18 @@ class test_chord(AppCase):
             chord._type = prev
 
 
-class test_Chord_task(AppCase):
+class test_Chord_task(ChordCase):
 
     def test_run(self):
-        prev, current_app.backend = current_app.backend, Mock()
-        current_app.backend.cleanup = Mock()
-        current_app.backend.cleanup.__name__ = 'cleanup'
+        prev, self.app.backend = self.app.backend, Mock()
+        self.app.backend.cleanup = Mock()
+        self.app.backend.cleanup.__name__ = 'cleanup'
         try:
-            Chord = current_app.tasks['celery.chord']
+            Chord = self.app.tasks['celery.chord']
 
             body = dict()
-            Chord(TaskSet(add.subtask((i, i)) for i in range(5)), body)
-            Chord([add.subtask((j, j)) for j in range(5)], body)
-            self.assertEqual(current_app.backend.on_chord_apply.call_count, 2)
+            Chord(group(self.add.subtask((i, i)) for i in range(5)), body)
+            Chord([self.add.subtask((j, j)) for j in range(5)], body)
+            self.assertEqual(self.app.backend.on_chord_apply.call_count, 2)
         finally:
-            current_app.backend = prev
+            self.app.backend = prev

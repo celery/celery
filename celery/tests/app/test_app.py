@@ -513,7 +513,7 @@ class test_App(Case):
             def mail_admins(*args, **kwargs):
                 return args, kwargs
 
-        self.app.loader = Loader()
+        self.app.loader = Loader(app=self.app)
         self.app.conf.ADMINS = None
         self.assertFalse(self.app.mail_admins('Subject', 'Body'))
         self.app.conf.ADMINS = [('George Costanza', 'george@vandelay.com')]

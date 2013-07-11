@@ -56,8 +56,8 @@ class CursesMonitor(object):  # pragma: no cover
     greet = 'celery events {0}'.format(VERSION_BANNER)
     info_str = 'Info: '
 
-    def __init__(self, state, keymap=None, app=None):
-        self.app = app_or_default(app)
+    def __init__(self, state, app, keymap=None):
+        self.app = app
         self.keymap = keymap or self.keymap
         self.state = state
         default_keymap = {'J': self.move_selection_down,
@@ -521,7 +521,7 @@ def capture_events(app, state, display):  # pragma: no cover
 def evtop(app=None):  # pragma: no cover
     app = app_or_default(app)
     state = app.events.State()
-    display = CursesMonitor(state, app=app)
+    display = CursesMonitor(state, app)
     display.init_screen()
     refresher = DisplayThread(display)
     refresher.start()

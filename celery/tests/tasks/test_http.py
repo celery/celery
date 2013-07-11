@@ -13,7 +13,7 @@ from kombu.utils.encoding import from_utf8
 
 from celery.five import StringIO, items
 from celery.task import http
-from celery.tests.case import Case, eager_tasks
+from celery.tests.case import AppCase, Case, eager_tasks
 
 
 @contextmanager
@@ -96,7 +96,7 @@ class test_MutableURL(Case):
         self.assertEqual(url.query, {'zzz': 'xxx'})
 
 
-class test_HttpDispatch(Case):
+class test_HttpDispatch(AppCase):
 
     def test_dispatch_success(self):
         with mock_urlopen(success_response(100)):
@@ -139,16 +139,16 @@ class test_HttpDispatch(Case):
             self.assertEqual(d.dispatch(), 100)
 
 
-class test_URL(Case):
+class test_URL(AppCase):
 
     def test_URL_get_async(self):
-        with eager_tasks():
+        with eager_tasks(self.app):
             with mock_urlopen(success_response(100)):
                 d = http.URL('http://example.com/mul').get_async(x=10, y=10)
                 self.assertEqual(d.get(), 100)
 
     def test_URL_post_async(self):
-        with eager_tasks():
+        with eager_tasks(self.app):
             with mock_urlopen(success_response(100)):
                 d = http.URL('http://example.com/mul').post_async(x=10, y=10)
                 self.assertEqual(d.get(), 100)

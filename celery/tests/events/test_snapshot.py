@@ -2,10 +2,9 @@ from __future__ import absolute_import
 
 from mock import patch
 
-from celery.app import app_or_default
 from celery.events import Events
 from celery.events.snapshot import Polaroid, evcam
-from celery.tests.case import Case
+from celery.tests.case import AppCase
 
 
 class TRef(object):
@@ -28,10 +27,9 @@ class MockTimer(object):
 timer = MockTimer()
 
 
-class test_Polaroid(Case):
+class test_Polaroid(AppCase):
 
-    def setUp(self):
-        self.app = app_or_default()
+    def setup(self):
         self.state = self.app.events.State()
 
     def test_constructor(self):
@@ -99,7 +97,7 @@ class test_Polaroid(Case):
         self.assertEqual(shutter_signal_sent[0], 1)
 
 
-class test_evcam(Case):
+class test_evcam(AppCase):
 
     class MockReceiver(object):
         raise_keyboard_interrupt = False
@@ -113,12 +111,11 @@ class test_evcam(Case):
         def Receiver(self, *args, **kwargs):
             return test_evcam.MockReceiver()
 
-    def setUp(self):
-        self.app = app_or_default()
+    def setup(self):
         self.prev, self.app.events = self.app.events, self.MockEvents()
         self.app.events.app = self.app
 
-    def tearDown(self):
+    def teardown(self):
         self.app.events = self.prev
 
     def test_evcam(self):

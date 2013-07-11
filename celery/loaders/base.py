@@ -64,9 +64,8 @@ class BaseLoader(object):
 
     _conf = None
 
-    def __init__(self, app=None, **kwargs):
-        from celery.app import app_or_default
-        self.app = app_or_default(app)
+    def __init__(self, app, **kwargs):
+        self.app = app
         self.task_modules = set()
 
     def now(self, utc=True):

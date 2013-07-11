@@ -18,7 +18,6 @@ from itertools import count
 
 from amqp import Message
 
-from celery.app import app_or_default
 from celery.utils.functional import padlist
 
 from celery.bin.base import Command
@@ -328,7 +327,7 @@ class AMQPAdmin(object):
     Shell = AMQShell
 
     def __init__(self, *args, **kwargs):
-        self.app = app_or_default(kwargs.get('app'))
+        self.app = kwargs['app']
         self.out = kwargs.setdefault('out', sys.stderr)
         self.silent = kwargs.get('silent')
         self.args = args

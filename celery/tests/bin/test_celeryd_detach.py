@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from mock import Mock, patch
 
-from celery import current_app
+from celery.platforms import IS_WINDOWS
 from celery.bin.celeryd_detach import (
     detach,
     detached_celeryd,
@@ -12,7 +12,7 @@ from celery.bin.celeryd_detach import (
 from celery.tests.case import Case, override_stdouts
 
 
-if not current_app.IS_WINDOWS:
+if not IS_WINDOWS:
     class test_detached(Case):
 
         @patch('celery.bin.celeryd_detach.detached')

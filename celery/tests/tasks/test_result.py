@@ -23,11 +23,6 @@ from celery.tests.case import AppCase
 from celery.tests.case import skip_if_quick
 
 
-@task()
-def mytask():
-    pass
-
-
 def mock_task(name, state, result):
     return dict(id=uuid(), name=name, state=state, result=result)
 
@@ -62,6 +57,11 @@ class test_AsyncResult(AppCase):
 
         for task in (self.task1, self.task2, self.task3, self.task4):
             save_result(self.app, task)
+
+        @self.app.task()
+        def mytask():
+            pass
+        self.mytask = mytask
 
     def test_compat_properties(self):
         x = self.app.AsyncResult('1')
@@ -153,10 +153,10 @@ class test_AsyncResult(AppCase):
         self.assertFalse(self.app.AsyncResult('1') == object())
 
     def test_reduce(self):
-        a1 = self.app.AsyncResult('uuid', task_name=mytask.name)
+        a1 = self.app.AsyncResult('uuid', task_name=self.mytask.name)
         restored = pickle.loads(pickle.dumps(a1))
         self.assertEqual(restored.id, 'uuid')
-        self.assertEqual(restored.task_name, mytask.name)
+        self.assertEqual(restored.task_name, self.mytask.name)
 
         a2 = self.app.AsyncResult('uuid')
         self.assertEqual(pickle.loads(pickle.dumps(a2)).id, 'uuid')
@@ -658,16 +658,17 @@ class test_pending_Group(AppCase):
             self.ts.join(timeout=1)
 
 
-class RaisingTask(Task):
-
-    def run(self, x, y):
-        raise KeyError('xy')
-
-
 class test_EagerResult(AppCase):
 
+    def setup(self):
+
+        @self.app.task
+        def raising(x, y):
+            raise KeyError(x, y)
+        self.raising = raising
+
     def test_wait_raises(self):
-        res = RaisingTask.apply(args=[3, 3])
+        res = self.raising.apply(args=[3, 3])
         with self.assertRaises(KeyError):
             res.wait()
         self.assertTrue(res.wait(propagate=False))
@@ -683,7 +684,7 @@ class test_EagerResult(AppCase):
         res.forget()
 
     def test_revoke(self):
-        res = RaisingTask.apply(args=[3, 3])
+        res = self.raising.apply(args=[3, 3])
         self.assertFalse(res.revoke())
 
 

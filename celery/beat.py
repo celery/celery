@@ -25,7 +25,6 @@ from . import __version__
 from . import platforms
 from . import signals
 from . import current_app
-from .app import app_or_default
 from .five import items, reraise, values
 from .schedules import maybe_schedule, crontab
 from .utils.imports import instantiate
@@ -135,7 +134,6 @@ class Scheduler(object):
     :keyword max_interval: see :attr:`max_interval`.
 
     """
-
     Entry = ScheduleEntry
 
     #: The schedule dict/shelve.
@@ -151,9 +149,9 @@ class Scheduler(object):
 
     logger = logger  # compat
 
-    def __init__(self, schedule=None, max_interval=None,
-                 app=None, Publisher=None, lazy=False, **kwargs):
-        app = self.app = app_or_default(app)
+    def __init__(self, app, schedule=None, max_interval=None,
+                 Publisher=None, lazy=False, **kwargs):
+        self.app = app
         self.data = maybe_promise({} if schedule is None else schedule)
         self.max_interval = (max_interval
                              or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
@@ -398,9 +396,9 @@ class PersistentScheduler(Scheduler):
 class Service(object):
     scheduler_cls = PersistentScheduler
 
-    def __init__(self, max_interval=None, schedule_filename=None,
-                 scheduler_cls=None, app=None):
-        app = self.app = app_or_default(app)
+    def __init__(self, app, max_interval=None, schedule_filename=None,
+                 scheduler_cls=None):
+        self.app = app
         self.max_interval = (max_interval
                              or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL)
         self.scheduler_cls = scheduler_cls or self.scheduler_cls

@@ -23,7 +23,6 @@ from celery.five import Empty, range, Queue as FastQueue
 from celery.task import task as task_dec
 from celery.task import periodic_task as periodic_task_dec
 from celery.utils import uuid
-from celery.worker import WorkController
 from celery.worker import components
 from celery.worker import consumer
 from celery.worker.consumer import Consumer as __Consumer
@@ -243,7 +242,7 @@ class test_Consumer(AppCase):
         self.timer.stop()
 
     def test_info(self):
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.task_consumer = Mock()
         l.qos = QoS(l.task_consumer.qos, 10)
         l.connection = Mock()
@@ -257,12 +256,12 @@ class test_Consumer(AppCase):
         self.assertTrue(info['broker'])
 
     def test_start_when_closed(self):
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.blueprint.state = CLOSE
         l.start()
 
     def test_connection(self):
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
 
         l.blueprint.start(l)
         self.assertIsInstance(l.connection, Connection)
@@ -287,7 +286,7 @@ class test_Consumer(AppCase):
         self.assertIsNone(l.task_consumer)
 
     def test_close_connection(self):
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.blueprint.state = RUN
         step = find_step(l, consumer.Connection)
         conn = l.connection = Mock()
@@ -295,7 +294,7 @@ class test_Consumer(AppCase):
         self.assertTrue(conn.close.called)
         self.assertIsNone(l.connection)
 
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         eventer = l.event_dispatcher = Mock()
         eventer.enabled = True
         heart = l.heart = MockHeart()
@@ -309,7 +308,7 @@ class test_Consumer(AppCase):
 
     @patch('celery.worker.consumer.warn')
     def test_receive_message_unknown(self, warn):
-        l = _MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.steps.pop()
         backend = Mock()
         m = create_message(backend, unknown={'baz': '!!!'})
@@ -323,7 +322,7 @@ class test_Consumer(AppCase):
     @patch('celery.worker.strategy.to_timestamp')
     def test_receive_message_eta_OverflowError(self, to_timestamp):
         to_timestamp.side_effect = OverflowError()
-        l = _MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.steps.pop()
         m = create_message(Mock(), task=foo_task.name,
                            args=('2, 2'),
@@ -340,7 +339,7 @@ class test_Consumer(AppCase):
 
     @patch('celery.worker.consumer.error')
     def test_receive_message_InvalidTaskError(self, error):
-        l = _MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.event_dispatcher = Mock()
         l.steps.pop()
         m = create_message(Mock(), task=foo_task.name,
@@ -354,7 +353,7 @@ class test_Consumer(AppCase):
 
     @patch('celery.worker.consumer.crit')
     def test_on_decode_error(self, crit):
-        l = Consumer(self.buffer.put, timer=self.timer)
+        l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
 
         class MockMessage(Mock):
             content_type = 'application/x-msgpack'
@@ -380,7 +379,7 @@ class test_Consumer(AppCase):
         return l.task_consumer.register_callback.call_args[0][0]
 
     def test_receieve_message(self):
-        l = Consumer(self.buffer.put, timer=self.timer)
+        l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
         l.event_dispatcher = Mock()
         m = create_message(Mock(), task=foo_task.name,
                            args=[2, 4, 8], kwargs={})
@@ -406,7 +405,7 @@ class test_Consumer(AppCase):
                 raise SyntaxError('bar')
 
         l = MockConsumer(self.buffer.put, timer=self.timer,
-                         send_events=False, pool=BasePool())
+                         send_events=False, pool=BasePool(), app=self.app)
         l.channel_errors = (KeyError, )
         with self.assertRaises(KeyError):
             l.start()
@@ -424,7 +423,7 @@ class test_Consumer(AppCase):
                 raise SyntaxError('bar')
 
         l = MockConsumer(self.buffer.put, timer=self.timer,
-                         send_events=False, pool=BasePool())
+                         send_events=False, pool=BasePool(), app=self.app)
 
         l.connection_errors = (KeyError, )
         self.assertRaises(SyntaxError, l.start)
@@ -439,7 +438,7 @@ class test_Consumer(AppCase):
                 self.obj.connection = None
                 raise socket.timeout(10)
 
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.connection = Connection()
         l.task_consumer = Mock()
         l.connection.obj = l
@@ -455,7 +454,7 @@ class test_Consumer(AppCase):
                 self.obj.connection = None
                 raise socket.error('foo')
 
-        l = Consumer(self.buffer.put, timer=self.timer)
+        l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
         l.blueprint.state = RUN
         c = l.connection = Connection()
         l.connection.obj = l
@@ -476,7 +475,7 @@ class test_Consumer(AppCase):
             def drain_events(self, **kwargs):
                 self.obj.connection = None
 
-        l = Consumer(self.buffer.put, timer=self.timer)
+        l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
         l.connection = Connection()
         l.connection.obj = l
         l.task_consumer = Mock()
@@ -494,7 +493,7 @@ class test_Consumer(AppCase):
         l.task_consumer.qos.assert_called_with(prefetch_count=9)
 
     def test_ignore_errors(self):
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.connection_errors = (AttributeError, KeyError, )
         l.channel_errors = (SyntaxError, )
         ignore_errors(l, Mock(side_effect=AttributeError('foo')))
@@ -505,7 +504,7 @@ class test_Consumer(AppCase):
 
     def test_apply_eta_task(self):
         from celery.worker import state
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.qos = QoS(None, 10)
 
         task = object()
@@ -516,7 +515,7 @@ class test_Consumer(AppCase):
         self.assertIs(self.buffer.get_nowait(), task)
 
     def test_receieve_message_eta_isoformat(self):
-        l = _MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.steps.pop()
         m = create_message(
             Mock(), task=foo_task.name,
@@ -545,7 +544,7 @@ class test_Consumer(AppCase):
         l.timer.stop()
 
     def test_pidbox_callback(self):
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         con = find_step(l, consumer.Control).box
         con.node = Mock()
         con.reset = Mock()
@@ -565,7 +564,7 @@ class test_Consumer(AppCase):
         self.assertTrue(con.reset.called)
 
     def test_revoke(self):
-        l = _MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.steps.pop()
         backend = Mock()
         id = uuid()
@@ -579,7 +578,7 @@ class test_Consumer(AppCase):
         self.assertTrue(self.buffer.empty())
 
     def test_receieve_message_not_registered(self):
-        l = _MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.steps.pop()
         backend = Mock()
         m = create_message(backend, task='x.X.31x', args=[2, 4, 8], kwargs={})
@@ -594,7 +593,7 @@ class test_Consumer(AppCase):
     @patch('celery.worker.consumer.warn')
     @patch('celery.worker.consumer.logger')
     def test_receieve_message_ack_raises(self, logger, warn):
-        l = Consumer(self.buffer.put, timer=self.timer)
+        l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
         backend = Mock()
         m = create_message(backend, args=[2, 4, 8], kwargs={})
 
@@ -612,7 +611,7 @@ class test_Consumer(AppCase):
         self.assertTrue(logger.critical.call_count)
 
     def test_receive_message_eta(self):
-        l = _MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.steps.pop()
         l.event_dispatcher = Mock()
         l.event_dispatcher._outbound_buffer = deque()
@@ -646,7 +645,7 @@ class test_Consumer(AppCase):
             self.buffer.get_nowait()
 
     def test_reset_pidbox_node(self):
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         con = find_step(l, consumer.Control).box
         con.node = Mock()
         chan = con.node.channel = Mock()
@@ -660,7 +659,8 @@ class test_Consumer(AppCase):
         from celery.worker.pidbox import gPidbox
         pool = Mock()
         pool.is_green = True
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer, pool=pool)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, pool=pool,
+                            app=self.app)
         con = find_step(l, consumer.Control)
         self.assertIsInstance(con.box, gPidbox)
         con.start(l)
@@ -671,7 +671,8 @@ class test_Consumer(AppCase):
     def test__green_pidbox_node(self):
         pool = Mock()
         pool.is_green = True
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer, pool=pool)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, pool=pool,
+                            app=self.app)
         l.node = Mock()
         controller = find_step(l, consumer.Control)
 
@@ -733,7 +734,7 @@ class test_Consumer(AppCase):
     @patch('kombu.connection.Connection._establish_connection')
     @patch('kombu.utils.sleep')
     def test_connect_errback(self, sleep, connect):
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         from kombu.transport.memory import Transport
         Transport.connection_errors = (StdChannelError, )
 
@@ -746,7 +747,7 @@ class test_Consumer(AppCase):
         connect.assert_called_with()
 
     def test_stop_pidbox_node(self):
-        l = MyKombuConsumer(self.buffer.put, timer=self.timer)
+        l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         cont = find_step(l, consumer.Control)
         cont._node_stopped = Event()
         cont._node_shutdown = Event()
@@ -771,7 +772,7 @@ class test_Consumer(AppCase):
 
         init_callback = Mock()
         l = _Consumer(self.buffer.put, timer=self.timer,
-                      init_callback=init_callback)
+                      init_callback=init_callback, app=self.app)
         l.task_consumer = Mock()
         l.broadcast_consumer = Mock()
         l.qos = _QoS()
@@ -792,7 +793,7 @@ class test_Consumer(AppCase):
         self.assertEqual(l.qos.prev, l.qos.value)
 
         init_callback.reset_mock()
-        l = _Consumer(self.buffer.put, timer=self.timer,
+        l = _Consumer(self.buffer.put, timer=self.timer, app=self.app,
                       send_events=False, init_callback=init_callback)
         l.qos = _QoS()
         l.task_consumer = Mock()
@@ -804,7 +805,7 @@ class test_Consumer(AppCase):
         self.assertTrue(l.loop.call_count)
 
     def test_reset_connection_with_no_node(self):
-        l = Consumer(self.buffer.put, timer=self.timer)
+        l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
         l.steps.pop()
         self.assertEqual(None, l.pool)
         l.blueprint.start(l)
@@ -921,7 +922,7 @@ class test_WorkController(AppCase):
         self.assertTrue(worker.steps)
 
     def test_with_embedded_beat(self):
-        worker = WorkController(concurrency=1, loglevel=0, beat=True)
+        worker = self.app.WorkController(concurrency=1, loglevel=0, beat=True)
         self.assertTrue(worker.beat)
         self.assertIn(worker.beat, [w.obj for w in worker.steps])
 
@@ -933,7 +934,7 @@ class test_WorkController(AppCase):
         self.assertTrue(worker.autoscaler)
 
     def test_dont_stop_or_terminate(self):
-        worker = WorkController(concurrency=1, loglevel=0)
+        worker = self.app.WorkController(concurrency=1, loglevel=0)
         worker.stop()
         self.assertNotEqual(worker.blueprint.state, CLOSE)
         worker.terminate()
@@ -950,7 +951,7 @@ class test_WorkController(AppCase):
             worker.pool.signal_safe = sigsafe
 
     def test_on_timer_error(self):
-        worker = WorkController(concurrency=1, loglevel=0)
+        worker = self.app.WorkController(concurrency=1, loglevel=0)
 
         try:
             raise KeyError('foo')
@@ -960,7 +961,7 @@ class test_WorkController(AppCase):
             self.assertIn('KeyError', msg % args)
 
     def test_on_timer_tick(self):
-        worker = WorkController(concurrency=1, loglevel=10)
+        worker = self.app.WorkController(concurrency=1, loglevel=10)
 
         components.Timer(worker).on_timer_tick(30.0)
         xargs = self.comp_logger.debug.call_args[0]
@@ -974,7 +975,7 @@ class test_WorkController(AppCase):
         backend = Mock()
         m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = Request.from_message(m, m.decode())
+        task = Request.from_message(m, m.decode(), app=self.app)
         worker._process_task(task)
         self.assertEqual(worker.pool.apply_async.call_count, 1)
         worker.pool.stop()
@@ -986,7 +987,7 @@ class test_WorkController(AppCase):
         backend = Mock()
         m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = Request.from_message(m, m.decode())
+        task = Request.from_message(m, m.decode(), app=self.app)
         worker.steps = []
         worker.blueprint.state = RUN
         with self.assertRaises(KeyboardInterrupt):
@@ -1000,7 +1001,7 @@ class test_WorkController(AppCase):
         backend = Mock()
         m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = Request.from_message(m, m.decode())
+        task = Request.from_message(m, m.decode(), app=self.app)
         worker.steps = []
         worker.blueprint.state = RUN
         with self.assertRaises(SystemExit):
@@ -1014,7 +1015,7 @@ class test_WorkController(AppCase):
         backend = Mock()
         m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = Request.from_message(m, m.decode())
+        task = Request.from_message(m, m.decode(), app=self.app)
         worker._process_task(task)
         worker.pool.stop()
 

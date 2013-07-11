@@ -26,7 +26,7 @@ MONGODB_COLLECTION = 'collection1'
 
 class test_MongoBackend(AppCase):
 
-    def setUp(self):
+    def setup(self):
         if pymongo is None:
             raise SkipTest('pymongo is not installed.')
 
@@ -36,9 +36,9 @@ class test_MongoBackend(AppCase):
         R['Binary'], module.Binary = module.Binary, Mock()
         R['datetime'], datetime.datetime = datetime.datetime, Mock()
 
-        self.backend = MongoBackend()
+        self.backend = MongoBackend(app=self.app)
 
-    def tearDown(self):
+    def teardown(self):
         MongoBackend.encode = self._reset['encode']
         MongoBackend.decode = self._reset['decode']
         module.Binary = self._reset['Binary']
@@ -53,7 +53,7 @@ class test_MongoBackend(AppCase):
         prev, module.pymongo = module.pymongo, None
         try:
             with self.assertRaises(ImproperlyConfigured):
-                MongoBackend()
+                MongoBackend(app=self.app)
         finally:
             module.pymongo = prev
 
@@ -69,14 +69,14 @@ class test_MongoBackend(AppCase):
         MongoBackend(app=celery)
 
     def test_restore_group_no_entry(self):
-        x = MongoBackend()
+        x = MongoBackend(app=self.app)
         x.collection = Mock()
         fo = x.collection.find_one = Mock()
         fo.return_value = None
         self.assertIsNone(x._restore_group('1f3fab'))
 
     def test_reduce(self):
-        x = MongoBackend()
+        x = MongoBackend(app=self.app)
         self.assertTrue(loads(dumps(x)))
 
     def test_get_connection_connection_exists(self):
@@ -311,7 +311,7 @@ class test_MongoBackend(AppCase):
         mock_collection.assert_called_once()
 
     def test_get_database_authfailure(self):
-        x = MongoBackend()
+        x = MongoBackend(app=self.app)
         x._get_connection = Mock()
         conn = x._get_connection.return_value = {}
         db = conn[x.mongodb_database] = Mock()

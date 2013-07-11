@@ -16,7 +16,6 @@ import socket
 import sys
 
 from celery import VERSION_BANNER, platforms, beat
-from celery.app import app_or_default
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
 from celery.utils.timeutils import humanize_seconds
@@ -44,7 +43,7 @@ class Beat(object):
                  scheduler_cls=None, redirect_stdouts=None,
                  redirect_stdouts_level=None, **kwargs):
         """Starts the beat task scheduler."""
-        self.app = app = app_or_default(app or self.app)
+        self.app = app = app or self.app
         self.loglevel = self._getopt('log_level', loglevel)
         self.logfile = self._getopt('log_file', logfile)
         self.schedule = self._getopt('schedule_filename', schedule)

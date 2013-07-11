@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from nose import SkipTest
 
-from celery.tests.case import Case
+from celery.tests.case import AppCase
 
 
 class MockWindow(object):
@@ -11,16 +11,16 @@ class MockWindow(object):
         return self.y, self.x
 
 
-class test_CursesDisplay(Case):
+class test_CursesDisplay(AppCase):
 
-    def setUp(self):
+    def setup(self):
         try:
             import curses  # noqa
         except ImportError:
             raise SkipTest('curses monitor requires curses')
 
         from celery.events import cursesmon
-        self.monitor = cursesmon.CursesMonitor(object())
+        self.monitor = cursesmon.CursesMonitor(object(), app=self.app)
         self.win = MockWindow()
         self.monitor.win = self.win
 

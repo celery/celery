@@ -15,7 +15,7 @@ from celery.tests.case import AppCase, body_from_sig
 
 class X(object):
 
-    def __init__(self, heartbeat=None, on_task=None):
+    def __init__(self, app, heartbeat=None, on_task=None):
         (
             self.obj,
             self.connection,
@@ -46,7 +46,7 @@ class X(object):
         self.hub.fire_timers.return_value = 1.7
         self.Hub = self.hub
         # need this for create_task_handler
-        _consumer = Consumer(Mock(), timer=Mock())
+        _consumer = Consumer(Mock(), timer=Mock(), app=app)
         self.obj.create_task_handler = _consumer.create_task_handler
         self.on_unknown_message = self.obj.on_unknown_message = Mock(
             name='on_unknown_message',
@@ -105,7 +105,7 @@ class test_asynloop(AppCase):
         self.add = add
 
     def test_setup_heartbeat(self):
-        x = X(heartbeat=10)
+        x = X(self.app, heartbeat=10)
         x.blueprint.state = CLOSE
         asynloop(*x.args)
         x.consumer.consume.assert_called_with()
@@ -115,7 +115,7 @@ class test_asynloop(AppCase):
         )
 
     def task_context(self, sig, **kwargs):
-        x, on_task = get_task_callback(**kwargs)
+        x, on_task = get_task_callback(self.app, **kwargs)
         body = body_from_sig(self.app, sig)
         message = Mock()
         strategy = x.obj.strategies[sig.task] = Mock()
@@ -153,7 +153,7 @@ class test_asynloop(AppCase):
         x.on_invalid_task.assert_called_with(body, msg, exc)
 
     def test_should_terminate(self):
-        x = X()
+        x = X(self.app)
         # XXX why aren't the errors propagated?!?
         state.should_terminate = True
         try:
@@ -163,7 +163,7 @@ class test_asynloop(AppCase):
             state.should_terminate = False
 
     def test_should_terminate_hub_close_raises(self):
-        x = X()
+        x = X(self.app)
         # XXX why aren't the errors propagated?!?
         state.should_terminate = True
         x.hub.close.side_effect = MemoryError()
@@ -174,7 +174,7 @@ class test_asynloop(AppCase):
             state.should_terminate = False
 
     def test_should_stop(self):
-        x = X()
+        x = X(self.app)
         state.should_stop = True
         try:
             with self.assertRaises(SystemExit):
@@ -183,13 +183,13 @@ class test_asynloop(AppCase):
             state.should_stop = False
 
     def test_updates_qos(self):
-        x = X()
+        x = X(self.app)
         x.qos.prev = 3
         x.qos.value = 3
         asynloop(*x.args, sleep=x.closer())
         self.assertFalse(x.qos.update.called)
 
-        x = X()
+        x = X(self.app)
         x.qos.prev = 1
         x.qos.value = 6
         asynloop(*x.args, sleep=x.closer())
@@ -198,7 +198,7 @@ class test_asynloop(AppCase):
         x.connection.transport.on_poll_start.assert_called_with()
 
     def test_poll_empty(self):
-        x = X()
+        x = X(self.app)
         x.hub.readers = {6: Mock()}
         x.close_then_error(x.connection.drain_nowait)
         x.hub.fire_timers.return_value = 33.37
@@ -209,7 +209,7 @@ class test_asynloop(AppCase):
         x.connection.transport.on_poll_empty.assert_called_with()
 
     def test_poll_readable(self):
-        x = X()
+        x = X(self.app)
         x.hub.readers = {6: Mock()}
         x.close_then_error(x.connection.drain_nowait, mod=4)
         x.hub.poller.poll.return_value = [(6, READ)]
@@ -219,7 +219,7 @@ class test_asynloop(AppCase):
         self.assertTrue(x.hub.poller.poll.called)
 
     def test_poll_readable_raises_Empty(self):
-        x = X()
+        x = X(self.app)
         x.hub.readers = {6: Mock()}
         x.close_then_error(x.connection.drain_nowait)
         x.hub.poller.poll.return_value = [(6, READ)]
@@ -230,7 +230,7 @@ class test_asynloop(AppCase):
         self.assertTrue(x.hub.poller.poll.called)
 
     def test_poll_writable(self):
-        x = X()
+        x = X(self.app)
         x.hub.writers = {6: Mock()}
         x.close_then_error(x.connection.drain_nowait)
         x.hub.poller.poll.return_value = [(6, WRITE)]
@@ -240,7 +240,7 @@ class test_asynloop(AppCase):
         self.assertTrue(x.hub.poller.poll.called)
 
     def test_poll_writable_none_registered(self):
-        x = X()
+        x = X(self.app)
         x.hub.writers = {6: Mock()}
         x.close_then_error(x.connection.drain_nowait)
         x.hub.poller.poll.return_value = [(7, WRITE)]
@@ -249,7 +249,7 @@ class test_asynloop(AppCase):
         self.assertTrue(x.hub.poller.poll.called)
 
     def test_poll_unknown_event(self):
-        x = X()
+        x = X(self.app)
         x.hub.writers = {6: Mock()}
         x.close_then_error(x.connection.drain_nowait)
         x.hub.poller.poll.return_value = [(6, 0)]
@@ -258,7 +258,7 @@ class test_asynloop(AppCase):
         self.assertTrue(x.hub.poller.poll.called)
 
     def test_poll_keep_draining_disabled(self):
-        x = X()
+        x = X(self.app)
         x.hub.writers = {6: Mock()}
         poll = x.hub.poller.poll
 
@@ -275,7 +275,7 @@ class test_asynloop(AppCase):
         self.assertFalse(x.connection.drain_nowait.called)
 
     def test_poll_err_writable(self):
-        x = X()
+        x = X(self.app)
         x.hub.writers = {6: Mock()}
         x.close_then_error(x.connection.drain_nowait)
         x.hub.poller.poll.return_value = [(6, ERR)]
@@ -285,7 +285,7 @@ class test_asynloop(AppCase):
         self.assertTrue(x.hub.poller.poll.called)
 
     def test_poll_write_generator(self):
-        x = X()
+        x = X(self.app)
 
         def Gen():
             yield 1
@@ -301,7 +301,7 @@ class test_asynloop(AppCase):
         self.assertFalse(x.hub.remove.called)
 
     def test_poll_write_generator_stopped(self):
-        x = X()
+        x = X(self.app)
 
         def Gen():
             raise StopIteration()
@@ -316,7 +316,7 @@ class test_asynloop(AppCase):
         x.hub.remove.assert_called_with(6)
 
     def test_poll_write_generator_raises(self):
-        x = X()
+        x = X(self.app)
 
         def Gen():
             raise ValueError('foo')
@@ -331,7 +331,7 @@ class test_asynloop(AppCase):
         x.hub.remove.assert_called_with(6)
 
     def test_poll_err_readable(self):
-        x = X()
+        x = X(self.app)
         x.hub.readers = {6: Mock()}
         x.close_then_error(x.connection.drain_nowait)
         x.hub.poller.poll.return_value = [(6, ERR)]
@@ -341,7 +341,7 @@ class test_asynloop(AppCase):
         self.assertTrue(x.hub.poller.poll.called)
 
     def test_poll_raises_ValueError(self):
-        x = X()
+        x = X(self.app)
         x.hub.readers = {6: Mock()}
         x.close_then_error(x.connection.drain_nowait)
         x.hub.poller.poll.side_effect = ValueError()
@@ -352,14 +352,14 @@ class test_asynloop(AppCase):
 class test_synloop(AppCase):
 
     def test_timeout_ignored(self):
-        x = X()
+        x = X(self.app)
         x.timeout_then_error(x.connection.drain_events)
         with self.assertRaises(socket.error):
             synloop(*x.args)
         self.assertEqual(x.connection.drain_events.call_count, 2)
 
     def test_updates_qos_when_changed(self):
-        x = X()
+        x = X(self.app)
         x.qos.prev = 2
         x.qos.value = 2
         x.timeout_then_error(x.connection.drain_events)
@@ -374,6 +374,6 @@ class test_synloop(AppCase):
         x.qos.update.assert_called_with()
 
     def test_ignores_socket_errors_when_closed(self):
-        x = X()
+        x = X(self.app)
         x.close_then_error(x.connection.drain_events)
         self.assertIsNone(synloop(*x.args))

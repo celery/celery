@@ -4,12 +4,11 @@ import anyjson
 
 from mock import Mock, patch
 
-from celery import current_app
 from celery.task import Task
 from celery.task.sets import subtask, TaskSet
 from celery.canvas import Signature
 
-from celery.tests.case import Case
+from celery.tests.case import AppCase
 
 
 class MockTask(Task):
@@ -27,7 +26,7 @@ class MockTask(Task):
         return (args, kwargs, options)
 
 
-class test_subtask(Case):
+class test_subtask(AppCase):
 
     def test_behaves_like_type(self):
         s = subtask('tasks.add', (2, 2), {'cache': True},
@@ -104,15 +103,15 @@ class test_subtask(Case):
         self.assertDictEqual(dict(cls(*args)), dict(s))
 
 
-class test_TaskSet(Case):
+class test_TaskSet(AppCase):
 
     def test_task_arg_can_be_iterable__compat(self):
         ts = TaskSet([MockTask.subtask((i, i))
-                      for i in (2, 4, 8)])
+                      for i in (2, 4, 8)], app=self.app)
         self.assertEqual(len(ts), 3)
 
     def test_respects_ALWAYS_EAGER(self):
-        app = current_app
+        app = self.app
 
         class MockTaskSet(TaskSet):
             applied = 0
@@ -122,6 +121,7 @@ class test_TaskSet(Case):
 
         ts = MockTaskSet(
             [MockTask.subtask((i, i)) for i in (2, 4, 8)],
+            app=self.app,
         )
         app.conf.CELERY_ALWAYS_EAGER = True
         try:
@@ -145,7 +145,7 @@ class test_TaskSet(Case):
                 applied[0] += 1
 
         ts = TaskSet([mocksubtask(MockTask, (i, i))
-                      for i in (2, 4, 8)])
+                      for i in (2, 4, 8)], app=self.app)
         ts.apply_async()
         self.assertEqual(applied[0], 3)
 
@@ -158,9 +158,10 @@ class test_TaskSet(Case):
 
         # setting current_task
 
-        @current_app.task
+        @self.app.task
         def xyz():
             pass
+
         from celery._state import _task_stack
         xyz.push_request()
         _task_stack.push(xyz)
@@ -180,21 +181,21 @@ class test_TaskSet(Case):
                 applied[0] += 1
 
         ts = TaskSet([mocksubtask(MockTask, (i, i))
-                      for i in (2, 4, 8)])
+                      for i in (2, 4, 8)], app=self.app)
         ts.apply()
         self.assertEqual(applied[0], 3)
 
     def test_set_app(self):
-        ts = TaskSet([])
+        ts = TaskSet([], app=self.app)
         ts.app = 42
         self.assertEqual(ts.app, 42)
 
     def test_set_tasks(self):
-        ts = TaskSet([])
+        ts = TaskSet([], app=self.app)
         ts.tasks = [1, 2, 3]
         self.assertEqual(ts, [1, 2, 3])
 
     def test_set_Publisher(self):
-        ts = TaskSet([])
+        ts = TaskSet([], app=self.app)
         ts.Publisher = 42
         self.assertEqual(ts.Publisher, 42)

@@ -8,7 +8,6 @@ from contextlib import contextmanager
 from kombu.utils.encoding import str_to_bytes
 from mock import Mock, patch
 
-from celery import current_app
 from celery import states
 from celery.backends.cache import CacheBackend, DummyClient
 from celery.exceptions import ImproperlyConfigured
@@ -67,13 +66,13 @@ class test_CacheBackend(AppCase):
             self.assertIsInstance(self.tb.get_result(self.tid), KeyError)
 
     def test_on_chord_apply(self):
-        tb = CacheBackend(backend='memory://')
+        tb = CacheBackend(backend='memory://', app=self.app)
         gid, res = uuid(), [AsyncResult(uuid()) for _ in range(3)]
         tb.on_chord_apply(gid, {}, result=res)
 
     @patch('celery.result.GroupResult')
     def test_on_chord_part_return(self, setresult):
-        tb = CacheBackend(backend='memory://')
+        tb = CacheBackend(backend='memory://', app=self.app)
 
         deps = Mock()
         deps.__len__ = Mock()
@@ -82,7 +81,7 @@ class test_CacheBackend(AppCase):
         task = Mock()
         task.name = 'foobarbaz'
         try:
-            current_app.tasks['foobarbaz'] = task
+            self.app.tasks['foobarbaz'] = task
             task.request.chord = subtask(task)
 
             gid, res = uuid(), [AsyncResult(uuid()) for _ in range(3)]
@@ -98,7 +97,7 @@ class test_CacheBackend(AppCase):
             deps.delete.assert_called_with()
 
         finally:
-            current_app.tasks.pop('foobarbaz')
+            self.app.tasks.pop('foobarbaz')
 
     def test_mget(self):
         self.tb.set('foo', 1)
@@ -117,12 +116,12 @@ class test_CacheBackend(AppCase):
         self.tb.process_cleanup()
 
     def test_expires_as_int(self):
-        tb = CacheBackend(backend='memory://', expires=10)
+        tb = CacheBackend(backend='memory://', expires=10, app=self.app)
         self.assertEqual(tb.expires, 10)
 
     def test_unknown_backend_raises_ImproperlyConfigured(self):
         with self.assertRaises(ImproperlyConfigured):
-            CacheBackend(backend='unknown://')
+            CacheBackend(backend='unknown://', app=self.app)
 
 
 class MyMemcachedStringEncodingError(Exception):
@@ -218,7 +217,7 @@ class test_memcache_key(AppCase, MockCacheMixin):
                     from celery.backends import cache
                     cache._imp = [None]
                     task_id, result = string(uuid()), 42
-                    b = cache.CacheBackend(backend='memcache')
+                    b = cache.CacheBackend(backend='memcache', app=self.app)
                     b.store_result(task_id, result, status=states.SUCCESS)
                     self.assertEqual(b.get_result(task_id), result)
 
@@ -229,7 +228,7 @@ class test_memcache_key(AppCase, MockCacheMixin):
                     from celery.backends import cache
                     cache._imp = [None]
                     task_id, result = str_to_bytes(uuid()), 42
-                    b = cache.CacheBackend(backend='memcache')
+                    b = cache.CacheBackend(backend='memcache', app=self.app)
                     b.store_result(task_id, result, status=states.SUCCESS)
                     self.assertEqual(b.get_result(task_id), result)
 
@@ -239,7 +238,7 @@ class test_memcache_key(AppCase, MockCacheMixin):
                 from celery.backends import cache
                 cache._imp = [None]
                 task_id, result = string(uuid()), 42
-                b = cache.CacheBackend(backend='memcache')
+                b = cache.CacheBackend(backend='memcache', app=self.app)
                 b.store_result(task_id, result, status=states.SUCCESS)
                 self.assertEqual(b.get_result(task_id), result)
 
@@ -249,6 +248,6 @@ class test_memcache_key(AppCase, MockCacheMixin):
                 from celery.backends import cache
                 cache._imp = [None]
                 task_id, result = str_to_bytes(uuid()), 42
-                b = cache.CacheBackend(backend='memcache')
+                b = cache.CacheBackend(backend='memcache', app=self.app)
                 b.store_result(task_id, result, status=states.SUCCESS)
                 self.assertEqual(b.get_result(task_id), result)

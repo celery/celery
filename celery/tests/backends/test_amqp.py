@@ -10,9 +10,7 @@ from pickle import dumps, loads
 from billiard.einfo import ExceptionInfo
 from mock import patch
 
-from celery import current_app
 from celery import states
-from celery.app import app_or_default
 from celery.backends.amqp import AMQPBackend
 from celery.exceptions import TimeoutError
 from celery.five import Empty, Queue, range
@@ -31,7 +29,7 @@ class test_AMQPBackend(AppCase):
 
     def create_backend(self, **opts):
         opts = dict(dict(serializer='pickle', persistent=False), **opts)
-        return AMQPBackend(**opts)
+        return AMQPBackend(self.app, **opts)
 
     def test_mark_as_done(self):
         tb1 = self.create_backend()
@@ -107,7 +105,7 @@ class test_AMQPBackend(AppCase):
             iterations[0] += 1
             raise KeyError('foo')
 
-        backend = AMQPBackend()
+        backend = AMQPBackend(self.app)
         from celery.app.amqp import TaskProducer
         prod, TaskProducer.publish = TaskProducer.publish, publish
         try:
@@ -172,7 +170,7 @@ class test_AMQPBackend(AppCase):
         class MockBackend(AMQPBackend):
             Queue = MockBinding
 
-        backend = MockBackend()
+        backend = MockBackend(self.app)
         backend._republish = Mock()
 
         yield results, backend, Message
@@ -251,7 +249,7 @@ class test_AMQPBackend(AppCase):
                 pass
 
         b = self.create_backend()
-        with current_app.pool.acquire_channel(block=False) as (_, channel):
+        with self.app.pool.acquire_channel(block=False) as (_, channel):
             binding = b._create_binding(uuid())
             consumer = b.Consumer(channel, binding, no_ack=True)
             with self.assertRaises(socket.timeout):
@@ -296,14 +294,14 @@ class test_AMQPBackend(AppCase):
             def Consumer(*args, **kwargs):
                 raise KeyError('foo')
 
-        b = Backend()
+        b = Backend(self.app)
         with self.assertRaises(KeyError):
             next(b.get_many(['id1']))
 
     def test_get_many_raises_inner_block(self):
         with patch('kombu.connection.Connection.drain_events') as drain:
             drain.side_effect = KeyError('foo')
-            b = AMQPBackend()
+            b = AMQPBackend(self.app)
             with self.assertRaises(KeyError):
                 next(b.get_many(['id1']))
 
@@ -314,13 +312,13 @@ class test_AMQPBackend(AppCase):
                 drain.side_effect = ValueError()
                 raise KeyError('foo')
             drain.side_effect = se
-            b = AMQPBackend()
+            b = AMQPBackend(self.app)
             with self.assertRaises(ValueError):
                 next(b.consume('id1'))
 
     def test_no_expires(self):
         b = self.create_backend(expires=None)
-        app = app_or_default()
+        app = self.app
         prev = app.conf.CELERY_TASK_RESULT_EXPIRES
         app.conf.CELERY_TASK_RESULT_EXPIRES = None
         try:

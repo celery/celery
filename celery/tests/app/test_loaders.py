@@ -70,7 +70,8 @@ class test_LoaderBase(AppCase):
 
     def test_read_configuration_no_env(self):
         self.assertDictEqual(
-            base.BaseLoader().read_configuration('FOO_X_S_WE_WQ_Q_WE'),
+            base.BaseLoader(app=self.app).read_configuration(
+                'FOO_X_S_WE_WQ_Q_WE'),
             {},
         )
 
@@ -146,7 +147,7 @@ class test_LoaderBase(AppCase):
 
     def test_mail_attribute(self):
         from celery.utils import mail
-        loader = base.BaseLoader()
+        loader = base.BaseLoader(app=self.app)
         self.assertIs(loader.mail, mail)
 
     def test_cmdline_config_ValueError(self):
@@ -154,12 +155,12 @@ class test_LoaderBase(AppCase):
             self.loader.cmdline_config_parser(['broker.port=foobar'])
 
 
-class test_DefaultLoader(Case):
+class test_DefaultLoader(AppCase):
 
     @patch('celery.loaders.base.find_module')
     def test_read_configuration_not_a_package(self, find_module):
         find_module.side_effect = NotAPackage()
-        l = default.Loader()
+        l = default.Loader(app=self.app)
         with self.assertRaises(NotAPackage):
             l.read_configuration()
 
@@ -169,7 +170,7 @@ class test_DefaultLoader(Case):
         os.environ['CELERY_CONFIG_MODULE'] = 'celeryconfig.py'
         try:
             find_module.side_effect = NotAPackage()
-            l = default.Loader()
+            l = default.Loader(app=self.app)
             with self.assertRaises(NotAPackage):
                 l.read_configuration()
         finally:
@@ -179,7 +180,7 @@ class test_DefaultLoader(Case):
     def test_read_configuration_importerror(self, find_module):
         default.C_WNOCONF = True
         find_module.side_effect = ImportError()
-        l = default.Loader()
+        l = default.Loader(app=self.app)
         with self.assertWarnsRegex(NotConfigured, r'make sure it exists'):
             l.read_configuration()
         default.C_WNOCONF = False
@@ -198,7 +199,7 @@ class test_DefaultLoader(Case):
         prevconfig = sys.modules.get(configname)
         sys.modules[configname] = celeryconfig
         try:
-            l = default.Loader()
+            l = default.Loader(app=self.app)
             settings = l.read_configuration()
             self.assertTupleEqual(settings.CELERY_IMPORTS, ('os', 'sys'))
             settings = l.read_configuration()
@@ -209,7 +210,7 @@ class test_DefaultLoader(Case):
                 sys.modules[configname] = prevconfig
 
     def test_import_from_cwd(self):
-        l = default.Loader()
+        l = default.Loader(app=self.app)
         old_path = list(sys.path)
         try:
             sys.path.remove(os.getcwd())
@@ -234,7 +235,7 @@ class test_DefaultLoader(Case):
                 raise ImportError(name)
 
         with warnings.catch_warnings(record=True):
-            l = _Loader()
+            l = _Loader(app=self.app)
             self.assertFalse(l.configured)
             context_executed[0] = True
         self.assertTrue(context_executed[0])

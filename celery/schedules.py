@@ -529,7 +529,7 @@ class crontab(schedule):
                     other.day_of_week == self.day_of_week and
                     other.hour == self.hour and
                     other.minute == self.minute)
-        return other is self
+        return NotImplemented
 
     def __ne__(self, other):
         return not self.__eq__(other)

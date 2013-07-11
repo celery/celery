@@ -16,8 +16,6 @@ from kombu.utils import cached_property
 
 from celery.exceptions import DuplicateNodenameWarning
 
-from . import app_or_default
-
 W_DUPNODE = """\
 Received multiple replies from node name {0!r}.
 Please make sure you give each node a unique nodename using the `-n` option.\
@@ -121,7 +119,7 @@ class Control(object):
     Mailbox = Mailbox
 
     def __init__(self, app=None):
-        self.app = app_or_default(app)
+        self.app = app
         self.mailbox = self.Mailbox('celery', type='fanout',
                                     accept=self.app.conf.CELERY_ACCEPT_CONTENT)
 

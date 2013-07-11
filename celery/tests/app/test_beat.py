@@ -379,7 +379,9 @@ class test_PersistentScheduler(AppCase):
         s._store.clear.assert_called_with()
 
     def test_get_schedule(self):
-        s = create_persistent_scheduler()[0](schedule_filename='schedule')
+        s = create_persistent_scheduler()[0](
+            schedule_filename='schedule', app=self.app,
+        )
         s._store = {'entries': {}}
         s.schedule = {'foo': 'bar'}
         self.assertDictEqual(s.schedule, {'foo': 'bar'})
@@ -455,7 +457,7 @@ class test_EmbeddedService(AppCase):
 
         from billiard.process import Process
 
-        s = beat.EmbeddedService()
+        s = beat.EmbeddedService(app=self.app)
         self.assertIsInstance(s, Process)
         self.assertIsInstance(s.service, beat.Service)
         s.service = MockService()
@@ -475,7 +477,7 @@ class test_EmbeddedService(AppCase):
         self.assertTrue(s._popen.terminated)
 
     def test_start_stop_threaded(self):
-        s = beat.EmbeddedService(thread=True)
+        s = beat.EmbeddedService(thread=True, app=self.app)
         from threading import Thread
         self.assertIsInstance(s, Thread)
         self.assertIsInstance(s.service, beat.Service)

@@ -249,7 +249,7 @@ class test_ControlPanel(AppCase):
         self.panel.handle('report')
 
     def test_active(self):
-        r = TaskRequest(mytask.name, 'do re mi', (), {})
+        r = TaskRequest(mytask.name, 'do re mi', (), {}, app=self.app)
         worker_state.active_requests.add(r)
         try:
             self.assertTrue(self.panel.handle('dump_active'))
@@ -331,7 +331,7 @@ class test_ControlPanel(AppCase):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
         self.assertFalse(panel.handle('dump_schedule'))
-        r = TaskRequest(mytask.name, 'CAFEBABE', (), {})
+        r = TaskRequest(mytask.name, 'CAFEBABE', (), {}, app=self.app)
         consumer.timer.schedule.enter(
             consumer.timer.Entry(lambda x: x, (r, )),
             datetime.now() + timedelta(seconds=10))
@@ -343,7 +343,8 @@ class test_ControlPanel(AppCase):
     def test_dump_reserved(self):
         consumer = Consumer(self.app)
         worker_state.reserved_requests.add(
-            TaskRequest(mytask.name, uuid(), args=(2, 2), kwargs={}),
+            TaskRequest(mytask.name, uuid(), args=(2, 2), kwargs={},
+                        app=self.app),
         )
         try:
             panel = self.create_panel(consumer=consumer)
