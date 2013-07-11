@@ -294,7 +294,7 @@ Here's some examples:
 
     Now you can create a chain of independent tasks instead::
 
-        >>> res = (add.si(2, 2), add.si(4, 4), add.s(8, 8))()
+        >>> res = (add.si(2, 2) | add.si(4, 4) | add.s(8, 8))()
         >>> res.get()
         16
 
