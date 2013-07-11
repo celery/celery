@@ -85,8 +85,8 @@ class CacheBackend(KeyValueStoreBackend):
     supports_native_join = True
     implements_incr = True
 
-    def __init__(self, expires=None, backend=None, options={}, **kwargs):
-        super(CacheBackend, self).__init__(**kwargs)
+    def __init__(self, app, expires=None, backend=None, options={}, **kwargs):
+        super(CacheBackend, self).__init__(app, **kwargs)
 
         self.options = dict(self.app.conf.CELERY_CACHE_BACKEND_OPTIONS,
                             **options)

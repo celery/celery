@@ -59,10 +59,10 @@ class AMQPBackend(BaseBackend):
         'interval_max': 1,
     }
 
-    def __init__(self, connection=None, exchange=None, exchange_type=None,
+    def __init__(self, app, connection=None, exchange=None, exchange_type=None,
                  persistent=None, serializer=None, auto_delete=True,
                  **kwargs):
-        super(AMQPBackend, self).__init__(**kwargs)
+        super(AMQPBackend, self).__init__(app, **kwargs)
         conf = self.app.conf
         self._connection = connection
         self.queue_arguments = {}

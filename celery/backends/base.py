@@ -41,7 +41,8 @@ PY3 = sys.version_info >= (3, 0)
 
 def unpickle_backend(cls, args, kwargs):
     """Returns an unpickled backend."""
-    return cls(*args, **kwargs)
+    from celery import current_app
+    return cls(*args, app=current_app._get_current_object(), **kwargs)
 
 
 class BaseBackend(object):
@@ -64,10 +65,9 @@ class BaseBackend(object):
     #: in this case.
     supports_autoexpire = False
 
-    def __init__(self, app=None, serializer=None,
+    def __init__(self, app, serializer=None,
                  max_cached_results=None, **kwargs):
-        from celery.app import app_or_default
-        self.app = app_or_default(app)
+        self.app = app
         conf = self.app.conf
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         (self.content_type,
