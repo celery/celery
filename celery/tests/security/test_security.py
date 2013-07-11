@@ -77,7 +77,7 @@ class test_security(SecurityCase):
                 calls[0] += 1
 
         prev, self.app.conf.CELERY_TASK_SERIALIZER = (
-                self.app.conf.CELERY_TASK_SERIALIZER, 'auth')
+            self.app.conf.CELERY_TASK_SERIALIZER, 'auth')
         try:
             with mock_open(side_effect=effect):
                 with patch('celery.security.registry') as registry:

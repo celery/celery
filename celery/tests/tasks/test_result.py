@@ -11,11 +11,9 @@ from celery.result import (
     EagerResult,
     TaskSetResult,
     ResultSet,
-    GroupResult,
+    #GroupResult,
     from_serializable,
 )
-from celery.task import task
-from celery.task.base import Task
 from celery.utils import uuid
 from celery.utils.serialization import pickle
 
@@ -437,7 +435,7 @@ class test_GroupResult(AppCase):
     def test_is_pickleable(self):
         ts = self.app.GroupResult(uuid(), [self.app.AsyncResult(uuid())])
         self.assertEqual(pickle.loads(pickle.dumps(ts)), ts)
-        ts2 = GroupResult(uuid(), [self.app.AsyncResult(uuid())])
+        ts2 = self.app.GroupResult(uuid(), [self.app.AsyncResult(uuid())])
         self.assertEqual(pickle.loads(pickle.dumps(ts2)), ts2)
 
     def test_len(self):

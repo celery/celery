@@ -1264,7 +1264,6 @@ class test_crontab_is_due(AppCase):
         self.assertFalse(due)
         self.assertEqual(remaining, 4 * 24 * 60 * 60 - 3 * 60 * 60)
 
-
     @patch_crontab_nowfun(monthly_moy, datetime(2014, 2, 26, 22, 0))
     def test_monthly_moy_execution_is_due(self):
         due, remaining = monthly_moy.run_every.is_due(
@@ -1274,14 +1273,14 @@ class test_crontab_is_due(AppCase):
 
     @patch_crontab_nowfun(monthly_moy, datetime(2013, 6, 28, 14, 30))
     def test_monthly_moy_execution_is_not_due(self):
-        
         due, remaining = monthly_moy.run_every.is_due(
             datetime(2013, 6, 28, 22, 14))
         self.assertFalse(due)
-        attempt = (time.mktime(datetime(2014, 2, 26, 22, 0).timetuple())
-                   - time.mktime(datetime(2013, 6, 28, 14, 30).timetuple())
-                   - 60 * 60
-                   ) 
+        attempt = (
+            time.mktime(datetime(2014, 2, 26, 22, 0).timetuple()) -
+            time.mktime(datetime(2013, 6, 28, 14, 30).timetuple()) -
+            60 * 60
+        )
         self.assertEqual(remaining, attempt)
 
     @patch_crontab_nowfun(monthly_moy, datetime(2014, 2, 26, 22, 0))
@@ -1293,13 +1292,11 @@ class test_crontab_is_due(AppCase):
 
     @patch_crontab_nowfun(monthly_moy, datetime(2014, 2, 26, 21, 0))
     def test_monthly_moy_execution_is_not_due2(self):
-        
         due, remaining = monthly_moy.run_every.is_due(
             datetime(2013, 6, 28, 22, 14))
         self.assertFalse(due)
         attempt = 60 * 60
         self.assertEqual(remaining, attempt)
-
 
     @patch_crontab_nowfun(yearly, datetime(2010, 3, 11, 7, 30))
     def test_yearly_execution_is_due(self):

@@ -262,7 +262,7 @@ class Celery(object):
         self.conf.update(self.loader.cmdline_config_parser(argv, namespace))
 
     def setup_security(self, allowed_serializers=None, key=None, cert=None,
-            store=None, digest='sha1', serializer='json'):
+                       store=None, digest='sha1', serializer='json'):
         from celery.security import setup_security
         return setup_security(allowed_serializers, key, cert,
                               store, digest, serializer, app=self)
