@@ -391,7 +391,11 @@ class crontab(schedule):
                 flag = (datedata.dom == len(days_of_month) or
                         day_out_of_range(datedata.year,
                                          months_of_year[datedata.moy],
-                                         days_of_month[datedata.dom]))
+                                         days_of_month[datedata.dom]) or
+                        (self.maybe_make_aware(datetime(datedata.year,
+                         months_of_year[datedata.moy],
+                         days_of_month[datedata.dom])) < last_run_at))
+
                 if flag:
                     datedata.dom = 0
                     datedata.moy += 1
@@ -457,6 +461,7 @@ class crontab(schedule):
 
     def remaining_delta(self, last_run_at, ffwd=ffwd):
         last_run_at = self.maybe_make_aware(last_run_at)
+        now = self.maybe_make_aware(self.now())
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (last_run_at.month in self.month_of_year and
@@ -464,6 +469,9 @@ class crontab(schedule):
                              dow_num in self.day_of_week)
 
         execute_this_hour = (execute_this_date and
+                             last_run_at.day == now.day and
+                             last_run_at.month == now.month and
+                             last_run_at.year == now.year and
                              last_run_at.hour in self.hour and
                              last_run_at.minute < max(self.minute))
 
@@ -500,7 +508,6 @@ class crontab(schedule):
                     delta = self._delta_to_next(last_run_at,
                                                 next_hour, next_minute)
 
-        now = self.maybe_make_aware(self.now())
         return self.to_local(last_run_at), delta, self.to_local(now)
 
     def remaining_estimate(self, last_run_at, ffwd=ffwd):
