@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+import time
+
 from datetime import datetime, timedelta
 from functools import wraps
 from mock import patch
@@ -616,6 +618,14 @@ def monthly():
     pass
 
 
+@periodic_task(run_every=crontab(hour=22,
+                                 day_of_week='*',
+                                 month_of_year='2',
+                                 day_of_month='26,27,28'))
+def monthly_moy():
+    pass
+
+
 @periodic_task(run_every=crontab(hour=7, minute=30,
                                  day_of_week='thursday',
                                  day_of_month='8-14',
@@ -1211,6 +1221,40 @@ class test_crontab_is_due(Case):
             datetime(2010, 4, 8, 7, 30))
         self.assertFalse(due)
         self.assertEqual(remaining, 4 * 24 * 60 * 60 - 3 * 60 * 60)
+
+    @patch_crontab_nowfun(monthly_moy, datetime(2014, 2, 26, 22, 0))
+    def test_monthly_moy_execution_is_due(self):
+        due, remaining = monthly_moy.run_every.is_due(
+            datetime(2013, 7, 4, 10, 0))
+        self.assertTrue(due)
+        self.assertEqual(remaining, 60.)
+
+    @patch_crontab_nowfun(monthly_moy, datetime(2013, 6, 28, 14, 30))
+    def test_monthly_moy_execution_is_not_due(self):
+        due, remaining = monthly_moy.run_every.is_due(
+            datetime(2013, 6, 28, 22, 14))
+        self.assertFalse(due)
+        attempt = (
+            time.mktime(datetime(2014, 2, 26, 22, 0).timetuple()) -
+            time.mktime(datetime(2013, 6, 28, 14, 30).timetuple()) -
+            60 * 60
+        )
+        self.assertEqual(remaining, attempt)
+
+    @patch_crontab_nowfun(monthly_moy, datetime(2014, 2, 26, 22, 0))
+    def test_monthly_moy_execution_is_due2(self):
+        due, remaining = monthly_moy.run_every.is_due(
+            datetime(2013, 2, 28, 10, 0))
+        self.assertTrue(due)
+        self.assertEqual(remaining, 60.)
+
+    @patch_crontab_nowfun(monthly_moy, datetime(2014, 2, 26, 21, 0))
+    def test_monthly_moy_execution_is_not_due2(self):
+        due, remaining = monthly_moy.run_every.is_due(
+            datetime(2013, 6, 28, 22, 14))
+        self.assertFalse(due)
+        attempt = 60 * 60
+        self.assertEqual(remaining, attempt)
 
     @patch_crontab_nowfun(yearly, datetime(2010, 3, 11, 7, 30))
     def test_yearly_execution_is_due(self):
