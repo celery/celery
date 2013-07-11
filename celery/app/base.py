@@ -261,6 +261,12 @@ class Celery(object):
     def config_from_cmdline(self, argv, namespace='celery'):
         self.conf.update(self.loader.cmdline_config_parser(argv, namespace))
 
+    def setup_security(self, allowed_serializers=None, key=None, cert=None,
+            store=None, digest='sha1', serializer='json'):
+        from celery.security import setup_security
+        return setup_security(allowed_serializers, key, cert,
+                              store, digest, serializer, app=self)
+
     def autodiscover_tasks(self, packages, related_name='tasks'):
         if self.conf.CELERY_FORCE_BILLIARD_LOGGING:
             # we'll use billiard's processName instead of

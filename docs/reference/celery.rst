@@ -188,6 +188,30 @@ and creating Celery applications.
         it's important that the same configuration happens at import time
         when pickle restores the object on the other side.
 
+    .. method:: Celery.setup_security(...)
+
+        Setup the message-signing serializer.
+        This will affect all application instances (a global operation).
+
+        Disables untrusted serializers and if configured to use the ``auth``
+        serializer will register the auth serializer with the provided settings
+        into the Kombu serializer registry.
+
+        :keyword allowed_serializers:  List of serializer names, or content_types
+            that should be exempt from being disabled.
+        :keyword key: Name of private key file to use.
+            Defaults to the :setting:`CELERY_SECURITY_KEY` setting.
+        :keyword cert: Name of certificate file to use.
+            Defaults to the :setting:`CELERY_SECURITY_CERTIFICATE` setting.
+        :keyword store: Directory containing certificates.
+            Defaults to the :setting:`CELERY_SECURITY_CERT_STORE` setting.
+        :keyword digest: Digest algorithm used when signing messages.
+            Default is ``sha1``.
+        :keyword serializer: Serializer used to encode messages after
+            they have been signed.  See :setting:`CELERY_TASK_SERIALIZER` for
+            the serializers supported.
+            Default is ``json``.
+
     .. method:: Celery.start(argv=None)
 
         Run :program:`celery` using `argv`.
@@ -248,7 +272,7 @@ and creating Celery applications.
 
         Run :program:`celery worker` using `argv`.
 
-        Uses :data:`sys.argv` if `argv` is not specified."""
+        Uses :data:`sys.argv` if `argv` is not specified.
 
     .. attribute:: Celery.Worker
 
