@@ -28,7 +28,6 @@ from celery import bootsteps
 from celery import concurrency as _concurrency
 from celery import platforms
 from celery import signals
-from celery.app import app_or_default
 from celery.exceptions import (
     ImproperlyConfigured, SystemTerminate, TaskRevokedError,
 )
@@ -79,7 +78,7 @@ class WorkController(object):
         ])
 
     def __init__(self, app=None, hostname=None, **kwargs):
-        self.app = app_or_default(app or self.app)
+        self.app = app or self.app
         self.hostname = default_nodename(hostname)
         self.app.loader.init_worker()
         self.on_before_init(**kwargs)
