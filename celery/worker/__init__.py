@@ -153,7 +153,8 @@ class Pool(bootsteps.StartStopComponent):
             if hard:
                 trefs[job] = apply_at(
                     now() + (hard - soft),
-                    _on_hard_timeout, (job, soft, hard, hub))
+                    _on_hard_timeout, (job, ),
+                )
             try:
                 result = cache[job]
             except KeyError:
