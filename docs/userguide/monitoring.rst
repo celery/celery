@@ -136,7 +136,7 @@ Commands
 
     .. code-block:: bash
 
-        $ celery inspect disable_events
+        $ celery control disable_events
 
 * **migrate**: Migrate tasks from one broker to another (**EXPERIMENTAL**).
 
