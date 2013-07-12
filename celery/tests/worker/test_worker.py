@@ -1195,18 +1195,7 @@ class test_WorkController(AppCase):
         tref = result._tref
 
         poolimp.on_timeout_cancel(result)
-        tref.cancel.assert_called_with()
         poolimp.on_timeout_cancel(result)  # no more tref
-
-        poolimp.on_timeout_set(result, 10, 20)
-        tsoft, callback = hub.timer.apply_after.call_args[0]
-        callback()
-
-        poolimp.on_timeout_set(result, 10, None)
-        tsoft, callback = hub.timer.apply_after.call_args[0]
-        callback()
-        poolimp.on_timeout_set(result, None, 10)
-        poolimp.on_timeout_set(result, None, None)
 
         with self.assertRaises(WorkerLostError):
             P._pool.did_start_ok = Mock()
