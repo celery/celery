@@ -1089,6 +1089,7 @@ class test_WorkController(AppCase):
         w.hub.on_init = []
         w.pool_cls = Mock()
         P = w.pool_cls.return_value = Mock()
+        P._cache = {}
         P.timers = {Mock(): 30}
         w.use_eventloop = True
         w.consumer.restart_count = -1
@@ -1108,22 +1109,12 @@ class test_WorkController(AppCase):
         cbs['on_process_down'](w)
         hub.remove.assert_called_with(w.sentinel)
 
+        w.pool._tref_for_id = {}
+
         result = Mock()
-        tref = result._tref
 
         cbs['on_timeout_cancel'](result)
-        tref.cancel.assert_called_with()
         cbs['on_timeout_cancel'](result)  # no more tref
-
-        cbs['on_timeout_set'](result, 10, 20)
-        tsoft, callback = hub.timer.apply_after.call_args[0]
-        callback()
-
-        cbs['on_timeout_set'](result, 10, None)
-        tsoft, callback = hub.timer.apply_after.call_args[0]
-        callback()
-        cbs['on_timeout_set'](result, None, 10)
-        cbs['on_timeout_set'](result, None, None)
 
         with self.assertRaises(WorkerLostError):
             P.did_start_ok.return_value = False
