@@ -36,7 +36,9 @@ class RPCBackend(amqp.AMQPBackend):
         return [self.binding]
 
     def _routing_key(self, task_id):
-        return current_task.request.reply_to
+        task = current_task._get_current_object()
+        if task is not None:
+            return task.request.reply_to
 
     def on_reply_declare(self, task_id):
         pass
