@@ -25,6 +25,9 @@ os.environ['GEVENT_NOPATCH'] = 'yes'
 os.environ['KOMBU_DISABLE_LIMIT_PROTECTION'] = 'yes'
 os.environ['CELERY_BROKER_URL'] = 'memory://'
 
+# virtual.QoS will not do sanity assertions when this is set.
+os.environ['KOMBU_UNITTEST'] = 'yes'
+
 
 def setup():
     if os.environ.get('COVER_ALL_MODULES') or '--with-coverage3' in sys.argv:
