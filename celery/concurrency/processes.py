@@ -531,6 +531,10 @@ class TaskPool(BasePool):
             pass  # job ready
         else:
             self.on_soft_timeout(result)
+        finally:
+            if not hard:
+                # remove tref
+                self._pool.on_timeout_cancel(job)
 
     def _on_hard_timeout(self, job):
         try:
@@ -539,6 +543,9 @@ class TaskPool(BasePool):
             pass  # job ready
         else:
             self.on_hard_timeout(result)
+        finally:
+            # remove tref
+            self._pool.on_timeout_cancel(job)
 
     def _create_timelimit_handlers(self, hub, now=time):
         apply_after = hub.timer.apply_after
