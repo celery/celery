@@ -48,9 +48,9 @@ And in this case the broker url may only be::
 Clouds
 ------
 
-The default cloud/region is ``AWS us-east-1``. You can choose the IronMQ Rackspace cloud by changing the URL to::
+The default cloud/region is ``AWS us-east-1``. You can choose the IronMQ Rackspace (ORD) cloud by changing the URL to::
 
-    ironmq://project_id:token@mq-rackspace-dfw.iron.io
+    ironmq://project_id:token@mq-rackspace-ord.iron.io
 
 Results
 =======
