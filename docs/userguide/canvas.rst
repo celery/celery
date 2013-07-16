@@ -357,7 +357,7 @@ Here's some examples:
     Chaining a group together with another task will automatically
     upgrade it to be a chord::
 
-        >>> c3 = (group(add.s(i, i) for i in xrange(10) | xsum.s()))
+        >>> c3 = (group(add.s(i, i) for i in xrange(10)) | xsum.s())
         >>> res = c3()
         >>> res.get()
         90
