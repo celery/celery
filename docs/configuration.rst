@@ -498,7 +498,7 @@ This is a dict supporting the following keys:
     Defaults to "celery_taskmeta".
 
 * max_pool_size
-    Passed as max_pool_size to PyMongo's Connection or MongoClient 
+    Passed as max_pool_size to PyMongo's Connection or MongoClient
     constructor. It is the maximum number of TCP connections to keep
     open to MongoDB at a given time. If there are more open connections
     than max_pool_size, sockets will be closed when they are released.
@@ -728,7 +728,7 @@ of :mod:`celery.contrib.migrate`.
 CELERY_CREATE_MISSING_QUEUES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If enabled (default), any queues specified that is not defined in
+If enabled (default), any queues specified that are not defined in
 :setting:`CELERY_QUEUES` will be automatically created. See
 :ref:`routing-automatic`.
 
@@ -742,7 +742,7 @@ no route or no custom queue has been specified.
 
 
 This queue must be listed in :setting:`CELERY_QUEUES`.
-If :setting:`CELERY_QUEUES` is not specified then it this automatically
+If :setting:`CELERY_QUEUES` is not specified then it is automatically
 created containing one queue entry, where this name is used as the name of
 that queue.
 
@@ -767,7 +767,7 @@ The default is: `celery`.
 CELERY_DEFAULT_EXCHANGE_TYPE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default exchange type used when no custom exchange type is specified.
+Default exchange type used when no custom exchange type is specified
 for a key in the :setting:`CELERY_QUEUES` setting.
 The default is: `direct`.
 
