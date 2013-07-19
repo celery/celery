@@ -180,11 +180,6 @@ _get_worker_pids() {
 }
 
 
-stop_workers () {
-    $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
-}
-
-
 start_workers () {
     $CELERYD_MULTI start $CELERYD_NODES $DAEMON_OPTS        \
                          --pidfile="$CELERYD_PID_FILE"      \
@@ -192,6 +187,11 @@ start_workers () {
                          --loglevel="$CELERYD_LOG_LEVEL"    \
                          $CELERY_APP_ARG                    \
                          $CELERYD_OPTS
+}
+
+
+stop_workers () {
+    $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
 }
 
 
@@ -203,6 +203,12 @@ restart_workers () {
                            $CELERY_APP_ARG                  \
                            $CELERYD_OPTS
 }
+
+
+kill_workers() {
+    $CELERYD_MULTI kill $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
+}
+
 
 restart_workers_graceful () {
     local worker_pids=
@@ -277,7 +283,10 @@ case "$1" in
         check_paths
         restart_workers
     ;;
-
+    kill)
+        check_dev_null
+        kill_workers
+    ;;
     restart-workers-graceful)
         check_dev_null
         restart_workers_graceful
