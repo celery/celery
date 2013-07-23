@@ -76,15 +76,29 @@ class MongoBackend(BaseBackend):
             self.mongodb_host = config.get('host', self.mongodb_host)
             self.mongodb_port = int(config.get('port', self.mongodb_port))
             self.mongodb_user = config.get('user', self.mongodb_user)
-            self.mongodb_options = config.get('options', {})
             self.mongodb_password = config.get(
                 'password', self.mongodb_password)
             self.mongodb_database = config.get(
                 'database', self.mongodb_database)
             self.mongodb_taskmeta_collection = config.get(
                 'taskmeta_collection', self.mongodb_taskmeta_collection)
-            self.mongodb_max_pool_size = config.get(
-                'max_pool_size', self.mongodb_max_pool_size)
+
+            # Allow for the old style options dict and new style inline options
+            non_options = ['host', 'port', 'user', 'password', 'database',
+                           'taskmeta_collection', 'options']
+            options = dict([(k, v) for k,v in config.items()
+                            if k not in non_options])
+
+            # Set option defaults
+            options['ssl'] = self.app.conf.BROKER_USE_SSL
+
+            if 'max_pool_size' not in options:
+                options['max_pool_size'] = self.mongodb_max_pool_size
+
+            if self.app.conf.get('CELERYD_POOL', None) == "gevent":
+                options['use_greenlets'] = True
+
+            self.mongodb_options = dict(options, **config.get('options', {}))
 
         self._connection = None
 
@@ -100,16 +114,12 @@ class MongoBackend(BaseBackend):
             # This enables the use of replica sets and sharding.
             # See pymongo.Connection() for more info.
             args = [self.mongodb_host]
-            kwargs = {
-                'max_pool_size': self.mongodb_max_pool_size,
-                'ssl': self.app.conf.BROKER_USE_SSL
-            }
             if isinstance(self.mongodb_host, string_t) \
                     and not self.mongodb_host.startswith('mongodb://'):
                 args.append(self.mongodb_port)
 
             self._connection = Connection(
-                *args, **dict(kwargs, **self.mongodb_options or {})
+                *args, **self.mongodb_options
             )
 
         return self._connection
