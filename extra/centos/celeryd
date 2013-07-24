@@ -16,6 +16,19 @@
 # Default-Stop:      0 1 6
 # Short-Description: celery task worker daemon
 ### END INIT INFO
+#
+#
+# To implement separate init scripts, do NOT copy this script.  Instead,
+# symlink it.  I.e., if my new application, "little-worker" needs an init, I
+# should just use:
+#
+#   ln -s /etc/init.d/celeryd /etc/init.d/little-worker
+#
+# You can then configure this by manipulating /etc/sysconfig/little-worker.
+#
+# Setting `prog` here allows you to symlink this init script, making it easy
+# to run multiple processes on the system.
+prog="$(basename $0)"
 
 # Source the centos service helper functions
 source /etc/init.d/functions
@@ -25,13 +38,13 @@ source /etc/init.d/functions
 # some commands work asyncronously, so we'll wait this many seconds
 SLEEP_SECONDS=5
 
-DEFAULT_PID_FILE="/var/run/celery/%n.pid"
-DEFAULT_LOG_FILE="/var/log/celery/%n.log"
+DEFAULT_PID_FILE="/var/run/celery/$prog-%n.pid"
+DEFAULT_LOG_FILE="/var/log/celery/$prog-%n.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
 DEFAULT_CELERYD="-m celery.bin.celeryd_detach"
 
-CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/sysconfig/celeryd"}
+CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/sysconfig/$prog"}
 
 test -f "$CELERY_DEFAULTS" && . "$CELERY_DEFAULTS"
 
@@ -132,23 +145,23 @@ export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 _get_pid_files() {
     [[ ! -d "$CELERYD_PID_DIR" ]] && return
-    echo $(ls -1 "$CELERYD_PID_DIR"/*.pid 2> /dev/null)
+    echo $(ls -1 "$CELERYD_PID_DIR"/$prog-*.pid 2> /dev/null)
 }
 
 stop() {
     local pid_files=$(_get_pid_files)
-    [[ -z "$pid_files" ]] && echo "celeryd is stopped" && return 0
+    [[ -z "$pid_files" ]] && echo "$prog is stopped" && return 0
 
     local one_failed=
     for pid_file in $pid_files; do
         local pid=$(cat "$pid_file")
-        echo -n $"Stopping celeryd (pid $pid): "
+        echo -n $"Stopping $prog (pid $pid): "
 
         # killproc comes from 'functions' and brings three nice features:
         #  1. sending TERM, sleeping, then sleeping more if needed, then sending KILL
         #  2. handling 'success' and 'failure' output
         #  3. removes stale pid files, if any remain
-        killproc -p "$pid_file" -d "$SLEEP_SECONDS" celeryd || one_failed=true
+        killproc -p "$pid_file" -d "$SLEEP_SECONDS" $prog || one_failed=true
         echo
     done
 
@@ -156,12 +169,12 @@ stop() {
 }
 
 start() {
-    echo -n $"Starting celeryd: "
+    echo -n $"Starting $prog: "
 
     # If Celery is already running, bail out
     local pid_files=$(_get_pid_files)
     if [[ "$pid_files" ]]; then
-        echo -n $"celeryd is already running. Use 'restart'."
+        echo -n $"$prog is already running. Use 'restart'."
         failure
         echo
         return 1
@@ -203,10 +216,10 @@ start() {
 
 check_status() {
     local pid_files=$(_get_pid_files)
-    [[ -z "$pid_files" ]] && echo "celeryd is stopped" && return 1
+    [[ -z "$pid_files" ]] && echo "$prog is stopped" && return 1
     for pid_file in $pid_files; do
         local node=$(basename "$pid_file" .pid)
-        status -p "$pid_file" $"celeryd (node $node)" || return 1  # if one node is down celeryd is down
+        status -p "$pid_file" $"$prog (node $node)" || return 1  # if one node is down celeryd is down
     done
     return 0
 }
@@ -235,7 +248,7 @@ case "$1" in
     ;;
 
     *)
-        echo "Usage: /etc/init.d/celeryd {start|stop|restart|status}"
+        echo "Usage: /etc/init.d/$prog {start|stop|restart|status}"
         exit 3
     ;;
 esac
