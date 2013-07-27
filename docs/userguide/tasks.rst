@@ -1214,7 +1214,7 @@ First, an author creates an article and saves it, then the author
 clicks on a button that initiates the abbreviation task::
 
     >>> article = Article.objects.get(id=102)
-    >>> expand_abbreviations.delay(model_object)
+    >>> expand_abbreviations.delay(article)
 
 Now, the queue is very busy, so the task won't be run for another 2 minutes.
 In the meantime another author makes changes to the article, so
