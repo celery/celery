@@ -10,13 +10,13 @@ Contents
 
 This is the project iself, created using
 ``django-admin.py startproject proj``, and then the settings module
-(``proj/settings.py``) was modified to add ``tasks`` and ``demoapp`` to
+(``proj/settings.py``) was modified to add ``demoapp`` to
 ``INSTALLED_APPS``
 
-``tasks/``
+``proj/celery.py``
 ----------
 
-This app contains the Celery application instance for this project,
+This module contains the Celery application instance for this project,
 we take configuration from Django settings and use ``autodiscover_tasks`` to
 find task modules inside all packages listed in ``INSTALLED_APPS``.
 
@@ -24,8 +24,8 @@ find task modules inside all packages listed in ``INSTALLED_APPS``.
 ------------
 
 Example generic app.  This is decoupled from the rest of the project by using
-the ``@shared_task`` decorator.  Shared tasks are shared between all Celery
-instances.
+the ``@shared_task`` decorator.  This decorator returns a proxy that always
+points to the currently active Celery instance.
 
 
 Starting the worker
@@ -36,4 +36,4 @@ worker:
 
 .. code-block:: bash
 
-    $ DJANGO_SETTINGS_MODULE='proj.settings' celery -A tasks worker -l info
+    $ DJANGO_SETTINGS_MODULE='proj.settings' celery -A proj worker -l info
