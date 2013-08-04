@@ -512,7 +512,7 @@ class ResultSet(ResultBase):
                                       interval=interval))
         return results
 
-    def iter_native(self, timeout=None, interval=None):
+    def iter_native(self, timeout=None, interval=0.5):
         """Backend optimized version of :meth:`iterate`.
 
         .. versionadded:: 2.2
