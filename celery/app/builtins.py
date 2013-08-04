@@ -183,7 +183,7 @@ def add_group_task(app):
         def prepare(self, options, tasks, args, **kwargs):
             AsyncResult = self.AsyncResult
             options['group_id'] = group_id = (
-                options.setdefault('task_id', uuid()))
+                options.setdefault('task_id', self.generate_task_id())) #TODO: check if not generate_group_id
 
             def prepare_member(task):
                 task = maybe_subtask(task)
@@ -192,7 +192,7 @@ def add_group_task(app):
                 try:
                     tid = opts['task_id']
                 except KeyError:
-                    tid = opts['task_id'] = uuid()
+                    tid = opts['task_id'] = self.generate_task_id()
                 return task, AsyncResult(tid)
 
             try:
@@ -349,7 +349,7 @@ def add_chord_task(app):
             try:
                 task_id = opts['task_id']
             except KeyError:
-                task_id = opts['task_id'] = uuid()
+                task_id = opts['task_id'] = self.generate_task_id()
             opts.update(chord=body, group_id=group_id)
             return task_id
 

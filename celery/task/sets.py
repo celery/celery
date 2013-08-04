@@ -36,6 +36,10 @@ class TaskSet(list):
         self.app = app_or_default(app or self.app)
         self.Publisher = Publisher or self.app.amqp.TaskProducer
         self.total = len(self)  # XXX compat
+    
+    def generate_set_id(self):
+        """ make sure this identifier is unique """
+        return uuid()
 
     def apply_async(self, connection=None, publisher=None, taskset_id=None):
         """Apply TaskSet."""
@@ -45,7 +49,7 @@ class TaskSet(list):
             return self.apply(taskset_id=taskset_id)
 
         with app.connection_or_acquire(connection) as conn:
-            setid = taskset_id or uuid()
+            setid = taskset_id or self.generate_set_id()
             pub = publisher or self.Publisher(conn)
             results = self._async_results(setid, pub)
 
@@ -61,7 +65,7 @@ class TaskSet(list):
 
     def apply(self, taskset_id=None):
         """Applies the TaskSet locally by blocking until all tasks return."""
-        setid = taskset_id or uuid()
+        setid = taskset_id or self.generate_set_id()
         return self.app.TaskSetResult(setid, self._sync_results(setid))
 
     def _sync_results(self, taskset_id):
