@@ -2,10 +2,124 @@
  First steps with Django
 =========================
 
-Configuring your Django project to use Celery
-=============================================
+Using Celery with Django
+========================
 
-You need four simple steps to use celery with your Django project.
+To use Celery with your Django project you must first define
+an instance of the Celery library.
+
+If you have a modern Django project layout like
+
+    - proj/
+      - proj/__init__.py
+      - proj/settings.py
+      - proj/urls.py
+    - manage.py
+
+then the recommended way is to create a new `proj/proj/celery.py` module
+that defines the Celery instance:
+
+:file: `proj/proj/celery.py`
+
+.. code-block:: python
+
+    from celery import Celery
+    from django.conf import settings
+
+    celery = Celery('proj.celery')
+    celery.config_from_object(settings)
+    celery.autodiscover_tasks(settings.INSTALLED_APPS, related_name='tasks')
+
+    @celery.task(bind=True)
+    def debug_task(self):
+        print('Request: {0!r}'.format(self.request))
+
+Let's explain what happens here.
+First we create the Celery app instance:
+
+.. code-block:: python
+
+    celery = Celery('proj')
+
+Then we add the Django settings module as a configuration source
+for Celery.  This means that you don't have to use multiple
+configuration files, and instead configure Celery directly
+from the Django settings.
+
+.. code-block:: python
+
+    celery.config_from_object(settings)
+
+Next, a common practice for reusable apps is to define all tasks
+in a separate ``tasks.py`` module, and Celery does have a way to
+autodiscover these modules:
+
+.. code-block:: python
+
+    celery.autodiscover_tasks(settings.INSTALLED_APPS, related_name='tasks')
+
+With the line above Celery will automatically discover tasks in reusable
+apps if you follow the ``tasks.py`` convention::
+
+    - app1/
+        - app1/tasks.py
+        - app2/models.py
+    - app2/
+        - app2/tasks.py
+        - app2/models.py
+
+This way you do not have to manually add the individual modules
+to the :setting:`CELERY_IMPORTS` setting.
+
+
+Finally, the ``debug_task`` example is a task that dumps
+its own request information.  This is using the new ``bind=True`` task option
+introduced in Celery 3.1 to easily refer to the current task instance.
+
+
+The `celery` command
+--------------------
+
+To use the :program:`celery` command with Django you need to
+set up the :envvar:`DJANGO_SETTINGS_MODULE` environment variable:
+
+.. code-block:: bash
+
+    $ DJANGO_SETTINGS_MODULE='proj.settings' celery -A proj worker -l info
+
+    $ DJANGO_SETTINGS_MODULE='proj.settings' celery -A proj status
+
+If you find this inconvienient you can create a small wrapper script
+alongside ``manage.py`` that automatically binds to your app, e.g. ``proj/celery.py`
+
+:file:`proj/celery.py`
+
+.. code-block:: python
+
+    #!/usr/bin/env python
+    import os
+
+    from proj.celery import celery
+
+
+    if __name__ == '__main__':
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.celery')
+        celery.start()
+
+Then you can use this command directly:
+
+.. code-block:: bash
+
+    $ ./celery.py status
+
+
+Using the Django ORM/Cache as a result backend.
+-----------------------------------------------
+
+The ``django-celery`` library defines result backends that
+uses the Django ORM and Django Cache frameworks.
+
+To use this with your project you need to follow these three steps:
 
     1. Install the ``django-celery`` library:
 
@@ -13,16 +127,9 @@ You need four simple steps to use celery with your Django project.
 
             $ pip install django-celery
 
-    2. Add the following lines to ``settings.py``:
+    2. Add ``djcelery`` to ``INSTALLED_APPS``.
 
-        .. code-block:: python
-
-            import djcelery
-            djcelery.setup_loader()
-
-    3. Add ``djcelery`` to ``INSTALLED_APPS``.
-
-    4. Create the celery database tables.
+    3. Create the celery database tables.
 
         If you are using south_ for schema migrations, you'll want to:
 
@@ -37,72 +144,6 @@ You need four simple steps to use celery with your Django project.
             $ python manage.py syncdb
 
 .. _south: http://pypi.python.org/pypi/South/
-
-By default Celery uses `RabbitMQ`_ as the broker, but there are several
-alternatives to choose from, see :ref:`celerytut-broker`.
-
-All settings mentioned in the Celery documentation should be added
-to your Django project's ``settings.py`` module. For example
-you can configure the :setting:`BROKER_URL` setting to specify
-what broker to use::
-
-    BROKER_URL = 'amqp://guest:guest@localhost:5672/'
-
-That's it.
-
-.. _`RabbitMQ`: http://www.rabbitmq.com/
-
-Special note for mod_wsgi users
--------------------------------
-
-If you're using ``mod_wsgi`` to deploy your Django application you need to
-include the following in your ``.wsgi`` module::
-
-    import djcelery
-    djcelery.setup_loader()
-
-Defining and calling tasks
-==========================
-
-Tasks are defined by wrapping functions in the ``@task`` decorator.
-It is a common practice to put these in their own module named ``tasks.py``,
-and the worker will automatically go through the apps in ``INSTALLED_APPS``
-to import these modules.
-
-For a simple demonstration create a new Django app called
-``celerytest``.  To create this app you need to be in the directory
-of your Django project where ``manage.py`` is located and execute:
-
-.. code-block:: bash
-
-    $ python manage.py startapp celerytest
-
-Next you have to add the new app to ``INSTALLED_APPS`` so that your
-Django project recognizes it.  This setting is a tuple/list so just
-append ``celerytest`` as a new element at the end
-
-.. code-block:: python
-
-    INSTALLED_APPS = (
-        ...,
-        'djcelery',
-        'celerytest',
-    )
-
-After the new app has been created and added to ``INSTALLED_APPS``,
-you can define your tasks by creating a new file called ``celerytest/tasks.py``:
-
-.. code-block:: python
-
-    from celery import task
-
-    @task()
-    def add(x, y):
-        return x + y
-
-Our example task is pretty pointless, it just returns the sum of two
-arguments, but it will do for demonstration, and it is referred to in many
-parts of the Celery documentation.
 
 .. admonition:: Relative Imports
 
@@ -123,80 +164,18 @@ development it is useful to be able to start a worker instance by using the
 
 .. code-block:: bash
 
-    $ python manage.py celery worker --loglevel=info
+    $ DJANGO_SETTINGS_MODULE='proj.settings' celery -A proj worker -l info
 
 For a complete listing of the command-line options available,
 use the help command:
 
 .. code-block:: bash
 
-    $ python manage.py celery help
-
-Calling our task
-================
-
-Now that the worker is running, open up a new python interactive shell
-with ``python manage.py shell`` to actually call the task you defined::
-
-    >>> from celerytest.tasks import add
-
-    >>> add.delay(2, 2)
-
-
-Note that if you open a regular python shell by simply running ``python``
-you will need to import your Django application's settings by running::
-
-    # Replace 'myproject' with your project's name
-    >>> from myproject import settings
-
-
-The ``delay`` method used above is a handy shortcut to the ``apply_async`` 
-method which enables you to have greater control of the task execution.
-To read more about calling tasks, including specifying the time at which
-the task should be processed see :ref:`guide-calling`.
-
-.. note::
-
-    Tasks need to be stored in a real module, they can't
-    be defined in the python shell or IPython/bpython. This is because the
-    worker server must be able to import the task function.
-
-The task should now be processed by the worker you started earlier,
-and you can verify that by looking at the worker's console output.
-
-Calling a task returns an :class:`~celery.result.AsyncResult` instance,
-which can be used to check the state of the task, wait for the task to finish
-or get its return value (or if the task failed, the exception and traceback).
-
-By default django-celery stores this state in the Django database.
-You may consider choosing an alternate result backend or disabling
-states alltogether (see :ref:`task-result-backends`).
-
-To demonstrate how the results work call the task again, but this time
-keep the result instance returned::
-
-    >>> result = add.delay(4, 4)
-    >>> result.ready() # returns True if the task has finished processing.
-    False
-    >>> result.result # task is not ready, so no return value yet.
-    None
-    >>> result.get()   # Waits until the task is done and returns the retval.
-    8
-    >>> result.result # direct access to result, doesn't re-raise errors.
-    8
-    >>> result.successful() # returns True if the task didn't end in failure.
-    True
-
-If the task raises an exception, the return value of ``result.successful()``
-will be ``False``, and ``result.result`` will contain the exception instance
-raised by the task.
+    $ celery help
 
 Where to go from here
 =====================
 
-To learn more you should read the `Celery User Guide`_, and the
-`Celery Documentation`_ in general.
-
-
-.. _`Celery User Guide`: http://docs.celeryproject.org/en/latest/userguide/
-.. _`Celery Documentation`: http://docs.celeryproject.org/
+If you want to learn more you should continue to the
+:ref:`Next Steps <next-steps>` tutorial, and after that you
+can study the :ref:`User Guide <guide>`.
