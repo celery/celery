@@ -81,7 +81,6 @@ class test_CouchBaseBackend(AppCase):
         TODO Should test on key not exists
         """
         celery = Celery(set_as_current=False)
-        # celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
         
         celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
 
@@ -108,8 +107,6 @@ class test_CouchBaseBackend(AppCase):
         x._connection.set = MagicMock()
         # should return None
         self.assertIsNone(x.set(sentinel.key, sentinel.value))
-    #     x._connection.set.assert_called_once_with(sentinel.key, sentinel.value)
-
 
     def test_delete(self):
         """
@@ -120,7 +117,6 @@ class test_CouchBaseBackend(AppCase):
         TODO Should test on key not exists
         """
         celery = Celery(set_as_current=False)
-        # celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
         
         celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
 

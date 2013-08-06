@@ -14,32 +14,18 @@ try:
     import couchbase
     from couchbase import Couchbase 
     from couchbase.connection import Connection
-    from couchbase.user_constants import *
-    import couchbase._libcouchbase as _LCB
+    from couchbase.exceptions import NotFoundError
 except ImportError:
     couchbase = None   # noqa
 
-from kombu.utils import cached_property
 from kombu.utils.url import _parse_url
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.five import string_t
 from celery.utils.timeutils import maybe_timedelta
 
 from .base import KeyValueStoreBackend
 import logging
-
-# class Bunch(object):
-
-#     def __init__(self, **kw):
-#         self.__dict__.update(kw)
-
-def is_single_url(obj):
-    try:
-        return isinstance(obj, basestring)
-    except NameError:
-        return isinstance(obj, str)
 
 class CouchBaseBackend(KeyValueStoreBackend):
 
@@ -58,8 +44,8 @@ class CouchBaseBackend(KeyValueStoreBackend):
     def __init__(self, url=None, *args, **kwargs):
         """Initialize CouchBase backend instance.
 
-        :raises celery.exceptions.ImproperlyConfigured: if
-            module :mod:`pymongo` is not available.
+        :raise celery.exceptions.ImproperlyConfigured: if
+            module :mod:`couchbase` is not available.
 
         """
         super(CouchBaseBackend, self).__init__(*args, **kwargs)
@@ -75,7 +61,7 @@ class CouchBaseBackend(KeyValueStoreBackend):
         uhost = uport = uname = upass = ubucket = None
         if url:
             _, uhost, uport, uname, upass, ubucket, _ = _parse_url(url)
-            ubucket = ubucket.strip('/') if ubucket else 'default_bucket'
+            ubucket = ubucket.strip('/') if ubucket else None
 
         config = self.app.conf.get('CELERY_COUCHBASE_BACKEND_SETTINGS', None)
         if config is not None:
@@ -90,17 +76,11 @@ class CouchBaseBackend(KeyValueStoreBackend):
         self.bucket = ubucket or config.get('bucket', self.bucket)
         self.username = uname or config.get('username', self.username)
         self.password = upass or config.get('password', self.password)
-        # self.quiet = config.get('quiet', self.quiet)
-        # self.conncache = config.get('conncache', self.conncache)
-        # self.unlock_gil = config.get('unlock_gil', self.unlock_gil)
-        # self.timeout = config.get('timeout', self.timeout)
-        # self.transcoder = config.get('transcoder', self.transcoder)
-        # self.lockmode = config.get('lockmode', self.lockmode)
             
         self._connection = None
 
     def _get_connection(self):
-        """Connect to the MongoDB server."""
+        """Connect to the Couchbase server."""
         if self._connection is None:
             kwargs = {
                 'bucket': self.bucket,
@@ -126,21 +106,15 @@ class CouchBaseBackend(KeyValueStoreBackend):
 
     def get(self, key):
         try:
-            if self._connection == None:
-                self._connection = self._get_connection()
-            return self._connection.get(key).value
-        except:
+            return self.connection.get(key).value
+        except NotFoundError:
             return None
-
+        
     def set(self, key, value):
-        if self._connection == None:
-            self._connection = self._get_connection()
-        self._connection.set(key, value)
-
+        self.connection.set(key, value)
+        
     def mget(self, keys):
         return [self.get(key) for key in keys]
 
     def delete(self, key):
-        if self._connection == None:
-            self._connection = self._get_connection()
-        self._connection.delete(key)
+        self.connection.delete(key)
