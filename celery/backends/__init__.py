@@ -30,6 +30,7 @@ BACKEND_ALIASES = {
     'mongodb': 'celery.backends.mongodb:MongoBackend',
     'database': 'celery.backends.database:DatabaseBackend',
     'cassandra': 'celery.backends.cassandra:CassandraBackend',
+    'couchbase': 'celery.backends.couchbase:CouchBaseBackend',
     'disabled': 'celery.backends.base:DisabledBackend',
 }
 
