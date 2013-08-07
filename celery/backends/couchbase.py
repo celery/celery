@@ -8,43 +8,40 @@
 """
 from __future__ import absolute_import
 
-from datetime import datetime
+import logging
 
 try:
-    import couchbase
-    from couchbase import Couchbase 
+    from couchbase import Couchbase
     from couchbase.connection import Connection
     from couchbase.exceptions import NotFoundError
 except ImportError:
-    couchbase = None   # noqa
+    Couchbase = Connection = NotFoundError = None   # noqa
 
 from kombu.utils.url import _parse_url
 
-from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.timeutils import maybe_timedelta
 
 from .base import KeyValueStoreBackend
-import logging
+
 
 class CouchBaseBackend(KeyValueStoreBackend):
-
-    bucket = "default"
+    bucket = 'default'
     host = 'localhost'
     port = 8091
     username = None
     password = None
-    quiet=False
-    conncache=None
-    unlock_gil=True
-    timeout=2.5
-    transcoder=None
+    quiet = False
+    conncache = None
+    unlock_gil = True
+    timeout = 2.5
+    transcoder = None
     # supports_autoexpire = False
-    
+
     def __init__(self, url=None, *args, **kwargs):
         """Initialize CouchBase backend instance.
 
-        :raise celery.exceptions.ImproperlyConfigured: if
+        :raises celery.exceptions.ImproperlyConfigured: if
             module :mod:`couchbase` is not available.
 
         """
@@ -53,10 +50,11 @@ class CouchBaseBackend(KeyValueStoreBackend):
         self.expires = kwargs.get('expires') or maybe_timedelta(
             self.app.conf.CELERY_TASK_RESULT_EXPIRES)
 
-        if not couchbase:
+        if Couchbase is None:
             raise ImproperlyConfigured(
                 'You need to install the couchbase library to use the '
-                'CouchBase backend.')
+                'CouchBase backend.',
+            )
 
         uhost = uport = uname = upass = ubucket = None
         if url:
@@ -67,25 +65,23 @@ class CouchBaseBackend(KeyValueStoreBackend):
         if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(
-                    'Couchbase backend settings should be grouped in a dict')
+                    'Couchbase backend settings should be grouped in a dict',
+                )
         else:
             config = {}
-            
+
         self.host = uhost or config.get('host', self.host)
         self.port = int(uport or config.get('port', self.port))
         self.bucket = ubucket or config.get('bucket', self.bucket)
         self.username = uname or config.get('username', self.username)
         self.password = upass or config.get('password', self.password)
-            
+
         self._connection = None
 
     def _get_connection(self):
         """Connect to the Couchbase server."""
         if self._connection is None:
-            kwargs = {
-                'bucket': self.bucket,
-                'host': self.host
-            }
+            kwargs = {'bucket': self.bucket, 'host': self.host}
 
             if self.port:
                 kwargs.update({'port': self.port})
@@ -94,10 +90,8 @@ class CouchBaseBackend(KeyValueStoreBackend):
             if self.password:
                 kwargs.update({'password': self.password})
 
-            logging.debug("couchbase settings %s" % kwargs)
-            self._connection = Connection(
-                **dict(kwargs)
-            )
+            logging.debug('couchbase settings %r', kwargs)
+            self._connection = Connection(**kwargs)
         return self._connection
 
     @property
@@ -109,10 +103,10 @@ class CouchBaseBackend(KeyValueStoreBackend):
             return self.connection.get(key).value
         except NotFoundError:
             return None
-        
+
     def set(self, key, value):
         self.connection.set(key, value)
-        
+
     def mget(self, keys):
         return [self.get(key) for key in keys]
 
