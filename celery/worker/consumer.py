@@ -146,7 +146,6 @@ class Consumer(object):
             'celery.worker.consumer:Events',
             'celery.worker.consumer:Gossip',
             'celery.worker.consumer:Heart',
-            'celery.worker.consumer:Control',
             'celery.worker.consumer:Tasks',
             'celery.worker.consumer:Evloop',
             'celery.worker.consumer:Agent',
@@ -202,9 +201,14 @@ class Consumer(object):
             # connect again.
             self.app.conf.BROKER_CONNECTION_TIMEOUT = None
 
+        
+        additional_steps = None
+        if self.app.conf.CELERY_ENABLE_REMOTE_CONTROL:
+            additional_steps = ['celery.worker.consumer:Control']
+            
         self.steps = []
         self.blueprint = self.Blueprint(
-            app=self.app, on_close=self.on_close,
+            app=self.app, on_close=self.on_close, steps=additional_steps,
         )
         self.blueprint.apply(self, **dict(worker_options or {}, **kwargs))
 
@@ -487,7 +491,7 @@ class Control(bootsteps.StartStopStep):
 
 
 class Tasks(bootsteps.StartStopStep):
-    requires = (Control, )
+    requires = ()
 
     def __init__(self, c, initial_prefetch_count=2, **kwargs):
         c.task_consumer = c.qos = None
