@@ -514,14 +514,6 @@ and return the result of the last task in the chain::
     >>> res.get()
     640
 
-And calling ``apply_async`` will create a dedicated
-task so that the act of sending the messages for the chain happens
-in a worker::
-
-    >>> res = chain(add.s(4, 4), mul.s(8), mul.s(10)).apply_async()
-    >>> res.get()
-    640
-
 It also sets ``parent`` attributes so that you can
 work your way up the chain to get intermediate results::
 
