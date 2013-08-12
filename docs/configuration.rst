@@ -211,6 +211,10 @@ Can be one of the following:
 * ironcache
     Use `IronCache`_ to store the results.
     See :ref:`conf-ironcache-result-backend`.
+    
+* couchbase
+    Use `Couchbase`_ to store the results.
+    See :ref:`conf-couchbase-result-backend`.
 
 .. warning:
 
@@ -223,6 +227,8 @@ Can be one of the following:
 .. _`Redis`: http://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
 .. _`IronCache`: http://www.iron.io/cache
+.. _`Couchbase`: http://www.couchbase.com/
+
 
 .. setting:: CELERY_RESULT_SERIALIZER
 
@@ -651,6 +657,52 @@ Or to change the cache name::
     ironcache:://project_id:token@/awesomecache
 
 For more information, see: https://github.com/iron-io/iron_celery
+
+
+. _conf-couchbase-result-backend:
+
+Couchbase backend settings
+--------------------------
+
+.. note::
+
+    The Couchbase backend requires the :mod:`couchbase` library:
+    https://pypi.python.org/pypi/couchbase
+    
+    To install the couchbase package use `pip` or `easy_install`:
+
+    .. code-block:: bash
+
+        $ pip install couchbase
+
+This backend can be configured via the :setting:`CELERY_RESULT_BACKEND`
+set to a couchbase URL::
+
+    CELERY_RESULT_BACKEND = "couchbase://username:password@host:port/bucket"
+    
+    
+.. setting:: CELERY_COUCHBASE_BACKEND_SETTINGS
+
+CELERY_COUCHBASE_BACKEND_SETTINGS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is a dict supporting the following keys:
+
+* host
+    Host name of the Couchbase server. Defaults to "localhost".
+
+* port
+    The port the Couchbase server is listening to. Defaults to 8091.
+    
+* bucket
+    The default bucket the Couchbase server is writing to. Defaults to "default".
+
+* username
+    User name to authenticate to the Couchbase server as (optional).
+
+* password
+    Password to authenticate to the Couchbase server (optional).
+
 
 .. _conf-messaging:
 
