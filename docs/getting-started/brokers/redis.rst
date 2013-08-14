@@ -111,4 +111,5 @@ Caveats
         InconsistencyError, Probably the key ('_kombu.binding.celery') has been
         removed from the Redis database.
 
-    you may want to configure the redis-server to not evict keys.
+    you may want to configure the redis-server to not evict keys by setting
+    the ``timeout`` parameter to 0.
