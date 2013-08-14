@@ -884,7 +884,7 @@ class test_WorkController(AppCase):
             from celery._state import _tls
             from celery.concurrency.processes import process_initializer
             from celery.concurrency.processes import (WORKER_SIGRESET,
-                                                    WORKER_SIGIGNORE)
+                                                      WORKER_SIGIGNORE)
 
             def on_worker_process_init(**kwargs):
                 on_worker_process_init.called = True
@@ -1193,8 +1193,6 @@ class test_WorkController(AppCase):
         ])
 
         result = Mock()
-        tref = result._tref
-
         poolimp.on_timeout_cancel(result)
         poolimp.on_timeout_cancel(result)  # no more tref
 

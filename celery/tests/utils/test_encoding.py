@@ -1,10 +1,5 @@
 from __future__ import absolute_import, unicode_literals
 
-import sys
-
-from nose import SkipTest
-
-from celery.five import string
 from celery.utils import encoding
 from celery.tests.case import Case
 

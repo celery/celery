@@ -200,8 +200,8 @@ class test_default_logger(AppCase):
 
             with override_stdouts() as outs:
                 stdout, stderr = outs
-                l = self.setup_logger(logfile=sys.stderr, loglevel=logging.INFO,
-                                      root=False)
+                l = self.setup_logger(logfile=sys.stderr,
+                                      loglevel=logging.INFO, root=False)
                 l.info('The quick brown fox...')
                 self.assertIn('The quick brown fox...', stderr.getvalue())
 
