@@ -22,7 +22,9 @@ from kombu import Exchange, Queue, Producer, Consumer
 from celery import states
 from celery.exceptions import TimeoutError
 from celery.five import range
+from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
+from celery.utils.timeutils import maybe_s_to_ms
 
 from .base import BaseBackend
 
@@ -65,7 +67,6 @@ class AMQPBackend(BaseBackend):
         super(AMQPBackend, self).__init__(app, **kwargs)
         conf = self.app.conf
         self._connection = connection
-        self.queue_arguments = {}
         self.persistent = (conf.CELERY_RESULT_PERSISTENT if persistent is None
                            else persistent)
         exchange = exchange or conf.CELERY_RESULT_EXCHANGE
@@ -78,8 +79,9 @@ class AMQPBackend(BaseBackend):
         self.expires = None
         if 'expires' not in kwargs or kwargs['expires'] is not None:
             self.expires = self.prepare_expires(kwargs.get('expires'))
-        if self.expires:
-            self.queue_arguments['x-expires'] = int(self.expires * 1000)
+        self.queue_arguments = dictfilter({
+            'x-expires': maybe_s_to_ms(self.expires),
+        })
         self.mutex = threading.Lock()
 
     def _create_exchange(self, name, type='direct', persistent=True):

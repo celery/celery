@@ -360,3 +360,7 @@ def utcoffset():
 
 def adjust_timestamp(ts, offset, here=utcoffset):
     return ts - (offset - here()) * 3600
+
+
+def maybe_s_to_ms(v):
+    return int(float(v) * 1000.0) if v is not None else v

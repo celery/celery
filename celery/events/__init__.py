@@ -26,7 +26,8 @@ from kombu.utils import cached_property
 
 from celery.app import app_or_default
 from celery.utils import uuid
-from celery.utils.timeutils import adjust_timestamp, utcoffset
+from celery.utils.functional import dictfilter
+from celery.utils.timeutils import adjust_timestamp, utcoffset, maybe_s_to_ms
 
 event_exchange = Exchange('celeryev', type='topic')
 
@@ -267,8 +268,16 @@ class EventReceiver(ConsumerMixin):
                            exchange=self.exchange,
                            routing_key=self.routing_key,
                            auto_delete=True,
-                           durable=False)
+                           durable=False,
+                           queue_arguments=self._get_queue_arguments())
         self.adjust_clock = self.app.clock.adjust
+
+    def _get_queue_arguments(self):
+        conf = self.app.conf
+        return dictfilter({
+            'x-message-ttl': maybe_s_to_ms(conf.CELERY_EVENT_QUEUE_TTL),
+            'x-expires': maybe_s_to_ms(conf.CELERY_EVENT_QUEUE_EXPIRES),
+        })
 
     def process(self, type, event):
         """Process the received event by dispatching it to the appropriate

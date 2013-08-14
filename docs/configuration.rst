@@ -1470,6 +1470,32 @@ tracked before they are consumed by a worker.
 
 Disabled by default.
 
+.. setting:: CELERY_EVENT_QUEUE_TTL
+
+CELERY_EVENT_QUEUE_TTL
+~~~~~~~~~~~~~~~~~~~~~~
+:transports supported: ``amqp``
+
+Message expiry time in seconds (int/float) for when messages sent to a monitor clients
+event queue is deleted (``x-message-ttl``)
+
+For example, if this value is set to 10 then a message delivered to this queue
+will be deleted after 10 seconds.
+
+Disabled by default.
+
+.. setting:: CELERY_EVENT_QUEUE_EXPIRES
+
+CELERY_EVENT_QUEUE_EXPIRES
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+:transports supported: ``amqp``
+
+
+Expiry time in seconds (int/float) for when a monitor clients
+event queue will be deleted (``x-expires``).
+
+Default is never, relying on the queue autodelete setting.
+
 .. setting:: CELERY_EVENT_SERIALIZER
 
 CELERY_EVENT_SERIALIZER
