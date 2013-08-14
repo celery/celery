@@ -32,6 +32,7 @@
     celery.backends.mongodb
     celery.backends.redis
     celery.backends.cassandra
+    celery.backends.couchbase
     celery.app.trace
     celery.app.annotations
     celery.app.routes
