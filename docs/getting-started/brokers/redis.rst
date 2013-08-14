@@ -103,3 +103,12 @@ Caveats
 
     This is caused by a limitation in Redis.  The Redis PUB/SUB channels
     are global and not affected by the database number.
+
+- Redis may evict keys from the database in some situations
+
+    If you experience an error like::
+
+        InconsistencyError, Probably the key ('_kombu.binding.celery') has been
+        removed from the Redis database.
+
+    you may want to configure the redis-server to not evict keys.
