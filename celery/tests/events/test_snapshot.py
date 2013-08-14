@@ -4,7 +4,7 @@ from mock import patch
 
 from celery.events import Events
 from celery.events.snapshot import Polaroid, evcam
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, restore_logging
 
 
 class TRef(object):
@@ -119,14 +119,15 @@ class test_evcam(AppCase):
         self.app.events = self.prev
 
     def test_evcam(self):
-        evcam(Polaroid, timer=timer)
-        evcam(Polaroid, timer=timer, loglevel='CRITICAL')
-        self.MockReceiver.raise_keyboard_interrupt = True
-        try:
-            with self.assertRaises(SystemExit):
-                evcam(Polaroid, timer=timer)
-        finally:
-            self.MockReceiver.raise_keyboard_interrupt = False
+        with restore_logging():
+            evcam(Polaroid, timer=timer)
+            evcam(Polaroid, timer=timer, loglevel='CRITICAL')
+            self.MockReceiver.raise_keyboard_interrupt = True
+            try:
+                with self.assertRaises(SystemExit):
+                    evcam(Polaroid, timer=timer)
+            finally:
+                self.MockReceiver.raise_keyboard_interrupt = False
 
     @patch('celery.platforms.create_pidlock')
     def test_evcam_pidfile(self, create_pidlock):

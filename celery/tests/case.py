@@ -204,11 +204,21 @@ class AppCase(Case):
             if isinstance(app.backend.client, DummyClient):
                 app.backend.client.cache.clear()
         app.backend._cache.clear()
+        root = logging.getLogger()
+        self.__rootlevel = root.level
+        self.__roothandlers = root.handlers
         self.setup()
 
     def tearDown(self):
         self.teardown()
         self._current_app.set_current()
+
+        root = logging.getLogger()
+        this = '.'.join([self.__class__.__name__, self._testMethodName])
+        if root.level != self.__rootlevel:
+            raise RuntimeError('Test {0} changed root loglevel'.format(this))
+        if root.handlers != self.__roothandlers:
+            raise RuntimeError('Test {0} changed root handlers'.format(this))
 
     def setup(self):
         pass
@@ -609,3 +619,16 @@ def body_from_sig(app, sig, utc=True):
         'utc': utc,
         'expires': expires,
     }
+
+
+@contextmanager
+def restore_logging():
+    root = logging.getLogger()
+    level = root.level
+    handlers = root.handlers
+
+    try:
+        yield
+    finally:
+        root.level = level
+        root.handlers[:] = handlers

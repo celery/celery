@@ -21,6 +21,7 @@ from celery.utils.log import (
 )
 from celery.tests.case import (
     AppCase, Case, override_stdouts, wrap_logger, get_handlers,
+    restore_logging,
 )
 
 
@@ -132,14 +133,16 @@ class test_default_logger(AppCase):
         self.assertIs(logger.parent, logging.root)
 
     def test_setup_logging_subsystem_misc(self):
-        self.app.log.setup_logging_subsystem(loglevel=None)
+        with restore_logging():
+            self.app.log.setup_logging_subsystem(loglevel=None)
 
     def test_setup_logging_subsystem_misc2(self):
-        self.app.conf.CELERYD_HIJACK_ROOT_LOGGER = True
-        try:
-            self.app.log.setup_logging_subsystem()
-        finally:
-            self.app.conf.CELERYD_HIJACK_ROOT_LOGGER = False
+        with restore_logging():
+            self.app.conf.CELERYD_HIJACK_ROOT_LOGGER = True
+            try:
+                self.app.log.setup_logging_subsystem()
+            finally:
+                self.app.conf.CELERYD_HIJACK_ROOT_LOGGER = False
 
     def test_get_default_logger(self):
         self.assertTrue(self.app.log.get_default_logger())
@@ -150,16 +153,18 @@ class test_default_logger(AppCase):
         logger.handlers[:] = []
 
     def test_setup_logging_subsystem_colorize(self):
-        self.app.log.setup_logging_subsystem(colorize=None)
-        self.app.log.setup_logging_subsystem(colorize=True)
+        with restore_logging():
+            self.app.log.setup_logging_subsystem(colorize=None)
+            self.app.log.setup_logging_subsystem(colorize=True)
 
     def test_setup_logging_subsystem_no_mputil(self):
         from celery.utils import log as logtools
-        mputil, logtools.mputil = logtools.mputil, None
-        try:
-            self.app.log.setup_logging_subsystem()
-        finally:
-            logtools.mputil = mputil
+        with restore_logging():
+            mputil, logtools.mputil = logtools.mputil, None
+            try:
+                self.app.log.setup_logging_subsystem()
+            finally:
+                logtools.mputil = mputil
 
     def _assertLog(self, logger, logmsg, loglevel=logging.ERROR):
 
@@ -176,86 +181,92 @@ class test_default_logger(AppCase):
         return self.assertFalse(val, reason)
 
     def test_setup_logger(self):
-        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
-                                   root=False, colorize=True)
-        logger.handlers = []
-        Logging._setup = False
-        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
-                                   root=False, colorize=None)
-        self.assertIs(
-            get_handlers(logger)[0].stream, sys.__stderr__,
-            'setup_logger logs to stderr without logfile argument.',
-        )
+        with restore_logging():
+            logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                       root=False, colorize=True)
+            logger.handlers = []
+            Logging._setup = False
+            logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                       root=False, colorize=None)
+            self.assertIs(
+                get_handlers(logger)[0].stream, sys.__stderr__,
+                'setup_logger logs to stderr without logfile argument.',
+            )
 
     def test_setup_logger_no_handlers_stream(self):
-        l = self.get_logger()
-        l.handlers = []
+        with restore_logging():
+            l = self.get_logger()
+            l.handlers = []
 
-        with override_stdouts() as outs:
-            stdout, stderr = outs
-            l = self.setup_logger(logfile=sys.stderr, loglevel=logging.INFO,
-                                  root=False)
-            l.info('The quick brown fox...')
-            self.assertIn('The quick brown fox...', stderr.getvalue())
+            with override_stdouts() as outs:
+                stdout, stderr = outs
+                l = self.setup_logger(logfile=sys.stderr, loglevel=logging.INFO,
+                                      root=False)
+                l.info('The quick brown fox...')
+                self.assertIn('The quick brown fox...', stderr.getvalue())
 
     def test_setup_logger_no_handlers_file(self):
-        l = self.get_logger()
-        l.handlers = []
-        tempfile = mktemp(suffix='unittest', prefix='celery')
-        l = self.setup_logger(logfile=tempfile, loglevel=0, root=False)
-        self.assertIsInstance(get_handlers(l)[0],
-                              logging.FileHandler)
+        with restore_logging():
+            l = self.get_logger()
+            l.handlers = []
+            tempfile = mktemp(suffix='unittest', prefix='celery')
+            l = self.setup_logger(logfile=tempfile, loglevel=0, root=False)
+            self.assertIsInstance(get_handlers(l)[0],
+                                  logging.FileHandler)
 
     def test_redirect_stdouts(self):
-        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
-                                   root=False)
-        try:
-            with wrap_logger(logger) as sio:
-                self.app.log.redirect_stdouts_to_logger(
-                    logger, loglevel=logging.ERROR,
-                )
-                logger.error('foo')
-                self.assertIn('foo', sio.getvalue())
-                self.app.log.redirect_stdouts_to_logger(
-                    logger, stdout=False, stderr=False,
-                )
-        finally:
-            sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+        with restore_logging():
+            logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                       root=False)
+            try:
+                with wrap_logger(logger) as sio:
+                    self.app.log.redirect_stdouts_to_logger(
+                        logger, loglevel=logging.ERROR,
+                    )
+                    logger.error('foo')
+                    self.assertIn('foo', sio.getvalue())
+                    self.app.log.redirect_stdouts_to_logger(
+                        logger, stdout=False, stderr=False,
+                    )
+            finally:
+                sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
     def test_logging_proxy(self):
-        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
-                                   root=False)
+        with restore_logging():
+            logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                       root=False)
 
-        with wrap_logger(logger) as sio:
-            p = LoggingProxy(logger, loglevel=logging.ERROR)
-            p.close()
-            p.write('foo')
-            self.assertNotIn('foo', sio.getvalue())
-            p.closed = False
-            p.write('foo')
-            self.assertIn('foo', sio.getvalue())
-            lines = ['baz', 'xuzzy']
-            p.writelines(lines)
-            for line in lines:
-                self.assertIn(line, sio.getvalue())
-            p.flush()
-            p.close()
-            self.assertFalse(p.isatty())
+            with wrap_logger(logger) as sio:
+                p = LoggingProxy(logger, loglevel=logging.ERROR)
+                p.close()
+                p.write('foo')
+                self.assertNotIn('foo', sio.getvalue())
+                p.closed = False
+                p.write('foo')
+                self.assertIn('foo', sio.getvalue())
+                lines = ['baz', 'xuzzy']
+                p.writelines(lines)
+                for line in lines:
+                    self.assertIn(line, sio.getvalue())
+                p.flush()
+                p.close()
+                self.assertFalse(p.isatty())
 
-            with override_stdouts() as (stdout, stderr):
-                with in_sighandler():
-                    p.write('foo')
-                    self.assertTrue(stderr.getvalue())
+                with override_stdouts() as (stdout, stderr):
+                    with in_sighandler():
+                        p.write('foo')
+                        self.assertTrue(stderr.getvalue())
 
     def test_logging_proxy_recurse_protection(self):
-        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
-                                   root=False)
-        p = LoggingProxy(logger, loglevel=logging.ERROR)
-        p._thread.recurse_protection = True
-        try:
-            self.assertIsNone(p.write('FOOFO'))
-        finally:
-            p._thread.recurse_protection = False
+        with restore_logging():
+            logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                       root=False)
+            p = LoggingProxy(logger, loglevel=logging.ERROR)
+            p._thread.recurse_protection = True
+            try:
+                self.assertIsNone(p.write('FOOFO'))
+            finally:
+                p._thread.recurse_protection = False
 
 
 class test_task_logger(test_default_logger):

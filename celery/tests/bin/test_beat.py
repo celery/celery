@@ -13,7 +13,7 @@ from celery import platforms
 from celery.bin import beat as beat_bin
 from celery.apps import beat as beatapp
 
-from celery.tests.case import AppCase, Mock
+from celery.tests.case import AppCase, Mock, restore_logging
 
 
 class MockedShelveModule(object):
@@ -118,24 +118,26 @@ class test_Beat(AppCase):
         MockService.in_sync = False
 
     def test_setup_logging(self):
-        try:
-            # py3k
-            delattr(sys.stdout, 'logger')
-        except AttributeError:
-            pass
-        b = beatapp.Beat(app=self.app)
-        b.redirect_stdouts = False
-        b.app.log.__class__._setup = False
-        b.setup_logging()
-        with self.assertRaises(AttributeError):
-            sys.stdout.logger
+        with restore_logging():
+            try:
+                # py3k
+                delattr(sys.stdout, 'logger')
+            except AttributeError:
+                pass
+            b = beatapp.Beat(app=self.app)
+            b.redirect_stdouts = False
+            b.app.log.__class__._setup = False
+            b.setup_logging()
+            with self.assertRaises(AttributeError):
+                sys.stdout.logger
 
     @redirect_stdouts
     @patch('celery.apps.beat.logger')
     def test_logs_errors(self, logger, stdout, stderr):
-        b = MockBeat3(app=self.app, socket_timeout=None)
-        b.start_scheduler()
-        self.assertTrue(logger.critical.called)
+        with restore_logging():
+            b = MockBeat3(app=self.app, socket_timeout=None)
+            b.start_scheduler()
+            self.assertTrue(logger.critical.called)
 
     @redirect_stdouts
     @patch('celery.platforms.create_pidlock')

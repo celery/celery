@@ -32,7 +32,7 @@ from celery.utils import worker_direct
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 
-from celery.tests.case import AppCase, Case
+from celery.tests.case import AppCase, Case, restore_logging
 
 
 def MockStep(step=None):
@@ -878,40 +878,41 @@ class test_WorkController(AppCase):
     @patch('celery.platforms.signals')
     @patch('celery.platforms.set_mp_process_title')
     def test_process_initializer(self, set_mp_process_title, _signals):
-        from celery import Celery
-        from celery import signals
-        from celery._state import _tls
-        from celery.concurrency.processes import process_initializer
-        from celery.concurrency.processes import (WORKER_SIGRESET,
-                                                  WORKER_SIGIGNORE)
+        with restore_logging():
+            from celery import Celery
+            from celery import signals
+            from celery._state import _tls
+            from celery.concurrency.processes import process_initializer
+            from celery.concurrency.processes import (WORKER_SIGRESET,
+                                                    WORKER_SIGIGNORE)
 
-        def on_worker_process_init(**kwargs):
-            on_worker_process_init.called = True
-        on_worker_process_init.called = False
-        signals.worker_process_init.connect(on_worker_process_init)
+            def on_worker_process_init(**kwargs):
+                on_worker_process_init.called = True
+            on_worker_process_init.called = False
+            signals.worker_process_init.connect(on_worker_process_init)
 
-        loader = Mock()
-        loader.override_backends = {}
-        app = Celery(loader=loader, set_as_current=False)
-        app.loader = loader
-        app.conf = AttributeDict(DEFAULTS)
-        process_initializer(app, 'awesome.worker.com')
-        _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
-        _signals.reset.assert_any_call(*WORKER_SIGRESET)
-        self.assertTrue(app.loader.init_worker.call_count)
-        self.assertTrue(on_worker_process_init.called)
-        self.assertIs(_tls.current_app, app)
-        set_mp_process_title.assert_called_with(
-            'celeryd', hostname='awesome.worker.com',
-        )
+            loader = Mock()
+            loader.override_backends = {}
+            app = Celery(loader=loader, set_as_current=False)
+            app.loader = loader
+            app.conf = AttributeDict(DEFAULTS)
+            process_initializer(app, 'awesome.worker.com')
+            _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
+            _signals.reset.assert_any_call(*WORKER_SIGRESET)
+            self.assertTrue(app.loader.init_worker.call_count)
+            self.assertTrue(on_worker_process_init.called)
+            self.assertIs(_tls.current_app, app)
+            set_mp_process_title.assert_called_with(
+                'celeryd', hostname='awesome.worker.com',
+            )
 
-        with patch('celery.app.trace.setup_worker_optimizations') as swo:
-            os.environ['FORKED_BY_MULTIPROCESSING'] = "1"
-            try:
-                process_initializer(app, 'luke.worker.com')
-                swo.assert_called_with(app)
-            finally:
-                os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+            with patch('celery.app.trace.setup_worker_optimizations') as swo:
+                os.environ['FORKED_BY_MULTIPROCESSING'] = "1"
+                try:
+                    process_initializer(app, 'luke.worker.com')
+                    swo.assert_called_with(app)
+                finally:
+                    os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
 
     def test_attrs(self):
         worker = self.worker
