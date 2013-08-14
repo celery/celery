@@ -63,7 +63,7 @@ Enabled by default since version 3.0.
 .. setting:: CELERY_TIMEZONE
 
 CELERY_TIMEZONE
----------------
+~~~~~~~~~~~~~~~
 
 Configure Celery to use a custom time zone.
 The timezone value can be any time zone supported by the `pytz`_
