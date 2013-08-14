@@ -102,6 +102,7 @@ NAMESPACES = {
         'CACHE_BACKEND': Option(),
         'CACHE_BACKEND_OPTIONS': Option({}, type='dict'),
         'CHORD_PROPAGATES': Option(True, type='bool'),
+        'COUCHBASE_BACKEND_SETTINGS': Option(None, type='dict'),
         'CREATE_MISSING_QUEUES': Option(True, type='bool'),
         'DEFAULT_RATE_LIMIT': Option(type='string'),
         'DISABLE_RATE_LIMITS': Option(False, type='bool'),

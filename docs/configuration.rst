@@ -668,7 +668,7 @@ Couchbase backend settings
 
     The Couchbase backend requires the :mod:`couchbase` library:
     https://pypi.python.org/pypi/couchbase
-    
+
     To install the couchbase package use `pip` or `easy_install`:
 
     .. code-block:: bash
@@ -679,8 +679,8 @@ This backend can be configured via the :setting:`CELERY_RESULT_BACKEND`
 set to a couchbase URL::
 
     CELERY_RESULT_BACKEND = "couchbase://username:password@host:port/bucket"
-    
-    
+
+
 .. setting:: CELERY_COUCHBASE_BACKEND_SETTINGS
 
 CELERY_COUCHBASE_BACKEND_SETTINGS
@@ -693,7 +693,7 @@ This is a dict supporting the following keys:
 
 * port
     The port the Couchbase server is listening to. Defaults to 8091.
-    
+
 * bucket
     The default bucket the Couchbase server is writing to. Defaults to "default".
 
