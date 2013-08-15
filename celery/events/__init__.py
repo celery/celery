@@ -56,7 +56,7 @@ def Event(type, _fields=None, __dict__=dict, __now__=time.time, **fields):
 
 
 def group_from(type):
-    """Get the group part of a event type name.
+    """Get the group part of an event type name.
 
     E.g.::
 

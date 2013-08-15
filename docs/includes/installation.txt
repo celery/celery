@@ -68,18 +68,21 @@ you are not currently using a virtualenv.
 Using the development version
 -----------------------------
 
-You can clone the repository by doing the following::
+With pip
+~~~~~~~~
 
-    $ git clone https://github.com/celery/celery
-    $ cd celery
-    $ python setup.py develop
+The Celery development version also requires the development
+versions of ``kombu``, ``amqp`` and ``billiard``.
 
-The development version will usually also depend on the development
-version of `kombu`_, the messaging framework Celery uses
-to send and receive messages, so you should also install that from git::
+You can install the latest snapshot of these using the following
+pip commands::
 
-    $ git clone https://github.com/celery/kombu
-    $ cd kombu
-    $ python setup.py develop
+    $ pip install https://github.com/celery/celery/zipball/master#egg=celery
+    $ pip install https://github.com/celery/billiard/zipball/master#egg=billiard
+    $ pip install https://github.com/celery/py-amqp/zipball/master#egg=amqp
+    $ pip install https://github.com/celery/kombu/zipball/master#egg=kombu
 
-.. _`kombu`: http://kombu.readthedocs.org/en/latest/
+With git
+~~~~~~~~
+
+Please the Contributing section.
