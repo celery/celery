@@ -15,17 +15,6 @@ class test_encoding(Case):
         self.assertTrue(encoding.safe_str('foo'))
         self.assertTrue(encoding.safe_str(u'foo'))
 
-    def test_safe_str_UnicodeDecodeError(self):
-        if sys.version_info >= (3, 0):
-            raise SkipTest('py3k: not relevant')
-
-        class foo(unicode):
-
-            def encode(self, *args, **kwargs):
-                raise UnicodeDecodeError('foo')
-
-        self.assertIn('<Unrepresentable', encoding.safe_str(foo()))
-
     def test_safe_repr(self):
         self.assertTrue(encoding.safe_repr(object()))
 

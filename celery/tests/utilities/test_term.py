@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
+from kombu.utils.encoding import str_t
+
 from celery.utils import term
 from celery.utils.term import colored, fg
 
@@ -38,7 +40,7 @@ class test_colored(Case):
         self.assertTrue(str(colored().iwhite('f')))
         self.assertTrue(str(colored().reset('f')))
 
-        self.assertTrue(str(colored().green(u'∂bar')))
+        self.assertTrue(str_t(colored().green(u'∂bar')))
 
         self.assertTrue(
             colored().red(u'éefoo') + colored().green(u'∂bar'))
