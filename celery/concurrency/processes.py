@@ -8,6 +8,12 @@
     We use the billiard fork of multiprocessing which contains
     numerous improvements.
 
+    This code deals with three major challenges:
+
+        1) Starting up child processes and keeping them running.
+        2) Sending jobs to the processes and receiving results back.
+        3) Safely shutting down this system.
+
 """
 from __future__ import absolute_import
 
