@@ -12,7 +12,6 @@
 from __future__ import absolute_import
 
 import atexit
-import gc
 import logging
 import socket
 import sys
