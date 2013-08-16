@@ -15,7 +15,9 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 ======
 :release-date: 2013-08-16 16:30 P.M BST
 
-- Now depends on billiard 2.7.3.32
+- Now depends on :ref:`Kombu 2.5.13 <kombu:version-2.5.13>`.
+
+- Now depends on :mod:`billiard` 2.7.3.32
 
 - Fixed bug with monthly and yearly crontabs (Issue #1465).
 
