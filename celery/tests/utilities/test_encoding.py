@@ -1,9 +1,5 @@
 from __future__ import absolute_import
 
-import sys
-
-from nose import SkipTest
-
 from celery.utils import encoding
 from celery.tests.utils import Case
 
