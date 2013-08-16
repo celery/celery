@@ -9,6 +9,26 @@
 
 If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
+.. _version-3.0.22:
+
+3.0.22
+======
+:release-date: 2013-08-16 16:30 P.M BST
+
+- Fixed bug with monthly and yearly crontabs (Issue #1465).
+
+    Fix contributed by Guillaume Gauvrit.
+
+- Fixed memory leak caused by time limits (Issue #1129, Issue #1427)
+
+- Worker will now sleep if being restarted more than 5 times
+  in one second to avoid spamming with ``worker-online`` events.
+
+- Includes documentation fixes
+
+    Contributed by: Ken Fromm, Andreas Savvides, Alex Kiriukha,
+    Michael Fladischer.
+
 .. _version-3.0.21:
 
 3.0.21
