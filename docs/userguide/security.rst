@@ -27,15 +27,15 @@ Broker
 ------
 
 It is imperative that the broker is guarded from unwanted access, especially
-if it is publically accesible.
+if accessible to the public.
 By default, workers trust that the data they get from the broker has not
 been tampered with. See `Message Signing`_ for information on how to make
-the broker connection more trusthworthy.
+the broker connection more trustworthy.
 
 The first line of defence should be to put a firewall in front of the broker,
 allowing only white-listed machines to access it.
 
-Keep in mind that both firewall misconfiguration, and temproraily disabling
+Keep in mind that both firewall misconfiguration, and temporarily disabling
 the firewall, is common in the real world. Solid security policy includes
 monitoring of firewall equipment to detect if they have been disabled, be it
 accidentally or on purpose.
@@ -101,7 +101,7 @@ unauthenticated.
 .. [*] http://nadiana.com/python-pickle-insecure
 
 You can disable untrusted content by specifying
-a whitelist of accepted content-types in the :setting:`CELERY_ACCEPT_CONTENT`
+a white-list of accepted content-types in the :setting:`CELERY_ACCEPT_CONTENT`
 setting:
 
 .. code-block:: python
@@ -148,8 +148,8 @@ the :setting:`CELERY_SECURITY_KEY`,
 :setting:`CELERY_SECURITY_CERTIFICATE` and :setting:`CELERY_SECURITY_CERT_STORE`
 settings respectively.
 With these configured it is also necessary to call the
-:func:`celery.security.setup_security` function.  Note that this will also
-disable all insucure serializers so that the worker won't accept
+:func:`celery.setup_security` function.  Note that this will also
+disable all insecure serializers so that the worker won't accept
 messages with untrusted content types.
 
 This is an example configuration using the `auth` serializer,
@@ -160,7 +160,7 @@ with the private key and certificate files located in `/etc/ssl`.
     CELERY_SECURITY_KEY = '/etc/ssl/private/worker.key'
     CELERY_SECURITY_CERTIFICATE = '/etc/ssl/certs/worker.pem'
     CELERY_SECURITY_CERT_STORE = '/etc/ssl/certs/*.pem'
-    from celery.security import setup_security
+    from celery import setup_security
     setup_security()
 
 .. note::
