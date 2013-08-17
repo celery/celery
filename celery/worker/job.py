@@ -331,7 +331,7 @@ class Request(object):
         if self.store_errors:
             self.task.backend.mark_as_failure(self.id, exc)
 
-    def on_success(self, ret_value, now=None):
+    def on_success(self, ret_value, now=None, nowfun=time.time):
         """Handler called if the task was successfully processed."""
         if isinstance(ret_value, ExceptionInfo):
             if isinstance(ret_value.exception, (
@@ -344,14 +344,14 @@ class Request(object):
             self.acknowledge()
 
         if self.eventer and self.eventer.enabled:
-            now = time.time()
-            runtime = self.time_start and (time.time() - self.time_start) or 0
+            now = nowfun()
+            runtime = self.time_start and (now - self.time_start) or 0
             self.send_event('task-succeeded',
                             result=safe_repr(ret_value), runtime=runtime)
 
         if _does_info:
-            now = now or time.time()
-            runtime = self.time_start and (time.time() - self.time_start) or 0
+            now = now or nowfun()
+            runtime = self.time_start and (now - self.time_start) or 0
             info(self.success_msg.strip(), {
                 'id': self.id, 'name': self.name,
                 'return_value': self.repr_result(ret_value),
