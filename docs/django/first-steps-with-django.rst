@@ -1,3 +1,5 @@
+.. _django-first-steps:
+
 =========================
  First steps with Django
 =========================

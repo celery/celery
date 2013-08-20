@@ -35,9 +35,9 @@ Highlights
 
 .. topic:: Overview
 
-    - XXX1
+    - Now supports Django out of the box.
 
-        YYY1
+        See the new tutorial at :ref:`django-first-steps`.
 
     - XXX2
 
@@ -176,8 +176,6 @@ In Other News
     - A bootstep can now be part of multiple namespaces.
     - Namespaces must instantiate individual bootsteps, and
       there's no global registry of bootsteps.
-
-
 
 - New result backend with RPC semantics (``rpc``).
 
@@ -337,6 +335,36 @@ In Other News
         pip install celery[zookeeper]
         pip install celery[sqlalchemy]
 
+- New settings :setting:`CELERY_EVENT_QUEUE_TTL` and
+  :setting:`CELERY_EVENT_QUEUE_EXPIRES`.
+
+    These control when a monitors event queue is deleted, and for how long
+    events published to that queue will be visible.  Only supported on
+    RabbitMQ.
+
+- New Couchbase result backend
+
+    This result backend enables you to store and retrieve task results
+    using `Couchbase`_.
+
+    See :ref:`conf-couchbase-result-backend` for more information
+    about configuring this result backend.
+
+    Contributed by Alain Masiero.
+
+    .. _`Couchbase`: http://www.couchbase.com
+
+
+- CentOS init script now supports starting multiple worker instances.
+
+    See the script header for details.
+
+    Contributed by Jonathan Jordan.
+
+- ``AsyncResult.iter_native`` now sets default interval parameter to 0.5
+
+    Fix contributed by Idan Kamara
+
 - Worker node names now consists of a name and a hostname separated by '@'.
 
     This change is to more easily identify multiple instances running
@@ -386,6 +414,29 @@ In Other News
     | ``%%``        | The character ``%``                   |
     +---------------+---------------------------------------+
 
+- Task decorator can now create "bound tasks"
+
+    This means that the function will be a method in the resulting
+    task class and so will have a ``self`` argument that can be used
+    to refer to the current task:
+
+    .. code-block:: python
+
+        @app.task(bind=True)
+        def send_twitter_status(self, oauth, tweet):
+            try:
+                twitter = Twitter(oauth)
+                twitter.update_status(tweet)
+            except (Twitter.FailWhaleError, Twitter.LoginError) as exc:
+                raise self.retry(exc=exc)
+
+    Using *bound tasks* is now the recommended approach whenever
+    you need access to the current task or request context.
+    Previously one would have to refer to the name of the task
+    instead (``send_twitter_status.retry``), but this could lead to problems
+    in some instances where the registered task was no longer the same
+    object.
+
 - Workers now synchronizes revoked tasks with its neighbors.
 
     This happens at startup and causes a one second startup delay
@@ -402,6 +453,40 @@ In Other News
     You may notice that the logical clock is an integer value and increases
     very rapidly. It will take several millennia before the clock overflows 64 bits,
     so this is not a concern.
+
+- New setting :setting:`BROKER_LOGIN_METHOD`
+
+    This setting can be used to specify an alternate login method
+    for the AMQP transports.
+
+    Contributed by Adrien Guinet
+
+- The ``dump_conf`` remote control command will now give the string
+  representation for types that are not JSON compatible.
+
+- Calling a subtask will now execute the task directly as documented.
+
+    A misunderstanding led to ``Signature.__call__`` being an alias of
+    ``.delay`` but this does not conform to the calling API of ``Task`` which
+    should call the underlying task method.
+
+    This means that:
+
+    .. code-block:: python
+
+        @app.task
+        def add(x, y):
+            return x + y
+
+        add.s(2, 2)()
+
+    does the same as calling the task directly:
+
+    .. code-block:: python
+
+        add(2, 2)
+
+- Function `celery.security.setup_security` is now :func:`celery.setup_security`.
 
 - Message expires value is now forwarded at retry (Issue #980).
 
@@ -428,6 +513,18 @@ In Other News
   error.
 
     Contributed by Chris Adams.
+
+- ``events.State`` no longer crashes when it receives unknown event types.
+
+- SQLAlchemy Result Backend: New :setting:`CELERY_RESULT_DB_TABLENAMES`
+  setting can be used to change the name of the database tables used.
+
+    Contributed by Ryan Petrello.
+
+- A stress test suite for the Celery worker has been written.
+
+    This is located in the ``funtests/stress`` directory in the git
+    repository. There's a README file there to get you started.
 
 - The logger named ``celery.concurrency`` has been renamed to ``celery.pool``.
 
@@ -556,6 +653,9 @@ Scheduled Removals
     setting.  This is because function rarely establish connections directly,
     but instead acquire connections from the connection pool.
 
+- The ``Celery.with_default_connection`` method has been removed in favor
+  of ``with app.connection_or_acquire``.
+
 .. _v310-deprecations:
 
 Deprecations
@@ -574,3 +674,26 @@ Fixes
 =====
 
 - XXX
+
+.. _v310-internal
+
+Internal changes
+================
+
+- Module ``celery.task.trace`` has been renamed to :mod:`celery.app.trace`.
+
+- Classes that no longer fall back to using the default app:
+
+    - Result backends (:class:`celery.backends.base.BaseBackend`)
+    - :class:`celery.worker.WorkController`
+    - :class:`celery.worker.Consumer`
+    - :class:`celery.worker.job.Request`
+
+    This means that you have to pass a specific app when instantiating
+    these classes.
+
+- ``EventDispatcher.copy_buffer`` renamed to ``EventDispatcher.extend_buffer``
+
+- Removed unused and never documented global instance
+  ``celery.events.state.state``.
+
