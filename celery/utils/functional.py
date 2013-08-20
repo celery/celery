@@ -280,6 +280,9 @@ class _regen(UserList, list):
     def __init__(self, it):
         self.__it = it
 
+    def __reduce__(self):
+        return list, (self.data, )
+
     @cached_property
     def data(self):
         return list(self.__it)
