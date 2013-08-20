@@ -49,9 +49,11 @@ def Event(type, _fields=None, __dict__=dict, __now__=time.time, **fields):
     A ``timestamp`` field will be set to the current time if not provided.
 
     """
-    event = __dict__(_fields or {}, type=type, **fields)
+    event = __dict__(_fields, **fields) if _fields else fields
     if 'timestamp' not in event:
-        event['timestamp'] = __now__()
+        event.update(timestamp=__now__(), type=type)
+    else:
+        event['type'] = type
     return event
 
 
