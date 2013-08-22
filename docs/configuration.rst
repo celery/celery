@@ -1082,7 +1082,8 @@ stored task tombstones will be deleted.
 A built-in periodic task will delete the results after this time
 (:class:`celery.task.backend_cleanup`).
 
-Setting it to None or 0 will disable results cleanup.
+A value of :const:`None` or 0 means results will never expire (depending
+on backend specifications).
 
 Default is to expire after 1 day.
 
