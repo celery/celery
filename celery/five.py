@@ -127,7 +127,7 @@ else:
 def with_metaclass(Type, skip_attrs=set(['__dict__', '__weakref__'])):
     """Class decorator to set metaclass.
 
-    Works with both Python 3 and Python 3 and it does not add
+    Works with both Python 2 and Python 3 and it does not add
     an extra class in the lookup order like ``six.with_metaclass`` does
     (that is -- it copies the original class instead of using inheritance).
 
