@@ -471,6 +471,10 @@ class group(Signature):
     def __repr__(self):
         return repr(self.tasks)
 
+    @property
+    def type(self):
+        return self._type or self.tasks[0].type.app.tasks[self['task']]
+
 
 @Signature.register_type
 class chord(Signature):
