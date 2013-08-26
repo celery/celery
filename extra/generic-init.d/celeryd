@@ -139,7 +139,8 @@ _get_pid_files() {
 }
 
 _get_pids() {
-    local pid_files="$(_get_pid_files)"
+    local pid_files=
+    pid_files=`_get_pid_files`
     [ -z "$pid_files" ] && echo "celeryd is stopped" && exit 1
 
     for pid_file in $pid_files; do
@@ -147,7 +148,7 @@ _get_pids() {
         local cleaned_pid=`echo "$pid" | sed -e 's/[^0-9]//g'`
         if [ -z "$pid" ] || [ "$cleaned_pid" != "$pid" ]; then
             echo "bad pid file ($pid_file)"
-            one_failure=true
+            one_failed=true
         else
             echo "$pid"
         fi
@@ -155,11 +156,12 @@ _get_pids() {
 }
 
 _get_worker_pids() {
-    local pids="$(_get_pids)"
+    local pids=
+    pids=`_get_pids`
     local worker_pids=
     for pid in $pids; do
         worker_pids=`ps h --ppid $pid -o pid`
-        [ "$worker_pids" ] && echo "$worker_pids" || one_failure=true
+        [ "$worker_pids" ] && echo "$worker_pids" || one_failed=true
     done
 }
 
@@ -194,7 +196,8 @@ restart_workers () {
 }
 
 restart_workers_graceful () {
-    local worker_pids="$(_get_worker_pids)"
+    local worker_pids=
+    worker_pids=`_get_worker_pids`
     [ "$one_failed" ] && exit 1
 
     for worker_pid in $worker_pids; do
