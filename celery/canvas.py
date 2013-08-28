@@ -432,7 +432,7 @@ class group(Signature):
                 task['args'] = task._merge(d['args'])[0]
         return group(tasks, **kwdict(d['options']))
 
-    def __call__(self, *partial_args, **options):
+    def __call__(self, *partial_args, **opts):
         tasks = [task.clone() for task in self.tasks]
         if not tasks:
             return
@@ -441,14 +441,15 @@ class group(Signature):
         # consolidate tasks with the same app and apply them in
         # batches.
         type = tasks[0].type.app.tasks[self['task']]
-        return type(*type.prepare(options, tasks, partial_args))
+        return type(*type.prepare(dict(self.options, **opts),
+                                  tasks, partial_args))
 
     def freeze(self, _id=None):
         opts = self.options
         try:
-            gid = opts['group']
+            gid = opts['task_id']
         except KeyError:
-            gid = opts['group'] = uuid()
+            gid = opts['task_id'] = uuid()
         new_tasks, results = [], []
         for task in self.tasks:
             task = maybe_subtask(task).clone()
