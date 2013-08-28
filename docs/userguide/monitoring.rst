@@ -118,7 +118,7 @@ Commands
 
         $ celery inspect registered
 
-* **inspect stats**: Show worker statistics
+* **inspect stats**: Show worker statistics (see :ref:`worker-statistics`)
 
     .. code-block:: bash
 

@@ -263,12 +263,26 @@ Persistent revokes
 ------------------
 
 Revoking tasks works by sending a broadcast message to all the workers,
-the workers then keep a list of revoked tasks in memory.
+the workers then keep a list of revoked tasks in memory.  When a worker starts
+up it will synchronize revoked tasks with other workers in the cluster.
 
-If you want tasks to remain revoked after worker restart you need to
-specify a file for these to be stored in, either by using the `--statedb`
-argument to :program:`celery worker` or the :setting:`CELERYD_STATE_DB`
-setting.
+The list of revoked tasks is in-memory so if all workers restart the list
+of revoked ids will also vanish.  If you want to preserve this list between
+restarts you need to specify a file for these to be stored in by using the `--statedb`
+argument to :program:`celery worker`:
+
+.. code-block:: bash
+
+    celery -A proj worker -l info --statedb=/var/run/celery/worker.state
+
+or if you use :program:`celery multi` you will want to create one file per
+worker instance so then you can use the `%n` format to expand the current node
+name:
+
+.. code-block:: bash
+
+    celery multi start 2 -l info --statedb=/var/run/celery/%n.state
+
 
 Note that remote control commands must be working for revokes to work.
 Remote control commands are only supported by the RabbitMQ (amqp), Redis and MongDB
@@ -764,6 +778,203 @@ You can get a list of these using
           'id': '32666e9b-809c-41fa-8e93-5ae0c80afbbf',
           'args': '(8,)',
           'kwargs': '{}'}]}]
+
+
+.. _worker-statistics:
+
+Statistics
+----------
+
+The remote control command ``inspect stats`` (or
+:meth:`~@control.inspect.stats`) will give you a long list of useful (or not
+so useful) statistics about the worker:
+
+.. code-block:: bash
+
+    $ celery -A proj inspect stats
+
+The output will include the following fields:
+
+- ``broker``
+
+    Section for broker information.
+
+    * ``connect_timeout``
+
+        Timeout in seconds (int/float) for establishing a new connection.
+
+    * ``heartbeat``
+
+        Current heartbeat value (set by client).
+
+    * ``hostname``
+
+        Hostname of the remote broker.
+
+    * ``insist``
+
+        No longer used.
+
+    * ``login_method``
+
+        Login method used to connect to the broker.
+
+    * ``port``
+
+        Port of the remote broker.
+
+    * ``ssl``
+
+        SSL enabled/disabled.
+
+    * ``transport``
+
+        Name of transport used (e.g. ``amqp`` or ``mongodb``)
+
+    * ``transport_options``
+
+        Options passed to transport.
+
+    * ``uri_prefix``
+
+        Some transports expects the host name to be an URL, this applies to
+        for example SQLAlchemy where the host name part is the connection URI:
+
+            sqla+sqlite:///
+
+        In this example the uri prefix will be ``sqla``.
+
+    * ``userid``
+
+        User id used to connect to the broker with.
+
+    * ``virtual_host``
+
+        Virtual host used.
+
+- ``clock``
+
+    Value of the workers logical clock.  This is a positive integer and should
+    be increasing every time you receive statistics.
+
+- ``pid``
+
+    Process id of the worker instance (Main process).
+
+- ``pool``
+
+    Pool-specific section.
+
+    * ``max-concurrency``
+
+        Max number of processes/threads/green threads.
+
+    * ``max-tasks-per-child``
+
+        Max number of tasks a thread may execute before being recycled.
+
+    * ``processes``
+
+        List of pids (or thread-id's).
+
+    * ``put-guarded-by-semaphore``
+
+        Internal
+
+    * ``timeouts``
+
+        Default values for time limits.
+
+    * ``writes``
+
+        Specific to the processes pool, this shows the distribution of writes
+        to each process in the pool when using async I/O.
+
+- ``prefetch_count``
+
+    Current prefetch count value for the task consumer.
+
+- ``rusage``
+
+    System usage statistics.  The fields available may be different
+    on your platform.
+
+    From :man:`getrusage(2)`:
+
+    * ``stime``
+
+        Time spent in operating system code on behalf of this process.
+
+    * ``utime``
+
+        Time spent executing user instructions.
+
+    * ``maxrss``
+
+        The maximum resident size used by this process (in kilobytes).
+
+    * ``idrss``
+
+        Amount of unshared memory used for data (in kilobytes times ticks of
+        execution)
+
+    * ``isrss``
+
+        Amount of unshared memory used for stack space (in kilobytes times
+        ticks of execution)
+
+    * ``ixrss``
+
+        Amount of memory shared with other processes (in kilobytes times
+        ticks of execution).
+
+    * ``inblock``
+
+        Number of times the file system had to read from the disk on behalf of
+        this process.
+
+    * ``oublock``
+
+        Number of times the file system has to write to disk on behalf of
+        this process.
+
+    * ``majflt``
+
+        Number of page faults which were serviced by doing I/O.
+
+    * ``minflt``
+
+        Number of page faults which were serviced without doing I/O.
+
+    * ``msgrcv``
+
+        Number of IPC messages received.
+
+    * ``msgsnd``
+
+        Number of IPC messages sent.
+
+    * ``nvcsw``
+
+        Number of times this process voluntarily invoked a context switch.
+
+    * ``nivcsw``
+
+        Number of times an involuntary context switch took place.
+
+    * ``nsignals``
+
+        Number of signals received.
+
+    * ``nswap``
+
+        The number of times this process was swapped entirely out of memory.
+
+
+- ``total``
+
+    List of task names and a total number of times that task have been
+    executed since worker start.
 
 
 Additional Commands
