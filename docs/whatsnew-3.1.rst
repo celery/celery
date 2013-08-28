@@ -153,6 +153,33 @@ In Other News
     no longer happens as a side-effect of importing the :mod:`djcelery`
     module.
 
+- ``Signature.freeze()`` can now be used to "finalize" subtasks
+
+    Regular subtask:
+
+    .. code-block:: python
+
+        >>> s = add.s(2, 2)
+        >>> result = s.freeze()
+        >>> result
+        <AsyncResult: ffacf44b-f8a1-44e9-80a3-703150151ef2>
+        >>> s.delay()
+        <AsyncResult: ffacf44b-f8a1-44e9-80a3-703150151ef2>
+
+    Group:
+
+    .. code-block:: python
+
+        >>> g = group(add.s(2, 2), add.s(4, 4))
+        >>> result = g.freeze()
+        <GroupResult: e1094b1d-08fc-4e14-838e-6d601b99da6d [
+            70c0fb3d-b60e-4b22-8df7-aa25b9abc86d,
+            58fcd260-2e32-4308-a2ea-f5be4a24f7f4]>
+        >>> g()
+        <GroupResult: e1094b1d-08fc-4e14-838e-6d601b99da6d [70c0fb3d-b60e-4b22-8df7-aa25b9abc86d, 58fcd260-2e32-4308-a2ea-f5be4a24f7f4]>
+
+
+
 - The consumer part of the worker has been rewritten to use Bootsteps.
 
     By writing bootsteps you can now easily extend the consumer part
@@ -566,6 +593,33 @@ In Other News
         # ...also specify the max number of workers/threads shown (wmax/tmax),
         # enumerating anything that exceeds that number.
         $ celery graph workers wmax:10 tmax:3
+
+- Changed the way that app instances are pickled
+
+    Apps can now define a ``__reduce_keys__`` method that is used instead
+    of the old ``AppPickler`` attribute.  E.g. if your app defines a custom
+    'foo' attribute that needs to be preserved when pickling you can define
+    a ``__reduce_keys__`` as such:
+
+    .. code-block:: python
+
+        import celery
+
+
+        class Celery(celery.Celery):
+
+            def __init__(self, *args, **kwargs):
+                super(Celery, self).__init__(*args, **kwargs)
+                self.foo = kwargs.get('foo')
+
+            def __reduce_keys__(self):
+                return super(Celery, self).__reduce_keys__().update(
+                    foo=self.foo,
+                )
+
+    This is a much more convenient way to add support for pickling custom
+    attributes. The old ``AppPickler`` is still supported but its use is
+    discouraged and we would like to remove it in a future version.
 
 - Ability to trace imports for debugging purposes.
 
