@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import sys
+
 from celery.utils import term
 from celery.utils.term import colored, fg
 from celery.five import text_t
@@ -9,6 +11,17 @@ from celery.tests.case import Case
 
 
 class test_colored(Case):
+
+    def setUp(self):
+        self._prev_encoding = sys.getdefaultencoding
+
+        def getdefaultencoding():
+            return 'utf-8'
+
+        sys.getdefaultencoding = getdefaultencoding
+
+    def tearDown(self):
+        sys.getdefaultencoding = self._prev_encoding
 
     def test_colors(self):
         colors = (
