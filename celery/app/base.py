@@ -242,10 +242,14 @@ class Celery(object):
                            self.conf.CELERY_MESSAGE_COMPRESSION)
         options = router.route(options, name, args, kwargs)
         with self.producer_or_acquire(producer) as producer:
+            cb = None
+            if 'callbacks' not in options:
+                cb = options.get('link')
             return result_cls(producer.publish_task(
                 name, args, kwargs,
                 task_id=task_id,
                 countdown=countdown, eta=eta,
+                callbacks=cb,
                 expires=expires, **options
             ))
 
