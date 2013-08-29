@@ -490,7 +490,7 @@ class Control(bootsteps.StartStopStep):
 
 
 class Tasks(bootsteps.StartStopStep):
-    requires = ()
+    requires = (Events, )
 
     def __init__(self, c, initial_prefetch_count=2, **kwargs):
         c.task_consumer = c.qos = None
