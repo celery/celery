@@ -4,6 +4,7 @@ from kombu import Exchange, Queue
 from mock import Mock
 
 from celery.app.amqp import Queues, TaskPublisher
+from celery.five import keys
 from celery.tests.case import AppCase
 
 
@@ -185,13 +186,13 @@ class test_Queues(AppCase):
         q = Queues()
         q.select_subset(['foo', 'bar'])
         q.select_add('baz')
-        self.assertItemsEqual(q._consume_from.keys(), ['foo', 'bar', 'baz'])
+        self.assertItemsEqual(keys(q._consume_from), ['foo', 'bar', 'baz'])
 
     def test_select_remove(self):
         q = Queues()
         q.select_subset(['foo', 'bar'])
         q.select_remove('bar')
-        self.assertItemsEqual(q._consume_from.keys(), ['foo'])
+        self.assertItemsEqual(keys(q._consume_from), ['foo'])
 
     def test_with_ha_policy_compat(self):
         q = Queues(ha_policy='all')

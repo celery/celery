@@ -40,7 +40,7 @@ class test_DictAttribute(Case):
             list(x.items()),
         )
         self.assertIn('foo', list(x.keys()))
-        self.assertIn('The quick yellow fox', x.values())
+        self.assertIn('The quick yellow fox', list(x.values()))
 
     def test_setdefault(self):
         x = DictAttribute(Object())
