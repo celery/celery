@@ -1336,6 +1336,16 @@ rechecking the schedule.  Default is 1 second.
 Setting this value to 1 second means the schedulers precision will
 be 1 second. If you need near millisecond precision you can set this to 0.1.
 
+.. setting:: CELERY_ENABLE_REMOTE_CONTROL
+
+CELERY_ENABLE_REMOTE_CONTROL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Specify if remote control of the workers is enabled.
+
+Default is :const:`True`.
+
+
 .. _conf-error-mails:
 
 Error E-Mails
