@@ -71,6 +71,10 @@ PRECEDENCE = ['SUCCESS',
               'RETRY',
               'PENDING']
 
+#: Hash lookup of PRECEDENCE to index
+PRECEDENCE_LOOKUP = dict(zip(PRECEDENCE, range(0, len(PRECEDENCE))))
+NONE_PRECEDENCE = PRECEDENCE_LOOKUP[None]
+
 
 def precedence(state):
     """Get the precedence index for state.
@@ -79,9 +83,9 @@ def precedence(state):
 
     """
     try:
-        return PRECEDENCE.index(state)
-    except ValueError:
-        return PRECEDENCE.index(None)
+        return PRECEDENCE_LOOKUP[state]
+    except KeyError:
+        return NONE_PRECEDENCE
 
 
 class state(str):
