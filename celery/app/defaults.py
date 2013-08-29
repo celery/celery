@@ -113,6 +113,7 @@ NAMESPACES = {
         'DEFAULT_DELIVERY_MODE': Option(2, type='string'),
         'EAGER_PROPAGATES_EXCEPTIONS': Option(False, type='bool'),
         'ENABLE_UTC': Option(True, type='bool'),
+        'ENABLE_REMOTE_CONTROL': Option(True, type='bool'),
         'EVENT_SERIALIZER': Option('json'),
         'EVENT_QUEUE_EXPIRES': Option(None, type='float'),
         'EVENT_QUEUE_TTL': Option(None, type='float'),
