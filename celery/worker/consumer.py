@@ -201,7 +201,7 @@ class Consumer(object):
             # so if the connection timeout is exceeded once, it can NEVER
             # connect again.
             self.app.conf.BROKER_CONNECTION_TIMEOUT = None
-            
+
         self.steps = []
         self.blueprint = self.Blueprint(
             app=self.app, on_close=self.on_close,
@@ -484,7 +484,7 @@ class Control(bootsteps.StartStopStep):
         self.start = self.box.start
         self.stop = self.box.stop
         self.shutdown = self.box.shutdown
-        
+
     def include_if(self, c):
         return c.app.conf.CELERY_ENABLE_REMOTE_CONTROL
 
