@@ -34,6 +34,8 @@ def _on_blocking(signum, frame):
 
 @contextmanager
 def blockdetection(timeout):
+    """A timeout context using ``SIGALRM`` that can be used to detect blocking
+    functions."""
     if not timeout:
         yield
     else:
@@ -116,11 +118,17 @@ UNITS = (
 
 
 def hfloat(f, p=5):
+    """Converts float to value suitable for humans.
+
+    :keyword p: Float precision.
+
+    """
     i = int(f)
     return i if i == f else '{0:.{p}}'.format(f, p=p)
 
 
 def humanbytes(s):
+    """Converts bytes to human-readable form (e.g. kB, MB)."""
     return next(
         '{0}{1}'.format(hfloat(s / div if div else s), unit)
         for div, unit in UNITS if s >= div

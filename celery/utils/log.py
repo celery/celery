@@ -48,8 +48,10 @@ def set_in_sighandler(value):
 @contextmanager
 def in_sighandler():
     set_in_sighandler(True)
-    yield
-    set_in_sighandler(False)
+    try:
+        yield
+    finally:
+        set_in_sighandler(False)
 
 
 def get_logger(name):
