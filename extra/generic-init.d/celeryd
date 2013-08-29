@@ -138,6 +138,34 @@ _get_pid_files() {
     echo `ls -1 "$CELERYD_PID_DIR"/*.pid 2> /dev/null`
 }
 
+_get_pids() {
+    local pid_files=
+    pid_files=`_get_pid_files`
+    [ -z "$pid_files" ] && echo "celeryd is stopped" && exit 1
+
+    for pid_file in $pid_files; do
+        local pid=`cat "$pid_file"`
+        local cleaned_pid=`echo "$pid" | sed -e 's/[^0-9]//g'`
+        if [ -z "$pid" ] || [ "$cleaned_pid" != "$pid" ]; then
+            echo "bad pid file ($pid_file)"
+            one_failed=true
+        else
+            echo "$pid"
+        fi
+    done
+}
+
+_get_worker_pids() {
+    local pids=
+    pids=`_get_pids`
+    local worker_pids=
+    for pid in $pids; do
+        worker_pids=`ps h --ppid $pid -o pid`
+        [ "$worker_pids" ] && echo "$worker_pids" || one_failed=true
+    done
+}
+
+
 stop_workers () {
     $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
     sleep $SLEEP_SECONDS
@@ -165,6 +193,25 @@ restart_workers () {
                            $CELERY_APP_ARG                  \
                            $CELERYD_OPTS
     sleep $SLEEP_SECONDS
+}
+
+restart_workers_graceful () {
+    local worker_pids=
+    worker_pids=`_get_worker_pids`
+    [ "$one_failed" ] && exit 1
+
+    for worker_pid in $worker_pids; do
+        local failed=
+        kill -HUP $worker_pid 2> /dev/null || failed=true
+        if [ "$failed" ]; then
+            echo "celeryd worker (pid $worker_pid) could not be restarted"
+            one_failed=true
+        else
+            echo "celeryd worker (pid $worker_pid) received SIGHUP"
+        fi
+    done
+
+    [ "$one_failed" ] && exit 1 || exit 0
 }
 
 check_status () {
@@ -221,21 +268,29 @@ case "$1" in
         check_paths
         restart_workers
     ;;
+
+    restart-workers-graceful)
+        check_dev_null
+        restart_workers_graceful
+    ;;
+
     try-restart)
         check_dev_null
         check_paths
         restart_workers
     ;;
+
     create-paths)
         check_dev_null
         create_paths
     ;;
+
     check-paths)
         check_dev_null
         check_paths
     ;;
     *)
-        echo "Usage: /etc/init.d/celeryd {start|stop|restart|kill|create-paths}"
+        echo "Usage: /etc/init.d/celeryd {start|stop|restart|restart-workers-graceful|kill|create-paths}"
         exit 64  # EX_USAGE
     ;;
 esac
