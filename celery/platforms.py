@@ -292,7 +292,7 @@ class DaemonContext(object):
         self.stdfds = (sys.stdin, sys.stdout, sys.stderr)
 
     def redirect_to_null(self, fd):
-        if fd:
+        if fd is not None:
             dest = os.open(os.devnull, os.O_RDWR)
             os.dup2(dest, fd)
 
