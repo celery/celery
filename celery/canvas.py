@@ -432,6 +432,16 @@ class group(Signature):
                 task['args'] = task._merge(d['args'])[0]
         return group(tasks, **kwdict(d['options']))
 
+    def apply_async(self, *args, **kwargs):
+        if not self.tasks:
+            return self.freeze()  # empty group returns GroupResult
+        return Signature.apply_async(self, *args, **kwargs)
+
+    def apply(self, *args, **kwargs):
+        if not self.tasks:
+            return self.freeze()  # empty group returns GroupResult
+        return Signature.apply(self, *args, **kwargs)
+
     def __call__(self, *partial_args, **opts):
         tasks = [task.clone() for task in self.tasks]
         if not tasks:
