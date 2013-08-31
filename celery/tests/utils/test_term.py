@@ -3,6 +3,8 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 
+from kombu.utils.encoding import str_t
+
 from celery.utils import term
 from celery.utils.term import colored, fg
 from celery.five import text_t

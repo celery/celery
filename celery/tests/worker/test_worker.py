@@ -1192,6 +1192,8 @@ class test_WorkController(AppCase):
             call(w.sentinel), call(w.outqR_fd),
         ])
 
+        w.pool._tref_for_id = {}
+
         result = Mock()
         poolimp.on_timeout_cancel(result)
         poolimp.on_timeout_cancel(result)  # no more tref
