@@ -95,7 +95,7 @@ class Celery(object):
         self.loader_cls = loader or self.loader_cls
         self.log_cls = log or self.log_cls
         self.control_cls = control or self.control_cls
-        self.task_cls = task_cls
+        self.task_cls = task_cls or self.task_cls
         self.set_as_current = set_as_current
         self.registry_cls = symbol_by_name(self.registry_cls)
         self.accept_magic_kwargs = accept_magic_kwargs
