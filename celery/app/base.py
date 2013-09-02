@@ -78,6 +78,7 @@ class Celery(object):
     loader_cls = 'celery.loaders.app:AppLoader'
     log_cls = 'celery.app.log:Logging'
     control_cls = 'celery.app.control:Control'
+    task_cls = 'celery.app.task:Task'
     registry_cls = TaskRegistry
     _pool = None
 
@@ -85,7 +86,7 @@ class Celery(object):
                  amqp=None, events=None, log=None, control=None,
                  set_as_current=True, accept_magic_kwargs=False,
                  tasks=None, broker=None, include=None, changes=None,
-                 config_source=None, fixups=None, **kwargs):
+                 config_source=None, fixups=None, task_cls=None, **kwargs):
         self.clock = LamportClock()
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
@@ -94,6 +95,7 @@ class Celery(object):
         self.loader_cls = loader or self.loader_cls
         self.log_cls = log or self.log_cls
         self.control_cls = control or self.control_cls
+        self.task_cls = task_cls
         self.set_as_current = set_as_current
         self.registry_cls = symbol_by_name(self.registry_cls)
         self.accept_magic_kwargs = accept_magic_kwargs
@@ -414,7 +416,7 @@ class Celery(object):
     def create_task_cls(self):
         """Creates a base task class using default configuration
         taken from this app."""
-        return self.subclass_with_self('celery.app.task:Task', name='Task',
+        return self.subclass_with_self(self.task_cls, name='Task',
                                        attribute='_app', abstract=True)
 
     def subclass_with_self(self, Class, name=None, attribute='app',
@@ -478,6 +480,7 @@ class Celery(object):
             'accept_magic_kwargs': self.accept_magic_kwargs,
             'fixups': self.fixups,
             'config_source': self._config_source,
+            'task_cls': self.task_cls,
         }
 
     def __reduce_args__(self):
