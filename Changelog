@@ -13,9 +13,29 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 3.0.23
 ======
-:release-date: 2013-08-31 16:00 P.M BST
+:release-date: 2013-09-02 01:00 P.M BST
 
 - Now depends on :ref:`Kombu 2.5.14 <kombu:version-2.5.14>`.
+
+- ``send_task`` did not honor ``link`` and ``link_error`` arguments.
+
+    This had the side effect of chains not calling unregistered tasks,
+    silently discarding them.
+
+    Fix contributed by Taylor Nelson.
+
+- :mod:`celery.state`: Optimized precedence lookup.
+
+    Contributed by Matt Robenolt.
+
+- Posix: Daemonization did not redirect ``sys.stdin`` to ``/dev/null``.
+
+    Fix contributed by Alexander Smirnov.
+
+- Canvas: group bug caused fallback to default app when ``.apply_async`` used
+  (Issue #1516)
+
+- Canvas: generator arguments was not always pickleable.
 
 .. _version-3.0.22:
 
