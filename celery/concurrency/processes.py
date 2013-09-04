@@ -453,8 +453,8 @@ class TaskPool(BasePool):
         """
         if self.options.get('maxtasksperchild'):
             try:
-                import _billiard  # noqa
-                _billiard.Connection.send_offset
+                from billiard import Connection
+                Connection.send_offset
             except (ImportError, AttributeError):
                 # billiard C extension not installed
                 warning(MAXTASKS_NO_BILLIARD)
