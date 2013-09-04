@@ -17,17 +17,36 @@
 # Default-Stop:      0 1 6
 # Short-Description: celery task worker daemon
 ### END INIT INFO
+#
+#
+# To implement separate init scripts, do NOT copy this script.  Instead,
+# symlink it.  I.e., if my new application, "little-worker" needs an init, I
+# should just use:
+#
+#   ln -s /etc/init.d/celeryd /etc/init.d/little-worker
+#
+# You can then configure this by manipulating /etc/default/little-worker.
+#
+# If you want to have separate LSB headers in each script you can source this
+# script instead of symlinking:
+#   # ...
+#   ### END INIT INFO
+#   source /etc/init.d/celeryd
+#
+# Setting `SCRIPT_NAME` here allows you to symlink/source this init script,
+# making it easy to run multiple processes on the system.
+SCRIPT_NAME="$(basename $0)"
 
 # some commands work asyncronously, so we'll wait this many seconds
 SLEEP_SECONDS=5
 
-DEFAULT_PID_FILE="/var/run/celery/%N.pid"
-DEFAULT_LOG_FILE="/var/log/celery/%N.log"
+DEFAULT_PID_FILE="/var/run/celery/${SCRIPT_NAME}-%N.pid"
+DEFAULT_LOG_FILE="/var/log/celery/${SCRIPT_NAME}-%N.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
 DEFAULT_CELERYD="-m celery worker --detach"
 
-CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/celeryd"}
+CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/${SCRIPT_NAME}"}
 
 test -f "$CELERY_DEFAULTS" && . "$CELERY_DEFAULTS"
 
@@ -141,7 +160,7 @@ _get_pid_files() {
 _get_pids() {
     local pid_files=
     pid_files=`_get_pid_files`
-    [ -z "$pid_files" ] && echo "celeryd is stopped" && exit 1
+    [ -z "$pid_files" ] && echo "${SCRIPT_NAME} is stopped" && exit 1
 
     for pid_file in $pid_files; do
         local pid=`cat "$pid_file"`
@@ -204,10 +223,10 @@ restart_workers_graceful () {
         local failed=
         kill -HUP $worker_pid 2> /dev/null || failed=true
         if [ "$failed" ]; then
-            echo "celeryd worker (pid $worker_pid) could not be restarted"
+            echo "${SCRIPT_NAME} worker (pid $worker_pid) could not be restarted"
             one_failed=true
         else
-            echo "celeryd worker (pid $worker_pid) received SIGHUP"
+            echo "${SCRIPT_NAME} worker (pid $worker_pid) received SIGHUP"
         fi
     done
 
@@ -217,7 +236,7 @@ restart_workers_graceful () {
 check_status () {
     local pid_files=
     pid_files=`_get_pid_files`
-    [ -z "$pid_files" ] && echo "celeryd not running (no pidfile)" && exit 1
+    [ -z "$pid_files" ] && echo "${SCRIPT_NAME} not running (no pidfile)" && exit 1
 
     local one_failed=
     for pid_file in $pid_files; do
@@ -230,10 +249,10 @@ check_status () {
             local failed=
             kill -0 $pid 2> /dev/null || failed=true
             if [ "$failed" ]; then
-                echo "celeryd (node $node) (pid $pid) is stopped, but pid file exists!"
+                echo "${SCRIPT_NAME} (node $node) (pid $pid) is stopped, but pid file exists!"
                 one_failed=true
             else
-                echo "celeryd (node $node) (pid $pid) is running..."
+                echo "${SCRIPT_NAME} (node $node) (pid $pid) is running..."
             fi
         fi
     done
@@ -290,7 +309,7 @@ case "$1" in
         check_paths
     ;;
     *)
-        echo "Usage: /etc/init.d/celeryd {start|stop|restart|restart-workers-graceful|kill|create-paths}"
+        echo "Usage: /etc/init.d/${SCRIPT_NAME} {start|stop|restart|restart-workers-graceful|kill|create-paths}"
         exit 64  # EX_USAGE
     ;;
 esac
