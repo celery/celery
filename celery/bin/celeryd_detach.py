@@ -109,7 +109,10 @@ class detached_celeryd(object):
                    'for the list of supported worker arguments.')
     command = sys.executable
     execv_path = sys.executable
-    execv_argv = ['-m', 'celery', 'worker']
+    if sys.version_info < (2, 7):  # does not support pkg/__main__.py
+        execv_argv = ['-m', 'celery.bin.celery', 'worker']
+    else:
+        execv_argv = ['-m', 'celery', 'worker']
 
     def Parser(self, prog_name):
         return PartialOptionParser(prog=prog_name,
