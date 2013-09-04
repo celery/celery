@@ -18,7 +18,6 @@
 from __future__ import absolute_import
 
 import errno
-import gc
 import os
 import select
 import socket
@@ -576,10 +575,6 @@ class TaskPool(BasePool):
                 tref = trefs.pop(job)
                 tref.cancel()
                 del(tref)
-                # Will not be reclaimed quickly enough on some platforms,
-                # so the memory is growing and still not released back to the
-                # OS.
-                gc.collect()
             except (KeyError, AttributeError):
                 pass  # out of scope
         self._discard_tref = _discard_tref
