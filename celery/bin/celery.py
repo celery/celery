@@ -780,6 +780,4 @@ def command(*args, **kwargs):
 
 
 if __name__ == '__main__':          # pragma: no cover
-    from celery.platforms import maybe_patch_concurrency
-    maybe_patch_concurrency(sys.argv, ['-P'], ['--pool'])
     main()

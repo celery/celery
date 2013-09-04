@@ -110,7 +110,7 @@ class detached_celeryd(object):
     command = sys.executable
     execv_path = sys.executable
     if sys.version_info < (2, 7):  # does not support pkg/__main__.py
-        execv_argv = ['-m', 'celery.bin.celery', 'worker']
+        execv_argv = ['-m', 'celery.__main__', 'worker']
     else:
         execv_argv = ['-m', 'celery', 'worker']
 
