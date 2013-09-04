@@ -21,9 +21,13 @@
 # abnormally in the absence of a valid process ID.
 #set -e
 
+# Setting `SCRIPT_NAME` here allows you to symlink/source this init script,
+# making it easy to run multiple processes on the system.
+SCRIPT_NAME="$(basename $0)"
+
 CELERY_BIN=${CELERY_BIN:-"celery"}
-DEFAULT_PID_FILE="/var/run/celery/beat.pid"
-DEFAULT_LOG_FILE="/var/log/celery/beat.log"
+DEFAULT_PID_FILE="/var/run/celery/${SCRIPT_NAME}.pid"
+DEFAULT_LOG_FILE="/var/log/celery/${SCRIPT_NAME}.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_CELERYBEAT="$CELERY_BIN beat"
 
@@ -33,8 +37,8 @@ if test -f /etc/default/celeryd; then
     . /etc/default/celeryd
 fi
 
-if test -f /etc/default/celerybeat; then
-    . /etc/default/celerybeat
+if test -f /etc/default/${SCRIPT_NAME}; then
+    . /etc/default/${SCRIPT_NAME}
 fi
 
 CELERYBEAT=${CELERYBEAT:-$DEFAULT_CELERYBEAT}
@@ -162,7 +166,7 @@ wait_pid () {
 
 
 stop_beat () {
-    echo -n "Stopping celerybeat... "
+    echo -n "Stopping ${SCRIPT_NAME}... "
     if [ -f "$CELERYBEAT_PID_FILE" ]; then
         wait_pid $(cat "$CELERYBEAT_PID_FILE")
     else
@@ -171,7 +175,7 @@ stop_beat () {
 }
 
 start_beat () {
-    echo "Starting celerybeat..."
+    echo "Starting ${SCRIPT_NAME}..."
     if [ -n "$VIRTUALENV" ]; then
         source $VIRTUALENV/bin/activate
     fi
@@ -210,7 +214,7 @@ case "$1" in
         check_paths
     ;;
     *)
-        echo "Usage: /etc/init.d/celerybeat {start|stop|restart|create-paths}"
+        echo "Usage: /etc/init.d/${SCRIPT_NAME} {start|stop|restart|create-paths}"
         exit 64  # EX_USAGE
     ;;
 esac
