@@ -224,7 +224,6 @@ class Celery(object):
             '__doc__': fun.__doc__,
             '__module__': fun.__module__}, **options))()
         task = self._tasks[T.name]  # return global instance.
-        task.bind(self)
         return task
 
     def finalize(self):
