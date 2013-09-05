@@ -43,6 +43,7 @@ class X(object):
         self.hub.on_task = on_task or []
         self.hub.readers = {}
         self.hub.writers = {}
+        self.hub.consolidate = set()
         self.hub.fire_timers.return_value = 1.7
         self.Hub = self.hub
         # need this for create_task_handler
