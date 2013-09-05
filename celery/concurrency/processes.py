@@ -19,6 +19,7 @@ from __future__ import absolute_import
 
 import errno
 import os
+import random
 import select
 import socket
 import struct
@@ -786,8 +787,17 @@ class TaskPool(BasePool):
             # are messages pending this will schedule writing one message
             # by registering the 'schedule_writes' function for all currently
             # inactive inqueues (not already being written to)
+
+            # consolidate means the eventloop will merge them
+            # and call the callback once with the list writable fds as
+            # argument.  Using this means we minimize the risk of having
+            # the same fd receive every task if the pipe read buffer is not
+            # full.
             if outbound:
-                hub_add(diff(active_writes), schedule_writes, WRITE | ERR)
+                hub_add(
+                    diff(active_writes), None, WRITE | ERR,
+                    consolidate=True,
+                )
         self.on_poll_start = on_poll_start
 
         def on_inqueue_close(fd):
@@ -797,47 +807,53 @@ class TaskPool(BasePool):
             all_inqueues.discard(fd)
         self._pool.on_inqueue_close = on_inqueue_close
 
-        def schedule_writes(ready_fd, events):
+        def schedule_writes(ready_fds, shuffle=random.shuffle):
             # Schedule write operation to ready file descriptor.
             # The file descriptor is writeable, but that does not
             # mean the process is currently reading from the socket.
             # The socket is buffered so writeable simply means that
             # the buffer can accept at least 1 byte of data.
-            if ready_fd in active_writes:
-                # already writing to this fd
-                return
-            try:
-                job = pop_message()
-            except IndexError:
-                # no more messages, remove all inactive fds from the hub.
-                # this is important since the fds are always writeable
-                # as long as there's 1 byte left in the buffer, and so
-                # this may create a spinloop where the eventloop always wakes
-                # up.
-                for inqfd in diff(active_writes):
-                    hub_remove(inqfd)
-            else:
-                if not job._accepted:  # job not accepted by another worker
-                    try:
-                        # keep track of what process the write operation
-                        # was scheduled for.
-                        proc = job._scheduled_for = fileno_to_inq[ready_fd]
-                    except KeyError:
-                        # write was scheduled for this fd but the process
-                        # has since exited and the message must be sent to
-                        # another process.
-                        return put_message(job)
-                    cor = _write_job(proc, ready_fd, job)
-                    job._writer = ref(cor)
-                    mark_write_gen_as_active(cor)
-                    mark_write_fd_as_active(ready_fd)
+            shuffle(ready_fds)
+            for ready_fd in ready_fds:
+                if ready_fd in active_writes:
+                    # already writing to this fd
+                    continue
+                try:
+                    job = pop_message()
+                except IndexError:
+                    # no more messages, remove all inactive fds from the hub.
+                    # this is important since the fds are always writeable
+                    # as long as there's 1 byte left in the buffer, and so
+                    # this may create a spinloop where the eventloop
+                    # always wakes up.
+                    for inqfd in diff(active_writes):
+                        hub_remove(inqfd)
+                    break
 
-                    # Try to write immediately, in case there's an error.
-                    try:
-                        next(cor)
-                        hub_add((ready_fd, ), cor, WRITE | ERR)
-                    except StopIteration:
-                        pass
+                else:
+                    if not job._accepted:  # job not accepted by another worker
+                        try:
+                            # keep track of what process the write operation
+                            # was scheduled for.
+                            proc = job._scheduled_for = fileno_to_inq[ready_fd]
+                        except KeyError:
+                            # write was scheduled for this fd but the process
+                            # has since exited and the message must be sent to
+                            # another process.
+                            put_message(job)
+                            continue
+                        cor = _write_job(proc, ready_fd, job)
+                        job._writer = ref(cor)
+                        mark_write_gen_as_active(cor)
+                        mark_write_fd_as_active(ready_fd)
+
+                        # Try to write immediately, in case there's an error.
+                        try:
+                            next(cor)
+                            hub_add((ready_fd, ), cor, WRITE | ERR)
+                        except StopIteration:
+                            pass
+        hub.consolidate_callback = schedule_writes
 
         def send_job(tup):
             # Schedule writing job request for when one of the process

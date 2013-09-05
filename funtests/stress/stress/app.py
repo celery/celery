@@ -59,7 +59,7 @@ def kill(sig=signal.SIGKILL):
 
 
 @app.task
-def sleeping(i):
+def sleeping(i, **_):
     sleep(i)
 
 

@@ -149,6 +149,7 @@ class Hub(object):
         self.on_init = []
         self.on_close = []
         self.on_task = []
+        self.consolidate = set()
 
     def start(self):
         """Called by Hub bootstep at worker startup."""
@@ -178,18 +179,20 @@ class Hub(object):
                     logger.error('Error in timer: %r', exc, exc_info=1)
         return min(max(delay or 0, min_delay), max_delay)
 
-    def _add(self, fd, cb, flags):
+    def _add(self, fd, cb, flags, consolidate=False):
         #if flags & WRITE:
         #    ex = self.writers.get(fd)
         #    if ex and ex.__name__ == '_write_job':
         #        assert not ex.gi_frame or ex.gi_frame == -1
         self.poller.register(fd, flags)
         (self.readers if flags & READ else self.writers)[fileno(fd)] = cb
+        if consolidate:
+            self.consolidate.add(fd)
 
-    def add(self, fds, callback, flags):
+    def add(self, fds, callback, flags, consolidate=False):
         for fd in maybe_list(fds, None):
             try:
-                self._add(fd, callback, flags)
+                self._add(fd, callback, flags, consolidate)
             except ValueError:
                 self._discard(fd)
 
@@ -220,6 +223,7 @@ class Hub(object):
         fd = fileno(fd)
         self.readers.pop(fd, None)
         self.writers.pop(fd, None)
+        self.consolidate.discard(fd)
 
     def close(self, *args):
         [self._unregister(fd) for fd in self.readers]

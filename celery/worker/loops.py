@@ -49,6 +49,8 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     keep_draining = connection.transport.nb_keep_draining
     errors = connection.connection_errors
     hub_add, hub_remove = hub.add, hub.remove
+    consolidate = hub.consolidate
+    consolidate_callback = hub.consolidate_callback
 
     on_task_received = obj.create_task_handler(on_task_callbacks)
 
@@ -83,6 +85,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
             update_readers(conn_poll_start())
             pool_poll_start(hub)
             if readers or writers:
+                to_consolidate = []
                 connection.more_to_read = True
                 while connection.more_to_read:
                     try:
@@ -94,6 +97,10 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
                     if not events:
                         conn_poll_empty()
                     for fileno, event in events or ():
+                        if fileno in consolidate and \
+                                writers.get(fileno) is None:
+                            to_consolidate.append(fileno)
+                            continue
                         cb = None
                         try:
                             if event & READ:
@@ -124,6 +131,8 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
                         except socket.error:
                             if blueprint.state != CLOSE:  # pragma: no cover
                                 raise
+                    if to_consolidate:
+                        consolidate_callback(to_consolidate)
                     if keep_draining:
                         drain_nowait()
                         poll_timeout = 0
