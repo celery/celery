@@ -150,6 +150,7 @@ class Hub(object):
         self.on_close = []
         self.on_task = []
         self.consolidate = set()
+        self.consolidate_callback = None
 
     def start(self):
         """Called by Hub bootstep at worker startup."""
