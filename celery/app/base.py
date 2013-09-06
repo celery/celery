@@ -126,8 +126,6 @@ class Celery(object):
         if include:
             self._preconf['CELERY_IMPORTS'] = include
 
-        enable_insecure_serializers()
-
         # Apply fixups.
         self.fixups = set(fixups or ())
         for fixup in self.fixups | BUILTIN_FIXUPS:

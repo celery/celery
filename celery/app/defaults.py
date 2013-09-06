@@ -30,6 +30,7 @@ elif is_pypy:
         DEFAULT_POOL = 'processes'
 
 
+DEFAULT_ACCEPT_CONTENT = ['json', 'pickle', 'msgpack', 'yaml']
 DEFAULT_PROCESS_LOG_FMT = """
     [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
 """.strip()
@@ -91,7 +92,7 @@ NAMESPACES = {
         'WRITE_CONSISTENCY': Option(type='string'),
     },
     'CELERY': {
-        'ACCEPT_CONTENT': Option(None, type='list'),
+        'ACCEPT_CONTENT': Option(DEFAULT_ACCEPT_CONTENT, type='list'),
         'ACKS_LATE': Option(False, type='bool'),
         'ALWAYS_EAGER': Option(False, type='bool'),
         'ANNOTATIONS': Option(type='any'),
