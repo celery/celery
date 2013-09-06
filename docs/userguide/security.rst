@@ -104,6 +104,14 @@ You can disable untrusted content by specifying
 a whitelist of accepted content-types in the :setting:`CELERY_ACCEPT_CONTENT`
 setting:
 
+.. versionadded:: 3.0.18
+
+.. note::
+
+    This setting was first supported in version 3.0.18. If you're
+    running an earlier version it will simply be ignored, so make
+    sure you're running a version that supports it.
+
 .. code-block:: python
 
     CELERY_ACCEPT_CONTENT = ['json']
