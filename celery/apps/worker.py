@@ -247,7 +247,7 @@ class Worker(configurated):
 
         banner = (BANNER % {
             'app': appr,
-            'hostname': self.hostname,
+            'hostname': safe_str(self.hostname),
             'version': VERSION_BANNER,
             'conninfo': self.app.connection().as_uri(),
             'concurrency': concurrency,
