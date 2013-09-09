@@ -245,7 +245,7 @@ class test_tasks(AppCase):
 
     def assertNextTaskDataEqual(self, consumer, presult, task_name,
                                 test_eta=False, test_expires=False, **kwargs):
-        next_task = consumer.queues[0].get()
+        next_task = consumer.queues[0].get(accept=['pickle'])
         task_data = next_task.decode()
         self.assertEqual(task_data['id'], presult.id)
         self.assertEqual(task_data['task'], task_name)
@@ -501,7 +501,7 @@ class test_TaskSet(AppCase):
         taskset_id = taskset_res.taskset_id
         consumer = increment_counter.get_consumer()
         for subtask in subtasks:
-            m = consumer.queues[0].get().payload
+            m = consumer.queues[0].get(accept=['pickle']).payload
             self.assertDictContainsSubset({'taskset': taskset_id,
                                            'task': increment_counter.name,
                                            'id': subtask.id}, m)
