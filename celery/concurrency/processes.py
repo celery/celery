@@ -465,7 +465,7 @@ class AsynPool(_pool.Pool):
             assert len(self._queues) == before
 
     def destroy_queues(self, queues):
-        """Destroyes queues that can no longer be used and that will
+        """Destroy queues that can no longer be used, so that they
         be replaced by new sockets."""
         removed = 1
         try:
@@ -623,7 +623,8 @@ class TaskPool(BasePool):
         return {
             'total': total,
             'avg': per(total / len(self.write_stats) if total else 0, total),
-            'all': ', '.join(per(v, total) for v in vals)
+            'all': ', '.join(per(v, total) for v in vals),
+            'raw': ', '.join(map(str, vals)),
         }
 
     def on_poll_init(self, w, hub):

@@ -20,7 +20,6 @@ from operator import attrgetter
 from billiard.util import register_after_fork
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
-from kombu.serialization import enable_insecure_serializers
 from kombu.utils import cached_property
 
 from celery import platforms
