@@ -413,11 +413,9 @@ class ResultSet(ResultBase):
             Default is TERM.
 
         """
-        with self.app.connection_or_acquire(connection) as conn:
-            for result in self.results:
-                result.revoke(
-                    connection=conn, terminate=terminate, signal=signal,
-                )
+        self.app.control.revoke([r.id for r in self.results],
+                                connection=connection,
+                                terminate=terminate, signal=signal)
 
     def __iter__(self):
         return iter(self.results)

@@ -15,6 +15,7 @@ from kombu.utils.encoding import safe_repr
 from celery.five import UserDict, items, StringIO
 from celery.platforms import signals as _signals
 from celery.utils import timeutils
+from celery.utils.functional import maybe_list
 from celery.utils.log import get_logger
 from celery.utils import jsonify
 
@@ -34,23 +35,51 @@ class Panel(UserDict):
         return method
 
 
+def _find_requests_by_id(ids, requests):
+    found, total = 0, len(ids)
+    for request in worker_state.reserved_requests:
+        if request.id in ids:
+            yield request
+            found += 1
+            if found >= total:
+                break
+
+
 @Panel.register
 def revoke(state, task_id, terminate=False, signal=None, **kwargs):
     """Revoke task by task id."""
-    revoked.add(task_id)
-    if terminate:
-        signum = _signals.signum(signal or 'TERM')
-        for request in worker_state.reserved_requests:
-            if request.id == task_id:
-                logger.info('Terminating %s (%s)', task_id, signum)
-                request.terminate(state.consumer.pool, signal=signum)
-                break
-        else:
-            return {'ok': 'terminate: task {0} not found'.format(task_id)}
-        return {'ok': 'terminating {0} ({1})'.format(task_id, signal)}
+    # supports list argument since 3.1
+    task_ids, task_id = maybe_list(task_id) or [], None
+    to_terminate = set()
+    terminated = set()
+    for task_id in task_ids:
+        revoked.add(task_id)
+        if terminate:
+            to_terminate.add(task_id)
 
-    logger.info('Revoking task %s', task_id)
-    return {'ok': 'revoking task {0}'.format(task_id)}
+    if to_terminate:
+        signum = _signals.signum(signal or 'TERM')
+        _to_terminate = set()
+        # reserved_requests changes size during iteration
+        # so need to consume the items first, then terminate after.
+        requests = set(_find_requests_by_id(
+            to_terminate,
+            worker_state.reserved_requests,
+        ))
+        for request in requests:
+            logger.info('Terminating %s (%s)', task_id, signum)
+            request.terminate(state.consumer.pool, signal=signum)
+            terminated.add(request.id)
+            if len(terminated) >= len(_to_terminate):
+                break
+
+        if not terminated:
+            return {'ok': 'terminate: tasks unknown'}
+        return {'ok': 'terminate: {0}'.format(', '.join(terminated))}
+
+    idstr = ', '.join(task_ids)
+    logger.info('Tasks flagged as revoked: %s', idstr)
+    return {'ok': 'tasks {0} flagged as revoked'.format(idstr)}
 
 
 @Panel.register

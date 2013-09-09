@@ -249,6 +249,10 @@ Terminating a task also revokes it.
 
 ::
 
+    >>> result.revoke()
+
+    >>> AsyncResult(id).revoke()
+
     >>> app.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed')
 
     >>> app.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed',
@@ -256,6 +260,32 @@ Terminating a task also revokes it.
 
     >>> app.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed',
     ...                    terminate=True, signal='SIGKILL')
+
+
+
+
+Revoking multiple tasks
+-----------------------
+
+.. versionadded:: 3.1
+
+
+The revoke method also accepts a list argument, where it will revoke
+several tasks at once.
+
+**Example**
+
+::
+
+    >>> app.control.revoke([
+    ...    '7993b0aa-1f0b-4780-9af0-c47c0858b3f2',
+    ...    'f565793e-b041-4b2b-9ca4-dca22762a55d',
+    ...    'd9d35e03-2997-42d0-a13e-64a66b88a618',
+    ])
+
+
+The ``GroupResult.revoke`` method takes advantage of this since
+version 3.1.
 
 .. _worker-persistent-revokes:
 
