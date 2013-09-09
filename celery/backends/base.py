@@ -20,7 +20,7 @@ from datetime import timedelta
 
 from billiard.einfo import ExceptionInfo
 from kombu.serialization import (
-    encode, decode, prepare_accept_encoding,
+    encode, decode, prepare_accept_content,
     registry as serializer_registry,
 )
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
@@ -79,7 +79,7 @@ class BaseBackend(object):
         self._cache = LRUCache(
             limit=max_cached_results or conf.CELERY_MAX_CACHED_RESULTS,
         )
-        self.accept = prepare_accept_encoding(
+        self.accept = prepare_accept_content(
             conf.CELERY_ACCEPT_CONTENT if accept is None else accept,
         )
 
