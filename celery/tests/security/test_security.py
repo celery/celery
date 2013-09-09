@@ -36,7 +36,7 @@ class test_security(SecurityCase):
 
     def test_disable_untrusted_serializers(self):
         disabled = registry._disabled_content_types
-        self.assertEqual(0, len(disabled))
+        self.assertTrue(disabled)
 
         disable_untrusted_serializers(
             ['application/json', 'application/x-python-serialize'])

@@ -62,8 +62,7 @@ class AMQPBackend(BaseBackend):
     }
 
     def __init__(self, app, connection=None, exchange=None, exchange_type=None,
-                 persistent=None, serializer=None, auto_delete=True,
-                 accept=None, **kwargs):
+                 persistent=None, serializer=None, auto_delete=True, **kwargs):
         super(AMQPBackend, self).__init__(app, **kwargs)
         conf = self.app.conf
         self._connection = connection
@@ -74,7 +73,6 @@ class AMQPBackend(BaseBackend):
         self.exchange = self._create_exchange(exchange, exchange_type,
                                               self.persistent)
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
-        self.accept = conf.CELERY_ACCEPT_CONTENT if accept is None else accept
         self.auto_delete = auto_delete
 
         self.expires = None
@@ -152,8 +150,11 @@ class AMQPBackend(BaseBackend):
             binding.declare()
 
             prev = latest = acc = None
+            print('binding.get: %r' % (binding.get, ))
             for i in range(backlog_limit):  # spool ffwd
-                prev, latest, acc = latest, acc, binding.get(no_ack=False)
+                prev, latest, acc = latest, acc, binding.get(
+                    accept=self.accept, no_ack=False,
+                )
                 if not acc:  # no more messages
                     break
                 if prev:

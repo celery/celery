@@ -441,10 +441,10 @@ class test_ControlPanel(AppCase):
             r = control.revoke(Mock(), tid, terminate=True)
             self.assertIn(tid, revoked)
             self.assertTrue(request.terminate.call_count)
-            self.assertIn('terminating', r['ok'])
+            self.assertIn('terminate:', r['ok'])
             # unknown task id only revokes
             r = control.revoke(Mock(), uuid(), terminate=True)
-            self.assertIn('not found', r['ok'])
+            self.assertIn('tasks unknown', r['ok'])
         finally:
             worker_state.reserved_requests.discard(request)
 

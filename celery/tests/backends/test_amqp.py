@@ -158,9 +158,12 @@ class test_AMQPBackend(AppCase):
             def declare(self):
                 pass
 
-            def get(self, no_ack=False):
+            def get(self, no_ack=False, accept=None):
                 try:
-                    return results.get(block=False)
+                    m = results.get(block=False)
+                    if m:
+                        m.accept = accept
+                    return m
                 except Empty:
                     pass
 

@@ -106,6 +106,7 @@ class test_RedisBackend(AppCase):
     def test_conf_raises_KeyError(self):
         conf = AttributeDict({'CELERY_RESULT_SERIALIZER': 'json',
                               'CELERY_MAX_CACHED_RESULTS': 1,
+                              'CELERY_ACCEPT_CONTENT': ['json'],
                               'CELERY_TASK_RESULT_EXPIRES': None})
         prev, self.app.conf = self.app.conf, conf
         try:

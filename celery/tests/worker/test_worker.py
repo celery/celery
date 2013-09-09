@@ -121,10 +121,12 @@ def foo_periodic_task():
 def create_message(channel, **data):
     data.setdefault('id', uuid())
     channel.no_ack_consumers = set()
-    return Message(channel, body=pickle.dumps(dict(**data)),
-                   content_type='application/x-python-serialize',
-                   content_encoding='binary',
-                   delivery_info={'consumer_tag': 'mock'})
+    m = Message(channel, body=pickle.dumps(dict(**data)),
+                content_type='application/x-python-serialize',
+                content_encoding='binary',
+                delivery_info={'consumer_tag': 'mock'})
+    m.accept = ['application/x-python-serialize']
+    return m
 
 
 class test_QoS(Case):

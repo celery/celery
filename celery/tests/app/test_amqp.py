@@ -58,15 +58,19 @@ class test_TaskConsumer(AppCase):
 
     def test_accept_content(self):
         with self.app.pool.acquire(block=True) as conn:
+            prev = self.app.conf.CELERY_ACCEPT_CONTENT
             self.app.conf.CELERY_ACCEPT_CONTENT = ['application/json']
-            self.assertEqual(
-                self.app.amqp.TaskConsumer(conn).accept,
-                set(['application/json'])
-            )
-            self.assertEqual(
-                self.app.amqp.TaskConsumer(conn, accept=['json']).accept,
-                set(['application/json']),
-            )
+            try:
+                self.assertEqual(
+                    self.app.amqp.TaskConsumer(conn).accept,
+                    set(['application/json'])
+                )
+                self.assertEqual(
+                    self.app.amqp.TaskConsumer(conn, accept=['json']).accept,
+                    set(['application/json']),
+                )
+            finally:
+                self.app.conf.CELERY_ACCEPT_CONTENT = prev
 
 
 class test_compat_TaskPublisher(AppCase):

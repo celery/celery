@@ -19,7 +19,10 @@ import sys
 from datetime import timedelta
 
 from billiard.einfo import ExceptionInfo
-from kombu import serialization
+from kombu.serialization import (
+    encode, decode, prepare_accept_encoding,
+    registry as serializer_registry,
+)
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
 
 from celery import states
@@ -66,15 +69,18 @@ class BaseBackend(object):
     supports_autoexpire = False
 
     def __init__(self, app, serializer=None,
-                 max_cached_results=None, **kwargs):
+                 max_cached_results=None, accept=None, **kwargs):
         self.app = app
         conf = self.app.conf
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         (self.content_type,
          self.content_encoding,
-         self.encoder) = serialization.registry._encoders[self.serializer]
+         self.encoder) = serializer_registry._encoders[self.serializer]
         self._cache = LRUCache(
             limit=max_cached_results or conf.CELERY_MAX_CACHED_RESULTS,
+        )
+        self.accept = prepare_accept_encoding(
+            conf.CELERY_ACCEPT_CONTENT if accept is None else accept,
         )
 
     def mark_as_started(self, task_id, **meta):
@@ -130,14 +136,15 @@ class BaseBackend(object):
         return result
 
     def encode(self, data):
-        _, _, payload = serialization.encode(data, serializer=self.serializer)
+        _, _, payload = encode(data, serializer=self.serializer)
         return payload
 
     def decode(self, payload):
         payload = PY3 and payload or str(payload)
-        return serialization.decode(payload,
-                                    content_type=self.content_type,
-                                    content_encoding=self.content_encoding)
+        return decode(payload,
+                      content_type=self.content_type,
+                      content_encoding=self.content_encoding,
+                      accept=self.accept)
 
     def wait_for(self, task_id, timeout=None, propagate=True, interval=0.5):
         """Wait for task and return its result.
