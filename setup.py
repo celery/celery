@@ -145,10 +145,12 @@ py_version = sys.version_info
 def strip_comments(l):
     return l.split('#', 1)[0].strip()
 
-
 def reqs(*f):
-    return list(filter(None, [strip_comments(l) for l in open(
-        os.path.join(os.getcwd(), 'requirements', *f)).readlines()]))
+    return [
+        r for r in (
+            strip_comments(l) for l in open(
+                os.path.join(os.getcwd(), 'requirements', *f)).readlines()
+        ) if r]
 
 install_requires = reqs('default.txt')
 if JYTHON:

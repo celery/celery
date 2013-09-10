@@ -1,4 +1,4 @@
-import urllib2
+import requests
 
 from celery import task
 
@@ -7,7 +7,7 @@ from celery import task
 def urlopen(url):
     print('Opening: {0}'.format(url))
     try:
-        body = urllib2.urlopen(url).read()
+        _response = requests.get(url)
     except Exception as exc:
         print('Exception for {0}: {1!r}'.format(url, exc))
         return url, 0

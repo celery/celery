@@ -132,7 +132,7 @@ class test_start_filter(AppCase):
     def test_start(self):
         with patch('celery.contrib.migrate.eventloop') as evloop:
             app = Mock()
-            filter = Mock(name='filter')
+            filt = Mock(name='filter')
             conn = Connection('memory://')
             evloop.side_effect = StopFiltering()
             app.amqp.queues = {'foo': Queue('foo'), 'bar': Queue('bar')}
@@ -147,26 +147,26 @@ class test_start_filter(AppCase):
                 consumer.callbacks.append(x)
             consumer.register_callback = register_callback
 
-            start_filter(app, conn, filter,
+            start_filter(app, conn, filt,
                          queues='foo,bar', ack_messages=True)
             body = {'task': 'add', 'id': 'id'}
             for callback in consumer.callbacks:
                 callback(body, Message(body))
             consumer.callbacks[:] = []
             cb = Mock(name='callback=')
-            start_filter(app, conn, filter, tasks='add,mul', callback=cb)
+            start_filter(app, conn, filt, tasks='add,mul', callback=cb)
             for callback in consumer.callbacks:
                 callback(body, Message(body))
             self.assertTrue(cb.called)
 
             on_declare_queue = Mock()
-            start_filter(app, conn, filter, tasks='add,mul', queues='foo',
+            start_filter(app, conn, filt, tasks='add,mul', queues='foo',
                          on_declare_queue=on_declare_queue)
             self.assertTrue(on_declare_queue.called)
-            start_filter(app, conn, filter, queues=['foo', 'bar'])
+            start_filter(app, conn, filt, queues=['foo', 'bar'])
             consumer.callbacks[:] = []
             state = State()
-            start_filter(app, conn, filter,
+            start_filter(app, conn, filt,
                          tasks='add,mul', callback=cb, state=state, limit=1)
             stop_filtering_raised = False
             for callback in consumer.callbacks:
@@ -182,14 +182,14 @@ class test_filter_callback(Case):
 
     def test_filter(self):
         callback = Mock()
-        filter = filter_callback(callback, ['add', 'mul'])
+        filt = filter_callback(callback, ['add', 'mul'])
         t1 = {'task': 'add'}
         t2 = {'task': 'div'}
 
         message = Mock()
-        filter(t2, message)
+        filt(t2, message)
         self.assertFalse(callback.called)
-        filter(t1, message)
+        filt(t1, message)
         callback.assert_called_with(t1, message)
 
 

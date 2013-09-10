@@ -117,7 +117,7 @@ class Suite(object):
         )
 
     def manyshort(self):
-        self.join(group(add.s(i, i) for i in xrange(1000))(), propagate=True)
+        self.join(group(add.s(i, i) for i in range(1000))(), propagate=True)
 
     def runtest(self, fun, n=50, index=0, repeats=1):
         with blockdetection(self.block_timeout):

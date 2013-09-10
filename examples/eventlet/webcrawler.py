@@ -24,11 +24,16 @@ to "zlib", and the serializer to "pickle".
 
 import re
 import time
-import urlparse
+
+try:
+    from urllib.parse import urlsplit
+except ImportError:
+    from urlparse import urlsplit
+
+import requests
 
 from celery import task, group
 from eventlet import Timeout
-from eventlet.green import urllib2
 
 from pybloom import BloomFilter
 
@@ -39,7 +44,7 @@ url_regex = re.compile(
 
 def domain(url):
     """Returns the domain part of an URL."""
-    return urlparse.urlsplit(url)[1].split(':')[0]
+    return urlsplit(url)[1].split(':')[0]
 
 
 @task(ignore_result=True, serializer='pickle', compression='zlib')
@@ -50,13 +55,13 @@ def crawl(url, seen=None):
 
     with Timeout(5, False):
         try:
-            data = urllib2.urlopen(url).read()
-        except (urllib2.HTTPError, IOError):
+            response = requests.get(url)
+        except Exception:
             return
 
     location = domain(url)
     wanted_urls = []
-    for url_match in url_regex.finditer(data):
+    for url_match in url_regex.finditer(response.text):
         url = url_match.group(0)
         # To not destroy the internet, we only fetch URLs on the same domain.
         if url not in seen and location in domain(url):
@@ -64,4 +69,4 @@ def crawl(url, seen=None):
             seen.add(url)
 
     subtasks = group(crawl.s(url, seen) for url in wanted_urls)
-    subtasks.apply_async()
+    subtasks()

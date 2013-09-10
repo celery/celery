@@ -39,17 +39,13 @@ else:
 
     from urllib2 import Request, urlopen  # noqa
 
-    def maybe_utf8(value):  # noqa
-        """Encode to utf-8, only if the value is Unicode."""
-        if isinstance(value, unicode):
-            return value.encode('utf-8')
-        return value
-
     def utf8dict(tup):  # noqa
         """With a dict's items() tuple return a new dict with any utf-8
         keys/values encoded."""
-        return dict((key.encode('utf-8'), maybe_utf8(value))
-                    for key, value in tup)
+        return dict(
+            (k.encode('utf-8'),
+             v.encode('utf-8') if isinstance(v, unicode) else v)
+            for k, v in tup)
 
 
 class InvalidResponseError(Exception):

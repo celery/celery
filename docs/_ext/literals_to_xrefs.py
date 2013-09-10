@@ -7,6 +7,11 @@ import re
 import sys
 import shelve
 
+try:
+    input = input
+except NameError:
+    input = raw_input  # noqa
+
 refre = re.compile(r'``([^`\s]+?)``')
 
 ROLES = (
@@ -76,7 +81,7 @@ def fixliterals(fname):
 
         replace_type = None
         while replace_type is None:
-            replace_type = raw_input(
+            replace_type = input(
                 colorize("Replace role: ", fg="yellow")).strip().lower()
             if replace_type and replace_type not in ROLES:
                 replace_type = None
@@ -94,7 +99,7 @@ def fixliterals(fname):
         if default.endswith("()") and \
                 replace_type in ("class", "func", "meth"):
             default = default[:-2]
-        replace_value = raw_input(
+        replace_value = input(
             colorize("Text <target> [", fg="yellow") + default + \
                     colorize("]: ", fg="yellow")).strip()
         if not replace_value:
@@ -154,7 +159,7 @@ def colorize(text='', opts=(), **kwargs):
     code_list = []
     if text == '' and len(opts) == 1 and opts[0] == 'reset':
         return '\x1b[%sm' % RESET
-    for k, v in kwargs.iteritems():
+    for k, v in kwargs.items():
         if k == 'fg':
             code_list.append(foreground[v])
         elif k == 'bg':

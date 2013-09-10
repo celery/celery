@@ -1,12 +1,11 @@
 from celery import current_app, task, uuid
-from celery.five import range
+from celery.five import Queue, range
 from celery.worker.consumer import Consumer
 #from celery.worker.job import Request
 from celery.app.task import Context
 from celery.concurrency.solo import TaskPool
 from celery.app.amqp import TASK_BARE
 from time import time
-from Queue import Queue
 from librabbitmq import Message
 from celery.utils.functional import noop
 from celery.worker.job import NEEDS_KWDICT

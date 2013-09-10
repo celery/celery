@@ -14,6 +14,8 @@ from tempfile import NamedTemporaryFile
 
 rq = lambda s: s.strip("\"'")
 
+str_t = str if sys.version_info[0] >= 3 else basestring
+
 
 def cmd(*args):
     return subprocess.Popen(args, stdout=subprocess.PIPE).communicate()[0]
@@ -23,7 +25,7 @@ def cmd(*args):
 def no_enoent():
     try:
         yield
-    except OSError, exc:
+    except OSError as exc:
         if exc.errno != errno.ENOENT:
             raise
 
@@ -56,7 +58,7 @@ class TupleVersion(object):
         v = list(v)
 
         def quote(lit):
-            if isinstance(lit, basestring):
+            if isinstance(lit, str_t):
                 return '"{0}"'.format(lit)
             return str(lit)
 

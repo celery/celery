@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import sys
 
 from time import sleep
+from celery.five import range
 from celery.utils import timer2 as timer
 
 def noop(*args, **kwargs):
@@ -11,7 +12,7 @@ def noop(*args, **kwargs):
 
 
 def insert(s, n=100000):
-    for i in xrange(n):
+    for i in range(n):
         s.apply_after(1 + (i and i / 10.0), noop, (i, ))
 
 

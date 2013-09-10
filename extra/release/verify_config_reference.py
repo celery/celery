@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from fileinput import input
+from fileinput import input as _input
 from sys import exit, stderr
 
 from celery.app.defaults import NAMESPACES, flatten
@@ -28,7 +28,7 @@ def find_undocumented_settings(directive='.. setting:: '):
     settings = dict(flatten(NAMESPACES))
     all = set(settings)
     documented = set(line.strip()[len(directive):].strip()
-                        for line in input()
+                        for line in _input()
                             if line.strip().startswith(directive))
     return [setting for setting in all ^ documented
                 if not is_ignored(setting, settings[setting])]

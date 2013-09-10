@@ -12,6 +12,7 @@ module (when this is installed all name lookups will be asynchronous)::
 
     $ pip install eventlet
     $ pip install dnspython
+    $ pip install requests
 
 Before you run any of the example tasks you need to start
 the worker::

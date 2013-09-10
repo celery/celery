@@ -21,7 +21,7 @@ def proper_name(name):
 
 def find_missing_authors(seen):
     with open("AUTHORS") as authors:
-        known = map(author, authors.readlines())
+        known = [author(line) for line in authors.readlines()]
 
     seen_authors = set(filter(proper_name, (t[0] for t in seen)))
     seen_emails = set(t[1] for t in seen)
@@ -32,5 +32,5 @@ def find_missing_authors(seen):
 
 
 if __name__ == "__main__":
-    find_missing_authors(map(author, fileinput.input()))
+    find_missing_authors([author(line) for line in fileinput.input()])
 

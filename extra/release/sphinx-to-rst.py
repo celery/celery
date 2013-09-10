@@ -3,6 +3,8 @@ import os
 import re
 import sys
 
+from collections import Callable
+
 dirname = ""
 
 RE_CODE_BLOCK = re.compile(r'.. code-block:: (.+?)\s*$')
@@ -51,7 +53,7 @@ def _process(lines):
     lines = list(lines)                                 # non-destructive
     for i, line in enumerate(lines):
         for regex, alt in TO_RST_MAP.items():
-            if callable(alt):
+            if isinstance(alt, Callable):
                 match = regex.match(line)
                 if match:
                     alt(lines, i, match)
