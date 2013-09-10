@@ -40,8 +40,8 @@ SCRIPT_NAME="$(basename $0)"
 # some commands work asyncronously, so we'll wait this many seconds
 SLEEP_SECONDS=5
 
-DEFAULT_PID_FILE="/var/run/celery/${SCRIPT_NAME}-%n.pid"
-DEFAULT_LOG_FILE="/var/log/celery/${SCRIPT_NAME}-%n.log"
+DEFAULT_PID_FILE="/var/run/celery/${SCRIPT_NAME}/%n.pid"
+DEFAULT_LOG_FILE="/var/log/celery/${SCRIPT_NAME}/%n.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
 DEFAULT_CELERYD="-m celery worker --detach"
