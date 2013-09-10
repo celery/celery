@@ -65,7 +65,7 @@ UNAVAIL = frozenset([errno.EAGAIN, errno.EINTR, errno.EBADF])
 
 MAXTASKS_NO_BILLIARD = """\
     maxtasksperchild enabled but billiard C extension not installed!
-    This may lead to a deadlock, please install the billiard C extension.
+    This may lead to a deadlock, so please install the billiard C extension.
 """
 
 #: Constant sent by child process when started (ready to accept work)
@@ -545,7 +545,7 @@ class TaskPool(BasePool):
         """
         if self.options.get('maxtasksperchild'):
             try:
-                from billiard import Connection
+                from billiard.connection import Connection
                 Connection.send_offset
             except (ImportError, AttributeError):
                 # billiard C extension not installed
