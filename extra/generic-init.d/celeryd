@@ -44,7 +44,6 @@ DEFAULT_PID_FILE="/var/run/celery/${SCRIPT_NAME}/%n.pid"
 DEFAULT_LOG_FILE="/var/log/celery/${SCRIPT_NAME}/%n.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
-DEFAULT_CELERYD="-m celery worker --detach"
 
 CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/${SCRIPT_NAME}"}
 
@@ -73,7 +72,6 @@ fi
 CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-${CELERYD_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
 CELERY_BIN=${CELERY_BIN:-"celery"}
 CELERYD_MULTI=${CELERYD_MULTI:-"$CELERY_BIN multi"}
-CELERYD=${CELERYD:-$DEFAULT_CELERYD}
 CELERYD_NODES=${CELERYD_NODES:-$DEFAULT_NODES}
 
 export CELERY_LOADER
@@ -196,7 +194,6 @@ start_workers () {
                          --pidfile="$CELERYD_PID_FILE"      \
                          --logfile="$CELERYD_LOG_FILE"      \
                          --loglevel="$CELERYD_LOG_LEVEL"    \
-                         --cmd="$CELERYD"                   \
                          $CELERY_APP_ARG                    \
                          $CELERYD_OPTS
     sleep $SLEEP_SECONDS
@@ -208,7 +205,6 @@ restart_workers () {
                            --pidfile="$CELERYD_PID_FILE"    \
                            --logfile="$CELERYD_LOG_FILE"    \
                            --loglevel="$CELERYD_LOG_LEVEL"  \
-                           --cmd="$CELERYD"                 \
                            $CELERY_APP_ARG                  \
                            $CELERYD_OPTS
     sleep $SLEEP_SECONDS
