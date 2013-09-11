@@ -13,7 +13,7 @@
 from __future__ import absolute_import
 
 from celery.five import string_t
-from celery.utils.functional import firstmethod, mpromise
+from celery.utils.functional import firstmethod, mlazy
 from celery.utils.imports import instantiate
 
 _first_match = firstmethod('annotate')
@@ -46,7 +46,7 @@ def prepare(annotations):
         if isinstance(annotation, dict):
             return MapAnnotation(annotation)
         elif isinstance(annotation, string_t):
-            return mpromise(instantiate, annotation)
+            return mlazy(instantiate, annotation)
         return annotation
 
     if annotations is None:

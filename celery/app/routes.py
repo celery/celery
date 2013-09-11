@@ -12,7 +12,7 @@ from __future__ import absolute_import
 from celery.exceptions import QueueNotFound
 from celery.five import string_t
 from celery.utils import lpmerge
-from celery.utils.functional import firstmethod, mpromise
+from celery.utils.functional import firstmethod, mlazy
 from celery.utils.imports import instantiate
 
 _first_route = firstmethod('route_for_task')
@@ -80,7 +80,7 @@ def prepare(routes):
         if isinstance(route, dict):
             return MapRoute(route)
         if isinstance(route, string_t):
-            return mpromise(instantiate, route)
+            return mlazy(instantiate, route)
         return route
 
     if routes is None:

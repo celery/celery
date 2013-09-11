@@ -2,14 +2,14 @@ from __future__ import absolute_import
 
 import pickle
 
-from kombu.utils.functional import promise
+from kombu.utils.functional import lazy
 
 from celery.five import THREAD_TIMEOUT_MAX, items, range, nextfun
 from celery.utils.functional import (
     LRUCache,
     firstmethod,
     first,
-    mpromise,
+    mlazy,
     padlist,
     maybe_list,
 )
@@ -131,7 +131,7 @@ class test_utils(Case):
     def test_firstmethod_AttributeError(self):
         self.assertIsNone(firstmethod('foo')([object()]))
 
-    def test_firstmethod_promises(self):
+    def test_firstmethod_handles_lazy(self):
 
         class A(object):
 
@@ -144,7 +144,7 @@ class test_utils(Case):
         self.assertEqual('four', firstmethod('m')([
             A(), A(), A(), A('four'), A('five')]))
         self.assertEqual('four', firstmethod('m')([
-            A(), A(), A(), promise(lambda: A('four')), A('five')]))
+            A(), A(), A(), lazy(lambda: A('four')), A('five')]))
 
     def test_first(self):
         iterations = [0]
@@ -168,12 +168,12 @@ class test_utils(Case):
         self.assertIsNone(maybe_list(None))
 
 
-class test_mpromise(Case):
+class test_mlazy(Case):
 
     def test_is_memoized(self):
 
         it = iter(range(20, 30))
-        p = mpromise(nextfun(it))
+        p = mlazy(nextfun(it))
         self.assertEqual(p(), 20)
         self.assertTrue(p.evaluated)
         self.assertEqual(p(), 20)

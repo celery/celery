@@ -15,7 +15,7 @@ from functools import wraps
 from itertools import islice
 
 from kombu.utils import cached_property
-from kombu.utils.functional import promise, maybe_promise
+from kombu.utils.functional import lazy, maybe_evaluate
 from kombu.utils.compat import OrderedDict
 
 from celery.five import UserDict, UserList, items, keys, string_t
@@ -161,15 +161,15 @@ def memoize(maxsize=None, Cache=LRUCache):
     return _memoize
 
 
-class mpromise(promise):
-    """Memoized promise.
+class mlazy(lazy):
+    """Memoized lazy evaluation.
 
     The function is only evaluated once, every subsequent access
     will return the same value.
 
     .. attribute:: evaluated
 
-        Set to to :const:`True` after the promise has been evaluated.
+        Set to to :const:`True` after the object has been evaluated.
 
     """
     evaluated = False
@@ -177,7 +177,7 @@ class mpromise(promise):
 
     def evaluate(self):
         if not self.evaluated:
-            self._value = super(mpromise, self).evaluate()
+            self._value = super(mlazy, self).evaluate()
             self.evaluated = True
         return self._value
 
@@ -208,14 +208,15 @@ def firstmethod(method):
     """Returns a function that with a list of instances,
     finds the first instance that returns a value for the given method.
 
-    The list can also contain promises (:class:`promise`.)
+    The list can also contain lazy instances
+    (:class:`~kombu.utils.functional.lazy`.)
 
     """
 
     def _matcher(it, *args, **kwargs):
         for obj in it:
             try:
-                answer = getattr(maybe_promise(obj), method)(*args, **kwargs)
+                answer = getattr(maybe_evaluate(obj), method)(*args, **kwargs)
             except AttributeError:
                 pass
             else:

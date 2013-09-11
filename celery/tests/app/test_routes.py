@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from contextlib import contextmanager
 
 from kombu import Exchange
-from kombu.utils.functional import maybe_promise
+from kombu.utils.functional import maybe_evaluate
 
 from celery.app import routes
 from celery.exceptions import QueueNotFound
@@ -156,7 +156,7 @@ class test_prepare(AppCase):
              'celery.utils.functional.LRUCache', o]
         p = routes.prepare(R)
         self.assertIsInstance(p[0], routes.MapRoute)
-        self.assertIsInstance(maybe_promise(p[1]), LRUCache)
+        self.assertIsInstance(maybe_evaluate(p[1]), LRUCache)
         self.assertIs(p[2], o)
 
         self.assertEqual(routes.prepare(o), [o])

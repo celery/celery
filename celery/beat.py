@@ -19,7 +19,7 @@ from threading import Event, Thread
 
 from billiard import Process, ensure_multiprocessing
 from kombu.utils import cached_property, reprcall
-from kombu.utils.functional import maybe_promise
+from kombu.utils.functional import maybe_evaluate
 
 from . import __version__
 from . import platforms
@@ -152,7 +152,7 @@ class Scheduler(object):
     def __init__(self, app, schedule=None, max_interval=None,
                  Publisher=None, lazy=False, **kwargs):
         self.app = app
-        self.data = maybe_promise({} if schedule is None else schedule)
+        self.data = maybe_evaluate({} if schedule is None else schedule)
         self.max_interval = (max_interval
                              or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
                              or self.max_interval)
