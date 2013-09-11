@@ -37,9 +37,6 @@
 # making it easy to run multiple processes on the system.
 SCRIPT_NAME="$(basename $0)"
 
-# some commands work asyncronously, so we'll wait this many seconds
-SLEEP_SECONDS=5
-
 DEFAULT_PID_FILE="/var/run/celery/${SCRIPT_NAME}/%n.pid"
 DEFAULT_LOG_FILE="/var/log/celery/${SCRIPT_NAME}/%n.log"
 DEFAULT_LOG_LEVEL="INFO"
@@ -185,7 +182,6 @@ _get_worker_pids() {
 
 stop_workers () {
     $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
-    sleep $SLEEP_SECONDS
 }
 
 
@@ -196,7 +192,6 @@ start_workers () {
                          --loglevel="$CELERYD_LOG_LEVEL"    \
                          $CELERY_APP_ARG                    \
                          $CELERYD_OPTS
-    sleep $SLEEP_SECONDS
 }
 
 
@@ -207,7 +202,6 @@ restart_workers () {
                            --loglevel="$CELERYD_LOG_LEVEL"  \
                            $CELERY_APP_ARG                  \
                            $CELERYD_OPTS
-    sleep $SLEEP_SECONDS
 }
 
 restart_workers_graceful () {
