@@ -18,6 +18,8 @@ from celery.five import reraise
 from celery.utils.imports import symbol_by_name
 from celery.utils.functional import memoize
 
+__all__ = ['get_backend_cls', 'get_backend_by_url']
+
 UNKNOWN_BACKEND = """\
 Unknown result backend: {0!r}.  Did you spell that correctly? ({1!r})\
 """

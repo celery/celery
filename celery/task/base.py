@@ -19,6 +19,8 @@ from celery.five import class_property, reclassmethod
 from celery.schedules import maybe_schedule
 from celery.utils.log import get_task_logger
 
+__all__ = ['Task', 'PeriodicTask', 'task']
+
 #: list of methods that must be classmethods in the old API.
 _COMPAT_CLASSMETHODS = (
     'delay', 'apply_async', 'retry', 'apply', 'subtask_from_request',

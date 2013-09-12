@@ -15,7 +15,7 @@ __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://celeryproject.org'
 __docformat__ = 'restructuredtext'
 __all__ = [
-    'celery', 'bugreport', 'shared_task', 'task',
+    'Celery', 'bugreport', 'shared_task', 'task',
     'current_app', 'current_task',
     'chain', 'chord', 'chunks', 'group', 'subtask',
     'xmap', 'xstarmap', 'uuid', 'version', '__version__',

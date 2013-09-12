@@ -24,6 +24,8 @@ from celery.utils.text import indent as textindent
 from . import app_or_default
 from . import routes as _routes
 
+__all__ = ['AMQP', 'Queues', 'TaskProducer', 'TaskConsumer']
+
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
 .> {0.name:<16} exchange={0.exchange.name}({0.exchange.type}) \

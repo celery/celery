@@ -20,6 +20,10 @@ from kombu.utils.compat import OrderedDict
 
 from celery.five import UserDict, UserList, items, keys, string_t
 
+__all__ = ['LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
+           'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
+           'regen', 'dictfilter', 'lazy', 'maybe_evaluate']
+
 KEYWORD_MARK = object()
 
 

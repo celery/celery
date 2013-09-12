@@ -38,6 +38,8 @@ from celery.utils.log import mlevel, worker_logger as logger
 
 from . import state
 
+__all__ = ['WorkController', 'default_nodename']
+
 UNKNOWN_QUEUE = """\
 Trying to select queue subset of {0!r}, but queue {1} is not
 defined in the CELERY_QUEUES setting.

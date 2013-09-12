@@ -12,6 +12,8 @@ import os
 
 from .base import BasePool, apply_target
 
+__all__ = ['TaskPool']
+
 
 class TaskPool(BasePool):
     """Solo task pool (blocking, inline, fast)."""

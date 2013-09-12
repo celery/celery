@@ -41,6 +41,8 @@ from .utils import (
     AppPickler, Settings, bugreport, _unpickle_app, _unpickle_app_v2, appstr,
 )
 
+__all__ = ['Celery']
+
 _EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
 BUILTIN_FIXUPS = frozenset([
     'celery.fixups.django:fixup',

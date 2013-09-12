@@ -4,6 +4,8 @@ import sys
 
 from os.path import basename
 
+__all__ = ['main']
+
 DEPRECATED_FMT = """
 The {old!r} command is deprecated, please use {new!r} instead:
 

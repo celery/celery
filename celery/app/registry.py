@@ -16,6 +16,8 @@ from celery._state import get_current_app
 from celery.exceptions import NotRegistered
 from celery.five import items
 
+__all__ = ['TaskRegistry']
+
 
 class TaskRegistry(dict):
     NotRegistered = NotRegistered

@@ -13,6 +13,8 @@ from celery._state import current_app
 from celery.utils import deprecated
 from celery.utils.imports import symbol_by_name, import_from_cwd
 
+__all__ = ['get_loader_cls']
+
 LOADER_ALIASES = {'app': 'celery.loaders.app:AppLoader',
                   'default': 'celery.loaders.default:Loader',
                   'django': 'djcelery.loaders:DjangoLoader'}

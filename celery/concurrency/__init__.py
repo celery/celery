@@ -13,6 +13,8 @@ from __future__ import absolute_import
 # too much (e.g. for eventlet patching)
 from kombu.utils import symbol_by_name
 
+__all__ = ['get_implementation']
+
 ALIASES = {
     'processes': 'celery.concurrency.processes:TaskPool',
     'eventlet': 'celery.concurrency.eventlet:TaskPool',

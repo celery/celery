@@ -114,6 +114,8 @@ from celery.platforms import Pidfile, IS_WINDOWS
 from celery.utils import term, nodesplit
 from celery.utils.text import pluralize
 
+__all__ = ['MultiTool']
+
 SIGNAMES = set(sig for sig in dir(signal)
                if sig.startswith('SIG') and '_' not in sig)
 SIGMAP = dict((getattr(signal, name), name) for name in SIGNAMES)

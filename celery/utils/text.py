@@ -12,6 +12,10 @@ from textwrap import fill
 
 from pprint import pformat
 
+__all__ = ['dedent_initial', 'dedent', 'fill_paragraphs', 'join',
+           'ensure_2lines', 'abbr', 'abbrtask', 'indent', 'truncate',
+           'pluralize', 'pretty']
+
 
 def dedent_initial(s, n=4):
     return s[n:] if s[:n] == ' ' * n else s

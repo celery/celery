@@ -20,6 +20,8 @@ from celery.utils.imports import qualname
 
 from .defaults import find
 
+__all__ = ['appstr', 'Settings', 'filter_hidden_settings', 'bugreport']
+
 #: Format used to generate bugreport information.
 BUGREPORT_INFO = """
 software -> celery:{celery_v} kombu:{kombu_v} py:{py_v}

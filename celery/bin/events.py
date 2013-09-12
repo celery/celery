@@ -44,6 +44,8 @@ from functools import partial
 from celery.platforms import detached, set_process_title, strargv
 from celery.bin.base import Command, Option, daemon_options
 
+__all__ = ['events']
+
 
 class events(Command):
     """Event-stream utilities.

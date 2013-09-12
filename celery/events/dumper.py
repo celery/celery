@@ -17,6 +17,8 @@ from celery.app import app_or_default
 from celery.utils.functional import LRUCache
 from celery.utils.timeutils import humanize_seconds
 
+__all__ = ['Dumper', 'evdump']
+
 TASK_NAMES = LRUCache(limit=0xFFF)
 
 HUMAN_TYPES = {'worker-offline': 'shutdown',

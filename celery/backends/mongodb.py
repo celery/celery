@@ -32,6 +32,8 @@ from celery.utils.timeutils import maybe_timedelta
 
 from .base import BaseBackend
 
+__all__ = ['MongoBackend']
+
 
 class Bunch(object):
 

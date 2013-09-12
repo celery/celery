@@ -15,6 +15,8 @@ from celery.five import items
 
 from .base import Command
 
+__all__ = ['graph']
+
 
 class graph(Command):
     args = """<TYPE> [arguments]

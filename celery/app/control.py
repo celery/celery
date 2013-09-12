@@ -16,6 +16,8 @@ from kombu.utils import cached_property
 
 from celery.exceptions import DuplicateNodenameWarning
 
+__all__ = ['Inspect', 'Control', 'flatten_reply']
+
 W_DUPNODE = """\
 Received multiple replies from node name {0!r}.
 Please make sure you give each node a unique nodename using the `-n` option.\

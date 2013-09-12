@@ -17,6 +17,8 @@ from celery.five import items
 from celery.utils import strtobool
 from celery.utils.functional import memoize
 
+__all__ = ['Option', 'NAMESPACES', 'flatten', 'find']
+
 is_jython = sys.platform.startswith('java')
 is_pypy = hasattr(sys, 'pypy_version_info')
 
@@ -62,7 +64,6 @@ class Option(object):
     def __repr__(self):
         return '<Option: type->{0} default->{1!r}>'.format(self.type,
                                                            self.default)
-
 
 NAMESPACES = {
     'BROKER': {

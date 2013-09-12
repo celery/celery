@@ -33,6 +33,8 @@ from celery.utils import timer2
 
 from .base import apply_target, BasePool
 
+__all__ = ['TaskPool']
+
 
 def apply_timeout(target, args=(), kwargs={}, callback=None,
                   accept_callback=None, pid=None, timeout=None,

@@ -16,6 +16,8 @@ import importlib
 
 from .five import long_t, string
 
+__all__ = ['Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate']
+
 __module__ = __name__  # used by Proxy class body
 
 

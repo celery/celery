@@ -124,6 +124,8 @@ from celery.bin.celeryd_detach import detached_celeryd
 from celery.five import string_t
 from celery.utils.log import LOG_LEVELS, mlevel
 
+__all__ = ['worker', 'main']
+
 __MODULE_DOC__ = __doc__
 
 

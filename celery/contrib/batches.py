@@ -91,6 +91,8 @@ from celery.utils.log import get_logger
 from celery.worker.job import Request
 from celery.utils import noop
 
+__all__ = ['Batches']
+
 logger = get_logger(__name__)
 
 

@@ -28,6 +28,9 @@ from celery.utils.functional import (
 )
 from celery.utils.text import truncate
 
+__all__ = ['Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
+           'group', 'chord', 'subtask', 'maybe_subtask']
+
 
 class _getitem_property(object):
     """Attribute -> dict key descriptor.

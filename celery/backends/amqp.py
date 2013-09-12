@@ -28,6 +28,8 @@ from celery.utils.timeutils import maybe_s_to_ms
 
 from .base import BaseBackend
 
+__all__ = ['BacklogLimitExceeded', 'AMQPBackend']
+
 logger = get_logger(__name__)
 
 

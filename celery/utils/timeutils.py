@@ -24,6 +24,12 @@ from .functional import dictfilter
 from .iso8601 import parse_iso8601
 from .text import pluralize
 
+__all__ = ['LocalTimezone', 'timezone', 'maybe_timedelta', 'timedelta_seconds',
+           'delta_resolution', 'remaining', 'rate', 'weekday',
+           'humanize_seconds', 'maybe_iso8601', 'is_naive', 'make_aware',
+           'localize', 'to_utc', 'maybe_make_aware', 'ffwd', 'utcoffset',
+           'adjust_timestamp', 'maybe_s_to_ms']
+
 C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
 
 DAYNAMES = 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
@@ -43,6 +49,9 @@ TIME_UNITS = (('day', 60 * 60 * 24.0, lambda n: format(n, '.2f')),
 ZERO = timedelta(0)
 
 _local_timezone = None
+
+__timezone__ = -_time.timezone
+__altzone__ = -_time.altzone
 
 
 class LocalTimezone(tzinfo):
@@ -346,10 +355,6 @@ class ffwd(object):
             'hour': self.hour, 'minute': self.minute,
             'second': self.second, 'microsecond': self.microsecond,
         }, **extra)
-
-
-__timezone__ = -_time.timezone
-__altzone__ = -_time.altzone
 
 
 def utcoffset():

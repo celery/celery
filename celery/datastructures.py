@@ -34,6 +34,10 @@ DOT_ATTRSEP = ', '
 DOT_DIRS = {'graph': '--', 'digraph': '->'}
 DOT_TAIL = '{IN}}}'
 
+__all__ = ['GraphFormatter', 'CycleError', 'DependencyGraph',
+           'AttributeDictMixin', 'AttributeDict', 'DictAttribute',
+           'ConfigurationView', 'LimitedSet']
+
 
 class GraphFormatter(object):
     _attr = DOT_ATTR.strip()

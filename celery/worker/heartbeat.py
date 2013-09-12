@@ -14,6 +14,8 @@ from celery.utils.sysinfo import load_average
 
 from .state import SOFTWARE_INFO, active_requests, total_count
 
+__all__ = ['Heart']
+
 
 class Heart(object):
     """Timer sending heartbeats at regular intervals.

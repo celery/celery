@@ -8,6 +8,8 @@
 """
 from __future__ import absolute_import
 
+__all__ = ['mro_lookup']
+
 
 def mro_lookup(cls, attr, stop=(), monkey_patched=[]):
     """Returns the first node by MRO order that defines an attribute.

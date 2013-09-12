@@ -23,6 +23,7 @@ except ImportError:  # pragma: no cover
     class SSLError(Exception):  # noqa
         """fallback used when ssl module not compiled."""
 
+__all__ = ['SendmailWarning', 'Message', 'Mailer', 'ErrorMail']
 
 _local_hostname = None
 

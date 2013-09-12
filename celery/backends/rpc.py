@@ -16,6 +16,8 @@ from kombu.utils import cached_property
 from celery import current_task
 from celery.backends import amqp
 
+__all__ = ['RPCBackend']
+
 
 class RPCBackend(amqp.AMQPBackend):
 

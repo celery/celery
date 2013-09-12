@@ -20,6 +20,8 @@ _SETUP = defaultdict(lambda: False)
 _ENGINES = {}
 _SESSIONS = {}
 
+__all__ = ['ResultSession', 'get_engine', 'create_session']
+
 
 def get_engine(dburi, **kwargs):
     if dburi not in _ENGINES:

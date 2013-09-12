@@ -23,6 +23,9 @@ from .datastructures import DependencyGraph, GraphFormatter
 from .exceptions import IncompleteStream, TimeoutError
 from .five import items, range, string_t
 
+__all__ = ['ResultBase', 'AsyncResult', 'ResultSet', 'GroupResult',
+           'EagerResult', 'from_serializable']
+
 
 class ResultBase(object):
     """Base class for all results"""

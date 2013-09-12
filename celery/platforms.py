@@ -30,6 +30,14 @@ resource = try_import('resource')
 pwd = try_import('pwd')
 grp = try_import('grp')
 
+__all__ = ['EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
+           'IS_OSX', 'IS_WINDOWS', 'pyimplementation', 'LockFailed',
+           'get_fdmax', 'Pidfile', 'create_pidlock', 'fileno', 'maybe_fileno',
+           'close_open_fds', 'DaemonContext', 'detached', 'parse_uid',
+           'parse_gid', 'setgroups', 'initgroups', 'setgid', 'setuid',
+           'maybe_drop_privileges', 'signals', 'set_process_title',
+           'set_mp_process_title', 'get_errno_name', 'ignore_errno']
+
 # exitcodes
 EX_OK = getattr(os, 'EX_OK', 0)
 EX_FAILURE = 1
@@ -645,7 +653,6 @@ class Signals(object):
         """Set signal handlers from a mapping."""
         for signal_name, handler in items(dict(_d_ or {}, **sigmap)):
             self[signal_name] = handler
-
 
 signals = Signals()
 get_signal = signals.signum                   # compat

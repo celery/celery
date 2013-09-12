@@ -11,6 +11,7 @@ from __future__ import absolute_import
 from celery import VERSION
 from bundle.extensions import Dist
 
+__all__ = ['bundles']
 
 defaults = {'author': 'Celery Project',
             'author_email': 'bundles@celeryproject.org',

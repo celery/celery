@@ -16,10 +16,12 @@ from celery.utils.log import get_logger
 from celery.utils.timer2 import to_timestamp
 from celery.utils.timeutils import timezone
 
-logger = get_logger(__name__)
-
 from .job import Request
 from .state import task_reserved
+
+__all__ = ['default']
+
+logger = get_logger(__name__)
 
 
 def default(task, app, consumer,

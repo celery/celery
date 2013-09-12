@@ -12,6 +12,8 @@ from celery.five import UserDict
 
 from .base import apply_target, BasePool
 
+__all__ = ['TaskPool']
+
 
 class NullDict(UserDict):
 

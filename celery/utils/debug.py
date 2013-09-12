@@ -21,6 +21,19 @@ try:
 except ImportError:
     Process = None  # noqa
 
+__all__ = [
+    'blockdetection', 'sample_mem', 'memdump', 'sample',
+    'humanbytes', 'mem_rss', 'ps',
+]
+
+UNITS = (
+    (2 ** 40.0, 'TB'),
+    (2 ** 30.0, 'GB'),
+    (2 ** 20.0, 'MB'),
+    (2 ** 10.0, 'kB'),
+    (0.0, '{0!d}b'),
+)
+
 _process = None
 _mem_sample = []
 
@@ -106,15 +119,6 @@ def sample(x, n, k=0):
     for _ in range(n):
         yield x[k]
         k += j
-
-
-UNITS = (
-    (2 ** 40.0, 'TB'),
-    (2 ** 30.0, 'GB'),
-    (2 ** 20.0, 'MB'),
-    (2 ** 10.0, 'kB'),
-    (0.0, '{0!d}b'),
-)
 
 
 def hfloat(f, p=5):

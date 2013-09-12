@@ -48,6 +48,9 @@ from billiard import current_process
 from celery.five import range
 from celery.platforms import ignore_errno
 
+__all__ = ['CELERY_RDB_HOST', 'CELERY_RDB_PORT', 'default_port',
+           'Rdb', 'debugger', 'set_trace']
+
 default_port = 6899
 
 CELERY_RDB_HOST = os.environ.get('CELERY_RDB_HOST') or '127.0.0.1'

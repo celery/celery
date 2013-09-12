@@ -19,6 +19,9 @@ import weakref
 from celery.local import Proxy
 from celery.utils.threads import LocalStack
 
+__all__ = ['set_default_app', 'get_current_app', 'get_current_task',
+           'get_current_worker_task', 'current_app', 'current_task']
+
 #: Global default app used when no current app.
 default_app = None
 

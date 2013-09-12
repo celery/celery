@@ -18,6 +18,10 @@ except ImportError:
 
 from .encoding import safe_repr
 
+__all__ = ['UnpickleableExceptionWrapper', 'subclass_exception',
+           'find_pickleable_exception', 'create_exception_cls',
+           'get_pickleable_exception', 'get_pickleable_etype',
+           'get_pickled_exception']
 
 #: List of base classes we probably don't want to reduce to.
 try:

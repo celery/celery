@@ -25,7 +25,7 @@ from types import ModuleType
 try:
     from unittest import mock
 except ImportError:
-    import mock
+    import mock  # noqa
 from nose import SkipTest
 from kombu.log import NullHandler
 from kombu.utils import nested
@@ -36,6 +36,16 @@ from celery.five import (
 )
 from celery.utils.functional import noop
 
+__all__ = [
+    'Case', 'AppCase', 'Mock', 'patch', 'call', 'skip_unless_module',
+    'wrap_logger', 'eager_tasks', 'with_environ', 'sleepdeprived',
+    'skip_if_environ', 'skip_if_quick', 'todo', 'skip', 'skip_if',
+    'skip_unless', 'mask_modules', 'override_stdouts', 'mock_module',
+    'replace_module_value', 'sys_platform', 'reset_modules',
+    'patch_modules', 'mock_context', 'mock_open', 'patch_many',
+    'patch_settings', 'assert_signal_called', 'skip_if_pypy',
+    'skip_if_jython', 'body_from_sig', 'restore_logging',
+]
 patch = mock.patch
 call = mock.call
 

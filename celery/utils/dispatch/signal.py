@@ -7,6 +7,8 @@ from collections import Callable
 from . import saferef
 from celery.five import range
 
+__all__ = ['Signal']
+
 WEAKREF_TYPES = (weakref.ReferenceType, saferef.BoundMethodWeakref)
 
 

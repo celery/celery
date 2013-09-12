@@ -19,8 +19,19 @@ from contextlib import contextmanager
 from celery.local import Proxy
 from celery.five import THREAD_TIMEOUT_MAX, items
 
+__all__ = ['bgThread', 'Local', 'LocalStack', 'LocalManager',
+           'get_ident', 'default_socket_timeout']
+
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
 PY3 = sys.version_info[0] == 3
+
+
+@contextmanager
+def default_socket_timeout(timeout):
+    prev = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(timeout)
+    yield
+    socket.setdefaulttimeout(prev)
 
 
 class bgThread(threading.Thread):
@@ -289,14 +300,6 @@ class LocalManager(object):
     def __repr__(self):
         return '<{0} storages: {1}>'.format(
             self.__class__.__name__, len(self.locals))
-
-
-@contextmanager
-def default_socket_timeout(timeout):
-    prev = socket.getdefaulttimeout()
-    socket.setdefaulttimeout(timeout)
-    yield
-    socket.setdefaulttimeout(prev)
 
 
 class _FastLocalStack(threading.local):

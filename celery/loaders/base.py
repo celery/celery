@@ -27,6 +27,8 @@ from celery.utils.imports import (
     import_from_cwd, symbol_by_name, NotAPackage, find_module,
 )
 
+__all__ = ['BaseLoader']
+
 _RACE_PROTECTION = False
 CONFIG_INVALID_NAME = """\
 Error: Module '{module}' doesn't exist, or it's not a valid \

@@ -37,6 +37,9 @@ from celery.utils.serialization import (
     get_pickleable_etype,
 )
 
+__all__ = ['TraceInfo', 'build_tracer', 'trace_task', 'eager_trace_task',
+           'setup_worker_optimizations', 'reset_worker_optimizations']
+
 _logger = get_logger(__name__)
 
 send_prerun = signals.task_prerun.send

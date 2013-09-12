@@ -25,6 +25,8 @@ from celery.utils.timeutils import maybe_timedelta, timedelta_seconds
 
 from .base import BaseBackend
 
+__all__ = ['CassandraBackend']
+
 logger = get_logger(__name__)
 
 

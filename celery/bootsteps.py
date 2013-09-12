@@ -26,6 +26,8 @@ try:
 except ImportError:  # pragma: no cover
     IGNORE_ERRORS = ()
 
+__all__ = ['Blueprint', 'Step', 'StartStopStep', 'ConsumerStep']
+
 #: Default socket timeout at shutdown.
 SHUTDOWN_SOCKET_TIMEOUT = 5.0
 

@@ -12,6 +12,8 @@ from importlib import import_module
 from celery import signals
 from celery.exceptions import FixupWarning
 
+__all__ = ['DjangoFixup', 'fixup']
+
 ERR_NOT_INSTALLED = """\
 Environment variable DJANGO_SETTINGS_MODULE is defined
 but Django is not installed.  Will not apply Django fixups!

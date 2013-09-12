@@ -14,6 +14,8 @@ from collections import deque
 from celery._state import get_current_worker_task
 from celery.utils import uuid
 
+__all__ = ['shared_task', 'load_shared_tasks']
+
 #: global list of functions defining tasks that should be
 #: added to all apps.
 _shared_tasks = []

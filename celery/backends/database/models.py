@@ -17,6 +17,8 @@ from celery import states
 
 from .session import ResultModelBase
 
+__all__ = ['Task', 'TaskSet']
+
 
 class Task(ResultModelBase):
     """Task result/status."""

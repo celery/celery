@@ -24,6 +24,8 @@ from celery.utils.timeutils import maybe_timedelta
 
 from .base import KeyValueStoreBackend
 
+__all__ = ['CouchBaseBackend']
+
 
 class CouchBaseBackend(KeyValueStoreBackend):
     bucket = 'default'

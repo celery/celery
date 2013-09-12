@@ -189,11 +189,11 @@ class test_AsynPool(PoolCase):
 
         with patch('select.select') as select:
 
-            def se(*args):
+            def se2(*args):
                 select.side_effect = socket.error()
                 select.side_effect.errno = 1321
                 raise ebadf
-            select.side_effect = se
+            select.side_effect = se2
             with self.assertRaises(socket.error):
                 mp._select(set([3]))
 

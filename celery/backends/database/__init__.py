@@ -20,6 +20,8 @@ from celery.backends.base import BaseBackend
 from .models import Task, TaskSet
 from .session import ResultSession
 
+__all__ = ['DatabaseBackend']
+
 
 def _sqlalchemy_installed():
     try:

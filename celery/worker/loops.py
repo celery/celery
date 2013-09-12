@@ -21,6 +21,8 @@ from celery.utils.log import get_logger
 
 from . import state
 
+__all__ = ['asynloop', 'synloop']
+
 logger = get_logger(__name__)
 error = logger.error
 

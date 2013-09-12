@@ -14,6 +14,15 @@ from billiard.exceptions import (  # noqa
     SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError, Terminated,
 )
 
+__all__ = ['SecurityError', 'Ignore', 'SystemTerminate', 'QueueNotFound',
+           'ImproperlyConfigured', 'NotRegistered', 'AlreadyRegistered',
+           'TimeoutError', 'MaxRetriesExceededError', 'RetryTaskError',
+           'TaskRevokedError', 'NotConfigured', 'AlwaysEagerIgnored',
+           'InvalidTaskError', 'ChordError', 'CPendingDeprecationWarning',
+           'CDeprecationWarning', 'FixupWarning', 'DuplicateNodenameWarning',
+           'SoftTimeLimitExceeded', 'TimeLimitExceeded', 'WorkerLostError',
+           'Terminated']
+
 UNREGISTERED_FMT = """\
 Task of kind {0} is not registered, please make sure it's imported.\
 """
@@ -116,6 +125,14 @@ class InvalidTaskError(Exception):
     """The task has invalid data or is not properly constructed."""
 
 
+class IncompleteStream(Exception):
+    """Found the end of a stream of data, but the data is not yet complete."""
+
+
+class ChordError(Exception):
+    """A task part of the chord raised an exception."""
+
+
 class CPendingDeprecationWarning(PendingDeprecationWarning):
     pass
 
@@ -126,14 +143,6 @@ class CDeprecationWarning(DeprecationWarning):
 
 class FixupWarning(UserWarning):
     pass
-
-
-class IncompleteStream(Exception):
-    """Found the end of a stream of data, but the data is not yet complete."""
-
-
-class ChordError(Exception):
-    """A task part of the chord raised an exception."""
 
 
 class DuplicateNodenameWarning(UserWarning):

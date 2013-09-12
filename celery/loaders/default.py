@@ -17,6 +17,8 @@ from celery.utils import strtobool
 
 from .base import BaseLoader
 
+__all__ = ['Loader', 'DEFAULT_CONFIG_MODULE']
+
 DEFAULT_CONFIG_MODULE = 'celeryconfig'
 
 #: Warns if configuration file is missing if :envvar:`C_WNOCONF` is set.

@@ -11,6 +11,8 @@ from celery.utils.log import get_logger
 
 from . import control
 
+__all__ = ['Pidbox', 'gPidbox']
+
 logger = get_logger(__name__)
 debug, error, info = logger.debug, logger.error, logger.info
 

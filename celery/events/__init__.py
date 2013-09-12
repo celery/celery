@@ -29,6 +29,8 @@ from celery.utils import uuid
 from celery.utils.functional import dictfilter
 from celery.utils.timeutils import adjust_timestamp, utcoffset, maybe_s_to_ms
 
+__all__ = ['Events', 'Event', 'EventDispatcher', 'EventReceiver']
+
 event_exchange = Exchange('celeryev', type='topic')
 
 _TZGETTER = itemgetter('utcoffset', 'timestamp')

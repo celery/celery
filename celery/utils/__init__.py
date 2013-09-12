@@ -23,7 +23,11 @@ from kombu.entity import Exchange, Queue
 from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 from celery.five import StringIO, items, reraise, string_t
 
-from .functional import noop
+__all__ = ['worker_direct', 'warn_deprecated', 'deprecated', 'lpmerge',
+           'is_iterable', 'isatty', 'cry', 'maybe_reraise', 'strtobool',
+           'jsonify', 'gen_task_name', 'nodename', 'nodesplit',
+           'cached_property']
+
 
 PENDING_DEPRECATION_FMT = """
     {description} is scheduled for deprecation in \

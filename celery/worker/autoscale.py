@@ -27,6 +27,8 @@ from . import state
 from .components import Pool
 from .hub import DummyLock
 
+__all__ = ['Autoscaler', 'WorkerComponent']
+
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error
 

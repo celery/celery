@@ -46,6 +46,8 @@ from celery.platforms import detached
 
 from celery.bin.base import Command, Option, daemon_options
 
+__all__ = ['beat']
+
 
 class beat(Command):
     """Start the beat periodic task scheduler.

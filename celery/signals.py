@@ -15,6 +15,15 @@
 from __future__ import absolute_import
 from .utils.dispatch import Signal
 
+__all__ = ['task_sent', 'task_prerun', 'task_postrun', 'task_success',
+           'task_retry', 'task_failure', 'task_revoked', 'celeryd_init',
+           'celeryd_after_setup', 'worker_init', 'worker_process_init',
+           'worker_ready', 'worker_shutdown', 'setup_logging',
+           'after_setup_logger', 'after_setup_task_logger',
+           'beat_init', 'beat_embedded_init', 'eventlet_pool_started',
+           'eventlet_pool_preshutdown', 'eventlet_pool_postshutdown',
+           'eventlet_pool_apply']
+
 task_sent = Signal(providing_args=[
     'task_id', 'task', 'args', 'kwargs', 'eta', 'taskset',
 ])

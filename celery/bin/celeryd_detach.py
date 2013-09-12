@@ -23,6 +23,8 @@ from celery.utils.log import get_logger
 
 from celery.bin.base import daemon_options, Option
 
+__all__ = ['detached_celeryd', 'detach']
+
 logger = get_logger(__name__)
 
 OPTION_LIST = daemon_options(default_pidfile='celeryd.pid') + (

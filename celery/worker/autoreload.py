@@ -35,6 +35,11 @@ except ImportError:         # pragma: no cover
     pyinotify = None        # noqa
     _ProcessEvent = object  # noqa
 
+__all__ = [
+    'WorkerComponent', 'Autoreloader', 'Monitor' 'BaseMonitor',
+    'StatMonitor', 'KQueueMonitor', 'InotifyMonitor', 'file_hash',
+]
+
 logger = get_logger(__name__)
 
 

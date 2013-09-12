@@ -22,6 +22,8 @@ from celery.utils.imports import instantiate
 from celery.utils.log import get_logger
 from celery.utils.timeutils import rate
 
+__all__ = ['Polaroid', 'evcam']
+
 logger = get_logger('celery.evcam')
 
 

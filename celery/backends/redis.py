@@ -22,6 +22,8 @@ except ImportError:         # pragma: no cover
     redis = None            # noqa
     ConnectionError = None  # noqa
 
+__all__ = ['RedisBackend']
+
 REDIS_MISSING = """\
 You need to install the redis library in order to use \
 the Redis result store backend."""

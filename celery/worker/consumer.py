@@ -46,9 +46,15 @@ from .state import task_reserved, maybe_shutdown, revoked, reserved_requests
 try:
     buffer_t = buffer
 except NameError:  # pragma: no cover
+    # Py3 does not have buffer, but we only need isinstance.
 
     class buffer_t(object):  # noqa
         pass
+
+__all__ = [
+    'Consumer', 'Conneciton', 'Events', 'Heart', 'Control',
+    'Tasks', 'Evloop', 'Agent', 'Mingle', 'Gossip', 'dump_body',
+]
 
 CLOSE = bootsteps.CLOSE
 logger = get_logger(__name__)

@@ -51,6 +51,8 @@ from celery.five import Counter, items, values
 from celery.utils.log import get_logger
 from celery.worker.hub import READ, WRITE, ERR
 
+__all__ = ['TaskPool']
+
 #: List of signals to reset when a child process starts.
 WORKER_SIGRESET = frozenset(['SIGTERM',
                              'SIGHUP',

@@ -31,6 +31,9 @@ from .utils.imports import instantiate
 from .utils.timeutils import humanize_seconds
 from .utils.log import get_logger
 
+__all__ = ['SchedulingError', 'ScheduleEntry', 'Scheduler',
+           'PersistentScheduler', 'Service', 'EmbeddedService']
+
 logger = get_logger(__name__)
 debug, info, error, warning = (logger.debug, logger.info,
                                logger.error, logger.warning)

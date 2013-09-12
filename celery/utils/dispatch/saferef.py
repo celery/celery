@@ -12,6 +12,8 @@ import traceback
 
 from collections import Callable
 
+__all__ = ['safe_ref']
+
 
 def safe_ref(target, on_delete=None):  # pragma: no cover
     """Return a *safe* weak reference to a callable target

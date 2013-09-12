@@ -12,7 +12,13 @@ from __future__ import absolute_import
 from celery._state import get_current_worker_task
 from celery.app import app_or_default
 from celery.canvas import subtask, maybe_subtask  # noqa
-from celery.utils import uuid
+from celery.utils import uuid, warn_deprecated
+
+warn_deprecated(
+    'celery.task.sets and TaskSet', removal='4.0',
+    alternative="""\
+Please use "group" instead (see the Canvas section in the userguide)\
+""")
 
 
 class TaskSet(list):

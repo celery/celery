@@ -38,6 +38,8 @@ from celery.utils.serialization import (
     create_exception_cls,
 )
 
+__all__ = ['BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend']
+
 EXCEPTION_ABLE_CODECS = frozenset(['pickle', 'yaml'])
 PY3 = sys.version_info >= (3, 0)
 

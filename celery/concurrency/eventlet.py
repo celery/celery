@@ -11,6 +11,8 @@ from __future__ import absolute_import
 import os
 import sys
 
+__all__ = ['TaskPool']
+
 EVENTLET_NOPATCH = os.environ.get('EVENTLET_NOPATCH', False)
 EVENTLET_DBLOCK = int(os.environ.get('EVENTLET_NOBLOCK', 0))
 W_RACE = """\

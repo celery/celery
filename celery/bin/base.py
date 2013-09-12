@@ -104,6 +104,9 @@ find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
 find_rst_ref = re.compile(r':\w+:`(.+?)`')
 find_sformat = re.compile(r'%(\w)')
 
+__all__ = ['Error', 'UsageError', 'Extensions', 'HelpFormatter',
+           'Command', 'Option', 'daemon_options']
+
 
 class Error(Exception):
     status = EX_FAILURE

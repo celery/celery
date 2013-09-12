@@ -24,6 +24,10 @@ from .utils.timeutils import (
 )
 from .datastructures import AttributeDict
 
+__all__ = ['ParseException', 'schedule', 'crontab', 'crontab_parser',
+           'maybe_schedule']
+
+
 CRON_PATTERN_INVALID = """\
 Invalid crontab pattern. Valid range is {min}-{max}. \
 '{value}' was found.\

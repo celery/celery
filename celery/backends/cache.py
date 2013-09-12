@@ -15,6 +15,8 @@ from celery.utils.functional import LRUCache
 
 from .base import KeyValueStoreBackend
 
+__all__ = ['CacheBackend']
+
 _imp = [None]
 
 REQUIRES_BACKEND = """\

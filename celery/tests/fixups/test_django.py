@@ -54,11 +54,11 @@ class test_DjangoFixup(AppCase):
             sym.side_effect = se
             self.assertTrue(DjangoFixup(self.app)._now)
 
-            def se(name):
+            def se2(name):
                 if name == 'django.db:close_old_connections':
                     raise ImportError()
                 return Mock()
-            sym.side_effect = se
+            sym.side_effect = se2
             self.assertIsNone(DjangoFixup(self.app)._close_old_connections)
 
     def test_install(self):

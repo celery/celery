@@ -38,6 +38,8 @@ from celery.utils.timeutils import maybe_iso8601, timezone, maybe_make_aware
 
 from . import state
 
+__all__ = ['Request']
+
 IS_PYPY = hasattr(sys, 'pypy_version_info')
 
 logger = get_logger(__name__)

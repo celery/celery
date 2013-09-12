@@ -7,6 +7,8 @@ from math import ceil
 
 from kombu.utils import cached_property
 
+__all__ = ['load_average', 'df']
+
 
 if hasattr(os, 'getloadavg'):
 

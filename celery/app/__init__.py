@@ -14,7 +14,7 @@ from collections import Callable
 
 from celery.local import Proxy
 from celery import _state
-from celery._state import (  # noqa
+from celery._state import (
     set_default_app,
     get_current_app as current_app,
     get_current_task as current_task,
@@ -23,7 +23,11 @@ from celery._state import (  # noqa
 from celery.utils import gen_task_name
 
 from .builtins import shared_task as _shared_task
-from .base import Celery, AppPickler  # noqa
+from .base import Celery, AppPickler
+
+__all__ = ['Celery', 'AppPickler', 'default_app', 'app_or_default',
+           'bugreport', 'enable_trace', 'disable_trace', 'shared_task',
+           'set_default_app', 'current_app', 'current_task']
 
 #: Proxy always returning the app set as default.
 default_app = Proxy(lambda: _state.default_app)

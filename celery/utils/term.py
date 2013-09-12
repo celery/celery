@@ -15,14 +15,15 @@ from functools import reduce
 from kombu.utils.encoding import safe_str
 from celery.five import string
 
+__all__ = ['colored']
+
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 OP_SEQ = '\033[%dm'
 RESET_SEQ = '\033[0m'
 COLOR_SEQ = '\033[1;%dm'
 fg = lambda s: COLOR_SEQ % s
 
-SYSTEM = platform.system()
-IS_WINDOWS = SYSTEM == 'Windows'
+IS_WINDOWS = platform.system() == 'Windows'
 
 
 class colored(object):

@@ -31,6 +31,8 @@ from celery.bin.events import events
 from celery.bin.graph import graph
 from celery.bin.worker import worker
 
+__all__ = ['CeleryCommand', 'main']
+
 HELP = """
 ---- -- - - ---- Commands- -------------- --- ------------
 

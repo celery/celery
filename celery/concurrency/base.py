@@ -17,6 +17,8 @@ from kombu.utils.encoding import safe_repr
 from celery.utils import timer2
 from celery.utils.log import get_logger
 
+__all__ = ['BasePool', 'apply_target']
+
 logger = get_logger('celery.pool')
 
 

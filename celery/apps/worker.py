@@ -34,6 +34,8 @@ from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
 from celery.utils.text import pluralize
 from celery.worker import WorkController
 
+__all__ = ['Worker']
+
 logger = get_logger(__name__)
 is_jython = sys.platform.startswith('java')
 is_pypy = hasattr(sys, 'pypy_version_info')

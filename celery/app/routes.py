@@ -15,6 +15,8 @@ from celery.utils import lpmerge
 from celery.utils.functional import firstmethod, mlazy
 from celery.utils.imports import instantiate
 
+__all__ = ['MapRoute', 'Router', 'prepare']
+
 _first_route = firstmethod('route_for_task')
 
 
