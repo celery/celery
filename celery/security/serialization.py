@@ -17,6 +17,8 @@ from .certificate import Certificate, FSCertStore
 from .key import PrivateKey
 from .utils import reraise_errors
 
+__all__ = ['SecureSerializer', 'register_auth']
+
 
 def b64encode(s):
     return bytes_to_str(base64.b64encode(str_to_bytes(s)))

@@ -18,9 +18,10 @@ from __future__ import absolute_import
 
 from mock import Mock, patch
 
+from kombu.serialization import disable_insecure_serializers
+
 from celery.exceptions import ImproperlyConfigured, SecurityError
 from celery.five import builtins
-from celery.security import disable_untrusted_serializers
 from celery.security.utils import reraise_errors
 from kombu.serialization import registry
 
@@ -34,21 +35,25 @@ class test_security(SecurityCase):
     def tearDown(self):
         registry._disabled_content_types.clear()
 
-    def test_disable_untrusted_serializers(self):
-        disabled = registry._disabled_content_types
-        self.assertTrue(disabled)
+    def test_disable_insecure_serializers(self):
+        try:
+            disabled = registry._disabled_content_types
+            self.assertTrue(disabled)
 
-        disable_untrusted_serializers(
-            ['application/json', 'application/x-python-serialize'])
-        self.assertIn('application/x-yaml', disabled)
-        self.assertNotIn('application/json', disabled)
-        self.assertNotIn('application/x-python-serialize', disabled)
-        disabled.clear()
+            disable_insecure_serializers(
+                ['application/json', 'application/x-python-serialize'],
+            )
+            self.assertIn('application/x-yaml', disabled)
+            self.assertNotIn('application/json', disabled)
+            self.assertNotIn('application/x-python-serialize', disabled)
+            disabled.clear()
 
-        disable_untrusted_serializers()
-        self.assertIn('application/x-yaml', disabled)
-        self.assertIn('application/json', disabled)
-        self.assertIn('application/x-python-serialize', disabled)
+            disable_insecure_serializers(allowed=None)
+            self.assertIn('application/x-yaml', disabled)
+            self.assertIn('application/json', disabled)
+            self.assertIn('application/x-python-serialize', disabled)
+        finally:
+            disable_insecure_serializers(allowed=['json'])
 
     def test_setup_security(self):
         disabled = registry._disabled_content_types
@@ -64,7 +69,7 @@ class test_security(SecurityCase):
             self.app.conf.CELERY_TASK_SERIALIZER = prev
 
     @patch('celery.security.register_auth')
-    @patch('celery.security.disable_untrusted_serializers')
+    @patch('celery.security._disable_insecure_serializers')
     def test_setup_registry_complete(self, dis, reg, key='KEY', cert='CERT'):
         calls = [0]
 

@@ -20,6 +20,8 @@ try:
 except ImportError:  # pragma: no cover
     crypto = None    # noqa
 
+__all__ = ['reraise_errors']
+
 
 @contextmanager
 def reraise_errors(msg='{0!r}', errors=None):

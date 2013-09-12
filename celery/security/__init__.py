@@ -8,7 +8,9 @@
 """
 from __future__ import absolute_import
 
-from kombu.serialization import registry
+from kombu.serialization import (
+    registry, disable_insecure_serializers as _disable_insecure_serializers,
+)
 
 from celery.exceptions import ImproperlyConfigured
 
@@ -31,12 +33,7 @@ configuration settings to use the auth serializer.
 Please see the configuration reference for more information.
 """
 
-
-def disable_untrusted_serializers(whitelist=None):
-    for name in set(registry._decoders) - set(whitelist or []):
-        registry.disable(name)
-    for name in whitelist or []:
-        registry.enable(name)
+__all__ = ['setup_security']
 
 
 def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
@@ -46,7 +43,7 @@ def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
         from celery import current_app
         app = current_app._get_current_object()
 
-    disable_untrusted_serializers(allowed_serializers)
+    _disable_insecure_serializers(allowed_serializers)
 
     conf = app.conf
     if conf.CELERY_TASK_SERIALIZER != 'auth':
@@ -68,3 +65,7 @@ def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
         with open(cert) as cf:
             register_auth(kf.read(), cf.read(), store, digest, serializer)
     registry._set_default_serializer('auth')
+
+
+def disable_untrusted_serializers(whitelist=None):
+    _disable_insecure_serializers(allowed=whitelist)

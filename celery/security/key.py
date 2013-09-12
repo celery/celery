@@ -12,6 +12,8 @@ from kombu.utils.encoding import ensure_bytes
 
 from .utils import crypto, reraise_errors
 
+__all__ = ['PrivateKey']
+
 
 class PrivateKey(object):
 
