@@ -20,14 +20,12 @@ from celery.utils.timer2 import Schedule
 
 from . import hub
 
+__all__ = ['Timer', 'Hub', 'Queues', 'Pool', 'Beat', 'StateDB', 'Consumer']
+
 ERR_B_GREEN = """\
 -B option doesn't work with eventlet/gevent pools: \
 use standalone beat instead.\
 """
-
-
-class Object(object):  # XXX
-    pass
 
 
 class Timer(bootsteps.Step):
@@ -65,6 +63,8 @@ class Hub(bootsteps.StartStopStep):
 
     def create(self, w):
         w.hub = hub.Hub(w.timer)
+        # make clock use dummy lock
+        w.app.clock.lock = hub.DummyLock()
         return w.hub
 
 
