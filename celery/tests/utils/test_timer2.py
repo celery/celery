@@ -3,12 +3,12 @@ from __future__ import absolute_import
 import sys
 import time
 
-from kombu.tests.utils import redirect_stdouts
 from mock import Mock, patch
 
 import celery.utils.timer2 as timer2
 
 from celery.tests.case import Case, skip_if_quick
+from kombu.tests.case import redirect_stdouts
 
 
 class test_Entry(Case):

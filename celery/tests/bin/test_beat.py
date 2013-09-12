@@ -5,7 +5,6 @@ import sys
 
 from collections import defaultdict
 
-from kombu.tests.utils import redirect_stdouts
 from mock import patch
 
 from celery import beat
@@ -14,6 +13,7 @@ from celery.bin import beat as beat_bin
 from celery.apps import beat as beatapp
 
 from celery.tests.case import AppCase, Mock, restore_logging
+from kombu.tests.case import redirect_stdouts
 
 
 class MockedShelveModule(object):
