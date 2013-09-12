@@ -38,7 +38,6 @@ from celery.five import items, values
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
-from celery.utils.timer2 import default_timer
 from celery.utils.timeutils import humanize_seconds, rate
 
 from . import heartbeat, loops, pidbox
@@ -166,7 +165,7 @@ class Consumer(object):
         self.hostname = hostname or socket.gethostname()
         self.pid = os.getpid()
         self.pool = pool
-        self.timer = timer or default_timer
+        self.timer = timer
         self.strategies = self.Strategies()
         conninfo = self.app.connection()
         self.connection_errors = conninfo.connection_errors

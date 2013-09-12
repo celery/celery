@@ -38,6 +38,8 @@ IS_PYPY = hasattr(sys, 'pypy_version_info')
 
 logger = get_logger('timer2')
 
+__all__ = ['Entry', 'Schedule', 'Timer', 'to_timestamp']
+
 
 class Entry(object):
     if not IS_PYPY:  # pragma: no cover
@@ -240,9 +242,10 @@ class Timer(threading.Thread):
             super(Timer, self).start(*args, **kwargs)
 
     def __init__(self, schedule=None, on_error=None, on_tick=None,
-                 max_interval=None, **kwargs):
+                 on_start=None, max_interval=None, **kwargs):
         self.schedule = schedule or self.Schedule(on_error=on_error,
                                                   max_interval=max_interval)
+        self.on_start = on_start
         self.on_tick = on_tick or self.on_tick
         threading.Thread.__init__(self)
         self._is_shutdown = threading.Event()
@@ -294,6 +297,8 @@ class Timer(threading.Thread):
 
     def ensure_started(self):
         if not self.running and not self.isAlive():
+            if self.on_start:
+                self.on_start(self)
             self.start()
 
     def _do_enter(self, meth, *args, **kwargs):
@@ -333,15 +338,3 @@ class Timer(threading.Thread):
     @property
     def queue(self):
         return self.schedule.queue
-
-default_timer = _default_timer = Timer()
-apply_after = _default_timer.apply_after
-apply_at = _default_timer.apply_at
-apply_interval = _default_timer.apply_interval
-enter_after = _default_timer.enter_after
-enter = _default_timer.enter
-exit_after = _default_timer.exit_after
-cancel = _default_timer.cancel
-clear = _default_timer.clear
-
-atexit.register(_default_timer.stop)
