@@ -11,7 +11,6 @@
 from __future__ import absolute_import
 
 import socket
-import threading
 import time
 
 from collections import deque
@@ -83,7 +82,6 @@ class AMQPBackend(BaseBackend):
         self.queue_arguments = dictfilter({
             'x-expires': maybe_s_to_ms(self.expires),
         })
-        self.mutex = threading.Lock()
 
     def _create_exchange(self, name, type='direct', persistent=True):
         delivery_mode = persistent and 'persistent' or 'transient'
@@ -110,17 +108,16 @@ class AMQPBackend(BaseBackend):
 
     def _store_result(self, task_id, result, status, traceback=None):
         """Send task return value and status."""
-        with self.mutex:
-            with self.app.amqp.producer_pool.acquire(block=True) as pub:
-                pub.publish({'task_id': task_id, 'status': status,
-                             'result': self.encode_result(result, status),
-                             'traceback': traceback,
-                             'children': self.current_task_children()},
-                            exchange=self.exchange,
-                            routing_key=self._routing_key(task_id),
-                            serializer=self.serializer,
-                            retry=True, retry_policy=self.retry_policy,
-                            declare=self.on_reply_declare(task_id))
+        with self.app.amqp.producer_pool.acquire(block=True) as pub:
+            pub.publish({'task_id': task_id, 'status': status,
+                         'result': self.encode_result(result, status),
+                         'traceback': traceback,
+                         'children': self.current_task_children()},
+                        exchange=self.exchange,
+                        routing_key=self._routing_key(task_id),
+                        serializer=self.serializer,
+                        retry=True, retry_policy=self.retry_policy,
+                        declare=self.on_reply_declare(task_id))
         return result
 
     def on_reply_declare(self, task_id):

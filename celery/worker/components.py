@@ -63,9 +63,19 @@ class Hub(bootsteps.StartStopStep):
 
     def create(self, w):
         w.hub = hub.Hub(w.timer)
+        self._patch_thread_primitives(w)
+        return w.hub
+
+    def _patch_thread_primitives(self, w):
         # make clock use dummy lock
         w.app.clock.lock = hub.DummyLock()
-        return w.hub
+        # multiprocessing's ApplyResult uses this lock.
+        try:
+            from billiard import pool
+        except ImportError:
+            pass
+        else:
+            pool.Lock = hub.DummyLock
 
 
 class Queues(bootsteps.Step):

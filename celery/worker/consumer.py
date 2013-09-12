@@ -41,6 +41,7 @@ from celery.utils.text import truncate
 from celery.utils.timeutils import humanize_seconds, rate
 
 from . import heartbeat, loops, pidbox
+from .hub import DummyLock
 from .state import task_reserved, maybe_shutdown, revoked, reserved_requests
 
 try:
@@ -717,4 +718,8 @@ class Evloop(bootsteps.StartStopStep):
     last = True
 
     def start(self, c):
+        self.patch_all(c)
         c.loop(*c.loop_args())
+
+    def patch_all(self, c):
+        c.qos._mutex = DummyLock()
