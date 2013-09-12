@@ -7,6 +7,21 @@
 .. contents::
     :local:
 
+.. _deprecations-v3.2:
+
+Removals for version 3.2
+========================
+
+- Module ``celery.task.trace`` has been renamed to ``celery.app.trace``
+  as the ``celery.task`` package is being phased out.  The compat module
+  will be removed in version 3.2 so please change any import from::
+
+    from celery.task.trace import ...
+
+  to::
+
+    from celery.app.trace import ...
+
 .. _deprecations-v4.0:
 
 Removals for version 4.0
