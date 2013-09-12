@@ -145,6 +145,7 @@ py_version = sys.version_info
 def strip_comments(l):
     return l.split('#', 1)[0].strip()
 
+
 def reqs(*f):
     return [
         r for r in (

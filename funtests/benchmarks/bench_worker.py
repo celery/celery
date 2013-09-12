@@ -25,27 +25,28 @@ BROKER_TRANSPORT = os.environ.get('BROKER', 'librabbitmq')
 if hasattr(sys, 'pypy_version_info'):
     BROKER_TRANSPORT = 'pyamqp'
 
-celery = Celery(__name__)
-celery.conf.update(BROKER_TRANSPORT=BROKER_TRANSPORT,
-                   BROKER_POOL_LIMIT=10,
-                   CELERYD_POOL='solo',
-                   CELERYD_PREFETCH_MULTIPLIER=0,
-                   CELERY_DISABLE_RATE_LIMITS=True,
-                   CELERY_DEFAULT_DELIVERY_MODE=1,
-                   CELERY_QUEUES = {
-                       'bench.worker': {
-                           'exchange': 'bench.worker',
-                           'routing_key': 'bench.worker',
-                           'no_ack': True,
-                           'exchange_durable': False,
-                           'queue_durable': False,
-                           'auto_delete': True,
-                        }
-                   },
-                   CELERY_TASK_SERIALIZER='json',
-                   CELERY_DEFAULT_QUEUE='bench.worker',
-                   CELERY_BACKEND=None,
-                   )#CELERY_MESSAGE_COMPRESSION='zlib')
+celery = Celery('bench_worker')
+celery.conf.update(
+    BROKER_TRANSPORT=BROKER_TRANSPORT,
+    BROKER_POOL_LIMIT=10,
+    CELERYD_POOL='solo',
+    CELERYD_PREFETCH_MULTIPLIER=0,
+    CELERY_DISABLE_RATE_LIMITS=True,
+    CELERY_DEFAULT_DELIVERY_MODE=1,
+    CELERY_QUEUES={
+        'bench.worker': {
+            'exchange': 'bench.worker',
+            'routing_key': 'bench.worker',
+            'no_ack': True,
+            'exchange_durable': False,
+            'queue_durable': False,
+            'auto_delete': True,
+        }
+    },
+    CELERY_TASK_SERIALIZER='json',
+    CELERY_DEFAULT_QUEUE='bench.worker',
+    CELERY_BACKEND=None,
+),
 
 
 def tdiff(then):
@@ -65,7 +66,8 @@ def it(_, n):
         total = tdiff(it.time_start)
         print('({0} so far: {1}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
         print('-- process {0} tasks: {1}s total, {2} tasks/s} '.format(
-                n, total, n / (total + .0)))
+            n, total, n / (total + .0),
+        ))
         sys.exit()
     it.cur += 1
 
@@ -100,7 +102,8 @@ def main(argv=sys.argv):
     n = DEFAULT_ITS
     if len(argv) < 2:
         print('Usage: {0} [apply|work|both] [n=20k]'.format(
-                os.path.basename(argv[0])))
+            os.path.basename(argv[0]),
+        ))
         return sys.exit(1)
     try:
         try:

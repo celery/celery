@@ -7,15 +7,16 @@ try:
 except ImportError:
     from ez_setup import use_setuptools
     use_setuptools()
-    from setuptools import setup
-    from setuptools.command.install import install
+    from setuptools import setup  # noqa
+    from setuptools.command.install import install  # noqa
 
 import os
 import sys
 
 sys.path.insert(0, os.getcwd())
 sys.path.insert(0, os.path.join(os.getcwd(), os.pardir))
-import suite
+import suite  # noqa
+
 
 class no_install(install):
 

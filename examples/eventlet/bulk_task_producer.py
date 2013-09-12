@@ -43,8 +43,9 @@ class ProducerPool(object):
         return receipt
 
     def _run(self):
-        self._producers = [spawn_n(self._producer)
-                                for _ in range(self.size)]
+        self._producers = [
+            spawn_n(self._producer) for _ in range(self.size)
+        ]
 
     def _producer(self):
         connection = current_app.connection()

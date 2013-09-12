@@ -23,7 +23,7 @@ from celery.five import string_t
 from .encoding import safe_str, str_t
 from .term import colored
 
-__all__ = ['ColorFormatter', 'LoggingProxy' 'base_logger',
+__all__ = ['ColorFormatter', 'LoggingProxy', 'base_logger',
            'set_in_sighandler', 'in_sighandler', 'get_logger',
            'get_task_logger', 'mlevel', 'ensure_process_aware_logger',
            'get_multiprocessing_logger', 'reset_multiprocessing_logger']

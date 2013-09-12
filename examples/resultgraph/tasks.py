@@ -19,9 +19,10 @@
 #    ...                           A_callback.subtask()), countdown=1)
 
 
-from celery import chord, task, subtask
+from celery import chord, group, task, subtask, uuid
 from celery.result import AsyncResult, ResultSet
 from collections import deque
+
 
 @task()
 def add(x, y):
@@ -42,8 +43,10 @@ def B_callback(urls, id):
 
 @task()
 def B(id):
-    return chord(make_request.s(id, '{0} {1!r}'.format(id, i))
-                    for i in range(10))(B_callback.s(id))
+    return chord(
+        make_request.s(id, '{0} {1!r}'.format(id, i))
+        for i in range(10)
+    )(B_callback.s(id))
 
 
 @task()
@@ -71,8 +74,8 @@ def joinall(R, timeout=None, propagate=True):
 
 
 @task()
-def unlock_graph(result, callback, interval=1, propagate=False,
-        max_retries=None):
+def unlock_graph(result, callback,
+                 interval=1, propagate=False, max_retries=None):
     if result.ready():
         second_level_res = result.get()
         if second_level_res.ready():

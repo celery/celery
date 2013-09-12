@@ -15,7 +15,7 @@ from celery import current_app
 from celery.five import range
 from celery.tests.utils import unittest
 
-import suite
+import suite  # noqa
 
 GET_RSIZE = '/bin/ps -p {pid} -o rss='
 QUICKTEST = int(os.environ.get('QUICKTEST', 0))
@@ -40,8 +40,9 @@ class LeakFunCase(unittest.TestCase):
     def get_rsize(self, cmd=GET_RSIZE):
         try:
             return int(subprocess.Popen(
-                        shlex.split(cmd.format(pid=os.getpid())),
-                            stdout=subprocess.PIPE).communicate()[0].strip())
+                shlex.split(cmd.format(pid=os.getpid())),
+                stdout=subprocess.PIPE).communicate()[0].strip()
+            )
         except OSError as exc:
             raise SkipTest(
                 'Cannot execute command: {0!r}: {1!r}'.format(cmd, exc))
@@ -73,7 +74,7 @@ class LeakFunCase(unittest.TestCase):
                     first = after
                 if self.debug:
                     print('{0!r} {1}: before/after: {2}/{3}'.format(
-                            fun, i, before, after))
+                          fun, i, before, after))
                 else:
                     sys.stderr.write('.')
                 sizes.add(self.appx(after))
@@ -102,7 +103,7 @@ class test_leaks(LeakFunCase):
         try:
             pool_limit = self.app.conf.BROKER_POOL_LIMIT
         except AttributeError:
-            return self.assertFreed(self.iterations, foo.delay)
+            return self.assertFreed(self.iterations, task1.delay)
 
         self.app.conf.BROKER_POOL_LIMIT = None
         try:

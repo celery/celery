@@ -7,7 +7,7 @@ from celery import task
 def urlopen(url):
     print('Opening: {0}'.format(url))
     try:
-        _response = requests.get(url)
+        requests.get(url)
     except Exception as exc:
         print('Exception for {0}: {1!r}'.format(url, exc))
         return url, 0

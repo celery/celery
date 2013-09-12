@@ -100,8 +100,9 @@ def fixliterals(fname):
                 replace_type in ("class", "func", "meth"):
             default = default[:-2]
         replace_value = input(
-            colorize("Text <target> [", fg="yellow") + default + \
-                    colorize("]: ", fg="yellow")).strip()
+            colorize("Text <target> [", fg="yellow") +
+            default + colorize("]: ", fg="yellow"),
+        ).strip()
         if not replace_value:
             replace_value = default
         new.append(":%s:`%s`" % (replace_type, replace_value))

@@ -44,6 +44,7 @@ LINKCODE_URL = 'http://github.com/{proj}/tree/{branch}/{filename}.py'
 GITHUB_PROJECT = 'celery/celery'
 GITHUB_BRANCH = 'master'
 
+
 def linkcode_resolve(domain, info):
     if domain != 'py' or not info['module']:
         return
@@ -51,7 +52,7 @@ def linkcode_resolve(domain, info):
     return LINKCODE_URL.format(
         proj=GITHUB_PROJECT,
         branch=GITHUB_BRANCH,
-        filename=FILENAME,
+        filename=filename,
     )
 
 html_show_sphinx = False
@@ -116,8 +117,8 @@ html_use_modindex = True
 html_use_index = True
 
 latex_documents = [
-  ('index', 'Celery.tex', 'Celery Documentation',
-   'Ask Solem & Contributors', 'manual'),
+    ('index', 'Celery.tex', 'Celery Documentation',
+     'Ask Solem & Contributors', 'manual'),
 ]
 
 html_theme = "celery"
@@ -135,7 +136,7 @@ if False:
     issuetracker_project = "celery/celery"
     issuetracker_issue_pattern = r'[Ii]ssue #(\d+)'
 
-# -- Options for Epub output ---------------------------------------------------
+# -- Options for Epub output -------------------------------------------
 
 # Bibliographic Dublin Core info.
 epub_title = 'Celery Manual, Version {0}'.format(version)

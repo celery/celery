@@ -23,12 +23,11 @@ to "zlib", and the serializer to "pickle".
 
 
 import re
-import time
 
 try:
     from urllib.parse import urlsplit
 except ImportError:
-    from urlparse import urlsplit
+    from urlparse import urlsplit  # noqa
 
 import requests
 

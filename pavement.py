@@ -1,12 +1,12 @@
 import sys
-from paver.easy import *
-from paver import doctools
-from paver.setuputils import setup
+from paver.easy import task, sh, cmdopts, path, needs, options, Bunch
+from paver import doctools  # noqa
+from paver.setuputils import setup  # noqa
 
 PYCOMPILE_CACHES = ['*.pyc', '*$py.class']
 
 options(
-        sphinx=Bunch(builddir='.build'),
+    sphinx=Bunch(builddir='.build'),
 )
 
 
@@ -102,6 +102,7 @@ def bump(options):
     sh("extra/release/bump_version.py \
             celery/__init__.py docs/includes/introduction.txt \
             --before-commit='paver readme'")
+
 
 @task
 @cmdopts([

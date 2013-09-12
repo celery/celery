@@ -125,6 +125,7 @@ _filetype_to_type = {"py": PyVersion,
                      "c": CPPVersion,
                      "h": CPPVersion}
 
+
 def filetype_to_type(filename):
     _, _, suffix = filename.rpartition(".")
     return _filetype_to_type[suffix](filename)

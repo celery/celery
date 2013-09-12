@@ -1,7 +1,6 @@
 from docutils import nodes
 
 from sphinx.environment import NoUri
-from sphinx.util.nodes import make_refnode
 
 APPATTRS = {
     "amqp": "celery.app.amqp.AMQP",
@@ -65,9 +64,7 @@ def get_abbr(pre, rest, type):
     return ABBR_EMPTY.get(type, DEFAULT_EMPTY), rest, ABBR_EMPTY
 
 
-
 def resolve(S, type):
-    is_appattr = False
     if S.startswith('@'):
         S = S.lstrip('@-')
         try:
@@ -91,9 +88,8 @@ def basename(module_fqdn):
 def modify_textnode(T, newtarget, node, src_dict, type):
     src = node.children[0].rawsource
     return nodes.Text(
-        typeify(basename(T), type) if '~' in src
-                                   else typeify(shorten(T, newtarget,
-                                                        src_dict), type),
+        (typeify(basename(T), type) if '~' in src
+         else typeify(shorten(T, newtarget, src_dict), type)),
         src,
     )
 

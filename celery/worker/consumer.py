@@ -53,7 +53,7 @@ except NameError:  # pragma: no cover
         pass
 
 __all__ = [
-    'Consumer', 'Conneciton', 'Events', 'Heart', 'Control',
+    'Consumer', 'Connection', 'Events', 'Heart', 'Control',
     'Tasks', 'Evloop', 'Agent', 'Mingle', 'Gossip', 'dump_body',
 ]
 

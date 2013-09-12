@@ -1,12 +1,11 @@
 import operator
 import os
 import sys
-import time
 
 # funtest config
 sys.path.insert(0, os.getcwd())
 sys.path.insert(0, os.path.join(os.getcwd(), os.pardir))
-import suite
+import suite  # noqa
 
 from celery.five import range
 from celery.tests.utils import unittest
@@ -22,13 +21,13 @@ class test_basic(WorkerCase):
     def test_roundtrip_simple_task(self):
         publisher = tasks.add.get_publisher()
         results = [(tasks.add.apply_async(i, publisher=publisher), i)
-                        for i in zip(range(100), range(100))]
+                   for i in zip(range(100), range(100))]
         for result, i in results:
             self.assertEqual(result.get(timeout=10), operator.add(*i))
 
     def test_dump_active(self, sleep=1):
         r1 = tasks.sleeptask.delay(sleep)
-        r2 = tasks.sleeptask.delay(sleep)
+        tasks.sleeptask.delay(sleep)
         self.ensure_accepted(r1.id)
         active = self.inspect().active(safe=True)
         self.assertTrue(active)
@@ -39,9 +38,9 @@ class test_basic(WorkerCase):
 
     def test_dump_reserved(self, sleep=1):
         r1 = tasks.sleeptask.delay(sleep)
-        r2 = tasks.sleeptask.delay(sleep)
-        r3 = tasks.sleeptask.delay(sleep)
-        r4 = tasks.sleeptask.delay(sleep)
+        tasks.sleeptask.delay(sleep)
+        tasks.sleeptask.delay(sleep)
+        tasks.sleeptask.delay(sleep)
         self.ensure_accepted(r1.id)
         reserved = self.inspect().reserved(safe=True)
         self.assertTrue(reserved)
@@ -51,7 +50,7 @@ class test_basic(WorkerCase):
 
     def test_dump_schedule(self, countdown=1):
         r1 = tasks.add.apply_async((2, 2), countdown=countdown)
-        r2 = tasks.add.apply_async((2, 2), countdown=countdown)
+        tasks.add.apply_async((2, 2), countdown=countdown)
         self.ensure_scheduled(r1.id, interval=0.1)
         schedule = self.inspect().scheduled(safe=True)
         self.assertTrue(schedule)

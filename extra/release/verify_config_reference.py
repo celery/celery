@@ -27,19 +27,23 @@ def is_ignored(setting, option):
 def find_undocumented_settings(directive='.. setting:: '):
     settings = dict(flatten(NAMESPACES))
     all = set(settings)
-    documented = set(line.strip()[len(directive):].strip()
-                        for line in _input()
-                            if line.strip().startswith(directive))
+    documented = set(
+        line.strip()[len(directive):].strip() for line in _input()
+        if line.strip().startswith(directive)
+    )
     return [setting for setting in all ^ documented
-                if not is_ignored(setting, settings[setting])]
+            if not is_ignored(setting, settings[setting])]
 
 
 if __name__ == '__main__':
     sep = '\n  * '
     missing = find_undocumented_settings()
     if missing:
-        print('Error: found undocumented settings:{0}{1}'.format(
-                sep, sep.join(sorted(missing))), file=stderr)
+        print(
+            'Error: found undocumented settings:{0}{1}'.format(
+                sep, sep.join(sorted(missing))),
+            file=stderr,
+        )
         exit(1)
     print('OK: Configuration reference complete :-)')
     exit(0)

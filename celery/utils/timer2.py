@@ -8,7 +8,6 @@
 """
 from __future__ import absolute_import
 
-import atexit
 import heapq
 import os
 import sys

@@ -36,7 +36,7 @@ except ImportError:         # pragma: no cover
     _ProcessEvent = object  # noqa
 
 __all__ = [
-    'WorkerComponent', 'Autoreloader', 'Monitor' 'BaseMonitor',
+    'WorkerComponent', 'Autoreloader', 'Monitor', 'BaseMonitor',
     'StatMonitor', 'KQueueMonitor', 'InotifyMonitor', 'file_hash',
 ]
 
