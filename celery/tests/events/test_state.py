@@ -5,7 +5,7 @@ import pickle
 from random import shuffle
 from time import time
 from itertools import count
-from mock import Mock, patch
+from mock import patch
 
 from celery import states
 from celery.events import Event
@@ -15,7 +15,6 @@ from celery.events.state import (
     Task,
     HEARTBEAT_EXPIRE_WINDOW,
     HEARTBEAT_DRIFT_MAX,
-    _lamportinfo
 )
 from celery.five import range
 from celery.utils import uuid
@@ -498,48 +497,3 @@ class test_State(Case):
         s = State(callback=callback)
         s.event({'type': 'worker-online'})
         self.assertTrue(scratch.get('recv'))
-
-
-class test_lamportinfo(Case):
-
-    def test_repr(self):
-        x = _lamportinfo(133, time(), 'id', Mock())
-        self.assertTrue(repr(x))
-
-    def test_pickleable(self):
-        x = _lamportinfo(133, time(), 'id', 'obj')
-        self.assertEqual(pickle.loads(pickle.dumps(x)), tuple(x))
-
-    def test_order(self):
-        t1 = time()
-        a = _lamportinfo(133, t1, 'A', 'obj')
-        b = _lamportinfo(140, t1, 'A', 'obj')
-        self.assertTrue(a.__getnewargs__())
-        self.assertEqual(a.clock, 133)
-        self.assertEqual(a.timestamp, t1)
-        self.assertEqual(a.id, 'A')
-        self.assertEqual(a.obj, 'obj')
-        self.assertTrue(
-            a <= b,
-        )
-        self.assertTrue(
-            b >= a,
-        )
-
-        self.assertEqual(
-            _lamportinfo(134, time(), 'A', 'obj').__lt__(tuple()),
-            NotImplemented,
-        )
-        self.assertGreater(
-            _lamportinfo(134, time(), 'A', 'obj'),
-            _lamportinfo(133, time(), 'A', 'obj'),
-        )
-        self.assertGreater(
-            _lamportinfo(134, t1, 'B', 'obj'),
-            _lamportinfo(134, t1, 'A', 'obj'),
-        )
-
-        self.assertGreater(
-            _lamportinfo(None, time(), 'B', 'obj'),
-            _lamportinfo(None, t1, 'A', 'obj'),
-        )
