@@ -10,7 +10,7 @@ Using Celery with Django
 To use Celery with your Django project you must first define
 an instance of the Celery library.
 
-If you have a modern Django project layout like
+If you have a modern Django project layout like::
 
     - proj/
       - proj/__init__.py
