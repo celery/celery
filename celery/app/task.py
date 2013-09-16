@@ -11,7 +11,6 @@ from __future__ import absolute_import
 import sys
 
 from billiard.einfo import ExceptionInfo
-from kombu.utils import cached_property
 
 from celery import current_app
 from celery import states
