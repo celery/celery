@@ -179,7 +179,7 @@ def add_group_task(app):
                                    add_to_parent=False) for stask in taskit]
             parent = get_current_worker_task()
             if parent:
-                parent.request.children.append(result)
+                parent.add_trail(result)
             return result
 
         def prepare(self, options, tasks, args, **kwargs):

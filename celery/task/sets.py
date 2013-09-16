@@ -58,7 +58,7 @@ class TaskSet(list):
             result = app.TaskSetResult(setid, results)
             parent = get_current_worker_task()
             if parent:
-                parent.request.children.append(result)
+                parent.add_trail(result)
             return result
 
     def _async_results(self, taskset_id, publisher):

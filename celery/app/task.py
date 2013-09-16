@@ -206,6 +206,11 @@ class Task(object):
     #: setting.
     ignore_result = None
 
+    #: If enabled the request will keep track of subtasks started by
+    #: this task, and this information will be sent with the result
+    #: (``result.children``).
+    trail = True
+
     #: When enabled errors will be stored even if the task is otherwise
     #: configured to ignore results.
     store_errors_even_if_ignored = None
@@ -462,7 +467,8 @@ class Task(object):
         :keyword add_to_parent: If set to True (default) and the task
             is applied while executing another task, then the result
             will be appended to the parent tasks ``request.children``
-            attribute.
+            attribute.  Trailing can also be disabled by default using the
+            :attr:`trail` attribute
         :keyword publisher: Deprecated alias to ``producer``.
 
         Also supports all keyword arguments supported by
@@ -503,7 +509,7 @@ class Task(object):
         if add_to_parent:
             parent = get_current_worker_task()
             if parent:
-                parent.request.children.append(result)
+                parent.add_trail(result)
         return result
 
     def subtask_from_request(self, request=None, args=None, kwargs=None,
@@ -800,6 +806,11 @@ class Task(object):
         if self.send_error_emails and \
                 not getattr(self, 'disable_error_emails', None):
             self.ErrorMail(self, **kwargs).send(context, exc)
+
+    def add_trail(self, result):
+        if self.trail:
+            self.request.children.append(result)
+        return result
 
     def push_request(self, *args, **kwargs):
         self.request_stack.push(Context(*args, **kwargs))
