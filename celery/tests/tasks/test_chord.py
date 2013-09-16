@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-from mock import patch
 from contextlib import contextmanager
 
 from celery import group
@@ -18,7 +17,7 @@ class ChordCase(AppCase):
 
     def setup(self):
 
-        @self.app.task
+        @self.app.task(shared=False)
         def add(x, y):
             return x + y
         self.add = add
@@ -64,8 +63,7 @@ def patch_unlock_retry(app):
 
 class test_unlock_chord_task(ChordCase):
 
-    @patch('celery.result.GroupResult')
-    def test_unlock_ready(self, GroupResult):
+    def test_unlock_ready(self):
 
         class AlwaysReady(TSR):
             is_ready = True
@@ -79,6 +77,7 @@ class test_unlock_chord_task(ChordCase):
             self.assertFalse(retry.call_count)
 
     def test_callback_fails(self):
+
         class AlwaysReady(TSR):
             is_ready = True
             value = [2, 4, 8, 6]
@@ -130,38 +129,37 @@ class test_unlock_chord_task(ChordCase):
 
     @contextmanager
     def _chord_context(self, ResultCls, setup=None, **kwargs):
-        with patch('celery.result.GroupResult'):
+        @self.app.task(shared=False)
+        def callback(*args, **kwargs):
+            pass
+        self.app.finalize()
 
-            @self.app.task()
-            def callback(*args, **kwargs):
-                pass
-
-            pts, result.GroupResult = result.GroupResult, ResultCls
-            callback.apply_async = Mock()
-            callback_s = callback.s()
-            callback_s.id = 'callback_id'
-            fail_current = self.app.backend.fail_from_current_stack = Mock()
-            try:
-                with patch_unlock_retry(self.app) as (unlock, retry):
-                    subtask, canvas.maybe_subtask = (
-                        canvas.maybe_subtask, passthru,
+        pts, result.GroupResult = result.GroupResult, ResultCls
+        callback.apply_async = Mock()
+        callback_s = callback.s()
+        callback_s.id = 'callback_id'
+        fail_current = self.app.backend.fail_from_current_stack = Mock()
+        try:
+            with patch_unlock_retry(self.app) as (unlock, retry):
+                subtask, canvas.maybe_subtask = (
+                    canvas.maybe_subtask, passthru,
+                )
+                if setup:
+                    setup(callback)
+                try:
+                    assert self.app.tasks['celery.chord_unlock'] is unlock
+                    unlock(
+                        'group_id', callback_s,
+                        result=[AsyncResult(r) for r in ['1', 2, 3]],
+                        GroupResult=ResultCls, **kwargs
                     )
-                    if setup:
-                        setup(callback)
-                    try:
-                        unlock(
-                            'group_id', callback_s,
-                            result=[AsyncResult(r) for r in ['1', 2, 3]],
-                            GroupResult=ResultCls, **kwargs
-                        )
-                    finally:
-                        canvas.maybe_subtask = subtask
-                    yield callback_s, retry, fail_current
-            finally:
-                result.GroupResult = pts
+                finally:
+                    canvas.maybe_subtask = subtask
+                yield callback_s, retry, fail_current
+        finally:
+            result.GroupResult = pts
 
-    @patch('celery.result.GroupResult')
-    def test_when_not_ready(self, GroupResult):
+    def test_when_not_ready(self):
         class NeverReady(TSR):
             is_ready = False
 

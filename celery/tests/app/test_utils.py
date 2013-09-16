@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 from collections import Mapping, MutableMapping
 
-from celery import Celery
 from celery.app.utils import Settings, bugreport
 
 from celery.tests.case import AppCase, Case, Mock
@@ -24,9 +23,8 @@ class TestSettings(Case):
 class test_bugreport(AppCase):
 
     def test_no_conn_driver_info(self):
-        app = Celery(set_as_current=False)
-        app.connection = Mock()
-        conn = app.connection.return_value = Mock()
+        self.app.connection = Mock()
+        conn = self.app.connection.return_value = Mock()
         conn.transport = None
 
-        bugreport(app)
+        bugreport(self.app)

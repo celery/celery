@@ -140,6 +140,7 @@ class test_HttpDispatch(AppCase):
 
 
 class test_URL(AppCase):
+    contained = False
 
     def test_URL_get_async(self):
         with eager_tasks(self.app):

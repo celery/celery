@@ -33,6 +33,7 @@ class test_backends(AppCase):
             backends.get_backend_cls('fasodaopjeqijwqe')
 
     def test_default_backend(self):
+        self.app.set_current()  # XXX compat test
         self.assertEqual(backends.default_backend, self.app.backend)
 
     def test_backend_by_url(self, url='redis://localhost/1'):

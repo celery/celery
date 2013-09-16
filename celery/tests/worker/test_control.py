@@ -11,7 +11,6 @@ from mock import Mock, patch, call
 
 from celery.datastructures import AttributeDict
 from celery.five import Queue as FastQueue
-from celery.task import task
 from celery.utils import uuid
 from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC
@@ -26,11 +25,6 @@ from celery.worker.pidbox import Pidbox, gPidbox
 from celery.tests.case import AppCase
 
 hostname = socket.gethostname()
-
-
-@task(rate_limit=200)                   # for extra info in dump_tasks
-def mytask():
-    pass
 
 
 class WorkController(object):
@@ -124,6 +118,11 @@ class test_ControlPanel(AppCase):
     def setup(self):
         self.panel = self.create_panel(consumer=Consumer(self.app))
 
+        @self.app.task(rate_limit=200, shared=False)
+        def mytask():
+            pass
+        self.mytask = mytask
+
     def create_state(self, **kwargs):
         kwargs.setdefault('app', self.app)
         return AttributeDict(kwargs)
@@ -199,24 +198,28 @@ class test_ControlPanel(AppCase):
 
     def test_time_limit(self):
         panel = self.create_panel(consumer=Mock())
-        th, ts = mytask.time_limit, mytask.soft_time_limit
+        th, ts = self.mytask.time_limit, self.mytask.soft_time_limit
         try:
             r = panel.handle('time_limit', arguments=dict(
-                task_name=mytask.name, hard=30, soft=10))
-            self.assertEqual((mytask.time_limit, mytask.soft_time_limit),
-                             (30, 10))
+                task_name=self.mytask.name, hard=30, soft=10))
+            self.assertEqual(
+                (self.mytask.time_limit, self.mytask.soft_time_limit),
+                (30, 10),
+            )
             self.assertIn('ok', r)
             r = panel.handle('time_limit', arguments=dict(
-                task_name=mytask.name, hard=None, soft=None))
-            self.assertEqual((mytask.time_limit, mytask.soft_time_limit),
-                             (None, None))
+                task_name=self.mytask.name, hard=None, soft=None))
+            self.assertEqual(
+                (self.mytask.time_limit, self.mytask.soft_time_limit),
+                (None, None),
+            )
             self.assertIn('ok', r)
 
             r = panel.handle('time_limit', arguments=dict(
                 task_name='248e8afya9s8dh921eh928', hard=30))
             self.assertIn('error', r)
         finally:
-            mytask.time_limit, mytask.soft_time_limit = th, ts
+            self.time_limit, self.soft_time_limit = th, ts
 
     def test_active_queues(self):
         import kombu
@@ -249,7 +252,7 @@ class test_ControlPanel(AppCase):
         self.panel.handle('report')
 
     def test_active(self):
-        r = TaskRequest(mytask.name, 'do re mi', (), {}, app=self.app)
+        r = TaskRequest(self.mytask.name, 'do re mi', (), {}, app=self.app)
         worker_state.active_requests.add(r)
         try:
             self.assertTrue(self.panel.handle('dump_active'))
@@ -331,7 +334,7 @@ class test_ControlPanel(AppCase):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
         self.assertFalse(panel.handle('dump_schedule'))
-        r = TaskRequest(mytask.name, 'CAFEBABE', (), {}, app=self.app)
+        r = TaskRequest(self.mytask.name, 'CAFEBABE', (), {}, app=self.app)
         consumer.timer.schedule.enter(
             consumer.timer.Entry(lambda x: x, (r, )),
             datetime.now() + timedelta(seconds=10))
@@ -343,14 +346,14 @@ class test_ControlPanel(AppCase):
     def test_dump_reserved(self):
         consumer = Consumer(self.app)
         worker_state.reserved_requests.add(
-            TaskRequest(mytask.name, uuid(), args=(2, 2), kwargs={},
+            TaskRequest(self.mytask.name, uuid(), args=(2, 2), kwargs={},
                         app=self.app),
         )
         try:
             panel = self.create_panel(consumer=consumer)
             response = panel.handle('dump_reserved', {'safe': True})
             self.assertDictContainsSubset(
-                {'name': mytask.name,
+                {'name': self.mytask.name,
                  'args': (2, 2),
                  'kwargs': {},
                  'hostname': socket.gethostname()},
@@ -377,7 +380,7 @@ class test_ControlPanel(AppCase):
         consumer = xConsumer()
         panel = self.create_panel(app=self.app, consumer=consumer)
 
-        task = self.app.tasks[mytask.name]
+        task = self.app.tasks[self.mytask.name]
         old_rate_limit = task.rate_limit
         try:
             panel.handle('rate_limit', arguments=dict(task_name=task.name,
@@ -406,7 +409,7 @@ class test_ControlPanel(AppCase):
         m = {'method': 'revoke',
              'destination': hostname,
              'arguments': {'task_id': tid,
-                           'task_name': mytask.name}}
+                           'task_name': self.mytask.name}}
         self.panel.handle_message(m, None)
         self.assertIn(tid, revoked)
 

@@ -150,19 +150,16 @@ class test_Scheduler(AppCase):
         self.assertIs(scheduler.data, custom)
 
     def test_apply_async_uses_registered_task_instances(self):
-        through_task = [False]
 
-        class MockTask(self.app.Task):
-
-            @classmethod
-            def apply_async(cls, *args, **kwargs):
-                through_task[0] = True
-
-        assert MockTask.name in MockTask._get_app().tasks
+        @self.app.task
+        def foo():
+            pass
+        foo.apply_async = Mock(name='foo.apply_async')
+        assert foo.name in foo._get_app().tasks
 
         scheduler = mScheduler(app=self.app)
-        scheduler.apply_async(scheduler.Entry(task=MockTask.name))
-        self.assertTrue(through_task[0])
+        scheduler.apply_async(scheduler.Entry(task=foo.name))
+        self.assertTrue(foo.apply_async.called)
 
     def test_apply_async_should_not_sync(self):
 

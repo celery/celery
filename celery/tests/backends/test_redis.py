@@ -153,32 +153,29 @@ class test_RedisBackend(AppCase):
         b.expires = None
         b.set('foo', 'bar')
 
-    @patch('celery.result.GroupResult')
-    def test_on_chord_part_return(self, setresult):
+    @patch('celery.result.GroupResult.restore')
+    def test_on_chord_part_return(self, restore):
         b = self.MockBackend(app=self.app)
         deps = Mock()
         deps.__len__ = Mock()
         deps.__len__.return_value = 10
-        setresult.restore.return_value = deps
+        restore.return_value = deps
         b.client.incr.return_value = 1
         task = Mock()
         task.name = 'foobarbaz'
-        try:
-            self.app.tasks['foobarbaz'] = task
-            task.request.chord = subtask(task)
-            task.request.group = 'group_id'
+        self.app.tasks['foobarbaz'] = task
+        task.request.chord = subtask(task)
+        task.request.group = 'group_id'
 
-            b.on_chord_part_return(task)
-            self.assertTrue(b.client.incr.call_count)
+        b.on_chord_part_return(task)
+        self.assertTrue(b.client.incr.call_count)
 
-            b.client.incr.return_value = len(deps)
-            b.on_chord_part_return(task)
-            deps.join_native.assert_called_with(propagate=True)
-            deps.delete.assert_called_with()
+        b.client.incr.return_value = len(deps)
+        b.on_chord_part_return(task)
+        deps.join_native.assert_called_with(propagate=True)
+        deps.delete.assert_called_with()
 
-            self.assertTrue(b.client.expire.call_count)
-        finally:
-            self.app.tasks.pop('foobarbaz')
+        self.assertTrue(b.client.expire.call_count)
 
     def test_process_cleanup(self):
         self.Backend(app=self.app).process_cleanup()

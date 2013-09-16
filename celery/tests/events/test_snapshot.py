@@ -112,24 +112,21 @@ class test_evcam(AppCase):
             return test_evcam.MockReceiver()
 
     def setup(self):
-        self.prev, self.app.events = self.app.events, self.MockEvents()
+        self.app.events = self.MockEvents()
         self.app.events.app = self.app
-
-    def teardown(self):
-        self.app.events = self.prev
 
     def test_evcam(self):
         with restore_logging():
-            evcam(Polaroid, timer=timer)
-            evcam(Polaroid, timer=timer, loglevel='CRITICAL')
+            evcam(Polaroid, timer=timer, app=self.app)
+            evcam(Polaroid, timer=timer, loglevel='CRITICAL', app=self.app)
             self.MockReceiver.raise_keyboard_interrupt = True
             try:
                 with self.assertRaises(SystemExit):
-                    evcam(Polaroid, timer=timer)
+                    evcam(Polaroid, timer=timer, app=self.app)
             finally:
                 self.MockReceiver.raise_keyboard_interrupt = False
 
     @patch('celery.platforms.create_pidlock')
     def test_evcam_pidfile(self, create_pidlock):
-        evcam(Polaroid, timer=timer, pidfile='/var/pid')
+        evcam(Polaroid, timer=timer, pidfile='/var/pid', app=self.app)
         create_pidlock.assert_called_with('/var/pid')

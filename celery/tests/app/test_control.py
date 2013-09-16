@@ -7,14 +7,8 @@ from functools import wraps
 from kombu.pidbox import Mailbox
 
 from celery.app import control
-from celery.task import task
 from celery.utils import uuid
 from celery.tests.case import AppCase, Case
-
-
-@task()
-def mytask():
-    pass
 
 
 class MockMailbox(Mailbox):
@@ -165,6 +159,11 @@ class test_Broadcast(AppCase):
         self.control = Control(app=self.app)
         self.app.control = self.control
 
+        @self.app.task()
+        def mytask():
+            pass
+        self.mytask = mytask
+
     def tearDown(self):
         del(self.app.control)
 
@@ -191,12 +190,12 @@ class test_Broadcast(AppCase):
 
     @with_mock_broadcast
     def test_rate_limit(self):
-        self.control.rate_limit(mytask.name, '100/m')
+        self.control.rate_limit(self.mytask.name, '100/m')
         self.assertIn('rate_limit', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_time_limit(self):
-        self.control.time_limit(mytask.name, soft=10, hard=20)
+        self.control.time_limit(self.mytask.name, soft=10, hard=20)
         self.assertIn('time_limit', MockMailbox.sent)
 
     @with_mock_broadcast

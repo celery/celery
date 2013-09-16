@@ -20,7 +20,7 @@ from celery.utils.serialization import pickle
 
 from celery.tests import config
 from celery.tests.case import (
-    Case,
+    AppCase, Case,
     mask_modules,
     platform_pyimp,
     sys_platform,
@@ -64,10 +64,9 @@ class test_module(Case):
         self.assertTrue(_app.bugreport())
 
 
-class test_App(Case):
+class test_App(AppCase):
 
-    def setUp(self):
-        self.app = Celery(set_as_current=False)
+    def setup(self):
         self.app.conf.update(test_config)
 
     def test_task(self):

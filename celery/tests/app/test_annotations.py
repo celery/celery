@@ -1,32 +1,35 @@
 from __future__ import absolute_import
 
 from celery.app.annotations import MapAnnotation, prepare
-from celery.task import task
 from celery.utils.imports import qualname
 
-from celery.tests.case import Case
-
-
-@task()
-def add(x, y):
-    return x + y
-
-
-@task()
-def mul(x, y):
-    return x * y
+from celery.tests.case import AppCase
 
 
 class MyAnnotation(object):
     foo = 65
 
 
-class test_MapAnnotation(Case):
+class AnnotationCase(AppCase):
+
+    def setup(self):
+        @self.app.task()
+        def add(x, y):
+            return x + y
+        self.add = add
+
+        @self.app.task()
+        def mul(x, y):
+            return x * y
+        self.mul = mul
+
+
+class test_MapAnnotation(AnnotationCase):
 
     def test_annotate(self):
-        x = MapAnnotation({add.name: {'foo': 1}})
-        self.assertDictEqual(x.annotate(add), {'foo': 1})
-        self.assertIsNone(x.annotate(mul))
+        x = MapAnnotation({self.add.name: {'foo': 1}})
+        self.assertDictEqual(x.annotate(self.add), {'foo': 1})
+        self.assertIsNone(x.annotate(self.mul))
 
     def test_annotate_any(self):
         x = MapAnnotation({'*': {'foo': 2}})
@@ -36,10 +39,10 @@ class test_MapAnnotation(Case):
         self.assertIsNone(x.annotate_any())
 
 
-class test_prepare(Case):
+class test_prepare(AnnotationCase):
 
     def test_dict_to_MapAnnotation(self):
-        x = prepare({add.name: {'foo': 3}})
+        x = prepare({self.add.name: {'foo': 3}})
         self.assertIsInstance(x[0], MapAnnotation)
 
     def test_returns_list(self):

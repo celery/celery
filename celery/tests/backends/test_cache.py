@@ -70,34 +70,30 @@ class test_CacheBackend(AppCase):
         gid, res = uuid(), [AsyncResult(uuid()) for _ in range(3)]
         tb.on_chord_apply(gid, {}, result=res)
 
-    @patch('celery.result.GroupResult')
-    def test_on_chord_part_return(self, setresult):
+    @patch('celery.result.GroupResult.restore')
+    def test_on_chord_part_return(self, restore):
         tb = CacheBackend(backend='memory://', app=self.app)
 
         deps = Mock()
         deps.__len__ = Mock()
         deps.__len__.return_value = 2
-        setresult.restore.return_value = deps
+        restore.return_value = deps
         task = Mock()
         task.name = 'foobarbaz'
-        try:
-            self.app.tasks['foobarbaz'] = task
-            task.request.chord = subtask(task)
+        self.app.tasks['foobarbaz'] = task
+        task.request.chord = subtask(task)
 
-            gid, res = uuid(), [AsyncResult(uuid()) for _ in range(3)]
-            task.request.group = gid
-            tb.on_chord_apply(gid, {}, result=res)
+        gid, res = uuid(), [AsyncResult(uuid()) for _ in range(3)]
+        task.request.group = gid
+        tb.on_chord_apply(gid, {}, result=res)
 
-            self.assertFalse(deps.join_native.called)
-            tb.on_chord_part_return(task)
-            self.assertFalse(deps.join_native.called)
+        self.assertFalse(deps.join_native.called)
+        tb.on_chord_part_return(task)
+        self.assertFalse(deps.join_native.called)
 
-            tb.on_chord_part_return(task)
-            deps.join_native.assert_called_with(propagate=True)
-            deps.delete.assert_called_with()
-
-        finally:
-            self.app.tasks.pop('foobarbaz')
+        tb.on_chord_part_return(task)
+        deps.join_native.assert_called_with(propagate=True)
+        deps.delete.assert_called_with()
 
     def test_mget(self):
         self.tb.set('foo', 1)

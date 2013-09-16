@@ -205,11 +205,15 @@ class Case(unittest.TestCase):
 
 
 class AppCase(Case):
+    contained = True
 
     def setUp(self):
+        from celery import Celery
         from celery.app import current_app
         from celery.backends.cache import CacheBackend, DummyClient
-        app = self.app = self._current_app = current_app()
+        self._current_app = current_app()
+        app = self.app = (Celery(set_as_current=False)
+                          if self.contained else self._current_app)
         if isinstance(app.backend, CacheBackend):
             if isinstance(app.backend.client, DummyClient):
                 app.backend.client.cache.clear()

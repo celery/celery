@@ -58,19 +58,15 @@ class test_TaskConsumer(AppCase):
 
     def test_accept_content(self):
         with self.app.pool.acquire(block=True) as conn:
-            prev = self.app.conf.CELERY_ACCEPT_CONTENT
             self.app.conf.CELERY_ACCEPT_CONTENT = ['application/json']
-            try:
-                self.assertEqual(
-                    self.app.amqp.TaskConsumer(conn).accept,
-                    set(['application/json'])
-                )
-                self.assertEqual(
-                    self.app.amqp.TaskConsumer(conn, accept=['json']).accept,
-                    set(['application/json']),
-                )
-            finally:
-                self.app.conf.CELERY_ACCEPT_CONTENT = prev
+            self.assertEqual(
+                self.app.amqp.TaskConsumer(conn).accept,
+                set(['application/json'])
+            )
+            self.assertEqual(
+                self.app.amqp.TaskConsumer(conn, accept=['json']).accept,
+                set(['application/json']),
+            )
 
 
 class test_compat_TaskPublisher(AppCase):
@@ -92,63 +88,51 @@ class test_compat_TaskPublisher(AppCase):
 class test_PublisherPool(AppCase):
 
     def test_setup_nolimit(self):
-        L = self.app.conf.BROKER_POOL_LIMIT
         self.app.conf.BROKER_POOL_LIMIT = None
         try:
             delattr(self.app, '_pool')
         except AttributeError:
             pass
         self.app.amqp._producer_pool = None
-        try:
-            pool = self.app.amqp.producer_pool
-            self.assertEqual(pool.limit, self.app.pool.limit)
-            self.assertFalse(pool._resource.queue)
+        pool = self.app.amqp.producer_pool
+        self.assertEqual(pool.limit, self.app.pool.limit)
+        self.assertFalse(pool._resource.queue)
 
-            r1 = pool.acquire()
-            r2 = pool.acquire()
-            r1.release()
-            r2.release()
-            r1 = pool.acquire()
-            r2 = pool.acquire()
-        finally:
-            self.app.conf.BROKER_POOL_LIMIT = L
+        r1 = pool.acquire()
+        r2 = pool.acquire()
+        r1.release()
+        r2.release()
+        r1 = pool.acquire()
+        r2 = pool.acquire()
 
     def test_setup(self):
-        L = self.app.conf.BROKER_POOL_LIMIT
         self.app.conf.BROKER_POOL_LIMIT = 2
         try:
             delattr(self.app, '_pool')
         except AttributeError:
             pass
         self.app.amqp._producer_pool = None
-        try:
-            pool = self.app.amqp.producer_pool
-            self.assertEqual(pool.limit, self.app.pool.limit)
-            self.assertTrue(pool._resource.queue)
+        pool = self.app.amqp.producer_pool
+        self.assertEqual(pool.limit, self.app.pool.limit)
+        self.assertTrue(pool._resource.queue)
 
-            p1 = r1 = pool.acquire()
-            p2 = r2 = pool.acquire()
-            r1.release()
-            r2.release()
-            r1 = pool.acquire()
-            r2 = pool.acquire()
-            self.assertIs(p2, r1)
-            self.assertIs(p1, r2)
-            r1.release()
-            r2.release()
-        finally:
-            self.app.conf.BROKER_POOL_LIMIT = L
+        p1 = r1 = pool.acquire()
+        p2 = r2 = pool.acquire()
+        r1.release()
+        r2.release()
+        r1 = pool.acquire()
+        r2 = pool.acquire()
+        self.assertIs(p2, r1)
+        self.assertIs(p1, r2)
+        r1.release()
+        r2.release()
 
 
 class test_Queues(AppCase):
 
     def test_queues_format(self):
-        prev, self.app.amqp.queues._consume_from = (
-            self.app.amqp.queues._consume_from, {})
-        try:
-            self.assertEqual(self.app.amqp.queues.format(), '')
-        finally:
-            self.app.amqp.queues._consume_from = prev
+        self.app.amqp.queues._consume_from = {}
+        self.assertEqual(self.app.amqp.queues.format(), '')
 
     def test_with_defaults(self):
         self.assertEqual(Queues(None), {})

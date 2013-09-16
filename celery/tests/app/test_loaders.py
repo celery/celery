@@ -29,17 +29,18 @@ class DummyLoader(base.BaseLoader):
 class test_loaders(AppCase):
 
     def test_get_loader_cls(self):
-
         self.assertEqual(loaders.get_loader_cls('default'),
                          default.Loader)
 
     def test_current_loader(self):
+        self.app.set_current()  # XXX Compat test
         with self.assertWarnsRegex(
                 CPendingDeprecationWarning,
                 r'deprecation'):
             self.assertIs(loaders.current_loader(), self.app.loader)
 
     def test_load_settings(self):
+        self.app.set_current()  # XXX Compat test
         with self.assertWarnsRegex(
                 CPendingDeprecationWarning,
                 r'deprecation'):
