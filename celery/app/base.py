@@ -198,12 +198,15 @@ class Celery(object):
                         task = filter(task)
                     return task
 
-                # return a proxy object that is only evaluated when first used
-                promise = PromiseProxy(self._task_from_fun, (fun, ), opts)
-                self._pending.append(promise)
+                if opts.get('_force_evaluate'):
+                    ret = self._task_from_fun(fun, **opts)
+                else:
+                    # return a proxy object that is only evaluated when first used
+                    ret = PromiseProxy(self._task_from_fun, (fun, ), opts)
+                    self._pending.append(ret)
                 if _filt:
-                    return _filt(promise)
-                return promise
+                    return _filt(ret)
+                return ret
 
             return _create_task_cls
 
@@ -421,11 +424,13 @@ class Celery(object):
     def create_task_cls(self):
         """Creates a base task class using default configuration
         taken from this app."""
-        return self.subclass_with_self(self.task_cls, name='Task',
-                                       attribute='_app', abstract=True)
+        return self.subclass_with_self(
+            self.task_cls, name='Task', attribute='_app',
+            keep_reduce=True, abstract=True,
+        )
 
     def subclass_with_self(self, Class, name=None, attribute='app',
-                           reverse=None, **kw):
+                           reverse=None, keep_reduce=False, **kw):
         """Subclass an app-compatible class by setting its app attribute
         to be this app instance.
 
@@ -446,7 +451,9 @@ class Celery(object):
             return _unpickle_appattr, (reverse, self.__reduce_args__())
 
         attrs = dict({attribute: self}, __module__=Class.__module__,
-                     __doc__=Class.__doc__, __reduce__=__reduce__, **kw)
+                     __doc__=Class.__doc__, **kw)
+        if not keep_reduce:
+            attrs['__reduce__'] = __reduce__
 
         return type(name or Class.__name__, (Class, ), attrs)
 
