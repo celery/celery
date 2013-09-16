@@ -59,17 +59,10 @@ Seems we're already running? (pid: {1})"""
 
 try:
     from io import UnsupportedOperation
-    FILENO_ERRORS = (AttributeError, UnsupportedOperation)
+    FILENO_ERRORS = (AttributeError, ValueError, UnsupportedOperation)
 except ImportError:  # pragma: no cover
     # Py2
-    FILENO_ERRORS = (AttributeError, )  # noqa
-
-try:
-    from io import UnsupportedOperation
-    FILENO_ERRORS = (AttributeError, UnsupportedOperation)
-except ImportError:  # pragma: no cover
-    # Py2
-    FILENO_ERRORS = (AttributeError, )  # noqa
+    FILENO_ERRORS = (AttributeError, ValueError)  # noqa
 
 
 def pyimplementation():
