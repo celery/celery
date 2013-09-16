@@ -649,7 +649,9 @@ class GroupResult(ResultSet):
     @classmethod
     def restore(self, id, backend=None):
         """Restore previously saved group result."""
-        return (backend or current_app.backend).restore_group(id)
+        return (
+            backend or self.app.backend if self.app else current_app.backend
+        ).restore_group(id)
 
 
 class TaskSetResult(GroupResult):
