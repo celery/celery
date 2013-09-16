@@ -489,6 +489,9 @@ else:
 
         def run(self):
             platforms.signals.reset('SIGTERM')
+            platforms.close_open_fds([
+                sys.__stdin__, sys.__stdout__, sys.__stderr__,
+            ])
             self.service.start(embedded_process=True)
 
         def stop(self):
