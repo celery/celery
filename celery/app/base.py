@@ -20,10 +20,12 @@ from operator import attrgetter
 from billiard.util import register_after_fork
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
-from kombu.utils import cached_property
+from kombu.utils import cached_property, uuid
 
 from celery import platforms
-from celery._state import _task_stack, _tls, get_current_app, _register_app
+from celery._state import (
+    _task_stack, _tls, get_current_app, _register_app, get_current_worker_task,
+)
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
 from celery.five import items, values
 from celery.loaders import get_loader_cls
@@ -278,28 +280,33 @@ class Celery(object):
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
                   eta=None, task_id=None, producer=None, connection=None,
-                  result_cls=None, expires=None, queues=None, publisher=None,
-                  link=None, link_error=None,
-                  **options):
+                  router=None, result_cls=None, expires=None,
+                  publisher=None, link=None, link_error=None,
+                  add_to_parent=True, reply_to=None, **options):
+        task_id = task_id or uuid()
         producer = producer or publisher  # XXX compat
-        if self.conf.CELERY_ALWAYS_EAGER:  # pragma: no cover
+        router = router or self.amqp.router
+        conf = self.conf
+        if conf.CELERY_ALWAYS_EAGER:  # pragma: no cover
             warnings.warn(AlwaysEagerIgnored(
                 'CELERY_ALWAYS_EAGER has no effect on send_task'))
-
-        result_cls = result_cls or self.AsyncResult
-        router = self.amqp.Router(queues)
-        options.setdefault('compression',
-                           self.conf.CELERY_MESSAGE_COMPRESSION)
         options = router.route(options, name, args, kwargs)
-        with self.producer_or_acquire(producer) as producer:
-            return result_cls(producer.publish_task(
-                name, args, kwargs,
-                task_id=task_id,
-                countdown=countdown, eta=eta,
-                callbacks=maybe_list(link),
-                errbacks=maybe_list(link_error),
-                expires=expires, **options
-            ))
+        if connection:
+            producer = self.amqp.TaskProducer(connection)
+        with self.producer_or_acquire(producer) as P:
+            self.backend.on_task_call(P, task_id)
+            task_id = P.publish_task(
+                name, args, kwargs, countdown=countdown, eta=eta,
+                task_id=task_id, expires=expires,
+                callbacks=maybe_list(link), errbacks=maybe_list(link_error),
+                reply_to=reply_to or self.oid, **options
+            )
+        result = (result_cls or self.AsyncResult)(task_id)
+        if add_to_parent:
+            parent = get_current_worker_task()
+            if parent:
+                parent.add_trail(result)
+        return result
 
     def connection(self, hostname=None, userid=None, password=None,
                    virtual_host=None, port=None, ssl=None,

@@ -11,10 +11,11 @@ from __future__ import absolute_import
 import sys
 
 from billiard.einfo import ExceptionInfo
+from kombu.utils import cached_property
 
 from celery import current_app
 from celery import states
-from celery._state import get_current_worker_task, _task_stack
+from celery._state import _task_stack
 from celery.canvas import subtask
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.five import class_property, items, with_metaclass
@@ -269,6 +270,8 @@ class Task(object):
     #: called.  This should probably be deprecated.
     _default_request = None
 
+    _exec_options = None
+
     __bound__ = False
 
     from_config = (
@@ -388,10 +391,8 @@ class Task(object):
         """
         return self.apply_async(args, kwargs)
 
-    def apply_async(self, args=None, kwargs=None,
-                    task_id=None, producer=None, connection=None, router=None,
-                    link=None, link_error=None, publisher=None,
-                    add_to_parent=True, reply_to=None, **options):
+    def apply_async(self, args=None, kwargs=None, task_id=None, producer=None,
+                    link=None, link_error=None, **options):
         """Apply tasks asynchronously by sending a message.
 
         :keyword args: The positional arguments to pass on to the
@@ -479,42 +480,21 @@ class Task(object):
             be replaced by a local :func:`apply` call instead.
 
         """
-        task_id = task_id or uuid()
-        producer = producer or publisher
-        app = self._get_app()
-        router = router or self.app.amqp.router
-        conf = app.conf
-
         # add 'self' if this is a bound method.
         if self.__self__ is not None:
             args = (self.__self__, ) + tuple(args)
-
-        if conf.CELERY_ALWAYS_EAGER:
-            return self.apply(args, kwargs, task_id=task_id,
+        app = self._get_app()
+        if app.conf.CELERY_ALWAYS_EAGER:
+            return self.apply(args, kwargs, task_id=task_id or uuid(),
                               link=link, link_error=link_error, **options)
-        options = dict(extract_exec_options(self), **options)
-        options = router.route(options, self.name, args, kwargs)
-
-        if connection:
-            producer = app.amqp.TaskProducer(connection)
-        with app.producer_or_acquire(producer) as P:
-            self.backend.on_task_call(P, task_id)
-            task_id = P.publish_task(self.name, args, kwargs,
-                                     task_id=task_id,
-                                     callbacks=maybe_list(link),
-                                     errbacks=maybe_list(link_error),
-                                     reply_to=reply_to or self.app.oid,
-                                     **options)
-        result = self.AsyncResult(task_id)
-        if add_to_parent:
-            parent = get_current_worker_task()
-            if parent:
-                parent.add_trail(result)
-        return result
+        return app.send_task(
+            self.name, args, kwargs, task_id=task_id, producer=producer,
+            link=link, link_error=link_error, result_cls=self.AsyncResult,
+            **dict(self._get_exec_options(), **options)
+        )
 
     def subtask_from_request(self, request=None, args=None, kwargs=None,
                              **extra_options):
-
         request = self.request if request is None else request
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
@@ -833,6 +813,11 @@ class Task(object):
             return self._default_request
         return req
     request = property(_get_request)
+
+    def _get_exec_options(self):
+        if self._exec_options is None:
+            self._exec_options = extract_exec_options(self)
+        return self._exec_options
 
     @property
     def __name__(self):

@@ -24,7 +24,7 @@ __all__ = ['Task', 'PeriodicTask', 'task']
 #: list of methods that must be classmethods in the old API.
 _COMPAT_CLASSMETHODS = (
     'delay', 'apply_async', 'retry', 'apply', 'subtask_from_request',
-    'AsyncResult', 'subtask', '_get_request',
+    'AsyncResult', 'subtask', '_get_request', '_get_exec_options',
 )
 
 

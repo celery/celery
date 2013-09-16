@@ -132,9 +132,8 @@ class test_TaskSet(AppCase):
 
         with patch('celery.task.sets.get_current_worker_task') as gwt:
             parent = gwt.return_value = Mock()
-            parent.request.children = []
             ts.apply_async()
-            self.assertTrue(parent.request.children)
+            self.assertTrue(parent.add_trail.called)
 
     def test_apply_async(self):
         applied = [0]
