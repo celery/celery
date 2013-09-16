@@ -50,9 +50,9 @@ Seems we're already running? (pid: %s)"""
 
 try:
     from io import UnsupportedOperation
-    FILENO_ERRORS = (AttributeError, UnsupportedOperation)
+    FILENO_ERRORS = (AttributeError, ValueError, UnsupportedOperation)
 except ImportError:  # Py2
-    FILENO_ERRORS = (AttributeError, )  # noqa
+    FILENO_ERRORS = (AttributeError, ValueError)  # noqa
 
 
 def pyimplementation():
