@@ -59,11 +59,13 @@ class DatabaseBackend(BaseBackend):
     subpolling_interval = 0.5
 
     def __init__(self, dburi=None, expires=None,
-                 engine_options=None, **kwargs):
+                 engine_options=None, url=None, **kwargs):
+        # The `url` argument was added later and is used by
+        # the app to set backend by url (celery.backends.get_backend_by_url)
         super(DatabaseBackend, self).__init__(**kwargs)
         conf = self.app.conf
         self.expires = maybe_timedelta(self.prepare_expires(expires))
-        self.dburi = dburi or conf.CELERY_RESULT_DBURI
+        self.dburi = url or dburi or conf.CELERY_RESULT_DBURI
         self.engine_options = dict(
             engine_options or {},
             **conf.CELERY_RESULT_ENGINE_OPTIONS or {})
