@@ -57,5 +57,8 @@ def get_backend_by_url(backend=None, loader=None):
     url = None
     if backend and '://' in backend:
         url = backend
-        backend, _, _, _, _, _, _ = _parse_url(url)
+        if '+' in url[:url.index('://')]:
+            backend, url = url.split('+', 1)
+        else:
+            backend, _, _, _, _, _, _ = _parse_url(url)
     return get_backend_cls(backend, loader), url
