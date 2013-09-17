@@ -450,6 +450,12 @@ General
     :setting:`CELERY_DEFAULT_RATE_LIMIT` setting, which if not specified means
     rate limiting for tasks is disabled by default.
 
+    However, be careful when rate limited tasks and non rate limited tasks are
+    routed to the same queue, which is by default if you're not specifying any
+    custom routes. It might happen that all tasks get rate limited. A good
+    practice is to route each type of task that is rate limited to its own
+    queue.
+
 .. attribute:: Task.time_limit
 
     The hard time limit for this task.  If not set then the workers default
