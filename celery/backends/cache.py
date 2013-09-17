@@ -87,13 +87,14 @@ class CacheBackend(KeyValueStoreBackend):
     supports_native_join = True
     implements_incr = True
 
-    def __init__(self, app, expires=None, backend=None, options={}, **kwargs):
+    def __init__(self, app, expires=None, backend=None,
+                 options={}, url=None, **kwargs):
         super(CacheBackend, self).__init__(app, **kwargs)
 
         self.options = dict(self.app.conf.CELERY_CACHE_BACKEND_OPTIONS,
                             **options)
 
-        self.backend = backend or self.app.conf.CELERY_CACHE_BACKEND
+        self.backend = url or backend or self.app.conf.CELERY_CACHE_BACKEND
         if self.backend:
             self.backend, _, servers = self.backend.partition('://')
             self.servers = servers.rstrip('/').split(';')
