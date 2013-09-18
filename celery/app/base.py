@@ -403,7 +403,7 @@ class Celery(object):
         # load lazy config dict initializers.
         pending = self._pending_defaults
         while pending:
-            s.add_defaults(pending.popleft()())
+            s.add_defaults(maybe_evaluate(pending.popleft()()))
         if self._preconf:
             for key, value in items(self._preconf):
                 setattr(s, key, value)
