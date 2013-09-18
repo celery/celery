@@ -228,8 +228,9 @@ class BaseLoader(object):
         except KeyError:
             pass
         else:
-            usercfg = self._import_config_module(custom_config)
-            return DictAttribute(usercfg)
+            if custom_config:
+                usercfg = self._import_config_module(custom_config)
+                return DictAttribute(usercfg)
         return {}
 
     def autodiscover_tasks(self, packages, related_name='tasks'):
