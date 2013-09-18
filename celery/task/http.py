@@ -17,13 +17,12 @@ except ImportError:  # pragma: no cover
     from urllib import urlencode              # noqa
     from urlparse import urlparse, parse_qsl  # noqa
 
-from celery import __version__ as celery_version
+from celery import shared_task, __version__ as celery_version
 from celery.five import items, reraise
 from celery.utils.log import get_task_logger
-from .base import Task as BaseTask
 
 __all__ = ['InvalidResponseError', 'RemoteExecuteError', 'UnknownStatusError',
-           'HttpDispatch', 'HttpDispatchTask', 'URL']
+           'HttpDispatch', 'dispatch', 'URL']
 
 GET_METHODS = frozenset(['GET', 'HEAD'])
 logger = get_task_logger(__name__)
@@ -163,7 +162,9 @@ class HttpDispatch(object):
         return headers
 
 
-class HttpDispatchTask(BaseTask):
+@shared_task(name='celery.http_dispatch', bind=True,
+             url=None, method=None, accept_magic_kwargs=False)
+def dispatch(self, url=None, method='GET', **kwargs):
     """Task dispatching to an URL.
 
     :keyword url: The URL location of the HTTP callback task.
@@ -184,15 +185,9 @@ class HttpDispatchTask(BaseTask):
         argument, as this attribute is intended for subclasses.
 
     """
-
-    url = None
-    method = None
-    accept_magic_kwargs = False
-
-    def run(self, url=None, method='GET', **kwargs):
-        url = url or self.url
-        method = method or self.method
-        return HttpDispatch(url, method, kwargs).dispatch()
+    return HttpDispatch(
+        url or self.url, method or self.method, kwargs,
+    ).dispatch()
 
 
 class URL(MutableURL):
@@ -202,14 +197,21 @@ class URL(MutableURL):
 
     :param url: URL to request.
     :keyword dispatcher: Class used to dispatch the request.
-        By default this is :class:`HttpDispatchTask`.
+        By default this is :func:`dispatch`.
 
     """
-    dispatcher = HttpDispatchTask
+    dispatcher = None
 
-    def __init__(self, url, dispatcher=None):
+    def __init__(self, url, dispatcher=None, app=None):
         super(URL, self).__init__(url)
+        self.app = app
         self.dispatcher = dispatcher or self.dispatcher
+        if self.dispatcher is None:
+            # Get default dispatcher
+            self.dispatcher = (
+                self.app.tasks['celery.http_dispatch'] if self.app
+                else dispatch
+            )
 
     def get_async(self, **kwargs):
         return self.dispatcher.delay(str(self), 'GET', **kwargs)
