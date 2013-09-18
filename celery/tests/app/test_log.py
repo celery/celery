@@ -122,7 +122,7 @@ class test_default_logger(AppCase):
         self.setup_logger = self.app.log.setup_logger
         self.get_logger = lambda n=None: get_logger(n) if n else logging.root
         signals.setup_logging.receivers[:] = []
-        Logging._setup = False
+        self.app.log.already_setup = False
 
     def test_get_logger_sets_parent(self):
         logger = get_logger('celery.test_get_logger')
@@ -185,7 +185,7 @@ class test_default_logger(AppCase):
             logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                        root=False, colorize=True)
             logger.handlers = []
-            Logging._setup = False
+            self.app.log.already_setup = False
             logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                        root=False, colorize=None)
             self.assertIs(

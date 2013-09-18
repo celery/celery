@@ -22,7 +22,7 @@ from kombu.log import NullHandler
 
 from celery import signals
 from celery._state import get_current_task
-from celery.five import string_t
+from celery.five import class_property, string_t
 from celery.utils import isatty
 from celery.utils.log import (
     get_logger, mlevel,
@@ -88,9 +88,9 @@ class Logging(object):
 
     def setup_logging_subsystem(self, loglevel=None, logfile=None,
                                 format=None, colorize=None, **kwargs):
-        if Logging._setup:
+        if self.already_setup:
             return
-        Logging._setup = True
+        self.already_setup = True
         loglevel = mlevel(loglevel or self.loglevel)
         format = format or self.format
         colorize = self.supports_color(colorize, logfile)
@@ -234,3 +234,11 @@ class Logging(object):
 
     def get_default_logger(self, name='celery', **kwargs):
         return get_logger(name)
+
+    @class_property
+    def already_setup(cls):
+        return cls._setup
+
+    @already_setup.setter  # noqa
+    def already_setup(cls, was_setup):
+        cls._setup = was_setup

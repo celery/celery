@@ -270,13 +270,15 @@ COMPAT_MODULES = {
 
 class class_property(object):
 
-    def __init__(self, fget=None, fset=None):
-        assert fget and isinstance(fget, classmethod)
-        assert isinstance(fset, classmethod) if fset else True
-        self.__get = fget
-        self.__set = fset
+    def __init__(self, getter=None, setter=None):
+        if getter is not None and not isinstance(getter, classmethod):
+            getter = classmethod(getter)
+        if setter is not None and not isinstance(setter, classmethod):
+            setter = classmethod(setter)
+        self.__get = getter
+        self.__set = setter
 
-        info = fget.__get__(object)  # just need the info attrs.
+        info = getter.__get__(object)  # just need the info attrs.
         self.__doc__ = info.__doc__
         self.__name__ = info.__name__
         self.__module__ = info.__module__
@@ -290,6 +292,9 @@ class class_property(object):
         if obj is None:
             return self
         return self.__set.__get__(obj)(value)
+
+    def setter(self, setter):
+        return self.__class__(self.__get, setter)
 
 
 def reclassmethod(method):

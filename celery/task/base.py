@@ -66,7 +66,6 @@ class Task(BaseTask):
         locals()[name] = reclassmethod(getattr(BaseTask, name))
 
     @class_property
-    @classmethod
     def request(cls):
         return cls._get_request()
 

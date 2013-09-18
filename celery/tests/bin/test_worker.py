@@ -352,7 +352,7 @@ class test_Worker(WorkerAppCase):
 
         try:
             worker = self.Worker(app=self.app, redirect_stdouts=False)
-            worker.app.log.__class__._setup = False
+            worker.app.log.already_setup = False
             worker.setup_logging()
             self.assertTrue(logging_setup[0])
             with self.assertRaises(AttributeError):
