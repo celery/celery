@@ -294,14 +294,14 @@ class Task(object):
         was_bound, self.__bound__ = self.__bound__, True
         self._app = app
         conf = app.conf
+        self._exec_options = None  # clear option cache
 
         for attr_name, config_name in self.from_config:
             if getattr(self, attr_name, None) is None:
                 setattr(self, attr_name, conf[config_name])
         if self.accept_magic_kwargs is None:
             self.accept_magic_kwargs = app.accept_magic_kwargs
-        if self.backend is None:
-            self.backend = app.backend
+        self.backend = app.backend
 
         # decorate with annotations from config.
         if not was_bound:
