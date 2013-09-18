@@ -95,9 +95,9 @@ Celery is...
 
         from celery import Celery
 
-        celery = Celery('hello', broker='amqp://guest@localhost//')
+        app = Celery('hello', broker='amqp://guest@localhost//')
 
-        @celery.task
+        @app.task
         def hello():
             return 'hello world'
 
