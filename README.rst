@@ -4,7 +4,11 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
+<<<<<<< HEAD
 :Version: 3.1.0rc4 (Cipater)
+=======
+:Version: 3.0.23 (Chiastic Slide)
+>>>>>>> 3.0
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
