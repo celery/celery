@@ -165,7 +165,7 @@ class Celery(object):
                 if opts.get('_force_evaluate'):
                     ret = self._task_from_fun(fun, **opts)
                 else:
-                    # return a proxy object that is only evaluated when first used
+                    # return a proxy object that is only evaluated on first use
                     ret = PromiseProxy(self._task_from_fun, (fun, ), opts)
                     self._pending.append(ret)
                 if _filt:
