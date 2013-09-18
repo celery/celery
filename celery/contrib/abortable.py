@@ -83,7 +83,7 @@ have it block until the task is finished.
 """
 from __future__ import absolute_import
 
-from celery.task.base import Task
+from celery import Task
 from celery.result import AsyncResult
 
 __all__ = ['AbortableAsyncResult', 'AbortableTask']
@@ -143,13 +143,11 @@ class AbortableTask(Task):
     the call evaluates to :const:`True`.
 
     """
-
     abstract = True
 
-    @classmethod
-    def AsyncResult(cls, task_id):
+    def AsyncResult(self, task_id):
         """Returns the accompanying AbortableAsyncResult instance."""
-        return AbortableAsyncResult(task_id, backend=cls.backend)
+        return AbortableAsyncResult(task_id, backend=self.backend)
 
     def is_aborted(self, **kwargs):
         """Checks against the backend whether this
