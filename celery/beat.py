@@ -24,7 +24,6 @@ from kombu.utils.functional import maybe_evaluate
 from . import __version__
 from . import platforms
 from . import signals
-from . import current_app
 from .five import items, reraise, values
 from .schedules import maybe_schedule, crontab
 from .utils.imports import instantiate
@@ -82,18 +81,21 @@ class ScheduleEntry(object):
 
     def __init__(self, name=None, task=None, last_run_at=None,
                  total_run_count=None, schedule=None, args=(), kwargs={},
-                 options={}, relative=False):
+                 options={}, relative=False, app=None):
+        self.app = app
         self.name = name
         self.task = task
         self.args = args
         self.kwargs = kwargs
         self.options = options
-        self.schedule = maybe_schedule(schedule, relative)
+        self.schedule = maybe_schedule(schedule, relative, app=self.app)
+        if self.schedule:
+            self.schedule.app = self.app
         self.last_run_at = last_run_at or self._default_now()
         self.total_run_count = total_run_count or 0
 
     def _default_now(self):
-        return self.schedule.now() if self.schedule else current_app.now()
+        return self.schedule.now() if self.schedule else self.app.now()
 
     def _next_instance(self, last_run_at=None):
         """Returns a new instance of the same class, but with
@@ -258,14 +260,14 @@ class Scheduler(object):
         self.sync()
 
     def add(self, **kwargs):
-        entry = self.Entry(**kwargs)
+        entry = self.Entry(app=self.app, **kwargs)
         self.schedule[entry.name] = entry
         return entry
 
     def _maybe_entry(self, name, entry):
         if isinstance(entry, self.Entry):
             return entry
-        return self.Entry(**dict(entry, name=name))
+        return self.Entry(**dict(entry, name=name, app=self.app))
 
     def update_from_dict(self, dict_):
         self.schedule.update(dict(
@@ -282,7 +284,7 @@ class Scheduler(object):
 
         # Update and add new items in the schedule
         for key in B:
-            entry = self.Entry(**dict(b[key], name=key))
+            entry = self.Entry(**dict(b[key], name=key, app=self.app))
             if schedule.get(key):
                 schedule[key].update(entry)
             else:

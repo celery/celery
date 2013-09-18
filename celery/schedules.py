@@ -55,10 +55,11 @@ class ParseException(Exception):
 class schedule(object):
     relative = False
 
-    def __init__(self, run_every=None, relative=False, nowfun=None):
+    def __init__(self, run_every=None, relative=False, nowfun=None, app=None):
         self.run_every = maybe_timedelta(run_every)
         self.relative = relative
         self.nowfun = nowfun
+        self._app = app
 
     def now(self):
         return (self.nowfun or self.app.now)()
@@ -126,9 +127,13 @@ class schedule(object):
     def human_seconds(self):
         return humanize_seconds(self.seconds)
 
-    @cached_property
+    @property
     def app(self):
-        return current_app._get_current_object()
+        return self._app or current_app._get_current_object()
+
+    @app.setter  # noqa
+    def app(self, app):
+        self._app = app
 
     @cached_property
     def tz(self):
@@ -327,6 +332,21 @@ class crontab(schedule):
 
     """
 
+    def __init__(self, minute='*', hour='*', day_of_week='*',
+                 day_of_month='*', month_of_year='*', nowfun=None, app=None):
+        self._orig_minute = cronfield(minute)
+        self._orig_hour = cronfield(hour)
+        self._orig_day_of_week = cronfield(day_of_week)
+        self._orig_day_of_month = cronfield(day_of_month)
+        self._orig_month_of_year = cronfield(month_of_year)
+        self.hour = self._expand_cronspec(hour, 24)
+        self.minute = self._expand_cronspec(minute, 60)
+        self.day_of_week = self._expand_cronspec(day_of_week, 7)
+        self.day_of_month = self._expand_cronspec(day_of_month, 31, 1)
+        self.month_of_year = self._expand_cronspec(month_of_year, 12, 1)
+        self.nowfun = nowfun
+        self._app = app
+
     @staticmethod
     def _expand_cronspec(cronspec, max_, min_=0):
         """Takes the given cronspec argument in one of the forms::
@@ -436,20 +456,6 @@ class crontab(schedule):
                     second=0,
                     microsecond=0)
 
-    def __init__(self, minute='*', hour='*', day_of_week='*',
-                 day_of_month='*', month_of_year='*', nowfun=None):
-        self._orig_minute = cronfield(minute)
-        self._orig_hour = cronfield(hour)
-        self._orig_day_of_week = cronfield(day_of_week)
-        self._orig_day_of_month = cronfield(day_of_month)
-        self._orig_month_of_year = cronfield(month_of_year)
-        self.hour = self._expand_cronspec(hour, 24)
-        self.minute = self._expand_cronspec(minute, 60)
-        self.day_of_week = self._expand_cronspec(day_of_week, 7)
-        self.day_of_month = self._expand_cronspec(day_of_month, 31, 1)
-        self.month_of_year = self._expand_cronspec(month_of_year, 12, 1)
-        self.nowfun = nowfun
-
     def now(self):
         return (self.nowfun or self.app.now)()
 
@@ -546,9 +552,9 @@ class crontab(schedule):
         return not self.__eq__(other)
 
 
-def maybe_schedule(s, relative=False):
+def maybe_schedule(s, relative=False, app=None):
     if isinstance(s, int):
         s = timedelta(seconds=s)
     if isinstance(s, timedelta):
-        return schedule(s, relative)
+        return schedule(s, relative, app=app)
     return s
