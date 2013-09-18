@@ -3,28 +3,11 @@ from __future__ import absolute_import
 from collections import Callable
 from datetime import datetime, timedelta
 from mock import patch
-<<<<<<< HEAD
 
 from kombu import Queue
 
 from celery import Task
 
-=======
-from nose import SkipTest
-from pickle import loads, dumps
-
-from celery.task import (
-    current,
-    task,
-    Task,
-    BaseTask,
-    TaskSet,
-    periodic_task,
-    PeriodicTask
-)
-from celery import current_app
-from celery.app import app_or_default
->>>>>>> 3.0
 from celery.exceptions import RetryTaskError
 from celery.five import items, range, string_t
 from celery.result import EagerResult
