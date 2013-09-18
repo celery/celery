@@ -410,8 +410,6 @@ class test_GroupResult(AppCase):
                          ts.subtasks)
         ts.delete()
         self.assertIsNone(GroupResult.restore(ts.id))
-        with self.assertRaises(AttributeError):
-            GroupResult.restore(ts.id, backend=object())
 
     def test_join_native(self):
         backend = SimpleBackend()
