@@ -637,10 +637,8 @@ class test_signal_handlers(WorkerAppCase):
 
     @disable_stdouts
     @patch('atexit.register')
-    @patch('os.fork')
     @patch('os.close')
-    def test_worker_restart_handler(self, _close, fork, register):
-        fork.return_value = 0
+    def test_worker_restart_handler(self, _close, register):
         if getattr(os, 'execv', None) is None:
             raise SkipTest('platform does not have excv')
         argv = []
@@ -658,10 +656,6 @@ class test_signal_handlers(WorkerAppCase):
             callback = register.call_args[0][0]
             callback()
             self.assertTrue(argv)
-            argv[:] = []
-            fork.return_value = 1
-            callback()
-            self.assertFalse(argv)
         finally:
             os.execv = execv
             state.should_stop = False
