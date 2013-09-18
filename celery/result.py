@@ -203,8 +203,9 @@ class AsyncResult(ResultBase):
         return NotImplemented
 
     def __copy__(self):
-        r = self.__reduce__()
-        return r[0](*r[1])
+        return self.__class__(
+            self.id, self.backend, self.task_name, self.app, self.parent,
+        )
 
     def __reduce__(self):
         return self.__class__, self.__reduce_args__()
