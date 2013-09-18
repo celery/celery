@@ -2,6 +2,9 @@ from __future__ import absolute_import
 
 from datetime import timedelta
 
+import sys
+sys.modules.pop('celery.task', None)
+
 from celery.schedules import schedule
 from celery.task import (
     periodic_task,

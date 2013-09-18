@@ -79,6 +79,43 @@ You can tweak the :setting:`BROKER_POOL_LIMIT` setting to minimize
 contention, and the value should be based on the number of
 active threads/greenthreads using broker connections.
 
+.. _optimizing-transient-queues:
+
+Using Transient Queues
+----------------------
+
+Queues created by Celery are persistent by default.  This means that
+the broker will write messages to disk to ensure that the tasks will
+be executed even if the broker is restarted.
+
+But in some cases it's fine that the message is lost, so not all tasks
+require durability.  You can create a *transient* queue for these tasks
+to improve performance:
+
+.. code-block:: python
+
+    from kombu import Exchange, Queue
+
+    CELERY_QUEUES = (
+        Queue('celery', routing_key='celery'),
+        Queue('transient', routing_key='transient',
+              delivery_mode=1),
+    )
+
+
+The ``delivery_mode`` changes how the messages to this queue are delivered.
+A value of 1 means that the message will not be written to disk, and a value
+of 2 (default) means that the message can be written to disk.
+
+To direct a task to your new transient queue you can specify the queue
+argument (or use the :setting:`CELERY_ROUTES` setting):
+
+.. code-block:: python
+
+    task.apply_async(args, queue='transient')
+
+For more information see the :ref:`routing guide <guide-routing>`.
+
 .. _optimizing-worker-settings:
 
 Worker Settings
