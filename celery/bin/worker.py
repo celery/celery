@@ -222,7 +222,7 @@ class worker(Command):
         ) + daemon_options() + tuple(self.app.user_options['worker'])
 
 
-def main():
+def main(app=None):
     # Fix for setuptools generated scripts, so that it will
     # work with multiprocessing fork emulation.
     # (see multiprocessing.forking.get_preparation_data())
@@ -230,7 +230,7 @@ def main():
         sys.modules['__main__'] = sys.modules[__name__]
     from billiard import freeze_support
     freeze_support()
-    worker().execute_from_commandline()
+    worker(app=app).execute_from_commandline()
 
 
 if __name__ == '__main__':          # pragma: no cover

@@ -151,8 +151,8 @@ class detached_celeryd(object):
                  **vars(options)))
 
 
-def main():
-    detached_celeryd().execute_from_commandline()
+def main(app=None):
+    detached_celeryd(app).execute_from_commandline()
 
 if __name__ == '__main__':  # pragma: no cover
     main()

@@ -91,8 +91,8 @@ class beat(Command):
         )
 
 
-def main():
-    beat().execute_from_commandline()
+def main(app=None):
+    beat(app=app).execute_from_commandline()
 
 if __name__ == '__main__':      # pragma: no cover
     main()
