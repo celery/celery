@@ -12,7 +12,6 @@ from nose import SkipTest
 from billiard import current_process
 from kombu import Exchange, Queue
 
-from celery import Celery
 from celery import platforms
 from celery import signals
 from celery.app import trace
@@ -68,33 +67,27 @@ class Worker(cd.Worker):
 class test_Worker(WorkerAppCase):
     Worker = Worker
 
-    def teardown(self):
-        self.app.conf.CELERY_INCLUDE = ()
-
     @disable_stdouts
     def test_queues_string(self):
-        celery = Celery(set_as_current=False)
-        w = celery.Worker()
+        w = self.app.Worker()
         w.setup_queues('foo,bar,baz')
         self.assertEqual(w.queues, ['foo', 'bar', 'baz'])
-        self.assertTrue('foo' in celery.amqp.queues)
+        self.assertTrue('foo' in self.app.amqp.queues)
 
     @disable_stdouts
     def test_cpu_count(self):
-        celery = Celery(set_as_current=False)
         with patch('celery.worker.cpu_count') as cpu_count:
             cpu_count.side_effect = NotImplementedError()
-            w = celery.Worker(concurrency=None)
+            w = self.app.Worker(concurrency=None)
             self.assertEqual(w.concurrency, 2)
-        w = celery.Worker(concurrency=5)
+        w = self.app.Worker(concurrency=5)
         self.assertEqual(w.concurrency, 5)
 
     @disable_stdouts
     def test_windows_B_option(self):
-        celery = Celery(set_as_current=False)
-        celery.IS_WINDOWS = True
+        self.app.IS_WINDOWS = True
         with self.assertRaises(SystemExit):
-            worker(app=celery).run(beat=True)
+            worker(app=self.app).run(beat=True)
 
     def test_setup_concurrency_very_early(self):
         x = worker()
@@ -124,26 +117,23 @@ class test_Worker(WorkerAppCase):
 
     @disable_stdouts
     def test_invalid_loglevel_gives_error(self):
-        x = worker(app=Celery(set_as_current=False))
+        x = worker(app=self.app)
         with self.assertRaises(SystemExit):
             x.run(loglevel='GRIM_REAPER')
 
     def test_no_loglevel(self):
-        app = Celery(set_as_current=False)
-        app.Worker = Mock()
-        worker(app=app).run(loglevel=None)
+        self.app.Worker = Mock()
+        worker(app=self.app).run(loglevel=None)
 
     def test_tasklist(self):
-        celery = Celery(set_as_current=False)
-        worker = celery.Worker()
+        worker = self.app.Worker()
         self.assertTrue(worker.app.tasks)
         self.assertTrue(worker.app.finalized)
         self.assertTrue(worker.tasklist(include_builtins=True))
         worker.tasklist(include_builtins=False)
 
     def test_extra_info(self):
-        celery = Celery(set_as_current=False)
-        worker = celery.Worker()
+        worker = self.app.Worker()
         worker.loglevel = logging.WARNING
         self.assertFalse(worker.extra_info())
         worker.loglevel = logging.INFO
@@ -154,6 +144,7 @@ class test_Worker(WorkerAppCase):
         worker = self.Worker(app=self.app, loglevel='INFO')
         self.assertEqual(worker.loglevel, logging.INFO)
 
+    @disable_stdouts
     def test_run_worker(self):
         handlers = {}
 
@@ -193,29 +184,21 @@ class test_Worker(WorkerAppCase):
         worker.autoscale = 13, 10
         self.assertTrue(worker.startup_info())
 
-        app = Celery(set_as_current=False)
-        worker = self.Worker(app=app, queues='foo,bar,baz,xuzzy,do,re,mi')
-        prev, app.loader = app.loader, Mock()
-        try:
-            app.loader.__module__ = 'acme.baked_beans'
-            self.assertTrue(worker.startup_info())
-        finally:
-            app.loader = prev
+        prev_loader = self.app.loader
+        worker = self.Worker(app=self.app, queues='foo,bar,baz,xuzzy,do,re,mi')
+        self.app.loader = Mock()
+        self.app.loader.__module__ = 'acme.baked_beans'
+        self.assertTrue(worker.startup_info())
 
-        prev, app.loader = app.loader, Mock()
-        try:
-            app.loader.__module__ = 'celery.loaders.foo'
-            self.assertTrue(worker.startup_info())
-        finally:
-            app.loader = prev
+        self.app.loader = Mock()
+        self.app.loader.__module__ = 'celery.loaders.foo'
+        self.assertTrue(worker.startup_info())
 
         from celery.loaders.app import AppLoader
-        prev, app.loader = app.loader, AppLoader(app=self.app)
-        try:
-            self.assertTrue(worker.startup_info())
-        finally:
-            app.loader = prev
+        self.app.loader = AppLoader(app=self.app)
+        self.assertTrue(worker.startup_info())
 
+        self.app.loader = prev_loader
         worker.send_events = True
         self.assertTrue(worker.startup_info())
 
@@ -239,32 +222,32 @@ class test_Worker(WorkerAppCase):
     def test_init_queues(self):
         app = self.app
         c = app.conf
-        p, app.amqp.queues = app.amqp.queues, app.amqp.Queues({
+        app.amqp.queues = app.amqp.Queues({
             'celery': {'exchange': 'celery',
                        'routing_key': 'celery'},
             'video': {'exchange': 'video',
-                      'routing_key': 'video'}})
-        try:
-            worker = self.Worker(app=self.app)
-            worker.setup_queues(['video'])
-            self.assertIn('video', app.amqp.queues)
-            self.assertIn('video', app.amqp.queues.consume_from)
-            self.assertIn('celery', app.amqp.queues)
-            self.assertNotIn('celery', app.amqp.queues.consume_from)
+                      'routing_key': 'video'},
+        })
+        worker = self.Worker(app=self.app)
+        worker.setup_queues(['video'])
+        self.assertIn('video', app.amqp.queues)
+        self.assertIn('video', app.amqp.queues.consume_from)
+        self.assertIn('celery', app.amqp.queues)
+        self.assertNotIn('celery', app.amqp.queues.consume_from)
 
-            c.CELERY_CREATE_MISSING_QUEUES = False
-            del(app.amqp.queues)
-            with self.assertRaises(ImproperlyConfigured):
-                self.Worker(app=self.app).setup_queues(['image'])
-            del(app.amqp.queues)
-            c.CELERY_CREATE_MISSING_QUEUES = True
-            worker = self.Worker(app=self.app)
-            worker.setup_queues(queues=['image'])
-            self.assertIn('image', app.amqp.queues.consume_from)
-            self.assertEqual(Queue('image', Exchange('image'),
-                             routing_key='image'), app.amqp.queues['image'])
-        finally:
-            app.amqp.queues = p
+        c.CELERY_CREATE_MISSING_QUEUES = False
+        del(app.amqp.queues)
+        with self.assertRaises(ImproperlyConfigured):
+            self.Worker(app=self.app).setup_queues(['image'])
+        del(app.amqp.queues)
+        c.CELERY_CREATE_MISSING_QUEUES = True
+        worker = self.Worker(app=self.app)
+        worker.setup_queues(queues=['image'])
+        self.assertIn('image', app.amqp.queues.consume_from)
+        self.assertEqual(
+            Queue('image', Exchange('image'), routing_key='image'),
+            app.amqp.queues['image'],
+        )
 
     @disable_stdouts
     def test_autoscale_argument(self):
@@ -272,6 +255,7 @@ class test_Worker(WorkerAppCase):
         self.assertListEqual(worker1.autoscale, [10, 3])
         worker2 = self.Worker(app=self.app, autoscale='10')
         self.assertListEqual(worker2.autoscale, [10, 0])
+        self.assert_no_logging_side_effect()
 
     def test_include_argument(self):
         worker1 = self.Worker(app=self.app, include='some.module')
@@ -318,16 +302,11 @@ class test_Worker(WorkerAppCase):
 
     @disable_stdouts
     def test_on_start_custom_logging(self):
-        prev, self.app.log.redirect_stdouts = (
-            self.app.log.redirect_stdouts, Mock(),
-        )
-        try:
-            worker = self.Worker(app=self.app, redirect_stoutds=True)
-            worker._custom_logging = True
-            worker.on_start()
-            self.assertFalse(self.app.log.redirect_stdouts.called)
-        finally:
-            self.app.log.redirect_stdouts = prev
+        self.app.log.redirect_stdouts = Mock()
+        worker = self.Worker(app=self.app, redirect_stoutds=True)
+        worker._custom_logging = True
+        worker.on_start()
+        self.assertFalse(self.app.log.redirect_stdouts.called)
 
     def test_setup_logging_no_color(self):
         worker = self.Worker(
@@ -463,7 +442,7 @@ class test_funs(WorkerAppCase):
         p, cd.Worker = cd.Worker, Worker
         s, sys.argv = sys.argv, ['worker', '--discard']
         try:
-            worker_main()
+            worker_main(app=self.app)
         finally:
             cd.Worker = p
             sys.argv = s

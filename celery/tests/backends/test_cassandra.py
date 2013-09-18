@@ -5,10 +5,9 @@ import socket
 from mock import Mock
 from pickle import loads, dumps
 
-from celery import Celery
 from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.tests.case import AppCase, mock_module
+from celery.tests.case import AppCase, mock_module, depends_on_current_app
 
 
 class Object(object):
@@ -46,6 +45,13 @@ def install_exceptions(mod):
 
 class test_CassandraBackend(AppCase):
 
+    def setup(self):
+        self.app.conf.update(
+            CASSANDRA_SERVERS=['example.com'],
+            CASSANDRA_KEYSPACE='keyspace',
+            CASSANDRA_COLUMN_FAMILY='columns',
+        )
+
     def test_init_no_pycassa(self):
         with mock_module('pycassa'):
             from celery.backends import cassandra as mod
@@ -56,13 +62,6 @@ class test_CassandraBackend(AppCase):
             finally:
                 mod.pycassa = prev
 
-    def get_app(self):
-        celery = Celery(set_as_current=False)
-        celery.conf.CASSANDRA_SERVERS = ['example.com']
-        celery.conf.CASSANDRA_KEYSPACE = 'keyspace'
-        celery.conf.CASSANDRA_COLUMN_FAMILY = 'columns'
-        return celery
-
     def test_init_with_and_without_LOCAL_QUROM(self):
         with mock_module('pycassa'):
             from celery.backends import cassandra as mod
@@ -71,23 +70,25 @@ class test_CassandraBackend(AppCase):
             cons = mod.pycassa.ConsistencyLevel = Object()
             cons.LOCAL_QUORUM = 'foo'
 
-            app = self.get_app()
-            app.conf.CASSANDRA_READ_CONSISTENCY = 'LOCAL_FOO'
-            app.conf.CASSANDRA_WRITE_CONSISTENCY = 'LOCAL_FOO'
+            self.app.conf.CASSANDRA_READ_CONSISTENCY = 'LOCAL_FOO'
+            self.app.conf.CASSANDRA_WRITE_CONSISTENCY = 'LOCAL_FOO'
 
-            mod.CassandraBackend(app=app)
+            mod.CassandraBackend(app=self.app)
             cons.LOCAL_FOO = 'bar'
-            mod.CassandraBackend(app=app)
+            mod.CassandraBackend(app=self.app)
 
             # no servers raises ImproperlyConfigured
             with self.assertRaises(ImproperlyConfigured):
-                app.conf.CASSANDRA_SERVERS = None
-                mod.CassandraBackend(app=app, keyspace='b', column_family='c')
+                self.app.conf.CASSANDRA_SERVERS = None
+                mod.CassandraBackend(
+                    app=self.app, keyspace='b', column_family='c',
+                )
 
+    @depends_on_current_app
     def test_reduce(self):
         with mock_module('pycassa'):
             from celery.backends.cassandra import CassandraBackend
-            self.assertTrue(loads(dumps(CassandraBackend(app=self.get_app()))))
+            self.assertTrue(loads(dumps(CassandraBackend(app=self.app))))
 
     def test_get_task_meta_for(self):
         with mock_module('pycassa'):
@@ -96,8 +97,7 @@ class test_CassandraBackend(AppCase):
             install_exceptions(mod.pycassa)
             mod.Thrift = Mock()
             install_exceptions(mod.Thrift)
-            app = self.get_app()
-            x = mod.CassandraBackend(app=app)
+            x = mod.CassandraBackend(app=self.app)
             Get_Column = x._get_column_family = Mock()
             get_column = Get_Column.return_value = Mock()
             get = get_column.get
@@ -155,8 +155,7 @@ class test_CassandraBackend(AppCase):
             install_exceptions(mod.pycassa)
             mod.Thrift = Mock()
             install_exceptions(mod.Thrift)
-            app = self.get_app()
-            x = mod.CassandraBackend(app=app)
+            x = mod.CassandraBackend(app=self.app)
             Get_Column = x._get_column_family = Mock()
             cf = Get_Column.return_value = Mock()
             x.detailed_mode = False
@@ -171,8 +170,7 @@ class test_CassandraBackend(AppCase):
     def test_process_cleanup(self):
         with mock_module('pycassa'):
             from celery.backends import cassandra as mod
-            app = self.get_app()
-            x = mod.CassandraBackend(app=app)
+            x = mod.CassandraBackend(app=self.app)
             x._column_family = None
             x.process_cleanup()
 
@@ -185,8 +183,7 @@ class test_CassandraBackend(AppCase):
             from celery.backends import cassandra as mod
             mod.pycassa = Mock()
             install_exceptions(mod.pycassa)
-            app = self.get_app()
-            x = mod.CassandraBackend(app=app)
+            x = mod.CassandraBackend(app=self.app)
             self.assertTrue(x._get_column_family())
             self.assertIsNotNone(x._column_family)
             self.assertIs(x._get_column_family(), x._column_family)

@@ -8,7 +8,7 @@ from kombu.pidbox import Mailbox
 
 from celery.app import control
 from celery.utils import uuid
-from celery.tests.case import AppCase, Case
+from celery.tests.case import AppCase
 
 
 class MockMailbox(Mailbox):
@@ -40,7 +40,7 @@ def with_mock_broadcast(fun):
     return _resets
 
 
-class test_flatten_reply(Case):
+class test_flatten_reply(AppCase):
 
     def test_flatten_reply(self):
         reply = [
@@ -64,9 +64,6 @@ class test_inspect(AppCase):
         self.c = Control(app=self.app)
         self.prev, self.app.control = self.app.control, self.c
         self.i = self.c.inspect()
-
-    def tearDown(self):
-        self.app.control = self.prev
 
     def test_prepare_reply(self):
         self.assertDictEqual(self.i._prepare([{'w1': {'ok': 1}},
@@ -159,13 +156,10 @@ class test_Broadcast(AppCase):
         self.control = Control(app=self.app)
         self.app.control = self.control
 
-        @self.app.task()
+        @self.app.task(shared=False)
         def mytask():
             pass
         self.mytask = mytask
-
-    def tearDown(self):
-        del(self.app.control)
 
     def test_purge(self):
         self.control.purge()

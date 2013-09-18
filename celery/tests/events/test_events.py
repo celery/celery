@@ -4,7 +4,6 @@ import socket
 
 from mock import Mock
 
-from celery import Celery
 from celery.events import Event
 from celery.tests.case import AppCase
 
@@ -41,21 +40,19 @@ class test_Event(AppCase):
 class test_EventDispatcher(AppCase):
 
     def test_redis_uses_fanout_exchange(self):
-        with Celery(set_as_current=False) as app:
-            app.connection = Mock()
-            conn = app.connection.return_value = Mock()
-            conn.transport.driver_type = 'redis'
+        self.app.connection = Mock()
+        conn = self.app.connection.return_value = Mock()
+        conn.transport.driver_type = 'redis'
 
-            dispatcher = app.events.Dispatcher(conn, enabled=False)
-            self.assertEqual(dispatcher.exchange.type, 'fanout')
+        dispatcher = self.app.events.Dispatcher(conn, enabled=False)
+        self.assertEqual(dispatcher.exchange.type, 'fanout')
 
     def test_others_use_topic_exchange(self):
-        with Celery(set_as_current=False) as app:
-            app.connection = Mock()
-            conn = app.connection.return_value = Mock()
-            conn.transport.driver_type = 'amqp'
-            dispatcher = app.events.Dispatcher(conn, enabled=False)
-            self.assertEqual(dispatcher.exchange.type, 'topic')
+        self.app.connection = Mock()
+        conn = self.app.connection.return_value = Mock()
+        conn.transport.driver_type = 'amqp'
+        dispatcher = self.app.events.Dispatcher(conn, enabled=False)
+        self.assertEqual(dispatcher.exchange.type, 'topic')
 
     def test_takes_channel_connection(self):
         x = self.app.events.Dispatcher(channel=Mock())

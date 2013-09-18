@@ -16,7 +16,9 @@ from celery.exceptions import TimeoutError
 from celery.five import Empty, Queue, range
 from celery.utils import uuid
 
-from celery.tests.case import AppCase, sleepdeprived, Mock
+from celery.tests.case import (
+    AppCase, Mock, depends_on_current_app, sleepdeprived,
+)
 
 
 class SomeClass(object):
@@ -43,6 +45,7 @@ class test_AMQPBackend(AppCase):
         self.assertTrue(tb2._cache.get(tid))
         self.assertTrue(tb2.get_result(tid), 42)
 
+    @depends_on_current_app
     def test_pickleable(self):
         self.assertTrue(loads(dumps(self.create_backend())))
 
@@ -322,14 +325,10 @@ class test_AMQPBackend(AppCase):
     def test_no_expires(self):
         b = self.create_backend(expires=None)
         app = self.app
-        prev = app.conf.CELERY_TASK_RESULT_EXPIRES
         app.conf.CELERY_TASK_RESULT_EXPIRES = None
-        try:
-            b = self.create_backend(expires=None)
-            with self.assertRaises(KeyError):
-                b.queue_arguments['x-expires']
-        finally:
-            app.conf.CELERY_TASK_RESULT_EXPIRES = prev
+        b = self.create_backend(expires=None)
+        with self.assertRaises(KeyError):
+            b.queue_arguments['x-expires']
 
     def test_process_cleanup(self):
         self.create_backend().process_cleanup()

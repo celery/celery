@@ -3,8 +3,8 @@ from __future__ import absolute_import
 
 from collections import Callable
 
-from celery.task.base import Context
-from celery.tests.case import Case
+from celery.app.task import Context
+from celery.tests.case import AppCase
 
 
 # Retreive the values of all context attributes as a
@@ -22,7 +22,7 @@ def get_context_as_dict(ctx, getter=getattr):
 default_context = get_context_as_dict(Context())
 
 
-class test_Context(Case):
+class test_Context(AppCase):
 
     def test_default_context(self):
         # A bit of a tautological test, since it uses the same

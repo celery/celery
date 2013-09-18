@@ -26,7 +26,7 @@ from celery.contrib.migrate import (
     move,
 )
 from celery.utils.encoding import bytes_t, ensure_bytes
-from celery.tests.case import AppCase, Case, Mock, override_stdouts
+from celery.tests.case import AppCase, Mock, override_stdouts
 
 # hack to ignore error at shutdown
 QoS.restore_at_shutdown = False
@@ -52,7 +52,7 @@ def Message(body, exchange='exchange', routing_key='rkey',
     )
 
 
-class test_State(Case):
+class test_State(AppCase):
 
     def test_strtotal(self):
         x = State()
@@ -178,7 +178,7 @@ class test_start_filter(AppCase):
             self.assertTrue(stop_filtering_raised)
 
 
-class test_filter_callback(Case):
+class test_filter_callback(AppCase):
 
     def test_filter(self):
         callback = Mock()
@@ -193,7 +193,7 @@ class test_filter_callback(Case):
         callback.assert_called_with(t1, message)
 
 
-class test_utils(Case):
+class test_utils(AppCase):
 
     def test_task_id_in(self):
         self.assertTrue(task_id_in(['A'], {'id': 'A'}, Mock()))
@@ -243,7 +243,7 @@ class test_utils(Case):
             )
 
 
-class test_migrate_task(Case):
+class test_migrate_task(AppCase):
 
     def test_removes_compression_header(self):
         x = Message('foo', compression='zlib')

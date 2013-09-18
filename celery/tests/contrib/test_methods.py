@@ -14,7 +14,7 @@ class test_task_method(AppCase):
             def __init__(self):
                 self.state = 0
 
-            @self.app.task(filter=task_method)
+            @self.app.task(shared=False, filter=task_method)
             def add(self, x):
                 self.state += x
 

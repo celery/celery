@@ -9,12 +9,12 @@ from celery.events.dumper import (
     evdump,
 )
 
-from celery.tests.case import Case, WhateverIO
+from celery.tests.case import AppCase, WhateverIO
 
 
-class test_Dumper(Case):
+class test_Dumper(AppCase):
 
-    def setUp(self):
+    def setup(self):
         self.out = WhateverIO()
         self.dumper = Dumper(out=self.out)
 
@@ -44,7 +44,7 @@ class test_Dumper(Case):
     @patch('celery.events.EventReceiver.capture')
     def test_evdump(self, capture):
         capture.side_effect = KeyboardInterrupt()
-        evdump()
+        evdump(app=self.app)
 
     def test_evdump_error_handler(self):
         app = Mock(name='app')

@@ -365,8 +365,8 @@ class test_crontab_remaining_estimate(AppCase):
 
     def test_not_weekmonthdayyear(self):
         next = self.next_ocurrance(
-            crontab(minute=[5, 42], day_of_week='fri,sat',
-                    day_of_month=29, month_of_year='2-10'),
+            self.crontab(minute=[5, 42], day_of_week='fri,sat',
+                         day_of_month=29, month_of_year='2-10'),
             datetime(2010, 1, 28, 14, 30, 15),
         )
         self.assertEqual(next, datetime(2010, 5, 29, 0, 5))

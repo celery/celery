@@ -150,7 +150,7 @@ class test_unlock_chord_task(ChordCase):
                     assert self.app.tasks['celery.chord_unlock'] is unlock
                     unlock(
                         'group_id', callback_s,
-                        result=[AsyncResult(r) for r in ['1', 2, 3]],
+                        result=[self.app.AsyncResult(r) for r in ['1', 2, 3]],
                         GroupResult=ResultCls, **kwargs
                     )
                 finally:
@@ -178,22 +178,19 @@ class test_chord(ChordCase):
     def test_eager(self):
         from celery import chord
 
-        @self.app.task()
+        @self.app.task(shared=False)
         def addX(x, y):
             return x + y
 
-        @self.app.task()
+        @self.app.task(shared=False)
         def sumX(n):
             return sum(n)
 
         self.app.conf.CELERY_ALWAYS_EAGER = True
-        try:
-            x = chord(addX.s(i, i) for i in range(10))
-            body = sumX.s()
-            result = x(body)
-            self.assertEqual(result.get(), sum(i + i for i in range(10)))
-        finally:
-            self.app.conf.CELERY_ALWAYS_EAGER = False
+        x = chord(addX.s(i, i) for i in range(10))
+        body = sumX.s()
+        result = x(body)
+        self.assertEqual(result.get(), sum(i + i for i in range(10)))
 
     def test_apply(self):
         self.app.conf.CELERY_ALWAYS_EAGER = False
@@ -219,15 +216,12 @@ class test_chord(ChordCase):
 class test_Chord_task(ChordCase):
 
     def test_run(self):
-        prev, self.app.backend = self.app.backend, Mock()
+        self.app.backend = Mock()
         self.app.backend.cleanup = Mock()
         self.app.backend.cleanup.__name__ = 'cleanup'
-        try:
-            Chord = self.app.tasks['celery.chord']
+        Chord = self.app.tasks['celery.chord']
 
-            body = dict()
-            Chord(group(self.add.subtask((i, i)) for i in range(5)), body)
-            Chord([self.add.subtask((j, j)) for j in range(5)], body)
-            self.assertEqual(self.app.backend.on_chord_apply.call_count, 2)
-        finally:
-            self.app.backend = prev
+        body = dict()
+        Chord(group(self.add.subtask((i, i)) for i in range(5)), body)
+        Chord([self.add.subtask((j, j)) for j in range(5)], body)
+        self.assertEqual(self.app.backend.on_chord_apply.call_count, 2)

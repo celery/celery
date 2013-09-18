@@ -1,14 +1,15 @@
 from __future__ import absolute_import
 
-
 import celery
+
 from celery.app.task import Task as ModernTask
 from celery.task.base import Task as CompatTask
 
-from celery.tests.case import Case
+from celery.tests.case import AppCase, depends_on_current_app
 
 
-class test_MagicModule(Case):
+@depends_on_current_app
+class test_MagicModule(AppCase):
 
     def test_class_property_set_without_type(self):
         self.assertTrue(ModernTask.__dict__['app'].__get__(CompatTask()))
@@ -21,10 +22,8 @@ class test_MagicModule(Case):
 
         class X(CompatTask):
             pass
-
-        app = celery.Celery(set_as_current=False)
-        ModernTask.__dict__['app'].__set__(X(), app)
-        self.assertEqual(X.app, app)
+        ModernTask.__dict__['app'].__set__(X(), self.app)
+        self.assertIs(X.app, self.app)
 
     def test_dir(self):
         self.assertTrue(dir(celery.messaging))

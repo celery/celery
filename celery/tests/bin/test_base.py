@@ -10,7 +10,9 @@ from celery.bin.base import (
     Extensions,
     HelpFormatter,
 )
-from celery.tests.case import AppCase, Case, override_stdouts
+from celery.tests.case import (
+    AppCase, override_stdouts, depends_on_current_app,
+)
 
 
 class Object(object):
@@ -36,7 +38,7 @@ class MockCommand(Command):
         return args, kwargs
 
 
-class test_Extensions(Case):
+class test_Extensions(AppCase):
 
     def test_load(self):
         with patch('pkg_resources.iter_entry_points') as iterep:
@@ -65,7 +67,7 @@ class test_Extensions(Case):
                     e.load()
 
 
-class test_HelpFormatter(Case):
+class test_HelpFormatter(AppCase):
 
     def test_format_epilog(self):
         f = HelpFormatter()
@@ -276,21 +278,19 @@ class test_Command(AppCase):
         cmd.show_body = False
         cmd.say_chat('->', 'foo', 'body')
 
+    @depends_on_current_app
     def test_with_cmdline_config(self):
         cmd = MockCommand()
-        try:
-            cmd.enable_config_from_cmdline = True
-            cmd.namespace = 'celeryd'
-            rest = cmd.setup_app_from_commandline(argv=[
-                '--loglevel=INFO', '--',
-                'broker.url=amqp://broker.example.com',
-                '.prefetch_multiplier=100'])
-            self.assertEqual(cmd.app.conf.BROKER_URL,
-                             'amqp://broker.example.com')
-            self.assertEqual(cmd.app.conf.CELERYD_PREFETCH_MULTIPLIER, 100)
-            self.assertListEqual(rest, ['--loglevel=INFO'])
-        finally:
-            cmd.app.conf.BROKER_URL = 'memory://'
+        cmd.enable_config_from_cmdline = True
+        cmd.namespace = 'celeryd'
+        rest = cmd.setup_app_from_commandline(argv=[
+            '--loglevel=INFO', '--',
+            'broker.url=amqp://broker.example.com',
+            '.prefetch_multiplier=100'])
+        self.assertEqual(cmd.app.conf.BROKER_URL,
+                         'amqp://broker.example.com')
+        self.assertEqual(cmd.app.conf.CELERYD_PREFETCH_MULTIPLIER, 100)
+        self.assertListEqual(rest, ['--loglevel=INFO'])
 
     def test_find_app(self):
         cmd = MockCommand()

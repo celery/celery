@@ -6,7 +6,6 @@ from mock import Mock, patch
 
 from kombu.utils.limits import TokenBucket
 
-from celery import Celery
 from celery.worker import state
 from celery.utils.timeutils import rate
 
@@ -14,6 +13,13 @@ from celery.tests.case import AppCase, body_from_sig
 
 
 class test_default_strategy(AppCase):
+
+    def setup(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        self.add = add
 
     class Context(object):
 
@@ -52,15 +58,6 @@ class test_default_strategy(AppCase):
                 return self.consumer.timer.apply_at.call_args[0][0]
             raise ValueError('request not handled')
 
-    def setup(self):
-        self.c = Celery(set_as_current=False)
-
-        @self.c.task()
-        def add(x, y):
-            return x + y
-
-        self.add = add
-
     @contextmanager
     def _context(self, sig,
                  rate_limits=True, events=True, utc=True, limit=None):
@@ -74,11 +71,11 @@ class test_default_strategy(AppCase):
             consumer.task_buckets[sig.task] = bucket
         consumer.disable_rate_limits = not rate_limits
         consumer.event_dispatcher.enabled = events
-        s = sig.type.start_strategy(self.c, consumer, task_reserved=reserved)
+        s = sig.type.start_strategy(self.app, consumer, task_reserved=reserved)
         self.assertTrue(s)
 
         message = Mock()
-        body = body_from_sig(self.c, sig, utc=utc)
+        body = body_from_sig(self.app, sig, utc=utc)
 
         yield self.Context(sig, s, reserved, consumer, message, body)
 

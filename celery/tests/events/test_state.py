@@ -18,7 +18,7 @@ from celery.events.state import (
 )
 from celery.five import range
 from celery.utils import uuid
-from celery.tests.case import Case
+from celery.tests.case import AppCase
 
 
 class replay(object):
@@ -152,7 +152,7 @@ class ev_snapshot(replay):
                                uuid=uuid(), hostname=worker))
 
 
-class test_Worker(Case):
+class test_Worker(AppCase):
 
     def test_equality(self):
         self.assertEqual(Worker(hostname='foo').hostname, 'foo')
@@ -192,7 +192,7 @@ class test_Worker(Case):
         self.assertEqual(len(worker.heartbeats), 1)
 
 
-class test_Task(Case):
+class test_Task(AppCase):
 
     def test_equality(self):
         self.assertEqual(Task(uuid='foo').uuid, 'foo')
@@ -265,7 +265,7 @@ class test_Task(Case):
         self.assertTrue(repr(Task(uuid='xxx', name='tasks.add')))
 
 
-class test_State(Case):
+class test_State(AppCase):
 
     def test_repr(self):
         self.assertTrue(repr(State()))

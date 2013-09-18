@@ -17,7 +17,9 @@ from celery.loaders.app import AppLoader
 from celery.utils.imports import NotAPackage
 from celery.utils.mail import SendmailWarning
 
-from celery.tests.case import AppCase, Case
+from celery.tests.case import (
+    AppCase, Case, depends_on_current_app, with_environ,
+)
 
 
 class DummyLoader(base.BaseLoader):
@@ -32,15 +34,15 @@ class test_loaders(AppCase):
         self.assertEqual(loaders.get_loader_cls('default'),
                          default.Loader)
 
+    @depends_on_current_app
     def test_current_loader(self):
-        self.app.set_current()  # XXX Compat test
         with self.assertWarnsRegex(
                 CPendingDeprecationWarning,
                 r'deprecation'):
             self.assertIs(loaders.current_loader(), self.app.loader)
 
+    @depends_on_current_app
     def test_load_settings(self):
-        self.app.set_current()  # XXX Compat test
         with self.assertWarnsRegex(
                 CPendingDeprecationWarning,
                 r'deprecation'):
@@ -105,15 +107,11 @@ class test_LoaderBase(AppCase):
 
     def test_import_default_modules(self):
         modnames = lambda l: [m.__name__ for m in l]
-        prev, self.app.conf.CELERY_IMPORTS = (
-            self.app.conf.CELERY_IMPORTS, ('os', 'sys'))
-        try:
-            self.assertEqual(
-                sorted(modnames(self.loader.import_default_modules())),
-                sorted(modnames([os, sys])),
-            )
-        finally:
-            self.app.conf.CELERY_IMPORTS = prev
+        self.app.conf.CELERY_IMPORTS = ('os', 'sys')
+        self.assertEqual(
+            sorted(modnames(self.loader.import_default_modules())),
+            sorted(modnames([os, sys])),
+        )
 
     def test_import_from_cwd_custom_imp(self):
 
@@ -163,19 +161,15 @@ class test_DefaultLoader(AppCase):
         find_module.side_effect = NotAPackage()
         l = default.Loader(app=self.app)
         with self.assertRaises(NotAPackage):
-            l.read_configuration()
+            l.read_configuration(fail_silently=False)
 
     @patch('celery.loaders.base.find_module')
+    @with_environ('CELERY_CONFIG_MODULE', 'celeryconfig.py')
     def test_read_configuration_py_in_name(self, find_module):
-        prev = os.environ['CELERY_CONFIG_MODULE']
-        os.environ['CELERY_CONFIG_MODULE'] = 'celeryconfig.py'
-        try:
-            find_module.side_effect = NotAPackage()
-            l = default.Loader(app=self.app)
-            with self.assertRaises(NotAPackage):
-                l.read_configuration()
-        finally:
-            os.environ['CELERY_CONFIG_MODULE'] = prev
+        find_module.side_effect = NotAPackage()
+        l = default.Loader(app=self.app)
+        with self.assertRaises(NotAPackage):
+            l.read_configuration(fail_silently=False)
 
     @patch('celery.loaders.base.find_module')
     def test_read_configuration_importerror(self, find_module):
@@ -183,9 +177,9 @@ class test_DefaultLoader(AppCase):
         find_module.side_effect = ImportError()
         l = default.Loader(app=self.app)
         with self.assertWarnsRegex(NotConfigured, r'make sure it exists'):
-            l.read_configuration()
+            l.read_configuration(fail_silently=True)
         default.C_WNOCONF = False
-        l.read_configuration()
+        l.read_configuration(fail_silently=True)
 
     def test_read_configuration(self):
         from types import ModuleType
@@ -193,17 +187,18 @@ class test_DefaultLoader(AppCase):
         class ConfigModule(ModuleType):
             pass
 
-        celeryconfig = ConfigModule('celeryconfig')
-        celeryconfig.CELERY_IMPORTS = ('os', 'sys')
         configname = os.environ.get('CELERY_CONFIG_MODULE') or 'celeryconfig'
+        celeryconfig = ConfigModule(configname)
+        celeryconfig.CELERY_IMPORTS = ('os', 'sys')
 
         prevconfig = sys.modules.get(configname)
         sys.modules[configname] = celeryconfig
         try:
             l = default.Loader(app=self.app)
-            settings = l.read_configuration()
+            l.find_module = Mock(name='find_module')
+            settings = l.read_configuration(fail_silently=False)
             self.assertTupleEqual(settings.CELERY_IMPORTS, ('os', 'sys'))
-            settings = l.read_configuration()
+            settings = l.read_configuration(fail_silently=False)
             self.assertTupleEqual(settings.CELERY_IMPORTS, ('os', 'sys'))
             l.on_worker_init()
         finally:
@@ -248,14 +243,10 @@ class test_AppLoader(AppCase):
         self.loader = AppLoader(app=self.app)
 
     def test_on_worker_init(self):
-        prev, self.app.conf.CELERY_IMPORTS = (
-            self.app.conf.CELERY_IMPORTS, ('subprocess', ))
-        try:
-            sys.modules.pop('subprocess', None)
-            self.loader.init_worker()
-            self.assertIn('subprocess', sys.modules)
-        finally:
-            self.app.conf.CELERY_IMPORTS = prev
+        self.app.conf.CELERY_IMPORTS = ('subprocess', )
+        sys.modules.pop('subprocess', None)
+        self.loader.init_worker()
+        self.assertIn('subprocess', sys.modules)
 
 
 class test_autodiscovery(Case):

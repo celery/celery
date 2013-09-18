@@ -198,28 +198,24 @@ class test_ControlPanel(AppCase):
 
     def test_time_limit(self):
         panel = self.create_panel(consumer=Mock())
-        th, ts = self.mytask.time_limit, self.mytask.soft_time_limit
-        try:
-            r = panel.handle('time_limit', arguments=dict(
-                task_name=self.mytask.name, hard=30, soft=10))
-            self.assertEqual(
-                (self.mytask.time_limit, self.mytask.soft_time_limit),
-                (30, 10),
-            )
-            self.assertIn('ok', r)
-            r = panel.handle('time_limit', arguments=dict(
-                task_name=self.mytask.name, hard=None, soft=None))
-            self.assertEqual(
-                (self.mytask.time_limit, self.mytask.soft_time_limit),
-                (None, None),
-            )
-            self.assertIn('ok', r)
+        r = panel.handle('time_limit', arguments=dict(
+            task_name=self.mytask.name, hard=30, soft=10))
+        self.assertEqual(
+            (self.mytask.time_limit, self.mytask.soft_time_limit),
+            (30, 10),
+        )
+        self.assertIn('ok', r)
+        r = panel.handle('time_limit', arguments=dict(
+            task_name=self.mytask.name, hard=None, soft=None))
+        self.assertEqual(
+            (self.mytask.time_limit, self.mytask.soft_time_limit),
+            (None, None),
+        )
+        self.assertIn('ok', r)
 
-            r = panel.handle('time_limit', arguments=dict(
-                task_name='248e8afya9s8dh921eh928', hard=30))
-            self.assertIn('error', r)
-        finally:
-            self.time_limit, self.soft_time_limit = th, ts
+        r = panel.handle('time_limit', arguments=dict(
+            task_name='248e8afya9s8dh921eh928', hard=30))
+        self.assertIn('error', r)
 
     def test_active_queues(self):
         import kombu
@@ -381,19 +377,15 @@ class test_ControlPanel(AppCase):
         panel = self.create_panel(app=self.app, consumer=consumer)
 
         task = self.app.tasks[self.mytask.name]
-        old_rate_limit = task.rate_limit
-        try:
-            panel.handle('rate_limit', arguments=dict(task_name=task.name,
-                                                      rate_limit='100/m'))
-            self.assertEqual(task.rate_limit, '100/m')
-            self.assertTrue(consumer.reset)
-            consumer.reset = False
-            panel.handle('rate_limit', arguments=dict(task_name=task.name,
-                                                      rate_limit=0))
-            self.assertEqual(task.rate_limit, 0)
-            self.assertTrue(consumer.reset)
-        finally:
-            task.rate_limit = old_rate_limit
+        panel.handle('rate_limit', arguments=dict(task_name=task.name,
+                                                  rate_limit='100/m'))
+        self.assertEqual(task.rate_limit, '100/m')
+        self.assertTrue(consumer.reset)
+        consumer.reset = False
+        panel.handle('rate_limit', arguments=dict(task_name=task.name,
+                                                  rate_limit=0))
+        self.assertEqual(task.rate_limit, 0)
+        self.assertTrue(consumer.reset)
 
     def test_rate_limit_nonexistant_task(self):
         self.panel.handle('rate_limit', arguments={
@@ -509,13 +501,10 @@ class test_ControlPanel(AppCase):
             panel.handle('pool_restart', {'reloader': _reload})
 
         self.app.conf.CELERYD_POOL_RESTARTS = True
-        try:
-            panel.handle('pool_restart', {'reloader': _reload})
-            self.assertTrue(consumer.controller.pool.restart.called)
-            self.assertFalse(_reload.called)
-            self.assertFalse(_import.called)
-        finally:
-            self.app.conf.CELERYD_POOL_RESTARTS = False
+        panel.handle('pool_restart', {'reloader': _reload})
+        self.assertTrue(consumer.controller.pool.restart.called)
+        self.assertFalse(_reload.called)
+        self.assertFalse(_import.called)
 
     def test_pool_restart_import_modules(self):
         consumer = Consumer(self.app)
@@ -527,18 +516,15 @@ class test_ControlPanel(AppCase):
         _reload = Mock()
 
         self.app.conf.CELERYD_POOL_RESTARTS = True
-        try:
-            panel.handle('pool_restart', {'modules': ['foo', 'bar'],
-                                          'reloader': _reload})
+        panel.handle('pool_restart', {'modules': ['foo', 'bar'],
+                                      'reloader': _reload})
 
-            self.assertTrue(consumer.controller.pool.restart.called)
-            self.assertFalse(_reload.called)
-            self.assertItemsEqual(
-                [call('bar'), call('foo')],
-                _import.call_args_list,
-            )
-        finally:
-            self.app.conf.CELERYD_POOL_RESTARTS = False
+        self.assertTrue(consumer.controller.pool.restart.called)
+        self.assertFalse(_reload.called)
+        self.assertItemsEqual(
+            [call('bar'), call('foo')],
+            _import.call_args_list,
+        )
 
     def test_pool_restart_reload_modules(self):
         consumer = Consumer(self.app)
@@ -550,26 +536,23 @@ class test_ControlPanel(AppCase):
         _reload = Mock()
 
         self.app.conf.CELERYD_POOL_RESTARTS = True
-        try:
-            with patch.dict(sys.modules, {'foo': None}):
-                panel.handle('pool_restart', {'modules': ['foo'],
-                                              'reload': False,
-                                              'reloader': _reload})
+        with patch.dict(sys.modules, {'foo': None}):
+            panel.handle('pool_restart', {'modules': ['foo'],
+                                          'reload': False,
+                                          'reloader': _reload})
 
-                self.assertTrue(consumer.controller.pool.restart.called)
-                self.assertFalse(_reload.called)
-                self.assertFalse(_import.called)
+            self.assertTrue(consumer.controller.pool.restart.called)
+            self.assertFalse(_reload.called)
+            self.assertFalse(_import.called)
 
-                _import.reset_mock()
-                _reload.reset_mock()
-                consumer.controller.pool.restart.reset_mock()
+            _import.reset_mock()
+            _reload.reset_mock()
+            consumer.controller.pool.restart.reset_mock()
 
-                panel.handle('pool_restart', {'modules': ['foo'],
-                                              'reload': True,
-                                              'reloader': _reload})
+            panel.handle('pool_restart', {'modules': ['foo'],
+                                          'reload': True,
+                                          'reloader': _reload})
 
-                self.assertTrue(consumer.controller.pool.restart.called)
-                self.assertTrue(_reload.called)
-                self.assertFalse(_import.called)
-        finally:
-            self.app.conf.CELERYD_POOL_RESTARTS = False
+            self.assertTrue(consumer.controller.pool.restart.called)
+            self.assertTrue(_reload.called)
+            self.assertFalse(_import.called)

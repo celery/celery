@@ -9,7 +9,7 @@ from threading import Event
 
 from billiard.exceptions import WorkerLostError
 from kombu import Connection
-from kombu.common import QoS, PREFETCH_COUNT_MAX, ignore_errors
+from kombu.common import QoS, ignore_errors
 from kombu.exceptions import StdChannelError
 from kombu.transport.base import Message
 from mock import call, Mock, patch
@@ -20,8 +20,6 @@ from celery.concurrency.base import BasePool
 from celery.datastructures import AttributeDict
 from celery.exceptions import SystemTerminate, TaskRevokedError
 from celery.five import Empty, range, Queue as FastQueue
-from celery.task import task as task_dec
-from celery.task import periodic_task as periodic_task_dec
 from celery.utils import uuid
 from celery.worker import components
 from celery.worker import consumer
@@ -32,7 +30,7 @@ from celery.utils import worker_direct
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 
-from celery.tests.case import AppCase, Case, restore_logging
+from celery.tests.case import AppCase, restore_logging
 
 
 def MockStep(step=None):
@@ -108,16 +106,6 @@ class MockHeart(object):
         self.closed = True
 
 
-@task_dec()
-def foo_task(x, y, z, **kwargs):
-    return x * y * z
-
-
-@periodic_task_dec(run_every=60)
-def foo_periodic_task():
-    return 'foo'
-
-
 def create_message(channel, **data):
     data.setdefault('id', uuid())
     channel.no_ack_consumers = set()
@@ -129,116 +117,16 @@ def create_message(channel, **data):
     return m
 
 
-class test_QoS(Case):
-
-    class _QoS(QoS):
-        def __init__(self, value):
-            self.value = value
-            QoS.__init__(self, None, value)
-
-        def set(self, value):
-            return value
-
-    def test_qos_increment_decrement(self):
-        qos = self._QoS(10)
-        self.assertEqual(qos.increment_eventually(), 11)
-        self.assertEqual(qos.increment_eventually(3), 14)
-        self.assertEqual(qos.increment_eventually(-30), 14)
-        self.assertEqual(qos.decrement_eventually(7), 7)
-        self.assertEqual(qos.decrement_eventually(), 6)
-
-    def test_qos_disabled_increment_decrement(self):
-        qos = self._QoS(0)
-        self.assertEqual(qos.increment_eventually(), 0)
-        self.assertEqual(qos.increment_eventually(3), 0)
-        self.assertEqual(qos.increment_eventually(-30), 0)
-        self.assertEqual(qos.decrement_eventually(7), 0)
-        self.assertEqual(qos.decrement_eventually(), 0)
-        self.assertEqual(qos.decrement_eventually(10), 0)
-
-    def test_qos_thread_safe(self):
-        qos = self._QoS(10)
-
-        def add():
-            for i in range(1000):
-                qos.increment_eventually()
-
-        def sub():
-            for i in range(1000):
-                qos.decrement_eventually()
-
-        def threaded(funs):
-            from threading import Thread
-            threads = [Thread(target=fun) for fun in funs]
-            for thread in threads:
-                thread.start()
-            for thread in threads:
-                thread.join()
-
-        threaded([add, add])
-        self.assertEqual(qos.value, 2010)
-
-        qos.value = 1000
-        threaded([add, sub])  # n = 2
-        self.assertEqual(qos.value, 1000)
-
-    def test_exceeds_short(self):
-        qos = QoS(Mock(), PREFETCH_COUNT_MAX - 1)
-        qos.update()
-        self.assertEqual(qos.value, PREFETCH_COUNT_MAX - 1)
-        qos.increment_eventually()
-        self.assertEqual(qos.value, PREFETCH_COUNT_MAX)
-        qos.increment_eventually()
-        self.assertEqual(qos.value, PREFETCH_COUNT_MAX + 1)
-        qos.decrement_eventually()
-        self.assertEqual(qos.value, PREFETCH_COUNT_MAX)
-        qos.decrement_eventually()
-        self.assertEqual(qos.value, PREFETCH_COUNT_MAX - 1)
-
-    def test_consumer_increment_decrement(self):
-        mconsumer = Mock()
-        qos = QoS(mconsumer.qos, 10)
-        qos.update()
-        self.assertEqual(qos.value, 10)
-        mconsumer.qos.assert_called_with(prefetch_count=10)
-        qos.decrement_eventually()
-        qos.update()
-        self.assertEqual(qos.value, 9)
-        mconsumer.qos.assert_called_with(prefetch_count=9)
-        qos.decrement_eventually()
-        self.assertEqual(qos.value, 8)
-        mconsumer.qos.assert_called_with(prefetch_count=9)
-        self.assertIn({'prefetch_count': 9}, mconsumer.qos.call_args)
-
-        # Does not decrement 0 value
-        qos.value = 0
-        qos.decrement_eventually()
-        self.assertEqual(qos.value, 0)
-        qos.increment_eventually()
-        self.assertEqual(qos.value, 0)
-
-    def test_consumer_decrement_eventually(self):
-        mconsumer = Mock()
-        qos = QoS(mconsumer.qos, 10)
-        qos.decrement_eventually()
-        self.assertEqual(qos.value, 9)
-        qos.value = 0
-        qos.decrement_eventually()
-        self.assertEqual(qos.value, 0)
-
-    def test_set(self):
-        mconsumer = Mock()
-        qos = QoS(mconsumer.qos, 10)
-        qos.set(12)
-        self.assertEqual(qos.prev, 12)
-        qos.set(qos.prev)
-
-
 class test_Consumer(AppCase):
 
     def setup(self):
         self.buffer = FastQueue()
         self.timer = Timer()
+
+        @self.app.task(shared=False)
+        def foo_task(x, y, z):
+            return x * y * z
+        self.foo_task = foo_task
 
     def teardown(self):
         self.timer.stop()
@@ -326,7 +214,7 @@ class test_Consumer(AppCase):
         to_timestamp.side_effect = OverflowError()
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.steps.pop()
-        m = create_message(Mock(), task=foo_task.name,
+        m = create_message(Mock(), task=self.foo_task.name,
                            args=('2, 2'),
                            kwargs={},
                            eta=datetime.now().isoformat())
@@ -344,7 +232,7 @@ class test_Consumer(AppCase):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.event_dispatcher = Mock()
         l.steps.pop()
-        m = create_message(Mock(), task=foo_task.name,
+        m = create_message(Mock(), task=self.foo_task.name,
                            args=(1, 2), kwargs='foobarbaz', id=1)
         l.update_strategies()
         l.event_dispatcher = Mock()
@@ -383,7 +271,7 @@ class test_Consumer(AppCase):
     def test_receieve_message(self):
         l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
         l.event_dispatcher = Mock()
-        m = create_message(Mock(), task=foo_task.name,
+        m = create_message(Mock(), task=self.foo_task.name,
                            args=[2, 4, 8], kwargs={})
         l.update_strategies()
         callback = self._get_on_message(l)
@@ -391,7 +279,7 @@ class test_Consumer(AppCase):
 
         in_bucket = self.buffer.get_nowait()
         self.assertIsInstance(in_bucket, Request)
-        self.assertEqual(in_bucket.name, foo_task.name)
+        self.assertEqual(in_bucket.name, self.foo_task.name)
         self.assertEqual(in_bucket.execute(), 2 * 4 * 8)
         self.assertTrue(self.timer.empty())
 
@@ -520,7 +408,7 @@ class test_Consumer(AppCase):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.steps.pop()
         m = create_message(
-            Mock(), task=foo_task.name,
+            Mock(), task=self.foo_task.name,
             eta=(datetime.now() + timedelta(days=1)).isoformat(),
             args=[2, 4, 8], kwargs={},
         )
@@ -539,7 +427,7 @@ class test_Consumer(AppCase):
         items = [entry[2] for entry in self.timer.queue]
         found = 0
         for item in items:
-            if item.args[0].name == foo_task.name:
+            if item.args[0].name == self.foo_task.name:
                 found = True
         self.assertTrue(found)
         self.assertGreater(l.qos.value, current_pcount)
@@ -570,7 +458,7 @@ class test_Consumer(AppCase):
         l.steps.pop()
         backend = Mock()
         id = uuid()
-        t = create_message(backend, task=foo_task.name, args=[2, 4, 8],
+        t = create_message(backend, task=self.foo_task.name, args=[2, 4, 8],
                            kwargs={}, id=id)
         from celery.worker.state import revoked
         revoked.add(id)
@@ -619,7 +507,7 @@ class test_Consumer(AppCase):
         l.event_dispatcher._outbound_buffer = deque()
         backend = Mock()
         m = create_message(
-            backend, task=foo_task.name,
+            backend, task=self.foo_task.name,
             args=[2, 4, 8], kwargs={},
             eta=(datetime.now() + timedelta(days=1)).isoformat(),
         )
@@ -627,10 +515,8 @@ class test_Consumer(AppCase):
         l.blueprint.start(l)
         p = l.app.conf.BROKER_CONNECTION_RETRY
         l.app.conf.BROKER_CONNECTION_RETRY = False
-        try:
-            l.blueprint.start(l)
-        finally:
-            l.app.conf.BROKER_CONNECTION_RETRY = p
+        l.blueprint.start(l)
+        l.app.conf.BROKER_CONNECTION_RETRY = p
         l.blueprint.restart(l)
         l.event_dispatcher = Mock()
         callback = self._get_on_message(l)
@@ -641,7 +527,7 @@ class test_Consumer(AppCase):
         eta, priority, entry = in_hold
         task = entry.args[0]
         self.assertIsInstance(task, Request)
-        self.assertEqual(task.name, foo_task.name)
+        self.assertEqual(task.name, self.foo_task.name)
         self.assertEqual(task.execute(), 2 * 4 * 8)
         with self.assertRaises(Empty):
             self.buffer.get_nowait()
@@ -823,6 +709,11 @@ class test_WorkController(AppCase):
         self.logger = worker.logger = Mock()
         self.comp_logger = components.logger = Mock()
 
+        @self.app.task(shared=False)
+        def foo_task(x, y, z):
+            return x * y * z
+        self.foo_task = foo_task
+
     def teardown(self):
         from celery import worker
         worker.logger = self._logger
@@ -838,15 +729,11 @@ class test_WorkController(AppCase):
 
     def test_setup_queues_worker_direct(self):
         self.app.conf.CELERY_WORKER_DIRECT = True
-        _qs, self.app.amqp.__dict__['queues'] = self.app.amqp.queues, Mock()
-        try:
-            self.worker.setup_queues({})
-            self.app.amqp.queues.select_add.assert_called_with(
-                worker_direct(self.worker.hostname),
-            )
-        finally:
-            self.app.amqp.queues = _qs
-            self.app.conf.CELERY_WORKER_DIRECT = False
+        self.app.amqp.__dict__['queues'] = Mock()
+        self.worker.setup_queues({})
+        self.app.amqp.queues.select_add.assert_called_with(
+            worker_direct(self.worker.hostname),
+        )
 
     def test_send_worker_shutdown(self):
         with patch('celery.signals.worker_shutdown') as ws:
@@ -881,40 +768,42 @@ class test_WorkController(AppCase):
     @patch('celery.platforms.set_mp_process_title')
     def test_process_initializer(self, set_mp_process_title, _signals):
         with restore_logging():
-            from celery import Celery
             from celery import signals
             from celery._state import _tls
-            from celery.concurrency.processes import process_initializer
-            from celery.concurrency.processes import (WORKER_SIGRESET,
-                                                      WORKER_SIGIGNORE)
+            from celery.concurrency.processes import (
+                process_initializer, WORKER_SIGRESET, WORKER_SIGIGNORE,
+            )
 
             def on_worker_process_init(**kwargs):
                 on_worker_process_init.called = True
             on_worker_process_init.called = False
             signals.worker_process_init.connect(on_worker_process_init)
 
-            loader = Mock()
-            loader.override_backends = {}
-            app = Celery(loader=loader, set_as_current=False)
-            app.loader = loader
-            app.conf = AttributeDict(DEFAULTS)
-            process_initializer(app, 'awesome.worker.com')
-            _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
-            _signals.reset.assert_any_call(*WORKER_SIGRESET)
-            self.assertTrue(app.loader.init_worker.call_count)
-            self.assertTrue(on_worker_process_init.called)
-            self.assertIs(_tls.current_app, app)
-            set_mp_process_title.assert_called_with(
-                'celeryd', hostname='awesome.worker.com',
-            )
+            def Loader(*args, **kwargs):
+                loader = Mock(*args, **kwargs)
+                loader.conf = {}
+                loader.override_backends = {}
+                return loader
 
-            with patch('celery.app.trace.setup_worker_optimizations') as swo:
-                os.environ['FORKED_BY_MULTIPROCESSING'] = "1"
-                try:
-                    process_initializer(app, 'luke.worker.com')
-                    swo.assert_called_with(app)
-                finally:
-                    os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+            with self.Celery(loader=Loader) as app:
+                app.conf = AttributeDict(DEFAULTS)
+                process_initializer(app, 'awesome.worker.com')
+                _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
+                _signals.reset.assert_any_call(*WORKER_SIGRESET)
+                self.assertTrue(app.loader.init_worker.call_count)
+                self.assertTrue(on_worker_process_init.called)
+                self.assertIs(_tls.current_app, app)
+                set_mp_process_title.assert_called_with(
+                    'celeryd', hostname='awesome.worker.com',
+                )
+
+                with patch('celery.app.trace.setup_worker_optimizations') as S:
+                    os.environ['FORKED_BY_MULTIPROCESSING'] = "1"
+                    try:
+                        process_initializer(app, 'luke.worker.com')
+                        S.assert_called_with(app)
+                    finally:
+                        os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
 
     def test_attrs(self):
         worker = self.worker
@@ -976,7 +865,7 @@ class test_WorkController(AppCase):
         worker = self.worker
         worker.pool = Mock()
         backend = Mock()
-        m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
+        m = create_message(backend, task=self.foo_task.name, args=[4, 8, 10],
                            kwargs={})
         task = Request.from_message(m, m.decode(), app=self.app)
         worker._process_task(task)
@@ -988,7 +877,7 @@ class test_WorkController(AppCase):
         worker.pool = Mock()
         worker.pool.apply_async.side_effect = KeyboardInterrupt('Ctrl+C')
         backend = Mock()
-        m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
+        m = create_message(backend, task=self.foo_task.name, args=[4, 8, 10],
                            kwargs={})
         task = Request.from_message(m, m.decode(), app=self.app)
         worker.steps = []
@@ -1002,7 +891,7 @@ class test_WorkController(AppCase):
         worker.pool = Mock()
         worker.pool.apply_async.side_effect = SystemTerminate()
         backend = Mock()
-        m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
+        m = create_message(backend, task=self.foo_task.name, args=[4, 8, 10],
                            kwargs={})
         task = Request.from_message(m, m.decode(), app=self.app)
         worker.steps = []
@@ -1016,7 +905,7 @@ class test_WorkController(AppCase):
         worker.pool = Mock()
         worker.pool.apply_async.side_effect = KeyError('some exception')
         backend = Mock()
-        m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
+        m = create_message(backend, task=self.foo_task.name, args=[4, 8, 10],
                            kwargs={})
         task = Request.from_message(m, m.decode(), app=self.app)
         worker._process_task(task)

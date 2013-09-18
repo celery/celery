@@ -7,7 +7,7 @@ from nose import SkipTest
 
 from billiard.einfo import ExceptionInfo
 
-from celery.tests.case import Case
+from celery.tests.case import AppCase
 
 
 def do_something(i):
@@ -25,9 +25,9 @@ def raise_something(i):
         return ExceptionInfo()
 
 
-class test_TaskPool(Case):
+class test_TaskPool(AppCase):
 
-    def setUp(self):
+    def setup(self):
         try:
             __import__('multiprocessing')
         except ImportError:

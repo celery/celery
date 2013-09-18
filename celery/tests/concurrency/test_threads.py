@@ -4,7 +4,7 @@ from mock import Mock
 
 from celery.concurrency.threads import NullDict, TaskPool, apply_target
 
-from celery.tests.case import Case, mask_modules, mock_module
+from celery.tests.case import AppCase, Case, mask_modules, mock_module
 
 
 class test_NullDict(Case):
@@ -16,7 +16,7 @@ class test_NullDict(Case):
             x['foo']
 
 
-class test_TaskPool(Case):
+class test_TaskPool(AppCase):
 
     def test_without_threadpool(self):
 

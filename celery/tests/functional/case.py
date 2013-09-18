@@ -11,8 +11,9 @@ import traceback
 from itertools import count
 from time import time
 
+from celery import current_app
 from celery.exceptions import TimeoutError
-from celery.task.control import ping, flatten_reply, inspect
+from celery.app.control import flatten_reply
 from celery.utils.imports import qualname
 
 from celery.tests.case import Case
@@ -39,9 +40,10 @@ class Worker(object):
     worker_ids = count(1)
     _shutdown_called = False
 
-    def __init__(self, hostname, loglevel='error'):
+    def __init__(self, hostname, loglevel='error', app=None):
         self.hostname = hostname
         self.loglevel = loglevel
+        self.app = app or current_app._get_current_object()
 
     def start(self):
         if not self.started:
@@ -51,16 +53,17 @@ class Worker(object):
     def _fork_and_exec(self):
         pid = os.fork()
         if pid == 0:
-            from celery import current_app
-            current_app.worker_main(['worker', '--loglevel=INFO',
-                                               '-n', self.hostname,
-                                               '-P', 'solo'])
+            self.app.worker_main(['worker', '--loglevel=INFO',
+                                  '-n', self.hostname,
+                                  '-P', 'solo'])
             os._exit(0)
         self.pid = pid
 
+    def ping(self, *args, **kwargs):
+        return self.app.control.ping(*args, **kwargs)
+
     def is_alive(self, timeout=1):
-        r = ping(destination=[self.hostname],
-                 timeout=timeout)
+        r = self.ping(destination=[self.hostname], timeout=timeout)
         return self.hostname in flatten_reply(r)
 
     def wait_until_started(self, timeout=10, interval=0.5):
@@ -124,7 +127,8 @@ class WorkerCase(Case):
         self.assertTrue(self.worker.is_alive)
 
     def inspect(self, timeout=1):
-        return inspect([self.worker.hostname], timeout=timeout)
+        return self.app.control.inspect([self.worker.hostname],
+                                        timeout=timeout)
 
     def my_response(self, response):
         return flatten_reply(response)[self.worker.hostname]

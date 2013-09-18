@@ -9,29 +9,21 @@ from celery.datastructures import LimitedSet
 from celery.exceptions import SystemTerminate
 from celery.worker import state
 
-from celery.tests.case import Case
+from celery.tests.case import AppCase
 
 
-class StateResetCase(Case):
+class StateResetCase(AppCase):
 
-    def setUp(self):
+    def setup(self):
         self.reset_state()
-        self.on_setup()
 
-    def tearDown(self):
+    def teardown(self):
         self.reset_state()
-        self.on_teardown()
 
     def reset_state(self):
         state.active_requests.clear()
         state.revoked.clear()
         state.total_count.clear()
-
-    def on_setup(self):
-        pass
-
-    def on_teardown(self):
-        pass
 
 
 class MockShelve(dict):
@@ -54,9 +46,9 @@ class MyPersistent(state.Persistent):
     storage = MockShelve()
 
 
-class test_maybe_shutdown(Case):
+class test_maybe_shutdown(AppCase):
 
-    def tearDown(self):
+    def teardown(self):
         state.should_stop = False
         state.should_terminate = False
 
@@ -73,7 +65,8 @@ class test_maybe_shutdown(Case):
 
 class test_Persistent(StateResetCase):
 
-    def on_setup(self):
+    def setup(self):
+        self.reset_state()
         self.p = MyPersistent(state, filename='celery-state')
 
     def test_close_twice(self):

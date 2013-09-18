@@ -1,44 +1,92 @@
 from __future__ import absolute_import
 
 import anyjson
+import warnings
 
 from mock import Mock, patch
 
+from celery import uuid
+from celery.result import TaskSetResult
 from celery.task import Task
-from celery.task.sets import subtask, TaskSet
 from celery.canvas import Signature
 
+from celery.tests.tasks.test_result import make_mock_group
 from celery.tests.case import AppCase
 
 
-class MockTask(Task):
-    name = 'tasks.add'
+class SetsCase(AppCase):
 
-    def run(self, x, y, **kwargs):
-        return x + y
+    def setup(self):
+        with warnings.catch_warnings(record=True):
+            from celery.task import sets
+            self.sets = sets
+            self.subtask = sets.subtask
+            self.TaskSet = sets.TaskSet
 
-    @classmethod
-    def apply_async(cls, args, kwargs, **options):
-        return (args, kwargs, options)
+        class MockTask(Task):
+            app = self.app
+            name = 'tasks.add'
 
-    @classmethod
-    def apply(cls, args, kwargs, **options):
-        return (args, kwargs, options)
+            def run(self, x, y, **kwargs):
+                return x + y
+
+            @classmethod
+            def apply_async(cls, args, kwargs, **options):
+                return (args, kwargs, options)
+
+            @classmethod
+            def apply(cls, args, kwargs, **options):
+                return (args, kwargs, options)
+        self.MockTask = MockTask
 
 
-class test_subtask(AppCase):
+class test_TaskSetResult(AppCase):
+
+    def setup(self):
+        self.size = 10
+        self.ts = TaskSetResult(uuid(), make_mock_group(self.app, self.size))
+
+    def test_total(self):
+        self.assertEqual(self.ts.total, self.size)
+
+    def test_compat_properties(self):
+        self.assertEqual(self.ts.taskset_id, self.ts.id)
+        self.ts.taskset_id = 'foo'
+        self.assertEqual(self.ts.taskset_id, 'foo')
+
+    def test_compat_subtasks_kwarg(self):
+        x = TaskSetResult(uuid(), subtasks=[1, 2, 3])
+        self.assertEqual(x.results, [1, 2, 3])
+
+    def test_itersubtasks(self):
+        it = self.ts.itersubtasks()
+
+        for i, t in enumerate(it):
+            self.assertEqual(t.get(), i)
+
+
+class test_App(AppCase):
+
+    def test_TaskSet(self):
+        with warnings.catch_warnings(record=True):
+            ts = self.app.TaskSet()
+            self.assertListEqual(ts.tasks, [])
+            self.assertIs(ts.app, self.app)
+
+
+class test_subtask(SetsCase):
 
     def test_behaves_like_type(self):
-        s = subtask('tasks.add', (2, 2), {'cache': True},
-                    {'routing_key': 'CPU-bound'})
-        self.assertDictEqual(subtask(s), s)
+        s = self.subtask('tasks.add', (2, 2), {'cache': True},
+                         {'routing_key': 'CPU-bound'})
+        self.assertDictEqual(self.subtask(s), s)
 
     def test_task_argument_can_be_task_cls(self):
-        s = subtask(MockTask, (2, 2))
-        self.assertEqual(s.task, MockTask.name)
+        s = self.subtask(self.MockTask, (2, 2))
+        self.assertEqual(s.task, self.MockTask.name)
 
     def test_apply_async(self):
-        s = MockTask.subtask(
+        s = self.MockTask.subtask(
             (2, 2), {'cache': True}, {'routing_key': 'CPU-bound'},
         )
         args, kwargs, options = s.apply_async()
@@ -47,7 +95,7 @@ class test_subtask(AppCase):
         self.assertDictEqual(options, {'routing_key': 'CPU-bound'})
 
     def test_delay_argmerge(self):
-        s = MockTask.subtask(
+        s = self.MockTask.subtask(
             (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
         )
         args, kwargs, options = s.delay(10, cache=False, other='foo')
@@ -56,7 +104,7 @@ class test_subtask(AppCase):
         self.assertDictEqual(options, {'routing_key': 'CPU-bound'})
 
     def test_apply_async_argmerge(self):
-        s = MockTask.subtask(
+        s = self.MockTask.subtask(
             (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
         )
         args, kwargs, options = s.apply_async((10, ),
@@ -70,7 +118,7 @@ class test_subtask(AppCase):
                                        'exchange': 'fast'})
 
     def test_apply_argmerge(self):
-        s = MockTask.subtask(
+        s = self.MockTask.subtask(
             (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
         )
         args, kwargs, options = s.apply((10, ),
@@ -85,50 +133,48 @@ class test_subtask(AppCase):
         )
 
     def test_is_JSON_serializable(self):
-        s = MockTask.subtask(
+        s = self.MockTask.subtask(
             (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
         )
         s.args = list(s.args)                   # tuples are not preserved
                                                 # but this doesn't matter.
-        self.assertEqual(s, subtask(anyjson.loads(anyjson.dumps(s))))
+        self.assertEqual(s, self.subtask(anyjson.loads(anyjson.dumps(s))))
 
     def test_repr(self):
-        s = MockTask.subtask((2, ), {'cache': True})
+        s = self.MockTask.subtask((2, ), {'cache': True})
         self.assertIn('2', repr(s))
         self.assertIn('cache=True', repr(s))
 
     def test_reduce(self):
-        s = MockTask.subtask((2, ), {'cache': True})
+        s = self.MockTask.subtask((2, ), {'cache': True})
         cls, args = s.__reduce__()
         self.assertDictEqual(dict(cls(*args)), dict(s))
 
 
-class test_TaskSet(AppCase):
+class test_TaskSet(SetsCase):
 
     def test_task_arg_can_be_iterable__compat(self):
-        ts = TaskSet([MockTask.subtask((i, i))
-                      for i in (2, 4, 8)], app=self.app)
+        ts = self.TaskSet([self.MockTask.subtask((i, i))
+                           for i in (2, 4, 8)], app=self.app)
         self.assertEqual(len(ts), 3)
 
     def test_respects_ALWAYS_EAGER(self):
         app = self.app
 
-        class MockTaskSet(TaskSet):
+        class MockTaskSet(self.TaskSet):
             applied = 0
 
             def apply(self, *args, **kwargs):
                 self.applied += 1
 
         ts = MockTaskSet(
-            [MockTask.subtask((i, i)) for i in (2, 4, 8)],
+            [self.MockTask.subtask((i, i)) for i in (2, 4, 8)],
             app=self.app,
         )
         app.conf.CELERY_ALWAYS_EAGER = True
-        try:
-            ts.apply_async()
-        finally:
-            app.conf.CELERY_ALWAYS_EAGER = False
+        ts.apply_async()
         self.assertEqual(ts.applied, 1)
+        app.conf.CELERY_ALWAYS_EAGER = False
 
         with patch('celery.task.sets.get_current_worker_task') as gwt:
             parent = gwt.return_value = Mock()
@@ -143,8 +189,8 @@ class test_TaskSet(AppCase):
             def apply_async(self, *args, **kwargs):
                 applied[0] += 1
 
-        ts = TaskSet([mocksubtask(MockTask, (i, i))
-                      for i in (2, 4, 8)], app=self.app)
+        ts = self.TaskSet([mocksubtask(self.MockTask, (i, i))
+                           for i in (2, 4, 8)], app=self.app)
         ts.apply_async()
         self.assertEqual(applied[0], 3)
 
@@ -157,7 +203,7 @@ class test_TaskSet(AppCase):
 
         # setting current_task
 
-        @self.app.task
+        @self.app.task(shared=False)
         def xyz():
             pass
 
@@ -179,22 +225,22 @@ class test_TaskSet(AppCase):
             def apply(self, *args, **kwargs):
                 applied[0] += 1
 
-        ts = TaskSet([mocksubtask(MockTask, (i, i))
-                      for i in (2, 4, 8)], app=self.app)
+        ts = self.TaskSet([mocksubtask(self.MockTask, (i, i))
+                           for i in (2, 4, 8)], app=self.app)
         ts.apply()
         self.assertEqual(applied[0], 3)
 
     def test_set_app(self):
-        ts = TaskSet([], app=self.app)
+        ts = self.TaskSet([], app=self.app)
         ts.app = 42
         self.assertEqual(ts.app, 42)
 
     def test_set_tasks(self):
-        ts = TaskSet([], app=self.app)
+        ts = self.TaskSet([], app=self.app)
         ts.tasks = [1, 2, 3]
         self.assertEqual(ts, [1, 2, 3])
 
     def test_set_Publisher(self):
-        ts = TaskSet([], app=self.app)
+        ts = self.TaskSet([], app=self.app)
         ts.Publisher = 42
         self.assertEqual(ts.Publisher, 42)

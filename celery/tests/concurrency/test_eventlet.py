@@ -14,13 +14,13 @@ from celery.concurrency.eventlet import (
     TaskPool,
 )
 
-from celery.tests.case import Case, mock_module, patch_many, skip_if_pypy
+from celery.tests.case import AppCase, mock_module, patch_many, skip_if_pypy
 
 
-class EventletCase(Case):
+class EventletCase(AppCase):
 
     @skip_if_pypy
-    def setUp(self):
+    def setup(self):
         if is_pypy:
             raise SkipTest('mock_modules not working on PyPy1.9')
         try:
@@ -30,7 +30,7 @@ class EventletCase(Case):
                 'eventlet not installed, skipping related tests.')
 
     @skip_if_pypy
-    def tearDown(self):
+    def teardown(self):
         for mod in [mod for mod in sys.modules if mod.startswith('eventlet')]:
             try:
                 del(sys.modules[mod])

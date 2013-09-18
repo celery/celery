@@ -14,7 +14,7 @@ from celery.concurrency.gevent import (
 )
 
 from celery.tests.case import (
-    Case, mock_module, patch_many, skip_if_pypy,
+    AppCase, mock_module, patch_many, skip_if_pypy,
 )
 
 gevent_modules = (
@@ -26,10 +26,10 @@ gevent_modules = (
 )
 
 
-class GeventCase(Case):
+class GeventCase(AppCase):
 
     @skip_if_pypy
-    def setUp(self):
+    def setup(self):
         try:
             self.gevent = __import__('gevent')
         except ImportError:
@@ -58,7 +58,7 @@ class test_gevent_patch(GeventCase):
                 monkey.patch_all = prev_monkey_patch
 
 
-class test_Schedule(Case):
+class test_Schedule(AppCase):
 
     def test_sched(self):
         with mock_module(*gevent_modules):
@@ -88,7 +88,7 @@ class test_Schedule(Case):
                 g.cancel()
 
 
-class test_TasKPool(Case):
+class test_TaskPool(AppCase):
 
     def test_pool(self):
         with mock_module(*gevent_modules):
@@ -115,7 +115,7 @@ class test_TasKPool(Case):
                 self.assertEqual(x.num_processes, 3)
 
 
-class test_Timer(Case):
+class test_Timer(AppCase):
 
     def test_timer(self):
         with mock_module(*gevent_modules):
@@ -127,7 +127,7 @@ class test_Timer(Case):
             x.schedule.clear.assert_called_with()
 
 
-class test_apply_timeout(Case):
+class test_apply_timeout(AppCase):
 
     def test_apply_timeout(self):
 

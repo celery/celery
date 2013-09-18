@@ -10,15 +10,12 @@ from celery.result import (
     AsyncResult,
     EagerResult,
     TaskSetResult,
-    ResultSet,
-    #GroupResult,
     from_serializable,
 )
 from celery.utils import uuid
 from celery.utils.serialization import pickle
 
-from celery.tests.case import AppCase
-from celery.tests.case import skip_if_quick
+from celery.tests.case import AppCase, depends_on_current_app, skip_if_quick
 
 
 def mock_task(name, state, result):
@@ -56,7 +53,7 @@ class test_AsyncResult(AppCase):
         for task in (self.task1, self.task2, self.task3, self.task4):
             save_result(self.app, task)
 
-        @self.app.task()
+        @self.app.task(shared=False)
         def mytask():
             pass
         self.mytask = mytask
@@ -150,6 +147,7 @@ class test_AsyncResult(AppCase):
     def test_eq_not_implemented(self):
         self.assertFalse(self.app.AsyncResult('1') == object())
 
+    @depends_on_current_app
     def test_reduce(self):
         a1 = self.app.AsyncResult('uuid', task_name=self.mytask.name)
         restored = pickle.loads(pickle.dumps(a1))
@@ -261,15 +259,15 @@ class test_AsyncResult(AppCase):
 class test_ResultSet(AppCase):
 
     def test_resultset_repr(self):
-        self.assertTrue(repr(ResultSet(
+        self.assertTrue(repr(self.app.ResultSet(
             [self.app.AsyncResult(t) for t in ['1', '2', '3']])))
 
     def test_eq_other(self):
-        self.assertFalse(ResultSet([1, 3, 3]) == 1)
-        self.assertTrue(ResultSet([1]) == ResultSet([1]))
+        self.assertFalse(self.app.ResultSet([1, 3, 3]) == 1)
+        self.assertTrue(self.app.ResultSet([1]) == self.app.ResultSet([1]))
 
     def test_get(self):
-        x = ResultSet([self.app.AsyncResult(t) for t in [1, 2, 3]])
+        x = self.app.ResultSet([self.app.AsyncResult(t) for t in [1, 2, 3]])
         b = x.results[0].backend = Mock()
         b.supports_native_join = False
         x.join_native = Mock()
@@ -281,7 +279,7 @@ class test_ResultSet(AppCase):
         self.assertTrue(x.join_native.called)
 
     def test_add(self):
-        x = ResultSet([1])
+        x = self.app.ResultSet([1])
         x.add(2)
         self.assertEqual(len(x), 2)
         x.add(2)
@@ -311,7 +309,7 @@ class test_ResultSet(AppCase):
         ready.return_value = False
         ready.side_effect = se
 
-        x = ResultSet([r1, r2])
+        x = self.app.ResultSet([r1, r2])
         with self.dummy_copy():
             with patch('celery.result.time') as _time:
                 with self.assertRaises(KeyError):
@@ -330,14 +328,14 @@ class test_ResultSet(AppCase):
         r1 = self.app.AsyncResult(uuid)
         r1.ready = Mock()
         r1.ready.return_value = False
-        x = ResultSet([r1])
+        x = self.app.ResultSet([r1])
         with self.dummy_copy():
             with patch('celery.result.time'):
                 with self.assertRaises(TimeoutError):
                     list(x.iterate(timeout=1))
 
     def test_add_discard(self):
-        x = ResultSet([])
+        x = self.app.ResultSet([])
         x.add(self.app.AsyncResult('1'))
         self.assertIn(self.app.AsyncResult('1'), x.results)
         x.discard(self.app.AsyncResult('1'))
@@ -348,7 +346,7 @@ class test_ResultSet(AppCase):
         x.update([self.app.AsyncResult('2')])
 
     def test_clear(self):
-        x = ResultSet([])
+        x = self.app.ResultSet([])
         r = x.results
         x.clear()
         self.assertIs(x.results, r)
@@ -432,6 +430,7 @@ class test_GroupResult(AppCase):
             uuid(), make_mock_group(self.app, self.size),
         )
 
+    @depends_on_current_app
     def test_is_pickleable(self):
         ts = self.app.GroupResult(uuid(), [self.app.AsyncResult(uuid())])
         self.assertEqual(pickle.loads(pickle.dumps(ts)), ts)
@@ -444,6 +443,7 @@ class test_GroupResult(AppCase):
     def test_eq_other(self):
         self.assertFalse(self.ts == 1)
 
+    @depends_on_current_app
     def test_reduce(self):
         self.assertTrue(pickle.loads(pickle.dumps(self.ts)))
 
@@ -660,7 +660,7 @@ class test_EagerResult(AppCase):
 
     def setup(self):
 
-        @self.app.task
+        @self.app.task(shared=False)
         def raising(x, y):
             raise KeyError(x, y)
         self.raising = raising
@@ -703,7 +703,7 @@ class test_serializable(AppCase):
 
     def test_compat(self):
         uid = uuid()
-        x = from_serializable([uid, []])
+        x = from_serializable([uid, []], app=self.app)
         self.assertEqual(x.id, uid)
 
     def test_GroupResult(self):

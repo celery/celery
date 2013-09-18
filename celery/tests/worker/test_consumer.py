@@ -59,26 +59,16 @@ class test_Consumer(AppCase):
     def test_sets_heartbeat(self):
         c = self.get_consumer(amqheartbeat=10)
         self.assertEqual(c.amqheartbeat, 10)
-        prev, self.app.conf.BROKER_HEARTBEAT = (
-            self.app.conf.BROKER_HEARTBEAT, 20,
-        )
-        try:
-            c = self.get_consumer(amqheartbeat=None)
-            self.assertEqual(c.amqheartbeat, 20)
-        finally:
-            self.app.conf.BROKER_HEARTBEAT = prev
+        self.app.conf.BROKER_HEARTBEAT = 20
+        c = self.get_consumer(amqheartbeat=None)
+        self.assertEqual(c.amqheartbeat, 20)
 
     def test_gevent_bug_disables_connection_timeout(self):
         with patch('celery.worker.consumer._detect_environment') as de:
             de.return_value = 'gevent'
-            prev, self.app.conf.BROKER_CONNECTION_TIMEOUT = (
-                self.app.conf.BROKER_CONNECTION_TIMEOUT, 33.33,
-            )
-            try:
-                self.get_consumer()
-                self.assertIsNone(self.app.conf.BROKER_CONNECTION_TIMEOUT)
-            finally:
-                self.app.conf.BROKER_CONNECTION_TIMEOUT = prev
+            self.app.conf.BROKER_CONNECTION_TIMEOUT = 33.33
+            self.get_consumer()
+            self.assertIsNone(self.app.conf.BROKER_CONNECTION_TIMEOUT)
 
     def test_limit_task(self):
         c = self.get_consumer()
@@ -163,17 +153,14 @@ class test_Consumer(AppCase):
             c.on_close()
 
     def test_connect_error_handler(self):
-        _prev, self.app.connection = self.app.connection, Mock()
-        try:
-            conn = self.app.connection.return_value = Mock()
-            c = self.get_consumer()
-            self.assertTrue(c.connect())
-            self.assertTrue(conn.ensure_connection.called)
-            errback = conn.ensure_connection.call_args[0][0]
-            conn.alt = [(1, 2, 3)]
-            errback(Mock(), 0)
-        finally:
-            self.app.connection = _prev
+        self.app.connection = Mock()
+        conn = self.app.connection.return_value = Mock()
+        c = self.get_consumer()
+        self.assertTrue(c.connect())
+        self.assertTrue(conn.ensure_connection.called)
+        errback = conn.ensure_connection.call_args[0][0]
+        conn.alt = [(1, 2, 3)]
+        errback(Mock(), 0)
 
 
 class test_Heart(AppCase):

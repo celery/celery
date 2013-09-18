@@ -100,7 +100,7 @@ class test_asynloop(AppCase):
 
     def setup(self):
 
-        @self.app.task()
+        @self.app.task(shared=False)
         def add(x, y):
             return x + y
         self.add = add

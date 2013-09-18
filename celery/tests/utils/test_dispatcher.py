@@ -55,7 +55,7 @@ class DispatcherTests(Case):
         # force cleanup just in case
         signal.receivers = []
 
-    def testExact(self):
+    def test_exact(self):
         a_signal.connect(receiver_1_arg, sender=self)
         expected = [(receiver_1_arg, 'test')]
         result = a_signal.send(sender=self, val='test')
@@ -63,7 +63,7 @@ class DispatcherTests(Case):
         a_signal.disconnect(receiver_1_arg, sender=self)
         self._testIsClean(a_signal)
 
-    def testIgnoredSender(self):
+    def test_ignored_sender(self):
         a_signal.connect(receiver_1_arg)
         expected = [(receiver_1_arg, 'test')]
         result = a_signal.send(sender=self, val='test')
@@ -71,7 +71,7 @@ class DispatcherTests(Case):
         a_signal.disconnect(receiver_1_arg)
         self._testIsClean(a_signal)
 
-    def testGarbageCollected(self):
+    def test_garbage_collected(self):
         a = Callable()
         a_signal.connect(a.a, sender=self)
         expected = []
@@ -81,7 +81,7 @@ class DispatcherTests(Case):
         self.assertEqual(result, expected)
         self._testIsClean(a_signal)
 
-    def testMultipleRegistration(self):
+    def test_multiple_registration(self):
         a = Callable()
         a_signal.connect(a)
         a_signal.connect(a)
@@ -97,7 +97,7 @@ class DispatcherTests(Case):
         garbage_collect()
         self._testIsClean(a_signal)
 
-    def testUidRegistration(self):
+    def test_uid_registration(self):
 
         def uid_based_receiver_1(**kwargs):
             pass
@@ -111,8 +111,7 @@ class DispatcherTests(Case):
         a_signal.disconnect(dispatch_uid='uid')
         self._testIsClean(a_signal)
 
-    def testRobust(self):
-        """Test the sendRobust function"""
+    def test_robust(self):
 
         def fails(val, **kwargs):
             raise ValueError('this')
@@ -125,7 +124,7 @@ class DispatcherTests(Case):
         a_signal.disconnect(fails)
         self._testIsClean(a_signal)
 
-    def testDisconnection(self):
+    def test_disconnection(self):
         receiver_1 = Callable()
         receiver_2 = Callable()
         receiver_3 = Callable()

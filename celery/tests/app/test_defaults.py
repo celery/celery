@@ -7,15 +7,15 @@ from mock import Mock, patch
 
 from celery.app.defaults import NAMESPACES
 
-from celery.tests.case import Case, pypy_version, sys_platform
+from celery.tests.case import AppCase, pypy_version, sys_platform
 
 
-class test_defaults(Case):
+class test_defaults(AppCase):
 
-    def setUp(self):
+    def setup(self):
         self._prev = sys.modules.pop('celery.app.defaults', None)
 
-    def tearDown(self):
+    def teardown(self):
         if self._prev:
             sys.modules['celery.app.defaults'] = self._prev
 

@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-from celery import Celery
 from celery.utils.text import (
     indent,
     ensure_2lines,
@@ -9,7 +8,7 @@ from celery.utils.text import (
     abbrtask,
     pretty,
 )
-from celery.tests.case import Case
+from celery.tests.case import AppCase, Case
 
 RANDTEXT = """\
 The quick brown
@@ -43,15 +42,14 @@ QUEUE_FORMAT1 = '.> queue1           exchange=exchange1(type1) key=bind1'
 QUEUE_FORMAT2 = '.> queue2           exchange=exchange2(type2) key=bind2'
 
 
-class test_Info(Case):
+class test_Info(AppCase):
 
     def test_textindent(self):
         self.assertEqual(indent(RANDTEXT, 4), RANDTEXT_RES)
 
     def test_format_queues(self):
-        celery = Celery(set_as_current=False)
-        celery.amqp.queues = celery.amqp.Queues(QUEUES)
-        self.assertEqual(sorted(celery.amqp.queues.format().split('\n')),
+        self.app.amqp.queues = self.app.amqp.Queues(QUEUES)
+        self.assertEqual(sorted(self.app.amqp.queues.format().split('\n')),
                          sorted([QUEUE_FORMAT1, QUEUE_FORMAT2]))
 
     def test_ensure_2lines(self):

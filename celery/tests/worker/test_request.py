@@ -84,7 +84,7 @@ def jail(app, task_id, name, args, kwargs):
     task = app.tasks[name]
     task.__trace__ = None  # rebuild
     return trace_task(
-        task, task_id, args, kwargs, request=request, eager=False,
+        task, task_id, args, kwargs, request=request, eager=False, app=app,
     )
 
 
@@ -161,25 +161,23 @@ class test_trace_task(AppCase):
         self.assertEqual(ret, 4)
 
     def test_marked_as_started(self):
+        _started = []
 
-        class Backend(self.mytask.backend.__class__):
-            _started = []
-
-            def store_result(self, tid, meta, state):
-                if state == states.STARTED:
-                    self._started.append(tid)
-
-        self.mytask.backend = Backend(self.app)
+        def store_result(tid, meta, state):
+            if state == states.STARTED:
+                _started.append(tid)
+        self.mytask.backend.store_result = Mock(name='store_result')
+        self.mytask.backend.store_result.side_effect = store_result
         self.mytask.track_started = True
 
         tid = uuid()
         jail(self.app, tid, self.mytask.name, [2], {})
-        self.assertIn(tid, Backend._started)
+        self.assertIn(tid, _started)
 
         self.mytask.ignore_result = True
         tid = uuid()
         jail(self.app, tid, self.mytask.name, [2], {})
-        self.assertNotIn(tid, Backend._started)
+        self.assertNotIn(tid, _started)
 
     def test_execute_jail_failure(self):
         ret = jail(
@@ -309,18 +307,15 @@ class test_Request(AppCase):
         task.freeze()
         req = self.get_request(task)
         self.add.accept_magic_kwargs = True
-        try:
-            pool = Mock()
-            req.execute_using_pool(pool)
-            self.assertTrue(pool.apply_async.called)
-            args = pool.apply_async.call_args[1]['args']
-            self.assertEqual(args[0], task.task)
-            self.assertEqual(args[1], task.id)
-            self.assertEqual(args[2], task.args)
-            kwargs = args[3]
-            self.assertEqual(kwargs.get('task_name'), task.task)
-        finally:
-            self.add.accept_magic_kwargs = False
+        pool = Mock()
+        req.execute_using_pool(pool)
+        self.assertTrue(pool.apply_async.called)
+        args = pool.apply_async.call_args[1]['args']
+        self.assertEqual(args[0], task.task)
+        self.assertEqual(args[1], task.id)
+        self.assertEqual(args[2], task.args)
+        kwargs = args[3]
+        self.assertEqual(kwargs.get('task_name'), task.task)
 
     def test_task_wrapper_repr(self):
         job = TaskRequest(
@@ -697,6 +692,7 @@ class test_Request(AppCase):
         try:
             self.mytask.__trace__ = build_tracer(
                 self.mytask.name, self.mytask, self.app.loader, 'test',
+                app=self.app,
             )
             res = trace.trace_task_ret(self.mytask.name, uuid(), [4], {})
             self.assertEqual(res, 4 ** 4)
@@ -704,24 +700,25 @@ class test_Request(AppCase):
             reset_worker_optimizations()
             self.assertIs(trace.trace_task_ret, trace._trace_task_ret)
         delattr(self.mytask, '__trace__')
-        res = trace.trace_task_ret(self.mytask.name, uuid(), [4], {})
+        res = trace.trace_task_ret(
+            self.mytask.name, uuid(), [4], {}, app=self.app,
+        )
         self.assertEqual(res, 4 ** 4)
 
     def test_trace_task_ret(self):
-        self.app.set_current()   # XXX compat test
         self.mytask.__trace__ = build_tracer(
             self.mytask.name, self.mytask, self.app.loader, 'test',
+            app=self.app,
         )
-        res = _trace_task_ret(self.mytask.name, uuid(), [4], {})
+        res = _trace_task_ret(self.mytask.name, uuid(), [4], {}, app=self.app)
         self.assertEqual(res, 4 ** 4)
 
     def test_trace_task_ret__no_trace(self):
-        self.app.set_current()  # XXX compat test
         try:
             delattr(self.mytask, '__trace__')
         except AttributeError:
             pass
-        res = _trace_task_ret(self.mytask.name, uuid(), [4], {})
+        res = _trace_task_ret(self.mytask.name, uuid(), [4], {}, app=self.app)
         self.assertEqual(res, 4 ** 4)
 
     def test_trace_catches_exception(self):
@@ -735,7 +732,7 @@ class test_Request(AppCase):
 
         with self.assertWarnsRegex(RuntimeWarning,
                                    r'Exception raised outside'):
-            res = trace_task(raising, uuid(), [], {})
+            res = trace_task(raising, uuid(), [], {}, app=self.app)
             self.assertIsInstance(res, ExceptionInfo)
 
     def test_worker_task_trace_handle_retry(self):
@@ -865,7 +862,7 @@ class test_Request(AppCase):
     def test_execute_success_some_kwargs(self):
         scratch = {'task_id': None}
 
-        @self.app.task(accept_magic_kwargs=True)
+        @self.app.task(shared=False, accept_magic_kwargs=True)
         def mytask_some_kwargs(i, task_id):
             scratch['task_id'] = task_id
             return i ** i

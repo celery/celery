@@ -4,10 +4,10 @@ from collections import Mapping, MutableMapping
 
 from celery.app.utils import Settings, bugreport
 
-from celery.tests.case import AppCase, Case, Mock
+from celery.tests.case import AppCase, Mock
 
 
-class TestSettings(Case):
+class TestSettings(AppCase):
     """
     Tests of celery.app.utils.Settings
     """

@@ -70,13 +70,11 @@ class test_Beat(AppCase):
         self.assertEqual(b2.loglevel, logging.DEBUG)
 
     def test_colorize(self):
-        from celery import Celery
-        app = Celery(set_as_current=False)
-        app.log.setup = Mock()
-        b = beatapp.Beat(app=app, no_color=True)
+        self.app.log.setup = Mock()
+        b = beatapp.Beat(app=self.app, no_color=True)
         b.setup_logging()
-        self.assertTrue(app.log.setup.called)
-        self.assertEqual(app.log.setup.call_args[1]['colorize'], False)
+        self.assertTrue(self.app.log.setup.called)
+        self.assertEqual(self.app.log.setup.call_args[1]['colorize'], False)
 
     def test_init_loader(self):
         b = beatapp.Beat(app=self.app)
@@ -179,7 +177,7 @@ class test_div(AppCase):
     def test_main(self):
         sys.argv = [sys.argv[0], '-s', 'foo']
         try:
-            beat_bin.main()
+            beat_bin.main(app=self.app)
             self.assertTrue(MockBeat.running)
         finally:
             MockBeat.running = False

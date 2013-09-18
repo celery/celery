@@ -7,12 +7,11 @@ from mock import MagicMock, Mock, patch, sentinel
 from nose import SkipTest
 from pickle import loads, dumps
 
-from celery import Celery
 from celery import states
 from celery.backends import mongodb as module
 from celery.backends.mongodb import MongoBackend, Bunch, pymongo
 from celery.exceptions import ImproperlyConfigured
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, depends_on_current_app
 
 COLLECTION = 'taskmeta_celery'
 TASK_ID = str(uuid.uuid1())
@@ -58,15 +57,13 @@ class test_MongoBackend(AppCase):
             module.pymongo = prev
 
     def test_init_no_settings(self):
-        celery = Celery(set_as_current=False)
-        celery.conf.CELERY_MONGODB_BACKEND_SETTINGS = []
+        self.app.conf.CELERY_MONGODB_BACKEND_SETTINGS = []
         with self.assertRaises(ImproperlyConfigured):
-            MongoBackend(app=celery)
+            MongoBackend(app=self.app)
 
     def test_init_settings_is_None(self):
-        celery = Celery(set_as_current=False)
-        celery.conf.CELERY_MONGODB_BACKEND_SETTINGS = None
-        MongoBackend(app=celery)
+        self.app.conf.CELERY_MONGODB_BACKEND_SETTINGS = None
+        MongoBackend(app=self.app)
 
     def test_restore_group_no_entry(self):
         x = MongoBackend(app=self.app)
@@ -75,6 +72,7 @@ class test_MongoBackend(AppCase):
         fo.return_value = None
         self.assertIsNone(x._restore_group('1f3fab'))
 
+    @depends_on_current_app
     def test_reduce(self):
         x = MongoBackend(app=self.app)
         self.assertTrue(loads(dumps(x)))

@@ -38,7 +38,7 @@ class test_map(BuiltinsCase):
 
     def test_run(self):
 
-        @self.app.task()
+        @self.app.task(shared=False)
         def map_mul(x):
             return x[0] * x[1]
 
@@ -52,7 +52,7 @@ class test_starmap(BuiltinsCase):
 
     def test_run(self):
 
-        @self.app.task()
+        @self.app.task(shared=False)
         def smap_mul(x, y):
             return x * y
 
@@ -67,7 +67,7 @@ class test_chunks(BuiltinsCase):
     @patch('celery.canvas.chunks.apply_chunks')
     def test_run(self, apply_chunks):
 
-        @self.app.task()
+        @self.app.task(shared=False)
         def chunks_mul(l):
             return l
 

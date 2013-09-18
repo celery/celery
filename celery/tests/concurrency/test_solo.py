@@ -4,10 +4,10 @@ import operator
 
 from celery.concurrency import solo
 from celery.utils.functional import noop
-from celery.tests.case import Case
+from celery.tests.case import AppCase
 
 
-class test_solo_TaskPool(Case):
+class test_solo_TaskPool(AppCase):
 
     def test_on_start(self):
         x = solo.TaskPool()

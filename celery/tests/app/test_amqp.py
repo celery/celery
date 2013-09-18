@@ -81,7 +81,7 @@ class test_compat_TaskPublisher(AppCase):
         self.assertEqual(producer.exchange.type, 'topic')
 
     def test_compat_exchange_is_Exchange(self):
-        producer = TaskPublisher(exchange=Exchange('foo'))
+        producer = TaskPublisher(exchange=Exchange('foo'), app=self.app)
         self.assertEqual(producer.exchange.name, 'foo')
 
 

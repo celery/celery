@@ -4,21 +4,22 @@ import warnings
 
 from celery.task import base
 
-from celery.tests.case import Case
+from celery.tests.case import AppCase, depends_on_current_app
 
 
 def add(x, y):
     return x + y
 
 
-class test_decorators(Case):
+@depends_on_current_app
+class test_decorators(AppCase):
 
     def test_task_alias(self):
         from celery import task
         self.assertTrue(task.__file__)
         self.assertTrue(task(add))
 
-    def setUp(self):
+    def setup(self):
         with warnings.catch_warnings(record=True):
             from celery import decorators
             self.decorators = decorators

@@ -9,6 +9,7 @@ except AttributeError:
     from unittest2.util import safe_repr, unorderable_list_difference  # noqa
 
 import importlib
+import inspect
 import logging
 import os
 import platform
@@ -18,6 +19,7 @@ import time
 import warnings
 
 from contextlib import contextmanager
+from copy import deepcopy
 from datetime import datetime, timedelta
 from functools import partial, wraps
 from types import ModuleType
@@ -27,27 +29,92 @@ try:
 except ImportError:
     import mock  # noqa
 from nose import SkipTest
+from kombu import Queue
 from kombu.log import NullHandler
-from kombu.utils import nested
+from kombu.utils import nested, symbol_by_name
 
+from celery import Celery
+from celery.app import current_app
+from celery.backends.cache import CacheBackend, DummyClient
 from celery.five import (
     WhateverIO, builtins, items, reraise,
     string_t, values, open_fqdn,
 )
 from celery.utils.functional import noop
+from celery.utils.imports import qualname
 
 __all__ = [
     'Case', 'AppCase', 'Mock', 'patch', 'call', 'skip_unless_module',
-    'wrap_logger', 'eager_tasks', 'with_environ', 'sleepdeprived',
+    'wrap_logger', 'with_environ', 'sleepdeprived',
     'skip_if_environ', 'skip_if_quick', 'todo', 'skip', 'skip_if',
     'skip_unless', 'mask_modules', 'override_stdouts', 'mock_module',
     'replace_module_value', 'sys_platform', 'reset_modules',
     'patch_modules', 'mock_context', 'mock_open', 'patch_many',
-    'patch_settings', 'assert_signal_called', 'skip_if_pypy',
+    'assert_signal_called', 'skip_if_pypy',
     'skip_if_jython', 'body_from_sig', 'restore_logging',
 ]
 patch = mock.patch
 call = mock.call
+
+CASE_REDEFINES_SETUP = """\
+{name} (subclass of AppCase) redefines private "setUp", should be: "setup"\
+"""
+CASE_REDEFINES_TEARDOWN = """\
+{name} (subclass of AppCase) redefines private "tearDown", \
+should be: "teardown"\
+"""
+
+CELERY_TEST_CONFIG = {
+    #: Don't want log output when running suite.
+    'CELERYD_HIJACK_ROOT_LOGGER': False,
+    'CELERY_SEND_TASK_ERROR_EMAILS': False,
+    'CELERY_DEFAULT_QUEUE': 'testcelery',
+    'CELERY_DEFAULT_EXCHANGE': 'testcelery',
+    'CELERY_DEFAULT_ROUTING_KEY': 'testcelery',
+    'CELERY_QUEUES': (
+        Queue('testcelery', routing_key='testcelery'),
+    ),
+    'CELERY_ENABLE_UTC': True,
+    'CELERY_TIMEZONE': 'UTC',
+    'CELERYD_LOG_COLOR': False,
+
+    # Mongo results tests (only executed if installed and running)
+    'CELERY_MONGODB_BACKEND_SETTINGS': {
+        'host': os.environ.get('MONGO_HOST') or 'localhost',
+        'port': os.environ.get('MONGO_PORT') or 27017,
+        'database': os.environ.get('MONGO_DB') or 'celery_unittests',
+        'taskmeta_collection': (os.environ.get('MONGO_TASKMETA_COLLECTION')
+                                or 'taskmeta_collection'),
+        'user': os.environ.get('MONGO_USER'),
+        'password': os.environ.get('MONGO_PASSWORD'),
+    }
+}
+
+
+class Trap(object):
+
+    def __getattr__(self, name):
+        raise RuntimeError('Test depends on current_app')
+
+
+class UnitLogging(symbol_by_name(Celery.log_cls)):
+
+    def __init__(self, *args, **kwargs):
+        super(UnitLogging, self).__init__(*args, **kwargs)
+        self.already_setup = True
+
+
+def UnitApp(name=None, broker=None, backend=None,
+            set_as_current=False, log=UnitLogging, **kwargs):
+
+    app = Celery(name or 'celery.tests',
+                 broker=broker or 'memory://',
+                 backend=backend or 'cache+memory://',
+                 set_as_current=set_as_current,
+                 log=log,
+                 **kwargs)
+    app.add_defaults(deepcopy(CELERY_TEST_CONFIG))
+    return app
 
 
 class Mock(mock.Mock):
@@ -204,29 +271,74 @@ class Case(unittest.TestCase):
             self.fail(self._formatMessage(msg, standardMsg))
 
 
+def depends_on_current_app(fun):
+    if inspect.isclass(fun):
+        fun.contained = False
+    else:
+        @wraps(fun)
+        def __inner(self, *args, **kwargs):
+            self.app.set_current()
+            return fun(self, *args, **kwargs)
+        return __inner
+
+
 class AppCase(Case):
     contained = True
 
+    def __new__(cls, *args, **kwargs):
+        if cls.__dict__.get('setUp'):
+            raise RuntimeError(CASE_REDEFINES_SETUP.format(name=qualname(cls)))
+        if cls.__dict__.get('tearDown'):
+            raise RuntimeError(CASE_REDEFINES_TEARDOWN.format(
+                name=qualname(cls)),
+            )
+        return super(AppCase, cls).__new__(cls, *args, **kwargs)
+
+    def Celery(self, *args, **kwargs):
+        return UnitApp(*args, **kwargs)
+
     def setUp(self):
-        from celery import Celery
-        from celery.app import current_app
-        from celery.backends.cache import CacheBackend, DummyClient
+        from celery import _state
         self._current_app = current_app()
-        app = self.app = (Celery(set_as_current=False)
-                          if self.contained else self._current_app)
-        if isinstance(app.backend, CacheBackend):
-            if isinstance(app.backend.client, DummyClient):
-                app.backend.client.cache.clear()
-        app.backend._cache.clear()
+        self._default_app = _state.default_app
+        trap = Trap()
+        _state.set_default_app(trap)
+        _state._tls.current_app = trap
+
+        self.app = self.Celery(set_as_current=False)
+        if not self.contained:
+            self.app.set_current()
         root = logging.getLogger()
         self.__rootlevel = root.level
         self.__roothandlers = root.handlers
-        self.setup()
+        try:
+            self.setup()
+        except:
+            self._teardown_app()
+            raise
+
+    def _teardown_app(self):
+        backend = self.app.__dict__.get('backend')
+        if backend is not None:
+            if isinstance(backend, CacheBackend):
+                if isinstance(backend.client, DummyClient):
+                    backend.client.cache.clear()
+                backend._cache.clear()
+        from celery._state import _tls, set_default_app
+        set_default_app(self._default_app)
+        _tls.current_app = self._current_app
+        if self.app is not self._current_app:
+            self.app.close()
+        self.app = None
 
     def tearDown(self):
-        self.teardown()
-        self._current_app.set_current()
+        try:
+            self.teardown()
+        finally:
+            self._teardown_app()
+        self.assert_no_logging_side_effect()
 
+    def assert_no_logging_side_effect(self):
         root = logging.getLogger()
         this = '.'.join([self.__class__.__name__, self._testMethodName])
         if root.level != self.__rootlevel:
@@ -258,16 +370,6 @@ def wrap_logger(logger, loglevel=logging.ERROR):
         logger.handlers = old_handlers
 
 
-@contextmanager
-def eager_tasks(app):
-    prev = app.conf.CELERY_ALWAYS_EAGER
-    app.conf.CELERY_ALWAYS_EAGER = True
-    try:
-        yield True
-    finally:
-        app.conf.CELERY_ALWAYS_EAGER = prev
-
-
 def with_environ(env_name, env_value):
 
     def _envpatched(fun):
@@ -279,8 +381,7 @@ def with_environ(env_name, env_value):
             try:
                 return fun(*args, **kwargs)
             finally:
-                if prev_val is not None:
-                    os.environ[env_name] = prev_val
+                os.environ[env_name] = prev_val or ''
 
         return _patch_environ
     return _envpatched
@@ -552,26 +653,6 @@ def mock_open(typ=WhateverIO, side_effect=None):
 
 def patch_many(*targets):
     return nested(*[patch(target) for target in targets])
-
-
-@contextmanager
-def patch_settings(app, **config):
-    if app is None:
-        from celery import current_app
-        app = current_app
-    prev = {}
-    for key, value in items(config):
-        try:
-            prev[key] = getattr(app.conf, key)
-        except AttributeError:
-            pass
-        setattr(app.conf, key, value)
-
-    try:
-        yield app.conf
-    finally:
-        for key, value in items(prev):
-            setattr(app.conf, key, value)
 
 
 @contextmanager

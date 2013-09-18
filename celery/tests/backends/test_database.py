@@ -7,11 +7,11 @@ from pickle import loads, dumps
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.result import AsyncResult
 from celery.utils import uuid
 
 from celery.tests.case import (
     AppCase,
+    depends_on_current_app,
     mask_modules,
     skip_if_pypy,
     skip_if_jython,
@@ -39,6 +39,7 @@ class test_DatabaseBackend(AppCase):
     def setup(self):
         if DatabaseBackend is None:
             raise SkipTest('sqlalchemy not installed')
+        self.uri = 'sqlite:///test.db'
 
     def test_retry_helper(self):
         from celery.backends.database import OperationalError
@@ -61,20 +62,16 @@ class test_DatabaseBackend(AppCase):
                 _sqlalchemy_installed()
 
     def test_missing_dburi_raises_ImproperlyConfigured(self):
-        conf = self.app.conf
-        prev, conf.CELERY_RESULT_DBURI = conf.CELERY_RESULT_DBURI, None
-        try:
-            with self.assertRaises(ImproperlyConfigured):
-                DatabaseBackend(app=self.app)
-        finally:
-            conf.CELERY_RESULT_DBURI = prev
+        self.app.conf.CELERY_RESULT_DBURI = None
+        with self.assertRaises(ImproperlyConfigured):
+            DatabaseBackend(app=self.app)
 
     def test_missing_task_id_is_PENDING(self):
-        tb = DatabaseBackend(app=self.app)
+        tb = DatabaseBackend(self.uri, app=self.app)
         self.assertEqual(tb.get_status('xxx-does-not-exist'), states.PENDING)
 
     def test_missing_task_meta_is_dict_with_pending(self):
-        tb = DatabaseBackend(app=self.app)
+        tb = DatabaseBackend(self.uri, app=self.app)
         self.assertDictContainsSubset({
             'status': states.PENDING,
             'task_id': 'xxx-does-not-exist-at-all',
@@ -83,7 +80,7 @@ class test_DatabaseBackend(AppCase):
         }, tb.get_task_meta('xxx-does-not-exist-at-all'))
 
     def test_mark_as_done(self):
-        tb = DatabaseBackend(app=self.app)
+        tb = DatabaseBackend(self.uri, app=self.app)
 
         tid = uuid()
 
@@ -95,7 +92,7 @@ class test_DatabaseBackend(AppCase):
         self.assertEqual(tb.get_result(tid), 42)
 
     def test_is_pickled(self):
-        tb = DatabaseBackend(app=self.app)
+        tb = DatabaseBackend(self.uri, app=self.app)
 
         tid2 = uuid()
         result = {'foo': 'baz', 'bar': SomeClass(12345)}
@@ -106,19 +103,19 @@ class test_DatabaseBackend(AppCase):
         self.assertEqual(rindb.get('bar').data, 12345)
 
     def test_mark_as_started(self):
-        tb = DatabaseBackend(app=self.app)
+        tb = DatabaseBackend(self.uri, app=self.app)
         tid = uuid()
         tb.mark_as_started(tid)
         self.assertEqual(tb.get_status(tid), states.STARTED)
 
     def test_mark_as_revoked(self):
-        tb = DatabaseBackend(app=self.app)
+        tb = DatabaseBackend(self.uri, app=self.app)
         tid = uuid()
         tb.mark_as_revoked(tid)
         self.assertEqual(tb.get_status(tid), states.REVOKED)
 
     def test_mark_as_retry(self):
-        tb = DatabaseBackend(app=self.app)
+        tb = DatabaseBackend(self.uri, app=self.app)
         tid = uuid()
         try:
             raise KeyError('foo')
@@ -131,7 +128,7 @@ class test_DatabaseBackend(AppCase):
             self.assertEqual(tb.get_traceback(tid), trace)
 
     def test_mark_as_failure(self):
-        tb = DatabaseBackend(app=self.app)
+        tb = DatabaseBackend(self.uri, app=self.app)
 
         tid3 = uuid()
         try:
@@ -145,24 +142,25 @@ class test_DatabaseBackend(AppCase):
             self.assertEqual(tb.get_traceback(tid3), trace)
 
     def test_forget(self):
-        tb = DatabaseBackend(backend='memory://', app=self.app)
+        tb = DatabaseBackend(self.uri, backend='memory://', app=self.app)
         tid = uuid()
         tb.mark_as_done(tid, {'foo': 'bar'})
         tb.mark_as_done(tid, {'foo': 'bar'})
-        x = AsyncResult(tid, backend=tb)
+        x = self.app.AsyncResult(tid, backend=tb)
         x.forget()
         self.assertIsNone(x.result)
 
     def test_process_cleanup(self):
-        tb = DatabaseBackend(app=self.app)
+        tb = DatabaseBackend(self.uri, app=self.app)
         tb.process_cleanup()
 
+    @depends_on_current_app
     def test_reduce(self):
-        tb = DatabaseBackend(app=self.app)
+        tb = DatabaseBackend(self.uri, app=self.app)
         self.assertTrue(loads(dumps(tb)))
 
     def test_save__restore__delete_group(self):
-        tb = DatabaseBackend(app=self.app)
+        tb = DatabaseBackend(self.uri, app=self.app)
 
         tid = uuid()
         res = {'something': 'special'}
@@ -177,7 +175,7 @@ class test_DatabaseBackend(AppCase):
         self.assertIsNone(tb.restore_group('xxx-nonexisting-id'))
 
     def test_cleanup(self):
-        tb = DatabaseBackend(app=self.app)
+        tb = DatabaseBackend(self.uri, app=self.app)
         for i in range(10):
             tb.mark_as_done(uuid(), 42)
             tb.save_group(uuid(), {'foo': 'bar'})

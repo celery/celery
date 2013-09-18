@@ -19,10 +19,10 @@ from celery.bin.multi import (
     __doc__ as doc,
 )
 
-from celery.tests.case import Case, WhateverIO
+from celery.tests.case import AppCase, WhateverIO
 
 
-class test_functions(Case):
+class test_functions(AppCase):
 
     def test_findsig(self):
         self.assertEqual(findsig(['a', 'b', 'c', '-1']), 1)
@@ -57,7 +57,7 @@ class test_functions(Case):
         self.assertEqual(quote("the 'quick"), "'the '\\''quick'")
 
 
-class test_NamespacedOptionParser(Case):
+class test_NamespacedOptionParser(AppCase):
 
     def test_parse(self):
         x = NamespacedOptionParser(['-c:1,3', '4'])
@@ -76,7 +76,7 @@ class test_NamespacedOptionParser(Case):
         self.assertEqual(x.passthrough, '-- .disable_rate_limits=1')
 
 
-class test_multi_args(Case):
+class test_multi_args(AppCase):
 
     @patch('socket.gethostname')
     def test_parse(self, gethostname):
@@ -160,9 +160,9 @@ class test_multi_args(Case):
         )
 
 
-class test_MultiTool(Case):
+class test_MultiTool(AppCase):
 
-    def setUp(self):
+    def setup(self):
         self.fh = WhateverIO()
         self.env = {}
         self.t = MultiTool(env=self.env, fh=self.fh)

@@ -8,12 +8,10 @@ from nose import SkipTest
 from pickle import dumps, loads
 
 from celery import beat
-from celery import task
 from celery.five import keys, string_t
-from celery.result import AsyncResult
 from celery.schedules import schedule
 from celery.utils import uuid
-from celery.tests.case import AppCase, patch_settings
+from celery.tests.case import AppCase
 
 
 class Object(object):
@@ -49,10 +47,13 @@ class test_ScheduleEntry(AppCase):
     Entry = beat.ScheduleEntry
 
     def create_entry(self, **kwargs):
-        entry = dict(name='celery.unittest.add',
-                     schedule=schedule(timedelta(seconds=10)),
-                     args=(2, 2),
-                     options={'routing_key': 'cpu'})
+        entry = dict(
+            name='celery.unittest.add',
+            schedule=timedelta(seconds=10),
+            args=(2, 2),
+            options={'routing_key': 'cpu'},
+            app=self.app,
+        )
         return self.Entry(**dict(entry, **kwargs))
 
     def test_next(self):
@@ -68,6 +69,8 @@ class test_ScheduleEntry(AppCase):
 
     def test_is_due(self):
         entry = self.create_entry(schedule=timedelta(seconds=10))
+        self.assertIs(entry.app, self.app)
+        self.assertIs(entry.schedule.app, self.app)
         due1, next_time_to_run1 = entry.is_due()
         self.assertFalse(due1)
         self.assertGreater(next_time_to_run1, 9)
@@ -111,7 +114,7 @@ class mScheduler(beat.Scheduler):
                           'args': args,
                           'kwargs': kwargs,
                           'options': options})
-        return AsyncResult(uuid(), app=self.app)
+        return self.app.AsyncResult(uuid())
 
 
 class mSchedulerSchedulingError(mScheduler):
@@ -151,19 +154,19 @@ class test_Scheduler(AppCase):
 
     def test_apply_async_uses_registered_task_instances(self):
 
-        @self.app.task
+        @self.app.task(shared=False)
         def foo():
             pass
         foo.apply_async = Mock(name='foo.apply_async')
         assert foo.name in foo._get_app().tasks
 
         scheduler = mScheduler(app=self.app)
-        scheduler.apply_async(scheduler.Entry(task=foo.name))
+        scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app))
         self.assertTrue(foo.apply_async.called)
 
     def test_apply_async_should_not_sync(self):
 
-        @task()
+        @self.app.task(shared=False)
         def not_sync():
             pass
         not_sync.apply_async = Mock()
@@ -172,12 +175,12 @@ class test_Scheduler(AppCase):
         s._do_sync = Mock()
         s.should_sync = Mock()
         s.should_sync.return_value = True
-        s.apply_async(s.Entry(task=not_sync.name))
+        s.apply_async(s.Entry(task=not_sync.name, app=self.app))
         s._do_sync.assert_called_with()
 
         s._do_sync = Mock()
         s.should_sync.return_value = False
-        s.apply_async(s.Entry(task=not_sync.name))
+        s.apply_async(s.Entry(task=not_sync.name, app=self.app))
         self.assertFalse(s._do_sync.called)
 
     @patch('celery.app.base.Celery.send_task')
@@ -192,7 +195,7 @@ class test_Scheduler(AppCase):
 
     def test_maybe_entry(self):
         s = mScheduler(app=self.app)
-        entry = s.Entry(name='add every', task='tasks.add')
+        entry = s.Entry(name='add every', task='tasks.add', app=self.app)
         self.assertIs(s._maybe_entry(entry.name, entry), entry)
         self.assertTrue(s._maybe_entry('add every', {
             'task': 'tasks.add',
@@ -213,29 +216,23 @@ class test_Scheduler(AppCase):
         callback(KeyError(), 5)
 
     def test_install_default_entries(self):
-        with patch_settings(self.app,
-                            CELERY_TASK_RESULT_EXPIRES=None,
-                            CELERYBEAT_SCHEDULE={}):
-            s = mScheduler(app=self.app)
-            s.install_default_entries({})
-            self.assertNotIn('celery.backend_cleanup', s.data)
+        self.app.conf.CELERY_TASK_RESULT_EXPIRES = None
+        self.app.conf.CELERYBEAT_SCHEDULE = {}
+        s = mScheduler(app=self.app)
+        s.install_default_entries({})
+        self.assertNotIn('celery.backend_cleanup', s.data)
         self.app.backend.supports_autoexpire = False
-        with patch_settings(self.app,
-                            CELERY_TASK_RESULT_EXPIRES=30,
-                            CELERYBEAT_SCHEDULE={}):
-            s = mScheduler(app=self.app)
-            s.install_default_entries({})
-            self.assertIn('celery.backend_cleanup', s.data)
+
+        self.app.conf.CELERY_TASK_RESULT_EXPIRES = 30
+        s = mScheduler(app=self.app)
+        s.install_default_entries({})
+        self.assertIn('celery.backend_cleanup', s.data)
+
         self.app.backend.supports_autoexpire = True
-        try:
-            with patch_settings(self.app,
-                                CELERY_TASK_RESULT_EXPIRES=31,
-                                CELERYBEAT_SCHEDULE={}):
-                s = mScheduler(app=self.app)
-                s.install_default_entries({})
-                self.assertNotIn('celery.backend_cleanup', s.data)
-        finally:
-            self.app.backend.supports_autoexpire = False
+        self.app.conf.CELERY_TASK_RESULT_EXPIRES = 31
+        s = mScheduler(app=self.app)
+        s.install_default_entries({})
+        self.assertNotIn('celery.backend_cleanup', s.data)
 
     def test_due_tick(self):
         scheduler = mScheduler(app=self.app)
@@ -490,7 +487,7 @@ class test_EmbeddedService(AppCase):
 class test_schedule(AppCase):
 
     def test_maybe_make_aware(self):
-        x = schedule(10)
+        x = schedule(10, app=self.app)
         x.utc_enabled = True
         d = x.maybe_make_aware(datetime.utcnow())
         self.assertTrue(d.tzinfo)
@@ -499,7 +496,7 @@ class test_schedule(AppCase):
         self.assertIsNone(d2.tzinfo)
 
     def test_to_local(self):
-        x = schedule(10)
+        x = schedule(10, app=self.app)
         x.utc_enabled = True
         d = x.to_local(datetime.utcnow())
         self.assertIsNone(d.tzinfo)

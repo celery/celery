@@ -5,7 +5,6 @@ import os
 from contextlib import contextmanager
 from mock import Mock, patch
 
-from celery import Celery
 from celery.fixups.django import (
     _maybe_close_fd,
     fixup,
@@ -62,10 +61,9 @@ class test_DjangoFixup(AppCase):
             self.assertIsNone(DjangoFixup(self.app)._close_old_connections)
 
     def test_install(self):
-        app = Celery(set_as_current=False)
-        app.conf = {'CELERY_DB_REUSE_MAX': None}
-        app.loader = Mock()
-        with self.fixup_context(app) as (f, _, _):
+        self.app.conf = {'CELERY_DB_REUSE_MAX': None}
+        self.app.loader = Mock()
+        with self.fixup_context(self.app) as (f, _, _):
             with patch_many('os.getcwd', 'sys.path',
                             'celery.fixups.django.signals') as (cw, p, sigs):
                 cw.return_value = '/opt/vandelay'
@@ -80,8 +78,8 @@ class test_DjangoFixup(AppCase):
                 sigs.worker_process_init.connect.assert_called_with(
                     f.on_worker_process_init,
                 )
-                self.assertEqual(app.loader.now, f.now)
-                self.assertEqual(app.loader.mail_admins, f.mail_admins)
+                self.assertEqual(self.app.loader.now, f.now)
+                self.assertEqual(self.app.loader.mail_admins, f.mail_admins)
                 p.append.assert_called_with('/opt/vandelay')
 
     def test_now(self):

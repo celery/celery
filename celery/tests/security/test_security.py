@@ -32,7 +32,7 @@ from celery.tests.case import mock_open
 
 class test_security(SecurityCase):
 
-    def tearDown(self):
+    def teardown(self):
         registry._disabled_content_types.clear()
 
     def test_disable_insecure_serializers(self):
@@ -59,14 +59,10 @@ class test_security(SecurityCase):
         disabled = registry._disabled_content_types
         self.assertEqual(0, len(disabled))
 
-        prev, self.app.conf.CELERY_TASK_SERIALIZER = (
-            self.app.conf.CELERY_TASK_SERIALIZER, 'json')
-        try:
-            self.app.setup_security()
-            self.assertIn('application/x-python-serialize', disabled)
-            disabled.clear()
-        finally:
-            self.app.conf.CELERY_TASK_SERIALIZER = prev
+        self.app.conf.CELERY_TASK_SERIALIZER = 'json'
+        self.app.setup_security()
+        self.assertIn('application/x-python-serialize', disabled)
+        disabled.clear()
 
     @patch('celery.security.register_auth')
     @patch('celery.security._disable_insecure_serializers')
@@ -81,39 +77,31 @@ class test_security(SecurityCase):
             finally:
                 calls[0] += 1
 
-        prev, self.app.conf.CELERY_TASK_SERIALIZER = (
-            self.app.conf.CELERY_TASK_SERIALIZER, 'auth')
-        try:
-            with mock_open(side_effect=effect):
-                with patch('celery.security.registry') as registry:
-                    store = Mock()
-                    self.app.setup_security(['json'], key, cert, store)
-                    dis.assert_called_with(['json'])
-                    reg.assert_called_with('A', 'B', store, 'sha1', 'json')
-                    registry._set_default_serializer.assert_called_with('auth')
-        finally:
-            self.app.conf.CELERY_TASK_SERIALIZER = prev
+        self.app.conf.CELERY_TASK_SERIALIZER = 'auth'
+        with mock_open(side_effect=effect):
+            with patch('celery.security.registry') as registry:
+                store = Mock()
+                self.app.setup_security(['json'], key, cert, store)
+                dis.assert_called_with(['json'])
+                reg.assert_called_with('A', 'B', store, 'sha1', 'json')
+                registry._set_default_serializer.assert_called_with('auth')
 
     def test_security_conf(self):
-        prev, self.app.conf.CELERY_TASK_SERIALIZER = (
-            self.app.conf.CELERY_TASK_SERIALIZER, 'auth')
-        try:
-            with self.assertRaises(ImproperlyConfigured):
-                self.app.setup_security()
+        self.app.conf.CELERY_TASK_SERIALIZER = 'auth'
+        with self.assertRaises(ImproperlyConfigured):
+            self.app.setup_security()
 
-            _import = builtins.__import__
+        _import = builtins.__import__
 
-            def import_hook(name, *args, **kwargs):
-                if name == 'OpenSSL':
-                    raise ImportError
-                return _import(name, *args, **kwargs)
+        def import_hook(name, *args, **kwargs):
+            if name == 'OpenSSL':
+                raise ImportError
+            return _import(name, *args, **kwargs)
 
-            builtins.__import__ = import_hook
-            with self.assertRaises(ImproperlyConfigured):
-                self.app.setup_security()
-            builtins.__import__ = _import
-        finally:
-            self.app.conf.CELERY_TASK_SERIALIZER = prev
+        builtins.__import__ = import_hook
+        with self.assertRaises(ImproperlyConfigured):
+            self.app.setup_security()
+        builtins.__import__ = _import
 
     def test_reraise_errors(self):
         with self.assertRaises(SecurityError):

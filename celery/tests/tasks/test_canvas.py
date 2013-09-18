@@ -140,20 +140,17 @@ class test_Signature(CanvasCase):
     def test_election(self):
         x = self.add.s(2, 2)
         x.freeze('foo')
-        prev, x.type.app.control = x.type.app.control, Mock()
-        try:
-            r = x.election()
-            self.assertTrue(x.type.app.control.election.called)
-            self.assertEqual(r.id, 'foo')
-        finally:
-            x.type.app.control = prev
+        x.type.app.control = Mock()
+        r = x.election()
+        self.assertTrue(x.type.app.control.election.called)
+        self.assertEqual(r.id, 'foo')
 
-    def test_AsyncResult_when_not_registerd(self):
-        s = subtask('xxx.not.registered')
+    def test_AsyncResult_when_not_registered(self):
+        s = subtask('xxx.not.registered', app=self.app)
         self.assertTrue(s.AsyncResult)
 
     def test_apply_async_when_not_registered(self):
-        s = subtask('xxx.not.registered')
+        s = subtask('xxx.not.registered', app=self.app)
         self.assertTrue(s._apply_async)
 
 
@@ -178,7 +175,9 @@ class test_chunks(CanvasCase):
 
     def test_chunks(self):
         x = self.add.chunks(range(100), 10)
-        self.assertEqual(chunks.from_dict(dict(x)), x)
+        self.assertEqual(
+            dict(chunks.from_dict(dict(x), app=self.app)), dict(x),
+        )
 
         self.assertTrue(x.group())
         self.assertEqual(len(x.group().tasks), 10)
@@ -193,10 +192,7 @@ class test_chunks(CanvasCase):
         gr.assert_called_with()
 
         self.app.conf.CELERY_ALWAYS_EAGER = True
-        try:
-            chunks.apply_chunks(**x['kwargs'])
-        finally:
-            self.app.conf.CELERY_ALWAYS_EAGER = False
+        chunks.apply_chunks(app=self.app, **x['kwargs'])
 
 
 class test_chain(CanvasCase):
@@ -214,10 +210,7 @@ class test_chain(CanvasCase):
 
     def test_always_eager(self):
         self.app.conf.CELERY_ALWAYS_EAGER = True
-        try:
-            self.assertEqual(~(self.add.s(4, 4) | self.add.s(8)), 16)
-        finally:
-            self.app.conf.CELERY_ALWAYS_EAGER = False
+        self.assertEqual(~(self.add.s(4, 4) | self.add.s(8)), 16)
 
     def test_apply(self):
         x = chain(self.add.s(4, 4), self.add.s(8), self.add.s(10))

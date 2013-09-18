@@ -1,10 +1,10 @@
 from __future__ import absolute_import
-from celery.tests.case import Case
+from celery.tests.case import AppCase
 
 import celery
 
 
-class test_celery_package(Case):
+class test_celery_package(AppCase):
 
     def test_version(self):
         self.assertTrue(celery.VERSION)

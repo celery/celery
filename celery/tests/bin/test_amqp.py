@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 from mock import Mock, patch
 
-from celery import Celery
 from celery.bin.amqp import (
     AMQPAdmin,
     AMQShell,
@@ -18,7 +17,6 @@ class test_AMQShell(AppCase):
 
     def setup(self):
         self.fh = WhateverIO()
-        self.app = Celery(broker='memory://', set_as_current=False)
         self.adm = self.create_adm()
         self.shell = AMQShell(connect=self.adm.connect, out=self.fh)
 

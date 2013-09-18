@@ -8,7 +8,7 @@ from mock import patch, Mock
 from nose import SkipTest
 
 from celery import signals
-from celery.app.log import Logging, TaskFormatter
+from celery.app.log import TaskFormatter
 from celery.utils.log import LoggingProxy
 from celery.utils import uuid
 from celery.utils.log import (
@@ -20,12 +20,12 @@ from celery.utils.log import (
     _patch_logger_class,
 )
 from celery.tests.case import (
-    AppCase, Case, override_stdouts, wrap_logger, get_handlers,
+    AppCase, override_stdouts, wrap_logger, get_handlers,
     restore_logging,
 )
 
 
-class test_TaskFormatter(Case):
+class test_TaskFormatter(AppCase):
 
     def test_no_task(self):
         class Record(object):
@@ -43,7 +43,7 @@ class test_TaskFormatter(Case):
         self.assertEqual(record.task_id, '???')
 
 
-class test_ColorFormatter(Case):
+class test_ColorFormatter(AppCase):
 
     @patch('celery.utils.log.safe_str')
     @patch('logging.Formatter.formatException')
@@ -139,10 +139,7 @@ class test_default_logger(AppCase):
     def test_setup_logging_subsystem_misc2(self):
         with restore_logging():
             self.app.conf.CELERYD_HIJACK_ROOT_LOGGER = True
-            try:
-                self.app.log.setup_logging_subsystem()
-            finally:
-                self.app.conf.CELERYD_HIJACK_ROOT_LOGGER = False
+            self.app.log.setup_logging_subsystem()
 
     def test_get_default_logger(self):
         self.assertTrue(self.app.log.get_default_logger())
@@ -277,7 +274,7 @@ class test_task_logger(test_default_logger):
         logging.root.manager.loggerDict.pop(logger.name, None)
         self.uid = uuid()
 
-        @self.app.task
+        @self.app.task(shared=False)
         def test_task():
             pass
         self.get_logger().handlers = []
@@ -285,7 +282,7 @@ class test_task_logger(test_default_logger):
         from celery._state import _task_stack
         _task_stack.push(test_task)
 
-    def tearDown(self):
+    def teardown(self):
         from celery._state import _task_stack
         _task_stack.pop()
 
@@ -296,7 +293,7 @@ class test_task_logger(test_default_logger):
         return get_task_logger("test_task_logger")
 
 
-class test_patch_logger_cls(Case):
+class test_patch_logger_cls(AppCase):
 
     def test_patches(self):
         _patch_logger_class()

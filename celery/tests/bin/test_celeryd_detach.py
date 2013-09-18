@@ -9,11 +9,11 @@ from celery.bin.celeryd_detach import (
     main,
 )
 
-from celery.tests.case import Case, override_stdouts
+from celery.tests.case import AppCase, override_stdouts
 
 
 if not IS_WINDOWS:
-    class test_detached(Case):
+    class test_detached(AppCase):
 
         @patch('celery.bin.celeryd_detach.detached')
         @patch('os.execv')
@@ -32,17 +32,17 @@ if not IS_WINDOWS:
 
             execv.side_effect = Exception('foo')
             r = detach('/bin/boo', ['a', 'b', 'c'],
-                       logfile='/var/log', pidfile='/var/pid')
+                       logfile='/var/log', pidfile='/var/pid', app=self.app)
             context.__enter__.assert_called_with()
             self.assertTrue(logger.critical.called)
             setup_logs.assert_called_with('ERROR', '/var/log')
             self.assertEqual(r, 1)
 
 
-class test_PartialOptionParser(Case):
+class test_PartialOptionParser(AppCase):
 
     def test_parser(self):
-        x = detached_celeryd()
+        x = detached_celeryd(self.app)
         p = x.Parser('celeryd_detach')
         options, values = p.parse_args(['--logfile=foo', '--fake', '--enable',
                                         'a', 'b', '-c1', '-d', '2'])
@@ -64,13 +64,13 @@ class test_PartialOptionParser(Case):
         p.get_option('--logfile').nargs = 1
 
 
-class test_Command(Case):
+class test_Command(AppCase):
     argv = ['--autoscale=10,2', '-c', '1',
             '--logfile=/var/log', '-lDEBUG',
             '--', '.disable_rate_limits=1']
 
     def test_parse_options(self):
-        x = detached_celeryd()
+        x = detached_celeryd(app=self.app)
         o, v, l = x.parse_options('cd', self.argv)
         self.assertEqual(o.logfile, '/var/log')
         self.assertEqual(l, ['--autoscale=10,2', '-c', '1',
@@ -81,7 +81,7 @@ class test_Command(Case):
     @patch('sys.exit')
     @patch('celery.bin.celeryd_detach.detach')
     def test_execute_from_commandline(self, detach, exit):
-        x = detached_celeryd()
+        x = detached_celeryd(app=self.app)
         x.execute_from_commandline(self.argv)
         self.assertTrue(exit.called)
         detach.assert_called_with(
@@ -92,10 +92,11 @@ class test_Command(Case):
                 '--logfile=/var/log', '--pidfile=celeryd.pid',
                 '--', '.disable_rate_limits=1'
             ],
+            app=self.app,
         )
 
     @patch('celery.bin.celeryd_detach.detached_celeryd')
     def test_main(self, command):
         c = command.return_value = Mock()
-        main()
+        main(self.app)
         c.execute_from_commandline.assert_called_with()

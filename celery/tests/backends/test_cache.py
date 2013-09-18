@@ -8,12 +8,11 @@ from contextlib import contextmanager
 from kombu.utils.encoding import str_to_bytes
 from mock import Mock, patch
 
+from celery import subtask
 from celery import states
 from celery.backends.cache import CacheBackend, DummyClient
 from celery.exceptions import ImproperlyConfigured
 from celery.five import items, string, text_t
-from celery.result import AsyncResult
-from celery.task import subtask
 from celery.utils import uuid
 
 from celery.tests.case import AppCase, mask_modules, reset_modules
@@ -32,14 +31,9 @@ class test_CacheBackend(AppCase):
         self.tid = uuid()
 
     def test_no_backend(self):
-        prev, self.app.conf.CELERY_CACHE_BACKEND = (
-            self.app.conf.CELERY_CACHE_BACKEND, None,
-        )
-        try:
-            with self.assertRaises(ImproperlyConfigured):
-                CacheBackend(backend=None, app=self.app)
-        finally:
-            self.app.conf.CELERY_CACHE_BACKEND = prev
+        self.app.conf.CELERY_CACHE_BACKEND = None
+        with self.assertRaises(ImproperlyConfigured):
+            CacheBackend(backend=None, app=self.app)
 
     def test_mark_as_done(self):
         self.assertEqual(self.tb.get_status(self.tid), states.PENDING)
@@ -67,7 +61,7 @@ class test_CacheBackend(AppCase):
 
     def test_on_chord_apply(self):
         tb = CacheBackend(backend='memory://', app=self.app)
-        gid, res = uuid(), [AsyncResult(uuid()) for _ in range(3)]
+        gid, res = uuid(), [self.app.AsyncResult(uuid()) for _ in range(3)]
         tb.on_chord_apply(gid, {}, result=res)
 
     @patch('celery.result.GroupResult.restore')
@@ -83,7 +77,7 @@ class test_CacheBackend(AppCase):
         self.app.tasks['foobarbaz'] = task
         task.request.chord = subtask(task)
 
-        gid, res = uuid(), [AsyncResult(uuid()) for _ in range(3)]
+        gid, res = uuid(), [self.app.AsyncResult(uuid()) for _ in range(3)]
         task.request.group = gid
         tb.on_chord_apply(gid, {}, result=res)
 
@@ -104,7 +98,7 @@ class test_CacheBackend(AppCase):
 
     def test_forget(self):
         self.tb.mark_as_done(self.tid, {'foo': 'bar'})
-        x = AsyncResult(self.tid, backend=self.tb)
+        x = self.app.AsyncResult(self.tid, backend=self.tb)
         x.forget()
         self.assertIsNone(x.result)
 

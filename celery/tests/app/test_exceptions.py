@@ -6,10 +6,10 @@ from datetime import datetime
 
 from celery.exceptions import RetryTaskError
 
-from celery.tests.case import Case
+from celery.tests.case import AppCase
 
 
-class test_RetryTaskError(Case):
+class test_RetryTaskError(AppCase):
 
     def test_when_datetime(self):
         x = RetryTaskError('foo', KeyError(), when=datetime.utcnow())

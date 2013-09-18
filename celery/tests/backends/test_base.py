@@ -9,7 +9,6 @@ from nose import SkipTest
 
 from celery.exceptions import ChordError
 from celery.five import items, range
-from celery.result import AsyncResult, GroupResult
 from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
 from celery.utils.serialization import find_pickleable_exception as fnpe
@@ -24,7 +23,7 @@ from celery.backends.base import (
 )
 from celery.utils import uuid
 
-from celery.tests.case import AppCase, Case
+from celery.tests.case import AppCase
 
 
 class wrapobject(object):
@@ -66,18 +65,15 @@ class test_BaseBackend_interface(AppCase):
         self.b.on_chord_part_return(None)
 
     def test_on_chord_apply(self, unlock='celery.chord_unlock'):
-        p, self.app.tasks[unlock] = self.app.tasks.get(unlock), Mock()
-        try:
-            self.b.on_chord_apply(
-                'dakj221', 'sdokqweok',
-                result=[self.app.AsyncResult(x) for x in [1, 2, 3]],
-            )
-            self.assertTrue(self.app.tasks[unlock].apply_async.call_count)
-        finally:
-            self.app.tasks[unlock] = p
+        self.app.tasks[unlock] = Mock()
+        self.b.on_chord_apply(
+            'dakj221', 'sdokqweok',
+            result=[self.app.AsyncResult(x) for x in [1, 2, 3]],
+        )
+        self.assertTrue(self.app.tasks[unlock].apply_async.call_count)
 
 
-class test_exception_pickle(Case):
+class test_exception_pickle(AppCase):
 
     def test_oldstyle(self):
         if Oldstyle is None:
@@ -224,7 +220,7 @@ class test_BaseBackend_dict(AppCase):
             self.assertTrue(args[2])
 
     def test_prepare_value_serializes_group_result(self):
-        g = GroupResult('group_id', [AsyncResult('foo')])
+        g = self.app.GroupResult('group_id', [self.app.AsyncResult('foo')])
         self.assertIsInstance(self.b.prepare_value(g), (list, tuple))
 
     def test_is_cached(self):
@@ -286,7 +282,7 @@ class test_KeyValueStoreBackend(AppCase):
     @contextmanager
     def _chord_part_context(self, b):
 
-        @self.app.task()
+        @self.app.task(shared=False)
         def callback(result):
             pass
 

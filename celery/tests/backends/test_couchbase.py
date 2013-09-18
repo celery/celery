@@ -3,7 +3,6 @@ from __future__ import absolute_import
 from mock import MagicMock, Mock, patch, sentinel
 from nose import SkipTest
 
-from celery import Celery
 from celery.backends import couchbase as module
 from celery.backends.couchbase import CouchBaseBackend
 from celery.exceptions import ImproperlyConfigured
@@ -36,19 +35,16 @@ class test_CouchBaseBackend(AppCase):
 
     def test_init_no_settings(self):
         """test init no settings"""
-        celery = Celery(set_as_current=False)
-        celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = []
+        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = []
         with self.assertRaises(ImproperlyConfigured):
-            CouchBaseBackend(app=celery)
+            CouchBaseBackend(app=self.app)
 
     def test_init_settings_is_None(self):
         """Test init settings is None"""
-        celery = Celery(set_as_current=False)
-        celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
-        CouchBaseBackend(app=celery)
+        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
+        CouchBaseBackend(app=self.app)
 
     def test_get_connection_connection_exists(self):
-        """Test get existing connection"""
         with patch('couchbase.connection.Connection') as mock_Connection:
             self.backend._connection = sentinel._connection
 
@@ -58,89 +54,81 @@ class test_CouchBaseBackend(AppCase):
             self.assertFalse(mock_Connection.called)
 
     def test_get(self):
-        """Test get
+        """test_get
 
         CouchBaseBackend.get should return  and take two params
         db conn to couchbase is mocked.
         TODO Should test on key not exists
 
         """
-        with Celery(set_as_current=False) as app:
-            app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
+        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
+        x = CouchBaseBackend(app=self.app)
+        x._connection = Mock()
+        mocked_get = x._connection.get = Mock()
+        mocked_get.return_value.value = sentinel.retval
+        # should return None
+        self.assertEqual(x.get('1f3fab'), sentinel.retval)
+        x._connection.get.assert_called_once_with('1f3fab')
 
-            x = CouchBaseBackend(app=app)
-            x._connection = Mock()
-            mocked_get = x._connection.get = Mock()
-            mocked_get.return_value.value = sentinel.retval
-            # should return None
-            self.assertEqual(x.get('1f3fab'), sentinel.retval)
-            x._connection.get.assert_called_once_with('1f3fab')
-
-    # betta
     def test_set(self):
-        """Test set
+        """test_set
 
         CouchBaseBackend.set should return None and take two params
         db conn to couchbase is mocked.
 
         """
-        with Celery(set_as_current=False) as app:
-            app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
-            x = CouchBaseBackend(app=app)
-            x._connection = MagicMock()
-            x._connection.set = MagicMock()
-            # should return None
-            self.assertIsNone(x.set(sentinel.key, sentinel.value))
+        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
+        x = CouchBaseBackend(app=self.app)
+        x._connection = MagicMock()
+        x._connection.set = MagicMock()
+        # should return None
+        self.assertIsNone(x.set(sentinel.key, sentinel.value))
 
     def test_delete(self):
-        """Test delete
+        """test_delete
 
         CouchBaseBackend.delete should return and take two params
         db conn to couchbase is mocked.
         TODO Should test on key not exists
 
         """
-        with Celery(set_as_current=False) as app:
-            app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
-            x = CouchBaseBackend(app=app)
-            x._connection = Mock()
-            mocked_delete = x._connection.delete = Mock()
-            mocked_delete.return_value = None
-            # should return None
-            self.assertIsNone(x.delete('1f3fab'))
-            x._connection.delete.assert_called_once_with('1f3fab')
+        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
+        x = CouchBaseBackend(app=self.app)
+        x._connection = Mock()
+        mocked_delete = x._connection.delete = Mock()
+        mocked_delete.return_value = None
+        # should return None
+        self.assertIsNone(x.delete('1f3fab'))
+        x._connection.delete.assert_called_once_with('1f3fab')
 
     def test_config_params(self):
-        """test celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS
+        """test_config_params
 
         celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS is properly set
         """
-        with Celery(set_as_current=False) as app:
-            app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {
-                'bucket': 'mycoolbucket',
-                'host': ['here.host.com', 'there.host.com'],
-                'username': 'johndoe',
-                'password': 'mysecret',
-                'port': '1234',
-            }
-            x = CouchBaseBackend(app=app)
-            self.assertEqual(x.bucket, 'mycoolbucket')
-            self.assertEqual(x.host, ['here.host.com', 'there.host.com'],)
-            self.assertEqual(x.username, 'johndoe',)
-            self.assertEqual(x.password, 'mysecret')
-            self.assertEqual(x.port, 1234)
+        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {
+            'bucket': 'mycoolbucket',
+            'host': ['here.host.com', 'there.host.com'],
+            'username': 'johndoe',
+            'password': 'mysecret',
+            'port': '1234',
+        }
+        x = CouchBaseBackend(app=self.app)
+        self.assertEqual(x.bucket, 'mycoolbucket')
+        self.assertEqual(x.host, ['here.host.com', 'there.host.com'],)
+        self.assertEqual(x.username, 'johndoe',)
+        self.assertEqual(x.password, 'mysecret')
+        self.assertEqual(x.port, 1234)
 
     def test_backend_by_url(self, url='couchbase://myhost/mycoolbucket'):
-        """test get backend by url"""
         from celery.backends.couchbase import CouchBaseBackend
-        backend, url_ = backends.get_backend_by_url(url)
+        backend, url_ = backends.get_backend_by_url(url, self.app.loader)
         self.assertIs(backend, CouchBaseBackend)
         self.assertEqual(url_, url)
 
     def test_backend_params_by_url(self):
-        """test get backend params by url"""
         url = 'couchbase://johndoe:mysecret@myhost:123/mycoolbucket'
-        with Celery(set_as_current=False, backend=url) as app:
+        with self.Celery(backend=url) as app:
             x = app.backend
             self.assertEqual(x.bucket, "mycoolbucket")
             self.assertEqual(x.host, "myhost")

@@ -7,7 +7,7 @@ from pickle import loads, dumps
 
 from kombu import Exchange
 
-from celery import Celery, shared_task, current_app
+from celery import shared_task, current_app
 from celery import app as _app
 from celery import _state
 from celery.app import base as _appbase
@@ -20,11 +20,13 @@ from celery.utils.serialization import pickle
 
 from celery.tests import config
 from celery.tests.case import (
-    AppCase, Case,
+    AppCase,
+    depends_on_current_app,
     mask_modules,
     platform_pyimp,
     sys_platform,
     pypy_version,
+    with_environ,
 )
 from celery.utils import uuid
 from celery.utils.mail import ErrorMail
@@ -55,42 +57,41 @@ def _get_test_config():
 test_config = _get_test_config()
 
 
-class test_module(Case):
+class test_module(AppCase):
 
     def test_default_app(self):
         self.assertEqual(_app.default_app, _state.default_app)
 
     def test_bugreport(self):
-        self.assertTrue(_app.bugreport())
+        self.assertTrue(_app.bugreport(app=self.app))
 
 
 class test_App(AppCase):
 
     def setup(self):
-        self.app.conf.update(test_config)
+        self.app.add_defaults(test_config)
 
     def test_task(self):
-        app = Celery('foozibari', set_as_current=False)
+        with self.Celery('foozibari') as app:
 
-        def fun():
-            pass
+            def fun():
+                pass
 
-        fun.__module__ = '__main__'
-        task = app.task(fun)
-        self.assertEqual(task.name, app.main + '.fun')
+            fun.__module__ = '__main__'
+            task = app.task(fun)
+            self.assertEqual(task.name, app.main + '.fun')
 
     def test_with_config_source(self):
-        app = Celery(set_as_current=False, config_source=ObjectConfig)
-        self.assertEqual(app.conf.FOO, 1)
-        self.assertEqual(app.conf.BAR, 2)
+        with self.Celery(config_source=ObjectConfig) as app:
+            self.assertEqual(app.conf.FOO, 1)
+            self.assertEqual(app.conf.BAR, 2)
 
+    @depends_on_current_app
     def test_task_windows_execv(self):
-        app = Celery(set_as_current=False)
-
         prev, _appbase._EXECV = _appbase._EXECV, True
         try:
 
-            @app.task()
+            @self.app.task(shared=False)
             def foo():
                 pass
 
@@ -101,41 +102,36 @@ class test_App(AppCase):
         assert not _appbase._EXECV
 
     def test_task_takes_no_args(self):
-        app = Celery(set_as_current=False)
-
         with self.assertRaises(TypeError):
-            @app.task(1)
+            @self.app.task(1)
             def foo():
                 pass
 
     def test_add_defaults(self):
-        app = Celery(set_as_current=False)
-
-        self.assertFalse(app.configured)
+        self.assertFalse(self.app.configured)
         _conf = {'FOO': 300}
         conf = lambda: _conf
-        app.add_defaults(conf)
-        self.assertIn(conf, app._pending_defaults)
-        self.assertFalse(app.configured)
-        self.assertEqual(app.conf.FOO, 300)
-        self.assertTrue(app.configured)
-        self.assertFalse(app._pending_defaults)
+        self.app.add_defaults(conf)
+        self.assertIn(conf, self.app._pending_defaults)
+        self.assertFalse(self.app.configured)
+        self.assertEqual(self.app.conf.FOO, 300)
+        self.assertTrue(self.app.configured)
+        self.assertFalse(self.app._pending_defaults)
 
         # defaults not pickled
-        appr = loads(dumps(app))
+        appr = loads(dumps(self.app))
         with self.assertRaises(AttributeError):
             appr.conf.FOO
 
         # add more defaults after configured
         conf2 = {'FOO': 'BAR'}
-        app.add_defaults(conf2)
-        self.assertEqual(app.conf.FOO, 'BAR')
+        self.app.add_defaults(conf2)
+        self.assertEqual(self.app.conf.FOO, 'BAR')
 
-        self.assertIn(_conf, app.conf.defaults)
-        self.assertIn(conf2, app.conf.defaults)
+        self.assertIn(_conf, self.app.conf.defaults)
+        self.assertIn(conf2, self.app.conf.defaults)
 
     def test_connection_or_acquire(self):
-
         with self.app.connection_or_acquire(block=True):
             self.assertTrue(self.app.pool._dirty)
 
@@ -173,117 +169,89 @@ class test_App(AppCase):
             self.app.autodiscover_tasks(['proj.A', 'proj.B'])
             self.assertFalse(ep.called)
 
+    @with_environ('CELERY_BROKER_URL', '')
     def test_with_broker(self):
-        prev = os.environ.get('CELERY_BROKER_URL')
-        os.environ.pop('CELERY_BROKER_URL', None)
-        try:
-            app = Celery(set_as_current=False, broker='foo://baribaz')
+        with self.Celery(broker='foo://baribaz') as app:
             self.assertEqual(app.conf.BROKER_HOST, 'foo://baribaz')
-        finally:
-            os.environ['CELERY_BROKER_URL'] = prev
 
     def test_repr(self):
         self.assertTrue(repr(self.app))
 
     def test_custom_task_registry(self):
-        app1 = Celery(set_as_current=False)
-        app2 = Celery(set_as_current=False, tasks=app1.tasks)
-        self.assertIs(app2.tasks, app1.tasks)
+        with self.Celery(tasks=self.app.tasks) as app2:
+            self.assertIs(app2.tasks, self.app.tasks)
 
     def test_include_argument(self):
-        app = Celery(set_as_current=False, include=('foo', 'bar.foo'))
-        self.assertEqual(app.conf.CELERY_IMPORTS, ('foo', 'bar.foo'))
+        with self.Celery(include=('foo', 'bar.foo')) as app:
+            self.assertEqual(app.conf.CELERY_IMPORTS, ('foo', 'bar.foo'))
 
     def test_set_as_current(self):
         current = _state._tls.current_app
         try:
-            app = Celery(set_as_current=True)
+            app = self.Celery(set_as_current=True)
             self.assertIs(_state._tls.current_app, app)
         finally:
             _state._tls.current_app = current
 
     def test_current_task(self):
-        app = Celery(set_as_current=False)
-
-        @app.task
-        def foo():
+        @self.app.task
+        def foo(shared=False):
             pass
 
         _state._task_stack.push(foo)
         try:
-            self.assertEqual(app.current_task.name, foo.name)
+            self.assertEqual(self.app.current_task.name, foo.name)
         finally:
             _state._task_stack.pop()
 
     def test_task_not_shared(self):
         with patch('celery.app.base.shared_task') as sh:
-            app = Celery(set_as_current=False)
-
-            @app.task(shared=False)
+            @self.app.task(shared=False)
             def foo():
                 pass
             self.assertFalse(sh.called)
 
     def test_task_compat_with_filter(self):
-        app = Celery(set_as_current=False, accept_magic_kwargs=True)
-        check = Mock()
+        with self.Celery(accept_magic_kwargs=True) as app:
+            check = Mock()
 
-        def filter(task):
-            check(task)
-            return task
+            def filter(task):
+                check(task)
+                return task
 
-        @app.task(filter=filter)
-        def foo():
-            pass
-        check.assert_called_with(foo)
+            @app.task(filter=filter, shared=False)
+            def foo():
+                pass
+            check.assert_called_with(foo)
 
     def test_task_with_filter(self):
-        app = Celery(set_as_current=False, accept_magic_kwargs=False)
-        check = Mock()
+        with self.Celery(accept_magic_kwargs=False) as app:
+            check = Mock()
 
-        def filter(task):
-            check(task)
-            return task
+            def filter(task):
+                check(task)
+                return task
 
-        assert not _appbase._EXECV
+            assert not _appbase._EXECV
 
-        @app.task(filter=filter)
-        def foo():
-            pass
-        check.assert_called_with(foo)
+            @app.task(filter=filter, shared=False)
+            def foo():
+                pass
+            check.assert_called_with(foo)
 
     def test_task_sets_main_name_MP_MAIN_FILE(self):
         from celery import utils as _utils
         _utils.MP_MAIN_FILE = __file__
         try:
-            app = Celery('xuzzy', set_as_current=False)
+            with self.Celery('xuzzy') as app:
 
-            @app.task
-            def foo():
-                pass
+                @app.task
+                def foo():
+                    pass
 
-            self.assertEqual(foo.name, 'xuzzy.foo')
+                self.assertEqual(foo.name, 'xuzzy.foo')
         finally:
             _utils.MP_MAIN_FILE = None
-
-    def test_base_task_inherits_magic_kwargs_from_app(self):
-        from celery.task import Task as OldTask
-
-        class timkX(OldTask):
-            abstract = True
-
-        app = Celery(set_as_current=False, accept_magic_kwargs=True)
-        timkX.bind(app)
-        # see #918
-        self.assertFalse(timkX.accept_magic_kwargs)
-
-        from celery import Task as NewTask
-
-        class timkY(NewTask):
-            abstract = True
-
-        timkY.bind(app)
-        self.assertFalse(timkY.accept_magic_kwargs)
 
     def test_annotate_decorator(self):
         from celery.app.task import Task
@@ -303,12 +271,11 @@ class test_App(AppCase):
                 return fun(*args, **kwargs)
             return _inner
 
-        app = Celery(set_as_current=False)
-        app.conf.CELERY_ANNOTATIONS = {
+        self.app.conf.CELERY_ANNOTATIONS = {
             adX.name: {'@__call__': deco}
         }
-        adX.bind(app)
-        self.assertIs(adX.app, app)
+        adX.bind(self.app)
+        self.assertIs(adX.app, self.app)
 
         i = adX()
         i(2, 4, x=3)
@@ -318,9 +285,7 @@ class test_App(AppCase):
         i.annotate()
 
     def test_apply_async_has__self__(self):
-        app = Celery(set_as_current=False)
-
-        @app.task(__self__='hello')
+        @self.app.task(__self__='hello', shared=False)
         def aawsX():
             pass
 
@@ -330,25 +295,22 @@ class test_App(AppCase):
             self.assertEqual(args, ('hello', 4, 5))
 
     def test_apply_async__connection_arg(self):
-        app = Celery(set_as_current=False)
-
-        @app.task()
+        @self.app.task(shared=False)
         def aacaX():
             pass
 
-        connection = app.connection('asd://')
+        connection = self.app.connection('asd://')
         with self.assertRaises(KeyError):
             aacaX.apply_async(connection=connection)
 
     def test_apply_async_adds_children(self):
         from celery._state import _task_stack
-        app = Celery(set_as_current=False)
 
-        @app.task()
+        @self.app.task(shared=False)
         def a3cX1(self):
             pass
 
-        @app.task()
+        @self.app.task(shared=False)
         def a3cX2(self):
             pass
 
@@ -362,11 +324,6 @@ class test_App(AppCase):
                 a3cX1.pop_request()
         finally:
             _task_stack.pop()
-
-    def test_TaskSet(self):
-        ts = self.app.TaskSet()
-        self.assertListEqual(ts.tasks, [])
-        self.assertIs(ts.app, self.app)
 
     def test_pickle_app(self):
         changes = dict(THE_FOO_BAR='bars',
@@ -461,19 +418,21 @@ class test_App(AppCase):
         x = self.app.Worker
         self.assertIs(x.app, self.app)
 
+    @depends_on_current_app
     def test_AsyncResult(self):
         x = self.app.AsyncResult('1')
         self.assertIs(x.app, self.app)
         r = loads(dumps(x))
         # not set as current, so ends up as default app after reduce
-        self.assertIs(r.app, _state.default_app)
+        self.assertIs(r.app, current_app._get_current_object())
 
     def test_get_active_apps(self):
         self.assertTrue(list(_state._get_active_apps()))
 
-        app1 = Celery(set_as_current=False)
+        app1 = self.Celery()
         appid = id(app1)
         self.assertIn(app1, _state._get_active_apps())
+        app1.close()
         del(app1)
 
         # weakref removed from list when app goes out of scope.
@@ -607,7 +566,7 @@ class test_App(AppCase):
         self.assertFalse(task.app.mail_admins.called)
 
 
-class test_defaults(Case):
+class test_defaults(AppCase):
 
     def test_str_to_bool(self):
         for s in ('false', 'no', '0'):
@@ -618,7 +577,7 @@ class test_defaults(Case):
             defaults.strtobool('unsure')
 
 
-class test_debugging_utils(Case):
+class test_debugging_utils(AppCase):
 
     def test_enable_disable_trace(self):
         try:
@@ -630,7 +589,7 @@ class test_debugging_utils(Case):
             _app.disable_trace()
 
 
-class test_pyimplementation(Case):
+class test_pyimplementation(AppCase):
 
     def test_platform_python_implementation(self):
         with platform_pyimp(lambda: 'Xython'):
@@ -656,36 +615,30 @@ class test_pyimplementation(Case):
                     self.assertEqual('CPython', pyimplementation())
 
 
-class test_shared_task(Case):
-
-    def setUp(self):
-        self._restore_app = current_app._get_current_object()
-
-    def tearDown(self):
-        self._restore_app.set_current()
+class test_shared_task(AppCase):
 
     def test_registers_to_all_apps(self):
-        xproj = Celery('xproj')
-        xproj.finalize()
+        with self.Celery('xproj', set_as_current=True) as xproj:
+            xproj.finalize()
 
-        @shared_task
-        def foo():
-            return 42
+            @shared_task
+            def foo():
+                return 42
 
-        @shared_task()
-        def bar():
-            return 84
+            @shared_task()
+            def bar():
+                return 84
 
-        self.assertIs(foo.app, xproj)
-        self.assertIs(bar.app, xproj)
-        self.assertTrue(foo._get_current_object())
+            self.assertIs(foo.app, xproj)
+            self.assertIs(bar.app, xproj)
+            self.assertTrue(foo._get_current_object())
 
-        yproj = Celery('yproj')
-        self.assertIs(foo.app, yproj)
-        self.assertIs(bar.app, yproj)
+            with self.Celery('yproj', set_as_current=True) as yproj:
+                self.assertIs(foo.app, yproj)
+                self.assertIs(bar.app, yproj)
 
-        @shared_task()
-        def baz():
-            return 168
+                @shared_task()
+                def baz():
+                    return 168
 
-        self.assertIs(baz.app, yproj)
+                self.assertIs(baz.app, yproj)

@@ -46,18 +46,30 @@ class SaferefTests(Case):
         del self.ts
         del self.ss
 
-    def testIn(self):
-        """Test the "in" operator for safe references (cmp)"""
+    def test_in(self):
+        """test_in
+
+        Test the "in" operator for safe references (cmp)
+
+        """
         for t in self.ts[:50]:
             self.assertTrue(safe_ref(t.x) in self.ss)
 
-    def testValid(self):
-        """Test that the references are valid (return instance methods)"""
+    def test_valid(self):
+        """test_value
+
+        Test that the references are valid (return instance methods)
+
+        """
         for s in self.ss:
             self.assertTrue(s())
 
-    def testShortCircuit(self):
-        """Test that creation short-circuits to reuse existing references"""
+    def test_shortcircuit(self):
+        """test_shortcircuit
+
+        Test that creation short-circuits to reuse existing references
+
+        """
         sd = {}
         for s in self.ss:
             sd[s] = 1
@@ -67,8 +79,10 @@ class SaferefTests(Case):
             else:
                 self.assertIn(safe_ref(t), sd)
 
-    def testRepresentation(self):
-        """Test that the reference object's representation works
+    def test_representation(self):
+        """test_representation
+
+        Test that the reference object's representation works
 
         XXX Doesn't currently check the results, just that no error
             is raised

@@ -1,29 +1,20 @@
 from __future__ import absolute_import
-import time
+
 from collections import Callable
 from datetime import datetime, timedelta
-from functools import wraps
 from mock import patch
-from nose import SkipTest
-from pickle import loads, dumps
 
 from kombu import Queue
 
 from celery import Task
 
-from celery.task import (
-    periodic_task,
-    PeriodicTask
-)
 from celery.exceptions import RetryTaskError
-from celery.execute import send_task
 from celery.five import items, range, string_t
 from celery.result import EagerResult
-from celery.schedules import crontab, crontab_parser, ParseException
 from celery.utils import uuid
-from celery.utils.timeutils import parse_iso8601, timedelta_seconds
+from celery.utils.timeutils import parse_iso8601
 
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, depends_on_current_app
 
 
 def return_True(*args, **kwargs):
@@ -49,8 +40,7 @@ class MockApplyTask(Task):
 class TasksCase(AppCase):
 
     def setup(self):
-
-        self.return_True_task = self.app.task(shared=False)(return_True)
+        self.mytask = self.app.task(shared=False)(return_True)
 
         @self.app.task(bind=True, count=0, shared=False)
         def increment_counter(self, increment_by=1):
@@ -225,18 +215,14 @@ class test_tasks(TasksCase):
     def now(self):
         return self.app.now()
 
+    @depends_on_current_app
     def test_unpickle_task(self):
-        self.app.set_current()
         import pickle
 
         @self.app.task(shared=True)
         def xxx():
             pass
         self.assertIs(pickle.loads(pickle.dumps(xxx)), xxx.app.tasks[xxx.name])
-
-    def create_task(self, name):
-        return self.app.task(__module__=self.__module__,
-                             shared=False, name=name)(return_True)
 
     def test_AsyncResult(self):
         task_id = uuid()
@@ -265,6 +251,7 @@ class test_tasks(TasksCase):
     def test_incomplete_task_cls(self):
 
         class IncompleteTask(Task):
+            app = self.app
             name = 'c.unittest.t.itask'
 
         with self.assertRaises(NotImplementedError):
@@ -279,11 +266,11 @@ class test_tasks(TasksCase):
             self.increment_counter.apply_async('str', {})
 
     def test_regular_task(self):
-        T1 = self.create_task('c.unittest.t.t1')
-        self.assertIsInstance(T1, Task)
-        self.assertTrue(T1.run())
-        self.assertTrue(isinstance(T1, Callable), 'Task class is callable()')
-        self.assertTrue(T1(), 'Task class runs run() when called')
+        self.assertIsInstance(self.mytask, Task)
+        self.assertTrue(self.mytask.run())
+        self.assertTrue(isinstance(self.mytask, Callable),
+                        'Task class is callable()')
+        self.assertTrue(self.mytask(), 'Task class runs run() when called')
 
         with self.app.connection_or_acquire() as conn:
             consumer = self.app.amqp.TaskConsumer(conn)
@@ -294,54 +281,57 @@ class test_tasks(TasksCase):
             self.app.amqp.TaskConsumer(conn, queues=[Queue('foo')])
 
             # Without arguments.
-            presult = T1.delay()
-            self.assertNextTaskDataEqual(consumer, presult, T1.name)
+            presult = self.mytask.delay()
+            self.assertNextTaskDataEqual(consumer, presult, self.mytask.name)
 
             # With arguments.
-            presult2 = T1.apply_async(kwargs=dict(name='George Costanza'))
+            presult2 = self.mytask.apply_async(
+                kwargs=dict(name='George Costanza'),
+            )
             self.assertNextTaskDataEqual(
-                consumer, presult2, T1.name, name='George Costanza',
+                consumer, presult2, self.mytask.name, name='George Costanza',
             )
 
             # send_task
-            sresult = send_task(T1.name, kwargs=dict(name='Elaine M. Benes'))
+            sresult = self.app.send_task(self.mytask.name,
+                                         kwargs=dict(name='Elaine M. Benes'))
             self.assertNextTaskDataEqual(
-                consumer, sresult, T1.name, name='Elaine M. Benes',
+                consumer, sresult, self.mytask.name, name='Elaine M. Benes',
             )
 
             # With eta.
-            presult2 = T1.apply_async(
+            presult2 = self.mytask.apply_async(
                 kwargs=dict(name='George Costanza'),
                 eta=self.now() + timedelta(days=1),
                 expires=self.now() + timedelta(days=2),
             )
             self.assertNextTaskDataEqual(
-                consumer, presult2, T1.name,
+                consumer, presult2, self.mytask.name,
                 name='George Costanza', test_eta=True, test_expires=True,
             )
 
             # With countdown.
-            presult2 = T1.apply_async(kwargs=dict(name='George Costanza'),
-                                      countdown=10, expires=12)
+            presult2 = self.mytask.apply_async(
+                kwargs=dict(name='George Costanza'), countdown=10, expires=12,
+            )
             self.assertNextTaskDataEqual(
-                consumer, presult2, T1.name,
+                consumer, presult2, self.mytask.name,
                 name='George Costanza', test_eta=True, test_expires=True,
             )
 
             # Discarding all tasks.
             consumer.purge()
-            T1.apply_async()
+            self.mytask.apply_async()
             self.assertEqual(consumer.purge(), 1)
             self.assertIsNone(consumer.queues[0].get())
 
             self.assertFalse(presult.successful())
-            T1.backend.mark_as_done(presult.id, result=None)
+            self.mytask.backend.mark_as_done(presult.id, result=None)
             self.assertTrue(presult.successful())
 
     def test_repr_v2_compat(self):
-        task = type(self.create_task('c.unittest.v2c')._get_current_object())
-        task.__v2_compat__ = True
-        self.assertIn('v2 compatible', repr(task))
+        self.mytask.__v2_compat__ = True
+        self.assertIn('v2 compatible', repr(self.mytask))
 
     def test_apply_with_self(self):
 
@@ -354,46 +344,43 @@ class test_tasks(TasksCase):
         self.assertEqual(tawself(), 42)
 
     def test_context_get(self):
-        task = self.create_task('c.unittest.t.c.g')
-        task.push_request()
+        self.mytask.push_request()
         try:
-            request = task.request
+            request = self.mytask.request
             request.foo = 32
             self.assertEqual(request.get('foo'), 32)
             self.assertEqual(request.get('bar', 36), 36)
             request.clear()
         finally:
-            task.pop_request()
+            self.mytask.pop_request()
 
     def test_task_class_repr(self):
-        task = self.create_task('c.unittest.t.repr')
-        self.assertIn('class Task of', repr(task.app.Task))
-        prev, task.app.Task._app = task.app.Task._app, None
-        try:
-            self.assertIn('unbound', repr(task.app.Task, ))
-        finally:
-            task.app.Task._app = prev
+        self.assertIn('class Task of', repr(self.mytask.app.Task))
+        self.mytask.app.Task._app = None
+        self.assertIn('unbound', repr(self.mytask.app.Task, ))
 
     def test_bind_no_magic_kwargs(self):
-        task = self.create_task('c.unittest.t.magic_kwargs')
-        task.accept_magic_kwargs = None
-        task.bind(task.app)
+        self.mytask.accept_magic_kwargs = None
+        self.mytask.bind(self.mytask.app)
 
     def test_annotate(self):
         with patch('celery.app.task.resolve_all_annotations') as anno:
             anno.return_value = [{'FOO': 'BAR'}]
-            Task.annotate()
-            self.assertEqual(Task.FOO, 'BAR')
+
+            @self.app.task(shared=False)
+            def task():
+                pass
+            task.annotate()
+            self.assertEqual(task.FOO, 'BAR')
 
     def test_after_return(self):
-        task = self.create_task('c.unittest.t.after_return')
-        task.push_request()
+        self.mytask.push_request()
         try:
-            task.request.chord = self.return_True_task.s()
-            task.after_return('SUCCESS', 1.0, 'foobar', (), {}, None)
-            task.request.clear()
+            self.mytask.request.chord = self.mytask.s()
+            self.mytask.after_return('SUCCESS', 1.0, 'foobar', (), {}, None)
+            self.mytask.request.clear()
         finally:
-            task.pop_request()
+            self.mytask.pop_request()
 
     def test_send_task_sent_event(self):
         with self.app.connection() as conn:
@@ -471,756 +458,3 @@ class test_apply_task(TasksCase):
         self.assertTrue(f.traceback)
         with self.assertRaises(KeyError):
             f.get()
-
-
-@periodic_task(run_every=timedelta(hours=1))
-def my_periodic():
-    pass
-
-
-class test_periodic_tasks(AppCase):
-
-    def now(self):
-        return self.app.now()
-
-    def test_must_have_run_every(self):
-        with self.assertRaises(NotImplementedError):
-            type('Foo', (PeriodicTask, ), {'__module__': __name__})
-
-    def test_remaining_estimate(self):
-        s = my_periodic.run_every
-        self.assertIsInstance(
-            s.remaining_estimate(s.maybe_make_aware(self.now())),
-            timedelta)
-
-    def test_is_due_not_due(self):
-        due, remaining = my_periodic.run_every.is_due(self.now())
-        self.assertFalse(due)
-        # This assertion may fail if executed in the
-        # first minute of an hour, thus 59 instead of 60
-        self.assertGreater(remaining, 59)
-
-    def test_is_due(self):
-        p = my_periodic
-        due, remaining = p.run_every.is_due(
-            self.now() - p.run_every.run_every,
-        )
-        self.assertTrue(due)
-        self.assertEqual(remaining,
-                         timedelta_seconds(p.run_every.run_every))
-
-    def test_schedule_repr(self):
-        p = my_periodic
-        self.assertTrue(repr(p.run_every))
-
-
-@periodic_task(run_every=crontab())
-def every_minute():
-    pass
-
-
-@periodic_task(run_every=crontab(minute='*/15'))
-def quarterly():
-    pass
-
-
-@periodic_task(run_every=crontab(minute=30))
-def hourly():
-    pass
-
-
-@periodic_task(run_every=crontab(hour=7, minute=30))
-def daily():
-    pass
-
-
-@periodic_task(run_every=crontab(hour=7, minute=30,
-                                 day_of_week='thursday'))
-def weekly():
-    pass
-
-
-@periodic_task(run_every=crontab(hour=7, minute=30,
-                                 day_of_week='thursday',
-                                 day_of_month='8-14'))
-def monthly():
-    pass
-
-
-@periodic_task(run_every=crontab(hour=22,
-                                 day_of_week='*',
-                                 month_of_year='2',
-                                 day_of_month='26,27,28'))
-def monthly_moy():
-    pass
-
-
-@periodic_task(run_every=crontab(hour=7, minute=30,
-                                 day_of_week='thursday',
-                                 day_of_month='8-14',
-                                 month_of_year=3))
-def yearly():
-    pass
-
-
-def patch_crontab_nowfun(cls, retval):
-
-    def create_patcher(fun):
-
-        @wraps(fun)
-        def __inner(*args, **kwargs):
-            prev_nowfun = cls.run_every.nowfun
-            cls.run_every.nowfun = lambda: retval
-            try:
-                return fun(*args, **kwargs)
-            finally:
-                cls.run_every.nowfun = prev_nowfun
-
-        return __inner
-
-    return create_patcher
-
-
-class test_crontab_parser(AppCase):
-
-    def test_crontab_reduce(self):
-        self.assertTrue(loads(dumps(crontab('*'))))
-
-    def test_range_steps_not_enough(self):
-        with self.assertRaises(crontab_parser.ParseException):
-            crontab_parser(24)._range_steps([1])
-
-    def test_parse_star(self):
-        self.assertEqual(crontab_parser(24).parse('*'), set(range(24)))
-        self.assertEqual(crontab_parser(60).parse('*'), set(range(60)))
-        self.assertEqual(crontab_parser(7).parse('*'), set(range(7)))
-        self.assertEqual(crontab_parser(31, 1).parse('*'),
-                         set(range(1, 31 + 1)))
-        self.assertEqual(crontab_parser(12, 1).parse('*'),
-                         set(range(1, 12 + 1)))
-
-    def test_parse_range(self):
-        self.assertEqual(crontab_parser(60).parse('1-10'),
-                         set(range(1, 10 + 1)))
-        self.assertEqual(crontab_parser(24).parse('0-20'),
-                         set(range(0, 20 + 1)))
-        self.assertEqual(crontab_parser().parse('2-10'),
-                         set(range(2, 10 + 1)))
-        self.assertEqual(crontab_parser(60, 1).parse('1-10'),
-                         set(range(1, 10 + 1)))
-
-    def test_parse_range_wraps(self):
-        self.assertEqual(crontab_parser(12).parse('11-1'),
-                         set([11, 0, 1]))
-        self.assertEqual(crontab_parser(60, 1).parse('2-1'),
-                         set(range(1, 60 + 1)))
-
-    def test_parse_groups(self):
-        self.assertEqual(crontab_parser().parse('1,2,3,4'),
-                         set([1, 2, 3, 4]))
-        self.assertEqual(crontab_parser().parse('0,15,30,45'),
-                         set([0, 15, 30, 45]))
-        self.assertEqual(crontab_parser(min_=1).parse('1,2,3,4'),
-                         set([1, 2, 3, 4]))
-
-    def test_parse_steps(self):
-        self.assertEqual(crontab_parser(8).parse('*/2'),
-                         set([0, 2, 4, 6]))
-        self.assertEqual(crontab_parser().parse('*/2'),
-                         set(i * 2 for i in range(30)))
-        self.assertEqual(crontab_parser().parse('*/3'),
-                         set(i * 3 for i in range(20)))
-        self.assertEqual(crontab_parser(8, 1).parse('*/2'),
-                         set([1, 3, 5, 7]))
-        self.assertEqual(crontab_parser(min_=1).parse('*/2'),
-                         set(i * 2 + 1 for i in range(30)))
-        self.assertEqual(crontab_parser(min_=1).parse('*/3'),
-                         set(i * 3 + 1 for i in range(20)))
-
-    def test_parse_composite(self):
-        self.assertEqual(crontab_parser(8).parse('*/2'), set([0, 2, 4, 6]))
-        self.assertEqual(crontab_parser().parse('2-9/5'), set([2, 7]))
-        self.assertEqual(crontab_parser().parse('2-10/5'), set([2, 7]))
-        self.assertEqual(
-            crontab_parser(min_=1).parse('55-5/3'),
-            set([55, 58, 1, 4]),
-        )
-        self.assertEqual(crontab_parser().parse('2-11/5,3'), set([2, 3, 7]))
-        self.assertEqual(
-            crontab_parser().parse('2-4/3,*/5,0-21/4'),
-            set([0, 2, 4, 5, 8, 10, 12, 15, 16,
-                 20, 25, 30, 35, 40, 45, 50, 55]),
-        )
-        self.assertEqual(
-            crontab_parser().parse('1-9/2'),
-            set([1, 3, 5, 7, 9]),
-        )
-        self.assertEqual(crontab_parser(8, 1).parse('*/2'), set([1, 3, 5, 7]))
-        self.assertEqual(crontab_parser(min_=1).parse('2-9/5'), set([2, 7]))
-        self.assertEqual(crontab_parser(min_=1).parse('2-10/5'), set([2, 7]))
-        self.assertEqual(
-            crontab_parser(min_=1).parse('2-11/5,3'),
-            set([2, 3, 7]),
-        )
-        self.assertEqual(
-            crontab_parser(min_=1).parse('2-4/3,*/5,1-21/4'),
-            set([1, 2, 5, 6, 9, 11, 13, 16, 17,
-                 21, 26, 31, 36, 41, 46, 51, 56]),
-        )
-        self.assertEqual(
-            crontab_parser(min_=1).parse('1-9/2'),
-            set([1, 3, 5, 7, 9]),
-        )
-
-    def test_parse_errors_on_empty_string(self):
-        with self.assertRaises(ParseException):
-            crontab_parser(60).parse('')
-
-    def test_parse_errors_on_empty_group(self):
-        with self.assertRaises(ParseException):
-            crontab_parser(60).parse('1,,2')
-
-    def test_parse_errors_on_empty_steps(self):
-        with self.assertRaises(ParseException):
-            crontab_parser(60).parse('*/')
-
-    def test_parse_errors_on_negative_number(self):
-        with self.assertRaises(ParseException):
-            crontab_parser(60).parse('-20')
-
-    def test_parse_errors_on_lt_min(self):
-        crontab_parser(min_=1).parse('1')
-        with self.assertRaises(ValueError):
-            crontab_parser(12, 1).parse('0')
-        with self.assertRaises(ValueError):
-            crontab_parser(24, 1).parse('12-0')
-
-    def test_parse_errors_on_gt_max(self):
-        crontab_parser(1).parse('0')
-        with self.assertRaises(ValueError):
-            crontab_parser(1).parse('1')
-        with self.assertRaises(ValueError):
-            crontab_parser(60).parse('61-0')
-
-    def test_expand_cronspec_eats_iterables(self):
-        self.assertEqual(crontab._expand_cronspec(iter([1, 2, 3]), 100),
-                         set([1, 2, 3]))
-        self.assertEqual(crontab._expand_cronspec(iter([1, 2, 3]), 100, 1),
-                         set([1, 2, 3]))
-
-    def test_expand_cronspec_invalid_type(self):
-        with self.assertRaises(TypeError):
-            crontab._expand_cronspec(object(), 100)
-
-    def test_repr(self):
-        self.assertIn('*', repr(crontab('*')))
-
-    def test_eq(self):
-        self.assertEqual(crontab(day_of_week='1, 2'),
-                         crontab(day_of_week='1-2'))
-        self.assertEqual(crontab(day_of_month='1, 16, 31'),
-                         crontab(day_of_month='*/15'))
-        self.assertEqual(crontab(minute='1', hour='2', day_of_week='5',
-                                 day_of_month='10', month_of_year='5'),
-                         crontab(minute='1', hour='2', day_of_week='5',
-                                 day_of_month='10', month_of_year='5'))
-        self.assertNotEqual(crontab(minute='1'), crontab(minute='2'))
-        self.assertNotEqual(crontab(month_of_year='1'),
-                            crontab(month_of_year='2'))
-        self.assertFalse(object() == crontab(minute='1'))
-        self.assertFalse(crontab(minute='1') == object())
-
-
-class test_crontab_remaining_estimate(AppCase):
-
-    def next_ocurrance(self, crontab, now):
-        crontab.nowfun = lambda: now
-        return now + crontab.remaining_estimate(now)
-
-    def test_next_minute(self):
-        next = self.next_ocurrance(crontab(),
-                                   datetime(2010, 9, 11, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 9, 11, 14, 31))
-
-    def test_not_next_minute(self):
-        next = self.next_ocurrance(crontab(),
-                                   datetime(2010, 9, 11, 14, 59, 15))
-        self.assertEqual(next, datetime(2010, 9, 11, 15, 0))
-
-    def test_this_hour(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42]),
-                                   datetime(2010, 9, 11, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 9, 11, 14, 42))
-
-    def test_not_this_hour(self):
-        next = self.next_ocurrance(crontab(minute=[5, 10, 15]),
-                                   datetime(2010, 9, 11, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 9, 11, 15, 5))
-
-    def test_today(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42], hour=[12, 17]),
-                                   datetime(2010, 9, 11, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 9, 11, 17, 5))
-
-    def test_not_today(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42], hour=[12]),
-                                   datetime(2010, 9, 11, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 9, 12, 12, 5))
-
-    def test_weekday(self):
-        next = self.next_ocurrance(crontab(minute=30,
-                                           hour=14,
-                                           day_of_week='sat'),
-                                   datetime(2010, 9, 11, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 9, 18, 14, 30))
-
-    def test_not_weekday(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42],
-                                           day_of_week='mon-fri'),
-                                   datetime(2010, 9, 11, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 9, 13, 0, 5))
-
-    def test_monthday(self):
-        next = self.next_ocurrance(crontab(minute=30,
-                                           hour=14,
-                                           day_of_month=18),
-                                   datetime(2010, 9, 11, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 9, 18, 14, 30))
-
-    def test_not_monthday(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42],
-                                           day_of_month=29),
-                                   datetime(2010, 1, 22, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 1, 29, 0, 5))
-
-    def test_weekday_monthday(self):
-        next = self.next_ocurrance(crontab(minute=30,
-                                           hour=14,
-                                           day_of_week='mon',
-                                           day_of_month=18),
-                                   datetime(2010, 1, 18, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 10, 18, 14, 30))
-
-    def test_monthday_not_weekday(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42],
-                                           day_of_week='sat',
-                                           day_of_month=29),
-                                   datetime(2010, 1, 29, 0, 5, 15))
-        self.assertEqual(next, datetime(2010, 5, 29, 0, 5))
-
-    def test_weekday_not_monthday(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42],
-                                           day_of_week='mon',
-                                           day_of_month=18),
-                                   datetime(2010, 1, 11, 0, 5, 15))
-        self.assertEqual(next, datetime(2010, 1, 18, 0, 5))
-
-    def test_not_weekday_not_monthday(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42],
-                                           day_of_week='mon',
-                                           day_of_month=18),
-                                   datetime(2010, 1, 10, 0, 5, 15))
-        self.assertEqual(next, datetime(2010, 1, 18, 0, 5))
-
-    def test_leapday(self):
-        next = self.next_ocurrance(crontab(minute=30,
-                                           hour=14,
-                                           day_of_month=29),
-                                   datetime(2012, 1, 29, 14, 30, 15))
-        self.assertEqual(next, datetime(2012, 2, 29, 14, 30))
-
-    def test_not_leapday(self):
-        next = self.next_ocurrance(crontab(minute=30,
-                                           hour=14,
-                                           day_of_month=29),
-                                   datetime(2010, 1, 29, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 3, 29, 14, 30))
-
-    def test_weekmonthdayyear(self):
-        next = self.next_ocurrance(crontab(minute=30,
-                                           hour=14,
-                                           day_of_week='fri',
-                                           day_of_month=29,
-                                           month_of_year=1),
-                                   datetime(2010, 1, 22, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 1, 29, 14, 30))
-
-    def test_monthdayyear_not_week(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42],
-                                           day_of_week='wed,thu',
-                                           day_of_month=29,
-                                           month_of_year='1,4,7'),
-                                   datetime(2010, 1, 29, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 4, 29, 0, 5))
-
-    def test_weekdaymonthyear_not_monthday(self):
-        next = self.next_ocurrance(crontab(minute=30,
-                                           hour=14,
-                                           day_of_week='fri',
-                                           day_of_month=29,
-                                           month_of_year='1-10'),
-                                   datetime(2010, 1, 29, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 10, 29, 14, 30))
-
-    def test_weekmonthday_not_monthyear(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42],
-                                           day_of_week='fri',
-                                           day_of_month=29,
-                                           month_of_year='2-10'),
-                                   datetime(2010, 1, 29, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 10, 29, 0, 5))
-
-    def test_weekday_not_monthdayyear(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42],
-                                           day_of_week='mon',
-                                           day_of_month=18,
-                                           month_of_year='2-10'),
-                                   datetime(2010, 1, 11, 0, 5, 15))
-        self.assertEqual(next, datetime(2010, 10, 18, 0, 5))
-
-    def test_monthday_not_weekdaymonthyear(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42],
-                                           day_of_week='mon',
-                                           day_of_month=29,
-                                           month_of_year='2-4'),
-                                   datetime(2010, 1, 29, 0, 5, 15))
-        self.assertEqual(next, datetime(2010, 3, 29, 0, 5))
-
-    def test_monthyear_not_weekmonthday(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42],
-                                           day_of_week='mon',
-                                           day_of_month=29,
-                                           month_of_year='2-4'),
-                                   datetime(2010, 2, 28, 0, 5, 15))
-        self.assertEqual(next, datetime(2010, 3, 29, 0, 5))
-
-    def test_not_weekmonthdayyear(self):
-        next = self.next_ocurrance(crontab(minute=[5, 42],
-                                           day_of_week='fri,sat',
-                                           day_of_month=29,
-                                           month_of_year='2-10'),
-                                   datetime(2010, 1, 28, 14, 30, 15))
-        self.assertEqual(next, datetime(2010, 5, 29, 0, 5))
-
-
-class test_crontab_is_due(AppCase):
-
-    def getnow(self):
-        return self.app.now()
-
-    def setup(self):
-        self.now = self.getnow()
-        self.next_minute = 60 - self.now.second - 1e-6 * self.now.microsecond
-
-    def test_default_crontab_spec(self):
-        c = crontab()
-        self.assertEqual(c.minute, set(range(60)))
-        self.assertEqual(c.hour, set(range(24)))
-        self.assertEqual(c.day_of_week, set(range(7)))
-        self.assertEqual(c.day_of_month, set(range(1, 32)))
-        self.assertEqual(c.month_of_year, set(range(1, 13)))
-
-    def test_simple_crontab_spec(self):
-        c = crontab(minute=30)
-        self.assertEqual(c.minute, set([30]))
-        self.assertEqual(c.hour, set(range(24)))
-        self.assertEqual(c.day_of_week, set(range(7)))
-        self.assertEqual(c.day_of_month, set(range(1, 32)))
-        self.assertEqual(c.month_of_year, set(range(1, 13)))
-
-    def test_crontab_spec_minute_formats(self):
-        c = crontab(minute=30)
-        self.assertEqual(c.minute, set([30]))
-        c = crontab(minute='30')
-        self.assertEqual(c.minute, set([30]))
-        c = crontab(minute=(30, 40, 50))
-        self.assertEqual(c.minute, set([30, 40, 50]))
-        c = crontab(minute=set([30, 40, 50]))
-        self.assertEqual(c.minute, set([30, 40, 50]))
-
-    def test_crontab_spec_invalid_minute(self):
-        with self.assertRaises(ValueError):
-            crontab(minute=60)
-        with self.assertRaises(ValueError):
-            crontab(minute='0-100')
-
-    def test_crontab_spec_hour_formats(self):
-        c = crontab(hour=6)
-        self.assertEqual(c.hour, set([6]))
-        c = crontab(hour='5')
-        self.assertEqual(c.hour, set([5]))
-        c = crontab(hour=(4, 8, 12))
-        self.assertEqual(c.hour, set([4, 8, 12]))
-
-    def test_crontab_spec_invalid_hour(self):
-        with self.assertRaises(ValueError):
-            crontab(hour=24)
-        with self.assertRaises(ValueError):
-            crontab(hour='0-30')
-
-    def test_crontab_spec_dow_formats(self):
-        c = crontab(day_of_week=5)
-        self.assertEqual(c.day_of_week, set([5]))
-        c = crontab(day_of_week='5')
-        self.assertEqual(c.day_of_week, set([5]))
-        c = crontab(day_of_week='fri')
-        self.assertEqual(c.day_of_week, set([5]))
-        c = crontab(day_of_week='tuesday,sunday,fri')
-        self.assertEqual(c.day_of_week, set([0, 2, 5]))
-        c = crontab(day_of_week='mon-fri')
-        self.assertEqual(c.day_of_week, set([1, 2, 3, 4, 5]))
-        c = crontab(day_of_week='*/2')
-        self.assertEqual(c.day_of_week, set([0, 2, 4, 6]))
-
-    def test_crontab_spec_invalid_dow(self):
-        with self.assertRaises(ValueError):
-            crontab(day_of_week='fooday-barday')
-        with self.assertRaises(ValueError):
-            crontab(day_of_week='1,4,foo')
-        with self.assertRaises(ValueError):
-            crontab(day_of_week='7')
-        with self.assertRaises(ValueError):
-            crontab(day_of_week='12')
-
-    def test_crontab_spec_dom_formats(self):
-        c = crontab(day_of_month=5)
-        self.assertEqual(c.day_of_month, set([5]))
-        c = crontab(day_of_month='5')
-        self.assertEqual(c.day_of_month, set([5]))
-        c = crontab(day_of_month='2,4,6')
-        self.assertEqual(c.day_of_month, set([2, 4, 6]))
-        c = crontab(day_of_month='*/5')
-        self.assertEqual(c.day_of_month, set([1, 6, 11, 16, 21, 26, 31]))
-
-    def test_crontab_spec_invalid_dom(self):
-        with self.assertRaises(ValueError):
-            crontab(day_of_month=0)
-        with self.assertRaises(ValueError):
-            crontab(day_of_month='0-10')
-        with self.assertRaises(ValueError):
-            crontab(day_of_month=32)
-        with self.assertRaises(ValueError):
-            crontab(day_of_month='31,32')
-
-    def test_crontab_spec_moy_formats(self):
-        c = crontab(month_of_year=1)
-        self.assertEqual(c.month_of_year, set([1]))
-        c = crontab(month_of_year='1')
-        self.assertEqual(c.month_of_year, set([1]))
-        c = crontab(month_of_year='2,4,6')
-        self.assertEqual(c.month_of_year, set([2, 4, 6]))
-        c = crontab(month_of_year='*/2')
-        self.assertEqual(c.month_of_year, set([1, 3, 5, 7, 9, 11]))
-        c = crontab(month_of_year='2-12/2')
-        self.assertEqual(c.month_of_year, set([2, 4, 6, 8, 10, 12]))
-
-    def test_crontab_spec_invalid_moy(self):
-        with self.assertRaises(ValueError):
-            crontab(month_of_year=0)
-        with self.assertRaises(ValueError):
-            crontab(month_of_year='0-5')
-        with self.assertRaises(ValueError):
-            crontab(month_of_year=13)
-        with self.assertRaises(ValueError):
-            crontab(month_of_year='12,13')
-
-    def seconds_almost_equal(self, a, b, precision):
-        for index, skew in enumerate((+0.1, 0, -0.1)):
-            try:
-                self.assertAlmostEqual(a, b + skew, precision)
-            except AssertionError:
-                if index + 1 >= 3:
-                    raise
-            else:
-                break
-
-    def assertRelativedelta(self, due, last_ran):
-        try:
-            from dateutil.relativedelta import relativedelta
-        except ImportError:
-            return
-        l1, d1, n1 = due.run_every.remaining_delta(last_ran)
-        l2, d2, n2 = due.run_every.remaining_delta(last_ran,
-                                                   ffwd=relativedelta)
-        if not isinstance(d1, relativedelta):
-            self.assertEqual(l1, l2)
-            for field, value in items(d1._fields()):
-                self.assertEqual(getattr(d1, field), value)
-            self.assertFalse(d2.years)
-            self.assertFalse(d2.months)
-            self.assertFalse(d2.days)
-            self.assertFalse(d2.leapdays)
-            self.assertFalse(d2.hours)
-            self.assertFalse(d2.minutes)
-            self.assertFalse(d2.seconds)
-            self.assertFalse(d2.microseconds)
-
-    def test_every_minute_execution_is_due(self):
-        last_ran = self.now - timedelta(seconds=61)
-        due, remaining = every_minute.run_every.is_due(last_ran)
-        self.assertRelativedelta(every_minute, last_ran)
-        self.assertTrue(due)
-        self.seconds_almost_equal(remaining, self.next_minute, 1)
-
-    def test_every_minute_execution_is_not_due(self):
-        last_ran = self.now - timedelta(seconds=self.now.second)
-        due, remaining = every_minute.run_every.is_due(last_ran)
-        self.assertFalse(due)
-        self.seconds_almost_equal(remaining, self.next_minute, 1)
-
-    # 29th of May 2010 is a saturday
-    @patch_crontab_nowfun(hourly, datetime(2010, 5, 29, 10, 30))
-    def test_execution_is_due_on_saturday(self):
-        last_ran = self.now - timedelta(seconds=61)
-        due, remaining = every_minute.run_every.is_due(last_ran)
-        self.assertTrue(due)
-        self.seconds_almost_equal(remaining, self.next_minute, 1)
-
-    # 30th of May 2010 is a sunday
-    @patch_crontab_nowfun(hourly, datetime(2010, 5, 30, 10, 30))
-    def test_execution_is_due_on_sunday(self):
-        last_ran = self.now - timedelta(seconds=61)
-        due, remaining = every_minute.run_every.is_due(last_ran)
-        self.assertTrue(due)
-        self.seconds_almost_equal(remaining, self.next_minute, 1)
-
-    # 31st of May 2010 is a monday
-    @patch_crontab_nowfun(hourly, datetime(2010, 5, 31, 10, 30))
-    def test_execution_is_due_on_monday(self):
-        last_ran = self.now - timedelta(seconds=61)
-        due, remaining = every_minute.run_every.is_due(last_ran)
-        self.assertTrue(due)
-        self.seconds_almost_equal(remaining, self.next_minute, 1)
-
-    @patch_crontab_nowfun(hourly, datetime(2010, 5, 10, 10, 30))
-    def test_every_hour_execution_is_due(self):
-        due, remaining = hourly.run_every.is_due(
-            datetime(2010, 5, 10, 6, 30))
-        self.assertTrue(due)
-        self.assertEqual(remaining, 60 * 60)
-
-    @patch_crontab_nowfun(hourly, datetime(2010, 5, 10, 10, 29))
-    def test_every_hour_execution_is_not_due(self):
-        due, remaining = hourly.run_every.is_due(
-            datetime(2010, 5, 10, 9, 30))
-        self.assertFalse(due)
-        self.assertEqual(remaining, 60)
-
-    @patch_crontab_nowfun(quarterly, datetime(2010, 5, 10, 10, 15))
-    def test_first_quarter_execution_is_due(self):
-        due, remaining = quarterly.run_every.is_due(
-            datetime(2010, 5, 10, 6, 30))
-        self.assertTrue(due)
-        self.assertEqual(remaining, 15 * 60)
-
-    @patch_crontab_nowfun(quarterly, datetime(2010, 5, 10, 10, 30))
-    def test_second_quarter_execution_is_due(self):
-        due, remaining = quarterly.run_every.is_due(
-            datetime(2010, 5, 10, 6, 30))
-        self.assertTrue(due)
-        self.assertEqual(remaining, 15 * 60)
-
-    @patch_crontab_nowfun(quarterly, datetime(2010, 5, 10, 10, 14))
-    def test_first_quarter_execution_is_not_due(self):
-        due, remaining = quarterly.run_every.is_due(
-            datetime(2010, 5, 10, 10, 0))
-        self.assertFalse(due)
-        self.assertEqual(remaining, 60)
-
-    @patch_crontab_nowfun(quarterly, datetime(2010, 5, 10, 10, 29))
-    def test_second_quarter_execution_is_not_due(self):
-        due, remaining = quarterly.run_every.is_due(
-            datetime(2010, 5, 10, 10, 15))
-        self.assertFalse(due)
-        self.assertEqual(remaining, 60)
-
-    @patch_crontab_nowfun(daily, datetime(2010, 5, 10, 7, 30))
-    def test_daily_execution_is_due(self):
-        due, remaining = daily.run_every.is_due(
-            datetime(2010, 5, 9, 7, 30))
-        self.assertTrue(due)
-        self.assertEqual(remaining, 24 * 60 * 60)
-
-    @patch_crontab_nowfun(daily, datetime(2010, 5, 10, 10, 30))
-    def test_daily_execution_is_not_due(self):
-        due, remaining = daily.run_every.is_due(
-            datetime(2010, 5, 10, 7, 30))
-        self.assertFalse(due)
-        self.assertEqual(remaining, 21 * 60 * 60)
-
-    @patch_crontab_nowfun(weekly, datetime(2010, 5, 6, 7, 30))
-    def test_weekly_execution_is_due(self):
-        due, remaining = weekly.run_every.is_due(
-            datetime(2010, 4, 30, 7, 30))
-        self.assertTrue(due)
-        self.assertEqual(remaining, 7 * 24 * 60 * 60)
-
-    @patch_crontab_nowfun(weekly, datetime(2010, 5, 7, 10, 30))
-    def test_weekly_execution_is_not_due(self):
-        due, remaining = weekly.run_every.is_due(
-            datetime(2010, 5, 6, 7, 30))
-        self.assertFalse(due)
-        self.assertEqual(remaining, 6 * 24 * 60 * 60 - 3 * 60 * 60)
-
-    @patch_crontab_nowfun(monthly, datetime(2010, 5, 13, 7, 30))
-    def test_monthly_execution_is_due(self):
-        due, remaining = monthly.run_every.is_due(
-            datetime(2010, 4, 8, 7, 30))
-        self.assertTrue(due)
-        self.assertEqual(remaining, 28 * 24 * 60 * 60)
-
-    @patch_crontab_nowfun(monthly, datetime(2010, 5, 9, 10, 30))
-    def test_monthly_execution_is_not_due(self):
-        due, remaining = monthly.run_every.is_due(
-            datetime(2010, 4, 8, 7, 30))
-        self.assertFalse(due)
-        self.assertEqual(remaining, 4 * 24 * 60 * 60 - 3 * 60 * 60)
-
-    @patch_crontab_nowfun(monthly_moy, datetime(2014, 2, 26, 22, 0))
-    def test_monthly_moy_execution_is_due(self):
-        due, remaining = monthly_moy.run_every.is_due(
-            datetime(2013, 7, 4, 10, 0))
-        self.assertTrue(due)
-        self.assertEqual(remaining, 60.)
-
-    @patch_crontab_nowfun(monthly_moy, datetime(2013, 6, 28, 14, 30))
-    def test_monthly_moy_execution_is_not_due(self):
-        raise SkipTest('unstable test')
-        due, remaining = monthly_moy.run_every.is_due(
-            datetime(2013, 6, 28, 22, 14))
-        self.assertFalse(due)
-        attempt = (
-            time.mktime(datetime(2014, 2, 26, 22, 0).timetuple()) -
-            time.mktime(datetime(2013, 6, 28, 14, 30).timetuple()) -
-            60 * 60
-        )
-        self.assertEqual(remaining, attempt)
-
-    @patch_crontab_nowfun(monthly_moy, datetime(2014, 2, 26, 22, 0))
-    def test_monthly_moy_execution_is_due2(self):
-        due, remaining = monthly_moy.run_every.is_due(
-            datetime(2013, 2, 28, 10, 0))
-        self.assertTrue(due)
-        self.assertEqual(remaining, 60.)
-
-    @patch_crontab_nowfun(monthly_moy, datetime(2014, 2, 26, 21, 0))
-    def test_monthly_moy_execution_is_not_due2(self):
-        due, remaining = monthly_moy.run_every.is_due(
-            datetime(2013, 6, 28, 22, 14))
-        self.assertFalse(due)
-        attempt = 60 * 60
-        self.assertEqual(remaining, attempt)
-
-    @patch_crontab_nowfun(yearly, datetime(2010, 3, 11, 7, 30))
-    def test_yearly_execution_is_due(self):
-        due, remaining = yearly.run_every.is_due(
-            datetime(2009, 3, 12, 7, 30))
-        self.assertTrue(due)
-        self.assertEqual(remaining, 364 * 24 * 60 * 60)
-
-    @patch_crontab_nowfun(yearly, datetime(2010, 3, 7, 10, 30))
-    def test_yearly_execution_is_not_due(self):
-        due, remaining = yearly.run_every.is_due(
-            datetime(2009, 3, 12, 7, 30))
-        self.assertFalse(due)
-        self.assertEqual(remaining, 4 * 24 * 60 * 60 - 3 * 60 * 60)

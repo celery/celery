@@ -1,51 +1,49 @@
 from __future__ import absolute_import
 
 from celery.contrib.abortable import AbortableTask, AbortableAsyncResult
-from celery.result import AsyncResult
-from celery.tests.case import Case
+from celery.tests.case import AppCase
 
 
-class MyAbortableTask(AbortableTask):
+class test_AbortableTask(AppCase):
 
-    def run(self, **kwargs):
-        return True
+    def setup(self):
 
-
-class test_AbortableTask(Case):
+        @self.app.task(base=AbortableTask, shared=False)
+        def abortable():
+            return True
+        self.abortable = abortable
 
     def test_async_result_is_abortable(self):
-        t = MyAbortableTask()
-        result = t.apply_async()
+        result = self.abortable.apply_async()
         tid = result.id
-        self.assertIsInstance(t.AsyncResult(tid), AbortableAsyncResult)
+        self.assertIsInstance(
+            self.abortable.AsyncResult(tid), AbortableAsyncResult,
+        )
 
     def test_is_not_aborted(self):
-        t = MyAbortableTask()
-        t.push_request()
+        self.abortable.push_request()
         try:
-            result = t.apply_async()
+            result = self.abortable.apply_async()
             tid = result.id
-            self.assertFalse(t.is_aborted(task_id=tid))
+            self.assertFalse(self.abortable.is_aborted(task_id=tid))
         finally:
-            t.pop_request()
+            self.abortable.pop_request()
 
     def test_is_aborted_not_abort_result(self):
-        t = MyAbortableTask()
-        t.AsyncResult = AsyncResult
-        t.push_request()
+        self.abortable.AsyncResult = self.app.AsyncResult
+        self.abortable.push_request()
         try:
-            t.request.id = 'foo'
-            self.assertFalse(t.is_aborted())
+            self.abortable.request.id = 'foo'
+            self.assertFalse(self.abortable.is_aborted())
         finally:
-            t.pop_request()
+            self.abortable.pop_request()
 
     def test_abort_yields_aborted(self):
-        t = MyAbortableTask()
-        t.push_request()
+        self.abortable.push_request()
         try:
-            result = t.apply_async()
+            result = self.abortable.apply_async()
             result.abort()
             tid = result.id
-            self.assertTrue(t.is_aborted(task_id=tid))
+            self.assertTrue(self.abortable.is_aborted(task_id=tid))
         finally:
-            t.pop_request()
+            self.abortable.pop_request()

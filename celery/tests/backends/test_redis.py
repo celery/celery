@@ -8,14 +8,13 @@ from pickle import loads, dumps
 
 from kombu.utils import cached_property, uuid
 
+from celery import subtask
 from celery import states
 from celery.datastructures import AttributeDict
 from celery.exceptions import ImproperlyConfigured
-from celery.result import AsyncResult
-from celery.task import subtask
 from celery.utils.timeutils import timedelta_seconds
 
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, depends_on_current_app
 
 
 class Redis(object):
@@ -85,6 +84,7 @@ class test_RedisBackend(AppCase):
 
         self.MockBackend = MockBackend
 
+    @depends_on_current_app
     def test_reduce(self):
         try:
             from celery.backends.redis import RedisBackend
@@ -104,25 +104,18 @@ class test_RedisBackend(AppCase):
         self.assertEqual(x.db, '1')
 
     def test_conf_raises_KeyError(self):
-        conf = AttributeDict({'CELERY_RESULT_SERIALIZER': 'json',
-                              'CELERY_MAX_CACHED_RESULTS': 1,
-                              'CELERY_ACCEPT_CONTENT': ['json'],
-                              'CELERY_TASK_RESULT_EXPIRES': None})
-        prev, self.app.conf = self.app.conf, conf
-        try:
-            self.MockBackend(app=self.app)
-        finally:
-            self.app.conf = prev
+        self.app.conf = AttributeDict({
+            'CELERY_RESULT_SERIALIZER': 'json',
+            'CELERY_MAX_CACHED_RESULTS': 1,
+            'CELERY_ACCEPT_CONTENT': ['json'],
+            'CELERY_TASK_RESULT_EXPIRES': None,
+        })
+        self.MockBackend(app=self.app)
 
     def test_expires_defaults_to_config(self):
-        conf = self.app.conf
-        prev = conf.CELERY_TASK_RESULT_EXPIRES
-        conf.CELERY_TASK_RESULT_EXPIRES = 10
-        try:
-            b = self.Backend(expires=None, app=self.app)
-            self.assertEqual(b.expires, 10)
-        finally:
-            conf.CELERY_TASK_RESULT_EXPIRES = prev
+        self.app.conf.CELERY_TASK_RESULT_EXPIRES = 10
+        b = self.Backend(expires=None, app=self.app)
+        self.assertEqual(b.expires, 10)
 
     def test_expires_is_int(self):
         b = self.Backend(expires=48, app=self.app)
@@ -140,7 +133,7 @@ class test_RedisBackend(AppCase):
     def test_on_chord_apply(self):
         self.Backend(app=self.app).on_chord_apply(
             'group_id', {},
-            result=[AsyncResult(x) for x in [1, 2, 3]],
+            result=[self.app.AsyncResult(x) for x in [1, 2, 3]],
         )
 
     def test_mget(self):

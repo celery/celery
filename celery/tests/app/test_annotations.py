@@ -13,12 +13,12 @@ class MyAnnotation(object):
 class AnnotationCase(AppCase):
 
     def setup(self):
-        @self.app.task()
+        @self.app.task(shared=False)
         def add(x, y):
             return x + y
         self.add = add
 
-        @self.app.task()
+        @self.app.task(shared=False)
         def mul(x, y):
             return x * y
         self.mul = mul

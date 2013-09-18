@@ -7,7 +7,6 @@ from datetime import datetime
 from mock import Mock, patch
 
 from celery import __main__
-from celery import task
 from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
 from celery.bin.base import Error
 from celery.bin.celery import (
@@ -30,15 +29,10 @@ from celery.bin.celery import (
     command,
 )
 
-from celery.tests.case import AppCase, Case, WhateverIO, override_stdouts
+from celery.tests.case import AppCase, WhateverIO, override_stdouts
 
 
-@task()
-def add(x, y):
-    return x + y
-
-
-class test__main__(Case):
+class test__main__(AppCase):
 
     def test_warn_deprecated(self):
         with override_stdouts() as (stdout, _):
@@ -167,28 +161,35 @@ class test_list(AppCase):
 
 class test_call(AppCase):
 
+    def setup(self):
+
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+        self.add = add
+
     @patch('celery.app.base.Celery.send_task')
     def test_run(self, send_task):
         a = call(app=self.app, stderr=WhateverIO(), stdout=WhateverIO())
-        a.run('tasks.add')
+        a.run(self.add.name)
         self.assertTrue(send_task.called)
 
-        a.run('tasks.add',
+        a.run(self.add.name,
               args=dumps([4, 4]),
               kwargs=dumps({'x': 2, 'y': 2}))
         self.assertEqual(send_task.call_args[1]['args'], [4, 4])
         self.assertEqual(send_task.call_args[1]['kwargs'], {'x': 2, 'y': 2})
 
-        a.run('tasks.add', expires=10, countdown=10)
+        a.run(self.add.name, expires=10, countdown=10)
         self.assertEqual(send_task.call_args[1]['expires'], 10)
         self.assertEqual(send_task.call_args[1]['countdown'], 10)
 
         now = datetime.now()
         iso = now.isoformat()
-        a.run('tasks.add', expires=iso)
+        a.run(self.add.name, expires=iso)
         self.assertEqual(send_task.call_args[1]['expires'], now)
         with self.assertRaises(ValueError):
-            a.run('tasks.add', expires='foobaribazibar')
+            a.run(self.add.name, expires='foobaribazibar')
 
 
 class test_purge(AppCase):
@@ -208,6 +209,13 @@ class test_purge(AppCase):
 
 class test_result(AppCase):
 
+    def setup(self):
+
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+        self.add = add
+
     def test_run(self):
         with patch('celery.result.AsyncResult.get') as get:
             out = WhateverIO()
@@ -217,11 +225,11 @@ class test_result(AppCase):
             self.assertIn('Jerry', out.getvalue())
 
             get.return_value = 'Elaine'
-            r.run('id', task=add.name)
+            r.run('id', task=self.add.name)
             self.assertIn('Elaine', out.getvalue())
 
             with patch('celery.result.AsyncResult.traceback') as tb:
-                r.run('id', task=add.name, traceback=True)
+                r.run('id', task=self.add.name, traceback=True)
                 self.assertIn(str(tb), out.getvalue())
 
 
@@ -417,15 +425,12 @@ class test_inspect(AppCase):
         self.assertTrue(inspect(app=self.app).epilog)
 
     def test_do_call_method_sql_transport_type(self):
-        prev, self.app.connection = self.app.connection, Mock()
-        try:
-            conn = self.app.connection.return_value = Mock(name='Connection')
-            conn.transport.driver_type = 'sql'
-            i = inspect(app=self.app)
-            with self.assertRaises(i.Error):
-                i.do_call_method(['ping'])
-        finally:
-            self.app.connection = prev
+        self.app.connection = Mock()
+        conn = self.app.connection.return_value = Mock(name='Connection')
+        conn.transport.driver_type = 'sql'
+        i = inspect(app=self.app)
+        with self.assertRaises(i.Error):
+            i.do_call_method(['ping'])
 
     def test_say_directions(self):
         i = inspect(self.app)
@@ -561,7 +566,7 @@ class test_main(AppCase):
         cmd.execute_from_commandline.assert_called_with(None)
 
 
-class test_compat(Case):
+class test_compat(AppCase):
 
     def test_compat_command_decorator(self):
         with patch('celery.bin.celery.CeleryCommand') as CC:

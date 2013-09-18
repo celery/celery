@@ -4,10 +4,10 @@ from mock import Mock, patch
 
 from celery import bootsteps
 
-from celery.tests.case import AppCase, Case
+from celery.tests.case import AppCase
 
 
-class test_StepFormatter(Case):
+class test_StepFormatter(AppCase):
 
     def test_get_prefix(self):
         f = bootsteps.StepFormatter()
@@ -53,12 +53,12 @@ class test_StepFormatter(Case):
         })
 
 
-class test_Step(Case):
+class test_Step(AppCase):
 
     class Def(bootsteps.StartStopStep):
         name = 'test_Step.Def'
 
-    def setUp(self):
+    def setup(self):
         self.steps = []
 
     def test_blueprint_name(self, bp='test_blueprint_name'):
@@ -151,12 +151,12 @@ class test_ConsumerStep(AppCase):
         step.start(self)
 
 
-class test_StartStopStep(Case):
+class test_StartStopStep(AppCase):
 
     class Def(bootsteps.StartStopStep):
         name = 'test_StartStopStep.Def'
 
-    def setUp(self):
+    def setup(self):
         self.steps = []
 
     def test_start__stop(self):

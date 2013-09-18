@@ -14,19 +14,15 @@ except NameError:
     class WindowsError(Exception):
         pass
 
-config_module = os.environ.setdefault(
-    'CELERY_TEST_CONFIG_MODULE', 'celery.tests.config',
+os.environ.update(
+    #: warn if config module not found
+    C_WNOCONF='yes',
+    EVENTLET_NOPATCH='yes',
+    GEVENT_NOPATCH='yes',
+    KOMBU_DISABLE_LIMIT_PROTECTION='yes',
+    # virtual.QoS will not do sanity assertions when this is set.
+    KOMBU_UNITTEST='yes',
 )
-
-os.environ.setdefault('CELERY_CONFIG_MODULE', config_module)
-os.environ['CELERY_LOADER'] = 'default'
-os.environ['EVENTLET_NOPATCH'] = 'yes'
-os.environ['GEVENT_NOPATCH'] = 'yes'
-os.environ['KOMBU_DISABLE_LIMIT_PROTECTION'] = 'yes'
-os.environ['CELERY_BROKER_URL'] = 'memory://'
-
-# virtual.QoS will not do sanity assertions when this is set.
-os.environ['KOMBU_UNITTEST'] = 'yes'
 
 
 def setup():
@@ -35,6 +31,9 @@ def setup():
         with catch_warnings(record=True):
             import_all_modules()
         warnings.resetwarnings()
+    from celery.tests.case import Trap
+    from celery._state import set_default_app
+    set_default_app(Trap())
 
 
 def teardown():
@@ -81,9 +80,11 @@ def find_distribution_modules(name=__name__, file=__file__):
 
 
 def import_all_modules(name=__name__, file=__file__,
-                       skip=['celery.decorators', 'celery.contrib.batches']):
+                       skip=('celery.decorators',
+                             'celery.contrib.batches',
+                             'celery.task')):
     for module in find_distribution_modules(name, file):
-        if module not in skip:
+        if not module.startswith(skip):
             try:
                 import_module(module)
             except ImportError:
