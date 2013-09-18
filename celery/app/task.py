@@ -672,6 +672,7 @@ class Task(object):
         """Returns :class:`~celery.subtask` object for
         this task, wrapping arguments and execution options
         for a single task invocation."""
+        starkwargs.setdefault('app', self.app)
         return subtask(self, args, *starargs, **starkwargs)
 
     def s(self, *args, **kwargs):
@@ -685,17 +686,17 @@ class Task(object):
     def chunks(self, it, n):
         """Creates a :class:`~celery.canvas.chunks` task for this task."""
         from celery import chunks
-        return chunks(self.s(), it, n)
+        return chunks(self.s(), it, n, app=self.app)
 
     def map(self, it):
         """Creates a :class:`~celery.canvas.xmap` task from ``it``."""
         from celery import xmap
-        return xmap(self.s(), it)
+        return xmap(self.s(), it, app=self.app)
 
     def starmap(self, it):
         """Creates a :class:`~celery.canvas.xstarmap` task from ``it``."""
         from celery import xstarmap
-        return xstarmap(self.s(), it)
+        return xstarmap(self.s(), it, app=self.app)
 
     def update_state(self, task_id=None, state=None, meta=None):
         """Update task state.
