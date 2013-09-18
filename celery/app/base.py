@@ -515,10 +515,6 @@ class Celery(object):
         return self.subclass_with_self('celery.apps.beat:Beat')
 
     @cached_property
-    def TaskSet(self):
-        return self.subclass_with_self('celery.task.sets:TaskSet')
-
-    @cached_property
     def Task(self):
         return self.create_task_cls()
 
@@ -531,11 +527,21 @@ class Celery(object):
         return self.subclass_with_self('celery.result:AsyncResult')
 
     @cached_property
+    def ResultSet(self):
+        return self.subclass_with_self('celery.result:ResultSet')
+
+    @cached_property
     def GroupResult(self):
         return self.subclass_with_self('celery.result:GroupResult')
 
     @cached_property
+    def TaskSet(self):  # XXX compat
+        """Deprecated! Please use :class:`celery.group` instead."""
+        return self.subclass_with_self('celery.task.sets:TaskSet')
+
+    @cached_property
     def TaskSetResult(self):  # XXX compat
+        """Deprecated! Please use :attr:`GroupResult` instead."""
         return self.subclass_with_self('celery.result:TaskSetResult')
 
     @property
