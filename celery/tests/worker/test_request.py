@@ -818,8 +818,8 @@ class test_Request(AppCase):
                     content_encoding='utf-8')
         job = TaskRequest.from_message(m, m.decode(), app=self.app)
         self.assertIsInstance(job, Request)
-        self.assertEquals(job.args, [])
-        self.assertEquals(job.kwargs, {})
+        self.assertEqual(job.args, [])
+        self.assertEqual(job.kwargs, {})
 
     def test_from_message_missing_required_fields(self):
         body = {}

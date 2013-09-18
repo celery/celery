@@ -48,7 +48,7 @@ Then we can put the tests in a ``tests.py`` somewhere:
             and returns the correct result."""
             result = add.delay(8, 8)
 
-            self.assertEquals(result.get(), 16)
+            self.assertEqual(result.get(), 16)
             self.assertTrue(result.successful())
 
 
