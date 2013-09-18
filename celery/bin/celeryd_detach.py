@@ -35,13 +35,15 @@ OPTION_LIST = daemon_options(default_pidfile='celeryd.pid') + (
 
 
 def detach(path, argv, logfile=None, pidfile=None, uid=None,
-           gid=None, umask=0, working_directory=None, fake=False, ):
+           gid=None, umask=0, working_directory=None, fake=False, app=None):
     with detached(logfile, pidfile, uid, gid, umask, working_directory, fake):
         try:
             os.execv(path, [path] + argv)
         except Exception:
-            from celery import current_app
-            current_app.log.setup_logging_subsystem('ERROR', logfile)
+            if app is None:
+                from celery import current_app
+                app = current_app
+            app.log.setup_logging_subsystem('ERROR', logfile)
             logger.critical("Can't exec %r", ' '.join([path] + argv),
                             exc_info=True)
         return EX_FAILURE
@@ -116,6 +118,9 @@ class detached_celeryd(object):
     else:
         execv_argv = ['-m', 'celery', 'worker']
 
+    def __init__(self, app=None):
+        self.app = app
+
     def Parser(self, prog_name):
         return PartialOptionParser(prog=prog_name,
                                    option_list=self.option_list,
@@ -146,9 +151,11 @@ class detached_celeryd(object):
                     config.append(arg)
         prog_name = os.path.basename(argv[0])
         options, values, leftovers = self.parse_options(prog_name, argv[1:])
-        sys.exit(detach(path=self.execv_path,
-                 argv=self.execv_argv + leftovers + config,
-                 **vars(options)))
+        sys.exit(detach(
+            app=self.app, path=self.execv_path,
+            argv=self.execv_argv + leftovers + config,
+            **vars(options)
+        ))
 
 
 def main(app=None):

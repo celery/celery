@@ -160,7 +160,7 @@ class worker(Command):
         if any(arg in argv for arg in dopts):
             argv = [v for v in argv if v not in dopts]
             # never returns
-            detached_celeryd().execute_from_commandline(argv)
+            detached_celeryd(self.app).execute_from_commandline(argv)
             raise SystemExit(0)
 
     def run(self, hostname=None, pool_cls=None, loglevel=None,
