@@ -107,7 +107,7 @@ class Pool(bootsteps.StartStopComponent):
         add_reader = hub.add_reader
         remove = hub.remove
         now = time.time
-        cache = pool._pool._cache
+        cache = getattr(pool._pool, '_cache', None)
 
         # did_start_ok will verify that pool processes were able to start,
         # but this will only work the first time we start, as
