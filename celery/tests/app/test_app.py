@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import os
 
+from copy import deepcopy
 from mock import Mock, patch
 from pickle import loads, dumps
 
@@ -18,8 +19,8 @@ from celery.loaders.base import BaseLoader
 from celery.platforms import pyimplementation
 from celery.utils.serialization import pickle
 
-from celery.tests import config
 from celery.tests.case import (
+    CELERY_TEST_CONFIG,
     AppCase,
     depends_on_current_app,
     mask_modules,
@@ -50,10 +51,7 @@ class Object(object):
 
 
 def _get_test_config():
-    return dict((key, getattr(config, key))
-                for key in dir(config)
-                if key.isupper() and not key.startswith('_'))
-
+    return deepcopy(CELERY_TEST_CONFIG)
 test_config = _get_test_config()
 
 
