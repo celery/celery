@@ -45,8 +45,8 @@ app_or_default = None
 default_loader = os.environ.get('CELERY_LOADER') or 'default'  # XXX
 
 
-def bugreport():
-    return current_app().bugreport()
+def bugreport(app=None):
+    return (app or current_app()).bugreport()
 
 
 def _app_or_default(app=None):
