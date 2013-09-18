@@ -31,7 +31,7 @@ class Loader(BaseLoader):
     def setup_settings(self, settingsdict):
         return DictAttribute(settingsdict)
 
-    def read_configuration(self):
+    def read_configuration(self, fail_silently=True):
         """Read configuration from :file:`celeryconfig.py` and configure
         celery and Django so it can be used by regular Python."""
         configname = os.environ.get('CELERY_CONFIG_MODULE',
@@ -39,6 +39,8 @@ class Loader(BaseLoader):
         try:
             usercfg = self._import_config_module(configname)
         except ImportError:
+            if not fail_silently:
+                raise
             # billiard sets this if forked using execv
             if C_WNOCONF and not os.environ.get('FORKED_BY_MULTIPROCESSING'):
                 warnings.warn(NotConfigured(
