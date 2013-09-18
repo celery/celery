@@ -272,8 +272,7 @@ class Task(object):
                 setattr(self, attr_name, conf[config_name])
         if self.accept_magic_kwargs is None:
             self.accept_magic_kwargs = app.accept_magic_kwargs
-        if self.backend is None:
-            self.backend = app.backend
+        self.backend = app.backend
 
         # decorate with annotations from config.
         if not was_bound:
