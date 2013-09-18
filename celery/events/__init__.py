@@ -102,6 +102,8 @@ class EventDispatcher(object):
     """
     DISABLED_TRANSPORTS = set(['sql'])
 
+    app = None
+
     # set of callbacks to be called when :meth:`enabled`.
     on_enabled = None
 
@@ -258,10 +260,11 @@ class EventReceiver(ConsumerMixin):
     handler.
 
     """
+    app = None
 
     def __init__(self, connection, handlers=None, routing_key='#',
                  node_id=None, app=None, queue_prefix='celeryev'):
-        self.app = app_or_default(app)
+        self.app = app_or_default(app or self.app)
         self.connection = connection
         self.handlers = {} if handlers is None else handlers
         self.routing_key = routing_key
