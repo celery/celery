@@ -71,6 +71,8 @@ class EventDispatcher(object):
     """
     DISABLED_TRANSPORTS = set(['sql'])
 
+    app = None
+
     def __init__(self, connection=None, hostname=None, enabled=True,
                  channel=None, buffer_while_offline=True, app=None,
                  serializer=None):
@@ -183,11 +185,12 @@ class EventReceiver(object):
     handler.
 
     """
+    app = None
     handlers = {}
 
     def __init__(self, connection, handlers=None, routing_key='#',
                  node_id=None, app=None, queue_prefix='celeryev'):
-        self.app = app_or_default(app)
+        self.app = app_or_default(app or self.app)
         self.connection = connection
         if handlers is not None:
             self.handlers = handlers
