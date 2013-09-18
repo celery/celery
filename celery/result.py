@@ -312,7 +312,7 @@ class ResultSet(ResultBase):
 
         """
         if isinstance(result, basestring):
-            result = AsyncResult(result)
+            result = self.app.AsyncResult(result)
         try:
             self.results.remove(result)
         except ValueError:
