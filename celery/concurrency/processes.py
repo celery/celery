@@ -115,7 +115,8 @@ def process_initializer(app, hostname):
     # rebuild execution handler for all tasks.
     from celery.app.trace import build_tracer
     for name, task in items(app.tasks):
-        task.__trace__ = build_tracer(name, task, app.loader, hostname)
+        task.__trace__ = build_tracer(name, task, app.loader, hostname,
+                                      app=app)
     signals.worker_process_init.send(sender=None)
 
 

@@ -123,7 +123,7 @@ class TraceInfo(object):
 
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
-                 Info=TraceInfo, eager=False, propagate=False,
+                 Info=TraceInfo, eager=False, propagate=False, app=None,
                  IGNORE_STATES=IGNORE_STATES):
     """Returns a function that traces task execution; catches all
     exceptions and updates result backend with the state and result
@@ -151,7 +151,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     # saving the extra method call and a line less in the stack trace.
     fun = task if task_has_custom(task, '__call__') else task.run
 
-    loader = loader or current_app.loader
+    loader = loader or app.loader
     backend = task.backend
     ignore_result = task.ignore_result
     track_started = task.track_started
@@ -283,9 +283,9 @@ def trace_task(task, uuid, args, kwargs, request={}, **opts):
         return report_internal_error(task, exc)
 
 
-def _trace_task_ret(name, uuid, args, kwargs, request={}, **opts):
-    return trace_task(current_app.tasks[name],
-                      uuid, args, kwargs, request, **opts)
+def _trace_task_ret(name, uuid, args, kwargs, request={}, app=None, **opts):
+    return trace_task((app or current_app).tasks[name],
+                      uuid, args, kwargs, request, app=app, **opts)
 trace_task_ret = _trace_task_ret
 
 

@@ -652,6 +652,7 @@ class Task(object):
 
         tb = None
         retval, info = eager_trace_task(task, task_id, args, kwargs,
+                                        app=self._get_app(),
                                         request=request, propagate=throw)
         if isinstance(retval, ExceptionInfo):
             retval, tb = retval.exception, retval.traceback

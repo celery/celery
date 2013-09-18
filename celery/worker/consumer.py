@@ -391,7 +391,8 @@ class Consumer(object):
         loader = self.app.loader
         for name, task in items(self.app.tasks):
             self.strategies[name] = task.start_strategy(self.app, self)
-            task.__trace__ = build_tracer(name, task, loader, self.hostname)
+            task.__trace__ = build_tracer(name, task, loader, self.hostname,
+                                          app=self.app)
 
     def create_task_handler(self, callbacks):
         strategies = self.strategies
