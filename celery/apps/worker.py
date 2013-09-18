@@ -293,12 +293,8 @@ else:  # pragma: no cover
     install_worker_int_handler = lambda *a, **kw: None
 
 
-def _clone_current_worker():
-    if os.fork() == 0:
-        platforms.close_open_fds([
-            sys.__stdin__, sys.__stdout__, sys.__stderr__,
-        ])
-        os.execv(sys.executable, [sys.executable] + sys.argv)
+def _reload_current_worker():
+    os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
 def install_worker_restart_handler(worker, sig='SIGHUP'):
@@ -308,7 +304,7 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
         set_in_sighandler(True)
         safe_say('Restarting celery worker ({0})'.format(' '.join(sys.argv)))
         import atexit
-        atexit.register(_clone_current_worker)
+        atexit.register(_reload_current_worker)
         from celery.worker import state
         state.should_stop = True
     platforms.signals[sig] = restart_worker_sig_handler
