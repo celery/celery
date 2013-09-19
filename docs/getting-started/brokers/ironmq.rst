@@ -27,7 +27,7 @@ First, you'll need to import the iron_celery library right after you import Cele
     from celery import Celery
     import iron_celery
 
-    celery = Celery('mytasks', broker='ironmq://', backend='ironcache://')
+    app = Celery('mytasks', broker='ironmq://', backend='ironcache://')
 
 You have to specify IronMQ in the broker URL::
 

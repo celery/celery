@@ -696,10 +696,10 @@ In Other News
 - App instance factory methods have been converted to be cached
   descriptors that creates a new subclass on access.
 
-    This means that e.g. ``celery.Worker`` is an actual class
+    This means that e.g. ``app.Worker`` is an actual class
     and will work as expected when::
 
-        class Worker(celery.Worker):
+        class Worker(app.Worker):
             ...
 
 - New signal: :signal:`task_success`.
@@ -711,7 +711,7 @@ In Other News
 
     .. code-block:: python
 
-        celery = Celery(broker='redis://')
+        app = Celery(broker='redis://')
 
 - Result backends can now be set using an URL
 

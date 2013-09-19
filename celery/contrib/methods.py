@@ -46,15 +46,21 @@ or with any task decorator:
         from celery.task import task  # ALSO BAD
 
         # GOOD:
-        celery = Celery(...)
+        app = Celery(...)
 
-        @celery.task(filter=task_method)
+        @app.task(filter=task_method)
         def foo(self): pass
 
         # ALSO GOOD:
         from celery import current_app
 
         @current_app.task(filter=task_method)
+        def foo(self): pass
+
+        # ALSO GOOD:
+        from celery import shared_task
+
+        @shared_task(filter=task_method)
         def foo(self): pass
 
 Caveats

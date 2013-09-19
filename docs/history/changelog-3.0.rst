@@ -1352,8 +1352,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     As an example, Celery can lazily use the configuration of a Flask app::
 
         flask_app = Flask()
-        celery = Celery()
-        celery.add_defaults(lambda: flask_app.config)
+        celery_app = Celery()
+        celery_app.add_defaults(lambda: flask_app.config)
 
 - Revoked tasks were not marked as revoked in the result backend (Issue #871).
 
@@ -2564,8 +2564,8 @@ See :ref:`whatsnew-3.0`.
     As an example, Celery can lazily use the configuration of a Flask app::
 
         flask_app = Flask()
-        celery = Celery()
-        celery.add_defaults(lambda: flask_app.config)
+        celery_app = Celery()
+        celery_app.add_defaults(lambda: flask_app.config)
 
 - Revoked tasks were not marked as revoked in the result backend (Issue #871).
 

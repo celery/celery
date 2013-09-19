@@ -232,8 +232,8 @@ In Other News
         from celery import Celery
         from optparse import make_option as Option
 
-        celery = Celery()
-        celery.user_options['worker'].add(
+        app = Celery()
+        app.user_options['worker'].add(
             Option('--my-argument'),
         )
 
@@ -247,7 +247,7 @@ In Other News
 
     Celery event messages have included a logical clock value for some time,
     but starting with this version that field is also used to order them
-    (if the monitor is using ``celery.events.state``).
+    (that is if the monitor is using :mod:`celery.events.state`).
 
     The logical clock is currently implemented using Lamport timestamps,
     which does not have a high degree of accuracy, but should be good

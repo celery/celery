@@ -219,8 +219,7 @@ from a module in the project, this module could look something like this:
 
     from celery import Celery
 
-    celery = Celery()
-    celery.config_from_object(BROKER_URL='amqp://')
+    app = Celery(broker='amqp://')
 
 
 Module Overview

@@ -552,9 +552,9 @@ Example adding a custom option to the :program:`celery worker` command:
     from celery import Celery
     from optparse import make_option as Option
 
-    celery = Celery(broker='amqp://')
+    app = Celery(broker='amqp://')
 
-    celery.user_options['worker'].add(
+    app.user_options['worker'].add(
         Option('--enable-my-option', action='store_true', default=False,
                help='Enable custom option.'),
     )

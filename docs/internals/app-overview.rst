@@ -16,9 +16,9 @@ Examples
 Creating a Celery instance::
 
     >>> from celery import Celery
-    >>> celery = Celery()
-    >>> celery.config_from_object("celeryconfig")
-    >>> celery.config_from_envvar("CELERY_CONFIG_MODULE")
+    >>> app = Celery()
+    >>> app.config_from_object("celeryconfig")
+    >>> #app.config_from_envvar("CELERY_CONFIG_MODULE")
 
 
 Creating tasks:

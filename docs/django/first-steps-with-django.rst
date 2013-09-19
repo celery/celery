@@ -28,9 +28,9 @@ that defines the Celery instance:
     from celery import Celery
     from django.conf import settings
 
-    celery = Celery('proj.celery')
-    celery.config_from_object(settings)
-    celery.autodiscover_tasks(settings.INSTALLED_APPS, related_name='tasks')
+    app = Celery('proj.celery')
+    app.config_from_object(settings)
+    app.autodiscover_tasks(settings.INSTALLED_APPS, related_name='tasks')
 
     @celery.task(bind=True)
     def debug_task(self):
@@ -41,7 +41,7 @@ First we create the Celery app instance:
 
 .. code-block:: python
 
-    celery = Celery('proj')
+    app = Celery('proj')
 
 Then we add the Django settings module as a configuration source
 for Celery.  This means that you don't have to use multiple
@@ -50,7 +50,7 @@ from the Django settings.
 
 .. code-block:: python
 
-    celery.config_from_object(settings)
+    app.config_from_object(settings)
 
 Next, a common practice for reusable apps is to define all tasks
 in a separate ``tasks.py`` module, and Celery does have a way to
@@ -58,7 +58,7 @@ autodiscover these modules:
 
 .. code-block:: python
 
-    celery.autodiscover_tasks(settings.INSTALLED_APPS, related_name='tasks')
+    app.autodiscover_tasks(settings.INSTALLED_APPS, related_name='tasks')
 
 With the line above Celery will automatically discover tasks in reusable
 apps if you follow the ``tasks.py`` convention::

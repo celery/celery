@@ -25,8 +25,8 @@ BROKER_TRANSPORT = os.environ.get('BROKER', 'librabbitmq')
 if hasattr(sys, 'pypy_version_info'):
     BROKER_TRANSPORT = 'pyamqp'
 
-celery = Celery('bench_worker')
-celery.conf.update(
+app = Celery('bench_worker')
+app.conf.update(
     BROKER_TRANSPORT=BROKER_TRANSPORT,
     BROKER_POOL_LIMIT=10,
     CELERYD_POOL='solo',
@@ -53,7 +53,7 @@ def tdiff(then):
     return time.time() - then
 
 
-@celery.task(cur=0, time_start=None, queue='bench.worker', bare=True)
+@app.task(cur=0, time_start=None, queue='bench.worker', bare=True)
 def it(_, n):
     i = it.cur  # use internal counter, as ordering can be skewed
                 # by previous runs, or the broker.
@@ -81,8 +81,8 @@ def bench_apply(n=DEFAULT_ITS):
 def bench_work(n=DEFAULT_ITS, loglevel='CRITICAL'):
     loglevel = os.environ.get('BENCH_LOGLEVEL') or loglevel
     if loglevel:
-        celery.log.setup_logging_subsystem(loglevel=loglevel)
-    worker = celery.WorkController(concurrency=15,
+        app.log.setup_logging_subsystem(loglevel=loglevel)
+    worker = app.WorkController(concurrency=15,
                                    queues=['bench.worker'])
 
     try:
