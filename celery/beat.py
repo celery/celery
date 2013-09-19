@@ -135,8 +135,14 @@ class ScheduleEntry(object):
 class Scheduler(object):
     """Scheduler for periodic tasks.
 
+    The :program:`celery beat` program may instantiate this class
+    multiple times for introspection purposes, but then with the
+    ``lazy`` argument set.  It is important for subclasses to
+    be idempotent when this argument is set.
+
     :keyword schedule: see :attr:`schedule`.
     :keyword max_interval: see :attr:`max_interval`.
+    :keyword lazy: Do not set up the schedule.
 
     """
     Entry = ScheduleEntry
