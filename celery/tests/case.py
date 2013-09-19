@@ -318,6 +318,20 @@ class AppCase(Case):
             raise
 
     def _teardown_app(self):
+        from celery.utils.log import LoggingProxy
+        assert sys.stdout
+        assert sys.stderr
+        assert sys.__stdout__
+        assert sys.__stderr__
+        this = self._get_test_name()
+        if isinstance(sys.stdout, LoggingProxy) or \
+                isinstance(sys.__stdout__, LoggingProxy):
+            raise RuntimeError(
+                'Test {0} did not disable LoggingProxy for stdout'.format(this))
+        if isinstance(sys.stderr, LoggingProxy) or \
+                isinstance(sys.__stderr__, LoggingProxy):
+            raise RuntimeError(
+                'Test {0} did not disable LoggingProxy for stderr'.format(this))
         backend = self.app.__dict__.get('backend')
         if backend is not None:
             if isinstance(backend, CacheBackend):
@@ -331,6 +345,9 @@ class AppCase(Case):
             self.app.close()
         self.app = None
 
+    def _get_test_name(self):
+        return '.'.join([self.__class__.__name__, self._testMethodName])
+
     def tearDown(self):
         try:
             self.teardown()
@@ -339,8 +356,8 @@ class AppCase(Case):
         self.assert_no_logging_side_effect()
 
     def assert_no_logging_side_effect(self):
+        this = self._get_test_name()
         root = logging.getLogger()
-        this = '.'.join([self.__class__.__name__, self._testMethodName])
         if root.level != self.__rootlevel:
             raise RuntimeError('Test {0} changed root loglevel'.format(this))
         if root.handlers != self.__roothandlers:
@@ -718,6 +735,7 @@ def body_from_sig(app, sig, utc=True):
 
 @contextmanager
 def restore_logging():
+    outs = sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__
     root = logging.getLogger()
     level = root.level
     handlers = root.handlers
@@ -725,5 +743,6 @@ def restore_logging():
     try:
         yield
     finally:
+        sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__ = outs
         root.level = level
         root.handlers[:] = handlers

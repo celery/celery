@@ -38,7 +38,6 @@ class MockService(beat.Service):
 
 class MockBeat(beatapp.Beat):
     running = False
-    redirect_stdouts = False
 
     def run(self):
         MockBeat.running = True
@@ -46,7 +45,6 @@ class MockBeat(beatapp.Beat):
 
 class MockBeat2(beatapp.Beat):
     Service = MockService
-    redirect_stdouts = False
 
     def install_sync_handler(self, b):
         pass
@@ -54,7 +52,6 @@ class MockBeat2(beatapp.Beat):
 
 class MockBeat3(beatapp.Beat):
     Service = MockService
-    redirect_stdouts = False
 
     def install_sync_handler(self, b):
         raise TypeError('xxx')
@@ -63,29 +60,32 @@ class MockBeat3(beatapp.Beat):
 class test_Beat(AppCase):
 
     def test_loglevel_string(self):
-        b = beatapp.Beat(app=self.app, loglevel='DEBUG')
+        b = beatapp.Beat(app=self.app, loglevel='DEBUG',
+                         redirect_stdouts=False)
         self.assertEqual(b.loglevel, logging.DEBUG)
 
-        b2 = beatapp.Beat(app=self.app, loglevel=logging.DEBUG)
+        b2 = beatapp.Beat(app=self.app, loglevel=logging.DEBUG,
+                          redirect_stdouts=False)
         self.assertEqual(b2.loglevel, logging.DEBUG)
 
     def test_colorize(self):
         self.app.log.setup = Mock()
-        b = beatapp.Beat(app=self.app, no_color=True)
+        b = beatapp.Beat(app=self.app, no_color=True,
+                         redirect_stdouts=False)
         b.setup_logging()
         self.assertTrue(self.app.log.setup.called)
         self.assertEqual(self.app.log.setup.call_args[1]['colorize'], False)
 
     def test_init_loader(self):
-        b = beatapp.Beat(app=self.app)
+        b = beatapp.Beat(app=self.app, redirect_stdouts=False)
         b.init_loader()
 
     def test_process_title(self):
-        b = beatapp.Beat(app=self.app)
+        b = beatapp.Beat(app=self.app, redirect_stdouts=False)
         b.set_process_title()
 
     def test_run(self):
-        b = MockBeat2(app=self.app)
+        b = MockBeat2(app=self.app, redirect_stdouts=False)
         MockService.started = False
         b.run()
         self.assertTrue(MockService.started)
@@ -106,7 +106,7 @@ class test_Beat(AppCase):
             platforms.signals = p
 
     def test_install_sync_handler(self):
-        b = beatapp.Beat(app=self.app)
+        b = beatapp.Beat(app=self.app, redirect_stdouts=False)
         clock = MockService(app=self.app)
         MockService.in_sync = False
         handlers = self.psig(b.install_sync_handler, clock)
@@ -122,7 +122,7 @@ class test_Beat(AppCase):
                 delattr(sys.stdout, 'logger')
             except AttributeError:
                 pass
-            b = beatapp.Beat(app=self.app)
+            b = beatapp.Beat(app=self.app, redirect_stdouts=False)
             b.redirect_stdouts = False
             b.app.log.already_setup = False
             b.setup_logging()
@@ -133,7 +133,7 @@ class test_Beat(AppCase):
     @patch('celery.apps.beat.logger')
     def test_logs_errors(self, logger, stdout, stderr):
         with restore_logging():
-            b = MockBeat3(app=self.app, socket_timeout=None)
+            b = MockBeat3(app=self.app, redirect_stdouts=False, socket_timeout=None)
             b.start_scheduler()
             self.assertTrue(logger.critical.called)
 
@@ -141,7 +141,7 @@ class test_Beat(AppCase):
     @patch('celery.platforms.create_pidlock')
     def test_use_pidfile(self, create_pidlock, stdout, stderr):
         b = MockBeat2(app=self.app, pidfile='pidfilelockfilepid',
-                      socket_timeout=None)
+                      socket_timeout=None, redirect_stdouts=False)
         b.start_scheduler()
         self.assertTrue(create_pidlock.called)
 
