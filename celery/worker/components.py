@@ -12,13 +12,14 @@ import atexit
 
 from functools import partial
 
+from kombu.async import Hub as _Hub, get_event_loop, set_event_loop
+from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
+
 from celery import bootsteps
 from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t
 from celery.utils.log import worker_logger as logger
 from celery.utils.timer2 import Schedule
-
-from . import hub
 
 __all__ = ['Timer', 'Hub', 'Queues', 'Pool', 'Beat', 'StateDB', 'Consumer']
 
@@ -62,20 +63,22 @@ class Hub(bootsteps.StartStopStep):
         return w.use_eventloop
 
     def create(self, w):
-        w.hub = hub.Hub(w.timer)
+        w.hub = get_event_loop()
+        if w.hub is None:
+            w.hub = set_event_loop(_Hub(w.timer))
         self._patch_thread_primitives(w)
         return w.hub
 
     def _patch_thread_primitives(self, w):
         # make clock use dummy lock
-        w.app.clock.lock = hub.DummyLock()
+        w.app.clock.lock = DummyLock()
         # multiprocessing's ApplyResult uses this lock.
         try:
             from billiard import pool
         except ImportError:
             pass
         else:
-            pool.Lock = hub.DummyLock
+            pool.Lock = DummyLock
 
 
 class Queues(bootsteps.Step):
@@ -134,7 +137,7 @@ class Pool(bootsteps.StartStopStep):
         procs = w.min_concurrency
         forking_enable = not threaded or (w.no_execv or not w.force_execv)
         if not threaded:
-            semaphore = w.semaphore = hub.BoundedSemaphore(procs)
+            semaphore = w.semaphore = LaxBoundedSemaphore(procs)
             w._quick_acquire = w.semaphore.acquire
             w._quick_release = w.semaphore.release
             max_restarts = 100

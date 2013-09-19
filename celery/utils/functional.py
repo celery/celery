@@ -15,10 +15,10 @@ from functools import wraps
 from itertools import islice
 
 from kombu.utils import cached_property
-from kombu.utils.functional import lazy, maybe_evaluate
+from kombu.utils.functional import lazy, maybe_evaluate, is_list, maybe_list
 from kombu.utils.compat import OrderedDict
 
-from celery.five import UserDict, UserList, items, keys, string_t
+from celery.five import UserDict, UserList, items, keys
 
 __all__ = ['LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
            'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
@@ -119,16 +119,6 @@ class LRUCache(UserDict):
 
         def items(self):
             return list(self._iterate_items())
-
-
-def is_list(l, scalars=(dict, string_t)):
-    """Returns true if object is list-like, but not a dict or string."""
-    return hasattr(l, '__iter__') and not isinstance(l, scalars or ())
-
-
-def maybe_list(l, scalars=(dict, string_t)):
-    """Returns list of one element if ``l`` is a scalar."""
-    return l if l is None or is_list(l, scalars) else [l]
 
 
 def memoize(maxsize=None, Cache=LRUCache):

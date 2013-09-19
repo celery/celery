@@ -1,13 +1,12 @@
 from __future__ import absolute_import
 
-from celery.worker.hub import (
-    DummyLock,
-    BoundedSemaphore,
+from kombu.async import (
     Hub,
     repr_flag,
     _rcb,
     READ, WRITE, ERR
 )
+from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
 
 from mock import Mock, call, patch
 
@@ -40,10 +39,10 @@ class test_DummyLock(Case):
             pass
 
 
-class test_BoundedSemaphore(Case):
+class test_LaxBoundedSemaphore(Case):
 
     def test_acquire_release(self):
-        x = BoundedSemaphore(2)
+        x = LaxBoundedSemaphore(2)
 
         c1 = Mock()
         x.acquire(c1, 1)
@@ -65,13 +64,13 @@ class test_BoundedSemaphore(Case):
         c3.assert_called_with(3)
 
     def test_bounded(self):
-        x = BoundedSemaphore(2)
+        x = LaxBoundedSemaphore(2)
         for i in range(100):
             x.release()
         self.assertEqual(x.value, 2)
 
     def test_grow_shrink(self):
-        x = BoundedSemaphore(1)
+        x = LaxBoundedSemaphore(1)
         self.assertEqual(x.initial_value, 1)
         cb1 = Mock()
         x.acquire(cb1, 1)
@@ -111,7 +110,7 @@ class test_BoundedSemaphore(Case):
         self.assertEqual(x.value, x.initial_value)
 
     def test_clear(self):
-        x = BoundedSemaphore(10)
+        x = LaxBoundedSemaphore(10)
         for i in range(11):
             x.acquire(Mock())
         self.assertTrue(x._waiting)
@@ -141,7 +140,7 @@ class test_Hub(Case):
         self.assertEqual(_rcb(f), f.__name__)
         self.assertEqual(_rcb('foo'), 'foo')
 
-    @patch('kombu.utils.eventio.poll')
+    @patch('kombu.async.hub.poll')
     def test_start_stop(self, poll):
         hub = Hub()
         hub.start()

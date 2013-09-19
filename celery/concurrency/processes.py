@@ -37,6 +37,7 @@ from billiard.pool import (
     RUN, CLOSE, TERMINATE, ACK, NACK, EX_RECYCLE, WorkersJoined, CoroStop,
 )
 from billiard.queues import _SimpleQueue
+from kombu.async import READ, WRITE, ERR
 from kombu.serialization import pickle as _pickle
 from kombu.utils import fxrange
 from kombu.utils.compat import get_errno
@@ -49,7 +50,6 @@ from celery.app import trace
 from celery.concurrency.base import BasePool
 from celery.five import Counter, items, values
 from celery.utils.log import get_logger
-from celery.worker.hub import READ, WRITE, ERR
 
 __all__ = ['TaskPool']
 

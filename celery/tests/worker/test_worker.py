@@ -9,6 +9,7 @@ from threading import Event
 
 from billiard.exceptions import WorkerLostError
 from kombu import Connection
+from kombu.async import READ, ERR
 from kombu.common import QoS, ignore_errors
 from kombu.exceptions import StdChannelError
 from kombu.transport.base import Message
@@ -24,7 +25,6 @@ from celery.utils import uuid
 from celery.worker import components
 from celery.worker import consumer
 from celery.worker.consumer import Consumer as __Consumer
-from celery.worker.hub import READ, ERR
 from celery.worker.job import Request
 from celery.utils import worker_direct
 from celery.utils.serialization import pickle
@@ -1036,7 +1036,7 @@ class test_WorkController(AppCase):
         pool.create(w)
 
     def test_Pool_create(self):
-        from celery.worker.hub import BoundedSemaphore
+        from kombu.async.semaphore import LaxBoundedSemaphore
         w = Mock()
         w._conninfo.connection_errors = w._conninfo.channel_errors = ()
         w.hub = Mock()
@@ -1063,7 +1063,7 @@ class test_WorkController(AppCase):
         w.consumer.restart_count = -1
         pool = components.Pool(w)
         pool.create(w)
-        self.assertIsInstance(w.semaphore, BoundedSemaphore)
+        self.assertIsInstance(w.semaphore, LaxBoundedSemaphore)
         self.assertTrue(w.hub.on_init)
         P = w.pool
         P.start()

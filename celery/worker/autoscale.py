@@ -19,13 +19,14 @@ import threading
 from functools import partial
 from time import sleep, time
 
+from kombu.async.semaphore import DummyLock
+
 from celery import bootsteps
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
 
 from . import state
 from .components import Pool
-from .hub import DummyLock
 
 __all__ = ['Autoscaler', 'WorkerComponent']
 

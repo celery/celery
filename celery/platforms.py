@@ -18,12 +18,14 @@ import signal as _signal
 import sys
 
 from billiard import current_process
+# fileno used to be in this module
+from kombu.utils import maybe_fileno
 from kombu.utils.compat import get_errno
 from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
 from .local import try_import
-from .five import items, range, reraise, string_t, int_types
+from .five import items, range, reraise, string_t
 
 _setproctitle = try_import('setproctitle')
 resource = try_import('resource')
@@ -32,7 +34,7 @@ grp = try_import('grp')
 
 __all__ = ['EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
            'IS_OSX', 'IS_WINDOWS', 'pyimplementation', 'LockFailed',
-           'get_fdmax', 'Pidfile', 'create_pidlock', 'fileno', 'maybe_fileno',
+           'get_fdmax', 'Pidfile', 'create_pidlock',
            'close_open_fds', 'DaemonContext', 'detached', 'parse_uid',
            'parse_gid', 'setgroups', 'initgroups', 'setgid', 'setuid',
            'maybe_drop_privileges', 'signals', 'set_process_title',
@@ -56,13 +58,6 @@ PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
 
 PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
 Seems we're already running? (pid: {1})"""
-
-try:
-    from io import UnsupportedOperation
-    FILENO_ERRORS = (AttributeError, ValueError, UnsupportedOperation)
-except ImportError:  # pragma: no cover
-    # Py2
-    FILENO_ERRORS = (AttributeError, ValueError)  # noqa
 
 
 def pyimplementation():
@@ -266,20 +261,6 @@ def _create_pidlock(pidfile):
         raise SystemExit(PIDLOCKED.format(pidfile, pidlock.read_pid()))
     pidlock.acquire()
     return pidlock
-
-
-def fileno(f):
-    if isinstance(f, int_types):
-        return f
-    return f.fileno()
-
-
-def maybe_fileno(f):
-    """Get object fileno, or :const:`None` if not defined."""
-    try:
-        return fileno(f)
-    except FILENO_ERRORS:
-        pass
 
 
 def close_open_fds(keep=None):

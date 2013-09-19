@@ -24,6 +24,7 @@ from time import sleep
 
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
+from kombu.async.semaphore import DummyLock
 from kombu.common import QoS, ignore_errors
 from kombu.syn import _detect_environment
 from kombu.utils.compat import get_errno
@@ -41,7 +42,6 @@ from celery.utils.text import truncate
 from celery.utils.timeutils import humanize_seconds, rate
 
 from . import heartbeat, loops, pidbox
-from .hub import DummyLock
 from .state import task_reserved, maybe_shutdown, revoked, reserved_requests
 
 try:
