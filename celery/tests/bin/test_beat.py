@@ -133,7 +133,9 @@ class test_Beat(AppCase):
     @patch('celery.apps.beat.logger')
     def test_logs_errors(self, logger, stdout, stderr):
         with restore_logging():
-            b = MockBeat3(app=self.app, redirect_stdouts=False, socket_timeout=None)
+            b = MockBeat3(
+                app=self.app, redirect_stdouts=False, socket_timeout=None,
+            )
             b.start_scheduler()
             self.assertTrue(logger.critical.called)
 

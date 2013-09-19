@@ -123,7 +123,7 @@ if sys.version_info[0:2] == (3, 2):
                 if '.' in name:
                     modname, path = name.split('.')[-1], __path__
                 module_info = imp.find_module(modname, path)
-                module = imp.load_module(name, *module_info)
+                imp.load_module(name, *module_info)
                 return sys.modules[name]
 
         def find_module(self, name, path):

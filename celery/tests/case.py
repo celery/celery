@@ -63,6 +63,15 @@ CASE_REDEFINES_TEARDOWN = """\
 {name} (subclass of AppCase) redefines private "tearDown", \
 should be: "teardown"\
 """
+CASE_LOG_REDIRECT_EFFECT = """\
+Test {0} did not disable LoggingProxy for {1}\
+"""
+CASE_LOG_LEVEL_EFFECT = """\
+Test {0} Modified the level of the root logger\
+"""
+CASE_LOG_HANDLER_EFFECT = """\
+Test {0} Modified handlers for the root logger\
+"""
 
 CELERY_TEST_CONFIG = {
     #: Don't want log output when running suite.
@@ -328,12 +337,10 @@ class AppCase(Case):
         this = self._get_test_name()
         if isinstance(sys.stdout, LoggingProxy) or \
                 isinstance(sys.__stdout__, LoggingProxy):
-            raise RuntimeError(
-                'Test {0} did not disable LoggingProxy for stdout'.format(this))
+            raise RuntimeError(CASE_LOG_REDIRECT_EFFECT.format(this, 'stdout'))
         if isinstance(sys.stderr, LoggingProxy) or \
                 isinstance(sys.__stderr__, LoggingProxy):
-            raise RuntimeError(
-                'Test {0} did not disable LoggingProxy for stderr'.format(this))
+            raise RuntimeError(CASE_LOG_REDIRECT_EFFECT.format(this, 'stderr'))
         backend = self.app.__dict__.get('backend')
         if backend is not None:
             if isinstance(backend, CacheBackend):
@@ -361,9 +368,9 @@ class AppCase(Case):
         this = self._get_test_name()
         root = logging.getLogger()
         if root.level != self.__rootlevel:
-            raise RuntimeError('Test {0} changed root loglevel'.format(this))
+            raise RuntimeError(CASE_LOG_LEVEL_EFFECT.format(this))
         if root.handlers != self.__roothandlers:
-            raise RuntimeError('Test {0} changed root handlers'.format(this))
+            raise RuntimeError(CASE_LOG_HANDLER_EFFECT.format(this))
 
     def setup(self):
         pass
