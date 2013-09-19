@@ -188,7 +188,7 @@ Branches
 Current active version branches:
 
 * master (http://github.com/celery/celery/tree/master)
-* 3.0-devel (http://github.com/celery/celery/tree/3.0-devel)
+* 3.0 (http://github.com/celery/celery/tree/3.0)
 
 You can see the state of any branch by looking at the Changelog:
 
