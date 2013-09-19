@@ -9,6 +9,40 @@
 
 If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
+.. _version-3.0.24:
+
+3.0.24
+======
+:release-date: 2013-09-19 XX:XX X.X BST
+
+- Now depends on :ref:`Kombu 2.5.15 <kombu:version-2.5.15>`.
+
+- AMQP Result backend:  No longer caches queue declarations.
+
+    The queues created by the AMQP result backend are always unique,
+    so caching the declarations caused a slow memory leak.
+
+- Worker: Fixed crash when hostname contained Unicode characters.
+
+    Contributed by Daodao.
+
+- The worker would no longer start if the `-P solo` pool was selected
+  (Issue #1548).
+
+- AsyncResult: Fixed bug with ``copy(AsyncResult)`` when no
+  ``current_app`` available.
+
+- ResultSet: Now properly propagates app when passed string id's.
+
+- Loader now ignores :envvar:`CELERY_CONFIG_MODULE` if value is empty string.
+
+- Fixed bug where ``app.GroupResult.restore`` would fall back to the default
+  app.
+
+- Fixed rare bug where built-in tasks would use the current_app.
+
+- :func:`~celery.platforms.maybe_fileno` now handles :exc:`ValueError`.
+
 .. _version-3.0.23:
 
 3.0.23
