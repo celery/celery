@@ -285,14 +285,16 @@ def depends_on_current_app(fun):
 class AppCase(Case):
     contained = True
 
-    def __new__(cls, *args, **kwargs):
-        if cls.__dict__.get('setUp'):
-            raise RuntimeError(CASE_REDEFINES_SETUP.format(name=qualname(cls)))
-        if cls.__dict__.get('tearDown'):
-            raise RuntimeError(CASE_REDEFINES_TEARDOWN.format(
-                name=qualname(cls)),
+    def __init__(self, *args, **kwargs):
+        super(AppCase, self).__init__(*args, **kwargs)
+        if self.__class__.__dict__.get('setUp'):
+            raise RuntimeError(
+                CASE_REDEFINES_SETUP.format(name=qualname(self)),
             )
-        return super(AppCase, cls).__new__(cls, *args, **kwargs)
+        if self.__class__.__dict__.get('tearDown'):
+            raise RuntimeError(
+                CASE_REDEFINES_TEARDOWN.format(name=qualname(self)),
+            )
 
     def Celery(self, *args, **kwargs):
         return UnitApp(*args, **kwargs)
