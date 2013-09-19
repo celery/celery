@@ -322,15 +322,20 @@ class MagicModule(ModuleType):
     def __dir__(self):
         return list(set(self.__all__) | DEFAULT_ATTRS)
 
+    def __reduce__(self):
+        return import_module, (self.__name__, )
+
 
 def create_module(name, attrs, cls_attrs=None, pkg=None,
                   base=MagicModule, prepare_attr=None):
     fqdn = '.'.join([pkg.__name__, name]) if pkg else name
     cls_attrs = {} if cls_attrs is None else cls_attrs
+    pkg, _, modname = name.rpartition('.')
+    cls_attrs['__module__'] = pkg
 
     attrs = dict((attr_name, prepare_attr(attr) if prepare_attr else attr)
                  for attr_name, attr in items(attrs))
-    module = sys.modules[fqdn] = type(name, (base, ), cls_attrs)(fqdn)
+    module = sys.modules[fqdn] = type(modname, (base, ), cls_attrs)(fqdn)
     module.__dict__.update(attrs)
     return module
 
