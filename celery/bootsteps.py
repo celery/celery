@@ -99,6 +99,12 @@ class Blueprint(object):
     state = None
     started = 0
     default_steps = set()
+    state_to_name = {
+        0: 'initializing',
+        RUN: 'running',
+        CLOSE: 'closing',
+        TERMINATE: 'terminating',
+    }
 
     def __init__(self, steps=None, name=None, app=None,
                  on_start=None, on_close=None, on_stopped=None):
@@ -121,6 +127,9 @@ class Blueprint(object):
             step.start(parent)
             debug('^-- substep ok')
 
+    def human_state(self):
+        return self.state_to_name[self.state or 0]
+
     def info(self, parent):
         info = {}
         for step in parent.steps:
@@ -135,7 +144,8 @@ class Blueprint(object):
     def restart(self, parent, method='stop', description='Restarting'):
         self.send_all(parent, method, description)
 
-    def send_all(self, parent, method, description=None, reverse=True):
+    def send_all(self, parent, method,
+                 description=None, reverse=True, args=()):
         description = description or method.capitalize()
         steps = reversed(parent.steps) if reverse else parent.steps
         with default_socket_timeout(SHUTDOWN_SOCKET_TIMEOUT):  # Issue 975
@@ -144,7 +154,7 @@ class Blueprint(object):
                     self._debug('%s %s...', description, step.alias)
                     fun = getattr(step, method, None)
                     if fun:
-                        fun(parent)
+                        fun(parent, *args)
 
     def stop(self, parent, close=True, terminate=False):
         what = 'Terminating' if terminate else 'Stopping'

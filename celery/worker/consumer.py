@@ -417,6 +417,11 @@ class Consumer(object):
 
         return on_task_received
 
+    def __repr__(self):
+        return '<Consumer: {self.hostname} ({state})>'.format(
+            self=self, state=self.blueprint.human_state(),
+        )
+
 
 class Connection(bootsteps.StartStopStep):
 
