@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 import threading
 
+from datetime import datetime
 from heapq import heappush, heappop
 from itertools import islice
 from time import time
@@ -44,7 +45,7 @@ HEARTBEAT_DRIFT_MAX = 16
 
 DRIFT_WARNING = """\
 Substantial drift from %s may mean clocks are out of sync.  Current drift is
-%s seconds (including message overhead).\
+%s seconds.  [orig: %s recv: %s]
 """
 
 logger = get_logger(__name__)
@@ -116,7 +117,9 @@ class Worker(AttributeDict):
             return
         drift = abs(int(received) - int(timestamp))
         if drift > HEARTBEAT_DRIFT_MAX:
-            warn(DRIFT_WARNING, self.hostname, drift)
+            warn(DRIFT_WARNING, self.hostname, drift,
+                 datetime.fromtimestamp(received),
+                 datetime.fromtimestamp(timestamp))
         heartbeats, hbmax = self.heartbeats, self.heartbeat_max
         if not heartbeats or (received and received > heartbeats[-1]):
             heappush(heartbeats, received)
