@@ -13,6 +13,7 @@ import os
 import sys
 import threading
 
+from collections import namedtuple
 from datetime import datetime
 from functools import wraps
 from itertools import count
@@ -38,6 +39,8 @@ IS_PYPY = hasattr(sys, 'pypy_version_info')
 logger = get_logger('timer2')
 
 __all__ = ['Entry', 'Schedule', 'Timer', 'to_timestamp']
+
+scheduled = namedtuple('scheduled', ('eta', 'priority', 'entry'))
 
 
 class Entry(object):
@@ -140,7 +143,7 @@ class Schedule(object):
         return self._enter(eta, priority, entry)
 
     def _enter(self, eta, priority, entry):
-        heapq.heappush(self._queue, (eta, priority, entry))
+        heapq.heappush(self._queue, scheduled(eta, priority, entry))
         return entry
 
     def apply_at(self, eta, fun, args=(), kwargs={}, priority=0):
@@ -186,20 +189,21 @@ class Schedule(object):
 
         while 1:
             if queue:
-                eta, priority, entry = verify = queue[0]
-                now = nowfun()
+                eventA = queue[0]
+                now, eta = nowfun(), eventA[0]
 
                 if now < eta:
                     yield min(eta - now, max_interval), None
                 else:
-                    event = pop(queue)
+                    eventB = pop(queue)
 
-                    if event is verify:
+                    if eventB is eventA:
+                        entry = eventA[2]
                         if not entry.cancelled:
                             yield None, entry
                         continue
                     else:
-                        push(queue, event)
+                        push(queue, eventB)
             else:
                 yield None, None
 
@@ -208,8 +212,7 @@ class Schedule(object):
         return not self._queue
 
     def clear(self):
-        self._queue[:] = []  # used because we can't replace the object
-                             # and the operation is atomic.
+        self._queue[:] = []  # atomic, without creating a new list.
 
     def info(self):
         return ({'eta': eta, 'priority': priority, 'item': item}
