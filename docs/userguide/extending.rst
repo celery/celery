@@ -135,7 +135,7 @@ Attributes
 
 .. attribute:: hub
 
-    Event loop object (:class:`~celery.worker.hub.Hub`).  You can use
+    Event loop object (:class:`~kombu.async.Hub`).  You can use
     this to register callbacks in the event loop.
 
     This is only supported by async I/O enabled transports (amqp, redis),
@@ -279,7 +279,7 @@ Attributes
 
 .. attribute:: hub
 
-    Event loop object (:class:`~celery.worker.hub.Hub`).  You can use
+    Event loop object (:class:`~kombu.async.Hub`).  You can use
     this to register callbacks in the event loop.
 
     This is only supported by async I/O enabled transports (amqp, redis),
@@ -456,15 +456,15 @@ It can be added both as a worker and consumer bootstep:
 Starting the worker with this step installed will give us the following
 logs::
 
-    <celery.apps.worker.Worker object at 0x101ad8410> is in init
-    <celery.worker.consumer.Consumer object at 0x101c2d790> is in init
+    <Worker: w@example.com (initializing)> is in init
+    <Consumer: w@example.com (initializing)> is in init
     [2013-05-29 16:18:20,544: WARNING/MainProcess]
-        <celery.apps.worker.Worker object at 0x101ad8410> is starting
+        <Worker: w@example.com (running)> is starting
     [2013-05-29 16:18:21,577: WARNING/MainProcess]
-        <celery.worker.consumer.Consumer object at 0x101c2d8d0> is starting
-    <celery.worker.consumer.Consumer object at 0x101c2d790> is stopping
-    <celery.apps.worker.Worker object at 0x101ad8410> is stopping
-    <celery.worker.consumer.Consumer object at 0x101c2d790> is shutting down
+        <Consumer: w@example.com (running)> is starting
+    <Consumer: w@example.com (closing)> is stopping
+    <Worker: w@example.com (closing)> is stopping
+    <Consumer: w@example.com (terminating)> is shutting down
 
 The ``print`` statements will be redirected to the logging subsystem after
 the worker has been initialized, so the "is starting" lines are timestamped.
@@ -629,8 +629,8 @@ Worker API
 ==========
 
 
-:class:`~celery.worker.Hub` - The workers async event loop.
------------------------------------------------------------
+:class:`~kombu.async.Hub` - The workers async event loop.
+---------------------------------------------------------
 :supported transports: amqp, redis
 
 .. versionadded:: 3.0

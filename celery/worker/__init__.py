@@ -301,6 +301,14 @@ class WorkController(object):
             info['rusage'] = 'N/A'
         return info
 
+    def __repr__(self):
+        return '<Worker: {self.hostname} ({state})>'.format(
+            self=self, state=self.blueprint.human_state(),
+        )
+
+    def __str__(self):
+        return self.hostname
+
     @property
     def state(self):
         return state
