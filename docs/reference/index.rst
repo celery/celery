@@ -46,7 +46,6 @@
     celery.apps.worker
     celery.apps.beat
     celery.worker
-    celery.worker.hub
     celery.worker.consumer
     celery.worker.job
     celery.worker.state
