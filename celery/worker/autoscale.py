@@ -45,28 +45,20 @@ class WorkerComponent(bootsteps.StartStopStep):
         self.enabled = w.autoscale
         w.autoscaler = None
 
-    def create_threaded(self, w):
-        scaler = w.autoscaler = self.instantiate(
-            w.autoscaler_cls,
-            w.pool, w.max_concurrency, w.min_concurrency,
-        )
-        return scaler
-
-    def on_poll_init(self, scaler, hub):
-        hub.on_task.append(scaler.maybe_scale)
-        hub.timer.apply_interval(scaler.keepalive * 1000.0, scaler.maybe_scale)
-
-    def create_ev(self, w):
-        scaler = w.autoscaler = self.instantiate(
-            w.autoscaler_cls,
-            w.pool, w.max_concurrency, w.min_concurrency,
-            mutex=DummyLock(),
-        )
-        w.hub.on_init.append(partial(self.on_poll_init, scaler))
-
     def create(self, w):
-        return (self.create_ev if w.use_eventloop
-                else self.create_threaded)(w)
+        scaler = w.autoscaler = self.instantiate(
+            w.autoscaler_cls,
+            w.pool, w.max_concurrency, w.min_concurrency,
+            mutex=DummyLock() if w.use_eventloop else None,
+        )
+        print('HELLO')
+        return scaler if not w.use_eventloop else None
+
+    def register_with_event_loop(self, w, hub):
+        w.consumer.on_task_message.add(w.autoscaler.maybe_scale)
+        hub.call_repeatedly(
+            w.autoscaler.keepalive, w.autoscaler.maybe_scale,
+        )
 
 
 class Autoscaler(bgThread):

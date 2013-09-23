@@ -199,6 +199,9 @@ class WorkController(object):
         except (KeyboardInterrupt, SystemExit):
             self.stop()
 
+    def register_with_event_loop(self, hub):
+        self.blueprint.send_all(self, 'register_with_event_loop', args=(hub, ))
+
     def _process_task_sem(self, req):
         return self._quick_acquire(self._process_task, req)
 

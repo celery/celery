@@ -161,7 +161,7 @@ class Consumer(object):
         def shutdown(self, parent):
             self.send_all(parent, 'shutdown')
 
-    def __init__(self, on_task,
+    def __init__(self, on_task_request,
                  init_callback=noop, hostname=None,
                  pool=None, app=None,
                  timer=None, controller=None, hub=None, amqheartbeat=None,
@@ -180,7 +180,8 @@ class Consumer(object):
         self._restart_state = restart_state(maxR=5, maxT=1)
 
         self._does_info = logger.isEnabledFor(logging.INFO)
-        self.on_task = on_task
+        self.on_task_request = on_task_request
+        self.on_task_message = set()
         self.amqheartbeat_rate = self.app.conf.BROKER_HEARTBEAT_CHECKRATE
         self.disable_rate_limits = disable_rate_limits
 
@@ -194,7 +195,6 @@ class Consumer(object):
             if self.amqheartbeat is None:
                 self.amqheartbeat = self.app.conf.BROKER_HEARTBEAT
             self.hub = hub
-            self.hub.on_init.append(self.on_poll_init)
         else:
             self.hub = None
             self.amqheartbeat = 0
@@ -231,7 +231,7 @@ class Consumer(object):
             )
         else:
             task_reserved(request)
-            self.on_task(request)
+            self.on_task_request(request)
 
     def start(self):
         blueprint, loop = self.blueprint, self.loop
@@ -258,6 +258,9 @@ class Consumer(object):
                     self.on_close()
                     blueprint.restart(self)
 
+    def register_with_event_loop(self, hub):
+        self.blueprint.send_all(self, 'register_with_event_loop', args=(hub, ))
+
     def shutdown(self):
         self.in_shutdown = True
         self.blueprint.shutdown(self)
@@ -274,10 +277,6 @@ class Consumer(object):
         return (self, self.connection, self.task_consumer,
                 self.blueprint, self.hub, self.qos, self.amqheartbeat,
                 self.app.clock, self.amqheartbeat_rate)
-
-    def on_poll_init(self, hub):
-        hub.update_readers(self.connection.eventmap)
-        self.connection.transport.on_poll_init(hub.poller)
 
     def on_decode_error(self, message, exc):
         """Callback called if an error occurs while decoding
@@ -366,7 +365,7 @@ class Consumer(object):
         """Method called by the timer to apply a task with an
         ETA/countdown."""
         task_reserved(task)
-        self.on_task(task)
+        self.on_task_request(task)
         self.qos.decrement_eventually()
 
     def _message_report(self, body, message):
@@ -394,11 +393,12 @@ class Consumer(object):
             task.__trace__ = build_tracer(name, task, loader, self.hostname,
                                           app=self.app)
 
-    def create_task_handler(self, callbacks):
+    def create_task_handler(self):
         strategies = self.strategies
         on_unknown_message = self.on_unknown_message
         on_unknown_task = self.on_unknown_task
         on_invalid_task = self.on_invalid_task
+        callbacks = self.on_task_message
 
         def on_task_received(body, message):
             if callbacks:

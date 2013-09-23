@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import socket
 
+from collections import defaultdict
 from mock import Mock
 
 from celery.exceptions import InvalidTaskError, SystemTerminate
@@ -40,7 +41,6 @@ class X(object):
         #hent = self.Hub.__enter__ = Mock(name='Hub.__enter__')
         #self.Hub.__exit__ = Mock(name='Hub.__exit__')
         #self.hub = hent.return_value = Mock(name='hub_context')
-        self.hub.on_task = on_task or []
         self.hub.readers = {}
         self.hub.writers = {}
         self.hub.consolidate = set()
@@ -111,8 +111,8 @@ class test_asynloop(AppCase):
         asynloop(*x.args)
         x.consumer.consume.assert_called_with()
         x.obj.on_ready.assert_called_with()
-        x.hub.timer.apply_interval.assert_called_with(
-            10 * 1000.0 / 2.0, x.connection.heartbeat_check, (2.0, ),
+        x.hub.call_repeatedly.assert_called_with(
+            10 / 2.0, x.connection.heartbeat_check, (2.0, ),
         )
 
     def task_context(self, sig, **kwargs):
@@ -196,7 +196,6 @@ class test_asynloop(AppCase):
         asynloop(*x.args, sleep=x.closer())
         x.qos.update.assert_called_with()
         x.hub.fire_timers.assert_called_with(propagate=(socket.error, ))
-        x.connection.transport.on_poll_start.assert_called_with()
 
     def test_poll_empty(self):
         x = X(self.app)
@@ -207,7 +206,6 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         x.hub.poller.poll.assert_called_with(33.37)
-        x.connection.transport.on_poll_empty.assert_called_with()
 
     def test_poll_readable(self):
         x = X(self.app)

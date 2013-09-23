@@ -10,8 +10,6 @@ from __future__ import absolute_import
 
 import atexit
 
-from functools import partial
-
 from kombu.async import Hub as _Hub, get_event_loop, set_event_loop
 from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
 
@@ -67,7 +65,13 @@ class Hub(bootsteps.StartStopStep):
         if w.hub is None:
             w.hub = set_event_loop(_Hub(w.timer))
         self._patch_thread_primitives(w)
-        return w.hub
+        return self
+
+    def start(self, w):
+        pass
+
+    def stop(self, w):
+        w.hub.close()
 
     def _patch_thread_primitives(self, w):
         # make clock use dummy lock
@@ -156,12 +160,13 @@ class Pool(bootsteps.StartStopStep):
             forking_enable=forking_enable,
             semaphore=semaphore,
         )
-        if w.hub:
-            w.hub.on_init.append(partial(pool.on_poll_init, w))
         return pool
 
     def info(self, w):
         return {'pool': w.pool.info}
+
+    def register_with_event_loop(self, w, hub):
+        w.pool.register_with_event_loop(hub)
 
 
 class Beat(bootsteps.StartStopStep):

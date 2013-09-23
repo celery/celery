@@ -28,7 +28,7 @@ class test_Consumer(AppCase):
 
     def get_consumer(self, no_hub=False, **kwargs):
         consumer = Consumer(
-            on_task=Mock(),
+            on_task_request=Mock(),
             init_callback=Mock(),
             pool=Mock(),
             app=self.app,
@@ -81,7 +81,7 @@ class test_Consumer(AppCase):
             c._limit_task(request, bucket, 3)
             bucket.can_consume.assert_called_with(3)
             reserved.assert_called_with(request)
-            c.on_task.assert_called_with(request)
+            c.on_task_request.assert_called_with(request)
 
         with patch('celery.worker.consumer.task_reserved') as reserved:
             bucket.can_consume.return_value = False
@@ -128,15 +128,15 @@ class test_Consumer(AppCase):
         c.start()
         c.connection.collect.assert_called_with()
 
-    def test_on_poll_init(self):
+    def test_register_with_event_loop(self):
         c = self.get_consumer()
         c.connection = Mock()
         c.connection.eventmap = {1: 2}
         hub = Mock()
-        c.on_poll_init(hub)
+        c.register_with_event_loop(hub)
 
-        hub.update_readers.assert_called_with({1: 2})
-        c.connection.transport.on_poll_init.assert_called_with(hub.poller)
+        hub.add_reader.assert_called_with(1, 2)
+        c.connection.transport.register_with_event_loop.assert_called_with(hub)
 
     def test_on_close_clears_semaphore_timer_and_reqs(self):
         with patch('celery.worker.consumer.reserved_requests') as reserved:

@@ -70,7 +70,7 @@ class BasePool(object):
     def on_stop(self):
         pass
 
-    def on_poll_init(self, worker, hub):
+    def register_with_event_loop(self, worker, hub):
         pass
 
     def on_poll_start(self, hub):

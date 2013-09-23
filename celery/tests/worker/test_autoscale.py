@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import sys
 
+from collections import defaultdict
 from time import time
 
 from mock import Mock, patch
@@ -42,28 +43,30 @@ class MockPool(BasePool):
 
 class test_WorkerComponent(AppCase):
 
-    def test_on_poll_init(self):
-        parent = Mock()
+    def test_register_with_event_loop(self):
+        parent = Mock(name='parent')
         parent.autoscale = True
+        parent.consumer.on_task_message = set()
         w = autoscale.WorkerComponent(parent)
         self.assertIsNone(parent.autoscaler)
         self.assertTrue(w.enabled)
 
-        hub = Mock()
-        hub.on_task = []
-        scaler = Mock()
-        scaler.keepalive = 10
-        w.on_poll_init(scaler, hub)
-        self.assertIn(scaler.maybe_scale, hub.on_task)
-        hub.timer.apply_interval.assert_called_with(
-            10 * 1000.0, scaler.maybe_scale,
+        hub = Mock(name='hub')
+        w.create(parent)
+        w.register_with_event_loop(parent, hub)
+        self.assertIn(
+            parent.autoscaler.maybe_scale,
+            parent.consumer.on_task_message,
+        )
+        hub.call_repeatedly.assert_called_with(
+            parent.autoscaler.keepalive, parent.autoscaler.maybe_scale,
         )
 
         parent.hub = hub
         hub.on_init = []
         w.instantiate = Mock()
-        w.create_ev(parent)
-        self.assertTrue(hub.on_init)
+        w.register_with_event_loop(parent, Mock(name='loop'))
+        self.assertTrue(parent.consumer.on_task_message)
 
 
 class test_Autoscaler(AppCase):

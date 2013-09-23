@@ -42,9 +42,11 @@ class test_WorkerComponent(AppCase):
         x.instantiate = Mock()
         r = x.create(w)
         x.instantiate.assert_called_with(w.autoreloader_cls, w)
+        x.register_with_event_loop(w, w.hub)
         self.assertIsNone(r)
-        w.hub.on_init.append.assert_called_with(w.autoreloader.on_poll_init)
-        w.hub.on_close.append.assert_called_with(w.autoreloader.on_poll_close)
+        w.hub.on_close.add.assert_called_with(
+            w.autoreloader.on_event_loop_close,
+        )
 
 
 class test_file_hash(Case):
@@ -120,22 +122,22 @@ class test_KQueueMontior(Case):
         close.side_effect.errno = errno.EBADF
         x.stop()
 
-    def test_on_poll_init(self):
+    def test_register_with_event_loop(self):
         x = KQueueMonitor(['a', 'b'])
         hub = Mock()
         x.add_events = Mock()
-        x.on_poll_init(hub)
+        x.register_with_event_loop(hub)
         x.add_events.assert_called_with(hub.poller)
         self.assertEqual(
             hub.poller.on_file_change,
             x.handle_event,
         )
 
-    def test_on_poll_close(self):
+    def test_on_event_loop_close(self):
         x = KQueueMonitor(['a', 'b'])
         x.close = Mock()
         hub = Mock()
-        x.on_poll_close(hub)
+        x.on_event_loop_close(hub)
         x.close.assert_called_with(hub.poller)
 
     def test_handle_event(self):
@@ -242,7 +244,7 @@ class test_default_implementation(Case):
 
 class test_Autoreloader(AppCase):
 
-    def test_on_poll_init(self):
+    def test_register_with_event_loop(self):
         x = Autoreloader(Mock(), modules=[__name__])
         hub = Mock()
         x._monitor = None
@@ -252,22 +254,22 @@ class test_Autoreloader(AppCase):
             x._monitor = Mock()
         x.on_init.side_effect = se
 
-        x.on_poll_init(hub)
+        x.register_with_event_loop(hub)
         x.on_init.assert_called_with()
-        x._monitor.on_poll_init.assert_called_with(hub)
+        x._monitor.register_with_event_loop.assert_called_with(hub)
 
-        x._monitor.on_poll_init.reset_mock()
-        x.on_poll_init(hub)
-        x._monitor.on_poll_init.assert_called_with(hub)
+        x._monitor.register_with_event_loop.reset_mock()
+        x.register_with_event_loop(hub)
+        x._monitor.register_with_event_loop.assert_called_with(hub)
 
-    def test_on_poll_close(self):
+    def test_on_event_loop_close(self):
         x = Autoreloader(Mock(), modules=[__name__])
         hub = Mock()
         x._monitor = Mock()
-        x.on_poll_close(hub)
-        x._monitor.on_poll_close.assert_called_with(hub)
+        x.on_event_loop_close(hub)
+        x._monitor.on_event_loop_close.assert_called_with(hub)
         x._monitor = None
-        x.on_poll_close(hub)
+        x.on_event_loop_close(hub)
 
     @patch('celery.worker.autoreload.file_hash')
     def test_start(self, fhash):

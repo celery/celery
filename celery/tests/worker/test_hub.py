@@ -1,11 +1,7 @@
 from __future__ import absolute_import
 
-from kombu.async import (
-    Hub,
-    repr_flag,
-    _rcb,
-    READ, WRITE, ERR
-)
+from kombu.async import Hub, READ, WRITE, ERR
+from kombu.async.hub import repr_flag, _rcb
 from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
 
 from mock import Mock, call, patch
@@ -143,21 +139,11 @@ class test_Hub(Case):
     @patch('kombu.async.hub.poll')
     def test_start_stop(self, poll):
         hub = Hub()
-        hub.start()
         poll.assert_called_with()
 
+        poller = hub.poller
         hub.stop()
-        hub.poller.close.assert_called_with()
-
-    def test_init(self):
-        hub = Hub()
-        cb1 = Mock()
-        cb2 = Mock()
-        hub.on_init.extend([cb1, cb2])
-
-        hub.init()
-        cb1.assert_called_with(hub)
-        cb2.assert_called_with(hub)
+        poller.close.assert_called_with()
 
     def test_fire_timers(self):
         hub = Hub()
@@ -207,17 +193,17 @@ class test_Hub(Case):
 
         eback.side_effect = ValueError('foo')
         hub.scheduler = iter([(0, eback)])
-        with patch('celery.worker.hub.logger') as logger:
+        with patch('kombu.async.hub.logger') as logger:
             with self.assertRaises(StopIteration):
                 hub.fire_timers()
             self.assertTrue(logger.error.called)
 
     def test_add_raises_ValueError(self):
         hub = Hub()
-        hub._add = Mock()
-        hub._add.side_effect = ValueError()
-        hub._discard = Mock()
-        hub.add([2], Mock(), READ)
+        hub.poller = Mock(name='hub.poller')
+        hub.poller.register.side_effect = ValueError()
+        hub._discard = Mock(name='hub.discard')
+        hub.add(2, Mock(), READ)
         hub._discard.assert_called_with(2)
 
     def test_repr_active(self):
@@ -254,21 +240,22 @@ class test_Hub(Case):
             hub._callback_for(6, WRITE)
         self.assertEqual(hub._callback_for(6, WRITE, 'foo'), 'foo')
 
-    def test_update_readers(self):
+    def test_add_remove_readers(self):
         hub = Hub()
         P = hub.poller = Mock()
 
         read_A = Mock()
         read_B = Mock()
-        hub.update_readers({10: read_A, File(11): read_B})
+        hub.add_reader(10, read_A)
+        hub.add_reader(File(11), read_B)
 
         P.register.assert_has_calls([
             call(10, hub.READ | hub.ERR),
             call(File(11), hub.READ | hub.ERR),
         ], any_order=True)
 
-        self.assertIs(hub.readers[10], read_A)
-        self.assertIs(hub.readers[11], read_B)
+        self.assertEqual(hub.readers[10], (read_A, ()))
+        self.assertEqual(hub.readers[11], (read_B, ()))
 
         hub.remove(10)
         self.assertNotIn(10, hub.readers)
@@ -291,21 +278,22 @@ class test_Hub(Case):
 
         hub.remove(313)
 
-    def test_update_writers(self):
+    def test_add_writers(self):
         hub = Hub()
         P = hub.poller = Mock()
 
         write_A = Mock()
         write_B = Mock()
-        hub.update_writers({20: write_A, File(21): write_B})
+        hub.add_writer(20, write_A)
+        hub.add_writer(File(21), write_B)
 
         P.register.assert_has_calls([
             call(20, hub.WRITE),
             call(File(21), hub.WRITE),
         ], any_order=True)
 
-        self.assertIs(hub.writers[20], write_A)
-        self.assertIs(hub.writers[21], write_B)
+        self.assertEqual(hub.writers[20], (write_A, ()))
+        self.assertEqual(hub.writers[21], (write_B, ()))
 
         hub.remove(20)
         self.assertNotIn(20, hub.writers)
@@ -321,7 +309,7 @@ class test_Hub(Case):
         hub.init = Mock()
 
         on_close = Mock()
-        hub.on_close.append(on_close)
+        hub.on_close.add(on_close)
 
         hub.init()
         try:
@@ -329,10 +317,12 @@ class test_Hub(Case):
 
             read_A = Mock()
             read_B = Mock()
-            hub.update_readers({10: read_A, File(11): read_B})
+            hub.add_reader(10, read_A)
+            hub.add_reader(File(11), read_B)
             write_A = Mock()
             write_B = Mock()
-            hub.update_writers({20: write_A, File(21): write_B})
+            hub.add_writer(20, write_A)
+            hub.add_writer(File(21), write_B)
             self.assertTrue(hub.readers)
             self.assertTrue(hub.writers)
         finally:

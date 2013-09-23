@@ -1025,7 +1025,6 @@ class test_WorkController(AppCase):
         x = components.Hub(w)
         hub = x.create(w)
         self.assertTrue(w.timer.max_interval)
-        self.assertIs(w.hub, hub)
 
     def test_Pool_crate_threaded(self):
         w = Mock()
@@ -1040,7 +1039,6 @@ class test_WorkController(AppCase):
         w = Mock()
         w._conninfo.connection_errors = w._conninfo.channel_errors = ()
         w.hub = Mock()
-        w.hub.on_init = []
 
         PoolImp = Mock()
         poolimp = PoolImp.return_value = Mock()
@@ -1063,19 +1061,18 @@ class test_WorkController(AppCase):
         w.consumer.restart_count = -1
         pool = components.Pool(w)
         pool.create(w)
+        pool.register_with_event_loop(w, w.hub)
         self.assertIsInstance(w.semaphore, LaxBoundedSemaphore)
-        self.assertTrue(w.hub.on_init)
         P = w.pool
         P.start()
 
         hub = Mock()
-        w.hub.on_init[0](hub)
 
         w = Mock()
         poolimp.on_process_up(w)
-        hub.add.assert_has_calls([
-            call(w.sentinel, P.maintain_pool, READ | ERR),
-            call(w.outqR_fd, P.handle_result_event, READ | ERR),
+        hub.add_reader.assert_has_calls([
+            call(w.sentinel, P.maintain_pool),
+            call(w.outqR_fd, P.handle_result_event),
         ])
 
         poolimp.on_process_down(w)
@@ -1093,4 +1090,4 @@ class test_WorkController(AppCase):
             P._pool.did_start_ok = Mock()
             P._pool.did_start_ok.return_value = False
             w.consumer.restart_count = 0
-            P.on_poll_init(w, hub)
+            P.register_with_event_loop(w, hub)

@@ -52,19 +52,14 @@ class WorkerComponent(bootsteps.StartStopStep):
         self.enabled = w.autoreload = autoreload
         w.autoreloader = None
 
-    def create_ev(self, w):
-        ar = w.autoreloader = self.instantiate(w.autoreloader_cls, w)
-        w.hub.on_init.append(ar.on_poll_init)
-        w.hub.on_close.append(ar.on_poll_close)
-
-    def create_threaded(self, w):
-        w.autoreloader = self.instantiate(w.autoreloader_cls, w)
-        return w.autoreloader
-
     def create(self, w):
-        if hasattr(select, 'kqueue') and w.use_eventloop:
-            return self.create_ev(w)
-        return self.create_threaded(w)
+        w.autoreloader = self.instantiate(w.autoreloader_cls, w)
+        return w.autoreloader if not w.use_eventloop else None
+
+    def register_with_event_loop(self, w, hub):
+        if hasattr(select, 'kqueue'):
+            w.autoreloader.register_with_event_loop(hub)
+            hub.on_close.add(w.autoreloader.on_event_loop_close)
 
 
 def file_hash(filename, algorithm='md5'):
@@ -130,11 +125,11 @@ class KQueueMonitor(BaseMonitor):
         self.filemap = dict((f, None) for f in self.files)
         self.fdmap = {}
 
-    def on_poll_init(self, hub):
+    def register_with_event_loop(self, hub):
         self.add_events(hub.poller)
         hub.poller.on_file_change = self.handle_event
 
-    def on_poll_close(self, hub):
+    def on_event_loop_close(self, hub):
         self.close(hub.poller)
 
     def add_events(self, poller):
@@ -244,14 +239,14 @@ class Autoreloader(bgThread):
             shutdown_event=self._is_shutdown, **self.options)
         self._hashes = dict([(f, file_hash(f)) for f in files])
 
-    def on_poll_init(self, hub):
+    def register_with_event_loop(self, hub):
         if self._monitor is None:
             self.on_init()
-        self._monitor.on_poll_init(hub)
+        self._monitor.register_with_event_loop(hub)
 
-    def on_poll_close(self, hub):
+    def on_event_loop_close(self, hub):
         if self._monitor is not None:
-            self._monitor.on_poll_close(hub)
+            self._monitor.on_event_loop_close(hub)
 
     def body(self):
         self.on_init()
