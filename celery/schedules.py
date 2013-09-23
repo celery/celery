@@ -11,6 +11,7 @@ from __future__ import absolute_import
 
 import re
 
+from collections import namedtuple
 from datetime import datetime, timedelta
 
 from kombu.utils import cached_property
@@ -26,6 +27,8 @@ from .datastructures import AttributeDict
 
 __all__ = ['ParseException', 'schedule', 'crontab', 'crontab_parser',
            'maybe_schedule']
+
+schedstate = namedtuple('schedstate', ('is_due', 'next'))
 
 
 CRON_PATTERN_INVALID = """\
@@ -98,10 +101,10 @@ class schedule(object):
         """
         last_run_at = self.maybe_make_aware(last_run_at)
         rem_delta = self.remaining_estimate(last_run_at)
-        rem = timedelta_seconds(rem_delta)
-        if rem == 0:
-            return True, self.seconds
-        return False, rem
+        remaining_s = timedelta_seconds(rem_delta)
+        if remaining_s == 0:
+            return schedstate(is_due=True, next=self.seconds)
+        return schedstate(is_due=False, next=remaining_s)
 
     def maybe_make_aware(self, dt):
         if self.utc_enabled:
