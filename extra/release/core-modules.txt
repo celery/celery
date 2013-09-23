@@ -51,7 +51,6 @@ celery//worker/buckets.py
 celery//worker/consumer.py
 celery//worker/control.py
 celery//worker/heartbeat.py
-celery//worker/hub.py
 celery//worker/job.py
 celery//worker/mediator.py
 celery//worker/state.py
