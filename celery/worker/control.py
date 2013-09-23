@@ -21,6 +21,7 @@ from celery.utils import jsonify
 
 from . import state as worker_state
 from .state import revoked
+from .job import Request
 
 __all__ = ['Panel']
 DEFAULT_TASK_INFO_ITEMS = ('exchange', 'routing_key', 'rate_limit')
@@ -168,18 +169,18 @@ def time_limit(state, task_name=None, hard=None, soft=None, **kwargs):
 
 @Panel.register
 def dump_schedule(state, safe=False, **kwargs):
-    from celery.worker.job import Request
-    schedule = state.consumer.timer.schedule
-    if not schedule.queue:
-        return []
 
     def prepare_entries():
-        for entry in schedule.info():
-            item = entry['item']
-            if item.args and isinstance(item.args[0], Request):
-                yield {'eta': entry['eta'],
-                       'priority': entry['priority'],
-                       'request': item.args[0].info(safe=safe)}
+        for waiting in state.consumer.timer.schedule.queue:
+            try:
+                arg0 = waiting.entry.args[0]
+            except (IndexError, TypeError):
+                continue
+            else:
+                if isinstance(arg0, Request):
+                    yield {'eta': waiting.eta,
+                           'priority': waiting.priority,
+                           'request': arg0.info(safe=safe)}
     return list(prepare_entries())
 
 
