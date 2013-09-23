@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 import sys
 
-from collections import deque
+from collections import deque, namedtuple
 from datetime import timedelta
 
 from celery.five import items
@@ -31,7 +31,6 @@ elif is_pypy:
     else:
         DEFAULT_POOL = 'processes'
 
-
 DEFAULT_ACCEPT_CONTENT = ['json', 'pickle', 'msgpack', 'yaml']
 DEFAULT_PROCESS_LOG_FMT = """
     [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
@@ -43,6 +42,8 @@ DEFAULT_TASK_LOG_FMT = """[%(asctime)s: %(levelname)s/%(processName)s] \
 _BROKER_OLD = {'deprecate_by': '2.5', 'remove_by': '4.0', 'alt': 'BROKER_URL'}
 _REDIS_OLD = {'deprecate_by': '2.5', 'remove_by': '4.0',
               'alt': 'URL form of CELERY_RESULT_BACKEND'}
+
+searchresult = namedtuple('searchresult', ('namespace', 'key', 'type'))
 
 
 class Option(object):
@@ -249,16 +250,18 @@ def find(name, namespace='celery'):
     # - Try specified namespace first.
     namespace = namespace.upper()
     try:
-        return namespace, name.upper(), NAMESPACES[namespace][name.upper()]
+        return searchresult(
+            namespace, name.upper(), NAMESPACES[namespace][name.upper()],
+        )
     except KeyError:
         # - Try all the other namespaces.
         for ns, keys in items(NAMESPACES):
             if ns.upper() == name.upper():
-                return None, ns, keys
+                return searchresult(None, ns, keys)
             elif isinstance(keys, dict):
                 try:
-                    return ns, name.upper(), keys[name.upper()]
+                    return searchresult(ns, name.upper(), keys[name.upper()])
                 except KeyError:
                     pass
     # - See if name is a qualname last.
-    return None, name.upper(), DEFAULTS[name.upper()]
+    return searchresult(None, name.upper(), DEFAULTS[name.upper()])

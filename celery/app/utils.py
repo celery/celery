@@ -79,9 +79,9 @@ class Settings(ConfigurationView):
     def find_option(self, name, namespace='celery'):
         """Search for option by name.
 
-        Will return ``(namespace, option_name, Option)`` tuple, e.g.::
+        Will return ``(namespace, key, type)`` tuple, e.g.::
 
-            >>> celery.conf.find_option('disable_rate_limits')
+            >>> app.conf.find_option('disable_rate_limits')
             ('CELERY', 'DISABLE_RATE_LIMITS',
              <Option: type->bool default->False>))
 
