@@ -1,11 +1,7 @@
 from __future__ import absolute_import
 
-from kombu.async import (
-    Hub,
-    repr_flag,
-    _rcb,
-    READ, WRITE, ERR
-)
+from kombu.async import Hub, READ, WRITE, ERR
+from kombu.async.hub import repr_flag, _rcb
 from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
 
 from mock import Mock, call, patch
@@ -207,7 +203,7 @@ class test_Hub(Case):
 
         eback.side_effect = ValueError('foo')
         hub.scheduler = iter([(0, eback)])
-        with patch('celery.worker.hub.logger') as logger:
+        with patch('kombu.async.hub.logger') as logger:
             with self.assertRaises(StopIteration):
                 hub.fire_timers()
             self.assertTrue(logger.error.called)

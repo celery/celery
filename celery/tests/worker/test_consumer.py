@@ -247,7 +247,7 @@ class test_Mingle(AppCase):
             }
 
             mingle.start(c)
-            I.hello.assert_called_with()
+            I.hello.assert_called_with(c.hostname, worker_state.revoked._data)
             c.app.clock.adjust.assert_has_calls([
                 call(312), call(29),
             ], any_order=True)

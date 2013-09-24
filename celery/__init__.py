@@ -114,7 +114,6 @@ def maybe_patch_concurrency(argv=sys.argv,
         except KeyError:
             pass
         else:
-            print('PATCHING CONCURRENCY USING %r' % (patcher, ))
             patcher()
         # set up eventlet/gevent environments ASAP.
         from celery import concurrency
@@ -140,6 +139,7 @@ old_module, new_module = recreate_module(  # pragma: no cover
     __homepage__=__homepage__, __docformat__=__docformat__,
     VERSION=VERSION, SERIES=SERIES, VERSION_BANNER=VERSION_BANNER,
     maybe_patch_concurrency=maybe_patch_concurrency,
+    _find_option_with_arg=_find_option_with_arg,
 )
 
 

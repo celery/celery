@@ -7,11 +7,11 @@ from collections import deque
 from datetime import datetime, timedelta
 from threading import Event
 
+from amqp import ChannelError
 from billiard.exceptions import WorkerLostError
 from kombu import Connection
 from kombu.async import READ, ERR
 from kombu.common import QoS, ignore_errors
-from kombu.exceptions import StdChannelError
 from kombu.transport.base import Message
 from mock import call, Mock, patch
 
@@ -624,12 +624,12 @@ class test_Consumer(AppCase):
     def test_connect_errback(self, sleep, connect):
         l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         from kombu.transport.memory import Transport
-        Transport.connection_errors = (StdChannelError, )
+        Transport.connection_errors = (ChannelError, )
 
         def effect():
             if connect.call_count > 1:
                 return
-            raise StdChannelError()
+            raise ChannelError()
         connect.side_effect = effect
         l.connect()
         connect.assert_called_with()

@@ -249,7 +249,8 @@ def dump_revoked(state, **kwargs):
 def hello(state, from_node, revoked=None, **kwargs):
     if from_node != state.hostname:
         logger.info('sync with %s', from_node)
-        worker_state.revoked.update(revoked)
+        if revoked:
+            worker_state.revoked.update(revoked)
         return {'revoked': worker_state.revoked._data,
                 'clock': state.app.clock.forward()}
 

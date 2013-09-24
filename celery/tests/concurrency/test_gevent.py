@@ -1,8 +1,5 @@
 from __future__ import absolute_import
 
-import os
-import sys
-
 from nose import SkipTest
 from mock import Mock
 

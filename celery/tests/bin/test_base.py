@@ -222,7 +222,7 @@ class test_Command(AppCase):
     def test_setup_app_no_respect(self):
         cmd = MockCommand()
         cmd.respects_app_option = False
-        with patch('celery.Celery') as cp:
+        with patch('celery.bin.base.Celery') as cp:
             cmd.setup_app_from_commandline(['--app=x.y:z'])
             self.assertTrue(cp.called)
 

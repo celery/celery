@@ -40,11 +40,6 @@ class test__main__(AppCase):
             self.assertIn('command is deprecated', stdout.getvalue())
             self.assertIn('YADDA YADDA', stdout.getvalue())
 
-    def test_maybe_patch_concurrency(self):
-        with patch('celery.maybe_patch_concurrency') as _mpc:
-            __main__.maybe_patch_concurrency()
-            _mpc.assert_called_with(sys.argv, ['-P'], ['--pool'])
-
     def test_main(self):
         with patch('celery.__main__.maybe_patch_concurrency') as mpc:
             with patch('celery.bin.celery.main') as main:
