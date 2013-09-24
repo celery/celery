@@ -20,7 +20,7 @@ from datetime import timedelta
 
 from billiard.einfo import ExceptionInfo
 from kombu.serialization import (
-    encode, decode, prepare_accept_content,
+    dumps, loads, prepare_accept_content,
     registry as serializer_registry,
 )
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
@@ -138,15 +138,15 @@ class BaseBackend(object):
         return result
 
     def encode(self, data):
-        _, _, payload = encode(data, serializer=self.serializer)
+        _, _, payload = dumps(data, serializer=self.serializer)
         return payload
 
     def decode(self, payload):
         payload = PY3 and payload or str(payload)
-        return decode(payload,
-                      content_type=self.content_type,
-                      content_encoding=self.content_encoding,
-                      accept=self.accept)
+        return loads(payload,
+                     content_type=self.content_type,
+                     content_encoding=self.content_encoding,
+                     accept=self.accept)
 
     def wait_for(self, task_id, timeout=None, propagate=True, interval=0.5):
         """Wait for task and return its result.
