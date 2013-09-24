@@ -39,7 +39,8 @@ DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s] %(message)s'
 DEFAULT_TASK_LOG_FMT = """[%(asctime)s: %(levelname)s/%(processName)s] \
 %(task_name)s[%(task_id)s]: %(message)s"""
 
-_BROKER_OLD = {'deprecate_by': '2.5', 'remove_by': '4.0', 'alt': 'BROKER_URL'}
+_BROKER_OLD = {'deprecate_by': '2.5', 'remove_by': '4.0',
+               'alt': 'BROKER_URL setting'}
 _REDIS_OLD = {'deprecate_by': '2.5', 'remove_by': '4.0',
               'alt': 'URL form of CELERY_RESULT_BACKEND'}
 
@@ -241,7 +242,7 @@ def find_deprecated_settings(source):
             warn_deprecated(description='The {0!r} setting'.format(name),
                             deprecation=opt.deprecate_by,
                             removal=opt.remove_by,
-                            alternative='Use {0.alt} instead'.format(opt))
+                            alternative='Use the {0.alt} instead'.format(opt))
     return source
 
 
