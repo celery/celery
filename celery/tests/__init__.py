@@ -14,18 +14,14 @@ except NameError:
     class WindowsError(Exception):
         pass
 
-os.environ.update(
-    #: warn if config module not found
-    C_WNOCONF='yes',
-    EVENTLET_NOPATCH='yes',
-    GEVENT_NOPATCH='yes',
-    KOMBU_DISABLE_LIMIT_PROTECTION='yes',
-    # virtual.QoS will not do sanity assertions when this is set.
-    KOMBU_UNITTEST='yes',
-)
-
 
 def setup():
+    os.environ.update(
+        # warn if config module not found
+        C_WNOCONF='yes',
+        KOMBU_DISABLE_LIMIT_PROTECTION='yes',
+    )
+
     if os.environ.get('COVER_ALL_MODULES') or '--with-coverage3' in sys.argv:
         from warnings import catch_warnings
         with catch_warnings(record=True):

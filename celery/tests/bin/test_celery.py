@@ -41,7 +41,7 @@ class test__main__(AppCase):
             self.assertIn('YADDA YADDA', stdout.getvalue())
 
     def test_maybe_patch_concurrency(self):
-        with patch('celery.platforms.maybe_patch_concurrency') as _mpc:
+        with patch('celery.maybe_patch_concurrency') as _mpc:
             __main__.maybe_patch_concurrency()
             _mpc.assert_called_with(sys.argv, ['-P'], ['--pool'])
 

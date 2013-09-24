@@ -13,8 +13,6 @@ import sys
 
 __all__ = ['TaskPool']
 
-EVENTLET_NOPATCH = os.environ.get('EVENTLET_NOPATCH', False)
-EVENTLET_DBLOCK = int(os.environ.get('EVENTLET_NOBLOCK', 0))
 W_RACE = """\
 Celery module with %s imported before eventlet patched\
 """
@@ -29,15 +27,6 @@ for mod in (mod for mod in sys.modules if mod.startswith(RACE_MODS)):
             import warnings
             warnings.warn(RuntimeWarning(W_RACE % side))
 
-
-PATCHED = [0]
-if not EVENTLET_NOPATCH and not PATCHED[0]:  # pragma: no cover
-    PATCHED[0] += 1
-    import eventlet
-    import eventlet.debug
-    eventlet.monkey_patch()
-    if EVENTLET_DBLOCK:
-        eventlet.debug.hub_blocking_detection(EVENTLET_DBLOCK)
 
 from time import time
 

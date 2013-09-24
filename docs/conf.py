@@ -3,11 +3,6 @@
 import sys
 import os
 
-# eventlet/gevent should not monkey patch anything.
-os.environ["GEVENT_NOPATCH"] = "yes"
-os.environ["EVENTLET_NOPATCH"] = "yes"
-os.environ["CELERY_LOADER"] = "default"
-
 this = os.path.dirname(os.path.abspath(__file__))
 
 # If your extensions are in another directory, add it here. If the directory
@@ -16,16 +11,6 @@ this = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(os.pardir, "tests"))
 sys.path.append(os.path.join(this, "_ext"))
 import celery
-
-
-# use app loader
-from celery import Celery
-app = Celery(set_as_current=True)
-app.conf.update(BROKER_URL="memory://",
-                CELERY_RESULT_BACKEND="cache",
-                CELERY_CACHE_BACKEND="memory",
-                CELERYD_HIJACK_ROOT_LOGGER=False,
-                CELERYD_LOG_COLOR=False)
 
 # General configuration
 # ---------------------

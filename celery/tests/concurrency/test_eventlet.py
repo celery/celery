@@ -41,19 +41,10 @@ class EventletCase(AppCase):
 class test_aaa_eventlet_patch(EventletCase):
 
     def test_aaa_is_patched(self):
-        raise SkipTest('side effects')
-        monkey_patched = []
-        prev_monkey_patch = self.eventlet.monkey_patch
-        self.eventlet.monkey_patch = lambda: monkey_patched.append(True)
-        prev_eventlet = sys.modules.pop('celery.concurrency.eventlet', None)
-        os.environ.pop('EVENTLET_NOPATCH')
-        try:
-            import celery.concurrency.eventlet  # noqa
-            self.assertTrue(monkey_patched)
-        finally:
-            sys.modules['celery.concurrency.eventlet'] = prev_eventlet
-            os.environ['EVENTLET_NOPATCH'] = 'yes'
-            self.eventlet.monkey_patch = prev_monkey_patch
+        with patch('eventlet.monkey_patch', create=True) as monkey_patch:
+            from celery import maybe_patch_concurrency
+            maybe_patch_concurrency(['x', '-P', 'eventlet'])
+            monkey_patch.assert_called_with()
 
 
 eventlet_modules = (

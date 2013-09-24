@@ -4,6 +4,8 @@ import sys
 
 from os.path import basename
 
+from . import maybe_patch_concurrency
+
 __all__ = ['main']
 
 DEPRECATED_FMT = """
@@ -19,11 +21,6 @@ def _warn_deprecated(new):
         old=basename(sys.argv[0]), new=new,
         new_argv=' '.join([new] + sys.argv[1:])),
     )
-
-
-def maybe_patch_concurrency():
-    from celery.platforms import maybe_patch_concurrency
-    maybe_patch_concurrency(sys.argv, ['-P'], ['--pool'])
 
 
 def main():
