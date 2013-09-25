@@ -7,6 +7,7 @@ import signal
 
 from mock import Mock, patch, call
 
+from celery import _find_option_with_arg
 from celery import platforms
 from celery.five import open_fqdn
 from celery.platforms import (
@@ -27,7 +28,6 @@ from celery.platforms import (
     LockFailed,
     setgroups,
     _setgroups_hack,
-    _find_option_with_arg,
     close_open_fds,
 )
 

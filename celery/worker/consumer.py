@@ -544,31 +544,6 @@ class Agent(bootsteps.StartStopStep):
         return agent
 
 
-class Mingle(bootsteps.StartStopStep):
-    label = 'Mingle'
-    requires = (Connection, )
-
-    def __init__(self, c, enable_mingle=True, **kwargs):
-        self.enabled = enable_mingle
-
-    def start(self, c):
-        info('mingle: searching for neighbors')
-        I = c.app.control.inspect(timeout=1.0, connection=c.connection)
-        replies = I.hello()
-        if replies:
-            for reply in values(replies):
-                try:
-                    other_clock, other_revoked = MINGLE_GET_FIELDS(reply)
-                except KeyError:  # reply from pre-3.1 worker
-                    pass
-                else:
-                    c.app.clock.adjust(other_clock)
-                    revoked.update(other_revoked)
-            info('mingle: synced with %s', ', '.join(replies))
-        else:
-            info('mingle: no one here')
-
-
 class Gossip(bootsteps.ConsumerStep):
     label = 'Gossip'
     requires = (Events, )
@@ -717,6 +692,34 @@ class Gossip(bootsteps.ConsumerStep):
                 self.on_node_join(worker)
         else:
             self.clock.forward()
+
+
+class Mingle(bootsteps.StartStopStep):
+    label = 'Mingle'
+    requires = (Gossip, )
+
+    def __init__(self, c, enable_mingle=True, **kwargs):
+        self.enabled = enable_mingle
+
+    def start(self, c):
+        info('mingle: searching for neighbors')
+        I = c.app.control.inspect(timeout=1.0, connection=c.connection)
+        replies = I.hello(c.hostname, revoked._data)
+        replies.pop(c.hostname, None)
+        if replies:
+            info('mingle: hello %s! sync with me',
+                 ', '.join(reply for reply, value in items(replies) if value))
+            for reply in values(replies):
+                if reply:
+                    try:
+                        other_clock, other_revoked = MINGLE_GET_FIELDS(reply)
+                    except KeyError:  # reply from pre-3.1 worker
+                        pass
+                    else:
+                        c.app.clock.adjust(other_clock)
+                        revoked.update(other_revoked)
+        else:
+            info('mingle: all alone')
 
 
 class Evloop(bootsteps.StartStopStep):

@@ -125,6 +125,7 @@ class test_ControlPanel(AppCase):
 
     def create_state(self, **kwargs):
         kwargs.setdefault('app', self.app)
+        kwargs.setdefault('hostname', hostname)
         return AttributeDict(kwargs)
 
     def create_panel(self, **kwargs):
@@ -165,7 +166,7 @@ class test_ControlPanel(AppCase):
         panel.state.app.clock.value = 313
         worker_state.revoked.add('revoked1')
         try:
-            x = panel.handle('hello')
+            x = panel.handle('hello', {'from_node': 'george@vandelay.com'})
             self.assertIn('revoked1', x['revoked'])
             self.assertEqual(x['clock'], 314)  # incremented
         finally:

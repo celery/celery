@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 import base64
 
-from kombu.serialization import registry, encode, decode
+from kombu.serialization import registry, dumps, loads
 from kombu.utils.encoding import bytes_to_str, str_to_bytes, ensure_bytes
 
 from .certificate import Certificate, FSCertStore
@@ -43,7 +43,7 @@ class SecureSerializer(object):
         assert self._key is not None
         assert self._cert is not None
         with reraise_errors('Unable to serialize: {0!r}', (Exception, )):
-            content_type, content_encoding, body = encode(
+            content_type, content_encoding, body = dumps(
                 data, serializer=self._serializer)
             # What we sign is the serialized body, not the body itself.
             # this way the receiver doesn't have to decode the contents
@@ -63,8 +63,8 @@ class SecureSerializer(object):
                                        payload['signer'],
                                        payload['body'])
             self._cert_store[signer].verify(body, signature, self._digest)
-        return decode(bytes_to_str(body), payload['content_type'],
-                      payload['content_encoding'], force=True)
+        return loads(bytes_to_str(body), payload['content_type'],
+                     payload['content_encoding'], force=True)
 
     def _pack(self, body, content_type, content_encoding, signer, signature,
               sep=str_to_bytes('\x00\x01')):

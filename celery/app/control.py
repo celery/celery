@@ -104,8 +104,8 @@ class Inspect(object):
     def conf(self):
         return self._request('dump_conf')
 
-    def hello(self):
-        return self._request('hello')
+    def hello(self, from_node, revoked=None):
+        return self._request('hello', from_node=from_node, revoked=revoked)
 
     def memsample(self):
         return self._request('memsample')

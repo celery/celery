@@ -1,8 +1,5 @@
 from __future__ import absolute_import
 
-import os
-import sys
-
 from nose import SkipTest
 from mock import Mock
 
@@ -14,7 +11,7 @@ from celery.concurrency.gevent import (
 )
 
 from celery.tests.case import (
-    AppCase, mock_module, patch_many, skip_if_pypy,
+    AppCase, mock_module, patch, patch_many, skip_if_pypy,
 )
 
 gevent_modules = (
@@ -41,21 +38,12 @@ class test_gevent_patch(GeventCase):
 
     def test_is_patched(self):
         with mock_module(*gevent_modules):
-            monkey_patched = []
-            import gevent
-            from gevent import monkey
-            gevent.version_info = (1, 0, 0)
-            prev_monkey_patch = monkey.patch_all
-            monkey.patch_all = lambda: monkey_patched.append(True)
-            prev_gevent = sys.modules.pop('celery.concurrency.gevent', None)
-            os.environ.pop('GEVENT_NOPATCH')
-            try:
-                import celery.concurrency.gevent  # noqa
-                self.assertTrue(monkey_patched)
-            finally:
-                sys.modules['celery.concurrency.gevent'] = prev_gevent
-                os.environ['GEVENT_NOPATCH'] = 'yes'
-                monkey.patch_all = prev_monkey_patch
+            with patch('gevent.monkey.patch_all', create=True) as patch_all:
+                import gevent
+                gevent.version_info = (1, 0, 0)
+                from celery import maybe_patch_concurrency
+                maybe_patch_concurrency(['x', '-P', 'gevent'])
+                self.assertTrue(patch_all.called)
 
 
 class test_Schedule(AppCase):

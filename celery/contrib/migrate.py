@@ -15,7 +15,6 @@ from itertools import cycle, islice
 
 from kombu import eventloop, Queue
 from kombu.common import maybe_declare
-from kombu.exceptions import StdChannelError
 from kombu.utils.encoding import ensure_bytes
 
 from celery.app import app_or_default
@@ -288,7 +287,7 @@ def start_filter(app, conn, filter, limit=None, timeout=1.0,
             _, mcount, _ = queue(consumer.channel).queue_declare(passive=True)
             if mcount:
                 state.total_apx += mcount
-        except conn.channel_errors + (StdChannelError, ):
+        except conn.channel_errors:
             pass
 
     # start migrating messages.

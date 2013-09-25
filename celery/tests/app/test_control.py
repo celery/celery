@@ -91,7 +91,7 @@ class test_inspect(AppCase):
 
     @with_mock_broadcast
     def test_hello(self):
-        self.i.hello()
+        self.i.hello('george@vandelay.com')
         self.assertIn('hello', MockMailbox.sent)
 
     @with_mock_broadcast

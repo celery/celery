@@ -75,39 +75,6 @@ def pyimplementation():
         return 'CPython'
 
 
-def _find_option_with_arg(argv, short_opts=None, long_opts=None):
-    """Search argv for option specifying its short and longopt
-    alternatives.
-
-    Returns the value of the option if found.
-
-    """
-    for i, arg in enumerate(argv):
-        if arg.startswith('-'):
-            if long_opts and arg.startswith('--'):
-                name, _, val = arg.partition('=')
-                if name in long_opts:
-                    return val
-            if short_opts and arg in short_opts:
-                return argv[i + 1]
-    raise KeyError('|'.join(short_opts or [] + long_opts or []))
-
-
-def maybe_patch_concurrency(argv, short_opts=None, long_opts=None):
-    """With short and long opt alternatives that specify the command line
-    option to set the pool, this makes sure that anything that needs
-    to be patched is completed as early as possible.
-    (e.g. eventlet/gevent monkey patches)."""
-    try:
-        pool = _find_option_with_arg(argv, short_opts, long_opts)
-    except KeyError:
-        pass
-    else:
-        # set up eventlet/gevent environments ASAP.
-        from celery import concurrency
-        concurrency.get_implementation(pool)
-
-
 class LockFailed(Exception):
     """Raised if a pidlock can't be acquired."""
 

@@ -79,13 +79,10 @@ from optparse import OptionParser, IndentedHelpFormatter, make_option as Option
 from pprint import pformat
 from types import ModuleType
 
-import celery
+from celery import VERSION_BANNER, Celery, maybe_patch_concurrency
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.five import items, string, string_t, values
-from celery.platforms import (
-    EX_FAILURE, EX_OK, EX_USAGE,
-    maybe_patch_concurrency,
-)
+from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
 from celery.utils import term
 from celery.utils import text
 from celery.utils.imports import symbol_by_name, import_from_cwd
@@ -181,7 +178,7 @@ class Command(object):
     args = ''
 
     #: Application version.
-    version = celery.VERSION_BANNER
+    version = VERSION_BANNER
 
     #: If false the parser will raise an exception if positional
     #: args are provided.
@@ -429,7 +426,7 @@ class Command(object):
             if self.enable_config_from_cmdline:
                 argv = self.process_cmdline_config(argv)
         else:
-            self.app = celery.Celery()
+            self.app = Celery()
         return argv
 
     def find_app(self, app):
@@ -448,7 +445,6 @@ class Command(object):
                                              app.replace(':', '')))
                     except ImportError:
                         pass
-                from celery.app.base import Celery
                 for suspect in values(vars(sym)):
                     if isinstance(suspect, Celery):
                         return suspect
