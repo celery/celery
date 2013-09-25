@@ -92,11 +92,8 @@ class test_BasePool(AppCase):
 
     def test_interface_register_with_event_loop(self):
         self.assertIsNone(
-            BasePool(10).register_with_event_loop(Mock(), Mock()),
+            BasePool(10).register_with_event_loop(Mock()),
         )
-
-    def test_interface_on_poll_start(self):
-        self.assertIsNone(BasePool(10).on_poll_start(Mock()))
 
     def test_interface_on_soft_timeout(self):
         self.assertIsNone(BasePool(10).on_soft_timeout(Mock()))

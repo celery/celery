@@ -39,7 +39,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     on_task_received = obj.create_task_handler()
 
     if heartbeat and connection.supports_heartbeats:
-        hub.call_repeatedly(heartbeat / hbrate, hbtick, (hbrate, ))
+        hub.call_repeatedly(heartbeat / hbrate, hbtick, hbrate)
 
     consumer.callbacks = [on_task_received]
     consumer.consume()
@@ -67,7 +67,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
             # control commands will be prioritized over task messages.
             if qos.prev != qos.value:
                 update_qos()
-            next(loop)
+            next(loop, None)
     finally:
         try:
             hub.close()

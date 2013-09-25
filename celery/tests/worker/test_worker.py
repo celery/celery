@@ -1061,33 +1061,8 @@ class test_WorkController(AppCase):
         w.consumer.restart_count = -1
         pool = components.Pool(w)
         pool.create(w)
+        print(pool.register_with_event_loop)
         pool.register_with_event_loop(w, w.hub)
         self.assertIsInstance(w.semaphore, LaxBoundedSemaphore)
         P = w.pool
         P.start()
-
-        hub = Mock()
-
-        w = Mock()
-        poolimp.on_process_up(w)
-        hub.add_reader.assert_has_calls([
-            call(w.sentinel, P.maintain_pool),
-            call(w.outqR_fd, P.handle_result_event),
-        ])
-
-        poolimp.on_process_down(w)
-        hub.remove.assert_has_calls([
-            call(w.sentinel), call(w.outqR_fd),
-        ])
-
-        w.pool._tref_for_id = {}
-
-        result = Mock()
-        poolimp.on_timeout_cancel(result)
-        poolimp.on_timeout_cancel(result)  # no more tref
-
-        with self.assertRaises(WorkerLostError):
-            P._pool.did_start_ok = Mock()
-            P._pool.did_start_ok.return_value = False
-            w.consumer.restart_count = 0
-            P.register_with_event_loop(w, hub)

@@ -130,13 +130,7 @@ class test_Consumer(AppCase):
 
     def test_register_with_event_loop(self):
         c = self.get_consumer()
-        c.connection = Mock()
-        c.connection.eventmap = {1: 2}
-        hub = Mock()
-        c.register_with_event_loop(hub)
-
-        hub.add_reader.assert_called_with(1, 2)
-        c.connection.transport.register_with_event_loop.assert_called_with(hub)
+        c.register_with_event_loop(Mock(name='loop'))
 
     def test_on_close_clears_semaphore_timer_and_reqs(self):
         with patch('celery.worker.consumer.reserved_requests') as reserved:

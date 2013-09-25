@@ -347,13 +347,12 @@ class AsynPool(_pool.Pool):
         def on_timeout_set(R, soft, hard):
             if soft:
                 trefs[R._job] = call_later(
-                    soft * 1000.0,
-                    self._on_soft_timeout, (R._job, soft, hard, hub),
+                    soft * 1000.0, self._on_soft_timeout,
+                    R._job, soft, hard, hub,
                 )
             elif hard:
                 trefs[R._job] = call_later(
-                    hard * 1000.0,
-                    self._on_hard_timeout, (R._job, )
+                    hard * 1000.0, self._on_hard_timeout, R._job,
                 )
         self.on_timeout_set = on_timeout_set
 
@@ -374,8 +373,7 @@ class AsynPool(_pool.Pool):
         # only used by async pool.
         if hard:
             self._tref_for_id[job] = hub.call_at(
-                now() + (hard - soft),
-                self._on_hard_timeout, (job, ),
+                now() + (hard - soft), self._on_hard_timeout, job,
             )
         try:
             result = self._cache[job]

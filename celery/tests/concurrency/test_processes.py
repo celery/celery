@@ -101,6 +101,9 @@ class MockPool(object):
     def apply_async(self, *args, **kwargs):
         pass
 
+    def register_with_event_loop(self, loop):
+        pass
+
 
 class ExeMockPool(MockPool):
 
@@ -303,10 +306,16 @@ class test_TaskPool(PoolCase):
     def test_info(self):
         pool = TaskPool(10)
         procs = [Object(pid=i) for i in range(pool.limit)]
-        pool._pool = Object(_pool=procs,
-                            _maxtasksperchild=None,
-                            timeout=10,
-                            soft_timeout=5)
+
+        class _Pool(object):
+            _pool = procs
+            _maxtasksperchild = None
+            timeout = 10
+            soft_timeout = 5
+
+            def human_write_stats(self, *args, **kwargs):
+                return {}
+        pool._pool = _Pool()
         info = pool.info
         self.assertEqual(info['max-concurrency'], pool.limit)
         self.assertEqual(info['max-tasks-per-child'], 'N/A')
