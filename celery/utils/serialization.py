@@ -182,6 +182,8 @@ def get_pickleable_etype(cls, loads=pickle.loads, dumps=pickle.dumps):
         loads(dumps(cls))
     except:
         return Exception
+    else:
+        return cls
 
 
 def get_pickled_exception(exc):
