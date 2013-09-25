@@ -26,6 +26,8 @@ from celery.bin.base import daemon_options, Option
 
 logger = get_logger(__name__)
 
+C_FAKEFORK = os.environ.get('C_FAKEFORK')
+
 OPTION_LIST = daemon_options(default_pidfile='celeryd.pid') + (
     Option('--fake',
            default=False, action='store_true', dest='fake',
@@ -35,6 +37,7 @@ OPTION_LIST = daemon_options(default_pidfile='celeryd.pid') + (
 
 def detach(path, argv, logfile=None, pidfile=None, uid=None,
            gid=None, umask=0, working_directory=None, fake=False, ):
+    fake = 1 if C_FAKEFORK else fake
     with detached(logfile, pidfile, uid, gid, umask, working_directory, fake):
         try:
             os.execv(path, [path] + argv)
