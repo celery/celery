@@ -219,7 +219,7 @@ class ResultHandler(_pool.ResultHandler):
                     raise CoroStop()
                 on_state_change(task)
 
-    def handle_event(self, fileno=None, event=None):
+    def handle_event(self, fileno):
         if self._state == RUN:
             it = self._it
             if it is None:
@@ -328,7 +328,7 @@ class AsynPool(_pool.Pool):
          for fd in self.process_sentinels]
         # Handle_result_event is called whenever one of the
         # result queues are readable.
-        [hub.add_reader(fd, self.handle_result_event)
+        [hub.add_reader(fd, self.handle_result_event, fd)
          for fd in self._fileno_to_outq]
 
         # Timers include calling maintain_pool at a regular interval
@@ -428,7 +428,7 @@ class AsynPool(_pool.Pool):
             add_reader(proc.sentinel, maintain_pool)
             # handle_result_event is called when the processes outqueue is
             # readable.
-            add_reader(proc.outqR_fd, handle_result_event)
+            add_reader(proc.outqR_fd, handle_result_event, proc.outqR_fd)
         self.on_process_up = on_process_up
 
         def on_process_down(proc):

@@ -8,15 +8,13 @@ from datetime import datetime, timedelta
 from threading import Event
 
 from amqp import ChannelError
-from billiard.exceptions import WorkerLostError
 from kombu import Connection
-from kombu.async import READ, ERR
 from kombu.common import QoS, ignore_errors
 from kombu.transport.base import Message
-from mock import call, Mock, patch
+from mock import Mock, patch
 
 from celery.app.defaults import DEFAULTS
-from celery.bootsteps import RUN, CLOSE, TERMINATE, StartStopStep
+from celery.bootsteps import RUN, CLOSE, StartStopStep
 from celery.concurrency.base import BasePool
 from celery.datastructures import AttributeDict
 from celery.exceptions import SystemTerminate, TaskRevokedError
@@ -199,6 +197,7 @@ class test_Consumer(AppCase):
     @patch('celery.worker.consumer.warn')
     def test_receive_message_unknown(self, warn):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
+        l.blueprint.state = RUN
         l.steps.pop()
         backend = Mock()
         m = create_message(backend, unknown={'baz': '!!!'})
@@ -213,6 +212,7 @@ class test_Consumer(AppCase):
     def test_receive_message_eta_OverflowError(self, to_timestamp):
         to_timestamp.side_effect = OverflowError()
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
+        l.blueprint.state = RUN
         l.steps.pop()
         m = create_message(Mock(), task=self.foo_task.name,
                            args=('2, 2'),
@@ -230,6 +230,7 @@ class test_Consumer(AppCase):
     @patch('celery.worker.consumer.error')
     def test_receive_message_InvalidTaskError(self, error):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
+        l.blueprint.state = RUN
         l.event_dispatcher = Mock()
         l.steps.pop()
         m = create_message(Mock(), task=self.foo_task.name,
@@ -270,6 +271,7 @@ class test_Consumer(AppCase):
 
     def test_receieve_message(self):
         l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
+        l.blueprint.state = RUN
         l.event_dispatcher = Mock()
         m = create_message(Mock(), task=self.foo_task.name,
                            args=[2, 4, 8], kwargs={})
@@ -366,6 +368,7 @@ class test_Consumer(AppCase):
                 self.obj.connection = None
 
         l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
+        l.blueprint.state = RUN
         l.connection = Connection()
         l.connection.obj = l
         l.task_consumer = Mock()
@@ -406,6 +409,7 @@ class test_Consumer(AppCase):
 
     def test_receieve_message_eta_isoformat(self):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
+        l.blueprint.state = RUN
         l.steps.pop()
         m = create_message(
             Mock(), task=self.foo_task.name,
@@ -455,6 +459,7 @@ class test_Consumer(AppCase):
 
     def test_revoke(self):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
+        l.blueprint.state = RUN
         l.steps.pop()
         backend = Mock()
         id = uuid()
@@ -469,6 +474,7 @@ class test_Consumer(AppCase):
 
     def test_receieve_message_not_registered(self):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
+        l.blueprint.state = RUN
         l.steps.pop()
         backend = Mock()
         m = create_message(backend, task='x.X.31x', args=[2, 4, 8], kwargs={})
@@ -484,6 +490,7 @@ class test_Consumer(AppCase):
     @patch('celery.worker.consumer.logger')
     def test_receieve_message_ack_raises(self, logger, warn):
         l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
+        l.blueprint.state = RUN
         backend = Mock()
         m = create_message(backend, args=[2, 4, 8], kwargs={})
 
@@ -884,7 +891,6 @@ class test_WorkController(AppCase):
         worker.blueprint.state = RUN
         with self.assertRaises(KeyboardInterrupt):
             worker._process_task(task)
-        self.assertEqual(worker.blueprint.state, TERMINATE)
 
     def test_process_task_raise_SystemTerminate(self):
         worker = self.worker
@@ -898,7 +904,6 @@ class test_WorkController(AppCase):
         worker.blueprint.state = RUN
         with self.assertRaises(SystemExit):
             worker._process_task(task)
-        self.assertEqual(worker.blueprint.state, TERMINATE)
 
     def test_process_task_raise_regular(self):
         worker = self.worker
@@ -913,6 +918,7 @@ class test_WorkController(AppCase):
 
     def test_start_catches_base_exceptions(self):
         worker1 = self.create_worker()
+        worker1.blueprint.state = RUN
         stc = MockStep()
         stc.start.side_effect = SystemTerminate()
         worker1.steps = [stc]
@@ -921,6 +927,7 @@ class test_WorkController(AppCase):
         self.assertTrue(stc.terminate.call_count)
 
         worker2 = self.create_worker()
+        worker2.blueprint.state = RUN
         sec = MockStep()
         sec.start.side_effect = SystemExit()
         sec.terminate = None
@@ -1023,7 +1030,7 @@ class test_WorkController(AppCase):
     def test_Hub_crate(self):
         w = Mock()
         x = components.Hub(w)
-        hub = x.create(w)
+        x.create(w)
         self.assertTrue(w.timer.max_interval)
 
     def test_Pool_crate_threaded(self):

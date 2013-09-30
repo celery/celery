@@ -246,16 +246,16 @@ class test_Hub(Case):
 
         read_A = Mock()
         read_B = Mock()
-        hub.add_reader(10, read_A)
-        hub.add_reader(File(11), read_B)
+        hub.add_reader(10, read_A, 10)
+        hub.add_reader(File(11), read_B, 11)
 
         P.register.assert_has_calls([
             call(10, hub.READ | hub.ERR),
             call(File(11), hub.READ | hub.ERR),
         ], any_order=True)
 
-        self.assertEqual(hub.readers[10], (read_A, ()))
-        self.assertEqual(hub.readers[11], (read_B, ()))
+        self.assertEqual(hub.readers[10], (read_A, (10, )))
+        self.assertEqual(hub.readers[11], (read_B, (11, )))
 
         hub.remove(10)
         self.assertNotIn(10, hub.readers)
@@ -306,15 +306,10 @@ class test_Hub(Case):
     def test_enter__exit(self):
         hub = Hub()
         P = hub.poller = Mock()
-        hub.init = Mock()
-
         on_close = Mock()
         hub.on_close.add(on_close)
 
-        hub.init()
         try:
-            hub.init.assert_called_with()
-
             read_A = Mock()
             read_B = Mock()
             hub.add_reader(10, read_A)

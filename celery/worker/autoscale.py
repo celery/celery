@@ -16,7 +16,6 @@ from __future__ import absolute_import
 import os
 import threading
 
-from functools import partial
 from time import sleep, time
 
 from kombu.async.semaphore import DummyLock
@@ -51,7 +50,6 @@ class WorkerComponent(bootsteps.StartStopStep):
             w.pool, w.max_concurrency, w.min_concurrency,
             mutex=DummyLock() if w.use_eventloop else None,
         )
-        print('HELLO')
         return scaler if not w.use_eventloop else None
 
     def register_with_event_loop(self, w, hub):

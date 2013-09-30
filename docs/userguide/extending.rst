@@ -641,11 +641,10 @@ will take some time so other transports still use a threading-based solution.
 
 .. method:: hub.add(fd, callback, flags)
 
-    Add callback for fd with custom flags, which can be any combination of
-    :data:`~kombu.utils.eventio.READ`, :data:`~kombu.utils.eventio.WRITE`,
-    and :data:`~kombu.utils.eventio.ERR`, the callback will then be called
-    whenever the condition specified in flags is true (readable,
-    writeable, or error).
+
+.. method:: hub.add_reader(fd, callback, \*args)
+
+    Add callback to be called when ``fd`` is readable.
 
     The callback will stay registered until explictly removed using
     :meth:`hub.remove(fd) <hub.remove>`, or the fd is automatically discarded
@@ -655,31 +654,17 @@ will take some time so other transports still use a threading-based solution.
     so calling ``add`` a second time will remove any callback that
     was previously registered for that fd.
 
-    ``fd`` may also be a list of file descriptors, in this case the
-    callback will be registered for all of the fds in this list.
-
     A file descriptor is any file-like object that supports the ``fileno``
     method, or it can be the file descriptor number (int).
 
-.. method:: hub.add_reader(fd, callback)
+.. method:: hub.add_writer(fd, callback, \*args)
 
-    Shortcut to ``hub.add(fd, callback, READ | ERR)``.
-
-.. method:: hub.add_writer(fd, callback)
-
-    Shortcut to ``hub.add(fd, callback, WRITE)``.
+    Add callback to be called when ``fd`` is writable.
+    See also notes for :meth:`hub.add_reader` above.
 
 .. method:: hub.remove(fd)
 
     Remove all callbacks for ``fd`` from the loop.
-
-.. method:: hub.update_readers(fd, mapping)
-
-    Shortcut to add callbacks from a map of ``{fd: callback}`` items.
-
-.. method:: hub.update_writers(fd, mapping)
-
-    Shortcut to add callbacks from a map of ``{fd: callback}`` items.
 
 Timer - Scheduling events
 -------------------------

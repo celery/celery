@@ -704,7 +704,7 @@ class Mingle(bootsteps.StartStopStep):
     def start(self, c):
         info('mingle: searching for neighbors')
         I = c.app.control.inspect(timeout=1.0, connection=c.connection)
-        replies = I.hello(c.hostname, revoked._data)
+        replies = I.hello(c.hostname, revoked._data) or {}
         replies.pop(c.hostname, None)
         if replies:
             info('mingle: hello %s! sync with me',

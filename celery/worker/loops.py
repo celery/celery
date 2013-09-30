@@ -9,11 +9,8 @@ from __future__ import absolute_import
 
 import socket
 
-from time import sleep
-
-from celery.bootsteps import CLOSE
+from celery.bootsteps import RUN
 from celery.exceptions import SystemTerminate, WorkerLostError
-from celery.five import Empty
 from celery.utils.log import get_logger
 
 from . import state
@@ -25,8 +22,7 @@ error = logger.error
 
 
 def asynloop(obj, connection, consumer, blueprint, hub, qos,
-             heartbeat, clock, hbrate=2.0,
-             sleep=sleep, min=min, Empty=Empty):
+             heartbeat, clock, hbrate=2.0, RUN=RUN):
     """Non-blocking event loop consuming messages until connection is lost,
     or shutdown is requested."""
 
@@ -55,7 +51,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     loop = hub._loop(propagate=errors)
 
     try:
-        while blueprint.state != CLOSE and obj.connection:
+        while blueprint.state == RUN and obj.connection:
             # shutdown if signal handlers told us to.
             if state.should_stop:
                 raise SystemExit()
@@ -67,7 +63,11 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
             # control commands will be prioritized over task messages.
             if qos.prev != qos.value:
                 update_qos()
-            next(loop, None)
+
+            try:
+                next(loop)
+            except StopIteration:
+                loop = hub._loop(propagate=errors)
     finally:
         try:
             hub.close()
@@ -87,7 +87,7 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
 
     obj.on_ready()
 
-    while blueprint.state != CLOSE and obj.connection:
+    while blueprint.state == RUN and obj.connection:
         state.maybe_shutdown()
         if qos.prev != qos.value:
             qos.update()
@@ -96,5 +96,5 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
         except socket.timeout:
             pass
         except socket.error:
-            if blueprint.state != CLOSE:
+            if blueprint.state == RUN:
                 raise

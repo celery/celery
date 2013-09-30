@@ -2,16 +2,16 @@ from __future__ import absolute_import
 
 import socket
 
-from collections import defaultdict
 from mock import Mock
 
 from kombu.async import Hub, READ, WRITE, ERR
 
+from celery.bootsteps import CLOSE, RUN
 from celery.exceptions import InvalidTaskError, SystemTerminate
 from celery.five import Empty
 from celery.worker import state
 from celery.worker.consumer import Consumer
-from celery.worker.loops import asynloop, synloop, CLOSE
+from celery.worker.loops import asynloop, synloop
 
 from celery.tests.case import AppCase, body_from_sig
 
@@ -51,6 +51,7 @@ class X(object):
         self.hub.poller = Mock(name='hub.poller')
         self.hub.close = Mock(name='hub.close()')  # asynloop calls hub.close
         self.Hub = self.hub
+        self.blueprint.state = RUN
         # need this for create_task_handler
         _consumer = Consumer(Mock(), timer=Mock(), app=app)
         _consumer.on_task_message = on_task_message or []
@@ -227,41 +228,41 @@ class test_asynloop(AppCase):
     def test_poll_readable(self):
         x = X(self.app)
         reader = Mock(name='reader')
-        x.hub.add_reader(6, reader)
+        x.hub.add_reader(6, reader, 6)
         x.hub.on_tick.add(x.close_then_error(Mock(name='tick'), mod=4))
         x.hub.poller.poll.return_value = [(6, READ)]
         with self.assertRaises(socket.error):
             asynloop(*x.args)
-        reader.assert_called_with(6, READ)
+        reader.assert_called_with(6)
         self.assertTrue(x.hub.poller.poll.called)
 
     def test_poll_readable_raises_Empty(self):
         x = X(self.app)
         reader = Mock(name='reader')
-        x.hub.add_reader(6, reader)
+        x.hub.add_reader(6, reader, 6)
         x.hub.on_tick.add(x.close_then_error(Mock(name='tick'), 2))
         x.hub.poller.poll.return_value = [(6, READ)]
         reader.side_effect = Empty()
         with self.assertRaises(socket.error):
             asynloop(*x.args)
-        reader.assert_called_with(6, READ)
+        reader.assert_called_with(6)
         self.assertTrue(x.hub.poller.poll.called)
 
     def test_poll_writable(self):
         x = X(self.app)
         writer = Mock(name='writer')
-        x.hub.add_writer(6, writer)
+        x.hub.add_writer(6, writer, 6)
         x.hub.on_tick.add(x.close_then_error(Mock(name='tick'), 2))
         x.hub.poller.poll.return_value = [(6, WRITE)]
         with self.assertRaises(socket.error):
             asynloop(*x.args)
-        writer.assert_called_with(6, WRITE)
+        writer.assert_called_with(6)
         self.assertTrue(x.hub.poller.poll.called)
 
     def test_poll_writable_none_registered(self):
         x = X(self.app)
         writer = Mock(name='writer')
-        x.hub.add_writer(6, writer)
+        x.hub.add_writer(6, writer, 6)
         x.hub.on_tick.add(x.close_then_error(Mock(name='tick'), 2))
         x.hub.poller.poll.return_value = [(7, WRITE)]
         with self.assertRaises(socket.error):
@@ -271,7 +272,7 @@ class test_asynloop(AppCase):
     def test_poll_unknown_event(self):
         x = X(self.app)
         writer = Mock(name='reader')
-        x.hub.add_writer(6, writer)
+        x.hub.add_writer(6, writer, 6)
         x.hub.on_tick.add(x.close_then_error(Mock(name='tick'), 2))
         x.hub.poller.poll.return_value = [(6, 0)]
         with self.assertRaises(socket.error):
@@ -287,23 +288,20 @@ class test_asynloop(AppCase):
             poll.side_effect = socket.error()
         poll.side_effect = se
 
-        x.connection.transport.nb_keep_draining = False
-        x.close_then_error(x.connection.drain_nowait)
         x.hub.poller.poll.return_value = [(6, 0)]
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         self.assertTrue(x.hub.poller.poll.called)
-        self.assertFalse(x.connection.drain_nowait.called)
 
     def test_poll_err_writable(self):
         x = X(self.app)
         writer = Mock(name='writer')
-        x.hub.add_writer(6, writer, 48)
+        x.hub.add_writer(6, writer, 6, 48)
         x.hub.on_tick.add(x.close_then_error(Mock(), 2))
         x.hub.poller.poll.return_value = [(6, ERR)]
         with self.assertRaises(socket.error):
             asynloop(*x.args)
-        writer.assert_called_with(6, ERR, 48)
+        writer.assert_called_with(6, 48)
         self.assertTrue(x.hub.poller.poll.called)
 
     def test_poll_write_generator(self):
@@ -358,12 +356,12 @@ class test_asynloop(AppCase):
     def test_poll_err_readable(self):
         x = X(self.app)
         reader = Mock(name='reader')
-        x.hub.add_reader(6, reader, 24)
+        x.hub.add_reader(6, reader, 6, 24)
         x.hub.on_tick.add(x.close_then_error(Mock(), 2))
         x.hub.poller.poll.return_value = [(6, ERR)]
         with self.assertRaises(socket.error):
             asynloop(*x.args)
-        reader.assert_called_with(6, ERR, 24)
+        reader.assert_called_with(6, 24)
         self.assertTrue(x.hub.poller.poll.called)
 
     def test_poll_raises_ValueError(self):

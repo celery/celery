@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 import sys
 
-from collections import defaultdict
 from time import time
 
 from mock import Mock, patch
