@@ -117,7 +117,10 @@ def sample(x, n, k=0):
     """
     j = len(x) // n
     for _ in range(n):
-        yield x[k]
+        try:
+            yield x[k]
+        except IndexError:
+            break
         k += j
 
 
