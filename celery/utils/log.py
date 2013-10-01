@@ -202,7 +202,7 @@ class LoggingProxy(object):
         self.closed = True
 
     def isatty(self):
-        """Always returns :const:`False`. Just here for file support."""
+        """Always return :const:`False`. Just here for file support."""
         return False
 
 

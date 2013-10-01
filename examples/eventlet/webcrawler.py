@@ -42,7 +42,7 @@ url_regex = re.compile(
 
 
 def domain(url):
-    """Returns the domain part of an URL."""
+    """Return the domain part of an URL."""
     return urlsplit(url)[1].split(':')[0]
 
 

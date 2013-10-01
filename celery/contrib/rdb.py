@@ -165,7 +165,7 @@ class Rdb(Pdb):
 
 
 def debugger():
-    """Returns the current debugger instance (if any),
+    """Return the current debugger instance (if any),
     or creates a new one."""
     rdb = _current[0]
     if rdb is None or not rdb.active:

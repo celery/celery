@@ -72,7 +72,7 @@ class Settings(ConfigurationView):
         return self.first('CELERY_TIMEZONE', 'TIME_ZONE')
 
     def without_defaults(self):
-        """Returns the current configuration, but without defaults."""
+        """Return the current configuration, but without defaults."""
         # the last stash is the default settings, so just skip that
         return Settings({}, self._order[:-1])
 
@@ -96,7 +96,7 @@ class Settings(ConfigurationView):
         return self.get_by_parts(*self.find_option(name, namespace)[:-1])
 
     def get_by_parts(self, *parts):
-        """Returns the current value for setting specified as a path.
+        """Return the current value for setting specified as a path.
 
         Example::
 
@@ -107,7 +107,7 @@ class Settings(ConfigurationView):
         return self['_'.join(part for part in parts if part)]
 
     def humanize(self):
-        """Returns a human readable string showing changes to the
+        """Return a human readable string showing changes to the
         configuration."""
         return '\n'.join(
             '{0}: {1}'.format(key, pretty(value, width=50))
@@ -164,7 +164,7 @@ def filter_hidden_settings(conf):
 
 
 def bugreport(app):
-    """Returns a string containing information useful in bug reports."""
+    """Return a string containing information useful in bug reports."""
     import billiard
     import celery
     import kombu

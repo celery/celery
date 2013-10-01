@@ -61,7 +61,7 @@ Seems we're already running? (pid: {1})"""
 
 
 def pyimplementation():
-    """Returns string identifying the current Python implementation."""
+    """Return string identifying the current Python implementation."""
     if hasattr(_platform, 'python_implementation'):
         return _platform.python_implementation()
     elif sys.platform.startswith('java'):
@@ -80,7 +80,7 @@ class LockFailed(Exception):
 
 
 def get_fdmax(default=None):
-    """Returns the maximum number of open file descriptors
+    """Return the maximum number of open file descriptors
     on this system.
 
     :keyword default: Value returned if there's no file
@@ -120,7 +120,7 @@ class Pidfile(object):
     __enter__ = acquire
 
     def is_locked(self):
-        """Returns true if the pid lock exists."""
+        """Return true if the pid lock exists."""
         return os.path.exists(self.path)
 
     def release(self, *args):
@@ -129,7 +129,7 @@ class Pidfile(object):
     __exit__ = release
 
     def read_pid(self):
-        """Reads and returns the current pid."""
+        """Read and return the current pid."""
         with ignore_errno('ENOENT'):
             with open(self.path, 'r') as fh:
                 line = fh.readline()
@@ -540,7 +540,7 @@ class Signals(object):
         return _signal.alarm(0)
 
     def supported(self, signal_name):
-        """Returns true value if ``signal_name`` exists on this platform."""
+        """Return true value if ``signal_name`` exists on this platform."""
         try:
             return self.signum(signal_name)
         except AttributeError:

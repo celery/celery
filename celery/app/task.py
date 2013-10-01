@@ -669,7 +669,7 @@ class Task(object):
                                            task_name=self.name, **kwargs)
 
     def subtask(self, args=None, *starargs, **starkwargs):
-        """Returns :class:`~celery.subtask` object for
+        """Return :class:`~celery.subtask` object for
         this task, wrapping arguments and execution options
         for a single task invocation."""
         starkwargs.setdefault('app', self.app)

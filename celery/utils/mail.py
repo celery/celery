@@ -175,7 +175,7 @@ py-celery at {{hostname}}.
         self.body = kwargs.get('body', self.body)
 
     def should_send(self, context, exc):
-        """Returns true or false depending on if a task error mail
+        """Return true or false depending on if a task error mail
         should be sent for this type of error."""
         return True
 

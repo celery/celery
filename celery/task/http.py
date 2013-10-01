@@ -138,7 +138,7 @@ class HttpDispatch(object):
         self.logger = kwargs.get('logger') or logger
 
     def make_request(self, url, method, params):
-        """Makes an HTTP request and returns the response."""
+        """Perform HTTP request and return the response."""
         request = Request(url, params)
         for key, val in items(self.http_headers):
             request.add_header(key, val)

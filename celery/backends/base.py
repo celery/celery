@@ -46,7 +46,7 @@ PY3 = sys.version_info >= (3, 0)
 
 
 def unpickle_backend(cls, args, kwargs):
-    """Returns an unpickled backend."""
+    """Return an unpickled backend."""
     from celery import current_app
     return cls(*args, app=current_app._get_current_object(), **kwargs)
 

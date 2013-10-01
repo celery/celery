@@ -159,7 +159,7 @@ class worker(Command):
     def maybe_detach(self, argv, dopts=['-D', '--detach']):
         if any(arg in argv for arg in dopts):
             argv = [v for v in argv if v not in dopts]
-            # never returns
+            # will never return
             detached_celeryd(self.app).execute_from_commandline(argv)
             raise SystemExit(0)
 

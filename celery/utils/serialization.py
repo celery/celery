@@ -44,8 +44,9 @@ def find_pickleable_exception(exc, loads=pickle.loads,
 
     :param exc: An exception instance.
 
-    :returns: the nearest exception if it's not :exc:`Exception` or below,
-              if it is it returns :const:`None`.
+    Will return the nearest pickleable parent exception class
+    (except :exc:`Exception` and parents), or if the exception is
+    pickleable it will return :cons:`None`.
 
     :rtype :exc:`Exception`:
 

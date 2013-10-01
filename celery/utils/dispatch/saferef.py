@@ -190,7 +190,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
         """Return a strong reference to the bound method
 
         If the target cannot be retrieved, then will
-        return None, otherwise returns a bound instance
+        return None, otherwise return a bound instance
         method for our object and function.
 
         Note:
@@ -253,7 +253,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
         """Return a strong reference to the bound method
 
         If the target cannot be retrieved, then will
-        return None, otherwise returns a bound instance
+        return None, otherwise return a bound instance
         method for our object and function.
 
         Note:

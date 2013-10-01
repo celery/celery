@@ -59,7 +59,7 @@ _patched = {}
 
 
 def task_has_custom(task, attr):
-    """Returns true if the task or one of its bases
+    """Return true if the task or one of its bases
     defines ``attr`` (excluding the one in BaseTask)."""
     return mro_lookup(task.__class__, attr, stop=(BaseTask, object),
                       monkey_patched=['celery.app.task'])
@@ -125,7 +125,7 @@ class TraceInfo(object):
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                  Info=TraceInfo, eager=False, propagate=False, app=None,
                  IGNORE_STATES=IGNORE_STATES):
-    """Returns a function that traces task execution; catches all
+    """Return a function that traces task execution; catches all
     exceptions and updates result backend with the state and result
 
     If the call was successful, it saves the result to the task result
@@ -138,7 +138,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     If the call results in an exception, it saves the exception as the task
     result, and sets the task state to `"FAILURE"`.
 
-    Returns a function that takes the following arguments:
+    Return a function that takes the following arguments:
 
         :param uuid: The id of the task.
         :param args: List of positional args to pass on to the function.

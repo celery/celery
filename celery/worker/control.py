@@ -335,7 +335,7 @@ def cancel_consumer(state, queue=None, **_):
 
 @Panel.register
 def active_queues(state):
-    """Returns the queues associated with each worker."""
+    """Return information about the queues a worker consumes from."""
     return [dict(queue.as_dict(recurse=True))
             for queue in state.consumer.task_consumer.queues]
 

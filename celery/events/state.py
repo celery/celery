@@ -323,7 +323,7 @@ class State(object):
     def get_or_create_worker(self, hostname, **kwargs):
         """Get or create worker by hostname.
 
-        Returns tuple of ``(worker, was_created)``.
+        Return tuple of ``(worker, was_created)``.
         """
         try:
             worker = self.workers[hostname]
@@ -415,7 +415,7 @@ class State(object):
     def tasks_by_type(self, name, limit=None):
         """Get all tasks by type.
 
-        Returns a list of ``(uuid, Task)`` tuples.
+        Return a list of ``(uuid, Task)`` tuples.
 
         """
         return islice(
@@ -435,11 +435,11 @@ class State(object):
         )
 
     def task_types(self):
-        """Returns a list of all seen task types."""
+        """Return a list of all seen task types."""
         return list(sorted(set(task.name for task in values(self.tasks))))
 
     def alive_workers(self):
-        """Returns a list of (seemingly) alive workers."""
+        """Return a list of (seemingly) alive workers."""
         return [w for w in values(self.workers) if w.alive]
 
     def __repr__(self):

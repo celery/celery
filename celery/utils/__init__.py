@@ -57,7 +57,7 @@ NODENAME_SEP = '@'
 
 
 def worker_direct(hostname):
-    """Returns :class:`kombu.Queue` that is a direct route to
+    """Return :class:`kombu.Queue` that is a direct route to
     a worker by hostname.
 
     :param hostname: The fully qualified node name of a worker

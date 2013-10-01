@@ -98,7 +98,7 @@ class ScheduleEntry(object):
         return self.schedule.now() if self.schedule else self.app.now()
 
     def _next_instance(self, last_run_at=None):
-        """Returns a new instance of the same class, but with
+        """Return a new instance of the same class, but with
         its date and count fields updated."""
         return self.__class__(**dict(
             self,

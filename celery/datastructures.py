@@ -187,7 +187,7 @@ class DependencyGraph(object):
         return [t[0] for t in graph._khan62()]
 
     def valency_of(self, obj):
-        """Returns the valency (degree) of a vertex in the graph."""
+        """Return the valency (degree) of a vertex in the graph."""
         try:
             l = [len(self[obj])]
         except KeyError:
@@ -207,7 +207,7 @@ class DependencyGraph(object):
                 self.add_edge(obj, dep)
 
     def edges(self):
-        """Returns generator that yields for all edges in the graph."""
+        """Return generator that yields for all edges in the graph."""
         return (obj for obj, adj in items(self) if adj)
 
     def _khan62(self):

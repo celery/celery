@@ -89,8 +89,8 @@ App = Celery  # XXX Compat
 
 
 def shared_task(*args, **kwargs):
-    """Task decorator that creates shared tasks,
-    and returns a proxy that always returns the task from the current apps
+    """Create shared tasks (decorator).
+    Will return a proxy that always takes the task from the current apps
     task registry.
 
     This can be used by library authors to create tasks that will work
@@ -126,7 +126,7 @@ def shared_task(*args, **kwargs):
                     with app._finalize_mutex:
                         app._task_from_fun(fun, **options)
 
-            # Returns a proxy that always gets the task from the current
+            # Return a proxy that always gets the task from the current
             # apps task registry.
             def task_by_cons():
                 app = current_app()

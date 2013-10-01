@@ -371,7 +371,7 @@ class AMQP(object):
         )
 
     def Router(self, queues=None, create_missing=None):
-        """Returns the current task router."""
+        """Return the current task router."""
         return _routes.Router(self.routes, queues or self.queues,
                               self.app.either('CELERY_CREATE_MISSING_QUEUES',
                                               create_missing), app=self.app)
@@ -386,7 +386,7 @@ class AMQP(object):
 
     @cached_property
     def TaskProducer(self):
-        """Returns publisher used to send tasks.
+        """Return publisher used to send tasks.
 
         You should use `app.send_task` instead.
 

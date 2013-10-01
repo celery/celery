@@ -509,7 +509,7 @@ class Command(object):
         return options
 
     def with_pool_option(self, argv):
-        """Returns tuple of ``(short_opts, long_opts)`` if the command
+        """Return tuple of ``(short_opts, long_opts)`` if the command
         supports a pool argument, and used to monkey patch eventlet/gevent
         environments as early as possible.
 

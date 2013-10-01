@@ -4,7 +4,7 @@ Originally taken from pyiso8601 (http://code.google.com/p/pyiso8601/)
 Modified to match the behavior of dateutil.parser:
 
     - raise ValueError instead of ParseError
-    - returns naive datetimes by default
+    - return naive datetimes by default
     - uses pytz.FixedOffset
 
 This is the original License:

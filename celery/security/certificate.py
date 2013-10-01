@@ -34,11 +34,11 @@ class Certificate(object):
         return self._cert.has_expired()
 
     def get_serial_number(self):
-        """Returns the certificates serial number."""
+        """Return the serial number in the certificate."""
         return self._cert.get_serial_number()
 
     def get_issuer(self):
-        """Returns issuer (CA) as a string"""
+        """Return issuer (CA) as a string"""
         return ' '.join(bytes_to_str(x[1]) for x in
                         self._cert.get_issuer().get_components())
 

@@ -171,7 +171,7 @@ class Control(object):
     def ping(self, destination=None, timeout=1, **kwargs):
         """Ping all (or specific) workers.
 
-        Returns answer from alive workers.
+        Will return the list of answers.
 
         See :meth:`broadcast` for supported keyword arguments.
 

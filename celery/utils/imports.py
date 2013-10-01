@@ -109,6 +109,6 @@ def reload_from_cwd(module, reloader=None):
 
 
 def module_file(module):
-    """Returns the correct original file name of a module."""
+    """Return the correct original file name of a module."""
     name = module.__file__
     return name[:-1] if name.endswith('.pyc') else name

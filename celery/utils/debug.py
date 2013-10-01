@@ -143,14 +143,14 @@ def humanbytes(s):
 
 
 def mem_rss():
-    """Returns RSS memory usage as a humanized string."""
+    """Return RSS memory usage as a humanized string."""
     p = ps()
     if p is not None:
         return humanbytes(p.get_memory_info().rss)
 
 
 def ps():
-    """Returns the global :class:`psutil.Process` instance,
+    """Return the global :class:`psutil.Process` instance,
     or :const:`None` if :mod:`psutil` is not installed."""
     global _process
     if _process is None and Process is not None:

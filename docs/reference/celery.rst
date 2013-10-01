@@ -121,7 +121,7 @@ and creating Celery applications.
 
     .. method:: Celery.bugreport
 
-        Returns a string with information useful for the Celery core
+        Return a string with information useful for the Celery core
         developers when reporting a bug.
 
     .. method:: Celery.config_from_object(obj, silent=False)
@@ -240,8 +240,8 @@ and creating Celery applications.
 
         .. admonition:: App Binding
 
-            For custom apps the task decorator returns proxy
-            objects, so that the act of creating the task is not performed
+            For custom apps the task decorator will return a proxy
+            object, so that the act of creating the task is not performed
             until the task is used or the task registry is accessed.
 
             If you are depending on binding to be deferred, then you must
@@ -333,7 +333,7 @@ and creating Celery applications.
 
     .. method:: Celery.now()
 
-        Returns the current time and date as a :class:`~datetime.datetime`
+        Return the current time and date as a :class:`~datetime.datetime`
         object.
 
     .. method:: Celery.set_current()
@@ -367,7 +367,9 @@ See :ref:`guide-canvas` for more about creating task workflows.
     A group is lazy so you must call it to take action and evaluate
     the group.
 
-    Calling the group returns :class:`~@GroupResult`.
+    Will return a `group` task that when called will then call of the
+    tasks in the group (and return a :class:`GroupResult` instance
+    that can be used to inspect the state of the group).
 
 .. class:: chain(task1[, task2[, task3[,... taskN]]])
 
@@ -460,7 +462,7 @@ See :ref:`guide-canvas` for more about creating task workflows.
 
     .. method:: subtask.clone(args=(), kwargs={}, ...)
 
-        Returns a copy of this subtask.
+        Return a copy of this subtask.
 
         :keyword args: Partial args to be prepended to the existing args.
         :keyword kwargs: Partial kwargs to be merged with the existing kwargs.
@@ -490,7 +492,7 @@ See :ref:`guide-canvas` for more about creating task workflows.
 
         Set arbitrary options (same as ``.options.update(...)``).
 
-        This is a chaining method call (i.e. it returns itself).
+        This is a chaining method call (i.e. it will return ``self``).
 
     .. method:: subtask.flatten_links()
 

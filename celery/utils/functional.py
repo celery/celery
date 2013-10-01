@@ -186,7 +186,7 @@ def noop(*args, **kwargs):
 
 
 def first(predicate, it):
-    """Returns the first element in `iterable` that `predicate` returns a
+    """Return the first element in `iterable` that `predicate` Gives a
     :const:`True` value for.
 
     If `predicate` is None it will return the first item that is not None.
@@ -199,8 +199,8 @@ def first(predicate, it):
 
 
 def firstmethod(method):
-    """Returns a function that with a list of instances,
-    finds the first instance that returns a value for the given method.
+    """Return a function that with a list of instances,
+    finds the first instance that gives a value for the given method.
 
     The list can also contain lazy instances
     (:class:`~kombu.utils.functional.lazy`.)
@@ -259,14 +259,14 @@ def padlist(container, size, default=None):
 
 
 def mattrgetter(*attrs):
-    """Like :func:`operator.itemgetter` but returns :const:`None` on missing
+    """Like :func:`operator.itemgetter` but return :const:`None` on missing
     attributes instead of raising :exc:`AttributeError`."""
     return lambda obj: dict((attr, getattr(obj, attr, None))
                             for attr in attrs)
 
 
 def uniq(it):
-    """Returns all unique elements in ``it``, preserving order."""
+    """Return all unique elements in ``it``, preserving order."""
     seen = set()
     return (seen.add(obj) or obj for obj in it if obj not in seen)
 

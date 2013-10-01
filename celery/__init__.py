@@ -62,7 +62,7 @@ def _find_option_with_arg(argv, short_opts=None, long_opts=None):
     """Search argv for option specifying its short and longopt
     alternatives.
 
-    Returns the value of the option if found.
+    Return the value of the option if found.
 
     """
     for i, arg in enumerate(argv):

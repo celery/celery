@@ -114,7 +114,7 @@ class AbortableAsyncResult(AsyncResult):
     """
 
     def is_aborted(self):
-        """Returns :const:`True` if the task is (being) aborted."""
+        """Return :const:`True` if the task is (being) aborted."""
         return self.state == ABORTED
 
     def abort(self):
@@ -146,14 +146,14 @@ class AbortableTask(Task):
     abstract = True
 
     def AsyncResult(self, task_id):
-        """Returns the accompanying AbortableAsyncResult instance."""
+        """Return the accompanying AbortableAsyncResult instance."""
         return AbortableAsyncResult(task_id, backend=self.backend)
 
     def is_aborted(self, **kwargs):
         """Checks against the backend whether this
         :class:`AbortableAsyncResult` is :const:`ABORTED`.
 
-        Always returns :const:`False` in case the `task_id` parameter
+        Always return :const:`False` in case the `task_id` parameter
         refers to a regular (non-abortable) :class:`Task`.
 
         Be aware that invoking this method will cause a hit in the

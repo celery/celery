@@ -639,16 +639,16 @@ It supports the following operations:
 
 * :meth:`~celery.result.GroupResult.successful`
 
-    Returns :const:`True` if all of the subtasks finished
+    Return :const:`True` if all of the subtasks finished
     successfully (e.g. did not raise an exception).
 
 * :meth:`~celery.result.GroupResult.failed`
 
-    Returns :const:`True` if any of the subtasks failed.
+    Return :const:`True` if any of the subtasks failed.
 
 * :meth:`~celery.result.GroupResult.waiting`
 
-    Returns :const:`True` if any of the subtasks
+    Return :const:`True` if any of the subtasks
     is not ready yet.
 
 * :meth:`~celery.result.GroupResult.ready`
@@ -658,15 +658,15 @@ It supports the following operations:
 
 * :meth:`~celery.result.GroupResult.completed_count`
 
-    Returns the number of completed subtasks.
+    Return the number of completed subtasks.
 
 * :meth:`~celery.result.GroupResult.revoke`
 
-    Revokes all of the subtasks.
+    Revoke all of the subtasks.
 
 * :meth:`~celery.result.GroupResult.iterate`
 
-    Iterates over the return values of the subtasks
+    Iterate over the return values of the subtasks
     as they finish, one by one.
 
 * :meth:`~celery.result.GroupResult.join`

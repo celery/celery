@@ -478,7 +478,7 @@ class Celery(object):
         )
 
     def __reduce_keys__(self):
-        """Returns keyword arguments used to reconstruct the object
+        """Return keyword arguments used to reconstruct the object
         when unpickling."""
         return {
             'main': self.main,

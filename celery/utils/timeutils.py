@@ -265,7 +265,7 @@ def maybe_iso8601(dt):
 
 
 def is_naive(dt):
-    """Returns :const:`True` if the datetime is naive
+    """Return :const:`True` if the datetime is naive
     (does not have timezone information)."""
     return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
 

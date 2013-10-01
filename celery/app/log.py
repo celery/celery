@@ -150,7 +150,7 @@ class Logging(object):
 
         If `logfile` is not specified, then `sys.stderr` is used.
 
-        Returns logger object.
+        Will return the base task logger object.
 
         """
         loglevel = mlevel(loglevel or self.loglevel)
