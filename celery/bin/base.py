@@ -323,7 +323,7 @@ class Command(object):
         return value
 
     def handle_argv(self, prog_name, argv, command=None):
-        """Parses command-line arguments from ``argv`` and dispatches
+        """Parse command-line arguments from ``argv`` and dispatch
         to :meth:`run`.
 
         :param prog_name: The program name (``argv[0]``).

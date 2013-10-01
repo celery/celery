@@ -125,7 +125,7 @@ def sample(x, n, k=0):
 
 
 def hfloat(f, p=5):
-    """Converts float to value suitable for humans.
+    """Convert float to value suitable for humans.
 
     :keyword p: Float precision.
 
@@ -135,7 +135,7 @@ def hfloat(f, p=5):
 
 
 def humanbytes(s):
-    """Converts bytes to human-readable form (e.g. kB, MB)."""
+    """Convert bytes to human-readable form (e.g. kB, MB)."""
     return next(
         '{0}{1}'.format(hfloat(s / div if div else s), unit)
         for div, unit in UNITS if s >= div

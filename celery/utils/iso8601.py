@@ -53,7 +53,7 @@ TIMEZONE_REGEX = re.compile(
 
 
 def parse_iso8601(datestring):
-    """Parses ISO 8601 dates into datetime objects"""
+    """Parse and convert ISO 8601 string into a datetime object"""
     m = ISO8601_REGEX.match(datestring)
     if not m:
         raise ValueError('unable to parse date string %r' % datestring)

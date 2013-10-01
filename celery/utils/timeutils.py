@@ -187,8 +187,8 @@ def remaining(start, ends_in, now=None, relative=False):
 
 
 def rate(rate):
-    """Parses rate strings, such as `"100/m"`, `"2/h"` or `"0.5/s"`
-    and converts them to seconds."""
+    """Parse rate strings, such as `"100/m"`, `"2/h"` or `"0.5/s"`
+    and convert them to seconds."""
     if rate:
         if isinstance(rate, string_t):
             ops, _, modifier = rate.partition('/')
