@@ -12,12 +12,12 @@ import atexit
 
 from kombu.async import Hub as _Hub, get_event_loop, set_event_loop
 from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
+from kombu.async.timer import Timer as _Timer
 
 from celery import bootsteps
 from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t
 from celery.utils.log import worker_logger as logger
-from celery.utils.timer2 import Schedule
 
 __all__ = ['Timer', 'Hub', 'Queues', 'Pool', 'Beat', 'StateDB', 'Consumer']
 
@@ -33,7 +33,7 @@ class Timer(bootsteps.Step):
     def create(self, w):
         if w.use_eventloop:
             # does not use dedicated timer thread.
-            w.timer = Schedule(max_interval=10.0)
+            w.timer = _Timer(max_interval=10.0)
         else:
             if not w.timer_cls:
                 # Default Timer is set by the pool, as e.g. eventlet

@@ -3,11 +3,9 @@ from __future__ import absolute_import
 import sys
 import time
 
-from mock import Mock, patch
-
 import celery.utils.timer2 as timer2
 
-from celery.tests.case import Case, skip_if_quick
+from celery.tests.case import Case, Mock, patch, skip_if_quick
 from kombu.tests.case import redirect_stdouts
 
 
@@ -51,27 +49,20 @@ class test_Schedule(Case):
         to_timestamp = timer2.to_timestamp
         scratch = [None]
 
-        def _overflow(x):
-            raise OverflowError(x)
-
         def on_error(exc_info):
             scratch[0] = exc_info
 
         s = timer2.Schedule(on_error=on_error)
 
-        timer2.to_timestamp = _overflow
-        try:
-            s.enter(timer2.Entry(lambda: None, (), {}),
-                    eta=datetime.now())
-            s.enter(timer2.Entry(lambda: None, (), {}),
-                    eta=None)
+        with patch('kombu.async.timer.to_timestamp') as tot:
+            tot.side_effect = OverflowError()
+            s.enter_at(timer2.Entry(lambda: None, (), {}),
+                       eta=datetime.now())
+            s.enter_at(timer2.Entry(lambda: None, (), {}), eta=None)
             s.on_error = None
             with self.assertRaises(OverflowError):
-                s.enter(timer2.Entry(lambda: None, (), {}),
-                        eta=datetime.now())
-        finally:
-            timer2.to_timestamp = to_timestamp
-
+                s.enter_at(timer2.Entry(lambda: None, (), {}),
+                           eta=datetime.now())
         exc = scratch[0]
         self.assertIsInstance(exc, OverflowError)
 
@@ -136,7 +127,7 @@ class test_Timer(Case):
         finally:
             t.stop()
 
-    @patch('celery.utils.timer2.logger')
+    @patch('kombu.async.timer.logger')
     def test_apply_entry_error_handled(self, logger):
         t = timer2.Timer()
         t.schedule.on_error = None
@@ -183,7 +174,7 @@ class test_Timer(Case):
         t._do_enter = Mock()
         e = Mock()
         t.enter(e, 13, 0)
-        t._do_enter.assert_called_with('enter', e, 13, priority=0)
+        t._do_enter.assert_called_with('enter_at', e, 13, priority=0)
 
     def test_test_enter_after(self):
         t = timer2.Timer()

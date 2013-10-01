@@ -15,6 +15,7 @@ from calendar import monthrange
 from datetime import date, datetime, timedelta, tzinfo
 
 from kombu.utils import cached_property, reprcall
+from kombu.utils.compat import timedelta_seconds
 
 from pytz import timezone as _timezone, AmbiguousTimeError
 
@@ -38,8 +39,6 @@ WEEKDAYS = dict(zip(DAYNAMES, range(7)))
 RATE_MODIFIER_MAP = {'s': lambda n: n,
                      'm': lambda n: n / 60.0,
                      'h': lambda n: n / 60.0 / 60.0}
-
-HAVE_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, 'total_seconds')
 
 TIME_UNITS = (('day', 60 * 60 * 24.0, lambda n: format(n, '.2f')),
               ('hour', 60 * 60.0, lambda n: format(n, '.2f')),
@@ -138,29 +137,6 @@ def maybe_timedelta(delta):
     if isinstance(delta, (int, float)):
         return timedelta(seconds=delta)
     return delta
-
-
-if HAVE_TIMEDELTA_TOTAL_SECONDS:   # pragma: no cover
-
-    def timedelta_seconds(delta):
-        """Convert :class:`datetime.timedelta` to seconds.
-
-        Doesn't account for negative values.
-
-        """
-        return max(delta.total_seconds(), 0)
-
-else:  # pragma: no cover
-
-    def timedelta_seconds(delta):  # noqa
-        """Convert :class:`datetime.timedelta` to seconds.
-
-        Doesn't account for negative values.
-
-        """
-        if delta.days < 0:
-            return 0
-        return delta.days * 86400 + delta.seconds + (delta.microseconds / 10e5)
 
 
 def delta_resolution(dt, delta):

@@ -332,10 +332,10 @@ class test_ControlPanel(AppCase):
         panel = self.create_panel(consumer=consumer)
         self.assertFalse(panel.handle('dump_schedule'))
         r = TaskRequest(self.mytask.name, 'CAFEBABE', (), {}, app=self.app)
-        consumer.timer.schedule.enter(
+        consumer.timer.schedule.enter_at(
             consumer.timer.Entry(lambda x: x, (r, )),
             datetime.now() + timedelta(seconds=10))
-        consumer.timer.schedule.enter(
+        consumer.timer.schedule.enter_at(
             consumer.timer.Entry(lambda x: x, (object(), )),
             datetime.now() + timedelta(seconds=10))
         self.assertTrue(panel.handle('dump_schedule'))

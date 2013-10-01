@@ -106,7 +106,7 @@ class test_StatMonitor(Case):
         x._mtime('a')
 
 
-class test_KQueueMontior(Case):
+class test_KQueueMonitor(Case):
 
     @patch('select.kqueue', create=True)
     @patch('os.close')
