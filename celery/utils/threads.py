@@ -219,7 +219,7 @@ class _LocalStack(object):
         return rv
 
     def pop(self):
-        """Removes the topmost item from the stack, will return the
+        """Remove the topmost item from the stack, will return the
         old value or `None` if the stack was already empty.
         """
         stack = getattr(self._local, 'stack', None)

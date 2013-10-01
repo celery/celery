@@ -54,7 +54,7 @@ total_count = Counter()
 #: the list of currently revoked tasks.  Persistent if statedb set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 
-#: Updates global state when a task has been reserved.
+#: Update global state when a task has been reserved.
 task_reserved = reserved_requests.add
 
 should_stop = False

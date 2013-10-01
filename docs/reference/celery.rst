@@ -32,6 +32,7 @@ and creating Celery applications.
 .. class:: Celery(main='__main__', broker='amqp://localhost//', ...)
 
     :param main: Name of the main module if running as `__main__`.
+        This is used as a prefix for task names.
     :keyword broker: URL of the default broker used.
     :keyword loader: The loader class, or the name of the loader class to use.
                      Default is :class:`celery.loaders.app.AppLoader`.
@@ -44,6 +45,9 @@ and creating Celery applications.
     :keyword control: Control object or class name.
     :keyword set_as_current:  Make this the global current app.
     :keyword tasks: A task registry or the name of a registry class.
+    :keyword include: List of modules every worker should import.
+    :keyword fixups: List of fixup plug-ins (see e.g.
+    :mod:`celery.fixups.django`).
 
     .. attribute:: Celery.main
 
@@ -111,9 +115,11 @@ and creating Celery applications.
 
     .. method:: Celery.close
 
-        Cleans-up after application, like closing any pool connections.
+        Close any open pool connections and do any other steps necessary
+        to clean up after the application.
+
         Only necessary for dynamically created apps for which you can
-        use the with statement::
+        use the with statement instead::
 
             with Celery(set_as_current=False) as app:
                 with app.connection() as conn:

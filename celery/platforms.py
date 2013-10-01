@@ -144,12 +144,12 @@ class Pidfile(object):
                         'pidfile {0.path} contents invalid.'.format(self))
 
     def remove(self):
-        """Removes the lock."""
+        """Remove the lock."""
         with ignore_errno(errno.ENOENT, errno.EACCES):
             os.unlink(self.path)
 
     def remove_if_stale(self):
-        """Removes the lock if the process is not running.
+        """Remove the lock if the process is not running.
         (does not respond to signals)."""
         try:
             pid = self.read_pid()

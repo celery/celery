@@ -294,6 +294,6 @@ class _regen(UserList, list):
 
 
 def dictfilter(d=None, **kw):
-    """Removes keys from dict ``d`` where value is :const:`None`"""
+    """Remove all keys from dict ``d`` whose value is :const:`None`"""
     d = kw if d is None else (dict(d, **kw) if kw else d)
     return dict((k, v) for k, v in items(d) if v is not None)

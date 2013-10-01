@@ -327,7 +327,7 @@ class ResultSet(ResultBase):
             self.results.append(result)
 
     def remove(self, result):
-        """Removes result from the set; it must be a member.
+        """Remove result from the set; it must be a member.
 
         :raises KeyError: if the result is not a member.
 

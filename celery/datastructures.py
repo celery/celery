@@ -324,9 +324,9 @@ class DependencyGraph(object):
 
 
 class AttributeDictMixin(object):
-    """Adds attribute access to mappings.
+    """Augment classes with a Mapping interface by adding attribute access.
 
-    `d.key -> d[key]`
+    I.e. `d.key -> d[key]`.
 
     """
 
@@ -473,7 +473,7 @@ class ConfigurationView(AttributeDictMixin):
             return default
 
     def clear(self):
-        """Removes all changes, but keeps defaults."""
+        """Remove all changes, but keep defaults."""
         self.changes.clear()
 
     def setdefault(self, key, default):
