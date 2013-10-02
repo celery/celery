@@ -47,8 +47,8 @@ class Heart(object):
     def start(self):
         if self.eventer.enabled:
             self._send('worker-online')
-            self.tref = self.timer.apply_interval(
-                self.interval * 1000.0, self._send, ('worker-heartbeat', ),
+            self.tref = self.timer.call_repeatedly(
+                self.interval, self._send, ('worker-heartbeat', ),
             )
 
     def stop(self):

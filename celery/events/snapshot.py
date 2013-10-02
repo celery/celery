@@ -47,10 +47,10 @@ class Polaroid(object):
         self.maxrate = maxrate and TokenBucket(rate(maxrate))
 
     def install(self):
-        self._tref = self.timer.apply_interval(self.freq * 1000.0,
-                                               self.capture)
-        self._ctref = self.timer.apply_interval(self.cleanup_freq * 1000.0,
-                                                self.cleanup)
+        self._tref = self.timer.call_repeatedly(self.freq, self.capture)
+        self._ctref = self.timer.call_repeatedly(
+            self.cleanup_freq, self.cleanup,
+        )
 
     def on_shutter(self, state):
         pass

@@ -15,6 +15,7 @@ import os
 import platform
 import re
 import sys
+import threading
 import time
 import warnings
 
@@ -309,6 +310,7 @@ class AppCase(Case):
         return UnitApp(*args, **kwargs)
 
     def setUp(self):
+        self._threads_at_setup = list(threading.enumerate())
         from celery import _state
         self._current_app = current_app()
         self._default_app = _state.default_app
@@ -353,6 +355,9 @@ class AppCase(Case):
         if self.app is not self._current_app:
             self.app.close()
         self.app = None
+        self.assertEqual(
+            self._threads_at_setup, list(threading.enumerate()),
+        )
 
     def _get_test_name(self):
         return '.'.join([self.__class__.__name__, self._testMethodName])

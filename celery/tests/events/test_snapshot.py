@@ -21,7 +21,7 @@ class TRef(object):
 class MockTimer(object):
     installed = []
 
-    def apply_interval(self, msecs, fun, *args, **kwargs):
+    def call_repeatedly(self, secs, fun, *args, **kwargs):
         self.installed.append(fun)
         return TRef()
 timer = MockTimer()

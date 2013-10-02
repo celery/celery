@@ -31,7 +31,7 @@ class MockDispatcherRaising(object):
 
 class MockTimer(object):
 
-    def apply_interval(self, msecs, fun, args=(), kwargs={}):
+    def call_repeatedly(self, secs, fun, args=(), kwargs={}):
 
         class entry(tuple):
             cancelled = False
@@ -39,7 +39,7 @@ class MockTimer(object):
             def cancel(self):
                 self.cancelled = True
 
-        return entry((msecs, fun, args, kwargs))
+        return entry((secs, fun, args, kwargs))
 
     def cancel(self, entry):
         entry.cancel()

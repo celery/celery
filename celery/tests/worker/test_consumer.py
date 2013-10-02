@@ -88,8 +88,8 @@ class test_Consumer(AppCase):
             bucket.expected_time.return_value = 3.33
             c._limit_task(request, bucket, 4)
             bucket.can_consume.assert_called_with(4)
-            c.timer.apply_after.assert_called_with(
-                3.33 * 1000.0, c._limit_task, (request, bucket, 4),
+            c.timer.call_after.assert_called_with(
+                3.33, c._limit_task, (request, bucket, 4),
             )
             bucket.expected_time.assert_called_with(4)
             self.assertFalse(reserved.called)
@@ -397,9 +397,7 @@ class test_Gossip(AppCase):
         c = self.Consumer()
         g = Gossip(c)
         g.register_timer()
-        c.timer.apply_interval.assert_called_with(
-            g.interval * 1000.0, g.periodic,
-        )
+        c.timer.call_repeatedly.assert_called_with(g.interval, g.periodic)
         tref = g._tref
         g.register_timer()
         tref.cancel.assert_called_with()

@@ -152,7 +152,7 @@ Attributes
 
 .. attribute:: timer
 
-    :class:`Timer <celery.utils.timer2.Schedule` used to schedule functions.
+    :class:`~kombu.async.timer.Timer` used to schedule functions.
 
     Your bootstep must require the Timer bootstep to use this.
 
@@ -230,8 +230,8 @@ Another example could use the timer to wake up at regular intervals:
 
         def start(self, worker):
             # run every 30 seconds.
-            self.tref = worker.timer.apply_interval(
-                30000.0, self.detect, (worker, ),
+            self.tref = worker.timer.call_repeatedly(
+                30.0, self.detect, (worker, ), priority=10,
             )
 
         def stop(self, worker):
@@ -669,12 +669,11 @@ will take some time so other transports still use a threading-based solution.
 Timer - Scheduling events
 -------------------------
 
-.. method:: timer.apply_after(msecs, callback, args=(), kwargs=(),
-                              priority=0)
+.. method:: timer.call_after(secs, callback, args=(), kwargs=(),
+                             priority=0)
 
+.. method:: timer.call_repeatedly(secs, callback, args=(), kwargs=(),
+                                  priority=0)
 
-.. method:: timer.apply_interval(msecs, callback, args=(), kwargs=(),
-                                priority=0)
-
-.. method:: timer.apply_at(eta, callback, args=(), kwargs=(),
-                           priority=0)
+.. method:: timer.call_at(eta, callback, args=(), kwargs=(),
+                          priority=0)

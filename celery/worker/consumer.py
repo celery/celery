@@ -226,8 +226,8 @@ class Consumer(object):
     def _limit_task(self, request, bucket, tokens):
         if not bucket.can_consume(tokens):
             hold = bucket.expected_time(tokens)
-            self.timer.apply_after(
-                hold * 1000.0, self._limit_task, (request, bucket, tokens),
+            self.timer.call_after(
+                hold, self._limit_task, (request, bucket, tokens),
             )
         else:
             task_reserved(request)
@@ -644,9 +644,7 @@ class Gossip(bootsteps.ConsumerStep):
     def register_timer(self):
         if self._tref is not None:
             self._tref.cancel()
-        self._tref = self.timer.apply_interval(
-            self.interval * 1000.0, self.periodic,
-        )
+        self._tref = self.timer.call_repeatedly(self.interval, self.periodic)
 
     def periodic(self):
         workers = self.state.workers

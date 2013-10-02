@@ -8,7 +8,6 @@
 """
 from __future__ import absolute_import
 
-import heapq
 import os
 import sys
 import threading
@@ -17,7 +16,6 @@ from itertools import count
 from time import sleep
 
 from celery.five import THREAD_TIMEOUT_MAX
-from celery.utils.timeutils import timedelta_seconds, timezone
 from kombu.async.timer import Entry, Timer as Schedule, to_timestamp, logger
 
 TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
@@ -110,20 +108,20 @@ class Timer(threading.Thread):
     def enter(self, entry, eta, priority=None):
         return self._do_enter('enter_at', entry, eta, priority=priority)
 
-    def apply_at(self, *args, **kwargs):
+    def call_at(self, *args, **kwargs):
         return self._do_enter('call_at', *args, **kwargs)
 
     def enter_after(self, *args, **kwargs):
         return self._do_enter('enter_after', *args, **kwargs)
 
-    def apply_after(self, *args, **kwargs):
+    def call_after(self, *args, **kwargs):
         return self._do_enter('call_after', *args, **kwargs)
 
-    def apply_interval(self, *args, **kwargs):
+    def call_repeatedly(self, *args, **kwargs):
         return self._do_enter('call_repeatedly', *args, **kwargs)
 
-    def exit_after(self, msecs, priority=10):
-        self.apply_after(msecs, sys.exit, priority)
+    def exit_after(self, secs, priority=10):
+        self.call_after(secs, sys.exit, priority)
 
     def cancel(self, tref):
         tref.cancel()
@@ -132,7 +130,13 @@ class Timer(threading.Thread):
         self.schedule.clear()
 
     def empty(self):
-        return not len(self.schedule)
+        return not len(self)
+
+    def __len__(self):
+        return len(self.schedule)
+
+    def __nonzero__(self):
+        return True
 
     @property
     def queue(self):

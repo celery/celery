@@ -46,7 +46,6 @@ class test_Schedule(Case):
 
     def test_handle_error(self):
         from datetime import datetime
-        to_timestamp = timer2.to_timestamp
         scratch = [None]
 
         def on_error(exc_info):
@@ -78,7 +77,7 @@ class test_Timer(Case):
             def set_done():
                 done[0] = True
 
-            t.apply_after(300, set_done)
+            t.call_after(0.3, set_done)
             mss = 0
             while not done[0]:
                 if mss >= 2.0:
@@ -90,9 +89,9 @@ class test_Timer(Case):
 
     def test_exit_after(self):
         t = timer2.Timer()
-        t.apply_after = Mock()
-        t.exit_after(300, priority=10)
-        t.apply_after.assert_called_with(300, sys.exit, 10)
+        t.call_after = Mock()
+        t.exit_after(0.3, priority=10)
+        t.call_after.assert_called_with(0.3, sys.exit, 10)
 
     def test_ensure_started_not_started(self):
         t = timer2.Timer()
@@ -101,25 +100,25 @@ class test_Timer(Case):
         t.ensure_started()
         self.assertFalse(t.start.called)
 
-    def test_apply_interval(self):
+    def test_call_repeatedly(self):
         t = timer2.Timer()
         try:
             t.schedule.enter_after = Mock()
 
             myfun = Mock()
             myfun.__name__ = 'myfun'
-            t.apply_interval(30, myfun)
+            t.call_repeatedly(0.03, myfun)
 
             self.assertEqual(t.schedule.enter_after.call_count, 1)
             args1, _ = t.schedule.enter_after.call_args_list[0]
-            msec1, tref1, _ = args1
-            self.assertEqual(msec1, 30)
+            sec1, tref1, _ = args1
+            self.assertEqual(sec1, 0.03)
             tref1()
 
             self.assertEqual(t.schedule.enter_after.call_count, 2)
             args2, _ = t.schedule.enter_after.call_args_list[1]
-            msec2, tref2, _ = args2
-            self.assertEqual(msec2, 30)
+            sec2, tref2, _ = args2
+            self.assertEqual(sec2, 0.03)
             tref2.cancelled = True
             tref2()
 

@@ -34,7 +34,7 @@ def default(task, app, consumer,
     _does_info = logger.isEnabledFor(logging.INFO)
     events = eventer and eventer.enabled
     send_event = eventer.send
-    timer_apply_at = consumer.timer.apply_at
+    call_at = consumer.timer.call_at
     apply_eta_task = consumer.apply_eta_task
     rate_limits_enabled = not consumer.disable_rate_limits
     bucket = consumer.task_buckets[task.name]
@@ -74,9 +74,7 @@ def default(task, app, consumer,
                 req.acknowledge()
             else:
                 consumer.qos.increment_eventually()
-                timer_apply_at(
-                    eta, apply_eta_task, (req, ), priority=6,
-                )
+                call_at(eta, apply_eta_task, (req, ), priority=6)
         else:
             if rate_limits_enabled:
                 if bucket:
