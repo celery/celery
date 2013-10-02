@@ -181,9 +181,6 @@ if CELERY_COMPAT_PROGRAMS:
         'celeryd-multi = celery.__main__:_compat_multi',
     ])
 
-# bundles: Only relevant for Celery developers.
-entrypoints['bundle.bundles'] = ['celery = celery.contrib.bundles:bundles']
-
 if is_setuptools:
     extras = lambda *p: reqs('extras', *p)
     extras_require = extra['extras_require'] = {

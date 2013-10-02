@@ -11,17 +11,11 @@ Installation
 
 For the Beanstalk support you have to install additional dependencies.
 You can install both Celery and these dependencies in one go using
-either the `celery-with-beanstalk`_, or the `django-celery-with-beanstalk`
-bundles:
+the ``celery[beanstalk]`` :ref:`bundle <bundles>`:
 
 .. code-block:: bash
 
-    $ pip install -U celery-with-beanstalk
-
-.. _`celery-with-beanstalk`:
-    http://pypi.python.org/pypi/celery-with-beanstalk
-.. _`django-celery-with-beanstalk`:
-    http://pypi.python.org/pypi/django-celery-with-beanstalk
+    $ pip install -U celery[beanstalk]
 
 .. _broker-beanstalk-configuration:
 

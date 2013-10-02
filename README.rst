@@ -4,11 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-<<<<<<< HEAD
-:Version: 3.1.0rc4 (Cipater)
-=======
 :Version: 3.0.23 (Chiastic Slide)
->>>>>>> 3.0
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
@@ -233,28 +229,40 @@ Bundles
 Celery also defines a group of bundles that can be used
 to install Celery and the dependencies for a given feature.
 
+You can specify these in your requirements or on the ``pip`` comand-line
+by using brackets.  Multiple bundles can be specified by separating them by
+commas.
+::
+
+    $ pip install celery[librabbitmq]
+
+    $ pip install celery[librabbitmq,redis]
+
 The following bundles are available:
 
-:`celery-with-redis`_:
-    for using Redis as a broker.
+:celery[librabbitmq]:
+    for using the librabbitmq C library.
 
-:`celery-with-mongodb`_:
-    for using MongoDB as a broker.
+:celery[redis]:
+    for using Redis as a message transport or as a result backend.
 
-:`django-celery-with-redis`_:
-    for Django, and using Redis as a broker.
+:celery[mongodb]:
+    for using MongoDB as a message transport, or as a result backend.
 
-:`django-celery-with-mongodb`_:
-    for Django, and using MongoDB as a broker.
+:celery[couchdb]:
+    for using CouchDB as a message transport.
 
-.. _`celery-with-redis`:
-    http://pypi.python.org/pypi/celery-with-redis/
-.. _`celery-with-mongodb`:
-    http://pypi.python.org/pypi/celery-with-mongdb/
-.. _`django-celery-with-redis`:
-    http://pypi.python.org/pypi/django-celery-with-redis/
-.. _`django-celery-with-mongodb`:
-    http://pypi.python.org/pypi/django-celery-with-mongdb/
+:celery[beanstalk]:
+    for using Beanstalk as a message transport.
+
+:celery[zookeeper]:
+    for using Zookeeper as a message transport.
+
+:celery[zeromq]:
+    for using ZeroMQ as a message transport.
+
+:celery[sqlalchemy]:
+    for using SQLAlchemy as a message transport, or as a result backend.
 
 .. _celery-installing-from-source:
 

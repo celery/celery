@@ -11,16 +11,11 @@ Installation
 
 For the CouchDB support you have to install additional dependencies.
 You can install both Celery and these dependencies in one go using
-either the `celery-with-couchdb`_, or the `django-celery-with-couchdb` bundles:
+the ``celery[couchdb]`` :ref:`bundle <bundles>`:
 
 .. code-block:: bash
 
-    $ pip install -U celery-with-couchdb
-
-.. _`celery-with-couchdb`:
-    http://pypi.python.org/pypi/celery-with-couchdb
-.. _`django-celery-with-couchdb`:
-    http://pypi.python.org/pypi/django-celery-with-couchdb
+    $ pip install -U celery[couchdb]
 
 .. _broker-couchdb-configuration:
 
