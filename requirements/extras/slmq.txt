@@ -1,0 +1,1 @@
+softlayer_messaging>=1.0.3

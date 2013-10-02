@@ -30,9 +30,36 @@ commas.
 
     $ pip install celery[librabbitmq]
 
-    $ pip install celery[librabbitmq,redis]
+    $ pip install celery[librabbitmq,redis,auth,msgpack]
 
 The following bundles are available:
+
+Serializers
+~~~~~~~~~~~
+
+:celery[auth]:
+    for using the auth serializer.
+
+:celery[msgpack]:
+    for using the msgpack serializer.
+
+:celery[yaml]:
+    for using the yaml serializer.
+
+Concurrency
+~~~~~~~~~~~
+
+:celery[eventlet]:
+    for using the eventlet pool.
+
+:celery[gevent]:
+    for using the gevent pool.
+
+:celery[threads]:
+    for using the thread pool.
+
+Transports and Backends
+~~~~~~~~~~~~~~~~~~~~~~~
 
 :celery[librabbitmq]:
     for using the librabbitmq C library.
@@ -43,8 +70,20 @@ The following bundles are available:
 :celery[mongodb]:
     for using MongoDB as a message transport, or as a result backend.
 
+:celery[sqs]:
+    for using Amazon SQS as a message transport.
+
+:celery[memcache]:
+    for using memcached as a result backend.
+
+:celery[cassandra]:
+    for using Apache Cassandra as a result backend.
+
 :celery[couchdb]:
     for using CouchDB as a message transport.
+
+:celery[couchbase]:
+    for using CouchBase as a result backend.
 
 :celery[beanstalk]:
     for using Beanstalk as a message transport.
@@ -57,6 +96,12 @@ The following bundles are available:
 
 :celery[sqlalchemy]:
     for using SQLAlchemy as a message transport, or as a result backend.
+
+:celery[pyro]:
+    for using the Pyro4 message transport.
+
+:celery[slmq]:
+    for using the SoftLayer Message Queue transport.
 
 .. _celery-installing-from-source:
 

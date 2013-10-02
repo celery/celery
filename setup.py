@@ -184,14 +184,28 @@ if CELERY_COMPAT_PROGRAMS:
 if is_setuptools:
     extras = lambda *p: reqs('extras', *p)
     extras_require = extra['extras_require'] = {
+        # Celery specific
+        'auth': extras('auth.txt'),
+        'cassandra': extras('cassandra.txt'),
+        'memcache': extras('memcache.txt'),
+        'couchbase': extras('couchbase.txt'),
+        'threads': extras('threads.txt'),
+        'eventlet': extras('eventlet.txt'),
+        'gevent': extras('gevent.txt'),
+
+        'msgpack': extras('msgpack.txt'),
+        'yaml': extras('yaml.txt'),
         'redis': extras('redis.txt'),
         'mongodb': extras('mongodb.txt'),
+        'sqs': extras('sqs.txt'),
         'couchdb': extras('couchdb.txt'),
         'beanstalk': extras('beanstalk.txt'),
         'zookeeper': extras('zookeeper.txt'),
         'zeromq': extras('zeromq.txt'),
         'sqlalchemy': extras('sqlalchemy.txt'),
         'librabbitmq': extras('librabbitmq.txt'),
+        'pyro': extras('pyro.txt'),
+        'slmq': extras('slmq.txt'),
     }
 
 # -*- %%% -*-
