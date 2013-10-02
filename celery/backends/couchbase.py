@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     celery.backends.couchbase
-    ~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
 
     CouchBase result store backend.
 

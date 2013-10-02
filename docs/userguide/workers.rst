@@ -929,7 +929,7 @@ The output will include the following fields:
     System usage statistics.  The fields available may be different
     on your platform.
 
-    From :man:`getrusage(2)`:
+    From :manpage:`getrusage(2)`:
 
     * ``stime``
 

@@ -47,7 +47,7 @@ and creating Celery applications.
     :keyword tasks: A task registry or the name of a registry class.
     :keyword include: List of modules every worker should import.
     :keyword fixups: List of fixup plug-ins (see e.g.
-    :mod:`celery.fixups.django`).
+        :mod:`celery.fixups.django`).
 
     .. attribute:: Celery.main
 

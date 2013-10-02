@@ -92,7 +92,7 @@ set up the :envvar:`DJANGO_SETTINGS_MODULE` environment variable:
     $ DJANGO_SETTINGS_MODULE='proj.settings' celery -A proj status
 
 If you find this inconvienient you can create a small wrapper script
-alongside ``manage.py`` that automatically binds to your app, e.g. ``proj/celery.py`
+alongside ``manage.py`` that automatically binds to your app, e.g. ``proj/celery.py``
 
 :file:`proj/celery.py`
 

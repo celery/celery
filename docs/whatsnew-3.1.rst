@@ -729,7 +729,7 @@ Fixes
 
 - XXX
 
-.. _v310-internal
+.. _v310-internal:
 
 Internal changes
 ================

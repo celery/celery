@@ -210,7 +210,7 @@ Can be one of the following:
 * ironcache
     Use `IronCache`_ to store the results.
     See :ref:`conf-ironcache-result-backend`.
-    
+
 * couchbase
     Use `Couchbase`_ to store the results.
     See :ref:`conf-couchbase-result-backend`.
@@ -670,7 +670,7 @@ Or to change the cache name::
 For more information, see: https://github.com/iron-io/iron_celery
 
 
-. _conf-couchbase-result-backend:
+.. _conf-couchbase-result-backend:
 
 Couchbase backend settings
 --------------------------
