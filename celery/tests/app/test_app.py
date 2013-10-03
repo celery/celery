@@ -292,15 +292,6 @@ class test_App(AppCase):
             args = dt.call_args[0][1]
             self.assertEqual(args, ('hello', 4, 5))
 
-    def test_apply_async__connection_arg(self):
-        @self.app.task(shared=False)
-        def aacaX():
-            pass
-
-        connection = self.app.connection('asd://')
-        with self.assertRaises(KeyError):
-            aacaX.apply_async(connection=connection)
-
     def test_apply_async_adds_children(self):
         from celery._state import _task_stack
 
