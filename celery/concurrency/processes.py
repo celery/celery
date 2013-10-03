@@ -987,10 +987,16 @@ class TaskPool(BasePool):
         self.restart = P.restart
         self.maybe_handle_result = P._result_handler.handle_event
         self.handle_result_event = P.handle_result_event
-        self.register_with_event_loop = P.register_with_event_loop
 
     def did_start_ok(self):
         return self._pool.did_start_ok()
+
+    def register_with_event_loop(self, loop):
+        try:
+            reg = self._pool.register_with_event_loop
+        except AttributeError:
+            return
+        return reg(loop)
 
     def on_stop(self):
         """Gracefully stop the pool."""
