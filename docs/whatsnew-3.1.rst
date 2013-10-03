@@ -704,8 +704,8 @@ Scheduled Removals
   supports the ``connect_timeout`` argument.
 
     This can now only be set using the :setting:`BROKER_CONNECTION_TIMEOUT`
-    setting.  This is because function rarely establish connections directly,
-    but instead acquire connections from the connection pool.
+    setting.  This is because the functions no longer create connections
+    directly, and instead get them from the connection pool.
 
 - The ``Celery.with_default_connection`` method has been removed in favor
   of ``with app.connection_or_acquire``.
