@@ -362,7 +362,7 @@ Installing the test requirements:
 
 .. code-block:: bash
 
-    $ pip -E $VIRTUAL_ENV install -U -r requirements/test.txt
+    $ pip install -U -r requirements/test.txt
 
 When installation of dependencies is complete you can execute
 the test suite by calling ``nosetests``:
@@ -464,7 +464,7 @@ listed in :file:`requirements/docs.txt`:
 
 .. code-block:: bash
 
-    $ pip -E $VIRTUAL_ENV install -U -r requirements/docs.txt
+    $ pip install -U -r requirements/docs.txt
 
 After these dependencies are installed you should be able to
 build the docs by running:
@@ -490,7 +490,7 @@ Installing the dependencies:
 
 .. code-block:: bash
 
-    $ pip -E $VIRTUAL_ENV install -U -r requirements/pkgutils.txt
+    $ pip install -U -r requirements/pkgutils.txt
 
 pyflakes & PEP8
 ~~~~~~~~~~~~~~~
