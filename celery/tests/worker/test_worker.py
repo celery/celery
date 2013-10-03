@@ -814,10 +814,10 @@ class test_WorkController(AppCase):
 
     def test_attrs(self):
         worker = self.worker
+        self.assertIsNotNone(worker.timer)
         self.assertIsInstance(worker.timer, Timer)
-        self.assertTrue(worker.timer)
-        self.assertTrue(worker.pool)
-        self.assertTrue(worker.consumer)
+        self.assertIsNotNone(worker.pool)
+        self.assertIsNotNone(worker.consumer)
         self.assertTrue(worker.steps)
 
     def test_with_embedded_beat(self):
