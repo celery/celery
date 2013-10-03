@@ -15,8 +15,6 @@ import warnings
 
 from email.mime.text import MIMEText
 
-from kombu.async import maybe_block
-
 from .functional import maybe_list
 
 try:
@@ -187,7 +185,6 @@ py-celery at {{hostname}}.
 
     def send(self, context, exc, fail_silently=True):
         if self.should_send(context, exc):
-            with maybe_block():
-                self.task.app.mail_admins(self.format_subject(context),
-                                          self.format_body(context),
-                                          fail_silently=fail_silently)
+            self.task.app.mail_admins(self.format_subject(context),
+                                      self.format_body(context),
+                                      fail_silently=fail_silently)

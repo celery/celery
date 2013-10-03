@@ -19,7 +19,6 @@ import sys
 from datetime import timedelta
 
 from billiard.einfo import ExceptionInfo
-from kombu.async import maybe_block
 from kombu.serialization import (
     dumps, loads, prepare_accept_content,
     registry as serializer_registry,
@@ -199,9 +198,8 @@ class BaseBackend(object):
     def store_result(self, task_id, result, status, traceback=None, **kwargs):
         """Update task state and result."""
         result = self.encode_result(result, status)
-        with maybe_block():
-            self._store_result(task_id, result, status, traceback, **kwargs)
-            return result
+        self._store_result(task_id, result, status, traceback, **kwargs)
+        return result
 
     def forget(self, task_id):
         self._cache.pop(task_id, None)

@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import socket
 import threading
 
-from kombu.async import maybe_block
 from kombu.common import ignore_errors
 from kombu.utils.encoding import safe_str
 
@@ -35,8 +34,7 @@ class Pidbox(object):
         self._forward_clock()  # just increase clock as clients usually don't
                                # have a valid clock to adjust with.
         try:
-            with maybe_block():
-                self.node.handle_message(body, message)
+            self.node.handle_message(body, message)
         except KeyError as exc:
             error('No such control command: %s', exc)
         except Exception as exc:
