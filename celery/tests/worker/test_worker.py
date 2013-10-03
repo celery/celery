@@ -519,16 +519,20 @@ class test_Consumer(AppCase):
             eta=(datetime.now() + timedelta(days=1)).isoformat(),
         )
 
-        l.blueprint.start(l)
-        p = l.app.conf.BROKER_CONNECTION_RETRY
-        l.app.conf.BROKER_CONNECTION_RETRY = False
-        l.blueprint.start(l)
-        l.app.conf.BROKER_CONNECTION_RETRY = p
-        l.blueprint.restart(l)
-        l.event_dispatcher = Mock()
-        callback = self._get_on_message(l)
-        callback(m.decode(), m)
-        l.timer.stop()
+        try:
+            l.blueprint.start(l)
+            p = l.app.conf.BROKER_CONNECTION_RETRY
+            l.app.conf.BROKER_CONNECTION_RETRY = False
+            l.blueprint.start(l)
+            l.app.conf.BROKER_CONNECTION_RETRY = p
+            l.blueprint.restart(l)
+            l.event_dispatcher = Mock()
+            callback = self._get_on_message(l)
+            callback(m.decode(), m)
+        finally:
+            l.timer.stop()
+            l.timer.join()
+
         in_hold = l.timer.queue[0]
         self.assertEqual(len(in_hold), 3)
         eta, priority, entry = in_hold
