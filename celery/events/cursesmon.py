@@ -173,7 +173,7 @@ class CursesMonitor(object):  # pragma: no cover
         self.win.addstr(my - 1, 0, 'Press any key to continue...',
                         curses.A_BOLD)
         self.win.refresh()
-        while 1:
+        while True:
             try:
                 return self.win.getkey().upper()
             except:
@@ -231,7 +231,7 @@ class CursesMonitor(object):  # pragma: no cover
         curses.echo()
         try:
             i = 0
-            while 1:
+            while True:
                 ch = self.win.getch(x, y + i)
                 if ch != -1:
                     if ch in (10, curses.KEY_ENTER):            # enter
