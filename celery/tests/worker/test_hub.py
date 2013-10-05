@@ -162,7 +162,7 @@ class test_Hub(Case):
         reset = lambda: [m.reset() for m in [e1, e2, e3]]
 
         def se():
-            while 1:
+            while True:
                 while entries:
                     yield None, entries.pop()
                 yield 3.982, None
