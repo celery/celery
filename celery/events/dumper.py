@@ -90,7 +90,7 @@ def evdump(app=None, out=sys.stdout):
             conn.as_uri(), exc, humanize_seconds(interval, 'in', ' ')
         ))
 
-    while 1:
+    while True:
         try:
             conn.ensure_connection(_error_handler)
             recv = app.events.Receiver(conn, handlers={'*': dumper.on_event})
