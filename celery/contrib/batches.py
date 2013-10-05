@@ -113,7 +113,7 @@ def consume_queue(queue):
 
     """
     get = queue.get_nowait
-    while 1:
+    while True:
         try:
             yield get()
         except Empty:
