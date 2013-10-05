@@ -383,7 +383,7 @@ def _setgroups_hack(groups):
     is, so we use this ugly hack stolen from glibc."""
     groups = groups[:]
 
-    while 1:
+    while True:
         try:
             return os.setgroups(groups)
         except ValueError:   # error from Python's check.
