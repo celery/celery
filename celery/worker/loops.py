@@ -48,7 +48,11 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     # maxtasksperchild will mess up metrics.
     if not obj.restart_count and not obj.pool.did_start_ok():
         raise WorkerLostError('Could not start worker processes')
-    loop = hub._loop(propagate=errors)
+
+    # FIXME: Use loop.run_forever
+    # Tried and works, but no time to test properly before release.
+    hub.propagate_errors = errors
+    loop = hub.create_loop()
 
     try:
         while blueprint.state == RUN and obj.connection:
@@ -67,7 +71,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
             try:
                 next(loop)
             except StopIteration:
-                loop = hub._loop(propagate=errors)
+                loop = hub.create_loop()
     finally:
         try:
             hub.close()

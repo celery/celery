@@ -143,6 +143,7 @@ class test_Hub(Case):
 
         poller = hub.poller
         hub.stop()
+        hub.close()
         poller.close.assert_called_with()
 
     def test_fire_timers(self):
