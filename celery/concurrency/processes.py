@@ -190,7 +190,7 @@ class ResultHandler(_pool.ResultHandler):
         fileno_to_outq = self.fileno_to_outq
         on_state_change = self.on_state_change
 
-        while 1:
+        while True:
             fileno = (yield)
             try:
                 proc = fileno_to_outq[fileno]

@@ -1,4 +1,3 @@
-
 from eventlet import spawn_n, monkey_patch, Timeout
 from eventlet.queue import LightQueue
 from eventlet.event import Event
@@ -52,7 +51,7 @@ class ProducerPool(object):
         publisher = current_app.amqp.TaskProducer(connection)
         inqueue = self.inqueue
 
-        while 1:
+        while True:
             task, args, kwargs, options, receipt = inqueue.get()
             result = task.apply_async(args, kwargs,
                                       publisher=publisher,

@@ -103,7 +103,7 @@ class CassandraBackend(BaseBackend):
 
     def _retry_on_error(self, fun, *args, **kwargs):
         ts = time.time() + self._retry_timeout
-        while 1:
+        while True:
             try:
                 return fun(*args, **kwargs)
             except (pycassa.InvalidRequestException,

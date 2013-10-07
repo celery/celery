@@ -135,8 +135,9 @@ class Timer(threading.Thread):
     def __len__(self):
         return len(self.schedule)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return True
+    __nonzero__ = __bool__
 
     @property
     def queue(self):

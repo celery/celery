@@ -162,7 +162,7 @@ class BaseBackend(object):
 
         time_elapsed = 0.0
 
-        while 1:
+        while True:
             status = self.get_status(task_id)
             if status == states.SUCCESS:
                 return self.get_result(task_id)
