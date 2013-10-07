@@ -33,9 +33,15 @@ Init script: celeryd
 :Usage: `/etc/init.d/celeryd {start|stop|restart|status}`
 :Configuration file: /etc/default/celeryd
 
-To configure this script to run the worker properly you probably need to at least tell it where to change
+To configure this script to run the worker properly you probably need to at least
+tell it where to change
 directory to when it starts (to find the module containing your app, or your
 configuration module).
+
+The daemonization script is configured by the file ``/etc/default/celeryd``,
+which is a shell (sh) script.  You can add environment variables and the
+configuration options below to this file.  To add environment variables you
+must also export them (e.g. ``export DISPLAY=":0"``)
 
 .. _generic-initd-celeryd-example:
 
