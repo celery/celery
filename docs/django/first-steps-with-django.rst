@@ -133,6 +133,11 @@ To use this with your project you need to follow these three steps:
 
     3. Create the celery database tables.
 
+        This step will create the tables used to store results
+        when using the database result backend and the tables used
+        by the database periodic task scheduler.  You can skip
+        this step if you don't use these.
+
         If you are using south_ for schema migrations, you'll want to:
 
         .. code-block:: bash
