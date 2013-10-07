@@ -10,7 +10,6 @@
 from __future__ import absolute_import
 
 import logging
-import time
 import socket
 import sys
 
@@ -27,7 +26,7 @@ from celery.exceptions import (
     SoftTimeLimitExceeded, TimeLimitExceeded,
     WorkerLostError, Terminated, RetryTaskError,
 )
-from celery.five import items
+from celery.five import items, monotonic
 from celery.platforms import signals as _signals
 from celery.utils import fun_takes_kwargs
 from celery.utils.functional import noop
@@ -333,7 +332,7 @@ class Request(object):
         if self.store_errors:
             self.task.backend.mark_as_failure(self.id, exc)
 
-    def on_success(self, ret_value, now=None, nowfun=time.time):
+    def on_success(self, ret_value, now=None, nowfun=monotonic):
         """Handler called if the task was successfully processed."""
         if isinstance(ret_value, ExceptionInfo):
             if isinstance(ret_value.exception, (

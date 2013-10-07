@@ -23,14 +23,13 @@ import threading
 from datetime import datetime
 from heapq import heappush, heappop
 from itertools import islice
-from time import time
 
 from kombu.clocks import timetuple
 from kombu.utils import kwdict
 
 from celery import states
 from celery.datastructures import AttributeDict
-from celery.five import items, values
+from celery.five import items, values, monotonic
 from celery.utils.functional import LRUCache
 from celery.utils.log import get_logger
 
@@ -140,7 +139,7 @@ class Worker(AttributeDict):
 
     @property
     def alive(self):
-        return bool(self.heartbeats and time() < self.heartbeat_expires)
+        return bool(self.heartbeats and monotonic() < self.heartbeat_expires)
 
     @property
     def id(self):

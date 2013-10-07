@@ -11,7 +11,6 @@ from __future__ import absolute_import, print_function
 import curses
 import sys
 import threading
-import time
 
 from datetime import datetime
 from itertools import count
@@ -21,7 +20,7 @@ from math import ceil
 from celery import VERSION_BANNER
 from celery import states
 from celery.app import app_or_default
-from celery.five import items, values
+from celery.five import items, values, monotonic
 from celery.utils.text import abbr, abbrtask
 
 __all__ = ['CursesMonitor', 'evtop']
@@ -334,7 +333,7 @@ class CursesMonitor(object):  # pragma: no cover
         if task.uuid == self.selected_task:
             attr = curses.A_STANDOUT
         timestamp = datetime.utcfromtimestamp(
-            task.timestamp or time.time(),
+            task.timestamp or monotonic(),
         )
         timef = timestamp.strftime('%H:%M:%S')
         hostname = task.worker.hostname if task.worker else '*NONE*'

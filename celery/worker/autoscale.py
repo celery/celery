@@ -16,11 +16,12 @@ from __future__ import absolute_import
 import os
 import threading
 
-from time import sleep, time
+from time import sleep
 
 from kombu.async.semaphore import DummyLock
 
 from celery import bootsteps
+from celery.five import monotonic
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
 
@@ -120,13 +121,13 @@ class Autoscaler(bgThread):
             self._shrink(min(n, self.processes))
 
     def scale_up(self, n):
-        self._last_action = time()
+        self._last_action = monotonic()
         return self._grow(n)
 
     def scale_down(self, n):
         if n and self._last_action and (
-                time() - self._last_action > self.keepalive):
-            self._last_action = time()
+                monotonic() - self._last_action > self.keepalive):
+            self._last_action = monotonic()
             return self._shrink(n)
 
     def _grow(self, n):

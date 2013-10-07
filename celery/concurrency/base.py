@@ -10,10 +10,10 @@ from __future__ import absolute_import
 
 import logging
 import os
-import time
 
 from kombu.utils.encoding import safe_repr
 
+from celery.five import monotonic
 from celery.utils import timer2
 from celery.utils.log import get_logger
 
@@ -25,7 +25,7 @@ logger = get_logger('celery.pool')
 def apply_target(target, args=(), kwargs={}, callback=None,
                  accept_callback=None, pid=None, **_):
     if accept_callback:
-        accept_callback(pid or os.getpid(), time.time())
+        accept_callback(pid or os.getpid(), monotonic())
     callback(target(*args, **kwargs))
 
 

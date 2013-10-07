@@ -24,7 +24,7 @@ from kombu.utils.functional import maybe_evaluate
 from . import __version__
 from . import platforms
 from . import signals
-from .five import items, reraise, values
+from .five import items, reraise, values, monotonic
 from .schedules import maybe_schedule, crontab
 from .utils.imports import instantiate
 from .utils.timeutils import humanize_seconds
@@ -215,7 +215,7 @@ class Scheduler(object):
 
     def should_sync(self):
         return (not self._last_sync or
-                (time.time() - self._last_sync) > self.sync_every)
+                (monotonic() - self._last_sync) > self.sync_every)
 
     def reserve(self, entry):
         new_entry = self.schedule[entry.name] = next(entry)
@@ -257,7 +257,7 @@ class Scheduler(object):
             debug('beat: Synchronizing schedule...')
             self.sync()
         finally:
-            self._last_sync = time.time()
+            self._last_sync = monotonic()
 
     def sync(self):
         pass

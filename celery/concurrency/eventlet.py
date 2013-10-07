@@ -27,9 +27,8 @@ for mod in (mod for mod in sys.modules if mod.startswith(RACE_MODS)):
             warnings.warn(RuntimeWarning(W_RACE % side))
 
 
-from time import time
-
 from celery import signals
+from celery.five import monotonic
 from celery.utils import timer2
 
 from . import base
@@ -53,7 +52,7 @@ class Schedule(timer2.Schedule):
         self._queue = set()
 
     def _enter(self, eta, priority, entry):
-        secs = max(eta - time(), 0)
+        secs = max(eta - monotonic(), 0)
         g = self._spawn_after(secs, entry)
         self._queue.add(g)
         g.link(self._entry_exit, entry)

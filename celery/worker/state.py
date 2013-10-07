@@ -86,8 +86,8 @@ C_BENCH_EVERY = int(os.environ.get('C_BENCH_EVERY') or
 if C_BENCH:  # pragma: no cover
     import atexit
 
-    from time import time
     from billiard import current_process
+    from celery.five import monotonic
     from celery.utils.debug import memdump, sample_mem
 
     all_count = 0
@@ -114,7 +114,7 @@ if C_BENCH:  # pragma: no cover
         global bench_first
         now = None
         if bench_start is None:
-            bench_start = now = time()
+            bench_start = now = monotonic()
         if bench_first is None:
             bench_first = now
 
@@ -126,7 +126,7 @@ if C_BENCH:  # pragma: no cover
         global bench_last
         all_count += 1
         if not all_count % bench_every:
-            now = time()
+            now = monotonic()
             diff = now - bench_start
             print('- Time spent processing {0} tasks (since first '
                   'task received): ~{1:.4f}s\n'.format(bench_every, diff))

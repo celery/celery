@@ -20,6 +20,7 @@ import time
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
+from celery.five import monotonic
 from celery.utils.log import get_logger
 from celery.utils.timeutils import maybe_timedelta, timedelta_seconds
 
@@ -102,7 +103,7 @@ class CassandraBackend(BaseBackend):
         self._column_family = None
 
     def _retry_on_error(self, fun, *args, **kwargs):
-        ts = time.time() + self._retry_timeout
+        ts = monotonic() + self._retry_timeout
         while 1:
             try:
                 return fun(*args, **kwargs)
@@ -113,7 +114,7 @@ class CassandraBackend(BaseBackend):
                     socket.error,
                     socket.timeout,
                     Thrift.TException) as exc:
-                if time.time() > ts:
+                if monotonic() > ts:
                     raise
                 logger.warning('Cassandra error: %r. Retrying...', exc)
                 time.sleep(self._retry_wait)

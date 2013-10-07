@@ -11,7 +11,6 @@
 from __future__ import absolute_import
 
 import socket
-import time
 
 from collections import deque
 from operator import itemgetter
@@ -20,7 +19,7 @@ from kombu import Exchange, Queue, Producer, Consumer
 
 from celery import states
 from celery.exceptions import TimeoutError
-from celery.five import range
+from celery.five import range, monotonic
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.timeutils import maybe_s_to_ms
@@ -181,7 +180,7 @@ class AMQPBackend(BaseBackend):
     poll = get_task_meta  # XXX compat
 
     def drain_events(self, connection, consumer,
-                     timeout=None, now=time.time, wait=None):
+                     timeout=None, now=monotonic, wait=None):
         wait = wait or connection.drain_events
         results = {}
 
@@ -218,7 +217,7 @@ class AMQPBackend(BaseBackend):
         return [self._create_binding(task_id) for task_id in ids]
 
     def get_many(self, task_ids, timeout=None,
-                 now=time.time, getfields=itemgetter('status', 'task_id'),
+                 now=monotonic, getfields=itemgetter('status', 'task_id'),
                  READY_STATES=states.READY_STATES, **kwargs):
         with self.app.pool.acquire_channel(block=True) as (conn, channel):
             ids = set(task_ids)

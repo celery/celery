@@ -25,6 +25,7 @@ from kombu.mixins import ConsumerMixin
 from kombu.utils import cached_property
 
 from celery.app import app_or_default
+from celery.five import monotonic
 from celery.utils import uuid
 from celery.utils.functional import dictfilter
 from celery.utils.timeutils import adjust_timestamp, utcoffset, maybe_s_to_ms
@@ -44,7 +45,7 @@ def get_exchange(conn):
     return ex
 
 
-def Event(type, _fields=None, __dict__=dict, __now__=time.time, **fields):
+def Event(type, _fields=None, __dict__=dict, __now__=monotonic, **fields):
     """Create an event.
 
     An event is a dictionary, the only required field is ``type``.
@@ -320,7 +321,7 @@ class EventReceiver(ConsumerMixin):
                                    channel=channel)
 
     def event_from_message(self, body, localize=True,
-                           now=time.time, tzfields=_TZGETTER,
+                           now=monotonic, tzfields=_TZGETTER,
                            adjust_timestamp=adjust_timestamp):
         type = body.get('type', '').lower()
         clock = body.get('clock')

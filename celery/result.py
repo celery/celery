@@ -21,7 +21,7 @@ from . import states
 from .app import app_or_default
 from .datastructures import DependencyGraph, GraphFormatter
 from .exceptions import IncompleteStream, TimeoutError
-from .five import items, range, string_t
+from .five import items, range, string_t, monotonic
 
 __all__ = ['ResultBase', 'AsyncResult', 'ResultSet', 'GroupResult',
            'EagerResult', 'from_serializable']
@@ -499,14 +499,14 @@ class ResultSet(ResultBase):
             seconds.
 
         """
-        time_start = time.time()
+        time_start = monotonic()
         remaining = None
 
         results = []
         for result in self.results:
             remaining = None
             if timeout:
-                remaining = timeout - (time.time() - time_start)
+                remaining = timeout - (monotonic() - time_start)
                 if remaining <= 0.0:
                     raise TimeoutError('join operation timed out')
             results.append(result.get(timeout=remaining,
