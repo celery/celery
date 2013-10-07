@@ -16,7 +16,7 @@ from celery import current_app
 from celery import states
 from celery._state import _task_stack
 from celery.canvas import subtask
-from celery.exceptions import MaxRetriesExceededError, RetryTaskError
+from celery.exceptions import MaxRetriesExceededError, RetryTaskError, Reject
 from celery.five import class_property, items, with_metaclass
 from celery.result import EagerResult
 from celery.utils import gen_task_name, fun_takes_kwargs, uuid, maybe_reraise
@@ -577,26 +577,32 @@ class Task(object):
         if not eta and countdown is None:
             countdown = self.default_retry_delay
 
-        S = self.subtask_from_request(
-            request, args, kwargs,
-            countdown=countdown, eta=eta, retries=retries,
-            **options
-        )
+        is_eager = request.is_eager
+        try:
+            S = self.subtask_from_request(
+                request, args, kwargs,
+                countdown=countdown, eta=eta, retries=retries,
+                **options
+            )
 
-        if max_retries is not None and retries > max_retries:
-            if exc:
-                maybe_reraise()
-            raise self.MaxRetriesExceededError(
-                "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
-                    self.name, request.id, S.args, S.kwargs))
+            if max_retries is not None and retries > max_retries:
+                if exc:
+                    maybe_reraise()
+                raise self.MaxRetriesExceededError(
+                    "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
+                        self.name, request.id, S.args, S.kwargs))
 
-        # If task was executed eagerly using apply(),
-        # then the retry must also be executed eagerly.
-        S.apply().get() if request.is_eager else S.apply_async()
-        ret = RetryTaskError(exc=exc, when=eta or countdown)
-        if throw:
-            raise ret
-        return ret
+            # If task was executed eagerly using apply(),
+            # then the retry must also be executed eagerly.
+            S.apply().get() if is_eager else S.apply_async()
+            ret = RetryTaskError(exc=exc, when=eta or countdown)
+            if throw:
+                raise ret
+            return ret
+        except Exception as exc:
+            if is_eager:
+                raise
+            raise Reject(exc, requeue=True)
 
     def apply(self, args=None, kwargs=None,
               link=None, link_error=None, **options):

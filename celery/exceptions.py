@@ -40,6 +40,18 @@ class Ignore(Exception):
     """A task can raise this to ignore doing state updates."""
 
 
+class Reject(Exception):
+    """A task can raise this if it wants to reject/requeue the message."""
+
+    def __init__(self, reason=None, requeue=False):
+        self.reason = reason
+        self.requeue = requeue
+        super(Reject, self).__init__(reason, requeue)
+
+    def __repr__(self):
+        return 'reject requeue=%s: %s' % (self.requeue, self.reason)
+
+
 class SystemTerminate(SystemExit):
     """Signals that the worker should terminate."""
 

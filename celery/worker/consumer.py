@@ -409,7 +409,9 @@ class Consumer(object):
                 return on_unknown_message(body, message)
 
             try:
-                strategies[name](message, body, message.ack_log_error)
+                strategies[name](message, body,
+                                 message.ack_log_error,
+                                 message.reject_log_error)
             except KeyError as exc:
                 on_unknown_task(body, message, exc)
             except InvalidTaskError as exc:

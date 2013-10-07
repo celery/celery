@@ -41,8 +41,10 @@ def default(task, app, consumer,
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
 
-    def task_message_handler(message, body, ack, to_timestamp=to_timestamp):
-        req = Req(body, on_ack=ack, app=app, hostname=hostname,
+    def task_message_handler(message, body, ack, reject,
+                             to_timestamp=to_timestamp):
+        req = Req(body, on_ack=ack, on_reject=reject,
+                  app=app, hostname=hostname,
                   eventer=eventer, task=task,
                   connection_errors=connection_errors,
                   delivery_info=message.delivery_info)

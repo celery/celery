@@ -29,7 +29,7 @@ from celery import states, signals
 from celery._state import _task_stack
 from celery.app import set_default_app
 from celery.app.task import Task as BaseTask, Context
-from celery.exceptions import Ignore, RetryTaskError
+from celery.exceptions import Ignore, RetryTaskError, Reject
 from celery.utils.log import get_logger
 from celery.utils.objects import mro_lookup
 from celery.utils.serialization import (
@@ -48,10 +48,11 @@ send_success = signals.task_success.send
 STARTED = states.STARTED
 SUCCESS = states.SUCCESS
 IGNORED = states.IGNORED
+REJECTED = states.REJECTED
 RETRY = states.RETRY
 FAILURE = states.FAILURE
 EXCEPTION_STATES = states.EXCEPTION_STATES
-IGNORE_STATES = frozenset([IGNORED, RETRY])
+IGNORE_STATES = frozenset([IGNORED, RETRY, REJECTED])
 
 #: set by :func:`setup_worker_optimizations`
 _tasks = None
@@ -210,6 +211,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 try:
                     R = retval = fun(*args, **kwargs)
                     state = SUCCESS
+                except Reject as exc:
+                    I, R = Info(REJECTED, exc), ExceptionInfo(internal=True)
+                    state, retval = I.state, I.retval
                 except Ignore as exc:
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval

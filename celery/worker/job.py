@@ -24,7 +24,7 @@ from celery.app.trace import trace_task, trace_task_ret
 from celery.exceptions import (
     Ignore, TaskRevokedError, InvalidTaskError,
     SoftTimeLimitExceeded, TimeLimitExceeded,
-    WorkerLostError, Terminated, RetryTaskError,
+    WorkerLostError, Terminated, RetryTaskError, Reject,
 )
 from celery.five import items, monotonic
 from celery.platforms import signals as _signals
@@ -99,13 +99,17 @@ class Request(object):
         Task %(name)s[%(id)s] ignored
     """
 
+    rejected_msg = """\
+        Task %(name)s[%(id)s] %(exc)s
+    """
+
     #: Format string used to log task retry.
     retry_msg = """Task %(name)s[%(id)s] retry: %(exc)s"""
 
     def __init__(self, body, on_ack=noop,
                  hostname=None, eventer=None, app=None,
                  connection_errors=None, request_dict=None,
-                 delivery_info=None, task=None, **opts):
+                 delivery_info=None, task=None, on_reject=noop, **opts):
         self.app = app
         name = self.name = body['task']
         self.id = body['id']
@@ -417,7 +421,13 @@ class Request(object):
         if internal:
             if isinstance(einfo.exception, MemoryError):
                 raise MemoryError('Process got: %s' % (einfo.exception, ))
-            if isinstance(einfo.exception, Ignore):
+            elif isinstance(einfo.exception, Reject):
+                format = self.rejected_msg
+                description = 'rejected'
+                severity = logging.WARN
+                exc_info = einfo
+                self.reject(requeue=einfo.exception.requeue)
+            elif isinstance(einfo.exception, Ignore):
                 format = self.ignored_msg
                 description = 'ignored'
                 severity = logging.INFO
@@ -454,6 +464,11 @@ class Request(object):
         """Acknowledge task."""
         if not self.acknowledged:
             self.on_ack(logger, self.connection_errors)
+            self.acknowledged = True
+
+    def reject(self, requeue=False):
+        if not self.acknowledged:
+            self.on_reject(logger, self.connection_errors, requeue)
             self.acknowledged = True
 
     def repr_result(self, result, maxlen=46):
