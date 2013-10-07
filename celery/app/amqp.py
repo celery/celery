@@ -195,7 +195,12 @@ class TaskProducer(Producer):
                      callbacks=None, errbacks=None, routing_key=None,
                      serializer=None, delivery_mode=None, compression=None,
                      reply_to=None, time_limit=None, soft_time_limit=None,
-                     declare=None, **kwargs):
+                     declare=None, headers=None,
+                     send_task_send=signals.task_send.send,
+                     send_task_sent=signals.task_sent.send,
+                     send_receivers=signals.task_send.receivers,
+                     sent_receivers=signals.task_sent.receivers,
+                     **kwargs):
         """Send task message."""
         retry = self.retry if retry is None else retry
 
@@ -249,17 +254,28 @@ class TaskProducer(Producer):
             'chord': chord,
         }
 
+        if send_receivers:
+            send_task_send(sender=task_name, body=body,
+                           exchange=exchange,
+                           routing_key=routing_key,
+                           declare=declare,
+                           headers=headers,
+                           properties=kwargs,
+                           retry_policy=retry_policy)
+
         self.publish(
             body,
             exchange=exchange, routing_key=routing_key,
             serializer=serializer or self.serializer,
             compression=compression or self.compression,
+            headers=headers,
             retry=retry, retry_policy=_rp,
             delivery_mode=delivery_mode, declare=declare,
             **kwargs
         )
 
-        signals.task_sent.send(sender=task_name, **body)
+        if sent_receivers:
+            send_task_sent(sender=task_name, **body)
         if self.send_sent_event:
             evd = event_dispatcher or self.event_dispatcher
             exname = exchange or self.exchange

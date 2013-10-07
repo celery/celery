@@ -61,14 +61,60 @@ Signals
 Task Signals
 ------------
 
+.. signal:: task_send
+
+task_send
+~~~~~~~~~
+.. versionadded:: 3.1
+
+Dispatched before a task is published.
+Note that this is executed in the process sending the task.
+
+Sender is the name of the task being sent.
+
+Provides arguements:
+
+* body
+
+    Task message body.
+
+    This is a mapping containing the task message fields
+    (see :ref:`internals-task-message-protocol`).
+
+* exchange
+
+    Name of the exchange to send to or a :class:`~kombu.Exchange` object.
+
+* routing_key
+
+    Routing used when sending the message.
+
+* headers
+
+    Application headers mapping (can be modified).
+
+* properties
+
+    Message properties (can be modified)
+
+* declare
+
+    List of entities (:class:`~kombu.Exchange`,
+    :class:`~kombu.Queue` or :class:~`kombu.binding` to declare before
+    publishing the message.  Can be modified.
+
+* retry_policy
+
+    Mapping of retry options.  Can be any argument to
+    :meth:`kombu.Connection.ensure` and can be modified.
+
 .. signal:: task_sent
 
 task_sent
 ~~~~~~~~~
 
 Dispatched when a task has been sent to the broker.
-Note that this is executed in the client process, the one sending
-the task, not in the worker.
+Note that this is executed in the process that sent the task.
 
 Sender is the name of the task being sent.
 

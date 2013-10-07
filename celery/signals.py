@@ -24,6 +24,10 @@ __all__ = ['task_sent', 'task_prerun', 'task_postrun', 'task_success',
            'eventlet_pool_preshutdown', 'eventlet_pool_postshutdown',
            'eventlet_pool_apply']
 
+task_send = Signal(providing_args=[
+    'body', 'exchange', 'routing_key', 'headers', 'properties',
+    'declare', 'retry_policy',
+])
 task_sent = Signal(providing_args=[
     'task_id', 'task', 'args', 'kwargs', 'eta', 'taskset',
 ])
