@@ -499,18 +499,6 @@ CELERY_MONGODB_BACKEND_SETTINGS
 
 This is a dict supporting the following keys:
 
-* host
-    Host name of the MongoDB server. Defaults to ``localhost``.
-
-* port
-    The port the MongoDB server is listening to. Defaults to 27017.
-
-* user
-    User name to authenticate to the MongoDB server as (optional).
-
-* password
-    Password to authenticate to the MongoDB server (optional).
-
 * database
     The database name to connect to. Defaults to ``celery``.
 
@@ -538,10 +526,8 @@ Example configuration
 
 .. code-block:: python
 
-    CELERY_RESULT_BACKEND = 'mongodb'
+    CELERY_RESULT_BACKEND = 'mongodb://192.168.1.100:30000/'
     CELERY_MONGODB_BACKEND_SETTINGS = {
-        'host': '192.168.1.100',
-        'port': 30000,
         'database': 'mydb',
         'taskmeta_collection': 'my_taskmeta_collection',
     }
