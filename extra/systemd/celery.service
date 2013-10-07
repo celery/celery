@@ -1,0 +1,17 @@
+[Unit]
+Description=Celery Nodes Daemon
+After=network.target
+
+[Service]
+Type=forking
+User=user
+Group=users
+#Environment=DJANGO_SETTINGS_MODULE=MyProject.settings
+EnvironmentFile=-/etc/conf.d/celery
+WorkingDirectory=/opt/Myproject/
+ExecStart=/usr/bin/python2 ${CELERY_BIN} $CELERYD_MULTI start $CELERYD_NODES --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel="INFO" $CELERYD_OPTS
+ExecStop=/usr/bin/python2 ${CELERY_BIN} $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile=${CELERYD_PID_FILE}
+ExecReload=/usr/bin/python2 ${CELERY_BIN} $CELERYD_MULTI restart $CELERYD_NODES --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel="INFO" $CELERYD_OPTS
+
+[Install]
+WantedBy=multi-user.target
