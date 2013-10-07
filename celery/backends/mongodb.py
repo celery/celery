@@ -87,6 +87,7 @@ class MongoBackend(BaseBackend):
                 'taskmeta_collection', self.mongodb_taskmeta_collection)
             self.mongodb_max_pool_size = config.get(
                 'max_pool_size', self.mongodb_max_pool_size)
+        url = kwargs.get('url')
         if url:
             # Specifying backend as an URL
             self.mongodb_host = url
