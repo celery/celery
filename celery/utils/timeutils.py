@@ -112,7 +112,7 @@ class _Zone(object):
     def to_system(self, dt):
         return localize(dt, self.local)
 
-    def to_local_fallback(self, dt, *args, **kwargs):
+    def to_local_fallback(self, dt):
         if is_naive(dt):
             return make_aware(dt, self.local)
         return localize(dt, self.local)
