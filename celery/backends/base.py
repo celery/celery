@@ -450,10 +450,16 @@ class KeyValueStoreBackend(BaseBackend):
             return
         key = self.get_key_for_chord(gid)
         deps = GroupResult.restore(gid, backend=task.backend)
+        if deps is None:
+            callback = subtask(task.request.chord)
+            return app._tasks[callback.task].backend.fail_from_current_stack(
+                callback.id,
+                exc=ChordError('GroupResult {0} no longer exists'.format(gid))
+            )
         val = self.incr(key)
         if val >= len(deps):
-            j = deps.join_native if deps.supports_native_join else deps.join
             callback = subtask(task.request.chord)
+            j = deps.join_native if deps.supports_native_join else deps.join
             try:
                 ret = j(propagate=propagate)
             except Exception as exc:
