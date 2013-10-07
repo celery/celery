@@ -592,4 +592,14 @@ class Celery(object):
     def tasks(self):
         self.finalize()
         return self._tasks
+
+    @cached_property
+    def timezone(self):
+        from celery.utils.timeutils import timezone
+        conf = self.conf
+        tz = conf.CELERY_TIMEZONE
+        if not tz:
+            return (timezone.get_timezone('UTC') if conf.CELERY_USE_UTC
+                    else timezone.local)
+        return timezone.get_timezone(self.conf.CELERY_TIMEZONE)
 App = Celery  # compat

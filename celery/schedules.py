@@ -140,7 +140,7 @@ class schedule(object):
 
     @cached_property
     def tz(self):
-        return timezone.get_timezone(self.app.conf.CELERY_TIMEZONE)
+        return self.app.timezone
 
     @cached_property
     def utc_enabled(self):
@@ -148,7 +148,7 @@ class schedule(object):
 
     def to_local(self, dt):
         if not self.utc_enabled:
-            return timezone.to_local_fallback(dt, self.tz)
+            return timezone.to_local_fallback(dt)
         return dt
 
 

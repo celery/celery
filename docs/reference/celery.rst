@@ -113,6 +113,12 @@ and creating Celery applications.
 
         Base task class for this app.
 
+    .. attribute:: Celery.timezone
+
+        Current timezone for this app.
+        This is a cached property taking the time zone from the
+        :setting:`CELERY_TIMEZONE` setting.
+
     .. method:: Celery.close
 
         Close any open pool connections and do any other steps necessary

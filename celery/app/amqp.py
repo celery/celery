@@ -231,9 +231,13 @@ class TaskProducer(Producer):
         if countdown:  # Convert countdown to ETA.
             now = now or self.app.now()
             eta = now + timedelta(seconds=countdown)
+            if self.utc:
+                eta = eta.replace(tzinfo=self.app.timezone)
         if isinstance(expires, (int, float)):
             now = now or self.app.now()
             expires = now + timedelta(seconds=expires)
+            if self.utc:
+                expires = expires.replace(tzinfo=self.app.timezone)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
