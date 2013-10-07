@@ -74,7 +74,7 @@ class Request(object):
         __slots__ = (
             'app', 'name', 'id', 'args', 'kwargs', 'on_ack', 'delivery_info',
             'hostname', 'eventer', 'connection_errors', 'task', 'eta',
-            'expires', 'request_dict', 'acknowledged',
+            'expires', 'request_dict', 'acknowledged', 'on_reject',
             'utc', 'time_start', 'worker_pid', '_already_revoked',
             '_terminate_on_ack',
             '_tzlocal', '__weakref__',
@@ -126,6 +126,7 @@ class Request(object):
         expires = body.get('expires')
         utc = self.utc = body.get('utc', False)
         self.on_ack = on_ack
+        self.on_reject = on_reject
         self.hostname = hostname or socket.gethostname()
         self.eventer = eventer
         self.connection_errors = connection_errors or ()
