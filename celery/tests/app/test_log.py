@@ -16,7 +16,9 @@ from celery.utils.log import (
     ColorFormatter,
     logger as base_logger,
     get_task_logger,
+    task_logger,
     in_sighandler,
+    logger_isa,
     _patch_logger_class,
 )
 from celery.tests.case import (
@@ -41,6 +43,53 @@ class test_TaskFormatter(AppCase):
         x.format(record)
         self.assertEqual(record.task_name, '???')
         self.assertEqual(record.task_id, '???')
+
+
+class test_logger_isa(AppCase):
+
+    def test_isa(self):
+        x = get_task_logger('Z1george')
+        self.assertTrue(logger_isa(x, task_logger))
+        prev_x, x.parent = x.parent, None
+        try:
+            self.assertFalse(logger_isa(x, task_logger))
+        finally:
+            x.parent = prev_x
+
+        y = get_task_logger('Z1elaine')
+        y.parent = x
+        self.assertTrue(logger_isa(y, task_logger))
+        self.assertTrue(logger_isa(y, x))
+        self.assertTrue(logger_isa(y, y))
+
+        z = get_task_logger('Z1jerry')
+        z.parent = y
+        self.assertTrue(logger_isa(z, task_logger))
+        self.assertTrue(logger_isa(z, y))
+        self.assertTrue(logger_isa(z, x))
+        self.assertTrue(logger_isa(z, z))
+
+    def test_recursive(self):
+        x = get_task_logger('X1foo')
+        prev, x.parent = x.parent, x
+        try:
+            with self.assertRaises(RuntimeError):
+                logger_isa(x, task_logger)
+        finally:
+            x.parent = prev
+
+        y = get_task_logger('X2foo')
+        z = get_task_logger('X2foo')
+        prev_y, y.parent = y.parent, z
+        try:
+            prev_z, z.parent = z.parent, y
+            try:
+                with self.assertRaises(RuntimeError):
+                    logger_isa(y, task_logger)
+            finally:
+                z.parent = prev_z
+        finally:
+            y.parent = prev_y
 
 
 class test_ColorFormatter(AppCase):

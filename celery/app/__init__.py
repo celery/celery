@@ -57,7 +57,6 @@ push_current_task = _task_stack.push
 pop_current_task = _task_stack.pop
 
 
-
 def bugreport(app=None):
     return (app or current_app()).bugreport()
 

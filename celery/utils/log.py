@@ -59,10 +59,26 @@ def in_sighandler():
         set_in_sighandler(False)
 
 
+def logger_isa(l, p):
+    this, seen = l, set()
+    while this:
+        if this == p:
+            return True
+        else:
+            if this in seen:
+                raise RuntimeError(
+                    'Logger {0!r} parents recursive'.format(l),
+                )
+            seen.add(this)
+            this = this.parent
+    return False
+
+
 def get_logger(name):
     l = _get_logger(name)
     if logging.root not in (l, l.parent) and l is not base_logger:
-        l.parent = base_logger
+        if not logger_isa(l, base_logger):
+            l.parent = base_logger
     return l
 task_logger = get_logger('celery.task')
 worker_logger = get_logger('celery.worker')
@@ -70,7 +86,7 @@ worker_logger = get_logger('celery.worker')
 
 def get_task_logger(name):
     logger = get_logger(name)
-    if logger.parent is logging.root:
+    if not logger_isa(logger, task_logger):
         logger.parent = task_logger
     return logger
 
