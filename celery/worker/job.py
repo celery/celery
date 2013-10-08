@@ -163,6 +163,7 @@ class Request(object):
             'exchange': delivery_info.get('exchange'),
             'routing_key': delivery_info.get('routing_key'),
             'priority': delivery_info.get('priority'),
+            'redelivered': delivery_info.get('redelivered'),
         }
         self.request_dict = body
 
