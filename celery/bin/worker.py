@@ -214,6 +214,7 @@ class worker(Command):
             Option('--maxtasksperchild', dest='max_tasks_per_child',
                    default=conf.CELERYD_MAX_TASKS_PER_CHILD, type='int'),
             Option('--queues', '-Q', default=[]),
+            Option('--exclude-queues', '-X', default=[]),
             Option('--include', '-I', default=[]),
             Option('--autoscale'),
             Option('--autoreload', action='store_true'),

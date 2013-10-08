@@ -378,7 +378,7 @@ class Celery(object):
             )
 
     def select_queues(self, queues=None):
-        return self.amqp.queues.select_subset(queues)
+        return self.amqp.queues.select(queues)
 
     def either(self, default_key, *values):
         """Fallback to the value of a configuration key if none of the

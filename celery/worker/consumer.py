@@ -358,7 +358,7 @@ class Consumer(object):
             info('Started consuming from %r', queue)
 
     def cancel_task_queue(self, queue):
-        self.app.amqp.queues.select_remove(queue)
+        self.app.amqp.queues.deselect(queue)
         self.task_consumer.cancel_by_queue(queue)
 
     def apply_eta_task(self, task):

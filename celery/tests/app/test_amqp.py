@@ -172,14 +172,14 @@ class test_Queues(AppCase):
 
     def test_select_add(self):
         q = Queues()
-        q.select_subset(['foo', 'bar'])
+        q.select(['foo', 'bar'])
         q.select_add('baz')
         self.assertItemsEqual(keys(q._consume_from), ['foo', 'bar', 'baz'])
 
-    def test_select_remove(self):
+    def test_deselect(self):
         q = Queues()
-        q.select_subset(['foo', 'bar'])
-        q.select_remove('bar')
+        q.select(['foo', 'bar'])
+        q.deselect('bar')
         self.assertItemsEqual(keys(q._consume_from), ['foo'])
 
     def test_with_ha_policy_compat(self):

@@ -41,13 +41,24 @@ from . import state
 
 __all__ = ['WorkController', 'default_nodename']
 
-UNKNOWN_QUEUE = """\
+SELECT_UNKNOWN_QUEUE = """\
 Trying to select queue subset of {0!r}, but queue {1} is not
 defined in the CELERY_QUEUES setting.
 
 If you want to automatically declare unknown queues you can
 enable the CELERY_CREATE_MISSING_QUEUES setting.
 """
+
+DESELECT_UNKNOWN_QUEUE = """\
+Trying to deselect queue subset of {0!r}, but queue {1} is not
+defined in the CELERY_QUEUES setting.
+"""
+
+
+def str_to_list(s):
+    if isinstance(s, string_t):
+        return s.split(',')
+    return s
 
 
 def default_nodename(hostname):
@@ -94,9 +105,10 @@ class WorkController(object):
         self.setup_instance(**self.prepare_args(**kwargs))
 
     def setup_instance(self, queues=None, ready_callback=None, pidfile=None,
-                       include=None, use_eventloop=None, **kwargs):
+                       include=None, use_eventloop=None, exclude_queues=None,
+                       **kwargs):
         self.pidfile = pidfile
-        self.setup_queues(queues)
+        self.setup_queues(queues, exclude_queues)
         self.setup_includes(include)
 
         # Set default concurrency
@@ -156,15 +168,19 @@ class WorkController(object):
         if self.pidlock:
             self.pidlock.release()
 
-    def setup_queues(self, queues):
-        if isinstance(queues, string_t):
-            queues = queues.split(',')
-        self.queues = queues
+    def setup_queues(self, include, exclude):
+        include = str_to_list(include)
+        exclude = str_to_list(exclude)
         try:
-            self.app.select_queues(queues)
+            self.app.amqp.queues.select(include)
         except KeyError as exc:
             raise ImproperlyConfigured(
-                UNKNOWN_QUEUE.format(queues, exc))
+                SELECT_UNKNOWN_QUEUE.format(include, exc))
+        try:
+            self.app.amqp.queues.deselect(exclude)
+        except KeyError as exc:
+            raise ImproperlyConfigured(
+                DESELECT_UNKNOWN_QUEUE.format(exclude, exc))
         if self.app.conf.CELERY_WORKER_DIRECT:
             self.app.amqp.queues.select_add(worker_direct(self.hostname))
 
@@ -173,8 +189,7 @@ class WorkController(object):
         # ensure all task modules are imported in case an execv happens.
         inc = self.app.conf.CELERY_INCLUDE
         if includes:
-            if isinstance(includes, string_t):
-                includes = includes.split(',')
+            includes = str_to_list(includes)
             inc = self.app.conf.CELERY_INCLUDE = tuple(inc) + tuple(includes)
         self.include = includes
         task_modules = set(task.__class__.__module__
