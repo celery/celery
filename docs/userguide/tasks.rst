@@ -319,7 +319,7 @@ Here's an example using ``retry``:
 .. note::
 
     The :meth:`~@Task.retry` call will raise an exception so any code after the retry
-    will not be reached.  This is the :exc:`~@RetryTaskError`
+    will not be reached.  This is the :exc:`~@Retry`
     exception, it is not handled as an error but rather as a semi-predicate
     to signify to the worker that the task is to be retried,
     so that it can store the correct state when a result backend is enabled.
@@ -341,7 +341,7 @@ but this will not happen if:
 
 - An ``exc`` argument was not given.
 
-    In this case the :exc:`celery.exceptions.MaxRetriesExceeded`
+    In this case the :exc:`~@MaxRetriesExceeded`
     exception will be raised.
 
 - There is no current exception

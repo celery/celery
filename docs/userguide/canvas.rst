@@ -754,7 +754,7 @@ the exception value will be forwarded to the chord callback.
 
 From 3.1 errors will propagate to the callback, so the callback will not be executed
 instead the callback changes to failure state, and the error is set
-to the :exc:`~celery.exceptions.ChordError` exception:
+to the :exc:`~@ChordError` exception:
 
 .. code-block:: python
 
@@ -782,7 +782,7 @@ find the original traceback in ``result.traceback``.
 
 Note that the rest of the tasks will still execute, so the third task
 (``add.s(8, 8)``) is still executed even though the middle task failed.
-Also the :exc:`~celery.exceptions.ChordError` only shows the task that failed
+Also the :exc:`~@ChordError` only shows the task that failed
 first (in time): it does not respect the ordering of the header group.
 
 .. _chord-important-notes:

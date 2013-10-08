@@ -855,7 +855,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     Fix contributed by Bryan Bishop.
     Congratulations on opening bug #1000!
 
-- Tasks that raise :exc:`~celery.exceptions.Ignore` are now acknowledged.
+- Tasks that raise :exc:`~@Ignore` are now acknowledged.
 
 - Beat: Now shows the name of the entry in ``sending due task`` logs.
 
@@ -909,7 +909,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Fix contributed by Sam Cooke.
 
-- Tasks can now raise :exc:`~celery.exceptions.Ignore` to skip updating states
+- Tasks can now raise :exc:`~@Ignore` to skip updating states
   or events after return.
 
     Example:
@@ -1184,14 +1184,14 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   :mod:`celery.task` modules.
 
 - Terminating a task now results in
-  :exc:`~celery.exceptions.RevokedTaskError` instead of a ``WorkerLostError``.
+  :exc:`~@RevokedTaskError` instead of a ``WorkerLostError``.
 
 - ``AsyncResult.revoke`` now accepts ``terminate`` and ``signal`` arguments.
 
 - The :event:`task-revoked` event now includes new fields: ``terminated``,
   ``signum``, and ``expired``.
 
-- The argument to :class:`~celery.exceptions.TaskRevokedError` is now one
+- The argument to :class:`~@TaskRevokedError` is now one
   of the reasons ``revoked``, ``expired`` or ``terminated``.
 
 - Old Task class does no longer use classmethods for push_request and
@@ -2067,7 +2067,7 @@ See :ref:`whatsnew-3.0`.
     Fix contributed by Bryan Bishop.
     Congratulations on opening bug #1000!
 
-- Tasks that raise :exc:`~celery.exceptions.Ignore` are now acknowledged.
+- Tasks that raise :exc:`~@Ignore` are now acknowledged.
 
 - Beat: Now shows the name of the entry in ``sending due task`` logs.
 
@@ -2121,7 +2121,7 @@ See :ref:`whatsnew-3.0`.
 
     Fix contributed by Sam Cooke.
 
-- Tasks can now raise :exc:`~celery.exceptions.Ignore` to skip updating states
+- Tasks can now raise :exc:`~@Ignore` to skip updating states
   or events after return.
 
     Example:
@@ -2396,14 +2396,14 @@ See :ref:`whatsnew-3.0`.
   :mod:`celery.task` modules.
 
 - Terminating a task now results in
-  :exc:`~celery.exceptions.RevokedTaskError` instead of a ``WorkerLostError``.
+  :exc:`~@RevokedTaskError` instead of a ``WorkerLostError``.
 
 - ``AsyncResult.revoke`` now accepts ``terminate`` and ``signal`` arguments.
 
 - The :event:`task-revoked` event now includes new fields: ``terminated``,
   ``signum``, and ``expired``.
 
-- The argument to :class:`~celery.exceptions.TaskRevokedError` is now one
+- The argument to :class:`~@TaskRevokedError` is now one
   of the reasons ``revoked``, ``expired`` or ``terminated``.
 
 - Old Task class does no longer use classmethods for push_request and

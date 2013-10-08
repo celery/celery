@@ -1114,7 +1114,7 @@ This setting defines what happens when a task part of a chord raises an
 exception:
 
 - If propagate is True the chord callback will change state to FAILURE
-  with the exception value set to a :exc:`~celery.exceptions.ChordError`
+  with the exception value set to a :exc:`~@ChordError`
   instance containing information about the error and the task that failed.
 
     This is the default behavior in Celery 3.1+
