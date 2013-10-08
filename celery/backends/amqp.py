@@ -152,7 +152,6 @@ class AMQPBackend(BaseBackend):
             binding.declare()
 
             prev = latest = acc = None
-            print('binding.get: %r' % (binding.get, ))
             for i in range(backlog_limit):  # spool ffwd
                 prev, latest, acc = latest, acc, binding.get(
                     accept=self.accept, no_ack=False,

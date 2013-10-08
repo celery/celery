@@ -599,7 +599,7 @@ class Celery(object):
         conf = self.conf
         tz = conf.CELERY_TIMEZONE
         if not tz:
-            return (timezone.get_timezone('UTC') if conf.CELERY_USE_UTC
+            return (timezone.get_timezone('UTC') if conf.CELERY_ENABLE_UTC
                     else timezone.local)
         return timezone.get_timezone(self.conf.CELERY_TIMEZONE)
 App = Celery  # compat

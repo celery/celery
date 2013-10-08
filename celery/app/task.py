@@ -578,31 +578,31 @@ class Task(object):
             countdown = self.default_retry_delay
 
         is_eager = request.is_eager
+        S = self.subtask_from_request(
+            request, args, kwargs,
+            countdown=countdown, eta=eta, retries=retries,
+            **options
+        )
+
+        if max_retries is not None and retries > max_retries:
+            if exc:
+                maybe_reraise()
+            raise self.MaxRetriesExceededError(
+                "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
+                    self.name, request.id, S.args, S.kwargs))
+
+        # If task was executed eagerly using apply(),
+        # then the retry must also be executed eagerly.
         try:
-            S = self.subtask_from_request(
-                request, args, kwargs,
-                countdown=countdown, eta=eta, retries=retries,
-                **options
-            )
-
-            if max_retries is not None and retries > max_retries:
-                if exc:
-                    maybe_reraise()
-                raise self.MaxRetriesExceededError(
-                    "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
-                        self.name, request.id, S.args, S.kwargs))
-
-            # If task was executed eagerly using apply(),
-            # then the retry must also be executed eagerly.
             S.apply().get() if is_eager else S.apply_async()
-            ret = Retry(exc=exc, when=eta or countdown)
-            if throw:
-                raise ret
-            return ret
         except Exception as exc:
             if is_eager:
                 raise
             raise Reject(exc, requeue=True)
+        ret = Retry(exc=exc, when=eta or countdown)
+        if throw:
+            raise ret
+        return ret
 
     def apply(self, args=None, kwargs=None,
               link=None, link_error=None, **options):

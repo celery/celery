@@ -42,6 +42,11 @@ def add(x, y):
 
 
 @app.task
+def xsum(x):
+    return sum(x)
+
+
+@app.task
 def any_(*args, **kwargs):
     wait = kwargs.get('sleep')
     if wait:
@@ -69,6 +74,13 @@ def sleeping_ignore_limits(i):
         sleep(i)
     except SoftTimeLimitExceeded:
         sleep(i)
+
+
+@app.task(bind=True)
+def retries(self):
+    if not self.request.retries:
+        raise self.retry(countdown=1)
+    return 10
 
 
 @app.task
