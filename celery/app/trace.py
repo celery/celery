@@ -29,7 +29,7 @@ from celery import states, signals
 from celery._state import _task_stack
 from celery.app import set_default_app
 from celery.app.task import Task as BaseTask, Context
-from celery.exceptions import Ignore, RetryTaskError, Reject
+from celery.exceptions import Ignore, Reject, Retry
 from celery.utils.log import get_logger
 from celery.utils.objects import mro_lookup
 from celery.utils.serialization import (
@@ -85,7 +85,7 @@ class TraceInfo(object):
 
     def handle_retry(self, task, store_errors=True):
         """Handle retry exception."""
-        # the exception raised is the RetryTaskError semi-predicate,
+        # the exception raised is the Retry semi-predicate,
         # and it's exc' attribute is the original exception raised (if any).
         req = task.request
         type_, _, tb = sys.exc_info()
@@ -132,7 +132,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     If the call was successful, it saves the result to the task result
     backend, and sets the task status to `"SUCCESS"`.
 
-    If the call raises :exc:`~celery.exceptions.RetryTaskError`, it extracts
+    If the call raises :exc:`~@Retry`, it extracts
     the original exception, uses that as the result and sets the task state
     to `"RETRY"`.
 
@@ -217,7 +217,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 except Ignore as exc:
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
-                except RetryTaskError as exc:
+                except Retry as exc:
                     I = Info(RETRY, exc)
                     state, retval = I.state, I.retval
                     R = I.handle_error_state(task, eager=eager)

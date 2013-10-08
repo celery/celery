@@ -24,7 +24,7 @@ from celery.app.trace import trace_task, trace_task_ret
 from celery.exceptions import (
     Ignore, TaskRevokedError, InvalidTaskError,
     SoftTimeLimitExceeded, TimeLimitExceeded,
-    WorkerLostError, Terminated, RetryTaskError, Reject,
+    WorkerLostError, Terminated, Retry, Reject,
 )
 from celery.five import items, monotonic
 from celery.platforms import signals as _signals
@@ -385,7 +385,7 @@ class Request(object):
         if not exc_info.internal:
             exc = exc_info.exception
 
-            if isinstance(exc, RetryTaskError):
+            if isinstance(exc, Retry):
                 return self.on_retry(exc_info)
 
             # These are special cases where the process would not have had

@@ -16,7 +16,7 @@ from celery import current_app
 from celery import states
 from celery._state import _task_stack
 from celery.canvas import subtask
-from celery.exceptions import MaxRetriesExceededError, RetryTaskError, Reject
+from celery.exceptions import MaxRetriesExceededError, Reject, Retry
 from celery.five import class_property, items, with_metaclass
 from celery.result import EagerResult
 from celery.utils import gen_task_name, fun_takes_kwargs, uuid, maybe_reraise
@@ -517,7 +517,7 @@ class Task(object):
         :param kwargs: Keyword arguments to retry with.
         :keyword exc: Custom exception to report when the max restart
             limit has been exceeded (default:
-            :exc:`~celery.exceptions.MaxRetriesExceededError`).
+            :exc:`~@MaxRetriesExceededError`).
 
             If this argument is set and retry is called while
             an exception was raised (``sys.exc_info()`` is set)
@@ -535,13 +535,13 @@ class Task(object):
         :keyword \*\*options: Any extra options to pass on to
                               meth:`apply_async`.
         :keyword throw: If this is :const:`False`, do not raise the
-                        :exc:`~celery.exceptions.RetryTaskError` exception,
+                        :exc:`~@Retry` exception,
                         that tells the worker to mark the task as being
                         retried.  Note that this means the task will be
                         marked as failed if the task raises an exception,
                         or successful if it returns.
 
-        :raises celery.exceptions.RetryTaskError: To tell the worker that
+        :raises celery.exceptions.Retry: To tell the worker that
             the task has been re-sent for retry. This always happens,
             unless the `throw` keyword argument has been explicitly set
             to :const:`False`, and is considered normal operation.
@@ -572,7 +572,7 @@ class Task(object):
         # so just raise the original exception.
         if request.called_directly:
             maybe_reraise()  # raise orig stack if PyErr_Occurred
-            raise exc or RetryTaskError('Task can be retried', None)
+            raise exc or Retry('Task can be retried', None)
 
         if not eta and countdown is None:
             countdown = self.default_retry_delay
@@ -595,7 +595,7 @@ class Task(object):
             # If task was executed eagerly using apply(),
             # then the retry must also be executed eagerly.
             S.apply().get() if is_eager else S.apply_async()
-            ret = RetryTaskError(exc=exc, when=eta or countdown)
+            ret = Retry(exc=exc, when=eta or countdown)
             if throw:
                 raise ret
             return ret

@@ -28,12 +28,12 @@ from celery.app.trace import (
 )
 from celery.concurrency.base import BasePool
 from celery.exceptions import (
-    RetryTaskError,
-    WorkerLostError,
+    Ignore,
     InvalidTaskError,
+    Retry,
     TaskRevokedError,
     Terminated,
-    Ignore,
+    WorkerLostError,
 )
 from celery.five import keys
 from celery.signals import task_revoked
@@ -114,13 +114,13 @@ class test_default_encode(AppCase):
             sys.getfilesystemencoding = gfe
 
 
-class test_RetryTaskError(AppCase):
+class test_Retry(AppCase):
 
-    def test_retry_task_error(self):
+    def test_retry_semipredicate(self):
         try:
             raise Exception('foo')
         except Exception as exc:
-            ret = RetryTaskError('Retrying task', exc)
+            ret = Retry('Retrying task', exc)
             self.assertEqual(ret.exc, exc)
 
 
@@ -361,7 +361,7 @@ class test_Request(AppCase):
         )
         job.eventer = MockEventDispatcher()
         try:
-            raise RetryTaskError('foo', KeyError('moofoobar'))
+            raise Retry('foo', KeyError('moofoobar'))
         except:
             einfo = ExceptionInfo()
             job.on_failure(einfo)
@@ -736,15 +736,14 @@ class test_Request(AppCase):
             self.assertIsInstance(res, ExceptionInfo)
 
     def test_worker_task_trace_handle_retry(self):
-        from celery.exceptions import RetryTaskError
         tid = uuid()
         self.mytask.push_request(id=tid)
         try:
             raise ValueError('foo')
         except Exception as exc:
             try:
-                raise RetryTaskError(str(exc), exc=exc)
-            except RetryTaskError as exc:
+                raise Retry(str(exc), exc=exc)
+            except Retry as exc:
                 w = TraceInfo(states.RETRY, exc)
                 w.handle_retry(self.mytask, store_errors=False)
                 self.assertEqual(

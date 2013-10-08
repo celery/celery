@@ -16,7 +16,7 @@ from billiard.exceptions import (  # noqa
 
 __all__ = ['SecurityError', 'Ignore', 'SystemTerminate', 'QueueNotFound',
            'ImproperlyConfigured', 'NotRegistered', 'AlreadyRegistered',
-           'TimeoutError', 'MaxRetriesExceededError', 'RetryTaskError',
+           'TimeoutError', 'MaxRetriesExceededError', 'Retry',
            'TaskRevokedError', 'NotConfigured', 'AlwaysEagerIgnored',
            'InvalidTaskError', 'ChordError', 'CPendingDeprecationWarning',
            'CDeprecationWarning', 'FixupWarning', 'DuplicateNodenameWarning',
@@ -83,7 +83,7 @@ class MaxRetriesExceededError(Exception):
     """The tasks max restart limit has been exceeded."""
 
 
-class RetryTaskError(Exception):
+class Retry(Exception):
     """The task is to be retried later."""
 
     #: Optional message describing context of retry.
@@ -119,6 +119,7 @@ class RetryTaskError(Exception):
 
     def __reduce__(self):
         return self.__class__, (self.message, self.excs, self.when)
+RetryTaskError = Retry   # XXX compat
 
 
 class TaskRevokedError(Exception):
