@@ -168,7 +168,7 @@ class WorkController(object):
         if self.pidlock:
             self.pidlock.release()
 
-    def setup_queues(self, include, exclude):
+    def setup_queues(self, include, exclude=None):
         include = str_to_list(include)
         exclude = str_to_list(exclude)
         try:

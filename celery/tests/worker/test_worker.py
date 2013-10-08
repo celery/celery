@@ -504,7 +504,7 @@ class test_Consumer(AppCase):
         with self.assertRaises(Empty):
             self.buffer.get_nowait()
         self.assertTrue(self.timer.empty())
-        m.reject.assert_called_with()
+        m.reject.assert_called_with(requeue=False)
         self.assertTrue(logger.critical.call_count)
 
     def test_receive_message_eta(self):

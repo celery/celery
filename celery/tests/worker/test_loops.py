@@ -139,7 +139,9 @@ class test_asynloop(AppCase):
     def test_on_task_received(self):
         _, on_task, body, msg, strategy = self.task_context(self.add.s(2, 2))
         on_task(body, msg)
-        strategy.assert_called_with(msg, body, msg.ack_log_error)
+        strategy.assert_called_with(
+            msg, body, msg.ack_log_error, msg.reject_log_error,
+        )
 
     def test_on_task_received_executes_on_task_message(self):
         cbs = [Mock(), Mock(), Mock()]

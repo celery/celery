@@ -71,7 +71,6 @@ class test_Worker(WorkerAppCase):
     def test_queues_string(self):
         w = self.app.Worker()
         w.setup_queues('foo,bar,baz')
-        self.assertEqual(w.queues, ['foo', 'bar', 'baz'])
         self.assertTrue('foo' in self.app.amqp.queues)
 
     @disable_stdouts
@@ -242,7 +241,7 @@ class test_Worker(WorkerAppCase):
         del(app.amqp.queues)
         c.CELERY_CREATE_MISSING_QUEUES = True
         worker = self.Worker(app=self.app)
-        worker.setup_queues(queues=['image'])
+        worker.setup_queues(['image'])
         self.assertIn('image', app.amqp.queues.consume_from)
         self.assertEqual(
             Queue('image', Exchange('image'), routing_key='image'),

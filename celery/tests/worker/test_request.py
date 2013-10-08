@@ -944,6 +944,7 @@ class test_Request(AppCase):
                     'exchange': None,
                     'routing_key': None,
                     'priority': None,
+                    'redelivered': None,
                 },
                 'task_name': job.name})
 

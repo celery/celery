@@ -32,7 +32,10 @@ class test_default_strategy(AppCase):
             self.body = body
 
         def __call__(self, **kwargs):
-            return self.s(self.message, self.body, self.message.ack, **kwargs)
+            return self.s(
+                self.message, self.body,
+                self.message.ack, self.message.reject, **kwargs
+            )
 
         def was_reserved(self):
             return self.reserved.called
