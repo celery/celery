@@ -453,13 +453,14 @@ class Task(object):
         router = router or self.app.amqp.router
         conf = app.conf
 
+        if conf.CELERY_ALWAYS_EAGER:
+            return self.apply(args, kwargs, task_id=task_id,
+                              link=link, link_error=link_error, **options)
+
         # add 'self' if this is a bound method.
         if self.__self__ is not None:
             args = (self.__self__, ) + tuple(args)
 
-        if conf.CELERY_ALWAYS_EAGER:
-            return self.apply(args, kwargs, task_id=task_id,
-                              link=link, link_error=link_error, **options)
         options = dict(extract_exec_options(self), **options)
         options = router.route(options, self.name, args, kwargs)
 
