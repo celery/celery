@@ -479,13 +479,13 @@ class Task(object):
             be replaced by a local :func:`apply` call instead.
 
         """
-        # add 'self' if this is a bound method.
-        if self.__self__ is not None:
-            args = (self.__self__, ) + tuple(args)
         app = self._get_app()
         if app.conf.CELERY_ALWAYS_EAGER:
             return self.apply(args, kwargs, task_id=task_id or uuid(),
                               link=link, link_error=link_error, **options)
+        # add 'self' if this is a bound method.
+        if self.__self__ is not None:
+            args = (self.__self__, ) + tuple(args)
         return app.send_task(
             self.name, args, kwargs, task_id=task_id, producer=producer,
             link=link, link_error=link_error, result_cls=self.AsyncResult,
