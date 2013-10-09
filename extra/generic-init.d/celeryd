@@ -181,12 +181,17 @@ _get_worker_pids() {
 
 
 start_workers () {
-    $CELERYD_MULTI start $CELERYD_NODES $DAEMON_OPTS        \
+    $CELERYD_MULTI $* start $CELERYD_NODES $DAEMON_OPTS     \
                          --pidfile="$CELERYD_PID_FILE"      \
                          --logfile="$CELERYD_LOG_FILE"      \
                          --loglevel="$CELERYD_LOG_LEVEL"    \
                          $CELERY_APP_ARG                    \
                          $CELERYD_OPTS
+}
+
+
+dryrun () {
+    (C_FAKEFORK=1 start_workers --verbose)
 }
 
 
@@ -228,6 +233,7 @@ restart_workers_graceful () {
 
     [ "$one_failed" ] && exit 1 || exit 0
 }
+
 
 check_status () {
     local pid_files=
@@ -283,13 +289,20 @@ case "$1" in
         check_paths
         restart_workers
     ;;
+
+    graceful)
+        check_dev_null
+        restart_workers_graceful
+    ;;
+
     kill)
         check_dev_null
         kill_workers
     ;;
-    restart-workers-graceful)
+
+    dryrun)
         check_dev_null
-        restart_workers_graceful
+        dryrun
     ;;
 
     try-restart)
@@ -307,8 +320,9 @@ case "$1" in
         check_dev_null
         check_paths
     ;;
+
     *)
-        echo "Usage: /etc/init.d/${SCRIPT_NAME} {start|stop|restart|restart-workers-graceful|kill|create-paths}"
+        echo "Usage: /etc/init.d/${SCRIPT_NAME} {start|stop|restart|graceful|kill|dryrun|create-paths}"
         exit 64  # EX_USAGE
     ;;
 esac
