@@ -408,15 +408,15 @@ class control(_RemoteControl):
 
     def pool_grow(self, method, n=1, **kwargs):
         """[N=1]"""
-        return self.call(method, n, **kwargs)
+        return self.call(method, int(n), **kwargs)
 
     def pool_shrink(self, method, n=1, **kwargs):
         """[N=1]"""
-        return self.call(method, n, **kwargs)
+        return self.call(method, int(n), **kwargs)
 
     def autoscale(self, method, max=None, min=None, **kwargs):
         """[max] [min]"""
-        return self.call(method, max, min, **kwargs)
+        return self.call(method, int(max), int(min), **kwargs)
 
     def rate_limit(self, method, task_name, rate_limit, **kwargs):
         """<task_name> <rate_limit> (e.g. 5/s | 5/m | 5/h)>"""
@@ -424,7 +424,7 @@ class control(_RemoteControl):
 
     def time_limit(self, method, task_name, soft, hard=None, **kwargs):
         """<task_name> <soft_secs> [hard_secs]"""
-        return self.call(method, task_name, soft, hard, reply=True, **kwargs)
+        return self.call(method, task_name, float(soft), float(hard), reply=True, **kwargs)
 
     def add_consumer(self, method, queue, exchange=None,
                      exchange_type='direct', routing_key=None, **kwargs):
