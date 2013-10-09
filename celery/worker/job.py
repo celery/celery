@@ -288,8 +288,8 @@ class Request(object):
             self.task.backend.mark_as_revoked(self.id, reason)
         self.acknowledge()
         self._already_revoked = True
-        send_revoked(self.task, terminated=terminated,
-                     signum=signum, expired=expired)
+        send_revoked(self.task, request=self,
+                     terminated=terminated, signum=signum, expired=expired)
 
     def revoked(self):
         """If revoked, skip task and mark state."""

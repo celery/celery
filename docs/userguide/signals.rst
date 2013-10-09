@@ -246,6 +246,14 @@ Sender is the task class revoked/terminated.
 
 Provides arguments:
 
+* request
+
+    This is a :class:`~celery.worker.job.Request` instance, and not
+    ``task.request``.   When using the multiprocessing pool this signal
+    is dispatched in the parent process, so ``task.request`` is not available
+    and should not be used.  Use this object instead, which should have many
+    of the same fields.
+
 * terminated
     Set to :const:`True` if the task was terminated.
 
