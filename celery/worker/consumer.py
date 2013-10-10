@@ -165,7 +165,7 @@ class Consumer(object):
                  init_callback=noop, hostname=None,
                  pool=None, app=None,
                  timer=None, controller=None, hub=None, amqheartbeat=None,
-                 worker_options=None, disable_rate_limits=False, 
+                 worker_options=None, disable_rate_limits=False,
                  initial_prefetch_count=2, **kwargs):
         self.app = app
         self.controller = controller
@@ -224,6 +224,34 @@ class Consumer(object):
         self.task_buckets.update(
             (n, self.bucket_for_task(t)) for n, t in items(self.app.tasks)
         )
+
+    def increment_prefetch_count(self, n=1):
+        """Increase the prefetch count by ``n``.
+
+        This will also increase the initial value so it'll persist between
+        consumer restarts.  If you want the change to be temporary,
+        you can use ``self.qos.increment_eventually(n)`` instead.
+
+        """
+        # initial value must be changed for consumer restart.
+        if self.initial_prefetch_count:
+            # only increase if prefetch enabled (>0)
+            self.initial_prefetch_count += n
+        self.qos.increment_eventually(n)
+
+    def decrement_prefetch_count(self, n=1):
+        """Decrease prefetch count by ``n``.
+
+        This will also decrease the initial value so it'll persist between
+        consumer restarts.  If you want the change to be temporary,
+        you can use ``self.qos.decrement_eventually(n)`` instead.
+
+        """
+        initial = self.initial_prefetch_count
+        if initial:  # was not disabled (>0)
+            # must not get lower than 1, since that will disable the limit.
+            self.initial_prefetch_count = max(initial - n, 1)
+        self.qos.decrement_eventually(n)
 
     def _limit_task(self, request, bucket, tokens):
         if not bucket.can_consume(tokens):

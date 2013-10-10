@@ -283,9 +283,8 @@ def pool_grow(state, n=1, **kwargs):
         state.consumer.controller.autoscaler.force_scale_up(n)
     else:
         state.consumer.pool.grow(n)
-    state.consumer.qos.increment_eventually(n)
-    state.consumer.initial_prefetch_count += n
-    return {'ok': 'spawned worker processes'}
+    state.consumer.increment_prefetch_count(n)
+    return {'ok': 'pool will grow'}
 
 
 @Panel.register
@@ -294,9 +293,8 @@ def pool_shrink(state, n=1, **kwargs):
         state.consumer.controller.autoscaler.force_scale_down(n)
     else:
         state.consumer.pool.shrink(n)
-    state.consumer.qos.decrement_eventually(n)
-    state.consumer.initial_prefetch_count -= n
-    return {'ok': 'terminated worker processes'}
+    state.consumer.decrement_prefetch_count(n)
+    return {'ok': 'pool will shrink'}
 
 
 @Panel.register
