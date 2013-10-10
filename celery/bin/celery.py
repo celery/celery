@@ -424,7 +424,8 @@ class control(_RemoteControl):
 
     def time_limit(self, method, task_name, soft, hard=None, **kwargs):
         """<task_name> <soft_secs> [hard_secs]"""
-        return self.call(method, task_name, float(soft), float(hard), reply=True, **kwargs)
+        return self.call(method, task_name,
+                         float(soft), float(hard), reply=True, **kwargs)
 
     def add_consumer(self, method, queue, exchange=None,
                      exchange_type='direct', routing_key=None, **kwargs):

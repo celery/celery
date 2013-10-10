@@ -212,7 +212,10 @@ class Consumer(bootsteps.StartStopStep):
     last = True
 
     def create(self, w):
-        prefetch_count = w.concurrency * w.prefetch_multiplier
+        if w.max_concurrency:
+            prefetch_count = max(w.min_concurrency, 1) * w.prefetch_multiplier
+        else:
+            prefetch_count = w.concurrency * w.prefetch_multiplier
         c = w.consumer = self.instantiate(
             w.consumer_cls, w.process_task,
             hostname=w.hostname,
@@ -226,5 +229,6 @@ class Consumer(bootsteps.StartStopStep):
             hub=w.hub,
             worker_options=w.options,
             disable_rate_limits=w.disable_rate_limits,
+            prefetch_multiplier=w.prefetch_multiplier,
         )
         return c

@@ -166,7 +166,7 @@ class Consumer(object):
                  pool=None, app=None,
                  timer=None, controller=None, hub=None, amqheartbeat=None,
                  worker_options=None, disable_rate_limits=False,
-                 initial_prefetch_count=2, **kwargs):
+                 initial_prefetch_count=2, prefetch_multiplier=1, **kwargs):
         self.app = app
         self.controller = controller
         self.init_callback = init_callback
@@ -186,6 +186,7 @@ class Consumer(object):
         self.amqheartbeat_rate = self.app.conf.BROKER_HEARTBEAT_CHECKRATE
         self.disable_rate_limits = disable_rate_limits
         self.initial_prefetch_count = initial_prefetch_count
+        self.prefetch_multiplier = prefetch_multiplier
 
         # this contains a tokenbucket for each task type by name, used for
         # rate limits, or None if rate limits are disabled for that task.
@@ -225,28 +226,35 @@ class Consumer(object):
             (n, self.bucket_for_task(t)) for n, t in items(self.app.tasks)
         )
 
-    def increment_prefetch_count(self, n=1):
+    def increment_prefetch_count(self, n=1, use_multiplier=False):
         """Increase the prefetch count by ``n``.
 
         This will also increase the initial value so it'll persist between
         consumer restarts.  If you want the change to be temporary,
         you can use ``self.qos.increment_eventually(n)`` instead.
 
+        :keyword use_multiplier: If True the value will be multiplied
+            using the current prefetch multiplier setting.
+
         """
+        n = n * self.prefetch_multiplier if use_multiplier else n
         # initial value must be changed for consumer restart.
         if self.initial_prefetch_count:
             # only increase if prefetch enabled (>0)
             self.initial_prefetch_count += n
         self.qos.increment_eventually(n)
 
-    def decrement_prefetch_count(self, n=1):
+    def decrement_prefetch_count(self, n=1, use_multiplier=False):
         """Decrease prefetch count by ``n``.
 
         This will also decrease the initial value so it'll persist between
         consumer restarts.  If you want the change to be temporary,
         you can use ``self.qos.decrement_eventually(n)`` instead.
 
+        :keyword use_multiplier: If True the value will be multiplied
+            using the current prefetch multiplier setting.
         """
+        n = n * self.prefetch_multiplier if use_multiplier else n
         initial = self.initial_prefetch_count
         if initial:  # was not disabled (>0)
             # must not get lower than 1, since that will disable the limit.
@@ -431,8 +439,6 @@ class Consumer(object):
         callbacks = self.on_task_message
 
         def on_task_received(body, message):
-            if callbacks:
-                [callback() for callback in callbacks]
             try:
                 name = body['task']
             except (KeyError, TypeError):
@@ -441,7 +447,8 @@ class Consumer(object):
             try:
                 strategies[name](message, body,
                                  message.ack_log_error,
-                                 message.reject_log_error)
+                                 message.reject_log_error,
+                                 callbacks)
             except KeyError as exc:
                 on_unknown_task(body, message, exc)
             except InvalidTaskError as exc:

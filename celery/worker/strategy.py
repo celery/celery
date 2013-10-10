@@ -41,7 +41,7 @@ def default(task, app, consumer,
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
 
-    def task_message_handler(message, body, ack, reject,
+    def task_message_handler(message, body, ack, reject, callbacks,
                              to_timestamp=to_timestamp):
         req = Req(body, on_ack=ack, on_reject=reject,
                   app=app, hostname=hostname,
@@ -82,6 +82,8 @@ def default(task, app, consumer,
                 if bucket:
                     return limit_task(req, bucket, 1)
             task_reserved(req)
+            if callbacks:
+                [callback() for callback in callbacks]
             handle(req)
 
     return task_message_handler

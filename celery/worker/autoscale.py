@@ -49,7 +49,7 @@ class WorkerComponent(bootsteps.StartStopStep):
         scaler = w.autoscaler = self.instantiate(
             w.autoscaler_cls,
             w.pool, w.max_concurrency, w.min_concurrency,
-            mutex=DummyLock() if w.use_eventloop else None,
+            worker=w, mutex=DummyLock() if w.use_eventloop else None,
         )
         return scaler if not w.use_eventloop else None
 
@@ -63,7 +63,8 @@ class WorkerComponent(bootsteps.StartStopStep):
 class Autoscaler(bgThread):
 
     def __init__(self, pool, max_concurrency,
-                 min_concurrency=0, keepalive=AUTOSCALE_KEEPALIVE, mutex=None):
+                 min_concurrency=0, worker=None,
+                 keepalive=AUTOSCALE_KEEPALIVE, mutex=None):
         super(Autoscaler, self).__init__()
         self.pool = pool
         self.mutex = mutex or threading.Lock()
@@ -71,6 +72,7 @@ class Autoscaler(bgThread):
         self.min_concurrency = min_concurrency
         self.keepalive = keepalive
         self._last_action = None
+        self.worker = worker
 
         assert self.keepalive, 'cannot scale down too fast.'
 
@@ -133,6 +135,7 @@ class Autoscaler(bgThread):
     def _grow(self, n):
         info('Scaling up %s processes.', n)
         self.pool.grow(n)
+        self.worker.consumer.increment_prefetch_count(n, True)
 
     def _shrink(self, n):
         info('Scaling down %s processes.', n)
@@ -142,6 +145,7 @@ class Autoscaler(bgThread):
             debug("Autoscaler won't scale down: all processes busy.")
         except Exception as exc:
             error('Autoscaler: scale_down: %r', exc, exc_info=True)
+        self.worker.consumer.decrement_prefetch_count(n, True)
 
     def info(self):
         return {'max': self.max_concurrency,
