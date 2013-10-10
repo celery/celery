@@ -12,6 +12,8 @@ import os
 import platform as _platform
 import re
 
+from collections import Mapping
+
 from celery.datastructures import ConfigurationView
 from celery.five import items
 from celery.platforms import pyimplementation
@@ -106,14 +108,20 @@ class Settings(ConfigurationView):
         """
         return self['_'.join(part for part in parts if part)]
 
-    def humanize(self):
+    def table(self, with_defaults=False, censored=True):
+        filt = filter_hidden_settings if censored else lambda v: v
+        return filt(dict(
+            (k, v) for k, v in items(
+                self if with_defaults else self.without_defaults())
+            if k.isupper() and not k.startswith('_')
+        ))
+
+    def humanize(self, with_defaults=False, censored=True):
         """Return a human readable string showing changes to the
         configuration."""
         return '\n'.join(
             '{0}: {1}'.format(key, pretty(value, width=50))
-            for key, value in items(filter_hidden_settings(dict(
-                (k, v) for k, v in items(self.without_defaults())
-                if k.isupper() and not k.startswith('_')))))
+            for key, value in items(self.table(with_defaults, censored)))
 
 
 class AppPickler(object):
@@ -157,8 +165,15 @@ def _unpickle_app_v2(cls, kwargs):
 
 def filter_hidden_settings(conf):
 
-    def maybe_censor(key, value):
-        return '********' if HIDDEN_SETTINGS.search(key) else value
+    def maybe_censor(key, value, mask='*' * 8):
+        if isinstance(value, Mapping):
+            return filter_hidden_settings(value)
+        if HIDDEN_SETTINGS.search(key):
+            return mask
+        if 'BROKER_URL' in key.upper():
+            from kombu import Connection
+            return Connection(value).as_uri(mask=mask)
+        return value
 
     return dict((k, maybe_censor(k, v)) for k, v in items(conf))
 

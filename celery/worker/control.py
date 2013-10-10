@@ -347,8 +347,8 @@ def _wanted_config_key(key):
 
 
 @Panel.register
-def dump_conf(state, **kwargs):
-    return jsonify(dict(state.app.conf),
+def dump_conf(state, with_defaults=False, **kwargs):
+    return jsonify(state.app.conf.table(with_defaults=with_defaults),
                    keyfilter=_wanted_config_key,
                    unknown_type_filter=safe_repr)
 
