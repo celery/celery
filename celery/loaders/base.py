@@ -135,10 +135,7 @@ class BaseLoader(object):
     def config_from_object(self, obj, silent=False):
         if isinstance(obj, string_t):
             try:
-                if '.' in obj:
-                    obj = symbol_by_name(obj, imp=self.import_from_cwd)
-                else:
-                    obj = self.import_from_cwd(obj)
+                obj = self._smart_import(obj, imp=self.import_from_cwd)
             except (ImportError, AttributeError):
                 if silent:
                     return False
@@ -147,6 +144,21 @@ class BaseLoader(object):
             obj = DictAttribute(obj)
         self._conf = obj
         return True
+
+    def _smart_import(self, path, imp=None):
+        imp = self.import_module if imp is None else imp
+        if ':' in path:
+            # Path includes attribute so can just jump here.
+            # e.g. ``os.path:abspath``.
+            return symbol_by_name(path, imp=imp)
+
+        # Not sure if path is just a module name or if it includes an
+        # attribute name (e.g. ``os.path``, vs, ``os.path.abspath``
+        try:
+            return imp(path)
+        except ImportError:
+            # Not a module name, so try module + attribute.
+            return symbol_by_name(path, imp=imp)
 
     def _import_config_module(self, name):
         try:
