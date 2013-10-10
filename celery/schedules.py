@@ -540,7 +540,7 @@ class crontab(schedule):
         if due:
             rem_delta = self.remaining_estimate(self.now())
             rem = timedelta_seconds(rem_delta)
-        return due, rem
+        return schedstate(due, rem)
 
     def __eq__(self, other):
         if isinstance(other, crontab):
