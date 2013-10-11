@@ -9,6 +9,67 @@
 
 If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
+.. _version-3.0.24:
+
+3.0.24
+======
+:release-date: 2013-10-11 04:40 P.M BST
+
+- Now depends on :ref:`Kombu 2.5.15 <kombu:version-2.5.15>`.
+
+- Now depends on :mod:`billiard` version 2.7.3.34.
+
+- AMQP Result backend:  No longer caches queue declarations.
+
+    The queues created by the AMQP result backend are always unique,
+    so caching the declarations caused a slow memory leak.
+
+- Worker: Fixed crash when hostname contained Unicode characters.
+
+    Contributed by Daodao.
+
+- The worker would no longer start if the `-P solo` pool was selected
+  (Issue #1548).
+
+- Redis/Cache result backends would not complete chords
+  if any of the tasks were retried (Issue #1401).
+
+- Task decorator is no longer lazy if app is finalized.
+
+- AsyncResult: Fixed bug with ``copy(AsyncResult)`` when no
+  ``current_app`` available.
+
+- ResultSet: Now properly propagates app when passed string id's.
+
+- Loader now ignores :envvar:`CELERY_CONFIG_MODULE` if value is empty string.
+
+- Fixed race condition in Proxy object where it tried to
+  delete an attribute twice, resulting in :exc:`AttributeError`.
+
+- Task methods now works with the :setting:`CELERY_ALWAYS_EAGER` setting
+  (Issue #1478).
+
+- :class:`~kombu.common.Broadcast` queues were accidentally declared
+  when publishing tasks (Issue #1540).
+
+- New :envvar:`C_FAKEFORK` environment variable can be used to
+  debug the init scripts.
+
+    Setting this will skip the daemonization step so that errors
+    printed to stderr after standard outs are closed can be seen::
+
+        $ C_FAKEFORK /etc/init.d/celeryd start
+
+    This works with the `celery multi` command in general.
+
+- ``get_pickleable_etype`` did not always return a value (Issue #1556).
+- Fixed bug where ``app.GroupResult.restore`` would fall back to the default
+  app.
+
+- Fixed rare bug where built-in tasks would use the current_app.
+
+- :func:`~celery.platforms.maybe_fileno` now handles :exc:`ValueError`.
+
 .. _version-3.0.23:
 
 3.0.23

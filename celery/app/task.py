@@ -502,7 +502,7 @@ class Task(object):
             'task_id': request.id,
             'link': request.callbacks,
             'link_error': request.errbacks,
-            'group_id': request.taskset,
+            'group_id': request.group,
             'chord': request.chord,
             'soft_time_limit': limit_soft,
             'time_limit': limit_hard,

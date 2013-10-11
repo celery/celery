@@ -1,3 +1,3 @@
 pytz>dev
-billiard>=2.7.3.32
-kombu>=2.5.14
+billiard>=2.7.3.34
+kombu>=2.5.15
