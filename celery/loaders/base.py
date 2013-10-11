@@ -9,7 +9,7 @@
 from __future__ import absolute_import
 
 import anyjson
-import imp
+import imp as _imp
 import importlib
 import os
 import re
@@ -284,7 +284,7 @@ def find_related_module(package, related_name):
         return
 
     try:
-        imp.find_module(related_name, pkg_path)
+        _imp.find_module(related_name, pkg_path)
     except ImportError:
         return
 

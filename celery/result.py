@@ -415,7 +415,7 @@ class ResultSet(ResultBase):
             result.forget()
 
     def revoke(self, connection=None, terminate=False, signal=None,
-            wait=False, timeout=None):
+               wait=False, timeout=None):
         """Send revoke signal to all workers for all tasks in the set.
 
         :keyword terminate: Also terminate the process currently working
