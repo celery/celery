@@ -162,7 +162,7 @@ class Celery(object):
                         task = filter(task)
                     return task
 
-                if opts.get('_force_evaluate'):
+                if self.finalized or opts.get('_force_evaluate'):
                     ret = self._task_from_fun(fun, **opts)
                 else:
                     # return a proxy object that is only evaluated on first use
