@@ -182,7 +182,6 @@ class test_Tasks(AppCase):
         tasks = Tasks(c)
         self.assertIsNone(c.task_consumer)
         self.assertIsNone(c.qos)
-        self.assertEqual(c.initial_prefetch_count, 2)
 
         c.task_consumer = Mock()
         tasks.stop(c)

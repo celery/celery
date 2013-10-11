@@ -26,6 +26,7 @@ from celery.tests.case import (
     WhateverIO,
     skip_if_pypy,
     skip_if_jython,
+    mock_module,
 )
 
 ensure_process_aware_logger()
@@ -257,13 +258,13 @@ class test_Worker(WorkerAppCase):
         self.assert_no_logging_side_effect()
 
     def test_include_argument(self):
-        worker1 = self.Worker(app=self.app, include='some.module')
-        self.assertListEqual(worker1.include, ['some.module'])
+        worker1 = self.Worker(app=self.app, include='os')
+        self.assertListEqual(worker1.include, ['os'])
         worker2 = self.Worker(app=self.app,
-                              include='some.module,another.package')
+                            include='os,sys')
         self.assertListEqual(
             worker2.include,
-            ['some.module', 'another.package'],
+            ['os', 'sys'],
         )
         self.Worker(app=self.app, include=['os', 'sys'])
 

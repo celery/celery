@@ -44,6 +44,8 @@ class Consumer(consumer.Consumer):
         self.event_dispatcher = Mock()
         self.controller = WorkController()
         self.task_consumer = Mock()
+        self.prefetch_multiplier = 1
+        self.initial_prefetch_count = 1
 
         from celery.concurrency.base import BasePool
         self.pool = BasePool(10)
@@ -270,13 +272,19 @@ class test_ControlPanel(AppCase):
                 self.size -= n
 
         consumer = Consumer(self.app)
+        consumer.prefetch_multiplier = 8
+        consumer.qos = Mock(name='qos')
         consumer.pool = MockPool()
         panel = self.create_panel(consumer=consumer)
 
         panel.handle('pool_grow')
         self.assertEqual(consumer.pool.size, 2)
+        consumer.qos.increment_eventually.assert_called_with(8)
+        self.assertEqual(consumer.initial_prefetch_count, 9)
         panel.handle('pool_shrink')
         self.assertEqual(consumer.pool.size, 1)
+        consumer.qos.decrement_eventually.assert_called_with(8)
+        self.assertEqual(consumer.initial_prefetch_count, 1)
 
         panel.state.consumer = Mock()
         panel.state.consumer.controller = Mock()

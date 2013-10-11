@@ -392,7 +392,7 @@ class test_Request(AppCase):
             self.mytask.name, uuid(), [1], {'f': 'x'}, app=self.app,
         )
         with assert_signal_called(
-                task_revoked, sender=job.task,
+                task_revoked, sender=job.task, request=job,
                 terminated=True, expired=False, signum=signum):
             job.time_start = time.time()
             job.worker_pid = 313
@@ -416,7 +416,7 @@ class test_Request(AppCase):
             expires=datetime.utcnow() - timedelta(days=1),
         )
         with assert_signal_called(
-                task_revoked, sender=job.task,
+                task_revoked, sender=job.task, request=job,
                 terminated=False, expired=True, signum=None):
             job.revoked()
             self.assertIn(job.id, revoked)
@@ -496,7 +496,7 @@ class test_Request(AppCase):
             self.mytask.name, uuid(), [1], {'f': 'x'}, app=self.app,
         )
         with assert_signal_called(
-                task_revoked, sender=job.task,
+                task_revoked, sender=job.task, request=job,
                 terminated=False, expired=False, signum=None):
             revoked.add(job.id)
             self.assertTrue(job.revoked())
@@ -552,7 +552,7 @@ class test_Request(AppCase):
             self.mytask.name, uuid(), [1], {'f': 'x'}, app=self.app,
         )
         with assert_signal_called(
-                task_revoked, sender=job.task,
+                task_revoked, sender=job.task, request=job,
                 terminated=True, expired=False, signum=signum):
             job.terminate(pool, signal='KILL')
             self.assertFalse(pool.terminate_job.call_count)

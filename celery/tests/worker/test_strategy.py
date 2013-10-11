@@ -34,7 +34,7 @@ class test_default_strategy(AppCase):
         def __call__(self, **kwargs):
             return self.s(
                 self.message, self.body,
-                self.message.ack, self.message.reject, **kwargs
+                self.message.ack, self.message.reject, [], **kwargs
             )
 
         def was_reserved(self):
