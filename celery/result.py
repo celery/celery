@@ -67,7 +67,8 @@ class AsyncResult(ResultBase):
         """Forget about (and possibly remove the result of) this task."""
         self.backend.forget(self.id)
 
-    def revoke(self, connection=None, terminate=False, signal=None):
+    def revoke(self, connection=None, terminate=False, signal=None,
+               wait=False, timeout=None):
         """Send revoke signal to all workers.
 
         Any worker receiving the task, or having reserved the
@@ -77,10 +78,15 @@ class AsyncResult(ResultBase):
             on the task (if any).
         :keyword signal: Name of signal to send to process if terminate.
             Default is TERM.
+        :keyword wait: Wait for replies from workers.  Will wait for 1 second
+           by default or you can specify a custom ``timeout``.
+        :keyword timeout: Time in seconds to wait for replies if ``wait``
+                          enabled.
 
         """
         self.app.control.revoke(self.id, connection=connection,
-                                terminate=terminate, signal=signal)
+                                terminate=terminate, signal=signal,
+                                reply=wait, timeout=timeout)
 
     def get(self, timeout=None, propagate=True, interval=0.5):
         """Wait until task is ready, and return its result.
@@ -408,18 +414,23 @@ class ResultSet(ResultBase):
         for result in self.results:
             result.forget()
 
-    def revoke(self, connection=None, terminate=False, signal=None):
+    def revoke(self, connection=None, terminate=False, signal=None,
+            wait=False, timeout=None):
         """Send revoke signal to all workers for all tasks in the set.
 
         :keyword terminate: Also terminate the process currently working
             on the task (if any).
         :keyword signal: Name of signal to send to process if terminate.
             Default is TERM.
+        :keyword wait: Wait for replies from worker.  Will wait for 1 second
+           by default or you can specify a custom ``timeout``.
+        :keyword timeout: Time in seconds to wait for replies if ``wait``
+                          enabled.
 
         """
         self.app.control.revoke([r.id for r in self.results],
-                                connection=connection,
-                                terminate=terminate, signal=signal)
+                                connection=connection, timeout=timeout,
+                                terminate=terminate, signal=signal, reply=wait)
 
     def __iter__(self):
         return iter(self.results)
