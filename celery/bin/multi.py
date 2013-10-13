@@ -145,6 +145,16 @@ def main():
     sys.exit(MultiTool().execute_from_commandline(sys.argv))
 
 
+CELERY_EXE = 'celery'
+if sys.version_info < (2, 7):
+    # pkg.__main__ first supported in Py2.7
+    CELERY_EXE = 'celery.__main__'
+
+
+def celery_exe(*args):
+    return ' '.join((CELERY_EXE, ) + args)
+
+
 class MultiTool(object):
     retcode = 0  # Final exit code.
 
@@ -235,7 +245,10 @@ class MultiTool(object):
     def with_detacher_default_options(self, p):
         p.options.setdefault('--pidfile', '%N.pid')
         p.options.setdefault('--logfile', '%N.log')
-        p.options.setdefault('--cmd', '-m celery worker --detach')
+        p.options.setdefault(
+            '--cmd',
+            '-m {0}'.format(celery_exe('worker', '--detach')),
+        )
 
     def signal_node(self, nodename, pid, sig):
         try:
