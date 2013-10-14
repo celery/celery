@@ -81,6 +81,11 @@ In Other News
 
     From this version Celery requires Python 2.6 or later.
 
+    Insteaad of using the 2to3 porting tool we now have
+    a dual codebase that runs on both Python 2 and Python 3.
+
+- Now depends on :ref:`Kombu 3.0 <kombu:version-3.0.0>`.
+
 - Now depends on :mod:`billiard` version 3.3.
 
 - No longer depends on ``python-dateutil``
