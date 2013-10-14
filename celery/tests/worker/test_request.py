@@ -35,7 +35,7 @@ from celery.exceptions import (
     Terminated,
     WorkerLostError,
 )
-from celery.five import keys
+from celery.five import keys, monotonic
 from celery.signals import task_revoked
 from celery.utils import uuid
 from celery.worker import job as module
@@ -394,7 +394,7 @@ class test_Request(AppCase):
         with assert_signal_called(
                 task_revoked, sender=job.task, request=job,
                 terminated=True, expired=False, signum=signum):
-            job.time_start = time.time()
+            job.time_start = monotonic()
             job.worker_pid = 313
             job.terminate(pool, signal='KILL')
             pool.terminate_job.assert_called_with(job.worker_pid, signum)
@@ -529,11 +529,11 @@ class test_Request(AppCase):
         job = TaskRequest(
             self.mytask.name, uuid(), [1], {'f': 'x'}, app=self.app,
         )
-        job.on_accepted(pid=os.getpid(), time_accepted=time.time())
+        job.on_accepted(pid=os.getpid(), time_accepted=monotonic())
         self.assertTrue(job.acknowledged)
         prev, module._does_debug = module._does_debug, False
         try:
-            job.on_accepted(pid=os.getpid(), time_accepted=time.time())
+            job.on_accepted(pid=os.getpid(), time_accepted=monotonic())
         finally:
             module._does_debug = prev
 
@@ -542,7 +542,7 @@ class test_Request(AppCase):
             self.mytask.name, uuid(), [1], {'f': 'x'}, app=self.app,
         )
         self.mytask.acks_late = True
-        job.on_accepted(pid=os.getpid(), time_accepted=time.time())
+        job.on_accepted(pid=os.getpid(), time_accepted=monotonic())
         self.assertFalse(job.acknowledged)
 
     def test_on_accepted_terminates(self):
@@ -556,7 +556,7 @@ class test_Request(AppCase):
                 terminated=True, expired=False, signum=signum):
             job.terminate(pool, signal='KILL')
             self.assertFalse(pool.terminate_job.call_count)
-            job.on_accepted(pid=314, time_accepted=time.time())
+            job.on_accepted(pid=314, time_accepted=monotonic())
             pool.terminate_job.assert_called_with(314, signum)
 
     def test_on_success_acks_early(self):

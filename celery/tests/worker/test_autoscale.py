@@ -7,6 +7,7 @@ from time import time
 from mock import Mock, patch
 
 from celery.concurrency.base import BasePool
+from celery.five import monotonic
 from celery.worker import state
 from celery.worker import autoscale
 from celery.tests.case import AppCase, sleepdeprived
@@ -110,7 +111,7 @@ class test_Autoscaler(AppCase):
         state.reserved_requests.clear()
         x.body()
         self.assertEqual(x.pool.num_processes, 10)
-        x._last_action = time() - 10000
+        x._last_action = monotonic() - 10000
         x.body()
         self.assertEqual(x.pool.num_processes, 3)
         self.assertTrue(worker.consumer.decrement_prefetch_count.called)
@@ -135,7 +136,7 @@ class test_Autoscaler(AppCase):
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.scale_up(3)
-        x._last_action = time() - 10000
+        x._last_action = monotonic() - 10000
         x.pool.shrink_raises_exception = True
         x.scale_down(1)
 
@@ -144,7 +145,7 @@ class test_Autoscaler(AppCase):
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.scale_up(3)
-        x._last_action = time() - 10000
+        x._last_action = monotonic() - 10000
         x.pool.shrink_raises_ValueError = True
         x.scale_down(1)
         self.assertTrue(debug.call_count)
