@@ -42,9 +42,17 @@ class Validators(object):
 
 
 class RiakBackend(KeyValueStoreBackend):
-    # use protobuf by default?
+    # TODO: allow using other protocols than protobuf ?
+    #: default protocol used to connect to Riak, might be `http` or `pbc`
+    protocol = 'pbc'
+
+    #: default Riak bucket name (`default`)
     bucket_name = "default"
+
+    #: default Riak server hostname (`localhost`)
     host = 'localhost'
+
+    #: default Riak server port (8087)
     port = 8087
 
     # supports_autoexpire = False
@@ -68,7 +76,7 @@ class RiakBackend(KeyValueStoreBackend):
 
         uhost = uport = uname = upass = ubucket = None
         if url:
-            _, uhost, uport, uname, upass, ubucket, _ = _parse_url(url)
+            uprot, uhost, uport, uname, upass, ubucket, _ = _parse_url(url)
             if ubucket:
                 ubucket = ubucket.strip('/')
 
@@ -83,6 +91,7 @@ class RiakBackend(KeyValueStoreBackend):
         self.host = uhost or config.get('host', self.host)
         self.port = int(uport or config.get('port', self.port))
         self.bucket_name = ubucket or config.get('bucket', self.bucket_name)
+        self.protocol = uprot or config.get('protocol', self.protocol)
 
         # riak bucket must be ascii letters or numbers only
         if not Validators.validate_riak_bucket_name(self.bucket_name):
@@ -100,7 +109,7 @@ class RiakBackend(KeyValueStoreBackend):
             if self.port:
                 kwargs.update({'port': self.port})
             logging.debug("riak settings %s" % kwargs)
-            self._client = RiakClient(protocol='pbc',
+            self._client = RiakClient(protocol=self.protocol,
                                       host=kwargs.get('host'),
                                       pb_port=kwargs.get('port'))
             self._client.resolver = last_written_resolver
