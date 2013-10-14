@@ -102,16 +102,9 @@ class RiakBackend(KeyValueStoreBackend):
     def _get_client(self):
         """Get client connection"""
         if self._client is None or not self._client.is_alive():
-            kwargs = {
-                'host': self.host,
-                'port': self.port
-            }
-            if self.port:
-                kwargs.update({'port': self.port})
-            logging.debug("riak settings %s" % kwargs)
             self._client = RiakClient(protocol=self.protocol,
-                                      host=kwargs.get('host'),
-                                      pb_port=kwargs.get('port'))
+                                      host=self.host,
+                                      pb_port=self.port)
             self._client.resolver = last_written_resolver
         return self._client
 
