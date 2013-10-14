@@ -81,6 +81,8 @@ In Other News
 
     From this version Celery requires Python 2.6 or later.
 
+- Now depends on :mod:`billiard` version 3.3.
+
 - No longer depends on ``python-dateutil``
 
     Instead a dependency on :mod:`pytz` has been added, which was already
