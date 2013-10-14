@@ -684,6 +684,65 @@ is following the conventions.
 
         from . import submodule
 
+
+.. _feature-with-extras:
+
+Contributing features requiring additional libraries
+====================================================
+
+Some features like a new result backend may require additional libraries
+that the user must install.
+
+We use setuptools `extra_requires` for this, and all new optional features
+that require 3rd party libraries must be added.
+
+1) Add a new requirements file in `requirements/extras`
+
+    E.g. for the Cassandra backend this is
+    :file:`requirements/extras/cassandra.txt`, and the file looks like this::
+
+        pycassa
+
+    These are pip requirement files so you can have version specifiers and
+    multiple packages are separated by newline.  A more complex example could
+    be:
+
+        # pycassa 2.0 breaks Foo
+        pycassa>=1.0,<2.0
+        thrift
+
+2) Modify ``setup.py``
+
+    After the requirements file is added you need to add it as an option
+    to ``setup.py`` in the ``extras_require`` section::
+
+        extra['extras_require'] = {
+            # ...
+            'cassandra': extras('cassandra.txt'),
+        }
+
+3) Document the new feature in ``docs/includes/installation.txt``
+
+    You must add your feature to the list in the :ref:`bundles` section
+    of :file:`docs/includes/installation.txt`.
+
+    After you've made changes to this file you need to render
+    the distro :file:`README` file:
+
+    .. code-block:: bash
+
+        $ pip install -U requirements/pkgutils.txt
+        $ paver readme
+
+
+That's all that needs to be done, but remember that if your feature
+adds additional configuration options then these needs to be documented
+in ``docs/configuration.rst``.  Also all settings need to be added to the
+``celery/app/defaults.py`` module.
+
+Result backends require a separate section in the ``docs/configuration.rst``
+file.
+
 .. _contact_information:
 
 Contacts
