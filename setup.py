@@ -183,7 +183,7 @@ if CELERY_COMPAT_PROGRAMS:
 
 if is_setuptools:
     extras = lambda *p: reqs('extras', *p)
-    extras_require = extra['extras_require'] = {
+    extra['extras_require'] = {
         # Celery specific
         'auth': extras('auth.txt'),
         'cassandra': extras('cassandra.txt'),
