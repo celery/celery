@@ -47,7 +47,7 @@ class RiakBackend(KeyValueStoreBackend):
     protocol = 'pbc'
 
     #: default Riak bucket name (`default`)
-    bucket_name = "default"
+    bucket_name = "celery"
 
     #: default Riak server hostname (`localhost`)
     host = 'localhost'
