@@ -110,8 +110,8 @@ You can specify another name for the main module:
 Configuration
 =============
 
-There are lots of different options you can set that will change how
-Celery work.  These options can be set on the app instance directly,
+There are several options you can set that will change how
+Celery works.  These options can be set directly on the app instance,
 or you can use a dedicated configuration module.
 
 The configuration is available as :attr:`@Celery.conf`::
@@ -119,11 +119,11 @@ The configuration is available as :attr:`@Celery.conf`::
     >>> app.conf.CELERY_TIMEZONE
     'Europe/London'
 
-where you can set configuration values directly::
+where you can also set configuration values directly::
 
     >>> app.conf.CELERY_ENABLE_UTC = True
 
-or you can update several keys at once by using the ``update`` method::
+and update several keys at once by using the ``update`` method::
 
     >>> app.conf.update(
     ...     CELERY_ENABLE_UTC=True,
@@ -137,6 +137,8 @@ that are consulted in order:
     #. The configuration module (if any)
     #. The default configuration (:mod:`celery.app.defaults`).
 
+You can even add new default sources by using the :meth:`@Celery.add_defaults`
+method.
 
 .. seealso::
 
@@ -208,6 +210,8 @@ Example 3:  Using a configuration class/object
         CELERY_TIMEZONE = 'Europe/London'
 
     app.config_from_object(Config)
+    # or using the fully qualified name of the object:
+    #   app.config_from_object('module:Config')
 
 ``config_from_envvar``
 ----------------------
@@ -234,6 +238,43 @@ You can then specify the configuration module to use via the environment:
 .. code-block:: bash
 
     $ CELERY_CONFIG_MODULE="celeryconfig.prod" celery worker -l info
+
+.. _app-censored-config:
+
+Censored configuration
+----------------------
+
+If you ever want to print out the configuration, as debugging information
+or similar, you may also want to filter out sensitive information like
+passwords and API keys.
+
+Celery comes with several utilities used for presenting the configuration,
+one is :meth:`~celery.app.utils.Settings.humanize`:
+
+.. code-block:: python
+
+    >>> app.conf.humanize(with_defaults=False, censored=True)
+
+This method returns the configuration as a tabulated string.  This will
+only contain changes to the configuration by default, but you can include the
+default keys and values by changing the ``with_defaults`` argument.
+
+If you instead want to work with the configuration as a dictionary, then you
+can use the :meth:`~celery.app.utils.Settings.table` method:
+
+.. code-block:: python
+
+    >>> app.conf.table(with_defaults=False, censored=True)
+
+Please note that Celery will not be able to remove all sensitive information,
+as it merely uses a regular expression to search for commonly named keys.
+If you add custom settings containing sensitive information you should name
+the keys using a name that Celery identifies as secret.
+
+A configuration setting will be censored if the name contains any of
+these substrings:
+
+``API``, ``TOKEN``, ``KEY``, ``SECRET``, ``PASS``, ``SIGNATURE``, ``DATABASE``
 
 Laziness
 ========
@@ -446,8 +487,14 @@ class: :class:`celery.Task`.
 
         def __call__(self, *args, **kwargs):
             print('TASK STARTING: {0.name}[{0.request.id}]'.format(self))
-            return self.run(*args, **kwargs)
+            return super(DebugTask, self).__call__(*args, **kwargs)
 
+
+.. tip::
+
+    If you override the tasks ``__call__`` method, then it's very important
+    that you also call super so that the base call method can set up the
+    default request used when a task is called directly.
 
 The neutral base class is special because it's not bound to any specific app
 yet.  Concrete subclasses of this class will be bound, so you should
