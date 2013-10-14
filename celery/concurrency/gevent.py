@@ -8,12 +8,13 @@
 """
 from __future__ import absolute_import
 
+from time import time
+
 try:
     from gevent import Timeout
 except ImportError:  # pragma: no cover
     Timeout = None  # noqa
 
-from celery.five import monotonic
 from celery.utils import timer2
 
 from .base import apply_target, BasePool
@@ -47,7 +48,7 @@ class Schedule(timer2.Schedule):
         self._queue = set()
 
     def _enter(self, eta, priority, entry):
-        secs = max(eta - monotonic(), 0)
+        secs = max(eta - time(), 0)
         g = self._Greenlet.spawn_later(secs, entry)
         self._queue.add(g)
         g.link(self._entry_exit)

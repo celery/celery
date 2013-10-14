@@ -23,6 +23,7 @@ import random
 import select
 import socket
 import struct
+import time
 
 from collections import deque, namedtuple
 from pickle import HIGHEST_PROTOCOL
@@ -47,7 +48,7 @@ from celery import signals
 from celery._state import set_default_app
 from celery.app import trace
 from celery.concurrency.base import BasePool
-from celery.five import Counter, items, values, monotonic
+from celery.five import Counter, items, values
 from celery.utils.log import get_logger
 
 __all__ = ['TaskPool']
@@ -338,7 +339,7 @@ class AsynPool(_pool.Pool):
 
         hub.on_tick.add(self.on_poll_start)
 
-    def _create_timelimit_handlers(self, hub, now=monotonic):
+    def _create_timelimit_handlers(self, hub, now=time.time):
         """For async pool this sets up the handlers used
         to implement time limits."""
         call_later = hub.call_later
@@ -368,11 +369,11 @@ class AsynPool(_pool.Pool):
             _discard_tref(R._job)
         self.on_timeout_cancel = on_timeout_cancel
 
-    def _on_soft_timeout(self, job, soft, hard, hub, now=monotonic):
+    def _on_soft_timeout(self, job, soft, hard, hub, now=time.time):
         # only used by async pool.
         if hard:
             self._tref_for_id[job] = hub.call_at(
-                now() + (hard - soft), self._on_hard_timeout, job,
+                time() + (hard - soft), self._on_hard_timeout, job,
             )
         try:
             result = self._cache[job]

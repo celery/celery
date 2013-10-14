@@ -9,6 +9,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
+import time
 
 from collections import defaultdict, Mapping, MutableMapping, MutableSet
 from heapq import heapify, heappush, heappop
@@ -19,7 +20,7 @@ from billiard.einfo import ExceptionInfo  # noqa
 from kombu.utils.encoding import safe_str
 from kombu.utils.limits import TokenBucket  # noqa
 
-from celery.five import items, monotonic
+from celery.five import items
 from celery.utils.functional import LRUCache, first, uniq  # noqa
 
 DOT_HEAD = """
@@ -560,7 +561,7 @@ class LimitedSet(object):
         self.__len__ = self._data.__len__
         self.__contains__ = self._data.__contains__
 
-    def add(self, value, now=monotonic):
+    def add(self, value, now=time.time):
         """Add a new member."""
         # offset is there to modify the length of the list,
         # this way we can expire an item before inserting the value,
@@ -588,7 +589,7 @@ class LimitedSet(object):
         self._data.pop(value, None)
     pop_value = discard  # XXX compat
 
-    def purge(self, limit=None, offset=0, now=monotonic):
+    def purge(self, limit=None, offset=0, now=time.time):
         """Purge expired items."""
         H, maxlen = self._heap, self.maxlen
         if not maxlen:
