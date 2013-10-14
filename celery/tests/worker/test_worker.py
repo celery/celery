@@ -640,7 +640,7 @@ class test_Consumer(AppCase):
         def effect():
             if connect.call_count > 1:
                 return
-            raise ChannelError()
+            raise ChannelError('error')
         connect.side_effect = effect
         l.connect()
         connect.assert_called_with()
