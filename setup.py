@@ -199,6 +199,7 @@ if is_setuptools:
         'mongodb': extras('mongodb.txt'),
         'sqs': extras('sqs.txt'),
         'couchdb': extras('couchdb.txt'),
+        'riak': extras('riak.txt'),
         'beanstalk': extras('beanstalk.txt'),
         'zookeeper': extras('zookeeper.txt'),
         'zeromq': extras('zeromq.txt'),
