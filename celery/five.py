@@ -45,10 +45,8 @@ try:
 except ImportError:                         # pragma: no cover
     from collections import UserDict        # noqa
 
-try:
-    from time import monotonic
-except ImportError:
-    from time import time as monotonic  # noqa
+
+from kombu.five import monotonic
 
 if PY3:  # pragma: no cover
     import builtins
