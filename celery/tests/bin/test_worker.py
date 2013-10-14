@@ -26,7 +26,6 @@ from celery.tests.case import (
     WhateverIO,
     skip_if_pypy,
     skip_if_jython,
-    mock_module,
 )
 
 ensure_process_aware_logger()
@@ -261,11 +260,8 @@ class test_Worker(WorkerAppCase):
         worker1 = self.Worker(app=self.app, include='os')
         self.assertListEqual(worker1.include, ['os'])
         worker2 = self.Worker(app=self.app,
-                            include='os,sys')
-        self.assertListEqual(
-            worker2.include,
-            ['os', 'sys'],
-        )
+                              include='os,sys')
+        self.assertListEqual(worker2.include, ['os', 'sys'])
         self.Worker(app=self.app, include=['os', 'sys'])
 
     @disable_stdouts
