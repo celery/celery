@@ -40,6 +40,22 @@ logger = get_logger(__name__)
 is_jython = sys.platform.startswith('java')
 is_pypy = hasattr(sys, 'pypy_version_info')
 
+C_FORCE_ROOT = os.environ.get('C_FORCE_ROOT', False)
+
+ROOT_DISALLOWED = """\
+Running a worker with superuser privileges when the
+worker accepts messages serialized with pickle is a very bad idea!
+
+If you really want to continue then you have to set the C_FORCE_ROOT
+environment variable (but please think about this before you do).
+"""
+
+ROOT_DISCOURAGED = """\
+You are running the worker with superuser privileges, which is
+absolutely not recommended!
+
+Please specify a different user using the -u option.
+"""
 
 def active_thread_count():
     from threading import enumerate
@@ -134,9 +150,12 @@ class Worker(WorkController):
         )
 
         if getattr(os, 'getuid', None) and os.getuid() == 0:
-            warnings.warn(RuntimeWarning(
-                'Running the worker with superuser privileges is discouraged!',
-            ))
+            accept_encoding = self.app.conf.CELERY_ACCEPT_CONTENT
+            if ('pickle' in accept_encoding or
+                    'application/x-python-serialize' in accept_encoding):
+                if not C_FORCE_ROOT:
+                    raise RuntimeError(ROOT_DISALLOWED)
+            warnings.warn(RuntimeWarning(ROOT_DISCOURAGED))
 
         if self.purge:
             self.purge_messages()
