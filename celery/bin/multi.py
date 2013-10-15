@@ -247,8 +247,8 @@ class MultiTool(object):
         self.retcode = int(any(retcodes))
 
     def with_detacher_default_options(self, p):
-        p.options.setdefault('--pidfile', '%N.pid')
-        p.options.setdefault('--logfile', '%N.log')
+        _setdefaultopt(p.options, ['--pidfile', '-p'], '%N.pid')
+        _setdefaultopt(p.options, ['--logfile', '-f'], '%N.log')
         p.options.setdefault(
             '--cmd',
             '-m {0}'.format(celery_exe('worker', '--detach')),
@@ -320,14 +320,16 @@ class MultiTool(object):
             self.note('')
 
     def getpids(self, p, cmd, callback=None):
-        p.options.setdefault('--pidfile', '%N.pid')
+        _setdefaultopt(p.options, ['--pidfile', '-p'], '%N.pid')
 
         nodes = []
         for node in multi_args(p, cmd):
             try:
-                pidfile_template = p.namespaces[node.namespace]['--pidfile']
+                pidfile_template = _getopt(
+                    p.namespaces[node.namespace], ['--pidfile', '-p'],
+                )
             except KeyError:
-                pidfile_template = p.options['--pidfile']
+                pidfile_template = _getopt(p.options, ['--pidfile', '-p'])
             pid = None
             pidfile = node.expander(pidfile_template)
             try:
@@ -601,6 +603,25 @@ def findsig(args, default=signal.SIGTERM):
             if maybe_sig in SIGNAMES:
                 return getattr(signal, maybe_sig)
     return default
+
+
+def _getopt(d, alt):
+    for opt in alt:
+        try:
+            return d[opt]
+        except KeyError:
+            pass
+    raise KeyError(alt[0])
+
+
+def _setdefaultopt(d, alt, value):
+    for opt in alt[1:]:
+        try:
+            return d[opt]
+        except KeyError:
+            pass
+    return d.setdefault(alt[0], value)
+
 
 if __name__ == '__main__':              # pragma: no cover
     main()
