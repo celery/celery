@@ -50,6 +50,10 @@ def pstatus(p):
         p, since=humanize_seconds(time() - p.when, now='0 seconds'))
 
 
+def testgroup(*funs):
+    return OrderedDict((fun.__name__, fun) for fun in funs)
+
+
 class Suite(object):
 
     def __init__(self, app, block_timeout=30 * 60):
@@ -58,8 +62,8 @@ class Suite(object):
         self.block_timeout = block_timeout
         self.progress = None
 
-        self.tests = OrderedDict(
-            (fun.__name__, fun) for fun in [
+        self.groups = {
+            'all': testgroup(
                 self.manyshort,
                 self.termbysig,
                 self.bigtasks,
@@ -69,12 +73,17 @@ class Suite(object):
                 self.revoketermfast,
                 self.revoketermslow,
                 self.alwayskilled,
-            ]
-        )
+            ),
+            'green': testgroup(
+                self.manyshort,
+                self.bigtasks,
+                self.smalltasks,
+            ),
+        }
 
     def run(self, names=None, iterations=50, offset=0,
-            numtests=None, list_all=False, repeat=0, **kw):
-        tests = self.filtertests(names)[offset:numtests or None]
+            numtests=None, list_all=False, repeat=0, group='all', **kw):
+        tests = self.filtertests(group, names)[offset:numtests or None]
         if list_all:
             return print(self.testlist(tests))
         print(self.banner(tests))
@@ -91,10 +100,11 @@ class Suite(object):
                 '+',
             )
 
-    def filtertests(self, names):
+    def filtertests(self, group, names):
+        tests = self.groups[group]
         try:
-            return ([self.tests[n] for n in names] if names
-                    else list(values(self.tests)))
+            return ([tests[n] for n in names] if names
+                    else list(values(tests)))
         except KeyError as exc:
             raise KeyError('Unknown test name: {0}'.format(exc))
 

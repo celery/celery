@@ -30,6 +30,8 @@ class Stress(Command):
                    help='List all tests'),
             Option('-r', '--repeat', type='float', default=0,
                    help='Number of times to repeat the test suite'),
+            Option('-g', '--group', default='all',
+                   help='Specify test group (all|green)'),
         )
 
 
