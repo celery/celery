@@ -157,7 +157,7 @@ def delta_resolution(dt, delta):
     args = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
     for res, predicate in resolutions:
         if predicate(delta) >= 1.0:
-            return datetime(*args[:res])
+            return datetime(*args[:res], tzinfo=dt.tzinfo)
     return dt
 
 
