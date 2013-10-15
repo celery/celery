@@ -24,7 +24,7 @@ from billiard import current_process
 from kombu.utils.encoding import safe_str
 
 from celery import VERSION_BANNER, platforms, signals
-from celery.exceptions import SystemTerminate
+from celery.exceptions import CDeprecationWarning, SystemTerminate
 from celery.five import string, string_t
 from celery.loaders.app import AppLoader
 from celery.app import trace
@@ -55,6 +55,25 @@ You are running the worker with superuser privileges, which is
 absolutely not recommended!
 
 Please specify a different user using the -u option.
+"""
+
+W_PICKLE_DEPRECATED = """
+Starting from version 3.2 Celery will refuse to accept pickle by default.
+
+The pickle serializer is a security concern as it may give attackers
+the ability to execute any command.  It's important to secure
+your broker from unauthorized access when using pickle, so we think
+that enabling pickle should require a deliberate action and not be
+the default choice.
+
+If you depend on pickle then you should set a setting to disable this
+warning and to be sure that everything will continue working
+when you upgrade to Celery 3.2::
+
+    CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
+
+You must only enable the serializers that you will actually use.
+
 """
 
 def active_thread_count():
@@ -156,6 +175,9 @@ class Worker(WorkController):
                 if not C_FORCE_ROOT:
                     raise RuntimeError(ROOT_DISALLOWED)
             warnings.warn(RuntimeWarning(ROOT_DISCOURAGED))
+
+        if not self.app.conf.value_set_for('CELERY_ACCEPT_CONTENT'):
+            warnings.warn(CDeprecationWarning(W_PICKLE_DEPRECATED))
 
         if self.purge:
             self.purge_messages()

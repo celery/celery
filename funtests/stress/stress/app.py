@@ -21,6 +21,7 @@ app = Celery(
     set_as_current=False,
 )
 app.conf.update(
+    CELERY_ACCEPT_CONTENT=['pickle', 'json'],
     CELERYD_PREFETCH_MULTIPLIER=CSTRESS_PREFETCH,
     CELERY_DEFAULT_QUEUE=CSTRESS_QUEUE,
     CELERY_QUEUES=(

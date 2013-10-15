@@ -78,6 +78,9 @@ class Settings(ConfigurationView):
         # the last stash is the default settings, so just skip that
         return Settings({}, self._order[:-1])
 
+    def value_set_for(self, key):
+        return key in self.without_defaults()
+
     def find_option(self, name, namespace='celery'):
         """Search for option by name.
 
