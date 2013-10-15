@@ -505,7 +505,8 @@ class Events(bootsteps.StartStopStep):
 
     def stop(self, c):
         if c.event_dispatcher:
-            ignore_errors(c, c.event_dispatcher.connection.close)
+            if c.event_dispatcher.connection:
+                ignore_errors(c, c.event_dispatcher.connection.close)
             ignore_errors(c, c.event_dispatcher.close)
             c.event_dispatcher = None
     shutdown = stop
