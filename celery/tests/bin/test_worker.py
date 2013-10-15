@@ -280,15 +280,27 @@ class test_Worker(WorkerAppCase):
         def getuid():
             return 0
 
-        prev, os.getuid = os.getuid, getuid
-        try:
-            with self.assertWarnsRegex(
-                    RuntimeWarning,
-                    r'superuser privileges is discouraged'):
+        with patch('os.getuid') as getuid:
+            getuid.return_value = 0
+            self.app.conf.CELERY_ACCEPT_CONTENT = ['pickle']
+            with self.assertRaises(RuntimeError):
                 worker = self.Worker(app=self.app)
                 worker.on_start()
-        finally:
-            os.getuid = prev
+            cd.C_FORCE_ROOT = True
+            try:
+                with self.assertWarnsRegex(
+                        RuntimeWarning,
+                        r'absolutely not recommended'):
+                    worker = self.Worker(app=self.app)
+                    worker.on_start()
+            finally:
+                cd.C_FORCE_ROOT = False
+            self.app.conf.CELERY_ACCEPT_CONTENT = ['json']
+            with self.assertWarnsRegex(
+                    RuntimeWarning,
+                    r'absolutely not recommended'):
+                worker = self.Worker(app=self.app)
+                worker.on_start()
 
     @disable_stdouts
     def test_redirect_stdouts(self):
