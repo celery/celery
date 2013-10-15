@@ -100,7 +100,7 @@ import signal
 import socket
 import sys
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from subprocess import Popen
 from time import sleep
 
@@ -139,6 +139,10 @@ additional options (must appear after command name):
     * --verbose:    Show more output.
     * --no-color:   Don't display colors.
 """
+
+multi_args_t = namedtuple(
+    'multi_args_t', ('name', 'argv', 'expander', 'namespace'),
+)
 
 
 def main():
@@ -211,22 +215,22 @@ class MultiTool(object):
     def names(self, argv, cmd):
         p = NamespacedOptionParser(argv)
         self.say('\n'.join(
-            hostname for hostname, _, _ in multi_args(p, cmd)),
+            n.name for n in multi_args(p, cmd)),
         )
 
     def get(self, argv, cmd):
         wanted = argv[0]
         p = NamespacedOptionParser(argv[1:])
-        for name, worker, _ in multi_args(p, cmd):
-            if name == wanted:
-                self.say(' '.join(worker))
+        for node in multi_args(p, cmd):
+            if node.name == wanted:
+                self.say(' '.join(node.argv))
                 return
 
     def show(self, argv, cmd):
         p = NamespacedOptionParser(argv)
         self.note('> Starting nodes...')
         self.say('\n'.join(
-            ' '.join(worker) for _, worker, _ in multi_args(p, cmd)),
+            ' '.join(n.argv) for n in multi_args(p, cmd)),
         )
 
     def start(self, argv, cmd):
@@ -235,9 +239,9 @@ class MultiTool(object):
         self.with_detacher_default_options(p)
         retcodes = []
         self.note('> Starting nodes...')
-        for nodename, argv, _ in multi_args(p, cmd):
-            self.note('\t> {0}: '.format(nodename), newline=False)
-            retcode = self.waitexec(argv)
+        for node in multi_args(p, cmd):
+            self.note('\t> {0}: '.format(node.name), newline=False)
+            retcode = self.waitexec(node.argv)
             self.note(retcode and self.FAILED or self.OK)
             retcodes.append(retcode)
         self.retcode = int(any(retcodes))
@@ -316,22 +320,26 @@ class MultiTool(object):
             self.note('')
 
     def getpids(self, p, cmd, callback=None):
-        pidfile_template = p.options.setdefault('--pidfile', '%N.pid')
+        p.options.setdefault('--pidfile', '%N.pid')
 
         nodes = []
-        for nodename, argv, expander in multi_args(p, cmd):
+        for node in multi_args(p, cmd):
+            try:
+                pidfile_template = p.namespaces[node.namespace]['--pidfile']
+            except KeyError:
+                pidfile_template = p.options['--pidfile']
             pid = None
-            pidfile = expander(pidfile_template)
+            pidfile = node.expander(pidfile_template)
             try:
                 pid = Pidfile(pidfile).read_pid()
             except ValueError:
                 pass
             if pid:
-                nodes.append((nodename, tuple(argv), pid))
+                nodes.append((node.name, tuple(node.argv), pid))
             else:
-                self.note('> {0}: {1}'.format(nodename, self.DOWN))
+                self.note('> {0.name}: {1}'.format(node, self.DOWN))
                 if callback:
-                    callback(nodename, argv, pid)
+                    callback(node.name, node.argv, pid)
 
         return nodes
 
@@ -380,8 +388,8 @@ class MultiTool(object):
     def expand(self, argv, cmd=None):
         template = argv[0]
         p = NamespacedOptionParser(argv[1:])
-        for _, _, expander in multi_args(p, cmd):
-            self.say(expander(template))
+        for node in multi_args(p, cmd):
+            self.say(node.expander(template))
 
     def help(self, argv, cmd=None):
         self.say(__doc__)
@@ -487,7 +495,7 @@ def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
                 [passthrough])
         if append:
             argv.append(expand(append))
-        yield this_name, argv, expand
+        yield multi_args_t(this_name, argv, expand, name)
 
 
 class NamespacedOptionParser(object):
