@@ -22,7 +22,7 @@ BROKER_TRANSPORT = os.environ.get('BROKER', 'librabbitmq')
 if hasattr(sys, 'pypy_version_info'):
     BROKER_TRANSPORT = 'pyamqp'
 
-celery = Celery(__name__)
+celery = Celery('bench_worker')
 celery.conf.update(BROKER_TRANSPORT=BROKER_TRANSPORT,
                    BROKER_POOL_LIMIT=10,
                    CELERYD_POOL='solo',
