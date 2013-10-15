@@ -91,7 +91,7 @@ class RiakBackend(KeyValueStoreBackend):
         self.host = uhost or config.get('host', self.host)
         self.port = int(uport or config.get('port', self.port))
         self.bucket_name = ubucket or config.get('bucket', self.bucket_name)
-        self.protocol = uprot or config.get('protocol', self.protocol)
+        self.protocol = protocol or config.get('protocol', self.protocol)
 
         # riak bucket must be ascii letters or numbers only
         if not Validators.validate_riak_bucket_name(self.bucket_name):
