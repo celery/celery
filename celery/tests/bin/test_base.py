@@ -20,7 +20,7 @@ class Object(object):
 
 
 class MyApp(object):
-    pass
+    user_options = {'preload': None}
 
 APP = MyApp()  # <-- Used by test_with_custom_app
 
@@ -139,7 +139,7 @@ class test_Command(AppCase):
             cmd.early_version(['--version'])
 
     def test_execute_from_commandline(self):
-        cmd = MockCommand()
+        cmd = MockCommand(app=self.app)
         args1, kwargs1 = cmd.execute_from_commandline()     # sys.argv
         self.assertTupleEqual(args1, cmd.mock_args)
         self.assertDictContainsSubset({'foo': 'bar'}, kwargs1)
@@ -151,7 +151,7 @@ class test_Command(AppCase):
 
     def test_with_bogus_args(self):
         with override_stdouts() as (_, stderr):
-            cmd = MockCommand()
+            cmd = MockCommand(app=self.app)
             cmd.supports_args = False
             with self.assertRaises(SystemExit):
                 cmd.execute_from_commandline(argv=['--bogus'])
@@ -161,7 +161,7 @@ class test_Command(AppCase):
     def test_with_custom_config_module(self):
         prev = os.environ.pop('CELERY_CONFIG_MODULE', None)
         try:
-            cmd = MockCommand()
+            cmd = MockCommand(app=self.app)
             cmd.setup_app_from_commandline(['--config=foo.bar.baz'])
             self.assertEqual(os.environ.get('CELERY_CONFIG_MODULE'),
                              'foo.bar.baz')
@@ -174,7 +174,7 @@ class test_Command(AppCase):
     def test_with_custom_broker(self):
         prev = os.environ.pop('CELERY_BROKER_URL', None)
         try:
-            cmd = MockCommand()
+            cmd = MockCommand(app=self.app)
             cmd.setup_app_from_commandline(['--broker=xyzza://'])
             self.assertEqual(
                 os.environ.get('CELERY_BROKER_URL'), 'xyzza://',
@@ -186,7 +186,7 @@ class test_Command(AppCase):
                 os.environ.pop('CELERY_BROKER_URL', None)
 
     def test_with_custom_app(self):
-        cmd = MockCommand()
+        cmd = MockCommand(app=self.app)
         app = '.'.join([__name__, 'APP'])
         cmd.setup_app_from_commandline(['--app=%s' % (app, ),
                                         '--loglevel=INFO'])
@@ -196,23 +196,23 @@ class test_Command(AppCase):
         self.assertIs(cmd.app, APP)
 
     def test_setup_app_sets_quiet(self):
-        cmd = MockCommand()
+        cmd = MockCommand(app=self.app)
         cmd.setup_app_from_commandline(['-q'])
         self.assertTrue(cmd.quiet)
-        cmd2 = MockCommand()
+        cmd2 = MockCommand(app=self.app)
         cmd2.setup_app_from_commandline(['--quiet'])
         self.assertTrue(cmd2.quiet)
 
     def test_setup_app_sets_chdir(self):
         with patch('os.chdir') as chdir:
-            cmd = MockCommand()
+            cmd = MockCommand(app=self.app)
             cmd.setup_app_from_commandline(['--workdir=/opt'])
             chdir.assert_called_with('/opt')
 
     def test_setup_app_sets_loader(self):
         prev = os.environ.get('CELERY_LOADER')
         try:
-            cmd = MockCommand()
+            cmd = MockCommand(app=self.app)
             cmd.setup_app_from_commandline(['--loader=X.Y:Z'])
             self.assertEqual(os.environ['CELERY_LOADER'], 'X.Y:Z')
         finally:
@@ -220,20 +220,21 @@ class test_Command(AppCase):
                 os.environ['CELERY_LOADER'] = prev
 
     def test_setup_app_no_respect(self):
-        cmd = MockCommand()
+        cmd = MockCommand(app=self.app)
         cmd.respects_app_option = False
         with patch('celery.bin.base.Celery') as cp:
             cmd.setup_app_from_commandline(['--app=x.y:z'])
             self.assertTrue(cp.called)
 
     def test_setup_app_custom_app(self):
-        cmd = MockCommand()
+        cmd = MockCommand(app=self.app)
         app = cmd.app = Mock()
+        app.user_options = {'preload': None}
         cmd.setup_app_from_commandline([])
         self.assertEqual(cmd.app, app)
 
     def test_find_app_suspects(self):
-        cmd = MockCommand()
+        cmd = MockCommand(app=self.app)
         self.assertTrue(cmd.find_app('celery.tests.bin.proj.app'))
         self.assertTrue(cmd.find_app('celery.tests.bin.proj'))
         self.assertTrue(cmd.find_app('celery.tests.bin.proj:hello'))
@@ -243,7 +244,7 @@ class test_Command(AppCase):
             cmd.find_app(__name__)
 
     def test_simple_format(self):
-        cmd = MockCommand()
+        cmd = MockCommand(app=self.app)
         with patch('socket.gethostname') as hn:
             hn.return_value = 'blacktron.example.com'
             self.assertEqual(cmd.simple_format(''), '')
@@ -261,26 +262,26 @@ class test_Command(AppCase):
             )
 
     def test_say_chat_quiet(self):
-        cmd = MockCommand()
+        cmd = MockCommand(app=self.app)
         cmd.quiet = True
         self.assertIsNone(cmd.say_chat('<-', 'foo', 'foo'))
 
     def test_say_chat_show_body(self):
-        cmd = MockCommand()
+        cmd = MockCommand(app=self.app)
         cmd.out = Mock()
         cmd.show_body = True
         cmd.say_chat('->', 'foo', 'body')
         cmd.out.assert_called_with('body')
 
     def test_say_chat_no_body(self):
-        cmd = MockCommand()
+        cmd = MockCommand(app=self.app)
         cmd.out = Mock()
         cmd.show_body = False
         cmd.say_chat('->', 'foo', 'body')
 
     @depends_on_current_app
     def test_with_cmdline_config(self):
-        cmd = MockCommand()
+        cmd = MockCommand(app=self.app)
         cmd.enable_config_from_cmdline = True
         cmd.namespace = 'celeryd'
         rest = cmd.setup_app_from_commandline(argv=[
@@ -293,7 +294,7 @@ class test_Command(AppCase):
         self.assertListEqual(rest, ['--loglevel=INFO'])
 
     def test_find_app(self):
-        cmd = MockCommand()
+        cmd = MockCommand(app=self.app)
         with patch('celery.bin.base.symbol_by_name') as sbn:
             from types import ModuleType
             x = ModuleType('proj')
