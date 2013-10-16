@@ -534,3 +534,49 @@ Provides arguments:
 
 * colorize
     Specify if log messages are colored or not.
+
+Command signals
+---------------
+
+.. signal:: user_preload_options
+
+user_preload_options
+~~~~~~~~~~~~~~~~~~~~
+
+This signal is sent after any of the Celery command line programs
+are finished parsing the user preload options.
+
+It can be used to add additional command-line arguments to the
+:program:`celery` umbrella command:
+
+.. code-block:: python
+
+    from celery import Celery
+    from celery import signals
+    from celery.bin.base import Option
+
+    app = Celery()
+    app.user_options['preload'].add(Option(
+        '--monitoring', action='store_true',
+        help='Enable our external monitoring utility, blahblah',
+    ))
+
+    @signals.user_preload_options.connect
+    def handle_preload_options(options, **kwargs):
+        if options['monitoring']:
+            enable_monitoring()
+
+
+Sender is the :class:`~celery.bin.base.Command` instance, which depends
+on what program was called (e.g. for the umbrella command it will be
+a :class:`~celery.bin.celery.CeleryCommand`) object).
+
+Provides arguments:
+
+* app
+
+    The app instance.
+
+* options
+
+    Mapping of the parsed user preload options (with default values).
