@@ -395,7 +395,12 @@ class Celery(object):
             self.loader)
         return backend(app=self, url=url)
 
+    def on_configure(self):
+        """Callback calld when the app loads configuration"""
+        pass
+
     def _get_config(self):
+        self.on_configure()
         self.configured = True
         s = Settings({}, [self.prepare_config(self.loader.conf),
                           deepcopy(DEFAULTS)])
