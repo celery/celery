@@ -348,6 +348,11 @@ Provides arguments:
 * conf
     The configuration of the current app.
 
+* options
+
+    Options passed to the worker from command-line arguments (including
+    defaults).
+
 .. signal:: worker_init
 
 worker_init

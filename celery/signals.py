@@ -45,7 +45,7 @@ task_failure = Signal(providing_args=[
 task_revoked = Signal(providing_args=[
     'request', 'terminated', 'signum', 'expired',
 ])
-celeryd_init = Signal(providing_args=['instance', 'conf'])
+celeryd_init = Signal(providing_args=['instance', 'conf', 'options'])
 celeryd_after_setup = Signal(providing_args=['instance', 'conf'])
 worker_init = Signal(providing_args=[])
 worker_process_init = Signal(providing_args=[])

@@ -130,7 +130,8 @@ class Worker(WorkController):
         # this signal can be used to set up configuration for
         # workers by name.
         signals.celeryd_init.send(
-            sender=self.hostname, instance=self, conf=self.app.conf,
+            sender=self.hostname, instance=self,
+            conf=self.app.conf, options=kwargs,
         )
 
     def on_after_init(self, purge=False, no_color=None,
