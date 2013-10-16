@@ -5,31 +5,53 @@ import os
 import sys
 import signal
 
-from kombu import Exchange, Queue
 from time import sleep
 
 from celery import Celery
+from celery import signals
+from celery.bin.base import Option
 from celery.exceptions import SoftTimeLimitExceeded
 
-CSTRESS_QUEUE = os.environ.get('CSTRESS_QUEUE_NAME', 'c.stress')
-CSTRESS_BROKER = os.environ.get('CSTRESS_BROKER', 'amqp://')
-CSTRESS_BACKEND = os.environ.get('CSTRESS_BACKEND', 'redis://127.0.0.1')
-CSTRESS_PREFETCH = int(os.environ.get('CSTRESS_PREFETCH', 1))
+from .templates import use_template, template_names
 
-app = Celery(
-    'stress', broker=CSTRESS_BROKER, backend=CSTRESS_BACKEND,
-    set_as_current=False,
-)
-app.conf.update(
-    CELERY_ACCEPT_CONTENT=['pickle', 'json'],
-    CELERYD_PREFETCH_MULTIPLIER=CSTRESS_PREFETCH,
-    CELERY_DEFAULT_QUEUE=CSTRESS_QUEUE,
-    CELERY_QUEUES=(
-        Queue(CSTRESS_QUEUE,
-              exchange=Exchange(CSTRESS_QUEUE),
-              routing_key=CSTRESS_QUEUE),
-    ),
-)
+
+class App(Celery):
+    template_selected = False
+
+    def __init__(self, *args, **kwargs):
+        self.template = kwargs.pop('template', None)
+        super(App, self).__init__(*args, **kwargs)
+        self.user_options['preload'].add(
+            Option(
+                '-t', '--template', default='default',
+                help='Configuration template to use: {0}'.format(
+                    template_names(),
+                ),
+            )
+        )
+        signals.user_preload_options.connect(self.on_preload_parsed)
+        self.after_configure = None
+
+    def on_preload_parsed(self, options=None, **kwargs):
+        self.use_template(options['template'])
+
+    def use_template(self, name='default'):
+        if self.template_selected:
+            raise RuntimeError('App already configured')
+        use_template(self, name)
+        self.template_selected = True
+
+    def _get_config(self):
+        ret = super(App, self)._get_config()
+        if self.after_configure:
+            self.after_configure(ret)
+        return ret
+
+    def on_configure(self):
+        if not self.template_selected:
+            self.use_template('default')
+
+app = App('stress', set_as_current=False)
 
 
 @app.task

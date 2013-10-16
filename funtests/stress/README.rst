@@ -56,7 +56,7 @@ Ideas include:
 
 ::
 
-    $ celery -A stress worker -c1 --maxtasksperchild=1 -- celery.acks_late=1
+    $ celery -A stress worker -c1 --maxtasksperchild=1 -t acks_late
 
 
 8) Worker using eventlet pool.
@@ -76,6 +76,59 @@ previous runs.
 
 Note that the stress client will probably hang if the test fails, so this
 test suite is currently not suited for automatic runs.
+
+Configuration Templates
+-----------------------
+
+You can select a configuration template using the `-t` command-line argument
+to any :program:`celery -A stress` command or the :program:`python -m stress`
+command when running the test suite itself.
+
+The templates available are:
+
+* default
+
+    Using amqp as a broker and rpc as a result backend,
+    and also using json for task and result messages.
+
+* redis
+
+    Using redis as a broker and result backend
+
+* acks_late
+
+    Enables late ack globally.
+
+* pickle
+
+    Using pickle as the serializer for tasks and results
+    (also allowing the worker to receive and process pickled messages)
+
+
+You can see the resulting configuration from any template by running
+the command::
+
+    $ celery -A stress report -t redis
+
+
+Example running the stress test using the ``redis`` configuration template::
+
+    $ python -m stress -t redis
+
+Example running the worker using the ``redis`` configuration template::
+
+    $ celery -A stress worker -t redis
+
+
+You can also mix several templates by listing them separated by commas::
+
+    $ celery -A stress worker -t redis,acks_late
+
+In this example (``redis,acks_late``) the ``redis`` template will be used
+as a configuration, and then additional keys from the ``acks_late`` template
+will be added on top as changes::
+
+    $ celery -A stress report -t redis,acks_late,pickle
 
 Running the client
 ------------------
