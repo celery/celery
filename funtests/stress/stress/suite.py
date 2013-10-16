@@ -17,7 +17,7 @@ from celery.utils.text import pluralize
 from celery.utils.timeutils import humanize_seconds
 
 from .app import (
-    marker, _marker, add, any_, kill, sleeping,
+    marker, _marker, add, any_, exiting, kill, sleeping,
     sleeping_ignore_limits, segfault,
 )
 from .data import BIG, SMALL
@@ -73,11 +73,14 @@ class Suite(object):
                 self.revoketermfast,
                 self.revoketermslow,
                 self.alwayskilled,
+                self.alwaysexits,
             ),
             'green': testgroup(
                 self.manyshort,
                 self.bigtasks,
                 self.smalltasks,
+                self.alwaysexits,
+                self.group_with_exit,
             ),
         }
 
@@ -159,6 +162,9 @@ class Suite(object):
     def termbysig(self):
         self._evil_groupmember(kill)
 
+    def group_with_exit(self):
+        self._evil_groupmember(exiting)
+
     def termbysegfault(self):
         self._evil_groupmember(segfault)
 
@@ -171,6 +177,10 @@ class Suite(object):
 
     def alwayskilled(self):
         g = group(kill.s() for _ in range(10))
+        self.join(g(), timeout=10)
+
+    def alwaysexits(self):
+        g = group(exiting.s() for _ in range(10))
         self.join(g(), timeout=10)
 
     def _evil_groupmember(self, evil_t, *eargs, **opts):

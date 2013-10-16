@@ -59,7 +59,19 @@ Ideas include:
     $ celery -A stress worker -c1 --maxtasksperchild=1 -- celery.acks_late=1
 
 
-It's a good idea to include the ``--purge`` argument to clear out tasks from
+8) Worker using eventlet pool.
+
+    Start the worker::
+
+        $ celery -A stress worker -c1000 -P eventlet
+
+    Then must use the `-g green` test group::
+
+        $ python -m stress -g green
+
+9) Worker using gevent pool.
+
+It's also a good idea to include the ``--purge`` argument to clear out tasks from
 previous runs.
 
 Note that the stress client will probably hang if the test fails, so this
