@@ -80,6 +80,7 @@ from pprint import pformat
 from types import ModuleType
 
 from celery import VERSION_BANNER, Celery, maybe_patch_concurrency
+from celery import signals
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.five import items, string, string_t, values
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
@@ -373,6 +374,11 @@ class Command(object):
         return self.parser.parse_args(arguments)
 
     def create_parser(self, prog_name, command=None):
+        option_list = (
+            self.preload_options +
+            self.get_options() +
+            tuple(self.app.user_options['preload'])
+        )
         return self.prepare_parser(self.Parser(
             prog=prog_name,
             usage=self.usage(command),
@@ -380,7 +386,7 @@ class Command(object):
             epilog=self.epilog,
             formatter=HelpFormatter(),
             description=self.description,
-            option_list=(self.preload_options + self.get_options()),
+            option_list=option_list,
         ))
 
     def prepare_parser(self, parser):
@@ -427,6 +433,15 @@ class Command(object):
                 argv = self.process_cmdline_config(argv)
         else:
             self.app = Celery()
+
+        user_preload = tuple(self.app.user_options['preload'] or ())
+        if user_preload:
+            user_options = self.preparse_options(argv, user_preload)
+            for user_option in user_preload:
+                user_options.setdefault(user_option.dest, user_option.default)
+            signals.user_preload_options.send(
+                sender=self, app=self.app, options=user_options,
+            )
         return argv
 
     def find_app(self, app):
@@ -465,9 +480,12 @@ class Command(object):
         return argv
 
     def parse_preload_options(self, args):
+        return self.preparse_options(args, self.preload_options)
+
+    def preparse_options(self, args, options):
         acc = {}
         opts = {}
-        for opt in self.preload_options:
+        for opt in options:
             for t in (opt._long_opts, opt._short_opts):
                 opts.update(dict(zip(t, [opt] * len(t))))
         index = 0
