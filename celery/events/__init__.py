@@ -21,6 +21,7 @@ from copy import copy
 from operator import itemgetter
 
 from kombu import Exchange, Queue, Producer
+from kombu.connection import maybe_channel
 from kombu.mixins import ConsumerMixin
 from kombu.utils import cached_property
 
@@ -262,10 +263,10 @@ class EventReceiver(ConsumerMixin):
     """
     app = None
 
-    def __init__(self, connection, handlers=None, routing_key='#',
+    def __init__(self, channel, handlers=None, routing_key='#',
                  node_id=None, app=None, queue_prefix='celeryev'):
         self.app = app_or_default(app or self.app)
-        self.connection = connection
+        self.channel = maybe_channel(channel)
         self.handlers = {} if handlers is None else handlers
         self.routing_key = routing_key
         self.node_id = node_id or uuid()
@@ -338,6 +339,10 @@ class EventReceiver(ConsumerMixin):
 
     def _receive(self, body, message):
         self.process(*self.event_from_message(body))
+
+    @property
+    def connection(self):
+        return self.channel.connection.client if self.channel else None
 
 
 class Events(object):

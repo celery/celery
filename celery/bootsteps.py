@@ -404,16 +404,17 @@ class ConsumerStep(StartStopStep):
         raise NotImplementedError('missing get_consumers')
 
     def start(self, c):
-        self.consumers = self.get_consumers(c.connection)
+        channel = c.connection.channel()
+        self.consumers = self.get_consumers(channel)
         for consumer in self.consumers or []:
             consumer.consume()
 
     def stop(self, c):
+        channels = set()
         for consumer in self.consumers or []:
             ignore_errors(c.connection, consumer.cancel)
-
-    def shutdown(self, c):
-        self.stop(c)
-        for consumer in self.consumers or []:
             if consumer.channel:
-                ignore_errors(c.connection, consumer.channel.close)
+                channels.add(consumer.channel)
+        for channel in channels:
+            ignore_errors(c.connection, channel.close)
+    shutdown = stop
