@@ -35,6 +35,7 @@ BACKEND_ALIASES = {
     'cassandra': 'celery.backends.cassandra:CassandraBackend',
     'couchbase': 'celery.backends.couchbase:CouchBaseBackend',
     'disabled': 'celery.backends.base:DisabledBackend',
+    'rest': 'celery.backends.rest:RESTBackend',
 }
 
 #: deprecated alias to ``current_app.backend``.
