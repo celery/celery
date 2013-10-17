@@ -240,6 +240,9 @@ def task_autoretry(*args_task, **kwargs_task):
             @task_autoretry(max_retries=5, default_retry_delay=1, autoretry_on=ZeroDivisionError)
             def baz(a, b):
                 pass
+            @task_autoretry(max_retries=5)
+            def bar(a, b):
+                pass
     """
     def real_decorator(func):
         """
