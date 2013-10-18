@@ -157,14 +157,17 @@ class DjangoFixup(object):
         if not getattr(sender.request, 'is_eager', False):
             self.close_database()
 
-    def on_task_postrun(self, **kwargs):
+    def on_task_postrun(self, sender, **kwargs):
         """Does everything necessary for Django to work in a long-living,
         multiprocessing environment.
 
         """
         # See http://groups.google.com/group/django-users/
         #            browse_thread/thread/78200863d0c07c6d/
-        self.close_database()
+
+        # Do not close db connection for eager tasks.
+        if not getattr(sender.request, 'is_eager', False):
+            self.close_database()
         self.close_cache()
 
     def close_database(self, **kwargs):
