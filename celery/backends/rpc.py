@@ -8,8 +8,7 @@
 """
 from __future__ import absolute_import
 
-import kombu
-
+from kombu import Consumer, Exchange
 from kombu.common import maybe_declare
 from kombu.utils import cached_property
 
@@ -20,13 +19,14 @@ __all__ = ['RPCBackend']
 
 
 class RPCBackend(amqp.AMQPBackend):
+    persistent = False
 
-    class Consumer(kombu.Consumer):
+    class Consumer(Consumer):
         auto_declare = False
 
-    def _create_exchange(self, name, type='direct', persistent=False):
-        return self.Exchange('c.rep', type=type, delivery_mode=1,
-                             durable=False, auto_delete=False)
+    def _create_exchange(self, name, type='direct', delivery_mode=2):
+        # uses direct to queue routing (anon exchange).
+        return Exchange(None)
 
     def on_task_call(self, producer, task_id):
         maybe_declare(self.binding(producer.channel), retry=True)
@@ -37,12 +37,19 @@ class RPCBackend(amqp.AMQPBackend):
     def _many_bindings(self, ids):
         return [self.binding]
 
-    def _routing_key(self, task_id, request):
-        if request:
-            return request.reply_to
-        task = current_task._get_current_object()
-        if task is not None:
-            return task.request.reply_to
+    def rkey(self, task_id):
+        return task_id
+
+    def destination_for(self, task_id, request):
+        # Request is a new argument for backends, so must still support
+        # old code that rely on current_task
+        try:
+            request = request or current_task.request
+        except AttributeError:
+            raise RuntimeError(
+                'RPC backend missing task request for {0!r}'.format(task_id),
+            )
+        return request.reply_to, request.correlation_id or task_id
 
     def on_reply_declare(self, task_id):
         pass

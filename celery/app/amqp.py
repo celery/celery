@@ -267,7 +267,6 @@ class TaskProducer(Producer):
             'utc': self.utc,
             'callbacks': callbacks,
             'errbacks': errbacks,
-            'reply_to': reply_to,
             'timelimit': (time_limit, soft_time_limit),
             'taskset': group_id or taskset_id,
             'chord': chord,
@@ -289,6 +288,8 @@ class TaskProducer(Producer):
             compression=compression or self.compression,
             headers=headers,
             retry=retry, retry_policy=_rp,
+            reply_to=reply_to,
+            correlation_id=task_id,
             delivery_mode=delivery_mode, declare=declare,
             **kwargs
         )

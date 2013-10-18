@@ -17,7 +17,7 @@ from celery.worker import WorkController as _WC
 from celery.worker import consumer
 from celery.worker import control
 from celery.worker import state as worker_state
-from celery.worker.job import TaskRequest
+from celery.worker.job import Request
 from celery.worker.state import revoked
 from celery.worker.control import Panel
 from celery.worker.pidbox import Pidbox, gPidbox
@@ -251,7 +251,12 @@ class test_ControlPanel(AppCase):
         self.panel.handle('report')
 
     def test_active(self):
-        r = TaskRequest(self.mytask.name, 'do re mi', (), {}, app=self.app)
+        r = Request({
+            'task': self.mytask.name,
+            'id': 'do re mi',
+            'args': (),
+            'kwargs': {},
+        }, app=self.app)
         worker_state.active_requests.add(r)
         try:
             self.assertTrue(self.panel.handle('dump_active'))
@@ -339,7 +344,12 @@ class test_ControlPanel(AppCase):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
         self.assertFalse(panel.handle('dump_schedule'))
-        r = TaskRequest(self.mytask.name, 'CAFEBABE', (), {}, app=self.app)
+        r = Request({
+            'task': self.mytask.name,
+            'id': 'CAFEBABE',
+            'args': (),
+            'kwargs': {},
+        }, app=self.app)
         consumer.timer.schedule.enter_at(
             consumer.timer.Entry(lambda x: x, (r, )),
             datetime.now() + timedelta(seconds=10))
@@ -350,10 +360,12 @@ class test_ControlPanel(AppCase):
 
     def test_dump_reserved(self):
         consumer = Consumer(self.app)
-        worker_state.reserved_requests.add(
-            TaskRequest(self.mytask.name, uuid(), args=(2, 2), kwargs={},
-                        app=self.app),
-        )
+        worker_state.reserved_requests.add(Request({
+            'task': self.mytask.name,
+            'id': uuid(),
+            'args': (2, 2),
+            'kwargs': {},
+        }, app=self.app))
         try:
             panel = self.create_panel(consumer=consumer)
             response = panel.handle('dump_reserved', {'safe': True})

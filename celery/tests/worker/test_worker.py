@@ -878,7 +878,7 @@ class test_WorkController(AppCase):
         backend = Mock()
         m = create_message(backend, task=self.foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = Request.from_message(m, m.decode(), app=self.app)
+        task = Request(m.decode(), message=m, app=self.app)
         worker._process_task(task)
         self.assertEqual(worker.pool.apply_async.call_count, 1)
         worker.pool.stop()
@@ -890,7 +890,7 @@ class test_WorkController(AppCase):
         backend = Mock()
         m = create_message(backend, task=self.foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = Request.from_message(m, m.decode(), app=self.app)
+        task = Request(m.decode(), message=m, app=self.app)
         worker.steps = []
         worker.blueprint.state = RUN
         with self.assertRaises(KeyboardInterrupt):
@@ -903,7 +903,7 @@ class test_WorkController(AppCase):
         backend = Mock()
         m = create_message(backend, task=self.foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = Request.from_message(m, m.decode(), app=self.app)
+        task = Request(m.decode(), message=m, app=self.app)
         worker.steps = []
         worker.blueprint.state = RUN
         with self.assertRaises(SystemExit):
@@ -916,7 +916,7 @@ class test_WorkController(AppCase):
         backend = Mock()
         m = create_message(backend, task=self.foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = Request.from_message(m, m.decode(), app=self.app)
+        task = Request(m.decode(), message=m, app=self.app)
         worker._process_task(task)
         worker.pool.stop()
 

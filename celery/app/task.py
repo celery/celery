@@ -75,6 +75,8 @@ class Context(object):
     is_eager = False
     headers = None
     delivery_info = None
+    reply_to = None
+    correlation_id = None
     taskset = None   # compat alias to group
     group = None
     chord = None

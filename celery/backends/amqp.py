@@ -70,12 +70,13 @@ class AMQPBackend(BaseBackend):
         super(AMQPBackend, self).__init__(app, **kwargs)
         conf = self.app.conf
         self._connection = connection
-        self.persistent = (conf.CELERY_RESULT_PERSISTENT if persistent is None
-                           else persistent)
+        self.persistent = self.prepare_persistent(persistent)
+        self.delivery_mode = 2 if self.persistent else 1
         exchange = exchange or conf.CELERY_RESULT_EXCHANGE
         exchange_type = exchange_type or conf.CELERY_RESULT_EXCHANGE_TYPE
-        self.exchange = self._create_exchange(exchange, exchange_type,
-                                              self.persistent)
+        self.exchange = self._create_exchange(
+            exchange, exchange_type, self.delivery_mode,
+        )
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         self.auto_delete = auto_delete
 
@@ -86,8 +87,7 @@ class AMQPBackend(BaseBackend):
             'x-expires': maybe_s_to_ms(self.expires),
         })
 
-    def _create_exchange(self, name, type='direct', persistent=True):
-        delivery_mode = persistent and 'persistent' or 'transient'
+    def _create_exchange(self, name, type='direct', delivery_mode=2):
         return self.Exchange(name=name,
                              type=type,
                              delivery_mode=delivery_mode,
@@ -95,7 +95,7 @@ class AMQPBackend(BaseBackend):
                              auto_delete=False)
 
     def _create_binding(self, task_id):
-        name = task_id.replace('-', '')
+        name = self.rkey(task_id)
         return self.Queue(name=name,
                           exchange=self.exchange,
                           routing_key=name,
@@ -106,12 +106,20 @@ class AMQPBackend(BaseBackend):
     def revive(self, channel):
         pass
 
-    def _routing_key(self, task_id, request):
+    def rkey(self, task_id):
         return task_id.replace('-', '')
+
+    def destination_for(self, task_id, request):
+        if request:
+            return self.rkey(task_id), request.correlation_id or task_id
+        return self.rkey(task_id), task_id
 
     def _store_result(self, task_id, result, status,
                       traceback=None, request=None, **kwargs):
         """Send task return value and status."""
+        routing_key, correlation_id = self.destination_for(task_id, request)
+        if not routing_key:
+            return
         with self.app.amqp.producer_pool.acquire(block=True) as producer:
             producer.publish(
                 {'task_id': task_id, 'status': status,
@@ -119,10 +127,12 @@ class AMQPBackend(BaseBackend):
                  'traceback': traceback,
                  'children': self.current_task_children(request)},
                 exchange=self.exchange,
-                routing_key=self._routing_key(task_id, request),
+                routing_key=routing_key,
+                correlation_id=correlation_id,
                 serializer=self.serializer,
                 retry=True, retry_policy=self.retry_policy,
                 declare=self.on_reply_declare(task_id),
+                delivery_mode=self.delivery_mode,
             )
         return result
 

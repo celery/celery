@@ -47,8 +47,7 @@ def default(task, app, consumer,
                   app=app, hostname=hostname,
                   eventer=eventer, task=task,
                   connection_errors=connection_errors,
-                  delivery_info=message.delivery_info,
-                  headers=message.headers)
+                  message=message)
         if req.revoked():
             return
 

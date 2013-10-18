@@ -70,6 +70,9 @@ class BaseBackend(object):
     #: in this case.
     supports_autoexpire = False
 
+    #: Set to true if the backend is peristent by default.
+    persistent = True
+
     def __init__(self, app, serializer=None,
                  max_cached_results=None, accept=None, **kwargs):
         self.app = app
@@ -187,6 +190,12 @@ class BaseBackend(object):
         if value is not None and type:
             return type(value)
         return value
+
+    def prepare_persistent(self, enabled=None):
+        if enabled is not None:
+            return enabled
+        p = self.app.conf.CELERY_RESULT_PERSISTENT
+        return self.persistent if p is None else p
 
     def encode_result(self, result, status):
         if status in self.EXCEPTION_STATES and isinstance(result, Exception):

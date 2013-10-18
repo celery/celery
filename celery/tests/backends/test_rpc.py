@@ -22,17 +22,28 @@ class test_RPCBackend(AppCase):
     def test_interface(self):
         self.b.on_reply_declare('task_id')
 
-    def test_current_routing_key(self):
+    def test_destination_for(self):
         req = Mock(name='request')
         req.reply_to = 'reply_to'
-        self.assertEqual(self.b._routing_key('task_id', req), 'reply_to')
+        req.correlation_id = 'corid'
+        self.assertTupleEqual(
+            self.b.destination_for('task_id', req),
+            ('reply_to', 'corid'),
+        )
         task = Mock()
         _task_stack.push(task)
         try:
             task.request.reply_to = 'reply_to'
-            self.assertEqual(self.b._routing_key('task_id', None), 'reply_to')
+            task.request.correlation_id = 'corid'
+            self.assertTupleEqual(
+                self.b.destination_for('task_id', None),
+                ('reply_to', 'corid'),
+            )
         finally:
             _task_stack.pop()
+
+        with self.assertRaises(RuntimeError):
+            self.b.destination_for('task_id', None)
 
     def test_binding(self):
         queue = self.b.binding

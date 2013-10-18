@@ -140,7 +140,7 @@ NAMESPACES = {
         'RESULT_EXCHANGE': Option('celeryresults'),
         'RESULT_EXCHANGE_TYPE': Option('direct'),
         'RESULT_SERIALIZER': Option('pickle'),
-        'RESULT_PERSISTENT': Option(False, type='bool'),
+        'RESULT_PERSISTENT': Option(None, type='bool'),
         'ROUTES': Option(type='any'),
         'SEND_EVENTS': Option(False, type='bool'),
         'SEND_TASK_ERROR_EMAILS': Option(False, type='bool'),

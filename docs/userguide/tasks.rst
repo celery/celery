@@ -241,6 +241,16 @@ The request defines the following attributes:
 :utc: Set to true the caller has utc enabled (:setting:`CELERY_ENABLE_UTC`).
 
 
+.. versionadded:: 3.1
+
+:headers:  Mapping of message headers (may be :const:`None`).
+
+:reply_to:  Where to send reply to (queue name).
+
+:correlation_id: Usually the same as the task id, often used in amqp
+                 to keep track of what a reply is for.
+
+
 An example task accessing information in the context is:
 
 .. code-block:: python

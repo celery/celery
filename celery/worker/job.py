@@ -7,7 +7,7 @@
     which specifies how tasks are executed.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import logging
 import socket
@@ -67,17 +67,30 @@ revoked_tasks = state.revoked
 
 NEEDS_KWDICT = sys.version_info <= (2, 6)
 
+#: Use when no message object passed to :class:`Request`.
+DEFAULT_FIELDS = {
+    'headers': None,
+    'reply_to': None,
+    'correlation_id': None,
+    'delivery_info': {
+        'exchange': None,
+        'routing_key': None,
+        'priority': 0,
+        'redelivered': False,
+    },
+}
+
 
 class Request(object):
     """A request for task execution."""
     if not IS_PYPY:  # pragma: no cover
         __slots__ = (
-            'app', 'name', 'id', 'args', 'kwargs', 'on_ack', 'delivery_info',
+            'app', 'name', 'id', 'args', 'kwargs', 'on_ack',
             'hostname', 'eventer', 'connection_errors', 'task', 'eta',
             'expires', 'request_dict', 'acknowledged', 'on_reject',
             'utc', 'time_start', 'worker_pid', '_already_revoked',
-            '_terminate_on_ack', 'headers',
-            '_tzlocal', '__weakref__',
+            '_terminate_on_ack',
+            '_tzlocal', '__weakref__', '__dict__',
         )
 
     #: Format string used to log task success.
@@ -109,8 +122,7 @@ class Request(object):
     def __init__(self, body, on_ack=noop,
                  hostname=None, eventer=None, app=None,
                  connection_errors=None, request_dict=None,
-                 delivery_info=None, headers=None, task=None,
-                 on_reject=noop, **opts):
+                 message=None, task=None, on_reject=noop, **opts):
         self.app = app
         name = self.name = body['task']
         self.id = body['id']
@@ -159,23 +171,28 @@ class Request(object):
         else:
             self.expires = None
 
-        delivery_info = {} if delivery_info is None else delivery_info
-        self.delivery_info = {
-            'exchange': delivery_info.get('exchange'),
-            'routing_key': delivery_info.get('routing_key'),
-            'priority': delivery_info.get('priority'),
-            'redelivered': delivery_info.get('redelivered'),
-        }
-        body['headers'] = headers  # pass application/headers
+        if message:
+            delivery_info = message.delivery_info or {}
+            properties = message.properties or {}
+            body.update({
+                'headers': message.headers,
+                'reply_to': properties.get('reply_to'),
+                'correlation_id': properties.get('correlation_id'),
+                'delivery_info': {
+                    'exchange': delivery_info.get('exchange'),
+                    'routing_key': delivery_info.get('routing_key'),
+                    'priority': delivery_info.get('priority'),
+                    'redelivered': delivery_info.get('redelivered'),
+                }
+
+            })
+        else:
+            body.update(DEFAULT_FIELDS)
         self.request_dict = body
 
-    @classmethod
-    def from_message(cls, message, body, **kwargs):
-        # should be deprecated
-        return Request(
-            body,
-            delivery_info=getattr(message, 'delivery_info', None), **kwargs
-        )
+    @property
+    def delivery_info(self):
+        return self.request_dict['delivery_info']
 
     def extend_with_default_kwargs(self):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -205,7 +222,7 @@ class Request(object):
         return kwargs
 
     def execute_using_pool(self, pool, **kwargs):
-        """Like :meth:`execute`, but using a worker pool.
+        """Used by the worker to send this task to the pool.
 
         :param pool: A :class:`celery.concurrency.base.TaskPool` instance.
 
@@ -538,14 +555,7 @@ class Request(object):
         # used by rpc backend when failures reported by parent process
         return self.request_dict['reply_to']
 
-
-class TaskRequest(Request):
-
-    def __init__(self, name, id, args=(), kwargs={},
-                 eta=None, expires=None, **options):
-        """Compatibility class."""
-
-        super(TaskRequest, self).__init__({
-            'task': name, 'id': id, 'args': args,
-            'kwargs': kwargs, 'eta': eta,
-            'expires': expires}, **options)
+    @property
+    def correlation_id(self):
+        # used similarly to reply_to
+        return self.request_dict['correlation_id']
