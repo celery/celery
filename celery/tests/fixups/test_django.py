@@ -149,12 +149,13 @@ class test_DjangoFixup(AppCase):
                     self.assertTrue(f.close_database.called)
                     self.assertTrue(f.close_cache.called)
 
-                # when a task is eager, do not close the db connection
+            # when a task is eager, do not close connections
+            with patch.object(f, 'close_cache'):
                 task.request.is_eager = True
                 with patch.object(f, 'close_database'):
                     f.on_task_postrun(task)
                     self.assertFalse(f.close_database.called)
-                    self.assertTrue(f.close_cache.called)
+                    self.assertFalse(f.close_cache.called)
 
     def test_close_database(self):
         with self.fixup_context(self.app) as (f, _, _):
