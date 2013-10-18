@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import sys
@@ -104,6 +104,11 @@ def retries(self):
     if not self.request.retries:
         raise self.retry(countdown=1)
     return 10
+
+
+@app.task
+def unicode():
+    print('hiöäüß')
 
 
 @app.task
