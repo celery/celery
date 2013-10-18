@@ -37,7 +37,9 @@ class RPCBackend(amqp.AMQPBackend):
     def _many_bindings(self, ids):
         return [self.binding]
 
-    def _routing_key(self, task_id):
+    def _routing_key(self, task_id, request):
+        if request:
+            return request.reply_to
         task = current_task._get_current_object()
         if task is not None:
             return task.request.reply_to

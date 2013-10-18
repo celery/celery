@@ -23,11 +23,14 @@ class test_RPCBackend(AppCase):
         self.b.on_reply_declare('task_id')
 
     def test_current_routing_key(self):
+        req = Mock(name='request')
+        req.reply_to = 'reply_to'
+        self.assertEqual(self.b._routing_key('task_id', req), 'reply_to')
         task = Mock()
         _task_stack.push(task)
         try:
             task.request.reply_to = 'reply_to'
-            self.assertEqual(self.b._routing_key('task_id'), 'reply_to')
+            self.assertEqual(self.b._routing_key('task_id', None), 'reply_to')
         finally:
             _task_stack.pop()
 

@@ -89,14 +89,15 @@ class BaseBackend(object):
         """Mark a task as started"""
         return self.store_result(task_id, meta, status=states.STARTED)
 
-    def mark_as_done(self, task_id, result):
+    def mark_as_done(self, task_id, result, request=None):
         """Mark task as successfully executed."""
-        return self.store_result(task_id, result, status=states.SUCCESS)
+        return self.store_result(task_id, result,
+                                 status=states.SUCCESS, request=request)
 
-    def mark_as_failure(self, task_id, exc, traceback=None):
+    def mark_as_failure(self, task_id, exc, traceback=None, request=None):
         """Mark task as executed with failure. Stores the execption."""
         return self.store_result(task_id, exc, status=states.FAILURE,
-                                 traceback=traceback)
+                                 traceback=traceback, request=request)
 
     def fail_from_current_stack(self, task_id, exc=None):
         type_, real_exc, tb = sys.exc_info()
@@ -108,15 +109,16 @@ class BaseBackend(object):
         finally:
             del(tb)
 
-    def mark_as_retry(self, task_id, exc, traceback=None):
+    def mark_as_retry(self, task_id, exc, traceback=None, request=None):
         """Mark task as being retries. Stores the current
         exception (if any)."""
         return self.store_result(task_id, exc, status=states.RETRY,
-                                 traceback=traceback)
+                                 traceback=traceback, request=request)
 
-    def mark_as_revoked(self, task_id, reason=''):
+    def mark_as_revoked(self, task_id, reason='', request=None):
         return self.store_result(task_id, TaskRevokedError(reason),
-                                 status=states.REVOKED, traceback=None)
+                                 status=states.REVOKED, traceback=None,
+                                 request=request)
 
     def prepare_exception(self, exc):
         """Prepare exception for serialization."""
@@ -195,10 +197,12 @@ class BaseBackend(object):
     def is_cached(self, task_id):
         return task_id in self._cache
 
-    def store_result(self, task_id, result, status, traceback=None, **kwargs):
+    def store_result(self, task_id, result, status,
+                     traceback=None, request=None, **kwargs):
         """Update task state and result."""
         result = self.encode_result(result, status)
-        self._store_result(task_id, result, status, traceback, **kwargs)
+        self._store_result(task_id, result, status, traceback,
+                           request=request, **kwargs)
         return result
 
     def forget(self, task_id):
@@ -300,10 +304,10 @@ class BaseBackend(object):
         )
     on_chord_apply = fallback_chord_unlock
 
-    def current_task_children(self):
-        current = current_task()
-        if current:
-            return [r.serializable() for r in current.request.children]
+    def current_task_children(self, request=None):
+        request = request or getattr(current_task(), 'request', None)
+        if request:
+            return [r.serializable() for r in getattr(request, 'children', [])]
 
     def __reduce__(self, args=(), kwargs={}):
         return (unpickle_backend, (self.__class__, args, kwargs))
@@ -398,9 +402,10 @@ class KeyValueStoreBackend(BaseBackend):
     def _forget(self, task_id):
         self.delete(self.get_key_for_task(task_id))
 
-    def _store_result(self, task_id, result, status, traceback=None):
+    def _store_result(self, task_id, result, status,
+                      traceback=None, request=None, **kwargs):
         meta = {'status': status, 'result': result, 'traceback': traceback,
-                'children': self.current_task_children()}
+                'children': self.current_task_children(request)}
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
 

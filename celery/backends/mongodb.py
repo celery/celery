@@ -128,14 +128,17 @@ class MongoBackend(BaseBackend):
             del(self.database)
             self._connection = None
 
-    def _store_result(self, task_id, result, status, traceback=None):
+    def _store_result(self, task_id, result, status,
+                      traceback=None, request=None, **kwargs):
         """Store return value and status of an executed task."""
         meta = {'_id': task_id,
                 'status': status,
                 'result': Binary(self.encode(result)),
                 'date_done': datetime.utcnow(),
                 'traceback': Binary(self.encode(traceback)),
-                'children': Binary(self.encode(self.current_task_children()))}
+                'children': Binary(self.encode(
+                    self.current_task_children(request),
+                ))}
         self.collection.save(meta)
 
         return result

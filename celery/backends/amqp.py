@@ -106,21 +106,24 @@ class AMQPBackend(BaseBackend):
     def revive(self, channel):
         pass
 
-    def _routing_key(self, task_id):
+    def _routing_key(self, task_id, request):
         return task_id.replace('-', '')
 
-    def _store_result(self, task_id, result, status, traceback=None):
+    def _store_result(self, task_id, result, status,
+                      traceback=None, request=None, **kwargs):
         """Send task return value and status."""
         with self.app.amqp.producer_pool.acquire(block=True) as producer:
-            producer.publish({'task_id': task_id, 'status': status,
-                              'result': self.encode_result(result, status),
-                              'traceback': traceback,
-                              'children': self.current_task_children()},
-                             exchange=self.exchange,
-                             routing_key=self._routing_key(task_id),
-                             serializer=self.serializer,
-                             retry=True, retry_policy=self.retry_policy,
-                             declare=self.on_reply_declare(task_id))
+            producer.publish(
+                {'task_id': task_id, 'status': status,
+                 'result': self.encode_result(result, status),
+                 'traceback': traceback,
+                 'children': self.current_task_children(request)},
+                exchange=self.exchange,
+                routing_key=self._routing_key(task_id, request),
+                serializer=self.serializer,
+                retry=True, retry_policy=self.retry_policy,
+                declare=self.on_reply_declare(task_id),
+            )
         return result
 
     def on_reply_declare(self, task_id):

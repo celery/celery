@@ -285,7 +285,7 @@ class Request(object):
         self.send_event('task-revoked',
                         terminated=terminated, signum=signum, expired=expired)
         if self.store_errors:
-            self.task.backend.mark_as_revoked(self.id, reason)
+            self.task.backend.mark_as_revoked(self.id, reason, request=self)
         self.acknowledge()
         self._already_revoked = True
         send_revoked(self.task, request=self,
@@ -336,7 +336,7 @@ class Request(object):
             exc = TimeLimitExceeded(timeout)
 
         if self.store_errors:
-            self.task.backend.mark_as_failure(self.id, exc)
+            self.task.backend.mark_as_failure(self.id, exc, request=self)
 
     def on_success(self, ret_value, now=None, nowfun=monotonic):
         """Handler called if the task was successfully processed."""
@@ -393,7 +393,9 @@ class Request(object):
             # time to write the result.
             if self.store_errors:
                 if isinstance(exc, WorkerLostError):
-                    self.task.backend.mark_as_failure(self.id, exc)
+                    self.task.backend.mark_as_failure(
+                        self.id, exc, request=self,
+                    )
                 elif isinstance(exc, Terminated):
                     self._announce_revoked('terminated', True, str(exc), False)
                     send_failed_event = False  # already sent revoked event
@@ -528,6 +530,11 @@ class Request(object):
     @task_name.setter  # noqa
     def task_name(self, value):
         self.name = value
+
+    @property
+    def reply_to(self):
+        # used by rpc backend when failures reported by parent process
+        return self.request_dict['reply_to']
 
 
 class TaskRequest(Request):

@@ -92,7 +92,7 @@ class DatabaseBackend(BaseBackend):
 
     @retry
     def _store_result(self, task_id, result, status,
-                      traceback=None, max_retries=3):
+                      traceback=None, max_retries=3, **kwargs):
         """Store return value and status of an executed task."""
         session = self.ResultSession()
         try:

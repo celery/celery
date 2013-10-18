@@ -135,7 +135,8 @@ class CassandraBackend(BaseBackend):
         if self._column_family is not None:
             self._column_family = None
 
-    def _store_result(self, task_id, result, status, traceback=None):
+    def _store_result(self, task_id, result, status,
+                      traceback=None, request=None, **kwargs):
         """Store return value and status of an executed task."""
 
         def _do_store():
@@ -144,7 +145,9 @@ class CassandraBackend(BaseBackend):
             meta = {'status': status,
                     'date_done': date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
                     'traceback': self.encode(traceback),
-                    'children': self.encode(self.current_task_children())}
+                    'children': self.encode(
+                        self.current_task_children(request),
+                    )}
             if self.detailed_mode:
                 meta['result'] = result
                 cf.insert(task_id, {date_done: self.encode(meta)},
