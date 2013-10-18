@@ -30,7 +30,7 @@ class SomeClass(object):
 class test_AMQPBackend(AppCase):
 
     def create_backend(self, **opts):
-        opts = dict(dict(serializer='pickle', persistent=False), **opts)
+        opts = dict(dict(serializer='pickle', persistent=True), **opts)
         return AMQPBackend(self.app, **opts)
 
     def test_mark_as_done(self):

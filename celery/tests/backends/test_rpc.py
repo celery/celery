@@ -74,8 +74,4 @@ class test_RPCBackend(AppCase):
     def test_create_exchange(self):
         ex = self.b._create_exchange('name')
         self.assertIsInstance(ex, self.b.Exchange)
-        self.assertEqual(ex.name, 'c.rep')
-        self.assertEqual(ex.type, 'direct')
-        self.assertEqual(ex.delivery_mode, 1)
-        self.assertFalse(ex.durable)
-        self.assertFalse(ex.auto_delete)
+        self.assertEqual(ex.name, '')
