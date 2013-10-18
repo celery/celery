@@ -165,10 +165,10 @@ class DjangoFixup(object):
         # See http://groups.google.com/group/django-users/
         #            browse_thread/thread/78200863d0c07c6d/
 
-        # Do not close db connection for eager tasks.
+        # Do not connections for eager tasks.
         if not getattr(sender.request, 'is_eager', False):
             self.close_database()
-        self.close_cache()
+            self.close_cache()
 
     def close_database(self, **kwargs):
         if self._close_old_connections:
