@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import platform
 import random
 import socket
+import sys
 
 from collections import namedtuple
 from itertools import count
@@ -46,6 +47,9 @@ Progress = namedtuple('Progress', (
 ))
 
 
+Inf = float('Inf')
+
+
 class StopSuite(Exception):
     pass
 
@@ -56,6 +60,22 @@ def pstatus(p):
         runtime=humanize_seconds(monotonic() - p.runtime, now='0 seconds'),
         elapsed=humanize_seconds(monotonic() - p.elapsed, now='0 seconds'),
     )
+
+
+class Speaker(object):
+
+    def __init__(self, gap=5.0):
+        self.gap = gap
+        self.last_noise = monotonic() - self.gap * 2
+
+    def beep(self):
+        now = monotonic()
+        if now - self.last_noise >= self.gap:
+            self.emit()
+            self.last_noise = now
+
+    def emit(self):
+        print('\a', file=sys.stderr, end='')
 
 
 def testgroup(*funs):
@@ -69,6 +89,7 @@ class Suite(object):
         self.connerrors = self.app.connection().recoverable_connection_errors
         self.block_timeout = block_timeout
         self.progress = None
+        self.speaker = Speaker()
 
         self.groups = {
             'all': testgroup(
@@ -98,7 +119,7 @@ class Suite(object):
         if list_all:
             return print(self.testlist(tests))
         print(self.banner(tests))
-        it = count() if repeat == float('Inf') else range(int(repeat) + 1)
+        it = count() if repeat == Inf else range(int(repeat) or 1)
         for i in it:
             marker(
                 'Stresstest suite start (repetition {0})'.format(i + 1),
@@ -167,6 +188,7 @@ class Suite(object):
                         print(pstatus(self.progress))
             except Exception:
                 failed = True
+                self.speaker.beep()
                 raise
             finally:
                 print('{0} {1} iterations in {2}s'.format(
@@ -247,11 +269,13 @@ class Suite(object):
                 return r.get(callback=on_result, propagate=propagate, **kwargs)
             except (socket.timeout, TimeoutError) as exc:
                 waiting_for = self.missing_results(r)
+                self.speaker.beep()
                 marker(
-                    'Still waiting for (0) [{1}]: {2!r}'.format(
-                        len(waiting_for), ','.join(waiting_for), exc), '!',
+                    'Still waiting for {0}/{1}: [{2}]: {3!r}'.format(
+                        len(received), len(r), ','.join(waiting_for), exc), '!',
                 )
             except self.connerrors as exc:
+                self.speaker.beep()
                 marker('join: connection lost: {0!r}'.format(exc), '!')
         raise StopSuite('Test failed: Missing task results')
 

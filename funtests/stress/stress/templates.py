@@ -67,6 +67,11 @@ class redis(default):
 
 
 @template()
+class redistore(default):
+    CELERY_RESULT_BACKEND = 'redis://'
+
+
+@template()
 class acks_late(default):
     CELERY_ACKS_LATE = True
 
