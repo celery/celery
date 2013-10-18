@@ -76,7 +76,7 @@ class Request(object):
             'hostname', 'eventer', 'connection_errors', 'task', 'eta',
             'expires', 'request_dict', 'acknowledged', 'on_reject',
             'utc', 'time_start', 'worker_pid', '_already_revoked',
-            '_terminate_on_ack',
+            '_terminate_on_ack', 'headers',
             '_tzlocal', '__weakref__',
         )
 
@@ -109,7 +109,8 @@ class Request(object):
     def __init__(self, body, on_ack=noop,
                  hostname=None, eventer=None, app=None,
                  connection_errors=None, request_dict=None,
-                 delivery_info=None, task=None, on_reject=noop, **opts):
+                 delivery_info=None, headers=None, task=None,
+                 on_reject=noop, **opts):
         self.app = app
         name = self.name = body['task']
         self.id = body['id']
@@ -165,6 +166,7 @@ class Request(object):
             'priority': delivery_info.get('priority'),
             'redelivered': delivery_info.get('redelivered'),
         }
+        body['headers'] = headers  # pass application/headers
         self.request_dict = body
 
     @classmethod

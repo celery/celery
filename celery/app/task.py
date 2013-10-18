@@ -73,6 +73,7 @@ class Context(object):
     eta = None
     expires = None
     is_eager = False
+    headers = None
     delivery_info = None
     taskset = None   # compat alias to group
     group = None
