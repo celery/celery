@@ -176,9 +176,6 @@ stop_beat () {
 
 start_beat () {
     echo "Starting ${SCRIPT_NAME}..."
-    if [ -n "$VIRTUALENV" ]; then
-        source $VIRTUALENV/bin/activate
-    fi
     $CELERYBEAT $CELERY_APP_ARG $CELERYBEAT_OPTS $DAEMON_OPTS --detach \
                 --pidfile="$CELERYBEAT_PID_FILE"
 }
