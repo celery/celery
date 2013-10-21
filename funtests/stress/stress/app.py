@@ -23,7 +23,7 @@ class App(Celery):
         super(App, self).__init__(*args, **kwargs)
         self.user_options['preload'].add(
             Option(
-                '-t', '--template', default='default',
+                '-Z', '--template', default='default',
                 help='Configuration template to use: {0}'.format(
                     template_names(),
                 ),

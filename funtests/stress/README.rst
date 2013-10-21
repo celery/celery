@@ -56,7 +56,7 @@ Ideas include:
 
 ::
 
-    $ celery -A stress worker -c1 --maxtasksperchild=1 -t acks_late
+    $ celery -A stress worker -c1 --maxtasksperchild=1 -Z acks_late
 
 
 8) Worker using eventlet pool.
@@ -80,7 +80,7 @@ test suite is currently not suited for automatic runs.
 Configuration Templates
 -----------------------
 
-You can select a configuration template using the `-t` command-line argument
+You can select a configuration template using the `-Z` command-line argument
 to any :program:`celery -A stress` command or the :program:`python -m stress`
 command when running the test suite itself.
 
@@ -108,27 +108,27 @@ The templates available are:
 You can see the resulting configuration from any template by running
 the command::
 
-    $ celery -A stress report -t redis
+    $ celery -A stress report -Z redis
 
 
 Example running the stress test using the ``redis`` configuration template::
 
-    $ python -m stress -t redis
+    $ python -m stress -Z redis
 
 Example running the worker using the ``redis`` configuration template::
 
-    $ celery -A stress worker -t redis
+    $ celery -A stress worker -Z redis
 
 
 You can also mix several templates by listing them separated by commas::
 
-    $ celery -A stress worker -t redis,acks_late
+    $ celery -A stress worker -Z redis,acks_late
 
 In this example (``redis,acks_late``) the ``redis`` template will be used
 as a configuration, and then additional keys from the ``acks_late`` template
 will be added on top as changes::
 
-    $ celery -A stress report -t redis,acks_late,pickle
+    $ celery -A stress report -Z redis,acks_late,pickle
 
 Running the client
 ------------------

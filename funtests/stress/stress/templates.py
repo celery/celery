@@ -63,6 +63,7 @@ class default(object):
 class redis(default):
     BROKER_URL = os.environ.get('CSTRESS_BROKER', 'redis://')
     CELERY_RESULT_BACKEND = os.environ.get('CSTRESS_bACKEND', 'redis://')
+    BROKER_TRANSPORT_OPTIONS = {'fanout_prefix': True}
 
 
 @template()
