@@ -257,7 +257,7 @@ class Suite(object):
     def missing_results(self, r):
         return [res.id for res in r if res.id not in res.backend._cache]
 
-    def join(self, r, propagate=False, max_retries=1, **kwargs):
+    def join(self, r, propagate=False, max_retries=5, **kwargs):
         received = []
 
         def on_result(task_id, value):
