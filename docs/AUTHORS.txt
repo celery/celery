@@ -55,6 +55,7 @@ Gunnlaugur Thor Briem <gunnlaugur@gmail.com>
 Hari <haridara@gmail.com>
 Harm Verhagen <harm.verhagen@gmail.com>
 Honza Kral <honza.kral@gmail.com>
+Ian A Wilson <ian@ianawilson.com>
 Ignas Mikalajūnas <ignas.mikalajunas@gmail.com>
 Ionel Maries Cristian <contact@ionelmc.ro>
 Ionut Turturica <jonozzz@yahoo.com>
