@@ -221,18 +221,28 @@ About the :option:`--app` argument
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :option:`--app` argument specifies the Celery app instance to use,
-it must be in the form of ``module.path:celery``, where the part before the colon
-is the name of the module, and the attribute name comes last.
-If a package name is specified instead it will automatically
-try to find a ``celery`` module in that package, and if the name
-is a module it will try to find an app in that module.
-This means that these are all equal:
+it must be in the form of ``module.path:attribute``
 
-.. code-block:: bash
+But it also supports a shortcut form If only a package name is specified,
+where it'll try to search for the app instance, in the following order:
 
-    $ celery --app=proj
-    $ celery --app=proj.celery:
-    $ celery --app=proj.celery:app
+With ``--app=proj``:
+
+1) an attribute named ``proj.app``, or
+2) an attribute named ``proj.celery``, or
+3) any attribute in the module ``proj`` where the value is a Celery
+   application, or
+
+If none of these are found it'll try a submodule named ``proj.celery``:
+
+4) an attribute named ``proj.celery.app``, or
+5) an attribute named ``proj.celery.celery``, or
+6) Any atribute in the module ``proj.celery`` where the value is a Celery
+   application.
+
+This scheme mimics the practices used in the documentation,
+i.e. ``proj:app`` for a single contained module, and ``proj.celery:app``
+for larger projects.
 
 
 .. _calling-tasks:
