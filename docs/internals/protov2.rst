@@ -24,11 +24,11 @@ Notes
     - If a message uses raw encoding then the raw data
       will be passed as a single argument to the function.
 
-    - Java/C, etc can use a thrift/protobuf document as the body
+    - Java/C, etc. can use a thrift/protobuf document as the body
 
 - Dispatches to actor based on ``c_type``, ``c_meth`` headers
 
-    c_meth is unsued by python, but may be used in the future
+    ``c_meth`` is unused by python, but may be used in the future
     to specify class+method pairs.
 
 - Chain gains a dedicated field.
@@ -55,7 +55,7 @@ Undecided
 - May consider moving callbacks/errbacks/chain into body.
 
     It's unknown if huge lists in headers will cause messaging overhead,
-    but the downside of moving them into the body is that intermiediates
+    but the downside of moving them into the body is that intermediates
     will not be able to introspect these values.
 
 Definition
