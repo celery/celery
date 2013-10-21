@@ -452,18 +452,22 @@ class Command(object):
             sym = import_from_cwd(app)
         if isinstance(sym, ModuleType):
             try:
-                return sym.celery
+                return sym.app
             except AttributeError:
-                if getattr(sym, '__path__', None):
-                    try:
-                        return self.find_app('{0}.celery:'.format(
-                                             app.replace(':', '')))
-                    except ImportError:
-                        pass
-                for suspect in values(vars(sym)):
-                    if isinstance(suspect, Celery):
-                        return suspect
-                raise
+                try:
+                    return sym.celery
+                except AttributeError:
+                    if getattr(sym, '__path__', None):
+                        try:
+                            return self.find_app(
+                                '{0}.celery:'.format(app.replace(':', '')),
+                            )
+                        except ImportError:
+                            pass
+                    for suspect in values(vars(sym)):
+                        if isinstance(suspect, Celery):
+                            return suspect
+                    raise
         return sym
 
     def symbol_by_name(self, name):
