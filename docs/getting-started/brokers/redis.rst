@@ -67,6 +67,19 @@ For a complete list of options supported by the Redis result backend, see
 Caveats
 =======
 
+- Broadcast messages will be seen by all virtual hosts by default.
+
+    You have to set a transport option to prefix the messages so that
+    they will only be received by the active virtual host::
+
+        BROKER_TRANSPORT_OPTIONS = {'fanout_prefix': True}
+
+    Note that you will not be able to communicate with workers running older
+    versions or workers that does not have this setting enabled.
+
+    This setting will be the default in the future, so better to migrate
+    sooner rather than later.
+
 - If a task is not acknowledged within the :ref:`redis-visibility_timeout`
   the task will be redelivered to another worker and executed.
 

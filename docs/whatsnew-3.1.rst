@@ -160,6 +160,20 @@ In Other News
     no longer happens as a side-effect of importing the :mod:`djcelery`
     module.
 
+- Redis: Option to separate broadcast messages by virtual host (Issue #1490).
+
+    Broadcast messages are seen by all virtual hosts when using the Redis
+    transport.  You can fix this by enabling a prefix to all channels
+    so that the messages are separated by virtual host::
+
+        BROKER_TRANSPORT_OPTIONS = {'fanout_prefix': True}
+
+    Note that you will not be able to communicate with workers running older
+    versions or workers that does not have this setting enabled.
+
+    This setting will be the default in the future, so better to migrate
+    sooner rather than later.
+
 - ``Signature.freeze()`` can now be used to "finalize" subtasks
 
     Regular subtask:
