@@ -56,6 +56,16 @@ class ParseException(Exception):
 
 
 class schedule(object):
+    """Schedule for periodic task.
+
+    :param run_every: Interval in seconds (or a :class:`~datetime.timedelta`).
+    :param relative:  If set to True the run time will be rounded to the
+        resolution of the interval.
+    :param nowfun: Function returning the current date and time
+        (class:`~datetime.datetime`).
+    :param app: Celery app instance.
+
+    """
     relative = False
 
     def __init__(self, run_every=None, relative=False, nowfun=None, app=None):
@@ -326,6 +336,15 @@ class crontab(schedule):
           advanced, such as `month_of_year='*/3'` (for the first month
           of every quarter) or `month_of_year='2-12/2'` (for every even
           numbered month).
+
+    .. attribute:: nowfun
+
+        Function returning the current date and time
+        (:class:`~datetime.datetime`).
+
+    .. attribute:: app
+
+        The Celery app instance.
 
     It is important to realize that any day on which execution should
     occur must be represented by entries in all three of the day and
