@@ -118,7 +118,7 @@ Celery is…
         - **Brokers**
 
             - :ref:`RabbitMQ <broker-rabbitmq>`, :ref:`Redis <broker-redis>`,
-            - :ref:`MongoDB <broker-mongodb>`, :ref:`Beanstalk <broker-beanstalk>`
+            - :ref:`MongoDB <broker-mongodb>`, :ref:`ZeroMQ`
             - :ref:`CouchDB <broker-couchdb>`, :ref:`SQLAlchemy <broker-sqlalchemy>`
             - :ref:`Django ORM <broker-django>`, :ref:`Amazon SQS <broker-sqs>`,
             - and more…
