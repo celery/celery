@@ -37,7 +37,7 @@ Notes
     causes problems when the recursion limit is exceeded.
 
     This is fixed in the new message protocol by specifying
-    a list of chords, each task will then pop a chain off the list
+    a list of signatures, each task will then pop a task off the list
     when sending the next message::
 
         execute_task(message)
@@ -46,7 +46,7 @@ Notes
             sig = maybe_signature(chain.pop())
             sig.apply_async(chain=chain)
 
-- ``correlation_id`` replaces task_id ``field``.
+- ``correlation_id`` replaces ``task_id`` field.
 
 
 Undecided
@@ -54,9 +54,9 @@ Undecided
 
 - May consider moving callbacks/errbacks/chain into body.
 
-    It's unknown if huge lists in headers will cause messaging overhead,
-    but the downside of moving them into the body is that intermediates
-    will not be able to introspect these values.
+    Will huge lists in headers cause overhead?
+    The downside of keeping them in the body is that intermediates
+    won't be able to introspect these values.
 
 Definition
 ==========
@@ -88,7 +88,7 @@ Definition
         'group': (uuid)group_id,
         'chord': (uuid)chord_id,
         'retries': (int)retries,
-        'time'
+        'timelimit': (tuple)(soft, hard),
     }
 
     body = (args, kwargs)
