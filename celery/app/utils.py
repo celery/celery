@@ -15,7 +15,7 @@ import re
 from collections import Mapping
 
 from celery.datastructures import ConfigurationView
-from celery.five import items
+from celery.five import items, string_t
 from celery.platforms import pyimplementation
 from celery.utils.text import pretty
 from celery.utils.imports import qualname
@@ -171,7 +171,7 @@ def filter_hidden_settings(conf):
     def maybe_censor(key, value, mask='*' * 8):
         if isinstance(value, Mapping):
             return filter_hidden_settings(value)
-        if HIDDEN_SETTINGS.search(key):
+        if isinstance(value, string_t) and HIDDEN_SETTINGS.search(key):
             return mask
         if 'BROKER_URL' in key.upper():
             from kombu import Connection
