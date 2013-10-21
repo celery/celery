@@ -274,11 +274,11 @@ class test_Gossip(AppCase):
         g = Gossip(c)
         g.start(c)
 
-        with patch('celery.worker.consumer.subtask') as subtask:
-            sig = subtask.return_value = Mock()
+        with patch('celery.worker.consumer.signature') as signature:
+            sig = signature.return_value = Mock()
             task = Mock()
             g.call_task(task)
-            subtask.assert_called_with(task)
+            signature.assert_called_with(task)
             sig.apply_async.assert_called_with()
 
             sig.apply_async.side_effect = MemoryError()

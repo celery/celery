@@ -19,7 +19,7 @@
 #    ...                           A_callback.subtask()), countdown=1)
 
 
-from celery import chord, group, task, subtask, uuid
+from celery import chord, group, task, signature, uuid
 from celery.result import AsyncResult, ResultSet
 from collections import deque
 
@@ -79,7 +79,7 @@ def unlock_graph(result, callback,
     if result.ready():
         second_level_res = result.get()
         if second_level_res.ready():
-            subtask(callback).delay(list(joinall(
+            signature(callback).delay(list(joinall(
                 second_level_res, propagate=propagate)))
     else:
         unlock_graph.retry(countdown=interval, max_retries=max_retries)

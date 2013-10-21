@@ -191,7 +191,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     success_receivers = signals.task_success.receivers
 
     from celery import canvas
-    subtask = canvas.subtask
+    signature = canvas.maybe_signature  # maybe_ does not clone if already
 
     def trace_task(uuid, args, kwargs, request=None):
         R = I = None
@@ -233,14 +233,14 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I = Info(FAILURE, exc)
                     state, retval = I.state, I.retval
                     R = I.handle_error_state(task, eager=eager)
-                    [subtask(errback).apply_async((uuid, ))
+                    [signature(errback).apply_async((uuid, ))
                         for errback in task_request.errbacks or []]
                 except BaseException as exc:
                     raise
                 else:
                     # callback tasks must be applied before the result is
                     # stored, so that result.children is populated.
-                    [subtask(callback).apply_async((retval, ))
+                    [signature(callback).apply_async((retval, ))
                         for callback in task_request.callbacks or []]
                     if publish_result:
                         store_result(

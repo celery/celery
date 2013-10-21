@@ -33,7 +33,7 @@ from kombu.utils.limits import TokenBucket
 
 from celery import bootsteps
 from celery.app.trace import build_tracer
-from celery.canvas import subtask
+from celery.canvas import signature
 from celery.exceptions import InvalidTaskError
 from celery.five import items, values
 from celery.utils.functional import noop
@@ -625,8 +625,7 @@ class Gossip(bootsteps.ConsumerStep):
 
     def call_task(self, task):
         try:
-            X = subtask(task)
-            X.apply_async()
+            signature(task).apply_async()
         except Exception as exc:
             error('Could not call task: %r', exc, exc_info=1)
 

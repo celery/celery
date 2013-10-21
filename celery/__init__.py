@@ -16,8 +16,8 @@ __homepage__ = 'http://celeryproject.org'
 __docformat__ = 'restructuredtext'
 __all__ = [
     'Celery', 'bugreport', 'shared_task', 'task',
-    'current_app', 'current_task',
-    'chain', 'chord', 'chunks', 'group', 'subtask',
+    'current_app', 'current_task', 'maybe_signature',
+    'chain', 'chord', 'chunks', 'group', 'signature',
     'xmap', 'xstarmap', 'uuid', 'version', '__version__',
 ]
 VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
@@ -50,7 +50,8 @@ if STATICA_HACK:  # pragma: no cover
     from celery.app.task import Task                     # noqa
     from celery._state import current_app, current_task  # noqa
     from celery.canvas import (                          # noqa
-        chain, chord, chunks, group, subtask, xmap, xstarmap,
+        chain, chord, chunks, group,
+        signature, maybe_signature, xmap, xstarmap, subtask,
     )
     from celery.utils import uuid                        # noqa
 
@@ -129,7 +130,8 @@ old_module, new_module = recreate_module(  # pragma: no cover
         'celery.app.task': ['Task'],
         'celery._state': ['current_app', 'current_task'],
         'celery.canvas': ['chain', 'chord', 'chunks', 'group',
-                          'subtask', 'xmap', 'xstarmap'],
+                          'signature', 'maybe_signature', 'subtask',
+                          'xmap', 'xstarmap'],
         'celery.utils': ['uuid'],
     },
     direct={'task': 'celery.task'},

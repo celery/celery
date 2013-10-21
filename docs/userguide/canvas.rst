@@ -10,28 +10,32 @@
 
 .. _canvas-subtasks:
 
-Subtasks
-========
+.. _canvas-signatures:
+
+Signatures
+==========
 
 .. versionadded:: 2.0
 
 You just learned how to call a task using the tasks ``delay`` method
 in the :ref:`calling <guide-calling>` guide, and this is often all you need,
 but sometimes you may want to pass the signature of a task invocation to
-another process or as an argument to another function, for this Celery uses
-something called *subtasks*.
+another process or as an argument to another function.
 
-A :func:`~celery.subtask` wraps the arguments, keyword arguments, and execution options
+A :func:`~celery.signature` wraps the arguments, keyword arguments, and execution options
 of a single task invocation in a way such that it can be passed to functions
 or even serialized and sent across the wire.
 
-- You can create a subtask for the ``add`` task using its name like this::
+Signatures are often nicknamed "subtasks" because they descripe a task to be called
+within a task.
 
-        >>> from celery import subtask
-        >>> subtask('tasks.add', args=(2, 2), countdown=10)
+- You can create a signature for the ``add`` task using its name like this::
+
+        >>> from celery import signature
+        >>> signature('tasks.add', args=(2, 2), countdown=10)
         tasks.add(2, 2)
 
-  This subtask has a signature of arity 2 (two arguments): ``(2, 2)``,
+  This task has a signature of arity 2 (two arguments): ``(2, 2)``,
   and sets the countdown execution option to 10.
 
 - or you can create one using the task's ``subtask`` method::
@@ -49,7 +53,7 @@ or even serialized and sent across the wire.
         >>> add.s(2, 2, debug=True)
         tasks.add(2, 2, debug=True)
 
-- From any subtask instance you can inspect the different fields::
+- From any signature instance you can inspect the different fields::
 
         >>> s = add.subtask((2, 2), {'debug': True}, countdown=10)
         >>> s.args
@@ -62,7 +66,7 @@ or even serialized and sent across the wire.
 - It supports the "Calling API" which means it supports ``delay`` and
   ``apply_async`` or being called directly.
 
-    Calling the subtask will execute the task inline in the current process::
+    Calling the signature will execute the task inline in the current process::
 
         >>> add(2, 2)
         4
@@ -93,7 +97,7 @@ or even serialized and sent across the wire.
 Partials
 --------
 
-You can execute the subtask in a worker::
+With a signature, you can execute the task in a worker::
 
     >>> add.s(2, 2).delay()
     >>> add.s(2, 2).apply_async(countdown=1)
@@ -125,7 +129,7 @@ creates partials:
     >>> s = add.subtask((2, 2), countdown=10)
     >>> s.apply_async(countdown=1)  # countdown is now 1
 
-You can also clone subtasks to create derivates:
+You can also clone signatures to create derivates:
 
     >>> s = add.s(2)
     proj.tasks.add(2)
@@ -141,28 +145,28 @@ Immutability
 Partials are meant to be used with callbacks, any tasks linked or chord
 callbacks will be applied with the result of the parent task.
 Sometimes you want to specify a callback that does not take
-additional arguments, and in that case you can set the subtask
+additional arguments, and in that case you can set the signature
 to be immutable::
 
     >>> add.apply_async((2, 2), link=reset_buffers.subtask(immutable=True))
 
-The ``.si()`` shortcut can also be used to create immutable subtasks::
+The ``.si()`` shortcut can also be used to create immutable signatures::
 
     >>> add.apply_async((2, 2), link=reset_buffers.si())
 
-Only the execution options can be set when a subtask is immutable,
-so it's not possible to call the subtask with partial args/kwargs.
+Only the execution options can be set when a signature is immutable,
+so it's not possible to call the signature with partial args/kwargs.
 
 .. note::
 
-    In this tutorial I sometimes use the prefix operator `~` to subtasks.
+    In this tutorial I sometimes use the prefix operator `~` to signatures.
     You probably shouldn't use it in your production code, but it's a handy shortcut
     when experimenting in the Python shell::
 
-        >>> ~subtask
+        >>> ~sig
 
         >>> # is the same as
-        >>> subtask.delay().get()
+        >>> sig.delay().get()
 
 
 .. _canvas-callbacks:
@@ -175,19 +179,19 @@ Callbacks
 Callbacks can be added to any task using the ``link`` argument
 to ``apply_async``::
 
-    add.apply_async((2, 2), link=other_task.subtask())
+    add.apply_async((2, 2), link=other_task.s())
 
 The callback will only be applied if the task exited successfully,
 and it will be applied with the return value of the parent task as argument.
 
-As I mentioned earlier, any arguments you add to `subtask`,
-will be prepended to the arguments specified by the subtask itself!
+As I mentioned earlier, any arguments you add to a signature,
+will be prepended to the arguments specified by the signature itself!
 
-If you have the subtask::
+If you have the signature::
 
-    >>> add.subtask(args=(10, ))
+    >>> sig = add.s(10)
 
-`subtask.delay(result)` becomes::
+then `sig.delay(result)` becomes::
 
     >>> add.apply_async(args=(result, 10))
 
@@ -196,7 +200,7 @@ If you have the subtask::
 Now let's call our ``add`` task with a callback using partial
 arguments::
 
-    >>> add.apply_async((2, 2), link=add.subtask((8, )))
+    >>> add.apply_async((2, 2), link=add.s(8))
 
 As expected this will first launch one task calculating :math:`2 + 2`, then
 another task calculating :math:`4 + 8`.
@@ -210,12 +214,12 @@ The Primitives
 
     - ``group``
 
-        The group primitive is a subtask that takes a list of tasks that should
+        The group primitive is a signature that takes a list of tasks that should
         be applied in parallel.
 
     - ``chain``
 
-        The chain primitive lets us link together subtasks so that one is called
+        The chain primitive lets us link together signatures so that one is called
         after the other, essentially forming a *chain* of callbacks.
 
     - ``chord``
@@ -253,7 +257,7 @@ The Primitives
         tasks (each processing 10 items in sequence).
 
 
-The primitives are also subtasks themselves, so that they can be combined
+The primitives are also signature objects themselves, so that they can be combined
 in any number of ways to compose complex workflows.
 
 Here's some examples:
@@ -277,13 +281,13 @@ Here's some examples:
         >>> (add.s(2, 2) | add.s(4) | add.s(8))().get()
         16
 
-- Immutable subtasks
+- Immutable signatures
 
     Signatures can be partial so arguments can be
     added to the existing arguments, but you may not always want that,
     for example if you don't want the result of the previous task in a chain.
 
-    In that case you can mark the subtask as immutable, so that the arguments
+    In that case you can mark the signature as immutable, so that the arguments
     cannot be changed::
 
         >>> add.subtask((2, 2), immutable=True)
@@ -355,7 +359,7 @@ Here's some examples:
         >>> chord((import_contact.s(c) for c in contacts),
         ...       notify_complete.si(import_id)).apply_async()
 
-    Note the use of ``.si`` above which creates an immutable subtask.
+    Note the use of ``.si`` above which creates an immutable signature.
 
 - Blow your mind by combining
 
@@ -399,7 +403,7 @@ Here's some examples:
 
 
     If you don't want to forward arguments to the group then
-    you can make the subtasks in the group immutable::
+    you can make the signatures in the group immutable::
 
         >>> res = (add.s(4, 4) | group(add.si(i, i) for i in xrange(10)))()
         >>> res.get()
@@ -464,7 +468,7 @@ too::
     ....
 
 You can link together as many tasks as you like,
-and subtasks can be linked too::
+and signatures can be linked too::
 
     >>> s = add.s(2, 2)
     >>> s.link(mul.s(4))
@@ -494,7 +498,7 @@ the error callbacks take the id of the parent task as argument instead:
                 task_id, result.result, result.traceback), file=fh)
 
 To make it even easier to link tasks together there is
-a special subtask called :class:`~celery.chain` that lets
+a special signature called :class:`~celery.chain` that lets
 you chain tasks together:
 
 .. code-block:: python
@@ -571,7 +575,7 @@ Groups
 
 A group can be used to execute several tasks in parallel.
 
-The :class:`~celery.group` function takes a list of subtasks::
+The :class:`~celery.group` function takes a list of signatures::
 
     >>> from celery import group
     >>> from proj.tasks import add
@@ -601,8 +605,8 @@ Group also supports iterators::
 
     >>> group(add.s(i, i) for i in xrange(100))()
 
-A group is a subtask instance, so it can be used in combination
-with other subtasks.
+A group is a signature object, so it can be used in combination
+with other signatures.
 
 Group Results
 ~~~~~~~~~~~~~
@@ -615,11 +619,11 @@ that it works on the group as a whole::
     >>> from tasks import add
 
     >>> job = group([
-    ...             add.subtask((2, 2)),
-    ...             add.subtask((4, 4)),
-    ...             add.subtask((8, 8)),
-    ...             add.subtask((16, 16)),
-    ...             add.subtask((32, 32)),
+    ...             add.s(2, 2),
+    ...             add.s(4, 4),
+    ...             add.s(8, 8),
+    ...             add.s(16, 16),
+    ...             add.s(32, 32),
     ... ])
 
     >>> result = job.apply_async()
@@ -727,8 +731,8 @@ Let's break the chord expression down:
 
 .. code-block:: python
 
-    >>> callback = tsum.subtask()
-    >>> header = [add.subtask((i, i)) for i in xrange(100)]
+    >>> callback = tsum.s()
+    >>> header = [add.s(i, i) for i in range(100)]
     >>> result = chord(header)(callback)
     >>> result.get()
     9900
@@ -815,17 +819,19 @@ Example decorated task:
         do_something()
 
 By default the synchronization step is implemented by having a recurring task
-poll the completion of the group every second, calling the subtask when
+poll the completion of the group every second, calling the signature when
 ready.
 
 Example implementation:
 
 .. code-block:: python
 
+    from celery import maybe_signature
+
     @app.task(bind=True)
     def unlock_chord(self, group, callback, interval=1, max_retries=None):
         if group.ready():
-            return subtask(callback).delay(group.join())
+            return maybe_signature(callback).delay(group.join())
         raise self.retry(countdown=interval, max_retries=max_retries)
 
 
@@ -895,8 +901,8 @@ is the same as having a task doing:
     def temp():
         return [add(i, i) for i in range(10)]
 
-Both ``map`` and ``starmap`` are subtasks, so they can be used as
-other subtasks and combined in groups etc., for example
+Both ``map`` and ``starmap`` are signature objects, so they can be used as
+other signatures and combined in groups etc., for example
 to call the starmap after 10 seconds::
 
     >>> add.starmap(zip(range(10), range(10))).apply_async(countdown=10)
@@ -915,7 +921,7 @@ of parallelism, but this is rarely true for a busy cluster
 and in practice since you are avoiding the overhead  of messaging
 it may considerably increase performance.
 
-To create a chunks subtask you can use :meth:`@Task.chunks`:
+To create a chunks signature you can use :meth:`@Task.chunks`:
 
 .. code-block:: python
 

@@ -15,7 +15,7 @@ from billiard.einfo import ExceptionInfo
 from celery import current_app
 from celery import states
 from celery._state import _task_stack
-from celery.canvas import subtask
+from celery.canvas import signature
 from celery.exceptions import MaxRetriesExceededError, Reject, Retry
 from celery.five import class_property, items, with_metaclass
 from celery.result import EagerResult
@@ -461,9 +461,9 @@ class Task(object):
                               :func:`kombu.compression.register`. Defaults to
                               the :setting:`CELERY_MESSAGE_COMPRESSION`
                               setting.
-        :keyword link: A single, or a list of subtasks to apply if the
+        :keyword link: A single, or a list of tasks to apply if the
                        task exits successfully.
-        :keyword link_error: A single, or a list of subtasks to apply
+        :keyword link_error: A single, or a list of tasks to apply
                       if an error occurs while executing the task.
 
         :keyword producer: :class:~@amqp.TaskProducer` instance to use.
@@ -678,11 +678,11 @@ class Task(object):
                                            task_name=self.name, **kwargs)
 
     def subtask(self, args=None, *starargs, **starkwargs):
-        """Return :class:`~celery.subtask` object for
+        """Return :class:`~celery.signature` object for
         this task, wrapping arguments and execution options
         for a single task invocation."""
         starkwargs.setdefault('app', self.app)
-        return subtask(self, args, *starargs, **starkwargs)
+        return signature(self, args, *starargs, **starkwargs)
 
     def s(self, *args, **kwargs):
         """``.s(*a, **k) -> .subtask(a, k)``"""

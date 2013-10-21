@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import time
 
-from celery import task, subtask
+from celery import task, signature
 
 
 @task()
@@ -14,7 +14,7 @@ def add(x, y):
 def add_cb(x, y, callback=None):
     result = x + y
     if callback:
-        return subtask(callback).apply_async(result)
+        return signature(callback).apply_async(result)
     return result
 
 

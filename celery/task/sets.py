@@ -11,8 +11,10 @@ from __future__ import absolute_import
 
 from celery._state import get_current_worker_task
 from celery.app import app_or_default
-from celery.canvas import subtask, maybe_subtask  # noqa
+from celery.canvas import maybe_signature  # noqa
 from celery.utils import uuid, warn_deprecated
+
+from celery.canvas import subtask   # noqa
 
 warn_deprecated(
     'celery.task.sets and TaskSet', removal='4.0',
@@ -38,7 +40,7 @@ class TaskSet(list):
     app = None
 
     def __init__(self, tasks=None, app=None, Publisher=None):
-        super(TaskSet, self).__init__(maybe_subtask(t) for t in tasks or [])
+        super(TaskSet, self).__init__(maybe_signature(t) for t in tasks or [])
         self.app = app_or_default(app or self.app)
         self.Publisher = Publisher or self.app.amqp.TaskProducer
         self.total = len(self)  # XXX compat

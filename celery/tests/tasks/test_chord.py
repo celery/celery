@@ -141,8 +141,8 @@ class test_unlock_chord_task(ChordCase):
         fail_current = self.app.backend.fail_from_current_stack = Mock()
         try:
             with patch_unlock_retry(self.app) as (unlock, retry):
-                subtask, canvas.maybe_subtask = (
-                    canvas.maybe_subtask, passthru,
+                subtask, canvas.maybe_signature = (
+                    canvas.maybe_signature, passthru,
                 )
                 if setup:
                     setup(callback)
@@ -154,7 +154,7 @@ class test_unlock_chord_task(ChordCase):
                         GroupResult=ResultCls, **kwargs
                     )
                 finally:
-                    canvas.maybe_subtask = subtask
+                    canvas.maybe_signature = subtask
                 yield callback_s, retry, fail_current
         finally:
             result.GroupResult = pts

@@ -62,7 +62,7 @@ def add_unlock_chord_task(app):
     It joins chords by creating a task chain polling the header for completion.
 
     """
-    from celery.canvas import subtask
+    from celery.canvas import signature
     from celery.exceptions import ChordError
     from celery.result import from_serializable
 
@@ -91,7 +91,7 @@ def add_unlock_chord_task(app):
         j = deps.join_native if deps.supports_native_join else deps.join
 
         if deps.ready():
-            callback = subtask(callback)
+            callback = signature(callback)
             try:
                 ret = j(propagate=propagate)
             except Exception as exc:
@@ -122,22 +122,22 @@ def add_unlock_chord_task(app):
 
 @shared_task
 def add_map_task(app):
-    from celery.canvas import subtask
+    from celery.canvas import signature
 
     @app.task(name='celery.map', _force_evaluate=True)
     def xmap(task, it):
-        task = subtask(task).type
+        task = signature(task).type
         return [task(item) for item in it]
     return xmap
 
 
 @shared_task
 def add_starmap_task(app):
-    from celery.canvas import subtask
+    from celery.canvas import signature
 
     @app.task(name='celery.starmap', _force_evaluate=True)
     def xstarmap(task, it):
-        task = subtask(task).type
+        task = signature(task).type
         return [task(*item) for item in it]
     return xstarmap
 
@@ -155,7 +155,7 @@ def add_chunk_task(app):
 @shared_task
 def add_group_task(app):
     _app = app
-    from celery.canvas import maybe_subtask, subtask
+    from celery.canvas import maybe_signature, signature
     from celery.result import from_serializable
 
     class Group(app.Task):
@@ -167,7 +167,7 @@ def add_group_task(app):
             app = self.app
             result = from_serializable(result, app)
             # any partial args are added to all tasks in the group
-            taskit = (subtask(task).clone(partial_args)
+            taskit = (signature(task).clone(partial_args)
                       for i, task in enumerate(tasks))
             if self.request.is_eager or app.conf.CELERY_ALWAYS_EAGER:
                 return app.GroupResult(
@@ -188,7 +188,7 @@ def add_group_task(app):
                 options.setdefault('task_id', uuid()))
 
             def prepare_member(task):
-                task = maybe_subtask(task)
+                task = maybe_signature(task)
                 opts = task.options
                 opts['group_id'] = group_id
                 try:
@@ -225,7 +225,7 @@ def add_group_task(app):
 
 @shared_task
 def add_chain_task(app):
-    from celery.canvas import Signature, chord, group, maybe_subtask
+    from celery.canvas import Signature, chord, group, maybe_signature
     _app = app
 
     class Chain(app.Task):
@@ -240,7 +240,7 @@ def add_chain_task(app):
             i = 0
             while steps:
                 # First task get partial args from chain.
-                task = maybe_subtask(steps.popleft())
+                task = maybe_signature(steps.popleft())
                 task = task.clone() if i else task.clone(args)
                 res = task.freeze()
                 i += 1
@@ -292,10 +292,10 @@ def add_chain_task(app):
             tasks[0].apply_async()
             return result
 
-        def apply(self, args=(), kwargs={}, subtask=maybe_subtask, **options):
+        def apply(self, args=(), kwargs={}, signature=maybe_signature, **options):
             last, fargs = None, args  # fargs passed to first task only
             for task in kwargs['tasks']:
-                res = subtask(task).clone(fargs).apply(last and (last.get(), ))
+                res = signature(task).clone(fargs).apply(last and (last.get(), ))
                 res.parent, last, fargs = last, res, None
             return last
     return Chain
@@ -304,10 +304,10 @@ def add_chain_task(app):
 @shared_task
 def add_chord_task(app):
     """Every chord is executed in a dedicated task, so that the chord
-    can be used as a subtask, and this generates the task
+    can be used as a signature, and this generates the task
     responsible for that."""
     from celery import group
-    from celery.canvas import maybe_subtask
+    from celery.canvas import maybe_signature
     _app = app
     default_propagate = app.conf.CELERY_CHORD_PROPAGATES
 
@@ -327,7 +327,7 @@ def add_chord_task(app):
 
             # - convert back to group if serialized
             tasks = header.tasks if isinstance(header, group) else header
-            header = group([maybe_subtask(s).clone() for s in tasks])
+            header = group([maybe_signature(s).clone() for s in tasks])
             # - eager applies the group inline
             if eager:
                 return header.apply(args=partial_args, task_id=group_id)
@@ -361,8 +361,8 @@ def add_chord_task(app):
                 return self.apply(args, kwargs, **options)
             header = kwargs.pop('header')
             body = kwargs.pop('body')
-            header, body = (list(maybe_subtask(header)),
-                            maybe_subtask(body))
+            header, body = (list(maybe_signature(header)),
+                            maybe_signature(body))
             # forward certain options to body
             if chord is not None:
                 body.options['chord'] = chord
@@ -380,6 +380,6 @@ def add_chord_task(app):
             body = kwargs['body']
             res = super(Chord, self).apply(args, dict(kwargs, eager=True),
                                            **options)
-            return maybe_subtask(body).apply(
+            return maybe_signature(body).apply(
                 args=(res.get(propagate=propagate).get(), ))
     return Chord

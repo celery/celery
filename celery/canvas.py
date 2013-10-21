@@ -29,7 +29,7 @@ from celery.utils.functional import (
 from celery.utils.text import truncate
 
 __all__ = ['Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
-           'group', 'chord', 'subtask', 'maybe_subtask']
+           'group', 'chord', 'signature', 'maybe_signature']
 
 
 class _getitem_property(object):
@@ -99,8 +99,8 @@ class Signature(dict):
     arguments will be ignored and the values in the dict will be used
     instead.
 
-        >>> s = subtask('tasks.add', args=(2, 2))
-        >>> subtask(s)
+        >>> s = signature('tasks.add', args=(2, 2))
+        >>> signature(s)
         {'task': 'tasks.add', args=(2, 2), kwargs={}, options={}}
 
     """
@@ -469,7 +469,7 @@ class group(Signature):
             gid = opts['task_id'] = uuid()
         new_tasks, results = [], []
         for task in self.tasks:
-            task = maybe_subtask(task).clone()
+            task = maybe_signature(task).clone()
             results.append(task._freeze())
             new_tasks.append(task)
         self.tasks = self.kwargs['tasks'] = new_tasks
@@ -501,7 +501,7 @@ class chord(Signature):
         Signature.__init__(
             self, task, args,
             dict(kwargs, header=_maybe_group(header),
-                 body=maybe_subtask(body)), **options
+                 body=maybe_signature(body)), **options
         )
         self.subtask_type = 'chord'
 
@@ -557,15 +557,17 @@ class chord(Signature):
     body = _getitem_property('kwargs.body')
 
 
-def subtask(varies, *args, **kwargs):
+def signature(varies, *args, **kwargs):
     if not (args or kwargs) and isinstance(varies, dict):
         if isinstance(varies, Signature):
             return varies.clone()
         return Signature.from_dict(varies)
     return Signature(varies, *args, **kwargs)
+subtask = signature   # XXX compat
 
 
-def maybe_subtask(d):
+def maybe_signature(d):
     if d is not None and isinstance(d, dict) and not isinstance(d, Signature):
-        return subtask(d)
+        return signature(d)
     return d
+maybe_subtask = maybe_signature  # XXX compat
