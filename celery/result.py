@@ -566,7 +566,7 @@ class ResultSet(ResultBase):
         result backends.
 
         """
-        results_index = dict(
+        results_index = None if callback else dict(
             (task_id, i) for i, task_id in enumerate(self.results)
         )
         acc = None if callback else [None for _ in range(len(self))]
