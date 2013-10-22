@@ -198,7 +198,7 @@ def dump_schedule(state, safe=False, **kwargs):
                 continue
             else:
                 if isinstance(arg0, Request):
-                    yield {'eta': waiting.eta,
+                    yield {'eta': arg0.eta.isoformat() if arg0.eta else None,
                            'priority': waiting.priority,
                            'request': arg0.info(safe=safe)}
     return list(prepare_entries())

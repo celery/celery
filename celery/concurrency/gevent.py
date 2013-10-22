@@ -75,7 +75,7 @@ class Schedule(timer2.Schedule):
 
     @property
     def queue(self):
-        return [(g.eta, g.priority, g.entry) for g in self._queue]
+        return self._queue
 
 
 class Timer(timer2.Timer):
