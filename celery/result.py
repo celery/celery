@@ -509,7 +509,8 @@ class ResultSet(ResultBase):
         :keyword callback: Optional callback to be called for every result
                            received.  Must have signature ``(task_id, value)``
                            No results will be returned by this function if
-                           a callback is specified.
+                           a callback is specified.  The order of results
+                           is also arbitrary when a callback is used.
 
         :raises celery.exceptions.TimeoutError: if `timeout` is not
             :const:`None` and the operation takes longer than `timeout`
@@ -567,8 +568,8 @@ class ResultSet(ResultBase):
         result backends.
 
         """
-        results_index = None if callback else dict(
-            (task_id, i) for i, task_id in enumerate(self.results)
+        order_index = None if callback else dict(
+            (result.id, i) for i, result in enumerate(self.results)
         )
         acc = None if callback else [None for _ in range(len(self))]
         for task_id, meta in self.iter_native(timeout, interval):
@@ -578,7 +579,7 @@ class ResultSet(ResultBase):
             if callback:
                 callback(task_id, value)
             else:
-                acc[results_index[task_id]] = value
+                acc[order_index[task_id]] = value
         return acc
 
     def _failed_join_report(self):
