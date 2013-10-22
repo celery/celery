@@ -129,6 +129,18 @@ def process_initializer(app, hostname):
     signals.worker_process_init.send(sender=None)
 
 
+def process_destructor(pid=None, code=None):
+    """Pool child process destructor
+
+    This will log a debug message and fire off a signal so that
+    users can run custom cleanup code just before a worker process
+    exits
+
+    """
+    debug("Worker process with pid %i exited with code \"%s\".",pid,code)
+    signals.worker_process_shutdown.send(sender=None)
+
+
 def _select(readers=None, writers=None, err=None, timeout=0):
     """Simple wrapper to :class:`~select.select`.
 
@@ -182,7 +194,6 @@ class Worker(_pool.Worker):
         # to accept work, this will tell the parent that the inqueue fd
         # is writable.
         self.outq.put((WORKER_UP, (pid, )))
-
 
 class ResultHandler(_pool.ResultHandler):
     """Handles messages from the pool processes."""
@@ -1004,6 +1015,7 @@ class TaskPool(BasePool):
                 else self.Pool)
         P = self._pool = Pool(processes=self.limit,
                               initializer=process_initializer,
+                              deinitializer=process_destructor,
                               synack=False,
                               **self.options)
 

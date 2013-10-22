@@ -371,6 +371,13 @@ worker_process_init
 
 Dispatched by each new pool worker process when it starts.
 
+.. signal:: worker_process_shutdown
+
+worker_process_shutdown
+~~~~~~~~~~~~~~~~~~~
+
+Dispatched by each new pool worker process when it is about to shut down.
+
 .. signal:: worker_shutdown
 
 worker_shutdown
