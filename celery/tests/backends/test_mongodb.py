@@ -79,7 +79,7 @@ class test_MongoBackend(AppCase):
 
     def test_get_connection_connection_exists(self):
 
-        with patch('pymongo.connection.Connection') as mock_Connection:
+        with patch('pymongo.MongoClient') as mock_Connection:
             self.backend._connection = sentinel._connection
 
             connection = self.backend._get_connection()
@@ -89,36 +89,38 @@ class test_MongoBackend(AppCase):
 
     def test_get_connection_no_connection_host(self):
 
-        with patch('pymongo.connection.Connection') as mock_Connection:
+        with patch('pymongo.MongoClient') as mock_Connection:
             self.backend._connection = None
-            self.backend.mongodb_host = MONGODB_HOST
-            self.backend.mongodb_port = MONGODB_PORT
+            self.backend.hostname = MONGODB_HOST
+            self.backend.port = MONGODB_PORT
             mock_Connection.return_value = sentinel.connection
 
             connection = self.backend._get_connection()
             mock_Connection.assert_called_once_with(
-                MONGODB_HOST, MONGODB_PORT, ssl=False, max_pool_size=10)
+                host='mongodb://localhost:27017', ssl=False, max_pool_size=10,
+                auto_start_request=False)
             self.assertEqual(sentinel.connection, connection)
 
     def test_get_connection_no_connection_mongodb_uri(self):
 
-        with patch('pymongo.connection.Connection') as mock_Connection:
+        with patch('pymongo.MongoClient') as mock_Connection:
             mongodb_uri = 'mongodb://%s:%d' % (MONGODB_HOST, MONGODB_PORT)
             self.backend._connection = None
-            self.backend.mongodb_host = mongodb_uri
+            self.backend.hostname = mongodb_uri
 
             mock_Connection.return_value = sentinel.connection
 
             connection = self.backend._get_connection()
             mock_Connection.assert_called_once_with(
-                mongodb_uri, ssl=False, max_pool_size=10)
+                host=mongodb_uri, ssl=False, max_pool_size=10,
+                auto_start_request=False)
             self.assertEqual(sentinel.connection, connection)
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
     def test_get_database_no_existing(self, mock_get_connection):
         # Should really check for combinations of these two, to be complete.
-        self.backend.mongodb_user = MONGODB_USER
-        self.backend.mongodb_password = MONGODB_PASSWORD
+        self.backend.user = MONGODB_USER
+        self.backend.password = MONGODB_PASSWORD
 
         mock_database = Mock()
         mock_connection = MagicMock(spec=['__getitem__'])
@@ -135,8 +137,8 @@ class test_MongoBackend(AppCase):
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
     def test_get_database_no_existing_no_auth(self, mock_get_connection):
         # Should really check for combinations of these two, to be complete.
-        self.backend.mongodb_user = None
-        self.backend.mongodb_password = None
+        self.backend.user = None
+        self.backend.password = None
 
         mock_database = Mock()
         mock_connection = MagicMock(spec=['__getitem__'])
@@ -160,7 +162,7 @@ class test_MongoBackend(AppCase):
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_store_result(self, mock_get_database):
-        self.backend.mongodb_taskmeta_collection = MONGODB_COLLECTION
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
         mock_collection = Mock()
@@ -179,7 +181,7 @@ class test_MongoBackend(AppCase):
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_get_task_meta_for(self, mock_get_database):
         datetime.datetime = self._reset['datetime']
-        self.backend.mongodb_taskmeta_collection = MONGODB_COLLECTION
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
         mock_collection = Mock()
@@ -199,7 +201,7 @@ class test_MongoBackend(AppCase):
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_get_task_meta_for_no_result(self, mock_get_database):
-        self.backend.mongodb_taskmeta_collection = MONGODB_COLLECTION
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
         mock_collection = Mock()
@@ -216,7 +218,7 @@ class test_MongoBackend(AppCase):
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_save_group(self, mock_get_database):
-        self.backend.mongodb_taskmeta_collection = MONGODB_COLLECTION
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
         mock_collection = Mock()
@@ -234,7 +236,7 @@ class test_MongoBackend(AppCase):
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_restore_group(self, mock_get_database):
-        self.backend.mongodb_taskmeta_collection = MONGODB_COLLECTION
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
         mock_collection = Mock()
@@ -256,7 +258,7 @@ class test_MongoBackend(AppCase):
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_delete_group(self, mock_get_database):
-        self.backend.mongodb_taskmeta_collection = MONGODB_COLLECTION
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
         mock_collection = Mock()
@@ -273,7 +275,7 @@ class test_MongoBackend(AppCase):
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_forget(self, mock_get_database):
-        self.backend.mongodb_taskmeta_collection = MONGODB_COLLECTION
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
         mock_collection = Mock()
@@ -292,7 +294,7 @@ class test_MongoBackend(AppCase):
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_cleanup(self, mock_get_database):
         datetime.datetime = self._reset['datetime']
-        self.backend.mongodb_taskmeta_collection = MONGODB_COLLECTION
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
         mock_collection = Mock()
@@ -312,10 +314,10 @@ class test_MongoBackend(AppCase):
         x = MongoBackend(app=self.app)
         x._get_connection = Mock()
         conn = x._get_connection.return_value = {}
-        db = conn[x.mongodb_database] = Mock()
+        db = conn[x.database_name] = Mock()
         db.authenticate.return_value = False
-        x.mongodb_user = 'jerry'
-        x.mongodb_password = 'cere4l'
+        x.user = 'jerry'
+        x.password = 'cere4l'
         with self.assertRaises(ImproperlyConfigured):
             x._get_database()
         db.authenticate.assert_called_with('jerry', 'cere4l')

@@ -47,12 +47,14 @@ class MongoBackend(BaseBackend):
     port = 27017
     user = None
     password = None
-    database = 'celery'
+    database_name = 'celery'
     taskmeta_collection = 'celery_taskmeta'
     max_pool_size = 10
     options = None
 
     supports_autoexpire = False
+
+    _connection = None
 
     def __init__(self, *args, **kwargs):
         """Initialize MongoDB backend instance.
@@ -61,6 +63,7 @@ class MongoBackend(BaseBackend):
             module :mod:`pymongo` is not available.
 
         """
+        self.options = {}
         super(MongoBackend, self).__init__(*args, **kwargs)
         self.expires = kwargs.get('expires') or maybe_timedelta(
             self.app.conf.CELERY_TASK_RESULT_EXPIRES)
@@ -70,22 +73,23 @@ class MongoBackend(BaseBackend):
                 'You need to install the pymongo library to use the '
                 'MongoDB backend.')
 
-        config = dict(self.app.conf.get('CELERY_MONGODB_BACKEND_SETTINGS', {}))
-        if config:
+        config = self.app.conf.get('CELERY_MONGODB_BACKEND_SETTINGS')
+        if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(
                     'MongoDB backend settings should be grouped in a dict')
+            config = dict(config)  # do not modify original
 
             self.hostname = config.pop('host', self.hostname)
             self.port = int(config.pop('port', self.port))
-            self.user = config.get('user', self.user)
+            self.user = config.pop('user', self.user)
             self.password = config.pop('password', self.password)
-            self.database = config.pop('database', self.database)
+            self.database_name = config.pop('database', self.database_name)
             self.taskmeta_collection = config.pop(
                 'taskmeta_collection', self.taskmeta_collection,
             )
 
-            self.options = dict(config, **config.pop('options', {}))
+            self.options = dict(config, **config.pop('options', None) or {})
 
             # Set option defaults
             self.options.setdefault('ssl', self.app.conf.BROKER_USE_SSL)
@@ -96,7 +100,6 @@ class MongoBackend(BaseBackend):
         if url:
             # Specifying backend as an URL
             self.hostname = url
-        self._connection = None
 
     def _get_connection(self):
         """Connect to the MongoDB server."""
@@ -115,10 +118,9 @@ class MongoBackend(BaseBackend):
                 url = 'mongodb://{0}:{1}'.format(url, self.port)
             if url == 'mongodb://':
                 url = url + 'localhost'
-            self._connection = MongoClient(
-                host=url, use_greenlet=detect_environment() != 'default',
-                **self.options
-            )
+            if detect_environment() != 'default':
+                self.options['use_greenlet'] = True
+            self._connection = MongoClient(host=url, **self.options)
 
         return self._connection
 
@@ -215,7 +217,7 @@ class MongoBackend(BaseBackend):
 
     def _get_database(self):
         conn = self._get_connection()
-        db = conn[self.database]
+        db = conn[self.database_name]
         if self.user and self.password:
             if not db.authenticate(self.user,
                                    self.password):
