@@ -15,6 +15,7 @@ from __future__ import absolute_import
 
 import time
 import sys
+import warnings
 
 from datetime import timedelta
 
@@ -507,7 +508,7 @@ class DisabledBackend(BaseBackend):
     _cache = {}   # need this attribute to reset cache in tests.
 
     def store_result(self, *args, **kwargs):
-        pass
+	    warnings.warn("{} consumed store_result call with args {}, {}".format(self.__class__.__name__, args, kwargs))
 
     def _is_disabled(self, *args, **kwargs):
         raise NotImplementedError(
