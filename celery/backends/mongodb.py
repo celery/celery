@@ -43,7 +43,7 @@ class Bunch(object):
 
 
 class MongoBackend(BaseBackend):
-    hostname = 'localhost'
+    host = 'localhost'
     port = 27017
     user = None
     password = None
@@ -80,7 +80,7 @@ class MongoBackend(BaseBackend):
                     'MongoDB backend settings should be grouped in a dict')
             config = dict(config)  # do not modify original
 
-            self.hostname = config.pop('host', self.hostname)
+            self.host = config.pop('host', self.host)
             self.port = int(config.pop('port', self.port))
             self.user = config.pop('user', self.user)
             self.password = config.pop('password', self.password)
@@ -99,7 +99,7 @@ class MongoBackend(BaseBackend):
         url = kwargs.get('url')
         if url:
             # Specifying backend as an URL
-            self.hostname = url
+            self.host = url
 
     def _get_connection(self):
         """Connect to the MongoDB server."""
@@ -112,7 +112,7 @@ class MongoBackend(BaseBackend):
             # but let pymongo get the port(s) from the URI instead.
             # This enables the use of replica sets and sharding.
             # See pymongo.Connection() for more info.
-            url = self.hostname
+            url = self.host
             if isinstance(url, string_t) \
                     and not url.startswith('mongodb://'):
                 url = 'mongodb://{0}:{1}'.format(url, self.port)

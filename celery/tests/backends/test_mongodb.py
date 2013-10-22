@@ -91,7 +91,7 @@ class test_MongoBackend(AppCase):
 
         with patch('pymongo.MongoClient') as mock_Connection:
             self.backend._connection = None
-            self.backend.hostname = MONGODB_HOST
+            self.backend.host = MONGODB_HOST
             self.backend.port = MONGODB_PORT
             mock_Connection.return_value = sentinel.connection
 
@@ -106,7 +106,7 @@ class test_MongoBackend(AppCase):
         with patch('pymongo.MongoClient') as mock_Connection:
             mongodb_uri = 'mongodb://%s:%d' % (MONGODB_HOST, MONGODB_PORT)
             self.backend._connection = None
-            self.backend.hostname = mongodb_uri
+            self.backend.host = mongodb_uri
 
             mock_Connection.return_value = sentinel.connection
 
