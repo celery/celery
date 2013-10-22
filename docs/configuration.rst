@@ -1696,10 +1696,13 @@ CELERYD_POOL
 
 Name of the pool class used by the worker.
 
-You can use a custom pool class name, or select one of
-the built-in aliases: ``processes``, ``eventlet``, ``gevent``.
+.. admonition:: Eventlet/Gevent
 
-Default is ``processes``.
+    Never use this option to select the eventlet or gevent pool.
+    You must use the `-P` option instead, otherwise the monkey patching
+    will happen too late and things will break in strange and silent ways.
+
+Default is ``celery.concurrency.processes:TaskPool``.
 
 .. setting:: CELERYD_POOL_RESTARTS
 
