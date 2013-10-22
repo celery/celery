@@ -566,7 +566,9 @@ class ResultSet(ResultBase):
         result backends.
 
         """
-        results = self.results
+        results_index = dict(
+            (task_id, i) for i, task_id in enumerate(self.results)
+        )
         acc = None if callback else [None for _ in range(len(self))]
         for task_id, meta in self.iter_native(timeout, interval):
             value = meta['result']
@@ -575,7 +577,7 @@ class ResultSet(ResultBase):
             if callback:
                 callback(task_id, value)
             else:
-                acc[results.index(task_id)] = value
+                acc[results_index[task_id]] = value
         return acc
 
     def _failed_join_report(self):
