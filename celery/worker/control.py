@@ -39,12 +39,32 @@ class Panel(UserDict):
 
 def _find_requests_by_id(ids, requests):
     found, total = 0, len(ids)
-    for request in worker_state.reserved_requests:
+    for request in requests:
         if request.id in ids:
             yield request
             found += 1
             if found >= total:
                 break
+
+
+@Panel.register
+def query_task(state, ids, **kwargs):
+    ids = maybe_list(ids)
+
+    def reqinfo(state, req):
+        return state, req.info()
+
+    reqs = dict((req.id, ('reserved', req.info()))
+                for req in _find_requests_by_id(
+                    ids, worker_state.reserved_requests))
+    reqs.update(dict(
+        (req.id, ('active', req.info()))
+        for req in _find_requests_by_id(
+            ids, worker_state.active_requests,
+        )
+    ))
+
+    return req
 
 
 @Panel.register

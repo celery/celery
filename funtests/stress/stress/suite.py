@@ -23,6 +23,7 @@ from .app import (
     sleeping_ignore_limits, segfault,
 )
 from .data import BIG, SMALL
+from .fbi import FBI
 
 BANNER = """\
 Celery stress-suite v{version}
@@ -90,6 +91,7 @@ class Suite(object):
         self.block_timeout = block_timeout
         self.progress = None
         self.speaker = Speaker()
+        self.fbi = FBI(app)
 
         self.groups = {
             'all': testgroup(
@@ -114,11 +116,15 @@ class Suite(object):
         }
 
     def run(self, names=None, iterations=50, offset=0,
-            numtests=None, list_all=False, repeat=0, group='all', **kw):
+            numtests=None, list_all=False, repeat=0, group='all',
+            diag=False, **kw):
+        self.fbi.enable(diag)
         tests = self.filtertests(group, names)[offset:numtests or None]
         if list_all:
             return print(self.testlist(tests))
         print(self.banner(tests))
+        print('+ Enabling events')
+        self.app.control.enable_events()
         it = count() if repeat == Inf else range(int(repeat) or 1)
         for i in it:
             marker(
@@ -159,46 +165,48 @@ class Suite(object):
         )
 
     def manyshort(self):
-        self.join(group(add.s(i, i) for i in range(1000))(), timeout=10, propagate=True)
+        self.join(group(add.s(i, i) for i in range(1000))(),
+                  timeout=10, propagate=True)
 
     def runtest(self, fun, n=50, index=0, repeats=1):
         print('{0}: [[[{1}({2})]]]'.format(repeats, fun.__name__, n))
         with blockdetection(self.block_timeout):
-            runtime = elapsed = monotonic()
-            i = 0
-            failed = False
-            self.progress = Progress(
-                fun, i, n, index, repeats, elapsed, runtime, 0,
-            )
-            _marker.delay(pstatus(self.progress))
-            try:
-                for i in range(n):
-                    runtime = monotonic()
-                    self.progress = Progress(
-                        fun, i + 1, n, index, repeats, runtime, elapsed, 0,
-                    )
-                    try:
-                        fun()
-                    except StopSuite:
-                        raise
-                    except Exception as exc:
-                        print('-> {0!r}'.format(exc))
-                        print(pstatus(self.progress))
-                    else:
-                        print(pstatus(self.progress))
-            except Exception:
-                failed = True
-                self.speaker.beep()
-                raise
-            finally:
-                print('{0} {1} iterations in {2}s'.format(
-                    'failed after' if failed else 'completed',
-                    i + 1, humanize_seconds(monotonic() - elapsed),
-                ))
-                if not failed:
-                    self.progress = Progress(
-                        fun, i + 1, n, index, repeats, runtime, elapsed, 1,
-                    )
+            with self.fbi.investigation():
+                runtime = elapsed = monotonic()
+                i = 0
+                failed = False
+                self.progress = Progress(
+                    fun, i, n, index, repeats, elapsed, runtime, 0,
+                )
+                _marker.delay(pstatus(self.progress))
+                try:
+                    for i in range(n):
+                        runtime = monotonic()
+                        self.progress = Progress(
+                            fun, i + 1, n, index, repeats, runtime, elapsed, 0,
+                        )
+                        try:
+                            fun()
+                        except StopSuite:
+                            raise
+                        except Exception as exc:
+                            print('-> {0!r}'.format(exc))
+                            print(pstatus(self.progress))
+                        else:
+                            print(pstatus(self.progress))
+                except Exception:
+                    failed = True
+                    self.speaker.beep()
+                    raise
+                finally:
+                    print('{0} {1} iterations in {2}s'.format(
+                        'failed after' if failed else 'completed',
+                        i + 1, humanize_seconds(monotonic() - elapsed),
+                    ))
+                    if not failed:
+                        self.progress = Progress(
+                            fun, i + 1, n, index, repeats, runtime, elapsed, 1,
+                        )
 
     def termbysig(self):
         self._evil_groupmember(kill)
@@ -272,8 +280,10 @@ class Suite(object):
                 self.speaker.beep()
                 marker(
                     'Still waiting for {0}/{1}: [{2}]: {3!r}'.format(
-                        len(received), len(r), ','.join(waiting_for), exc), '!',
+                        len(received), len(r),
+                        ','.join(waiting_for), exc), '!',
                 )
+                self.fbi.diag(waiting_for)
             except self.connerrors as exc:
                 self.speaker.beep()
                 marker('join: connection lost: {0!r}'.format(exc), '!')

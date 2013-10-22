@@ -101,6 +101,9 @@ class Inspect(object):
     def active_queues(self):
         return self._request('active_queues')
 
+    def query_task(self, ids):
+        return self._request('query_task', ids=ids)
+
     def conf(self):
         return self._request('dump_conf')
 

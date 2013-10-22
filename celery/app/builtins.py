@@ -292,10 +292,13 @@ def add_chain_task(app):
             tasks[0].apply_async()
             return result
 
-        def apply(self, args=(), kwargs={}, signature=maybe_signature, **options):
+        def apply(self, args=(), kwargs={}, signature=maybe_signature,
+                  **options):
             last, fargs = None, args  # fargs passed to first task only
             for task in kwargs['tasks']:
-                res = signature(task).clone(fargs).apply(last and (last.get(), ))
+                res = signature(task).clone(fargs).apply(
+                    last and (last.get(), ),
+                )
                 res.parent, last, fargs = last, res, None
             return last
     return Chain

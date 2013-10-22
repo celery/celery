@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 
 import json
-import sys
 
 from celery.utils.debug import humanbytes
 from celery.utils.imports import qualname
@@ -60,7 +59,7 @@ class JSONEncoder(json.JSONEncoder):
 
 def decode_hook(d):
     try:
-        meta = d['py/obj']
+        d = d['py/obj']
     except KeyError:
         return d
     type_registry[d['type']](**d['attrs'])

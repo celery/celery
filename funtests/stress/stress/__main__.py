@@ -32,6 +32,9 @@ class Stress(Command):
                    help='Number of times to repeat the test suite'),
             Option('-g', '--group', default='all',
                    help='Specify test group (all|green)'),
+            Option('--diag', default=False, action='store_true',
+                   help='Enable diagnostics (slow)',
+            )
         )
 
 

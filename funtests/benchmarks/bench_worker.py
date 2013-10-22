@@ -83,7 +83,7 @@ def bench_work(n=DEFAULT_ITS, loglevel='CRITICAL'):
     if loglevel:
         app.log.setup_logging_subsystem(loglevel=loglevel)
     worker = app.WorkController(concurrency=15,
-                                   queues=['bench.worker'])
+                                queues=['bench.worker'])
 
     try:
         print('STARTING WORKER')
