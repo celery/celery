@@ -97,7 +97,7 @@ class MongoBackend(BaseBackend):
     def _get_connection(self):
         """Connect to the MongoDB server."""
         if self._connection is None:
-            from pymongo.connection import Connection
+            from pymongo import MongoClient
 
             # The first pymongo.Connection() argument (host) can be
             # a list of ['host:port'] elements or a mongodb connection
@@ -105,17 +105,19 @@ class MongoBackend(BaseBackend):
             # but let pymongo get the port(s) from the URI instead.
             # This enables the use of replica sets and sharding.
             # See pymongo.Connection() for more info.
-            args = [self.mongodb_host]
+            url = self.mongodb_host
             kwargs = {
                 'max_pool_size': self.mongodb_max_pool_size,
-                'ssl': self.app.conf.BROKER_USE_SSL
+                'ssl': self.app.conf.BROKER_USE_SSL,
+                'auto_start_request': False,
             }
-            if isinstance(self.mongodb_host, string_t) \
-                    and not self.mongodb_host.startswith('mongodb://'):
-                args.append(self.mongodb_port)
-
-            self._connection = Connection(
-                *args, **dict(kwargs, **self.mongodb_options or {})
+            if isinstance(url, string_t) \
+                    and not url.startswith('mongodb://'):
+                url = 'mongodb://{0}:{1}'.format(url, self.mongodb_port)
+            if url == 'mongodb://':
+                url = url + 'localhost'
+            self._connection = MongoClient(
+                host=url, **dict(kwargs, **self.mongodb_options or {})
             )
 
         return self._connection
