@@ -27,11 +27,13 @@ logger = get_logger('celery.pool')
 
 def apply_target(target, args=(), kwargs={}, callback=None,
                  accept_callback=None, pid=None, getpid=os.getpid,
-                 monotonic=monotonic, **_):
+                 propagate=(), monotonic=monotonic, **_):
     if accept_callback:
         accept_callback(pid or getpid(), monotonic())
     try:
         ret = target(*args, **kwargs)
+    except propagate:
+        raise
     except Exception:
         raise
     except BaseException as exc:
