@@ -22,7 +22,7 @@ export CELERYD_LOGFILE=${1:-$DEFAULT_LOGFILE}
 
 get_start_date_by_task_id() {
     task_id="$1"
-    grep 'Got task from broker:' $CELERYD_LOGFILE | \
+    grep 'Received task:' $CELERYD_LOGFILE | \
         grep "$task_id" | \
         perl -nle'
             /^\[(.+?): INFO/; print $1' | \
@@ -41,8 +41,8 @@ get_end_date_by_task_id() {
 
 
 get_all_task_ids() {
- grep 'Got task from broker:' $CELERYD_LOGFILE | \
-	perl -nle'/Got task from broker:.+?\[(.+?)\]/; print($1)'
+ grep 'Received task:' $CELERYD_LOGFILE | \
+	perl -nle'/Received task:.+?\[(.+?)\]/; print($1)'
 }
 
 

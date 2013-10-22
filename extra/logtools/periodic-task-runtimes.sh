@@ -36,9 +36,9 @@ get_received_date_for_task () {
     host="$1"
     ssh "$USER@$host" "
         grep '$query' $CELERYD_LOGFILE | \
-            grep 'Got task from broker:' | \
+            grep 'Received task:' | \
             perl -nle'
-                /^\[(.+?): INFO.+?Got task from broker:(.+?)\s*/;
+                /^\[(.+?): INFO.+?Received task:(.+?)\s*/;
                 print \"[\$1] $host \$2\"' | \
             sed 's/\s*$//'
     "

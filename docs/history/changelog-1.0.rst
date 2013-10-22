@@ -1283,8 +1283,8 @@ News
 
 * Log message `Unknown task ignored...` now has log level `ERROR`
 
-* Log message `"Got task from broker"` is now emitted for all tasks, even if
-    the task has an ETA (estimated time of arrival). Also the message now
+* Log message when task is received is now emitted for all tasks, even if
+    the task has an ETA (estimated time of arrival). Also the log message now
     includes the ETA for the task (if any).
 
 * Acknowledgement now happens in the pool callback. Can't do ack in the job

@@ -42,7 +42,7 @@ variable :envvar:`CELERY_RDB_HOST`.
 When the worker encounters your breakpoint it will log the following
 information::
 
-    [INFO/MainProcess] Got task from broker:
+    [INFO/MainProcess] Received task:
         tasks.add[d7261c71-4962-47e5-b342-2448bedd20e8]
     [WARNING/PoolWorker-1] Remote Debugger:6900:
         Please telnet 127.0.0.1 6900.  Type `exit` in session to continue.

@@ -52,7 +52,7 @@ def default(task, app, consumer,
             return
 
         if _does_info:
-            info('Got task from broker: %s', req)
+            info('Received task: %s', req)
 
         if events:
             send_event(
