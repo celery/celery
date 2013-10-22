@@ -547,11 +547,12 @@ class ResultSet(ResultBase):
         result backends.
 
         """
-        if not self.results:
+        results = self.results
+        if not results:
             return iter([])
-        backend = self.results[0].backend
-        ids = [result.id for result in self.results]
-        return backend.get_many(ids, timeout=timeout, interval=interval)
+        return results[0].backend.get_many(
+            set(r.id for r in results), timeout=timeout, interval=interval,
+        )
 
     def join_native(self, timeout=None, propagate=True,
                     interval=0.5, callback=None):

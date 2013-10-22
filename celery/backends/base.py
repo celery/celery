@@ -381,7 +381,7 @@ class KeyValueStoreBackend(BaseBackend):
 
     def get_many(self, task_ids, timeout=None, interval=0.5):
         interval = 0.5 if interval is None else interval
-        ids = set(task_ids)
+        ids = task_ids if isinstance(task_ids, set) else set(task_ids)
         cached_ids = set()
         for task_id in ids:
             try:
