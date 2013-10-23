@@ -752,10 +752,10 @@ class test_WorkController(AppCase):
             ws.send.assert_called_with(sender=self.worker)
 
     def test_process_shutdown_on_worker_shutdown(self):
-        from celery.concurrency.processes import Worker
+        from celery.concurrency.processes import Worker, process_destructor
         with patch('celery.signals.worker_process_shutdown') as ws:
             Worker._make_shortcuts = Mock()
-            Worker.on_loop_stop(Worker(None,None),22,True)
+            Worker.on_loop_stop(Worker(None,None,deinitializer=process_destructor),22,'foo')
             ws.send.assert_called_with(sender=None)
 
     def test_process_task_revoked_release_semaphore(self):

@@ -119,8 +119,16 @@ def process_initializer(app, hostname):
                                       app=app)
     signals.worker_process_init.send(sender=None)
 
+
 def process_destructor(pid=None, code=None):
-    debug("   Child pid %i exited with code \"%s\".",pid,code)
+    """Pool child process destructor
+
+    This will log a debug message and fire off a signal so that
+    users can run custom cleanup code just before a worker process
+    exits
+
+    """
+    debug("Worker process with pid %i exited with code \"%s\".",pid,code)
     signals.worker_process_shutdown.send(sender=None)
 
 
