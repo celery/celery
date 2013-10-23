@@ -198,11 +198,19 @@ class test_chord(BuiltinsCase):
     def test_forward_options(self):
         body = self.xsum.s()
         x = chord([self.add.s(i, i) for i in range(10)], body=body)
+        x._type = Mock()
+        x._type.app.conf.CELERY_ALWAYS_EAGER = False
         x.apply_async(group_id='some_group_id')
-        self.assertEqual(body.options['group_id'], 'some_group_id')
+        self.assertTrue(x._type.called)
+        resbody = x._type.call_args[0][1]
+        self.assertEqual(resbody.options['group_id'], 'some_group_id')
         x2 = chord([self.add.s(i, i) for i in range(10)], body=body)
+        x2._type = Mock()
+        x2._type.app.conf.CELERY_ALWAYS_EAGER = False
         x2.apply_async(chord='some_chord_id')
-        self.assertEqual(body.options['chord'], 'some_chord_id')
+        self.assertTrue(x2._type.called)
+        resbody = x2._type.call_args[0][1]
+        self.assertEqual(resbody.options['chord'], 'some_chord_id')
 
     def test_apply_eager(self):
         self.app.conf.CELERY_ALWAYS_EAGER = True

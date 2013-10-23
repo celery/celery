@@ -201,9 +201,12 @@ class Signature(dict):
 
     def set(self, immutable=None, **options):
         if immutable is not None:
-            self.immutable = immutable
+            self.set_immutable(immutable)
         self.options.update(options)
         return self
+
+    def set_immutable(self, immutable):
+        self.immutable = immutable
 
     def apply_async(self, args=(), kwargs={}, **options):
         # For callbacks: extra args are prepended to the stored args.
@@ -419,6 +422,11 @@ def _maybe_group(tasks):
     return tasks
 
 
+def _maybe_clone(tasks):
+    return [s.clone() if isinstance(s, Signature) else signature(s)
+            for s in tasks]
+
+
 @Signature.register_type
 class group(Signature):
 
@@ -439,27 +447,38 @@ class group(Signature):
                 task['args'] = task._merge(d['args'])[0]
         return group(tasks, app=app, **kwdict(d['options']))
 
-    def apply_async(self, *args, **kwargs):
-        if not self.tasks:
-            return self.freeze()  # empty group returns GroupResult
-        return Signature.apply_async(self, *args, **kwargs)
+    def apply_async(self, args=(), kwargs=None, **options):
+        tasks = _maybe_clone(self.tasks)
+        if not tasks:
+            return self.freeze()
+        # taking the app from the first task in the list,
+        # there may be a better solution to this, e.g.
+        # consolidate tasks with the same app and apply them in
+        # batches.
+        type = tasks[0].type.app.tasks[self['task']]
+        return type(*type.prepare(dict(self.options, **options),
+                                  tasks, args))
+
+    def set_immutable(self, immutable):
+        for task in self.tasks:
+            task.set_immutable(immutable)
+
+    def link(self, sig):
+        # Simply link to first task
+        sig = sig.clone().set(immutable=True)
+        return self.tasks[0].link(sig)
+
+    def link_error(self, sig):
+        sig = sig.clone().set(immutable=True)
+        return self.tasks[0].link_error(sig)
 
     def apply(self, *args, **kwargs):
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
         return Signature.apply(self, *args, **kwargs)
 
-    def __call__(self, *partial_args, **opts):
-        tasks = [task.clone() for task in self.tasks]
-        if not tasks:
-            return
-        # taking the app from the first task in the list,
-        # there may be a better solution to this, e.g.
-        # consolidate tasks with the same app and apply them in
-        # batches.
-        type = tasks[0].type.app.tasks[self['task']]
-        return type(*type.prepare(dict(self.options, **opts),
-                                  tasks, partial_args))
+    def __call__(self, *partial_args, **options):
+        return self.apply_async(partial_args, **options)
 
     def freeze(self, _id=None):
         opts = self.options
@@ -520,16 +539,22 @@ class chord(Signature):
     def type(self):
         return self._type or self.tasks[0].type.app.tasks['celery.chord']
 
-    def __call__(self, body=None, task_id=None, **kwargs):
-        _chord = self.type
-        body = (body or self.kwargs['body']).clone()
-        kwargs = dict(self.kwargs, body=body, **kwargs)
+    def apply_async(self, args=(), kwargs={}, task_id=None, **options):
+        body = kwargs.get('body') or self.kwargs['body']
+        kwargs = dict(self.kwargs, **kwargs)
+        body = body.clone(**options)
+
+        _chord = self._type or body.type.app.tasks['celery.chord']
+
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
-            return self.apply((), kwargs)
+            return self.apply((), kwargs, task_id=task_id, **options)
         res = body.freeze(task_id)
-        parent = _chord(**kwargs)
+        parent = _chord(self.tasks, body, args, **options)
         res.parent = parent
         return res
+
+    def __call__(self, body=None, **options):
+        return self.apply_async((), {'body': body} if body else {}, **options)
 
     def clone(self, *args, **kwargs):
         s = Signature.clone(self, *args, **kwargs)
@@ -547,6 +572,11 @@ class chord(Signature):
     def link_error(self, errback):
         self.body.link_error(errback)
         return errback
+
+    def set_immutable(self, immutable):
+        # changes mutability of header only, not callback.
+        for task in self.tasks:
+            task.set_immutable(immutable)
 
     def __repr__(self):
         if self.body:

@@ -270,7 +270,7 @@ class test_group(CanvasCase):
 
     def test_call_empty_group(self):
         x = group()
-        self.assertIsNone(x())
+        self.assertFalse(len(x()))
 
     def test_skew(self):
         g = group([self.add.s(i, i) for i in range(10)])

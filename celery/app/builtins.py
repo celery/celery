@@ -189,13 +189,8 @@ def add_group_task(app):
 
             def prepare_member(task):
                 task = maybe_signature(task)
-                opts = task.options
-                opts['group_id'] = group_id
-                try:
-                    tid = opts['task_id']
-                except KeyError:
-                    tid = opts['task_id'] = uuid()
-                return task, AsyncResult(tid)
+                task.options['group_id'] = group_id
+                return task, task.freeze()
 
             try:
                 tasks, res = list(zip(
@@ -245,13 +240,14 @@ def add_chain_task(app):
                 res = task.freeze()
                 i += 1
 
-                if isinstance(task, group):
+                if isinstance(task, group) and steps and \
+                        not isinstance(steps[0], group):
                     # automatically upgrade group(..) | s to chord(group, s)
                     try:
                         next_step = steps.popleft()
                         # for chords we freeze by pretending it's a normal
                         # task instead of a group.
-                        res = Signature.freeze(task)
+                        res = Signature.freeze(next_step)
                         task = chord(task, body=next_step, task_id=res.task_id)
                     except IndexError:
                         pass  # no callback, so keep as group
@@ -259,7 +255,8 @@ def add_chain_task(app):
                     # link previous task to this task.
                     prev_task.link(task)
                     # set the results parent attribute.
-                    res.parent = prev_res
+                    if not res.parent:
+                        res.parent = prev_res
 
                 if not isinstance(prev_task, chord):
                     results.append(res)
@@ -338,6 +335,9 @@ def add_chord_task(app):
             results = [AsyncResult(prepare_member(task, body, group_id))
                        for task in header.tasks]
 
+            # - call the header group, returning the GroupResult.
+            final_res = header(*partial_args, task_id=group_id)
+
             # - fallback implementations schedules the chord_unlock task here
             app.backend.on_chord_apply(group_id, body,
                                        interval=interval,
@@ -345,8 +345,7 @@ def add_chord_task(app):
                                        max_retries=max_retries,
                                        propagate=propagate,
                                        result=results)
-            # - call the header group, returning the GroupResult.
-            return header(*partial_args, task_id=group_id)
+            return final_res
 
         def _prepare_member(self, task, body, group_id):
             opts = task.options
