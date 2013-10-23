@@ -23,13 +23,39 @@ _first_route = firstmethod('route_for_task')
 class MapRoute(object):
     """Creates a router out of a :class:`dict`."""
 
+    no_route = object()  # sentinel value representing task w/ no route
+
     def __init__(self, map):
-        self.map = map
+        self.map = {}
+        self.prefix_map = {}
+
+        for name, route in map.items():  # discern routes that are prefix vs. fully-qualified
+            if name.endswith('.'):
+                self.prefix_map[name[:-1]] = route  # slice off period suffix
+            else:
+                self.map[name] = route
 
     def route_for_task(self, task, *args, **kwargs):
+
+        def derive_route(name):
+            split = name.rsplit('.', 1)
+            if len(split) == 1:  # can't traverse any deeper
+                self.map[task] = self.no_route
+                return
+
+            name = split[0]
+            route = self.prefix_map.get(name)
+            if route:
+                self.map[task] = route
+                return dict(route)
+            return derive_route(name)
+
         route = self.map.get(task)
+        if route == self.no_route:
+            return
         if route:
             return dict(route)
+        return derive_route(task)
 
 
 class Router(object):

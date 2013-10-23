@@ -80,6 +80,7 @@ Keith Perkins <keith@tasteoftheworld.us>
 Kevin Tran <hekevintran@gmail.com>
 Kornelijus Survila <kornholijo@gmail.com>
 Leo Dirac <leo@banyanbranch.com>
+Loren Abrams <loren.abrams@gmail.com>
 Luis Clara Gomez <ekkolabs@gmail.com>
 Lukas Linhart <lukas.linhart@centrumholdings.com>
 Luke Zapart <drx@drx.pl>
