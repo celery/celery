@@ -160,6 +160,14 @@ In Other News
     no longer happens as a side-effect of importing the :mod:`djcelery`
     module.
 
+- Canvas: ``group.apply_async`` and ``chain.apply_async`` no longer starts
+  separate task.
+
+    That the group and chord primitives supported the "calling API" like other
+    subtasks was a nice idea, but it was useless in practice, often confusing
+    users.  If you still want this behavior you can create a task to do it
+    for you.
+
 - Redis: Option to separate broadcast messages by virtual host (Issue #1490).
 
     Broadcast messages are seen by all virtual hosts when using the Redis

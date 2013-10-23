@@ -317,27 +317,6 @@ Here's some examples:
         >>> res.get(timeout=1)
         [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
 
-    - For primitives `.apply_async` is special...
-
-        as it will create a temporary task to apply the tasks in,
-        for example by *applying the group*::
-
-            >>> g = group(add.s(i, i) for i in xrange(10))
-            >>> g()  # << applying
-
-        the act of sending the messages for the tasks in the group
-        will happen in the current process,
-        but with ``.apply_async`` this happens in a temporary task
-        instead::
-
-            >>> g = group(add.s(i, i) for i in xrange(10))
-            >>> g.apply_async()
-
-        This is useful because you can e.g. specify a time for the
-        messages in the group to be called::
-
-            >>> g.apply_async(countdown=10)
-
 - Simple chord
 
     The chord primitive enables us to add callback to be called when
@@ -590,14 +569,6 @@ or tell how many tasks are ready and so on::
 
     >>> g = group(add.s(2, 2), add.s(4, 4))
     >>> res = g()
-    >>> res.get()
-    [4, 8]
-
-However, if you call ``apply_async`` on the group it will
-send a special grouping task, so that the action of calling
-the tasks happens in a worker instead of the current process::
-
-    >>> res = g.apply_async()
     >>> res.get()
     [4, 8]
 
