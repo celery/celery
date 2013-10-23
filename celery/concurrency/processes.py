@@ -119,6 +119,10 @@ def process_initializer(app, hostname):
                                       app=app)
     signals.worker_process_init.send(sender=None)
 
+def process_destructor(pid=None, code=None):
+    debug("   Child pid %i exited with code \"%s\".",pid,code)
+    signals.worker_process_shutdown.send(sender=None)
+
 
 def _select(readers=None, writers=None, err=None, timeout=0):
     """Simple wrapper to :class:`~select.select`.
@@ -173,10 +177,6 @@ class Worker(_pool.Worker):
         # to accept work, this will tell the parent that the inqueue fd
         # is writable.
         self.outq.put((WORKER_UP, (pid, )))
-    def on_loop_stop(self, pid, exitcode):
-        code = "FAIL" if exitcode is None else "OK"
-        debug("   Child pid %i exited with code \"%s\".",pid,code)
-        signals.worker_process_shutdown.send(sender=None)
 
 class ResultHandler(_pool.ResultHandler):
     """Handles messages from the pool processes."""
@@ -979,6 +979,7 @@ class TaskPool(BasePool):
                 else self.Pool)
         P = self._pool = Pool(processes=self.limit,
                               initializer=process_initializer,
+                              deinitializer=process_destructor,
                               synack=False,
                               **self.options)
 
