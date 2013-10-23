@@ -19,6 +19,7 @@ import sys
 from logging.handlers import WatchedFileHandler
 
 from kombu.log import NullHandler
+from kombu.utils.encoding import set_default_encoding_file
 
 from celery import signals
 from celery._state import get_current_task
@@ -127,6 +128,13 @@ class Logging(object):
 
             # then setup the root task logger.
             self.setup_task_loggers(loglevel, logfile, colorize=colorize)
+
+        try:
+            stream = root.handlers[0].stream
+        except (AttributeError, IndexError):
+            pass
+        else:
+            set_default_encoding_file(stream)
 
         # This is a hack for multiprocessing's fork+exec, so that
         # logging before Process.run works.

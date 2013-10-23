@@ -17,10 +17,10 @@ import traceback
 from contextlib import contextmanager
 from billiard import current_process, util as mputil
 from kombu.log import get_logger as _get_logger, LOG_LEVELS
+from kombu.utils.encoding import safe_str
 
-from celery.five import string_t
+from celery.five import string_t, text_t
 
-from .encoding import safe_str
 from .term import colored
 
 __all__ = ['ColorFormatter', 'LoggingProxy', 'base_logger',
@@ -116,6 +116,7 @@ class ColorFormatter(logging.Formatter):
         return r
 
     def format(self, record):
+        sformat = logging.Formatter.format
         color = self.colors.get(record.levelname)
 
         if color and self.use_color:
@@ -127,7 +128,7 @@ class ColorFormatter(logging.Formatter):
                 # Issue #427
                 try:
                     if isinstance(msg, string_t):
-                        record.msg = safe_str(color(safe_str(msg)))
+                        record.msg = text_t(color(safe_str(msg)))
                     else:
                         record.msg = safe_str(color(msg))
                 except UnicodeDecodeError:
@@ -136,8 +137,9 @@ class ColorFormatter(logging.Formatter):
                 record.msg = '<Unrepresentable {0!r}: {1!r}>'.format(
                     type(msg), exc)
                 record.exc_info = True
-
-        return safe_str(logging.Formatter.format(self, record))
+            return sformat(self, record)
+        else:
+            return safe_str(sformat(self, record))
 
 
 class LoggingProxy(object):
