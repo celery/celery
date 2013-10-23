@@ -20,7 +20,7 @@ from kombu.log import get_logger as _get_logger, LOG_LEVELS
 
 from celery.five import string_t
 
-from .encoding import safe_str, str_t
+from .encoding import safe_str
 from .term import colored
 
 __all__ = ['ColorFormatter', 'LoggingProxy', 'base_logger',
@@ -125,10 +125,13 @@ class ColorFormatter(logging.Formatter):
                 # and color will break on non-string objects
                 # so need to reorder calls based on type.
                 # Issue #427
-                if isinstance(msg, string_t):
-                    record.msg = str_t(color(safe_str(msg)))
-                else:
-                    record.msg = safe_str(color(msg))
+                try:
+                    if isinstance(msg, string_t):
+                        record.msg = safe_str(color(safe_str(msg)))
+                    else:
+                        record.msg = safe_str(color(msg))
+                except UnicodeDecodeError:
+                    record.msg = safe_str(msg)  # skip colors
             except Exception as exc:
                 record.msg = '<Unrepresentable {0!r}: {1!r}>'.format(
                     type(msg), exc)
