@@ -488,7 +488,7 @@ class group(Signature):
             gid = opts['task_id'] = uuid()
         new_tasks, results = [], []
         for task in self.tasks:
-            task = maybe_signature(task).clone()
+            task = maybe_signature(task, app=self._app).clone()
             results.append(task._freeze())
             new_tasks.append(task)
         self.tasks = self.kwargs['tasks'] = new_tasks
@@ -520,7 +520,7 @@ class chord(Signature):
         Signature.__init__(
             self, task, args,
             dict(kwargs, header=_maybe_group(header),
-                 body=maybe_signature(body)), **options
+                 body=maybe_signature(body, app=self._app)), **options
         )
         self.subtask_type = 'chord'
 
@@ -596,8 +596,8 @@ def signature(varies, *args, **kwargs):
 subtask = signature   # XXX compat
 
 
-def maybe_signature(d):
+def maybe_signature(d, app=None):
     if d is not None and isinstance(d, dict) and not isinstance(d, Signature):
-        return signature(d)
+        return signature(d, app=app)
     return d
 maybe_subtask = maybe_signature  # XXX compat

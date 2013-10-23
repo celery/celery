@@ -233,7 +233,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I = Info(FAILURE, exc)
                     state, retval = I.state, I.retval
                     R = I.handle_error_state(task, eager=eager)
-                    [signature(errback).apply_async((uuid, ))
+                    [signature(errback, app=app).apply_async((uuid, ))
                         for errback in task_request.errbacks or []]
                 except BaseException as exc:
                     raise
@@ -241,7 +241,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     # callback tasks must be applied before the result is
                     # stored, so that result.children is populated.
                     print('CALLBACKS: %r' % (task_request.callbacks, ))
-                    [signature(callback).apply_async((retval, ))
+                    [signature(callback, app=app).apply_async((retval, ))
                         for callback in task_request.callbacks or []]
                     if publish_result:
                         store_result(

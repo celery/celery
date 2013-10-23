@@ -463,7 +463,14 @@ class KeyValueStoreBackend(BaseBackend):
         if not gid:
             return
         key = self.get_key_for_chord(gid)
-        deps = GroupResult.restore(gid, backend=task.backend)
+        try:
+            deps = GroupResult.restore(gid, backend=task.backend)
+        except Exception as exc:
+            callback = signature(task.request.chord)
+            return app._tasks[callback.task].backend.fail_from_current_stack(
+                callback.id,
+                exc=ChordError('Cannot restore group: {0!r}'.format(exc)),
+            )
         if deps is None:
             callback = signature(task.request.chord)
             return app._tasks[callback.task].backend.fail_from_current_stack(

@@ -40,8 +40,10 @@ class TaskSet(list):
     app = None
 
     def __init__(self, tasks=None, app=None, Publisher=None):
-        super(TaskSet, self).__init__(maybe_signature(t) for t in tasks or [])
         self.app = app_or_default(app or self.app)
+        super(TaskSet, self).__init__(
+            maybe_signature(t, app=self.app) for t in tasks or []
+        )
         self.Publisher = Publisher or self.app.amqp.TaskProducer
         self.total = len(self)  # XXX compat
 

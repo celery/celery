@@ -321,11 +321,13 @@ class test_chord(CanvasCase):
 class test_maybe_signature(CanvasCase):
 
     def test_is_None(self):
-        self.assertIsNone(maybe_signature(None))
+        self.assertIsNone(maybe_signature(None, app=self.app))
 
     def test_is_dict(self):
-        self.assertIsInstance(maybe_signature(dict(self.add.s())), Signature)
+        self.assertIsInstance(
+            maybe_signature(dict(self.add.s()), app=self.app), Signature,
+        )
 
     def test_when_sig(self):
         s = self.add.s()
-        self.assertIs(maybe_signature(s), s)
+        self.assertIs(maybe_signature(s, app=self.app), s)

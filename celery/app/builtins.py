@@ -183,12 +183,11 @@ def add_group_task(app):
             return result
 
         def prepare(self, options, tasks, args, **kwargs):
-            AsyncResult = self.AsyncResult
             options['group_id'] = group_id = (
                 options.setdefault('task_id', uuid()))
 
             def prepare_member(task):
-                task = maybe_signature(task)
+                task = maybe_signature(task, app=app)
                 task.options['group_id'] = group_id
                 return task, task.freeze()
 
@@ -235,7 +234,7 @@ def add_chain_task(app):
             i = 0
             while steps:
                 # First task get partial args from chain.
-                task = maybe_signature(steps.popleft())
+                task = maybe_signature(steps.popleft(), app=app)
                 task = task.clone() if i else task.clone(args)
                 res = task.freeze()
                 i += 1
@@ -327,7 +326,9 @@ def add_chord_task(app):
 
             # - convert back to group if serialized
             tasks = header.tasks if isinstance(header, group) else header
-            header = group([maybe_signature(s).clone() for s in tasks])
+            header = group([
+                maybe_signature(s, app=app).clone() for s in tasks
+            ])
             # - eager applies the group inline
             if eager:
                 return header.apply(args=partial_args, task_id=group_id)
@@ -363,8 +364,8 @@ def add_chord_task(app):
                 return self.apply(args, kwargs, **options)
             header = kwargs.pop('header')
             body = kwargs.pop('body')
-            header, body = (list(maybe_signature(header)),
-                            maybe_signature(body))
+            header, body = (list(maybe_signature(header, app=app)),
+                            maybe_signature(body, app=app))
             # forward certain options to body
             if chord is not None:
                 body.options['chord'] = chord
@@ -382,6 +383,6 @@ def add_chord_task(app):
             body = kwargs['body']
             res = super(Chord, self).apply(args, dict(kwargs, eager=True),
                                            **options)
-            return maybe_signature(body).apply(
+            return maybe_signature(body, app=app).apply(
                 args=(res.get(propagate=propagate).get(), ))
     return Chord
