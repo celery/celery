@@ -240,7 +240,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 else:
                     # callback tasks must be applied before the result is
                     # stored, so that result.children is populated.
-                    print('CALLBACKS: %r' % (task_request.callbacks, ))
                     [signature(callback, app=app).apply_async((retval, ))
                         for callback in task_request.callbacks or []]
                     if publish_result:
