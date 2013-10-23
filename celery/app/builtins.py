@@ -18,7 +18,7 @@ __all__ = ['shared_task', 'load_shared_tasks']
 
 #: global list of functions defining tasks that should be
 #: added to all apps.
-_shared_tasks = []
+_shared_tasks = set()
 
 
 def shared_task(constructor):
@@ -29,13 +29,14 @@ def shared_task(constructor):
 
     The function must take a single ``app`` argument.
     """
-    _shared_tasks.append(constructor)
+    _shared_tasks.add(constructor)
     return constructor
 
 
 def load_shared_tasks(app):
     """Create built-in tasks for an app instance."""
-    for constructor in _shared_tasks:
+    constructors = set(_shared_tasks)
+    for constructor in constructors:
         constructor(app)
 
 
@@ -49,7 +50,7 @@ def add_backend_cleanup_task(app):
     :program:`celery beat` to be running).
 
     """
-    @app.task(name='celery.backend_cleanup', _force_evaluate=True)
+    @app.task(name='celery.backend_cleanup', shared=False, _force_evaluate=True)
     def backend_cleanup():
         app.backend.cleanup()
     return backend_cleanup
@@ -68,7 +69,7 @@ def add_unlock_chord_task(app):
 
     default_propagate = app.conf.CELERY_CHORD_PROPAGATES
 
-    @app.task(name='celery.chord_unlock', max_retries=None,
+    @app.task(name='celery.chord_unlock', max_retries=None, shared=False,
               default_retry_delay=1, ignore_result=True, _force_evaluate=True)
     def unlock_chord(group_id, callback, interval=None, propagate=None,
                      max_retries=None, result=None,
@@ -124,7 +125,7 @@ def add_unlock_chord_task(app):
 def add_map_task(app):
     from celery.canvas import signature
 
-    @app.task(name='celery.map', _force_evaluate=True)
+    @app.task(name='celery.map', shared=False, _force_evaluate=True)
     def xmap(task, it):
         task = signature(task).type
         return [task(item) for item in it]
@@ -135,7 +136,7 @@ def add_map_task(app):
 def add_starmap_task(app):
     from celery.canvas import signature
 
-    @app.task(name='celery.starmap', _force_evaluate=True)
+    @app.task(name='celery.starmap', shared=False, _force_evaluate=True)
     def xstarmap(task, it):
         task = signature(task).type
         return [task(*item) for item in it]
@@ -146,7 +147,7 @@ def add_starmap_task(app):
 def add_chunk_task(app):
     from celery.canvas import chunks as _chunks
 
-    @app.task(name='celery.chunks', _force_evaluate=True)
+    @app.task(name='celery.chunks', shared=False, _force_evaluate=True)
     def chunks(task, it, n):
         return _chunks.apply_chunks(task, it, n)
     return chunks
@@ -162,6 +163,7 @@ def add_group_task(app):
         app = _app
         name = 'celery.group'
         accept_magic_kwargs = False
+        _decorated = True
 
         def run(self, tasks, result, group_id, partial_args):
             app = self.app
@@ -226,6 +228,7 @@ def add_chain_task(app):
         app = _app
         name = 'celery.chain'
         accept_magic_kwargs = False
+        _decorated = True
 
         def prepare_steps(self, args, tasks):
             steps = deque(tasks)
@@ -315,6 +318,7 @@ def add_chord_task(app):
         name = 'celery.chord'
         accept_magic_kwargs = False
         ignore_result = False
+        _decorated = True
 
         def run(self, header, body, partial_args=(), interval=None,
                 countdown=1, max_retries=None, propagate=None,

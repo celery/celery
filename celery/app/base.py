@@ -225,6 +225,7 @@ class Celery(object):
             'app': self,
             'accept_magic_kwargs': False,
             'run': fun if bind else staticmethod(fun),
+            '_decorated': True,
             '__doc__': fun.__doc__,
             '__module__': fun.__module__}, **options))()
         task = self._tasks[T.name]  # return global instance.

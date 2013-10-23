@@ -44,6 +44,23 @@ R_SELF_TASK = '<@task {0.name} bound to other {0.__self__}>'
 R_INSTANCE = '<@task: {0.name} of {app}{flags}>'
 
 
+class _CompatShared(object):
+
+    def __init__(self, name, cons):
+        self.name = name
+        self.cons = cons
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __repr__(self):
+        return '<OldTask: %r>' % (self.name, )
+
+    def __call__(self, app):
+        return self.cons(app)
+
+
+
 def _strflags(flags, default=''):
     if flags:
         return ' ({0})'.format(', '.join(flags))
@@ -121,13 +138,15 @@ class TaskType(type):
     from the module and class name.
 
     """
+    _creation_count = {}  # used by old non-abstract task classes
 
     def __new__(cls, name, bases, attrs):
         new = super(TaskType, cls).__new__
         task_module = attrs.get('__module__') or '__main__'
 
         # - Abstract class: abstract attribute should not be inherited.
-        if attrs.pop('abstract', None) or not attrs.get('autoregister', True):
+        abstract = attrs.pop('abstract', None)
+        if abstract or not attrs.get('autoregister', True):
             return new(cls, name, bases, attrs)
 
         # The 'app' attribute is now a property, with the real app located
@@ -140,6 +159,26 @@ class TaskType(type):
         task_name = attrs.get('name')
         if not task_name:
             attrs['name'] = task_name = gen_task_name(app, name, task_module)
+
+        if not attrs.get('_decorated'):
+            # non decorated tasks must also be shared in case
+            # an app is created multiple times due to modules
+            # imported under multiple names.
+            # Hairy stuff,  here to be compatible with 2.x.
+            # People should not use non-abstract task classes anymore,
+            # use the task decorator.
+            from celery.app.builtins import shared_task, _shared_tasks
+            unique_name = '.'.join([task_module, name])
+            if unique_name not in cls._creation_count:
+                # the creation count is used as a safety
+                # so that the same task is not added recursively
+                # to the set of constructors.
+                cls._creation_count[unique_name] = 1
+                shared_task(_CompatShared(
+                    unique_name,
+                    lambda app: TaskType.__new__(cls, name, bases,
+                                                 dict(attrs, _app=app)),
+                ))
 
         # - Create and register class.
         # Because of the way import happens (recursively)
