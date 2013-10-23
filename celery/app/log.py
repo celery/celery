@@ -130,7 +130,7 @@ class Logging(object):
             self.setup_task_loggers(loglevel, logfile, colorize=colorize)
 
         try:
-            stream = root.handlers[0].stream
+            stream = logging.getLogger().handlers[0].stream
         except (AttributeError, IndexError):
             pass
         else:

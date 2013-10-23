@@ -150,7 +150,7 @@ class test_ColorFormatter(AppCase):
 
         x.format(record)
         self.assertIn('<Unrepresentable', record.msg)
-        self.assertEqual(safe_str.call_count, 2)
+        self.assertEqual(safe_str.call_count, 1)
 
     @patch('celery.utils.log.safe_str')
     def test_format_raises_no_color(self, safe_str):
