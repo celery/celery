@@ -15,7 +15,7 @@ tools and support you need to run such a system in production.
 In this tutorial you will learn the absolute basics of using Celery.
 You will learn about;
 
-- Choosing and installing a message broker.
+- Choosing and installing a message transport (broker).
 - Installing Celery and creating your first task
 - Starting the worker and calling tasks.
 - Keeping track of tasks as they transition through different states,

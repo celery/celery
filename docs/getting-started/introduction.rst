@@ -17,7 +17,7 @@ machines.
 A task queue's input is a unit of work, called a task, dedicated worker
 processes then constantly monitor the queue for new work to perform.
 
-Celery communicates via messages using a broker
+Celery communicates via messages, usually using a broker
 to mediate between clients and workers.  To initiate a task a client puts a
 message on the queue, the broker then delivers the message to a worker.
 
@@ -47,9 +47,9 @@ What do I need?
     and from the next version Python 2.6 or newer is required.
     The last version to support Python 2.4 was Celery series 2.2.
 
-*Celery* requires a message broker to send and receive messages.
-The RabbitMQ, Redis and MongoDB broker transports are feature complete,
-but there's also support for a myriad of other solutions, including
+*Celery* requires a message transport to send and receive messages.
+The RabbitMQ and Redis broker transports are feature complete,
+but there's also support for a myriad of other experimental solutions, including
 using SQLite for local development.
 
 *Celery* can run on a single machine, on multiple machines, or even
@@ -118,9 +118,9 @@ Celery is…
         - **Brokers**
 
             - :ref:`RabbitMQ <broker-rabbitmq>`, :ref:`Redis <broker-redis>`,
-            - :ref:`MongoDB <broker-mongodb>`, :ref:`ZeroMQ`
-            - :ref:`CouchDB <broker-couchdb>`, :ref:`SQLAlchemy <broker-sqlalchemy>`
-            - :ref:`Django ORM <broker-django>`, :ref:`Amazon SQS <broker-sqs>`,
+            - :ref:`MongoDB <broker-mongodb>` (exp), :ref:`ZeroMQ` (exp)
+            - :ref:`CouchDB <broker-couchdb>` (exp), :ref:`SQLAlchemy <broker-sqlalchemy>` (exp)
+            - :ref:`Django ORM <broker-django>` (exp), :ref:`Amazon SQS <broker-sqs>`, (exp)
             - and more…
 
         - **Concurrency**
