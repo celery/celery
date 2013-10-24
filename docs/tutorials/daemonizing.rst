@@ -339,31 +339,33 @@ Troubleshooting
 ---------------
 
 If you can't get the init scripts to work, you should try running
-them in *verbose mode*::
+them in *verbose mode*:
 
-    $ sh -x /etc/init.d/celeryd start
+.. code-block:: bash
+
+    # sh -x /etc/init.d/celeryd start
 
 This can reveal hints as to why the service won't start.
 
-Also you will see the commands generated, so you can try to run the celeryd
-command manually to read the resulting error output.
-
-For example my `sh -x` output does this:
-
-.. code-block:: bash
-
-    ++ start-stop-daemon --start --chdir /opt/App/release/app --quiet \
-        --oknodo --background --make-pidfile --pidfile /var/run/celeryd.pid \
-        --exec /opt/App/release/app/manage.py celery worker -- --time-limit=300 \
-        -f /var/log/celeryd.log -l INFO
-
-Run the worker command after `--exec` (without the `--`) to show the
-actual resulting output:
+If the worker starts with "OK" but exits almost immediately afterwards
+and there is nothing in the log file, then there is probably an error
+but as the daemons standard outputs are already closed you'll
+not be able to see them anywhere.  For this situation you can use
+the :envvar:`C_FAKEFORK` environment variable to skip the
+daemonization step:
 
 .. code-block:: bash
 
-    $ /opt/App/release/app/manage.py celery worker --time-limit=300 \
-        -f /var/log/celeryd.log -l INFO
+    C_FAKEFORK=1 sh -x /etc/init.d/celeryd start
+
+
+and now you should be able to see the errors.
+
+Commonly such errors are caused by insufficient permissions
+to read from, or write to a file, and also by syntax errors
+in configuration modules, user modules, 3rd party libraries,
+or even from Celery itself (if you've found a bug, in which case
+you should :ref:`report it <reporting-bugs>`).
 
 .. _daemon-supervisord:
 
