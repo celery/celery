@@ -161,6 +161,11 @@ argument:
 
     $ celery -A tasks worker --loglevel=info
 
+.. note::
+
+    See the :ref:`celerytut-troubleshooting` section if the worker
+    does not start.
+
 In production you will want to run the worker in the
 background as a daemon.  To do this you need to use the tools provided
 by your platform, or something like `supervisord`_ (see :ref:`daemonizing`
@@ -389,3 +394,67 @@ Where to go from here
 If you want to learn more you should continue to the
 :ref:`Next Steps <next-steps>` tutorial, and after that you
 can study the :ref:`User Guide <guide>`.
+
+.. _celerytut-troubleshooting:
+
+Troubleshooting
+===============
+
+There's also a troubleshooting section in the :ref:`faq`.
+
+Worker does not start: Permission Error
+---------------------------------------
+
+- If you're using Debian, Ubuntu or other Debian-based distributions:
+
+    Debian recently renamed the ``/dev/shm`` special file to ``/run/shm``.
+
+    A simple workaround is to create a symbolic link:
+
+    .. code-block:: bash
+
+        # ln -s /run/shm /dev/shm
+
+- Others:
+
+    If you provide any of the :option:`--pidfile`, :option:`--logfile` or
+    ``--statedb`` arguments, then you must make sure that they
+    point to a file/directory that is writable and readable by the
+    user starting the worker.
+
+Result backend does not work or tasks are always in ``PENDING`` state.
+----------------------------------------------------------------------
+
+All tasks are ``PENDING`` by default, so the state would have been
+better named "unknown".  Celery does not update any state when a task
+is sent, and any task with no history is assumed to be pending (you know
+the task id after all).
+
+1) Make sure that the task does not have ``ignore_result`` enabled.
+
+    Enabling this option will force the worker to skip updating
+    states.
+
+2) Make sure the :setting:`CELERY_IGNORE_RESULT` setting is not enabled.
+
+3) Make sure that you do not have any old workers still running.
+
+    It's easy to start multiple workers by accident, so make sure
+    that the previous worker is properly shutdown before you start a new one.
+
+    An old worker that is not configured with the expected result backend
+    may be running and is hijacking the tasks.
+
+    The `--pidfile` argument can be set to an absolute path to make sure
+    this doesn't happen.
+
+4) Make sure the client is configured with the right backend.
+
+    If for some reason the client is configured to use a different backend
+    than the worker, you will not be able to receive the result,
+    so make sure the backend is correct by inspecting it:
+
+    .. code-block:: python
+
+        >>> result = task.delay(...)
+        >>> print(result.backend)
