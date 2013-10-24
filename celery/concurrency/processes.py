@@ -72,6 +72,7 @@ MAXTASKS_NO_BILLIARD = """\
 
 #: Constant sent by child process when started (ready to accept work)
 WORKER_UP = 15
+TASK_DONE = 1
 
 logger = get_logger(__name__)
 warning, debug = logger.warning, logger.debug
@@ -118,6 +119,18 @@ def process_initializer(app, hostname):
         task.__trace__ = build_tracer(name, task, app.loader, hostname,
                                       app=app)
     signals.worker_process_init.send(sender=None)
+
+
+def process_destructor(pid=None, code=None):
+    """Pool child process destructor
+
+    This will log a debug message and fire off a signal so that
+    users can run custom cleanup code just before a worker process
+    exits
+
+    """
+    debug("Worker process with pid %i exited with code \"%s\".",pid,code)
+    signals.worker_process_shutdown.send(sender=None)
 
 
 def _select(readers=None, writers=None, err=None, timeout=0):
@@ -174,16 +187,20 @@ class Worker(_pool.Worker):
         # is writable.
         self.outq.put((WORKER_UP, (pid, )))
 
-
 class ResultHandler(_pool.ResultHandler):
     """Handles messages from the pool processes."""
 
     def __init__(self, *args, **kwargs):
         self.fileno_to_outq = kwargs.pop('fileno_to_outq')
         self.on_process_alive = kwargs.pop('on_process_alive')
+        self.pids_running_tasks = kwargs.pop('pids_running_tasks')
         super(ResultHandler, self).__init__(*args, **kwargs)
         # add our custom message handler
         self.state_handlers[WORKER_UP] = self.on_process_alive
+
+    def on_process_complete(self,task,pid):
+        if task is not None and task[0] == TASK_DONE and self.pids_running_tasks.has_key(pid):
+            self.pids_running_tasks.pop(pid)
 
     def _process_result(self):
         """Coroutine that reads messages from the pool processes
@@ -203,12 +220,18 @@ class ResultHandler(_pool.ResultHandler):
             try:
                 if reader.poll(0):
                     ready, task = True, reader.recv()
+                    self.on_process_complete(task, proc.pid)
+                    #if task[0] == 1 and self.pids_running_tasks.has_key(proc.name):
+                    #     self.pids_running_tasks.pop(proc.name)
+                    #     logger.error("yes %d"%task[0])
+                    #else:
+                    #     logger.error("no %d"%task[0])
                 else:
                     ready, task = False, None
             except (IOError, EOFError) as exc:
                 debug('result handler got %r -- exiting', exc)
                 raise CoroStop()
-
+            
             if self._state:
                 assert self._state == TERMINATE
                 debug('result handler found thread._state==TERMINATE')
@@ -229,6 +252,8 @@ class ResultHandler(_pool.ResultHandler):
             try:
                 it.send(fileno)
             except (StopIteration, CoroStop):
+                #workername=self.fileno_to_outq[fileno].name
+                #self.on_process_complete((1), workername)
                 self._it = None
 
     def on_stop_not_started(self):
@@ -294,6 +319,10 @@ class AsynPool(_pool.Pool):
         self._fileno_to_outq = {}
         # synqueue fileno -> process mapping
         self._fileno_to_synq = {}
+
+        
+        # outqueue fileno -> running task mapping (currently just a set of running)
+        self._pids_running_tasks = {}
 
         # denormalized set of all inqueues.
         self._all_inqueues = set()
@@ -449,6 +478,7 @@ class AsynPool(_pool.Pool):
         child processes."""
         fileno_to_inq = self._fileno_to_inq
         fileno_to_synq = self._fileno_to_synq
+        pids_running_tasks = self._pids_running_tasks
         outbound = self.outbound_buffer
         pop_message = outbound.popleft
         put_message = outbound.append
@@ -465,7 +495,7 @@ class AsynPool(_pool.Pool):
         self._put_back = outbound.appendleft
         precalc = {ACK: self._create_payload(ACK, (0, )),
                    NACK: self._create_payload(NACK, (0, ))}
-
+        #self.lastfntt = None
         def on_poll_start():
             # called for every event loop iteration, and if there
             # are messages pending this will schedule writing one message
@@ -480,6 +510,11 @@ class AsynPool(_pool.Pool):
             if outbound:
                 [hub_add(fd, None, WRITE | ERR, consolidate=True)
                  for fd in diff(active_writes)]
+
+            #if not self.lastfntt == set(pids_running_tasks.keys()):
+            #    logger.error(pids_running_tasks)
+            #self.lastfntt = set(pids_running_tasks.keys())
+            
         self.on_poll_start = on_poll_start
 
         def on_inqueue_close(fd):
@@ -498,7 +533,11 @@ class AsynPool(_pool.Pool):
             shuffle(ready_fds)
             for ready_fd in ready_fds:
                 if ready_fd in active_writes:
-                    # already writing to this fd
+                    # already writing to this fd 
+                    continue
+                assoc_inq = fileno_to_inq.get(ready_fd)
+                if assoc_inq and pids_running_tasks.has_key(assoc_inq.pid):
+                    # fd exists and is already running a task
                     continue
                 try:
                     job = pop_message()
@@ -524,6 +563,7 @@ class AsynPool(_pool.Pool):
                             # another process.
                             put_message(job)
                             continue
+                        pids_running_tasks[proc.pid] = (proc.name, ready_fd)
                         cor = _write_job(proc, ready_fd, job)
                         job._writer = ref(cor)
                         mark_write_gen_as_active(cor)
@@ -600,6 +640,7 @@ class AsynPool(_pool.Pool):
                     errors = 0
             finally:
                 write_stats[proc.index] += 1
+                #pids_running_tasks[proc.name]=fd # but task running, so dont use til removed
                 # message written, so this fd is now available
                 active_writes.discard(fd)
                 write_generator_done(job._writer())  # is a weakref
@@ -762,6 +803,8 @@ class AsynPool(_pool.Pool):
         """Handler called for each *started* job when the process it
         was assigned to exited by mysterious means (error exitcodes and
         signals)"""
+        if self._pids_running_tasks.has_key(pid):
+            self._pids_running_tasks.pop(pid)
         self.mark_as_worker_lost(job, exitcode)
 
     def human_write_stats(self):
@@ -803,6 +846,7 @@ class AsynPool(_pool.Pool):
         return super(AsynPool, self).create_result_handler(
             fileno_to_outq=self._fileno_to_outq,
             on_process_alive=self.on_process_alive,
+            pids_running_tasks=self._pids_running_tasks,
         )
 
     def _process_register_queues(self, proc, queues):
@@ -976,6 +1020,7 @@ class TaskPool(BasePool):
                 else self.Pool)
         P = self._pool = Pool(processes=self.limit,
                               initializer=process_initializer,
+                              deinitializer=process_destructor,
                               synack=False,
                               **self.options)
 
