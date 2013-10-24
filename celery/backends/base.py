@@ -133,8 +133,8 @@ class BaseBackend(object):
         """Convert serialized exception to Python exception."""
         if self.serializer in EXCEPTION_ABLE_CODECS:
             return get_pickled_exception(exc)
-        return create_exception_cls(from_utf8(exc['exc_type']),
-                                    sys.modules[__name__])(exc['exc_message'])
+        return create_exception_cls(
+            from_utf8(exc['exc_type']), __name__)(exc['exc_message'])
 
     def prepare_value(self, result):
         """Prepare value for storage."""
@@ -379,17 +379,19 @@ class KeyValueStoreBackend(BaseBackend):
                         for i, value in enumerate(values)
                         if value is not None)
 
-    def get_many(self, task_ids, timeout=None, interval=0.5):
+    def get_many(self, task_ids, timeout=None, interval=0.5,
+                 READY_STATES=states.READY_STATES):
         interval = 0.5 if interval is None else interval
         ids = task_ids if isinstance(task_ids, set) else set(task_ids)
         cached_ids = set()
+        cache = self._cache
         for task_id in ids:
             try:
-                cached = self._cache[task_id]
+                cached = cache[task_id]
             except KeyError:
                 pass
             else:
-                if cached['status'] in states.READY_STATES:
+                if cached['status'] in READY_STATES:
                     yield bytes_to_str(task_id), cached
                     cached_ids.add(task_id)
 
@@ -399,7 +401,7 @@ class KeyValueStoreBackend(BaseBackend):
             keys = list(ids)
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
                                                  for k in keys]), keys)
-            self._cache.update(r)
+            cache.update(r)
             ids.difference_update(set(bytes_to_str(v) for v in r))
             for key, value in items(r):
                 yield bytes_to_str(key), value

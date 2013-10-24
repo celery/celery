@@ -114,8 +114,8 @@ class AMQPBackend(BaseBackend):
             return self.rkey(task_id), request.correlation_id or task_id
         return self.rkey(task_id), task_id
 
-    def _store_result(self, task_id, result, status,
-                      traceback=None, request=None, **kwargs):
+    def store_result(self, task_id, result, status,
+                     traceback=None, request=None, **kwargs):
         """Send task return value and status."""
         routing_key, correlation_id = self.destination_for(task_id, request)
         if not routing_key:
@@ -230,7 +230,8 @@ class AMQPBackend(BaseBackend):
 
     def get_many(self, task_ids, timeout=None,
                  now=monotonic, getfields=itemgetter('status', 'task_id'),
-                 READY_STATES=states.READY_STATES, **kwargs):
+                 READY_STATES=states.READY_STATES,
+                 PROPAGATE_STATES=states.PROPAGATE_STATES, **kwargs):
         with self.app.pool.acquire_channel(block=True) as (conn, channel):
             ids = set(task_ids)
             cached_ids = set()
@@ -248,11 +249,14 @@ class AMQPBackend(BaseBackend):
             results = deque()
             push_result = results.append
             push_cache = self._cache.__setitem__
+            to_exception = self.exception_to_python
 
             def on_message(message):
                 body = message.decode()
                 state, uid = getfields(body)
                 if state in READY_STATES:
+                    if state in PROPAGATE_STATES:
+                        body['result'] = to_exception(body['result'])
                     push_result(body) \
                         if uid in task_ids else push_cache(uid, body)
 
