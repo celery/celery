@@ -278,7 +278,7 @@ class test_Gossip(AppCase):
             sig = signature.return_value = Mock()
             task = Mock()
             g.call_task(task)
-            signature.assert_called_with(task)
+            signature.assert_called_with(task, app=c.app)
             sig.apply_async.assert_called_with()
 
             sig.apply_async.side_effect = MemoryError()

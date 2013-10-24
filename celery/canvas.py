@@ -422,8 +422,8 @@ def _maybe_group(tasks):
     return tasks
 
 
-def _maybe_clone(tasks):
-    return [s.clone() if isinstance(s, Signature) else signature(s)
+def _maybe_clone(tasks, app):
+    return [s.clone() if isinstance(s, Signature) else signature(s, app=app)
             for s in tasks]
 
 
@@ -448,7 +448,7 @@ class group(Signature):
         return group(tasks, app=app, **kwdict(d['options']))
 
     def apply_async(self, args=(), kwargs=None, **options):
-        tasks = _maybe_clone(self.tasks)
+        tasks = _maybe_clone(self.tasks, app=self._app)
         if not tasks:
             return self.freeze()
         # taking the app from the first task in the list,
@@ -597,7 +597,10 @@ subtask = signature   # XXX compat
 
 
 def maybe_signature(d, app=None):
-    if d is not None and isinstance(d, dict) and not isinstance(d, Signature):
-        return signature(d, app=app)
-    return d
+    if d is not None and isinstance(d, dict):
+        if not isinstance(d, Signature):
+            return signature(d, app=app)
+        if app is not None:
+            d._app = app
+        return d
 maybe_subtask = maybe_signature  # XXX compat

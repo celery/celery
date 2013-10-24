@@ -50,7 +50,8 @@ def add_backend_cleanup_task(app):
     :program:`celery beat` to be running).
 
     """
-    @app.task(name='celery.backend_cleanup', shared=False, _force_evaluate=True)
+    @app.task(name='celery.backend_cleanup',
+              shared=False, _force_evaluate=True)
     def backend_cleanup():
         app.backend.cleanup()
     return backend_cleanup
@@ -92,7 +93,7 @@ def add_unlock_chord_task(app):
         j = deps.join_native if deps.supports_native_join else deps.join
 
         if deps.ready():
-            callback = signature(callback)
+            callback = signature(callback, app=app)
             try:
                 ret = j(propagate=propagate)
             except Exception as exc:
@@ -127,7 +128,7 @@ def add_map_task(app):
 
     @app.task(name='celery.map', shared=False, _force_evaluate=True)
     def xmap(task, it):
-        task = signature(task).type
+        task = signature(task, app=app).type
         return [task(item) for item in it]
     return xmap
 
@@ -138,7 +139,7 @@ def add_starmap_task(app):
 
     @app.task(name='celery.starmap', shared=False, _force_evaluate=True)
     def xstarmap(task, it):
-        task = signature(task).type
+        task = signature(task, app=app).type
         return [task(*item) for item in it]
     return xstarmap
 
@@ -169,7 +170,7 @@ def add_group_task(app):
             app = self.app
             result = from_serializable(result, app)
             # any partial args are added to all tasks in the group
-            taskit = (signature(task).clone(partial_args)
+            taskit = (signature(task, app=app).clone(partial_args)
                       for i, task in enumerate(tasks))
             if self.request.is_eager or app.conf.CELERY_ALWAYS_EAGER:
                 return app.GroupResult(
@@ -189,7 +190,7 @@ def add_group_task(app):
                 options.setdefault('task_id', uuid()))
 
             def prepare_member(task):
-                task = maybe_signature(task, app=app)
+                task = maybe_signature(task, app=self.app)
                 task.options['group_id'] = group_id
                 return task, task.freeze()
 
@@ -231,6 +232,7 @@ def add_chain_task(app):
         _decorated = True
 
         def prepare_steps(self, args, tasks):
+            app = self.app
             steps = deque(tasks)
             next_step = prev_task = prev_res = None
             tasks, results = [], []
@@ -293,9 +295,10 @@ def add_chain_task(app):
 
         def apply(self, args=(), kwargs={}, signature=maybe_signature,
                   **options):
+            app = self.app
             last, fargs = None, args  # fargs passed to first task only
             for task in kwargs['tasks']:
-                res = signature(task).clone(fargs).apply(
+                res = signature(task, app=app).clone(fargs).apply(
                     last and (last.get(), ),
                 )
                 res.parent, last, fargs = last, res, None
@@ -323,9 +326,10 @@ def add_chord_task(app):
         def run(self, header, body, partial_args=(), interval=None,
                 countdown=1, max_retries=None, propagate=None,
                 eager=False, **kwargs):
+            app = self.app
             propagate = default_propagate if propagate is None else propagate
             group_id = uuid()
-            AsyncResult = self.app.AsyncResult
+            AsyncResult = app.AsyncResult
             prepare_member = self._prepare_member
 
             # - convert back to group if serialized
@@ -364,7 +368,8 @@ def add_chord_task(app):
 
         def apply_async(self, args=(), kwargs={}, task_id=None,
                         group_id=None, chord=None, **options):
-            if self.app.conf.CELERY_ALWAYS_EAGER:
+            app = self.app
+            if app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
             header = kwargs.pop('header')
             body = kwargs.pop('body')
@@ -387,6 +392,6 @@ def add_chord_task(app):
             body = kwargs['body']
             res = super(Chord, self).apply(args, dict(kwargs, eager=True),
                                            **options)
-            return maybe_signature(body, app=app).apply(
+            return maybe_signature(body, app=self.app).apply(
                 args=(res.get(propagate=propagate).get(), ))
     return Chord

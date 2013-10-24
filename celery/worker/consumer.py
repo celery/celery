@@ -625,7 +625,7 @@ class Gossip(bootsteps.ConsumerStep):
 
     def call_task(self, task):
         try:
-            signature(task).apply_async()
+            signature(task, app=self.app).apply_async()
         except Exception as exc:
             error('Could not call task: %r', exc, exc_info=1)
 

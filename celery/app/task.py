@@ -18,6 +18,7 @@ from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import MaxRetriesExceededError, Reject, Retry
 from celery.five import class_property, items, with_metaclass
+from celery.local import Proxy
 from celery.result import EagerResult
 from celery.utils import gen_task_name, fun_takes_kwargs, uuid, maybe_reraise
 from celery.utils.functional import mattrgetter, maybe_list
@@ -58,7 +59,6 @@ class _CompatShared(object):
 
     def __call__(self, app):
         return self.cons(app)
-
 
 
 def _strflags(flags, default=''):
@@ -152,8 +152,15 @@ class TaskType(type):
         # The 'app' attribute is now a property, with the real app located
         # in the '_app' attribute.  Previously this was a regular attribute,
         # so we should support classes defining it.
-        _app1, _app2 = attrs.pop('_app', None), attrs.pop('app', None)
-        app = attrs['_app'] = _app1 or _app2 or current_app
+        app = attrs.pop('_app', None) or attrs.pop('app', None)
+        if not isinstance(app, Proxy) and app is None:
+            for base in bases:
+                if base._app:
+                    app = base._app
+                    break
+            else:
+                app = current_app._get_current_object()
+        attrs['_app'] = app
 
         # - Automatically generate missing/empty name.
         task_name = attrs.get('name')
@@ -167,7 +174,7 @@ class TaskType(type):
             # Hairy stuff,  here to be compatible with 2.x.
             # People should not use non-abstract task classes anymore,
             # use the task decorator.
-            from celery.app.builtins import shared_task, _shared_tasks
+            from celery.app.builtins import shared_task
             unique_name = '.'.join([task_module, name])
             if unique_name not in cls._creation_count:
                 # the creation count is used as a safety
@@ -365,10 +372,12 @@ class Task(object):
 
     @classmethod
     def _get_app(self):
-        if not self.__bound__ or self._app is None:
+        if self._app is None:
+            self._app = current_app
+        if not self.__bound__:
             # The app property's __set__  method is not called
             # if Task.app is set (on the class), so must bind on use.
-            self.bind(current_app)
+            self.bind(self._app)
         return self._app
     app = class_property(_get_app, bind)
 

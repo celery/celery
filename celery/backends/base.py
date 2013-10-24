@@ -454,7 +454,7 @@ class KeyValueStoreBackend(BaseBackend):
     def on_chord_part_return(self, task, propagate=None):
         if not self.implements_incr:
             return
-        from celery import signature
+        from celery import maybe_signature
         from celery.result import GroupResult
         app = self.app
         if propagate is None:
@@ -466,20 +466,20 @@ class KeyValueStoreBackend(BaseBackend):
         try:
             deps = GroupResult.restore(gid, backend=task.backend)
         except Exception as exc:
-            callback = signature(task.request.chord)
+            callback = maybe_signature(task.request.chord, app=self.app)
             return app._tasks[callback.task].backend.fail_from_current_stack(
                 callback.id,
                 exc=ChordError('Cannot restore group: {0!r}'.format(exc)),
             )
         if deps is None:
-            callback = signature(task.request.chord)
+            callback = maybe_signature(task.request.chord, app=self.app)
             return app._tasks[callback.task].backend.fail_from_current_stack(
                 callback.id,
                 exc=ChordError('GroupResult {0} no longer exists'.format(gid))
             )
         val = self.incr(key)
         if val >= len(deps):
-            callback = signature(task.request.chord)
+            callback = maybe_signature(task.request.chord, app=self.app)
             j = deps.join_native if deps.supports_native_join else deps.join
             try:
                 ret = j(propagate=propagate)
