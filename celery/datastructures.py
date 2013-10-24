@@ -619,7 +619,7 @@ class LimitedSet(object):
             i += 1
 
     def update(self, other, heappush=heappush):
-        if isinstance(other, self.__class__):
+        if isinstance(other, LimitedSet):
             self._data.update(other._data)
             self._heap.extend(other._heap)
             heapify(self._heap)
