@@ -34,7 +34,10 @@ class Stress(Command):
                    help='Specify test group (all|green)'),
             Option('--diag', default=False, action='store_true',
                    help='Enable diagnostics (slow)',
-            )
+            ),
+            Option('-J', '--no-join', default=False, action='store_true',
+                   help='Do not wait for task results',
+            ),
         )
 
 

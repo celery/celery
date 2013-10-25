@@ -81,3 +81,8 @@ class pickle(default):
     CELERY_ACCEPT_CONTENT = ['pickle', 'json']
     CELERY_TASK_SERIALIZER = 'pickle'
     CELERY_RESULT_SERIALIZER = 'pickle'
+
+
+@template()
+class confirms(default):
+    BROKER_TRANSPORT_OPTIONS = {'confirm_publish': True}

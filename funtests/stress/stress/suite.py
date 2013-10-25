@@ -117,7 +117,8 @@ class Suite(object):
 
     def run(self, names=None, iterations=50, offset=0,
             numtests=None, list_all=False, repeat=0, group='all',
-            diag=False, **kw):
+            diag=False, no_join=False, **kw):
+        self.no_join = no_join
         self.fbi.enable(diag)
         tests = self.filtertests(group, names)[offset:numtests or None]
         if list_all:
@@ -266,6 +267,8 @@ class Suite(object):
         return [res.id for res in r if res.id not in res.backend._cache]
 
     def join(self, r, propagate=False, max_retries=5, **kwargs):
+        if self.no_join:
+            return
         received = []
 
         def on_result(task_id, value):
@@ -280,7 +283,7 @@ class Suite(object):
                 self.speaker.beep()
                 marker(
                     'Still waiting for {0}/{1}: [{2}]: {3!r}'.format(
-                        len(received), len(r),
+                        len(r) - len(received), len(r),
                         ','.join(waiting_for), exc), '!',
                 )
                 self.fbi.diag(waiting_for)
