@@ -474,11 +474,17 @@ class KeyValueStoreBackend(BaseBackend):
                 exc=ChordError('Cannot restore group: {0!r}'.format(exc)),
             )
         if deps is None:
-            callback = maybe_signature(task.request.chord, app=self.app)
-            return app._tasks[callback.task].backend.fail_from_current_stack(
-                callback.id,
-                exc=ChordError('GroupResult {0} no longer exists'.format(gid))
-            )
+            try:
+                raise ValueError(gid)
+            except ValueError as exc:
+                callback = maybe_signature(task.request.chord, app=self.app)
+                task = app._tasks[callback.task]
+                return task.backend.fail_from_current_stack(
+                    callback.id,
+                    exc=ChordError('GroupResult {0} no longer exists'.format(
+                        gid,
+                    ))
+                )
         val = self.incr(key)
         if val >= len(deps):
             callback = maybe_signature(task.request.chord, app=self.app)
