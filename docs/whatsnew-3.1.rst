@@ -218,8 +218,8 @@ You can set both hard and soft time limits using the ``time_limit`` and
 
 Contributed by Mher Movsisyan.
 
-Redis: Separate broadcast messages by virtual host
----------------------------------------------------------------------------
+Redis: Broadcast messages and virtual hosts.
+--------------------------------------------
 
 Broadcast messages are seen by all virtual hosts when using the Redis
 transport.  You can fix this by enabling a prefix to all channels
@@ -583,12 +583,12 @@ In Other News
 - The ``dump_conf`` remote control command will now give the string
   representation for types that are not JSON compatible.
 
-- Function `celery.security.setup_security` is now :func:`celery.setup_security`.
+- Function `celery.security.setup_security` is now :func:`@setup_security`.
 
-- Message expires value is now forwarded at retry (Issue #980).
+- Task retry now propagates the message expiry value (Issue #980).
 
     The value is forwarded at is, so the expiry time will not change.
-    To update the expiry time you would have to pass the expires
+    To update the expiry time you would have to pass a new expires
     argument to ``retry()``.
 
 - Worker now crashes if a channel error occurs.
@@ -712,16 +712,10 @@ In Other News
 
         >>> t.apply_async(headers={'sender': 'George Costanza'})
 
-- :class:`@events.Receiver` is now a :class:`kombu.mixins.ConsumerMixin`
-  subclass.
-
 - New :signal:`task_send`` signal dispatched before a task message
   is sent and can be used to modify the final message fields (Issue #1281).
 
 - ``celery.platforms.PIDFile`` renamed to :class:`celery.platforms.Pidfile`.
-
-- ``celery.results.BaseDictBackend`` has been removed, replaced by
-  :class:``celery.results.BaseBackend``.
 
 - MongoDB Backend: Can now be configured using an URL
 
@@ -759,9 +753,6 @@ In Other News
 
     This callback is called when an app is about to be configured (a
     configuration key is required).
-
-- Eventlet/gevent/solo/threads pools now properly handles BaseException errors
-  raised by tasks.
 
 - Worker: No longer forks on :sig:`HUP`
 
@@ -828,16 +819,6 @@ In Other News
 
 - :ref:`Semipredicates <task-semipredicates>` documented: (Retry/Ignore/Reject).
 
-
-.. _v310-experimental:
-
-Experimental
-============
-
-XXX
----
-
-YYY
 
 .. _v310-removals:
 
@@ -906,6 +887,9 @@ Fixes
 - Task methods: ``.apply_async`` now works properly if args list is None
   (Issue #1459).
 
+- Eventlet/gevent/solo/threads pools now properly handles BaseException errors
+  raised by tasks.
+
 - Autoscale and ``pool_grow``/``pool_shrink`` remote control commands
   will now also automatically increase and decrease the consumer prefetch count.
 
@@ -947,6 +931,9 @@ Internal changes
 - Removed unused and never documented global instance
   ``celery.events.state.state``.
 
+- :class:`@events.Receiver` is now a :class:`kombu.mixins.ConsumerMixin`
+  subclass.
+
 - :class:`celery.apps.worker.Worker` has been refactored as a subclass of
   :class:`celery.worker.WorkController`.
 
@@ -955,3 +942,5 @@ Internal changes
 - The ``Celery.with_default_connection`` method has been removed in favor
   of ``with app.connection_or_acquire``.
 
+- The ``celery.results.BaseDictBackend`` class has been removed and is replaced by
+  :class:`celery.results.BaseBackend`.
