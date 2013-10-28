@@ -8,10 +8,10 @@
 
 .. admonition:: Out of order
 
-The Beanstalk transport is currently not working well.
+    The Beanstalk transport is currently not working well.
 
-We are interested in contributions and donations that can go towards
-improving this situation.
+    We are interested in contributions and donations that can go towards
+    improving this situation.
 
 
 
