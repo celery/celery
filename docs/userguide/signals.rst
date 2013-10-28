@@ -249,7 +249,7 @@ Provides arguments:
 * request
 
     This is a :class:`~celery.worker.job.Request` instance, and not
-    ``task.request``.   When using the multiprocessing pool this signal
+    ``task.request``.   When using the prefork pool this signal
     is dispatched in the parent process, so ``task.request`` is not available
     and should not be used.  Use this object instead, which should have many
     of the same fields.

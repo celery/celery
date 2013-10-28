@@ -96,7 +96,7 @@ When the worker starts you should see a banner and some messages::
 module, you can also specify a different broker on the command-line by using
 the :option:`-b` option.
 
--- *Concurrency* is the number of multiprocessing worker process used
+-- *Concurrency* is the number of prefork worker process used
 to process your tasks concurrently, when all of these are busy doing work
 new tasks will have to wait for one of the tasks to finish before
 it can be processed.
@@ -109,7 +109,7 @@ it, experimentation has shown that adding more than twice the number
 of CPU's is rarely effective, and likely to degrade performance
 instead.
 
-Including the default multiprocessing pool, Celery also supports using
+Including the default prefork pool, Celery also supports using
 Eventlet, Gevent, and threads (see :ref:`concurrency`).
 
 -- *Events* is an option that when enabled causes Celery to send

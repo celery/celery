@@ -184,7 +184,7 @@ Example 2: Using a configuration module
 
     Using the name of a module is recomended
     as this means that the module doesn't need to be serialized
-    when the multiprocessing pool is used.  If you're
+    when the prefork pool is used.  If you're
     experiencing configuration pickle errors then please try using
     the name of a module instead.
 

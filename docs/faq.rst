@@ -286,7 +286,7 @@ most systems), it usually contains a message describing the reason.
 Does it work on FreeBSD?
 ------------------------
 
-**Answer:** The multiprocessing pool requires a working POSIX semaphore
+**Answer:** The prefork pool requires a working POSIX semaphore
 implementation which isn't enabled in FreeBSD by default. You have to enable
 POSIX semaphores in the kernel and manually recompile multiprocessing.
 

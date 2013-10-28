@@ -1,11 +1,11 @@
 =============================================================
- celery.concurrency.processes
+ celery.concurrency.prefork
 =============================================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.concurrency.processes
+.. currentmodule:: celery.concurrency.prefork
 
-.. automodule:: celery.concurrency.processes
+.. automodule:: celery.concurrency.prefork
     :members:
     :undoc-members:

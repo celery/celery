@@ -126,7 +126,7 @@ It supports...
 
     - **Concurrency**
 
-        - multiprocessing, Eventlet_, gevent_, threads/single threaded
+        - Prefork, Eventlet_, gevent_, threads/single threaded
 
     - **Result Stores**
 

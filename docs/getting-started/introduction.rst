@@ -125,7 +125,7 @@ Celery is…
 
         - **Concurrency**
 
-            - multiprocessing,
+            - prefork (multiprocessing),
             - Eventlet_, gevent_
             - threads/single threaded
 

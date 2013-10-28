@@ -34,7 +34,7 @@ class test_defaults(AppCase):
     def test_default_pool_pypy_15(self):
         with sys_platform('darwin'):
             with pypy_version((1, 5, 0)):
-                self.assertEqual(self.defaults.DEFAULT_POOL, 'processes')
+                self.assertEqual(self.defaults.DEFAULT_POOL, 'prefork')
 
     def test_deprecated(self):
         source = Mock()

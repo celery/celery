@@ -13,7 +13,7 @@ from celery.five import items, range
 from celery.utils.functional import noop
 from celery.tests.case import AppCase
 try:
-    from celery.concurrency import processes as mp
+    from celery.concurrency import prefork as mp
 except ImportError:
 
     class _mp(object):

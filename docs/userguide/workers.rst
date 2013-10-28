@@ -133,7 +133,7 @@ but you can also use :ref:`Eventlet <concurrency-eventlet>`.  The number
 of worker processes/threads can be changed using the :option:`--concurrency`
 argument and defaults to the number of CPUs available on the machine.
 
-.. admonition:: Number of processes (multiprocessing)
+.. admonition:: Number of processes (multiprocessing/prefork pool)
 
     More pool processes are usually better, but there's a cut-off point where
     adding more pool processes affects performance in negative ways.
@@ -156,7 +156,7 @@ Remote control
     commands from the command-line.  It supports all of the commands
     listed below.  See :ref:`monitoring-control` for more information.
 
-pool support: *processes, eventlet, gevent*, blocking:*threads/solo* (see note)
+pool support: *prefork, eventlet, gevent*, blocking:*threads/solo* (see note)
 broker support: *amqp, redis, mongodb*
 
 Workers have the ability to be remote controlled using a high-priority
@@ -325,7 +325,7 @@ Time Limits
 
 .. versionadded:: 2.0
 
-pool support: *processes*
+pool support: *prefork/gevent*
 
 .. sidebar:: Soft, or hard?
 
@@ -418,7 +418,7 @@ Max tasks per child setting
 
 .. versionadded:: 2.0
 
-pool support: *processes*
+pool support: *prefork*
 
 With this option you can configure the maximum number of tasks
 a worker can execute before it's replaced by a new process.
@@ -436,7 +436,7 @@ Autoscaling
 
 .. versionadded:: 2.2
 
-pool support: *processes*, *gevent*
+pool support: *prefork*, *gevent*
 
 The *autoscaler* component is used to dynamically resize the pool
 based on load:
@@ -605,7 +605,7 @@ Autoreloading
 
 .. versionadded:: 2.5
 
-pool support: *processes, eventlet, gevent, threads, solo*
+pool support: *prefork, eventlet, gevent, threads, solo*
 
 Starting :program:`celery worker` with the :option:`--autoreload` option will
 enable the worker to watch for file system changes to all imported task
@@ -621,7 +621,7 @@ the Django ``runserver`` command.
 When auto-reload is enabled the worker starts an additional thread
 that watches for changes in the file system.  New modules are imported,
 and already imported modules are reloaded whenever a change is detected,
-and if the processes pool is used the child processes will finish the work
+and if the prefork pool is used the child processes will finish the work
 they are doing and exit, so that they can be replaced by fresh processes
 effectively reloading the code.
 
@@ -917,7 +917,7 @@ The output will include the following fields:
 
     * ``writes``
 
-        Specific to the processes pool, this shows the distribution of writes
+        Specific to the prefork pool, this shows the distribution of writes
         to each process in the pool when using async I/O.
 
 - ``prefetch_count``

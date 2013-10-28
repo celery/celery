@@ -1236,7 +1236,7 @@ The modules in this setting are imported after the modules in
 CELERYD_FORCE_EXECV
 ~~~~~~~~~~~~~~~~~~~
 
-On Unix the processes pool will fork, so that child processes
+On Unix the prefork pool will fork, so that child processes
 start with the same memory as the parent process.
 
 This can cause problems as there is a known deadlock condition
@@ -1702,7 +1702,7 @@ Name of the pool class used by the worker.
     You must use the `-P` option instead, otherwise the monkey patching
     will happen too late and things will break in strange and silent ways.
 
-Default is ``celery.concurrency.processes:TaskPool``.
+Default is ``celery.concurrency.prefork:TaskPool``.
 
 .. setting:: CELERYD_POOL_RESTARTS
 

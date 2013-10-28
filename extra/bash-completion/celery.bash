@@ -14,7 +14,7 @@ _celery()
     fargs="--app= --broker= --loader= --config= --version"
     dopts="--detach --umask= --gid= --uid= --pidfile= --logfile= --loglevel="
     controlargs="--timeout --destination"
-    pools="processes eventlet gevent threads solo"
+    pools="prefork eventlet gevent threads solo"
     loglevels="critical error warning info debug"
     in_opt=0
 

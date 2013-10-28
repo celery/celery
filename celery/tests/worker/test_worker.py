@@ -781,7 +781,7 @@ class test_WorkController(AppCase):
         with restore_logging():
             from celery import signals
             from celery._state import _tls
-            from celery.concurrency.processes import (
+            from celery.concurrency.prefork import (
                 process_initializer, WORKER_SIGRESET, WORKER_SIGIGNORE,
             )
 
@@ -1058,7 +1058,7 @@ class test_WorkController(AppCase):
         poolimp._fileno_to_inq = {}
         poolimp._fileno_to_outq = {}
 
-        from celery.concurrency.processes import TaskPool as _TaskPool
+        from celery.concurrency.prefork import TaskPool as _TaskPool
 
         class MockTaskPool(_TaskPool):
             Pool = PoolImp

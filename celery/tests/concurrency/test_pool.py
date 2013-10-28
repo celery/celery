@@ -32,7 +32,7 @@ class test_TaskPool(AppCase):
             __import__('multiprocessing')
         except ImportError:
             raise SkipTest('multiprocessing not supported')
-        from celery.concurrency.processes import TaskPool
+        from celery.concurrency.prefork import TaskPool
         self.TaskPool = TaskPool
 
     def test_attrs(self):
