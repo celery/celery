@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.concurrency.processes
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    celery.concurrency.prefork
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Pool implementation using :mod:`multiprocessing`.
 
