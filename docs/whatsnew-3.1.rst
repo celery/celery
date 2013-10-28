@@ -85,6 +85,31 @@ and make sure you have properly secured your broker from unwanted access
 
 The worker will show a deprecation warning if you don't define this setting.
 
+Old command-line programs removals and deprecations
+---------------------------------------------------
+
+The goal is that everyone should move the new :program:`celery` umbrella
+command, so with this version we deprecate the old command names,
+and remove commands that are not used in init scripts.
+
++-------------------+--------------+-------------------------------------+
+| Program           | New Status   | Replacement                         |
++===================+==============+=====================================+
+| ``celeryd``       | *DEPRECATED* | :program:`celery worker`            |
++-------------------+--------------+-------------------------------------+
+| ``celerybeat``    | *DEPRECATED* | :program:`celery beat`              |
++-------------------+--------------+-------------------------------------+
+| ``celeryd-multi`` | *DEPRECATED* | :program:`celery multi`             |
++-------------------+--------------+-------------------------------------+
+| ``celeryctl``     | **REMOVED**  | :program:`celery inspect|control`   |
++-------------------+--------------+-------------------------------------+
+| ``celeryev``      | **REMOVED**  | :program:`celery events`            |
++-------------------+--------------+-------------------------------------+
+| ``camqadm``       | **REMOVED**  | :program:`celery amqp`              |
++-------------------+--------------+-------------------------------------+
+
+Please see :program:`celery --help` for help using the umbrella command.
+
 .. _v310-news:
 
 News
@@ -116,6 +141,9 @@ Some features still require the :mod:`django-celery` library:
     module.
 
 Multiprocessing Pool improvements
+---------------------------------
+
+XXX TODO TODO BLABLABLABLA
 
 :mod:`pytz` replaces ``python-dateutil`` dependency.
 ----------------------------------------------------
@@ -128,31 +156,6 @@ The :mod:`pytz` library was already recommended for accurate timezone support.
 This also means that dependencies are the same for both Python 2 and
 Python 3, and that the :file:`requirements/default-py3k.txt` file has
 been removed.
-
-Old command-line programs removed and deprecated
-------------------------------------------------
-
-The goal is that everyone should move the new :program:`celery` umbrella
-command, so with this version we deprecate the old command names,
-and remove commands that are not used in init scripts.
-
-+-------------------+--------------+-------------------------------------+
-| Program           | New Status   | Replacement                         |
-+===================+==============+=====================================+
-| ``celeryd``       | *DEPRECATED* | :program:`celery worker`            |
-+-------------------+--------------+-------------------------------------+
-| ``celerybeat``    | *DEPRECATED* | :program:`celery beat`              |
-+-------------------+--------------+-------------------------------------+
-| ``celeryd-multi`` | *DEPRECATED* | :program:`celery multi`             |
-+-------------------+--------------+-------------------------------------+
-| ``celeryctl``     | **REMOVED**  | :program:`celery`                   |
-+-------------------+--------------+-------------------------------------+
-| ``celeryev``      | **REMOVED**  | :program:`celery events`            |
-+-------------------+--------------+-------------------------------------+
-| ``camqadm``       | **REMOVED**  | :program:`celery amqp`              |
-+-------------------+--------------+-------------------------------------+
-
-Please see :program:`celery --help` for help using the umbrella command.
 
 Bootsteps: Extending the worker
 -------------------------------
