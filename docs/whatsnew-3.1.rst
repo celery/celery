@@ -67,8 +67,8 @@ Celery now requires Python 2.6 or later.
 We now have a dual codebase that runs on both Python 2 and 3 without
 using the ``2to3`` porting tool.
 
-Last version to use Pickle.
----------------------------
+Last version to enable Pickle by default.
+-----------------------------------------
 
 Starting from Celery 3.2 the default serializer will be json.
 
@@ -85,8 +85,8 @@ and make sure you have properly secured your broker from unwanted access
 
 The worker will show a deprecation warning if you don't define this setting.
 
-Old command-line programs removals and deprecations
----------------------------------------------------
+Old command-line programs removed and deprecated.
+-------------------------------------------------
 
 The goal is that everyone should move the new :program:`celery` umbrella
 command, so with this version we deprecate the old command names,
@@ -125,7 +125,7 @@ the :envvar:`DJANGO_SETTINGS_MODULE` environment variable is set.
 The distribution ships with a new example project using Django
 in :file:`examples/django`:
 
-http://github.com/celery/celery/tree/master/examples/django
+http://github.com/celery/celery/tree/3.1/examples/django
 
 Some features still require the :mod:`django-celery` library:
 
@@ -763,8 +763,71 @@ In Other News
 - Eventlet/gevent/solo/threads pools now properly handles BaseException errors
   raised by tasks.
 
-- Multi: Now properly handles both ``-f`` and ``--logfile`` options
-  (Issue #1541).
+- Worker: No longer forks on :sig:`HUP`
+
+    This means that the worker will reuse the same pid, which makes it
+    easier for process supervisors.
+
+    Contributed by Jameel Al-Aziz.
+
+- Optimization: Improved performance of ``ResultSet.join_native()``.
+
+    Contributed by Stas Rudakou.
+
+- The :signal:`task_revoked` signal now accepts new ``request`` argument
+  (Issue #1555).
+
+    The revoked signal is dispatched after the task request is removed from
+    the stack, so it must instead use the :class:`~celery.worker.job.Request`
+    object to get information about the task.
+
+- Worker: New :option:`-X` command line argument to exclude queues
+  (Issue #1399).
+
+    The :option:`-X` argument is the inverse of the :option:`-Q` argument
+    and accepts a list of queues to exclude (not consume from):
+
+    .. code-block:: bash
+
+        # Consume from all queues in CELERY_QUEUES, but not the 'foo' queue.
+        $ celery worker -A proj -l info -X foo
+
+- Adds :envvar:`C_FAKEFORK` envvar for simple init script/multi debugging
+
+    This means that you can now do:
+
+    .. code-block:: bash
+
+            $ C_FAKEFORK=1 celery multi start 10
+
+    or:
+
+    .. code-block:: bash
+
+        $ C_FAKEFORK=1 /etc/init.d/celeryd start
+
+    to avoid the daemonization step to see errors that are not visible
+    due to missing stdout/stderr.
+
+    A ``dryrun`` command has been added to the generic init script that
+    enables this option.
+
+- New public API to push and pop from the current task stack:
+
+    :func:`celery.app.push_current_task` and
+    :func:`celery.app.pop_current_task``.
+
+- ``RetryTaskError`` has been renamed to :exc:`~celery.exceptions.Retry`.
+
+    The old name is still available for backwards compatibility.
+
+- New semi-predicate exception :exc:`~celery.exceptions.Reject`
+
+    This exception can be raised to reject/requeue the task message,
+    see :ref:`task-semipred-reject` for examples.
+
+- :ref:`Semipredicates <task-semipredicates>` documented: (Retry/Ignore/Reject).
+
 
 .. _v310-experimental:
 
@@ -812,60 +875,16 @@ Scheduled Removals
                 }
             }
 
-- Worker: No longer forks on :sig:`HUP`
+- Functions that creates a broker connections no longer
+  supports the ``connect_timeout`` argument.
 
-    This means that the worker will reuse the same pid, which makes it
-    easier for process supervisors.
-
-    Contributed by Jameel Al-Aziz.
+    This can now only be set using the :setting:`BROKER_CONNECTION_TIMEOUT`
+    setting.  This is because functions no longer create connections
+    directly, but instead get them from the connection pool.
 
 - The ``CELERY_AMQP_TASK_RESULT_EXPIRES`` setting is no longer supported.
 
     Use :setting:`CELERY_TASK_RESULT_EXPIRES` instead.
-
-- Functions that establishes broker connections no longer
-  supports the ``connect_timeout`` argument.
-
-    This can now only be set using the :setting:`BROKER_CONNECTION_TIMEOUT`
-    setting.  This is because the functions no longer create connections
-    directly, and instead get them from the connection pool.
-
-- The ``Celery.with_default_connection`` method has been removed in favor
-  of ``with app.connection_or_acquire``.
-
-- The :signal:`task_revoked` signal now accepts new ``request`` argument
-  (Issue #1555).
-
-    The revoked signal is dispatched after the task request is removed from
-    the stack, so it must instead use the :class:`~celery.worker.job.Request`
-    object to get information about the task.
-
-- Worker: New :option:`-X` command line argument to exclude queues
-  (Issue #1399).
-
-    The :option:`-X` argument is the inverse of the :option:`-Q` argument
-    and accepts a list of queues to exclude (not consume from):
-
-    .. code-block:: bash
-
-        # Consume from all queues in CELERY_QUEUES, but not the 'foo' queue.
-        $ celery worker -A proj -l info -X foo
-
-- New public API to push and pop from the current task stack:
-
-    :func:`celery.app.push_current_task` and
-    :func:`celery.app.pop_current_task``.
-
-- ``RetryTaskError`` has been renamed to :exc:`~celery.exceptions.Retry`.
-
-    The old name is still available for backwards compatibility.
-
-- New semipredicate exception :exc:`~celery.exceptions.Reject`
-
-    This exception can be raised to reject/requeue the task message,
-    see :ref:`task-semipred-reject` for examples.
-
-- Semipredicates documented: :ref:`task-semipredicates` (Retry/Ignore/Reject).
 
 .. _v310-deprecations:
 
@@ -873,11 +892,6 @@ Deprecations
 ============
 
 See the :ref:`deprecation-timeline`.
-
-- XXX
-
-    YYY
-
 
 .. _v310-fixes:
 
@@ -897,10 +911,6 @@ Fixes
 
     Fix contributed by Daniel M. Taub.
 
-- Optimization: Improved performance of ``ResultSet.join_native()``.
-
-    Contributed by Stas Rudakou.
-
 - ``celery control pool_`` commands did not coerce string arguments to int.
 
 - Redis/Cache chords: Callback result is now set to failure if the group
@@ -909,25 +919,8 @@ Fixes
 - Worker: Now makes sure that the shutdown process is not initiated multiple
   times.
 
-- Adds :envvar:`C_FAKEFORK` envvar for simple init script/multi debugging
-
-    This means that you can now do:
-
-    .. code-block:: bash
-
-            $ C_FAKEFORK=1 celery multi start 10
-
-    or:
-
-    .. code-block:: bash
-
-        $ C_FAKEFORK=1 /etc/init.d/celeryd start
-
-    to avoid the daemonization step to see errors that are not visible
-    due to missing stdout/stderr.
-
-    A ``dryrun`` command has been added to the generic init script that
-    enables this option.
+- Multi: Now properly handles both ``-f`` and ``--logfile`` options
+  (Issue #1541).
 
 .. _v310-internal:
 
@@ -935,6 +928,9 @@ Internal changes
 ================
 
 - Module ``celery.task.trace`` has been renamed to :mod:`celery.app.trace`.
+
+- Module ``celery.concurrency.processes`` has been renamed to
+  :mod:`celery.concurrency.prefork`.
 
 - Classes that no longer fall back to using the default app:
 
@@ -955,4 +951,7 @@ Internal changes
   :class:`celery.worker.WorkController`.
 
     This removes a lot of duplicate functionality.
+
+- The ``Celery.with_default_connection`` method has been removed in favor
+  of ``with app.connection_or_acquire``.
 

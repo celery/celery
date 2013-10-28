@@ -23,7 +23,7 @@ This directory contains generic bash init scripts for the
 these should run on Linux, FreeBSD, OpenBSD, and other Unix-like platforms.
 
 .. _`extra/generic-init.d/`:
-    http://github.com/celery/celery/tree/3.0/extra/generic-init.d/
+    http://github.com/celery/celery/tree/3.1/extra/generic-init.d/
 
 .. _generic-initd-celeryd:
 
@@ -90,7 +90,6 @@ This is an example configuration for a Python project.
     # If enabled pid and log directories will be created if missing,
     # and owned by the userid/group configured.
     CELERY_CREATE_DIRS=1
-
 
 .. _generic-initd-celeryd-django-example:
 
@@ -291,7 +290,7 @@ This is an example configuration for a Python project:
     # Absolute or relative path to the 'celery' command:
     CELERY_BIN="/usr/local/bin/celery"
     #CELERY_BIN="/virtualenvs/def/bin/celery"
-    
+
     # How to call manage.py
     CELERYD_MULTI="multi"
 
@@ -319,7 +318,7 @@ This is an example configuration for those using `django-celery`:
 
     # Absolute path to "manage.py"
     CELERY_BIN="/opt/Myproject/manage.py"
-    
+
     # How to call manage.py
     CELERYD_MULTI="celery multi"
 
@@ -330,7 +329,7 @@ This is an example configuration for those using `django-celery`:
     CELERYD_LOG_FILE="/var/log/celery/%N.log"
     CELERYD_PID_FILE="/var/run/celery/%N.pid"
 
-To add an environment variable such as DJANGO_SETTINGS_MODULE use the 
+To add an environment variable such as DJANGO_SETTINGS_MODULE use the
 Environment in celery.service.
 
 .. _generic-initd-troubleshooting:
@@ -375,7 +374,7 @@ you should :ref:`report it <reporting-bugs>`).
 * `extra/supervisord/`_
 
 .. _`extra/supervisord/`:
-    http://github.com/celery/celery/tree/3.0/extra/supervisord/
+    http://github.com/celery/celery/tree/3.1/extra/supervisord/
 .. _`supervisord`: http://supervisord.org/
 
 .. _daemon-launchd:
@@ -386,7 +385,7 @@ launchd (OS X)
 * `extra/mac/`_
 
 .. _`extra/mac/`:
-    http://github.com/celery/celery/tree/3.0/extra/mac/
+    http://github.com/celery/celery/tree/3.1/extra/mac/
 
 
 .. _daemon-windows:
@@ -402,4 +401,4 @@ CentOS
 ======
 In CentOS we can take advantage of built-in service helpers, such as the
 pid-based status checker function in ``/etc/init.d/functions``.
-See the sample script in http://github.com/celery/celery/tree/3.0/extra/centos/.
+See the sample script in http://github.com/celery/celery/tree/3.1/extra/centos/.
