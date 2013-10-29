@@ -550,7 +550,7 @@ Example adding a custom option to the :program:`celery worker` command:
 .. code-block:: python
 
     from celery import Celery
-    from optparse import make_option as Option
+    from celery.bin import Option
 
     app = Celery(broker='amqp://')
 

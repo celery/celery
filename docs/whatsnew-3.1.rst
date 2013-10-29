@@ -27,23 +27,23 @@ To read more about Celery you should go read the :ref:`introduction <intro>`.
 While this version is backward compatible with previous versions
 it's important that you read the following section.
 
-This version is officially supported on CPython 2.6, 2.7, 3.2 and 3.3,
-as well as PyPy and Jython.
+This version is officially supported on CPython 2.6, 2.7 and 3.3,
+and also supported on PyPy.
 
 Highlights
 ==========
 
 .. topic:: Overview
 
+    - Massive prefork pool improvements
+
     - Now supports Django out of the box.
 
         See the new tutorial at :ref:`django-first-steps`.
 
-    - XXX2
+    - Extend the worker using bootsteps
 
-    - XXX3
-
-        YYY3
+    - Gossip and Mingle: Worker to worker communication.
 
 .. _`website`: http://celeryproject.org/
 .. _`django-celery changelog`:
@@ -67,8 +67,8 @@ Celery now requires Python 2.6 or later.
 We now have a dual codebase that runs on both Python 2 and 3 without
 using the ``2to3`` porting tool.
 
-Last version to enable Pickle by default.
------------------------------------------
+Last version to enable Pickle by default
+----------------------------------------
 
 Starting from Celery 3.2 the default serializer will be json.
 
@@ -85,8 +85,8 @@ and make sure you have properly secured your broker from unwanted access
 
 The worker will show a deprecation warning if you don't define this setting.
 
-Old command-line programs removed and deprecated.
--------------------------------------------------
+Old command-line programs removed and deprecated
+------------------------------------------------
 
 The goal is that everyone should move the new :program:`celery` umbrella
 command, so with this version we deprecate the old command names,
@@ -115,8 +115,49 @@ Please see :program:`celery --help` for help using the umbrella command.
 News
 ====
 
-Now supports Django out of the box.
------------------------------------
+Prefork Pool Improvements
+-------------------------
+
+These improvements are only active if you use a async capable broker
+transport.  This only includes RabbitMQ (AMQP) and Redis at this point,
+but hopefully more transports will be supported in the future.
+
+- Pool is now using one IPC queue per child process.
+
+    Previously the pool shared one queue between all child processes,
+    using a POSIX semaphore as a mutex to achieve exclusive read and write
+    access.
+
+    The POSIX semaphore has now been removed and each child process
+    gets a dedicated queue.  This means that the worker will require more
+    file descriptors (two descriptors per process), but it also means
+    that performance is improved and we can direct work to specific child
+    processes.
+
+    POSIX semaphores are not released when a process is killed, so killing
+    processes could lead to a deadlock if it happened while the semaphore was
+    acquired.  There is no good solution to fix this, so the best option
+    was to remove the semaphore.
+
+- Asynchronous write operations
+
+    The pool now uses async I/O to send work to the child processes.
+
+- Lost process detection is now immediate.
+
+    If a child process was killed or exited mysteriously the pool previously
+    had to wait for 30 seconds before marking the task with a
+    :exc:`~celery.exceptions.WorkerLostError`.  It had to do this because
+    the outqueue was shared between all processes, and the pool could not
+    be certain whether the process completed the task or not.  So an arbitrary
+    timeout of 30 seconds was chosen, as it was believed that the outqueue
+    would have been drained by this point.
+
+    This timeout is no longer necessary, and so the task can be marked as
+    failed as soon as the pool gets the notification that the process exited.
+
+Now supports Django out of the box
+----------------------------------
 
 The fixes and improvements applied by the django-celery library is now
 automatically applied by core Celery when it detects that
@@ -140,103 +181,8 @@ Some features still require the :mod:`django-celery` library:
     no longer happens as a side-effect of importing the :mod:`djcelery`
     module.
 
-Multiprocessing Pool improvements
----------------------------------
-
-XXX TODO TODO BLABLABLABLA
-
-:mod:`pytz` replaces ``python-dateutil`` dependency.
-----------------------------------------------------
-
-Celery no longer depends on the ``python-dateutil`` library,
-but instead a new dependency on the :mod:`pytz` library was added.
-
-The :mod:`pytz` library was already recommended for accurate timezone support.
-
-This also means that dependencies are the same for both Python 2 and
-Python 3, and that the :file:`requirements/default-py3k.txt` file has
-been removed.
-
-Bootsteps: Extending the worker
--------------------------------
-
-By writing bootsteps you can now easily extend the consumer part
-of the worker to add additional features, or even message consumers.
-
-The worker has been using bootsteps for some time, but these were never
-documented.  In this version the consumer part of the worker
-has also been rewritten to use bootsteps and the new :ref:`guide-extending`
-guide documents examples extending the worker, including adding
-custom message consumers.
-
-See the :ref:`guide-extending` guide for more information.
-
-.. note::
-
-    Bootsteps written for older versions will not be compatible
-    with this version, as the API has changed significantly.
-
-    The old API was experimental and internal so hopefully no one
-    is depending.  Should you happen to be using it then please
-    contact the mailing-list and we will help you port to the new version.
-
-New result backend with RPC semantics
--------------------------------------
-
-This version of the ``amqp`` result backend is a very good alternative
-to use in classical RPC scenarios, where the process that initiates
-the task is always the process to retrieve the result.
-
-It uses Kombu to send and retrieve results, and each client
-will create a unique queue for replies to be sent to. Avoiding
-the significant overhead of the original amqp backend which creates
-one queue per task.
-
-Results sent using this backend is not persistent, and so will
-not survive a broker restart, but you can set
-the :setting:`CELERY_RESULT_PERSISTENT` setting to change that.
-
-.. code-block:: python
-
-    CELERY_RESULT_BACKEND = 'rpc'
-
-Note that chords are currently not supported by the RPC backend.
-
-Time limits can now be set by the client.
+Events are now ordered using logical time
 -----------------------------------------
-
-You can set both hard and soft time limits using the ``time_limit`` and
-``soft_time_limit`` calling options:
-
-.. code-block:: python
-
-    >>> res = add.apply_async((2, 2), time_limit=10, soft_time_limit=8)
-
-    >>> res = add.subtask((2, 2), time_limit=10, soft_time_limit=8).delay()
-
-    >>> res = add.s(2, 2).set(time_limit=10, soft_time_limit=8).delay()
-
-Contributed by Mher Movsisyan.
-
-Redis: Broadcast messages and virtual hosts.
---------------------------------------------
-
-Broadcast messages are seen by all virtual hosts when using the Redis
-transport.  You can fix this by enabling a prefix to all channels
-so that the messages are separated by virtual host::
-
-    BROKER_TRANSPORT_OPTIONS = {'fanout_prefix': True}
-
-Note that you will not be able to communicate with workers running older
-versions or workers that does not have this setting enabled.
-
-This setting will be the default in the future, so better to migrate
-sooner rather than later.
-
-Related to Issue #1490.
-
-Events are now ordered using logical time.
-------------------------------------------
 
 Timestamps are not a reliable way to order events in a distributed system,
 for one the floating point value does not have enough precision, but
@@ -250,14 +196,14 @@ The logical clock is currently implemented using Lamport timestamps,
 which does not have a high degree of accuracy, but should be good
 enough to casually order the events.
 
-Also, events now records timezone information for better timestamp
-accuracy, where a new ``utcoffset`` field is included in the event.
+Also, events now record timezone information
+by including a new ``utcoffset`` field in the event message.
 This is a signed integer telling the difference from UTC time in hours,
 so e.g. an even sent from the Europe/London timezone in daylight savings
 time will have an offset of 1.
 
 :class:`@events.Receiver` will automatically convert the timestamps
-to the destination timezone.
+to the local timezone.
 
 .. note::
 
@@ -276,10 +222,10 @@ to the destination timezone.
     though, as even in the most busy clusters it may take several
     millennia before the clock exceeds a 64 bits value.
 
-New worker node name format (``name@host``).
--------------------------------------------------------------------------
+New worker node name format (``name@host``)
+-------------------------------------------
 
-Node names are now constructed by a node name and a hostname separated by '@'.
+Node names are now constructed by two elements: name and hostname separated by '@'.
 
 This change was made to more easily identify multiple instances running
 on the same machine.
@@ -351,28 +297,150 @@ instead (``send_twitter_status.retry``), but this could lead to problems
 in some instances where the registered task was no longer the same
 object.
 
-Gossip: Worker <-> Worker communication.
-----------------------------------------
+Mingle: Startup synchronization
+-------------------------------
 
-Workers now synchronizes revoked tasks with its neighbors.
+Worker now synchronizes with other workers in the same cluster.
 
-This happens at startup and causes a one second startup delay
+Synchronized data currently includes revoked tasks and logical clock.
+
+This only happens at startup and causes a one second startup delay
 to collect broadcast responses from other workers.
 
-Now supports Setuptools extra requirements.
+You can disable this bootstep using the ``--without-mingle`` argument.
+
+Gossip: Worker <-> Worker communication
+---------------------------------------
+
+Workers are now passively subscribing to worker related events like
+heartbeats.
+
+This means that a worker will know what other workers are doing and
+can detect when they go offline.  Currently this is only used for clock
+synchronization, but there are many possibilities for future additions
+and you can write extensions that take advantage of this already.
+
+Some ideas include consensus protocols, reroute task to best worker (based on
+resource usage or data locality) or restarting workers when they crash.
+
+We believe that this is a small addition but one that may redefine everything.
+
+You can disable this bootstep using the ``--without-gossip`` argument.
+
+Bootsteps: Extending the worker
+-------------------------------
+
+By writing bootsteps you can now easily extend the consumer part
+of the worker to add additional features, or even message consumers.
+
+The worker has been using bootsteps for some time, but these were never
+documented.  In this version the consumer part of the worker
+has also been rewritten to use bootsteps and the new :ref:`guide-extending`
+guide documents examples extending the worker, including adding
+custom message consumers.
+
+See the :ref:`guide-extending` guide for more information.
+
+.. note::
+
+    Bootsteps written for older versions will not be compatible
+    with this version, as the API has changed significantly.
+
+    The old API was experimental and internal but should you be so unlucky
+    to use it then please contact the mailing-list and we will help you port
+    the bootstep to the new API.
+
+New result backend with RPC semantics
+-------------------------------------
+
+This version of the ``amqp`` result backend is a very good alternative
+to use in classical RPC scenarios, where the process that initiates
+the task is always the process to retrieve the result.
+
+It uses Kombu to send and retrieve results, and each client
+will create a unique queue for replies to be sent to. Avoiding
+the significant overhead of the original amqp backend which creates
+one queue per task.
+
+Results sent using this backend is not persistent, and so will
+not survive a broker restart, but you can set
+the :setting:`CELERY_RESULT_PERSISTENT` setting to change that.
+
+.. code-block:: python
+
+    CELERY_RESULT_BACKEND = 'rpc'
+
+Note that chords are currently not supported by the RPC backend.
+
+Time limits can now be set by the client
+----------------------------------------
+
+You can set both hard and soft time limits using the ``time_limit`` and
+``soft_time_limit`` calling options:
+
+.. code-block:: python
+
+    >>> res = add.apply_async((2, 2), time_limit=10, soft_time_limit=8)
+
+    >>> res = add.subtask((2, 2), time_limit=10, soft_time_limit=8).delay()
+
+    >>> res = add.s(2, 2).set(time_limit=10, soft_time_limit=8).delay()
+
+Contributed by Mher Movsisyan.
+
+Redis: Broadcast messages and virtual hosts
 -------------------------------------------
 
-Pip now supports installing setuptools extra requirements
-so we have deprecated the old bundles, replacing them with these
-little creatures, which are more convenient since you can easily
-specify multiple extras (e.g. ``pip install celery[redis,mongodb]``).
+Broadcast messages are seen by all virtual hosts when using the Redis
+transport.  You can fix this by enabling a prefix to all channels
+so that the messages are separated by virtual host:
+
+.. code-block:: python
+
+    BROKER_TRANSPORT_OPTIONS = {'fanout_prefix': True}
+
+Note that you will not be able to communicate with workers running older
+versions or workers that does not have this setting enabled.
+
+This setting will be the default in the future, so better to migrate
+sooner rather than later.
+
+Related to Issue #1490.
+
+:mod:`pytz` replaces ``python-dateutil`` dependency
+---------------------------------------------------
+
+Celery no longer depends on the ``python-dateutil`` library,
+but instead a new dependency on the :mod:`pytz` library was added.
+
+The :mod:`pytz` library was already recommended for accurate timezone support.
+
+This also means that dependencies are the same for both Python 2 and
+Python 3, and that the :file:`requirements/default-py3k.txt` file has
+been removed.
+
+Now supports Setuptools extra requirements
+------------------------------------------
+
+Pip now supports the :mod:`setuptools` extra requirements format,
+so we have removed the old bundles concept, and instead specify
+setuptools extras.
+
+You install extras by specifying them inside brackets:
+
+.. code-block:: bash
+
+    $ pip install celery[redis,mongodb]
+
+The above will install the dependencies for Redis and MongoDB.  You can list
+as many extras as you want.
 
 +-------------+-------------------------+---------------------------+
 | Extension   | Requirement entry       | Type                      |
 +=============+=========================+===========================+
 | Redis       | ``celery[redis]``       | transport, result backend |
 +-------------+-------------------------+---------------------------+
-| MongoDB``   | ``celery[mongodb]``     | transport, result backend |
+| MongoDB     | ``celery[mongodb]``     | transport, result backend |
 +-------------+-------------------------+---------------------------+
 | CouchDB     | ``celery[couchdb]``     | transport                 |
 +-------------+-------------------------+---------------------------+
@@ -465,7 +533,7 @@ In Other News
     .. code-block:: python
 
         from celery import Celery
-        from optparse import make_option as Option
+        from celery.bin import Option
 
         app = Celery()
         app.user_options['worker'].add(
@@ -487,10 +555,12 @@ In Other News
     time and the internal time is greater than 15 seconds, suggesting
     that the clocks are out of sync.
 
-- Many parts of the Celery codebase now uses a montonic clock.
+- Monotonic clock support.
 
-    The montonic clock function is built-in starting from Python 3.4,
-    but we also have fallback implementaions for Linux and OS X.
+    A monotonic clock is now used for timeouts and scheduling.
+
+    The monotonic clock function is built-in starting from Python 3.4,
+    but we also have fallback implementations for Linux and OS X.
 
 - :program:`celery worker` now supports a ``--detach`` argument to start
   the worker as a daemon in the background.
@@ -499,7 +569,7 @@ In Other News
   events, which is set to the time of when the event was received.
 
 - :class:`@events.Dispatcher` now accepts a ``groups`` argument
-  which decides a whitelist of event groups that will be sent.
+  which decides a white-list of event groups that will be sent.
 
     The type of an event is a string separated by '-', where the part
     before the first '-' is the group.  Currently there are only
@@ -704,7 +774,9 @@ In Other News
 
 - Message headers now available as part of the task request.
 
-    Example setting and retreiving a header value::
+    Example adding and retrieving a header value:
+
+    .. code-block:: python
 
         @app.task(bind=True)
         def t(self):
@@ -814,7 +886,7 @@ In Other News
 
 - New semi-predicate exception :exc:`~celery.exceptions.Reject`
 
-    This exception can be raised to reject/requeue the task message,
+    This exception can be raised to ``reject``/``requeue`` the task message,
     see :ref:`task-semipred-reject` for examples.
 
 - :ref:`Semipredicates <task-semipredicates>` documented: (Retry/Ignore/Reject).
@@ -882,13 +954,13 @@ Fixes
 - AMQP Backend: join did not convert exceptions when using the json
   serializer.
 
-- Worker: Workaround for unicode errors in logs (Issue #427)
+- Worker: Workaround for Unicode errors in logs (Issue #427)
 
 - Task methods: ``.apply_async`` now works properly if args list is None
   (Issue #1459).
 
-- Eventlet/gevent/solo/threads pools now properly handles BaseException errors
-  raised by tasks.
+- Eventlet/gevent/solo/threads pools now properly handles :exc:`BaseException`
+  errors raised by tasks.
 
 - Autoscale and ``pool_grow``/``pool_shrink`` remote control commands
   will now also automatically increase and decrease the consumer prefetch count.

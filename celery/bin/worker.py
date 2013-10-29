@@ -234,6 +234,7 @@ class worker(Command):
             Option('--without-gossip', action='store_true', default=False),
             Option('--without-mingle', action='store_true', default=False),
             Option('--without-heartbeat', action='store_true', default=False),
+            Option('-O', dest='optimization'),
             Option('-D', '--detach', action='store_true'),
         ) + daemon_options() + tuple(self.app.user_options['worker'])
 
