@@ -344,9 +344,6 @@ def add_chord_task(app):
             results = [AsyncResult(prepare_member(task, body, group_id))
                        for task in header.tasks]
 
-            # - call the header group, returning the GroupResult.
-            final_res = header(*partial_args, task_id=group_id)
-
             # - fallback implementations schedules the chord_unlock task here
             app.backend.on_chord_apply(group_id, body,
                                        interval=interval,
@@ -354,6 +351,9 @@ def add_chord_task(app):
                                        max_retries=max_retries,
                                        propagate=propagate,
                                        result=results)
+            # - call the header group, returning the GroupResult.
+            final_res = header(*partial_args, task_id=group_id)
+
             return final_res
 
         def _prepare_member(self, task, body, group_id):
