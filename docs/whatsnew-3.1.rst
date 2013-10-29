@@ -159,6 +159,69 @@ but hopefully more transports will be supported in the future.
 Now supports Django out of the box
 ----------------------------------
 
+It was always the goal that the new API introduced in 3.0 would
+be used by everyone, but sadly we didn't have the time to
+define what this means for Django users.
+
+The Django community has a convention where there's a separate
+django-x package for every library, acting like a bridge between
+Django and the library.
+
+Having a separate project for Django users have been a pain for Celery,
+with multiple issue trackers and multiple documentation
+sources, and then lastly since 3.0 we even had different APIs.
+
+With this version we challenge that convention and Django users will
+use the same library, the same API and the same documentation as
+everyone else.
+
+There is no rush to port your existing code to use the new API,
+but if you would like to experiment with it you should now that:
+
+- You need to use a Celery application instance.
+
+    The new Celery API introduced in 3.0 requires users to instantiate the
+    library by creating an application:
+
+    .. code-block:: python
+
+        from celery import Celery
+
+        app = Celery()
+
+- You need to explicitly integrate Celery with Django
+
+    Celery will not automatically use the Django settings, so you can
+    either configure Celery separately or you can tell it to use the Django
+    settings with:
+
+    .. code-block:: python
+
+        from django.conf import settings
+        app.config_from_object(settings)
+
+    Neither will it automatically traverse your installed apps so to get the
+    autodiscovery behavior of ``django-celery`` you need to call this yourself:
+
+    .. code-block:: python
+
+        app.autodiscover_tasks(settings.INSTALLED_APPS)
+
+- You no longer use ``manage.py``
+
+    Instead you use the :program:`celery` command directly, but for that to
+    work you need to specify the :envvar:`DJANGO_SETTINGS_MODULE` environment
+    variable:
+
+    .. code-block:: bash
+
+        DJANGO_SETTINGS_MODULE='proj.settings' celery -A proj worker -l info
+
+
+To get started with the new API you should first read the :ref:`first-steps`
+tutorial, and then you should read the Django specific instructions in
+:ref:`django-first-steps`.
+
 The fixes and improvements applied by the django-celery library is now
 automatically applied by core Celery when it detects that
 the :envvar:`DJANGO_SETTINGS_MODULE` environment variable is set.
@@ -176,8 +239,8 @@ Some features still require the :mod:`django-celery` library:
 
 .. note::
 
-    If you are using django-celery then it is crucial that you have
-    ``djcelery.setup_loader()`` in your settings module, as this
+    If you're using django-celery then it's crucial that your settings
+    module includes ``djcelery.setup_loader()`` as this
     no longer happens as a side-effect of importing the :mod:`djcelery`
     module.
 
