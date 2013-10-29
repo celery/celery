@@ -518,8 +518,8 @@ class Events(bootsteps.StartStopStep):
 class Heart(bootsteps.StartStopStep):
     requires = (Events, )
 
-    def __init__(self, c, enable_heartbeat=True, **kwargs):
-        self.enabled = enable_heartbeat
+    def __init__(self, c, without_heartbeat=False, **kwargs):
+        self.enabled = not without_heartbeat
         c.heart = None
 
     def start(self, c):
@@ -594,8 +594,8 @@ class Gossip(bootsteps.ConsumerStep):
         'id', 'clock', 'hostname', 'pid', 'topic', 'action', 'cver',
     )
 
-    def __init__(self, c, enable_gossip=True, interval=5.0, **kwargs):
-        self.enabled = enable_gossip
+    def __init__(self, c, without_gossip=False, interval=5.0, **kwargs):
+        self.enabled = not without_gossip
         self.app = c.app
         c.gossip = self
         self.Receiver = c.app.events.Receiver
@@ -738,8 +738,8 @@ class Mingle(bootsteps.StartStopStep):
     label = 'Mingle'
     requires = (Gossip, )
 
-    def __init__(self, c, enable_mingle=True, **kwargs):
-        self.enabled = enable_mingle
+    def __init__(self, c, without_mingle=False, **kwargs):
+        self.enabled = not without_mingle
 
     def start(self, c):
         info('mingle: searching for neighbors')

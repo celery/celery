@@ -50,9 +50,9 @@ def find_step(obj, typ):
 class Consumer(__Consumer):
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault('enable_mingle', False)  # disable Mingle step
-        kwargs.setdefault('enable_gossip', False)  # disable Gossip step
-        kwargs.setdefault('enable_heartbeat', False)  # disable Heart step
+        kwargs.setdefault('without_mingle', True)  # disable Mingle step
+        kwargs.setdefault('without_gossip', True)  # disable Gossip step
+        kwargs.setdefault('without_heartbeat', True)  # disable Heart step
         super(Consumer, self).__init__(*args, **kwargs)
 
 

@@ -70,6 +70,18 @@ The :program:`celery worker` command (previously known as ``celeryd``)
     Send events that can be captured by monitors like :program:`celery events`,
     `celerymon`, and others.
 
+.. cmdoption:: --without-gossip
+
+    Do not subscribe to other workers events.
+
+.. cmdoption:: --without-mingle
+
+    Do not synchronize with other workers at startup.
+
+.. cmdoption:: --without-heartbeat
+
+    Do not send event heartbeats.
+
 .. cmdoption:: --purge
 
     Purges all waiting tasks before the daemon is started.
@@ -219,6 +231,9 @@ class worker(Command):
             Option('--autoscale'),
             Option('--autoreload', action='store_true'),
             Option('--no-execv', action='store_true', default=False),
+            Option('--without-gossip', action='store_true', default=False),
+            Option('--without-mingle', action='store_true', default=False),
+            Option('--without-heartbeat', action='store_true', default=False),
             Option('-D', '--detach', action='store_true'),
         ) + daemon_options() + tuple(self.app.user_options['worker'])
 
