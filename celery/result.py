@@ -24,7 +24,7 @@ from .exceptions import IncompleteStream, TimeoutError
 from .five import items, range, string_t, monotonic
 
 __all__ = ['ResultBase', 'AsyncResult', 'ResultSet', 'GroupResult',
-           'EagerResult', 'from_serializable']
+           'EagerResult', 'result_from_tuple']
 
 
 class ResultBase(object):
@@ -60,8 +60,10 @@ class AsyncResult(ResultBase):
         self.task_name = task_name
         self.parent = parent
 
-    def serializable(self):
-        return [self.id, self.parent and self.parent.serializable()], None
+    def as_tuple(self):
+        parent = self.parent
+        return (self.id, parent and parent.as_tuple()), None
+    serializable = as_tuple   # XXX compat
 
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
@@ -249,7 +251,7 @@ class AsyncResult(ResultBase):
     def children(self):
         children = self.backend.get_children(self.id)
         if children:
-            return [from_serializable(child, self.app) for child in children]
+            return [result_from_tuple(child, self.app) for child in children]
 
     @property
     def result(self):
@@ -669,8 +671,9 @@ class GroupResult(ResultSet):
         return '<{0}: {1} [{2}]>'.format(type(self).__name__, self.id,
                                          ', '.join(r.id for r in self.results))
 
-    def serializable(self):
-        return self.id, [r.serializable() for r in self.results]
+    def as_tuple(self):
+        return self.id, [r.as_tuple() for r in self.results]
+    serializable = as_tuple   # XXX compat
 
     @property
     def children(self):
@@ -775,7 +778,7 @@ class EagerResult(AsyncResult):
         return False
 
 
-def from_serializable(r, app=None):
+def result_from_tuple(r, app=None):
     # earlier backends may just pickle, so check if
     # result is already prepared.
     app = app_or_default(app)
@@ -784,11 +787,12 @@ def from_serializable(r, app=None):
         res, nodes = r
         if nodes:
             return app.GroupResult(
-                res, [from_serializable(child, app) for child in nodes],
+                res, [result_from_tuple(child, app) for child in nodes],
             )
         # previously did not include parent
         id, parent = res if isinstance(res, (list, tuple)) else (res, None)
         if parent:
-            parent = from_serializable(parent, app)
+            parent = result_from_tuple(parent, app)
         return Result(id, parent=parent)
     return r
+from_serializable = result_from_tuple  # XXX compat

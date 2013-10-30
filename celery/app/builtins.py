@@ -66,7 +66,7 @@ def add_unlock_chord_task(app):
     """
     from celery.canvas import signature
     from celery.exceptions import ChordError
-    from celery.result import from_serializable
+    from celery.result import result_from_tuple
 
     default_propagate = app.conf.CELERY_CHORD_PROPAGATES
 
@@ -75,7 +75,7 @@ def add_unlock_chord_task(app):
     def unlock_chord(group_id, callback, interval=None, propagate=None,
                      max_retries=None, result=None,
                      Result=app.AsyncResult, GroupResult=app.GroupResult,
-                     from_serializable=from_serializable):
+                     result_from_tuple=result_from_tuple):
         # if propagate is disabled exceptions raised by chord tasks
         # will be sent as part of the result list to the chord callback.
         # Since 3.1 propagate will be enabled by default, and instead
@@ -88,7 +88,7 @@ def add_unlock_chord_task(app):
         # check if the task group is ready, and if so apply the callback.
         deps = GroupResult(
             group_id,
-            [from_serializable(r, app=app) for r in result],
+            [result_from_tuple(r, app=app) for r in result],
         )
         j = deps.join_native if deps.supports_native_join else deps.join
 
@@ -158,7 +158,7 @@ def add_chunk_task(app):
 def add_group_task(app):
     _app = app
     from celery.canvas import maybe_signature, signature
-    from celery.result import from_serializable
+    from celery.result import result_from_tuple
 
     class Group(app.Task):
         app = _app
@@ -168,7 +168,7 @@ def add_group_task(app):
 
         def run(self, tasks, result, group_id, partial_args):
             app = self.app
-            result = from_serializable(result, app)
+            result = result_from_tuple(result, app)
             # any partial args are added to all tasks in the group
             taskit = (signature(task, app=app).clone(partial_args)
                       for i, task in enumerate(tasks))
@@ -209,7 +209,7 @@ def add_group_task(app):
                 options, args=partial_args, **kwargs
             )
             super(Group, self).apply_async((
-                list(tasks), result.serializable(), gid, args), **options
+                list(tasks), result.as_tuple(), gid, args), **options
             )
             return result
 
