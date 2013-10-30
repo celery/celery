@@ -228,6 +228,7 @@ class test_ResultHandler(PoolCase):
             Mock(), Mock(), Mock(), Mock(),
             fileno_to_outq={},
             on_process_alive=Mock(),
+            on_job_ready=Mock(),
         )
         self.assertTrue(x)
         x.on_state_change = Mock()

@@ -211,9 +211,11 @@ class TaskProducer(Producer):
                      serializer=None, delivery_mode=None, compression=None,
                      reply_to=None, time_limit=None, soft_time_limit=None,
                      declare=None, headers=None,
-                     send_task_send=signals.task_send.send,
-                     send_task_sent=signals.task_sent.send,
-                     send_receivers=signals.task_send.receivers,
+                     send_before_publish=signals.before_task_publish.send,
+                     before_receivers=signals.before_task_publish.receivers,
+                     send_after_publish=signals.after_task_publish.send,
+                     after_receivers=signals.after_task_publish.receivers,
+                     send_task_sent=signals.task_sent.send,  # XXX deprecated
                      sent_receivers=signals.task_sent.receivers,
                      **kwargs):
         """Send task message."""
@@ -272,14 +274,16 @@ class TaskProducer(Producer):
             'chord': chord,
         }
 
-        if send_receivers:
-            send_task_send(sender=task_name, body=body,
-                           exchange=exchange,
-                           routing_key=routing_key,
-                           declare=declare,
-                           headers=headers,
-                           properties=kwargs,
-                           retry_policy=retry_policy)
+        if before_receivers:
+            send_before_publish(
+                sender=task_name, body=body,
+                exchange=exchange,
+                routing_key=routing_key,
+                declare=declare,
+                headers=headers,
+                properties=kwargs,
+                retry_policy=retry_policy,
+            )
 
         self.publish(
             body,
@@ -294,8 +298,15 @@ class TaskProducer(Producer):
             **kwargs
         )
 
-        if sent_receivers:
-            send_task_sent(sender=task_name, **body)
+        if after_receivers:
+            send_after_publish(sender=task_name, body=body,
+                               exchange=exchange, routing_key=routing_key)
+
+        if sent_receivers:  # XXX deprecated
+            send_task_sent(sender=task_name, task_id=task_id,
+                           task=task_name, args=task_args,
+                           kwargs=task_kwargs, eta=eta,
+                           taskset=group_id or taskset_id)
         if self.send_sent_event:
             evd = event_dispatcher or self.event_dispatcher
             exname = exchange or self.exchange

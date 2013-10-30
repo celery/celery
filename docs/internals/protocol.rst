@@ -1,5 +1,7 @@
 .. _internals-task-message-protocol:
 
+.. _task-message-protocol-v1:
+
 =======================
  Task Messages
 =======================

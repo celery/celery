@@ -389,7 +389,7 @@ class AsynPool(_pool.Pool):
         # only used by async pool.
         if hard:
             self._tref_for_id[job] = hub.call_at(
-                time() + (hard - soft), self._on_hard_timeout, job,
+                now() + (hard - soft), self._on_hard_timeout, job,
             )
         try:
             result = self._cache[job]
@@ -482,7 +482,6 @@ class AsynPool(_pool.Pool):
         mark_write_fd_as_active = active_writes.add
         mark_write_gen_as_active = self._active_writers.add
         mark_worker_as_busy = busy_workers.add
-        mark_worker_as_available = busy_workers.discard
         write_generator_done = self._active_writers.discard
         get_job = self._cache.__getitem__
         # puts back at the end of the queue

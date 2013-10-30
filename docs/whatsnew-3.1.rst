@@ -847,8 +847,13 @@ In Other News
 
         >>> t.apply_async(headers={'sender': 'George Costanza'})
 
-- New :signal:`task_send`` signal dispatched before a task message
+- New :signal:`task_before_publish`` signal dispatched before a task message
   is sent and can be used to modify the final message fields (Issue #1281).
+
+- New :signal:`task_after_publish` signal replaces the old :signal:`task_sent`
+  signal.
+
+    The :signal:`task_sent` signal is now deprecated and should not be used.
 
 - ``celery.platforms.PIDFile`` renamed to :class:`celery.platforms.Pidfile`.
 

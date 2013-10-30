@@ -49,7 +49,7 @@ def get_engine(dburi, **kwargs):
 def create_session(dburi, short_lived_sessions=False, **kwargs):
     engine = get_engine(dburi, **kwargs)
     if short_lived_sessions or dburi not in _SESSIONS:
-        session = _SESSIONS[dburi] = sessionmaker(bind=engine)
+        _SESSIONS[dburi] = sessionmaker(bind=engine)
     return engine, _SESSIONS[dburi]
 
 

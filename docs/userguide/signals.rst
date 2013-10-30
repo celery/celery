@@ -21,30 +21,33 @@ Basics
 Several kinds of events trigger signals, you can connect to these signals
 to perform actions as they trigger.
 
-Example connecting to the :signal:`task_sent` signal:
+Example connecting to the :signal:`after_task_publish` signal:
 
 .. code-block:: python
 
-    from celery.signals import task_sent
+    from celery.signals import after_task_publish
 
-    @task_sent.connect
-    def task_sent_handler(sender=None, task_id=None, task=None, args=None,
-                          kwargs=None, **kwds):
-        print('Got signal task_sent for task id {0}'.format(task_id))
+    @after_task_publish.connect
+    def task_sent_handler(sender=None, body=None, **kwargs):
+        print('after_task_publish for task id {body[id]}'.format(
+            body=body,
+        ))
 
 
 Some signals also have a sender which you can filter by. For example the
-:signal:`task_sent` signal uses the task name as a sender, so you can
-connect your handler to be called only when tasks with name `"tasks.add"`
-has been sent by providing the `sender` argument to
-:class:`~celery.utils.dispatch.signal.Signal.connect`:
+:signal:`after_task_publish` signal uses the task name as a sender, so by
+providing the ``sender`` argument to
+:class:`~celery.utils.dispatch.signal.Signal.connect` you can
+connect your handler to be called every time a task with name `"proj.tasks.add"`
+is published:
 
 .. code-block:: python
 
-    @task_sent.connect(sender='tasks.add')
-    def task_sent_handler(sender=None, task_id=None, task=None, args=None,
-                          kwargs=None, **kwds):
-        print('Got signal task_sent for task id {0}'.format(task_id)
+    @after_task_publish.connect(sender='proj.tasks.add')
+    def task_sent_handler(sender=None, body=None, **kwargs):
+        print('after_task_publish for task id {body[id]}'.format(
+            body=body,
+        ))
 
 Signals use the same implementation as django.core.dispatch. As a result other
 keyword parameters (e.g. signal) are passed to all signal handlers by default.
@@ -61,10 +64,10 @@ Signals
 Task Signals
 ------------
 
-.. signal:: task_send
+.. signal:: before_task_publish
 
-task_send
-~~~~~~~~~
+before_task_publish
+~~~~~~~~~~~~~~~~~~~
 .. versionadded:: 3.1
 
 Dispatched before a task is published.
@@ -79,7 +82,7 @@ Provides arguements:
     Task message body.
 
     This is a mapping containing the task message fields
-    (see :ref:`internals-task-message-protocol`).
+    (see :ref:`task-message-protocol-v1`).
 
 * exchange
 
@@ -87,7 +90,7 @@ Provides arguements:
 
 * routing_key
 
-    Routing used when sending the message.
+    Routing key to use when sending the message.
 
 * headers
 
@@ -108,10 +111,10 @@ Provides arguements:
     Mapping of retry options.  Can be any argument to
     :meth:`kombu.Connection.ensure` and can be modified.
 
-.. signal:: task_sent
+.. signal:: after_task_publish
 
-task_sent
-~~~~~~~~~
+after_task_publish
+~~~~~~~~~~~~~~~~~~
 
 Dispatched when a task has been sent to the broker.
 Note that this is executed in the process that sent the task.
@@ -120,24 +123,18 @@ Sender is the name of the task being sent.
 
 Provides arguments:
 
-* task_id
-    Id of the task to be executed.
+* body
 
-* task
-    The task being executed.
+    The task message body, see :ref:`task-message-protocol-v1`
+    for a reference of possible fields that can be defined.
 
-* args
-    the tasks positional arguments.
+* exchange
 
-* kwargs
-    The tasks keyword arguments.
+    Name of the exchange or :class:`~kombu.Exchange` object used.
 
-* eta
-    The time to execute the task.
+* routing_key
 
-* taskset
-    Id of the group this task is part of (if any).
-    (named taskset for historial reasons)
+    Routing key used.
 
 .. signal:: task_prerun
 
@@ -580,3 +577,13 @@ Provides arguments:
 * options
 
     Mapping of the parsed user preload options (with default values).
+
+Deprecated Signals
+------------------
+
+.. signal:: task_sent
+
+task_sent
+~~~~~~~~~
+
+This signal is deprecated, please use :signal:`after_task_publish` instead.

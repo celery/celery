@@ -15,7 +15,8 @@
 from __future__ import absolute_import
 from .utils.dispatch import Signal
 
-__all__ = ['task_sent', 'task_prerun', 'task_postrun', 'task_success',
+__all__ = ['before_task_publish', 'after_task_publish',
+           'task_prerun', 'task_postrun', 'task_success',
            'task_retry', 'task_failure', 'task_revoked', 'celeryd_init',
            'celeryd_after_setup', 'worker_init', 'worker_process_init',
            'worker_ready', 'worker_shutdown', 'setup_logging',
@@ -24,10 +25,14 @@ __all__ = ['task_sent', 'task_prerun', 'task_postrun', 'task_success',
            'eventlet_pool_preshutdown', 'eventlet_pool_postshutdown',
            'eventlet_pool_apply']
 
-task_send = Signal(providing_args=[
+before_task_publish = Signal(providing_args=[
     'body', 'exchange', 'routing_key', 'headers', 'properties',
     'declare', 'retry_policy',
 ])
+after_task_publish = Signal(providing_args=[
+    'body', 'exchange', 'routing_key',
+])
+#: Deprecated, use after_task_publish instead.
 task_sent = Signal(providing_args=[
     'task_id', 'task', 'args', 'kwargs', 'eta', 'taskset',
 ])
