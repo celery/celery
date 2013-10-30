@@ -188,3 +188,38 @@ You can enable this behavior by using the following configuration options:
 
     CELERY_ACKS_LATE = True
     CELERYD_PREFETCH_MULTIPLIER = 1
+
+Prefork pool prefetch settings
+------------------------------
+    
+The prefork pool will asynchronously send as many tasks to the processes
+as it can and this means that the processes are, in effect, prefetching
+tasks.
+
+This benefits performance but it also means that tasks may be stuck
+waiting for long running tasks to complete::
+
+    -> send T1 to Process A
+    # A executes T1
+    -> send T2 to Process B
+    # B executes T2
+    <- T2 complete
+
+    -> send T3 to Process A
+    # A still executing T1, T3 stuck in local buffer and
+    # will not start until T1 returns
+
+The worker will send tasks to the process as long as the pipe buffer is
+writable.  The pipe buffer size varies based on the operating system: some may
+have a buffer as small as 64kb but on recent Linux versions the buffer
+size is 1MB (can only be changed system wide).
+
+You can disable this prefetching behavior by enabling the :option:`-Ofair`
+worker option:
+
+.. code-block:: bash
+
+    $ celery -A proj worker -l info -Ofair
+
+With this option enabled the worker will only write to workers that are
+available for work, disabling the prefetch behavior.

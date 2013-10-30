@@ -56,6 +56,10 @@ The :program:`celery worker` command (previously known as ``celeryd``)
     Defaults to `celerybeat-schedule`. The extension ".db" may be
     appended to the filename.
 
+.. cmdoption:: -O
+
+    Apply optimization profile.  Supported: default, fair
+
 .. cmdoption:: --scheduler
 
     Scheduler class to use. Default is celery.beat.PersistentScheduler

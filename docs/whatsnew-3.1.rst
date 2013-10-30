@@ -59,13 +59,13 @@ Highlights
 Important Notes
 ===============
 
-No longer supports Python 2.5
------------------------------
+Drops support for Python 2.5
+----------------------------
 
 Celery now requires Python 2.6 or later.
 
-We now have a dual codebase that runs on both Python 2 and 3 without
-using the ``2to3`` porting tool.
+We now have a dual codebase that runs on both Python 2 and 3, and
+we are no longer using the ``2to3`` tool.
 
 Last version to enable Pickle by default
 ----------------------------------------
@@ -156,8 +156,43 @@ but hopefully more transports will be supported in the future.
     This timeout is no longer necessary, and so the task can be marked as
     failed as soon as the pool gets the notification that the process exited.
 
-Now supports Django out of the box
-----------------------------------
+.. admonition:: Long running tasks
+
+    The new pool will asynchronously send as many tasks to the processes
+    as it can and this means that the processes are, in effect, prefetching
+    tasks.
+
+    This benefits performance but it also means that tasks may be stuck
+    waiting for long running tasks to complete::
+
+        -> send T1 to Process A
+        # A executes T1
+        -> send T2 to Process B
+        # B executes T2
+        <- T2 complete
+
+        -> send T3 to Process A
+        # A still executing T1, T3 stuck in local buffer and
+        # will not start until T1 returns
+
+    The worker will send tasks to the process as long as the pipe buffer is
+    writable.  The pipe buffer size varies based on the operating system: some may
+    have a buffer as small as 64kb but on recent Linux versions the buffer
+    size is 1MB (can only be changed system wide).
+
+    You can disable this prefetching behavior by enabling the :option:`-Ofair`
+    worker option:
+
+    .. code-block:: bash
+
+        $ celery -A proj worker -l info -Ofair
+
+    With this option enabled the worker will only write to workers that are
+    available for work, disabling the prefetch behavior.
+
+
+Django supported out of the box
+-------------------------------
 
 It was always the goal that the new API introduced in 3.0 would
 be used by everyone, but sadly we didn't have the time to
@@ -247,17 +282,15 @@ Some features still require the :mod:`django-celery` library:
 Events are now ordered using logical time
 -----------------------------------------
 
-Timestamps are not a reliable way to order events in a distributed system,
-for one the floating point value does not have enough precision, but
-also it's impossible to keep physical clocks in sync.
+Keeping physical clocks in perfect sync is impossible so timestamps are not
+a reliable way to order events in a distributed system.
 
 Celery event messages have included a logical clock value for some time,
 but starting with this version that field is also used to order them
-(that is if the monitor is using :mod:`celery.events.state`).
 
 The logical clock is currently implemented using Lamport timestamps,
 which does not have a high degree of accuracy, but should be good
-enough to casually order the events.
+enough for a casual order.
 
 Also, events now record timezone information
 by including a new ``utcoffset`` field in the event message.
