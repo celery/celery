@@ -427,6 +427,10 @@ class Celery(object):
                 amqp._producer_pool.force_close_all()
                 amqp._producer_pool = None
 
+    def signature(self, *args, **kwargs):
+        kwargs['app'] = self
+        return self.canvas.signature(*args, **kwargs)
+
     def create_task_cls(self):
         """Creates a base task class using default configuration
         taken from this app."""
@@ -593,6 +597,11 @@ class Celery(object):
     @cached_property
     def log(self):
         return instantiate(self.log_cls, app=self)
+
+    @cached_property
+    def canvas(self):
+        from celery import canvas
+        return canvas
 
     @cached_property
     def tasks(self):
