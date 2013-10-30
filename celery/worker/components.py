@@ -118,7 +118,7 @@ class Pool(bootsteps.StartStopStep):
     requires = (Queues, )
 
     def __init__(self, w, autoscale=None, autoreload=None,
-                 no_execv=False, **kwargs):
+                 no_execv=False, optimization=None, **kwargs):
         if isinstance(autoscale, string_t):
             max_c, _, min_c = autoscale.partition(',')
             autoscale = [int(max_c), min_c and int(min_c) or 0]
@@ -130,6 +130,7 @@ class Pool(bootsteps.StartStopStep):
         if w.autoscale:
             w.max_concurrency, w.min_concurrency = w.autoscale
         self.autoreload_enabled = autoreload
+        self.optimization = optimization
 
     def close(self, w):
         if w.pool:
@@ -162,6 +163,7 @@ class Pool(bootsteps.StartStopStep):
             allow_restart=allow_restart,
             forking_enable=forking_enable,
             semaphore=semaphore,
+            sched_strategy=self.optimization,
         )
         return pool
 
