@@ -100,7 +100,7 @@ class test_group(BuiltinsCase):
         x.apply_async()
 
     def test_apply_empty(self):
-        x = group()
+        x = group(app=self.app)
         x.apply()
         res = x.apply_async()
         self.assertFalse(res)

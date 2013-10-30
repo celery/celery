@@ -269,7 +269,7 @@ class test_group(CanvasCase):
         self.assertTrue(group.from_dict(dict(x)))
 
     def test_call_empty_group(self):
-        x = group()
+        x = group(app=self.app)
         self.assertFalse(len(x()))
 
     def test_skew(self):
