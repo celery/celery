@@ -888,6 +888,11 @@ In Other News
 
     The :signal:`task_sent` signal is now deprecated and should not be used.
 
+- New :signal:`worker_process_shutdown` signal is dispatched in the
+  prefork pool child processes as they exit.
+
+    Contributed by Daniel M Taub.
+
 - ``celery.platforms.PIDFile`` renamed to :class:`celery.platforms.Pidfile`.
 
 - MongoDB Backend: Can now be configured using an URL

@@ -369,14 +369,28 @@ Dispatched when the worker is ready to accept work.
 worker_process_init
 ~~~~~~~~~~~~~~~~~~~
 
-Dispatched by each new pool worker process when it starts.
+Dispatched in all pool child processes when they start.
 
 .. signal:: worker_process_shutdown
 
 worker_process_shutdown
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
-Dispatched by each new pool worker process when it is about to shut down.
+Dispatched in all pool child processes just before they exit.
+
+Note: There is no guarantee that this signal will be dispatched,
+similarly to finally blocks it's impossible to guarantee that handlers
+will be called at shutdown, and if called it may be interrupted during.
+
+Provides arguments:
+
+* pid
+
+    The pid of the child process that is about to shutdown.
+
+* exitcode
+
+    The exitcode that will be used when the child process exits.
 
 .. signal:: worker_shutdown
 

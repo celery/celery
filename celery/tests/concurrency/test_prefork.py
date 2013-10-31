@@ -14,6 +14,7 @@ from celery.utils.functional import noop
 from celery.tests.case import AppCase
 try:
     from celery.concurrency import prefork as mp
+    from celery.concurrency import asynpool
 except ImportError:
 
     class _mp(object):
@@ -34,6 +35,7 @@ except ImportError:
             def apply_async(self, *args, **kwargs):
                 pass
     mp = _mp()  # noqa
+    asynpool = None  # noqa
 
 
 class Object(object):   # for writeable attributes.
@@ -139,11 +141,11 @@ class test_AsynPool(PoolCase):
             yield 1
             yield 2
         g = gen()
-        self.assertTrue(mp.gen_not_started(g))
+        self.assertTrue(asynpool.gen_not_started(g))
         next(g)
-        self.assertFalse(mp.gen_not_started(g))
+        self.assertFalse(asynpool.gen_not_started(g))
         list(g)
-        self.assertFalse(mp.gen_not_started(g))
+        self.assertFalse(asynpool.gen_not_started(g))
 
     def test_select(self):
         ebadf = socket.error()
@@ -151,13 +153,13 @@ class test_AsynPool(PoolCase):
         with patch('select.select') as select:
             select.return_value = ([3], [], [])
             self.assertEqual(
-                mp._select(set([3])),
+                asynpool._select(set([3])),
                 ([3], [], 0),
             )
 
             select.return_value = ([], [], [3])
             self.assertEqual(
-                mp._select(set([3]), None, set([3])),
+                asynpool._select(set([3]), None, set([3])),
                 ([3], [], 0),
             )
 
@@ -166,20 +168,20 @@ class test_AsynPool(PoolCase):
             select.side_effect = eintr
 
             readers = set([3])
-            self.assertEqual(mp._select(readers), ([], [], 1))
+            self.assertEqual(asynpool._select(readers), ([], [], 1))
             self.assertIn(3, readers)
 
         with patch('select.select') as select:
             select.side_effect = ebadf
             readers = set([3])
-            self.assertEqual(mp._select(readers), ([], [], 1))
+            self.assertEqual(asynpool._select(readers), ([], [], 1))
             select.assert_has_calls([call([3], [], [], 0)])
             self.assertNotIn(3, readers)
 
         with patch('select.select') as select:
             select.side_effect = MemoryError()
             with self.assertRaises(MemoryError):
-                mp._select(set([1]))
+                asynpool._select(set([1]))
 
         with patch('select.select') as select:
 
@@ -188,7 +190,7 @@ class test_AsynPool(PoolCase):
                 raise ebadf
             select.side_effect = se
             with self.assertRaises(MemoryError):
-                mp._select(set([3]))
+                asynpool._select(set([3]))
 
         with patch('select.select') as select:
 
@@ -198,32 +200,32 @@ class test_AsynPool(PoolCase):
                 raise ebadf
             select.side_effect = se2
             with self.assertRaises(socket.error):
-                mp._select(set([3]))
+                asynpool._select(set([3]))
 
         with patch('select.select') as select:
 
             select.side_effect = socket.error()
             select.side_effect.errno = 34134
             with self.assertRaises(socket.error):
-                mp._select(set([3]))
+                asynpool._select(set([3]))
 
     def test_promise(self):
         fun = Mock()
-        x = mp.promise(fun, (1, ), {'foo': 1})
+        x = asynpool.promise(fun, (1, ), {'foo': 1})
         x()
         self.assertTrue(x.ready)
         fun.assert_called_with(1, foo=1)
 
     def test_Worker(self):
-        w = mp.Worker(Mock(), Mock())
+        w = asynpool.Worker(Mock(), Mock())
         w.on_loop_start(1234)
-        w.outq.put.assert_called_with((mp.WORKER_UP, (1234, )))
+        w.outq.put.assert_called_with((asynpool.WORKER_UP, (1234, )))
 
 
 class test_ResultHandler(PoolCase):
 
     def test_process_result(self):
-        x = mp.ResultHandler(
+        x = asynpool.ResultHandler(
             Mock(), Mock(), {}, Mock(),
             Mock(), Mock(), Mock(), Mock(),
             fileno_to_outq={},
@@ -253,19 +255,19 @@ class test_ResultHandler(PoolCase):
         x.handle_event(3)
         self.assertIsNone(x._it)
 
-        x._state = mp.TERMINATE
+        x._state = asynpool.TERMINATE
         it = x._process_result()
         next(it)
-        with self.assertRaises(mp.CoroStop):
+        with self.assertRaises(asynpool.CoroStop):
             it.send(3)
         x.handle_event(3)
         self.assertIsNone(x._it)
-        x._state == mp.RUN
+        x._state == asynpool.RUN
 
         reader.recv.side_effect = EOFError()
         it = x._process_result()
         next(it)
-        with self.assertRaises(mp.CoroStop):
+        with self.assertRaises(asynpool.CoroStop):
             it.send(3)
         reader.recv.side_effect = None
 
@@ -276,7 +278,7 @@ class test_TaskPool(PoolCase):
         pool = TaskPool(10)
         pool.start()
         self.assertTrue(pool._pool.started)
-        self.assertTrue(pool._pool._state == mp.RUN)
+        self.assertTrue(pool._pool._state == asynpool.RUN)
 
         _pool = pool._pool
         pool.stop()
