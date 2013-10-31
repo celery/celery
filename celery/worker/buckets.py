@@ -65,7 +65,7 @@ class AsyncTaskBucket(object):
             return self._quick_put(request)
         return self.cont(request, bucket, 1)
 
-    def add_task_type(self, name):
+    def add_bucket_for_type(self, name):
         task_type = self.task_registry[name]
         limit = getattr(task_type, 'rate_limit', None)
         limit = timeutils.rate(limit)
@@ -81,7 +81,7 @@ class AsyncTaskBucket(object):
 
     def refresh(self):
         for name in self.task_registry:
-            self.add_task_type(name)
+            self.add_bucket_for_type(name)
 
 
 class TaskBucket(object):
