@@ -6,7 +6,7 @@
     Composing task workflows.
 
     Documentation for some of these types are in :mod:`celery`.
-    You should not import these from :mod:`celery` and not this module.
+    You should import these from :mod:`celery` and not this module.
 
 
 """
