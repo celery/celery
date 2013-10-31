@@ -377,7 +377,7 @@ class PersistentScheduler(Scheduler):
                     choices[stored_utc], choices[utc])
             self._store.clear()   # UTC setting changed, reset db!
         entries = self._store.setdefault('entries', {})
-        self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
+        self.update_from_dict(self.app.conf.CELERYBEAT_SCHEDULE)
         self.install_default_entries(self.schedule)
         self._store.update(__version__=__version__, tz=tz, utc_enabled=utc)
         self.sync()
