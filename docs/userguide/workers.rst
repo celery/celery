@@ -237,6 +237,15 @@ When a worker receives a revoke request it will skip executing
 the task, but it won't terminate an already executing task unless
 the `terminate` option is set.
 
+.. note::
+
+    The terminate option is a last resort for administrators when
+    a task is stuck.  It's not for terminating the task,
+    it's for terminating the process that is executing the task, and that
+    process may have already started processing another task at the point
+    when the signal is sent, so for this rason you must never call this
+    programatically.
+
 If `terminate` is set the worker child process processing the task
 will be terminated.  The default signal sent is `TERM`, but you can
 specify this using the `signal` argument.  Signal can be the uppercase name
