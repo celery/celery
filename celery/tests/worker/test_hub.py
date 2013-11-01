@@ -204,7 +204,8 @@ class test_Hub(Case):
         hub.poller = Mock(name='hub.poller')
         hub.poller.register.side_effect = ValueError()
         hub._discard = Mock(name='hub.discard')
-        hub.add(2, Mock(), READ)
+        with self.assertRaises(ValueError):
+            hub.add(2, Mock(), READ)
         hub._discard.assert_called_with(2)
 
     def test_repr_active(self):
