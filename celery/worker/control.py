@@ -87,7 +87,7 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
         for request in requests:
             if request.id not in terminated:
                 terminated.add(request.id)
-                logger.info('Terminating %s (%s)', task_id, signum)
+                logger.info('Terminating %s (%s)', request.id, signum)
                 request.terminate(state.consumer.pool, signal=signum)
                 if len(terminated) >= size:
                     break
