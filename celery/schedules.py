@@ -134,6 +134,9 @@ class schedule(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __reduce__(self):
+        return self.__class__, (self.run_every, self.relative, self.nowfun)
+
     @property
     def seconds(self):
         return timedelta_seconds(self.run_every)
@@ -577,8 +580,11 @@ class crontab(schedule):
 
 
 def maybe_schedule(s, relative=False, app=None):
-    if isinstance(s, int):
-        s = timedelta(seconds=s)
-    if isinstance(s, timedelta):
-        return schedule(s, relative, app=app)
+    if s is not None:
+        if isinstance(s, int):
+            s = timedelta(seconds=s)
+        if isinstance(s, timedelta):
+            return schedule(s, relative, app=app)
+        else:
+            s.app = app
     return s

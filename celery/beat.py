@@ -89,8 +89,6 @@ class ScheduleEntry(object):
         self.kwargs = kwargs
         self.options = options
         self.schedule = maybe_schedule(schedule, relative, app=self.app)
-        if self.schedule:
-            self.schedule.app = self.app
         self.last_run_at = last_run_at or self._default_now()
         self.total_run_count = total_run_count or 0
 
@@ -106,6 +104,12 @@ class ScheduleEntry(object):
             total_run_count=self.total_run_count + 1,
         ))
     __next__ = next = _next_instance  # for 2to3
+
+    def __reduce__(self):
+        return self.__class__, (
+            self.name, self.task, self.last_run_at, self.total_run_count,
+            self.schedule, self.args, self.kwargs, self.options,
+        )
 
     def update(self, other):
         """Update values from another entry.
@@ -272,6 +276,7 @@ class Scheduler(object):
 
     def _maybe_entry(self, name, entry):
         if isinstance(entry, self.Entry):
+            entry.app = self.app
             return entry
         return self.Entry(**dict(entry, name=name, app=self.app))
 
