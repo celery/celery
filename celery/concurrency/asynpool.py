@@ -474,8 +474,12 @@ class AsynPool(_pool.Pool):
         mark_worker_as_busy = busy_workers.add
         write_generator_done = self._active_writers.discard
         get_job = self._cache.__getitem__
-        # puts back at the end of the queue
-        self._put_back = outbound.appendleft
+
+        def _put_back(job):
+            # puts back at the end of the queue
+            if job not in outbound:  # XXX slow, should find another way
+                outbound.appendleft(job)
+        self._put_back = _put_back
         precalc = {ACK: self._create_payload(ACK, (0, )),
                    NACK: self._create_payload(NACK, (0, ))}
         is_fair_strategy = self.sched_strategy == SCHED_STRATEGY_FAIR
