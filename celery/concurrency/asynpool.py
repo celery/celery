@@ -3,6 +3,10 @@
     celery.concurrency.asynpool
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    .. note::
+
+        This module will be moved soon, so don't use it directly.
+
     Non-blocking version of :class:`multiprocessing.Pool`.
 
     This code deals with three major challenges:

@@ -15,6 +15,7 @@ SKIP_FILES="celery.five.rst
             celery.app.base.rst
             celery.apps.rst
             celery.canvas.rst
+            celery.concurrency.asynpool.rst
             celery.utils.encoding.rst"
 
 modules=$(find "$PACKAGE" -name "*.py")
