@@ -57,6 +57,11 @@ class default(object):
     BROKER_URL = os.environ.get('CSTRESS_BROKER', 'amqp://')
     CELERY_RESULT_BACKEND = os.environ.get('CSTRESS_BACKEND', 'rpc://')
     CELERYD_PREFETCH_MULTIPLIER = int(os.environ.get('CSTRESS_PREFETCH', 1))
+    CELERY_TASK_PUBLISH_RETRY_POLICY = {
+        'max_retries': 100,
+        'interval_max': 2,
+        'interval_step': 0.1,
+    }
 
 
 @template()
