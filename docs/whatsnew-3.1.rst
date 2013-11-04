@@ -232,14 +232,14 @@ but if you would like to experiment with it you should now that:
 
     .. code-block:: python
 
-        from django.conf import settings
-        app.config_from_object(settings)
+        app.config_from_object('django.conf:settings')
 
     Neither will it automatically traverse your installed apps so to get the
     autodiscovery behavior of ``django-celery`` you need to call this yourself:
 
     .. code-block:: python
 
+        from django.conf imoprt settings
         app.autodiscover_tasks(settings.INSTALLED_APPS)
 
 - You no longer use ``manage.py``

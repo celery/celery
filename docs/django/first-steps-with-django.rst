@@ -39,7 +39,7 @@ that defines the Celery instance:
     from django.conf import settings
 
     app = Celery('proj.celery')
-    app.config_from_object(settings)
+    app.config_from_object('django.conf:settings')
     app.autodiscover_tasks(settings.INSTALLED_APPS, related_name='tasks')
 
     @celery.task(bind=True)
@@ -58,9 +58,13 @@ for Celery.  This means that you don't have to use multiple
 configuration files, and instead configure Celery directly
 from the Django settings.
 
+You can pass the object directly here, but using a string is better since
+then the worker doesn't have to serialize the object when using Windows
+or execv:
+
 .. code-block:: python
 
-    app.config_from_object(settings)
+    app.config_from_object('django.conf:settings')
 
 Next, a common practice for reusable apps is to define all tasks
 in a separate ``tasks.py`` module, and Celery does have a way to
