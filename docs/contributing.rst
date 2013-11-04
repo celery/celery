@@ -291,7 +291,7 @@ The versions we currently maintain is:
 
 * 2.1
 
-  This is the last version to use the ``carrot`` AMQP framework.
+  This is the last version to use the ``carrot`` AMQP library.
   Recent versions use ``kombu``.
 
 Archived branches
@@ -860,7 +860,7 @@ celery
 kombu
 -----
 
-Messaging framework.
+Messaging library.
 
 :git: https://github.com/celery/kombu
 :CI: http://travis-ci.org/#!/celery/kombu
@@ -904,7 +904,7 @@ Django <-> Celery Integration.
 cl
 --
 
-Actor framework.
+Actor library.
 
 :git: https://github.com/celery/cl
 :PyPI: http://pypi.python.org/pypi/cl

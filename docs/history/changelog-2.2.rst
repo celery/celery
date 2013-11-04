@@ -449,7 +449,7 @@ Important Notes
 
 * Carrot has been replaced with `Kombu`_
 
-    Kombu is the next generation messaging framework for Python,
+    Kombu is the next generation messaging library for Python,
     fixing several flaws present in Carrot that was hard to fix
     without breaking backwards compatibility.
 

@@ -23,8 +23,8 @@ message on the queue, the broker then delivers the message to a worker.
 A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
-Celery is written in Python, but the protocol can be implemented in any
-language.  So far there's RCelery_ for the Ruby programming language, and a
+Celery is a library written in Python, but the protocol can be implemented in
+any language.  So far there's RCelery_ for the Ruby programming language, and a
 `PHP client`, but language interoperability can also be achieved
 by using webhooks.
 
