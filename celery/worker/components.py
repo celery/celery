@@ -9,6 +9,7 @@
 from __future__ import absolute_import
 
 import atexit
+import warnings
 
 from kombu.async import Hub as _Hub, get_event_loop, set_event_loop
 from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
@@ -24,6 +25,12 @@ __all__ = ['Timer', 'Hub', 'Queues', 'Pool', 'Beat', 'StateDB', 'Consumer']
 ERR_B_GREEN = """\
 -B option doesn't work with eventlet/gevent pools: \
 use standalone beat instead.\
+"""
+
+W_POOL_SETTING = """
+The CELERYD_POOL setting should not be used to select the eventlet/gevent
+pools, instead you *must use the -P* argument so that patches are applied
+as early as possible.
 """
 
 
@@ -141,6 +148,8 @@ class Pool(bootsteps.StartStopStep):
             w.pool.terminate()
 
     def create(self, w, semaphore=None, max_restarts=None):
+        if w.app.conf.CELERYD_POOL in ('eventlet', 'gevent'):
+            warnings.warn(UserWarning(W_POOL_SETTING))
         threaded = not w.use_eventloop
         procs = w.min_concurrency
         forking_enable = w.no_execv if w.force_execv else True
