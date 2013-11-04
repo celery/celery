@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-:Version: 3.0.24 (Chiastic Slide)
+:Version: 3.1.0rc6 (Cipater)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
@@ -22,15 +22,15 @@ machines.
 A task queue's input is a unit of work, called a task, dedicated worker
 processes then constantly monitor the queue for new work to perform.
 
-Celery communicates via messages using a broker
+Celery communicates via messages, usually using a broker
 to mediate between clients and workers.  To initiate a task a client puts a
 message on the queue, the broker then delivers the message to a worker.
 
 A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
-Celery is written in Python, but the protocol can be implemented in any
-language.  So far there's RCelery_ for the Ruby programming language, and a
+Celery is a library written in Python, but the protocol can be implemented in
+any language.  So far there's RCelery_ for the Ruby programming language, and a
 `PHP client`, but language interoperability can also be achieved
 by using webhooks.
 
@@ -52,9 +52,9 @@ This is the last version to support Python 2.5,
 and from Celery 3.1, Python 2.6 or later is required.
 The last version to support Python 2.4 was Celery series 2.2.
 
-*Celery* requires a message broker to send and receive messages.
-The RabbitMQ, Redis and MongoDB broker transports are feature complete,
-but there's also support for a myriad of other solutions, including
+*Celery* is usually used with a message broker to send and receive messages.
+The RabbitMQ, Redis transports are feature complete,
+but there's also experimental support for a myriad of other solutions, including
 using SQLite for local development.
 
 *Celery* can run on a single machine, on multiple machines, or even
@@ -122,17 +122,17 @@ Celery is...
 It supports...
 ==============
 
-    - **Brokers**
+    - **Message Transports**
 
         - RabbitMQ_, Redis_,
-        - MongoDB_, Beanstalk_,
-        - CouchDB_, SQLAlchemy_,
-        - Django ORM, Amazon SQS, `IronMQ`_
+        - MongoDB_ (experimental), Amazon SQS (experimental),
+        - CouchDB_ (experimental), SQLAlchemy_ (experimental),
+        - Django ORM (experimental), `IronMQ`_
         - and more...
 
     - **Concurrency**
 
-        - multiprocessing, Eventlet_, gevent_, threads/single threaded
+        - Prefork, Eventlet_, gevent_, threads/single threaded
 
     - **Result Stores**
 
@@ -236,9 +236,36 @@ commas.
 
     $ pip install celery[librabbitmq]
 
-    $ pip install celery[librabbitmq,redis]
+    $ pip install celery[librabbitmq,redis,auth,msgpack]
 
 The following bundles are available:
+
+Serializers
+~~~~~~~~~~~
+
+:celery[auth]:
+    for using the auth serializer.
+
+:celery[msgpack]:
+    for using the msgpack serializer.
+
+:celery[yaml]:
+    for using the yaml serializer.
+
+Concurrency
+~~~~~~~~~~~
+
+:celery[eventlet]:
+    for using the eventlet pool.
+
+:celery[gevent]:
+    for using the gevent pool.
+
+:celery[threads]:
+    for using the thread pool.
+
+Transports and Backends
+~~~~~~~~~~~~~~~~~~~~~~~
 
 :celery[librabbitmq]:
     for using the librabbitmq C library.
@@ -249,8 +276,20 @@ The following bundles are available:
 :celery[mongodb]:
     for using MongoDB as a message transport, or as a result backend.
 
+:celery[sqs]:
+    for using Amazon SQS as a message transport.
+
+:celery[memcache]:
+    for using memcached as a result backend.
+
+:celery[cassandra]:
+    for using Apache Cassandra as a result backend.
+
 :celery[couchdb]:
     for using CouchDB as a message transport.
+
+:celery[couchbase]:
+    for using CouchBase as a result backend.
 
 :celery[beanstalk]:
     for using Beanstalk as a message transport.
@@ -263,6 +302,12 @@ The following bundles are available:
 
 :celery[sqlalchemy]:
     for using SQLAlchemy as a message transport, or as a result backend.
+
+:celery[pyro]:
+    for using the Pyro4 message transport.
+
+:celery[slmq]:
+    for using the SoftLayer Message Queue transport.
 
 .. _celery-installing-from-source:
 
