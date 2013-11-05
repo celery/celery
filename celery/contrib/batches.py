@@ -90,6 +90,7 @@ from celery.five import Empty, Queue
 from celery.utils.log import get_logger
 from celery.worker.job import Request
 from celery.utils import noop
+from kombu.async.timer import to_timestamp
 
 __all__ = ['Batches']
 
@@ -195,7 +196,8 @@ class Batches(Task):
         put_buffer = self._buffer.put
         flush_buffer = self._do_flush
 
-        def task_message_handler(message, body, ack):
+        def task_message_handler(message, body, ack, reject, callbacks,
+                             to_timestamp=to_timestamp):
             request = Req(body, on_ack=ack, app=app, hostname=hostname,
                           events=eventer, task=task,
                           connection_errors=connection_errors,
