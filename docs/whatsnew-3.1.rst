@@ -449,17 +449,17 @@ See the :ref:`guide-extending` guide for more information.
 New result backend with RPC semantics
 -------------------------------------
 
-This version of the ``amqp`` result backend is a very good alternative
-to use in classical RPC scenarios, where the process that initiates
+This new experimental version of the ``amqp`` result backend is a very good
+alternative to use in classical RPC scenarios, where the process that initiates
 the task is always the process to retrieve the result.
 
 It uses Kombu to send and retrieve results, and each client
-will create a unique queue for replies to be sent to. Avoiding
-the significant overhead of the original amqp backend which creates
+uses a unique queue for replies to be sent to, which avoids
+the significant overhead of the original amqp backend that creates
 one queue per task.
 
-Results sent using this backend is not persistent, and so will
-not survive a broker restart, but you can set
+Results sent using this backend does not persist, and so they won't
+survive a broker restart, but you can set
 the :setting:`CELERY_RESULT_PERSISTENT` setting to change that.
 
 .. code-block:: python
