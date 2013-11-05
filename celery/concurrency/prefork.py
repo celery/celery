@@ -128,6 +128,7 @@ class TaskPool(BasePool):
         self.terminate_job = P.terminate_job
         self.grow = P.grow
         self.shrink = P.shrink
+        self.flush = P.flush
         self.restart = P.restart
         self.maybe_handle_result = P._result_handler.handle_event
         self.handle_result_event = P.handle_result_event
