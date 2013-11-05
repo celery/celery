@@ -105,14 +105,14 @@ class test_Autoscaler(AppCase):
         x.body()
         x.body()
         self.assertEqual(x.pool.num_processes, 10)
-        self.assertTrue(worker.consumer.increment_prefetch_count.called)
+        self.assertTrue(worker.consumer._update_prefetch_count.called)
         state.reserved_requests.clear()
         x.body()
         self.assertEqual(x.pool.num_processes, 10)
         x._last_action = monotonic() - 10000
         x.body()
         self.assertEqual(x.pool.num_processes, 3)
-        self.assertTrue(worker.consumer.decrement_prefetch_count.called)
+        self.assertTrue(worker.consumer._update_prefetch_count.called)
 
     def test_run(self):
 

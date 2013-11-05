@@ -300,7 +300,7 @@ def pool_grow(state, n=1, **kwargs):
         state.consumer.controller.autoscaler.force_scale_up(n)
     else:
         state.consumer.pool.grow(n)
-        state.consumer.increment_prefetch_count(n, True)
+        state.consumer._update_prefetch_count(n)
     return {'ok': 'pool will grow'}
 
 
@@ -310,7 +310,7 @@ def pool_shrink(state, n=1, **kwargs):
         state.consumer.controller.autoscaler.force_scale_down(n)
     else:
         state.consumer.pool.shrink(n)
-        state.consumer.decrement_prefetch_count(n, True)
+        state.consumer._update_prefetch_count(-n)
     return {'ok': 'pool will shrink'}
 
 
