@@ -314,7 +314,7 @@ to setup worker specific configuration:
 
     from celery.signals import celeryd_init
 
-    @celeryd_init.connect(sender='worker12.example.com')
+    @celeryd_init.connect(sender='worker12@example.com')
     def configure_worker12(conf=None, **kwargs):
         conf.CELERY_DEFAULT_RATE_LIMIT = '10/m'
 
@@ -327,9 +327,9 @@ sender when you connect:
 
     @celeryd_init.connect
     def configure_workers(sender=None, conf=None, **kwargs):
-        if sender in ('worker1.example.com', 'worker2.example.com'):
+        if sender in ('worker1@example.com', 'worker2@example.com'):
             conf.CELERY_DEFAULT_RATE_LIMIT = '10/m'
-        if sender == 'worker3.example.com':
+        if sender == 'worker3@example.com':
             conf.CELERYD_PREFETCH_MULTIPLIER = 0
 
 Provides arguments:

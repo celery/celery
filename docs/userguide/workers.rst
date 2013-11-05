@@ -215,7 +215,7 @@ to receive the command::
     >>> app.control.broadcast('rate_limit', {
     ...     'task_name': 'myapp.mytask',
     ...     'rate_limit': '200/m'}, reply=True,
-    ...                             destination=['worker1.example.com'])
+    ...                             destination=['worker1@example.com'])
     [{'worker1.example.com': 'New rate limit set successfully'}]
 
 
@@ -404,16 +404,21 @@ Rate Limits
 Changing rate-limits at runtime
 -------------------------------
 
-Example changing the rate limit for the `myapp.mytask` task to accept
-200 tasks a minute on all servers::
+Example changing the rate limit for the `myapp.mytask` task to execute
+at most 200 tasks of that type every minute:
+
+.. code-block:: python
 
     >>> app.control.rate_limit('myapp.mytask', '200/m')
 
-Example changing the rate limit on a single host by specifying the
-destination host name::
+The above does not specify a destination, so the change request will affect
+all worker instances in the cluster.  If you only want to affect a specific
+list of workers you can include the ``destination`` argument:
+
+.. code-block:: python
 
     >>> app.control.rate_limit('myapp.mytask', '200/m',
-    ...            destination=['worker1.example.com'])
+    ...            destination=['celery@worker1.example.com'])
 
 .. warning::
 
@@ -523,7 +528,7 @@ The same can be accomplished dynamically using the :meth:`@control.add_consumer`
     [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
 
     >>> myapp.control.add_consumer('foo', reply=True,
-    ...                            destination=['worker1.local'])
+    ...                            destination=['worker1@example.com'])
     [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
 
 
@@ -541,7 +546,7 @@ even other options::
     ...         'exchange_durable': False,
     ...     },
     ...     reply=True,
-    ...     destination=['worker1.local', 'worker2.local'])
+    ...     destination=['w1@example.com', 'w2@example.com'])
 
 
 .. control:: cancel_consumer
@@ -1024,10 +1029,12 @@ Additional Commands
 Remote shutdown
 ---------------
 
-This command will gracefully shut down the worker remotely::
+This command will gracefully shut down the worker remotely:
+
+.. code-block:: python
 
     >>> app.control.broadcast('shutdown') # shutdown all workers
-    >>> app.control.broadcast('shutdown, destination='worker1.example.com')
+    >>> app.control.broadcast('shutdown, destination="worker1@example.com")
 
 .. control:: ping
 
@@ -1037,7 +1044,9 @@ Ping
 This command requests a ping from alive workers.
 The workers reply with the string 'pong', and that's just about it.
 It will use the default one second timeout for replies unless you specify
-a custom timeout::
+a custom timeout:
+
+.. code-block:: python
 
     >>> app.control.ping(timeout=0.5)
     [{'worker1.example.com': 'pong'},

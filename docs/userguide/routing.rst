@@ -147,21 +147,21 @@ start it with the ``-Q`` option:
 
 .. code-block:: bash
 
-    user@z:/$ celery worker -Q feed_tasks --hostname=z.example.com
+    user@z:/$ celery worker -Q feed_tasks --hostname=z@%h
 
 Servers `x` and `y` must be configured to consume from the default queue:
 
 .. code-block:: bash
 
-    user@x:/$ celery worker -Q default --hostname=x.example.com
-    user@y:/$ celery worker -Q default --hostname=y.example.com
+    user@x:/$ celery worker -Q default --hostname=x@%h
+    user@y:/$ celery worker -Q default --hostname=y@%h
 
 If you want, you can even have your feed processing worker handle regular
 tasks as well, maybe in times when there's a lot of work to do:
 
 .. code-block:: python
 
-    user@z:/$ celery worker -Q feed_tasks,default --hostname=z.example.com
+    user@z:/$ celery worker -Q feed_tasks,default --hostname=z@%h
 
 If you have another queue but on another exchange you want to add,
 just specify a custom exchange and exchange type:
