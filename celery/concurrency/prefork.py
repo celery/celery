@@ -130,8 +130,6 @@ class TaskPool(BasePool):
         self.shrink = P.shrink
         self.flush = P.flush
         self.restart = P.restart
-        self.maybe_handle_result = P._result_handler.handle_event
-        self.handle_result_event = P.handle_result_event
 
     def did_start_ok(self):
         return self._pool.did_start_ok()
