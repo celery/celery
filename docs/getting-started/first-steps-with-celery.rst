@@ -380,7 +380,7 @@ for the task at runtime:
 .. code-block:: bash
 
     $ celery control rate_limit tasks.add 10/m
-    worker.example.com: OK
+    worker@example.com: OK
         new rate limit set successfully
 
 See :ref:`guide-routing` to read more about task routing,

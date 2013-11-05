@@ -341,8 +341,8 @@ class inspect(_RemoteControl):
     Examples::
 
         celery inspect active --timeout=5
-        celery inspect scheduled -d worker1.example.com
-        celery inspect revoked -d w1.e.com,w2.e.com
+        celery inspect scheduled -d worker1@example.com
+        celery inspect revoked -d w1@e.com,w2@e.com
 
     """
     name = 'inspect'
@@ -379,7 +379,7 @@ class control(_RemoteControl):
     Examples::
 
         celery control enable_events --timeout=5
-        celery control -d worker1.example.com enable_events
+        celery control -d worker1@example.com enable_events
         celery control -d w1.e.com,w2.e.com enable_events
 
         celery control -d w1.e.com add_consumer queue_name

@@ -226,40 +226,31 @@ class Consumer(object):
             (n, self.bucket_for_task(t)) for n, t in items(self.app.tasks)
         )
 
-    def increment_prefetch_count(self, n=1, use_multiplier=False):
-        """Increase the prefetch count by ``n``.
+    def _update_prefetch_count(self, index=0):
+        """Update prefetch count after pool/shrink grow operations.
 
-        This will also increase the initial value so it'll persist between
-        consumer restarts.  If you want the change to be temporary,
-        you can use ``self.qos.increment_eventually(n)`` instead.
+        Index must be the change in number of processes as a postive
+        (increasing) or negative (decreasing) number.
 
-        :keyword use_multiplier: If True the value will be multiplied
-            using the current prefetch multiplier setting.
+        .. note::
+
+            Currently pool grow operations will end up with an offset
+            of +1 if the initial size of the pool was 0 (e.g.
+            ``--autoscale=1,0``).
 
         """
-        n = n * self.prefetch_multiplier if use_multiplier else n
-        # initial value must be changed for consumer restart.
-        if self.initial_prefetch_count:
-            # only increase if prefetch enabled (>0)
-            self.initial_prefetch_count += n
-        self.qos.increment_eventually(n)
+        num_processes = self.pool.num_processes
+        if not self.initial_prefetch_count or not num_processes:
+            return  # prefetch disabled
+        self.initial_prefetch_count = (
+            self.pool.num_processes * self.prefetch_multiplier
+        )
+        return self._update_qos_eventually(index)
 
-    def decrement_prefetch_count(self, n=1, use_multiplier=False):
-        """Decrease prefetch count by ``n``.
-
-        This will also decrease the initial value so it'll persist between
-        consumer restarts.  If you want the change to be temporary,
-        you can use ``self.qos.decrement_eventually(n)`` instead.
-
-        :keyword use_multiplier: If True the value will be multiplied
-            using the current prefetch multiplier setting.
-        """
-        n = n * self.prefetch_multiplier if use_multiplier else n
-        initial = self.initial_prefetch_count
-        if initial:  # was not disabled (>0)
-            # must not get lower than 1, since that will disable the limit.
-            self.initial_prefetch_count = max(initial - n, 1)
-        self.qos.decrement_eventually(n)
+    def _update_qos_eventually(self, index):
+        return (self.qos.decrement_eventually if index < 0
+                else self.qos.increment_eventually(
+                    abs(index) * self.prefetch_multiplier))
 
     def _limit_task(self, request, bucket, tokens):
         if not bucket.can_consume(tokens):

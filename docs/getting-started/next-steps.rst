@@ -628,7 +628,7 @@ list of worker host names:
 
 .. code-block:: bash
 
-    $ celery -A proj inspect active --destination=worker1.example.com
+    $ celery -A proj inspect active --destination=celery@example.com
 
 If a destination is not provided then every worker will act and reply
 to the request.

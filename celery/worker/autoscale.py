@@ -135,7 +135,7 @@ class Autoscaler(bgThread):
     def _grow(self, n):
         info('Scaling up %s processes.', n)
         self.pool.grow(n)
-        self.worker.consumer.increment_prefetch_count(n, True)
+        self.worker.consumer._update_prefetch_count(n)
 
     def _shrink(self, n):
         info('Scaling down %s processes.', n)
@@ -145,7 +145,7 @@ class Autoscaler(bgThread):
             debug("Autoscaler won't scale down: all processes busy.")
         except Exception as exc:
             error('Autoscaler: scale_down: %r', exc, exc_info=True)
-        self.worker.consumer.decrement_prefetch_count(n, True)
+        self.worker.consumer._update_prefetch_count(-n)
 
     def info(self):
         return {'max': self.max_concurrency,

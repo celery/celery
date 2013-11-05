@@ -24,12 +24,12 @@ class test_Dumper(AppCase):
 
     def test_format_task_event(self):
         self.dumper.format_task_event(
-            'worker.example.com', time(), 'task-started', 'tasks.add', {})
+            'worker@example.com', time(), 'task-started', 'tasks.add', {})
         self.assertTrue(self.out.getvalue())
 
     def test_on_event(self):
         event = {
-            'hostname': 'worker.example.com',
+            'hostname': 'worker@example.com',
             'timestamp': time(),
             'uuid': '1ef',
             'name': 'tasks.add',
