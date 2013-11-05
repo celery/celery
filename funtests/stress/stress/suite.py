@@ -219,7 +219,7 @@ class Suite(object):
         self._evil_groupmember(segfault)
 
     def timelimits(self):
-        self._evil_groupmember(sleeping, 2, timeout=1)
+        self._evil_groupmember(sleeping, 2, time_limit=1)
 
     def timelimits_soft(self):
         self._evil_groupmember(sleeping_ignore_limits, 2,
