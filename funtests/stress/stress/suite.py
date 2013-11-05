@@ -15,7 +15,7 @@ from celery import group, VERSION_BANNER
 from celery.exceptions import TimeoutError
 from celery.five import range, values, monotonic
 from celery.utils.debug import blockdetection
-from celery.utils.text import pluralize
+from celery.utils.text import pluralize, truncate
 from celery.utils.timeutils import humanize_seconds
 
 from .app import (
@@ -223,7 +223,7 @@ class Suite(object):
 
     def timelimits_soft(self):
         self._evil_groupmember(sleeping_ignore_limits, 2,
-                               soft_timeout=1, timeout=1.1)
+                               soft_time_limit=1, time_limit=1.1)
 
     def alwayskilled(self):
         g = group(kill.s() for _ in range(10))
@@ -284,7 +284,7 @@ class Suite(object):
                 marker(
                     'Still waiting for {0}/{1}: [{2}]: {3!r}'.format(
                         len(r) - len(received), len(r),
-                        ','.join(waiting_for), exc), '!',
+                        truncate(', '.join(waiting_for)), exc), '!',
                 )
                 self.fbi.diag(waiting_for)
             except self.connerrors as exc:

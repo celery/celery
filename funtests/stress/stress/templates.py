@@ -49,6 +49,7 @@ class default(object):
     CELERY_DEFAULT_QUEUE = CSTRESS_QUEUE
     CELERY_TASK_SERIALIZER = 'json'
     CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_RESULT_PERSISTENT = True
     CELERY_QUEUES = [
         Queue(CSTRESS_QUEUE,
               exchange=Exchange(CSTRESS_QUEUE),
