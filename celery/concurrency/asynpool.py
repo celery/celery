@@ -810,8 +810,9 @@ class AsynPool(_pool.Pool):
                             except KeyError:
                                 pass
                             else:
-                                if job._write_to.exitcode is None:
-                                    self._flush_writer(gen)
+                                job_proc = job._write_to
+                                if job_proc.exitcode is None:
+                                    self._flush_writer(job_proc.inq, gen)
                     # workers may have exited in the meantime.
                     self.maintain_pool()
                     sleep(next(intervals))  # don't busyloop
@@ -821,12 +822,16 @@ class AsynPool(_pool.Pool):
             self._active_writes.clear()
             self._busy_workers.clear()
 
-    def _flush_writer(self, writer):
+    def _flush_writer(self, inq, writer):
+        fds = set([inq._writer])
         try:
-            list(writer)
-        except (OSError, IOError) as exc:
-            if get_errno(exc) != errno.EBADF:
-                raise
+            while fds:
+                _, writable, again = _select(writers=fds, timeout=0.5)
+                if not again and writable:
+                    try:
+                        next(writer)
+                    except (StopIteration, OSError, IOError, EOFError):
+                        break
         finally:
             self._active_writers.discard(writer)
 
