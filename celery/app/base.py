@@ -327,7 +327,7 @@ class Celery(object):
             transport=transport or conf.BROKER_TRANSPORT,
             ssl=self.either('BROKER_USE_SSL', ssl),
             heartbeat=heartbeat,
-            login_method=login_method or self.app.conf.BROKER_LOGIN_METHOD,
+            login_method=login_method or conf.BROKER_LOGIN_METHOD,
             failover_strategy=(
                 failover_strategy or conf.BROKER_FAILOVER_STRATEGY
             ),
