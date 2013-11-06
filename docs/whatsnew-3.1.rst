@@ -67,6 +67,9 @@ Celery now requires Python 2.6 or later.
 The new dual code base runs on both Python 2 and 3, without
 requiring the ``2to3`` porting tool.
 
+This is also the last version to support Python 2.6, as from Celery 3.2 and
+onwards Python 2.7 or later will be required.
+
 Last version to enable Pickle by default
 ----------------------------------------
 
