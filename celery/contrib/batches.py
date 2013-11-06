@@ -90,6 +90,7 @@ from celery.five import Empty, Queue
 from celery.utils.log import get_logger
 from celery.worker.job import Request
 from celery.utils import noop
+from kombu.async.timer import to_timestamp
 
 __all__ = ['Batches']
 
