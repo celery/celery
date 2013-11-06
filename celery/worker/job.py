@@ -26,7 +26,7 @@ from celery.exceptions import (
     SoftTimeLimitExceeded, TimeLimitExceeded,
     WorkerLostError, Terminated, Retry, Reject,
 )
-from celery.five import items, monotonic
+from celery.five import items, monotonic, string_t
 from celery.platforms import signals as _signals
 from celery.utils import fun_takes_kwargs
 from celery.utils.functional import noop
@@ -500,7 +500,9 @@ class Request(object):
     def repr_result(self, result, maxlen=46):
         # 46 is the length needed to fit
         #     'the quick brown fox jumps over the lazy dog' :)
-        return truncate(safe_repr(result), maxlen)
+        if not isinstance(result, string_t):
+            result = safe_repr(result)
+        return truncate(result) if len(result) > maxlen else result
 
     def info(self, safe=False):
         return {'id': self.id,
