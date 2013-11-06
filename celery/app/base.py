@@ -315,7 +315,8 @@ class Celery(object):
     def connection(self, hostname=None, userid=None, password=None,
                    virtual_host=None, port=None, ssl=None,
                    connect_timeout=None, transport=None,
-                   transport_options=None, heartbeat=None, **kwargs):
+                   transport_options=None, heartbeat=None,
+                   failover_strategy=None, **kwargs):
         conf = self.conf
         return self.amqp.Connection(
             hostname or conf.BROKER_URL,
@@ -328,6 +329,7 @@ class Celery(object):
             connect_timeout=self.either(
                 'BROKER_CONNECTION_TIMEOUT', connect_timeout),
             heartbeat=heartbeat,
+            failover_strategy=failover_strategy or conf.BROKER_FAILOVER_STRATEGY,
             login_method=self.either('BROKER_LOGIN_METHOD', None),
             transport_options=dict(conf.BROKER_TRANSPORT_OPTIONS,
                                    **transport_options or {}))
