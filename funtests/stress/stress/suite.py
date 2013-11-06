@@ -20,7 +20,7 @@ from celery.utils.timeutils import humanize_seconds
 
 from .app import (
     marker, _marker, add, any_, exiting, kill, sleeping,
-    sleeping_ignore_limits, segfault,
+    sleeping_ignore_limits, segfault, any_returning,
 )
 from .data import BIG, SMALL
 from .fbi import FBI
@@ -98,6 +98,7 @@ class Suite(object):
                 self.manyshort,
                 self.termbysig,
                 self.bigtasks,
+                self.bigtasksbigvalue,
                 self.smalltasks,
                 self.timelimits,
                 self.timelimits_soft,
@@ -109,6 +110,7 @@ class Suite(object):
             'green': testgroup(
                 self.manyshort,
                 self.bigtasks,
+                self.bigtasksbigvalue,
                 self.smalltasks,
                 self.alwaysexits,
                 self.group_with_exit,
@@ -240,6 +242,11 @@ class Suite(object):
                    evil_t.s(*eargs).set(**opts), add.s(7, 7).set(**opts))
         self.join(g1(), timeout=10)
         self.join(g2(), timeout=10)
+
+    def bigtasksbigvalue(self):
+        g = group(any_returning.s(BIG, sleep=0.3) for i in range(8))
+        r = g()
+        self.join(r, timeout=10)
 
     def bigtasks(self, wait=None):
         self._revoketerm(wait, False, False, BIG)

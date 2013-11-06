@@ -77,6 +77,12 @@ def any_(*args, **kwargs):
 
 
 @app.task
+def any_returning(*args, **kwargs):
+    any_(*args, **kwargs)
+    return args, kwargs
+
+
+@app.task
 def exiting(status=0):
     sys.exit(status)
 
