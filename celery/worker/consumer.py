@@ -487,7 +487,7 @@ class Events(bootsteps.StartStopStep):
         c.event_dispatcher = None
 
     def start(self, c):
-        # Flush events sent while connection was down.
+        # flush events sent while connection was down.
         prev = c.event_dispatcher
         dis = c.event_dispatcher = c.app.events.Dispatcher(
             c.connect(), hostname=c.hostname,
@@ -499,6 +499,10 @@ class Events(bootsteps.StartStopStep):
 
     def stop(self, c):
         if c.event_dispatcher:
+            # remember changes from remote control commands:
+            self.groups = c.event_dispatcher.groups
+
+            # close custom connection
             if c.event_dispatcher.connection:
                 ignore_errors(c, c.event_dispatcher.connection.close)
             ignore_errors(c, c.event_dispatcher.close)
