@@ -67,6 +67,7 @@ NAMESPACES = {
         'CONNECTION_TIMEOUT': Option(4, type='float'),
         'CONNECTION_RETRY': Option(True, type='bool'),
         'CONNECTION_MAX_RETRIES': Option(100, type='int'),
+        'FAILOVER_STRATEGY': Option(None, type='string'),
         'HEARTBEAT': Option(None, type='int'),
         'HEARTBEAT_CHECKRATE': Option(3.0, type='int'),
         'POOL_LIMIT': Option(10, type='int'),
