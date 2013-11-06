@@ -94,6 +94,9 @@ class MockPool(object):
     def handle_result_event(self, *args, **kwargs):
         pass
 
+    def flush(self):
+        pass
+
     def grow(self, n=1):
         self._processes += n
 
@@ -234,44 +237,18 @@ class test_ResultHandler(PoolCase):
         )
         self.assertTrue(x)
         hub = Mock(name='hub')
-        x.register_with_event_loop(hub)
+        recv = x._recv_message = Mock(name='recv_message')
+        recv.return_value = iter([])
         x.on_state_change = Mock()
+        x.register_with_event_loop(hub)
         proc = x.fileno_to_outq[3] = Mock()
         reader = proc.outq._reader
         reader.poll.return_value = False
         x.handle_event(6)  # KeyError
         x.handle_event(3)
-        reader.poll.assert_called_with(0)
-        self.assertFalse(x.on_state_change.called)
-
-        reader.poll.reset()
-        reader.poll.return_value = True
-        task = reader.recv.return_value = (1, (2, 3))
-        x.handle_event(3)
-        reader.poll.assert_called_with(0)
-        reader.recv.assert_called_with()
-        x.on_state_change.assert_called_with(task)
-        self.assertTrue(x._it)
-
-        reader.recv.return_value = None
-        x.handle_event(3)
-        self.assertIsNone(x._it)
-
-        x._state = asynpool.TERMINATE
-        it = x._process_result()
-        next(it)
-        with self.assertRaises(asynpool.CoroStop):
-            it.send(3)
-        x.handle_event(3)
-        self.assertIsNone(x._it)
-        x._state == asynpool.RUN
-
-        reader.recv.side_effect = EOFError()
-        it = x._process_result()
-        next(it)
-        with self.assertRaises(asynpool.CoroStop):
-            it.send(3)
-        reader.recv.side_effect = None
+        x._recv_message.assert_called_with(
+            hub.add_reader, 3, x.on_state_change,
+        )
 
 
 class test_TaskPool(PoolCase):

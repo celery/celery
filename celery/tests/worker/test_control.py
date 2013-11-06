@@ -276,20 +276,24 @@ class test_ControlPanel(AppCase):
             def shrink(self, n=1):
                 self.size -= n
 
+            @property
+            def num_processes(self):
+                return self.size
+
         consumer = Consumer(self.app)
         consumer.prefetch_multiplier = 8
         consumer.qos = Mock(name='qos')
-        consumer.pool = MockPool()
+        consumer.pool = MockPool(1)
         panel = self.create_panel(consumer=consumer)
 
         panel.handle('pool_grow')
         self.assertEqual(consumer.pool.size, 2)
         consumer.qos.increment_eventually.assert_called_with(8)
-        self.assertEqual(consumer.initial_prefetch_count, 9)
+        self.assertEqual(consumer.initial_prefetch_count, 16)
         panel.handle('pool_shrink')
         self.assertEqual(consumer.pool.size, 1)
         consumer.qos.decrement_eventually.assert_called_with(8)
-        self.assertEqual(consumer.initial_prefetch_count, 1)
+        self.assertEqual(consumer.initial_prefetch_count, 8)
 
         panel.state.consumer = Mock()
         panel.state.consumer.controller = Mock()
