@@ -64,7 +64,7 @@ class Settings(ConfigurationView):
         return self.BROKER_TRANSPORT
 
     @property
-    def BROKER_HOST(self):
+    def BROKER_URL(self):
         return (os.environ.get('CELERY_BROKER_URL') or
                 self.first('BROKER_URL', 'BROKER_HOST'))
 

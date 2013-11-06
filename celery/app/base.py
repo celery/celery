@@ -318,7 +318,7 @@ class Celery(object):
                    transport_options=None, heartbeat=None, **kwargs):
         conf = self.conf
         return self.amqp.Connection(
-            hostname or conf.BROKER_HOST,
+            hostname or conf.BROKER_URL,
             userid or conf.BROKER_USER,
             password or conf.BROKER_PASSWORD,
             virtual_host or conf.BROKER_VHOST,

@@ -170,7 +170,7 @@ class test_App(AppCase):
     @with_environ('CELERY_BROKER_URL', '')
     def test_with_broker(self):
         with self.Celery(broker='foo://baribaz') as app:
-            self.assertEqual(app.conf.BROKER_HOST, 'foo://baribaz')
+            self.assertEqual(app.conf.BROKER_URL, 'foo://baribaz')
 
     def test_repr(self):
         self.assertTrue(repr(self.app))
