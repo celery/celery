@@ -233,6 +233,8 @@ class test_ResultHandler(PoolCase):
             on_job_ready=Mock(),
         )
         self.assertTrue(x)
+        hub = Mock(name='hub')
+        x.register_with_event_loop(hub)
         x.on_state_change = Mock()
         proc = x.fileno_to_outq[3] = Mock()
         reader = proc.outq._reader
