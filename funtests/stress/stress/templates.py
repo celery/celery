@@ -50,7 +50,7 @@ class default(object):
     CELERY_TASK_SERIALIZER = 'json'
     CELERY_RESULT_SERIALIZER = 'json'
     CELERY_RESULT_PERSISTENT = True
-    CELERY_TASK_RESULT_EXPIRES = 60
+    CELERY_TASK_RESULT_EXPIRES = 300
     CELERY_QUEUES = [
         Queue(CSTRESS_QUEUE,
               exchange=Exchange(CSTRESS_QUEUE),
