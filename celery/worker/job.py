@@ -15,6 +15,7 @@ import sys
 
 from billiard.einfo import ExceptionInfo
 from datetime import datetime
+from weakref import ref
 
 from kombu.utils import kwdict, reprcall
 from kombu.utils.encoding import safe_repr, safe_str
@@ -89,7 +90,7 @@ class Request(object):
             'hostname', 'eventer', 'connection_errors', 'task', 'eta',
             'expires', 'request_dict', 'acknowledged', 'on_reject',
             'utc', 'time_start', 'worker_pid', '_already_revoked',
-            '_terminate_on_ack',
+            '_terminate_on_ack', '_apply_result',
             '_tzlocal', '__weakref__', '__dict__',
         )
 
@@ -257,6 +258,7 @@ class Request(object):
             timeout=timeout,
             correlation_id=uuid,
         )
+        self._apply_result = ref(result)
         return result
 
     def execute(self, loglevel=None, logfile=None):
@@ -295,12 +297,16 @@ class Request(object):
                 return True
 
     def terminate(self, pool, signal=None):
+        signal = _signals.signum(signal or 'TERM')
         if self.time_start:
-            signal = _signals.signum(signal or 'TERM')
             pool.terminate_job(self.worker_pid, signal)
             self._announce_revoked('terminated', True, signal, False)
         else:
             self._terminate_on_ack = pool, signal
+        if self._apply_result is not None:
+            obj = self._apply_result()  # is a weakref
+            if obj is not None:
+                obj.terminate(signal)
 
     def _announce_revoked(self, reason, terminated, signum, expired):
         task_ready(self)

@@ -544,8 +544,9 @@ class AsynPool(_pool.Pool):
 
         def _put_back(job):
             # puts back at the end of the queue
-            if job._terminated or job.correlation_id in revoked_tasks:
-                job._set_terminated('process already gone')
+            if job._terminated is not None or \
+                    job.correlation_id in revoked_tasks:
+                job._set_terminated(job._terminated)
             else:
                 # XXX linear lookup, should find a better way,
                 # but this happens rarely and is here to protect against races.
