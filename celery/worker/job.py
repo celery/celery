@@ -147,6 +147,7 @@ class Request(object):
         self.task = task or self.app.tasks[name]
         self.acknowledged = self._already_revoked = False
         self.time_start = self.worker_pid = self._terminate_on_ack = None
+        self._apply_result = None
         self._tzlocal = None
 
         # timezone means the message is timezone-aware, and the only timezone
