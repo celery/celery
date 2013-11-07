@@ -30,25 +30,14 @@ it's important that you read the following section.
 This version is officially supported on CPython 2.6, 2.7 and 3.3,
 and also supported on PyPy.
 
-Table of Contents
-=================
-
-.. topic:: Highlights
-
-    - Massive prefork pool improvements.
-
-    - Now supports Django out of the box.
-
-        See the new tutorial at :ref:`django-first-steps`.
-
-    - Extend the worker using bootsteps.
-
-    - Gossip and Mingle: Worker to worker communication.
-
 .. _`website`: http://celeryproject.org/
 .. _`django-celery changelog`:
     http://github.com/celery/django-celery/tree/master/Changelog
 .. _`django-celery 3.0`: http://pypi.python.org/pypi/django-celery/
+
+.. topic:: Table of Contents
+
+    Make sure you read the important notes before upgrading to this version.
 
 .. contents::
     :local:
