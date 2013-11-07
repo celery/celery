@@ -30,18 +30,18 @@ it's important that you read the following section.
 This version is officially supported on CPython 2.6, 2.7 and 3.3,
 and also supported on PyPy.
 
-Highlights
-==========
+Table of Contents
+=================
 
-.. topic:: Overview
+.. topic:: Highlights
 
-    - Massive prefork pool improvements
+    - Massive prefork pool improvements.
 
     - Now supports Django out of the box.
 
         See the new tutorial at :ref:`django-first-steps`.
 
-    - Extend the worker using bootsteps
+    - Extend the worker using bootsteps.
 
     - Gossip and Mingle: Worker to worker communication.
 
@@ -59,8 +59,8 @@ Highlights
 Important Notes
 ===============
 
-Drops support for Python 2.5
-----------------------------
+Dropped support for Python 2.5
+------------------------------
 
 Celery now requires Python 2.6 or later.
 
@@ -205,7 +205,7 @@ The Django community has a convention where there's a separate
 django-x package for every library, acting like a bridge between
 Django and the library.
 
-Having a separate project for Django users have been a pain for Celery,
+Having a separate project for Django users has been a pain for Celery,
 with multiple issue trackers and multiple documentation
 sources, and then lastly since 3.0 we even had different APIs.
 
@@ -214,7 +214,7 @@ use the same library, the same API and the same documentation as
 everyone else.
 
 There is no rush to port your existing code to use the new API,
-but if you would like to experiment with it you should now that:
+but if you would like to experiment with it you should know that:
 
 - You need to use a Celery application instance.
 
@@ -260,7 +260,7 @@ To get started with the new API you should first read the :ref:`first-steps`
 tutorial, and then you should read the Django specific instructions in
 :ref:`django-first-steps`.
 
-The fixes and improvements applied by the django-celery library is now
+The fixes and improvements applied by the django-celery library are now
 automatically applied by core Celery when it detects that
 the :envvar:`DJANGO_SETTINGS_MODULE` environment variable is set.
 
@@ -376,7 +376,7 @@ The available substitutions are as follows:
 Bound tasks
 -----------
 
-The task decorator can now created "bound tasks", which means that the
+The task decorator can now create "bound tasks", which means that the
 task will receive the ``self`` argument.
 
 .. code-block:: python
@@ -449,8 +449,8 @@ See the :ref:`guide-extending` guide for more information.
     to use it then please contact the mailing-list and we will help you port
     the bootstep to the new API.
 
-New result backend with RPC semantics
--------------------------------------
+New RPC result backend
+----------------------
 
 This new experimental version of the ``amqp`` result backend is a very good
 alternative to use in classical RPC scenarios, where the process that initiates
