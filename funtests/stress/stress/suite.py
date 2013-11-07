@@ -268,12 +268,12 @@ class Suite(object):
             if joindelay:
                 sleep(random.choice(range(4)))
             r.revoke(terminate=True)
-        self.join(r, timeout=5)
+        self.join(r, timeout=10)
 
     def missing_results(self, r):
         return [res.id for res in r if res.id not in res.backend._cache]
 
-    def join(self, r, propagate=False, max_retries=5, **kwargs):
+    def join(self, r, propagate=False, max_retries=10, **kwargs):
         if self.no_join:
             return
         received = []
