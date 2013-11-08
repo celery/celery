@@ -328,7 +328,7 @@ class Request(object):
         if self.expires:
             expired = self.maybe_expire()
         if self.id in revoked_tasks:
-            warn('Skipping revoked task: %s[%s]', self.name, self.id)
+            info('Discarding revoked task: %s[%s]', self.name, self.id)
             self._announce_revoked(
                 'expired' if expired else 'revoked', False, None, expired,
             )
