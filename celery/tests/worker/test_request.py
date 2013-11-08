@@ -412,7 +412,7 @@ class test_Request(AppCase):
         job.time_start = None
         job.terminate(pool, signal='KILL')
         self.assertFalse(pool.terminate_job.called)
-        self.assertTupleEqual(job._terminate_on_ack, (pool, 'KILL'))
+        self.assertTupleEqual(job._terminate_on_ack, (pool, 9))
         job.terminate(pool, signal='KILL')
 
     def test_revoked_expires_expired(self):

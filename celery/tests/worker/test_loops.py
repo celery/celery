@@ -339,7 +339,6 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         self.assertIsNone(gen.gi_frame)
-        x.hub.remove.assert_called_with(6)
 
     def test_poll_write_generator_raises(self):
         x = X(self.app)

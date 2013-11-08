@@ -259,7 +259,8 @@ class Request(object):
             timeout=timeout,
             correlation_id=uuid,
         )
-        self._apply_result = ref(result)
+        # cannot create weakref to None
+        self._apply_result = ref(result) if result is not None else result
         return result
 
     def execute(self, loglevel=None, logfile=None):
