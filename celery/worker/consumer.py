@@ -332,7 +332,7 @@ class Consumer(object):
         if self.timer:
             self.timer.clear()
         reserved_requests.clear()
-        if self.pool:
+        if self.pool and self.pool.flush:
             self.pool.flush()
 
     def connect(self):

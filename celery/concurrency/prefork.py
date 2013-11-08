@@ -128,7 +128,7 @@ class TaskPool(BasePool):
         self.terminate_job = P.terminate_job
         self.grow = P.grow
         self.shrink = P.shrink
-        self.flush = P.flush
+        self.flush = getattr(P, 'flush', None)  # FIXME add to billiard
         self.restart = P.restart
 
     def did_start_ok(self):
