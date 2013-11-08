@@ -31,9 +31,6 @@ This version is officially supported on CPython 2.6, 2.7 and 3.3,
 and also supported on PyPy.
 
 .. _`website`: http://celeryproject.org/
-.. _`django-celery changelog`:
-    http://github.com/celery/django-celery/tree/master/Changelog
-.. _`django-celery 3.0`: http://pypi.python.org/pypi/django-celery/
 
 .. topic:: Table of Contents
 
@@ -42,6 +39,45 @@ and also supported on PyPy.
 .. contents::
     :local:
     :depth: 2
+
+Preface
+=======
+
+Deadlocks have long plagued our workers, and while uncommon they are
+not acceptable.  They are also infamous for being extremely hard to diagnose
+and reproduce, so to make this job easier I wrote a stress test suite that
+bombards the worker with different tasks in an attempt to break it.
+
+What happens if thousands of worker child processes are killed every
+second? what if we also kill the broker connection every 10
+seconds?  These are examples of what the stress test suite will do to the
+worker, and it reruns these tests using different configuration combinations
+to find edge case bugs.
+
+The end result was that I had to rewrite the prefork pool to avoid the use
+of the POSIX semaphore.  This was extremely challenging, but after
+months of hard work the worker now finally passes the stress test suite.
+
+Sadly there are probably still bugs left to find, but the good news is
+that we now have a tool to reproduce them and should you be so unlucky to
+experience a bug then we'll write a test for it and squash it!
+
+Note that I have also moved many broker transports into experimental status:
+the only transports recommended for production use today is RabbitMQ and
+Redis.
+
+I don't have the resources to maintain all of them, so bugs are left
+unresolved.  I wish that someone will step up and take responsibility for
+these transports or donate resources to improve them, but  as the situation
+is now I don't think the quality is up to date with the rest of the code-base
+so I cannot recommend them for production use.
+
+The next version of Celery 3.2 will focus on performance and removing
+rarely used parts of the library.
+
+Thanks for your support!
+
+- Ask Solem
 
 .. _v310-important:
 
@@ -71,11 +107,18 @@ setting::
 
     CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 
-Make sure you select only the serialization formats that you will actually be using,
+Make sure you only select the serialization formats you'll actually be using,
 and make sure you have properly secured your broker from unwanted access
 (see the :ref:`guide-security` guide).
 
 The worker will show a deprecation warning if you don't define this setting.
+
+.. topic:: for Kombu users
+
+    Kombu 3.0 no longer accepts pickled messages by default, so if you
+    use Kombu directly then you have to configure your consumers:
+    see the :ref:`Kombu 3.0 Changelog <kombu:version-3.0.0>` for more
+    information.
 
 Old command-line programs removed and deprecated
 ------------------------------------------------
@@ -817,7 +860,7 @@ In Other News
 
         from multiprocessing.util import register_after_fork
 
-        engine = create_engine(...)
+        engine = create_engine(…)
         register_after_fork(engine, engine.dispose)
 
 - A stress test suite for the Celery worker has been written.
@@ -858,10 +901,10 @@ In Other News
         # also specify the number of threads in each worker
         $ celery graph workers nodes:w1,w2,w3 threads:2,4,6
 
-        # ...also specify the broker and backend URLs shown in the graph
+        # …also specify the broker and backend URLs shown in the graph
         $ celery graph workers broker:amqp:// backend:redis://
 
-        # ...also specify the max number of workers/threads shown (wmax/tmax),
+        # …also specify the max number of workers/threads shown (wmax/tmax),
         # enumerating anything that exceeds that number.
         $ celery graph workers wmax:10 tmax:3
 
@@ -974,6 +1017,9 @@ In Other News
     easier for process supervisors.
 
     Contributed by Jameel Al-Aziz.
+
+- Worker: The log message ``Got task from broker …`` has been changed to
+ ``Received task …``
 
 - Optimization: Improved performance of ``ResultSet.join_native()``.
 
