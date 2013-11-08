@@ -140,7 +140,7 @@ class Signal(object):  # pragma: no cover
 
         :keyword \*\*named: Named arguments which will be passed to receivers.
 
-        :returns: a list of tuple pairs: `[(receiver, response), ... ]`.
+        :returns: a list of tuple pairs: `[(receiver, response), … ]`.
 
         """
         responses = []
@@ -163,7 +163,7 @@ class Signal(object):  # pragma: no cover
             These arguments must be a subset of the argument names defined in
             :attr:`providing_args`.
 
-        :returns: a list of tuple pairs: `[(receiver, response), ... ]`.
+        :returns: a list of tuple pairs: `[(receiver, response), … ]`.
 
         :raises DispatcherKeyError:
 
@@ -177,7 +177,7 @@ class Signal(object):  # pragma: no cover
             return responses
 
         # Call each receiver with whatever arguments it can accept.
-        # Return a list of tuple pairs [(receiver, response), ... ].
+        # Return a list of tuple pairs [(receiver, response), … ].
         for receiver in self._live_receivers(_make_id(sender)):
             try:
                 response = receiver(signal=self, sender=sender, **named)

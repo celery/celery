@@ -81,8 +81,8 @@ getting started tutorials:
 .. _`Next steps`:
     http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
 
-Celery is...
-============
+Celery is…
+==========
 
 - **Simple**
 
@@ -119,8 +119,8 @@ Celery is...
     Custom pool implementations, serializers, compression schemes, logging,
     schedulers, consumers, producers, autoscalers, broker transports and much more.
 
-It supports...
-==============
+It supports…
+============
 
     - **Message Transports**
 
@@ -128,7 +128,7 @@ It supports...
         - MongoDB_ (experimental), Amazon SQS (experimental),
         - CouchDB_ (experimental), SQLAlchemy_ (experimental),
         - Django ORM (experimental), `IronMQ`_
-        - and more...
+        - and more…
 
     - **Concurrency**
 

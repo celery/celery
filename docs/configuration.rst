@@ -127,7 +127,7 @@ instead of a dict to choose which tasks to annotate:
             if task.name.startswith('tasks.'):
                 return {'rate_limit': '10/s'}
 
-    CELERY_ANNOTATIONS = (MyAnnotate(), {...})
+    CELERY_ANNOTATIONS = (MyAnnotate(), {…})
 
 
 

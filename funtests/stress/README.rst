@@ -159,7 +159,7 @@ Using a different result backend
 You can set the environment variable ``CSTRESS_BACKEND`` to change
 the result backend used::
 
-    $ CSTRESS_BACKEND='amqp://' celery -A stress worker #...
+    $ CSTRESS_BACKEND='amqp://' celery -A stress worker # …
     $ CSTRESS_BACKEND='amqp://' python -m stress
 
 Using a custom queue

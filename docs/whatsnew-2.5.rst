@@ -303,7 +303,7 @@ that filter for tasks to annotate:
             if task.name.startswith('tasks.'):
                 return {'rate_limit': '10/s'}
 
-    CELERY_ANNOTATIONS = (MyAnnotate(), {...})
+    CELERY_ANNOTATIONS = (MyAnnotate(), {…})
 
 ``current`` provides the currently executing task
 -------------------------------------------------
@@ -326,7 +326,7 @@ executing task.
             # retry in 10 seconds.
             current.retry(countdown=10, exc=exc)
 
-Previously you would have to type ``update_twitter_status.retry(...)``
+Previously you would have to type ``update_twitter_status.retry(…)``
 here, which can be annoying for long task names.
 
 .. note::

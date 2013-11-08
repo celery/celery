@@ -29,7 +29,7 @@ and creating Celery applications.
 
 .. versionadded:: 2.5
 
-.. class:: Celery(main='__main__', broker='amqp://localhost//', ...)
+.. class:: Celery(main='__main__', broker='amqp://localhost//', …)
 
     :param main: Name of the main module if running as `__main__`.
         This is used as a prefix for task names.
@@ -205,7 +205,7 @@ and creating Celery applications.
         it's important that the same configuration happens at import time
         when pickle restores the object on the other side.
 
-    .. method:: Celery.setup_security(...)
+    .. method:: Celery.setup_security(…)
 
         Setup the message-signing serializer.
         This will affect all application instances (a global operation).
@@ -235,7 +235,7 @@ and creating Celery applications.
 
         Uses :data:`sys.argv` if `argv` is not specified.
 
-    .. method:: Celery.task(fun, ...)
+    .. method:: Celery.task(fun, …)
 
         Decorator to create a task class out of any callable.
 
@@ -245,7 +245,7 @@ and creating Celery applications.
 
             @celery.task
             def refresh_feed(url):
-                return ...
+                return …
 
         with setting extra options:
 
@@ -253,7 +253,7 @@ and creating Celery applications.
 
             @celery.task(exchange="feeds")
             def refresh_feed(url):
-                return ...
+                return …
 
         .. admonition:: App Binding
 
@@ -266,7 +266,7 @@ and creating Celery applications.
             application is fully set up (finalized).
 
 
-    .. method:: Celery.send_task(name[, args[, kwargs[, ...]]])
+    .. method:: Celery.send_task(name[, args[, kwargs[, …]]])
 
         Send task by name.
 
@@ -371,7 +371,7 @@ Canvas primitives
 
 See :ref:`guide-canvas` for more about creating task workflows.
 
-.. class:: group(task1[, task2[, task3[,... taskN]]])
+.. class:: group(task1[, task2[, task3[,… taskN]]])
 
     Creates a group of tasks to be executed in parallel.
 
@@ -388,7 +388,7 @@ See :ref:`guide-canvas` for more about creating task workflows.
     tasks in the group (and return a :class:`GroupResult` instance
     that can be used to inspect the state of the group).
 
-.. class:: chain(task1[, task2[, task3[,... taskN]]])
+.. class:: chain(task1[, task2[, task3[,… taskN]]])
 
     Chains tasks together, so that each tasks follows each other
     by being applied as a callback of the previous task.
@@ -465,7 +465,7 @@ See :ref:`guide-canvas` for more about creating task workflows.
 
         Shortcut to :meth:`apply_async`.
 
-    .. method:: signature.apply_async(args=(), kwargs={}, ...)
+    .. method:: signature.apply_async(args=(), kwargs={}, …)
 
         Apply this task asynchronously.
 
@@ -476,7 +476,7 @@ See :ref:`guide-canvas` for more about creating task workflows.
 
         See :meth:`~@Task.apply_async`.
 
-    .. method:: signature.apply(args=(), kwargs={}, ...)
+    .. method:: signature.apply(args=(), kwargs={}, …)
 
         Same as :meth:`apply_async` but executed the task inline instead
         of sending a task message.
@@ -490,7 +490,7 @@ See :ref:`guide-canvas` for more about creating task workflows.
 
         :returns: :class:`@AsyncResult` instance.
 
-    .. method:: signature.clone(args=(), kwargs={}, ...)
+    .. method:: signature.clone(args=(), kwargs={}, …)
 
         Return a copy of this signature.
 
@@ -518,9 +518,9 @@ See :ref:`guide-canvas` for more about creating task workflows.
 
         :returns: ``other_signature`` (to work with :func:`~functools.reduce`)
 
-    .. method:: signature.set(...)
+    .. method:: signature.set(…)
 
-        Set arbitrary options (same as ``.options.update(...)``).
+        Set arbitrary options (same as ``.options.update(…)``).
 
         This is a chaining method call (i.e. it will return ``self``).
 

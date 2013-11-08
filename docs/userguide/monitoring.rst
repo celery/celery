@@ -319,7 +319,7 @@ as manage users, virtual hosts and their permissions.
     The default virtual host (``"/"``) is used in these
     examples, if you use a custom virtual host you have to add
     the ``-p`` argument to the command, e.g:
-    ``rabbitmqctl list_queues -p my_vhost ....``
+    ``rabbitmqctl list_queues -p my_vhost …``
 
 .. _`rabbitmqctl(1)`: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
 

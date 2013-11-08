@@ -397,8 +397,8 @@ There is also a shortcut using star arguments::
     >>> add.s(2, 2)
     tasks.add(2, 2)
 
-And there's that calling API again...
--------------------------------------
+And there's that calling API again…
+-----------------------------------
 
 Subtask instances also supports the calling API, which means that they
 have the ``delay`` and ``apply_async`` methods.
@@ -449,7 +449,7 @@ As stated subtasks supports the calling API, which means that:
   existing keys.
 
 So this all seems very useful, but what can you actually do with these?
-To get to that I must introduce the canvas primitives...
+To get to that I must introduce the canvas primitives…
 
 The Primitives
 --------------

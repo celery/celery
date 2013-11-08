@@ -35,7 +35,7 @@ Whether to use GET or POST is up to you and your requirements.
 The web page should then return a response in the following format
 if the execution was successful::
 
-    {'status': 'success', 'retval': ....}
+    {'status': 'success', 'retval': …}
 
 or if there was an error::
 

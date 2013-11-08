@@ -528,7 +528,7 @@ If you don't use the results for a task, make sure you set the
 
     @celery.task(ignore_result=True)
     def mytask():
-        ...
+        …
 
     class MyTask(Task):
         ignore_result = True
@@ -633,7 +633,7 @@ Can I specify a custom task_id?
 
 **Answer**: Yes.  Use the `task_id` argument to :meth:`Task.apply_async`::
 
-    >>> task.apply_async(args, kwargs, task_id="...")
+    >>> task.apply_async(args, kwargs, task_id='…')
 
 
 Can I use decorators with tasks?
@@ -730,19 +730,18 @@ Can I change the interval of a periodic task at runtime?
 --------------------------------------------------------
 
 **Answer**: Yes. You can use the Django database scheduler, or you can
-override `PeriodicTask.is_due` or turn `PeriodicTask.run_every` into a
-property:
+create a new schedule subclass and override
+:meth:`~celery.schedules.schedule.is_due`:
 
 .. code-block:: python
 
-    class MyPeriodic(PeriodicTask):
+    from celery.schedules import schedule
 
-        def run(self):
-            # ...
 
-        @property
-        def run_every(self):
-            return get_interval_from_database(...)
+    class my_schedule(schedule):
+
+        def is_due(self, last_run_at):
+            return …
 
 .. _faq-task-priorities:
 

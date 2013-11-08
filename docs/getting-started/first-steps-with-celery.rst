@@ -266,7 +266,7 @@ If the task raised an exception you can also gain access to the
 original traceback::
 
     >>> result.traceback
-    ...
+    …
 
 See :mod:`celery.result` for the complete result object reference.
 
@@ -456,5 +456,5 @@ the task id after all).
 
     .. code-block:: python
 
-        >>> result = task.delay(...)
+        >>> result = task.delay(…)
         >>> print(result.backend)

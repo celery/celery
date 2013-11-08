@@ -16,7 +16,7 @@ The API>RCP Precedence Rule
 - The API is more important than Readability
 - Readability is more important than Convention
 - Convention is more important than Performance
-    - ...unless the code is a proven hotspot.
+    - …unless the code is a proven hotspot.
 
 More important than anything else is the end-user API.
 Conventions must step aside, and any suffering is always alleviated

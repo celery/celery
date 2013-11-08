@@ -16,11 +16,20 @@ Removals for version 3.2
   as the ``celery.task`` package is being phased out.  The compat module
   will be removed in version 3.2 so please change any import from::
 
-    from celery.task.trace import ...
+    from celery.task.trace import …
 
   to::
 
-    from celery.app.trace import ...
+    from celery.app.trace import …
+
+- ``AsyncResult.serializable()`` and ``celery.result.from_serializable``
+  will be removed.
+
+    Use instead::
+
+        >>> tup = result.as_tuple()
+        >>> from celery.result import result_from_tuple
+        >>> result = result_from_tuple(tup)
 
 .. _deprecations-v4.0:
 
@@ -164,6 +173,14 @@ Apply to: :class:`~celery.result.AsyncResult`,
 - ``current_loader()`` -> ``current_app.loader``
 
 - ``load_settings()`` -> ``current_app.conf``
+
+
+Task_sent signal
+----------------
+
+The :signals:`task_sent` signal will be removed in version 4.0.
+Please use the :signal:`before_task_publish` and :signal:`after_task_publush`
+signals instead.
 
 
 Modules to Remove

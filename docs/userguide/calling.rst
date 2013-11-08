@@ -19,7 +19,7 @@ used by task instances and the :ref:`canvas <guide-canvas>`.
 
 The API defines a standard set of execution options, as well as three methods:
 
-    - ``apply_async(args[, kwargs[, ...]])``
+    - ``apply_async(args[, kwargs[, …]])``
 
         Sends a task message.
 
@@ -92,7 +92,7 @@ called `add`, returning the sum of two arguments:
         return x + y
 
 
-.. topic:: There's another way...
+.. topic:: There's another way…
 
     You will learn more about this later while reading about the :ref:`Canvas
     <guide-canvas>`, but :class:`~celery.subtask`'s are objects used to pass around

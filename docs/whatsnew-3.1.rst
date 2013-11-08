@@ -148,7 +148,10 @@ but hopefully more transports will be supported in the future.
     This timeout is no longer necessary, and so the task can be marked as
     failed as soon as the pool gets the notification that the process exited.
 
-.. admonition:: Long running tasks
+Caveats
+~~~~~~~
+
+.. topic:: Long running tasks
 
     The new pool will asynchronously send as many tasks to the processes
     as it can and this means that the processes are, in effect, prefetching
@@ -182,6 +185,15 @@ but hopefully more transports will be supported in the future.
     With this option enabled the worker will only write to workers that are
     available for work, disabling the prefetch behavior.
 
+.. topic:: Max tasks per child
+
+    If a process exits and pool prefetch is enabled the worker may have
+    already written many tasks to the process inqueue, and these tasks
+    must then be moved back and rewritten to a new process.
+
+    This is very expensive if you have ``--maxtasksperchild`` set to a low
+    value (e.g. less than 10), so if you need that you should also
+    enable ``-Ofair`` to turn off the prefetching behavior.
 
 Django supported out of the box
 -------------------------------
@@ -672,6 +684,14 @@ In Other News
     will only send worker related events and silently drop any attempts
     to send events related to any other group.
 
+- New :setting:`BROKER_FAILOVER_STRATEGY` setting.
+
+    This setting can be used to change the transport failover strategy,
+    can either be a callable returning an iterable or the name of a
+    Kombu built-in failover strategy.  Default is "round-robin".
+
+    Contributed by Matt Wise.
+
 - ``Result.revoke`` will no longer wait for replies.
 
     You can add the ``reply=True`` argument if you really want to wait for
@@ -680,6 +700,17 @@ In Other News
 - Better support for link and link_error tasks for chords.
 
     Contributed by Steeve Morin.
+
+- Worker: Now emits warning if the :setting:`CELERYD_POOL` setting is set
+  to enable the eventlet/gevent pools.
+
+    The `-P` option should always be used to select the eventlet/gevent pool
+    to ensure that the patches are applied as early as possible.
+
+    If you start the worker in a wrapper (like Django's manage.py)
+    then you must apply the patches manually, e.g. by creating an alternative
+    wrapper that monkey patches at the start of the program before importing
+    any other modules.
 
 - There's a now an 'inspect clock' command which will collect the current
   logical clock value from workers.
@@ -775,6 +806,19 @@ In Other News
   setting can be used to change the name of the database tables used.
 
     Contributed by Ryan Petrello.
+
+- SQLAlchemy Result Backend: Now calls ``enginge.dispose`` after fork
+   (Issue #1564).
+
+    If you create your own sqlalchemy engines then you must also
+    make sure that these are closed after fork in the worker:
+
+    .. code-block:: python
+
+        from multiprocessing.util import register_after_fork
+
+        engine = create_engine(...)
+        register_after_fork(engine, engine.dispose)
 
 - A stress test suite for the Celery worker has been written.
 
@@ -872,10 +916,10 @@ In Other News
 
         >>> t.apply_async(headers={'sender': 'George Costanza'})
 
-- New :signal:`task_before_publish`` signal dispatched before a task message
+- New :signal:`before_task_publish`` signal dispatched before a task message
   is sent and can be used to modify the final message fields (Issue #1281).
 
-- New :signal:`task_after_publish` signal replaces the old :signal:`task_sent`
+- New :signal:`after_task_publish` signal replaces the old :signal:`task_sent`
   signal.
 
     The :signal:`task_sent` signal is now deprecated and should not be used.
@@ -1061,6 +1105,16 @@ Fixes
 
 - AMQP Backend: join did not convert exceptions when using the json
   serializer.
+
+- Non-abstract task classes are now shared between apps (Issue #1150).
+
+    Note that non-abstract task classes should not be used in the
+    new API.  You should only create custom task classes when you
+    use them as a base class in the ``@task`` decorator.
+
+    This fix ensure backwards compatibility with older Celery versions
+    so that non-abstract task classes works even if a module is imported
+    multiple times so that the app is also instantiated multiple times.
 
 - Worker: Workaround for Unicode errors in logs (Issue #427)
 

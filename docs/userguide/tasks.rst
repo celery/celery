@@ -384,7 +384,7 @@ override this default.
     @app.task(bind=True, default_retry_delay=30 * 60)  # retry in 30 minutes.
     def add(x, y):
         try:
-            ...
+            …
         except Exception as exc:
             raise self.retry(exc=exc, countdown=60)  # override the default and
                                                      # retry in 1 minute
@@ -1002,7 +1002,7 @@ that can be added to tasks like this:
     @app.task(base=DatabaseTask)
     def process_rows():
         for row in process_rows.db.table.all():
-            ...
+            …
 
 The ``db`` attribute of the ``process_rows`` task will then
 always stay the same in each process.
@@ -1159,7 +1159,7 @@ wastes time and resources.
 .. code-block:: python
 
     @app.task(ignore_result=True)
-    def mytask(...)
+    def mytask(…):
         something()
 
 Results can even be disabled globally using the :setting:`CELERY_IGNORE_RESULT`
@@ -1377,7 +1377,7 @@ Let's have a look at another example:
 
     @transaction.commit_on_success
     def create_article(request):
-        article = Article.objects.create(....)
+        article = Article.objects.create(…)
         expand_abbreviations.delay(article.pk)
 
 This is a Django view creating an article object in the database,
@@ -1397,7 +1397,7 @@ depending on state from the current transaction*:
     @transaction.commit_manually
     def create_article(request):
         try:
-            article = Article.objects.create(...)
+            article = Article.objects.create(…)
         except:
             transaction.rollback()
             raise
