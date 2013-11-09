@@ -87,6 +87,8 @@ def get_fdmax(default=None):
                       descriptor limit.
 
     """
+    if resource is None:  # Windows
+        return default
     fdmax = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
     if fdmax == resource.RLIM_INFINITY:
         return default
