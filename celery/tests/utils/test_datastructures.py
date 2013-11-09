@@ -169,6 +169,10 @@ class test_ExceptionInfo(Case):
 
 class test_LimitedSet(Case):
 
+    def setup(self):
+        if sys.platform == 'win32':
+            raise SkipTest('Not working in Windows')
+
     def test_add(self):
         if sys.platform == 'win32':
             raise SkipTest('Not working properly on Windows')
