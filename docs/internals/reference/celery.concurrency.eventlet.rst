@@ -1,5 +1,5 @@
 =============================================================
- celery.concurrency.eventlet† (*experimental*)
+ celery.concurrency.eventlet
 =============================================================
 
 .. contents::
