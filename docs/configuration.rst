@@ -873,7 +873,7 @@ Example::
     # or the actual content-type (MIME)
     CELERY_ACCEPT_CONTENT = ['application/json']
 
-.. setting:: BROKER_TRANSPORT
+.. setting:: BROKER_FAILOVER_STRATEGY
 
 BROKER_FAILOVER_STRATEGY
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -894,6 +894,7 @@ Example::
 
     BROKER_FAILOVER_STRATEGY=random_failover_strategy
 
+.. setting:: BROKER_TRANSPORT
 
 BROKER_TRANSPORT
 ~~~~~~~~~~~~~~~~
