@@ -386,7 +386,7 @@ class test_Request(AppCase):
 
     def test_terminate__task_started(self):
         pool = Mock()
-        signum = signal.SIGKILL
+        signum = signal.SIGTERM
         job = Request({
             'task': self.mytask.name,
             'id': uuid(),
@@ -398,7 +398,7 @@ class test_Request(AppCase):
                 terminated=True, expired=False, signum=signum):
             job.time_start = monotonic()
             job.worker_pid = 313
-            job.terminate(pool, signal='KILL')
+            job.terminate(pool, signal='TERM')
             pool.terminate_job.assert_called_with(job.worker_pid, signum)
 
     def test_terminate__task_reserved(self):
