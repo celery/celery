@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import pickle
+import sys
 
 from billiard.einfo import ExceptionInfo
 from mock import Mock, patch
