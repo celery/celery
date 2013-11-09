@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import errno
 import os
+import sys
 import signal
 
 from mock import Mock, patch, call
@@ -35,7 +36,9 @@ try:
 except ImportError:  # pragma: no cover
     resource = None  # noqa
 
-from celery.tests.case import Case, WhateverIO, override_stdouts, mock_open
+from celery.tests.case import (
+    Case, WhateverIO, override_stdouts, mock_open, SkipTest,
+)
 
 
 class test_find_option_with_arg(Case):
@@ -104,6 +107,8 @@ class test_Signals(Case):
         self.assertFalse(signals.supported('SIGIMAGINARY'))
 
     def test_reset_alarm(self):
+        if sys.platform == 'win32':
+            raise SkipTest('signal.alarm not available on Windows')
         with patch('signal.alarm') as _alarm:
             signals.reset_alarm()
             _alarm.assert_called_with(0)
