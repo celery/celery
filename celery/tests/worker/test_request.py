@@ -540,13 +540,13 @@ class test_Request(AppCase):
         self.assertFalse(job.acknowledged)
 
     def test_on_accepted_terminates(self):
-        signum = signal.SIGKILL
+        signum = signal.SIGTERM
         pool = Mock()
         job = self.xRequest()
         with assert_signal_called(
                 task_revoked, sender=job.task, request=job,
                 terminated=True, expired=False, signum=signum):
-            job.terminate(pool, signal='KILL')
+            job.terminate(pool, signal='TERM')
             self.assertFalse(pool.terminate_job.call_count)
             job.on_accepted(pid=314, time_accepted=monotonic())
             pool.terminate_job.assert_called_with(314, signum)
