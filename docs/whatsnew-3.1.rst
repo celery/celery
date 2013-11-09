@@ -578,6 +578,12 @@ You install extras by specifying them inside brackets:
 The above will install the dependencies for Redis and MongoDB.  You can list
 as many extras as you want.
 
+
+.. warning::
+
+    You can't use the ``celery-with-*`` packages anymore, as these will not be
+    updated to use Celery 3.1.
+
 +-------------+-------------------------+---------------------------+
 | Extension   | Requirement entry       | Type                      |
 +=============+=========================+===========================+

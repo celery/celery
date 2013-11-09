@@ -47,7 +47,7 @@ from celery.utils.imports import qualname
 __all__ = [
     'Case', 'AppCase', 'Mock', 'patch', 'call', 'skip_unless_module',
     'wrap_logger', 'with_environ', 'sleepdeprived',
-    'skip_if_environ', 'skip_if_quick', 'todo', 'skip', 'skip_if',
+    'skip_if_environ', 'todo', 'skip', 'skip_if',
     'skip_unless', 'mask_modules', 'override_stdouts', 'mock_module',
     'replace_module_value', 'sys_platform', 'reset_modules',
     'patch_modules', 'mock_context', 'mock_open', 'patch_many',
@@ -450,10 +450,6 @@ def skip_if_environ(env_var_name):
         return _skips_if_environ
 
     return _wrap_test
-
-
-def skip_if_quick(fun):
-    return skip_if_environ('QUICKTEST')(fun)
 
 
 def _skip_test(reason, sign):

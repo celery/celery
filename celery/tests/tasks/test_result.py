@@ -15,7 +15,7 @@ from celery.result import (
 from celery.utils import uuid
 from celery.utils.serialization import pickle
 
-from celery.tests.case import AppCase, depends_on_current_app, skip_if_quick
+from celery.tests.case import AppCase, depends_on_current_app
 
 
 def mock_task(name, state, result):
@@ -650,7 +650,6 @@ class test_pending_Group(AppCase):
         with self.assertRaises(TimeoutError):
             self.ts.join(timeout=0.001)
 
-    @skip_if_quick
     def x_join_longer(self):
         with self.assertRaises(TimeoutError):
             self.ts.join(timeout=1)

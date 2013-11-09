@@ -52,7 +52,7 @@ class GraphFormatter(object):
         'shape': 'box',
         'arrowhead': 'vee',
         'style': 'filled',
-        'fontname': 'Helvetica Neue',
+        'fontname': 'HelveticaNeue',
     }
     edge_scheme = {
         'color': 'darkseagreen4',

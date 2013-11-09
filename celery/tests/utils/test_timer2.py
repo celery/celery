@@ -5,7 +5,7 @@ import time
 
 import celery.utils.timer2 as timer2
 
-from celery.tests.case import Case, Mock, patch, skip_if_quick
+from celery.tests.case import Case, Mock, patch
 from kombu.tests.case import redirect_stdouts
 
 
@@ -68,7 +68,6 @@ class test_Schedule(Case):
 
 class test_Timer(Case):
 
-    @skip_if_quick
     def test_enter_after(self):
         t = timer2.Timer()
         try:

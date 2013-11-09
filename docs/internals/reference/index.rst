@@ -22,7 +22,6 @@
     celery.concurrency.gevent
     celery.concurrency.base
     celery.concurrency.threads
-    celery.beat
     celery.backends
     celery.backends.base
     celery.backends.rpc

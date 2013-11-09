@@ -92,5 +92,5 @@ class pickle(default):
 
 @template()
 class confirms(default):
-    BROKER_URL='pyamqp://'
+    BROKER_URL = 'pyamqp://'
     BROKER_TRANSPORT_OPTIONS = {'confirm_publish': True}

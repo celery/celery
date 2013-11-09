@@ -8,7 +8,13 @@ include setup.cfg
 include setup.py
 recursive-include celery *.py
 recursive-include docs *
-recursive-include extra *
+recursive-include extra/bash-completion *
+recursive-include extra/centos *
+recursive-include extra/generic-init.d *
+recursive-include extra/osx *
+recursive-include extra/supervisord *
+recursive-include extra/systemd *
+recursive-include extra/zsh-completion *
 recursive-include examples *
 recursive-include requirements *.txt
 prune *.pyc

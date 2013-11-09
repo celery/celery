@@ -1,10 +1,2 @@
 Please see our Issue Tracker at GitHub:
     http://github.com/celery/celery/issues
-
-Celerymon
-=========
-
-Create a UI for celerymon using js, with statistics and so on.
-Needs a graphing library, maybe highcharts
-(http://www.highcharts.com/: awesome but weird license) or InfoVis
-(http://thejit.org/; BSD licensed).

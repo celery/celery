@@ -24,7 +24,6 @@ if sys.version_info < (2, 6):
 
 downgrade_packages = [
     'celery.app.task',
-    'celery.concurrency.processes',
 ]
 orig_path = sys.path[:]
 for path in (os.path.curdir, os.getcwd()):
@@ -71,8 +70,8 @@ classes = """
     Programming Language :: Python :: 2.6
     Programming Language :: Python :: 2.7
     Programming Language :: Python :: 3
-    Programming Language :: Python :: 3.2
     Programming Language :: Python :: 3.3
+    Programming Language :: Python :: 3.4
     Programming Language :: Python :: Implementation :: CPython
     Programming Language :: Python :: Implementation :: PyPy
     Programming Language :: Python :: Implementation :: Jython
@@ -125,17 +124,6 @@ try:
                 meta.update(handler(m))
 finally:
     meta_fh.close()
-
-# -*- Custom Commands -*-
-
-
-class quicktest(test):
-    extra_env = dict(SKIP_RLIMITS=1, QUICKTEST=1)
-
-    def run(self, *args, **kwargs):
-        for env_name, env_value in self.extra_env.items():
-            os.environ[env_name] = str(env_value)
-        test.run(self, *args, **kwargs)
 
 # -*- Installation Requires -*-
 
@@ -224,7 +212,6 @@ setup(
     install_requires=install_requires,
     tests_require=tests_require,
     test_suite='nose.collector',
-    cmdclass={'quicktest': quicktest},
     classifiers=classifiers,
     entry_points=entrypoints,
     long_description=long_description,

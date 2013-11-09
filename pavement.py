@@ -107,15 +107,12 @@ def bump(options):
 @task
 @cmdopts([
     ('coverage', 'c', 'Enable coverage'),
-    ('quick', 'q', 'Quick test'),
     ('verbose', 'V', 'Make more noise'),
 ])
 def test(options):
     cmd = 'CELERY_LOADER=default nosetests'
     if getattr(options, 'coverage', False):
         cmd += ' --with-coverage3'
-    if getattr(options, 'quick', False):
-        cmd = 'QUICKTEST=1 SKIP_RLIMITS=1 {0}'.format(cmd)
     if getattr(options, 'verbose', False):
         cmd += ' --verbosity=2'
     sh(cmd)
@@ -139,9 +136,10 @@ def removepyc(options):
 
 
 @task
-def update_graphs(options):
-    sh('celery worker_graph | dot -Tpng -o docs/images/worker_graph.png')
-    sh('celery consumer_graph | dot -Tpng -o docs/images/consumer_graph.png')
+def update_graphs(options, dest='docs/images/worker_graph_full.png'):
+    sh('celery graph bootsteps | dot -Tpng -o {dest}'.format(
+        dest=dest,
+    ))
 
 
 @task
@@ -166,11 +164,6 @@ def releaseok(options):
 @task
 def verify_authors(options):
     sh('git shortlog -se | cut -f2 | extra/release/attribution.py')
-
-
-@task
-def coreloc(options):
-    sh('xargs sloccount < extra/release/core-modules.txt')
 
 
 @task

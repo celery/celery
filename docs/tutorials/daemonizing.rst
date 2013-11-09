@@ -382,10 +382,10 @@ you should :ref:`report it <reporting-bugs>`).
 launchd (OS X)
 ==============
 
-* `extra/mac/`_
+* `extra/osx`_
 
-.. _`extra/mac/`:
-    http://github.com/celery/celery/tree/3.1/extra/mac/
+.. _`extra/osx`:
+    http://github.com/celery/celery/tree/3.1/extra/osx/
 
 
 .. _daemon-windows:
