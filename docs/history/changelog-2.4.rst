@@ -21,7 +21,7 @@
 
 * New :ref:`brokers` section in the Getting Started part of the Documentation
 
-    This replaces the old :ref:`tut-otherqueues` tutorial, and adds
+    This replaces the old "Other queues" tutorial, and adds
     documentation for MongoDB, Beanstalk and CouchDB.
 
 .. _version-2.4.4:

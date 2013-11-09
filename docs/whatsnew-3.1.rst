@@ -789,7 +789,7 @@ In Other News
     events published to that queue will be visible.  Only supported on
     RabbitMQ.
 
-- New Couchbase result backend
+- New Couchbase result backend.
 
     This result backend enables you to store and retrieve task results
     using `Couchbase`_.
@@ -811,7 +811,7 @@ In Other News
 
     Fix contributed by Idan Kamara
 
-- New setting :setting:`BROKER_LOGIN_METHOD`
+- New setting :setting:`BROKER_LOGIN_METHOD`.
 
     This setting can be used to specify an alternate login method
     for the AMQP transports.
@@ -876,7 +876,7 @@ In Other News
 
 - The logger named ``celery.concurrency`` has been renamed to ``celery.pool``.
 
-- New command line utility ``celery graph``
+- New command line utility ``celery graph``.
 
     This utility creates graphs in GraphViz dot format.
 
@@ -914,7 +914,7 @@ In Other News
         # enumerating anything that exceeds that number.
         $ celery graph workers wmax:10 tmax:3
 
-- Changed the way that app instances are pickled
+- Changed the way that app instances are pickled.
 
     Apps can now define a ``__reduce_keys__`` method that is used instead
     of the old ``AppPickler`` attribute.  E.g. if your app defines a custom
@@ -980,7 +980,7 @@ In Other News
 
 - ``celery.platforms.PIDFile`` renamed to :class:`celery.platforms.Pidfile`.
 
-- MongoDB Backend: Can now be configured using an URL
+- MongoDB Backend: Can now be configured using an URL:
 
     See :ref:`example-mongodb-result-config`.
 
@@ -1017,15 +1017,18 @@ In Other News
     This callback is called when an app is about to be configured (a
     configuration key is required).
 
-- Worker: No longer forks on :sig:`HUP`
+- Worker: No longer forks on :sig:`HUP`.
 
-    This means that the worker will reuse the same pid, which makes it
-    easier for process supervisors.
+    This means that the worker will reuse the same pid for better
+    support with external process supervisors.
 
     Contributed by Jameel Al-Aziz.
 
-- Worker: The log message ``Got task from broker …`` has been changed to
- ``Received task …``
+- Worker: The log message ``Got task from broker …`` was changed to
+  ``Received task …``.
+
+- Worker: The log message ``Skipping revoked task …`` was changed
+  to ``Discarding revoked task …``.
 
 - Optimization: Improved performance of ``ResultSet.join_native()``.
 
@@ -1049,7 +1052,7 @@ In Other News
         # Consume from all queues in CELERY_QUEUES, but not the 'foo' queue.
         $ celery worker -A proj -l info -X foo
 
-- Adds :envvar:`C_FAKEFORK` envvar for simple init script/multi debugging
+- Adds :envvar:`C_FAKEFORK` envvar for simple init script/multi debugging.
 
     This means that you can now do:
 
@@ -1078,7 +1081,7 @@ In Other News
 
     The old name is still available for backwards compatibility.
 
-- New semi-predicate exception :exc:`~celery.exceptions.Reject`
+- New semi-predicate exception :exc:`~celery.exceptions.Reject`.
 
     This exception can be raised to ``reject``/``requeue`` the task message,
     see :ref:`task-semipred-reject` for examples.
@@ -1158,7 +1161,7 @@ Fixes
     so that non-abstract task classes works even if a module is imported
     multiple times so that the app is also instantiated multiple times.
 
-- Worker: Workaround for Unicode errors in logs (Issue #427)
+- Worker: Workaround for Unicode errors in logs (Issue #427).
 
 - Task methods: ``.apply_async`` now works properly if args list is None
   (Issue #1459).
@@ -1202,7 +1205,8 @@ Internal changes
     This means that you have to pass a specific app when instantiating
     these classes.
 
-- ``EventDispatcher.copy_buffer`` renamed to ``EventDispatcher.extend_buffer``
+- ``EventDispatcher.copy_buffer`` renamed to
+  :meth:`@events.Dispatcher.extend_buffer``.
 
 - Removed unused and never documented global instance
   ``celery.events.state.state``.

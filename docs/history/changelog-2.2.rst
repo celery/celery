@@ -142,7 +142,7 @@ News
 .. _`logrotate.d`:
     http://www.ducea.com/2006/06/06/rotating-linux-log-files-part-2-logrotate/
 
-* :ref:`tut-otherqueues` now documents how to configure Redis/Database result
+* otherqueues tutorial now documents how to configure Redis/Database result
    backends.
 
 * gevent: Now supports ETA tasks.

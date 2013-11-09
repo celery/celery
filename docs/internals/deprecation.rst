@@ -178,7 +178,7 @@ Apply to: :class:`~celery.result.AsyncResult`,
 Task_sent signal
 ----------------
 
-The :signals:`task_sent` signal will be removed in version 4.0.
+The :signal:`task_sent` signal will be removed in version 4.0.
 Please use the :signal:`before_task_publish` and :signal:`after_task_publush`
 signals instead.
 
