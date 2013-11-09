@@ -410,10 +410,10 @@ class test_Request(AppCase):
             'kwargs': {'f': 'x'},
         }, app=self.app)
         job.time_start = None
-        job.terminate(pool, signal='KILL')
+        job.terminate(pool, signal='TERM')
         self.assertFalse(pool.terminate_job.called)
-        self.assertTupleEqual(job._terminate_on_ack, (pool, 9))
-        job.terminate(pool, signal='KILL')
+        self.assertTupleEqual(job._terminate_on_ack, (pool, 15))
+        job.terminate(pool, signal='TERM')
 
     def test_revoked_expires_expired(self):
         job = Request({
