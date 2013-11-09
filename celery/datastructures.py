@@ -557,8 +557,8 @@ class LimitedSet(object):
         self._data = {} if data is None else data
         self._heap = [] if heap is None else heap
         # make shortcuts
-        self.__iter__ = self._data.__iter__
-        self.__len__ = self._data.__len__
+        self.__len__ = self._heap.__len__
+        self.__iter__ = self._heap.__iter__
         self.__contains__ = self._data.__contains__
 
     def add(self, value, now=time.time):
