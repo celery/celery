@@ -604,7 +604,7 @@ as many extras as you want.
 | librabbitmq | ``celery[librabbitmq]`` | transport (C amqp client) |
 +-------------+-------------------------+---------------------------+
 
-There are more examples in the :ref:`bundles` section.
+The complete list with examples is found in the :ref:`bundles` section.
 
 Calling a subtask will now execute the task directly
 ----------------------------------------------------
@@ -1139,16 +1139,6 @@ Deprecations
 ============
 
 See the :ref:`deprecation-timeline`.
-
-.. _v310-known-issues:
-
-Known Issues
-============
-
-- This release does not yet work on Windows.
-
-    We have not had the time to test properly on Windows, this situtation
-    will be resolved in a bug fix release soon.
 
 .. _v310-fixes:
 
