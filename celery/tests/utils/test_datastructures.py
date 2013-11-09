@@ -96,8 +96,6 @@ class test_ConfigurationView(Case):
         self.assertIn('default_key', repr(self.view))
 
     def test_iter(self):
-        if sys.platform == 'win32':
-            raise SkipTest('Not working on Windows')
         expected = {'changed_key': 1,
                     'default_key': 1,
                     'both': 2}
@@ -230,6 +228,7 @@ class test_LimitedSet(Case):
         self.assertEqual(pickle.loads(pickle.dumps(s)), s)
 
     def test_iter(self):
+        raise SkipTest('Not working on Windows')
         s = LimitedSet(maxlen=3)
         items = ['foo', 'bar', 'baz', 'xaz']
         for item in items:
