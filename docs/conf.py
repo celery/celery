@@ -8,8 +8,8 @@ this = os.path.dirname(os.path.abspath(__file__))
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
-sys.path.append(os.path.join(os.pardir, "tests"))
-sys.path.append(os.path.join(this, "_ext"))
+sys.path.append(os.path.join(os.pardir, 'tests'))
+sys.path.append(os.path.join(this, '_ext'))
 import celery
 
 # General configuration
@@ -106,8 +106,8 @@ latex_documents = [
      'Ask Solem & Contributors', 'manual'),
 ]
 
-html_theme = "celery"
-html_theme_path = ["_theme"]
+html_theme = 'celery'
+html_theme_path = ['_theme']
 html_sidebars = {
     'index': ['sidebarintro.html', 'sourcelink.html', 'searchbox.html'],
     '**': ['sidebarlogo.html', 'relations.html',
@@ -117,8 +117,8 @@ html_sidebars = {
 ### Issuetracker
 
 if False:
-    issuetracker = "github"
-    issuetracker_project = "celery/celery"
+    issuetracker = 'github'
+    issuetracker_project = 'celery/celery'
     issuetracker_issue_pattern = r'[Ii]ssue #(\d+)'
 
 # -- Options for Epub output -------------------------------------------
