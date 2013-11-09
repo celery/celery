@@ -7,12 +7,15 @@ from celery.utils import term
 from celery.utils.term import colored, fg
 from celery.five import text_t
 
-from celery.tests.case import Case
+from celery.tests.case import Case, SkipTest
 
 
 class test_colored(Case):
 
     def setUp(self):
+        if sys.platform == 'win32':
+            raise SkipTest('Colors not supported on Windows')
+
         self._prev_encoding = sys.getdefaultencoding
 
         def getdefaultencoding():
