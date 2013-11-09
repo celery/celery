@@ -15,7 +15,7 @@ from celery.datastructures import (
 )
 from celery.five import items
 
-from celery.tests.case import Case, WhateverIO
+from celery.tests.case import Case, WhateverIO, SkipTest
 
 
 class Object(object):
@@ -169,6 +169,8 @@ class test_ExceptionInfo(Case):
 class test_LimitedSet(Case):
 
     def test_add(self):
+        if sys.platform == 'win32':
+            raise SkipTest('Not working properly on Windows')
         s = LimitedSet(maxlen=2)
         s.add('foo')
         s.add('bar')
