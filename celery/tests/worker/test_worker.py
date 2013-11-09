@@ -1085,7 +1085,6 @@ class test_WorkController(AppCase):
         w.consumer.restart_count = -1
         pool = components.Pool(w)
         pool.create(w)
-        print(pool.register_with_event_loop)
         pool.register_with_event_loop(w, w.hub)
         self.assertIsInstance(w.semaphore, LaxBoundedSemaphore)
         P = w.pool
