@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 import errno
 import os
-import resource
 import signal
 
 from mock import Mock, patch, call
@@ -30,6 +29,11 @@ from celery.platforms import (
     _setgroups_hack,
     close_open_fds,
 )
+
+try:
+    import resource
+except ImportError:  # pragma: no cover
+    resource = None  # noqa
 
 from celery.tests.case import Case, WhateverIO, override_stdouts, mock_open
 
