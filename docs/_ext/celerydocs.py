@@ -3,36 +3,37 @@ from docutils import nodes
 from sphinx.environment import NoUri
 
 APPATTRS = {
-    "amqp": "celery.app.amqp.AMQP",
-    "backend": "celery.backends.base.BaseBackend",
-    "control": "celery.app.control.Control",
-    "events": "celery.events.Events",
-    "loader": "celery.app.loaders.base.BaseLoader",
-    "log": "celery.app.log.Logging",
-    "pool": "kombu.connection.ConnectionPool",
-    "tasks": "celery.app.registry.Registry",
+    'amqp': 'celery.app.amqp.AMQP',
+    'backend': 'celery.backends.base.BaseBackend',
+    'control': 'celery.app.control.Control',
+    'events': 'celery.events.Events',
+    'loader': 'celery.app.loaders.base.BaseLoader',
+    'log': 'celery.app.log.Logging',
+    'pool': 'kombu.connection.ConnectionPool',
+    'tasks': 'celery.app.registry.Registry',
 
-    "AsyncResult": "celery.result.AsyncResult",
-    "GroupResult": "celery.result.GroupResult",
-    "Worker": "celery.apps.worker.Worker",
-    "WorkController": "celery.worker.WorkController",
-    "Beat": "celery.apps.beat.Beat",
-    "Task": "celery.app.task.Task",
-    "send_task": "celery.Celery.send_task",
+    'AsyncResult': 'celery.result.AsyncResult',
+    'GroupResult': 'celery.result.GroupResult',
+    'Worker': 'celery.apps.worker.Worker',
+    'WorkController': 'celery.worker.WorkController',
+    'Beat': 'celery.apps.beat.Beat',
+    'Task': 'celery.app.task.Task',
+    'send_task': 'celery.Celery.send_task',
+    'connection': 'celery.Celery.connection',
 }
 
 ABBRS = {
-    "Celery": "celery.Celery",
+    'Celery': 'celery.Celery',
 }
 
 ABBR_EMPTY = {
-    "exc": "celery.exceptions",
+    'exc': 'celery.exceptions',
 }
-DEFAULT_EMPTY = "celery.Celery"
+DEFAULT_EMPTY = 'celery.Celery'
 
 
 def typeify(S, type):
-    if type in ("meth", "func"):
+    if type in ('meth', 'func'):
         return S + '()'
     return S
 
@@ -96,21 +97,21 @@ def modify_textnode(T, newtarget, node, src_dict, type):
 
 def maybe_resolve_abbreviations(app, env, node, contnode):
     domainname = node.get('refdomain')
-    target = node["reftarget"]
-    type = node["reftype"]
+    target = node['reftarget']
+    type = node['reftype']
     if target.startswith('@'):
         newtarget, src_dict = resolve(target, type)
-        node["reftarget"] = newtarget
+        node['reftarget'] = newtarget
         # shorten text if '~' is not enabled.
         if len(contnode) and isinstance(contnode[0], nodes.Text):
                 contnode[0] = modify_textnode(target, newtarget, node,
                                               src_dict, type)
         if domainname:
             try:
-                domain = env.domains[node.get("refdomain")]
+                domain = env.domains[node.get('refdomain')]
             except KeyError:
                 raise NoUri
-            return domain.resolve_xref(env, node["refdoc"], app.builder,
+            return domain.resolve_xref(env, node['refdoc'], app.builder,
                                        type, newtarget,
                                        node, contnode)
 
@@ -119,32 +120,32 @@ def setup(app):
     app.connect('missing-reference', maybe_resolve_abbreviations)
 
     app.add_crossref_type(
-        directivename="setting",
-        rolename="setting",
-        indextemplate="pair: %s; setting",
+        directivename='setting',
+        rolename='setting',
+        indextemplate='pair: %s; setting',
     )
     app.add_crossref_type(
-        directivename="sig",
-        rolename="sig",
-        indextemplate="pair: %s; sig",
+        directivename='sig',
+        rolename='sig',
+        indextemplate='pair: %s; sig',
     )
     app.add_crossref_type(
-        directivename="state",
-        rolename="state",
-        indextemplate="pair: %s; state",
+        directivename='state',
+        rolename='state',
+        indextemplate='pair: %s; state',
     )
     app.add_crossref_type(
-        directivename="control",
-        rolename="control",
-        indextemplate="pair: %s; control",
+        directivename='control',
+        rolename='control',
+        indextemplate='pair: %s; control',
     )
     app.add_crossref_type(
-        directivename="signal",
-        rolename="signal",
-        indextemplate="pair: %s; signal",
+        directivename='signal',
+        rolename='signal',
+        indextemplate='pair: %s; signal',
     )
     app.add_crossref_type(
-        directivename="event",
-        rolename="event",
-        indextemplate="pair: %s; event",
+        directivename='event',
+        rolename='event',
+        indextemplate='pair: %s; event',
     )
