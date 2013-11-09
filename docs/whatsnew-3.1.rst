@@ -77,9 +77,9 @@ rarely used parts of the library.  Work has also started on a new message
 protocol, supporting multiple languages and more.  The initial a draft that can
 be found :ref:`here <protov2draft>`.
 
-This has probably been the hardest release I have worked on, so no
+This has probably been the hardest release I've worked on, so no
 introduction to this changelog would be complete without a massive
-thank you to everyone who contributed and helped me test this release!
+thank you to everyone who contributed and helped me test it!
 
 Thank you for your support!
 
