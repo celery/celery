@@ -370,6 +370,9 @@ class inspect(_RemoteControl):
     def objgraph(self, type_='Request', *args, **kwargs):
         return self.call('objgraph', type_)
 
+    def conf(self, with_defaults=False, *args, **kwargs):
+        return self.call('conf', with_defaults=with_defaults)
+
 
 class control(_RemoteControl):
     """Workers remote control.

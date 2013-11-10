@@ -104,8 +104,8 @@ class Inspect(object):
     def query_task(self, ids):
         return self._request('query_task', ids=ids)
 
-    def conf(self):
-        return self._request('dump_conf')
+    def conf(self, with_defaults=False):
+        return self._request('dump_conf', with_defaults=with_defaults)
 
     def hello(self, from_node, revoked=None):
         return self._request('hello', from_node=from_node, revoked=revoked)
