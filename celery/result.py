@@ -683,7 +683,7 @@ class GroupResult(ResultSet):
     def restore(self, id, backend=None):
         """Restore previously saved group result."""
         return (
-            backend or self.app.backend if self.app else current_app.backend
+            backend or (self.app.backend if self.app else current_app.backend)
         ).restore_group(id)
 
 
