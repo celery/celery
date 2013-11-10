@@ -23,6 +23,12 @@ from kombu.utils.limits import TokenBucket  # noqa
 from celery.five import items
 from celery.utils.functional import LRUCache, first, uniq  # noqa
 
+try:
+    from django.utils.functional import LazyObject
+except ImportError:
+    class LazyObject(object):  # noqa
+        pass
+
 DOT_HEAD = """
 {IN}{type} {id} {{
 {INp}graph [{attrs}]
@@ -37,6 +43,12 @@ DOT_TAIL = '{IN}}}'
 __all__ = ['GraphFormatter', 'CycleError', 'DependencyGraph',
            'AttributeDictMixin', 'AttributeDict', 'DictAttribute',
            'ConfigurationView', 'LimitedSet']
+
+
+def force_mapping(m):
+    if isinstance(m, LazyObject):
+        m = m._wrapped
+    return DictAttribute(m) if not isinstance(m, Mapping) else m
 
 
 class GraphFormatter(object):
@@ -447,8 +459,7 @@ class ConfigurationView(AttributeDictMixin):
                              _order=[changes] + defaults)
 
     def add_defaults(self, d):
-        if not isinstance(d, Mapping):
-            d = DictAttribute(d)
+        d = force_mapping(d)
         self.defaults.insert(0, d)
         self._order.insert(1, d)
 

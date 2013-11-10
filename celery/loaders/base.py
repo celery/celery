@@ -20,7 +20,7 @@ from datetime import datetime
 from kombu.utils import cached_property
 from kombu.utils.encoding import safe_str
 
-from celery.datastructures import DictAttribute
+from celery.datastructures import DictAttribute, force_mapping
 from celery.five import reraise, string_t
 from celery.utils.functional import maybe_list
 from celery.utils.imports import (
@@ -140,9 +140,7 @@ class BaseLoader(object):
                 if silent:
                     return False
                 raise
-        if not hasattr(obj, '__getitem__'):
-            obj = DictAttribute(obj)
-        self._conf = obj
+        self._conf = force_mapping(obj)
         return True
 
     def _smart_import(self, path, imp=None):
