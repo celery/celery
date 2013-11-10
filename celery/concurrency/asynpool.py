@@ -248,6 +248,8 @@ class ResultHandler(_pool.ResultHandler):
             for fd in outqueues:
                 self._flush_outqueue(
                     fd, pending_remove_fd.discard, fileno_to_outq,
+                    on_state_change,
+                )
                 try:
                     join_exited_workers(shutdown=True)
                 except WorkersJoined:
