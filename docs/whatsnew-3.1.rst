@@ -3,6 +3,7 @@
 ===========================================
  What's new in Celery 3.1 (Cipater)
 ===========================================
+:Author: Ask Solem (ask at celeryproject.org)
 
 .. sidebar:: Change history
 
