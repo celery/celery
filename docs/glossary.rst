@@ -67,3 +67,7 @@ Glossary
         be the same given the same inputs, and a reentrant function may have
         side effects as long as it can be interrupted;  An idempotent function
         is always reentrant, but the reverse may not be true.
+
+    cipater
+        Celery release 3.1 named after song by Autechre
+        (http://www.youtube.com/watch?v=OHsaqUr_33Y)
