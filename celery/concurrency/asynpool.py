@@ -183,14 +183,15 @@ class ResultHandler(_pool.ResultHandler):
                 if get_errno(exc) not in UNAVAIL:
                     raise
                 yield
-            n = len(chunk)
-            if n == 0:
-                if remaining == size:
-                    raise EOFError()
-                else:
-                    raise IOError('Got end of file during message')
-            buf.write(chunk)
-            remaining -= n
+            else:
+                n = len(chunk)
+                if n == 0:
+                    if remaining == size:
+                        raise EOFError()
+                    else:
+                        raise IOError('Got end of file during message')
+                buf.write(chunk)
+                remaining -= n
         add_reader(fd, self.handle_event, fd)
         message = loads(buf.getvalue())
         if message:
