@@ -35,8 +35,14 @@ that defines the Celery instance:
 
 .. code-block:: python
 
+    from __future__ import absolute_import
+
+    import os
+
     from celery import Celery
     from django.conf import settings
+
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.settings')
 
     app = Celery('proj.celery')
     app.config_from_object('django.conf:settings')
@@ -47,13 +53,32 @@ that defines the Celery instance:
         print('Request: {0!r}'.format(self.request))
 
 Let's explain what happens here.
-First we create the Celery app instance:
+First we import absolute imports from the future, so that our
+``celery.py`` module will not crash with the library:
+
+.. code-block:: python
+
+    from __future__ import absolute_import
+
+Then we set the default :envvar:`DJANGO_SETTINGS_MODULE` 
+for the :program:`celery` command-line program:
+
+.. code-block:: python
+
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.settings')
+
+You don't need this line, but it saves you from always passing in the
+settings module to the celery program.  It must always come before
+creating the app instances, which is what we do next:
 
 .. code-block:: python
 
     app = Celery('proj')
 
-Then we add the Django settings module as a configuration source
+This is our instance of the library, you can have many instances
+but there's probably no reason for that when using Django.
+
+We also add the Django settings module as a configuration source
 for Celery.  This means that you don't have to use multiple
 configuration files, and instead configure Celery directly
 from the Django settings.

@@ -330,6 +330,9 @@ but if you would like to experiment with it you should know that:
 
         DJANGO_SETTINGS_MODULE='proj.settings' celery -A proj worker -l info
 
+    You can also set a default value in your app module so you
+    don't have to type it every time: just see the example in the :ref:`Django
+    guide <django-first-steps>`.
 
 To get started with the new API you should first read the :ref:`first-steps`
 tutorial, and then you should read the Django specific instructions in
