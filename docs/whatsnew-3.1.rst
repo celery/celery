@@ -74,7 +74,7 @@ so I cannot recommend them for production use.
 
 The next version of Celery 3.2 will focus on performance and removing
 rarely used parts of the library.  Work has also started on a new message
-protocol, supporting multiple languages and more.  The initial a draft that can
+protocol, supporting multiple languages and more.  The initial draft can
 be found :ref:`here <protov2draft>`.
 
 This has probably been the hardest release I've worked on, so no
@@ -997,7 +997,7 @@ In Other News
 
         >>> t.apply_async(headers={'sender': 'George Costanza'})
 
-- New :signal:`before_task_publish`` signal dispatched before a task message
+- New :signal:`before_task_publish` signal dispatched before a task message
   is sent and can be used to modify the final message fields (Issue #1281).
 
 - New :signal:`after_task_publish` signal replaces the old :signal:`task_sent`
