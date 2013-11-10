@@ -973,7 +973,7 @@ class AsynPool(_pool.Pool):
     def _stop_task_handler(task_handler):
         """Called at shutdown to tell processes that we are shutting down."""
         for proc in task_handler.pool:
-            proc.inq._writer.setblocking(1)
+            setblocking(proc.inq._writer, 1)
             try:
                 proc.inq.put(None)
             except OSError as exc:
