@@ -123,34 +123,58 @@ Using the Django ORM/Cache as a result backend.
 The ``django-celery`` library defines result backends that
 uses the Django ORM and Django Cache frameworks.
 
-To use this with your project you need to follow these three steps:
+To use this with your project you need to follow these four steps:
 
-    1. Install the ``django-celery`` library:
+1. Install the ``django-celery`` library:
 
-        .. code-block:: bash
+    .. code-block:: bash
 
-            $ pip install django-celery
+        $ pip install django-celery
 
-    2. Add ``djcelery`` to ``INSTALLED_APPS``.
+2. Add ``djcelery`` to ``INSTALLED_APPS``.
 
-    3. Create the celery database tables.
+3. Create the celery database tables.
 
-        This step will create the tables used to store results
-        when using the database result backend and the tables used
-        by the database periodic task scheduler.  You can skip
-        this step if you don't use these.
+    This step will create the tables used to store results
+    when using the database result backend and the tables used
+    by the database periodic task scheduler.  You can skip
+    this step if you don't use these.
 
-        If you are using south_ for schema migrations, you'll want to:
+    If you are using south_ for schema migrations, you'll want to:
 
-        .. code-block:: bash
+    .. code-block:: bash
 
-            $ python manage.py migrate djcelery
+        $ python manage.py migrate djcelery
 
-        For those who are not using south, a normal ``syncdb`` will work:
+    For those who are not using south, a normal ``syncdb`` will work:
 
-        .. code-block:: bash
+    .. code-block:: bash
 
-            $ python manage.py syncdb
+        $ python manage.py syncdb
+
+4.  Configure celery to use the django-celery backend.
+
+    For the database backend you must use:
+
+    .. code-block:: python
+
+        app.conf.update(
+            CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend',
+        )
+
+    For the cache backend you can use:
+
+    .. code-block:: python
+
+        app.conf.update(
+            CELERY_RESULT_BACKEND='djcelery.backends.cache:CacheBackend',
+        )
+
+    If you have connected Celery to your Django settings then you can
+    add this directly into your settings module (without the
+    ``app.conf.update`` part)
+
+
 
 .. _south: http://pypi.python.org/pypi/South/
 
