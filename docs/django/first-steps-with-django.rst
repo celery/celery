@@ -140,12 +140,12 @@ alongside ``manage.py`` that automatically binds to your app, e.g. ``proj/celery
     #!/usr/bin/env python
     import os
 
-    from proj.celery import celery
+    from proj.celery import app
 
 
     if __name__ == '__main__':
         os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.celery')
-        celery.start()
+        app.start()
 
 Then you can use this command directly:
 
