@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from mock import patch
-
 from celery.utils.threads import (
     _LocalStack,
     _FastLocalStack,
@@ -10,7 +8,7 @@ from celery.utils.threads import (
     bgThread,
 )
 
-from celery.tests.case import Case, override_stdouts
+from celery.tests.case import Case, override_stdouts, patch
 
 
 class test_bgThread(Case):

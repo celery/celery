@@ -1,13 +1,11 @@
 from __future__ import absolute_import
 
-from mock import Mock, patch
-
 from celery import group, chord
 from celery.app import builtins
 from celery.canvas import Signature
 from celery.five import range
 from celery._state import _task_stack
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock, patch
 
 
 class BuiltinsCase(AppCase):

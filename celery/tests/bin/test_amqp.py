@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from mock import Mock, patch
-
 from celery.bin.amqp import (
     AMQPAdmin,
     AMQShell,
@@ -10,7 +8,7 @@ from celery.bin.amqp import (
     main,
 )
 
-from celery.tests.case import AppCase, WhateverIO
+from celery.tests.case import AppCase, Mock, WhateverIO, patch
 
 
 class test_AMQShell(AppCase):

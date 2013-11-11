@@ -1,10 +1,8 @@
 from __future__ import absolute_import
 
-from mock import patch
-
 from celery.events import Events
 from celery.events.snapshot import Polaroid, evcam
-from celery.tests.case import AppCase, restore_logging
+from celery.tests.case import AppCase, patch, restore_logging
 
 
 class TRef(object):

@@ -3,12 +3,10 @@ from __future__ import absolute_import
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
 
-from mock import Mock, patch
-
 from . import CERT1, CERT2, KEY1
 from .case import SecurityCase
 
-from celery.tests.case import mock_open
+from celery.tests.case import Mock, mock_open, patch
 
 
 class test_Certificate(SecurityCase):

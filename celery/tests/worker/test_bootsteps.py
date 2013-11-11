@@ -1,10 +1,8 @@
 from __future__ import absolute_import
 
-from mock import Mock, patch
-
 from celery import bootsteps
 
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock, patch
 
 
 class test_StepFormatter(AppCase):

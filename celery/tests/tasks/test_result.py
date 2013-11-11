@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 from contextlib import contextmanager
-from mock import Mock, patch
 
 from celery import states
 from celery.exceptions import IncompleteStream, TimeoutError
@@ -15,7 +14,7 @@ from celery.result import (
 from celery.utils import uuid
 from celery.utils.serialization import pickle
 
-from celery.tests.case import AppCase, depends_on_current_app
+from celery.tests.case import AppCase, Mock, depends_on_current_app, patch
 
 
 def mock_task(name, state, result):

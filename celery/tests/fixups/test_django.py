@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import os
 
 from contextlib import contextmanager
-from mock import Mock, patch
 
 from celery.fixups.django import (
     _maybe_close_fd,
@@ -11,7 +10,9 @@ from celery.fixups.django import (
     DjangoFixup,
 )
 
-from celery.tests.case import AppCase, patch_many, patch_modules, mask_modules
+from celery.tests.case import (
+    AppCase, Mock, patch, patch_many, patch_modules, mask_modules,
+)
 
 
 class test_DjangoFixup(AppCase):

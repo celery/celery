@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from mock import Mock, patch
-
 from celery.platforms import IS_WINDOWS
 from celery.bin.celeryd_detach import (
     detach,
@@ -9,7 +7,7 @@ from celery.bin.celeryd_detach import (
     main,
 )
 
-from celery.tests.case import AppCase, override_stdouts
+from celery.tests.case import AppCase, Mock, override_stdouts, patch
 
 
 if not IS_WINDOWS:

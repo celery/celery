@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.getcwd(), os.pardir))
 import suite  # noqa
 
 from celery.five import range
-from celery.tests.utils import unittest
+from celery.tests.case import unittest
 from celery.tests.functional import tasks
 from celery.tests.functional.case import WorkerCase
 

@@ -2,13 +2,11 @@ from __future__ import absolute_import
 
 import sys
 
-from mock import Mock, patch
-
 from celery.concurrency.base import BasePool
 from celery.five import monotonic
 from celery.worker import state
 from celery.worker import autoscale
-from celery.tests.case import AppCase, sleepdeprived
+from celery.tests.case import AppCase, Mock, patch, sleepdeprived
 
 
 class Object(object):

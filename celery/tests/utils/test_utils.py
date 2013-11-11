@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import pytz
 
 from datetime import datetime, date, time, timedelta
-from mock import Mock, patch
 
 from kombu import Queue
 
@@ -16,7 +15,7 @@ from celery.utils import (
     gen_task_name,
     jsonify,
 )
-from celery.tests.case import Case
+from celery.tests.case import Case, Mock, patch
 
 
 def double(x):

@@ -2,10 +2,8 @@ from __future__ import absolute_import
 
 import socket
 
-from mock import Mock
-
 from celery.events import Event
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock
 
 
 class MockProducer(object):

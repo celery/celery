@@ -1,10 +1,8 @@
 from __future__ import absolute_import
 
-from mock import Mock
-
 from celery.concurrency.threads import NullDict, TaskPool, apply_target
 
-from celery.tests.case import AppCase, Case, mask_modules, mock_module
+from celery.tests.case import AppCase, Case, Mock, mask_modules, mock_module
 
 
 class test_NullDict(Case):

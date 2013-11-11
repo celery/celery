@@ -4,8 +4,6 @@ import os
 import sys
 import warnings
 
-from mock import Mock, patch
-
 from celery import loaders
 from celery.exceptions import (
     NotConfigured,
@@ -18,7 +16,7 @@ from celery.utils.imports import NotAPackage
 from celery.utils.mail import SendmailWarning
 
 from celery.tests.case import (
-    AppCase, Case, depends_on_current_app, with_environ,
+    AppCase, Case, Mock, depends_on_current_app, patch, with_environ,
 )
 
 

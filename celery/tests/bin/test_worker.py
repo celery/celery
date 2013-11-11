@@ -6,9 +6,6 @@ import sys
 
 from functools import wraps
 
-from mock import Mock, patch
-from nose import SkipTest
-
 from billiard import current_process
 from kombu import Exchange, Queue
 
@@ -23,7 +20,10 @@ from celery.worker import state
 
 from celery.tests.case import (
     AppCase,
+    Mock,
+    SkipTest,
     WhateverIO,
+    patch,
     skip_if_pypy,
     skip_if_jython,
 )

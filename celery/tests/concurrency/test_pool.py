@@ -3,11 +3,9 @@ from __future__ import absolute_import
 import time
 import itertools
 
-from nose import SkipTest
-
 from billiard.einfo import ExceptionInfo
 
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, SkipTest
 
 
 def do_something(i):

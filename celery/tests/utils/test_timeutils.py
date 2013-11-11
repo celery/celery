@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import pytz
 
 from datetime import datetime, timedelta, tzinfo
-from mock import Mock, patch
 from pytz import AmbiguousTimeError
 
 from celery.utils.timeutils import (
@@ -23,7 +22,7 @@ from celery.utils.timeutils import (
     utcoffset,
 )
 from celery.utils.iso8601 import parse_iso8601
-from celery.tests.case import Case
+from celery.tests.case import Case, Mock, patch
 
 
 class test_LocalTimezone(Case):

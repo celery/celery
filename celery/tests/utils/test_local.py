@@ -2,8 +2,6 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 
-from mock import Mock
-
 from celery.five import string, long_t
 from celery.local import (
     Proxy,
@@ -11,7 +9,7 @@ from celery.local import (
     maybe_evaluate,
     try_import,
 )
-from celery.tests.case import Case
+from celery.tests.case import Case, Mock
 
 
 class test_try_import(Case):

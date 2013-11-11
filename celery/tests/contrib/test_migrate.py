@@ -1,7 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
 from contextlib import contextmanager
-from mock import patch
 
 from amqp import ChannelError
 
@@ -27,7 +26,7 @@ from celery.contrib.migrate import (
     move,
 )
 from celery.utils.encoding import bytes_t, ensure_bytes
-from celery.tests.case import AppCase, Mock, override_stdouts
+from celery.tests.case import AppCase, Mock, override_stdouts, patch
 
 # hack to ignore error at shutdown
 QoS.restore_at_shutdown = False

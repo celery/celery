@@ -2,14 +2,13 @@ from __future__ import absolute_import
 
 from collections import defaultdict
 from contextlib import contextmanager
-from mock import Mock, patch
 
 from kombu.utils.limits import TokenBucket
 
 from celery.worker import state
 from celery.utils.timeutils import rate
 
-from celery.tests.case import AppCase, body_from_sig
+from celery.tests.case import AppCase, Mock, patch, body_from_sig
 
 
 class test_default_strategy(AppCase):

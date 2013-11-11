@@ -4,7 +4,6 @@ import errno
 import select
 import sys
 
-from mock import Mock, patch
 from time import time
 
 from celery.worker import autoreload
@@ -19,7 +18,7 @@ from celery.worker.autoreload import (
     Autoreloader,
 )
 
-from celery.tests.case import AppCase, Case, mock_open
+from celery.tests.case import AppCase, Case, Mock, patch, mock_open
 
 
 class test_WorkerComponent(AppCase):

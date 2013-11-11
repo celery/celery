@@ -4,8 +4,6 @@ import sys
 import types
 
 from contextlib import contextmanager
-from mock import Mock, patch
-from nose import SkipTest
 
 from celery.exceptions import ChordError
 from celery.five import items, range
@@ -23,7 +21,7 @@ from celery.backends.base import (
 )
 from celery.utils import uuid
 
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock, SkipTest, patch
 
 
 class wrapobject(object):

@@ -2,12 +2,9 @@ from __future__ import absolute_import
 
 import os
 
-from mock import patch
-from nose import SkipTest
-
 from celery.utils.sysinfo import load_average, df
 
-from celery.tests.case import Case
+from celery.tests.case import Case, SkipTest, patch
 
 
 class test_load_average(Case):

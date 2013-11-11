@@ -1,11 +1,10 @@
 from __future__ import absolute_import
 
 from kombu import Exchange, Queue
-from mock import Mock
 
 from celery.app.amqp import Queues, TaskPublisher
 from celery.five import keys
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock
 
 
 class test_TaskProducer(AppCase):

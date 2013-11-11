@@ -4,14 +4,12 @@ from __future__ import absolute_import
 # here to complete coverage.  Should move everyting to this module at some
 # point [-ask]
 
-from mock import Mock
-
 from celery.worker.components import (
     Queues,
     Pool,
 )
 
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock
 
 
 class test_Queues(AppCase):

@@ -16,8 +16,6 @@ Generated with:
 """
 from __future__ import absolute_import
 
-from mock import Mock, patch
-
 from kombu.serialization import disable_insecure_serializers
 
 from celery.exceptions import ImproperlyConfigured, SecurityError
@@ -27,7 +25,7 @@ from kombu.serialization import registry
 
 from .case import SecurityCase
 
-from celery.tests.case import mock_open
+from celery.tests.case import Mock, mock_open, patch
 
 
 class test_security(SecurityCase):

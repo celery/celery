@@ -4,8 +4,6 @@ import errno
 import signal
 import sys
 
-from mock import Mock, patch
-
 from celery.bin.multi import (
     main,
     MultiTool,
@@ -19,7 +17,7 @@ from celery.bin.multi import (
     __doc__ as doc,
 )
 
-from celery.tests.case import AppCase, WhateverIO, SkipTest
+from celery.tests.case import AppCase, Mock, WhateverIO, SkipTest, patch
 
 
 class test_functions(AppCase):

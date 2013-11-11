@@ -6,12 +6,9 @@ import time
 
 from itertools import cycle
 
-from mock import Mock, call, patch
-from nose import SkipTest
-
 from celery.five import items, range
 from celery.utils.functional import noop
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock, SkipTest, call, patch
 try:
     from celery.concurrency import prefork as mp
     from celery.concurrency import asynpool

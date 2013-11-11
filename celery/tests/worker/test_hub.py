@@ -4,10 +4,8 @@ from kombu.async import Hub, READ, WRITE, ERR
 from kombu.async.hub import repr_flag, _rcb
 from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
 
-from mock import Mock, call, patch
-
 from celery.five import range
-from celery.tests.case import Case
+from celery.tests.case import Case, Mock, call, patch
 
 
 class File(object):

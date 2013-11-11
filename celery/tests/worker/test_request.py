@@ -12,8 +12,6 @@ from datetime import datetime, timedelta
 from billiard.einfo import ExceptionInfo
 from kombu.transport.base import Message
 from kombu.utils.encoding import from_utf8, default_encode
-from mock import Mock, patch
-from nose import SkipTest
 
 from celery import states
 from celery.app.trace import (
@@ -44,8 +42,11 @@ from celery.worker.state import revoked
 from celery.tests.case import (
     AppCase,
     Case,
+    Mock,
+    SkipTest,
     assert_signal_called,
     body_from_sig,
+    patch,
 )
 
 

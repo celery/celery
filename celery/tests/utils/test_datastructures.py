@@ -4,7 +4,6 @@ import pickle
 import sys
 
 from billiard.einfo import ExceptionInfo
-from mock import Mock, patch
 from time import time
 
 from celery.datastructures import (
@@ -16,7 +15,7 @@ from celery.datastructures import (
 )
 from celery.five import items
 
-from celery.tests.case import Case, WhateverIO, SkipTest
+from celery.tests.case import Case, Mock, WhateverIO, SkipTest, patch
 
 
 class Object(object):

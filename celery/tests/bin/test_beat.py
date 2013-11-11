@@ -5,14 +5,12 @@ import sys
 
 from collections import defaultdict
 
-from mock import patch
-
 from celery import beat
 from celery import platforms
 from celery.bin import beat as beat_bin
 from celery.apps import beat as beatapp
 
-from celery.tests.case import AppCase, Mock, restore_logging
+from celery.tests.case import AppCase, Mock, patch, restore_logging
 from kombu.tests.case import redirect_stdouts
 
 

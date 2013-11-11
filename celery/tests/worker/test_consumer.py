@@ -3,9 +3,6 @@ from __future__ import absolute_import
 import errno
 import socket
 
-from mock import Mock, patch, call
-from nose import SkipTest
-
 from billiard.exceptions import RestartFreqExceeded
 
 from celery.datastructures import LimitedSet
@@ -21,7 +18,7 @@ from celery.worker.consumer import (
     CLOSE,
 )
 
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock, SkipTest, call, patch
 
 
 class test_Consumer(AppCase):

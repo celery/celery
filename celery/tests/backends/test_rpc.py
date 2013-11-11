@@ -1,11 +1,9 @@
 from __future__ import absolute_import
 
-from mock import patch
-
 from celery.backends.rpc import RPCBackend
 from celery._state import _task_stack
 
-from celery.tests.case import AppCase, Mock
+from celery.tests.case import AppCase, Mock, patch
 
 
 class test_RPCBackend(AppCase):

@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from mock import Mock, patch
-
 from celery import uuid
 from celery import signals
 from celery import states
@@ -13,7 +11,7 @@ from celery.app.trace import (
     setup_worker_optimizations,
     reset_worker_optimizations,
 )
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock, patch
 
 
 def trace(app, task, args=(), kwargs={}, propagate=False, **opts):

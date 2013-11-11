@@ -6,7 +6,6 @@ import types
 from contextlib import contextmanager
 
 from kombu.utils.encoding import str_to_bytes
-from mock import Mock, patch
 
 from celery import signature
 from celery import states
@@ -15,7 +14,9 @@ from celery.exceptions import ImproperlyConfigured
 from celery.five import items, string, text_t
 from celery.utils import uuid
 
-from celery.tests.case import AppCase, mask_modules, reset_modules
+from celery.tests.case import (
+    AppCase, Mock, mask_modules, patch, reset_modules,
+)
 
 
 class SomeClass(object):

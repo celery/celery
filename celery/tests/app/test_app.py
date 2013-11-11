@@ -4,7 +4,6 @@ import os
 import itertools
 
 from copy import deepcopy
-from mock import Mock, patch
 from pickle import loads, dumps
 
 from kombu import Exchange
@@ -23,8 +22,10 @@ from celery.utils.serialization import pickle
 from celery.tests.case import (
     CELERY_TEST_CONFIG,
     AppCase,
+    Mock,
     depends_on_current_app,
     mask_modules,
+    patch,
     platform_pyimp,
     sys_platform,
     pypy_version,

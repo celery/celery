@@ -4,7 +4,6 @@ import sys
 
 from anyjson import dumps
 from datetime import datetime
-from mock import Mock, patch
 
 from celery import __main__
 from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
@@ -29,7 +28,9 @@ from celery.bin.celery import (
     command,
 )
 
-from celery.tests.case import AppCase, WhateverIO, override_stdouts
+from celery.tests.case import (
+    AppCase, Mock, WhateverIO, override_stdouts, patch,
+)
 
 
 class test__main__(AppCase):

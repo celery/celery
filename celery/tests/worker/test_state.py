@@ -2,14 +2,13 @@ from __future__ import absolute_import
 
 import pickle
 
-from mock import Mock, patch
 from time import time
 
 from celery.datastructures import LimitedSet
 from celery.exceptions import SystemTerminate
 from celery.worker import state
 
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock, patch
 
 
 class StateResetCase(AppCase):

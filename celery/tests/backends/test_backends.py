@@ -1,11 +1,9 @@
 from __future__ import absolute_import
 
-from mock import patch
-
 from celery import backends
 from celery.backends.amqp import AMQPBackend
 from celery.backends.cache import CacheBackend
-from celery.tests.case import AppCase, depends_on_current_app
+from celery.tests.case import AppCase, depends_on_current_app, patch
 
 
 class test_backends(AppCase):

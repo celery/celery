@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 import os
 
-from mock import Mock, patch
-
 from celery.bin.base import (
     Command,
     Option,
@@ -11,7 +9,7 @@ from celery.bin.base import (
     HelpFormatter,
 )
 from celery.tests.case import (
-    AppCase, override_stdouts, depends_on_current_app,
+    AppCase, Mock, depends_on_current_app, override_stdouts, patch,
 )
 
 

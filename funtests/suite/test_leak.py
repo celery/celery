@@ -9,11 +9,9 @@ import subprocess
 sys.path.insert(0, os.getcwd())
 sys.path.insert(0, os.path.join(os.getcwd(), os.pardir))
 
-from nose import SkipTest
-
 from celery import current_app
 from celery.five import range
-from celery.tests.utils import unittest
+from celery.tests.case import SkipTest, unittest
 
 import suite  # noqa
 

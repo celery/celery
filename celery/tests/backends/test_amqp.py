@@ -8,7 +8,6 @@ from datetime import timedelta
 from pickle import dumps, loads
 
 from billiard.einfo import ExceptionInfo
-from mock import patch
 
 from celery import states
 from celery.backends.amqp import AMQPBackend
@@ -17,7 +16,7 @@ from celery.five import Empty, Queue, range
 from celery.utils import uuid
 
 from celery.tests.case import (
-    AppCase, Mock, depends_on_current_app, sleepdeprived,
+    AppCase, Mock, depends_on_current_app, patch, sleepdeprived,
 )
 
 

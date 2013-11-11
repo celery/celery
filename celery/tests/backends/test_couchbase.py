@@ -1,13 +1,12 @@
 from __future__ import absolute_import
 
-from mock import MagicMock, Mock, patch, sentinel
-from nose import SkipTest
-
 from celery.backends import couchbase as module
 from celery.backends.couchbase import CouchBaseBackend
 from celery.exceptions import ImproperlyConfigured
 from celery import backends
-from celery.tests.case import AppCase
+from celery.tests.case import (
+    AppCase, MagicMock, Mock, SkipTest, patch, sentinel,
+)
 
 try:
     import couchbase

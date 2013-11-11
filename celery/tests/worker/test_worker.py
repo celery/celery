@@ -11,7 +11,6 @@ from amqp import ChannelError
 from kombu import Connection
 from kombu.common import QoS, ignore_errors
 from kombu.transport.base import Message
-from mock import Mock, patch
 
 from celery.app.defaults import DEFAULTS
 from celery.bootsteps import RUN, CLOSE, StartStopStep
@@ -28,7 +27,7 @@ from celery.utils import worker_direct
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 
-from celery.tests.case import AppCase, restore_logging
+from celery.tests.case import AppCase, Mock, patch, restore_logging
 
 
 def MockStep(step=None):

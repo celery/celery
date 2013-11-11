@@ -3,14 +3,12 @@ from __future__ import absolute_import
 import errno
 import socket
 
-from mock import Mock, patch
-
 from celery.contrib.rdb import (
     Rdb,
     debugger,
     set_trace,
 )
-from celery.tests.case import Case, WhateverIO, skip_if_pypy
+from celery.tests.case import Case, Mock, WhateverIO, patch, skip_if_pypy
 
 
 class SockErr(socket.error):

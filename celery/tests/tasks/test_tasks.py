@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 from collections import Callable
 from datetime import datetime, timedelta
-from mock import patch
 
 from kombu import Queue
 
@@ -14,7 +13,7 @@ from celery.result import EagerResult
 from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601
 
-from celery.tests.case import AppCase, depends_on_current_app
+from celery.tests.case import AppCase, depends_on_current_app, patch
 
 
 def return_True(*args, **kwargs):

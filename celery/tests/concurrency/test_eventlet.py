@@ -2,9 +2,6 @@ from __future__ import absolute_import
 
 import sys
 
-from nose import SkipTest
-from mock import patch, Mock
-
 from celery.app.defaults import is_pypy
 from celery.concurrency.eventlet import (
     apply_target,
@@ -13,7 +10,9 @@ from celery.concurrency.eventlet import (
     TaskPool,
 )
 
-from celery.tests.case import AppCase, mock_module, patch_many, skip_if_pypy
+from celery.tests.case import (
+    AppCase, Mock, SkipTest, mock_module, patch, patch_many, skip_if_pypy,
+)
 
 
 class EventletCase(AppCase):

@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 import socket
 
-from mock import Mock
-
 from kombu.async import Hub, READ, WRITE, ERR
 
 from celery.bootsteps import CLOSE, RUN
@@ -13,7 +11,7 @@ from celery.worker import state
 from celery.worker.consumer import Consumer
 from celery.worker.loops import asynloop, synloop
 
-from celery.tests.case import AppCase, body_from_sig
+from celery.tests.case import AppCase, Mock, body_from_sig
 
 
 class X(object):

@@ -1,4 +1,4 @@
-unittest2>=0.4.0
+unittest2>=0.5.1
 nose
 nose-cover3
-mock
+mock>=1.0.1

@@ -1,8 +1,6 @@
 from __future__ import absolute_import
 
-from nose import SkipTest
-
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, SkipTest
 
 
 class MockWindow(object):

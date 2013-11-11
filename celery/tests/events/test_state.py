@@ -5,7 +5,6 @@ import pickle
 from random import shuffle
 from time import time
 from itertools import count
-from mock import patch
 
 from celery import states
 from celery.events import Event
@@ -18,7 +17,7 @@ from celery.events.state import (
 )
 from celery.five import range
 from celery.utils import uuid
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, patch
 
 
 class replay(object):

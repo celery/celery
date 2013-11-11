@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from mock import Mock, patch
-
 from celery.utils.imports import (
     qualname,
     reload_from_cwd,
@@ -10,7 +8,7 @@ from celery.utils.imports import (
     NotAPackage,
 )
 
-from celery.tests.case import Case
+from celery.tests.case import Case, Mock, patch
 
 
 class test_import_utils(Case):

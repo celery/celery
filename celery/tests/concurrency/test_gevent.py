@@ -1,8 +1,5 @@
 from __future__ import absolute_import
 
-from nose import SkipTest
-from mock import Mock
-
 from celery.concurrency.gevent import (
     Schedule,
     Timer,
@@ -11,7 +8,7 @@ from celery.concurrency.gevent import (
 )
 
 from celery.tests.case import (
-    AppCase, mock_module, patch, patch_many, skip_if_pypy,
+    AppCase, Mock, SkipTest, mock_module, patch, patch_many, skip_if_pypy,
 )
 
 gevent_modules = (

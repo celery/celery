@@ -3,10 +3,9 @@ from __future__ import absolute_import
 import os
 
 from itertools import count
-from mock import Mock
 
 from celery.concurrency.base import apply_target, BasePool
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock
 
 
 class test_BasePool(AppCase):

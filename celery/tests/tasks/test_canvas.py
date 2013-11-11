@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from mock import Mock
-
 from celery.canvas import (
     Signature,
     chain,
@@ -16,7 +14,7 @@ from celery.canvas import (
 )
 from celery.result import EagerResult
 
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock
 
 SIG = Signature({'task': 'TASK',
                  'args': ('A1', ),

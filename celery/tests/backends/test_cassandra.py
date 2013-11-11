@@ -2,12 +2,13 @@ from __future__ import absolute_import
 
 import socket
 
-from mock import Mock
 from pickle import loads, dumps
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.tests.case import AppCase, mock_module, depends_on_current_app
+from celery.tests.case import (
+    AppCase, Mock, mock_module, depends_on_current_app,
+)
 
 
 class Object(object):

@@ -1,10 +1,8 @@
 from __future__ import absolute_import
 
-from mock import Mock, patch
-
 from celery.utils.mail import Message, Mailer, SSLError
 
-from celery.tests.case import Case
+from celery.tests.case import Case, Mock, patch
 
 
 msg = Message(to='george@vandelay.com', sender='elaine@pendant.com',

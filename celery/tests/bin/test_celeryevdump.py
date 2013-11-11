@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-from mock import Mock, patch
 from time import time
 
 from celery.events.dumper import (
@@ -9,7 +8,7 @@ from celery.events.dumper import (
     evdump,
 )
 
-from celery.tests.case import AppCase, WhateverIO
+from celery.tests.case import AppCase, Mock, WhateverIO, patch
 
 
 class test_Dumper(AppCase):

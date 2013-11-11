@@ -2,7 +2,6 @@ from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime
 
-from nose import SkipTest
 from pickle import loads, dumps
 
 from celery import states
@@ -11,6 +10,7 @@ from celery.utils import uuid
 
 from celery.tests.case import (
     AppCase,
+    SkipTest,
     depends_on_current_app,
     mask_modules,
     skip_if_pypy,

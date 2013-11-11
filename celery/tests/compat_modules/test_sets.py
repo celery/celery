@@ -3,15 +3,13 @@ from __future__ import absolute_import
 import anyjson
 import warnings
 
-from mock import Mock, patch
-
 from celery import uuid
 from celery.result import TaskSetResult
 from celery.task import Task
 from celery.canvas import Signature
 
 from celery.tests.tasks.test_result import make_mock_group
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock, patch
 
 
 class SetsCase(AppCase):

@@ -4,9 +4,6 @@ import sys
 import logging
 from tempfile import mktemp
 
-from mock import patch, Mock
-from nose import SkipTest
-
 from celery import signals
 from celery.app.log import TaskFormatter
 from celery.utils.log import LoggingProxy
@@ -22,8 +19,8 @@ from celery.utils.log import (
     _patch_logger_class,
 )
 from celery.tests.case import (
-    AppCase, override_stdouts, wrap_logger, get_handlers,
-    restore_logging,
+    AppCase, Mock, SkipTest,
+    get_handlers, override_stdouts, patch, wrap_logger, restore_logging,
 )
 
 

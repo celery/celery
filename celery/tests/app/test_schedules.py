@@ -6,11 +6,9 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pickle import dumps, loads
 
-from nose import SkipTest
-
 from celery.five import items
 from celery.schedules import ParseException, crontab, crontab_parser
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, SkipTest
 
 
 @contextmanager

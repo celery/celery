@@ -3,15 +3,16 @@ from __future__ import absolute_import
 import datetime
 import uuid
 
-from mock import MagicMock, Mock, patch, sentinel
-from nose import SkipTest
 from pickle import loads, dumps
 
 from celery import states
 from celery.backends import mongodb as module
 from celery.backends.mongodb import MongoBackend, Bunch, pymongo
 from celery.exceptions import ImproperlyConfigured
-from celery.tests.case import AppCase, depends_on_current_app
+from celery.tests.case import (
+    AppCase, MagicMock, Mock, SkipTest,
+    depends_on_current_app, patch, sentinel,
+)
 
 COLLECTION = 'taskmeta_celery'
 TASK_ID = str(uuid.uuid1())

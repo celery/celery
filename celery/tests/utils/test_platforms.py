@@ -5,8 +5,6 @@ import os
 import sys
 import signal
 
-from mock import Mock, patch, call
-
 from celery import _find_option_with_arg
 from celery import platforms
 from celery.five import open_fqdn
@@ -37,7 +35,8 @@ except ImportError:  # pragma: no cover
     resource = None  # noqa
 
 from celery.tests.case import (
-    Case, WhateverIO, override_stdouts, mock_open, SkipTest,
+    Case, WhateverIO, Mock, SkipTest,
+    call, override_stdouts, mock_open, patch,
 )
 
 
