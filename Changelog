@@ -12,7 +12,9 @@ new in Celery 3.1.
 
 3.1.1
 =====
-:release-date: 2013-11-11 XX:XX P.M UTC
+:release-date: 2013-11-11 06:30 P.M UTC
+
+- Now depends on :mod:`billiard` 3.3.0.4.
 
 - Python 3: Fixed compatibility issues.
 
