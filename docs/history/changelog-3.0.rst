@@ -1,8 +1,8 @@
 .. _changelog-3.0:
 
-================
- Change history
-================
+===============================
+ Change history for Celery 3.0
+===============================
 
 .. contents::
     :local:
