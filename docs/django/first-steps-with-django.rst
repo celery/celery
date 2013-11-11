@@ -118,42 +118,6 @@ its own request information.  This is using the new ``bind=True`` task option
 introduced in Celery 3.1 to easily refer to the current task instance.
 
 
-The `celery` command
---------------------
-
-To use the :program:`celery` command with Django you need to
-set up the :envvar:`DJANGO_SETTINGS_MODULE` environment variable:
-
-.. code-block:: bash
-
-    $ DJANGO_SETTINGS_MODULE='proj.settings' celery -A proj worker -l info
-
-    $ DJANGO_SETTINGS_MODULE='proj.settings' celery -A proj status
-
-If you find this inconvienient you can create a small wrapper script
-alongside ``manage.py`` that automatically binds to your app, e.g. ``proj/celery.py``
-
-:file:`proj/celery.py`
-
-.. code-block:: python
-
-    #!/usr/bin/env python
-    import os
-
-    from proj.celery import celery
-
-
-    if __name__ == '__main__':
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.celery')
-        celery.start()
-
-Then you can use this command directly:
-
-.. code-block:: bash
-
-    $ ./celery.py status
-
-
 Using the Django ORM/Cache as a result backend.
 -----------------------------------------------
 
@@ -210,7 +174,8 @@ development it is useful to be able to start a worker instance by using the
 
 .. code-block:: bash
 
-    $ DJANGO_SETTINGS_MODULE='proj.settings' celery -A proj worker -l info
+    $ celery -A proj worker -l info
+
 
 For a complete listing of the command-line options available,
 use the help command:

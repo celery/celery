@@ -31,9 +31,6 @@ points to the currently active Celery instance.
 Starting the worker
 ===================
 
-The ``DJANGO_SETTINGS_MODULE`` environment must be set when starting the
-worker:
-
 .. code-block:: bash
 
-    $ DJANGO_SETTINGS_MODULE='proj.settings' celery -A proj worker -l info
+    $ celery -A proj worker -l info
