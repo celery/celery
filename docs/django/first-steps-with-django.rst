@@ -48,7 +48,7 @@ that defines the Celery instance:
     app.config_from_object('django.conf:settings')
     app.autodiscover_tasks(settings.INSTALLED_APPS, related_name='tasks')
 
-    @celery.task(bind=True)
+    @app.task(bind=True)
     def debug_task(self):
         print('Request: {0!r}'.format(self.request))
 
