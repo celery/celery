@@ -8,6 +8,39 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.1:
+
+3.1.1
+=====
+:release-date: 2013-11-11 XX:XX P.M UTC
+
+- Python 3: Fixed compatibility issues.
+
+- Windows:  Accidentally showed warning that the billiard C extension
+  was not installed (Issue #1630).
+
+- Django: Tutorial updated with a solution that sets a default
+  :envvar:`DJANGO_SETTINGS_MODULE` so that it doesn't have to be typed
+  in with the :program:`celery` command.
+
+    Also fixed typos in the tutorial, and added the settings
+    required to use the Django database backend.
+
+    Thanks to Chris Ward, orarbel.
+
+- Django: Fixed a problem when using the Django settings in Django 1.6.
+
+- Django: Fixup should not be applied if the django loader is active.
+
+- Worker:  Fixed attribute error for ``human_write_stats`` when using the
+  compatibility prefork pool implementation.
+
+- Worker: Fixed compatibility with billiard without C extension.
+
+- Inspect.conf: Now supports a ``with_defaults`` argument.
+
+- Group.restore: The backend argument was not respected.
+
 .. _version-3.1.0:
 
 3.1.0
