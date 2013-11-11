@@ -669,11 +669,11 @@ already a standard function):
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     def add(x, y):
         return x + y
 
-    @celery.task
+    @app.task
     def tsum(numbers):
         return sum(numbers)
 
@@ -785,7 +785,7 @@ Example decorated task:
 
 .. code-block:: python
 
-    @celery.task(ignore_result=False)
+    @app.task(ignore_result=False)
     def another_task(project):
         do_something()
 
@@ -855,7 +855,7 @@ is the same as having a task doing:
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     def temp():
         return [xsum(range(10)), xsum(range(100))]
 
@@ -868,7 +868,7 @@ is the same as having a task doing:
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     def temp():
         return [add(i, i) for i in range(10)]
 

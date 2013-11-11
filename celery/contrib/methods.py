@@ -26,7 +26,7 @@ or with any task decorator:
 
     class X(object):
 
-        @celery.task(filter=task_method)
+        @app.task(filter=task_method)
         def add(self, x, y):
             return x + y
 

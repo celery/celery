@@ -25,7 +25,7 @@ Creating tasks:
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     def add(x, y):
         return x + y
 
@@ -43,7 +43,7 @@ Creating custom Task subclasses:
             import pdb
             pdb.set_trace()
 
-    @celery.task(base=DebugTask)
+    @app.task(base=DebugTask)
     def add(x, y):
         return x + y
 

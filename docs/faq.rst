@@ -526,7 +526,7 @@ If you don't use the results for a task, make sure you set the
 
 .. code-block python
 
-    @celery.task(ignore_result=True)
+    @app.task(ignore_result=True)
     def mytask():
         …
 
@@ -620,7 +620,7 @@ How can I get the task id of the current task?
 
 **Answer**: The current id and more is available in the task request::
 
-    @celery.task(bind=True)
+    @app.task(bind=True)
     def mytask(self):
         cache.set(self.request.id, "Running")
 
@@ -666,11 +666,11 @@ Also, a common pattern is to add callbacks to tasks:
 
     logger = get_task_logger(__name__)
 
-    @celery.task
+    @app.task
     def add(x, y):
         return x + y
 
-    @celery.task(ignore_result=True)
+    @app.task(ignore_result=True)
     def log_result(result):
         logger.info("log_result got: %r", result)
 
@@ -779,7 +779,7 @@ this is rarely the case. Imagine the following task:
 
 .. code-block:: python
 
-    @celery.task
+    @app.task
     def process_upload(filename, tmpfile):
         # Increment a file count stored in a database
         increment_file_counter()

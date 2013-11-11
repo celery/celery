@@ -243,7 +243,7 @@ and creating Celery applications.
 
         .. code-block:: python
 
-            @celery.task
+            @app.task
             def refresh_feed(url):
                 return …
 
@@ -251,7 +251,7 @@ and creating Celery applications.
 
         .. code-block:: python
 
-            @celery.task(exchange="feeds")
+            @app.task(exchange="feeds")
             def refresh_feed(url):
                 return …
 

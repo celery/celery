@@ -205,7 +205,7 @@ and here's the same using Celery app objects:
     from .celery import celery
     from .models import CeleryStats
 
-    @celery.task
+    @app.task
     def write_stats_to_db():
         stats = celery.control.inspect().stats(timeout=1)
         for node_name, reply in stats:
