@@ -157,31 +157,63 @@ For example if the client imports the module "myapp.tasks" as ".tasks", and
 the worker imports the module as "myapp.tasks", the generated names won't match
 and an :exc:`~@NotRegistered` error will be raised by the worker.
 
-This is also the case if using Django and using `project.myapp`::
-
-    INSTALLED_APPS = ('project.myapp', )
-
-The worker will have the tasks registered as "project.myapp.tasks.*",
-while this is what happens in the client if the module is imported as
-"myapp.tasks":
+This is also the case when using Django and using `project.myapp`-style
+naming in ``INSTALLED_APPS``:
 
 .. code-block:: python
 
-    >>> from myapp.tasks import add
-    >>> add.name
-    'myapp.tasks.add'
+    INSTALLED_APPS = ['project.myapp']
 
-For this reason you should never use "project.app", but rather
-add the project directory to the Python path::
+If you install the app under the name ``project.myapp`` then the
+tasks module will be imported as ``project.myapp.tasks``,
+so you must make sure you always import the tasks using the same name:
 
-    import os
-    import sys
-    sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+.. code-block:: python
 
-    INSTALLED_APPS = ('myapp', )
+    >>> from project.myapp.tasks import mytask   # << GOOD
 
-This makes more sense from the reusable app perspective anyway.
+    >>> from myapp.tasks import mytask    # << BAD!!!
 
+The second example will cause the task to be named differently
+since the worker and the client imports the modules under different names:
+
+.. code-block:: python
+
+    >>> from project.myapp.tasks import mytask
+    >>> mytask.name
+    'project.myapp.tasks.mytask'
+
+    >>> from myapp.tasks import mytask
+    >>> mytask.name
+    'myapp.tasks.mytask'
+
+So for this reason you must be consistent in how you
+import modules, which is also a Python best practice.
+
+Similarly, you should not use old-style relative imports:
+
+.. code-block:: python
+
+    from module import foo   # BAD!
+
+    from proj.module import foo  # GOOD!
+
+New-style relative imports are fine and can be used:
+
+.. code-block:: python
+
+    from .module import foo  # GOOD!
+
+If you want to use Celery with a project already using these patterns
+extensively and you don't have the time to refactor the existing code
+then you can consider specifying the names explicitly instead of relying
+on the automatic naming:
+
+.. code-block:: python
+
+    @task(name='proj.tasks.add')
+    def add(x, y):
+        return x + y
 
 .. _task-request-info:
 
