@@ -9,6 +9,7 @@
 from __future__ import absolute_import
 
 import os
+import sys
 
 from billiard import forking_enable
 from billiard.pool import RUN, CLOSE, Pool as BlockingPool
@@ -105,7 +106,7 @@ class TaskPool(BasePool):
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
-        if self.options.get('maxtasksperchild'):
+        if self.options.get('maxtasksperchild') and sys.platform != 'win32':
             try:
                 from billiard.connection import Connection
                 Connection.send_offset
