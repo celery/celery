@@ -462,7 +462,8 @@ class test_EmbeddedService(AppCase):
             def terminate(self):
                 self.terminated = True
 
-        s.run()
+        with patch('celery.platforms.close_open_fds'):
+            s.run()
         self.assertTrue(s.service.started)
 
         s._popen = _Popen()
