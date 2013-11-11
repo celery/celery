@@ -159,6 +159,10 @@ class TaskPool(BasePool):
             self._pool.close()
 
     def _get_info(self):
+        try:
+            write_stats = self._pool.human_write_stats
+        except AttributeError:
+            write_stats = lambda: 'N/A'  # only supported by asynpool
         return {
             'max-concurrency': self.limit,
             'processes': [p.pid for p in self._pool._pool],
@@ -166,7 +170,7 @@ class TaskPool(BasePool):
             'put-guarded-by-semaphore': self.putlocks,
             'timeouts': (self._pool.soft_timeout or 0,
                          self._pool.timeout or 0),
-            'writes': self._pool.human_write_stats(),
+            'writes': write_stats()
         }
 
     @property
