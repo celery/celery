@@ -323,16 +323,14 @@ but if you would like to experiment with it you should know that:
 
 - You no longer use ``manage.py``
 
-    Instead you use the :program:`celery` command directly, but for that to
-    work you need to specify the :envvar:`DJANGO_SETTINGS_MODULE` environment
-    variable:
+    Instead you use the :program:`celery` command directly:
 
     .. code-block:: bash
 
-        DJANGO_SETTINGS_MODULE='proj.settings' celery -A proj worker -l info
+        celery -A proj worker -l info
 
-    You can also set a default value in your app module so you
-    don't have to type it every time: just see the example in the :ref:`Django
+    For this to work your app module must store the  :envvar:`DJANGO_SETTINGS_MODULE`
+    environment variable, see the example in the :ref:`Django
     guide <django-first-steps>`.
 
 To get started with the new API you should first read the :ref:`first-steps`
