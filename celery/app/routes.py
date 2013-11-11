@@ -27,9 +27,10 @@ class MapRoute(object):
         self.map = map
 
     def route_for_task(self, task, *args, **kwargs):
-        route = self.map.get(task)
-        if route:
-            return dict(route)
+        try:
+            return dict(self.map[task])
+        except KeyError:
+            pass
 
 
 class Router(object):
