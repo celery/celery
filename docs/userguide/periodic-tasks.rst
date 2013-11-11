@@ -37,6 +37,14 @@ An example time zone could be `Europe/London`:
 
     CELERY_TIMEZONE = 'Europe/London'
 
+
+This setting must be added to your app, either by configuration it directly
+using (``app.conf.CELERY_TIMEZONE = 'Europe/London'``), or by adding
+it to your configuration module if you have set one up using
+``app.config_from_object``.  See :ref:`celerytut-configuration` for
+more information about configuration options.
+
+
 The default scheduler (storing the schedule in the :file:`celerybeat-schedule`
 file) will automatically detect that the time zone has changed, and so will
 reset the schedule itself, but other schedulers may not be so smart (e.g. the
@@ -84,6 +92,14 @@ Example: Run the `tasks.add` task every 30 seconds.
     }
 
     CELERY_TIMEZONE = 'UTC'
+
+
+.. note::
+
+    If you are wondering where these settings should go then
+    please see :ref:`celerytut-configuration`.  You can either
+    set these options on your app directly or you can keep
+    a separate module for configuration.
 
 Using a :class:`~datetime.timedelta` for the schedule means the task will
 be sent in 30 second intervals (the first task will be sent 30 seconds
