@@ -28,7 +28,7 @@ from .five import items, reraise, values, monotonic
 from .schedules import maybe_schedule, crontab
 from .utils.imports import instantiate
 from .utils.timeutils import humanize_seconds
-from .utils.log import get_logger
+from .utils.log import get_logger, iter_open_logger_fds
 
 __all__ = ['SchedulingError', 'ScheduleEntry', 'Scheduler',
            'PersistentScheduler', 'Service', 'EmbeddedService']
@@ -504,7 +504,7 @@ else:
             platforms.signals.reset('SIGTERM')
             platforms.close_open_fds([
                 sys.__stdin__, sys.__stdout__, sys.__stderr__,
-            ])
+            ] + list(iter_open_logger_fds()))
             self.service.start(embedded_process=True)
 
         def stop(self):

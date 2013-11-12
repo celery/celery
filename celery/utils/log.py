@@ -16,6 +16,7 @@ import traceback
 
 from contextlib import contextmanager
 from billiard import current_process, util as mputil
+from kombu.five import values
 from kombu.log import get_logger as _get_logger, LOG_LEVELS
 from kombu.utils.encoding import safe_str
 
@@ -48,6 +49,22 @@ _in_sighandler = False
 def set_in_sighandler(value):
     global _in_sighandler
     _in_sighandler = value
+
+
+def iter_open_logger_fds():
+    seen = set()
+    loggers = logging.Logger.manager.loggerDict
+    for logger in values(logging.Logger.manager.loggerDict):
+        try:
+            for handler in logger.handlers:
+                try:
+                    if handler not in seen:
+                        yield handler.stream
+                        seen.add(handler)
+                except AttributeError:
+                    pass
+        except AttributeError:  # PlaceHolder does not have handlers
+            pass
 
 
 @contextmanager

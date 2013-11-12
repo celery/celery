@@ -17,6 +17,9 @@ import platform as _platform
 import signal as _signal
 import sys
 
+from collections import namedtuple
+from itertools import izip_longest
+
 from billiard import current_process
 # fileno used to be in this module
 from kombu.utils import maybe_fileno
@@ -26,6 +29,7 @@ from contextlib import contextmanager
 
 from .local import try_import
 from .five import items, range, reraise, string_t
+from .utils.functional import uniq
 
 _setproctitle = try_import('setproctitle')
 resource = try_import('resource')
@@ -59,6 +63,39 @@ PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
 PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
 Seems we're already running? (pid: {1})"""
 
+_range = namedtuple('_range', ('start', 'stop'))
+
+
+def ranges(sequence, end):
+    """From a sequence of numbers return a list of ranges
+    avoiding those numbers.
+
+    Note: List must be sorted and uniq.
+
+    Useful for :func:`os.closerange` to provide a list
+    of file descriptors to keep:
+
+        >>> list(ranges([], end=2048))
+        _range(start=0, stop=2048)]
+
+        >>> list(ranges([1, 2, 3, 30, 1400], end=2048))
+        [_range(start=0, stop=1), _range(start=4, stop=30),
+         _range(start=31, stop=256)]
+
+        >>> list(ranges([1, 2, 3, 30, 1400], end=256))
+        [_range(start=0, stop=1), _range(start=4, stop=30),
+         _range(start=31, stop=1400), _range(start=1401, stop=2048)]
+
+    """
+    k, l = iter([-1] + sequence), iter(sequence)
+    for prev, stop in izip_longest(k, l):
+        prev = min(prev + 1, end)
+        if prev != stop:
+            if stop > end:
+                yield _range(prev, end)
+                break
+            yield _range(prev, end if stop is None else stop)
+
 
 def pyimplementation():
     """Return string identifying the current Python implementation."""
@@ -87,6 +124,10 @@ def get_fdmax(default=None):
                       descriptor limit.
 
     """
+    try:
+        return os.sysconf('SC_OPEN_MAX')
+    except:
+        pass
     if resource is None:  # Windows
         return default
     fdmax = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
@@ -232,12 +273,24 @@ def _create_pidlock(pidfile):
     return pidlock
 
 
-def close_open_fds(keep=None):
-    keep = [maybe_fileno(f) for f in keep if maybe_fileno(f)] if keep else []
-    for fd in reversed(range(get_fdmax(default=2048))):
-        if fd not in keep:
-            with ignore_errno(errno.EBADF):
-                os.close(fd)
+if hasattr(os, 'closerange'):
+
+    def close_open_fds(keep):
+        keep = [maybe_fileno(f)
+                for f in uniq(sorted((keep or [])))
+                if maybe_fileno(f) is not None]
+        for low, high in ranges(keep, get_fdmax(default=2048)):
+            os.closerange(low, high)
+
+else:
+
+    def close_open_fds(keep=None):  # noqa
+        keep = [maybe_fileno(f)
+                for f in (keep or []) if maybe_fileno(f) is not None]
+        for fd in reversed(range(get_fdmax(default=2048))):
+            if fd not in keep:
+                with ignore_errno(errno.EBADF):
+                    os.close(fd)
 
 
 class DaemonContext(object):
