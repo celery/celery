@@ -178,7 +178,10 @@ class DjangoFixup(object):
         try:
             funs = [conn.close for conn in self._db.connections]
         except AttributeError:
-            funs = [self._db.close_connection]  # pre multidb
+            if hasattr(self._db, 'close_old_connections'):  # django 1.6
+                funs = [self._db.close_old_connections]
+            else:
+                funs = [self._db.close_connection]  # pre multidb, pending deprication in django 1.6
 
         for close in funs:
             try:
