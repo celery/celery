@@ -158,6 +158,7 @@ class Worker(_pool.Worker):
     def prepare_result(self, result):
         if not isinstance(result, ExceptionInfo):
             return truncate(repr(result), 46)
+        return result
 
 
 class ResultHandler(_pool.ResultHandler):
