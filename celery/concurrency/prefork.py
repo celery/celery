@@ -16,7 +16,7 @@ from billiard.pool import RUN, CLOSE, Pool as BlockingPool
 
 from celery import platforms
 from celery import signals
-from celery._state import set_default_app
+from celery._state import set_default_app, _set_task_join_will_block
 from celery.app import trace
 from celery.concurrency.base import BasePool
 from celery.five import items
@@ -53,6 +53,7 @@ def process_initializer(app, hostname):
     logging works.
 
     """
+    _set_task_join_will_block(True)
     platforms.signals.reset(*WORKER_SIGRESET)
     platforms.signals.ignore(*WORKER_SIGIGNORE)
     platforms.set_mp_process_title('celeryd', hostname=hostname)

@@ -28,6 +28,17 @@ default_app = None
 #: List of all app instances (weakrefs), must not be used directly.
 _apps = set()
 
+_task_join_will_block = False
+
+
+def _set_task_join_will_block(blocks):
+    global _task_join_will_block
+    _task_join_will_block = True
+
+
+def task_join_will_block():
+    return _task_join_will_block
+
 
 class _TLS(threading.local):
     #: Apps with the :attr:`~celery.app.base.BaseApp.set_as_current` attribute

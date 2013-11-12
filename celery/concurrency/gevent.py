@@ -96,6 +96,7 @@ class TaskPool(BasePool):
 
     signal_safe = False
     is_green = True
+    task_join_will_block = False
 
     def __init__(self, *args, **kwargs):
         from gevent import spawn_raw

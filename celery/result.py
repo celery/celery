@@ -18,6 +18,7 @@ from kombu.utils.compat import OrderedDict
 
 from . import current_app
 from . import states
+from ._state import task_join_will_block
 from .app import app_or_default
 from .datastructures import DependencyGraph, GraphFormatter
 from .exceptions import IncompleteStream, TimeoutError
@@ -25,6 +26,17 @@ from .five import items, range, string_t, monotonic
 
 __all__ = ['ResultBase', 'AsyncResult', 'ResultSet', 'GroupResult',
            'EagerResult', 'result_from_tuple']
+
+E_WOULDBLOCK = """\
+Never call result.get() within a task!
+See http://docs.celeryq.org/en/latest/userguide/tasks.html\
+#task-synchronous-subtasks
+"""
+
+
+def assert_will_not_block():
+    if task_join_will_block():
+        raise Exception(E_WOULDBLOCK)
 
 
 class ResultBase(object):
@@ -114,6 +126,7 @@ class AsyncResult(ResultBase):
         be re-raised.
 
         """
+        assert_will_not_block()
         if propagate and self.parent:
             for node in reversed(list(self._parents())):
                 node.get(propagate=True, timeout=timeout, interval=interval)
@@ -519,6 +532,7 @@ class ResultSet(ResultBase):
             seconds.
 
         """
+        assert_will_not_block()
         time_start = monotonic()
         remaining = None
 
@@ -570,6 +584,7 @@ class ResultSet(ResultBase):
         result backends.
 
         """
+        assert_will_not_block()
         order_index = None if callback else dict(
             (result.id, i) for i, result in enumerate(self.results)
         )

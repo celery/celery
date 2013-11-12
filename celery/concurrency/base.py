@@ -66,6 +66,8 @@ class BasePool(object):
     #: only used by multiprocessing pool
     uses_semaphore = False
 
+    task_join_will_block = True
+
     def __init__(self, limit=None, putlocks=True,
                  forking_enable=True, callbacks_propagate=(), **options):
         self.limit = limit

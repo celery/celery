@@ -16,6 +16,7 @@ from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
 from kombu.async.timer import Timer as _Timer
 
 from celery import bootsteps
+from celery._state import _set_task_join_will_block
 from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t
 from celery.utils.log import worker_logger as logger
@@ -174,6 +175,7 @@ class Pool(bootsteps.StartStopStep):
             semaphore=semaphore,
             sched_strategy=self.optimization,
         )
+        _set_task_join_will_block(pool.task_join_will_block)
         return pool
 
     def info(self, w):
