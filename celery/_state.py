@@ -32,6 +32,7 @@ _task_join_will_block = False
 
 
 def _set_task_join_will_block(blocks):
+    print('SET TASK JOIN WILL BLOCK: %r' % (blocks, ))
     global _task_join_will_block
     _task_join_will_block = True
 

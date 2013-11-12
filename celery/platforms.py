@@ -275,7 +275,7 @@ def _create_pidlock(pidfile):
 
 if hasattr(os, 'closerange'):
 
-    def close_open_fds(keep):
+    def close_open_fds(keep=None):
         keep = [maybe_fileno(f)
                 for f in uniq(sorted((keep or [])))
                 if maybe_fileno(f) is not None]

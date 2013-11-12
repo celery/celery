@@ -59,13 +59,15 @@ class test_close_open_fds(Case):
 
     def test_closes(self):
         with patch('os.close') as _close:
-            with patch('celery.platforms.get_fdmax') as fdmax:
-                fdmax.return_value = 3
-                close_open_fds()
-                _close.assert_has_calls([call(2), call(1), call(0)])
-                _close.side_effect = OSError()
-                _close.side_effect.errno = errno.EBADF
-                close_open_fds()
+            with patch('os.closerange', create=True) as closerange:
+                with patch('celery.platforms.get_fdmax') as fdmax:
+                    fdmax.return_value = 3
+                    close_open_fds()
+                    if not closerange.called:
+                        _close.assert_has_calls([call(2), call(1), call(0)])
+                        _close.side_effect = OSError()
+                        _close.side_effect.errno = errno.EBADF
+                    close_open_fds()
 
 
 class test_ignore_errno(Case):
@@ -151,14 +153,18 @@ if not platforms.IS_WINDOWS:
 
         @patch('resource.getrlimit')
         def test_when_infinity(self, getrlimit):
-            getrlimit.return_value = [None, resource.RLIM_INFINITY]
-            default = object()
-            self.assertIs(get_fdmax(default), default)
+            with patch('os.sysconf') as sysconfig:
+                sysconfig.side_effect = KeyError()
+                getrlimit.return_value = [None, resource.RLIM_INFINITY]
+                default = object()
+                self.assertIs(get_fdmax(default), default)
 
         @patch('resource.getrlimit')
         def test_when_actual(self, getrlimit):
-            getrlimit.return_value = [None, 13]
-            self.assertEqual(get_fdmax(None), 13)
+            with patch('os.sysconf') as sysconfig:
+                sysconfig.side_effect = KeyError()
+                getrlimit.return_value = [None, 13]
+                self.assertEqual(get_fdmax(None), 13)
 
     class test_maybe_drop_privileges(Case):
 

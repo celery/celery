@@ -315,6 +315,9 @@ class AppCase(Case):
     def setUp(self):
         self._threads_at_setup = list(threading.enumerate())
         from celery import _state
+        from celery import result
+        result.task_join_will_block = \
+            _state.task_join_will_block = lambda: False
         self._current_app = current_app()
         self._default_app = _state.default_app
         trap = Trap()
@@ -327,6 +330,7 @@ class AppCase(Case):
         root = logging.getLogger()
         self.__rootlevel = root.level
         self.__roothandlers = root.handlers
+        _state._set_task_join_will_block(False)
         try:
             self.setup()
         except:
@@ -352,7 +356,11 @@ class AppCase(Case):
                 if isinstance(backend.client, DummyClient):
                     backend.client.cache.clear()
                 backend._cache.clear()
-        from celery._state import _tls, set_default_app
+        from celery._state import (
+            _tls, set_default_app, _set_task_join_will_block,
+        )
+        _set_task_join_will_block(False)
+
         set_default_app(self._default_app)
         _tls.current_app = self._current_app
         if self.app is not self._current_app:
