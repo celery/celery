@@ -25,12 +25,6 @@ new in Celery 3.1.
 
     Fix contributed by j0hnsmith
 
-- Worker now raises :exc:`RuntimeError` if task calls ``result.get()``
-  and the call will block.
-
-    The call will not block if using the eventlet/gevent pools,
-    so the error will not be raised there.
-
 - Prefork pool: Now using ``_multiprocessing.read`` with ``memoryview``
   if available.
 
