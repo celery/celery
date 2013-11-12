@@ -18,7 +18,6 @@ import signal as _signal
 import sys
 
 from collections import namedtuple
-from itertools import izip_longest
 
 from billiard import current_process
 # fileno used to be in this module
@@ -28,7 +27,7 @@ from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
 from .local import try_import
-from .five import items, range, reraise, string_t
+from .five import items, range, reraise, string_t, zip_longest
 from .utils.functional import uniq
 
 _setproctitle = try_import('setproctitle')

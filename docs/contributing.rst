@@ -692,8 +692,8 @@ is following the conventions.
         from Queue import Queue, Empty
 
         from .datastructures import TokenBucket
+        from .five import zip_longest, items, range
         from .utils import timeutils
-        from .utils.compat import all, izip_longest, chain_from_iterable
 
 * Wildcard imports must not be used (`from xxx import *`).
 
