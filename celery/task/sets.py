@@ -31,6 +31,8 @@ class TaskSet(list):
 
     Example::
 
+        >>> from myproj.tasks import refresh_feed
+
         >>> urls = ('http://cnn.com/rss', 'http://bbc.co.uk/rss')
         >>> s = TaskSet(refresh_feed.s(url) for url in urls)
         >>> taskset_result = s.apply_async()

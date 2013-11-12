@@ -206,7 +206,6 @@ class ResultHandler(_pool.ResultHandler):
         else:
             buf = bufv = BytesIO()
 
-
         while Br < body_size:
             try:
                 n = __read__(

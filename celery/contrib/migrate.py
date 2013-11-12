@@ -321,10 +321,10 @@ def move_by_idmap(map, **kwargs):
 
     Example::
 
-        >>> reroute_idmap({
-        ...     '5bee6e82-f4ac-468e-bd3d-13e8600250bc': Queue(...),
-        ...     'ada8652d-aef3-466b-abd2-becdaf1b82b3': Queue(...),
-        ...     '3a2b140d-7db1-41ba-ac90-c36a0ef4ab1f': Queue(...)},
+        >>> move_by_idmap({
+        ...     '5bee6e82-f4ac-468e-bd3d-13e8600250bc': Queue('name'),
+        ...     'ada8652d-aef3-466b-abd2-becdaf1b82b3': Queue('name'),
+        ...     '3a2b140d-7db1-41ba-ac90-c36a0ef4ab1f': Queue('name')},
         ...   queues=['hipri'])
 
     """
@@ -342,9 +342,9 @@ def move_by_taskmap(map, **kwargs):
 
     Example::
 
-        >>> reroute_idmap({
-        ...     'tasks.add': Queue(...),
-        ...     'tasks.mul': Queue(...),
+        >>> move_by_taskmap({
+        ...     'tasks.add': Queue('name'),
+        ...     'tasks.mul': Queue('name'),
         ... })
 
     """

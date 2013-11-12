@@ -167,6 +167,8 @@ class AsyncResult(ResultBase):
 
         .. code-block:: python
 
+            >>> from proj.tasks import A
+
             >>> result = A.delay(10)
             >>> list(result.collect())
             [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
@@ -658,8 +660,9 @@ class GroupResult(ResultSet):
 
         Example::
 
-            >>> result.save()
-            >>> result = GroupResult.restore(group_id)
+            >>> def save_and_restore(result):
+            ...     result.save()
+            ...     result = GroupResult.restore(result.id)
 
         """
         return (backend or self.app.backend).save_group(self.id, self)

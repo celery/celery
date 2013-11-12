@@ -181,7 +181,8 @@ class DjangoFixup(object):
             if hasattr(self._db, 'close_old_connections'):  # django 1.6
                 funs = [self._db.close_old_connections]
             else:
-                funs = [self._db.close_connection]  # pre multidb, pending deprication in django 1.6
+                # pre multidb, pending deprication in django 1.6
+                funs = [self._db.close_connection]
 
         for close in funs:
             try:

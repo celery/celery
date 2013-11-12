@@ -85,13 +85,16 @@ class UnpickleableExceptionWrapper(Exception):
 
     .. code-block:: python
 
-        >>> try:
-        ...     something_raising_unpickleable_exc()
-        >>> except Exception as e:
-        ...     exc = UnpickleableException(e.__class__.__module__,
-        ...                                 e.__class__.__name__,
-        ...                                 e.args)
-        ...     pickle.dumps(exc) # Works fine.
+        >>> def pickle_it(raising_function):
+        ...     try:
+        ...         raising_function()
+        ...     except Exception as e:
+        ...         exc = UnpickleableExceptionWrapper(
+        ...             e.__class__.__module__,
+        ...             e.__class__.__name__,
+        ...             e.args,
+        ...         )
+        ...         pickle.dumps(exc)  # Works fine.
 
     """
 

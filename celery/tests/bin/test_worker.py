@@ -277,9 +277,6 @@ class test_Worker(WorkerAppCase):
         if app.IS_WINDOWS:
             raise SkipTest('Not applicable on Windows')
 
-        def getuid():
-            return 0
-
         with patch('os.getuid') as getuid:
             getuid.return_value = 0
             self.app.conf.CELERY_ACCEPT_CONTENT = ['pickle']

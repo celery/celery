@@ -64,7 +64,7 @@ def query_task(state, ids, **kwargs):
         )
     ))
 
-    return req
+    return reqs
 
 
 @Panel.register

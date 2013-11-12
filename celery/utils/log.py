@@ -53,7 +53,6 @@ def set_in_sighandler(value):
 
 def iter_open_logger_fds():
     seen = set()
-    loggers = logging.Logger.manager.loggerDict
     for logger in values(logging.Logger.manager.loggerDict):
         try:
             for handler in logger.handlers:

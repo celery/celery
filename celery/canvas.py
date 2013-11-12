@@ -38,11 +38,13 @@ class _getitem_property(object):
 
     Example:
 
-        class Me(dict):
-            deep = defaultdict(dict)
+        >>> from collections import defaultdict
 
-            foo = _getitem_property('foo')
-            deep_thing = _getitem_property('deep.thing')
+        >>> class Me(dict):
+        ...     deep = defaultdict(dict)
+        ...
+        ...     foo = _getitem_property('foo')
+        ...     deep_thing = _getitem_property('deep.thing')
 
 
         >>> me = Me()
@@ -58,7 +60,7 @@ class _getitem_property(object):
         >>> me.deep_thing = 42
         >>> me.deep_thing
         42
-        >>> me.deep:
+        >>> me.deep
         defaultdict(<type 'dict'>, {'thing': 42})
 
     """

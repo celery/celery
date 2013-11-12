@@ -130,27 +130,7 @@ def is_iterable(obj):
 
 
 def fun_takes_kwargs(fun, kwlist=[]):
-    """With a function, and a list of keyword arguments, returns arguments
-    in the list which the function takes.
-
-    If the object has an `argspec` attribute that is used instead
-    of using the :meth:`inspect.getargspec` introspection.
-
-    :param fun: The function to inspect arguments of.
-    :param kwlist: The list of keyword arguments.
-
-    Examples
-
-        >>> def foo(self, x, y, logfile=None, loglevel=None):
-        ...     return x * y
-        >>> fun_takes_kwargs(foo, ['logfile', 'loglevel', 'task_id'])
-        ['logfile', 'loglevel']
-
-        >>> def foo(self, x, y, **kwargs):
-        >>> fun_takes_kwargs(foo, ['logfile', 'loglevel', 'task_id'])
-        ['logfile', 'loglevel', 'task_id']
-
-    """
+    # deprecated
     S = getattr(fun, 'argspec', getargspec(fun))
     if S.keywords is not None:
         return kwlist
@@ -165,11 +145,8 @@ def isatty(fh):
 
 
 def cry(out=None, sepchr='=', seplen=49):  # pragma: no cover
-    """Return stacktrace of all active threads.
-
-    From https://gist.github.com/737056
-
-    """
+    """Return stacktrace of all active threads,
+    taken from https://gist.github.com/737056."""
     import threading
 
     out = StringIO() if out is None else out

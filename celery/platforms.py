@@ -547,6 +547,7 @@ class Signals(object):
 
         >>> from celery.platforms import signals
 
+        >>> from proj.handlers import my_handler
         >>> signals['INT'] = my_handler
 
         >>> signals['INT']
@@ -566,6 +567,7 @@ class Signals(object):
         >>> signals['USR1'] == signals.default
         True
 
+        >>> from proj.handlers import exit_handler, hup_handler
         >>> signals.update(INT=exit_handler,
         ...                TERM=exit_handler,
         ...                HUP=hup_handler)
@@ -710,8 +712,8 @@ def ignore_errno(*errnos, **kwargs):
     the name of the code, or the code integer itself::
 
         >>> with ignore_errno('ENOENT'):
-        ...     with open('foo', 'r'):
-        ...         return r.read()
+        ...     with open('foo', 'r') as fh:
+        ...         return fh.read()
 
         >>> with ignore_errno(errno.ENOENT, errno.EPERM):
         ...    pass

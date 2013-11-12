@@ -250,7 +250,7 @@ class Consumer(object):
     def _update_qos_eventually(self, index):
         return (self.qos.decrement_eventually if index < 0
                 else self.qos.increment_eventually)(
-                    abs(index) * self.prefetch_multiplier)
+            abs(index) * self.prefetch_multiplier)
 
     def _limit_task(self, request, bucket, tokens):
         if not bucket.can_consume(tokens):

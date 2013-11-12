@@ -602,8 +602,11 @@ class Task(object):
 
         .. code-block:: python
 
-            >>> @task()
-            >>> def tweet(auth, message):
+            >>> from imaginary_twitter_lib import Twitter
+            >>> from proj.celery import app
+
+            >>> @app.task()
+            ... def tweet(auth, message):
             ...     twitter = Twitter(oauth=auth)
             ...     try:
             ...         twitter.post_status_update(message)

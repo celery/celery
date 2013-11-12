@@ -86,6 +86,7 @@ class Settings(ConfigurationView):
 
         Will return ``(namespace, key, type)`` tuple, e.g.::
 
+            >>> from proj.celery import app
             >>> app.conf.find_option('disable_rate_limits')
             ('CELERY', 'DISABLE_RATE_LIMITS',
              <Option: type->bool default->False>))
@@ -105,7 +106,8 @@ class Settings(ConfigurationView):
 
         Example::
 
-            >>> celery.conf.get_by_parts('CELERY', 'DISABLE_RATE_LIMITS')
+            >>> from proj.celery import app
+            >>> app.conf.get_by_parts('CELERY', 'DISABLE_RATE_LIMITS')
             False
 
         """

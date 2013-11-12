@@ -507,14 +507,14 @@ def mask_modules(*modnames):
 
     For example:
 
-        >>> with missing_modules('sys'):
+        >>> with mask_modules('sys'):
         ...     try:
         ...         import sys
         ...     except ImportError:
         ...         print 'sys not found'
         sys not found
 
-        >>> import sys
+        >>> import sys  # noqa
         >>> sys.version
         (2, 5, 2, 'final', 0)
 

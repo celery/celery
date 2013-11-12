@@ -513,18 +513,6 @@ class shell(Command):  # pragma: no cover
           xmap, xstarmap subtask, Task
         - all registered tasks.
 
-    Example Session:
-
-    .. code-block:: bash
-
-        $ celery shell
-
-        >>> celery
-        <Celery default:0x1012d9fd0>
-        >>> add
-        <@task: tasks.add>
-        >>> add.delay(2, 2)
-        <AsyncResult: 537b48c7-d6d3-427a-a24a-d1b4414035be>
     """
     option_list = Command.option_list + (
         Option('--ipython', '-I',

@@ -212,13 +212,6 @@ class AMQShell(cmd.Cmd):
 
         :returns: tuple of `(method, processed_args)`.
 
-        Example:
-
-            >>> get_amqp_api_command('queue.delete', ['pobox', 'yes', 'no'])
-            (<bound method Channel.queue_delete of
-             <amqp.channel.Channel object at 0x...>>,
-             ('testfoo', True, False))
-
         """
         spec = self.amqp[cmd]
         args = spec.str_args_to_python(arglist)
@@ -278,11 +271,6 @@ class AMQShell(cmd.Cmd):
 
         :returns: tuple of three items:
             `(command_name, arglist, original_line)`
-
-        E.g::
-
-            >>> parseline('queue.delete A 'B' C')
-            ('queue.delete', 'A 'B' C', 'queue.delete A 'B' C')
 
         """
         parts = line.split()

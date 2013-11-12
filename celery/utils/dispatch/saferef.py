@@ -243,9 +243,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
             which will be passed a pointer to this object.
 
         """
-        assert getattr(target.__self__, target.__name__) == target, \
-            "method %s isn't available as the attribute %s of %s" % (
-            target, target.__name__, target.__self__)
+        assert getattr(target.__self__, target.__name__) == target
         super(BoundNonDescriptorMethodWeakref, self).__init__(target,
                                                               on_delete)
 
