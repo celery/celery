@@ -65,37 +65,6 @@ Seems we're already running? (pid: {1})"""
 _range = namedtuple('_range', ('start', 'stop'))
 
 
-def ranges(sequence, end):
-    """From a sequence of numbers return a list of ranges
-    avoiding those numbers.
-
-    Note: List must be sorted and uniq.
-
-    Useful for :func:`os.closerange` to provide a list
-    of file descriptors to keep:
-
-        >>> list(ranges([], end=2048))
-        _range(start=0, stop=2048)]
-
-        >>> list(ranges([1, 2, 3, 30, 1400], end=2048))
-        [_range(start=0, stop=1), _range(start=4, stop=30),
-         _range(start=31, stop=256)]
-
-        >>> list(ranges([1, 2, 3, 30, 1400], end=256))
-        [_range(start=0, stop=1), _range(start=4, stop=30),
-         _range(start=31, stop=1400), _range(start=1401, stop=2048)]
-
-    """
-    k, l = iter([-1] + sequence), iter(sequence)
-    for prev, stop in zip_longest(k, l):
-        prev = min(prev + 1, end)
-        if prev != stop:
-            if stop and stop > end:
-                yield _range(prev, end)
-                break
-            yield _range(prev, end if stop is None else stop)
-
-
 def pyimplementation():
     """Return string identifying the current Python implementation."""
     if hasattr(_platform, 'python_implementation'):
@@ -276,10 +245,13 @@ if hasattr(os, 'closerange'):
 
     def close_open_fds(keep=None):
         keep = [maybe_fileno(f)
-                for f in uniq(sorted((keep or [])))
+                for f in uniq(sorted(keep or []))
                 if maybe_fileno(f) is not None]
-        for low, high in ranges(keep, get_fdmax(default=2048)):
-            os.closerange(low, high)
+        maxfd = get_fdmax(default=2048)
+        kL, kH = iter([-1] + keep), iter(keep + [maxfd])
+        for low, high in zip_longest(kL, kH):
+            if low + 1 != high:
+                os.closerange(low + 1, high)
 
 else:
 
