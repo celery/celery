@@ -90,7 +90,7 @@ def ranges(sequence, end):
     for prev, stop in zip_longest(k, l):
         prev = min(prev + 1, end)
         if prev != stop:
-            if stop > end:
+            if stop and stop > end:
                 yield _range(prev, end)
                 break
             yield _range(prev, end if stop is None else stop)
