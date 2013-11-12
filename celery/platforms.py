@@ -87,7 +87,7 @@ def ranges(sequence, end):
 
     """
     k, l = iter([-1] + sequence), iter(sequence)
-    for prev, stop in izip_longest(k, l):
+    for prev, stop in zip_longest(k, l):
         prev = min(prev + 1, end)
         if prev != stop:
             if stop > end:
