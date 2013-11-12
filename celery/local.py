@@ -56,12 +56,16 @@ class Proxy(object):
     # Code stolen from werkzeug.local.Proxy.
     __slots__ = ('__local', '__args', '__kwargs', '__dict__')
 
-    def __init__(self, local, args=None, kwargs=None, name=None):
+    def __init__(self, local,
+                 args=None, kwargs=None, name=None, __doc__=None):
         object.__setattr__(self, '_Proxy__local', local)
         object.__setattr__(self, '_Proxy__args', args or ())
         object.__setattr__(self, '_Proxy__kwargs', kwargs or {})
         if name is not None:
             object.__setattr__(self, '__custom_name__', name)
+        if __doc__ is not None:
+            object.__setattr__(self, '__doc__', __doc__)
+
 
     @_default_cls_attr('name', str, __name__)
     def __name__(self):

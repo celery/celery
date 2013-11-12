@@ -202,7 +202,8 @@ class Celery(object):
                     ret = self._task_from_fun(fun, **opts)
                 else:
                     # return a proxy object that evaluates on first use
-                    ret = PromiseProxy(self._task_from_fun, (fun, ), opts)
+                    ret = PromiseProxy(self._task_from_fun, (fun, ), opts,
+                                       __doc__=fun.__doc__)
                     self._pending.append(ret)
                 if _filt:
                     return _filt(ret)
