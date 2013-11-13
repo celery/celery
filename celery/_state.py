@@ -19,6 +19,31 @@ import weakref
 from celery.local import Proxy
 from celery.utils.threads import LocalStack
 
+try:
+    from weakref import WeakSet as AppSet
+except ImportError:  # XXX Py2.6
+
+    class AppSet(object):  # noqa
+
+        def __init__(self):
+            self._refs = set()
+
+        def add(self, app):
+            self._refs.add(weakref.ref(app))
+
+        def __iter__(self):
+            dirty = []
+            try:
+                for appref in self._refs:
+                    app = appref()
+                    if app is None:
+                        dirty.append(appref)
+                    else:
+                        yield app
+            finally:
+                while dirty:
+                    self._refs.discard(dirty.pop())
+
 __all__ = ['set_default_app', 'get_current_app', 'get_current_task',
            'get_current_worker_task', 'current_app', 'current_task']
 
@@ -26,7 +51,7 @@ __all__ = ['set_default_app', 'get_current_app', 'get_current_task',
 default_app = None
 
 #: List of all app instances (weakrefs), must not be used directly.
-_apps = set()
+_apps = AppSet()
 
 _task_join_will_block = False
 
@@ -104,18 +129,8 @@ current_task = Proxy(get_current_task)
 
 
 def _register_app(app):
-    _apps.add(weakref.ref(app))
+    _apps.add(app)
 
 
 def _get_active_apps():
-    dirty = []
-    try:
-        for appref in _apps:
-            app = appref()
-            if app is None:
-                dirty.append(appref)
-            else:
-                yield app
-    finally:
-        while dirty:
-            _apps.discard(dirty.pop())
+    return _apps

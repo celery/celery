@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import gc
 import os
 import itertools
 
@@ -425,6 +426,8 @@ class test_App(AppCase):
         self.assertIn(app1, _state._get_active_apps())
         app1.close()
         del(app1)
+
+        gc.collect()
 
         # weakref removed from list when app goes out of scope.
         with self.assertRaises(StopIteration):
