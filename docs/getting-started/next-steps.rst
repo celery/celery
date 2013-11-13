@@ -152,7 +152,7 @@ start one or more workers in the background:
 .. code-block:: bash
 
     $ celery multi start w1 -A proj -l info
-    celery multi v3.1.0 (Cipater)
+    celery multi v3.1.1 (Cipater)
     > Starting nodes...
         > w1.halcyon.local: OK
 
@@ -161,13 +161,13 @@ You can restart it too:
 .. code-block:: bash
 
     $ celery multi restart w1 -A proj -l info
-    celery multi v3.1.0 (Cipater)
+    celery multi v3.1.1 (Cipater)
     > Stopping nodes...
         > w1.halcyon.local: TERM -> 64024
     > Waiting for 1 node.....
         > w1.halcyon.local: OK
     > Restarting node w1.halcyon.local: OK
-    celery multi v3.1.0 (Cipater)
+    celery multi v3.1.1 (Cipater)
     > Stopping nodes...
         > w1.halcyon.local: TERM -> 64052
 
