@@ -46,7 +46,7 @@ CELERYBEAT_LOG_LEVEL=${CELERYBEAT_LOG_LEVEL:-${CELERYBEAT_LOGLEVEL:-$DEFAULT_LOG
 
 # Sets --app argument for CELERY_BIN
 CELERY_APP_ARG=""
-if [ ! -z "$CELERY_APP"]; then
+if [ ! -z "$CELERY_APP" ]; then
     CELERY_APP_ARG="--app=$CELERY_APP"
 fi
 
