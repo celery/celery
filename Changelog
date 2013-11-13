@@ -8,6 +8,22 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.3:
+
+3.1.3
+=====
+:release-date: 2013-11-13 12:31 A.M UTC
+
+- Fixed problem with ``unpack_from`` not supporting ``memoryview``
+  (Issue #1637)
+
+    This is first supported in the new Python 2.7.6 version,
+    so we have now provided a workaround for earlier versions.
+
+- Worker: -B argument accidentally closed files used for logging.
+
+- Task decorated tasks now keep their docstring (Issue #1636)
+
 .. _version-3.1.2:
 
 3.1.2
