@@ -66,7 +66,6 @@ class Proxy(object):
         if __doc__ is not None:
             object.__setattr__(self, '__doc__', __doc__)
 
-
     @_default_cls_attr('name', str, __name__)
     def __name__(self):
         try:
