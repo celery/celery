@@ -52,8 +52,24 @@ that defines the Celery instance:
     def debug_task(self):
         print('Request: {0!r}'.format(self.request))
 
-Let's explain what happens here.
-First we import absolute imports from the future, so that our
+Then you need to import this app in your :file:`proj/proj/__init__py`
+module.  This ensures that the app is loaded when Django starts
+so that the ``@shared_task`` decorator (mentioned later) will use it:
+
+:file:`proj/proj/__init__.py`:
+
+.. code-block:: python
+
+    from __future__ import absolute_import
+
+    from .celery import app as celery_app
+
+Note that this example project layout is suitable for larger projects,
+for simple projects you may use a single contained module that defines
+both the app and tasks, like in the :ref:`tut-firsteps` tutorial.
+
+Let's break down what happens in the first module,
+first we import absolute imports from the future, so that our
 ``celery.py`` module will not crash with the library:
 
 .. code-block:: python
