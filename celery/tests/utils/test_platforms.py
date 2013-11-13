@@ -373,6 +373,7 @@ if not platforms.IS_WINDOWS:
         def test_open(self, dup2, open, close, closer, umask, chdir,
                       _exit, setsid, fork):
             x = DaemonContext(workdir='/opt/workdir')
+            x.stdfds = [0, 1, 2]
 
             fork.return_value = 0
             with x:
@@ -390,12 +391,14 @@ if not platforms.IS_WINDOWS:
             fork.reset_mock()
             fork.return_value = 1
             x = DaemonContext(workdir='/opt/workdir')
+            x.stdfds = [0, 1, 2]
             with x:
                 pass
             self.assertEqual(fork.call_count, 1)
             _exit.assert_called_with(0)
 
             x = DaemonContext(workdir='/opt/workdir', fake=True)
+            x.stdfds = [0, 1, 2]
             x._detach = Mock()
             with x:
                 pass

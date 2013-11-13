@@ -64,7 +64,6 @@ try:
         unpack_from = _unpack_from  # noqa
 
 except (ImportError, NameError):  # pragma: no cover
-    raise
 
     def __read__(fd, buf, size, read=os.read):  # noqa
         chunk = read(fd, size)
