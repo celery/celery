@@ -27,7 +27,7 @@ from celery.exceptions import (
     SoftTimeLimitExceeded, TimeLimitExceeded,
     WorkerLostError, Terminated, Retry, Reject,
 )
-from celery.five import items, monotonic, string_t
+from celery.five import items, monotonic, string, string_t
 from celery.platforms import signals as _signals
 from celery.utils import fun_takes_kwargs
 from celery.utils.functional import noop
@@ -427,7 +427,8 @@ class Request(object):
                         self.id, exc, request=self,
                     )
                 elif isinstance(exc, Terminated):
-                    self._announce_revoked('terminated', True, str(exc), False)
+                    self._announce_revoked(
+                        'terminated', True, string(exc), False)
                     send_failed_event = False  # already sent revoked event
             # (acks_late) acknowledge after result stored.
             if self.task.acks_late:

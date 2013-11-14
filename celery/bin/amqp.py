@@ -5,7 +5,7 @@ The :program:`celery amqp` command.
 .. program:: celery amqp
 
 """
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import cmd
 import sys

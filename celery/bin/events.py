@@ -35,7 +35,7 @@ The :program:`celery events` command.
     `ERROR`, `CRITICAL`, or `FATAL`.  Default is INFO.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 

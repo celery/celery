@@ -63,7 +63,7 @@ in any command that also has a `--detach` option.
     Optional directory to change to after detaching.
 
 """
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import re
