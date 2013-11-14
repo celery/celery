@@ -452,10 +452,14 @@ class Command(object):
             sym = import_from_cwd(app)
         if isinstance(sym, ModuleType):
             try:
-                return sym.app
+                found = sym.app
+                if isinstance(found, ModuleType):
+                    raise AttributeError()
             except AttributeError:
                 try:
-                    return sym.celery
+                    found = sym.celery
+                    if isinstance(found, ModuleType):
+                        raise AttributeError()
                 except AttributeError:
                     if getattr(sym, '__path__', None):
                         try:
@@ -468,6 +472,8 @@ class Command(object):
                         if isinstance(suspect, Celery):
                             return suspect
                     raise
+            else:
+                return found
         return sym
 
     def symbol_by_name(self, name):

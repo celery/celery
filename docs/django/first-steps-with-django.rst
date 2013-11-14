@@ -62,7 +62,7 @@ so that the ``@shared_task`` decorator (mentioned later) will use it:
 
     from __future__ import absolute_import
 
-    from .celery import app as celery_app
+    from .celery import app
 
 Note that this example project layout is suitable for larger projects,
 for simple projects you may use a single contained module that defines
