@@ -64,24 +64,24 @@ class colored(object):
         except AttributeError:
             B = string(b)
 
-        return safe_str(safe_str(A) + safe_str(B))
+        return ''.join((string(A), string(B)))
 
     def no_color(self):
         if self.s:
-            return safe_str(reduce(self._fold_no_color, self.s))
+            return string(reduce(self._fold_no_color, self.s))
         return ''
 
     def embed(self):
         prefix = ''
         if self.enabled:
             prefix = self.op
-        return safe_str(prefix) + safe_str(reduce(self._add, self.s))
+        return ''.join((string(prefix), string(reduce(self._add, self.s))))
 
     def __unicode__(self):
         suffix = ''
         if self.enabled:
             suffix = RESET_SEQ
-        return safe_str(self.embed() + safe_str(suffix))
+        return string(''.join((self.embed(), string(suffix))))
 
     def __str__(self):
         return safe_str(self.__unicode__())
