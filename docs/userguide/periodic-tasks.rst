@@ -285,7 +285,7 @@ Django database:
 
 .. code-block:: bash
 
-    $ celery beat -S djcelery.schedulers.DatabaseScheduler
+    $ celery -A proj beat -S djcelery.schedulers.DatabaseScheduler
 
 Using `django-celery`'s scheduler you can add, modify and remove periodic
 tasks from the Django Admin.
