@@ -29,7 +29,7 @@ class wrapobject(object):
     def __init__(self, *args, **kwargs):
         self.args = args
 
-if sys.version_info[0] == 3 or getattr(sys, 'pypy_version_info'):
+if sys.version_info[0] == 3 or getattr(sys, 'pypy_version_info', None):
     Oldstyle = None
 else:
     Oldstyle = types.ClassType('Oldstyle', (), {})
