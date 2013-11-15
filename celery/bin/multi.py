@@ -228,9 +228,9 @@ class MultiTool(object):
 
     def show(self, argv, cmd):
         p = NamespacedOptionParser(argv)
-        self.note('> Starting nodes...')
+        self.with_detacher_default_options(p)
         self.say('\n'.join(
-            ' '.join(n.argv) for n in multi_args(p, cmd)),
+            ' '.join([sys.executable] + n.argv) for n in multi_args(p, cmd)),
         )
 
     def start(self, argv, cmd):
