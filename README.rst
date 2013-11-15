@@ -165,7 +165,7 @@ Celery is easy to integrate with web frameworks, some of which even have
 integration packages:
 
     +--------------------+------------------------+
-    | `Django`_          | `django-celery`_       |
+    | `Django`_          | not needed[#f1]_       |
     +--------------------+------------------------+
     | `Pyramid`_         | `pyramid_celery`_      |
     +--------------------+------------------------+
