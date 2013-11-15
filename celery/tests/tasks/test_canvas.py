@@ -220,6 +220,10 @@ class test_chain(CanvasCase):
         self.assertEqual(res.parent.parent.get(), 8)
         self.assertIsNone(res.parent.parent.parent)
 
+    def test_empty_chain_returns_none(self):
+        self.assertIsNone(chain(app=self.app)())
+        self.assertIsNone(chain(app=self.app).apply_async())
+
     def test_call_no_tasks(self):
         x = chain()
         self.assertFalse(x())

@@ -209,12 +209,16 @@ class Signature(dict):
         self.immutable = immutable
 
     def apply_async(self, args=(), kwargs={}, **options):
+        try:
+            _apply = self._apply_async
+        except IndexError:  # no tasks for chain, etc to find type
+            return
         # For callbacks: extra args are prepended to the stored args.
         if args or kwargs or options:
             args, kwargs, options = self._merge(args, kwargs, options)
         else:
             args, kwargs, options = self.args, self.kwargs, self.options
-        return self._apply_async(args, kwargs, **options)
+        return _apply(args, kwargs, **options)
 
     def append_to_list_option(self, key, value):
         items = self.options.setdefault(key, [])
