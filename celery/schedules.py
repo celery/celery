@@ -84,25 +84,27 @@ class schedule(object):
         )
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items `(is_due, next_time_to_run)`,
-        where next time to run is in seconds.
+        """Returns tuple of two items `(is_due, next_time_to_check)`,
+        where next time to check is in seconds.
 
         e.g.
 
         * `(True, 20)`, means the task should be run now, and the next
-            time to run is in 20 seconds.
+            time to check is in 20 seconds.
 
-        * `(False, 12)`, means the task should be run in 12 seconds.
+        * `(False, 12.3)`, means the task is not due, but that the scheduler
+          should check again in 12.3 seconds.
 
-        You can override this to decide the interval at runtime,
-        but keep in mind the value of :setting:`CELERYBEAT_MAX_LOOP_INTERVAL`,
-        which decides the maximum number of seconds the Beat scheduler can
+        The next time to check is used to save energy/cpu cycles,
+        it does not need to be accurate but will influence the precision
+        of your schedule.  You must also keep in mind
+        the value of :setting:`CELERYBEAT_MAX_LOOP_INTERVAL`,
+        which decides the maximum number of seconds the scheduler can
         sleep between re-checking the periodic task intervals.  So if you
-        dynamically change the next run at value, and the max interval is
-        set to 5 minutes, it will take 5 minutes for the change to take
-        effect, so you may consider lowering the value of
-        :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` if responsiveness is of
-        importance to you.
+        have a task that changes schedule at runtime then your next_run_at
+        check will decide how long it will take before a change to the
+        schedule takes effect.  The max loop interval takes precendence
+        over the next check at value returned.
 
         .. admonition:: Scheduler max interval variance
 
