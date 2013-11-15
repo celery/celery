@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-:Version: 3.1.3 (Cipater)
+:Version: 3.1.4 (Cipater)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
@@ -204,10 +204,6 @@ The `latest documentation`_ with user guides, tutorials and API reference
 is hosted at Read The Docs.
 
 .. _`latest documentation`: http://docs.celeryproject.org/en/latest/
-
-.. image:: https://d2weczhvl823v0.cloudfront.net/ask/celery/trend.png
-    :alt: Bitdeli badge
-    :target: https://bitdeli.com/free
 
 .. _celery-installation:
 
@@ -421,4 +417,9 @@ This software is licensed under the `New BSD License`. See the ``LICENSE``
 file in the top distribution directory for the full license text.
 
 .. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround
+
+
+.. image:: https://d2weczhvl823v0.cloudfront.net/celery/celery/trend.png
+    :alt: Bitdeli badge
+    :target: https://bitdeli.com/free
 
