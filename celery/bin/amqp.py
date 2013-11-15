@@ -17,6 +17,7 @@ from functools import partial
 from itertools import count
 
 from amqp import Message
+from kombu.utils.encoding import safe_str
 
 from celery.utils.functional import padlist
 
@@ -260,7 +261,7 @@ class AMQShell(cmd.Cmd):
         Lookup order is: :attr:`builtins` -> :attr:`amqp`.
 
         """
-        arglist = shlex.split(argline)
+        arglist = shlex.split(safe_str(argline))
         if cmd in self.builtins:
             return getattr(self, self.builtins[cmd])(*arglist)
         fun, args, formatter = self.get_amqp_api_command(cmd, arglist)
