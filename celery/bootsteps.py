@@ -18,7 +18,6 @@ from .datastructures import DependencyGraph, GraphFormatter
 from .five import values, with_metaclass
 from .utils.imports import instantiate, qualname
 from .utils.log import get_logger
-from .utils.threads import default_socket_timeout
 
 try:
     from greenlet import GreenletExit
@@ -27,9 +26,6 @@ except ImportError:  # pragma: no cover
     IGNORE_ERRORS = ()
 
 __all__ = ['Blueprint', 'Step', 'StartStopStep', 'ConsumerStep']
-
-#: Default socket timeout at shutdown.
-SHUTDOWN_SOCKET_TIMEOUT = 5.0
 
 #: States
 RUN = 0x1
@@ -149,22 +145,21 @@ class Blueprint(object):
                  description=None, reverse=True, propagate=True, args=()):
         description = description or method.capitalize()
         steps = reversed(parent.steps) if reverse else parent.steps
-        with default_socket_timeout(SHUTDOWN_SOCKET_TIMEOUT):  # Issue 975
-            for step in steps:
-                if step:
-                    self._debug('%s %s...',
-                                description.capitalize(), step.alias)
-                    fun = getattr(step, method, None)
-                    if fun:
-                        try:
-                            fun(parent, *args)
-                        except Exception as exc:
-                            if propagate:
-                                raise
-                            logger.error(
-                                'Error while %s %s: %r',
-                                description, step.alias, exc, exc_info=1,
-                            )
+        for step in steps:
+            if step:
+                self._debug('%s %s...',
+                            description.capitalize(), step.alias)
+                fun = getattr(step, method, None)
+                if fun:
+                    try:
+                        fun(parent, *args)
+                    except Exception as exc:
+                        if propagate:
+                            raise
+                        logger.error(
+                            'Error while %s %s: %r',
+                            description, step.alias, exc, exc_info=1,
+                        )
 
     def stop(self, parent, close=True, terminate=False):
         what = 'terminating' if terminate else 'stopping'
