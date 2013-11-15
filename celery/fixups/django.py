@@ -44,6 +44,8 @@ class DjangoFixup(object):
 
     def __init__(self, app):
         self.app = app
+        self.app.set_default()
+
         self.db_reuse_max = self.app.conf.get('CELERY_DB_REUSE_MAX', None)
         self._db = import_module('django.db')
         self._cache = import_module('django.core.cache')
