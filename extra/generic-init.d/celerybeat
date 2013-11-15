@@ -25,12 +25,6 @@
 # making it easy to run multiple processes on the system.
 SCRIPT_NAME="$(basename $0)"
 
-CELERY_BIN=${CELERY_BIN:-"celery"}
-DEFAULT_PID_FILE="/var/run/celery/${SCRIPT_NAME}.pid"
-DEFAULT_LOG_FILE="/var/log/celery/${SCRIPT_NAME}.log"
-DEFAULT_LOG_LEVEL="INFO"
-DEFAULT_CELERYBEAT="$CELERY_BIN beat"
-
 # /etc/init.d/celerybeat: start and stop the celery periodic task scheduler daemon.
 
 if test -f /etc/default/celeryd; then
@@ -41,12 +35,18 @@ if test -f /etc/default/${SCRIPT_NAME}; then
     . /etc/default/${SCRIPT_NAME}
 fi
 
+CELERY_BIN=${CELERY_BIN:-"celery"}
+DEFAULT_PID_FILE="/var/run/celery/${SCRIPT_NAME}.pid"
+DEFAULT_LOG_FILE="/var/log/celery/${SCRIPT_NAME}.log"
+DEFAULT_LOG_LEVEL="INFO"
+DEFAULT_CELERYBEAT="$CELERY_BIN beat"
+
 CELERYBEAT=${CELERYBEAT:-$DEFAULT_CELERYBEAT}
 CELERYBEAT_LOG_LEVEL=${CELERYBEAT_LOG_LEVEL:-${CELERYBEAT_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
 
 # Sets --app argument for CELERY_BIN
 CELERY_APP_ARG=""
-if [ ! -z "$CELERY_APP"]; then
+if [ ! -z "$CELERY_APP" ]; then
     CELERY_APP_ARG="--app=$CELERY_APP"
 fi
 
