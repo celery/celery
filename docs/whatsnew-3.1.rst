@@ -354,11 +354,14 @@ Some features still require the :mod:`django-celery` library:
 
 .. note::
 
-    If you're still using django-celery when you upgrade to Celery 3.1
-    then it's crucial that your settings module includes
-    the ``djcelery.setup_loader()`` line, as this will
+    If you're still using the old API when you upgrade to Celery 3.1
+    then you must make sure that your settings module contains
+    the ``djcelery.setup_loader()`` line, since this will
     no longer happen as a side-effect of importing the :mod:`djcelery`
     module.
+
+    New users (or if you have ported to the new API) don't need the ``setup_loader``
+    line anymore, and must make sure to remove it.
 
 Events are now ordered using logical time
 -----------------------------------------
