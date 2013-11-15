@@ -13,16 +13,18 @@ import platform as _platform
 import re
 
 from collections import Mapping
+from types import ModuleType
 
 from celery.datastructures import ConfigurationView
-from celery.five import items, string_t
+from celery.five import items, string_t, values
 from celery.platforms import pyimplementation
 from celery.utils.text import pretty
-from celery.utils.imports import qualname
+from celery.utils.imports import import_from_cwd, symbol_by_name, qualname
 
 from .defaults import find
 
-__all__ = ['appstr', 'Settings', 'filter_hidden_settings', 'bugreport']
+__all__ = ['Settings', 'appstr', 'bugreport',
+           'filter_hidden_settings', 'find_app']
 
 #: Format used to generate bugreport information.
 BUGREPORT_INFO = """
@@ -211,3 +213,39 @@ def bugreport(app):
         human_settings=app.conf.humanize(),
         loader=qualname(app.loader.__class__),
     )
+
+
+def find_app(app, symbol_by_name=symbol_by_name, imp=import_from_cwd):
+    from .base import Celery
+
+    try:
+        sym = symbol_by_name(app, imp=imp)
+    except AttributeError:
+        # last part was not an attribute, but a module
+        sym = imp(app)
+    if isinstance(sym, ModuleType) and ':' not in app:
+        try:
+            found = sym.app
+            if isinstance(found, ModuleType):
+                raise AttributeError()
+        except AttributeError:
+            try:
+                found = sym.celery
+                if isinstance(found, ModuleType):
+                    raise AttributeError()
+            except AttributeError:
+                if getattr(sym, '__path__', None):
+                    try:
+                        return find_app(
+                            '{0}.celery'.format(app),
+                            symbol_by_name=symbol_by_name, imp=imp,
+                        )
+                    except ImportError:
+                        pass
+                for suspect in values(vars(sym)):
+                    if isinstance(suspect, Celery):
+                        return suspect
+                raise
+        else:
+            return found
+    return sym

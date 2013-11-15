@@ -77,12 +77,11 @@ from heapq import heappush
 from inspect import getargspec
 from optparse import OptionParser, IndentedHelpFormatter, make_option as Option
 from pprint import pformat
-from types import ModuleType
 
 from celery import VERSION_BANNER, Celery, maybe_patch_concurrency
 from celery import signals
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
-from celery.five import items, string, string_t, values
+from celery.five import items, string, string_t
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
 from celery.utils import term
 from celery.utils import text
@@ -445,39 +444,11 @@ class Command(object):
         return argv
 
     def find_app(self, app):
-        try:
-            sym = self.symbol_by_name(app)
-        except AttributeError:
-            # last part was not an attribute, but a module
-            sym = import_from_cwd(app)
-        if isinstance(sym, ModuleType):
-            try:
-                found = sym.app
-                if isinstance(found, ModuleType):
-                    raise AttributeError()
-            except AttributeError:
-                try:
-                    found = sym.celery
-                    if isinstance(found, ModuleType):
-                        raise AttributeError()
-                except AttributeError:
-                    if getattr(sym, '__path__', None):
-                        try:
-                            return self.find_app(
-                                '{0}.celery:'.format(app.replace(':', '')),
-                            )
-                        except ImportError:
-                            pass
-                    for suspect in values(vars(sym)):
-                        if isinstance(suspect, Celery):
-                            return suspect
-                    raise
-            else:
-                return found
-        return sym
+        from celery.app.utils import find_app
+        return find_app(app, symbol_by_name=self.symbol_by_name)
 
-    def symbol_by_name(self, name):
-        return symbol_by_name(name, imp=import_from_cwd)
+    def symbol_by_name(self, name, imp=import_from_cwd):
+        return symbol_by_name(name, imp=imp)
     get_cls_by_name = symbol_by_name  # XXX compat
 
     def process_cmdline_config(self, argv):

@@ -300,7 +300,7 @@ class test_Command(AppCase):
             def on_sbn(*args, **kwargs):
 
                 def after(*args, **kwargs):
-                    x.celery = 'quick brown fox'
+                    x.app = 'quick brown fox'
                     x.__path__ = None
                     return x
                 sbn.side_effect = after
