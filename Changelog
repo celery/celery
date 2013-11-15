@@ -17,6 +17,27 @@ new in Celery 3.1.
 
 - Now depends on :mod:`billiard` 3.3.0.7
 
+- Worker would accidentally set a default socket timeout of 5 seconds.
+
+- Django: Fixup now sets the default app so that threads will use
+  the same app instance (e.g. for manage.py runserver).
+
+- Worker: Fixed Unicode error crash at startup.
+
+- Calling ``.apply_async`` on an empty chain now works again (Issue #1650).
+
+- The ``celery multi show`` command now generates the same arguments
+  as the start command does.
+
+- The ``--app`` argument could end up using a module object instead
+  of an app instance (with a resulting crash).
+
+- Fixed a syntax error problem in the celerybeat init script.
+
+    Fix contributed by Vsevolod.
+
+- Tests now passing on PyPy 1.1 and 1.2.
+
 .. _version-3.1.3:
 
 3.1.3
