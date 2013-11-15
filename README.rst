@@ -205,6 +205,10 @@ is hosted at Read The Docs.
 
 .. _`latest documentation`: http://docs.celeryproject.org/en/latest/
 
+.. image:: https://d2weczhvl823v0.cloudfront.net/ask/celery/trend.png
+    :alt: Bitdeli badge
+    :target: https://bitdeli.com/free
+
 .. _celery-installation:
 
 Installation
