@@ -11,6 +11,6 @@
 .. include:: ../includes/resources.txt
 
 
-.. image:: https://d2weczhvl823v0.cloudfront.net/ask/celery/trend.png
+.. image:: https://d2weczhvl823v0.cloudfront.net/celery/celery/trend.png
     :alt: Bitdeli badge
     :target: https://bitdeli.com/free
