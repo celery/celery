@@ -57,9 +57,8 @@ class WorkerComponent(bootsteps.StartStopStep):
         return w.autoreloader if not w.use_eventloop else None
 
     def register_with_event_loop(self, w, hub):
-        if hasattr(select, 'kqueue'):
-            w.autoreloader.register_with_event_loop(hub)
-            hub.on_close.add(w.autoreloader.on_event_loop_close)
+        w.autoreloader.register_with_event_loop(hub)
+        hub.on_close.add(w.autoreloader.on_event_loop_close)
 
 
 def file_hash(filename, algorithm='md5'):
@@ -90,6 +89,9 @@ class BaseMonitor(object):
         if self._on_change:
             return self._on_change(modified)
 
+    def on_event_loop_close(self, hub):
+        pass
+
 
 class StatMonitor(BaseMonitor):
     """File change monitor based on the ``stat`` system call."""
@@ -100,13 +102,20 @@ class StatMonitor(BaseMonitor):
     def _maybe_modified(self, f, mt):
         return mt is not None and self.modify_times[f] != mt
 
+    def register_with_event_loop(self, hub):
+        hub.call_repeatedly(2.0, self.find_changes)
+
+    def find_changes(self):
+        maybe_modified = self._maybe_modified
+        modified = dict((f, mt) for f, mt in self._mtimes()
+                        if maybe_modified(f, mt))
+        if modified:
+            self.on_change(modified)
+            self.modify_times.update(modified)
+
     def start(self):
         while not self.shutdown_event.is_set():
-            modified = dict((f, mt) for f, mt in self._mtimes()
-                            if self._maybe_modified(f, mt))
-            if modified:
-                self.on_change(modified)
-                self.modify_times.update(modified)
+            self.find_changes()
             time.sleep(self.interval)
 
     @staticmethod
@@ -172,14 +181,28 @@ class InotifyMonitor(_ProcessEvent):
         self._wm = None
         self._notifier = None
 
+    def register_with_event_loop(self, hub):
+        self.create_notifier()
+        hub.add_reader(self._wm.get_fd(), self.on_readable)
+
+    def on_event_loop_close(self, hub):
+        pass
+
+    def on_readable(self):
+        self._notifier.read_events()
+        self._notifier.process_events()
+
+    def create_notifier(self):
+        self._wm = pyinotify.WatchManager()
+        self._notifier = pyinotify.Notifier(self._wm, self)
+        add_watch = self._wm.add_watch
+        flags = pyinotify.IN_MODIFY | pyinotify.IN_ATTRIB
+        for m in self._modules:
+            add_watch(m, flags)
+
     def start(self):
         try:
-            self._wm = pyinotify.WatchManager()
-            self._notifier = pyinotify.Notifier(self._wm, self)
-            add_watch = self._wm.add_watch
-            flags = pyinotify.IN_MODIFY | pyinotify.IN_ATTRIB
-            for m in self._modules:
-                add_watch(m, flags)
+            self.create_notifier()
             self._notifier.loop()
         finally:
             if self._wm:
@@ -201,8 +224,6 @@ class InotifyMonitor(_ProcessEvent):
 
 
 def default_implementation():
-    if hasattr(select, 'kqueue'):
-        return 'kqueue'
     if sys.platform.startswith('linux') and pyinotify:
         return 'inotify'
     else:
