@@ -246,6 +246,8 @@ def find_app(app, symbol_by_name=symbol_by_name, imp=import_from_cwd):
                     if isinstance(suspect, Celery):
                         return suspect
                 raise
+            else:
+                return found
         else:
             return found
     return sym
