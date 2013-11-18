@@ -177,7 +177,7 @@ def filter_hidden_settings(conf):
             return filter_hidden_settings(value)
         if isinstance(value, string_t) and HIDDEN_SETTINGS.search(key):
             return mask
-        if 'BROKER_URL' in key.upper():
+        if isinstance(key, string_t) and 'BROKER_URL' in key.upper():
             from kombu import Connection
             return Connection(value).as_uri(mask=mask)
         return value
