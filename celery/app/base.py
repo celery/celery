@@ -106,10 +106,10 @@ class Celery(object):
         self.registry_cls = symbol_by_name(self.registry_cls)
         self.accept_magic_kwargs = accept_magic_kwargs
         self.user_options = defaultdict(set)
-        self._config_source = config_source
         self.steps = defaultdict(set)
 
         self.configured = False
+        self._config_source = config_source
         self._pending_defaults = deque()
 
         self.finalized = False
@@ -139,13 +139,6 @@ class Celery(object):
 
         if self.set_as_current:
             self.set_current()
-
-        # See Issue #1126
-        # this is used when pickling the app object so that configuration
-        # is reread without having to pickle the contents
-        # (which is often unpickleable anyway)
-        if self._config_source:
-            self.config_from_object(self._config_source)
 
         self.on_init()
         _register_app(self)
@@ -258,10 +251,11 @@ class Celery(object):
             return self.conf.add_defaults(fun())
         self._pending_defaults.append(fun)
 
-    def config_from_object(self, obj, silent=False):
-        del(self.conf)
+    def config_from_object(self, obj, silent=False, force=False):
         self._config_source = obj
-        return self.loader.config_from_object(obj, silent=silent)
+        if force or self.configured:
+            del(self.conf)
+            return self.loader.config_from_object(obj, silent=silent)
 
     def config_from_envvar(self, variable_name, silent=False):
         module_name = os.environ.get(variable_name)
@@ -416,6 +410,8 @@ class Celery(object):
 
     def _get_config(self):
         self.on_configure()
+        if self._config_source:
+            self.loader.config_from_object(self._config_source)
         self.configured = True
         s = Settings({}, [self.prepare_config(self.loader.conf),
                           deepcopy(DEFAULTS)])
