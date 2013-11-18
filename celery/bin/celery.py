@@ -686,16 +686,18 @@ class CeleryCommand(Command):
             self=self, command=command,
         )))
 
-    def remove_options_at_beginning(self, argv, index=0):
+    def _relocate_args_from_start(self, argv, index=0):
         if argv:
+            rest = []
             while index < len(argv):
                 value = argv[index]
                 if value.startswith('--'):
-                    pass
+                    rest.append(value)
                 elif value.startswith('-'):
+                    rest.extend([value] + [argv[index + 1]])
                     index += 1
                 else:
-                    return argv[index:]
+                    return argv[index:] + rest
                 index += 1
         return []
 
@@ -706,7 +708,8 @@ class CeleryCommand(Command):
 
     def handle_argv(self, prog_name, argv):
         self.prog_name = self.prepare_prog_name(prog_name)
-        argv = self.remove_options_at_beginning(argv)
+        print('ARGV THEN IS: %r' % (argv, ))
+        argv = self._relocate_args_from_start(argv)
         _, argv = self.prepare_args(None, argv)
         try:
             command = argv[0]

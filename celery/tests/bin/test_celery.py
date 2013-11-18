@@ -330,13 +330,25 @@ class test_CeleryCommand(AppCase):
         self.assertEqual(determine_exit_status('true'), EX_OK)
         self.assertEqual(determine_exit_status(''), EX_FAILURE)
 
-    def test_remove_options_at_beginning(self):
+    def test_relocate_args_from_start(self):
         x = CeleryCommand(app=self.app)
-        self.assertEqual(x.remove_options_at_beginning(None), [])
-        self.assertEqual(x.remove_options_at_beginning(['-c 3', '--foo']), [])
-        self.assertEqual(x.remove_options_at_beginning(['--foo', '-c 3']), [])
-        self.assertEqual(x.remove_options_at_beginning(
-            ['foo', '--foo=1']), ['foo', '--foo=1'])
+        self.assertEqual(x._relocate_args_from_start(None), [])
+        self.assertEqual(
+            x._relocate_args_from_start(
+                ['-l', 'debug', 'worker', '-c', '3', '--foo'],
+            ),
+            ['worker', '-c', '3', '--foo', '-l', 'debug'],
+        )
+        self.assertEqual(
+            x._relocate_args_from_start(
+                ['--pool=gevent', '-l', 'debug', 'worker', '--foo', '-c', '3'],
+            ),
+            ['worker', '--foo', '-c', '3', '--pool=gevent', '-l', 'debug'],
+        )
+        self.assertEqual(
+            x._relocate_args_from_start(['foo', '--foo=1']),
+            ['foo', '--foo=1'],
+        )
 
     def test_handle_argv(self):
         x = CeleryCommand(app=self.app)
