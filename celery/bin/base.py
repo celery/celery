@@ -431,7 +431,7 @@ class Command(object):
             if self.enable_config_from_cmdline:
                 argv = self.process_cmdline_config(argv)
         else:
-            self.app = Celery()
+            self.app = Celery(fixups=[])
 
         user_preload = tuple(self.app.user_options['preload'] or ())
         if user_preload:

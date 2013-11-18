@@ -85,6 +85,7 @@ class Celery(object):
     task_cls = 'celery.app.task:Task'
     registry_cls = TaskRegistry
     _pool = None
+    builtin_fixups = BUILTIN_FIXUPS
 
     def __init__(self, main=None, loader=None, backend=None,
                  amqp=None, events=None, log=None, control=None,
@@ -131,8 +132,8 @@ class Celery(object):
             self._preconf['CELERY_IMPORTS'] = include
 
         # Apply fixups.
-        self.fixups = set(fixups or ())
-        for fixup in self.fixups | BUILTIN_FIXUPS:
+        self.fixups = set(self.builtin_fixups) if fixups is None else fixups
+        for fixup in self.fixups:
             symbol_by_name(fixup)(self)
 
         if self.set_as_current:

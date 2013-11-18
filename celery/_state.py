@@ -87,6 +87,7 @@ def _get_current_app():
         set_default_app(Celery(
             'default',
             loader=os.environ.get('CELERY_LOADER') or 'default',
+            fixups=[],
             set_as_current=False, accept_magic_kwargs=True,
         ))
     return _tls.current_app or default_app
