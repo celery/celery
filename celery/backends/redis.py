@@ -92,7 +92,7 @@ class RedisBackend(KeyValueStoreBackend):
 
     def set(self, key, value):
         client = self.client
-        if self.expires is not None:
+        if self.expires:
             client.setex(key, value, self.expires)
         else:
             client.set(key, value)
