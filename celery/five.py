@@ -58,7 +58,6 @@ if PY3:  # pragma: no cover
     map = map
     string = str
     string_t = str
-    internal_string_t = str  # used in fun.__name__ etc
     long_t = int
     text_t = str
     range = range
@@ -102,7 +101,6 @@ else:
     text_t = unicode
     long_t = long                   # noqa
     range = xrange
-    internal_string_t = str
     int_types = (int, long)
 
     open_fqdn = '__builtin__.open'

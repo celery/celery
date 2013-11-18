@@ -25,7 +25,7 @@ from kombu.utils.encoding import safe_str
 
 from celery import VERSION_BANNER, platforms, signals
 from celery.exceptions import CDeprecationWarning, SystemTerminate
-from celery.five import string, string_t, internal_string_t
+from celery.five import string, string_t
 from celery.loaders.app import AppLoader
 from celery.app import trace
 from celery.utils import cry, isatty
@@ -311,7 +311,7 @@ def _shutdown_handler(worker, sig='TERM', how='Warm',
                                 'Cold': 'should_terminate'}[how], True)
             else:
                 raise exc()
-    _handle_request.__name__ = internal_string_t('worker_{0}'.format(how))
+    _handle_request.__name__ = str('worker_{0}'.format(how))
     platforms.signals[sig] = _handle_request
 install_worker_term_handler = partial(
     _shutdown_handler, sig='SIGTERM', how='Warm', exc=SystemExit,
