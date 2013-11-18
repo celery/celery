@@ -20,6 +20,7 @@ from celery._state import set_default_app, _set_task_join_will_block
 from celery.app import trace
 from celery.concurrency.base import BasePool
 from celery.five import items
+from celery.utils.functional import noop
 from celery.utils.log import get_logger
 
 from .asynpool import AsynPool
@@ -131,7 +132,10 @@ class TaskPool(BasePool):
         self.grow = P.grow
         self.shrink = P.shrink
         self.flush = getattr(P, 'flush', None)  # FIXME add to billiard
-        self.restart = P.restart
+
+    def restart(self):
+        self._pool.restart()
+        self._pool.apply_async(noop)
 
     def did_start_ok(self):
         return self._pool.did_start_ok()

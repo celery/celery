@@ -135,11 +135,14 @@ class KQueueMonitor(BaseMonitor):
         self.fdmap = {}
 
     def register_with_event_loop(self, hub):
-        self.add_events(hub.poller)
-        hub.poller.on_file_change = self.handle_event
+        from kombu.utils.eventio import _kqueue
+        self._kq = _kqueue()
+        self.add_events(self._kq)
+        self._kq.on_file_change = self.handle_event
+        hub.add_reader(self._kq._kqueue, self._kq.poll, 0)
 
     def on_event_loop_close(self, hub):
-        self.close(hub.poller)
+        self.close(self._kq)
 
     def add_events(self, poller):
         for f in self.filemap:
@@ -224,7 +227,9 @@ class InotifyMonitor(_ProcessEvent):
 
 
 def default_implementation():
-    if sys.platform.startswith('linux') and pyinotify:
+    if hasattr(select, 'kqueue'):
+        return 'kqueue'
+    elif sys.platform.startswith('linux') and pyinotify:
         return 'inotify'
     else:
         return 'stat'
