@@ -24,10 +24,11 @@ from celery.five import items
 from celery.utils.functional import LRUCache, first, uniq  # noqa
 
 try:
-    from django.utils.functional import LazyObject
+    from django.utils.functional import LazyObject, LazySettings
 except ImportError:
     class LazyObject(object):  # noqa
         pass
+    LazySettings = LazyObject  # noqa
 
 DOT_HEAD = """
 {IN}{type} {id} {{
@@ -46,7 +47,7 @@ __all__ = ['GraphFormatter', 'CycleError', 'DependencyGraph',
 
 
 def force_mapping(m):
-    if isinstance(m, LazyObject):
+    if isinstance(m, (LazyObject, LazySettings)):
         m = m._wrapped
     return DictAttribute(m) if not isinstance(m, Mapping) else m
 
