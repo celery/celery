@@ -708,7 +708,6 @@ class CeleryCommand(Command):
 
     def handle_argv(self, prog_name, argv):
         self.prog_name = self.prepare_prog_name(prog_name)
-        print('ARGV THEN IS: %r' % (argv, ))
         argv = self._relocate_args_from_start(argv)
         _, argv = self.prepare_args(None, argv)
         try:
