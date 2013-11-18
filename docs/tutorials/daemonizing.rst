@@ -96,15 +96,10 @@ This is an example configuration for a Python project.
 Example Django configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You should use the same template as above, but make sure the
-``DJANGO_SETTINGS_MODULE`` variable is set (and exported), and that
-``CELERYD_CHDIR`` is set to the projects directory:
-
-.. code-block:: bash
-
-    export DJANGO_SETTINGS_MODULE="settings"
-
-    CELERYD_CHDIR="/opt/MyProject"
+Django users now uses the exact same template as above,
+but make sure that the module that defines your Celery app instance
+also sets a default value for :envvar:`DJANGO_SETTINGS_MODULE`
+as shown in the example Django project in :ref:`django-first-steps`.
 
 .. _generic-initd-celeryd-options:
 
