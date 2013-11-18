@@ -515,8 +515,13 @@ class test_ControlPanel(AppCase):
     def test_pool_restart(self):
         consumer = Consumer(self.app)
         consumer.controller = _WC(app=self.app)
+        consumer.controller.consumer = consumer
         consumer.controller.pool.restart = Mock()
+        consumer.reset_rate_limits = Mock(name='reset_rate_limits()')
+        consumer.update_strategies = Mock(name='update_strategies()')
+        consumer.event_dispatcher = Mock(name='evd')
         panel = self.create_panel(consumer=consumer)
+        assert panel.state.consumer.controller.consumer is consumer
         panel.app = self.app
         _import = panel.app.loader.import_from_cwd = Mock()
         _reload = Mock()
@@ -527,15 +532,21 @@ class test_ControlPanel(AppCase):
         self.app.conf.CELERYD_POOL_RESTARTS = True
         panel.handle('pool_restart', {'reloader': _reload})
         self.assertTrue(consumer.controller.pool.restart.called)
+        consumer.reset_rate_limits.assert_called_with()
+        consumer.update_strategies.assert_called_with()
         self.assertFalse(_reload.called)
         self.assertFalse(_import.called)
 
     def test_pool_restart_import_modules(self):
         consumer = Consumer(self.app)
         consumer.controller = _WC(app=self.app)
+        consumer.controller.consumer = consumer
         consumer.controller.pool.restart = Mock()
+        consumer.reset_rate_limits = Mock(name='reset_rate_limits()')
+        consumer.update_strategies = Mock(name='update_strategies()')
         panel = self.create_panel(consumer=consumer)
         panel.app = self.app
+        assert panel.state.consumer.controller.consumer is consumer
         _import = consumer.controller.app.loader.import_from_cwd = Mock()
         _reload = Mock()
 
@@ -544,6 +555,8 @@ class test_ControlPanel(AppCase):
                                       'reloader': _reload})
 
         self.assertTrue(consumer.controller.pool.restart.called)
+        consumer.reset_rate_limits.assert_called_with()
+        consumer.update_strategies.assert_called_with()
         self.assertFalse(_reload.called)
         self.assertItemsEqual(
             [call('bar'), call('foo')],
@@ -553,7 +566,10 @@ class test_ControlPanel(AppCase):
     def test_pool_restart_reload_modules(self):
         consumer = Consumer(self.app)
         consumer.controller = _WC(app=self.app)
+        consumer.controller.consumer = consumer
         consumer.controller.pool.restart = Mock()
+        consumer.reset_rate_limits = Mock(name='reset_rate_limits()')
+        consumer.update_strategies = Mock(name='update_strategies()')
         panel = self.create_panel(consumer=consumer)
         panel.app = self.app
         _import = panel.app.loader.import_from_cwd = Mock()

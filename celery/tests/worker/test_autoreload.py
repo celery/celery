@@ -123,21 +123,21 @@ class test_KQueueMonitor(Case):
 
     def test_register_with_event_loop(self):
         x = KQueueMonitor(['a', 'b'])
-        hub = Mock()
-        x.add_events = Mock()
+        hub = Mock(name='hub')
+        x.add_events = Mock(name='add_events()')
         x.register_with_event_loop(hub)
-        x.add_events.assert_called_with(hub.poller)
+        x.add_events.assert_called_with(x._kq)
         self.assertEqual(
-            hub.poller.on_file_change,
+            x._kq.on_file_change,
             x.handle_event,
         )
 
     def test_on_event_loop_close(self):
         x = KQueueMonitor(['a', 'b'])
         x.close = Mock()
-        hub = Mock()
-        x.on_event_loop_close(hub)
-        x.close.assert_called_with(hub.poller)
+        x._kq = Mock(name='_kq')
+        x.on_event_loop_close(Mock(name='hub'))
+        x.close.assert_called_with(x._kq)
 
     def test_handle_event(self):
         x = KQueueMonitor(['a', 'b'])

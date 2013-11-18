@@ -281,8 +281,9 @@ class WorkController(object):
                 logger.debug('reloading module %s', module)
                 reload_from_cwd(sys.modules[module], reloader)
 
-        self.consumer.update_strategies()
-        self.consumer.reset_rate_limits()
+        if self.consumer:
+            self.consumer.update_strategies()
+            self.consumer.reset_rate_limits()
         self.pool.restart()
 
     def info(self):
