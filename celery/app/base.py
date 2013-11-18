@@ -84,6 +84,7 @@ class Celery(object):
     control_cls = 'celery.app.control:Control'
     task_cls = 'celery.app.task:Task'
     registry_cls = TaskRegistry
+    _fixups = None
     _pool = None
     builtin_fixups = BUILTIN_FIXUPS
 
@@ -131,10 +132,10 @@ class Celery(object):
         if include:
             self._preconf['CELERY_IMPORTS'] = include
 
-        # Apply fixups.
+        # - Apply fixups.
         self.fixups = set(self.builtin_fixups) if fixups is None else fixups
-        for fixup in self.fixups:
-            symbol_by_name(fixup)(self)
+        # ...store fixup instances in _fixups to keep weakrefs alive.
+        self._fixups = [symbol_by_name(fixup)(self) for fixup in self.fixups]
 
         if self.set_as_current:
             self.set_current()
