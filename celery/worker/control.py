@@ -355,8 +355,10 @@ def cancel_consumer(state, queue=None, **_):
 @Panel.register
 def active_queues(state):
     """Return information about the queues a worker consumes from."""
-    return [dict(queue.as_dict(recurse=True))
-            for queue in state.consumer.task_consumer.queues]
+    if state.consumer.task_consumer:
+        return [dict(queue.as_dict(recurse=True))
+                for queue in state.consumer.task_consumer.queues]
+    return []
 
 
 def _wanted_config_key(key):
@@ -372,4 +374,5 @@ def dump_conf(state, with_defaults=False, **kwargs):
 
 @Panel.register
 def election(state, id, topic, action=None, **kwargs):
-    state.consumer.gossip.election(id, topic, action)
+    if state.consumer.gossip:
+        state.consumer.gossip.election(id, topic, action)

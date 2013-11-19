@@ -474,10 +474,11 @@ class Connection(bootsteps.StartStopStep):
         if connection:
             ignore_errors(connection, connection.close)
 
-    def info(self, c):
-        info = c.connection.info()
-        info.pop('password', None)  # don't send password.
-        return {'broker': info}
+    def info(self, c, params='N/A'):
+        if c.connection:
+            params = c.connection.info()
+            params.pop('password', None)  # don't send password.
+        return {'broker': params}
 
 
 class Events(bootsteps.StartStopStep):
@@ -569,7 +570,7 @@ class Tasks(bootsteps.StartStopStep):
             c.task_consumer = None
 
     def info(self, c):
-        return {'prefetch_count': c.qos.value}
+        return {'prefetch_count': c.qos.value if c.qos else 'N/A'}
 
 
 class Agent(bootsteps.StartStopStep):

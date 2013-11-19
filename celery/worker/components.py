@@ -179,7 +179,7 @@ class Pool(bootsteps.StartStopStep):
         return pool
 
     def info(self, w):
-        return {'pool': w.pool.info}
+        return {'pool': w.pool.info if w.pool else 'N/A'}
 
     def register_with_event_loop(self, w, hub):
         w.pool.register_with_event_loop(hub)
