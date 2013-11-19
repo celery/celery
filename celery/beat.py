@@ -244,7 +244,7 @@ class Scheduler(object):
         except Exception as exc:
             reraise(SchedulingError, SchedulingError(
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
-                    entry, exc)), sys.exc_info()[2])
+                    entry, exc=exc)), sys.exc_info()[2])
         finally:
             if self.should_sync():
                 self._do_sync()
