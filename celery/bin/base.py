@@ -481,7 +481,12 @@ class Command(object):
                         acc[opt.dest] = value
                 else:
                     opt = opts.get(arg)
-                    if opt and opt.action == 'store_true':
+                    if opt.takes_value():
+                        # optparse also supports ['--opt', 'value']
+                        # (Issue #1668)
+                        acc[opt.dest] = args[index + 1]
+                        index += 1
+                    elif opt and opt.action == 'store_true':
                         acc[opt.dest] = True
             elif arg.startswith('-'):
                 opt = opts.get(arg)
