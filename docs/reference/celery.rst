@@ -141,12 +141,15 @@ and creating Celery applications.
         Return a string with information useful for the Celery core
         developers when reporting a bug.
 
-    .. method:: Celery.config_from_object(obj, silent=False)
+    .. method:: Celery.config_from_object(obj, silent=False, force=False)
 
         Reads configuration from object, where object is either
         an object or the name of a module to import.
 
         :keyword silent: If true then import errors will be ignored.
+
+        :keyword force:  Force reading configuration immediately.
+            By default the configuration will be read only when required.
 
         .. code-block:: python
 
@@ -155,7 +158,8 @@ and creating Celery applications.
             >>> from myapp import celeryconfig
             >>> celery.config_from_object(celeryconfig)
 
-    .. method:: Celery.config_from_envvar(variable_name, silent=False)
+    .. method:: Celery.config_from_envvar(variable_name,
+                                          silent=False, force=False)
 
         Read configuration from environment variable.
 
@@ -187,6 +191,19 @@ and creating Celery applications.
 
         Then calling ``app.autodiscover_tasks(['foo', bar', 'baz'])`` will
         result in the modules ``foo.tasks`` and ``bar.tasks`` being imported.
+
+        :param packages: List of packages to search.
+            This argument may also be a callable, in which case the
+            value returned is used (for lazy evaluation).
+
+        :keyword related_name: The name of the module to find.  Defaults
+            to "tasks", which means it look for "module.tasks" for every
+            module in ``packages``.
+        :keyword force: By default this call is lazy so that the actual
+            autodiscovery will not happen until an application imports the
+            default modules.  Forcing will cause the autodiscovery to happen
+            immediately.
+
 
     .. method:: Celery.add_defaults(d)
 

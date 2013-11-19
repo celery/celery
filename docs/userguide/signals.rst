@@ -261,6 +261,20 @@ Provides arguments:
 * expired
   Set to :const:`True` if the task expired.
 
+App Signals
+-----------
+
+.. signal:: import_modules
+
+import_modules
+~~~~~~~~~~~~~~
+
+This signal is sent when a program (worker, beat, shell) etc, asks
+for modules in the :setting:`CELERY_INCLUDE` and :setting:`CELERY_IMPORTS`
+settings to be imported.
+
+Sender is the app instance.
+
 Worker Signals
 --------------
 

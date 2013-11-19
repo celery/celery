@@ -52,6 +52,7 @@ task_revoked = Signal(providing_args=[
 ])
 celeryd_init = Signal(providing_args=['instance', 'conf', 'options'])
 celeryd_after_setup = Signal(providing_args=['instance', 'conf'])
+import_modules = Signal(providing_args=[])
 worker_init = Signal(providing_args=[])
 worker_process_init = Signal(providing_args=[])
 worker_process_shutdown = Signal(providing_args=[])

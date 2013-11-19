@@ -20,6 +20,7 @@ from datetime import datetime
 from kombu.utils import cached_property
 from kombu.utils.encoding import safe_str
 
+from celery import signals
 from celery.datastructures import DictAttribute, force_mapping
 from celery.five import reraise, string_t
 from celery.utils.functional import maybe_list
@@ -112,6 +113,7 @@ class BaseLoader(object):
         )
 
     def import_default_modules(self):
+        signals.import_modules.send(sender=self.app)
         return [
             self.import_task_module(m) for m in (
                 tuple(self.builtin_modules) +
