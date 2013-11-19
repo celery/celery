@@ -492,6 +492,8 @@ class Events(bootsteps.StartStopStep):
     def start(self, c):
         # flush events sent while connection was down.
         prev = c.event_dispatcher
+        if prev:
+            self._close()
         dis = c.event_dispatcher = c.app.events.Dispatcher(
             c.connect(), hostname=c.hostname,
             enabled=self.send_events, groups=self.groups,
@@ -501,6 +503,9 @@ class Events(bootsteps.StartStopStep):
             dis.flush()
 
     def stop(self, c):
+        pass
+
+    def _close(self, c):
         if c.event_dispatcher:
             # remember changes from remote control commands:
             self.groups = c.event_dispatcher.groups
@@ -510,7 +515,9 @@ class Events(bootsteps.StartStopStep):
                 ignore_errors(c, c.event_dispatcher.connection.close)
             ignore_errors(c, c.event_dispatcher.close)
             c.event_dispatcher = None
-    shutdown = stop
+
+    def shutdown(self, c):
+        self._close(c)
 
 
 class Heart(bootsteps.StartStopStep):
