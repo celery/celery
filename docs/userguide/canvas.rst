@@ -26,7 +26,7 @@ A :func:`~celery.signature` wraps the arguments, keyword arguments, and executio
 of a single task invocation in a way such that it can be passed to functions
 or even serialized and sent across the wire.
 
-Signatures are often nicknamed "subtasks" because they descripe a task to be called
+Signatures are often nicknamed "subtasks" because they describe a task to be called
 within a task.
 
 - You can create a signature for the ``add`` task using its name like this::
