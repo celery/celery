@@ -481,7 +481,7 @@ class Command(object):
                         acc[opt.dest] = value
                 else:
                     opt = opts.get(arg)
-                    if opt.takes_value():
+                    if opt and opt.takes_value():
                         # optparse also supports ['--opt', 'value']
                         # (Issue #1668)
                         acc[opt.dest] = args[index + 1]
