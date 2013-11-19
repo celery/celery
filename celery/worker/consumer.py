@@ -287,7 +287,10 @@ class Consumer(object):
                     blueprint.restart(self)
 
     def register_with_event_loop(self, hub):
-        self.blueprint.send_all(self, 'register_with_event_loop', args=(hub, ))
+        self.blueprint.send_all(
+            self, 'register_with_event_loop', args=(hub, ),
+            description='Hub.register',
+        )
 
     def shutdown(self):
         self.in_shutdown = True

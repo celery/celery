@@ -19,6 +19,7 @@ Environment variable DJANGO_SETTINGS_MODULE is defined
 but Django is not installed.  Will not apply Django fixups!
 """
 
+
 def _maybe_close_fd(fh):
     try:
         os.close(fh.fileno())
