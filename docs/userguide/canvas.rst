@@ -79,8 +79,7 @@ within a task.
         >>> result.get()
         4
 
-    ``apply_async`` takes the same arguments
-    as the :meth:`Task.apply_async <@Task.apply_async>` method::
+  ``apply_async`` takes the same arguments as the :meth:`Task.apply_async <@Task.apply_async>` method::
 
         >>> add.apply_async(args, kwargs, **options)
         >>> add.subtask(args, kwargs, **options).apply_async()
