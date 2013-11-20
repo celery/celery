@@ -7,9 +7,15 @@
 
 from __future__ import absolute_import
 
+from collections import namedtuple
+
+version_info_t = namedtuple(
+    'version_info_t', ('major', 'minor', 'micro', 'releaselevel', 'serial'),
+)
+
 SERIES = 'Cipater'
-VERSION = (3, 1, 4)
-__version__ = '.'.join(str(p) for p in VERSION[0:3]) + ''.join(VERSION[3:])
+VERSION = version_info_t(3, 1, 4, '', 0)
+__version__ = '{0.major}.{0.minor}.{0.micro}{0.releaselevel}'.format(VERSION)
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://celeryproject.org'

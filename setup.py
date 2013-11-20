@@ -89,7 +89,7 @@ PYPY = hasattr(sys, 'pypy_version_info')
 
 import re
 re_meta = re.compile(r'__(\w+?)__\s*=\s*(.*)')
-re_vers = re.compile(r'VERSION\s*=\s*\((.*?)\)')
+re_vers = re.compile(r'VERSION\s*=.*?\((.*?)\)')
 re_doc = re.compile(r'^"""(.+?)"""')
 rq = lambda s: s.strip("\"'")
 
