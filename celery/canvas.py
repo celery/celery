@@ -605,10 +605,14 @@ subtask = signature   # XXX compat
 
 
 def maybe_signature(d, app=None):
-    if d is not None and isinstance(d, dict):
-        if not isinstance(d, Signature):
-            return signature(d, app=app)
+    if d is not None:
+        if isinstance(d, dict):
+            if not isinstance(d, Signature):
+                return signature(d, app=app)
+        elif isinstance(d, list):
+            return [maybe_signature(s, app=app) for s in d]
         if app is not None:
             d._app = app
         return d
+
 maybe_subtask = maybe_signature  # XXX compat

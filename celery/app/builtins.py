@@ -377,7 +377,7 @@ def add_chord_task(app):
                 return self.apply(args, kwargs, **options)
             header = kwargs.pop('header')
             body = kwargs.pop('body')
-            header, body = (list(maybe_signature(header, app=app)),
+            header, body = (maybe_signature(header, app=app),
                             maybe_signature(body, app=app))
             # forward certain options to body
             if chord is not None:
