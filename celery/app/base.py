@@ -292,12 +292,6 @@ class Celery(object):
     def _autodiscover_tasks(self, packages, related_name='tasks', **kwargs):
         # argument may be lazy
         packages = packages() if isinstance(packages, Callable) else packages
-        if self.conf.CELERY_FORCE_BILLIARD_LOGGING:
-            # we'll use billiard's processName instead of
-            # multiprocessing's one in all the loggers
-            # created after this call
-            ensure_process_aware_logger()
-
         self.loader.autodiscover_tasks(packages, related_name)
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
