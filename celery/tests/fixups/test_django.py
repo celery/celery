@@ -8,6 +8,7 @@ from celery.fixups.django import (
     _maybe_close_fd,
     fixup,
     DjangoFixup,
+    DjangoWorkerFixup,
 )
 
 from celery.tests.case import (
@@ -15,7 +16,19 @@ from celery.tests.case import (
 )
 
 
-class test_DjangoFixup(AppCase):
+class FixupCase(AppCase):
+    Fixup = None
+
+    @contextmanager
+    def fixup_context(self, app):
+        with patch('celery.fixups.django.import_module') as import_module:
+            with patch('celery.fixups.django.symbol_by_name') as symbyname:
+                f = self.Fixup(app)
+                yield f, import_module, symbyname
+
+
+class test_DjangoFixup(FixupCase):
+    Fixup = DjangoFixup
 
     def test_fixup(self):
         with patch('celery.fixups.django.DjangoFixup') as Fixup:
@@ -31,13 +44,6 @@ class test_DjangoFixup(AppCase):
                     fixup(self.app)
                     self.assertTrue(Fixup.called)
 
-    @contextmanager
-    def fixup_context(self, app):
-        with patch('celery.fixups.django.import_module') as import_module:
-            with patch('celery.fixups.django.symbol_by_name') as symbyname:
-                f = DjangoFixup(app)
-                yield f, import_module, symbyname
-
     def test_maybe_close_fd(self):
         with patch('os.close'):
             _maybe_close_fd(Mock())
@@ -52,33 +58,16 @@ class test_DjangoFixup(AppCase):
                     raise ImportError()
                 return Mock()
             sym.side_effect = se
-            self.assertTrue(DjangoFixup(self.app)._now)
-
-            def se2(name):
-                if name == 'django.db:close_old_connections':
-                    raise ImportError()
-                return Mock()
-            sym.side_effect = se2
-            self.assertIsNone(DjangoFixup(self.app)._close_old_connections)
+            self.assertTrue(self.Fixup(self.app)._now)
 
     def test_install(self):
-        self.app.conf = {'CELERY_DB_REUSE_MAX': None}
         self.app.loader = Mock()
         with self.fixup_context(self.app) as (f, _, _):
             with patch_many('os.getcwd', 'sys.path',
                             'celery.fixups.django.signals') as (cw, p, sigs):
                 cw.return_value = '/opt/vandelay'
                 f.install()
-                sigs.beat_embedded_init.connect.assert_called_with(
-                    f.close_database,
-                )
-                sigs.worker_ready.connect.assert_called_with(f.on_worker_ready)
-                sigs.task_prerun.connect.assert_called_with(f.on_task_prerun)
-                sigs.task_postrun.connect.assert_called_with(f.on_task_postrun)
                 sigs.worker_init.connect.assert_called_with(f.on_worker_init)
-                sigs.worker_process_init.connect.assert_called_with(
-                    f.on_worker_process_init,
-                )
                 self.assertEqual(self.app.loader.now, f.now)
                 self.assertEqual(self.app.loader.mail_admins, f.mail_admins)
                 p.append.assert_called_with('/opt/vandelay')
@@ -99,11 +88,44 @@ class test_DjangoFixup(AppCase):
 
     def test_on_worker_init(self):
         with self.fixup_context(self.app) as (f, _, _):
-            f.close_database = Mock()
-            f.close_cache = Mock()
-            f.on_worker_init()
-            f.close_database.assert_called_with()
-            f.close_cache.assert_called_with()
+            with patch('celery.fixups.django.DjangoWorkerFixup') as DWF:
+                f.on_worker_init()
+                DWF.assert_called_with(f.app)
+                DWF.return_value.install.assert_called_with()
+                self.assertIs(
+                    f._worker_fixup, DWF.return_value.install.return_value,
+                )
+
+
+class test_DjangoWorkerFixup(FixupCase):
+    Fixup = DjangoWorkerFixup
+
+    def test_init(self):
+        with self.fixup_context(self.app) as (f, importmod, sym):
+            self.assertTrue(f)
+
+            def se(name):
+                if name == 'django.db:close_old_connections':
+                    raise ImportError()
+                return Mock()
+            sym.side_effect = se
+            self.assertIsNone(self.Fixup(self.app)._close_old_connections)
+
+    def test_install(self):
+        self.app.conf = {'CELERY_DB_REUSE_MAX': None}
+        self.app.loader = Mock()
+        with self.fixup_context(self.app) as (f, _, _):
+            with patch_many('celery.fixups.django.signals') as (sigs, ):
+                f.install()
+                sigs.beat_embedded_init.connect.assert_called_with(
+                    f.close_database,
+                )
+                sigs.worker_ready.connect.assert_called_with(f.on_worker_ready)
+                sigs.task_prerun.connect.assert_called_with(f.on_task_prerun)
+                sigs.task_postrun.connect.assert_called_with(f.on_task_postrun)
+                sigs.worker_process_init.connect.assert_called_with(
+                    f.on_worker_process_init,
+                )
 
     def test_on_worker_process_init(self):
         with self.fixup_context(self.app) as (f, _, _):

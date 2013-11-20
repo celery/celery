@@ -7,6 +7,7 @@ import itertools
 from copy import deepcopy
 from pickle import loads, dumps
 
+from amqp import promise
 from kombu import Exchange
 
 from celery import shared_task, current_app
@@ -44,6 +45,14 @@ class ObjectConfig(object):
 
 object_config = ObjectConfig()
 dict_config = dict(FOO=10, BAR=20)
+
+
+class ObjectConfig2(object):
+    LEAVE_FOR_WORK = True
+    MOMENT_TO_STOP = True
+    CALL_ME_BACK = 123456789
+    WANT_ME_TO = False
+    UNDERSTAND_ME = True
 
 
 class Object(object):
@@ -156,19 +165,37 @@ class test_App(AppCase):
         self.app._using_v1_reduce = True
         self.assertTrue(loads(dumps(self.app)))
 
-    def test_autodiscover_tasks(self):
+    def test_autodiscover_tasks_force(self):
         self.app.conf.CELERY_FORCE_BILLIARD_LOGGING = True
         with patch('celery.app.base.ensure_process_aware_logger') as ep:
             self.app.loader.autodiscover_tasks = Mock()
-            self.app.autodiscover_tasks(['proj.A', 'proj.B'])
+            self.app.autodiscover_tasks(['proj.A', 'proj.B'], force=True)
             ep.assert_called_with()
             self.app.loader.autodiscover_tasks.assert_called_with(
                 ['proj.A', 'proj.B'], 'tasks',
             )
         with patch('celery.app.base.ensure_process_aware_logger') as ep:
+            self.app.loader.autodiscover_tasks = Mock()
             self.app.conf.CELERY_FORCE_BILLIARD_LOGGING = False
-            self.app.autodiscover_tasks(['proj.A', 'proj.B'])
+            self.app.autodiscover_tasks(
+                lambda: ['proj.A', 'proj.B'],
+                related_name='george',
+                force=True,
+            )
+            self.app.loader.autodiscover_tasks.assert_called_with(
+                ['proj.A', 'proj.B'], 'george',
+            )
             self.assertFalse(ep.called)
+
+    def test_autodiscover_tasks_lazy(self):
+        with patch('celery.signals.import_modules') as import_modules:
+            packages = lambda: [1, 2, 3]
+            self.app.autodiscover_tasks(packages)
+            self.assertTrue(import_modules.connect.called)
+            prom = import_modules.connect.call_args[0][0]
+            self.assertIsInstance(prom, promise)
+            self.assertEqual(prom.fun, self.app._autodiscover_tasks)
+            self.assertEqual(prom.args[0](), [1, 2, 3])
 
     @with_environ('CELERY_BROKER_URL', '')
     def test_with_broker(self):
@@ -346,22 +373,25 @@ class test_App(AppCase):
         self.app.config_from_envvar('CELERYTEST_CONFIG_OBJECT')
         self.assertEqual(self.app.conf.THIS_IS_A_KEY, 'this is a value')
 
-    def test_config_from_object(self):
-
-        class Object(object):
-            LEAVE_FOR_WORK = True
-            MOMENT_TO_STOP = True
-            CALL_ME_BACK = 123456789
-            WANT_ME_TO = False
-            UNDERSTAND_ME = True
-
-        self.app.config_from_object(Object())
-
+    def assert_config2(self):
         self.assertTrue(self.app.conf.LEAVE_FOR_WORK)
         self.assertTrue(self.app.conf.MOMENT_TO_STOP)
         self.assertEqual(self.app.conf.CALL_ME_BACK, 123456789)
         self.assertFalse(self.app.conf.WANT_ME_TO)
         self.assertTrue(self.app.conf.UNDERSTAND_ME)
+
+    def test_config_from_object__lazy(self):
+        conf = ObjectConfig2()
+        self.app.config_from_object(conf)
+        self.assertFalse(self.app.loader._conf)
+        self.assertIs(self.app._config_source, conf)
+
+        self.assert_config2()
+
+    def test_config_from_object__force(self):
+        self.app.config_from_object(ObjectConfig2(), force=True)
+        self.assertTrue(self.app.loader._conf)
+        self.assert_config2()
 
     def test_config_from_cmdline(self):
         cmdline = ['.always_eager=no',
@@ -434,22 +464,28 @@ class test_App(AppCase):
             next(app for app in _state._get_active_apps() if id(app) == appid)
 
     def test_config_from_envvar_more(self, key='CELERY_HARNESS_CFG1'):
-        self.assertFalse(self.app.config_from_envvar('HDSAJIHWIQHEWQU',
-                                                     silent=True))
+        self.assertFalse(
+            self.app.config_from_envvar(
+                'HDSAJIHWIQHEWQU', force=True, silent=True),
+        )
         with self.assertRaises(ImproperlyConfigured):
-            self.app.config_from_envvar('HDSAJIHWIQHEWQU', silent=False)
+            self.app.config_from_envvar(
+                'HDSAJIHWIQHEWQU', force=True, silent=False,
+            )
         os.environ[key] = __name__ + '.object_config'
-        self.assertTrue(self.app.config_from_envvar(key))
+        self.assertTrue(self.app.config_from_envvar(key, force=True))
         self.assertEqual(self.app.conf['FOO'], 1)
         self.assertEqual(self.app.conf['BAR'], 2)
 
         os.environ[key] = 'unknown_asdwqe.asdwqewqe'
         with self.assertRaises(ImportError):
             self.app.config_from_envvar(key, silent=False)
-        self.assertFalse(self.app.config_from_envvar(key, silent=True))
+        self.assertFalse(
+            self.app.config_from_envvar(key, force=True, silent=True),
+        )
 
         os.environ[key] = __name__ + '.dict_config'
-        self.assertTrue(self.app.config_from_envvar(key))
+        self.assertTrue(self.app.config_from_envvar(key, force=True))
         self.assertEqual(self.app.conf['FOO'], 10)
         self.assertEqual(self.app.conf['BAR'], 20)
 

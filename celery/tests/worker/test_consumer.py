@@ -18,7 +18,7 @@ from celery.worker.consumer import (
     CLOSE,
 )
 
-from celery.tests.case import AppCase, Mock, SkipTest, call, patch
+from celery.tests.case import AppCase, ContextMock, Mock, SkipTest, call, patch
 
 
 class test_Consumer(AppCase):
@@ -36,7 +36,7 @@ class test_Consumer(AppCase):
         )
         consumer.blueprint = Mock()
         consumer._restart_state = Mock()
-        consumer.connection = Mock()
+        consumer.connection = _amqp_connection()
         consumer.connection_errors = (socket.error, OSError, )
         return consumer
 
@@ -144,8 +144,8 @@ class test_Consumer(AppCase):
             c.on_close()
 
     def test_connect_error_handler(self):
-        self.app.connection = Mock()
-        conn = self.app.connection.return_value = Mock()
+        self.app.connection = _amqp_connection()
+        conn = self.app.connection.return_value
         c = self.get_consumer()
         self.assertTrue(c.connect())
         self.assertTrue(conn.ensure_connection.called)
@@ -204,6 +204,7 @@ class test_Mingle(AppCase):
 
     def test_start_no_replies(self):
         c = Mock()
+        c.app.connection = _amqp_connection()
         mingle = Mingle(c)
         I = c.app.control.inspect.return_value = Mock()
         I.hello.return_value = {}
@@ -212,6 +213,7 @@ class test_Mingle(AppCase):
     def test_start(self):
         try:
             c = Mock()
+            c.app.connection = _amqp_connection()
             mingle = Mingle(c)
             self.assertTrue(mingle.enabled)
 
@@ -248,16 +250,24 @@ class test_Mingle(AppCase):
             worker_state.revoked.clear()
 
 
+def _amqp_connection():
+    connection = ContextMock()
+    connection.return_value = ContextMock()
+    connection.return_value.transport.driver_type = 'amqp'
+    return connection
+
 class test_Gossip(AppCase):
 
     def test_init(self):
         c = self.Consumer()
+        c.app.connection = _amqp_connection()
         g = Gossip(c)
         self.assertTrue(g.enabled)
         self.assertIs(c.gossip, g)
 
     def test_election(self):
         c = self.Consumer()
+        c.app.connection = _amqp_connection()
         g = Gossip(c)
         g.start(c)
         g.election('id', 'topic', 'action')
@@ -268,6 +278,7 @@ class test_Gossip(AppCase):
 
     def test_call_task(self):
         c = self.Consumer()
+        c.app.connection = _amqp_connection()
         g = Gossip(c)
         g.start(c)
 
@@ -298,6 +309,7 @@ class test_Gossip(AppCase):
 
     def test_on_elect(self):
         c = self.Consumer()
+        c.app.connection = _amqp_connection()
         g = Gossip(c)
         g.start(c)
 
@@ -314,6 +326,7 @@ class test_Gossip(AppCase):
 
     def Consumer(self, hostname='foo@x.com', pid=4312):
         c = Mock()
+        c.app.connection = _amqp_connection()
         c.hostname = hostname
         c.pid = pid
         return c
@@ -355,6 +368,7 @@ class test_Gossip(AppCase):
 
     def test_on_elect_ack_lose(self):
         c = self.Consumer(hostname='bar@x.com')  # I will lose
+        c.app.connection = _amqp_connection()
         g = Gossip(c)
         handler = g.election_handlers['topic'] = Mock()
         self.setup_election(g, c)

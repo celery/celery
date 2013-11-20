@@ -38,6 +38,13 @@ def MockStep(step=None):
     return step
 
 
+def mock_event_dispatcher():
+    evd = Mock(name='event_dispatcher')
+    evd.groups = ['worker']
+    evd._outbound_buffer = deque()
+    return evd
+
+
 class PlaceHolder(object):
         pass
 
@@ -182,7 +189,7 @@ class test_Consumer(AppCase):
         self.assertIsNone(l.connection)
 
         l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
-        eventer = l.event_dispatcher = Mock()
+        eventer = l.event_dispatcher = mock_event_dispatcher()
         eventer.enabled = True
         heart = l.heart = MockHeart()
         l.blueprint.state = RUN
@@ -200,7 +207,7 @@ class test_Consumer(AppCase):
         l.steps.pop()
         backend = Mock()
         m = create_message(backend, unknown={'baz': '!!!'})
-        l.event_dispatcher = Mock()
+        l.event_dispatcher = mock_event_dispatcher()
         l.node = MockNode()
 
         callback = self._get_on_message(l)
@@ -217,7 +224,7 @@ class test_Consumer(AppCase):
                            args=('2, 2'),
                            kwargs={},
                            eta=datetime.now().isoformat())
-        l.event_dispatcher = Mock()
+        l.event_dispatcher = mock_event_dispatcher()
         l.node = MockNode()
         l.update_strategies()
         l.qos = Mock()
@@ -230,12 +237,12 @@ class test_Consumer(AppCase):
     def test_receive_message_InvalidTaskError(self, error):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.blueprint.state = RUN
-        l.event_dispatcher = Mock()
+        l.event_dispatcher = mock_event_dispatcher()
         l.steps.pop()
         m = create_message(Mock(), task=self.foo_task.name,
                            args=(1, 2), kwargs='foobarbaz', id=1)
         l.update_strategies()
-        l.event_dispatcher = Mock()
+        l.event_dispatcher = mock_event_dispatcher()
 
         callback = self._get_on_message(l)
         callback(m.decode(), m)
@@ -258,7 +265,7 @@ class test_Consumer(AppCase):
     def _get_on_message(self, l):
         if l.qos is None:
             l.qos = Mock()
-        l.event_dispatcher = Mock()
+        l.event_dispatcher = mock_event_dispatcher()
         l.task_consumer = Mock()
         l.connection = Mock()
         l.connection.drain_events.side_effect = SystemExit()
@@ -271,7 +278,7 @@ class test_Consumer(AppCase):
     def test_receieve_message(self):
         l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
         l.blueprint.state = RUN
-        l.event_dispatcher = Mock()
+        l.event_dispatcher = mock_event_dispatcher()
         m = create_message(Mock(), task=self.foo_task.name,
                            args=[2, 4, 8], kwargs={})
         l.update_strategies()
@@ -419,7 +426,7 @@ class test_Consumer(AppCase):
         l.task_consumer = Mock()
         l.qos = QoS(l.task_consumer.qos, 1)
         current_pcount = l.qos.value
-        l.event_dispatcher = Mock()
+        l.event_dispatcher = mock_event_dispatcher()
         l.enabled = False
         l.update_strategies()
         callback = self._get_on_message(l)
@@ -478,7 +485,7 @@ class test_Consumer(AppCase):
         backend = Mock()
         m = create_message(backend, task='x.X.31x', args=[2, 4, 8], kwargs={})
 
-        l.event_dispatcher = Mock()
+        l.event_dispatcher = mock_event_dispatcher()
         callback = self._get_on_message(l)
         self.assertFalse(callback(m.decode(), m))
         with self.assertRaises(Empty):
@@ -493,7 +500,7 @@ class test_Consumer(AppCase):
         backend = Mock()
         m = create_message(backend, args=[2, 4, 8], kwargs={})
 
-        l.event_dispatcher = Mock()
+        l.event_dispatcher = mock_event_dispatcher()
         l.connection_errors = (socket.error, )
         m.reject = Mock()
         m.reject.side_effect = socket.error('foo')
@@ -509,8 +516,7 @@ class test_Consumer(AppCase):
     def test_receive_message_eta(self):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.steps.pop()
-        l.event_dispatcher = Mock()
-        l.event_dispatcher._outbound_buffer = deque()
+        l.event_dispatcher = mock_event_dispatcher()
         backend = Mock()
         m = create_message(
             backend, task=self.foo_task.name,
@@ -525,12 +531,15 @@ class test_Consumer(AppCase):
             l.blueprint.start(l)
             l.app.conf.BROKER_CONNECTION_RETRY = p
             l.blueprint.restart(l)
-            l.event_dispatcher = Mock()
+            l.event_dispatcher = mock_event_dispatcher()
             callback = self._get_on_message(l)
             callback(m.decode(), m)
         finally:
             l.timer.stop()
-            l.timer.join()
+            try:
+                l.timer.join()
+            except RuntimeError:
+                pass
 
         in_hold = l.timer.queue[0]
         self.assertEqual(len(in_hold), 3)
