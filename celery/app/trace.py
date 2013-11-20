@@ -259,22 +259,24 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         task_after_return(
                             state, retval, uuid, args, kwargs, None,
                         )
+            finally:
+                try:
                     if postrun_receivers:
                         send_postrun(sender=task, task_id=uuid, task=task,
-                                     args=args, kwargs=kwargs,
-                                     retval=retval, state=state)
-            finally:
-                pop_task()
-                pop_request()
-                if not eager:
-                    try:
-                        backend_cleanup()
-                        loader_cleanup()
-                    except (KeyboardInterrupt, SystemExit, MemoryError):
-                        raise
-                    except Exception as exc:
-                        _logger.error('Process cleanup failed: %r', exc,
-                                      exc_info=True)
+                                    args=args, kwargs=kwargs,
+                                    retval=retval, state=state)
+                finally:
+                    pop_task()
+                    pop_request()
+                    if not eager:
+                        try:
+                            backend_cleanup()
+                            loader_cleanup()
+                        except (KeyboardInterrupt, SystemExit, MemoryError):
+                            raise
+                        except Exception as exc:
+                            _logger.error('Process cleanup failed: %r', exc,
+                                          exc_info=True)
         except MemoryError:
             raise
         except Exception as exc:
