@@ -11,7 +11,7 @@ from __future__ import absolute_import
 from datetime import datetime
 
 import sqlalchemy as sa
-from sqlalchemy.types import CLOB
+from sqlalchemy.types import PickleType
 
 from celery import states
 
@@ -25,12 +25,12 @@ class Task(ResultModelBase):
     __tablename__ = 'celery_taskmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(sa.Integer, sa.Sequence('celery_taskmeta_sq'),
+    id = sa.Column(sa.Integer, sa.Sequence('task_id_sequence'),
                    primary_key=True,
                    autoincrement=True)
     task_id = sa.Column(sa.String(255), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
-    result = sa.Column(CLOB, nullable=True)
+    result = sa.Column(PickleType, nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
                           onupdate=datetime.utcnow, nullable=True)
     traceback = sa.Column(sa.Text, nullable=True)
@@ -54,10 +54,10 @@ class TaskSet(ResultModelBase):
     __tablename__ = 'celery_tasksetmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(sa.Integer, sa.Sequence('celery_tasksetmeta_sq'),
+    id = sa.Column(sa.Integer, sa.Sequence('taskset_id_sequence'),
                    autoincrement=True, primary_key=True)
     taskset_id = sa.Column(sa.String(255), unique=True)
-    result = sa.Column(CLOB, nullable=True)
+    result = sa.Column(PickleType, nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
                           nullable=True)
 
