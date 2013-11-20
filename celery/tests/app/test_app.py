@@ -191,25 +191,20 @@ class test_App(AppCase):
 
     def test_autodiscover_tasks_force(self):
         self.app.conf.CELERY_FORCE_BILLIARD_LOGGING = True
-        with patch('celery.app.base.ensure_process_aware_logger') as ep:
-            self.app.loader.autodiscover_tasks = Mock()
-            self.app.autodiscover_tasks(['proj.A', 'proj.B'], force=True)
-            ep.assert_called_with()
-            self.app.loader.autodiscover_tasks.assert_called_with(
-                ['proj.A', 'proj.B'], 'tasks',
-            )
-        with patch('celery.app.base.ensure_process_aware_logger') as ep:
-            self.app.loader.autodiscover_tasks = Mock()
-            self.app.conf.CELERY_FORCE_BILLIARD_LOGGING = False
-            self.app.autodiscover_tasks(
-                lambda: ['proj.A', 'proj.B'],
-                related_name='george',
-                force=True,
-            )
-            self.app.loader.autodiscover_tasks.assert_called_with(
-                ['proj.A', 'proj.B'], 'george',
-            )
-            self.assertFalse(ep.called)
+        self.app.loader.autodiscover_tasks = Mock()
+        self.app.autodiscover_tasks(['proj.A', 'proj.B'], force=True)
+        self.app.loader.autodiscover_tasks.assert_called_with(
+            ['proj.A', 'proj.B'], 'tasks',
+        )
+        self.app.loader.autodiscover_tasks = Mock()
+        self.app.autodiscover_tasks(
+            lambda: ['proj.A', 'proj.B'],
+            related_name='george',
+            force=True,
+        )
+        self.app.loader.autodiscover_tasks.assert_called_with(
+            ['proj.A', 'proj.B'], 'george',
+        )
 
     def test_autodiscover_tasks_lazy(self):
         with patch('celery.signals.import_modules') as import_modules:
