@@ -133,12 +133,6 @@ class DjangoWorkerFixup(object):
         )
 
     def install(self):
-        """Called when the worker starts.
-
-        Automatically discovers any ``tasks.py`` files in the applications
-        listed in ``INSTALLED_APPS``.
-
-        """
         signals.beat_embedded_init.connect(self.close_database)
         signals.worker_ready.connect(self.on_worker_ready)
         signals.task_prerun.connect(self.on_task_prerun)
