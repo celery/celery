@@ -245,10 +245,10 @@ class LoggingProxy(object):
         return False
 
 
-def ensure_process_aware_logger():
+def ensure_process_aware_logger(force=False):
     """Make sure process name is recorded when loggers are used."""
     global _process_aware
-    if not _process_aware:
+    if force or not _process_aware:
         logging._acquireLock()
         try:
             _process_aware = True
@@ -257,12 +257,18 @@ def ensure_process_aware_logger():
                 return
 
             class ProcessAwareLogger(Logger):
+                _signal_safe = True
                 _process_aware = True
 
                 def makeRecord(self, *args, **kwds):
                     record = Logger.makeRecord(self, *args, **kwds)
                     record.processName = current_process()._name
                     return record
+
+                def log(self, *args, **kwargs):
+                    if _in_sighandler:
+                        return
+                    return Logger.log(self, *args, **kwargs)
             logging.setLoggerClass(ProcessAwareLogger)
         finally:
             logging._releaseLock()
@@ -275,24 +281,4 @@ def get_multiprocessing_logger():
 def reset_multiprocessing_logger():
     if mputil and hasattr(mputil, '_logger'):
         mputil._logger = None
-
-
-def _patch_logger_class():
-    """Make sure loggers don't log while in a signal handler."""
-
-    logging._acquireLock()
-    try:
-        OldLoggerClass = logging.getLoggerClass()
-        if not getattr(OldLoggerClass, '_signal_safe', False):
-
-            class SigSafeLogger(OldLoggerClass):
-                _signal_safe = True
-
-                def log(self, *args, **kwargs):
-                    if _in_sighandler:
-                        return
-                    return OldLoggerClass.log(self, *args, **kwargs)
-            logging.setLoggerClass(SigSafeLogger)
-    finally:
-        logging._releaseLock()
-_patch_logger_class()
+ensure_process_aware_logger()
