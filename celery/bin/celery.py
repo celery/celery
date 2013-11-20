@@ -594,7 +594,7 @@ class shell(Command):  # pragma: no cover
 
     def invoke_ipython_shell(self):
         try:
-            from IPython.frontend.terminal import embed
+            from IPython.terminal import embed
             embed.TerminalInteractiveShell(user_ns=self.locals).mainloop()
         except ImportError:  # ipython < 0.11
             from IPython.Shell import IPShell
