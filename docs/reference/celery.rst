@@ -48,6 +48,9 @@ and creating Celery applications.
     :keyword include: List of modules every worker should import.
     :keyword fixups: List of fixup plug-ins (see e.g.
         :mod:`celery.fixups.django`).
+    :keyword autofinalize: If set to False a :exc:`RuntimeError`
+        will be raised if the task registry or tasks are used before
+        the app is finalized.
 
     .. attribute:: Celery.main
 

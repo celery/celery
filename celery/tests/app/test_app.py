@@ -81,6 +81,30 @@ class test_App(AppCase):
     def setup(self):
         self.app.add_defaults(test_config)
 
+    def test_task_autofinalize_disabled(self):
+        with self.Celery('xyzibari', autofinalize=False) as app:
+            @app.task
+            def ttafd():
+                return 42
+
+            with self.assertRaises(RuntimeError):
+                ttafd()
+
+        with self.Celery('xyzibari', autofinalize=False) as app:
+            @app.task
+            def ttafd2():
+                return 42
+
+            app.finalize()
+            self.assertEqual(ttafd2(), 42)
+
+    def test_registry_autofinalize_disabled(self):
+        with self.Celery('xyzibari', autofinalize=False) as app:
+            with self.assertRaises(RuntimeError):
+                app.tasks['celery.chain']
+            app.finalize()
+            self.assertTrue(app.tasks['celery.chain'])
+
     def test_task(self):
         with self.Celery('foozibari') as app:
 
@@ -391,6 +415,7 @@ class test_App(AppCase):
     def test_config_from_object__force(self):
         self.app.config_from_object(ObjectConfig2(), force=True)
         self.assertTrue(self.app.loader._conf)
+
         self.assert_config2()
 
     def test_config_from_cmdline(self):
