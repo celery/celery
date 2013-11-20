@@ -120,7 +120,7 @@ apps if you follow the ``tasks.py`` convention::
 
     - app1/
         - app1/tasks.py
-        - app2/models.py
+        - app1/models.py
     - app2/
         - app2/tasks.py
         - app2/models.py
