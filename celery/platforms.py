@@ -16,6 +16,7 @@ import os
 import platform as _platform
 import signal as _signal
 import sys
+import warnings
 
 from collections import namedtuple
 
@@ -63,6 +64,27 @@ PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
 Seems we're already running? (pid: {1})"""
 
 _range = namedtuple('_range', ('start', 'stop'))
+
+C_FORCE_ROOT = os.environ.get('C_FORCE_ROOT', False)
+
+ROOT_DISALLOWED = """\
+Running a worker with superuser privileges when the
+worker accepts messages serialized with pickle is a very bad idea!
+
+If you really want to continue then you have to set the C_FORCE_ROOT
+environment variable (but please think about this before you do).
+
+User information: uid={uid} euid={euid} gid={gid} egid={egid}
+"""
+
+ROOT_DISCOURAGED = """\
+You are running the worker with superuser privileges, which is
+absolutely not recommended!
+
+Please specify a different user using the -u option.
+
+User information: uid={uid} euid={euid} gid={gid} egid={egid}
+"""
 
 
 def pyimplementation():
@@ -354,9 +376,7 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
     workdir = os.getcwd() if workdir is None else workdir
 
     signals.reset('SIGCLD')  # Make sure SIGCLD is using the default handler.
-    if not os.geteuid():
-        # no point trying to setuid unless we're root.
-        maybe_drop_privileges(uid=uid, gid=gid)
+    maybe_drop_privileges(uid=uid, gid=gid)
 
     def after_chdir_do():
         # Since without stderr any errors will be silently suppressed,
@@ -473,6 +493,10 @@ def maybe_drop_privileges(uid=None, gid=None):
     If only GID is specified, only the group is changed.
 
     """
+    if os.geteuid():
+        # no point trying to setuid unless we're root.
+        if not os.getuid():
+            raise AssertionError('contact support')
     uid = uid and parse_uid(uid)
     gid = gid and parse_gid(gid)
 
@@ -501,9 +525,13 @@ def maybe_drop_privileges(uid=None, gid=None):
         else:
             raise RuntimeError(
                 'non-root user able to restore privileges after setuid.')
-
     else:
         gid and setgid(gid)
+
+    if uid and (not os.getuid()) and not (os.geteuid()):
+        raise AssertionError('Still root uid after drop privileges!')
+    if gid and (not os.getgid()) and not (os.getegid()):
+        raise AssertionError('Still root gid after drop privileges!')
 
 
 class Signals(object):
@@ -701,3 +729,29 @@ def ignore_errno(*errnos, **kwargs):
             raise
         if exc.errno not in errnos:
             raise
+
+
+def check_privileges(accept_content):
+    uid = os.getuid() if hasattr(os, 'getuid') else 65535
+    gid = os.getgid() if hasattr(os, 'getgid') else 65535
+    euid = os.geteuid() if hasattr(os, 'geteuid') else 65535
+    egid = os.getegid() if hasattr(os, 'getegid') else 65535
+
+    if hasattr(os, 'fchown'):
+        if not all(hasattr(os, attr)
+                   for attr in ['getuid', 'getgid', 'geteuid', 'getegid']):
+            raise AssertionError('suspicious platform, contact support')
+
+    if not uid or not gid or not euid or not egid:
+        if ('pickle' in accept_content or
+                'application/x-python-serialize' in accept_content):
+            if not C_FORCE_ROOT:
+                try:
+                    print(ROOT_DISALLOWED.format(
+                        uid=uid, euid=euid, gid=gid, egid=egid,
+                    ), file=sys.stderr)
+                finally:
+                    os._exit(1)
+        warnings.warn(RuntimeWarning(ROOT_DISCOURAGED.format(
+            uid=uid, euid=euid, gid=gid, egid=egid,
+        )))

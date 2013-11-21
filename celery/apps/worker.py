@@ -24,10 +24,11 @@ from billiard import current_process
 from kombu.utils.encoding import safe_str
 
 from celery import VERSION_BANNER, platforms, signals
+from celery.app import trace
 from celery.exceptions import CDeprecationWarning, SystemTerminate
 from celery.five import string, string_t
 from celery.loaders.app import AppLoader
-from celery.app import trace
+from celery.platforms import check_privileges
 from celery.utils import cry, isatty
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
@@ -39,23 +40,6 @@ __all__ = ['Worker']
 logger = get_logger(__name__)
 is_jython = sys.platform.startswith('java')
 is_pypy = hasattr(sys, 'pypy_version_info')
-
-C_FORCE_ROOT = os.environ.get('C_FORCE_ROOT', False)
-
-ROOT_DISALLOWED = """\
-Running a worker with superuser privileges when the
-worker accepts messages serialized with pickle is a very bad idea!
-
-If you really want to continue then you have to set the C_FORCE_ROOT
-environment variable (but please think about this before you do).
-"""
-
-ROOT_DISCOURAGED = """\
-You are running the worker with superuser privileges, which is
-absolutely not recommended!
-
-Please specify a different user using the -u option.
-"""
 
 W_PICKLE_DEPRECATED = """
 Starting from version 3.2 Celery will refuse to accept pickle by default.
@@ -133,6 +117,7 @@ class Worker(WorkController):
             sender=self.hostname, instance=self,
             conf=self.app.conf, options=kwargs,
         )
+        check_privileges(self.app.conf.CELERY_ACCEPT_CONTENT)
 
     def on_after_init(self, purge=False, no_color=None,
                       redirect_stdouts=None, redirect_stdouts_level=None,
@@ -169,14 +154,6 @@ class Worker(WorkController):
         signals.celeryd_after_setup.send(
             sender=self.hostname, instance=self, conf=self.app.conf,
         )
-
-        if getattr(os, 'getuid', None) and os.getuid() == 0:
-            accept_encoding = self.app.conf.CELERY_ACCEPT_CONTENT
-            if ('pickle' in accept_encoding or
-                    'application/x-python-serialize' in accept_encoding):
-                if not C_FORCE_ROOT:
-                    raise RuntimeError(ROOT_DISALLOWED)
-            warnings.warn(RuntimeWarning(ROOT_DISCOURAGED))
 
         if not self.app.conf.value_set_for('CELERY_ACCEPT_CONTENT'):
             warnings.warn(CDeprecationWarning(W_PICKLE_DEPRECATED))

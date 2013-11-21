@@ -138,6 +138,7 @@ from celery import concurrency
 from celery.bin.base import Command, Option, daemon_options
 from celery.bin.celeryd_detach import detached_celeryd
 from celery.five import string_t
+from celery.platforms import maybe_drop_privileges
 from celery.utils.log import LOG_LEVELS, mlevel
 
 __all__ = ['worker', 'main']
@@ -180,7 +181,8 @@ class worker(Command):
             raise SystemExit(0)
 
     def run(self, hostname=None, pool_cls=None, loglevel=None,
-            app=None, **kwargs):
+            app=None, uid=None, gid=None, **kwargs):
+        maybe_drop_privileges(uid=uid, gid=gid)
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
         pool_cls = (concurrency.get_implementation(pool_cls) or

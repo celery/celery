@@ -272,7 +272,8 @@ class test_Worker(WorkerAppCase):
         self.assertEqual(worker1.loglevel, 0xFFFF)
 
     @disable_stdouts
-    def test_warns_if_running_as_privileged_user(self):
+    @patch('os._exit')
+    def test_warns_if_running_as_privileged_user(self, _exit):
         app = self.app
         if app.IS_WINDOWS:
             raise SkipTest('Not applicable on Windows')
@@ -280,10 +281,11 @@ class test_Worker(WorkerAppCase):
         with patch('os.getuid') as getuid:
             getuid.return_value = 0
             self.app.conf.CELERY_ACCEPT_CONTENT = ['pickle']
-            with self.assertRaises(RuntimeError):
-                worker = self.Worker(app=self.app)
-                worker.on_start()
-            cd.C_FORCE_ROOT = True
+            worker = self.Worker(app=self.app)
+            worker.on_start()
+            _exit.assert_called_with(1)
+            from celery import platforms
+            platforms.C_FORCE_ROOT = True
             try:
                 with self.assertWarnsRegex(
                         RuntimeWarning,
@@ -291,7 +293,7 @@ class test_Worker(WorkerAppCase):
                     worker = self.Worker(app=self.app)
                     worker.on_start()
             finally:
-                cd.C_FORCE_ROOT = False
+                platforms.C_FORCE_ROOT = False
             self.app.conf.CELERY_ACCEPT_CONTENT = ['json']
             with self.assertWarnsRegex(
                     RuntimeWarning,
