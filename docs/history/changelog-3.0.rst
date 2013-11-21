@@ -1,4 +1,4 @@
-.. _changelog:
+.. _changelog-3.0:
 
 ================
  Change history
@@ -364,7 +364,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - MongoDB Backend: The :setting:`MONGODB_BACKEND_SETTINGS` setting
   now accepts a ``option`` key that lets you forward arbitrary kwargs
-  to the underlying ``pymongo.Connection` object (Issue #1015).
+  to the underlying ``pymongo.Connection`` object (Issue #1015).
 
 - Beat: The daily backend cleanup task is no longer enabled
   for result backends that support automatic result expiration (Issue #1031).
