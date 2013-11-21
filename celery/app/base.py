@@ -35,7 +35,6 @@ from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils.functional import first, maybe_list
 from celery.utils.imports import instantiate, symbol_by_name
-from celery.utils.log import ensure_process_aware_logger
 from celery.utils.objects import mro_lookup
 
 from .annotations import prepare as prepare_annotations

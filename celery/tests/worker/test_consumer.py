@@ -256,6 +256,7 @@ def _amqp_connection():
     connection.return_value.transport.driver_type = 'amqp'
     return connection
 
+
 class test_Gossip(AppCase):
 
     def test_init(self):

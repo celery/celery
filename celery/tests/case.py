@@ -138,6 +138,7 @@ class Mock(mock.Mock):
         for attr_name, attr_value in items(attrs):
             setattr(self, attr_name, attr_value)
 
+
 class _ContextMock(Mock):
     """Dummy class implementing __enter__ and __exit__
     as the with statement requires these to be implemented
@@ -159,7 +160,6 @@ def ContextMock(*args, **kwargs):
     # so it must return None here.
     obj.__exit__.return_value = None
     return obj
-
 
 
 def skip_unless_module(module):

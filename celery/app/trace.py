@@ -263,8 +263,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 try:
                     if postrun_receivers:
                         send_postrun(sender=task, task_id=uuid, task=task,
-                                    args=args, kwargs=kwargs,
-                                    retval=retval, state=state)
+                                     args=args, kwargs=kwargs,
+                                     retval=retval, state=state)
                 finally:
                     pop_task()
                     pop_request()
