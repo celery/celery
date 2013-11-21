@@ -182,7 +182,7 @@ _get_worker_pids() {
 
 
 start_workers () {
-    if [ -z "$CELERYD_ULIMIT" ]; then
+    if [ ! -z "$CELERYD_ULIMIT" ]; then
         ulimit $CELERYD_ULIMIT
     fi
     $CELERYD_MULTI $* start $CELERYD_NODES $DAEMON_OPTS     \
