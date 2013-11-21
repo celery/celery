@@ -386,23 +386,23 @@ class test_Gossip(AppCase):
     def test_on_node_join(self):
         c = self.Consumer()
         g = Gossip(c)
-        with patch('celery.worker.consumer.info') as info:
+        with patch('celery.worker.consumer.debug') as debug:
             g.on_node_join(c)
-            info.assert_called_with('%s joined the party', 'foo@x.com')
+            debug.assert_called_with('%s joined the party', 'foo@x.com')
 
     def test_on_node_leave(self):
         c = self.Consumer()
         g = Gossip(c)
-        with patch('celery.worker.consumer.info') as info:
+        with patch('celery.worker.consumer.debug') as debug:
             g.on_node_leave(c)
-            info.assert_called_with('%s left', 'foo@x.com')
+            debug.assert_called_with('%s left', 'foo@x.com')
 
     def test_on_node_lost(self):
         c = self.Consumer()
         g = Gossip(c)
-        with patch('celery.worker.consumer.warn') as warn:
+        with patch('celery.worker.consumer.info') as info:
             g.on_node_lost(c)
-            warn.assert_called_with('%s went missing!', 'foo@x.com')
+            info.assert_called_with('missed heartbeat from %s', 'foo@x.com')
 
     def test_register_timer(self):
         c = self.Consumer()

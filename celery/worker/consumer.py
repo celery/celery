@@ -688,13 +688,13 @@ class Gossip(bootsteps.ConsumerStep):
             self.consensus_replies.pop(id, None)
 
     def on_node_join(self, worker):
-        info('%s joined the party', worker.hostname)
+        debug('%s joined the party', worker.hostname)
 
     def on_node_leave(self, worker):
-        info('%s left', worker.hostname)
+        debug('%s left', worker.hostname)
 
     def on_node_lost(self, worker):
-        warn('%s went missing!', worker.hostname)
+        info('missed heartbeat from %s', worker.hostname)
 
     def register_timer(self):
         if self._tref is not None:
@@ -765,8 +765,8 @@ class Mingle(bootsteps.StartStopStep):
         replies = I.hello(c.hostname, revoked._data) or {}
         replies.pop(c.hostname, None)
         if replies:
-            info('mingle: hello %s! sync with me',
-                 ', '.join(reply for reply, value in items(replies) if value))
+            info('mingle: sync with %s nodes',
+                 len([reply for reply, value in items(replies) if value]))
             for reply in values(replies):
                 if reply:
                     try:
@@ -776,6 +776,7 @@ class Mingle(bootsteps.StartStopStep):
                     else:
                         c.app.clock.adjust(other_clock)
                         revoked.update(other_revoked)
+            info('mingle: sync complete')
         else:
             info('mingle: all alone')
 
