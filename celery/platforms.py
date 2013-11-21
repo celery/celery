@@ -493,6 +493,8 @@ def maybe_drop_privileges(uid=None, gid=None):
     If only GID is specified, only the group is changed.
 
     """
+    if sys.platform == 'win32':
+        return
     if os.geteuid():
         # no point trying to setuid unless we're root.
         if not os.getuid():
