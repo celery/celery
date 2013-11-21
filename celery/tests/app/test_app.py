@@ -190,7 +190,6 @@ class test_App(AppCase):
         self.assertTrue(loads(dumps(self.app)))
 
     def test_autodiscover_tasks_force(self):
-        self.app.conf.CELERY_FORCE_BILLIARD_LOGGING = True
         self.app.loader.autodiscover_tasks = Mock()
         self.app.autodiscover_tasks(['proj.A', 'proj.B'], force=True)
         self.app.loader.autodiscover_tasks.assert_called_with(

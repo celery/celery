@@ -100,7 +100,6 @@ NAMESPACES = {
         'ACKS_LATE': Option(False, type='bool'),
         'ALWAYS_EAGER': Option(False, type='bool'),
         'ANNOTATIONS': Option(type='any'),
-        'FORCE_BILLIARD_LOGGING': Option(True, type='bool'),
         'BROADCAST_QUEUE': Option('celeryctl'),
         'BROADCAST_EXCHANGE': Option('celeryctl'),
         'BROADCAST_EXCHANGE_TYPE': Option('fanout'),

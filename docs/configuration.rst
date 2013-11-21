@@ -1652,23 +1652,6 @@ Can be one of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
 
 Default is :const:`WARNING`.
 
-.. setting:: CELERY_FORCE_BILLIARD_LOGGING
-
-CELERY_FORCE_BILLIARD_LOGGING
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 3.1
-
-Celery uses :mod:`multiprocessing`'s fork called `billiard` as a pool
-implementation. Python assumes we use :mod:`multiprocessing` when trying
-to log `processName` though. By default this option forces Celery to modify
-the logger class as early as possible in order to provide correct process
-name in log messages. If you are going to use :mod:`multiprocessing` along
-with Celery, you can disable this behavior by setting
-`CELERY_FORCE_BILLIARD_LOGGING = False`.
-
-Default is :const:`True`.
-
 .. _conf-security:
 
 Security
