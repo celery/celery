@@ -153,9 +153,11 @@ class TaskType(type):
         # in the '_app' attribute.  Previously this was a regular attribute,
         # so we should support classes defining it.
         app = attrs.pop('_app', None) or attrs.pop('app', None)
+
+        # Attempt to inherit app from one the bases
         if not isinstance(app, Proxy) and app is None:
             for base in bases:
-                if base._app:
+                if getattr(base, '_app', None):
                     app = base._app
                     break
             else:
