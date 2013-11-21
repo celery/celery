@@ -9,7 +9,6 @@
 from __future__ import absolute_import
 
 import os
-import sys
 
 from billiard import forking_enable
 from billiard.pool import RUN, CLOSE, Pool as BlockingPool
@@ -36,11 +35,6 @@ WORKER_SIGRESET = frozenset(['SIGTERM',
 
 #: List of signals to ignore when a child process starts.
 WORKER_SIGIGNORE = frozenset(['SIGINT'])
-
-MAXTASKS_NO_BILLIARD = """\
-    maxtasksperchild enabled but billiard C extension not installed!
-    This may lead to a deadlock, so please install the billiard C extension.
-"""
 
 logger = get_logger(__name__)
 warning, debug = logger.warning, logger.debug
@@ -108,14 +102,6 @@ class TaskPool(BasePool):
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
-        if self.options.get('maxtasksperchild') and sys.platform != 'win32':
-            try:
-                from billiard.connection import Connection
-                Connection.send_offset
-            except (ImportError, AttributeError):
-                # billiard C extension not installed
-                warning(MAXTASKS_NO_BILLIARD)
-
         forking_enable(self.forking_enable)
         Pool = (self.BlockingPool if self.options.get('threads', True)
                 else self.Pool)
