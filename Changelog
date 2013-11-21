@@ -8,6 +8,118 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.5:
+
+3.1.5
+=====
+:release-date: 2013-11-21 6:00 P.M UTC
+:release-by: Ask Solem
+
+- Now depends on :ref:`Kombu 3.0.6 <kombu:version-3.0.6>`.
+
+- Now depends on :mod:`billiard` 3.3.0.8
+
+- App: ``config_from_object`` is now lazy (Issue #1665).
+
+- App: ``autodiscover_tasks`` is now lazy.
+
+    Django users should now wrap access to the settings object
+    in a lambda::
+
+        app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+
+    this ensures that the settings object is not prepared
+    prematurely.
+
+- Fixed regression for ``--app`` argument experienced by
+  some users (Issue #1653).
+
+- Worker: Now respects the ``--uid`` and ``--gid`` arguments
+  even if ``--detach`` is not enabled.
+
+- Beat: Now respects the ``--uid`` and ``--gid`` arguments
+  even if ``--detach`` is not enabled.
+
+- Python 3: Fixed unorderable error occuring with the worker ``-B``
+  argument enabled.
+
+- ``celery.VERSION`` is now a named tuple.
+
+- ``maybe_signature(list)`` is now applied recursively (Issue #1645).
+
+- ``celery shell`` command: Fixed ``IPython.frontend`` deprecation warning.
+
+- The default app no longer includes the builtin fixups.
+
+    This fixes a bug where ``celery multi`` would attempt
+    to load the Django settings module before entering
+    the target working directory.
+
+- The Django daemonization tutorial was changed.
+
+    Users no longer have to explicitly export ``DJANGO_SETTINGS_MODULE``
+    in :file:`/etc/default/celeryd` when the new project layout is used.
+
+- Redis result backend: expiry value can now be 0 (Issue #1661).
+
+- Censoring settings now accounts for non-string keys (Issue #1663).
+
+- App: New ``autofinalize`` option.
+
+    Apps are automatically finalized when the task registry is accessed.
+    You can now disable this behavior so that an exception is raised
+    instead.
+
+    Example:
+
+    .. code-block:: python
+
+        app = Celery(autofinalize=False)
+
+        # raises RuntimeError
+        tasks = app.tasks
+
+        @app.task
+        def add(x, y):
+            return x + y
+
+        # raises RuntimeError
+        add.delay(2, 2)
+
+        app.finalize()
+        # no longer raises:
+        tasks = app.tasks
+        add.delay(2, 2)
+
+- The worker did not send monitoring events during shutdown.
+
+- Worker: Mingle and gossip is now automatically disabled when
+  used with an unsupported transport (Issue #1664).
+
+- ``celery`` command:  Preload options now supports
+  the rare ``--opt value`` format (Issue #1668).
+
+- ``celery`` command: Accidentally removed options
+  appearing before the subcommand, these are now moved to the end
+  instead.
+
+- Worker now properly responds to ``inspect stats`` commands
+  even if received before startup is complete (Issue #1659).
+
+- :signal:`task_postrun` is now sent within a finally block, to make
+  sure the signal is always sent.
+
+- Beat: Fixed syntax error in string formatting.
+
+    Contributed by nadad.
+
+- Fixed typos in the documentation.
+
+    Fixes contributed by Loic Bistuer, sunfinite.
+
+- Nested chains now works properly when constructed using the
+  ``chain`` type instead of the ``|`` operator (Issue #1656).
+
 .. _version-3.1.4:
 
 3.1.4
@@ -15,7 +127,7 @@ new in Celery 3.1.
 :release-date: 2013-11-15 11:40 P.M UTC
 :release-by: Ask Solem
 
-- Now depends on :mod:`kombu` 3.0.5
+- Now depends on :ref:`Kombu 3.0.5 <kombu:version-3.0.5>`.
 
 - Now depends on :mod:`billiard` 3.3.0.7
 
