@@ -12,6 +12,7 @@
 2.0.3
 =====
 :release-date: 2010-08-27 12:00 P.M CEST
+:release-by: Ask Solem
 
 .. _v203-fixes:
 
@@ -148,6 +149,7 @@ Documentation
 2.0.2
 =====
 :release-date: 2010-07-22 11:31 A.M CEST
+:release-by: Ask Solem
 
 * Routes: When using the dict route syntax, the exchange for a task
   could disappear making the task unroutable.
@@ -265,6 +267,7 @@ Documentation
 2.0.1
 =====
 :release-date: 2010-07-09 03:02 P.M CEST
+:release-by: Ask Solem
 
 * multiprocessing.pool: Now handles encoding errors, so that pickling errors
   doesn't crash the worker processes.
@@ -396,6 +399,7 @@ Documentation
 2.0.0
 =====
 :release-date: 2010-07-02 02:30 P.M CEST
+:release-by: Ask Solem
 
 Foreword
 --------

@@ -12,7 +12,7 @@
 2.3.4
 =====
 :release-date: 2011-11-25 16:00 P.M GMT
-:by: Ask Solem
+:release-by: Ask Solem
 
 .. _v234-security-fixes:
 
@@ -46,7 +46,7 @@ Fixes
 2.3.3
 =====
 :release-date: 2011-16-09 05:00 P.M BST
-:by: Mher Movsisyan
+:release-by: Mher Movsisyan
 
 * Monkey patching :attr:`sys.stdout` could result in the worker
   crashing if the replacing object did not define :meth:`isatty`
@@ -61,6 +61,7 @@ Fixes
 2.3.2
 =====
 :release-date: 2011-10-07 05:00 P.M BST
+:release-by: Ask Solem
 
 .. _v232-news:
 
@@ -124,6 +125,7 @@ Fixes
 2.3.1
 =====
 :release-date: 2011-08-07 08:00 P.M BST
+:release-by: Ask Solem
 
 Fixes
 -----
@@ -138,6 +140,7 @@ Fixes
 =====
 :release-date: 2011-08-05 12:00 P.M BST
 :tested: cPython: 2.5, 2.6, 2.7; PyPy: 1.5; Jython: 2.5.2
+:release-by: Ask Solem
 
 .. _v230-important:
 

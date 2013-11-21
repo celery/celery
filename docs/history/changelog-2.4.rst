@@ -12,7 +12,7 @@
 2.4.5
 =====
 :release-date: 2011-12-02 05:00 P.M GMT
-:by: Ask Solem
+:release-by: Ask Solem
 
 * Periodic task interval schedules were accidentally rounded down,
   resulting in some periodic tasks being executed early.
@@ -29,7 +29,7 @@
 2.4.4
 =====
 :release-date: 2011-11-25 16:00 P.M GMT
-:by: Ask Solem
+:release-by: Ask Solem
 
 .. _v244-security-fixes:
 
@@ -80,7 +80,7 @@ Fixes
 2.4.3
 =====
 :release-date: 2011-11-22 18:00 P.M GMT
-:by: Ask Solem
+:release-by: Ask Solem
 
 * Fixes module import typo in `celeryctl` (Issue #538).
 
@@ -91,7 +91,7 @@ Fixes
 2.4.2
 =====
 :release-date: 2011-11-14 12:00 P.M GMT
-:by: Ask Solem
+:release-by: Ask Solem
 
 * Program module no longer uses relative imports so that it is
   possible to do ``python -m celery.bin.name``.
@@ -101,7 +101,7 @@ Fixes
 2.4.1
 =====
 :release-date: 2011-11-07 06:00 P.M GMT
-:by: Ask Solem
+:release-by: Ask Solem
 
 * celeryctl inspect commands was missing output.
 
@@ -120,7 +120,7 @@ Fixes
 2.4.0
 =====
 :release-date: 2011-11-04 04:00 P.M GMT
-:by: Ask Solem
+:release-by: Ask Solem
 
 .. _v240-important:
 

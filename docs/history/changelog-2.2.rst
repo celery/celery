@@ -12,7 +12,7 @@
 2.2.8
 =====
 :release-date: 2011-11-25 16:00 P.M GMT
-:by: Ask Solem
+:release-by: Ask Solem
 
 .. _v228-security-fixes:
 
@@ -36,6 +36,7 @@ Security Fixes
 2.2.7
 =====
 :release-date: 2011-06-13 16:00 P.M BST
+:release-by: Ask Solem
 
 * New signals: :signal:`after_setup_logger` and
   :signal:`after_setup_task_logger`
@@ -59,6 +60,7 @@ Security Fixes
 2.2.6
 =====
 :release-date: 2011-04-15 16:00 P.M CEST
+:release-by: Ask Solem
 
 .. _v226-important:
 
@@ -116,6 +118,7 @@ Fixes
 2.2.5
 =====
 :release-date: 2011-03-28 06:00 P.M CEST
+:release-by: Ask Solem
 
 .. _v225-important:
 
@@ -299,6 +302,7 @@ Fixes
 2.2.4
 =====
 :release-date: 2011-02-19 12:00 AM CET
+:release-by: Ask Solem
 
 .. _v224-fixes:
 
@@ -331,6 +335,7 @@ Fixes
 2.2.3
 =====
 :release-date: 2011-02-12 04:00 P.M CET
+:release-by: Ask Solem
 
 .. _v223-fixes:
 
@@ -388,6 +393,7 @@ Fixes
 2.2.2
 =====
 :release-date: 2011-02-03 04:00 P.M CET
+:release-by: Ask Solem
 
 .. _v222-fixes:
 
@@ -418,6 +424,7 @@ Fixes
 2.2.1
 =====
 :release-date: 2011-02-02 04:00 P.M CET
+:release-by: Ask Solem
 
 .. _v221-fixes:
 
@@ -441,6 +448,7 @@ Fixes
 2.2.0
 =====
 :release-date: 2011-02-01 10:00 AM CET
+:release-by: Ask Solem
 
 .. _v220-important:
 

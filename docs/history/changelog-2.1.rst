@@ -12,6 +12,7 @@
 2.1.4
 =====
 :release-date: 2010-12-03 12:00 P.M CEST
+:release-by: Ask Solem
 
 .. _v214-fixes:
 
@@ -69,6 +70,7 @@ Documentation
 2.1.3
 =====
 :release-date: 2010-11-09 05:00 P.M CEST
+:release-by: Ask Solem
 
 .. _v213-fixes:
 
@@ -116,6 +118,7 @@ Fixes
 2.1.1
 =====
 :release-date: 2010-10-14 02:00 P.M CEST
+:release-by: Ask Solem
 
 .. _v211-fixes:
 
@@ -255,6 +258,7 @@ News
 2.1.0
 =====
 :release-date: 2010-10-08 12:00 P.M CEST
+:release-by: Ask Solem
 
 .. _v210-important:
 

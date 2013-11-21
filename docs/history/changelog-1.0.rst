@@ -12,6 +12,7 @@
 1.0.6
 =====
 :release-date: 2010-06-30 09:57 A.M CEST
+:release-by: Ask Solem
 
 * RabbitMQ 1.8.0 has extended their exchange equivalence tests to
   include `auto_delete` and `durable`. This broke the AMQP backend.
@@ -34,6 +35,7 @@
 1.0.5
 =====
 :release-date: 2010-06-01 02:36 P.M CEST
+:release-by: Ask Solem
 
 .. _v105-critical:
 
@@ -95,6 +97,7 @@ Changes
 1.0.4
 =====
 :release-date: 2010-05-31 09:54 A.M CEST
+:release-by: Ask Solem
 
 * Changelog merged with 1.0.5 as the release was never announced.
 
@@ -103,6 +106,7 @@ Changes
 1.0.3
 =====
 :release-date: 2010-05-15 03:00 P.M CEST
+:release-by: Ask Solem
 
 .. _v103-important:
 
@@ -362,6 +366,7 @@ Fixes
 1.0.2
 =====
 :release-date: 2010-03-31 12:50 P.M CET
+:release-by: Ask Solem
 
 * Deprecated: :setting:`CELERY_BACKEND`, please use
   :setting:`CELERY_RESULT_BACKEND` instead.
@@ -450,6 +455,7 @@ Fixes
 1.0.1
 =====
 :release-date: 2010-02-24 07:05 P.M CET
+:release-by: Ask Solem
 
 * Tasks are now acknowledged early instead of late.
 
@@ -615,6 +621,7 @@ Fixes
 1.0.0
 =====
 :release-date: 2010-02-10 04:00 P.M CET
+:release-by: Ask Solem
 
 .. _v100-incompatible:
 
@@ -949,6 +956,7 @@ Documentation
 0.8.4
 =====
 :release-date: 2010-02-05 01:52 P.M CEST
+:release-by: Ask Solem
 
 * Now emits a warning if the --detach argument is used.
   --detach should not be used anymore, as it has several not easily fixed
@@ -966,6 +974,7 @@ Documentation
 0.8.3
 =====
 :release-date: 2009-12-22 09:43 A.M CEST
+:release-by: Ask Solem
 
 * Fixed a possible race condition that could happen when storing/querying
   task results using the database backend.
@@ -978,6 +987,7 @@ Documentation
 0.8.2
 =====
 :release-date: 2009-11-20 03:40 P.M CEST
+:release-by: Ask Solem
 
 * QOS Prefetch count was not applied properly, as it was set for every message
   received (which apparently behaves like, "receive one more"), instead of only
@@ -988,6 +998,7 @@ Documentation
 0.8.1
 =================================
 :release-date: 2009-11-16 05:21 P.M CEST
+:release-by: Ask Solem
 
 .. _v081-very-important:
 
@@ -1080,6 +1091,7 @@ Changes
 0.8.0
 =====
 :release-date: 2009-09-22 03:06 P.M CEST
+:release-by: Ask Solem
 
 .. _v080-incompatible:
 
@@ -1225,6 +1237,7 @@ News
 0.6.0
 =====
 :release-date: 2009-08-07 06:54 A.M CET
+:release-by: Ask Solem
 
 .. _v060-important:
 
@@ -1306,6 +1319,7 @@ News
 0.4.1
 =====
 :release-date: 2009-07-02 01:42 P.M CET
+:release-by: Ask Solem
 
 * Fixed a bug with parsing the message options (`mandatory`,
   `routing_key`, `priority`, `immediate`)
@@ -1315,6 +1329,7 @@ News
 0.4.0
 =====
 :release-date: 2009-07-01 07:29 P.M CET
+:release-by: Ask Solem
 
 * Adds eager execution. `celery.execute.apply`|`Task.apply` executes the
   function blocking until the task is done, for API compatibility it
@@ -1331,6 +1346,7 @@ News
 0.3.20
 ======
 :release-date: 2009-06-25 08:42 P.M CET
+:release-by: Ask Solem
 
 * New arguments to `apply_async` (the advanced version of
   `delay_task`), `countdown` and `eta`;
@@ -1413,6 +1429,7 @@ News
 0.3.7
 =====
 :release-date: 2008-06-16 11:41 P.M CET
+:release-by: Ask Solem
 
 * **IMPORTANT** Now uses AMQP`s `basic.consume` instead of
   `basic.get`. This means we're no longer polling the broker for
@@ -1479,6 +1496,7 @@ News
 0.3.3
 =====
 :release-date: 2009-06-08 01:07 P.M CET
+:release-by: Ask Solem
 
 * The `PeriodicWorkController` now sleeps for 1 second between checking
   for periodic tasks to execute.
@@ -1488,6 +1506,7 @@ News
 0.3.2
 =====
 :release-date: 2009-06-08 01:07 P.M CET
+:release-by: Ask Solem
 
 * worker: Added option `--discard`: Discard (delete!) all waiting
   messages in the queue.
@@ -1499,6 +1518,7 @@ News
 0.3.1
 =====
 :release-date: 2009-06-08 01:07 P.M CET
+:release-by: Ask Solem
 
 * The `PeriodicTask` worker is now running in its own thread instead
   of blocking the `TaskController` loop.
@@ -1510,6 +1530,7 @@ News
 0.3.0
 =====
 :release-date: 2009-06-08 12:41 P.M CET
+:release-by: Ask Solem
 
 .. warning::
 
@@ -1587,6 +1608,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.2.0
 =====
 :release-date: 2009-05-20 05:14 P.M CET
+:release-by: Ask Solem
 
 * Final release of 0.2.0
 
@@ -1600,6 +1622,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.2.0-pre3
 ==========
 :release-date: 2009-05-20 05:14 P.M CET
+:release-by: Ask Solem
 
 * *Internal release*. Improved handling of unpickleable exceptions,
   `get_result` now tries to recreate something looking like the
@@ -1610,6 +1633,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.2.0-pre2
 ==========
 :release-date: 2009-05-20 01:56 P.M CET
+:release-by: Ask Solem
 
 * Now handles unpickleable exceptions (like the dynamically generated
   subclasses of `django.core.exception.MultipleObjectsReturned`).
@@ -1619,6 +1643,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.2.0-pre1
 ==========
 :release-date: 2009-05-20 12:33 P.M CET
+:release-by: Ask Solem
 
 * It's getting quite stable, with a lot of new features, so bump
   version to 0.2. This is a pre-release.
@@ -1632,6 +1657,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.1.15
 ======
 :release-date: 2009-05-19 04:13 P.M CET
+:release-by: Ask Solem
 
 * The celery daemon was leaking AMQP connections, this should be fixed,
   if you have any problems with too many files open (like `emfile`
@@ -1642,6 +1668,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.1.14
 ======
 :release-date: 2009-05-19 01:08 P.M CET
+:release-by: Ask Solem
 
 * Fixed a syntax error in the `TaskSet` class.  (No such variable
   `TimeOutError`).
@@ -1651,6 +1678,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.1.13
 ======
 :release-date: 2009-05-19 12:36 P.M CET
+:release-by: Ask Solem
 
 * Forgot to add `yadayada` to install requirements.
 
@@ -1677,6 +1705,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.1.12
 ======
 :release-date: 2009-05-18 04:38 P.M CET
+:release-by: Ask Solem
 
 * `delay_task()` etc. now returns `celery.task.AsyncResult` object,
   which lets you check the result and any failure that might have
@@ -1718,6 +1747,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.1.11
 ======
 :release-date: 2009-05-12 02:08 P.M CET
+:release-by: Ask Solem
 
 * The logging system was leaking file descriptors, resulting in
   servers stopping with the EMFILES (too many open files) error. (fixed)
@@ -1727,6 +1757,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.1.10
 ======
 :release-date: 2009-05-11 12:46 P.M CET
+:release-by: Ask Solem
 
 * Tasks now supports both positional arguments and keyword arguments.
 
@@ -1739,6 +1770,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.1.8
 =====
 :release-date: 2009-05-07 12:27 P.M CET
+:release-by: Ask Solem
 
 * Better test coverage
 * More documentation
@@ -1750,6 +1782,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.1.7
 =====
 :release-date: 2009-04-30 01:50 P.M CET
+:release-by: Ask Solem
 
 * Added some unit tests
 
@@ -1768,6 +1801,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.1.6
 =====
 :release-date: 2009-04-28 02:13 P.M CET
+:release-by: Ask Solem
 
 * Introducing `TaskSet`. A set of subtasks is executed and you can
   find out how many, or if all them, are done (excellent for progress
@@ -1814,5 +1848,6 @@ arguments, so be sure to flush your task queue before you upgrade.
 0.1.0
 =====
 :release-date: 2009-04-24 11:28 A.M CET
+:release-by: Ask Solem
 
 * Initial release
