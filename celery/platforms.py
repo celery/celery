@@ -244,9 +244,9 @@ def _create_pidlock(pidfile):
 if hasattr(os, 'closerange'):
 
     def close_open_fds(keep=None):
-        keep = [maybe_fileno(f)
-                for f in uniq(sorted(keep or []))
-                if maybe_fileno(f) is not None]
+        keep = list(uniq(sorted(filter(None, (
+            maybe_fileno(f) for f in keep or []
+        )))))
         maxfd = get_fdmax(default=2048)
         kL, kH = iter([-1] + keep), iter(keep + [maxfd])
         for low, high in zip_longest(kL, kH):
