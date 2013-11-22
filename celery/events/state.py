@@ -18,6 +18,7 @@
 """
 from __future__ import absolute_import
 
+import sys
 import threading
 
 from datetime import datetime
@@ -47,6 +48,8 @@ DRIFT_WARNING = """\
 Substantial drift from %s may mean clocks are out of sync.  Current drift is
 %s seconds.  [orig: %s recv: %s]
 """
+
+CAN_KWDICT = sys.version_info >= (2, 6, 5)
 
 logger = get_logger(__name__)
 warn = logger.warning
@@ -352,7 +355,7 @@ class State(object):
             worker, created = self.get_or_create_worker(hostname)
             handler = getattr(worker, 'on_' + type, None)
             if handler:
-                handler(**fields)
+                handler(**(fields if CAN_KWDICT else kwdict(fields)))
             return worker, created
 
     def task_event(self, type, fields, timetuple=timetuple):
