@@ -12,7 +12,7 @@ import os
 import threading
 import warnings
 
-from collections import Callable, defaultdict, deque
+from collections import defaultdict, deque
 from contextlib import contextmanager
 from copy import deepcopy
 from operator import attrgetter
@@ -213,7 +213,7 @@ class Celery(object):
 
             return _create_task_cls
 
-        if len(args) == 1 and isinstance(args[0], Callable):
+        if len(args) == 1 and callable(args[0]):
             return inner_create_task_cls(**opts)(*args)
         if args:
             raise TypeError(
@@ -252,7 +252,7 @@ class Celery(object):
                     task.bind(self)
 
     def add_defaults(self, fun):
-        if not isinstance(fun, Callable):
+        if not callable(fun):
             d, fun = fun, lambda: d
         if self.configured:
             return self.conf.add_defaults(fun())
@@ -290,7 +290,7 @@ class Celery(object):
 
     def _autodiscover_tasks(self, packages, related_name='tasks', **kwargs):
         # argument may be lazy
-        packages = packages() if isinstance(packages, Callable) else packages
+        packages = packages() if callable(packages) else packages
         self.loader.autodiscover_tasks(packages, related_name)
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,

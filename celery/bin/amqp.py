@@ -12,7 +12,6 @@ import sys
 import shlex
 import pprint
 
-from collections import Callable
 from functools import partial
 from itertools import count
 
@@ -99,7 +98,7 @@ class Spec(object):
         """Format the return value of this command in a human-friendly way."""
         if not self.returns:
             return 'ok.' if response is None else response
-        if isinstance(self.returns, Callable):
+        if callable(self.returns):
             return self.returns(response)
         return self.returns.format(response)
 

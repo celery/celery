@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-from collections import Callable
 from datetime import datetime, timedelta
 
 from kombu import Queue
@@ -267,8 +266,9 @@ class test_tasks(TasksCase):
     def test_regular_task(self):
         self.assertIsInstance(self.mytask, Task)
         self.assertTrue(self.mytask.run())
-        self.assertTrue(isinstance(self.mytask, Callable),
-                        'Task class is callable()')
+        self.assertTrue(
+            callable(self.mytask), 'Task class is callable()',
+        )
         self.assertTrue(self.mytask(), 'Task class runs run() when called')
 
         with self.app.connection_or_acquire() as conn:
