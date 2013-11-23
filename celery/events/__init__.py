@@ -12,7 +12,6 @@ from __future__ import absolute_import
 
 import os
 import time
-import socket
 import threading
 import warnings
 
@@ -27,7 +26,7 @@ from kombu.mixins import ConsumerMixin
 from kombu.utils import cached_property
 
 from celery.app import app_or_default
-from celery.utils import uuid
+from celery.utils import anon_nodename, uuid
 from celery.utils.functional import dictfilter
 from celery.utils.timeutils import adjust_timestamp, utcoffset, maybe_s_to_ms
 
@@ -90,7 +89,8 @@ class EventDispatcher(object):
     :param connection: Connection to the broker.
 
     :keyword hostname: Hostname to identify ourselves as,
-        by default uses the hostname returned by :func:`socket.gethostname`.
+        by default uses the hostname returned by
+        :func:`~celery.utils.anon_nodename`.
 
     :keyword groups: List of groups to send events for.  :meth:`send` will
         ignore send requests to groups not in this list.
@@ -126,7 +126,7 @@ class EventDispatcher(object):
         self.app = app_or_default(app or self.app)
         self.connection = connection
         self.channel = channel
-        self.hostname = hostname or socket.gethostname()
+        self.hostname = hostname or anon_nodename()
         self.buffer_while_offline = buffer_while_offline
         self.mutex = threading.Lock()
         self.producer = None

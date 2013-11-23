@@ -9,6 +9,7 @@
 from __future__ import absolute_import, print_function
 
 import os
+import socket
 import sys
 import traceback
 import warnings
@@ -268,6 +269,11 @@ def gen_task_name(app, name, module_name):
 def nodename(name, hostname):
     """Create node name from name/hostname pair."""
     return NODENAME_SEP.join((name, hostname))
+
+
+def anon_nodename(hostname=None, prefix='gen'):
+    return nodename(''.join([prefix, str(os.getpid())]),
+                    hostname or socket.gethostname())
 
 
 def nodesplit(nodename):
