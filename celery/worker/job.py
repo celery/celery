@@ -106,7 +106,7 @@ class Request(object):
 
     #: Format string used to log internal error.
     internal_error_msg = """\
-        Task %(name)s[%(id)s] %(descriptions)s: %(exc)s
+        Task %(name)s[%(id)s] %(description)s: %(exc)s
     """
 
     ignored_msg = """\
