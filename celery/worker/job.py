@@ -101,16 +101,16 @@ class Request(object):
 
     #: Format string used to log task failure.
     error_msg = """\
-        Task %(name)s[%(id)s] raised exception: %(exc)s
+        Task %(name)s[%(id)s] %(description)s: %(exc)s
     """
 
     #: Format string used to log internal error.
     internal_error_msg = """\
-        Task %(name)s[%(id)s] INTERNAL ERROR: %(exc)s
+        Task %(name)s[%(id)s] %(descriptions)s: %(exc)s
     """
 
     ignored_msg = """\
-        Task %(name)s[%(id)s] ignored
+        Task %(name)s[%(id)s] %(description)s
     """
 
     rejected_msg = """\
@@ -437,17 +437,23 @@ class Request(object):
 
     def _log_error(self, einfo, send_failed_event=True):
         einfo.exception = get_pickled_exception(einfo.exception)
+        eobj = einfo.exception
         exception, traceback, exc_info, internal, sargs, skwargs = (
-            safe_repr(einfo.exception),
+            safe_repr(eobj),
             safe_str(einfo.traceback),
             einfo.exc_info,
             einfo.internal,
             safe_repr(self.args),
             safe_repr(self.kwargs),
         )
+        task = self.task
+        if task.throws and isinstance(eobj, task.throws):
+            severity, exc_info = logging.INFO, None
+            description = 'raised expected'
+        else:
+            severity = logging.ERROR
+            description = 'raised unexpected'
         format = self.error_msg
-        description = 'raised exception'
-        severity = logging.ERROR
         if send_failed_event:
             self.send_event(
                 'task-failed', exception=exception, traceback=traceback,
@@ -493,7 +499,7 @@ class Request(object):
                                    'hostname': self.hostname,
                                    'internal': internal}})
 
-        self.task.send_error_email(context, einfo.exception)
+        task.send_error_email(context, einfo.exception)
 
     def acknowledge(self):
         """Acknowledge task."""

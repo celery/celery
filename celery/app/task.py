@@ -313,6 +313,14 @@ class Task(object):
     #: :setting:`CELERY_ACKS_LATE` setting.
     acks_late = None
 
+    #: List/tuple of expected exceptions.
+    #:
+    #: These are errors that are expected in normal operation
+    #: and that should not be regarded as a real error by the worker.
+    #: Currently this means that the state will be updated to an error
+    #: state, but the worker will not log the event as an error.
+    throws = ()
+
     #: Default task expiry time.
     expires = None
 
