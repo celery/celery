@@ -769,6 +769,11 @@ class Task(object):
         from celery import xstarmap
         return xstarmap(self.s(), it, app=self.app)
 
+    def send_event(self, type_, **fields):
+        req = self.request
+        with self.app.events.default_dispatcher(hostname=req.hostname) as d:
+            return d.send(type_, uuid=req.id, **fields)
+
     def update_state(self, task_id=None, state=None, meta=None):
         """Update task state.
 
