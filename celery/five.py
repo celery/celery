@@ -48,12 +48,23 @@ except ImportError:                         # pragma: no cover
 
 from kombu.five import monotonic
 
+import six
+
+items = six.iteritems
+keys = six.iterkeys
+values = six.itervalues
+nextfun = six.Iterator
+exec_ = six.exec_
+reraise = six.reraise
+StringIO = six.StringIO
+BytesIO = six.BytesIO
+with_metaclass = six.with_metaclass
+
 if PY3:  # pragma: no cover
     import builtins
 
     from queue import Queue, Empty
     from itertools import zip_longest
-    from io import StringIO, BytesIO
 
     map = map
     string = str
@@ -64,25 +75,6 @@ if PY3:  # pragma: no cover
     int_types = (int, )
 
     open_fqdn = 'builtins.open'
-
-    def items(d):
-        return d.items()
-
-    def keys(d):
-        return d.keys()
-
-    def values(d):
-        return d.values()
-
-    def nextfun(it):
-        return it.__next__
-
-    exec_ = getattr(builtins, 'exec')
-
-    def reraise(tp, value, tb=None):
-        if value.__traceback__ is not tb:
-            raise value.with_traceback(tb)
-        raise value
 
     class WhateverIO(StringIO):
 
@@ -95,7 +87,6 @@ else:
     import __builtin__ as builtins  # noqa
     from Queue import Queue, Empty  # noqa
     from itertools import imap as map, izip_longest as zip_longest  # noqa
-    from StringIO import StringIO   # noqa
     string = unicode                # noqa
     string_t = basestring           # noqa
     text_t = unicode
@@ -105,33 +96,7 @@ else:
 
     open_fqdn = '__builtin__.open'
 
-    def items(d):                   # noqa
-        return d.iteritems()
-
-    def keys(d):                    # noqa
-        return d.iterkeys()
-
-    def values(d):                  # noqa
-        return d.itervalues()
-
-    def nextfun(it):                # noqa
-        return it.next
-
-    def exec_(code, globs=None, locs=None):  # pragma: no cover
-        """Execute code in a namespace."""
-        if globs is None:
-            frame = sys._getframe(1)
-            globs = frame.f_globals
-            if locs is None:
-                locs = frame.f_locals
-            del frame
-        elif locs is None:
-            locs = globs
-        exec("""exec code in globs, locs""")
-
-    exec_("""def reraise(tp, value, tb=None): raise tp, value, tb""")
-
-    BytesIO = WhateverIO = StringIO         # noqa
+    WhateverIO = StringIO         # noqa
 
 
 def with_metaclass(Type, skip_attrs=set(['__dict__', '__weakref__'])):
