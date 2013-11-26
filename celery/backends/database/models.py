@@ -57,7 +57,7 @@ class TaskSet(ResultModelBase):
     id = sa.Column(sa.Integer, sa.Sequence('taskset_id_sequence'),
                    autoincrement=True, primary_key=True)
     taskset_id = sa.Column(sa.String(255), unique=True)
-    result = sa.Column(sa.PickleType, nullable=True)
+    result = sa.Column(PickleType, nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
                           nullable=True)
 
