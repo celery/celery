@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import io
 import os
 import sys
 import warnings
@@ -132,12 +133,22 @@ class DjangoWorkerFixup(object):
             _oracle_database_errors
         )
 
+    def validate_models(self):
+        from django.core.management.validation import get_validation_errors
+        s = io.StringIO()
+        num_errors = get_validation_errors(s, None)
+        if num_errors:
+            raise RuntimeError(
+                'One or more Django models did not validate:\n{0}'.format(
+                    s.getvalue()))
+
     def install(self):
         signals.beat_embedded_init.connect(self.close_database)
         signals.worker_ready.connect(self.on_worker_ready)
         signals.task_prerun.connect(self.on_task_prerun)
         signals.task_postrun.connect(self.on_task_postrun)
         signals.worker_process_init.connect(self.on_worker_process_init)
+        self.validate_models()
         self.close_database()
         self.close_cache()
         return self
