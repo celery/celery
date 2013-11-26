@@ -8,6 +8,7 @@
 """
 from __future__ import absolute_import, print_function
 
+import io
 import os
 import socket
 import sys
@@ -22,7 +23,7 @@ from pprint import pprint
 from kombu.entity import Exchange, Queue
 
 from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
-from celery.five import StringIO, items, reraise, string_t
+from celery.five import items, reraise, string_t
 
 __all__ = ['worker_direct', 'warn_deprecated', 'deprecated', 'lpmerge',
            'is_iterable', 'isatty', 'cry', 'maybe_reraise', 'strtobool',
@@ -150,7 +151,7 @@ def cry(out=None, sepchr='=', seplen=49):  # pragma: no cover
     taken from https://gist.github.com/737056."""
     import threading
 
-    out = StringIO() if out is None else out
+    out = io.StringIO() if out is None else out
     P = partial(print, file=out)
 
     # get a map of threads by their ID so we can print their names

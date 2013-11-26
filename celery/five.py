@@ -11,7 +11,7 @@
 from __future__ import absolute_import
 
 __all__ = ['Counter', 'reload', 'UserList', 'UserDict', 'Queue', 'Empty',
-           'zip_longest', 'StringIO', 'BytesIO', 'map', 'string', 'string_t',
+           'zip_longest', 'map', 'string', 'string_t',
            'long_t', 'text_t', 'range', 'int_types', 'items', 'keys', 'values',
            'nextfun', 'reraise', 'WhateverIO', 'with_metaclass',
            'OrderedDict', 'THREAD_TIMEOUT_MAX', 'format_d',
@@ -53,7 +53,6 @@ if PY3:  # pragma: no cover
 
     from queue import Queue, Empty
     from itertools import zip_longest
-    from io import StringIO, BytesIO
 
     map = map
     string = str
@@ -84,6 +83,8 @@ if PY3:  # pragma: no cover
             raise value.with_traceback(tb)
         raise value
 
+    from io import StringIO
+
     class WhateverIO(StringIO):
 
         def write(self, data):
@@ -95,7 +96,6 @@ else:
     import __builtin__ as builtins  # noqa
     from Queue import Queue, Empty  # noqa
     from itertools import imap as map, izip_longest as zip_longest  # noqa
-    from StringIO import StringIO   # noqa
     string = unicode                # noqa
     string_t = basestring           # noqa
     text_t = unicode
@@ -131,7 +131,7 @@ else:
 
     exec_("""def reraise(tp, value, tb=None): raise tp, value, tb""")
 
-    BytesIO = WhateverIO = StringIO         # noqa
+    from io import StringIO as WhateverIO  # noqa
 
 
 def with_metaclass(Type, skip_attrs=set(['__dict__', '__weakref__'])):

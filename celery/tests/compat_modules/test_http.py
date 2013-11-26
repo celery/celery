@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 
 from contextlib import contextmanager
 from functools import wraps
+from io import StringIO
 try:
     from urllib import addinfourl
 except ImportError:  # py3k
@@ -11,7 +12,7 @@ except ImportError:  # py3k
 from anyjson import dumps
 from kombu.utils.encoding import from_utf8
 
-from celery.five import StringIO, items
+from celery.five import items
 from celery.task import http
 from celery.tests.case import AppCase, Case
 
