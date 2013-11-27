@@ -21,10 +21,11 @@ class FixupCase(AppCase):
 
     @contextmanager
     def fixup_context(self, app):
-        with patch('celery.fixups.django.import_module') as import_module:
+        with patch('celery.fixups.django.DjangoWorkerFixup.validate_models'):
             with patch('celery.fixups.django.symbol_by_name') as symbyname:
-                f = self.Fixup(app)
-                yield f, import_module, symbyname
+                with patch('celery.fixups.django.import_module') as import_module:
+                    f = self.Fixup(app)
+                    yield f, import_module, symbyname
 
 
 class test_DjangoFixup(FixupCase):
