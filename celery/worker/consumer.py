@@ -120,7 +120,7 @@ MINGLE_GET_FIELDS = itemgetter('clock', 'revoked')
 
 def dump_body(m, body):
     if isinstance(body, buffer_t):
-        body = bytes_t(buffer)
+        body = bytes_t(body)
     return '{0} ({1}b)'.format(truncate(safe_repr(body), 1024),
                                len(m.body))
 
@@ -779,7 +779,6 @@ class Gossip(bootsteps.ConsumerStep):
                 self.on_node_join(worker)
         else:
             self.clock.forward()
-
 
 
 class Evloop(bootsteps.StartStopStep):

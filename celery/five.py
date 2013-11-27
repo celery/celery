@@ -18,6 +18,8 @@ __all__ = ['Counter', 'reload', 'UserList', 'UserDict', 'Queue', 'Empty',
            'class_property', 'reclassmethod', 'create_module',
            'recreate_module', 'monotonic']
 
+import io
+
 try:
     from collections import Counter
 except ImportError:  # pragma: no cover
@@ -61,6 +63,7 @@ if PY3:  # pragma: no cover
     text_t = str
     range = range
     int_types = (int, )
+    _byte_t = bytes
 
     open_fqdn = 'builtins.open'
 
@@ -83,15 +86,6 @@ if PY3:  # pragma: no cover
             raise value.with_traceback(tb)
         raise value
 
-    from io import StringIO
-
-    class WhateverIO(StringIO):
-
-        def write(self, data):
-            if isinstance(data, bytes):
-                data = data.encode()
-            StringIO.write(self, data)
-
 else:
     import __builtin__ as builtins  # noqa
     from Queue import Queue, Empty  # noqa
@@ -102,6 +96,7 @@ else:
     long_t = long                   # noqa
     range = xrange
     int_types = (int, long)
+    _byte_t = (str, bytes)
 
     open_fqdn = '__builtin__.open'
 
@@ -130,8 +125,6 @@ else:
         exec("""exec code in globs, locs""")
 
     exec_("""def reraise(tp, value, tb=None): raise tp, value, tb""")
-
-    from io import StringIO as WhateverIO  # noqa
 
 
 def with_metaclass(Type, skip_attrs=set(['__dict__', '__weakref__'])):
@@ -385,3 +378,16 @@ def get_origins(defs):
     for module, attrs in items(defs):
         origins.update(dict((attr, module) for attr in attrs))
     return origins
+
+
+_SIO_write = io.StringIO.write
+_SIO_init = io.StringIO.__init__
+
+
+class WhateverIO(io.StringIO):
+
+    def __init__(self, v=None, *a, **kw):
+        _SIO_init(self, v.decode() if isinstance(v, _byte_t) else v, *a, **kw)
+
+    def write(self, data):
+        _SIO_write(self, data.decode() if isinstance(data, _byte_t) else data)

@@ -58,7 +58,10 @@ class test_TaskProducer(AppCase):
         now = datetime.datetime(2013, 11, 26, 16, 48, 46)
         prod.publish_task('tasks.add', (1, 1), {}, retry=False,
                           countdown=10, now=now)
-        self.assertEqual(prod.publish.call_args[0][0]['eta'], '2013-11-26T16:48:56+00:00')
+        self.assertEqual(
+            prod.publish.call_args[0][0]['eta'],
+            '2013-11-26T16:48:56+00:00',
+        )
 
     def test_publish_with_countdown_and_timezone(self):
         # use timezone with fixed offset to be sure it won't be changed
@@ -69,7 +72,10 @@ class test_TaskProducer(AppCase):
         now = datetime.datetime(2013, 11, 26, 16, 48, 46)
         prod.publish_task('tasks.add', (2, 2), {}, retry=False,
                           countdown=20, now=now)
-        self.assertEqual(prod.publish.call_args[0][0]['eta'], '2013-11-26T18:49:06+02:00')
+        self.assertEqual(
+            prod.publish.call_args[0][0]['eta'],
+            '2013-11-26T18:49:06+02:00',
+        )
 
     def test_event_dispatcher(self):
         prod = self.app.amqp.TaskProducer(Mock())

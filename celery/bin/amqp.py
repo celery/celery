@@ -71,7 +71,7 @@ class Spec(object):
 
         E.g. if :attr:`args` is `[('is_active', bool)]`:
 
-            >>> coerce(0, 'False')
+            >>> obj.coerce(0, 'False')
             False
 
         """
