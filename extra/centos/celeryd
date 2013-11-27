@@ -28,7 +28,16 @@
 #
 # Setting `prog` here allows you to symlink this init script, making it easy
 # to run multiple processes on the system.
-prog="$(basename $0)"
+
+# If we're invoked via SysV-style runlevel scripts we need to follow the 
+# link from rcX.d before working out the script name.
+if [[ `dirname $0` == /etc/rc*.d ]]; then
+    target="$(readlink $0)"
+else
+    target=$0
+fi
+
+prog="$(basename $target)"
 
 # Source the centos service helper functions
 source /etc/init.d/functions
