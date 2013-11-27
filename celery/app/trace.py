@@ -194,7 +194,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     signature = canvas.maybe_signature  # maybe_ does not clone if already
 
     def trace_task(uuid, args, kwargs, request=None):
-        R = I = retval = None
+        R = I = retval = state = None
         kwargs = kwdict(kwargs)
         try:
             push_task(task)
