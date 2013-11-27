@@ -21,6 +21,20 @@ __all__ = ['shared_task', 'load_shared_tasks']
 _shared_tasks = set()
 
 
+def maybe_unroll_group(g):
+    try:
+        size = len(g.tasks)
+    except TypeError:
+        try:
+            size = g.tasks.__length_hint__()
+        except (AttributeError, TypeError):
+            pass
+        else:
+            return list(g.tasks)[0] if size == 1 else g
+    else:
+        return g.tasks[0] if size == 1 else g
+
+
 def shared_task(constructor):
     """Decorator that specifies a function that generates a built-in task.
 
@@ -244,10 +258,13 @@ def add_chain_task(app):
                 res = task.freeze()
                 i += 1
 
+                if isinstance(task, group):
+                    task = maybe_unroll_group(task)
                 if isinstance(task, chain):
                     # splice the chain
                     steps.extendleft(reversed(task.tasks))
                     continue
+
                 elif isinstance(task, group) and steps and \
                         not isinstance(steps[0], group):
                     # automatically upgrade group(..) | s to chord(group, s)
@@ -270,6 +287,8 @@ def add_chain_task(app):
                     results.append(res)
                     tasks.append(task)
                 prev_task, prev_res = task, res
+
+            print(tasks)
 
             return tasks, results
 

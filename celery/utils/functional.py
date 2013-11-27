@@ -289,6 +289,9 @@ class _regen(UserList, list):
     def __reduce__(self):
         return list, (self.data, )
 
+    def __length_hint__(self):
+        return self.__it.__length_hint__()
+
     @cached_property
     def data(self):
         return list(self.__it)
