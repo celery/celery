@@ -21,20 +21,6 @@ __all__ = ['shared_task', 'load_shared_tasks']
 _shared_tasks = set()
 
 
-def maybe_unroll_group(g):
-    try:
-        size = len(g.tasks)
-    except TypeError:
-        try:
-            size = g.tasks.__length_hint__()
-        except (AttributeError, TypeError):
-            pass
-        else:
-            return list(g.tasks)[0] if size == 1 else g
-    else:
-        return g.tasks[0] if size == 1 else g
-
-
 def shared_task(constructor):
     """Decorator that specifies a function that generates a built-in task.
 
@@ -236,7 +222,10 @@ def add_group_task(app):
 
 @shared_task
 def add_chain_task(app):
-    from celery.canvas import Signature, chain, chord, group, maybe_signature
+    from celery.canvas import (
+        Signature, chain, chord, group, maybe_signature, maybe_unroll_group,
+    )
+
     _app = app
 
     class Chain(app.Task):
