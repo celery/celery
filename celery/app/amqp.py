@@ -21,6 +21,7 @@ from kombu.utils.functional import maybe_list
 from celery import signals
 from celery.five import items, string_t
 from celery.utils.text import indent as textindent
+from celery.utils.timeutils import to_utc
 
 from . import app_or_default
 from . import routes as _routes
@@ -249,12 +250,12 @@ class TaskProducer(Producer):
             now = now or self.app.now()
             eta = now + timedelta(seconds=countdown)
             if self.utc:
-                eta = eta.replace(tzinfo=self.app.timezone)
+                eta = to_utc(eta).astimezone(self.app.timezone)
         if isinstance(expires, (int, float)):
             now = now or self.app.now()
             expires = now + timedelta(seconds=expires)
             if self.utc:
-                expires = expires.replace(tzinfo=self.app.timezone)
+                expires = to_utc(expires).astimezone(self.app.timezone)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
