@@ -164,7 +164,7 @@ class test_get_best_memcache(AppCase, MockCacheMixin):
             with reset_modules('celery.backends.cache'):
                 from celery.backends import cache
                 cache._imp = [None]
-                self.assertEqual(cache.get_best_memcache().__module__,
+                self.assertEqual(cache.get_best_memcache()[0].__module__,
                                  'pylibmc')
 
     def test_memcache(self):
@@ -173,7 +173,7 @@ class test_get_best_memcache(AppCase, MockCacheMixin):
                 with mask_modules('pylibmc'):
                     from celery.backends import cache
                     cache._imp = [None]
-                    self.assertEqual(cache.get_best_memcache().__module__,
+                    self.assertEqual(cache.get_best_memcache()[0]().__module__,
                                      'memcache')
 
     def test_no_implementations(self):
@@ -189,9 +189,9 @@ class test_get_best_memcache(AppCase, MockCacheMixin):
             with reset_modules('celery.backends.cache'):
                 from celery.backends import cache
                 cache._imp = [None]
-                cache.get_best_memcache(behaviors={'foo': 'bar'})
+                cache.get_best_memcache()[0](behaviors={'foo': 'bar'})
                 self.assertTrue(cache._imp[0])
-                cache.get_best_memcache()
+                cache.get_best_memcache()[0]()
 
     def test_backends(self):
         from celery.backends.cache import backends

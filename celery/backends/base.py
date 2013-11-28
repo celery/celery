@@ -324,10 +324,18 @@ BaseDictBackend = BaseBackend  # XXX compat
 
 
 class KeyValueStoreBackend(BaseBackend):
-    task_keyprefix = ensure_bytes('celery-task-meta-')
-    group_keyprefix = ensure_bytes('celery-taskset-meta-')
-    chord_keyprefix = ensure_bytes('chord-unlock-')
+    key_t = ensure_bytes
+    task_keyprefix = 'celery-task-meta-'
+    group_keyprefix = 'celery-taskset-meta-'
+    chord_keyprefix = 'chord-unlock-'
     implements_incr = False
+
+    def __init__(self, *args, **kwargs):
+        super(KeyValueStoreBackend, self).__init__(*args, **kwargs)
+        self.key_t = self.__class__.key_t.__func__  # remove binding
+        self.task_keyprefix = self.key_t(self.task_keyprefix)
+        self.group_keyprefix = self.key_t(self.group_keyprefix)
+        self.chord_keyprefix = self.key_t(self.chord_keyprefix)
 
     def get(self, key):
         raise NotImplementedError('Must implement the get method.')
@@ -349,19 +357,19 @@ class KeyValueStoreBackend(BaseBackend):
 
     def get_key_for_task(self, task_id):
         """Get the cache key for a task by id."""
-        return self.task_keyprefix + ensure_bytes(task_id)
+        return self.task_keyprefix + self.key_t(task_id)
 
     def get_key_for_group(self, group_id):
         """Get the cache key for a group by id."""
-        return self.group_keyprefix + ensure_bytes(group_id)
+        return self.group_keyprefix + self.key_t(group_id)
 
     def get_key_for_chord(self, group_id):
         """Get the cache key for the chord waiting on group with given id."""
-        return self.chord_keyprefix + ensure_bytes(group_id)
+        return self.chord_keyprefix + self.key_t(group_id)
 
     def _strip_prefix(self, key):
         """Takes bytes, emits string."""
-        key = ensure_bytes(key)
+        key = self.key_t(key)
         for prefix in self.task_keyprefix, self.group_keyprefix:
             if key.startswith(prefix):
                 return bytes_to_str(key[len(prefix):])
