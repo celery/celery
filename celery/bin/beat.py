@@ -65,7 +65,8 @@ class beat(Command):
 
     def run(self, detach=False, logfile=None, pidfile=None, uid=None,
             gid=None, umask=None, working_directory=None, **kwargs):
-        maybe_drop_privileges(uid=uid, gid=gid)
+        if not detach:
+            maybe_drop_privileges(uid=uid, gid=gid)
         workdir = working_directory
         kwargs.pop('app', None)
         beat = partial(self.app.Beat,
