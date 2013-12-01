@@ -439,7 +439,8 @@ class State(object):
 
     def task_types(self):
         """Return a list of all seen task types."""
-        return list(sorted(set(task.name for task in values(self.tasks))))
+        return list(sorted(set(task.name for task in values(self.tasks)
+                               if task.name is not None)))
 
     def alive_workers(self):
         """Return a list of (seemingly) alive workers."""
