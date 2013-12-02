@@ -17,6 +17,77 @@ new in Celery 3.1.
 
 - Now depends on :ref:`Kombu 3.0.7 <kombu:version-3.0.7>`.
 
+- Fixed problem where Mingle caused the worker to hang at startup
+  (Issue #1686).
+
+- Beat: Would attempt to drop privileges twice when ``--detach`` enabled
+  (Issue #1708).
+
+- Windows: Fixed error with ``geteuid`` not being available (Issue #1676).
+
+- Tasks can now provide a list of expected error classes (Issue #1682).
+
+    The list should only include errors that the task is expected to raise
+    during normal operation::
+
+        @task(throws=(KeyError, HttpNotFound))
+
+    What happens when an exceptions is raised depends on the type of error:
+
+    - Expected errors (included in ``Task.throws``)
+
+        Will be logged using severity ``INFO``, and traceback is excluded.
+
+    - Unexpected errors
+
+        Will be logged using severity ``ERROR``, with traceback included.
+
+- Cache result backend now compatible with Python 3 (Issue #1697).
+
+- CentOS init script: Now compatible with sys-v style init symlinks.
+
+    Fix contributed by Jonathan Jordan.
+
+- Events: Fixed problem when task name is not defined (Issue #1710).
+
+    Fix contributed by Mher Movsisyan.
+
+- Task: Fixed unbound local errors (Issue #1684).
+
+    Fix contributed by Markus Ullmann.
+
+- Canvas: Now unrolls groups with only one task (optimization) (Issue #1656).
+
+- Task: Fixed problem with eta and timezones.
+
+    Fix contributed by Alexander Koval.
+
+- Django: Worker now performs model validation (Issue #1681).
+
+- Task decorator now emits less confusing errors when used with
+  incorrect arguments (Issue #1692).
+
+- Task: New method ``Task.send_event`` can be used to send custom events
+  to Flower and other monitors.
+
+- Fixed a compatibility issue with non-abstract task classes
+
+- Events from clients now uses new node name format (``gen<pid>@<hostname>``).
+
+- Fixed rare bug with Callable not being defined at interpreter shutdown
+  (Issue #1678).
+
+    Fix contributed by Nick Johnson.
+
+- Fixed Python 2.6 compatibility (Issue #1679).
+
+
+
+
+
+
+
+
 .. _version-3.1.5:
 
 3.1.5
