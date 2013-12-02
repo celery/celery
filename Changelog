@@ -13,15 +13,14 @@ new in Celery 3.1.
 3.1.6
 =====
 
-- Now depends on :mod:`billiard` 3.3.0.9.
+- Now depends on :mod:`billiard` 3.3.0.10.
 
 - Now depends on :ref:`Kombu 3.0.7 <kombu:version-3.0.7>`.
 
 - Fixed problem where Mingle caused the worker to hang at startup
   (Issue #1686).
 
-- Beat: Would attempt to drop privileges twice when ``--detach`` enabled
-  (Issue #1708).
+- Beat: Would attempt to drop privileges twice (Issue #1708).
 
 - Windows: Fixed error with ``geteuid`` not being available (Issue #1676).
 
