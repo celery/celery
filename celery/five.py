@@ -92,11 +92,11 @@ else:
     from itertools import imap as map, izip_longest as zip_longest  # noqa
     string = unicode                # noqa
     string_t = basestring           # noqa
-    text_t = unicode
+    text_t = unicode                # noqa
     long_t = long                   # noqa
-    range = xrange
-    int_types = (int, long)
-    _byte_t = (str, bytes)
+    range = xrange                  # noqa
+    int_types = (int, long)         # noqa
+    _byte_t = (str, bytes)          # noqa
 
     open_fqdn = '__builtin__.open'
 

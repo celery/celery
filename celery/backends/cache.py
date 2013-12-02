@@ -45,7 +45,8 @@ def import_best_memcache():
                 import memcache  # noqa
             except ImportError:
                 raise ImproperlyConfigured(REQUIRES_BACKEND)
-            memcache_key_t = bytes_to_str if PY3 else ensure_bytes
+        if PY3:
+            memcache_key_t = bytes_to_str
         _imp[0] = (is_pylibmc, memcache, memcache_key_t)
     return _imp[0]
 

@@ -15,7 +15,7 @@ from __future__ import absolute_import
 import importlib
 import sys
 
-from .five import long_t, string
+from .five import string
 
 __all__ = ['Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate']
 
@@ -200,8 +200,8 @@ class Proxy(object):
     __reduce__ = lambda x: x._get_current_object().__reduce__()
 
     if not PY3:
-        __cmp__ = lambda x, o: cmp(x._get_current_object(), o)
-        __long__ = lambda x: long_t(x._get_current_object())
+        __cmp__ = lambda x, o: cmp(x._get_current_object(), o)  # noqa
+        __long__ = lambda x: long(x._get_current_object())      # noqa
 
 
 class PromiseProxy(Proxy):

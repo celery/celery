@@ -67,14 +67,7 @@ class Spec(object):
         self.returns = kwargs.get('returns')
 
     def coerce(self, index, value):
-        """Coerce value for argument at index.
-
-        E.g. if :attr:`args` is `[('is_active', bool)]`:
-
-            >>> obj.coerce(0, 'False')
-            False
-
-        """
+        """Coerce value for argument at index."""
         arg_info = self.args[index]
         arg_type = arg_info[1]
         # Might be a custom way to coerce the string value,
