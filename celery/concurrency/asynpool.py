@@ -1085,7 +1085,7 @@ class AsynPool(_pool.Pool):
                         break
                     else:
                         debug('got %r while flushing process %r',
-                                exc, proc, exc_info=1)
+                              exc, proc, exc_info=1)
                     if get_errno(exc) not in UNAVAIL:
                         debug('got %r while flushing process %r',
                               exc, proc, exc_info=1)
