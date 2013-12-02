@@ -8,11 +8,12 @@
 """
 from __future__ import absolute_import
 
+import io
 import tempfile
 
 from kombu.utils.encoding import safe_repr
 
-from celery.five import UserDict, items, StringIO
+from celery.five import UserDict, items
 from celery.platforms import signals as _signals
 from celery.utils import timeutils
 from celery.utils.functional import maybe_list
@@ -247,7 +248,7 @@ def memsample(state, **kwargs):  # pragma: no cover
 @Panel.register
 def memdump(state, samples=10, **kwargs):  # pragma: no cover
     from celery.utils.debug import memdump
-    out = StringIO()
+    out = io.StringIO()
     memdump(file=out)
     return out.getvalue()
 

@@ -762,6 +762,7 @@ class test_Request(AppCase):
             'name': job.name,
             'id': job.id,
             'exc': 'FOOBARBAZ',
+            'description': 'raised unexpected',
             'traceback': 'foobarbaz',
         }
         self.assertTrue(x)

@@ -7,12 +7,13 @@ aren't handled by the core weakref module).
 """
 from __future__ import absolute_import
 
-import weakref
+import sys
 import traceback
-
-from collections import Callable
+import weakref
 
 __all__ = ['safe_ref']
+
+PY3 = sys.version_info[0] == 3
 
 
 def safe_ref(target, on_delete=None):  # pragma: no cover
@@ -35,7 +36,7 @@ def safe_ref(target, on_delete=None):  # pragma: no cover
             don't know how to create reference""".format(target)
         return get_bound_method_weakref(target=target,
                                         on_delete=on_delete)
-    if isinstance(on_delete, Callable):
+    if callable(on_delete):
         return weakref.ref(target, on_delete)
     else:
         return weakref.ref(target)
@@ -140,7 +141,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
                 pass
             for function in methods:
                 try:
-                    if isinstance(function, Callable):
+                    if callable(function):
                         function(self)
                 except Exception as exc:
                     try:
@@ -180,11 +181,12 @@ class BoundMethodWeakref(object):  # pragma: no cover
         return self() is not None
     __nonzero__ = __bool__  # py2
 
-    def __cmp__(self, other):
-        """Compare with another reference"""
-        if not isinstance(other, self.__class__):
-            return cmp(self.__class__, type(other))
-        return cmp(self.key, other.key)
+    if not PY3:
+        def __cmp__(self, other):
+            """Compare with another reference"""
+            if not isinstance(other, self.__class__):
+                return cmp(self.__class__, type(other))  # noqa
+            return cmp(self.key, other.key)              # noqa
 
     def __call__(self):
         """Return a strong reference to the bound method

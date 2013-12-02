@@ -313,6 +313,14 @@ class Task(object):
     #: :setting:`CELERY_ACKS_LATE` setting.
     acks_late = None
 
+    #: List/tuple of expected exceptions.
+    #:
+    #: These are errors that are expected in normal operation
+    #: and that should not be regarded as a real error by the worker.
+    #: Currently this means that the state will be updated to an error
+    #: state, but the worker will not log the event as an error.
+    throws = ()
+
     #: Default task expiry time.
     expires = None
 
@@ -760,6 +768,11 @@ class Task(object):
         """Creates a :class:`~celery.canvas.xstarmap` task from ``it``."""
         from celery import xstarmap
         return xstarmap(self.s(), it, app=self.app)
+
+    def send_event(self, type_, **fields):
+        req = self.request
+        with self.app.events.default_dispatcher(hostname=req.hostname) as d:
+            return d.send(type_, uuid=req.id, **fields)
 
     def update_state(self, task_id=None, state=None, meta=None):
         """Update task state.

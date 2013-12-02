@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 import weakref
-from collections import Callable
 from . import saferef
 from celery.five import range
 
@@ -95,7 +94,7 @@ class Signal(object):  # pragma: no cover
 
             return _connect_signal
 
-        if args and isinstance(args[0], Callable):
+        if args and callable(args[0]):
             return _handle_options(*args[1:], **kwargs)(args[0])
         return _handle_options(*args, **kwargs)
 

@@ -11,6 +11,8 @@ from celery.local import (
 )
 from celery.tests.case import Case, Mock
 
+PY3 = sys.version_info[0] == 3
+
 
 class test_try_import(Case):
 
@@ -258,7 +260,8 @@ class test_Proxy(Case):
         x = Proxy(lambda: 10)
         self.assertEqual(type(x.__float__()), float)
         self.assertEqual(type(x.__int__()), int)
-        self.assertEqual(type(x.__long__()), long_t)
+        if not PY3:
+            self.assertEqual(type(x.__long__()), long_t)
         self.assertTrue(hex(x))
         self.assertTrue(oct(x))
 

@@ -534,7 +534,7 @@ def mask_modules(*modnames):
         ...     try:
         ...         import sys
         ...     except ImportError:
-        ...         print 'sys not found'
+        ...         print('sys not found')
         sys not found
 
         >>> import sys  # noqa

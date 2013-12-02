@@ -46,7 +46,7 @@ else:
         keys/values encoded."""
         return dict(
             (k.encode('utf-8'),
-             v.encode('utf-8') if isinstance(v, unicode) else v)
+             v.encode('utf-8') if isinstance(v, unicode) else v)  # noqa
             for k, v in tup)
 
 

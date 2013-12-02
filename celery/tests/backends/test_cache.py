@@ -18,6 +18,8 @@ from celery.tests.case import (
     AppCase, Mock, mask_modules, patch, reset_modules,
 )
 
+PY3 = sys.version_info[0] == 3
+
 
 class SomeClass(object):
 
@@ -122,10 +124,15 @@ class MyMemcachedStringEncodingError(Exception):
 class MemcachedClient(DummyClient):
 
     def set(self, key, value, *args, **kwargs):
-        if isinstance(key, text_t):
+        if PY3:
+            key_t, must_be, not_be, cod = bytes, 'string', 'bytes', 'decode'
+        else:
+            key_t, must_be, not_be, cod = text_t, 'bytes', 'string', 'encode'
+        if isinstance(key, key_t):
             raise MyMemcachedStringEncodingError(
-                'Keys must be bytes, not string.  Convert your '
-                'strings using mystring.encode(charset)!')
+                'Keys must be {0}, not {1}.  Convert your '
+                'strings using mystring.{2}(charset)!'.format(
+                    must_be, not_be, cod))
         return super(MemcachedClient, self).set(key, value, *args, **kwargs)
 
 
@@ -164,7 +171,7 @@ class test_get_best_memcache(AppCase, MockCacheMixin):
             with reset_modules('celery.backends.cache'):
                 from celery.backends import cache
                 cache._imp = [None]
-                self.assertEqual(cache.get_best_memcache().__module__,
+                self.assertEqual(cache.get_best_memcache()[0].__module__,
                                  'pylibmc')
 
     def test_memcache(self):
@@ -173,7 +180,7 @@ class test_get_best_memcache(AppCase, MockCacheMixin):
                 with mask_modules('pylibmc'):
                     from celery.backends import cache
                     cache._imp = [None]
-                    self.assertEqual(cache.get_best_memcache().__module__,
+                    self.assertEqual(cache.get_best_memcache()[0]().__module__,
                                      'memcache')
 
     def test_no_implementations(self):
@@ -189,14 +196,15 @@ class test_get_best_memcache(AppCase, MockCacheMixin):
             with reset_modules('celery.backends.cache'):
                 from celery.backends import cache
                 cache._imp = [None]
-                cache.get_best_memcache(behaviors={'foo': 'bar'})
+                cache.get_best_memcache()[0](behaviors={'foo': 'bar'})
                 self.assertTrue(cache._imp[0])
-                cache.get_best_memcache()
+                cache.get_best_memcache()[0]()
 
     def test_backends(self):
         from celery.backends.cache import backends
-        for name, fun in items(backends):
-            self.assertTrue(fun())
+        with self.mock_memcache():
+            for name, fun in items(backends):
+                self.assertTrue(fun())
 
 
 class test_memcache_key(AppCase, MockCacheMixin):

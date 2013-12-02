@@ -13,12 +13,15 @@
 from __future__ import absolute_import
 
 import importlib
+import sys
 
-from .five import long_t, string
+from .five import string
 
 __all__ = ['Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate']
 
 __module__ = __name__  # used by Proxy class body
+
+PY3 = sys.version_info[0] == 3
 
 
 def _default_cls_attr(name, type_, cls_value):
@@ -160,7 +163,6 @@ class Proxy(object):
     __ne__ = lambda x, o: x._get_current_object() != o
     __gt__ = lambda x, o: x._get_current_object() > o
     __ge__ = lambda x, o: x._get_current_object() >= o
-    __cmp__ = lambda x, o: cmp(x._get_current_object(), o)
     __hash__ = lambda x: hash(x._get_current_object())
     __call__ = lambda x, *a, **kw: x._get_current_object()(*a, **kw)
     __len__ = lambda x: len(x._get_current_object())
@@ -188,7 +190,6 @@ class Proxy(object):
     __invert__ = lambda x: ~(x._get_current_object())
     __complex__ = lambda x: complex(x._get_current_object())
     __int__ = lambda x: int(x._get_current_object())
-    __long__ = lambda x: long_t(x._get_current_object())
     __float__ = lambda x: float(x._get_current_object())
     __oct__ = lambda x: oct(x._get_current_object())
     __hex__ = lambda x: hex(x._get_current_object())
@@ -197,6 +198,10 @@ class Proxy(object):
     __enter__ = lambda x: x._get_current_object().__enter__()
     __exit__ = lambda x, *a, **kw: x._get_current_object().__exit__(*a, **kw)
     __reduce__ = lambda x: x._get_current_object().__reduce__()
+
+    if not PY3:
+        __cmp__ = lambda x, o: cmp(x._get_current_object(), o)  # noqa
+        __long__ = lambda x: long(x._get_current_object())      # noqa
 
 
 class PromiseProxy(Proxy):

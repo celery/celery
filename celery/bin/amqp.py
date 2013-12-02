@@ -12,7 +12,6 @@ import sys
 import shlex
 import pprint
 
-from collections import Callable
 from functools import partial
 from itertools import count
 
@@ -68,14 +67,7 @@ class Spec(object):
         self.returns = kwargs.get('returns')
 
     def coerce(self, index, value):
-        """Coerce value for argument at index.
-
-        E.g. if :attr:`args` is `[('is_active', bool)]`:
-
-            >>> coerce(0, 'False')
-            False
-
-        """
+        """Coerce value for argument at index."""
         arg_info = self.args[index]
         arg_type = arg_info[1]
         # Might be a custom way to coerce the string value,
@@ -99,7 +91,7 @@ class Spec(object):
         """Format the return value of this command in a human-friendly way."""
         if not self.returns:
             return 'ok.' if response is None else response
-        if isinstance(self.returns, Callable):
+        if callable(self.returns):
             return self.returns(response)
         return self.returns.format(response)
 

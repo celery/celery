@@ -82,6 +82,22 @@ class _getitem_property(object):
         self._path(obj)[self.key] = value
 
 
+def maybe_unroll_group(g):
+    """Unroll group with only one member."""
+    # Issue #1656
+    try:
+        size = len(g.tasks)
+    except TypeError:
+        try:
+            size = g.tasks.__length_hint__()
+        except (AttributeError, TypeError):
+            pass
+        else:
+            return list(g.tasks)[0] if size == 1 else g
+    else:
+        return g.tasks[0] if size == 1 else g
+
+
 class Signature(dict):
     """Class that wraps the arguments and execution options
     for a single task invocation.
@@ -240,6 +256,8 @@ class Signature(dict):
         )))
 
     def __or__(self, other):
+        if isinstance(other, group):
+            other = maybe_unroll_group(other)
         if not isinstance(self, chain) and isinstance(other, chain):
             return chain((self, ) + other.tasks, app=self._app)
         elif isinstance(other, chain):

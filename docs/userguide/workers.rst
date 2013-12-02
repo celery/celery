@@ -1088,13 +1088,13 @@ they take a single argument: the current
 From there you have access to the active
 :class:`~celery.worker.consumer.Consumer` if needed.
 
-Here's an example control command that restarts the broker connection:
+Here's an example control command that increments the task prefetch count:
 
 .. code-block:: python
 
     from celery.worker.control import Panel
 
     @Panel.register
-    def reset_connection(state):
-        state.consumer.reset_connection()
-        return {'ok': 'connection reset'}
+    def increase_prefetch_count(state, n=1):
+        state.consumer.qos.increment_eventually(n)
+        return {'ok': 'prefetch count incremented'}
