@@ -45,8 +45,7 @@ def import_best_memcache():
                 import memcache  # noqa
             except ImportError:
                 raise ImproperlyConfigured(REQUIRES_BACKEND)
-            else:
-                memcache_key_t = bytes_to_str if PY3 else ensure_bytes
+            memcache_key_t = bytes_to_str if PY3 else ensure_bytes
         _imp[0] = (is_pylibmc, memcache, memcache_key_t)
     return _imp[0]
 
@@ -114,6 +113,7 @@ class CacheBackend(KeyValueStoreBackend):
         except KeyError:
             raise ImproperlyConfigured(UNKNOWN_BACKEND.format(
                 self.backend, ', '.join(backends)))
+        self._encode_prefixes()  # rencode the keyprefixes
 
     def get(self, key):
         return self.client.get(key)

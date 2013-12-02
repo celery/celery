@@ -195,8 +195,9 @@ class test_get_best_memcache(AppCase, MockCacheMixin):
 
     def test_backends(self):
         from celery.backends.cache import backends
-        for name, fun in items(backends):
-            self.assertTrue(fun())
+        with self.mock_memcache():
+            for name, fun in items(backends):
+                self.assertTrue(fun())
 
 
 class test_memcache_key(AppCase, MockCacheMixin):

@@ -331,8 +331,12 @@ class KeyValueStoreBackend(BaseBackend):
     implements_incr = False
 
     def __init__(self, *args, **kwargs):
+        if hasattr(self.key_t, '__func__'):
+            self.key_t = self.key_t.__func__  # remove binding
+        self._encode_prefixes()
         super(KeyValueStoreBackend, self).__init__(*args, **kwargs)
-        self.key_t = self.__class__.key_t.__func__  # remove binding
+
+    def _encode_prefixes(self):
         self.task_keyprefix = self.key_t(self.task_keyprefix)
         self.group_keyprefix = self.key_t(self.group_keyprefix)
         self.chord_keyprefix = self.key_t(self.chord_keyprefix)
