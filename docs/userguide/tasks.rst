@@ -470,6 +470,33 @@ General
     A value of :const:`None` will disable the retry limit and the
     task will retry forever until it succeeds.
 
+.. attribute:: Task.throws
+
+    Optional list of expected error classes that should not be regarded
+    as an actual error.
+
+    Errors in this list will be reported as a failure to the result backend,
+    but the worker will not log the event as an error, and no traceback will
+    be included.
+
+    Example:
+
+    .. code-block:: python
+
+        @task(throws=(KeyError, HttpNotFound)):
+        def get_foo():
+            something()
+
+    Error types:
+
+    - Expected errors (in ``Task.throws``)
+
+        Logged with severity ``INFO``, traceback excluded.
+
+    - Unexpected errors
+
+        Logged with severity ``ERROR``, with traceback included.
+
 .. attribute:: Task.default_retry_delay
 
     Default time in seconds before a retry of the task
