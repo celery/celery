@@ -414,7 +414,7 @@ override this default.
 .. code-block:: python
 
     @app.task(bind=True, default_retry_delay=30 * 60)  # retry in 30 minutes.
-    def add(x, y):
+    def add(self, x, y):
         try:
             …
         except Exception as exc:
@@ -764,7 +764,7 @@ which defines its own custom :state:`ABORTED` state.
 Use :meth:`~@Task.update_state` to update a task's state::
 
     @app.task(bind=True)
-    def upload_files(filenames):
+    def upload_files(self, filenames):
         for i, file in enumerate(filenames):
             self.update_state(state='PROGRESS',
                 meta={'current': i, 'total': len(filenames)})
