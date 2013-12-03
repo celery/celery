@@ -36,7 +36,7 @@ See http://docs.celeryq.org/en/latest/userguide/tasks.html\
 
 def assert_will_not_block():
     if task_join_will_block():
-        pass   # TODO future version: raise
+        raise RuntimeError(E_WOULDBLOCK)
 
 
 class ResultBase(object):
