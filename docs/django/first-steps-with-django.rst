@@ -33,24 +33,7 @@ that defines the Celery instance:
 
 :file: `proj/proj/celery.py`
 
-.. code-block:: python
-
-    from __future__ import absolute_import
-
-    import os
-
-    from celery import Celery
-    from django.conf import settings
-
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.settings')
-
-    app = Celery('proj')
-    app.config_from_object('django.conf:settings')
-    app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
-
-    @app.task(bind=True)
-    def debug_task(self):
-        print('Request: {0!r}'.format(self.request))
+.. literalinclude:: ../../examples/django/proj/celery.py
 
 Then you need to import this app in your :file:`proj/proj/__init__py`
 module.  This ensures that the app is loaded when Django starts
@@ -58,11 +41,7 @@ so that the ``@shared_task`` decorator (mentioned later) will use it:
 
 :file:`proj/proj/__init__.py`:
 
-.. code-block:: python
-
-    from __future__ import absolute_import
-
-    from .celery import app
+.. literalinclude:: ../../examples/django/proj/__init__.py
 
 Note that this example project layout is suitable for larger projects,
 for simple projects you may use a single contained module that defines
@@ -133,6 +112,26 @@ module will not evaluate the Django settings object.
 Finally, the ``debug_task`` example is a task that dumps
 its own request information.  This is using the new ``bind=True`` task option
 introduced in Celery 3.1 to easily refer to the current task instance.
+
+Using the ``@shared_task`` decorator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The tasks you write will probably live in reusable apps, and reusable
+apps cannot depend on the project itself, so you also cannot import your app
+instance directly.
+
+The ``@shared_task`` decorator lets you create tasks without having any
+concrete app instance:
+
+:file:`demoapp/tasks.py`:
+
+.. literalinclude:: ../../examples/django/demoapp/tasks.py
+
+
+.. seealso::
+
+    You can find the full source code for the Django example project at:
+    https://github.com/celery/celery/tree/3.1/examples/django/
 
 Using the Django ORM/Cache as a result backend.
 -----------------------------------------------
