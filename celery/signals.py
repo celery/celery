@@ -45,7 +45,7 @@ task_retry = Signal(providing_args=[
     'request', 'reason', 'einfo',
 ])
 task_failure = Signal(providing_args=[
-    'task_id', 'exception', 'args', 'kwargs', 'traceback', 'einfo',
+    'task_id', 'exception', 'args', 'kwargs', 'traceback', 'einfo', 'sender',
 ])
 task_revoked = Signal(providing_args=[
     'request', 'terminated', 'signum', 'expired',

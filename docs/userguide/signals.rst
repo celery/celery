@@ -232,6 +232,9 @@ Provides arguments:
 * einfo
     The :class:`celery.datastructures.ExceptionInfo` instance.
 
+* sender
+    The failed task function.
+
 .. signal:: task_revoked
 
 task_revoked
