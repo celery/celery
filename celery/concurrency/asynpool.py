@@ -493,7 +493,7 @@ class AsynPool(_pool.Pool):
         waiting_to_start = self._waiting_to_start
 
         def verify_process_alive(proc):
-            if proc.exitcode is None and proc in waiting_to_start:
+            if proc._is_alive() and proc in waiting_to_start:
                 assert proc.outqR_fd in fileno_to_outq
                 assert fileno_to_outq[proc.outqR_fd] is proc
                 assert proc.outqR_fd in hub.readers
@@ -728,7 +728,7 @@ class AsynPool(_pool.Pool):
 
         def on_not_recovering(proc, fd, job):
             error('Process inqueue damaged: %r %r' % (proc, proc.exitcode))
-            if proc.exitcode is not None:
+            if proc._is_alive():
                 proc.terminate()
             hub.remove(fd)
             self._put_back(job)
@@ -886,7 +886,7 @@ class AsynPool(_pool.Pool):
                                 pass
                             else:
                                 job_proc = job._write_to
-                                if job_proc.exitcode is None:
+                                if job_proc._is_alive():
                                     self._flush_writer(job_proc, gen)
                     # workers may have exited in the meantime.
                     self.maintain_pool()
@@ -901,7 +901,7 @@ class AsynPool(_pool.Pool):
         fds = set([proc.inq._writer])
         try:
             while fds:
-                if proc.exitcode:
+                if not proc._is_alive():
                     break  # process exited
                 readable, writable, again = _select(
                     writers=fds, err=fds, timeout=0.5,
@@ -973,10 +973,10 @@ class AsynPool(_pool.Pool):
     def on_job_process_down(self, job, pid_gone):
         """Handler called for each job when the process it was assigned to
         exits."""
-        if job._write_to and job._write_to.exitcode:
+        if job._write_to and not job._write_to._is_alive():
             # job was partially written
             self.on_partial_read(job, job._write_to)
-        elif job._scheduled_for and job._scheduled_for.exitcode:
+        elif job._scheduled_for and not job._scheduled_for._is_alive():
             # job was only scheduled to be written to this process,
             # but no data was sent so put it back on the outbound_buffer.
             self._put_back(job)
@@ -1131,7 +1131,7 @@ class AsynPool(_pool.Pool):
     def destroy_queues(self, queues, proc):
         """Destroy queues that can no longer be used, so that they
         be replaced by new sockets."""
-        assert proc.exitcode is not None
+        assert not proc._is_alive()
         self._waiting_to_start.discard(proc)
         removed = 1
         try:
