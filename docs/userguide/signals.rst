@@ -385,6 +385,10 @@ worker_process_init
 
 Dispatched in all pool child processes when they start.
 
+Note that handlers attached to this signal must not be blocking
+for more than 4 seconds, or the process will be killed assuming
+it failed to start.
+
 .. signal:: worker_process_shutdown
 
 worker_process_shutdown
