@@ -157,7 +157,7 @@ Remote control
     listed below.  See :ref:`monitoring-control` for more information.
 
 pool support: *prefork, eventlet, gevent*, blocking:*threads/solo* (see note)
-broker support: *amqp, redis, mongodb*
+broker support: *amqp, redis*
 
 Workers have the ability to be remote controlled using a high-priority
 broadcast message queue.  The commands can be directed to all, or a specific
@@ -228,7 +228,7 @@ using :meth:`~@control.broadcast`.
 Revoking tasks
 ==============
 pool support: all
-broker support: *amqp, redis, mongodb*
+broker support: *amqp, redis*
 
 All worker nodes keeps a memory of revoked task ids, either in-memory or
 persistent on disk (see :ref:`worker-persistent-revokes`).
@@ -324,8 +324,8 @@ name:
 
 
 Note that remote control commands must be working for revokes to work.
-Remote control commands are only supported by the RabbitMQ (amqp), Redis and MongDB
-transports at this point.
+Remote control commands are only supported by the RabbitMQ (amqp) and Redis
+at this point.
 
 .. _worker-time-limits:
 
@@ -379,7 +379,7 @@ Changing time limits at runtime
 -------------------------------
 .. versionadded:: 2.3
 
-broker support: *amqp, redis, mongodb*
+broker support: *amqp, redis*
 
 There is a remote control command that enables you to change both soft
 and hard time limits for a task — named ``time_limit``.
@@ -873,7 +873,7 @@ The output will include the following fields:
 
     * ``transport``
 
-        Name of transport used (e.g. ``amqp`` or ``mongodb``)
+        Name of transport used (e.g. ``amqp`` or ``redis``)
 
     * ``transport_options``
 
@@ -884,9 +884,9 @@ The output will include the following fields:
         Some transports expects the host name to be an URL, this applies to
         for example SQLAlchemy where the host name part is the connection URI:
 
-            sqla+sqlite:///
+            redis+socket:///tmp/redis.sock
 
-        In this example the uri prefix will be ``sqla``.
+        In this example the uri prefix will be ``redis``.
 
     * ``userid``
 

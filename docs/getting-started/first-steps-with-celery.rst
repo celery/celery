@@ -144,8 +144,8 @@ this is needed so that names can be automatically generated, the second
 argument is the broker keyword argument which specifies the URL of the
 message broker you want to use, using RabbitMQ here, which is already the
 default option.  See :ref:`celerytut-broker` above for more choices,
-e.g. for Redis you can use ``redis://localhost``, or MongoDB:
-``mongodb://localhost``.
+e.g. for RabbitMQ you can use ``amqp://localhost``, or for Redis you can
+use ``redis://localhost``.
 
 You defined a single task, called ``add``, which returns the sum of two numbers.
 
@@ -373,7 +373,7 @@ instead, so that only 10 tasks of this type can be processed in a minute
         'tasks.add': {'rate_limit': '10/m'}
     }
 
-If you are using RabbitMQ, Redis or MongoDB as the
+If you are using RabbitMQ or Redis as the
 broker then you can also direct the workers to set a new rate limit
 for the task at runtime:
 
