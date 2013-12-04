@@ -85,6 +85,9 @@ UNAVAIL = frozenset([errno.EAGAIN, errno.EINTR])
 #: Constant sent by child process when started (ready to accept work)
 WORKER_UP = 15
 
+#: A process must have started before this timeout (in secs.) expires.
+PROC_ALIVE_TIMEOUT = 4.0
+
 SCHED_STRATEGY_PREFETCH = 1
 SCHED_STRATEGY_FAIR = 4
 
@@ -356,7 +359,7 @@ class AsynPool(_pool.Pool):
         # sent a WORKER_UP message.  If a process fails to send
         # this message within proc_up_timeout we terminate it
         # and hope the next process will recover.
-        self._proc_alive_timeout = 2.0
+        self._proc_alive_timeout = PROC_ALIVE_TIMEOUT
         self._waiting_to_start = set()
 
         # denormalized set of all inqueues.
