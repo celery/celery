@@ -197,15 +197,17 @@ Do I have to use AMQP/RabbitMQ?
 
 **Answer**: No.
 
-You can also use Redis, Beanstalk, CouchDB, MongoDB or an SQL database,
-see :ref:`brokers`.
+Although using RabbitMQ is recommended you can also use Redis.  There are also
+experimental transports available such as MongoDB, Beanstalk, CouchDB, or using
+SQL databases. See :ref:`brokers` for more information.
 
-These "virtual transports" may have limited broadcast and event functionality.
+The experimental transports may have reliability problems and
+limited broadcast and event functionality.
 For example remote control commands only works with AMQP and Redis.
 
 Redis or a database won't perform as well as
 an AMQP broker. If you have strict reliability requirements you are
-encouraged to use RabbitMQ or another AMQP broker. Redis/database also use
+encouraged to use RabbitMQ or another AMQP broker. Some transports also uses
 polling, so they are likely to consume more resources. However, if you for
 some reason are not able to use AMQP, feel free to use these alternatives.
 They will probably work fine for most use cases, and note that the above
