@@ -389,10 +389,10 @@ class Consumer(object):
         if not cset.consuming_from(queue):
             cset.add_queue(q)
             cset.consume()
-            info('Started consuming from %s', q)
+            info('Started consuming from %s', queue)
 
     def cancel_task_queue(self, queue):
-        info('Cancelling queue %s', q)
+        info('Cancelling queue %s', queue)
         self.app.amqp.queues.deselect(queue)
         self.task_consumer.cancel_by_queue(queue)
 
