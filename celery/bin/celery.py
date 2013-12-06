@@ -542,7 +542,8 @@ class shell(Command):  # pragma: no cover
         import celery
         import celery.task.base
         self.app.loader.import_default_modules()
-        self.locals = {'celery': self.app,
+        self.locals = {'app': self.app,
+                       'celery': self.app,
                        'Task': celery.Task,
                        'chord': celery.chord,
                        'group': celery.group,
