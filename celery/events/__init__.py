@@ -294,6 +294,7 @@ class EventReceiver(ConsumerMixin):
                            durable=False,
                            queue_arguments=self._get_queue_arguments())
         self.adjust_clock = self.app.clock.adjust
+        self.forward_clock = self.app.clock.forward
 
     def _get_queue_arguments(self):
         conf = self.app.conf
@@ -338,10 +339,17 @@ class EventReceiver(ConsumerMixin):
     def event_from_message(self, body, localize=True,
                            now=time.time, tzfields=_TZGETTER,
                            adjust_timestamp=adjust_timestamp):
-        type = body.get('type', '').lower()
-        clock = body.get('clock')
-        if clock:
-            self.adjust_clock(clock)
+        type = body['type']
+        if type == 'task-sent':
+            # clients never sync so cannot use their clock value
+            body['clock'] = self.forward_clock()
+        else:
+            try:
+                clock = body['clock']
+            except KeyError:
+                body['clock'] = self.forward_clock()
+            else:
+                self.adjust_clock(clock)
 
         if localize:
             try:
@@ -350,7 +358,8 @@ class EventReceiver(ConsumerMixin):
                 pass
             else:
                 body['timestamp'] = adjust_timestamp(timestamp, offset)
-        return type, Event(type, body, local_received=now())
+        body['local_received'] = now()
+        return type, body
 
     def _receive(self, body, message):
         self.process(*self.event_from_message(body))

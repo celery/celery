@@ -462,7 +462,8 @@ class State(object):
         get_handler = self.handlers.__getitem__
         event_callback = self.event_callback
         wfields = itemgetter('hostname', 'timestamp', 'local_received')
-        tfields = itemgetter('uuid', 'hostname', 'timestamp', 'local_received')
+        tfields = itemgetter('uuid', 'hostname', 'timestamp',
+                             'local_received', 'clock')
         taskheap = self._taskheap
         maxtasks = self.max_tasks_in_memory * 2
         add_type = self._seen_types.add
@@ -497,7 +498,8 @@ class State(object):
                     worker.event(subject, timestamp, local_received, event)
                     return created
             elif group == 'task':
-                uuid, hostname, timestamp, local_received = tfields(event)
+                (uuid, hostname, timestamp,
+                 local_received, clock) = tfields(event)
                 # task-sent event is sent by client, not worker
                 is_client_event = subject == 'sent'
                 try:
@@ -514,7 +516,6 @@ class State(object):
                     task.worker = worker
                     if worker is not None and local_received:
                         worker.event(None, local_received, timestamp)
-                clock = 0 if is_client_event else event.get('clock')
                 origin = hostname if is_client_event else worker.id
                 heappush(taskheap,
                          timetuple(clock, timestamp, origin, ref(task)))
