@@ -58,7 +58,7 @@ _task_join_will_block = False
 
 def _set_task_join_will_block(blocks):
     global _task_join_will_block
-    _task_join_will_block = True
+    _task_join_will_block = blocks
 
 
 def task_join_will_block():
