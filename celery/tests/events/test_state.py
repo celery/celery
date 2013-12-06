@@ -34,7 +34,10 @@ class replay(object):
     def next_event(self):
         ev = self.events[next(self.position)]
         ev['local_received'] = ev['timestamp']
-        self.current_clock = ev.get('clock') or self.current_clock + 1
+        try:
+            self.current_clock = ev['clock']
+        except KeyError:
+            ev['clock'] = self.current_clock = self.current_clock + 1
         return ev
 
     def __iter__(self):
@@ -474,6 +477,7 @@ class test_State(AppCase):
                 'hostname': 'y',
                 'timestamp': time(),
                 'local_received': time(),
+                'clock': 0,
             },
         )
 
