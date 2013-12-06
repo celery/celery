@@ -96,6 +96,8 @@ SCHED_STRATEGIES = {
     'fair': SCHED_STRATEGY_FAIR,
 }
 
+RESULT_MAXLEN = 128
+
 Ack = namedtuple('Ack', ('id', 'fd', 'payload'))
 
 
@@ -168,9 +170,9 @@ class Worker(_pool.Worker):
         # is writable.
         self.outq.put((WORKER_UP, (pid, )))
 
-    def prepare_result(self, result):
+    def prepare_result(self, result, RESULT_MAXLEN=RESULT_MAXLEN):
         if not isinstance(result, ExceptionInfo):
-            return truncate(repr(result), 46)
+            return truncate(repr(result), RESULT_MAXLEN)
         return result
 
 

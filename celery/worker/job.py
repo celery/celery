@@ -48,6 +48,9 @@ debug, info, warn, error = (logger.debug, logger.info,
 _does_info = False
 _does_debug = False
 
+#: Max length of result representation
+RESULT_MAXLEN = 128
+
 
 def __optimize__():
     # this is also called by celery.app.trace.setup_worker_optimizations
@@ -512,7 +515,7 @@ class Request(object):
             self.on_reject(logger, self.connection_errors, requeue)
             self.acknowledged = True
 
-    def repr_result(self, result, maxlen=46):
+    def repr_result(self, result, maxlen=RESULT_MAXLEN):
         # 46 is the length needed to fit
         #     'the quick brown fox jumps over the lazy dog' :)
         if not isinstance(result, string_t):

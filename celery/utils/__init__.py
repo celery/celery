@@ -85,18 +85,18 @@ def warn_deprecated(description=None, deprecation=None,
     warnings.warn(w)
 
 
-def deprecated(description=None, deprecation=None,
-               removal=None, alternative=None):
+def deprecated(deprecation=None, removal=None,
+               alternative=None, description=None):
     """Decorator for deprecated functions.
 
     A deprecation warning will be emitted when the function is called.
 
-    :keyword description: Description of what is being deprecated.
     :keyword deprecation: Version that marks first deprecation, if this
       argument is not set a ``PendingDeprecationWarning`` will be emitted
       instead.
     :keyword removed:  Future version when this feature will be removed.
     :keyword alternative:  Instructions for an alternative solution (if any).
+    :keyword description: Description of what is being deprecated.
 
     """
     def _inner(fun):
