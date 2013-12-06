@@ -94,3 +94,9 @@ class pickle(default):
 class confirms(default):
     BROKER_URL = 'pyamqp://'
     BROKER_TRANSPORT_OPTIONS = {'confirm_publish': True}
+
+
+@template()
+class events(default):
+    CELERY_SEND_EVENTS = True
+    CELERY_SEND_TASK_SENT_EVENT = True
