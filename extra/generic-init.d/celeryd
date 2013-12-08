@@ -4,7 +4,7 @@
 # ============================================
 #
 # :Usage: /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}
-# :Configuration file: /etc/default/celeryd
+# :Configuration file: /etc/default/celeryd (or /usr/local/etc/celeryd on BSD)
 #
 # See http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html#generic-init-scripts
 
@@ -58,7 +58,13 @@ DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
 DEFAULT_CELERYD="-m celery worker --detach"
 
-CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/${SCRIPT_NAME}"}
+if [ -d "/etc/default" ]; then
+	CELERY_CONFIG_DIR="/etc/default"
+else
+	CELERY_CONFIG_DIR="/usr/local/etc"
+fi
+
+CELERY_DEFAULTS=${CELERY_DEFAULTS:-"$CELERY_CONFIG_DIR/${SCRIPT_NAME}"}
 
 # Make sure executable configuration script is owned by root
 _config_sanity() {
