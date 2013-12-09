@@ -99,10 +99,8 @@ def with_unique_field(attr):
 @with_unique_field('hostname')
 class Worker(object):
     """Worker State."""
-    clock = 0
     heartbeat_max = 4
     expire_window = HEARTBEAT_EXPIRE_WINDOW
-    pid = None
 
     _fields = ('hostname', 'pid', 'freq', 'heartbeats', 'clock')
     if not PYPY:
@@ -213,7 +211,7 @@ class Task(object):
                'timestamp', 'runtime', 'traceback', 'exchange', 'routing_key',
                'clock', 'client')
     if not PYPY:
-        __slots__ = _fields + ('__dict__', '__weakref__')
+        __slots__ = ('__dict__', '__weakref__')
 
     #: How to merge out of order events.
     #: Disorder is detected by logical ordering (e.g. :event:`task-received`
