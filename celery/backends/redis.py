@@ -12,6 +12,8 @@ from kombu.utils import cached_property
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
+from celery.five import string_t
+from celery.utils import deprecated_property
 
 from .base import KeyValueStoreBackend
 
@@ -28,24 +30,19 @@ REDIS_MISSING = """\
 You need to install the redis library in order to use \
 the Redis result store backend."""
 
+default_params = {
+    'host': 'localhost',
+    'port': 6379,
+    'db': 0,
+    'password': None,
+}
+
 
 class RedisBackend(KeyValueStoreBackend):
     """Redis task result store."""
 
     #: redis-py client module.
     redis = redis
-
-    #: default Redis server hostname (`localhost`).
-    host = 'localhost'
-
-    #: default Redis server port (6379)
-    port = 6379
-
-    #: default Redis db number (0)
-    db = 0
-
-    #: default Redis password (:const:`None`)
-    password = None
 
     #: Maximium number of connections in the pool.
     max_connections = None
@@ -69,20 +66,49 @@ class RedisBackend(KeyValueStoreBackend):
                 except KeyError:
                     pass
         if host and '://' in host:
-            url, host = host, None
-        self.url = url
-        uhost = uport = upass = udb = None
+            url = host
+            host = None
+
+        self.max_connections = (
+            max_connections or _get('MAX_CONNECTIONS') or self.max_connections
+        )
+
+        self.connparams = {
+            'host': _get('HOST') or 'localhost',
+            'port': _get('PORT') or 6379,
+            'db': _get('DB') or 0,
+            'password': _get('PASSWORD'),
+            'max_connections': max_connections,
+        }
         if url:
-            _, uhost, uport, _, upass, udb, _ = _parse_url(url)
-            udb = udb.strip('/') if udb else 0
-        self.host = uhost or host or _get('HOST') or self.host
-        self.port = int(uport or port or _get('PORT') or self.port)
-        self.db = udb or db or _get('DB') or self.db
-        self.password = upass or password or _get('PASSWORD') or self.password
+            self.connparams = self._params_from_url(url, self.connparams)
+        self.url = url
         self.expires = self.prepare_expires(expires, type=int)
-        self.max_connections = (max_connections
-                                or _get('MAX_CONNECTIONS')
-                                or self.max_connections)
+
+    def _params_from_url(self, url, defaults):
+        scheme, host, port, user, password, path, query = _parse_url(url)
+        connparams = dict(
+            defaults,
+            host=host, port=port, user=user, password=password,
+            db=int(query.pop('virtual_host', None) or 0),
+        )
+
+        if scheme == 'socket':
+            # Use 'path' as path to the socket... in this case
+            # the database number should be given in 'query'
+            connparams.update({
+                'connection_class': self.redis.UnixDomainSocketConnection,
+                'path': '/' + path,
+            })
+            connparams.pop('host', None)
+            connparams.pop('port', None)
+        else:
+            path = path.strip('/') if isinstance(path, string_t) else path
+            if path:
+                connparams['db'] = int(path)
+        # Query parameters override other parameters
+        connparams.update(query)
+        return connparams
 
     def get(self, key):
         return self.client.get(key)
@@ -109,17 +135,26 @@ class RedisBackend(KeyValueStoreBackend):
 
     @cached_property
     def client(self):
-        pool = self.redis.ConnectionPool(host=self.host, port=self.port,
-                                         db=self.db, password=self.password,
-                                         max_connections=self.max_connections)
-        return self.redis.Redis(connection_pool=pool)
+        return self.redis.Redis(
+            connection_pool=self.redis.ConnectionPool(**self.connparams))
 
     def __reduce__(self, args=(), kwargs={}):
-        kwargs.update(
-            dict(host=self.host,
-                 port=self.port,
-                 db=self.db,
-                 password=self.password,
-                 expires=self.expires,
-                 max_connections=self.max_connections))
-        return super(RedisBackend, self).__reduce__(args, kwargs)
+        return super(RedisBackend, self).__reduce__(
+            (self.url, ), {'expires': self.expires},
+        )
+
+    @deprecated_property(3.2, 3.3)
+    def host(self):
+        return self.connparams['host']
+
+    @deprecated_property(3.2, 3.3)
+    def port(self):
+        return self.connparams['port']
+
+    @deprecated_property(3.2, 3.3)
+    def db(self):
+        return self.connparams['db']
+
+    @deprecated_property(3.2, 3.3)
+    def password(self):
+        return self.connparams['password']
