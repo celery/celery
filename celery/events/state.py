@@ -174,25 +174,25 @@ class Worker(object):
     def id(self):
         return '{0.hostname}.{0.pid}'.format(self)
 
-    @deprecated('3.2' '3.3')
+    @deprecated(3.2, 3.3)
     def update_heartbeat(self, received, timestamp):
         self.event(None, timestamp, received)
 
-    @deprecated('3.2', '3.3')
+    @deprecated(3.2, 3.3)
     def on_online(self, timestamp=None, local_received=None, **fields):
         self.event('online', timestamp, local_received, fields)
 
-    @deprecated('3.2', '3.3')
+    @deprecated(3.2, 3.3)
     def on_offline(self, timestamp=None, local_received=None, **fields):
         self.event('offline', timestamp, local_received, fields)
 
-    @deprecated('3.2', '3.3')
+    @deprecated(3.2, 3.3)
     def on_heartbeat(self, timestamp=None, local_received=None, **fields):
         self.event('heartbeat', timestamp, local_received, fields)
 
     @class_property
     def _defaults(cls):
-        """Deprecated, to be removed in 3.2"""
+        """Deprecated, to be removed in 3.3"""
         source = cls()
         return dict((k, getattr(source, k)) for k in cls._fields)
 
@@ -310,44 +310,44 @@ class Task(object):
     def ready(self):
         return self.state in states.READY_STATES
 
-    @deprecated('3.2', '3.3')
+    @deprecated(3.2, 3.3)
     def on_sent(self, timestamp=None, **fields):
         self.event('sent', timestamp, fields)
 
-    @deprecated('3.2', '3.3')
+    @deprecated(3.2, 3.3)
     def on_received(self, timestamp=None, **fields):
         self.event('received', timestamp, fields)
 
-    @deprecated('3.2', '3.3')
+    @deprecated(3.2, 3.3)
     def on_started(self, timestamp=None, **fields):
         self.event('started', timestamp, fields)
 
-    @deprecated('3.2', '3.3')
+    @deprecated(3.2, 3.3)
     def on_failed(self, timestamp=None, **fields):
         self.event('failed', timestamp, fields)
 
-    @deprecated('3.2', '3.3')
+    @deprecated(3.2, 3.3)
     def on_retried(self, timestamp=None, **fields):
         self.event('retried', timestamp, fields)
 
-    @deprecated('3.2' '3.3')
+    @deprecated(3.2, 3.3)
     def on_succeeded(self, timestamp=None, **fields):
         self.event('succeeded', timestamp, fields)
 
-    @deprecated('3.2', '3.3')
+    @deprecated(3.2, 3.3)
     def on_revoked(self, timestamp=None, **fields):
         self.event('revoked', timestamp, fields)
 
-    @deprecated('3.2', '3.3')
+    @deprecated(3.2, 3.3)
     def on_unknown_event(self, shortype, timestamp=None, **fields):
         self.event(shortype, timestamp, fields)
 
-    @deprecated('3.2', '3.3')
+    @deprecated(3.2, 3.3)
     def update(self, state, timestamp, fields,
                _state=states.state, RETRY=states.RETRY):
         return self.event(state, timestamp, None, fields)
 
-    @deprecated('3.2', '3.3')
+    @deprecated(3.2, 3.3)
     def merge(self, state, timestamp, fields):
         keep = self.merge_rules.get(state)
         if keep is not None:
@@ -357,7 +357,7 @@ class Task(object):
 
     @class_property
     def _defaults(cls):
-        """Deprecated, to be removed in 3.2."""
+        """Deprecated, to be removed in 3.3."""
         source = cls()
         return dict((k, getattr(source, k)) for k in source._fields)
 

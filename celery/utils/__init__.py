@@ -113,6 +113,55 @@ def deprecated(deprecation=None, removal=None,
     return _inner
 
 
+def deprecated_property(deprecation=None, removal=None,
+                        alternative=None, description=None):
+    def _inner(fun):
+        return _deprecated_property(
+            fun, deprecation=deprecation, removal=removal,
+            alternative=alternative, description=description or fun.__name__)
+    return _inner
+
+
+class _deprecated_property(object):
+
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None, **depreinfo):
+        self.__get = fget
+        self.__set = fset
+        self.__del = fdel
+        self.__name__, self.__module__, self.__doc__ = (
+            fget.__name__, fget.__module__, fget.__doc__,
+        )
+        self.depreinfo = depreinfo
+
+    def __get__(self, obj, type=None):
+        if obj is None:
+            return self
+        warn_deprecated(**self.depreinfo)
+        return self.__get(obj)
+
+    def __set__(self, obj, value):
+        if obj is None:
+            return self
+        if self.__set is None:
+            raise AttributeError('cannot set attribute')
+        warn_deprecated(**self.depreinfo)
+        self.__set(obj, value)
+
+    def __delete__(self, obj):
+        if obj is None:
+            return self
+        if self.__del is None:
+            raise AttributeError('cannot delete attribute')
+        warn_deprecated(**self.depreinfo)
+        self.__del(obj)
+
+    def setter(self, fset):
+        return self.__class__(self.__get, fset, self.__del, **self.depreinfo)
+
+    def deleter(self, fdel):
+        return self.__class__(self.__get, self.__set, fdel, **self.depreinfo)
+
+
 def lpmerge(L, R):
     """In place left precedent dictionary merge.
 

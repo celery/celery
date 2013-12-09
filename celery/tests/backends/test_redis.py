@@ -101,7 +101,7 @@ class test_RedisBackend(AppCase):
     def test_url(self):
         x = self.MockBackend('redis://foobar//1', app=self.app)
         self.assertEqual(x.host, 'foobar')
-        self.assertEqual(x.db, '1')
+        self.assertEqual(x.db, 1)
 
     def test_conf_raises_KeyError(self):
         self.app.conf = AttributeDict({
