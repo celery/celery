@@ -30,13 +30,6 @@ REDIS_MISSING = """\
 You need to install the redis library in order to use \
 the Redis result store backend."""
 
-default_params = {
-    'host': 'localhost',
-    'port': 6379,
-    'db': 0,
-    'password': None,
-}
-
 
 class RedisBackend(KeyValueStoreBackend):
     """Redis task result store."""
