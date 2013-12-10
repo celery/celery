@@ -370,7 +370,8 @@ class State(object):
 
     def __init__(self, callback=None,
                  workers=None, tasks=None, taskheap=None,
-                 max_workers_in_memory=5000, max_tasks_in_memory=10000):
+                 max_workers_in_memory=5000, max_tasks_in_memory=10000,
+                 on_node_join=None, on_node_leave=None):
         self.event_callback = callback
         self.workers = (LRUCache(max_workers_in_memory)
                         if workers is None else workers)
@@ -379,6 +380,8 @@ class State(object):
         self._taskheap = [] if taskheap is None else taskheap
         self.max_workers_in_memory = max_workers_in_memory
         self.max_tasks_in_memory = max_tasks_in_memory
+        self.on_node_join = on_node_join
+        self.on_node_leave = on_node_leave
         self._mutex = threading.Lock()
         self.handlers = {}
         self._seen_types = set()
@@ -451,11 +454,11 @@ class State(object):
 
     def task_event(self, type_, fields):
         """Deprecated, use :meth:`event`."""
-        return self._event(dict(fields, type='-'.join(['task', type_])))
+        return self._event(dict(fields, type='-'.join(['task', type_])))[0]
 
     def worker_event(self, type_, fields):
         """Deprecated, use :meth:`event`."""
-        return self._event(dict(fields, type='-'.join(['worker', type_])))
+        return self._event(dict(fields, type='-'.join(['worker', type_])))[0]
 
     def _create_dispatcher(self):
         get_handler = self.handlers.__getitem__
@@ -470,6 +473,7 @@ class State(object):
         #: an O(n) operation
         max_events_in_heap = self.max_tasks_in_memory * self.heap_multiplier
         add_type = self._seen_types.add
+        on_node_join, on_node_leave = self.on_node_join, self.on_node_leave
         tasks, Task = self.tasks, self.Task
         workers, Worker = self.workers, self.Worker
         # avoid updating LRU entry at getitem
@@ -486,7 +490,7 @@ class State(object):
             except KeyError:
                 pass
             else:
-                return handler(subject, event)
+                return handler(subject, event), subject
 
             if group == 'worker':
                 try:
@@ -497,9 +501,17 @@ class State(object):
                     try:
                         worker, created = get_worker(hostname), False
                     except KeyError:
-                        worker = workers[hostname] = Worker(hostname)
-                    worker.event(subject, timestamp, local_received, event)
-                    return created
+                        if subject == 'offline':
+                            worker, created = None, False
+                        else:
+                            worker = workers[hostname] = Worker(hostname)
+                    if worker:
+                        worker.event(subject, timestamp, local_received, event)
+                    if on_node_join and (created or subject == 'online'):
+                        on_node_join(worker)
+                    if on_node_leave and subject == 'offline':
+                        on_node_leave(worker)
+                    return (worker, created), subject
             elif group == 'task':
                 (uuid, hostname, timestamp,
                  local_received, clock) = tfields(event)
@@ -530,7 +542,7 @@ class State(object):
                 task_name = task.name
                 if task_name is not None:
                     add_type(task_name)
-                return created
+                return (task, created), subject
         return _event
 
     def rebuild_taskheap(self, timetuple=timetuple, heapify=heapify):
@@ -596,4 +608,5 @@ class State(object):
         return self.__class__, (
             self.event_callback, self.workers, self.tasks, None,
             self.max_workers_in_memory, self.max_tasks_in_memory,
+            self.on_node_join, self.on_node_leave,
         )
