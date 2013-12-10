@@ -14,6 +14,7 @@ from kombu.utils.url import _parse_url
 from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t
 from celery.utils import deprecated_property
+from celery.utils.functional import dictfilter
 
 from .base import KeyValueStoreBackend
 
@@ -81,10 +82,10 @@ class RedisBackend(KeyValueStoreBackend):
     def _params_from_url(self, url, defaults):
         scheme, host, port, user, password, path, query = _parse_url(url)
         connparams = dict(
-            defaults,
-            host=host, port=port, user=user, password=password,
-            db=int(query.pop('virtual_host', None) or 0),
-        )
+            defaults, **dictfilter({
+                'host': host, 'port': port, 'password': password,
+                'db': int(query.pop('virtual_host', None) or 0),
+        }))
 
         if scheme == 'socket':
             # Use 'path' as path to the socket... in this case
