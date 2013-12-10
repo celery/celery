@@ -62,7 +62,7 @@ class test__main__(AppCase):
             with patch('celery.__main__._warn_deprecated') as depr:
                 with patch('celery.bin.multi.main') as main:
                     __main__._compat_multi()
-                    mpc.assert_called_with()
+                    self.assertFalse(mpc.called)
                     depr.assert_called_with('celery multi')
                     main.assert_called_with()
 
