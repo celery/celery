@@ -66,7 +66,7 @@ def add_unlock_chord_task(app):
     """
     from celery.canvas import signature
     from celery.exceptions import ChordError
-    from celery.result import result_from_tuple
+    from celery.result import allow_join_result, result_from_tuple
 
     default_propagate = app.conf.CELERY_CHORD_PROPAGATES
 
@@ -95,7 +95,8 @@ def add_unlock_chord_task(app):
         if deps.ready():
             callback = signature(callback, app=app)
             try:
-                ret = j(propagate=propagate)
+                with allow_join_result():
+                    ret = j(propagate=propagate)
             except Exception as exc:
                 try:
                     culprit = next(deps._failed_join_report())

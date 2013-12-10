@@ -20,7 +20,7 @@
 
 
 from celery import chord, group, task, signature, uuid
-from celery.result import AsyncResult, ResultSet
+from celery.result import AsyncResult, ResultSet, allow_join_result
 from collections import deque
 
 
@@ -79,8 +79,9 @@ def unlock_graph(result, callback,
     if result.ready():
         second_level_res = result.get()
         if second_level_res.ready():
-            signature(callback).delay(list(joinall(
-                second_level_res, propagate=propagate)))
+            with allow_join_result():
+                signature(callback).delay(list(joinall(
+                    second_level_res, propagate=propagate)))
     else:
         unlock_graph.retry(countdown=interval, max_retries=max_retries)
 

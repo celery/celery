@@ -469,7 +469,7 @@ class KeyValueStoreBackend(BaseBackend):
         if not self.implements_incr:
             return
         from celery import maybe_signature
-        from celery.result import GroupResult
+        from celery.result import GroupResult, allow_join_result
         app = self.app
         if propagate is None:
             propagate = self.app.conf.CELERY_CHORD_PROPAGATES
@@ -502,7 +502,8 @@ class KeyValueStoreBackend(BaseBackend):
             callback = maybe_signature(task.request.chord, app=self.app)
             j = deps.join_native if deps.supports_native_join else deps.join
             try:
-                ret = j(propagate=propagate)
+                with allow_join_result():
+                    ret = j(propagate=propagate)
             except Exception as exc:
                 try:
                     culprit = next(deps._failed_join_report())
