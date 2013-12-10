@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from celery import group
 from celery import canvas
 from celery import result
-from celery.exceptions import ChordError
+from celery.exceptions import ChordError, Retry
 from celery.five import range
 from celery.result import AsyncResult, GroupResult, EagerResult
 from celery.tests.case import AppCase, Mock
@@ -54,6 +54,7 @@ class TSRNoReport(TSR):
 def patch_unlock_retry(app):
     unlock = app.tasks['celery.chord_unlock']
     retry = Mock()
+    retry.return_value = Retry()
     prev, unlock.retry = unlock.retry, retry
     try:
         yield unlock, retry
@@ -148,11 +149,16 @@ class test_unlock_chord_task(ChordCase):
                     setup(callback)
                 try:
                     assert self.app.tasks['celery.chord_unlock'] is unlock
-                    unlock(
-                        'group_id', callback_s,
-                        result=[self.app.AsyncResult(r) for r in ['1', 2, 3]],
-                        GroupResult=ResultCls, **kwargs
-                    )
+                    try:
+                        unlock(
+                            'group_id', callback_s,
+                            result=[
+                                self.app.AsyncResult(r) for r in ['1', 2, 3]
+                            ],
+                            GroupResult=ResultCls, **kwargs
+                        )
+                    except Retry:
+                        pass
                 finally:
                     canvas.maybe_signature = subtask
                 yield callback_s, retry, fail_current

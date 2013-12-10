@@ -118,8 +118,8 @@ def add_unlock_chord_task(app):
                         exc=ChordError('Callback error: {0!r}'.format(exc)),
                     )
         else:
-            return unlock_chord.retry(countdown=interval,
-                                      max_retries=max_retries)
+            raise unlock_chord.retry(countdown=interval,
+                                     max_retries=max_retries)
     return unlock_chord
 
 
