@@ -483,6 +483,7 @@ class test_State(AppCase):
 
     def test_limits_maxtasks(self):
         s = State(max_tasks_in_memory=1)
+        s.heap_multiplier = 2
         s.event({
             'type': 'task-unknown-event-xxx',
             'foo': 'bar',
