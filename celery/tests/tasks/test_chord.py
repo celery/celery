@@ -224,4 +224,4 @@ class test_Chord_task(ChordCase):
         body = dict()
         Chord(group(self.add.subtask((i, i)) for i in range(5)), body)
         Chord([self.add.subtask((j, j)) for j in range(5)], body)
-        self.assertEqual(self.app.backend.on_chord_apply.call_count, 2)
+        self.assertEqual(self.app.backend.apply_chord.call_count, 2)

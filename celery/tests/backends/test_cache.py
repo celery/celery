@@ -9,6 +9,7 @@ from kombu.utils.encoding import str_to_bytes
 
 from celery import signature
 from celery import states
+from celery import group
 from celery.backends.cache import CacheBackend, DummyClient
 from celery.exceptions import ImproperlyConfigured
 from celery.five import items, string, text_t
@@ -62,10 +63,10 @@ class test_CacheBackend(AppCase):
             self.assertEqual(self.tb.get_status(self.tid), states.FAILURE)
             self.assertIsInstance(self.tb.get_result(self.tid), KeyError)
 
-    def test_on_chord_apply(self):
+    def test_apply_chord(self):
         tb = CacheBackend(backend='memory://', app=self.app)
         gid, res = uuid(), [self.app.AsyncResult(uuid()) for _ in range(3)]
-        tb.on_chord_apply(gid, {}, result=res)
+        tb.apply_chord(group(app=self.app), (), gid, {}, result=res)
 
     @patch('celery.result.GroupResult.restore')
     def test_on_chord_part_return(self, restore):
@@ -82,7 +83,7 @@ class test_CacheBackend(AppCase):
 
         gid, res = uuid(), [self.app.AsyncResult(uuid()) for _ in range(3)]
         task.request.group = gid
-        tb.on_chord_apply(gid, {}, result=res)
+        tb.apply_chord(group(app=self.app), (), gid, {}, result=res)
 
         self.assertFalse(deps.join_native.called)
         tb.on_chord_part_return(task)

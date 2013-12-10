@@ -8,6 +8,7 @@ from kombu.utils import cached_property, uuid
 
 from celery import signature
 from celery import states
+from celery import group
 from celery.datastructures import AttributeDict
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.timeutils import timedelta_seconds
@@ -130,9 +131,9 @@ class test_RedisBackend(AppCase):
         b = self.Backend(expires=timedelta(minutes=1), app=self.app)
         self.assertEqual(b.expires, 60)
 
-    def test_on_chord_apply(self):
-        self.Backend(app=self.app).on_chord_apply(
-            'group_id', {},
+    def test_apply_chord(self):
+        self.Backend(app=self.app).apply_chord(
+            group(app=self.app), (), 'group_id', {},
             result=[self.app.AsyncResult(x) for x in [1, 2, 3]],
         )
 

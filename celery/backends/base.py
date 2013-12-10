@@ -311,7 +311,11 @@ class BaseBackend(object):
         self.app.tasks['celery.chord_unlock'].apply_async(
             (group_id, body, ), kwargs, countdown=countdown,
         )
-    on_chord_apply = fallback_chord_unlock
+
+    def apply_chord(self, header, partial_args, group_id, body, **options):
+        result = header(*partial_args, task_id=group_id)
+        self.fallback_chord_unlock(group_id, body, **options)
+        return result
 
     def current_task_children(self, request=None):
         request = request or getattr(current_task(), 'request', None)
@@ -335,6 +339,8 @@ class KeyValueStoreBackend(BaseBackend):
             self.key_t = self.key_t.__func__  # remove binding
         self._encode_prefixes()
         super(KeyValueStoreBackend, self).__init__(*args, **kwargs)
+        if self.implements_incr:
+            self.apply_chord = self._apply_chord_incr
 
     def _encode_prefixes(self):
         self.task_keyprefix = self.key_t(self.task_keyprefix)
@@ -459,11 +465,10 @@ class KeyValueStoreBackend(BaseBackend):
             meta['result'] = result_from_tuple(result, self.app)
             return meta
 
-    def on_chord_apply(self, group_id, body, result=None, **kwargs):
-        if self.implements_incr:
-            self.save_group(group_id, self.app.GroupResult(group_id, result))
-        else:
-            self.fallback_chord_unlock(group_id, body, result, **kwargs)
+    def _apply_chord_incr(self, header, partial_args, group_id, body,
+                          result=None, **options):
+        self.save_group(group_id, self.app.GroupResult(group_id, result))
+        return header(*partial_args, task_id=group_id)
 
     def on_chord_part_return(self, task, propagate=None):
         if not self.implements_incr:
