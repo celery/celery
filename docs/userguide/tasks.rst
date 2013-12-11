@@ -997,12 +997,11 @@ will do roughly this behind the scenes:
 
 .. code-block:: python
 
-    @app.task
-    class AddTask(Task):
+    class _AddTask(app.Task):
 
         def run(self, x, y):
             return x + y
-    add = registry.tasks[AddTask.name]
+    add = app.tasks[_AddTask.name]
 
 
 Instantiation
