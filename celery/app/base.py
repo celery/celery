@@ -307,7 +307,8 @@ class Celery(object):
         conf = self.conf
         if conf.CELERY_ALWAYS_EAGER:  # pragma: no cover
             warnings.warn(AlwaysEagerIgnored(
-                'CELERY_ALWAYS_EAGER has no effect on send_task'))
+                'CELERY_ALWAYS_EAGER has no effect on send_task',
+            ), stacklevel=2)
         options = router.route(options, name, args, kwargs)
         if connection:
             producer = self.amqp.TaskProducer(connection)

@@ -74,7 +74,7 @@ def worker_direct(hostname):
 
 
 def warn_deprecated(description=None, deprecation=None,
-                    removal=None, alternative=None):
+                    removal=None, alternative=None, stacklevel=2):
     ctx = {'description': description,
            'deprecation': deprecation, 'removal': removal,
            'alternative': alternative}
@@ -82,7 +82,7 @@ def warn_deprecated(description=None, deprecation=None,
         w = CPendingDeprecationWarning(PENDING_DEPRECATION_FMT.format(**ctx))
     else:
         w = CDeprecationWarning(DEPRECATION_FMT.format(**ctx))
-    warnings.warn(w)
+    warnings.warn(w, stacklevel=stacklevel)
 
 
 def deprecated(deprecation=None, removal=None,
@@ -107,7 +107,8 @@ def deprecated(deprecation=None, removal=None,
             warn_deprecated(description=description or qualname(fun),
                             deprecation=deprecation,
                             removal=removal,
-                            alternative=alternative)
+                            alternative=alternative,
+                            stacklevel=3)
             return fun(*args, **kwargs)
         return __inner
     return _inner
@@ -132,6 +133,7 @@ class _deprecated_property(object):
             fget.__name__, fget.__module__, fget.__doc__,
         )
         self.depreinfo = depreinfo
+        self.depreinfo.setdefault('stacklevel', 3)
 
     def __get__(self, obj, type=None):
         if obj is None:
