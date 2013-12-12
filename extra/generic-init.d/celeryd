@@ -37,6 +37,7 @@
 # making it easy to run multiple processes on the system.
 SCRIPT_NAME="$(basename $0)"
 
+DEFAULT_USER="celery"
 DEFAULT_PID_FILE="/var/run/celery/${SCRIPT_NAME}/%n.pid"
 DEFAULT_LOG_FILE="/var/log/celery/${SCRIPT_NAME}/%n.log"
 DEFAULT_LOG_LEVEL="INFO"
@@ -53,6 +54,7 @@ if [ ! -z "$CELERY_APP" ]; then
     CELERY_APP_ARG="--app=$CELERY_APP"
 fi
 
+CELERYD_USER=${CELERYD_USER:-$DEFAULT_USER}
 
 # Set CELERY_CREATE_DIRS to always create log/pid dirs.
 CELERY_CREATE_DIRS=${CELERY_CREATE_DIRS:-0}
@@ -82,13 +84,6 @@ CELERYD_LOG_DIR=`dirname $CELERYD_LOG_FILE`
 CELERYD_PID_DIR=`dirname $CELERYD_PID_FILE`
 
 # Extra start-stop-daemon options, like user/group.
-if [ -n "$CELERYD_USER" ]; then
-    DAEMON_OPTS="$DAEMON_OPTS --uid=$CELERYD_USER"
-fi
-if [ -n "$CELERYD_GROUP" ]; then
-    DAEMON_OPTS="$DAEMON_OPTS --gid=$CELERYD_GROUP"
-fi
-
 if [ -n "$CELERYD_CHDIR" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --workdir=$CELERYD_CHDIR"
 fi
@@ -148,36 +143,32 @@ create_paths() {
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
-_get_pid_files() {
-    [ ! -d "$CELERYD_PID_DIR" ] && return
-    echo `ls -1 "$CELERYD_PID_DIR"/*.pid 2> /dev/null`
-}
-
 _get_pids() {
-    local pid_files=
-    pid_files=`_get_pid_files`
-    [ -z "$pid_files" ] && echo "${SCRIPT_NAME} is stopped" && exit 1
+    found_pids=0
+    my_exitcode=0
 
-    for pid_file in $pid_files; do
+    for pid_file in "$CELERYD_PID_DIR"/*.pid; do
         local pid=`cat "$pid_file"`
         local cleaned_pid=`echo "$pid" | sed -e 's/[^0-9]//g'`
         if [ -z "$pid" ] || [ "$cleaned_pid" != "$pid" ]; then
             echo "bad pid file ($pid_file)"
             one_failed=true
+            my_exitcode=1
         else
+            found_pids=1
             echo "$pid"
         fi
+
+    if [ $found_pids -eq 0 ]; then
+        echo "${SCRIPT_NAME}: All nodes down"
+        exit $my_exitcode
+    fi
     done
 }
 
-_get_worker_pids() {
-    local pids=
-    pids=`_get_pids`
-    local worker_pids=
-    for pid in $pids; do
-        worker_pids=`ps h --ppid $pid -o pid`
-        [ "$worker_pids" ] && echo "$worker_pids" || one_failed=true
-    done
+
+_chuid () {
+    su "$CELERYD_USER" -c "$CELERYD_MULTI $*"
 }
 
 
@@ -185,12 +176,12 @@ start_workers () {
     if [ ! -z "$CELERYD_ULIMIT" ]; then
         ulimit $CELERYD_ULIMIT
     fi
-    $CELERYD_MULTI $* start $CELERYD_NODES $DAEMON_OPTS     \
-                         --pidfile="$CELERYD_PID_FILE"      \
-                         --logfile="$CELERYD_LOG_FILE"      \
-                         --loglevel="$CELERYD_LOG_LEVEL"    \
-                         $CELERY_APP_ARG                    \
-                         $CELERYD_OPTS
+    _chuid $* start $CELERYD_NODES $DAEMON_OPTS     \
+                 --pidfile="$CELERYD_PID_FILE"      \
+                 --logfile="$CELERYD_LOG_FILE"      \
+                 --loglevel="$CELERYD_LOG_LEVEL"    \
+                 $CELERY_APP_ARG                    \
+                 $CELERYD_OPTS
 }
 
 
@@ -200,28 +191,28 @@ dryrun () {
 
 
 stop_workers () {
-    $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
+    _chuid stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
 }
 
 
 restart_workers () {
-    $CELERYD_MULTI restart $CELERYD_NODES $DAEMON_OPTS      \
-                           --pidfile="$CELERYD_PID_FILE"    \
-                           --logfile="$CELERYD_LOG_FILE"    \
-                           --loglevel="$CELERYD_LOG_LEVEL"  \
-                           $CELERY_APP_ARG                  \
-                           $CELERYD_OPTS
+    _chuid restart $CELERYD_NODES $DAEMON_OPTS      \
+                   --pidfile="$CELERYD_PID_FILE"    \
+                   --logfile="$CELERYD_LOG_FILE"    \
+                   --loglevel="$CELERYD_LOG_LEVEL"  \
+                   $CELERY_APP_ARG                  \
+                   $CELERYD_OPTS
 }
 
 
 kill_workers() {
-    $CELERYD_MULTI kill $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
+    _chuid kill $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
 }
 
 
 restart_workers_graceful () {
     local worker_pids=
-    worker_pids=`_get_worker_pids`
+    worker_pids=`_get_pids`
     [ "$one_failed" ] && exit 1
 
     for worker_pid in $worker_pids; do
@@ -240,17 +231,17 @@ restart_workers_graceful () {
 
 
 check_status () {
-    local pid_files=
-    pid_files=`_get_pid_files`
-    [ -z "$pid_files" ] && echo "${SCRIPT_NAME} not running (no pidfile)" && exit 1
+    my_exitcode=0
+    found_pids=0
 
     local one_failed=
-    for pid_file in $pid_files; do
+    for pid_file in "$CELERYD_PID_DIR"/*.pid; do
         local node=`basename "$pid_file" .pid`
         local pid=`cat "$pid_file"`
         local cleaned_pid=`echo "$pid" | sed -e 's/[^0-9]//g'`
         if [ -z "$pid" ] || [ "$cleaned_pid" != "$pid" ]; then
             echo "bad pid file ($pid_file)"
+            one_failed=true
         else
             local failed=
             kill -0 $pid 2> /dev/null || failed=true
