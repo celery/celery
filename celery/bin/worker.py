@@ -139,6 +139,7 @@ from celery.bin.base import Command, Option, daemon_options
 from celery.bin.celeryd_detach import detached_celeryd
 from celery.five import string_t
 from celery.platforms import maybe_drop_privileges
+from celery.utils import default_nodename
 from celery.utils.log import LOG_LEVELS, mlevel
 
 __all__ = ['worker', 'main']
@@ -180,8 +181,8 @@ class worker(Command):
             detached_celeryd(self.app).execute_from_commandline(argv)
             raise SystemExit(0)
 
-    def run(self, hostname=None, pool_cls=None, loglevel=None,
-            app=None, uid=None, gid=None, **kwargs):
+    def run(self, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
+            loglevel=None, logfile=None, pidfile=None, state_db=None, **kwargs):
         maybe_drop_privileges(uid=uid, gid=gid)
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
@@ -190,7 +191,7 @@ class worker(Command):
         if self.app.IS_WINDOWS and kwargs.get('beat'):
             self.die('-B option does not work on Windows.  '
                      'Please run celery beat as a separate service.')
-        hostname = self.simple_format(hostname)
+        hostname = self.simple_format(default_nodename(hostname))
         if loglevel:
             try:
                 loglevel = mlevel(loglevel)
@@ -200,7 +201,10 @@ class worker(Command):
                         l for l in LOG_LEVELS if isinstance(l, string_t))))
 
         return self.app.Worker(
-            hostname=hostname, pool_cls=pool_cls, loglevel=loglevel, **kwargs
+            hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
+            logfile=self.node_format(logfile, hostname),
+            pidfile=self.node_format(pidfile, hostname),
+            state_db=self.node_format(state_db, hostname), **kwargs
         ).start()
 
     def with_pool_option(self, argv):

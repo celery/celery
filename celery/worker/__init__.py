@@ -33,7 +33,7 @@ from celery.exceptions import (
     ImproperlyConfigured, SystemTerminate, TaskRevokedError,
 )
 from celery.five import string_t, values
-from celery.utils import nodename, nodesplit, worker_direct
+from celery.utils import default_nodename, worker_direct
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel, worker_logger as logger
 from celery.utils.threads import default_socket_timeout
@@ -63,11 +63,6 @@ def str_to_list(s):
     if isinstance(s, string_t):
         return s.split(',')
     return s
-
-
-def default_nodename(hostname):
-    name, host = nodesplit(hostname or '')
-    return nodename(name or 'celery', host or socket.gethostname())
 
 
 class WorkController(object):

@@ -335,6 +335,10 @@ def nodesplit(nodename):
     return parts
 
 
+def default_nodename(hostname):
+    name, host = nodesplit(hostname or '')
+    return nodename(name or 'celery', host or socket.gethostname())
+
 # ------------------------------------------------------------------------ #
 # > XXX Compat
 from .log import LOG_LEVELS     # noqa
