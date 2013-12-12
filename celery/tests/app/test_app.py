@@ -174,12 +174,13 @@ class test_App(AppCase):
 
     def test_maybe_close_pool(self):
         cpool = self.app._pool = Mock()
-        ppool = self.app.amqp._producer_pool = Mock()
+        amqp = self.app.__dict__['amqp'] = Mock()
+        ppool = amqp._producer_pool
         self.app._maybe_close_pool()
         cpool.force_close_all.assert_called_with()
         ppool.force_close_all.assert_called_with()
         self.assertIsNone(self.app._pool)
-        self.assertIsNone(self.app.amqp._producer_pool)
+        self.assertIsNone(self.app.__dict__['amqp']._producer_pool)
 
         self.app._pool = Mock()
         self.app._maybe_close_pool()
