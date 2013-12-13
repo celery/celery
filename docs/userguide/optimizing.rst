@@ -137,7 +137,7 @@ or that the messages may not even fit in memory.
 
 The workers' default prefetch count is the
 :setting:`CELERYD_PREFETCH_MULTIPLIER` setting multiplied by the number
-of child worker processes [*]_.
+of concurrency slots[*]_ (processes/threads/greenthreads).
 
 If you have many tasks with a long duration you want
 the multiplier value to be 1, which means it will only reserve one
