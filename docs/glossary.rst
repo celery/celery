@@ -71,3 +71,13 @@ Glossary
     cipater
         Celery release 3.1 named after song by Autechre
         (http://www.youtube.com/watch?v=OHsaqUr_33Y)
+
+    prefetch multiplier
+        The :term:`prefetch count` is configured by using the
+        :setting:`CELERYD_PREFETCH_MULTIPLIER` setting, which is multiplied
+        by the number of pool slots (threads/processes/greenthreads).
+
+    prefetch count
+        Maximum number of unacknowledged messages a consumer can hold and if
+        exceeded the transport should not deliver any more messages to that
+        consumer.  See :ref:`optimizing-prefetch-limits`.
