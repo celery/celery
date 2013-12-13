@@ -279,7 +279,8 @@ class EventReceiver(ConsumerMixin):
     app = None
 
     def __init__(self, channel, handlers=None, routing_key='#',
-                 node_id=None, app=None, queue_prefix='celeryev'):
+                 node_id=None, app=None, queue_prefix='celeryev',
+                 accept=None):
         self.app = app_or_default(app or self.app)
         self.channel = maybe_channel(channel)
         self.handlers = {} if handlers is None else handlers
@@ -295,6 +296,9 @@ class EventReceiver(ConsumerMixin):
                            queue_arguments=self._get_queue_arguments())
         self.adjust_clock = self.app.clock.adjust
         self.forward_clock = self.app.clock.forward
+        if accept is None:
+            accept = set([self.app.conf.CELERY_EVENT_SERIALIZER, 'json'])
+        self.accept = accept
 
     def _get_queue_arguments(self):
         conf = self.app.conf
@@ -312,7 +316,7 @@ class EventReceiver(ConsumerMixin):
     def get_consumers(self, Consumer, channel):
         return [Consumer(queues=[self.queue],
                          callbacks=[self._receive], no_ack=True,
-                         accept=['application/json'])]
+                         accept=self.accept)]
 
     def on_consume_ready(self, connection, channel, consumers,
                          wakeup=True, **kwargs):
