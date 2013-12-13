@@ -339,7 +339,7 @@ def nodesplit(nodename):
 
 def default_nodename(hostname):
     name, host = nodesplit(hostname or '')
-    return nodename(name or NODENAME_DEFAUALT, host or socket.gethostname())
+    return nodename(name or NODENAME_DEFAULT, host or socket.gethostname())
 
 # ------------------------------------------------------------------------ #
 # > XXX Compat
