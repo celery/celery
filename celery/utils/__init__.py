@@ -56,6 +56,8 @@ WORKER_DIRECT_QUEUE_FORMAT = '{hostname}.dq'
 #: Separator for worker node name and hostname.
 NODENAME_SEP = '@'
 
+NODENAME_DEFAULT = 'celery'
+
 
 def worker_direct(hostname):
     """Return :class:`kombu.Queue` that is a direct route to
@@ -337,7 +339,7 @@ def nodesplit(nodename):
 
 def default_nodename(hostname):
     name, host = nodesplit(hostname or '')
-    return nodename(name or 'celery', host or socket.gethostname())
+    return nodename(name or NODENAME_DEFAUALT, host or socket.gethostname())
 
 # ------------------------------------------------------------------------ #
 # > XXX Compat
