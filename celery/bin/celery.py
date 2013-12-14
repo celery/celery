@@ -319,10 +319,7 @@ class _RemoteControl(Command):
         if destination and isinstance(destination, string_t):
             destination = [dest.strip() for dest in destination.split(',')]
 
-        try:
-            handler = getattr(self, method)
-        except AttributeError:
-            handler = self.call
+        handler = getattr(self, method, self.call)
 
         replies = handler(method, *args[1:], timeout=timeout,
                           destination=destination,
@@ -423,22 +420,22 @@ class control(_RemoteControl):
 
     def rate_limit(self, method, task_name, rate_limit, **kwargs):
         """<task_name> <rate_limit> (e.g. 5/s | 5/m | 5/h)>"""
-        return self.call(method, task_name, rate_limit, reply=True, **kwargs)
+        return self.call(method, task_name, rate_limit, **kwargs)
 
     def time_limit(self, method, task_name, soft, hard=None, **kwargs):
         """<task_name> <soft_secs> [hard_secs]"""
         return self.call(method, task_name,
-                         float(soft), float(hard), reply=True, **kwargs)
+                         float(soft), float(hard), **kwargs)
 
     def add_consumer(self, method, queue, exchange=None,
                      exchange_type='direct', routing_key=None, **kwargs):
         """<queue> [exchange [type [routing_key]]]"""
         return self.call(method, queue, exchange,
-                         exchange_type, routing_key, reply=True, **kwargs)
+                         exchange_type, routing_key, **kwargs)
 
     def cancel_consumer(self, method, queue, **kwargs):
         """<queue>"""
-        return self.call(method, queue, reply=True, **kwargs)
+        return self.call(method, queue, **kwargs)
 
 
 class status(Command):
