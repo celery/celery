@@ -19,23 +19,24 @@
 ### END INIT INFO
 #
 #
-# To implement separate init scripts, do NOT copy this script.  Instead,
-# symlink it.  I.e., if my new application, "little-worker" needs an init, I
+# To implement separate init scripts, copy this script and give it a different
+# name:
+# I.e., if my new application, "little-worker" needs an init, I
 # should just use:
 #
-#   ln -s /etc/init.d/celeryd /etc/init.d/little-worker
+#   cp /etc/init.d/celeryd /etc/init.d/little-worker
 #
 # You can then configure this by manipulating /etc/default/little-worker.
 #
-# If you want to have separate LSB headers in each script you can source this
-# script instead of symlinking:
-#   # ...
-#   ### END INIT INFO
-#   source /etc/init.d/celeryd
-#
-# Setting `SCRIPT_NAME` here allows you to symlink/source this init script,
-# making it easy to run multiple processes on the system.
-SCRIPT_NAME="$(basename $0)"
+
+
+# May be a runlevel symlink (e.g. S02celeryd)
+if [ -L "$0" ]; then
+    SCRIPT_FILE=$(readlink "$0")
+else
+    SCRIPT_FILE="$0"
+fi
+SCRIPT_NAME="$(basename "$SCRIPT_FILE")"
 
 DEFAULT_USER="celery"
 DEFAULT_PID_FILE="/var/run/celery/%n.pid"

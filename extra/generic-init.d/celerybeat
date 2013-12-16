@@ -21,9 +21,13 @@
 # abnormally in the absence of a valid process ID.
 #set -e
 
-# Setting `SCRIPT_NAME` here allows you to symlink/source this init script,
-# making it easy to run multiple processes on the system.
-SCRIPT_NAME="$(basename $0)"
+# May be a runlevel symlink (e.g. S02celeryd)
+if [ -L "$0" ]; then
+    SCRIPT_FILE=$(readlink "$0")
+else
+    SCRIPT_FILE="$0"
+fi
+SCRIPT_NAME="$(basename "$SCRIPT_FILE")"
 
 # /etc/init.d/celerybeat: start and stop the celery periodic task scheduler daemon.
 
