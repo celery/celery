@@ -65,8 +65,8 @@ class test_BaseBackend_interface(AppCase):
 
     def test_apply_chord(self, unlock='celery.chord_unlock'):
         self.app.tasks[unlock] = Mock()
-        self.b.apply_chord(group(app=self.app), (),
-            'dakj221', None,
+        self.b.apply_chord(
+            group(app=self.app), (), 'dakj221', None,
             result=[self.app.AsyncResult(x) for x in [1, 2, 3]],
         )
         self.assertTrue(self.app.tasks[unlock].apply_async.call_count)

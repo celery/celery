@@ -520,12 +520,12 @@ class test_control(AppCase):
     def test_rate_limit(self):
         i = self.control(True)
         i.rate_limit('rate_limit', 'proj.add', '1/s')
-        i.call.assert_called_with('rate_limit', 'proj.add', '1/s', reply=True)
+        i.call.assert_called_with('rate_limit', 'proj.add', '1/s')
 
     def test_time_limit(self):
         i = self.control(True)
         i.time_limit('time_limit', 'proj.add', 10, 30)
-        i.call.assert_called_with('time_limit', 'proj.add', 10, 30, reply=True)
+        i.call.assert_called_with('time_limit', 'proj.add', 10, 30)
 
     def test_add_consumer(self):
         i = self.control(True)
@@ -535,13 +535,13 @@ class test_control(AppCase):
         )
         i.call.assert_called_with(
             'add_consumer', 'queue', 'exchange', 'topic', 'rkey',
-            durable=True, reply=True,
+            durable=True,
         )
 
     def test_cancel_consumer(self):
         i = self.control(True)
         i.cancel_consumer('cancel_consumer', 'queue')
-        i.call.assert_called_with('cancel_consumer', 'queue', reply=True)
+        i.call.assert_called_with('cancel_consumer', 'queue')
 
 
 class test_multi(AppCase):

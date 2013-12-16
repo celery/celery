@@ -182,7 +182,8 @@ class worker(Command):
             raise SystemExit(0)
 
     def run(self, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
-            loglevel=None, logfile=None, pidfile=None, state_db=None, **kwargs):
+            loglevel=None, logfile=None, pidfile=None, state_db=None,
+            **kwargs):
         maybe_drop_privileges(uid=uid, gid=gid)
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.

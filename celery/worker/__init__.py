@@ -12,7 +12,6 @@
 from __future__ import absolute_import
 
 import os
-import socket
 import sys
 import traceback
 try:

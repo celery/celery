@@ -84,8 +84,8 @@ class RedisBackend(KeyValueStoreBackend):
         connparams = dict(
             defaults, **dictfilter({
                 'host': host, 'port': port, 'password': password,
-                'db': int(query.pop('virtual_host', None) or 0),
-        }))
+                'db': int(query.pop('virtual_host', None) or 0)})
+        )
 
         if scheme == 'socket':
             # Use 'path' as path to the socket... in this case
