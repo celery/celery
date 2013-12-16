@@ -12,7 +12,134 @@ new in Celery 3.1.
 
 3.1.7
 =====
-:release-date: 2013-12-16 X:XX P.M UTC
+:release-date: 2013-12-17 X:XX P.M UTC
+
+.. _v317-important:
+
+Important Notes
+---------------
+
+Init script security improvements
+---------------------------------
+
+Where the generic init scripts (for ``celeryd``, and ``celerybeat``) before
+delegated the responsibility of dropping privileges to the target application,
+it will now use ``su`` instead, so that the Python program is not trusted
+with superuser privileges.
+
+This is not in reaction to any known exploit, but instead will
+limit the possibility of a privilege escalation bug being discovered in the
+future.
+
+You have to upgrade the init scripts manually from this directory:
+https://github.com/celery/celery/tree/3.1/extra/generic-init.d
+
+AMQP result backend
+~~~~~~~~~~~~~~~~~~~
+
+The 3.1 release accidentally left the amqp backend configured to be
+non-persistent by default.
+
+Upgrading from 3.0 would give "not equivalent" errors when attempting to
+set or retrieve results for a task unless you manually set the
+persistence setting:
+
+    CELERY_RESULT_PERSISTENT = True
+
+This version restores the previous setting so if you already forced
+this upgrade by removing the existing exchange you must either
+keep the configuration by setting ``CELERY_RESULT_PERSISTENT = False``
+or delete the ``celeryresults`` exchange again.
+
+
+.. _v317-fixes:
+
+Fixes
+-----
+
+- Now depends on :ref:`Kombu 3.0.8 <kombu:version-3.0.8>`.
+
+- Now depends on :mod:`billiard` 3.3.0.13
+
+- Events: Fixed compatability with non-standard json libraries
+  that sends float as :class:`decimal.Decimal` (Issue #1731)
+
+- Events: State worker objects now always defines attributes:
+  ``active``, ``processed``, ``loadavg``, ``sw_ident``, ``sw_ver``
+  and ``sw_sys``.
+
+- Worker: Now keeps count of the total number of tasks processed,
+  not just by type (``all_active_count``).
+
+- Init scripts:  Fixed problem with reading configuration file
+  when the init script is symlinked to a runlevel (e.g. ``S02celeryd``).
+  (Issue #1740).
+
+    This also removed a rarely used feature where you can symlink the script
+    to provide alternative configurations.  You instead copy the script
+    and give it a new name, but perhaps a better solution is to provide
+    arguments to ``CELERYD_OPTS`` to separate them:
+
+    .. code-block:: bash
+
+        CELERYD_NODES="X1 X2 Y1 Y2"
+        CELERYD_OPTS="-A:X1 x -A:X2 x -A:Y1 y -A:Y2 y"
+
+- Fallback chord unlock task is now always called after the chord header
+  (Issue #1700).
+
+    This means that the unlock task will not be started if there's
+    an error sending the header.
+
+- Celery command: Fixed problem with arguments for some control commands.
+
+    Fix contributed by Konstantin Podshumok.
+
+- Fixed bug in ``utcoffset`` where the offset when in DST would be
+  completely wrong (Issue #1743).
+
+- Worker with ``-B`` argument did not properly shut down the beat instance.
+
+- Worker: The ``%n`` and ``%h`` formats are now also supported by the
+  :option:`--logfile`, :option:`--pidfile` and :option:`--statedb` arguments.
+
+    Example:
+
+    .. code-block:: bash
+
+        $ celery -A proj worker -n foo@%h --logfile=%n.log --statedb=%n.db
+
+- Redis/Cache result backends: Will now timeout if keys evicted while trying
+  to join a chord.
+
+- The fallbock unlock chord task now raises :exc:`Retry` so that the
+  retry even is properly logged by the worker.
+
+- Multi: Will no longer apply Eventlet/gevent monkey patches (Issue #1717).
+
+- Redis result backend: Now supports UNIX sockets.
+
+    Like the Redis broker transport the result backend now also supports
+    using ``redis+socket:///tmp/redis.sock`` URLs.
+
+    Contributed by Alcides Viamontes Esquivel.
+
+- Events: Events sent by clients was mistaken for worker related events
+  (Issue #1714).
+
+    For ``events.State`` the tasks now have a ``Task.client`` attribute
+    that is set when a ``task-sent`` event is being received.
+
+    Also, a clients logical clock is not in sync with the cluster so
+    they live in a "time bubble".  So for this reason monitors will no
+    longer attempt to merge with the clock of an event sent by a client,
+    instead it will fake the value by using the current clock with
+    a skew of -1.
+
+- Prefork pool: The method used to find terminated process was flawed
+  in that it did not also take into account a missing popen object.
+
+- Events: No longer takes clock value from ``task-sent`` events.
 
 
 .. _version-3.1.6:
