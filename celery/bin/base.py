@@ -66,6 +66,7 @@ in any command that also has a `--detach` option.
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
+import random
 import re
 import socket
 import sys
@@ -259,6 +260,7 @@ class Command(object):
         pass
 
     def __call__(self, *args, **kwargs):
+        random.seed()  # maybe we were forked.
         self.verify_args(args)
         try:
             ret = self.run(*args, **kwargs)
