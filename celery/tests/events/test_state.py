@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import pickle
 
+from decimal import Decimal
 from random import shuffle
 from time import time
 from itertools import count
@@ -170,6 +171,17 @@ class test_Worker(AppCase):
         self.assertNotEqual(
             hash(Worker(hostname='foo')), hash(Worker(hostname='bar')),
         )
+
+    def test_compatible_with_Decimal(self):
+        w = Worker('george@vandelay.com')
+        timestamp, local_received = Decimal(time()), time()
+        w.event('worker-online', timestamp, local_received, fields={
+            'hostname': 'george@vandelay.com',
+            'timestamp': timestamp,
+            'local_received': local_received,
+            'freq': Decimal(5.6335431),
+        })
+        self.assertTrue(w.alive)
 
     def test_survives_missing_timestamp(self):
         worker = Worker(hostname='foo')
