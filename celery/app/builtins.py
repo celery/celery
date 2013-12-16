@@ -96,7 +96,7 @@ def add_unlock_chord_task(app):
             callback = signature(callback, app=app)
             try:
                 with allow_join_result():
-                    ret = j(propagate=propagate)
+                    ret = j(timeout=3.0, propagate=propagate)
             except Exception as exc:
                 try:
                     culprit = next(deps._failed_join_report())
