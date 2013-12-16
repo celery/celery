@@ -109,22 +109,33 @@ class Worker(object):
     heartbeat_max = 4
     expire_window = HEARTBEAT_EXPIRE_WINDOW
 
-    _fields = ('hostname', 'pid', 'freq', 'heartbeats', 'clock')
+    _fields = ('hostname', 'pid', 'freq', 'heartbeats', 'clock',
+               'active', 'processed', 'loadavg', 'sw_ident',
+               'sw_ver', 'sw_sys')
     if not PYPY:
         __slots__ = _fields + ('event', '__dict__', '__weakref__')
 
     def __init__(self, hostname=None, pid=None, freq=60,
-                 heartbeats=None, clock=0):
+                 heartbeats=None, clock=0, active=None, processed=None,
+                 loadavg=None, sw_ident=None, sw_ver=None, sw_sys=None):
         self.hostname = hostname
         self.pid = pid
         self.freq = freq
         self.heartbeats = [] if heartbeats is None else heartbeats
         self.clock = clock or 0
+        self.active = active
+        self.processed = processed
+        self.loadavg = loadavg
+        self.sw_ident = sw_ident
+        self.sw_ver = sw_ver
+        self.sw_sys = sw_sys
         self.event = self._create_event_handler()
 
     def __reduce__(self):
         return self.__class__, (self.hostname, self.pid, self.freq,
-                                self.heartbeats, self.clock)
+                                self.heartbeats, self.clock, self.active,
+                                self.processed, self.loadavg, self.sw_ident,
+                                self.sw_ver, self.sw_sys)
 
     def _create_event_handler(self):
         _set = object.__setattr__
