@@ -55,6 +55,7 @@ class AMQPBackend(BaseBackend):
 
     BacklogLimitExceeded = BacklogLimitExceeded
 
+    persistent = True
     supports_autoexpire = True
     supports_native_join = True
 
