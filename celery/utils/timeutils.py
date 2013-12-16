@@ -335,7 +335,7 @@ class ffwd(object):
 
 def utcoffset():
     if _time.daylight:
-        return (__timezone__ + __altzone__) // 3600
+        return __altzone__ // 3600
     return __timezone__ // 3600
 
 
