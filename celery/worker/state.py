@@ -51,6 +51,9 @@ active_requests = set()
 #: count of tasks accepted by the worker, sorted by type.
 total_count = Counter()
 
+#: count of all tasks accepted by the worker
+all_total_count = [0]
+
 #: the list of currently revoked tasks.  Persistent if statedb set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 
@@ -68,10 +71,11 @@ def maybe_shutdown():
         raise SystemTerminate()
 
 
-def task_accepted(request):
+def task_accepted(request, _all_total_count=all_total_count):
     """Updates global state when a task has been accepted."""
     active_requests.add(request)
     total_count[request.name] += 1
+    all_total_count[0] += 1
 
 
 def task_ready(request):
