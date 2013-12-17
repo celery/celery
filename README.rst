@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-:Version: 3.1.6 (Cipater)
+:Version: 3.1.7 (Cipater)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
@@ -274,10 +274,11 @@ Transports and Backends
     for using Redis as a message transport or as a result backend.
 
 :celery[mongodb]:
-    for using MongoDB as a message transport, or as a result backend.
+    for using MongoDB as a message transport (*experimental*),
+    or as a result backend (*supported*).
 
 :celery[sqs]:
-    for using Amazon SQS as a message transport.
+    for using Amazon SQS as a message transport (*experimental*).
 
 :celery[memcache]:
     for using memcached as a result backend.
@@ -286,28 +287,29 @@ Transports and Backends
     for using Apache Cassandra as a result backend.
 
 :celery[couchdb]:
-    for using CouchDB as a message transport.
+    for using CouchDB as a message transport (*experimental*).
 
 :celery[couchbase]:
     for using CouchBase as a result backend.
 
 :celery[beanstalk]:
-    for using Beanstalk as a message transport.
+    for using Beanstalk as a message transport (*experimental*).
 
 :celery[zookeeper]:
     for using Zookeeper as a message transport.
 
 :celery[zeromq]:
-    for using ZeroMQ as a message transport.
+    for using ZeroMQ as a message transport (*experimental*).
 
 :celery[sqlalchemy]:
-    for using SQLAlchemy as a message transport, or as a result backend.
+    for using SQLAlchemy as a message transport (*experimental*),
+    or as a result backend (*supported*).
 
 :celery[pyro]:
-    for using the Pyro4 message transport.
+    for using the Pyro4 message transport (*experimental*).
 
 :celery[slmq]:
-    for using the SoftLayer Message Queue transport.
+    for using the SoftLayer Message Queue transport (*experimental*).
 
 .. _celery-installing-from-source:
 
