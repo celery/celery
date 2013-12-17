@@ -189,9 +189,11 @@ You can enable this behavior by using the following configuration options:
     CELERY_ACKS_LATE = True
     CELERYD_PREFETCH_MULTIPLIER = 1
 
+.. _prefork-pool-prefetch:
+
 Prefork pool prefetch settings
 ------------------------------
-    
+
 The prefork pool will asynchronously send as many tasks to the processes
 as it can and this means that the processes are, in effect, prefetching
 tasks.

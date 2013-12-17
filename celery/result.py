@@ -9,6 +9,7 @@
 from __future__ import absolute_import
 
 import time
+import warnings
 
 from collections import deque
 from contextlib import contextmanager
@@ -32,12 +33,15 @@ E_WOULDBLOCK = """\
 Never call result.get() within a task!
 See http://docs.celeryq.org/en/latest/userguide/tasks.html\
 #task-synchronous-subtasks
+
+In Celery 3.2 this will result in an exception being
+raised instead of just being a warning.
 """
 
 
 def assert_will_not_block():
     if task_join_will_block():
-        raise RuntimeError(E_WOULDBLOCK)
+        warnings.warn(RuntimeWarning(E_WOULDBLOCK)
 
 
 @contextmanager
