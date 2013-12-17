@@ -80,4 +80,4 @@ Glossary
     prefetch count
         Maximum number of unacknowledged messages a consumer can hold and if
         exceeded the transport should not deliver any more messages to that
-        consumer.  See :ref:`optimizing-prefetch-limits`.
+        consumer.  See :ref:`optimizing-prefetch-limit`.

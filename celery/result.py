@@ -41,7 +41,7 @@ raised instead of just being a warning.
 
 def assert_will_not_block():
     if task_join_will_block():
-        warnings.warn(RuntimeWarning(E_WOULDBLOCK)
+        warnings.warn(RuntimeWarning(E_WOULDBLOCK))
 
 
 @contextmanager
