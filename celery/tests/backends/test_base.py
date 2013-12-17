@@ -307,7 +307,7 @@ class test_KeyValueStoreBackend(AppCase):
             self.b.on_chord_part_return(task, propagate=True)
             self.assertFalse(self.b.expire.called)
             deps.delete.assert_called_with()
-            deps.join_native.assert_called_with(propagate=True)
+            deps.join_native.assert_called_with(propagate=True, timeout=3.0)
 
     def test_chord_part_return_propagate_default(self):
         with self._chord_part_context(self.b) as (task, deps, _):
@@ -316,6 +316,7 @@ class test_KeyValueStoreBackend(AppCase):
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(
                 propagate=self.b.app.conf.CELERY_CHORD_PROPAGATES,
+                timeout=3.0,
             )
 
     def test_chord_part_return_join_raises_internal(self):

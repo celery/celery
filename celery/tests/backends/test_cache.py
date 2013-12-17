@@ -90,7 +90,7 @@ class test_CacheBackend(AppCase):
         self.assertFalse(deps.join_native.called)
 
         tb.on_chord_part_return(task)
-        deps.join_native.assert_called_with(propagate=True)
+        deps.join_native.assert_called_with(propagate=True, timeout=3.0)
         deps.delete.assert_called_with()
 
     def test_mget(self):
