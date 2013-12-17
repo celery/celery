@@ -348,7 +348,6 @@ class EventReceiver(ConsumerMixin):
                            adjust_timestamp=adjust_timestamp,
                            CLIENT_CLOCK_SKEW=CLIENT_CLOCK_SKEW):
         type = body['type']
-        is_client_event = type == 'task-sent'
         if type == 'task-sent':
             # clients never sync so cannot use their clock value
             _c = body['clock'] = (self.clock.value or 1) + CLIENT_CLOCK_SKEW

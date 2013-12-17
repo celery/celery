@@ -9,7 +9,6 @@
 """
 from __future__ import absolute_import
 
-from celery.five import values
 from celery.utils.sysinfo import load_average
 
 from .state import SOFTWARE_INFO, active_requests, all_total_count
