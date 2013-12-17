@@ -371,9 +371,11 @@ class test_CeleryCommand(AppCase):
 
         Dummy = x.commands['dummy'] = Mock()
         dummy = Dummy.return_value = Mock()
-        dummy.run_from_argv.side_effect = Error('foo', status='EX_FAILURE')
+        exc = dummy.run_from_argv.side_effect = Error('foo', status='EX_FAILURE')
+        x.on_error = Mock(name='on_error')
         help.reset()
         x.execute('dummy', ['dummy'])
+        x.on_error.assert_called_with(exc)
         dummy.run_from_argv.assert_called_with(
             x.prog_name, [], command='dummy',
         )
