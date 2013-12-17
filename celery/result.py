@@ -9,8 +9,10 @@
 from __future__ import absolute_import
 
 import time
+import warnings
 
 from collections import deque
+from contextlib import contextmanager
 from copy import copy
 
 from kombu.utils import cached_property
@@ -18,7 +20,7 @@ from kombu.utils.compat import OrderedDict
 
 from . import current_app
 from . import states
-from ._state import task_join_will_block
+from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .datastructures import DependencyGraph, GraphFormatter
 from .exceptions import IncompleteStream, TimeoutError
@@ -31,12 +33,25 @@ E_WOULDBLOCK = """\
 Never call result.get() within a task!
 See http://docs.celeryq.org/en/latest/userguide/tasks.html\
 #task-synchronous-subtasks
+
+In Celery 3.2 this will result in an exception being
+raised instead of just being a warning.
 """
 
 
 def assert_will_not_block():
     if task_join_will_block():
-        pass   # TODO future version: raise
+        warnings.warn(RuntimeWarning(E_WOULDBLOCK))
+
+
+@contextmanager
+def allow_join_result():
+    reset_value = task_join_will_block()
+    _set_task_join_will_block(False)
+    try:
+        yield
+    finally:
+        _set_task_join_will_block(reset_value)
 
 
 class ResultBase(object):

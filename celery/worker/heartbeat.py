@@ -9,10 +9,9 @@
 """
 from __future__ import absolute_import
 
-from celery.five import values
 from celery.utils.sysinfo import load_average
 
-from .state import SOFTWARE_INFO, active_requests, total_count
+from .state import SOFTWARE_INFO, active_requests, all_total_count
 
 __all__ = ['Heart']
 
@@ -40,7 +39,7 @@ class Heart(object):
     def _send(self, event):
         return self.eventer.send(event, freq=self.interval,
                                  active=len(active_requests),
-                                 processed=sum(values(total_count)),
+                                 processed=all_total_count[0],
                                  loadavg=load_average(),
                                  **SOFTWARE_INFO)
 

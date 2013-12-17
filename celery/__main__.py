@@ -24,7 +24,8 @@ def _warn_deprecated(new):
 
 
 def main():
-    maybe_patch_concurrency()
+    if 'multi' not in sys.argv:
+        maybe_patch_concurrency()
     from celery.bin.celery import main
     main()
 
@@ -37,7 +38,6 @@ def _compat_worker():
 
 
 def _compat_multi():
-    maybe_patch_concurrency()
     _warn_deprecated('celery multi')
     from celery.bin.multi import main
     main()

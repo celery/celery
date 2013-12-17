@@ -18,6 +18,7 @@ import traceback
 from threading import Event, Thread
 
 from billiard import Process, ensure_multiprocessing
+from billiard.common import reset_signals
 from kombu.utils import cached_property, reprcall
 from kombu.utils.functional import maybe_evaluate
 
@@ -501,7 +502,7 @@ else:
             self.name = 'Beat'
 
         def run(self):
-            platforms.signals.reset('SIGTERM')
+            reset_signals(full=False)
             platforms.close_open_fds([
                 sys.__stdin__, sys.__stdout__, sys.__stderr__,
             ] + list(iter_open_logger_fds()))

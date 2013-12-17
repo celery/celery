@@ -8,8 +8,9 @@ from kombu.utils import cached_property, uuid
 
 from celery import signature
 from celery import states
+from celery import group
 from celery.datastructures import AttributeDict
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import CPendingDeprecationWarning, ImproperlyConfigured
 from celery.utils.timeutils import timedelta_seconds
 
 from celery.tests.case import (
@@ -62,6 +63,11 @@ class redis(object):
         def __init__(self, **kwargs):
             pass
 
+    class UnixDomainSocketConnection(object):
+
+        def __init__(self, **kwargs):
+            pass
+
 
 class test_RedisBackend(AppCase):
 
@@ -99,9 +105,45 @@ class test_RedisBackend(AppCase):
             self.MockBackend(app=self.app)
 
     def test_url(self):
-        x = self.MockBackend('redis://foobar//1', app=self.app)
-        self.assertEqual(x.host, 'foobar')
-        self.assertEqual(x.db, '1')
+        x = self.MockBackend(
+            'redis://:bosco@vandelay.com:123//1', app=self.app,
+        )
+        self.assertTrue(x.connparams)
+        self.assertEqual(x.connparams['host'], 'vandelay.com')
+        self.assertEqual(x.connparams['db'], 1)
+        self.assertEqual(x.connparams['port'], 123)
+        self.assertEqual(x.connparams['password'], 'bosco')
+
+    def test_socket_url(self):
+        x = self.MockBackend(
+            'socket:///tmp/redis.sock?virtual_host=/3', app=self.app,
+        )
+        self.assertTrue(x.connparams)
+        self.assertEqual(x.connparams['path'], '/tmp/redis.sock')
+        self.assertIs(
+            x.connparams['connection_class'],
+            redis.UnixDomainSocketConnection,
+        )
+        self.assertNotIn('host', x.connparams)
+        self.assertNotIn('port', x.connparams)
+        self.assertEqual(x.connparams['db'], 3)
+
+    def test_compat_propertie(self):
+        x = self.MockBackend(
+            'redis://:bosco@vandelay.com:123//1', app=self.app,
+        )
+        with self.assertWarnsRegex(CPendingDeprecationWarning,
+                                   r'scheduled for deprecation'):
+            self.assertEqual(x.host, 'vandelay.com')
+        with self.assertWarnsRegex(CPendingDeprecationWarning,
+                                   r'scheduled for deprecation'):
+            self.assertEqual(x.db, 1)
+        with self.assertWarnsRegex(CPendingDeprecationWarning,
+                                   r'scheduled for deprecation'):
+            self.assertEqual(x.port, 123)
+        with self.assertWarnsRegex(CPendingDeprecationWarning,
+                                   r'scheduled for deprecation'):
+            self.assertEqual(x.password, 'bosco')
 
     def test_conf_raises_KeyError(self):
         self.app.conf = AttributeDict({
@@ -130,9 +172,9 @@ class test_RedisBackend(AppCase):
         b = self.Backend(expires=timedelta(minutes=1), app=self.app)
         self.assertEqual(b.expires, 60)
 
-    def test_on_chord_apply(self):
-        self.Backend(app=self.app).on_chord_apply(
-            'group_id', {},
+    def test_apply_chord(self):
+        self.Backend(app=self.app).apply_chord(
+            group(app=self.app), (), 'group_id', {},
             result=[self.app.AsyncResult(x) for x in [1, 2, 3]],
         )
 
@@ -165,7 +207,7 @@ class test_RedisBackend(AppCase):
 
         b.client.incr.return_value = len(deps)
         b.on_chord_part_return(task)
-        deps.join_native.assert_called_with(propagate=True)
+        deps.join_native.assert_called_with(propagate=True, timeout=3.0)
         deps.delete.assert_called_with()
 
         self.assertTrue(b.client.expire.call_count)

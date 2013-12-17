@@ -116,16 +116,16 @@ class state(str):
         return fun(precedence(self), precedence(other))
 
     def __gt__(self, other):
-        return self.compare(other, lambda a, b: a < b)
+        return precedence(self) < precedence(other)
 
     def __ge__(self, other):
-        return self.compare(other, lambda a, b: a <= b)
+        return precedence(self) <= precedence(other)
 
     def __lt__(self, other):
-        return self.compare(other, lambda a, b: a > b)
+        return precedence(self) > precedence(other)
 
     def __le__(self, other):
-        return self.compare(other, lambda a, b: a >= b)
+        return precedence(self) >= precedence(other)
 
 #: Task state is unknown (assumed pending since you know the id).
 PENDING = 'PENDING'

@@ -66,6 +66,7 @@ in any command that also has a `--detach` option.
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
+import random
 import re
 import socket
 import sys
@@ -85,6 +86,7 @@ from celery.five import items, string, string_t
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
 from celery.utils import term
 from celery.utils import text
+from celery.utils import NODENAME_DEFAULT, nodesplit
 from celery.utils.imports import symbol_by_name, import_from_cwd
 
 # always enable DeprecationWarnings, so our users can see them.
@@ -258,6 +260,7 @@ class Command(object):
         pass
 
     def __call__(self, *args, **kwargs):
+        random.seed()  # maybe we were forked.
         self.verify_args(args)
         try:
             ret = self.run(*args, **kwargs)
@@ -522,9 +525,17 @@ class Command(object):
         """
         pass
 
-    def simple_format(self, s, match=find_sformat, expand=r'\1', **keys):
+    def node_format(self, s, nodename, **extra):
+        name, host = nodesplit(nodename)
+        return self._simple_format(
+            s, host, n=name or NODENAME_DEFAULT, **extra)
+
+    def simple_format(self, s, **extra):
+        return self._simple_format(s, socket.gethostname(), **extra)
+
+    def _simple_format(self, s, host,
+                       match=find_sformat, expand=r'\1', **keys):
         if s:
-            host = socket.gethostname()
             name, _, domain = host.partition('.')
             keys = dict({'%': '%', 'h': host, 'n': name, 'd': domain}, **keys)
             return match.sub(lambda m: keys[m.expand(expand)], s)

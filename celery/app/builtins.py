@@ -66,7 +66,7 @@ def add_unlock_chord_task(app):
     """
     from celery.canvas import signature
     from celery.exceptions import ChordError
-    from celery.result import result_from_tuple
+    from celery.result import allow_join_result, result_from_tuple
 
     default_propagate = app.conf.CELERY_CHORD_PROPAGATES
 
@@ -95,7 +95,8 @@ def add_unlock_chord_task(app):
         if deps.ready():
             callback = signature(callback, app=app)
             try:
-                ret = j(propagate=propagate)
+                with allow_join_result():
+                    ret = j(timeout=3.0, propagate=propagate)
             except Exception as exc:
                 try:
                     culprit = next(deps._failed_join_report())
@@ -117,8 +118,8 @@ def add_unlock_chord_task(app):
                         exc=ChordError('Callback error: {0!r}'.format(exc)),
                     )
         else:
-            return unlock_chord.retry(countdown=interval,
-                                      max_retries=max_retries)
+            raise unlock_chord.retry(countdown=interval,
+                                     max_retries=max_retries)
     return unlock_chord
 
 
@@ -277,8 +278,6 @@ def add_chain_task(app):
                     tasks.append(task)
                 prev_task, prev_res = task, res
 
-            print(tasks)
-
             return tasks, results
 
         def apply_async(self, args=(), kwargs={}, group_id=None, chord=None,
@@ -356,17 +355,11 @@ def add_chord_task(app):
             results = [AsyncResult(prepare_member(task, body, group_id))
                        for task in header.tasks]
 
-            # - fallback implementations schedules the chord_unlock task here
-            app.backend.on_chord_apply(group_id, body,
-                                       interval=interval,
-                                       countdown=countdown,
-                                       max_retries=max_retries,
-                                       propagate=propagate,
-                                       result=results)
-            # - call the header group, returning the GroupResult.
-            final_res = header(*partial_args, task_id=group_id)
-
-            return final_res
+            return self.backend.apply_chord(
+                header, partial_args, group_id,
+                body, interval=interval, countdown=countdown,
+                max_retries=max_retries, propagate=propagate, result=results,
+            )
 
         def _prepare_member(self, task, body, group_id):
             opts = task.options

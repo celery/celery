@@ -85,6 +85,9 @@ UNAVAIL = frozenset([errno.EAGAIN, errno.EINTR])
 #: Constant sent by child process when started (ready to accept work)
 WORKER_UP = 15
 
+#: A process must have started before this timeout (in secs.) expires.
+PROC_ALIVE_TIMEOUT = 4.0
+
 SCHED_STRATEGY_PREFETCH = 1
 SCHED_STRATEGY_FAIR = 4
 
@@ -92,6 +95,8 @@ SCHED_STRATEGIES = {
     None: SCHED_STRATEGY_PREFETCH,
     'fair': SCHED_STRATEGY_FAIR,
 }
+
+RESULT_MAXLEN = 128
 
 Ack = namedtuple('Ack', ('id', 'fd', 'payload'))
 
@@ -165,9 +170,9 @@ class Worker(_pool.Worker):
         # is writable.
         self.outq.put((WORKER_UP, (pid, )))
 
-    def prepare_result(self, result):
+    def prepare_result(self, result, RESULT_MAXLEN=RESULT_MAXLEN):
         if not isinstance(result, ExceptionInfo):
-            return truncate(repr(result), 46)
+            return truncate(repr(result), RESULT_MAXLEN)
         return result
 
 
@@ -356,7 +361,7 @@ class AsynPool(_pool.Pool):
         # sent a WORKER_UP message.  If a process fails to send
         # this message within proc_up_timeout we terminate it
         # and hope the next process will recover.
-        self._proc_alive_timeout = 2.0
+        self._proc_alive_timeout = PROC_ALIVE_TIMEOUT
         self._waiting_to_start = set()
 
         # denormalized set of all inqueues.

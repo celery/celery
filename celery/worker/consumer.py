@@ -389,9 +389,10 @@ class Consumer(object):
         if not cset.consuming_from(queue):
             cset.add_queue(q)
             cset.consume()
-            info('Started consuming from %r', queue)
+            info('Started consuming from %s', queue)
 
     def cancel_task_queue(self, queue):
+        info('Cancelling queue %s', queue)
         self.app.amqp.queues.deselect(queue)
         self.task_consumer.cancel_by_queue(queue)
 
@@ -644,10 +645,13 @@ class Gossip(bootsteps.ConsumerStep):
 
         self.timer = c.timer
         if self.enabled:
-            self.state = c.app.events.State()
+            self.state = c.app.events.State(
+                on_node_join=self.on_node_join,
+                on_node_leave=self.on_node_leave,
+            )
             if c.hub:
                 c._mutex = DummyLock()
-            self.update_state = self.state.worker_event
+            self.update_state = self.state.event
         self.interval = interval
         self._tref = None
         self.consensus_requests = defaultdict(list)
@@ -768,15 +772,7 @@ class Gossip(bootsteps.ConsumerStep):
                     message.payload['hostname'])
         if hostname != self.hostname:
             type, event = prepare(message.payload)
-            group, _, subject = type.partition('-')
-            worker, created = self.update_state(subject, event)
-            if subject == 'offline':
-                try:
-                    self.on_node_leave(worker)
-                finally:
-                    self.state.workers.pop(worker.hostname, None)
-            elif created or subject == 'online':
-                self.on_node_join(worker)
+            obj, subject = self.update_state(event)
         else:
             self.clock.forward()
 

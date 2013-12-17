@@ -137,7 +137,7 @@ or that the messages may not even fit in memory.
 
 The workers' default prefetch count is the
 :setting:`CELERYD_PREFETCH_MULTIPLIER` setting multiplied by the number
-of child worker processes [*]_.
+of concurrency slots[*]_ (processes/threads/greenthreads).
 
 If you have many tasks with a long duration you want
 the multiplier value to be 1, which means it will only reserve one
@@ -189,9 +189,11 @@ You can enable this behavior by using the following configuration options:
     CELERY_ACKS_LATE = True
     CELERYD_PREFETCH_MULTIPLIER = 1
 
+.. _prefork-pool-prefetch:
+
 Prefork pool prefetch settings
 ------------------------------
-    
+
 The prefork pool will asynchronously send as many tasks to the processes
 as it can and this means that the processes are, in effect, prefetching
 tasks.

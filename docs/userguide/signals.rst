@@ -298,7 +298,7 @@ used to route a task to any specific worker:
 
     @celeryd_after_setup.connect
     def setup_direct_queue(sender, instance, **kwargs):
-        queue_name = '{0}.dq'.format(sender)  # sender is the hostname of the worker
+        queue_name = '{0}.dq'.format(sender)  # sender is the nodename of the worker
         instance.app.amqp.queues.select_add(queue_name)
 
 Provides arguments:
@@ -308,7 +308,7 @@ Provides arguments:
 
 * instance
     This is the :class:`celery.apps.worker.Worker` instance to be initialized.
-    Note that only the :attr:`app` and :attr:`hostname` attributes have been
+    Note that only the :attr:`app` and :attr:`hostname` (nodename) attributes have been
     set so far, and the rest of ``__init__`` has not been executed.
 
 * conf
@@ -349,11 +349,11 @@ sender when you connect:
 Provides arguments:
 
 * sender
-  Hostname of the worker.
+  Nodename of the worker.
 
 * instance
     This is the :class:`celery.apps.worker.Worker` instance to be initialized.
-    Note that only the :attr:`app` and :attr:`hostname` attributes have been
+    Note that only the :attr:`app` and :attr:`hostname` (nodename) attributes have been
     set so far, and the rest of ``__init__`` has not been executed.
 
 * conf
@@ -384,6 +384,10 @@ worker_process_init
 ~~~~~~~~~~~~~~~~~~~
 
 Dispatched in all pool child processes when they start.
+
+Note that handlers attached to this signal must not be blocking
+for more than 4 seconds, or the process will be killed assuming
+it failed to start.
 
 .. signal:: worker_process_shutdown
 

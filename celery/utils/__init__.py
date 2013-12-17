@@ -56,6 +56,8 @@ WORKER_DIRECT_QUEUE_FORMAT = '{hostname}.dq'
 #: Separator for worker node name and hostname.
 NODENAME_SEP = '@'
 
+NODENAME_DEFAULT = 'celery'
+
 
 def worker_direct(hostname):
     """Return :class:`kombu.Queue` that is a direct route to
@@ -74,7 +76,7 @@ def worker_direct(hostname):
 
 
 def warn_deprecated(description=None, deprecation=None,
-                    removal=None, alternative=None):
+                    removal=None, alternative=None, stacklevel=2):
     ctx = {'description': description,
            'deprecation': deprecation, 'removal': removal,
            'alternative': alternative}
@@ -82,21 +84,21 @@ def warn_deprecated(description=None, deprecation=None,
         w = CPendingDeprecationWarning(PENDING_DEPRECATION_FMT.format(**ctx))
     else:
         w = CDeprecationWarning(DEPRECATION_FMT.format(**ctx))
-    warnings.warn(w)
+    warnings.warn(w, stacklevel=stacklevel)
 
 
-def deprecated(description=None, deprecation=None,
-               removal=None, alternative=None):
+def deprecated(deprecation=None, removal=None,
+               alternative=None, description=None):
     """Decorator for deprecated functions.
 
     A deprecation warning will be emitted when the function is called.
 
-    :keyword description: Description of what is being deprecated.
     :keyword deprecation: Version that marks first deprecation, if this
       argument is not set a ``PendingDeprecationWarning`` will be emitted
       instead.
     :keyword removed:  Future version when this feature will be removed.
     :keyword alternative:  Instructions for an alternative solution (if any).
+    :keyword description: Description of what is being deprecated.
 
     """
     def _inner(fun):
@@ -107,10 +109,61 @@ def deprecated(description=None, deprecation=None,
             warn_deprecated(description=description or qualname(fun),
                             deprecation=deprecation,
                             removal=removal,
-                            alternative=alternative)
+                            alternative=alternative,
+                            stacklevel=3)
             return fun(*args, **kwargs)
         return __inner
     return _inner
+
+
+def deprecated_property(deprecation=None, removal=None,
+                        alternative=None, description=None):
+    def _inner(fun):
+        return _deprecated_property(
+            fun, deprecation=deprecation, removal=removal,
+            alternative=alternative, description=description or fun.__name__)
+    return _inner
+
+
+class _deprecated_property(object):
+
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None, **depreinfo):
+        self.__get = fget
+        self.__set = fset
+        self.__del = fdel
+        self.__name__, self.__module__, self.__doc__ = (
+            fget.__name__, fget.__module__, fget.__doc__,
+        )
+        self.depreinfo = depreinfo
+        self.depreinfo.setdefault('stacklevel', 3)
+
+    def __get__(self, obj, type=None):
+        if obj is None:
+            return self
+        warn_deprecated(**self.depreinfo)
+        return self.__get(obj)
+
+    def __set__(self, obj, value):
+        if obj is None:
+            return self
+        if self.__set is None:
+            raise AttributeError('cannot set attribute')
+        warn_deprecated(**self.depreinfo)
+        self.__set(obj, value)
+
+    def __delete__(self, obj):
+        if obj is None:
+            return self
+        if self.__del is None:
+            raise AttributeError('cannot delete attribute')
+        warn_deprecated(**self.depreinfo)
+        self.__del(obj)
+
+    def setter(self, fset):
+        return self.__class__(self.__get, fset, self.__del, **self.depreinfo)
+
+    def deleter(self, fdel):
+        return self.__class__(self.__get, self.__set, fdel, **self.depreinfo)
 
 
 def lpmerge(L, R):
@@ -283,6 +336,10 @@ def nodesplit(nodename):
         return None, parts[0]
     return parts
 
+
+def default_nodename(hostname):
+    name, host = nodesplit(hostname or '')
+    return nodename(name or NODENAME_DEFAULT, host or socket.gethostname())
 
 # ------------------------------------------------------------------------ #
 # > XXX Compat

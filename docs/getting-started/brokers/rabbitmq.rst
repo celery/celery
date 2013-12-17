@@ -48,15 +48,15 @@ allow that user access to that virtual host:
 
 .. code-block:: bash
 
-    $ rabbitmqctl add_user myuser mypassword
+    $ sudo rabbitmqctl add_user myuser mypassword
 
 .. code-block:: bash
 
-    $ rabbitmqctl add_vhost myvhost
+    $ sudo rabbitmqctl add_vhost myvhost
 
 .. code-block:: bash
 
-    $ rabbitmqctl set_permissions -p myvhost myuser ".*" ".*" ".*"
+    $ sudo rabbitmqctl set_permissions -p myvhost myuser ".*" ".*" ".*"
 
 See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
 

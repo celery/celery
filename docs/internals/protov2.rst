@@ -51,6 +51,29 @@ Notes
 - ``correlation_id`` replaces ``task_id`` field.
 
 
+- ``c_shadow`` lets you specify a different name for logs, monitors
+  can be used for e.g. meta tasks that calls any function::
+
+    from celery.utils.imports import qualname
+
+    class PickleTask(Task):
+        abstract = True
+
+        def unpack_args(self, fun, args=()):
+            return fun, args
+
+        def apply_async(self, args, kwargs, **options):
+            fun, real_args = self.unpack_args(*args)
+            return super(PickleTask, self).apply_async(
+                (fun, real_args, kwargs), shadow=qualname(fun), **options
+            )
+
+    @app.task(base=PickleTask)
+    def call(fun, args, kwargs):
+        return fun(*args, **kwargs)
+
+
+
 Undecided
 ---------
 
@@ -81,7 +104,8 @@ Definition
         'c_type': (string)task,
 
         # optional
-        'c_meth': (string)'',
+        'c_meth': (string)unused,
+        'c_shadow': (string)replace_name,
         'eta': (iso8601)eta,
         'expires'; (iso8601)expires,
         'callbacks': (list)Signature,

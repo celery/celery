@@ -14,6 +14,7 @@ from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.utils.serialization import get_pickleable_exception as gpe
 
 from celery import states
+from celery import group
 from celery.backends.base import (
     BaseBackend,
     KeyValueStoreBackend,
@@ -62,10 +63,10 @@ class test_BaseBackend_interface(AppCase):
     def test_on_chord_part_return(self):
         self.b.on_chord_part_return(None)
 
-    def test_on_chord_apply(self, unlock='celery.chord_unlock'):
+    def test_apply_chord(self, unlock='celery.chord_unlock'):
         self.app.tasks[unlock] = Mock()
-        self.b.on_chord_apply(
-            'dakj221', 'sdokqweok',
+        self.b.apply_chord(
+            group(app=self.app), (), 'dakj221', None,
             result=[self.app.AsyncResult(x) for x in [1, 2, 3]],
         )
         self.assertTrue(self.app.tasks[unlock].apply_async.call_count)
@@ -306,7 +307,7 @@ class test_KeyValueStoreBackend(AppCase):
             self.b.on_chord_part_return(task, propagate=True)
             self.assertFalse(self.b.expire.called)
             deps.delete.assert_called_with()
-            deps.join_native.assert_called_with(propagate=True)
+            deps.join_native.assert_called_with(propagate=True, timeout=3.0)
 
     def test_chord_part_return_propagate_default(self):
         with self._chord_part_context(self.b) as (task, deps, _):
@@ -315,6 +316,7 @@ class test_KeyValueStoreBackend(AppCase):
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(
                 propagate=self.b.app.conf.CELERY_CHORD_PROPAGATES,
+                timeout=3.0,
             )
 
     def test_chord_part_return_join_raises_internal(self):
@@ -364,9 +366,12 @@ class test_KeyValueStoreBackend(AppCase):
     def test_chord_apply_fallback(self):
         self.b.implements_incr = False
         self.b.fallback_chord_unlock = Mock()
-        self.b.on_chord_apply('group_id', 'body', 'result', foo=1)
+        self.b.apply_chord(
+            group(app=self.app), (), 'group_id', 'body',
+            result='result', foo=1,
+        )
         self.b.fallback_chord_unlock.assert_called_with(
-            'group_id', 'body', 'result', foo=1,
+            'group_id', 'body', result='result', foo=1,
         )
 
     def test_get_missing_meta(self):

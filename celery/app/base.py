@@ -307,7 +307,8 @@ class Celery(object):
         conf = self.conf
         if conf.CELERY_ALWAYS_EAGER:  # pragma: no cover
             warnings.warn(AlwaysEagerIgnored(
-                'CELERY_ALWAYS_EAGER has no effect on send_task'))
+                'CELERY_ALWAYS_EAGER has no effect on send_task',
+            ), stacklevel=2)
         options = router.route(options, name, args, kwargs)
         if connection:
             producer = self.amqp.TaskProducer(connection)
@@ -445,8 +446,8 @@ class Celery(object):
         if self._pool:
             self._pool.force_close_all()
             self._pool = None
-            amqp = self.amqp
-            if amqp._producer_pool:
+            amqp = self.__dict__.get('amqp')
+            if amqp is not None and amqp._producer_pool is not None:
                 amqp._producer_pool.force_close_all()
                 amqp._producer_pool = None
 

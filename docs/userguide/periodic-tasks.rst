@@ -249,8 +249,9 @@ To start the :program:`celery beat` service:
     $ celery beat
 
 You can also start embed `beat` inside the worker by enabling
-workers `-B` option, this is convenient if you only intend to
-use one worker node:
+workers `-B` option, this is convenient if you will never run
+more than one worker node, but it's not commonly used and for that
+reason is not recommended for production use:
 
 .. code-block:: bash
 

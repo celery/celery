@@ -62,7 +62,7 @@ class test__main__(AppCase):
             with patch('celery.__main__._warn_deprecated') as depr:
                 with patch('celery.bin.multi.main') as main:
                     __main__._compat_multi()
-                    mpc.assert_called_with()
+                    self.assertFalse(mpc.called)
                     depr.assert_called_with('celery multi')
                     main.assert_called_with()
 
@@ -371,9 +371,13 @@ class test_CeleryCommand(AppCase):
 
         Dummy = x.commands['dummy'] = Mock()
         dummy = Dummy.return_value = Mock()
-        dummy.run_from_argv.side_effect = Error('foo', status='EX_FAILURE')
+        exc = dummy.run_from_argv.side_effect = Error(
+            'foo', status='EX_FAILURE',
+        )
+        x.on_error = Mock(name='on_error')
         help.reset()
         x.execute('dummy', ['dummy'])
+        x.on_error.assert_called_with(exc)
         dummy.run_from_argv.assert_called_with(
             x.prog_name, [], command='dummy',
         )
@@ -520,12 +524,12 @@ class test_control(AppCase):
     def test_rate_limit(self):
         i = self.control(True)
         i.rate_limit('rate_limit', 'proj.add', '1/s')
-        i.call.assert_called_with('rate_limit', 'proj.add', '1/s', reply=True)
+        i.call.assert_called_with('rate_limit', 'proj.add', '1/s')
 
     def test_time_limit(self):
         i = self.control(True)
         i.time_limit('time_limit', 'proj.add', 10, 30)
-        i.call.assert_called_with('time_limit', 'proj.add', 10, 30, reply=True)
+        i.call.assert_called_with('time_limit', 'proj.add', 10, 30)
 
     def test_add_consumer(self):
         i = self.control(True)
@@ -535,13 +539,13 @@ class test_control(AppCase):
         )
         i.call.assert_called_with(
             'add_consumer', 'queue', 'exchange', 'topic', 'rkey',
-            durable=True, reply=True,
+            durable=True,
         )
 
     def test_cancel_consumer(self):
         i = self.control(True)
         i.cancel_consumer('cancel_consumer', 'queue')
-        i.call.assert_called_with('cancel_consumer', 'queue', reply=True)
+        i.call.assert_called_with('cancel_consumer', 'queue')
 
 
 class test_multi(AppCase):

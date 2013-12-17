@@ -433,8 +433,13 @@ class test_Gossip(AppCase):
     def test_on_message(self):
         c = self.Consumer()
         g = Gossip(c)
+        self.assertTrue(g.enabled)
         prepare = Mock()
         prepare.return_value = 'worker-online', {}
+        c.app.events.State.assert_called_with(
+            on_node_join=g.on_node_join,
+            on_node_leave=g.on_node_leave,
+        )
         g.update_state = Mock()
         worker = Mock()
         g.on_node_join = Mock()
@@ -450,20 +455,16 @@ class test_Gossip(AppCase):
         g.event_handlers = {}
 
         g.on_message(prepare, message)
-        g.on_node_join.assert_called_with(worker)
 
         message.delivery_info = {'routing_key': 'worker-offline'}
         prepare.return_value = 'worker-offline', {}
         g.on_message(prepare, message)
-        g.on_node_leave.assert_called_with(worker)
 
         message.delivery_info = {'routing_key': 'worker-baz'}
         prepare.return_value = 'worker-baz', {}
         g.update_state.return_value = worker, 0
         g.on_message(prepare, message)
 
-        g.on_node_leave.reset_mock()
         message.headers = {'hostname': g.hostname}
         g.on_message(prepare, message)
-        self.assertFalse(g.on_node_leave.called)
         g.clock.forward.assert_called_with()

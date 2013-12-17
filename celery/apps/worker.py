@@ -91,10 +91,10 @@ BANNER = """\
 {platform}
 
 [config]
-.> broker:      {conninfo}
 .> app:         {app}
+.> transport:   {conninfo}
+.> results:     {results}
 .> concurrency: {concurrency}
-.> events:      {events}
 
 [queues]
 {queues}
@@ -225,6 +225,7 @@ class Worker(WorkController):
             hostname=safe_str(self.hostname),
             version=VERSION_BANNER,
             conninfo=self.app.connection().as_uri(),
+            results=self.app.conf.CELERY_RESULT_BACKEND or 'disabled',
             concurrency=concurrency,
             platform=safe_str(_platform.platform()),
             events=events,

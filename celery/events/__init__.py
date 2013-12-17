@@ -44,6 +44,8 @@ so timestamps will not work.
 Please uninstall yajl or force anyjson to use a different library.
 """
 
+CLIENT_CLOCK_SKEW = -1
+
 
 def get_exchange(conn):
     ex = copy(event_exchange)
@@ -279,7 +281,8 @@ class EventReceiver(ConsumerMixin):
     app = None
 
     def __init__(self, channel, handlers=None, routing_key='#',
-                 node_id=None, app=None, queue_prefix='celeryev'):
+                 node_id=None, app=None, queue_prefix='celeryev',
+                 accept=None):
         self.app = app_or_default(app or self.app)
         self.channel = maybe_channel(channel)
         self.handlers = {} if handlers is None else handlers
@@ -293,7 +296,12 @@ class EventReceiver(ConsumerMixin):
                            auto_delete=True,
                            durable=False,
                            queue_arguments=self._get_queue_arguments())
-        self.adjust_clock = self.app.clock.adjust
+        self.clock = self.app.clock
+        self.adjust_clock = self.clock.adjust
+        self.forward_clock = self.clock.forward
+        if accept is None:
+            accept = set([self.app.conf.CELERY_EVENT_SERIALIZER, 'json'])
+        self.accept = accept
 
     def _get_queue_arguments(self):
         conf = self.app.conf
@@ -311,7 +319,7 @@ class EventReceiver(ConsumerMixin):
     def get_consumers(self, Consumer, channel):
         return [Consumer(queues=[self.queue],
                          callbacks=[self._receive], no_ack=True,
-                         accept=['application/json'])]
+                         accept=self.accept)]
 
     def on_consume_ready(self, connection, channel, consumers,
                          wakeup=True, **kwargs):
@@ -337,11 +345,20 @@ class EventReceiver(ConsumerMixin):
 
     def event_from_message(self, body, localize=True,
                            now=time.time, tzfields=_TZGETTER,
-                           adjust_timestamp=adjust_timestamp):
-        type = body.get('type', '').lower()
-        clock = body.get('clock')
-        if clock:
-            self.adjust_clock(clock)
+                           adjust_timestamp=adjust_timestamp,
+                           CLIENT_CLOCK_SKEW=CLIENT_CLOCK_SKEW):
+        type = body['type']
+        if type == 'task-sent':
+            # clients never sync so cannot use their clock value
+            _c = body['clock'] = (self.clock.value or 1) + CLIENT_CLOCK_SKEW
+            self.adjust_clock(_c)
+        else:
+            try:
+                clock = body['clock']
+            except KeyError:
+                body['clock'] = self.forward_clock()
+            else:
+                self.adjust_clock(clock)
 
         if localize:
             try:
@@ -350,7 +367,8 @@ class EventReceiver(ConsumerMixin):
                 pass
             else:
                 body['timestamp'] = adjust_timestamp(timestamp, offset)
-        return type, Event(type, body, local_received=now())
+        body['local_received'] = now()
+        return type, body
 
     def _receive(self, body, message):
         self.process(*self.event_from_message(body))

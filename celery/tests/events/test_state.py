@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import pickle
 
+from decimal import Decimal
 from random import shuffle
 from time import time
 from itertools import count
@@ -19,6 +20,14 @@ from celery.five import range
 from celery.utils import uuid
 from celery.tests.case import AppCase, patch
 
+try:
+    Decimal(2.6)
+except TypeError:  # pragma: no cover
+    # Py2.6: Must first convert float to str
+    _float_to_decimal = str
+else:
+    _float_to_decimal = lambda f: f  # noqa
+
 
 class replay(object):
 
@@ -34,7 +43,10 @@ class replay(object):
     def next_event(self):
         ev = self.events[next(self.position)]
         ev['local_received'] = ev['timestamp']
-        self.current_clock = ev.get('clock') or self.current_clock + 1
+        try:
+            self.current_clock = ev['clock']
+        except KeyError:
+            ev['clock'] = self.current_clock = self.current_clock + 1
         return ev
 
     def __iter__(self):
@@ -94,10 +106,10 @@ class ev_task_states(replay):
         ]
 
 
-def QTEV(type, uuid, hostname, clock, timestamp=None):
+def QTEV(type, uuid, hostname, clock, name=None, timestamp=None):
     """Quick task event."""
     return Event('task-{0}'.format(type), uuid=uuid, hostname=hostname,
-                 clock=clock, timestamp=timestamp or time())
+                 clock=clock, name=name, timestamp=timestamp or time())
 
 
 class ev_logical_clock_ordering(replay):
@@ -115,18 +127,18 @@ class ev_logical_clock_ordering(replay):
         offset = self.offset
         tA, tB, tC = self.uids
         self.events = [
-            QTEV('received', tA, 'w1', clock=offset + 1),
-            QTEV('received', tB, 'w2', clock=offset + 1),
-            QTEV('started', tA, 'w1', clock=offset + 3),
-            QTEV('received', tC, 'w2', clock=offset + 3),
-            QTEV('started', tB, 'w2', clock=offset + 5),
-            QTEV('retried', tA, 'w1', clock=offset + 7),
-            QTEV('succeeded', tB, 'w2', clock=offset + 9),
-            QTEV('started', tC, 'w2', clock=offset + 10),
-            QTEV('received', tA, 'w3', clock=offset + 13),
-            QTEV('succeded', tC, 'w2', clock=offset + 12),
-            QTEV('started', tA, 'w3', clock=offset + 14),
-            QTEV('succeeded', tA, 'w3', clock=offset + 16),
+            QTEV('received', tA, 'w1', name='tA', clock=offset + 1),
+            QTEV('received', tB, 'w2', name='tB', clock=offset + 1),
+            QTEV('started', tA, 'w1', name='tA', clock=offset + 3),
+            QTEV('received', tC, 'w2', name='tC', clock=offset + 3),
+            QTEV('started', tB, 'w2', name='tB', clock=offset + 5),
+            QTEV('retried', tA, 'w1', name='tA', clock=offset + 7),
+            QTEV('succeeded', tB, 'w2', name='tB', clock=offset + 9),
+            QTEV('started', tC, 'w2', name='tC', clock=offset + 10),
+            QTEV('received', tA, 'w3', name='tA', clock=offset + 13),
+            QTEV('succeded', tC, 'w2', name='tC', clock=offset + 12),
+            QTEV('started', tA, 'w3', name='tA', clock=offset + 14),
+            QTEV('succeeded', tA, 'w3', name='TA', clock=offset + 16),
         ]
 
     def rewind_with_offset(self, offset, uids=None):
@@ -168,9 +180,20 @@ class test_Worker(AppCase):
             hash(Worker(hostname='foo')), hash(Worker(hostname='bar')),
         )
 
+    def test_compatible_with_Decimal(self):
+        w = Worker('george@vandelay.com')
+        timestamp, local_received = Decimal(_float_to_decimal(time())), time()
+        w.event('worker-online', timestamp, local_received, fields={
+            'hostname': 'george@vandelay.com',
+            'timestamp': timestamp,
+            'local_received': local_received,
+            'freq': Decimal(_float_to_decimal(5.6335431)),
+        })
+        self.assertTrue(w.alive)
+
     def test_survives_missing_timestamp(self):
         worker = Worker(hostname='foo')
-        worker.on_heartbeat(timestamp=None)
+        worker.event('heartbeat')
         self.assertEqual(worker.heartbeats, [])
 
     def test_repr(self):
@@ -179,15 +202,15 @@ class test_Worker(AppCase):
     def test_drift_warning(self):
         worker = Worker(hostname='foo')
         with patch('celery.events.state.warn') as warn:
-            worker.update_heartbeat(time(), time() + (HEARTBEAT_DRIFT_MAX * 2))
+            worker.event(None, time() + (HEARTBEAT_DRIFT_MAX * 2), time())
             self.assertTrue(warn.called)
             self.assertIn('Substantial drift', warn.call_args[0][0])
 
-    def test_update_heartbeat(self):
+    def test_updates_heartbeat(self):
         worker = Worker(hostname='foo')
-        worker.update_heartbeat(time(), time())
+        worker.event(None, time(), time())
         self.assertEqual(len(worker.heartbeats), 1)
-        worker.update_heartbeat(time() - 10, time())
+        worker.event(None, time(), time() - 10)
         self.assertEqual(len(worker.heartbeats), 1)
 
 
@@ -238,26 +261,28 @@ class test_Task(AppCase):
     def test_ready(self):
         task = Task(uuid='abcdefg',
                     name='tasks.add')
-        task.on_received(timestamp=time())
+        task.event('received', time(), time())
         self.assertFalse(task.ready)
-        task.on_succeeded(timestamp=time())
+        task.event('succeeded', time(), time())
         self.assertTrue(task.ready)
 
     def test_sent(self):
         task = Task(uuid='abcdefg',
                     name='tasks.add')
-        task.on_sent(timestamp=time())
+        task.event('sent', time(), time())
         self.assertEqual(task.state, states.PENDING)
 
     def test_merge(self):
         task = Task()
-        task.on_failed(timestamp=time())
-        task.on_started(timestamp=time())
-        task.on_received(timestamp=time(), name='tasks.add', args=(2, 2))
+        task.event('failed', time(), time())
+        task.event('started', time(), time())
+        task.event('received', time(), time(), {
+            'name': 'tasks.add', 'args': (2, 2),
+        })
         self.assertEqual(task.state, states.FAILURE)
         self.assertEqual(task.name, 'tasks.add')
         self.assertTupleEqual(task.args, (2, 2))
-        task.on_retried(timestamp=time())
+        task.event('retried', time(), time())
         self.assertEqual(task.state, states.RETRY)
 
     def test_repr(self):
@@ -452,32 +477,60 @@ class test_State(AppCase):
 
     def test_survives_unknown_worker_event(self):
         s = State()
-        s.worker_event('worker-unknown-event-xxx', {'foo': 'bar'})
-        s.worker_event('worker-unknown-event-xxx', {'hostname': 'xxx',
-                                                    'foo': 'bar'})
+        s.event({
+            'type': 'worker-unknown-event-xxx',
+            'foo': 'bar',
+        })
+        s.event({
+            'type': 'worker-unknown-event-xxx',
+            'hostname': 'xxx',
+            'foo': 'bar',
+        })
 
     def test_survives_unknown_task_event(self):
         s = State()
-        s.task_event('task-unknown-event-xxx', {'foo': 'bar',
-                                                'uuid': 'x',
-                                                'hostname': 'y'})
+        s.event(
+            {
+                'type': 'task-unknown-event-xxx',
+                'foo': 'bar',
+                'uuid': 'x',
+                'hostname': 'y',
+                'timestamp': time(),
+                'local_received': time(),
+                'clock': 0,
+            },
+        )
 
     def test_limits_maxtasks(self):
-        s = State()
-        s.max_tasks_in_memory = 1
-        s.task_event('task-unknown-event-xxx', {'foo': 'bar',
-                                                'uuid': 'x',
-                                                'hostname': 'y',
-                                                'clock': 3})
-        s.task_event('task-unknown-event-xxx', {'foo': 'bar',
-                                                'uuid': 'y',
-                                                'hostname': 'y',
-                                                'clock': 4})
-
-        s.task_event('task-unknown-event-xxx', {'foo': 'bar',
-                                                'uuid': 'z',
-                                                'hostname': 'y',
-                                                'clock': 5})
+        s = State(max_tasks_in_memory=1)
+        s.heap_multiplier = 2
+        s.event({
+            'type': 'task-unknown-event-xxx',
+            'foo': 'bar',
+            'uuid': 'x',
+            'hostname': 'y',
+            'clock': 3,
+            'timestamp': time(),
+            'local_received': time(),
+        })
+        s.event({
+            'type': 'task-unknown-event-xxx',
+            'foo': 'bar',
+            'uuid': 'y',
+            'hostname': 'y',
+            'clock': 4,
+            'timestamp': time(),
+            'local_received': time(),
+        })
+        s.event({
+            'type': 'task-unknown-event-xxx',
+            'foo': 'bar',
+            'uuid': 'z',
+            'hostname': 'y',
+            'clock': 5,
+            'timestamp': time(),
+            'local_received': time(),
+        })
         self.assertEqual(len(s._taskheap), 2)
         self.assertEqual(s._taskheap[0].clock, 4)
         self.assertEqual(s._taskheap[1].clock, 5)

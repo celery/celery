@@ -86,7 +86,7 @@ class Hub(bootsteps.StartStopStep):
 
     def _patch_thread_primitives(self, w):
         # make clock use dummy lock
-        w.app.clock.lock = DummyLock()
+        w.app.clock.mutex = DummyLock()
         # multiprocessing's ApplyResult uses this lock.
         try:
             from billiard import pool
