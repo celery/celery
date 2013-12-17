@@ -84,22 +84,27 @@ class RedisBackend(KeyValueStoreBackend):
         connparams = dict(
             defaults, **dictfilter({
                 'host': host, 'port': port, 'password': password,
-                'db': int(query.pop('virtual_host', None) or 0)})
+                'db': query.pop('virtual_host', None)})
         )
 
         if scheme == 'socket':
-            # Use 'path' as path to the socket... in this case
+            # use 'path' as path to the socket… in this case
             # the database number should be given in 'query'
             connparams.update({
                 'connection_class': self.redis.UnixDomainSocketConnection,
                 'path': '/' + path,
             })
+            # host+port are invalid options when using this connection type.
             connparams.pop('host', None)
             connparams.pop('port', None)
         else:
-            path = path.strip('/') if isinstance(path, string_t) else path
-            if path:
-                connparams['db'] = int(path)
+            connparams['db'] = path
+
+        # db may be string and start with / like in kombu.
+        db = connparams.get('db') or 0
+        db = db.strip('/') if isinstance(db, string_t) else db
+        connparams['db'] = int(db)
+
         # Query parameters override other parameters
         connparams.update(query)
         return connparams
