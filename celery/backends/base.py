@@ -31,7 +31,7 @@ from celery.app import current_task
 from celery.exceptions import ChordError, TimeoutError, TaskRevokedError
 from celery.five import items
 from celery.result import (
-    AsyncResult, GroupResult, allow_join_result, result_from_tuple,
+    GroupResult, ResultBase, allow_join_result, result_from_tuple,
 )
 from celery.utils import timeutils
 from celery.utils.functional import LRUCache
@@ -147,7 +147,7 @@ class BaseBackend(object):
 
     def prepare_value(self, result):
         """Prepare value for storage."""
-        if self.serializer != 'pickle' and isinstance(result, AsyncResult):
+        if self.serializer != 'pickle' and isinstance(result, ResultBase):
             return result.as_tuple()
         return result
 
