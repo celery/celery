@@ -519,12 +519,8 @@ class State(object):
                     try:
                         worker, created = get_worker(hostname), False
                     except KeyError:
-                        if subject == 'offline':
-                            worker, created = None, False
-                        else:
-                            worker = workers[hostname] = Worker(hostname)
-                    if worker:
-                        worker.event(subject, timestamp, local_received, event)
+                        worker = workers[hostname] = Worker(hostname)
+                    worker.event(subject, timestamp, local_received, event)
                     if on_node_join and (created or subject == 'online'):
                         on_node_join(worker)
                     if on_node_leave and subject == 'offline':
