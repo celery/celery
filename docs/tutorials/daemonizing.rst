@@ -43,6 +43,25 @@ which is a shell (sh) script.  You can add environment variables and the
 configuration options below to this file.  To add environment variables you
 must also export them (e.g. ``export DISPLAY=":0"``)
 
+.. Admonition:: Superuser privileges required
+
+    The init scripts can only be used by root,
+    and the shell configuration file must also be owned by root.
+
+    Unprivileged users do not need to use the init script,
+    instead they can use the :program:`celery multi` utility (or
+    :program:`celery worker --detach`):
+
+    .. code-block:: bash
+
+        $ celery multi start worker1 \
+            --pidfile="$HOME/run/celery/%n.pid" \
+            --logfile=""$HOME/log/celery/%n.log"
+
+        $ celery multi restart worker1 --pidfile="$HOME/run/celery/%n.pid"
+
+        $ celery multi stopwait worker1 --pidfile="$HOME/run/celery/%n.pid"
+
 .. _generic-initd-celeryd-example:
 
 Example configuration

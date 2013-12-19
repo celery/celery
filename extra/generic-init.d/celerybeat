@@ -20,6 +20,15 @@
 # Cannot use set -e/bash -e since the kill -0 command will abort
 # abnormally in the absence of a valid process ID.
 #set -e
+VERSION=10.0
+echo "celery init v${VERSION}."
+
+if [ "$EUID" != "0" ]; then
+    echo "Error: This program can only be used by the root user."
+    echo "       Unpriviliged users must use 'celery beat --detach'"
+    exit 1
+fi
+
 
 # May be a runlevel symlink (e.g. S02celeryd)
 if [ -L "$0" ]; then
@@ -31,13 +40,64 @@ SCRIPT_NAME="$(basename "$SCRIPT_FILE")"
 
 # /etc/init.d/celerybeat: start and stop the celery periodic task scheduler daemon.
 
+# Make sure executable configuration script is owned by root
+_config_sanity() {
+    local path="$1"
+    local owner=$(stat -Lr "$path" | awk '{print $5}')
+    local perm=$(stat -Lr "$path" | awk '{print $3}')
+
+    if [ "$owner" != "0" ]; then
+        echo "Error: Config script '$path' must be owned by root!"
+        echo
+        echo "Resolution:"
+        echo "Review the file carefully and make sure it has not been "
+        echo "modified with mailicious intent.  When sure the "
+        echo "script is safe to execute with superuser privileges "
+        echo "you can change ownership of the script:"
+        echo "    $ sudo chown root '$path'"
+        exit 1
+    fi
+
+    if [ "$(($perm & 02))" -ne 0 ]; then  # S_IWOTH
+        echo "Error: Config script '$path' cannot be writable by others!"
+        echo
+        echo "Resolution:"
+        echo "Review the file carefully and make sure it has not been "
+        echo "modified with malicious intent.  When sure the "
+        echo "script is safe to execute with superuser privileges "
+        echo "you can change the scripts permissions:"
+        echo "    $ sudo chmod 640 '$path'"
+        exit 1
+    fi
+    if [ "$(($perm & 020))" -ne 0 ]; then  # S_IWGRP
+        echo "Error: Config script '$path' cannot be writable by group!"
+        echo
+        echo "Resolution:"
+        echo "Review the file carefully and make sure it has not been "
+        echo "modified with malicious intent.  When sure the "
+        echo "script is safe to execute with superuser privileges "
+        echo "you can change the scripts permissions:"
+        echo "    $ sudo chmod 640 '$path'"
+        exit 1
+    fi
+}
+
+scripts=""
+
 if test -f /etc/default/celeryd; then
+    scripts="/etc/default/celeryd"
+    _config_sanity /etc/default/celeryd
     . /etc/default/celeryd
 fi
 
-if test -f /etc/default/${SCRIPT_NAME}; then
-    . /etc/default/${SCRIPT_NAME}
+EXTRA_CONFIG="/etc/default/${SCRIPT_NAME}"
+if test -f "$EXTRA_CONFIG"; then
+    scripts="$scripts, $EXTRA_CONFIG"
+    _config_sanity "$EXTRA_CONFIG"
+    . "$EXTRA_CONFIG"
 fi
+
+echo "Using configuration: $scripts"
 
 CELERY_BIN=${CELERY_BIN:-"celery"}
 DEFAULT_USER="celery"
