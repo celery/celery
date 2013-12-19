@@ -73,6 +73,13 @@ class BaseBackend(object):
     #: Set to true if the backend is peristent by default.
     persistent = True
 
+    retry_policy = {
+        'max_retries': 20,
+        'interval_start': 0,
+        'interval_step': 1,
+        'interval_max': 1,
+    }
+
     def __init__(self, app, serializer=None,
                  max_cached_results=None, accept=None, **kwargs):
         self.app = app
