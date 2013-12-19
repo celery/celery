@@ -166,15 +166,18 @@ class AsyncResult(ResultBase):
 
         .. code-block:: python
 
-            @task()
-            def A(how_many):
-                return group(B.s(i) for i in range(how_many))
+            from celery import group
+            from proj.celery import app
 
-            @task()
+            @app.task
+            def A(how_many):
+                return group(B.s(i) for i in range(how_many))()
+
+            @app.task
             def B(i):
                 return pow2.delay(i)
 
-            @task()
+            @app.task
             def pow2(i):
                 return i ** 2
 
