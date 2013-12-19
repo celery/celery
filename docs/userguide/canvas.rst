@@ -602,7 +602,7 @@ that it works on the group as a whole::
     True
     >>> result.successful() # were all subtasks successful?
     True
-    >>> result.join()
+    >>> result.get()
     [4, 8, 16, 32, 64]
 
 The :class:`~celery.result.GroupResult` takes a list of
@@ -637,11 +637,6 @@ It supports the following operations:
 * :meth:`~celery.result.GroupResult.revoke`
 
     Revoke all of the subtasks.
-
-* :meth:`~celery.result.GroupResult.iterate`
-
-    Iterate over the return values of the subtasks
-    as they finish, one by one.
 
 * :meth:`~celery.result.GroupResult.join`
 
