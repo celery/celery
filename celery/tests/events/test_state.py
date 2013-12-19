@@ -18,7 +18,7 @@ from celery.events.state import (
 )
 from celery.five import range
 from celery.utils import uuid
-from celery.tests.case import AppCase, patch
+from celery.tests.case import AppCase, Mock, patch
 
 try:
     Decimal(2.6)
@@ -486,6 +486,36 @@ class test_State(AppCase):
             'hostname': 'xxx',
             'foo': 'bar',
         })
+
+    def test_survives_unknown_worker_leaving(self):
+        s = State(on_node_leave=Mock(name='on_node_leave'))
+        (worker, created), subject = s.event({
+            'type': 'worker-offline',
+            'hostname': 'unknown@vandelay.com',
+            'timestamp': time(),
+            'local_received': time(),
+            'clock': 301030134894833,
+        })
+        self.assertEqual(worker, Worker('unknown@vandelay.com'))
+        self.assertFalse(created)
+        self.assertEqual(subject, 'offline')
+        self.assertNotIn('unknown@vandelay.com', s.workers)
+        s.on_node_leave.assert_called_with(worker)
+
+    def test_on_node_join_callback(self):
+        s = State(on_node_join=Mock(name='on_node_join'))
+        (worker, created), subject = s.event({
+            'type': 'worker-online',
+            'hostname': 'george@vandelay.com',
+            'timestamp': time(),
+            'local_received': time(),
+            'clock': 34314,
+        })
+        self.assertTrue(worker)
+        self.assertTrue(created)
+        self.assertEqual(subject, 'online')
+        self.assertIn('george@vandelay.com', s.workers)
+        s.on_node_join.assert_called_with(worker)
 
     def test_survives_unknown_task_event(self):
         s = State()
