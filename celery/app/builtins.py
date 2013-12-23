@@ -301,7 +301,7 @@ def add_chain_task(app):
             if link_error:
                 for task in tasks:
                     task.set(link_error=link_error)
-            tasks[0].apply_async()
+            tasks[0].apply_async(**options)
             return result
 
         def apply(self, args=(), kwargs={}, signature=maybe_signature,
