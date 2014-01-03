@@ -315,6 +315,9 @@ else:  # pragma: no cover
 
 
 def _reload_current_worker():
+    platforms.close_open_fds([
+        sys.__stdin__, sys.__stdout__, sys.__stderr__,
+    ])
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
