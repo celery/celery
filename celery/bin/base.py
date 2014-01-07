@@ -427,7 +427,7 @@ class Command(object):
         if config:
             os.environ['CELERY_CONFIG_MODULE'] = config
         if self.respects_app_option:
-            if app and self.respects_app_option:
+            if app:
                 self.app = self.find_app(app)
             elif self.app is None:
                 self.app = self.get_app(loader=loader)
