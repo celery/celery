@@ -99,7 +99,7 @@ Caveats
     as this is a concept separate from ETA/countdown.
 
     You can increase this timeout by configuring a transport option
-    with the same name:
+    with the same name::
 
         BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 43200}
 
