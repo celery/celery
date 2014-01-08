@@ -25,11 +25,6 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
              heartbeat, clock, hbrate=2.0, RUN=RUN):
     """Non-blocking event loop consuming messages until connection is lost,
     or shutdown is requested."""
-    if hub.poller is None:
-        # TODO this must be cleaner, but works for now.
-        # here to make sure we have a epoll fd.
-        hub._create_poller()
-
     update_qos = qos.update
     readers, writers = hub.readers, hub.writers
     hbtick = connection.heartbeat_check
@@ -78,13 +73,11 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
                 loop = hub.create_loop()
     finally:
         try:
-            hub.close()
+            hub.reset()
         except Exception as exc:
             error(
                 'Error cleaning up after event loop: %r', exc, exc_info=1,
             )
-        finally:
-            hub.poller = None
 
 
 def synloop(obj, connection, consumer, blueprint, hub, qos,
