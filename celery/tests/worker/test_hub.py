@@ -321,6 +321,7 @@ class test_Hub(Case):
             self.assertTrue(hub.readers)
             self.assertTrue(hub.writers)
         finally:
+            assert hub.poller
             hub.close()
         self.assertFalse(hub.readers)
         self.assertFalse(hub.writers)
