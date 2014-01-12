@@ -69,37 +69,15 @@ See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
 Installing RabbitMQ on OS X
 ---------------------------
 
-The easiest way to install RabbitMQ on Snow Leopard is using `Homebrew`_; the new
-and shiny package management system for OS X.
+The easiest way to install RabbitMQ on OS X is using `Homebrew`_ the new and
+shiny package management system for OS X.
 
-In this example we'll install Homebrew into :file:`/lol`, but you can
-choose whichever destination, even in your home directory if you want, as one of
-the strengths of Homebrew is that it's relocatable.
-
-Homebrew is actually a `git`_ repository, so to install Homebrew, you first need to
-install git. Download and install from the disk image at
-http://code.google.com/p/git-osx-installer/downloads/list?can=3
-
-When git is installed you can finally clone the repository, storing it at the
-:file:`/lol` location:
+First, install homebrew using the one-line command provided by the `Homebrew
+documentation`_:
 
 .. code-block:: bash
 
-    $ git clone git://github.com/mxcl/homebrew /lol
-
-Brew comes with a simple utility called :program:`brew`, used to install, remove and
-query packages. To use it you first have to add it to :envvar:`PATH`, by
-adding the following line to the end of your :file:`~/.profile`:
-
-.. code-block:: bash
-
-    export PATH="/lol/bin:/lol/sbin:$PATH"
-
-Save your profile and reload it:
-
-.. code-block:: bash
-
-    $ source ~/.profile
+    ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
 
 Finally, we can install rabbitmq using :program:`brew`:
 
@@ -108,7 +86,7 @@ Finally, we can install rabbitmq using :program:`brew`:
     $ brew install rabbitmq
 
 .. _`Homebrew`: http://github.com/mxcl/homebrew/
-.. _`git`: http://git-scm.org
+.. _`Homebrew documentation`: https://github.com/Homebrew/homebrew/wiki/Installation
 
 .. _rabbitmq-osx-system-hostname:
 
