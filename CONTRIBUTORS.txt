@@ -151,3 +151,4 @@ Matt Wise, 2013/11/06
 Michael Robellard, 2013/11/07
 Vsevolod Kulaga, 2013/11/16
 Ionel Cristian Mărieș, 2013/12/09
+Antoine Legrand, 2014/09/01
