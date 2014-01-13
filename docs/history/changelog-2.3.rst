@@ -11,7 +11,7 @@
 
 2.3.4
 =====
-:release-date: 2011-11-25 16:00 P.M GMT
+:release-date: 2011-11-25 04:00 P.M GMT
 :release-by: Ask Solem
 
 .. _v234-security-fixes:

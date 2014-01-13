@@ -18,7 +18,7 @@ If you're looking for versions prior to 2.5 you should visit our
 
 2.5.5
 =====
-:release-date: 2012-06-06 16:00 P.M BST
+:release-date: 2012-06-06 04:00 P.M BST
 :release-by: Ask Solem
 
 This is a dummy release performed for the following goals:

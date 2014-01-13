@@ -11,7 +11,7 @@
 
 2.2.8
 =====
-:release-date: 2011-11-25 16:00 P.M GMT
+:release-date: 2011-11-25 04:00 P.M GMT
 :release-by: Ask Solem
 
 .. _v228-security-fixes:
@@ -35,7 +35,7 @@ Security Fixes
 
 2.2.7
 =====
-:release-date: 2011-06-13 16:00 P.M BST
+:release-date: 2011-06-13 04:00 P.M BST
 :release-by: Ask Solem
 
 * New signals: :signal:`after_setup_logger` and
@@ -59,7 +59,7 @@ Security Fixes
 
 2.2.6
 =====
-:release-date: 2011-04-15 16:00 P.M CEST
+:release-date: 2011-04-15 04:00 P.M CEST
 :release-by: Ask Solem
 
 .. _v226-important:
@@ -301,7 +301,7 @@ Fixes
 
 2.2.4
 =====
-:release-date: 2011-02-19 12:00 AM CET
+:release-date: 2011-02-19 00:00 AM CET
 :release-by: Ask Solem
 
 .. _v224-fixes:

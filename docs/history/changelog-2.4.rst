@@ -28,7 +28,7 @@
 
 2.4.4
 =====
-:release-date: 2011-11-25 16:00 P.M GMT
+:release-date: 2011-11-25 04:00 P.M GMT
 :release-by: Ask Solem
 
 .. _v244-security-fixes:
@@ -79,7 +79,7 @@ Fixes
 
 2.4.3
 =====
-:release-date: 2011-11-22 18:00 P.M GMT
+:release-date: 2011-11-22 06:00 P.M GMT
 :release-by: Ask Solem
 
 * Fixes module import typo in `celeryctl` (Issue #538).
