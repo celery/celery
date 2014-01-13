@@ -552,14 +552,13 @@ class ResultSet(ResultBase):
                            is also arbitrary when a callback is used.
                            To get access to the result object for a particular
                            id you will have to generate an index first:
-                           ``results = {r.id: r
-                                        for r in gresult.results.values()}``
+                           ``index = {r.id: r for r in gres.results.values()}``
                            Or you can create new result objects on the fly:
                            ``result = app.AsyncResult(task_id)`` (both will
                            take advantage of the backend cache anyway).
 
-        :raises celery.exceptions.TimeoutError: if `timeout` is not
-            :const:`None` and the operation takes longer than `timeout`
+        :raises celery.exceptions.TimeoutError: if ``timeout`` is not
+            :const:`None` and the operation takes longer than ``timeout``
             seconds.
 
         """
