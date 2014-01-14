@@ -12,7 +12,7 @@ import sys
 import time
 
 from collections import defaultdict, Mapping, MutableMapping, MutableSet
-from heapq import heapify, heappush, heappop
+from heapq import heappush, heappop
 from functools import partial
 from itertools import chain
 
@@ -634,7 +634,7 @@ class LimitedSet(object):
         if isinstance(other, LimitedSet):
             self._data.update(other._data)
             self._heap.extend(other._heap)
-            heapify(self._heap)
+            self._heap.sort()
         else:
             for obj in other:
                 self.add(obj)
