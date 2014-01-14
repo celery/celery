@@ -210,8 +210,10 @@ class test_Worker(AppCase):
         worker = Worker(hostname='foo')
         worker.event(None, time(), time())
         self.assertEqual(len(worker.heartbeats), 1)
+        h1 = worker.heartbeats[0]
         worker.event(None, time(), time() - 10)
-        self.assertEqual(len(worker.heartbeats), 1)
+        self.assertEqual(len(worker.heartbeats), 2)
+        self.assertEqual(worker.heartbeats[-1], h1)
 
 
 class test_Task(AppCase):
