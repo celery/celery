@@ -373,6 +373,7 @@ class TaskConsumer(Consumer):
 class AMQP(object):
     Connection = Connection
     Consumer = Consumer
+    Queues = Queues
 
     #: compat alias to Connection
     BrokerConnection = Connection
@@ -414,7 +415,7 @@ class AMQP(object):
                             routing_key=conf.CELERY_DEFAULT_ROUTING_KEY), )
         autoexchange = (self.autoexchange if autoexchange is None
                         else autoexchange)
-        return Queues(
+        return self.Queues(
             queues, self.default_exchange, create_missing,
             ha_policy, autoexchange,
         )
