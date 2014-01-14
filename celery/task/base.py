@@ -159,7 +159,7 @@ class PeriodicTask(Task):
 
 
 def task(*args, **kwargs):
-    """Deprecated decorators, please use :meth:`~@task`."""
+    """Deprecated decorator, please use :func:`celery.task`."""
     return current_app.task(*args, **dict({'accept_magic_kwargs': False,
                                            'base': Task}, **kwargs))
 
