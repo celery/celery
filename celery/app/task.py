@@ -650,8 +650,9 @@ class Task(object):
         )
 
         if max_retries is not None and retries > max_retries:
+            maybe_reraise()
             if exc:
-                maybe_reraise()
+                exc()
             raise self.MaxRetriesExceededError(
                 "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
                     self.name, request.id, S.args, S.kwargs))
