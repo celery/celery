@@ -645,9 +645,10 @@ class test_signal_handlers(WorkerAppCase):
             state.should_stop = False
 
     @disable_stdouts
+    @patch('celery.platforms.close_open_fds')
     @patch('atexit.register')
     @patch('os.close')
-    def test_worker_restart_handler(self, _close, register):
+    def test_worker_restart_handler(self, _close, register, close_open):
         if getattr(os, 'execv', None) is None:
             raise SkipTest('platform does not have excv')
         argv = []
