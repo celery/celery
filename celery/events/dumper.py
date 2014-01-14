@@ -45,6 +45,11 @@ class Dumper(object):
 
     def say(self, msg):
         print(msg, file=self.out)
+        # need to flush so that output can be piped.
+        try:
+            self.out.flush()
+        except AttributeError:
+            pass
 
     def on_event(self, ev):
         timestamp = datetime.utcfromtimestamp(ev.pop('timestamp'))
