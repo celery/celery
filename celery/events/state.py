@@ -184,9 +184,7 @@ class Worker(object):
 
     @property
     def alive(self, nowfun=time):
-        now = nowfun()
-        expires = self.heartbeat_expires
-        return bool(self.heartbeats and now < expires)
+        return bool(self.heartbeats and nowfun() < self.heartbeat_expires)
 
     @property
     def id(self):
