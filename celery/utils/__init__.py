@@ -96,7 +96,7 @@ def deprecated(deprecation=None, removal=None,
     :keyword deprecation: Version that marks first deprecation, if this
       argument is not set a ``PendingDeprecationWarning`` will be emitted
       instead.
-    :keyword removed:  Future version when this feature will be removed.
+    :keyword removal:  Future version when this feature will be removed.
     :keyword alternative:  Instructions for an alternative solution (if any).
     :keyword description: Description of what is being deprecated.
 
