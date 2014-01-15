@@ -26,6 +26,22 @@ class Redis(object):
         def disconnect(self):
             self.connected = False
 
+    class Pipeline(object):
+
+        def __init__(self, client):
+            self.client = client
+            self.steps = []
+
+        def __getattr__(self, attr):
+
+            def add_step(*args, **kwargs):
+                self.steps.append((getattr(self.client, attr), args, kwargs))
+                return self
+            return add_step
+
+        def execute(self):
+            return [step(*a, **kw) for step, a, kw in self.steps]
+
     def __init__(self, host=None, port=None, db=None, password=None, **kw):
         self.host = host
         self.port = port
@@ -53,6 +69,9 @@ class Redis(object):
 
     def publish(self, key, value):
         pass
+
+    def pipeline(self):
+        return self.Pipeline(self)
 
 
 class redis(object):
