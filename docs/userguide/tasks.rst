@@ -955,7 +955,6 @@ Example requeuing the message:
 
 .. code-block:: python
 
-    import errno
     from celery.exceptions import Reject
 
     @app.task(bind=True, acks_late=True)
