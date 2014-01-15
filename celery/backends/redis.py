@@ -55,7 +55,8 @@ class RedisBackend(KeyValueStoreBackend):
     implements_incr = True
 
     def __init__(self, host=None, port=None, db=None, password=None,
-                 expires=None, max_connections=None, url=None, **kwargs):
+                 expires=None, max_connections=None, url=None,
+                 connection_pool=None, **kwargs):
         super(RedisBackend, self).__init__(**kwargs)
         conf = self.app.conf
         if self.redis is None:
@@ -75,6 +76,7 @@ class RedisBackend(KeyValueStoreBackend):
         self.max_connections = (
             max_connections or _get('MAX_CONNECTIONS') or self.max_connections
         )
+        self._ConnectionPool = connection_pool
 
         self.connparams = {
             'host': _get('HOST') or 'localhost',
@@ -162,10 +164,17 @@ class RedisBackend(KeyValueStoreBackend):
     def expire(self, key, value):
         return self.client.expire(key, value)
 
+    @property
+    def ConnectionPool(self):
+        if self._ConnectionPool is None:
+            self._ConnectionPool = self.redis.ConnectionPool
+        return self._ConnectionPool
+
     @cached_property
     def client(self):
         return self.redis.Redis(
-            connection_pool=self.redis.ConnectionPool(**self.connparams))
+            connection_pool=self.ConnectionPool(**self.connparams),
+        )
 
     def __reduce__(self, args=(), kwargs={}):
         return super(RedisBackend, self).__reduce__(
