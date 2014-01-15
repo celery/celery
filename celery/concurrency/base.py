@@ -143,7 +143,8 @@ class BasePool(object):
         """
         if self._does_debug:
             logger.debug('TaskPool: Apply %s (args:%s kwargs:%s)',
-                         target, safe_repr(args), safe_repr(kwargs))
+                         target, truncate(safe_repr(args), 1024),
+                         truncate(safe_repr(kwargs), 1024))
 
         return self.on_apply(target, args, kwargs,
                              waitforslot=self.putlocks,
