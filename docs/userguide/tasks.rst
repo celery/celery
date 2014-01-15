@@ -961,7 +961,7 @@ Example requeuing the message:
     @app.task(bind=True, acks_late=True)
     def requeues(self):
         if not self.request.delivery_info['redelivered']:
-            raise Requeue('no reason', requeue=True)
+            raise Reject('no reason', requeue=True)
         print('received two times')
 
 Consult your broker documentation for more details about the ``basic_reject``
