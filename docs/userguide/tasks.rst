@@ -521,7 +521,7 @@ General
 
 .. attribute:: Task.time_limit
 
-    The hard time limit for this task.  If not set then the workers default
+    The hard time limit, in seconds, for this task.  If not set then the workers default
     will be used.
 
 .. attribute:: Task.soft_time_limit
