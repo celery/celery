@@ -148,12 +148,13 @@ class RedisBackend(KeyValueStoreBackend):
         return self.ensure(self._set, (key, value), **retry_policy)
 
     def _set(self, key, value):
-        client = self.client
+        pipe = self.client.pipeline()
         if self.expires:
-            client.setex(key, value, self.expires)
+            pipe.setex(key, value, self.expires)
         else:
-            client.set(key, value)
-        client.publish(key, value)
+            pipe.set(key, value)
+        pipe.publish(key, value)
+        pipe.execute()
 
     def delete(self, key):
         self.client.delete(key)
