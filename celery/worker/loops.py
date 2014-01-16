@@ -10,7 +10,7 @@ from __future__ import absolute_import
 import socket
 
 from celery.bootsteps import RUN
-from celery.exceptions import SystemTerminate, WorkerLostError
+from celery.exceptions import WorkerShutdown, WorkerTerminate, WorkerLostError
 from celery.utils.log import get_logger
 
 from . import state
@@ -57,9 +57,9 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
         while blueprint.state == RUN and obj.connection:
             # shutdown if signal handlers told us to.
             if state.should_stop:
-                raise SystemExit()
+                raise WorkerShutdown()
             elif state.should_terminate:
-                raise SystemTerminate()
+                raise WorkerTerminate()
 
             # We only update QoS when there is no more messages to read.
             # This groups together qos calls, and makes sure that remote

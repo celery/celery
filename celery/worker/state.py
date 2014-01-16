@@ -22,7 +22,7 @@ from kombu.utils import cached_property
 
 from celery import __version__
 from celery.datastructures import LimitedSet
-from celery.exceptions import SystemTerminate
+from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.five import Counter
 
 __all__ = ['SOFTWARE_INFO', 'reserved_requests', 'active_requests',
@@ -66,9 +66,9 @@ should_terminate = False
 
 def maybe_shutdown():
     if should_stop:
-        raise SystemExit()
+        raise WorkerShutdown()
     elif should_terminate:
-        raise SystemTerminate()
+        raise WorkerTerminate()
 
 
 def task_accepted(request, _all_total_count=all_total_count):

@@ -29,7 +29,7 @@ from celery import concurrency as _concurrency
 from celery import platforms
 from celery import signals
 from celery.exceptions import (
-    ImproperlyConfigured, SystemTerminate, TaskRevokedError,
+    ImproperlyConfigured, WorkerTerminate, TaskRevokedError,
 )
 from celery.five import string_t, values
 from celery.utils import default_nodename, worker_direct
@@ -204,7 +204,7 @@ class WorkController(object):
         """Starts the workers main loop."""
         try:
             self.blueprint.start(self)
-        except SystemTerminate:
+        except WorkerTerminate:
             self.terminate()
         except Exception as exc:
             logger.error('Unrecoverable error: %r', exc, exc_info=True)

@@ -5,7 +5,7 @@ import pickle
 from time import time
 
 from celery.datastructures import LimitedSet
-from celery.exceptions import SystemTerminate
+from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.worker import state
 
 from celery.tests.case import AppCase, Mock, patch
@@ -53,12 +53,12 @@ class test_maybe_shutdown(AppCase):
 
     def test_should_stop(self):
         state.should_stop = True
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(WorkerShutdown):
             state.maybe_shutdown()
 
     def test_should_terminate(self):
         state.should_terminate = True
-        with self.assertRaises(SystemTerminate):
+        with self.assertRaises(WorkerTerminate):
             state.maybe_shutdown()
 
 

@@ -16,6 +16,7 @@ from billiard.einfo import ExceptionInfo
 from billiard.exceptions import WorkerLostError
 from kombu.utils.encoding import safe_repr
 
+from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.five import monotonic, reraise
 from celery.utils import timer2
 from celery.utils.text import truncate
@@ -36,6 +37,8 @@ def apply_target(target, args=(), kwargs={}, callback=None,
     except propagate:
         raise
     except Exception:
+        raise
+    except (WorkerShutdown, WorkerTerminate):
         raise
     except BaseException as exc:
         try:

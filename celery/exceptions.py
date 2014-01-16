@@ -14,7 +14,8 @@ from billiard.exceptions import (  # noqa
     SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError, Terminated,
 )
 
-__all__ = ['SecurityError', 'Ignore', 'SystemTerminate', 'QueueNotFound',
+__all__ = ['SecurityError', 'Ignore', 'QueueNotFound',
+           'WorkerShutdown', 'WorkerTerminate',
            'ImproperlyConfigured', 'NotRegistered', 'AlreadyRegistered',
            'TimeoutError', 'MaxRetriesExceededError', 'Retry',
            'TaskRevokedError', 'NotConfigured', 'AlwaysEagerIgnored',
@@ -52,8 +53,14 @@ class Reject(Exception):
         return 'reject requeue=%s: %s' % (self.requeue, self.reason)
 
 
-class SystemTerminate(SystemExit):
-    """Signals that the worker should terminate."""
+class WorkerTerminate(SystemExit):
+    """Signals that the worker should terminate immediately."""
+SystemTerminate = WorkerTerminate  # XXX compat
+
+
+class WorkerShutdown(SystemExit):
+    """Signals that the worker should perform a warm shutdown."""
+
 
 
 class QueueNotFound(KeyError):

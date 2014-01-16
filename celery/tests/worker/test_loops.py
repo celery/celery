@@ -5,7 +5,7 @@ import socket
 from kombu.async import Hub, READ, WRITE, ERR
 
 from celery.bootsteps import CLOSE, RUN
-from celery.exceptions import InvalidTaskError, SystemTerminate
+from celery.exceptions import InvalidTaskError, WorkerShutdown, WorkerTerminate
 from celery.five import Empty
 from celery.worker import state
 from celery.worker.consumer import Consumer
@@ -174,7 +174,7 @@ class test_asynloop(AppCase):
         # XXX why aren't the errors propagated?!?
         state.should_terminate = True
         try:
-            with self.assertRaises(SystemTerminate):
+            with self.assertRaises(WorkerTerminate):
                 asynloop(*x.args)
         finally:
             state.should_terminate = False
@@ -185,7 +185,7 @@ class test_asynloop(AppCase):
         state.should_terminate = True
         x.hub.close.side_effect = MemoryError()
         try:
-            with self.assertRaises(SystemTerminate):
+            with self.assertRaises(WorkerTerminate):
                 asynloop(*x.args)
         finally:
             state.should_terminate = False
@@ -194,7 +194,7 @@ class test_asynloop(AppCase):
         x = X(self.app)
         state.should_stop = True
         try:
-            with self.assertRaises(SystemExit):
+            with self.assertRaises(WorkerShutdown):
                 asynloop(*x.args)
         finally:
             state.should_stop = False

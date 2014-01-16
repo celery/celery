@@ -13,6 +13,7 @@ import tempfile
 
 from kombu.utils.encoding import safe_repr
 
+from celery.exceptions import WorkerShutdown
 from celery.five import UserDict, items
 from celery.platforms import signals as _signals
 from celery.utils import timeutils
@@ -336,7 +337,7 @@ def autoscale(state, max=None, min=None):
 @Panel.register
 def shutdown(state, msg='Got shutdown from remote', **kwargs):
     logger.warning(msg)
-    raise SystemExit(msg)
+    raise WorkerShutdown(msg)
 
 
 @Panel.register
