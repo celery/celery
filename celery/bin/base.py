@@ -236,8 +236,8 @@ class Command(object):
         self.get_app = get_app or self._get_default_app
         self.stdout = stdout or sys.stdout
         self.stderr = stderr or sys.stderr
-        self.no_color = no_color
-        self.colored = term.colored(enabled=not self.no_color)
+        self._colored = None
+        self._no_color = no_color
         self.quiet = quiet
         if not self.description:
             self.description = self.__doc__
@@ -405,8 +405,10 @@ class Command(object):
         quiet = preload_options.get('quiet')
         if quiet is not None:
             self.quiet = quiet
-        self.colored.enabled = \
-            not preload_options.get('no_color', self.no_color)
+        try:
+            self.no_color = preload_options['no_color']
+        except KeyError:
+            pass
         workdir = preload_options.get('working_directory')
         if workdir:
             os.chdir(workdir)
@@ -593,6 +595,25 @@ class Command(object):
         if body and self.show_body:
             self.out(body)
 
+    @property
+    def colored(self):
+        if self._colored is None:
+            self._colored = term.colored(enabled=not self.no_color)
+        return self._colored
+
+    @colored.setter
+    def colored(self, obj):
+        self._colored = obj
+
+    @property
+    def no_color(self):
+        return self._no_color
+
+    @no_color.setter
+    def no_color(self, value):
+        self._no_color = value
+        if self._colored is not None:
+            self._colored.enabled = not self._no_color
 
 def daemon_options(default_pidfile=None, default_logfile=None):
     return (

@@ -611,8 +611,10 @@ class help(Command):
 
     def run(self, *args, **kwargs):
         self.parser.print_help()
-        self.out(HELP.format(prog_name=self.prog_name,
-                             commands=CeleryCommand.list_commands()))
+        self.out(HELP.format(
+            prog_name=self.prog_name,
+            commands=CeleryCommand.list_commands(colored=self.colored),
+        ))
 
         return EX_USAGE
 
@@ -665,6 +667,7 @@ class CeleryCommand(Command):
         try:
             return cls(
                 app=self.app, on_error=self.on_error,
+                no_color=self.no_color, quiet=self.quiet,
                 on_usage_error=partial(self.on_usage_error, command=command),
             ).run_from_argv(self.prog_name, argv[1:], command=argv[0])
         except self.UsageError as exc:
@@ -725,8 +728,9 @@ class CeleryCommand(Command):
             sys.exit(EX_FAILURE)
 
     @classmethod
-    def get_command_info(self, command, indent=0, color=None):
-        colored = term.colored().names[color] if color else lambda x: x
+    def get_command_info(self, command, indent=0, color=None, colored=None):
+        colored = term.colored() if colored is None else colored
+        colored = colored.names[color] if color else lambda x: x
         obj = self.commands[command]
         cmd = 'celery {0}'.format(colored(command))
         if obj.leaf:
@@ -738,14 +742,16 @@ class CeleryCommand(Command):
         ])
 
     @classmethod
-    def list_commands(self, indent=0):
-        white = term.colored().white
+    def list_commands(self, indent=0, colored=None):
+        colored = term.colored() if colored is None else colored
+        white = colored.white
         ret = []
         for cls, commands, color in command_classes:
             ret.extend([
                 text.indent('+ {0}: '.format(white(cls)), indent),
-                '\n'.join(self.get_command_info(command, indent + 4, color)
-                          for command in commands),
+                '\n'.join(
+                    self.get_command_info(command, indent + 4, color, colored)
+                    for command in commands),
                 ''
             ])
         return '\n'.join(ret).strip()
