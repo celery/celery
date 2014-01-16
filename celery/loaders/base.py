@@ -247,7 +247,7 @@ class BaseLoader(object):
 
     def autodiscover_tasks(self, packages, related_name='tasks'):
         self.task_modules.update(
-            mod.__name__ for mod in autodiscover_tasks(packages,
+            mod.__name__ for mod in autodiscover_tasks(packages or (),
                                                        related_name) if mod)
 
     @property
@@ -266,7 +266,7 @@ def autodiscover_tasks(packages, related_name='tasks'):
     global _RACE_PROTECTION
 
     if _RACE_PROTECTION:
-        return
+        return ()
     _RACE_PROTECTION = True
     try:
         return [find_related_module(pkg, related_name) for pkg in packages]
