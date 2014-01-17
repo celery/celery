@@ -15,6 +15,107 @@ new in Celery 3.1.
 :release-date: 2014-01-17 XX:XX X.X UTC
 :release-by: Ask Solem
 
+- ``ResultSet.iterate`` is now pending deprecation.
+
+    The implementation is very inefficient and using
+    ``result.get(callback=)`` or ``result.iter_native()` where available
+    is better.
+
+- Worker: The event loop was not properly reinitialized at consumer restart
+  which would force the worker to continue with a closed epoll instance on
+  Linux.
+
+- Events: Fixed issue with both heartbeats and task events that could
+  result in the data not being kept in sorted order.
+
+    As a result this would force the worker to log "heartbeat missed"
+    events even though the remote node was sending heartbeats in a timely manner.
+
+- Results: Pickle no longer converts group results to tuples,
+  and will now keep the original type (Issue #1750).
+
+- Eventlet/Gevent: A regression caused Ctrl+C to be ineffective for shutdown.
+
+- Redis result backend: Storing a result now uses an execution pipeline
+  for better performance.
+
+    Contributed by Pepijn de Vos.
+
+- Redis result backend: Will now retry storing the result in the event
+  of connection problems.
+
+- ``autodiscover_tasks``: Fixed bug when called multiple times (Issue #1797).
+
+- Generic init scripts: Now runs a check at startup to verify
+  that the configuration scripts are owned by root and that they
+  are not world/group writeable.
+
+    The init script configuration is a shell script executed by root,
+    so this is a preventive measure to ensure that users do not
+    leave this file vulnerable to changes from malicious users.
+
+    Note that upgrading celery will not update the init scripts,
+    so that you need to manually copy the improved versions from the
+    source distribution:
+    https://github.com/celery/celery/tree/3.1/extra/generic-init.d
+
+- The documentation for ``Task.retry`` states that the value provided in
+  ``exc`` argument will be raised if the call does not happen in an error
+  context, but that did not happen (Issue #1755).
+
+- ``celery multi/worker --detach`` did not forward command line configuration
+  to the target worker.
+
+    Fix contributed by Antoine Legrand.
+
+- Canvas: ``chain.apply_async`` now properly forwards execution options.
+
+    Fix contributed by Konstantin Podshumok.
+
+- Redis result backend: Now takes ``connection_pool`` argument that can be
+  used to change the connection pool class/constructor used.
+
+- Worker: Now truncates very long arguments and keyword arguments logged by
+  the pool at debug severity.
+
+- Worker: The worker now closes all open files on SIGHUP (regression)
+  (Issue #1768).
+
+    Fix contributed by Brodie Rao
+
+- Worker: The remote control bootstep is now always started after the
+  task consumer so that remote control commands are not handled before
+  the worker is properly set up (Issue #1741).
+
+- The output of the event dump utility (:program`celery events -d`) can
+  now be piped to other commands.
+
+- App: The ``Queues`` mapping used can now be changed by setting the
+  ``app.amqp.queues_cls` attribute.
+
+- Documentation: The RabbitMQ installation instructions for OS X has been
+  updated to use modern homebrew practices.
+
+    Contributed by Jon Chen.
+
+- The :program:`celery inspect conf` utility now works.
+
+- :program:`celery` program: The ``-no-color`` argument was not respected
+  by all commands (Issue #1799).
+
+- Distribution: The sphinx docs will now always add the parent directory
+  to path so that the current celery source code is used as a basis for
+  API documentation (Issue #1782).
+
+- Supervisord examples: Removed extraneous '-' from `--logfile` argument.
+
+    Fix contributed by Mohammad Almeer.
+
+- Worker|Gossip: Fixed attribute error occurring when neighbor node leaves.
+
+    Fix contributed by Brodie Rao.
+
+
 .. _version-3.1.7:
 
 3.1.7
