@@ -17,6 +17,8 @@ new in Celery 3.1.
 
 - Now depends on :ref:`Kombu 3.0.10 <kombu:version-3.0.10>`.
 
+- Now depends on :mod:`billiard` 3.3.0.14.
+
 - ``ResultSet.iterate`` is now pending deprecation.
 
     The implementation is very inefficient and using
