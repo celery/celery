@@ -62,7 +62,6 @@ class WorkerShutdown(SystemExit):
     """Signals that the worker should perform a warm shutdown."""
 
 
-
 class QueueNotFound(KeyError):
     """Task routed to a queue not in CELERY_QUEUES."""
 

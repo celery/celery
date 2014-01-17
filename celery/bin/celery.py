@@ -196,17 +196,35 @@ class purge(Command):
     WARNING: There is no undo operation for this command.
 
     """
+    warn_prelude = (
+        '{warning}: This will remove all tasks from {queues}: {names}.\n'
+        '         There is no undo for this operation!\n\n'
+        '(to skip this prompt use the -f option)\n'
+    )
+    warn_prompt = 'Are you sure you want to delete all tasks'
     fmt_purged = 'Purged {mnum} {messages} from {qnum} known task {queues}.'
     fmt_empty = 'No messages purged from {qnum} {queues}'
+    option_list = Command.option_list + (
+        Option('--force', '-f', action='store_true',
+               help='Do not prompt for verification'),
+    )
 
-    def run(self, *args, **kwargs):
-        queues = len(self.app.amqp.queues)
+    def run(self, force=False, **kwargs):
+        names = list(sorted(self.app.amqp.queues.keys()))
+        qnum = len(names)
+        if not force:
+            self.out(self.warn_prelude.format(
+                warning=self.colored.red('WARNING'),
+                queues=text.pluralize(qnum, 'queue'), names=', '.join(names),
+            ))
+            if self.ask(self.warn_prompt, ('yes', 'no'), 'no') != 'yes':
+                return
         messages = self.app.control.purge()
         fmt = self.fmt_purged if messages else self.fmt_empty
         self.out(fmt.format(
-            mnum=messages, qnum=queues,
+            mnum=messages, qnum=qnum,
             messages=text.pluralize(messages, 'message'),
-            queues=text.pluralize(queues, 'queue')))
+            queues=text.pluralize(qnum, 'queue')))
 
 
 class result(Command):

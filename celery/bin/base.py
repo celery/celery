@@ -89,6 +89,11 @@ from celery.utils import text
 from celery.utils import NODENAME_DEFAULT, nodesplit
 from celery.utils.imports import symbol_by_name, import_from_cwd
 
+try:
+    input = raw_input
+except NameError:
+    pass
+
 # always enable DeprecationWarnings, so our users can see them.
 for warning in (CDeprecationWarning, CPendingDeprecationWarning):
     warnings.simplefilter('once', warning, 0)
@@ -324,6 +329,34 @@ class Command(object):
         if isinstance(value, string_t):
             return os.path.expanduser(value)
         return value
+
+    def ask(self, q, choices, default=None):
+        """Prompt user to choose from a tuple of string values.
+
+        :param q: the question to ask (do not include questionark)
+        :param choice: tuple of possible choices, must be lowercase.
+        :param default: Default value if any.
+
+        If a default is not specified the question will be repeated
+        until the user gives a valid choice.
+
+        Matching is done case insensitively.
+
+        """
+        schoices = choices
+        if default is not None:
+            schoices = [c.upper() if c == default else c.lower()
+                        for c in choices]
+        schoices = '/'.join(schoices)
+
+        p = '{0} ({1})? '.format(q.capitalize(), schoices)
+        while 1:
+            val = input(p).lower()
+            if val in choices:
+                return val
+            elif default is not None:
+                break
+        return default
 
     def handle_argv(self, prog_name, argv, command=None):
         """Parse command-line arguments from ``argv`` and dispatch
@@ -614,6 +647,7 @@ class Command(object):
         self._no_color = value
         if self._colored is not None:
             self._colored.enabled = not self._no_color
+
 
 def daemon_options(default_pidfile=None, default_logfile=None):
     return (
