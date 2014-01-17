@@ -549,7 +549,8 @@ class shell(Command):  # pragma: no cover
                        'chunks': celery.chunks,
                        'xmap': celery.xmap,
                        'xstarmap': celery.xstarmap,
-                       'subtask': celery.subtask}
+                       'subtask': celery.subtask,
+                       'signature': celery.signature}
 
         if not without_tasks:
             self.locals.update(dict(
