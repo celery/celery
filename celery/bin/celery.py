@@ -296,7 +296,7 @@ class _RemoteControl(Command):
             command, self.args)
 
     def call(self, *args, **kwargs):
-        raise NotImplementedError('get_obj')
+        raise NotImplementedError('call')
 
     def run(self, *args, **kwargs):
         if not args:
@@ -366,10 +366,10 @@ class inspect(_RemoteControl):
         return getattr(i, method)(*args)
 
     def objgraph(self, type_='Request', *args, **kwargs):
-        return self.call('objgraph', type_)
+        return self.call('objgraph', type_, **kwargs)
 
     def conf(self, with_defaults=False, *args, **kwargs):
-        return self.call('conf', with_defaults=with_defaults)
+        return self.call('conf', with_defaults, **kwargs)
 
 
 class control(_RemoteControl):
