@@ -22,7 +22,7 @@ new in Celery 3.1.
 - ``ResultSet.iterate`` is now pending deprecation.
 
     The implementation is very inefficient and using
-    ``result.get(callback=)`` or ``result.iter_native()` where available
+    ``result.get(callback=)`` (or ``result.iter_native()`` where available)
     is better.
 
 - Worker: The event loop was not properly reinitialized at consumer restart
