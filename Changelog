@@ -15,6 +15,8 @@ new in Celery 3.1.
 :release-date: 2014-01-17 XX:XX X.X UTC
 :release-by: Ask Solem
 
+- Now depends on :ref:`Kombu 3.0.10 <kombu:version-3.0.10>`.
+
 - ``ResultSet.iterate`` is now pending deprecation.
 
     The implementation is very inefficient and using
@@ -44,7 +46,7 @@ new in Celery 3.1.
 - Redis result backend: Will now retry storing the result in the event
   of connection problems.
 
-- ``autodiscover_tasks``: Fixed bug when called multiple times (Issue #1797).
+- ``autodiscover_tasks()``: Fixed bug when called multiple times (Issue #1797).
 
 - Generic init scripts: Now runs a check at startup to verify
   that the configuration scripts are owned by root and that they
@@ -58,6 +60,12 @@ new in Celery 3.1.
     so that you need to manually copy the improved versions from the
     source distribution:
     https://github.com/celery/celery/tree/3.1/extra/generic-init.d
+
+- The :program:`celery purge` command now warns the user that the operation
+  will delete all tasks and prompts for confirmation.
+
+    A new :option:`-f` has also been added that can be used to disable
+    the interactive mode.
 
 - The documentation for ``Task.retry`` states that the value provided in
   ``exc`` argument will be raised if the call does not happen in an error
