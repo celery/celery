@@ -195,11 +195,11 @@ class test_purge(AppCase):
         out = WhateverIO()
         a = purge(app=self.app, stdout=out)
         purge_.return_value = 0
-        a.run()
+        a.run(force=True)
         self.assertIn('No messages purged', out.getvalue())
 
         purge_.return_value = 100
-        a.run()
+        a.run(force=True)
         self.assertIn('100 messages', out.getvalue())
 
 
