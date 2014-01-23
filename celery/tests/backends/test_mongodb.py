@@ -10,7 +10,7 @@ from celery.backends import mongodb as module
 from celery.backends.mongodb import MongoBackend, Bunch, pymongo
 from celery.exceptions import ImproperlyConfigured
 from celery.tests.case import (
-    AppCase, MagicMock, Mock, SkipTest,
+    AppCase, MagicMock, Mock, SkipTest, ANY,
     depends_on_current_app, patch, sentinel,
 )
 
@@ -176,7 +176,7 @@ class test_MongoBackend(AppCase):
 
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
-        mock_collection.save.assert_called_once()
+        mock_collection.save.assert_called_once_with(ANY)
         self.assertEqual(sentinel.result, ret_val)
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
@@ -232,7 +232,7 @@ class test_MongoBackend(AppCase):
 
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
-        mock_collection.save.assert_called_once()
+        mock_collection.save.assert_called_once_with(ANY)
         self.assertEqual(sentinel.result, ret_val)
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
@@ -309,7 +309,7 @@ class test_MongoBackend(AppCase):
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(
             MONGODB_COLLECTION)
-        mock_collection.assert_called_once()
+        mock_collection.assert_called_once_with()
 
     def test_get_database_authfailure(self):
         x = MongoBackend(app=self.app)
