@@ -371,6 +371,9 @@ class Request(object):
         if self.store_errors:
             self.task.backend.mark_as_failure(self.id, exc, request=self)
 
+        if self.task.acks_late:
+            self.acknowledge()
+
     def on_success(self, ret_value, now=None, nowfun=monotonic):
         """Handler called if the task was successfully processed."""
         if isinstance(ret_value, ExceptionInfo):
