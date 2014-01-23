@@ -45,7 +45,7 @@ from celery.utils.functional import noop
 from celery.utils.imports import qualname
 
 __all__ = [
-    'Case', 'AppCase', 'Mock', 'MagicMock',
+    'Case', 'AppCase', 'Mock', 'MagicMock', 'ANY',
     'patch', 'call', 'sentinel', 'skip_unless_module',
     'wrap_logger', 'with_environ', 'sleepdeprived',
     'skip_if_environ', 'todo', 'skip', 'skip_if',
@@ -59,6 +59,7 @@ patch = mock.patch
 call = mock.call
 sentinel = mock.sentinel
 MagicMock = mock.MagicMock
+ANY = mock.ANY
 
 CASE_REDEFINES_SETUP = """\
 {name} (subclass of AppCase) redefines private "setUp", should be: "setup"\
