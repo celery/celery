@@ -86,15 +86,26 @@ command usually does the trick:
 Restarting the worker
 =====================
 
+To restart the worker you should send the `TERM` signal and start a new
+instance.  The easiest way to manage workers for development
+is by using `celery multi`:
+
+    .. code-block:: bash
+
+        $ celery multi start 1 -A proj -l info -c4 --pidfile=/var/run/celery/%n.pid
+        $ celery multi restart 1 --pidfile=/var/run/celery/%n.pid
+
+For production deployments you should be using init scripts or other process
+supervision systems (see :ref:`daemonizing`).
+
 Other than stopping then starting the worker to restart, you can also
-restart the worker using the :sig:`HUP` signal:
+restart the worker using the :sig:`HUP` signal, but note that the worker
+will be responsible for restarting itself so this is prone to problems and
+is not recommended in production:
 
 .. code-block:: bash
 
     $ kill -HUP $pid
-
-The worker will then replace itself with a new instance using the same
-arguments as it was started with.
 
 .. note::
 
