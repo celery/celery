@@ -220,7 +220,6 @@ class Scheduler(object):
         if H is None:
             H = self._heap = [event_t(e.is_due()[1], 5, e)
                               for e in values(self.schedule)]
-        print('HEAP: %r' % (H, ))
         event = H[0]
         entry = event[2]
         is_due, next_time_to_run = entry.is_due()
