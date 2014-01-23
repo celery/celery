@@ -30,7 +30,7 @@
 #
 VERSION=10.0
 echo "celery init v${VERSION}."
-if [ $(id -u) ne 0 ]; then
+if [ $(id -u) -ne 0 ]; then
     echo "Error: This program can only be used by the root user."
     echo "       Unprivileged users must use the 'celery multi' utility, "
     echo "       or 'celery worker --detach'."
