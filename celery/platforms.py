@@ -266,7 +266,8 @@ def _create_pidlock(pidfile):
 if hasattr(os, 'closerange'):
 
     def close_open_fds(keep=None):
-        keep = list(uniq(sorted(filter(None, (
+        # using filter(None) causes 0 to be filtered out too
+        keep = list(uniq(sorted(filter(lambda x: x is not None, (
             maybe_fileno(f) for f in keep or []
         )))))
         maxfd = get_fdmax(default=2048)
