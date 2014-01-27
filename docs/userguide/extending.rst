@@ -536,12 +536,17 @@ Command-line programs
 Adding new command-line options
 -------------------------------
 
+.. _extending-command-options:
+
+Command-specific options
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 You can add additional command-line options to the ``worker``, ``beat`` and
 ``events`` commands by modifying the :attr:`~@Celery.user_options` attribute of the
 application instance.
 
 Celery commands uses the :mod:`optparse` module to parse command-line
-arguments, and so you have to use optparse specific option instances created
+arguments, and so you have to use :mod:`optparse` specific option instances created
 using :func:`optparse.make_option`.  Please see the :mod:`optparse`
 documentation to read about the fields supported.
 
@@ -550,7 +555,7 @@ Example adding a custom option to the :program:`celery worker` command:
 .. code-block:: python
 
     from celery import Celery
-    from celery.bin import Option
+    from celery.bin import Option  # <-- alias to optparse.make_option
 
     app = Celery(broker='amqp://')
 
@@ -558,6 +563,52 @@ Example adding a custom option to the :program:`celery worker` command:
         Option('--enable-my-option', action='store_true', default=False,
                help='Enable custom option.'),
     )
+
+
+All bootsteps will now receive this argument as a keyword argument to
+``Bootstep.__init__``:
+
+.. code-block:: python
+
+    from celery import bootsteps
+
+    class MyBootstep(bootsteps.Step):
+
+        def __init__(self, worker, enable_my_option=False, **options):
+            if enable_my_option:
+                party()
+
+    app.steps['worker'].add(MyBootstep)
+
+.. _extending-preload_options:
+
+Preload options
+~~~~~~~~~~~~~~~
+
+The :program:`celery umbrella` command supports the concept of 'preload
+options', which are special options passed to all subcommands and parsed
+outside of the main parsing step.
+
+The list of default preload options can be found in the API reference:
+:mod:`celery.bin.base`.
+
+You can add new preload options too, e.g. to specify a configuration template:
+
+.. code-block:: python
+
+    from celery import Celery
+    from celery import signals
+    from celery.bin import Option
+
+    app = Celery()
+    app.user_options['preload'].add(
+        Option('-Z', '--template', default='default',
+               help='Configuration template to use.'),
+    )
+
+    @signals.user_preload_options.connect
+    def on_preload_parsed(options, **kwargs):
+        use_template(options['template'])
 
 .. _extending-subcommands:
 
