@@ -112,7 +112,9 @@ The full contents of the message body was:
 """
 
 MESSAGE_REPORT = """\
-body: {0} {{content_type:{1} content_encoding:{2} delivery_info:{3}}}\
+body: {0}
+{{content_type:{1} content_encoding:{2}
+  delivery_info:{3} headers={4}}}
 """
 
 MINGLE_GET_FIELDS = itemgetter('clock', 'revoked')
@@ -407,7 +409,8 @@ class Consumer(object):
         return MESSAGE_REPORT.format(dump_body(message, body),
                                      safe_repr(message.content_type),
                                      safe_repr(message.content_encoding),
-                                     safe_repr(message.delivery_info))
+                                     safe_repr(message.delivery_info),
+                                     safe_repr(message.headers))
 
     def on_unknown_message(self, body, message):
         warn(UNKNOWN_FORMAT, self._message_report(body, message))
