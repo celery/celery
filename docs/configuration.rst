@@ -1142,7 +1142,7 @@ CELERY_MAX_CACHED_RESULTS
 Result backends caches ready results used by the client.
 
 This is the total number of results to cache before older results are evicted.
-The default is 5000.
+The default is 5000.  0 or None means no limit.
 
 .. note::
     
