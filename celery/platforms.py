@@ -266,10 +266,10 @@ def _create_pidlock(pidfile):
 if hasattr(os, 'closerange'):
 
     def close_open_fds(keep=None):
-        # using filter(None) causes 0 to be filtered out too
-        keep = list(uniq(sorted(filter(lambda x: x is not None, (
-            maybe_fileno(f) for f in keep or []
-        )))))
+        # must make sure this is 0-inclusive (Issue #1882)
+        keep = list(uniq(sorted(
+            f for f in map(maybe_fileno, keep or []) if f is not None
+        )))
         maxfd = get_fdmax(default=2048)
         kL, kH = iter([-1] + keep), iter(keep + [maxfd])
         for low, high in zip_longest(kL, kH):
