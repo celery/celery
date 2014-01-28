@@ -111,6 +111,12 @@ The full contents of the message body was:
 %s
 """
 
+MESSAGE_DECODE_ERROR = """\
+Can't decode message body: %r [type:%r encoding:%r headers:%s]
+
+body: %s
+"""
+
 MESSAGE_REPORT = """\
 body: {0}
 {{content_type:{1} content_encoding:{2}
@@ -322,9 +328,10 @@ class Consumer(object):
         :param exc: The original exception instance.
 
         """
-        crit("Can't decode message body: %r (type:%r encoding:%r raw:%r')",
+        crit(MESSAGE_DECODE_ERROR,
              exc, message.content_type, message.content_encoding,
-             dump_body(message, message.body), exc_info=1)
+             safe_repr(message.headers), dump_body(message, message.body),
+             exc_info=1)
         message.ack()
 
     def on_close(self):
