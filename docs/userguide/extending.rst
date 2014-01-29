@@ -585,7 +585,7 @@ All bootsteps will now receive this argument as a keyword argument to
 Preload options
 ~~~~~~~~~~~~~~~
 
-The :program:`celery umbrella` command supports the concept of 'preload
+The :program:`celery` umbrella command supports the concept of 'preload
 options', which are special options passed to all subcommands and parsed
 outside of the main parsing step.
 
