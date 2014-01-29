@@ -501,7 +501,7 @@ class AsynPool(_pool.Pool):
             if proc._is_alive() and proc in waiting_to_start:
                 assert proc.outqR_fd in fileno_to_outq
                 assert fileno_to_outq[proc.outqR_fd] is proc
-                assert proc.outqR_fd in hub.readers
+                assert proc.outqR_fd in hub.readers, "%s.outqR_fd=%s, hub.readers=%s" % (proc, proc.outqR_fd, hub.readers)
                 error('Timed out waiting for UP message from %r', proc)
                 os.kill(proc.pid, 9)
 
@@ -966,7 +966,7 @@ class AsynPool(_pool.Pool):
         try:
             proc = next(w for w in self._pool if w.pid == pid)
         except StopIteration:
-            # process already exited :(  this will be handled elsewhere.
+            logger.critical("process with pid=%s already exited :(  this will be handled elsewhere.", pid)
             return
         assert proc.inqW_fd not in self._fileno_to_inq
         assert proc.inqW_fd not in self._all_inqueues
