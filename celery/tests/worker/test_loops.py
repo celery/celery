@@ -36,6 +36,9 @@ class X(object):
                          heartbeat,
                          Mock(name='clock')]
         self.connection.supports_heartbeats = True
+        self.connection.get_heartbeat_interval.side_effect = (
+            lambda: self.heartbeat
+        )
         self.consumer.callbacks = []
         self.obj.strategies = {}
         self.connection.connection_errors = (socket.error, )
