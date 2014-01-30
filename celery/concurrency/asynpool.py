@@ -571,6 +571,12 @@ class AsynPool(_pool.Pool):
                 busy_workers.discard(inq)
             hub_remove(proc.sentinel)
             waiting_to_start.discard(proc)
+            hub_remove(proc.inqW_fd)
+            hub_remove(proc.outqR_fd)
+            if proc.synqR_fd:
+                hub_remove(proc.synqR_fd)
+            if proc.synqW_fd:
+                hub_remove(proc.synqW_fd)
         self.on_process_down = on_process_down
 
     def _create_write_handlers(self, hub,
