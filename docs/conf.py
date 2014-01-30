@@ -21,6 +21,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.coverage',
               'sphinx.ext.intersphinx',
+              'celery.contrib.sphinx',
               'sphinxcontrib.issuetracker',
               'celerydocs']
 
