@@ -69,6 +69,16 @@ class Task(BaseTask):
     def request(cls):
         return cls._get_request()
 
+    @class_property
+    def backend(cls):
+        if cls._backend is None:
+            return cls.app.backend
+        return cls._backend
+
+    @backend.setter
+    def backend(cls, value):  # noqa
+        cls._backend = value
+
     @classmethod
     def get_logger(self, **kwargs):
         return get_task_logger(self.name)
