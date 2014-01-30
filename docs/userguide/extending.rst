@@ -141,45 +141,76 @@ Attributes
     This is only supported by async I/O enabled transports (amqp, redis),
     in which case the `worker.use_eventloop` attribute should be set.
 
-    Your bootstep must require the Hub bootstep to use this.
+    Your worker bootstep must require the Hub bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.components:Hub', )
 
 .. attribute:: pool
 
     The current process/eventlet/gevent/thread pool.
     See :class:`celery.concurrency.base.BasePool`.
 
-    Your bootstep must require the Pool bootstep to use this.
+    Your worker bootstep must require the Pool bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.components:Pool', )
 
 .. attribute:: timer
 
     :class:`~kombu.async.timer.Timer` used to schedule functions.
 
-    Your bootstep must require the Timer bootstep to use this.
+    Your worker bootstep must require the Timer bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.components:Timer', )
 
 .. attribute:: statedb
 
     :class:`Database <celery.worker.state.Persistent>`` to persist state between
     worker restarts.
 
-    This only exists if the ``statedb`` argument is enabled.
-    Your bootstep must require the Statedb bootstep to use this.
+    This is only defined if the ``statedb`` argument is enabled.
+
+    Your worker bootstep must require the Statedb bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.components:Statedb', )
 
 .. attribute:: autoscaler
 
     :class:`~celery.worker.autoscaler.Autoscaler` used to automatically grow
     and shrink the number of processes in the pool.
 
-    This only exists if the ``autoscale`` argument is enabled.
-    Your bootstep must require the Autoscaler bootstep to use this.
+    This is only defined if the ``autoscale`` argument is enabled.
+
+    Your worker bootstep must require the `Autoscaler` bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.autoscaler:Autoscaler', )
 
 .. attribute:: autoreloader
 
     :class:`~celery.worker.autoreloder.Autoreloader` used to automatically
     reload use code when the filesystem changes.
 
-    This only exists if the ``autoreload`` argument is enabled.
-    Your bootstep must require the Autoreloader bootstep to use this.
+    This is only defined if the ``autoreload`` argument is enabled.
+    Your worker bootstep must require the `Autoreloader` bootstep to use this;
 
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.autoreloader:Autoreloader', )
 
 An example Worker bootstep could be:
 
@@ -285,24 +316,48 @@ Attributes
     This is only supported by async I/O enabled transports (amqp, redis),
     in which case the `worker.use_eventloop` attribute should be set.
 
-    Your bootstep must require the Hub bootstep to use this.
+    Your worker bootstep must require the Hub bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker:Hub', )
+
 
 .. attribute:: connection
 
     The current broker connection (:class:`kombu.Connection`).
 
-    Your bootstep must require the 'Connection' bootstep to use this.
+    A consumer bootstep must require the 'Connection' bootstep
+    to use this:
+
+    .. code-block:: python
+
+        class Step(bootsteps.StartStopStep):
+            requires = ('celery.worker.consumer:Connection', )
 
 .. attribute:: event_dispatcher
 
     A :class:`@events.Dispatcher` object that can be used to send events.
 
-    Your bootstep must require the `Events` bootstep to use this.
+    A consumer bootstep must require the `Events` bootstep to use this.
+
+    .. code-block:: python
+
+        class Step(bootsteps.StartStopStep):
+            requires = ('celery.worker.consumer:Events', )
 
 .. attribute:: gossip
 
     Worker to worker broadcast communication
     (class:`~celery.worker.consumer.Gossip`).
+
+    A consumer bootstep must require the `Gossip` bootstep to use this.
+
+    .. code-block:: python
+
+        class Step(bootsteps.StartStopStep):
+            requires = ('celery.worker.consumer:Events', )
 
 .. attribute:: pool
 
@@ -318,13 +373,23 @@ Attributes
     Responsible for sending worker event heartbeats
     (:class:`~celery.worker.heartbeat.Heart`).
 
-    Your bootstep must require the `Heart` bootstep to use this.
+    Your consumer bootstep must require the `Heart` bootstep to use this:
+
+    .. code-block:: python
+
+        class Step(bootsteps.StartStopStep):
+            requires = ('celery.worker.consumer:Heart', )
 
 .. attribute:: task_consumer
 
     The :class:`kombu.Consumer` object used to consume task messages.
 
-    Your bootstep must require the `Tasks` bootstep to use this.
+    Your consumer bootstep must require the `Tasks` bootstep to use this:
+
+    .. code-block:: python
+
+        class Step(bootsteps.StartStopStep):
+            requires = ('celery.worker.consumer:Heart', )
 
 .. attribute:: strategies
 
@@ -339,7 +404,13 @@ Attributes
                 name, task, loader, hostname
             )
 
-    Your bootstep must require the `Tasks` bootstep to use this.
+    Your consumer bootstep must require the `Tasks` bootstep to use this:
+
+    .. code-block:: python
+
+        class Step(bootsteps.StartStopStep):
+            requires = ('celery.worker.consumer:Heart', )
+
 
 .. attribute:: task_buckets
 
