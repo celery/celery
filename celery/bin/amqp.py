@@ -15,7 +15,6 @@ import pprint
 from functools import partial
 from itertools import count
 
-from amqp import Message
 from kombu.utils.encoding import safe_str
 
 from celery.utils.functional import padlist

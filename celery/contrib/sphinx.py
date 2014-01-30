@@ -23,15 +23,16 @@ then you can change the ``celery_task_prefix`` configuration value:
 
 
 With the extension installed `autodoc` will automatically find
-task decorated objects and generate the correct (as well as add a ``(task)``
-prefix), and you can also refer to the tasks using `:task:proj.tasks.add` syntax.
+task decorated objects and generate the correct (as well as
+add a ``(task)`` prefix), and you can also refer to the tasks
+using `:task:proj.tasks.add` syntax.
 
 Use ``.. autotask::`` to manually document a task.
 
 """
 from __future__ import absolute_import
 
-from inspect import ArgSpec, formatargspec, getargs, getargspec
+from inspect import formatargspec, getargspec
 
 from sphinx.domains.python import PyModulelevel
 from sphinx.ext.autodoc import FunctionDocumenter
