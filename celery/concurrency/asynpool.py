@@ -501,7 +501,7 @@ class AsynPool(_pool.Pool):
             if proc._is_alive() and proc in waiting_to_start:
                 assert proc.outqR_fd in fileno_to_outq
                 assert fileno_to_outq[proc.outqR_fd] is proc
-                assert proc.outqR_fd in hub.readers, "%s.outqR_fd=%s, hub.readers=%s" % (proc, proc.outqR_fd, hub.readers)
+                assert proc.outqR_fd in hub.readers, "%s.outqR_fd=%s not in hub.readers !" % (proc, proc.outqR_fd)
                 error('Timed out waiting for UP message from %r', proc)
                 os.kill(proc.pid, 9)
 
