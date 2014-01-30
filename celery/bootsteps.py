@@ -392,7 +392,7 @@ class StartStopStep(Step):
 
 
 class ConsumerStep(StartStopStep):
-    requires = ('Connection', )
+    requires = ('celery.worker.consumer:Connection', )
     consumers = None
 
     def get_consumers(self, channel):
