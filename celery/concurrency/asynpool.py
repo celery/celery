@@ -973,7 +973,7 @@ class AsynPool(_pool.Pool):
         try:
             proc = next(w for w in self._pool if w.pid == pid)
         except StopIteration:
-            logger.critical("process with pid=%s already exited :(  this will be handled elsewhere.", pid)
+            logger.warning("process with pid=%s already exited :( - handling this elsewhere ...", pid)
             return
         assert proc.inqW_fd not in self._fileno_to_inq
         assert proc.inqW_fd not in self._all_inqueues
