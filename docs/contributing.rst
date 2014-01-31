@@ -32,7 +32,7 @@ Be considerate.
 Your work will be used by other people, and you in turn will depend on the
 work of others.  Any decision you take will affect users and colleagues, and
 we expect you to take those consequences into account when making decisions.
-Even if it's not obvious at the time, our contributions to Ubuntu will impact
+Even if it's not obvious at the time, our contributions to Celery will impact
 the work of others.  For example, changes to code, infrastructure, policy,
 documentation and translations during a release may negatively impact
 others work.
