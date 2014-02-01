@@ -23,7 +23,7 @@ class Signal(object):  # pragma: no cover
 
     .. attribute:: receivers
         Internal attribute, holds a dictionary of
-        `{receriverkey (id): weakref(receiver)}` mappings.
+        `{receiverkey (id): weakref(receiver)}` mappings.
 
     """
 
