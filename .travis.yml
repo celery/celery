@@ -20,4 +20,4 @@ before_install:
     sudo pip install tox
 script: tox -v -e $TRAVIS_PYTHON_VERSION
 after_success:
-  - .tox/$TRAVIS_PYTHON_VERSION-$DJANGO_VERSION/bin/coveralls
+  - .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
