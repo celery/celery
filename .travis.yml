@@ -1,8 +1,21 @@
 language: python
 python:
-    - 2.6
-    - 2.7
-    - 3.3
-install:
-    - pip install --use-mirrors tox
+  - 2.6
+  - 2.7
+  - 3.2
+  - 3.3
+  - pypy
+before_install:
+  - |
+    deactivate
+    if python --version |& grep PyPy; then
+      sudo apt-add-repository --yes ppa:pypy/ppa
+      sudo apt-get update
+      sudo apt-get install pypy
+      source ~/virtualenv/pypy/bin/activate
+    fi
+    python --version
+    uname -a
+    lsb_release -a
+    sudo pip install tox
 script: TOXENV=py$(echo $TRAVIS_PYTHON_VERSION | tr -d .) tox -v
