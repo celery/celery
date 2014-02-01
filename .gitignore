@@ -21,3 +21,6 @@ Documentation/
 .pydevproject
 .idea/
 celery/tests/cover/
+.ve*
+cover/
+
