@@ -149,38 +149,55 @@ Bugs can always be described to the :ref:`mailing-list`, but the best
 way to report an issue and to ensure a timely response is to use the
 issue tracker.
 
-1) Create a GitHub account.
+1) **Create a GitHub account.**
 
 You need to `create a GitHub account`_ to be able to create new issues
 and participate in the discussion.
 
 .. _`create a GitHub account`: https://github.com/signup/free
 
-2) Determine if your bug is really a bug.
+2) **Determine if your bug is really a bug.**
 
 You should not file a bug if you are requesting support.  For that you can use
 the :ref:`mailing-list`, or :ref:`irc-channel`.
 
-3) Make sure your bug hasn't already been reported.
+3) **Make sure your bug hasn't already been reported.**
 
 Search through the appropriate Issue tracker.  If a bug like yours was found,
 check if you have new information that could be reported to help
 the developers fix the bug.
 
-4) Collect information about the bug.
+4) **Check if you're using the latest version.**
+
+A bug could be fixed by some other improvements and fixes - it might not have an
+existing report in the bug tracker. Make sure you're using the latest releases of
+celery, billiard and kombu.
+
+5) **Collect information about the bug.**
 
 To have the best chance of having a bug fixed, we need to be able to easily
 reproduce the conditions that caused it.  Most of the time this information
 will be from a Python traceback message, though some bugs might be in design,
 spelling or other errors on the website/docs/code.
 
-If the error is from a Python traceback, include it in the bug report.
+    A) If the error is from a Python traceback, include it in the bug report.
 
-We also need to know what platform you're running (Windows, OSX, Linux, etc),
-the version of your Python interpreter, and the version of Celery, and related
-packages that you were running when the bug occurred.
+    B) We also need to know what platform you're running (Windows, OSX, Linux,
+       etc), the version of your Python interpreter, and the version of Celery,
+       and related packages that you were running when the bug occurred.
 
-5) Submit the bug.
+    C) If you are reporting a race condition or a deadlock, tracebacks can be
+       hard to get or might not be that useful. Try to inspect the process to
+       get more diagnostic data. Some ideas:
+
+       * Enable celery's `breakpoint signal`_ and use it to inspect the
+         process's state. This will allow you to open a pdb_ session.
+       * Collect tracing data using strace_, ltrace_ and lsof_.
+
+    D) Show your celery configuration. Don't forget to strip out confidential
+       information (like Django's SECRET_KEY or authentication credentials)
+
+6) **Submit the bug.**
 
 By default `GitHub`_ will email you to let you know when new comments have
 been made on your bug. In the event you've turned this feature off, you
@@ -188,6 +205,11 @@ should check back on occasion to ensure you don't miss any questions a
 developer trying to fix the bug might ask.
 
 .. _`GitHub`: http://github.com
+.. _`breakpoint signal`: http://docs.celeryproject.org/en/latest/tutorials/debugging.html#enabling-the-breakpoint-signal
+.. _`pdb`: http://docs.python.org/2/library/pdb.html
+.. _`strace`: http://en.wikipedia.org/wiki/Strace
+.. _`ltrace`: http://en.wikipedia.org/wiki/Ltrace
+.. _`lsof`: http://en.wikipedia.org/wiki/Lsof
 
 .. _issue-trackers:
 
