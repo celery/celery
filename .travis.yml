@@ -19,3 +19,5 @@ before_install:
     lsb_release -a
     sudo pip install tox
 script: TOXENV=py$(echo $TRAVIS_PYTHON_VERSION | tr -d .) tox -v
+after_success:
+  - .tox/$TRAVIS_PYTHON_VERSION-$DJANGO_VERSION/bin/coveralls
