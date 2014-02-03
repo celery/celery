@@ -143,7 +143,7 @@ task_prerun
 
 Dispatched before a task is executed.
 
-Sender is the task class being executed.
+Sender is the task object being executed.
 
 Provides arguments:
 
@@ -166,7 +166,7 @@ task_postrun
 
 Dispatched after a task has been executed.
 
-Sender is the task class executed.
+Sender is the task object executed.
 
 Provides arguments:
 
@@ -189,6 +189,32 @@ Provides arguments:
 
     Name of the resulting state.
 
+.. signal:: task_retry
+
+task_retry
+~~~~~~~~~~
+
+Dispatched when a task will be retried.
+
+Sender is the task object.
+
+Provides arguments:
+
+* request
+
+    The current task request.
+
+* reason
+
+    Reason for retry (usually an exception instance, but can always be
+    coerced to :class:`str`).
+
+* einfo
+
+    Detailed exception information, including traceback
+    (a :class:`billiard.einfo.ExceptionInfo` object).
+
+
 .. signal:: task_success
 
 task_success
@@ -196,7 +222,7 @@ task_success
 
 Dispatched when a task succeeds.
 
-Sender is the task class executed.
+Sender is the task object executed.
 
 Provides arguments
 
@@ -210,7 +236,7 @@ task_failure
 
 Dispatched when a task fails.
 
-Sender is the task class executed.
+Sender is the task object executed.
 
 Provides arguments:
 
@@ -239,7 +265,7 @@ task_revoked
 
 Dispatched when a task is revoked/terminated by the worker.
 
-Sender is the task class revoked/terminated.
+Sender is the task object revoked/terminated.
 
 Provides arguments:
 
