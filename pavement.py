@@ -91,11 +91,21 @@ def clean_readme(options):
 
 
 @task
+def clean_contributing(options):
+    path('CONTRIBUTING.rst').unlink_p()
+
+
+@task
 @needs('clean_readme')
 def readme(options):
     sh('{0} extra/release/sphinx-to-rst.py docs/templates/readme.txt \
             > README.rst'.format(sys.executable))
 
+@task
+@needs('clean_contributing')
+def contributing(options):
+    sh('{0} extra/release/sphinx-to-rst.py docs/contributing.rst \
+            > CONTRIBUTING.rst'.format(sys.executable))
 
 @task
 def bump(options):
