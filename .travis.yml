@@ -17,6 +17,6 @@ before_install:
     uname -a
     lsb_release -a
     sudo pip install tox
-script: tox -v -e $TRAVIS_PYTHON_VERSION
+script: tox -v -e $TRAVIS_PYTHON_VERSION -- -v
 after_success:
   - .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
