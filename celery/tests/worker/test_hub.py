@@ -251,7 +251,7 @@ class test_Hub(Case):
 
         P.register.assert_has_calls([
             call(10, hub.READ | hub.ERR),
-            call(File(11), hub.READ | hub.ERR),
+            call(11, hub.READ | hub.ERR),
         ], any_order=True)
 
         self.assertEqual(hub.readers[10], (read_A, (10, )))
@@ -289,7 +289,7 @@ class test_Hub(Case):
 
         P.register.assert_has_calls([
             call(20, hub.WRITE),
-            call(File(21), hub.WRITE),
+            call(21, hub.WRITE),
         ], any_order=True)
 
         self.assertEqual(hub.writers[20], (write_A, ()))
