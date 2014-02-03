@@ -1,0 +1,6 @@
+[run]
+branch = 1
+cover_pylib = 0
+omit = celery.utils.debug,celery.tests.*,celery.bin.graph
+[report]
+omit = */python?.?/*,*/site-packages/*,*/pypy/*
