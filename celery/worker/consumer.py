@@ -228,7 +228,7 @@ class Consumer(object):
     def _update_prefetch_count(self, index=0):
         """Update prefetch count after pool/shrink grow operations.
 
-        Index must be the change in number of processes as a postive
+        Index must be the change in number of processes as a positive
         (increasing) or negative (decreasing) number.
 
         .. note::
