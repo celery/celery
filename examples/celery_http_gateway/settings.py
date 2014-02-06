@@ -13,8 +13,14 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
+# Notes: Django 1.3 deprecated the old-style way of specifying databases,
+# using 'django.db.backends.XXX' where XXX is one of:
 # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_ENGINE = 'sqlite3'
+import django
+if django.VERSION[:3] > (1, 3):
+    DATABASE_ENGINE = 'django.db.backends.sqlite3'
+else:
+    DATABASE_ENGINE = 'sqlite3'
 
 # path to database file if using sqlite3.
 DATABASE_NAME = 'development.db'
@@ -30,6 +36,17 @@ DATABASE_HOST = ''
 
 # Set to empty string for default. Not used with sqlite3.
 DATABASE_PORT = ''
+
+DATABASES = {
+    'default': {
+        'ENGINE': DATABASE_ENGINE,
+        'NAME': DATABASE_NAME,
+        'USER': DATABASE_USER,
+        'PASSWORD': DATABASE_PASSWORD,
+        'HOST': DATABASE_HOST,                                                                                          
+        'PORT': DATABASE_PORT,
+       }
+}
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
