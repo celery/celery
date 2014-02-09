@@ -518,7 +518,7 @@ Code coverage in HTML:
 
 .. code-block:: bash
 
-    $ nosetests --with-coverage3 --cover3-html
+    $ nosetests --with-coverage --cover-html
 
 The coverage output will then be located at
 :file:`celery/tests/cover/index.html`.
@@ -527,7 +527,7 @@ Code coverage in XML (Cobertura-style):
 
 .. code-block:: bash
 
-    $ nosetests --with-coverage3 --cover3-xml --cover3-xml-file=coverage.xml
+    $ nosetests --with-coverage --cover-xml --cover-xml-file=coverage.xml
 
 The coverage XML output will then be located at :file:`coverage.xml`
 

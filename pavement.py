@@ -122,7 +122,7 @@ def bump(options):
 def test(options):
     cmd = 'CELERY_LOADER=default nosetests'
     if getattr(options, 'coverage', False):
-        cmd += ' --with-coverage3'
+        cmd += ' --with-coverage'
     if getattr(options, 'verbose', False):
         cmd += ' --verbosity=2'
     sh(cmd)
