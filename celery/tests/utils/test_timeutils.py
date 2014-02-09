@@ -66,6 +66,9 @@ class test_iso8601(Case):
         iso2 = iso.replace('+00:00', '+01:00')
         d2 = parse_iso8601(iso2)
         self.assertEqual(d2.tzinfo._minutes, +60)
+        iso3 = iso.replace('+00:00', 'Z')
+        d3 = parse_iso8601(iso3)
+        self.assertEqual(d3.tzinfo, pytz.UTC)
 
 
 class test_timeutils(Case):
