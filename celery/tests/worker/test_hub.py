@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from kombu.async import Hub, READ, WRITE, ERR
-from kombu.async.hub import repr_flag, _rcb
+from kombu.async.debug import callback_for, repr_flag, _rcb
 from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
 
 from celery.five import range
@@ -234,11 +234,11 @@ class test_Hub(Case):
         hub.readers = {6: reader}
         hub.writers = {7: writer}
 
-        self.assertEqual(hub._callback_for(6, READ), reader)
-        self.assertEqual(hub._callback_for(7, WRITE), writer)
+        self.assertEqual(callback_for(hub, 6, READ), reader)
+        self.assertEqual(callback_for(hub, 7, WRITE), writer)
         with self.assertRaises(KeyError):
-            hub._callback_for(6, WRITE)
-        self.assertEqual(hub._callback_for(6, WRITE, 'foo'), 'foo')
+            callback_for(hub, 6, WRITE)
+        self.assertEqual(callback_for(hub, 6, WRITE, 'foo'), 'foo')
 
     def test_add_remove_readers(self):
         hub = Hub()
