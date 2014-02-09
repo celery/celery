@@ -558,7 +558,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     execv was only enabled when transports other than amqp/redis was used,
     and it's there to prevent deadlocks caused by mutexes not being released
-    before the process forks.  Sadly it also changes the environment
+    before the process forks.  Unfortunately it also changes the environment
     introducing many corner case bugs that is hard to fix without adding
     horrible hacks.  Deadlock issues are reported far less often than the
     bugs that execv are causing, so we now disable it by default.

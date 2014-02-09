@@ -698,8 +698,8 @@ and then after installation, read from the system using the :mod:`pkg_resources`
 
 Celery recognizes ``celery.commands`` entry-points to install additional
 subcommands, where the value of the entry-point must point to a valid subclass
-of :class:`celery.bin.base.Command`.  Sadly there is limited documentation,
-but you can find inspiration from the various commands in the
+of :class:`celery.bin.base.Command`.  There is limited documentation,
+unfortunately, but you can find inspiration from the various commands in the
 :mod:`celery.bin` package.
 
 This is how the Flower_ monitoring extension adds the :program:`celery flower` command,

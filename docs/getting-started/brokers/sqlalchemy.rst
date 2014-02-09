@@ -7,7 +7,7 @@
 .. admonition:: Experimental Status
 
     The SQLAlchemy transport is unstable in many areas and there are
-    several issues open.  Sadly we don't have the resources or funds
+    several issues open.  Unfortunately we don't have the resources or funds
     required to improve the situation, so we're looking for contributors
     and partners willing to help.
 

@@ -270,7 +270,7 @@ Caveats
 Django supported out of the box
 -------------------------------
 
-Celery 3.0 introduced a shiny new API, but sadly did not
+Celery 3.0 introduced a shiny new API, but unfortunately did not
 have a solution for Django users.
 
 The situation changes with this version as Django is now supported
