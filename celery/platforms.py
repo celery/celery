@@ -49,6 +49,7 @@ EX_OK = getattr(os, 'EX_OK', 0)
 EX_FAILURE = 1
 EX_UNAVAILABLE = getattr(os, 'EX_UNAVAILABLE', 69)
 EX_USAGE = getattr(os, 'EX_USAGE', 64)
+EX_CANTCREAT = getattr(os, 'EX_CANTCREAT', 73)
 
 SYSTEM = _platform.system()
 IS_OSX = SYSTEM == 'Darwin'
@@ -258,7 +259,8 @@ def create_pidlock(pidfile):
 def _create_pidlock(pidfile):
     pidlock = Pidfile(pidfile)
     if pidlock.is_locked() and not pidlock.remove_if_stale():
-        raise SystemExit(PIDLOCKED.format(pidfile, pidlock.read_pid()))
+        print(PIDLOCKED.format(pidfile, pidlock.read_pid()), file=sys.stderr)
+        raise SystemExit(EX_CANTCREAT)
     pidlock.acquire()
     return pidlock
 
