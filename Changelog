@@ -8,6 +8,64 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.9:
+
+3.1.9
+=====
+:release-date: 2014-02-09 04:30 P.M UTC
+:release-by: Ask Solem
+
+- **Requirements**:
+
+    - Now depends on :ref:`Kombu 3.0.10 <kombu:version-3.0.10>`.
+
+- **Prefork pool**: Better handling of exiting child processes.
+
+    Fix contributed by Ionel Cristian Mărieș.
+
+- **Prefork pool**: Now makes sure all file descriptors are removed
+  from the hub when a process is cleaned up.
+
+    Fix contributed by Ionel Cristian Mărieș.
+
+- **New Sphinx extension**: for autodoc documentation of tasks:
+  :mod:`celery.contrib.spinx` (Issue #1833).
+
+- **Task**: Task.backend is now a property that forwards to ``app.backend``
+  if no custom backend has been specified for the task (Issue #1821).
+
+- **Generic init scripts**: Fixed bug in stop command.
+
+    Fix contributed by Rinat Shigapov.
+
+- **Generic init scripts**: Fixed compatibility with GNU :man:`stat`.
+
+    Fix contributed by Paul Kilgo.
+
+- **Generic init scripts**: Fixed compatibility with the minimal
+  :program:`dash` shell (Issue #1815).
+
+- **Commands**: The :program:`celery amqp basic.publish` command was not
+  working properly.
+
+    Fix contributed by Andrey Voronov.
+
+- **Worker**: Improved error message for message decoding errors.
+
+- **Worker**: Now uses the *negotiated* heartbeat value to calculate
+  how often to run the heartbeat checks.
+
+- **Beat**: Fixed problem with beat hanging after the first schedule
+  iteration (Issue #1822).
+
+    Fix contributed by Roger Hu.
+
+- **Signals**: The header argument to :signal:`before_task_publish` is now
+  always a dictionary instance so that signal handlers can add headers.
+
+- **Worker**: A list of message headers is now included in message related
+  errors.
+
 .. _version-3.1.8:
 
 3.1.8
