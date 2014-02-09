@@ -17,7 +17,7 @@ new in Celery 3.1.
 
 - **Requirements**:
 
-    - Now depends on :ref:`Kombu 3.0.10 <kombu:version-3.0.10>`.
+    - Now depends on :ref:`Kombu 3.0.12 <kombu:version-3.0.12>`.
 
 - **Prefork pool**: Better handling of exiting child processes.
 
@@ -50,7 +50,15 @@ new in Celery 3.1.
 
     Fix contributed by Andrey Voronov.
 
+- **Commands**: Better error message for missing arguments to preload
+  options (Issue #1860).
+
 - **Worker**: Improved error message for message decoding errors.
+
+- **Time**: Now properly parses the `Z` timezone specifier in ISO 8601 date
+  strings.
+
+    Fix contributed by Martin Davidsson.
 
 - **Worker**: Now uses the *negotiated* heartbeat value to calculate
   how often to run the heartbeat checks.
