@@ -37,6 +37,7 @@ from kombu.utils import nested, symbol_by_name
 from celery import Celery
 from celery.app import current_app
 from celery.backends.cache import CacheBackend, DummyClient
+from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.five import (
     WhateverIO, builtins, items, reraise,
     string_t, values, open_fqdn,
@@ -261,6 +262,18 @@ class Case(unittest.TestCase):
     def assertWarnsRegex(self, expected_warning, expected_regex):
         return _AssertWarnsContext(expected_warning, self,
                                    None, expected_regex)
+
+    @contextmanager
+    def assertDeprecated(self):
+        with self.assertWarnsRegex(CDeprecationWarning,
+                                   r'scheduled for removal'):
+            yield
+
+    @contextmanager
+    def assertPendingDeprecation(self):
+        with self.assertWarnsRegex(CPendingDeprecationWarning,
+                                   r'scheduled for deprecation'):
+            yield
 
     def assertDictContainsSubset(self, expected, actual, msg=None):
         missing, mismatched = [], []

@@ -7,7 +7,6 @@ import warnings
 from celery import loaders
 from celery.exceptions import (
     NotConfigured,
-    CPendingDeprecationWarning,
 )
 from celery.loaders import base
 from celery.loaders import default
@@ -34,16 +33,12 @@ class test_loaders(AppCase):
 
     @depends_on_current_app
     def test_current_loader(self):
-        with self.assertWarnsRegex(
-                CPendingDeprecationWarning,
-                r'deprecation'):
+        with self.assertPendingDeprecation():
             self.assertIs(loaders.current_loader(), self.app.loader)
 
     @depends_on_current_app
     def test_load_settings(self):
-        with self.assertWarnsRegex(
-                CPendingDeprecationWarning,
-                r'deprecation'):
+        with self.assertPendingDeprecation():
             self.assertIs(loaders.load_settings(), self.app.conf)
 
 

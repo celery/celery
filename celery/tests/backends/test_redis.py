@@ -10,7 +10,7 @@ from celery import signature
 from celery import states
 from celery import group
 from celery.datastructures import AttributeDict
-from celery.exceptions import CPendingDeprecationWarning, ImproperlyConfigured
+from celery.exceptions import ImproperlyConfigured
 from celery.utils.timeutils import timedelta_seconds
 
 from celery.tests.case import (
@@ -151,17 +151,13 @@ class test_RedisBackend(AppCase):
         x = self.MockBackend(
             'redis://:bosco@vandelay.com:123//1', app=self.app,
         )
-        with self.assertWarnsRegex(CPendingDeprecationWarning,
-                                   r'scheduled for deprecation'):
+        with self.assertPendingDeprecation():
             self.assertEqual(x.host, 'vandelay.com')
-        with self.assertWarnsRegex(CPendingDeprecationWarning,
-                                   r'scheduled for deprecation'):
+        with self.assertPendingDeprecation():
             self.assertEqual(x.db, 1)
-        with self.assertWarnsRegex(CPendingDeprecationWarning,
-                                   r'scheduled for deprecation'):
+        with self.assertPendingDeprecation():
             self.assertEqual(x.port, 123)
-        with self.assertWarnsRegex(CPendingDeprecationWarning,
-                                   r'scheduled for deprecation'):
+        with self.assertPendingDeprecation():
             self.assertEqual(x.password, 'bosco')
 
     def test_conf_raises_KeyError(self):

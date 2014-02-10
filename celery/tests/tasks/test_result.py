@@ -311,17 +311,19 @@ class test_ResultSet(AppCase):
         x = self.app.ResultSet([r1, r2])
         with self.dummy_copy():
             with patch('celery.result.time') as _time:
-                with self.assertRaises(KeyError):
-                    list(x.iterate())
+                with self.assertPendingDeprecation():
+                    with self.assertRaises(KeyError):
+                        list(x.iterate())
                 _time.sleep.assert_called_with(10)
 
             backend.subpolling_interval = 0
             with patch('celery.result.time') as _time:
-                with self.assertRaises(KeyError):
-                    ready.return_value = False
-                    ready.side_effect = se
-                    list(x.iterate())
-                self.assertFalse(_time.sleep.called)
+                with self.assertPendingDeprecation():
+                    with self.assertRaises(KeyError):
+                        ready.return_value = False
+                        ready.side_effect = se
+                        list(x.iterate())
+                    self.assertFalse(_time.sleep.called)
 
     def test_times_out(self):
         r1 = self.app.AsyncResult(uuid)
@@ -330,8 +332,9 @@ class test_ResultSet(AppCase):
         x = self.app.ResultSet([r1])
         with self.dummy_copy():
             with patch('celery.result.time'):
-                with self.assertRaises(TimeoutError):
-                    list(x.iterate(timeout=1))
+                with self.assertPendingDeprecation():
+                    with self.assertRaises(TimeoutError):
+                        list(x.iterate(timeout=1))
 
     def test_add_discard(self):
         x = self.app.ResultSet([])
@@ -449,7 +452,8 @@ class test_GroupResult(AppCase):
     def test_iterate_raises(self):
         ar = MockAsyncResultFailure(uuid(), app=self.app)
         ts = self.app.GroupResult(uuid(), [ar])
-        it = ts.iterate()
+        with self.assertPendingDeprecation():
+            it = ts.iterate()
         with self.assertRaises(KeyError):
             next(it)
 
@@ -530,7 +534,8 @@ class test_GroupResult(AppCase):
         ar = MockAsyncResultSuccess(uuid(), app=self.app)
         ar2 = MockAsyncResultSuccess(uuid(), app=self.app)
         ts = self.app.GroupResult(uuid(), [ar, ar2])
-        it = ts.iterate()
+        with self.assertPendingDeprecation():
+            it = ts.iterate()
         self.assertEqual(next(it), 42)
         self.assertEqual(next(it), 42)
 
@@ -538,7 +543,8 @@ class test_GroupResult(AppCase):
         ar1 = EagerResult(uuid(), 42, states.SUCCESS)
         ar2 = EagerResult(uuid(), 42, states.SUCCESS)
         ts = self.app.GroupResult(uuid(), [ar1, ar2])
-        it = ts.iterate()
+        with self.assertPendingDeprecation():
+            it = ts.iterate()
         self.assertEqual(next(it), 42)
         self.assertEqual(next(it), 42)
 
@@ -560,7 +566,8 @@ class test_GroupResult(AppCase):
         self.assertListEqual(list(ts.iter_native()), [])
 
     def test_iterate_simple(self):
-        it = self.ts.iterate()
+        with self.assertPendingDeprecation():
+            it = self.ts.iterate()
         results = sorted(list(it))
         self.assertListEqual(results, list(range(self.size)))
 
@@ -610,7 +617,8 @@ class test_failed_AsyncResult(test_GroupResult):
         self.assertEqual(self.ts.completed_count(), len(self.ts) - 1)
 
     def test_iterate_simple(self):
-        it = self.ts.iterate()
+        with self.assertPendingDeprecation():
+            it = self.ts.iterate()
 
         def consume():
             return list(it)
