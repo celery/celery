@@ -535,11 +535,11 @@ If you want to specify a specific worker you can use the
 
 The same can be accomplished dynamically using the :meth:`@control.add_consumer` method::
 
-    >>> myapp.control.add_consumer('foo', reply=True)
+    >>> app.control.add_consumer('foo', reply=True)
     [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
 
-    >>> myapp.control.add_consumer('foo', reply=True,
-    ...                            destination=['worker1@example.com'])
+    >>> app.control.add_consumer('foo', reply=True,
+    ...                          destination=['worker1@example.com'])
     [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
 
 
@@ -547,7 +547,7 @@ By now I have only shown examples using automatic queues,
 If you need more control you can also specify the exchange, routing_key and
 even other options::
 
-    >>> myapp.control.add_consumer(
+    >>> app.control.add_consumer(
     ...     queue='baz',
     ...     exchange='ex',
     ...     exchange_type='topic',
@@ -588,7 +588,7 @@ You can also cancel consumers programmatically using the
 
 .. code-block:: bash
 
-    >>> myapp.control.cancel_consumer('foo', reply=True)
+    >>> app.control.cancel_consumer('foo', reply=True)
     [{u'worker1.local': {u'ok': u"no longer consuming from u'foo'"}}]
 
 .. control:: active_queues
@@ -617,10 +617,10 @@ reply to the request:
 This can also be done programmatically by using the
 :meth:`@control.inspect.active_queues` method::
 
-    >>> myapp.inspect().active_queues()
+    >>> app.control.inspect().active_queues()
     [...]
 
-    >>> myapp.inspect(['worker1.local']).active_queues()
+    >>> app.control.inspect(['worker1.local']).active_queues()
     [...]
 
 .. _worker-autoreloading:
