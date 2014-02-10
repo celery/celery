@@ -134,13 +134,22 @@ class DjangoWorkerFixup(object):
         )
 
     def validate_models(self):
-        from django.core.management.validation import get_validation_errors
         s = io.StringIO()
-        num_errors = get_validation_errors(s, None)
-        if num_errors:
-            raise RuntimeError(
-                'One or more Django models did not validate:\n{0}'.format(
-                    s.getvalue()))
+        try:
+            from django.core.management.validation import get_validation_errors
+        except ImportError:
+            import django
+            from django.core.management.base import BaseCommand
+            django.setup()
+            cmd = BaseCommand()
+            cmd.stdout, cmd.stderr = sys.stdout, sys.stderr
+            cmd.check()
+        else:
+            num_errors = get_validation_errors(s, None)
+            if num_errors:
+                raise RuntimeError(
+                    'One or more Django models did not validate:\n{0}'.format(
+                        s.getvalue()))
 
     def install(self):
         signals.beat_embedded_init.connect(self.close_database)
