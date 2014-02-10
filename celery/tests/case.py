@@ -44,6 +44,12 @@ from celery.five import (
 from celery.utils.functional import noop
 from celery.utils.imports import qualname
 
+try:  # pragma: no cover
+    from django.utils.six import MovedModule
+except ImportError:  # pragma: no cover
+    class MovedModule(object):  # noqa
+        pass
+
 __all__ = [
     'Case', 'AppCase', 'Mock', 'MagicMock', 'ANY',
     'patch', 'call', 'sentinel', 'skip_unless_module',
@@ -202,8 +208,10 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
         # to work properly.
         warnings.resetwarnings()
         for v in list(values(sys.modules)):
-            if getattr(v, '__warningregistry__', None):
-                v.__warningregistry__ = {}
+            # do not evaluate Django moved modules:
+            if not isinstance(v, MovedModule):
+                if getattr(v, '__warningregistry__', None):
+                    v.__warningregistry__ = {}
         self.warnings_manager = warnings.catch_warnings(record=True)
         self.warnings = self.warnings_manager.__enter__()
         warnings.simplefilter('always', self.expected)
