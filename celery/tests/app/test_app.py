@@ -549,14 +549,14 @@ class test_App(AppCase):
         # Test passing in a string and make sure the string
         # gets there untouched
         self.app.conf.BROKER_FAILOVER_STRATEGY = 'foo-bar'
-        self.assertEquals(
+        self.assertEqual(
             self.app.connection('amqp:////value').failover_strategy,
             'foo-bar',
         )
 
         # Try passing in None
         self.app.conf.BROKER_FAILOVER_STRATEGY = None
-        self.assertEquals(
+        self.assertEqual(
             self.app.connection('amqp:////value').failover_strategy,
             itertools.cycle,
         )
@@ -566,7 +566,7 @@ class test_App(AppCase):
             yield True
 
         self.app.conf.BROKER_FAILOVER_STRATEGY = my_failover_strategy
-        self.assertEquals(
+        self.assertEqual(
             self.app.connection('amqp:////value').failover_strategy,
             my_failover_strategy,
         )

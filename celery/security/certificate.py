@@ -35,7 +35,7 @@ class Certificate(object):
 
     def get_serial_number(self):
         """Return the serial number in the certificate."""
-        return self._cert.get_serial_number()
+        return bytes_to_str(self._cert.get_serial_number())
 
     def get_issuer(self):
         """Return issuer (CA) as a string"""
@@ -66,14 +66,15 @@ class CertStore(object):
     def __getitem__(self, id):
         """get certificate by id"""
         try:
-            return self._certs[id]
+            return self._certs[bytes_to_str(id)]
         except KeyError:
             raise SecurityError('Unknown certificate: {0!r}'.format(id))
 
     def add_cert(self, cert):
-        if cert.get_id() in self._certs:
+        cert_id = bytes_to_str(cert.get_id())
+        if cert_id in self._certs:
             raise SecurityError('Duplicate certificate: {0!r}'.format(id))
-        self._certs[cert.get_id()] = cert
+        self._certs[cert_id] = cert
 
 
 class FSCertStore(CertStore):
