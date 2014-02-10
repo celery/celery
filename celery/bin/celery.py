@@ -715,11 +715,33 @@ class CeleryCommand(Command):
                 if value.startswith('--'):
                     rest.append(value)
                 elif value.startswith('-'):
-                    rest.extend([value] + [argv[index + 1]])
-                    index += 1
+                    # we eat the next argument even though we don't know
+                    # if this option takes an argument or not.
+                    # instead we will assume what is the command name in the
+                    # return statements below.
+                    try:
+                        nxt = argv[index + 1]
+                        if nxt.startswith('-'):
+                            # is another option
+                            rest.append(value)
+                        else:
+                            # is (maybe) a value for this option
+                            rest.extend([value, nxt])
+                            index += 1
+                    except IndexError:
+                        rest.append(value)
+                        break
                 else:
-                    return argv[index:] + rest
+                    break
                 index += 1
+            if argv[index:]:
+                # if there are more arguments left then divide and swap
+                # we assume the first argument in argv[i:] is the command
+                # name.
+                return argv[index:] + rest
+            # if there are no more arguments then the last arg in rest'
+            # must be the command.
+            [rest.pop()] + rest
         return []
 
     def prepare_prog_name(self, name):
