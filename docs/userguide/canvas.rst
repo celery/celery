@@ -651,6 +651,13 @@ Chords
 
 .. versionadded:: 2.3
 
+.. note::
+
+    Tasks used within a chord must *not* ignore their results. If the result
+    backend is disabled for *any* task (header or body) in your chord you
+    should read ":ref:`chord-important-notes`".
+    
+
 A chord is a task that only executes after all of the tasks in a group have
 finished executing.
 
