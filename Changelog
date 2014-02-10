@@ -12,7 +12,7 @@ new in Celery 3.1.
 
 3.1.9
 =====
-:release-date: 2014-02-09 04:30 P.M UTC
+:release-date: 2014-02-10 06:00 P.M UTC
 :release-by: Ask Solem
 
 - **Requirements**:
@@ -51,6 +51,9 @@ new in Celery 3.1.
   working properly.
 
     Fix contributed by Andrey Voronov.
+
+- **Commands**: Did no longer emit an error message if the pidfile exists
+  and the process is still alive (Issue #1855).
 
 - **Commands**: Better error message for missing arguments to preload
   options (Issue #1860).
