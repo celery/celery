@@ -31,6 +31,8 @@ new in Celery 3.1.
 - **New Sphinx extension**: for autodoc documentation of tasks:
   :mod:`celery.contrib.spinx` (Issue #1833).
 
+- **Django**: Now works with Django 1.7a1.
+
 - **Task**: Task.backend is now a property that forwards to ``app.backend``
   if no custom backend has been specified for the task (Issue #1821).
 
@@ -38,7 +40,7 @@ new in Celery 3.1.
 
     Fix contributed by Rinat Shigapov.
 
-- **Generic init scripts**: Fixed compatibility with GNU :man:`stat`.
+- **Generic init scripts**: Fixed compatibility with GNU :manpage:`stat`.
 
     Fix contributed by Paul Kilgo.
 
@@ -52,6 +54,9 @@ new in Celery 3.1.
 
 - **Commands**: Better error message for missing arguments to preload
   options (Issue #1860).
+
+- **Commands**: :program:`celery -h` did not work because of a bug in the
+  argument parser (Issue #1849).
 
 - **Worker**: Improved error message for message decoding errors.
 
