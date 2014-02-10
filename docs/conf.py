@@ -21,7 +21,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.coverage',
               'sphinx.ext.intersphinx',
-              'sphinxcontrib.issuetracker',
+              'celery.contrib.sphinx',
+              'githubsphinx',
               'celerydocs']
 
 
@@ -116,10 +117,7 @@ html_sidebars = {
 
 ### Issuetracker
 
-if False:
-    issuetracker = 'github'
-    issuetracker_project = 'celery/celery'
-    issuetracker_issue_pattern = r'[Ii]ssue #(\d+)'
+github_project = 'celery/celery'
 
 # -- Options for Epub output -------------------------------------------
 

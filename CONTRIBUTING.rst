@@ -161,7 +161,7 @@ If you'd like to submit the information encrypted our PGP key is::
 Other bugs
 ----------
 
-Bugs can always be described to the :ref:`mailing-list`, but the best
+Bugs can always be described to the ``mailing-list``, but the best
 way to report an issue and to ensure a timely response is to use the
 issue tracker.
 
@@ -175,7 +175,7 @@ and participate in the discussion.
 2) **Determine if your bug is really a bug.**
 
 You should not file a bug if you are requesting support.  For that you can use
-the :ref:`mailing-list`, or :ref:`irc-channel`.
+the ``mailing-list``, or ``irc-channel``.
 
 3) **Make sure your bug hasn't already been reported.**
 
@@ -206,8 +206,8 @@ spelling or other errors on the website/docs/code.
        hard to get or might not be that useful. Try to inspect the process to
        get more diagnostic data. Some ideas:
 
-       * Enable celery's :ref:`breakpoint signal <breakpoint_signal>` and use it
-         to inspect the process's state. This will allow you to open a :mod:`pdb`
+       * Enable celery's ``breakpoint signal <breakpoint_signal>`` and use it
+         to inspect the process's state. This will allow you to open a ``pdb``
          session.
        * Collect tracing data using strace_(Linux), dtruss (OSX) and ktrace(BSD),
          ltrace_ and lsof_.
@@ -251,7 +251,7 @@ issue tracker.
 * Django-Celery: http://github.com/celery/django-celery/issues
 
 If you are unsure of the origin of the bug you can ask the
-:ref:`mailing-list`, or just use the Celery issue tracker.
+``mailing-list``, or just use the Celery issue tracker.
 
 Contributors guide to the codebase
 ==================================
@@ -259,7 +259,7 @@ Contributors guide to the codebase
 There's a separate section for internal details,
 including details about the codebase and a style guide.
 
-Read :ref:`internals-guide` for more!
+Read ``internals-guide`` for more!
 
 .. _versions:
 
@@ -401,30 +401,25 @@ is in the Github Guide: `Fork a Repo`_.
 
 After you have cloned the repository you should checkout your copy
 to a directory on your machine:
-
-.. code-block:: bash
+::
 
     $ git clone git@github.com:username/celery.git
 
 When the repository is cloned enter the directory to set up easy access
 to upstream changes:
-
-.. code-block:: bash
+::
 
     $ cd celery
-
-.. code-block:: bash
+::
 
     $ git remote add upstream git://github.com/celery/celery.git
-
-.. code-block:: bash
+::
 
     $ git fetch upstream
 
 If you need to pull in new changes from upstream you should
-always use the :option:`--rebase` option to ``git pull``:
-
-.. code-block:: bash
+always use the ``--rebase`` option to ``git pull``:
+::
 
     git pull --rebase upstream master
 
@@ -438,7 +433,7 @@ fetch and checkout a remote branch like this::
 
     git checkout --track -b 3.0-devel origin/3.0-devel
 
-For a list of branches see :ref:`git-branches`.
+For a list of branches see ``git-branches``.
 
 .. _`Fork a Repo`: http://help.github.com/fork-a-repo/
 .. _`Rebasing merge commits in git`:
@@ -452,43 +447,40 @@ Running the unit test suite
 
 To run the Celery test suite you need to install a few dependencies.
 A complete list of the dependencies needed are located in
-:file:`requirements/test.txt`.
+``requirements/test.txt``.
 
 Installing the test requirements:
-
-.. code-block:: bash
+::
 
     $ pip install -U -r requirements/test.txt
 
 When installation of dependencies is complete you can execute
 the test suite by calling ``nosetests``:
-
-.. code-block:: bash
+::
 
     $ nosetests
 
-Some useful options to :program:`nosetests` are:
+Some useful options to ``nosetests`` are:
 
-* :option:`-x`
+* ``-x``
 
     Stop running the tests at the first test that fails.
 
-* :option:`-s`
+* ``-s``
 
     Don't capture output
 
-* :option:`--nologcapture`
+* ``--nologcapture``
 
     Don't capture log output.
 
-* :option:`-v`
+* ``-v``
 
     Run with verbose output.
 
 If you want to run the tests for a single test file only
 you can do so like this:
-
-.. code-block:: bash
+::
 
     $ nosetests celery.tests.test_worker.test_worker_job
 
@@ -515,21 +507,19 @@ Calculating test coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Code coverage in HTML:
-
-.. code-block:: bash
+::
 
     $ nosetests --with-coverage --cover-html
 
 The coverage output will then be located at
-:file:`celery/tests/cover/index.html`.
+``celery/tests/cover/index.html``.
 
 Code coverage in XML (Cobertura-style):
-
-.. code-block:: bash
+::
 
     $ nosetests --with-coverage --cover-xml --cover-xml-file=coverage.xml
 
-The coverage XML output will then be located at :file:`coverage.xml`
+The coverage XML output will then be located at ``coverage.xml``
 
 .. _contributing-tox:
 
@@ -540,15 +530,13 @@ There is a ``tox`` configuration file in the top directory of the
 distribution.
 
 To run the tests for all supported Python versions simply execute:
-
-.. code-block:: bash
+::
 
     $ tox
 
-If you only want to test specific Python versions use the :option:`-e`
+If you only want to test specific Python versions use the ``-e``
 option:
-
-.. code-block:: bash
+::
 
     $ tox -e py26
 
@@ -556,23 +544,21 @@ Building the documentation
 --------------------------
 
 To build the documentation you need to install the dependencies
-listed in :file:`requirements/docs.txt`:
-
-.. code-block:: bash
+listed in ``requirements/docs.txt``:
+::
 
     $ pip install -U -r requirements/docs.txt
 
 After these dependencies are installed you should be able to
 build the docs by running:
-
-.. code-block:: bash
+::
 
     $ cd docs
     $ rm -rf .build
     $ make html
 
 Make sure there are no errors or warnings in the build output.
-After building succeeds the documentation is available at :file:`.build/html`.
+After building succeeds the documentation is available at ``.build/html``.
 
 .. _contributing-verify:
 
@@ -580,11 +566,10 @@ Verifying your contribution
 ---------------------------
 
 To use these tools you need to install a few dependencies.  These dependencies
-can be found in :file:`requirements/pkgutils.txt`.
+can be found in ``requirements/pkgutils.txt``.
 
 Installing the dependencies:
-
-.. code-block:: bash
+::
 
     $ pip install -U -r requirements/pkgutils.txt
 
@@ -593,15 +578,13 @@ pyflakes & PEP8
 
 To ensure that your changes conform to PEP8 and to run pyflakes
 execute:
-
-.. code-block:: bash
+::
 
     $ paver flake8
 
 To not return a negative exit code when this command fails use the
-:option:`-E` option, this can be convenient while developing:
-
-.. code-block:: bash
+``-E`` option, this can be convenient while developing:
+::
 
     $ paver flake8 -E
 
@@ -610,8 +593,7 @@ API reference
 
 To make sure that all modules have a corresponding section in the API
 reference please execute:
-
-.. code-block:: bash
+::
 
     $ paver autodoc
     $ paver verifyindex
@@ -619,31 +601,27 @@ reference please execute:
 If files are missing you can add them by copying an existing reference file.
 
 If the module is internal it should be part of the internal reference
-located in :file:`docs/internals/reference/`.  If the module is public
-it should be located in :file:`docs/reference/`.
+located in ``docs/internals/reference/``.  If the module is public
+it should be located in ``docs/reference/``.
 
 For example if reference is missing for the module ``celery.worker.awesome``
 and this module is considered part of the public API, use the following steps:
-
-.. code-block:: bash
+::
 
     $ cd docs/reference/
     $ cp celery.schedules.rst celery.worker.awesome.rst
-
-.. code-block:: bash
+::
 
     $ vim celery.worker.awesome.rst
 
         # change every occurance of ``celery.schedules`` to
         # ``celery.worker.awesome``
-
-.. code-block:: bash
+::
 
     $ vim index.rst
 
         # Add ``celery.worker.awesome`` to the index.
-
-.. code-block:: bash
+::
 
     # Add the file to git
     $ git add celery.worker.awesome.rst
@@ -703,7 +681,7 @@ is following the conventions.
 
 * Lines should not exceed 78 columns.
 
-  You can enforce this in :program:`vim` by setting the ``textwidth`` option:
+  You can enforce this in ``vim`` by setting the ``textwidth`` option:
 
   .. code-block:: vim
 
@@ -775,8 +753,7 @@ is following the conventions.
 
 * Note that we use "new-style` relative imports when the distribution
   does not support Python versions below 2.5
-
-.. code-block:: python
+::
 
         from . import submodule
 
@@ -795,7 +772,7 @@ that require 3rd party libraries must be added.
 1) Add a new requirements file in `requirements/extras`
 
     E.g. for the Cassandra backend this is
-    :file:`requirements/extras/cassandra.txt`, and the file looks like this::
+    ``requirements/extras/cassandra.txt``, and the file looks like this::
 
         pycassa
 
@@ -819,11 +796,11 @@ that require 3rd party libraries must be added.
 
 3) Document the new feature in ``docs/includes/installation.txt``
 
-    You must add your feature to the list in the :ref:`bundles` section
-    of :file:`docs/includes/installation.txt`.
+    You must add your feature to the list in the ``bundles`` section
+    of ``docs/includes/installation.txt``.
 
     After you've made changes to this file you need to render
-    the distro :file:`README` file:
+    the distro ``README`` file:
 
     .. code-block:: bash
 
@@ -849,7 +826,7 @@ regarding the official git repositories, PyPI packages
 Read the Docs pages.
 
 If the issue is not an emergency then it is better
-to :ref:`report an issue <reporting-bugs>`.
+to ``report an issue <reporting-bugs>``.
 
 
 Committers
@@ -998,9 +975,9 @@ Deprecated
 
 - pylibrabbitmq
 
-Old name for :mod:`librabbitmq`.
+Old name for ``librabbitmq``.
 
-:git: :const:`None`
+``None``
 :PyPI: http://pypi.python.org/pypi/pylibrabbitmq
 
 .. _release-procedure:
@@ -1014,27 +991,24 @@ Updating the version number
 
 The version number must be updated two places:
 
-    * :file:`celery/__init__.py`
-    * :file:`docs/include/introduction.txt`
+    * ``celery/__init__.py``
+    * ``docs/include/introduction.txt``
 
 After you have changed these files you must render
-the :file:`README` files.  There is a script to convert sphinx syntax
+the ``README`` files.  There is a script to convert sphinx syntax
 to generic reStructured Text syntax, and the paver task `readme`
 does this for you:
-
-.. code-block:: bash
+::
 
     $ paver readme
 
 Now commit the changes:
-
-.. code-block:: bash
+::
 
     $ git commit -a -m "Bumps version to X.Y.Z"
 
 and make a new version tag:
-
-.. code-block:: bash
+::
 
     $ git tag vX.Y.Z
     $ git push --tags
@@ -1061,3 +1035,4 @@ following:
     for series 2.4.
 
 * Also add the previous version under the "versions" tab.
+

@@ -221,6 +221,7 @@ class TaskProducer(Producer):
                      **kwargs):
         """Send task message."""
         retry = self.retry if retry is None else retry
+        headers = {} if headers is None else headers
 
         qname = queue
         if queue is None and exchange is None:

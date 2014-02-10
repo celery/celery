@@ -44,8 +44,14 @@ from celery.five import (
 from celery.utils.functional import noop
 from celery.utils.imports import qualname
 
+try:  # pragma: no cover
+    from django.utils.six import MovedModule
+except ImportError:  # pragma: no cover
+    class MovedModule(object):  # noqa
+        pass
+
 __all__ = [
-    'Case', 'AppCase', 'Mock', 'MagicMock',
+    'Case', 'AppCase', 'Mock', 'MagicMock', 'ANY',
     'patch', 'call', 'sentinel', 'skip_unless_module',
     'wrap_logger', 'with_environ', 'sleepdeprived',
     'skip_if_environ', 'todo', 'skip', 'skip_if',
@@ -59,6 +65,7 @@ patch = mock.patch
 call = mock.call
 sentinel = mock.sentinel
 MagicMock = mock.MagicMock
+ANY = mock.ANY
 
 CASE_REDEFINES_SETUP = """\
 {name} (subclass of AppCase) redefines private "setUp", should be: "setup"\
@@ -201,8 +208,10 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
         # to work properly.
         warnings.resetwarnings()
         for v in list(values(sys.modules)):
-            if getattr(v, '__warningregistry__', None):
-                v.__warningregistry__ = {}
+            # do not evaluate Django moved modules:
+            if not isinstance(v, MovedModule):
+                if getattr(v, '__warningregistry__', None):
+                    v.__warningregistry__ = {}
         self.warnings_manager = warnings.catch_warnings(record=True)
         self.warnings = self.warnings_manager.__enter__()
         warnings.simplefilter('always', self.expected)

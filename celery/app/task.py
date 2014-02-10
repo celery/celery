@@ -343,6 +343,8 @@ class Task(object):
             'CELERY_STORE_ERRORS_EVEN_IF_IGNORED'),
     )
 
+    _backend = None  # set by backend property.
+
     __bound__ = False
 
     # - Tasks are lazily bound, so that configuration is not set
@@ -360,7 +362,6 @@ class Task(object):
                 setattr(self, attr_name, conf[config_name])
         if self.accept_magic_kwargs is None:
             self.accept_magic_kwargs = app.accept_magic_kwargs
-        self.backend = app.backend
 
         # decorate with annotations from config.
         if not was_bound:
@@ -898,6 +899,17 @@ class Task(object):
         if self._exec_options is None:
             self._exec_options = extract_exec_options(self)
         return self._exec_options
+
+    @property
+    def backend(self):
+        backend = self._backend
+        if backend is None:
+            return self.app.backend
+        return backend
+
+    @backend.setter
+    def backend(self, value):  # noqa
+        self._backend = value
 
     @property
     def __name__(self):

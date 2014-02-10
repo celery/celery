@@ -86,15 +86,26 @@ command usually does the trick:
 Restarting the worker
 =====================
 
+To restart the worker you should send the `TERM` signal and start a new
+instance.  The easiest way to manage workers for development
+is by using `celery multi`:
+
+    .. code-block:: bash
+
+        $ celery multi start 1 -A proj -l info -c4 --pidfile=/var/run/celery/%n.pid
+        $ celery multi restart 1 --pidfile=/var/run/celery/%n.pid
+
+For production deployments you should be using init scripts or other process
+supervision systems (see :ref:`daemonizing`).
+
 Other than stopping then starting the worker to restart, you can also
-restart the worker using the :sig:`HUP` signal:
+restart the worker using the :sig:`HUP` signal, but note that the worker
+will be responsible for restarting itself so this is prone to problems and
+is not recommended in production:
 
 .. code-block:: bash
 
     $ kill -HUP $pid
-
-The worker will then replace itself with a new instance using the same
-arguments as it was started with.
 
 .. note::
 
@@ -524,11 +535,11 @@ If you want to specify a specific worker you can use the
 
 The same can be accomplished dynamically using the :meth:`@control.add_consumer` method::
 
-    >>> myapp.control.add_consumer('foo', reply=True)
+    >>> app.control.add_consumer('foo', reply=True)
     [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
 
-    >>> myapp.control.add_consumer('foo', reply=True,
-    ...                            destination=['worker1@example.com'])
+    >>> app.control.add_consumer('foo', reply=True,
+    ...                          destination=['worker1@example.com'])
     [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
 
 
@@ -536,7 +547,7 @@ By now I have only shown examples using automatic queues,
 If you need more control you can also specify the exchange, routing_key and
 even other options::
 
-    >>> myapp.control.add_consumer(
+    >>> app.control.add_consumer(
     ...     queue='baz',
     ...     exchange='ex',
     ...     exchange_type='topic',
@@ -577,7 +588,7 @@ You can also cancel consumers programmatically using the
 
 .. code-block:: bash
 
-    >>> myapp.control.cancel_consumer('foo', reply=True)
+    >>> app.control.cancel_consumer('foo', reply=True)
     [{u'worker1.local': {u'ok': u"no longer consuming from u'foo'"}}]
 
 .. control:: active_queues
@@ -606,10 +617,10 @@ reply to the request:
 This can also be done programmatically by using the
 :meth:`@control.inspect.active_queues` method::
 
-    >>> myapp.inspect().active_queues()
+    >>> app.control.inspect().active_queues()
     [...]
 
-    >>> myapp.inspect(['worker1.local']).active_queues()
+    >>> app.control.inspect(['worker1.local']).active_queues()
     [...]
 
 .. _worker-autoreloading:

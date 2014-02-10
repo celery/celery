@@ -292,6 +292,12 @@ check_status () {
 
     local one_failed=
     for pid_file in "$CELERYD_PID_DIR"/*.pid; do
+        if [ ! -r $pid_file ]; then
+            echo "${SCRIPT_NAME} is stopped: no pids were found"
+            one_failed=true
+            break
+        fi
+
         local node=`basename "$pid_file" .pid`
         local pid=`cat "$pid_file"`
         local cleaned_pid=`echo "$pid" | sed -e 's/[^0-9]//g'`

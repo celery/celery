@@ -250,7 +250,7 @@ The Primitives
         Chunking splits a long list of arguments into parts, e.g the operation::
 
             >>> items = zip(xrange(1000), xrange(1000))  # 1000 items
-            >>> add.chunks(items, 10))
+            >>> add.chunks(items, 10)
 
         will split the list of items into chunks of 10, resulting in 100
         tasks (each processing 10 items in sequence).
@@ -650,6 +650,13 @@ Chords
 ------
 
 .. versionadded:: 2.3
+
+.. note::
+
+    Tasks used within a chord must *not* ignore their results. If the result
+    backend is disabled for *any* task (header or body) in your chord you
+    should read ":ref:`chord-important-notes`".
+    
 
 A chord is a task that only executes after all of the tasks in a group have
 finished executing.

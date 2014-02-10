@@ -56,7 +56,7 @@ must also export them (e.g. ``export DISPLAY=":0"``)
 
         $ celery multi start worker1 \
             --pidfile="$HOME/run/celery/%n.pid" \
-            --logfile=""$HOME/log/celery/%n.log"
+            --logfile="$HOME/log/celery/%n.log"
 
         $ celery multi restart worker1 --pidfile="$HOME/run/celery/%n.pid"
 

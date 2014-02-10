@@ -24,7 +24,7 @@ The :program:`celery beat` command.
     Scheduler class to use.
     Default is :class:`celery.beat.PersistentScheduler`.
 
-.. cmdoption:: max-interval
+.. cmdoption:: --max-interval
 
     Max seconds to sleep between schedule iterations.
 

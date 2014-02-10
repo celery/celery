@@ -33,6 +33,7 @@ from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
 from celery.five import items, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
+from celery.utils import shadowsig
 from celery.utils.functional import first, maybe_list
 from celery.utils.imports import instantiate, symbol_by_name
 from celery.utils.objects import mro_lookup
@@ -235,7 +236,9 @@ class Celery(object):
             'run': fun if bind else staticmethod(fun),
             '_decorated': True,
             '__doc__': fun.__doc__,
-            '__module__': fun.__module__}, **options))()
+            '__module__': fun.__module__,
+            '__wrapped__': fun}, **options))()
+        shadowsig(T, fun)  # for inspect.getargspec
         task = self._tasks[T.name]  # return global instance.
         return task
 

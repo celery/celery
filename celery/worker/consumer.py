@@ -111,8 +111,16 @@ The full contents of the message body was:
 %s
 """
 
+MESSAGE_DECODE_ERROR = """\
+Can't decode message body: %r [type:%r encoding:%r headers:%s]
+
+body: %s
+"""
+
 MESSAGE_REPORT = """\
-body: {0} {{content_type:{1} content_encoding:{2} delivery_info:{3}}}\
+body: {0}
+{{content_type:{1} content_encoding:{2}
+  delivery_info:{3} headers={4}}}
 """
 
 MINGLE_GET_FIELDS = itemgetter('clock', 'revoked')
@@ -320,9 +328,10 @@ class Consumer(object):
         :param exc: The original exception instance.
 
         """
-        crit("Can't decode message body: %r (type:%r encoding:%r raw:%r')",
+        crit(MESSAGE_DECODE_ERROR,
              exc, message.content_type, message.content_encoding,
-             dump_body(message, message.body), exc_info=1)
+             safe_repr(message.headers), dump_body(message, message.body),
+             exc_info=1)
         message.ack()
 
     def on_close(self):
@@ -407,7 +416,8 @@ class Consumer(object):
         return MESSAGE_REPORT.format(dump_body(message, body),
                                      safe_repr(message.content_type),
                                      safe_repr(message.content_encoding),
-                                     safe_repr(message.delivery_info))
+                                     safe_repr(message.delivery_info),
+                                     safe_repr(message.headers))
 
     def on_unknown_message(self, body, message):
         warn(UNKNOWN_FORMAT, self._message_report(body, message))

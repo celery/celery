@@ -530,7 +530,12 @@ class Command(object):
                 opt = opts.get(arg)
                 if opt:
                     if opt.takes_value():
-                        acc[opt.dest] = args[index + 1]
+                        try:
+                            acc[opt.dest] = args[index + 1]
+                        except IndexError:
+                            raise ValueError(
+                                'Missing required argument for {0}'.format(
+                                    arg))
                         index += 1
                     elif opt.action == 'store_true':
                         acc[opt.dest] = True

@@ -570,6 +570,15 @@ class AsynPool(_pool.Pool):
             if inq:
                 busy_workers.discard(inq)
             hub_remove(proc.sentinel)
+            waiting_to_start.discard(proc)
+            self._active_writes.discard(proc.inqW_fd)
+            hub_remove(proc.inqW_fd)
+            hub_remove(proc.outqR_fd)
+            if proc.synqR_fd:
+                hub_remove(proc.synqR_fd)
+            if proc.synqW_fd:
+                self._active_writes.discard(proc.synqW_fd)
+                hub_remove(proc.synqW_fd)
         self.on_process_down = on_process_down
 
     def _create_write_handlers(self, hub,
@@ -960,14 +969,13 @@ class AsynPool(_pool.Pool):
         return inq, outq, synq
 
     def on_process_alive(self, pid):
-        """Handler called when the WORKER_UP message is received
+        """Handler called when the :const:`WORKER_UP` message is received
         from a child process, which marks the process as ready
         to receive work."""
         try:
             proc = next(w for w in self._pool if w.pid == pid)
         except StopIteration:
-            # process already exited :(  this will be handled elsewhere.
-            return
+            return logger.warning('process with pid=%s already exited', pid)
         assert proc.inqW_fd not in self._fileno_to_inq
         assert proc.inqW_fd not in self._all_inqueues
         self._waiting_to_start.discard(proc)

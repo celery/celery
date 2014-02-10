@@ -47,7 +47,7 @@ messages, and every 10 seconds.
 
     from celery.contrib.batches import Batches
 
-    wot_api_target = "https://api.mywot.com/0.4/public_link_json"
+    wot_api_target = 'https://api.mywot.com/0.4/public_link_json'
 
     @app.task(base=Batches, flush_every=100, flush_interval=10)
     def wot_api(requests):
@@ -64,7 +64,7 @@ messages, and every 10 seconds.
         domains = [urlparse(url).netloc for url in urls]
         response = requests.get(
             wot_api_target,
-            params={"hosts": ('/').join(set(domains)) + '/'}
+            params={'hosts': ('/').join(set(domains)) + '/'}
         )
         return [response.json[domain] for domain in domains]
 

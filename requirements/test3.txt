@@ -1,4 +1,3 @@
 nose
-nose-cover3
 # FIXME required by kombu.tests.case
 mock >=1.0.1

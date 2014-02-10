@@ -16,7 +16,7 @@ import warnings
 import datetime
 
 from functools import partial, wraps
-from inspect import getargspec
+from inspect import getargspec, ismethod
 from pprint import pprint
 
 from kombu.entity import Exchange, Queue
@@ -28,6 +28,8 @@ __all__ = ['worker_direct', 'warn_deprecated', 'deprecated', 'lpmerge',
            'is_iterable', 'isatty', 'cry', 'maybe_reraise', 'strtobool',
            'jsonify', 'gen_task_name', 'nodename', 'nodesplit',
            'cached_property']
+
+PY3 = sys.version_info[0] == 3
 
 
 PENDING_DEPRECATION_FMT = """
@@ -340,6 +342,18 @@ def nodesplit(nodename):
 def default_nodename(hostname):
     name, host = nodesplit(hostname or '')
     return nodename(name or NODENAME_DEFAULT, host or socket.gethostname())
+
+
+def shadowsig(wrapper, wrapped):
+    if ismethod(wrapped):
+        wrapped = wrapped.__func__
+    wrapper.__code__ = wrapped.__code__
+    wrapper.__defaults__ = wrapper.func_defaults = wrapped.__defaults__
+
+    if not PY3:
+        wrapper.func_code = wrapper.__code__
+        wrapper.func_defaults = wrapper.__defaults__
+
 
 # ------------------------------------------------------------------------ #
 # > XXX Compat

@@ -15,7 +15,6 @@ import pprint
 from functools import partial
 from itertools import count
 
-from amqp import Message
 from kombu.utils.encoding import safe_str
 
 from celery.utils.functional import padlist
@@ -175,7 +174,7 @@ class AMQShell(cmd.Cmd):
         'basic.get': Spec(('queue', str),
                           ('no_ack', bool, 'off'),
                           returns=dump_message),
-        'basic.publish': Spec(('msg', Message),
+        'basic.publish': Spec(('msg', str),
                               ('exchange', str),
                               ('routing_key', str),
                               ('mandatory', bool, 'no'),

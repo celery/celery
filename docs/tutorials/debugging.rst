@@ -86,6 +86,7 @@ The result of our vandalism can be seen in the worker logs::
 Tips
 ====
 
+.. _breakpoint_signal:
 
 Enabling the breakpoint signal
 ------------------------------
