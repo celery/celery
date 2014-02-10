@@ -702,7 +702,7 @@ class CeleryCommand(Command):
             helps = '{self.prog_name} {command} --help'
         else:
             helps = '{self.prog_name} --help'
-        self.error(self.colored.magenta("Error: {0}".format(exc)))
+        self.error(self.colored.magenta('Error: {0}'.format(exc)))
         self.error("""Please try '{0}'""".format(helps.format(
             self=self, command=command,
         )))

@@ -501,7 +501,7 @@ class AsynPool(_pool.Pool):
             if proc._is_alive() and proc in waiting_to_start:
                 assert proc.outqR_fd in fileno_to_outq
                 assert fileno_to_outq[proc.outqR_fd] is proc
-                assert proc.outqR_fd in hub.readers, "%s.outqR_fd=%s not in hub.readers !" % (proc, proc.outqR_fd)
+                assert proc.outqR_fd in hub.readers
                 error('Timed out waiting for UP message from %r', proc)
                 os.kill(proc.pid, 9)
 
@@ -969,14 +969,13 @@ class AsynPool(_pool.Pool):
         return inq, outq, synq
 
     def on_process_alive(self, pid):
-        """Handler called when the WORKER_UP message is received
+        """Handler called when the :const:`WORKER_UP` message is received
         from a child process, which marks the process as ready
         to receive work."""
         try:
             proc = next(w for w in self._pool if w.pid == pid)
         except StopIteration:
-            logger.warning("process with pid=%s already exited :( - handling this elsewhere ...", pid)
-            return
+            return logger.warning('process with pid=%s already exited', pid)
         assert proc.inqW_fd not in self._fileno_to_inq
         assert proc.inqW_fd not in self._all_inqueues
         self._waiting_to_start.discard(proc)

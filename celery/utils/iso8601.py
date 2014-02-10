@@ -60,7 +60,7 @@ def parse_iso8601(datestring):
     groups = m.groupdict()
     tz = groups['timezone']
     if tz == 'Z':
-      tz = FixedOffset(0)
+        tz = FixedOffset(0)
     elif tz:
         m = TIMEZONE_REGEX.match(tz)
         prefix, hours, minutes = m.groups()

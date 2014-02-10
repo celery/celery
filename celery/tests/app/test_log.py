@@ -336,7 +336,7 @@ class test_task_logger(test_default_logger):
         return self.app.log.setup_task_loggers(*args, **kwargs)
 
     def get_logger(self, *args, **kwargs):
-        return get_task_logger("test_task_logger")
+        return get_task_logger('test_task_logger')
 
 
 class test_patch_logger_cls(AppCase):
