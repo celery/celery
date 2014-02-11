@@ -16,7 +16,7 @@ import warnings
 import datetime
 
 from functools import partial, wraps
-from inspect import getargspec, ismethod
+from inspect import getargspec
 from pprint import pprint
 
 from kombu.entity import Exchange, Queue
@@ -342,17 +342,6 @@ def nodesplit(nodename):
 def default_nodename(hostname):
     name, host = nodesplit(hostname or '')
     return nodename(name or NODENAME_DEFAULT, host or socket.gethostname())
-
-
-def shadowsig(wrapper, wrapped):
-    if ismethod(wrapped):
-        wrapped = wrapped.__func__
-    wrapper.__code__ = wrapped.__code__
-    wrapper.__defaults__ = wrapper.func_defaults = wrapped.__defaults__
-
-    if not PY3:
-        wrapper.func_code = wrapper.__code__
-        wrapper.func_defaults = wrapper.__defaults__
 
 
 # ------------------------------------------------------------------------ #
