@@ -9,6 +9,7 @@
 from __future__ import absolute_import, print_function
 
 import logging
+import numbers
 import os
 import sys
 import threading
@@ -110,7 +111,7 @@ def get_task_logger(name):
 
 
 def mlevel(level):
-    if level and not isinstance(level, int):
+    if level and not isinstance(level, numbers.Integral):
         return LOG_LEVELS[level.upper()]
     return level
 

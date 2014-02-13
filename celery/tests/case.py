@@ -11,6 +11,7 @@ except AttributeError:
 import importlib
 import inspect
 import logging
+import numbers
 import os
 import platform
 import re
@@ -782,7 +783,7 @@ def body_from_sig(app, sig, utc=True):
     if eta and isinstance(eta, datetime):
         eta = eta.isoformat()
     expires = sig.options.pop('expires', None)
-    if expires and isinstance(expires, int):
+    if expires and isinstance(expires, numbers.Real):
         expires = app.now() + timedelta(seconds=expires)
     if expires and isinstance(expires, datetime):
         expires = expires.isoformat()

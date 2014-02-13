@@ -8,6 +8,7 @@
 """
 from __future__ import absolute_import, print_function
 
+import numbers
 import os
 import socket
 import sys
@@ -255,7 +256,7 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
 
 
 def jsonify(obj,
-            builtin_types=(int, float, string_t), key=None,
+            builtin_types=(numbers.Real, string_t), key=None,
             keyfilter=None,
             unknown_type_filter=None):
     """Transforms object making it suitable for json serialization"""

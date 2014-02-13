@@ -8,6 +8,7 @@
 """
 from __future__ import absolute_import
 
+import numbers
 import os
 import time as _time
 
@@ -134,7 +135,7 @@ timezone = _Zone()
 
 def maybe_timedelta(delta):
     """Coerces integer to timedelta if `delta` is an integer."""
-    if isinstance(delta, (int, float)):
+    if isinstance(delta, numbers.Real):
         return timedelta(seconds=delta)
     return delta
 

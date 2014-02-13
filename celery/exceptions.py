@@ -8,6 +8,8 @@
 """
 from __future__ import absolute_import
 
+import numbers
+
 from .five import string_t
 
 from billiard.exceptions import (  # noqa
@@ -98,7 +100,8 @@ class Retry(Exception):
     #: Exception (if any) that caused the retry to happen.
     exc = None
 
-    #: Time of retry (ETA), either int or :class:`~datetime.datetime`.
+    #: Time of retry (ETA), either :class:`numbers.Real` or
+    #: :class:`~datetime.datetime`.
     when = None
 
     def __init__(self, message=None, exc=None, when=None, **kwargs):
@@ -112,7 +115,7 @@ class Retry(Exception):
         Exception.__init__(self, exc, when, **kwargs)
 
     def humanize(self):
-        if isinstance(self.when, int):
+        if isinstance(self.when, numbers.Real):
             return 'in {0.when}s'.format(self)
         return 'at {0.when}'.format(self)
 

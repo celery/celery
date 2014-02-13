@@ -12,6 +12,7 @@
 """
 from __future__ import absolute_import, unicode_literals
 
+import numbers
 import socket
 import sys
 
@@ -66,7 +67,7 @@ class Beat(object):
         )
         self.pidfile = pidfile
 
-        if not isinstance(self.loglevel, int):
+        if not isinstance(self.loglevel, numbers.Integral):
             self.loglevel = LOG_LEVELS[self.loglevel.upper()]
 
     def _getopt(self, key, value):

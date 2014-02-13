@@ -9,6 +9,7 @@
 """
 from __future__ import absolute_import
 
+import numbers
 import re
 
 from collections import namedtuple
@@ -401,7 +402,7 @@ class crontab(schedule):
         week.
 
         """
-        if isinstance(cronspec, int):
+        if isinstance(cronspec, numbers.Integral):
             result = set([cronspec])
         elif isinstance(cronspec, string_t):
             result = crontab_parser(max_, min_).parse(cronspec)
@@ -583,7 +584,7 @@ class crontab(schedule):
 
 def maybe_schedule(s, relative=False, app=None):
     if s is not None:
-        if isinstance(s, int):
+        if isinstance(s, numbers.Integral):
             s = timedelta(seconds=s)
         if isinstance(s, timedelta):
             return schedule(s, relative, app=app)
