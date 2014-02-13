@@ -156,7 +156,7 @@ at this point.
 
 .. warning::
 
-    Do not use the ``amqp`` backend with SQS.
+    Do not use the ``amqp`` result backend with SQS.
 
     It will create one queue for every task, and the queues will
     not be collected.  This could cost you money that would be better
