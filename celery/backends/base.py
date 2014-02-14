@@ -311,7 +311,7 @@ class BaseBackend(object):
     def on_task_call(self, producer, task_id):
         return {}
 
-    def on_chord_part_return(self, task, propagate=False):
+    def on_chord_part_return(self, task, state, result, propagate=False):
         pass
 
     def fallback_chord_unlock(self, group_id, body, result=None,
@@ -374,17 +374,26 @@ class KeyValueStoreBackend(BaseBackend):
     def expire(self, key, value):
         pass
 
-    def get_key_for_task(self, task_id):
+    def get_key_for_task(self, task_id, key=''):
         """Get the cache key for a task by id."""
-        return self.task_keyprefix + self.key_t(task_id)
+        key_t = self.key_t
+        return ''.join([
+            self.task_keyprefix, key_t(task_id), key_t(key),
+        ])
 
-    def get_key_for_group(self, group_id):
+    def get_key_for_group(self, group_id, key=''):
         """Get the cache key for a group by id."""
-        return self.group_keyprefix + self.key_t(group_id)
+        key_t = self.key_t
+        return ''.join([
+            self.group_keyprefix, key_t(group_id), key_t(key),
+        ])
 
-    def get_key_for_chord(self, group_id):
+    def get_key_for_chord(self, group_id, key=''):
         """Get the cache key for the chord waiting on group with given id."""
-        return self.chord_keyprefix + self.key_t(group_id)
+        key_t = self.key_t
+        return ''.join([
+            self.chord_keyprefix, key_t(group_id), key_t(key),
+        ])
 
     def _strip_prefix(self, key):
         """Takes bytes, emits string."""
@@ -479,7 +488,7 @@ class KeyValueStoreBackend(BaseBackend):
         self.save_group(group_id, self.app.GroupResult(group_id, result))
         return header(*partial_args, task_id=group_id)
 
-    def on_chord_part_return(self, task, propagate=None):
+    def on_chord_part_return(self, task, state, result, propagate=None):
         if not self.implements_incr:
             return
         app = self.app

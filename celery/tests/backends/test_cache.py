@@ -86,10 +86,10 @@ class test_CacheBackend(AppCase):
         tb.apply_chord(group(app=self.app), (), gid, {}, result=res)
 
         self.assertFalse(deps.join_native.called)
-        tb.on_chord_part_return(task)
+        tb.on_chord_part_return(task, 'SUCCESS', 10)
         self.assertFalse(deps.join_native.called)
 
-        tb.on_chord_part_return(task)
+        tb.on_chord_part_return(task, 'SUCCESS', 10)
         deps.join_native.assert_called_with(propagate=True, timeout=3.0)
         deps.delete.assert_called_with()
 

@@ -171,6 +171,27 @@ def ContextMock(*args, **kwargs):
     return obj
 
 
+def _bind(f, o):
+    @wraps(f)
+    def bound_meth(*fargs, **fkwargs):
+        return f(o, *fargs, **fkwargs)
+    return bound_meth
+
+
+class MockCallbacks(object):
+
+    def __new__(cls, *args, **kwargs):
+        r = Mock(name=cls.__name__)
+        cls.__init__.__func__(r, *args, **kwargs)
+        for key, value in items(vars(cls)):
+            if key not in ('__dict__', '__weakref__', '__new__', '__init__'):
+                if inspect.ismethod(value) or inspect.isfunction(value):
+                    r.__getattr__(key).side_effect = _bind(value, r)
+                else:
+                    r.__setattr__(key, value)
+        return r
+
+
 def skip_unless_module(module):
 
     def _inner(fun):

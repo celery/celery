@@ -13,9 +13,11 @@ from functools import partial
 from kombu.utils import cached_property, retry_over_time
 from kombu.utils.url import _parse_url
 
-from celery.exceptions import ImproperlyConfigured
+from celery import states
+from celery.canvas import maybe_signature
+from celery.exceptions import ChordError, ImproperlyConfigured
 from celery.five import string_t
-from celery.utils import deprecated_property
+from celery.utils import deprecated_property, strtobool
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.timeutils import humanize_seconds
@@ -56,7 +58,7 @@ class RedisBackend(KeyValueStoreBackend):
 
     def __init__(self, host=None, port=None, db=None, password=None,
                  expires=None, max_connections=None, url=None,
-                 connection_pool=None, **kwargs):
+                 connection_pool=None, new_join=False, **kwargs):
         super(RedisBackend, self).__init__(**kwargs)
         conf = self.app.conf
         if self.redis is None:
@@ -89,6 +91,14 @@ class RedisBackend(KeyValueStoreBackend):
             self.connparams = self._params_from_url(url, self.connparams)
         self.url = url
         self.expires = self.prepare_expires(expires, type=int)
+
+        try:
+            new_join = strtobool(self.connparams.pop('new_join'))
+        except KeyError:
+            pass
+        if new_join:
+            self.apply_chord = self._new_chord_apply
+            self.on_chord_part_return = self._new_chord_return
 
         self.connection_errors, self.channel_errors = get_redis_error_classes()
 
@@ -164,6 +174,62 @@ class RedisBackend(KeyValueStoreBackend):
 
     def expire(self, key, value):
         return self.client.expire(key, value)
+
+    def _unpack_chord_result(self, tup, decode,
+                             PROPAGATE_STATES=states.PROPAGATE_STATES):
+        _, tid, state, retval = decode(tup)
+        if state in PROPAGATE_STATES:
+            raise ChordError('Dependency {0} raised {1!r}'.format(tid, retval))
+        return retval
+
+    def _new_chord_apply(self, header, partial_args, group_id, body,
+                         result=None, **options):
+        # avoids saving the group in the redis db.
+        return header(*partial_args, task_id=group_id)
+
+    def _new_chord_return(self, task, state, result, propagate=None,
+                          PROPAGATE_STATES=states.PROPAGATE_STATES):
+        app = self.app
+        if propagate is None:
+            propagate = self.app.conf.CELERY_CHORD_PROPAGATES
+        request = task.request
+        tid, gid = request.id, request.group
+        if not gid or not tid:
+            return
+
+        client = self.client
+        jkey = self.get_key_for_group(gid, '.j')
+        result = self.encode_result(result, state)
+        _, readycount, _ = client.pipeline()                            \
+            .rpush(jkey, self.encode([1, tid, state, result]))          \
+            .llen(jkey)                                                 \
+            .expire(jkey, 86400)                                        \
+            .execute()
+
+        try:
+            callback = maybe_signature(request.chord, app=app)
+            total = callback['chord_size']
+            if readycount >= total:
+                decode, unpack = self.decode, self._unpack_chord_result
+                resl, _ = client.pipeline()     \
+                    .lrange(jkey, 0, total)     \
+                    .delete(jkey)               \
+                    .execute()
+                try:
+                    callback.delay([unpack(tup, decode) for tup in resl])
+                except Exception as exc:
+                    app._tasks[callback.task].backend.fail_from_current_stack(
+                        callback.id,
+                        exc=ChordError('Callback error: {0!r}'.format(exc)),
+                    )
+        except ChordError as exc:
+            app._tasks[callback.task].backend.fail_from_current_stack(
+                callback.id, exc=exc,
+            )
+        except Exception as exc:
+            app._tasks[callback.task].backend.fail_from_current_stack(
+                callback.id, exc=ChordError('Join error: {0!r}').format(exc),
+            )
 
     @property
     def ConnectionPool(self):

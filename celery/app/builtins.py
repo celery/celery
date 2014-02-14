@@ -352,6 +352,7 @@ def add_chord_task(app):
             if eager:
                 return header.apply(args=partial_args, task_id=group_id)
 
+            body.setdefault('chord_size', len(header.tasks))
             results = [AsyncResult(prepare_member(task, body, group_id))
                        for task in header.tasks]
 

@@ -272,7 +272,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 # -* POST *-
                 if state not in IGNORE_STATES:
                     if task_request.chord:
-                        on_chord_part_return(task)
+                        on_chord_part_return(task, state, R)
                     if task_after_return:
                         task_after_return(
                             state, retval, uuid, args, kwargs, None,
