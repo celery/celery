@@ -377,21 +377,21 @@ class KeyValueStoreBackend(BaseBackend):
     def get_key_for_task(self, task_id, key=''):
         """Get the cache key for a task by id."""
         key_t = self.key_t
-        return ''.join([
+        return key_t('').join([
             self.task_keyprefix, key_t(task_id), key_t(key),
         ])
 
     def get_key_for_group(self, group_id, key=''):
         """Get the cache key for a group by id."""
         key_t = self.key_t
-        return ''.join([
+        return key_t('').join([
             self.group_keyprefix, key_t(group_id), key_t(key),
         ])
 
     def get_key_for_chord(self, group_id, key=''):
         """Get the cache key for the chord waiting on group with given id."""
         key_t = self.key_t
-        return ''.join([
+        return key_t('').join([
             self.chord_keyprefix, key_t(group_id), key_t(key),
         ])
 

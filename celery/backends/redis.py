@@ -206,9 +206,12 @@ class RedisBackend(KeyValueStoreBackend):
             .expire(jkey, 86400)                                        \
             .execute()
 
+        print('YEA')
+
         try:
             callback = maybe_signature(request.chord, app=app)
             total = callback['chord_size']
+            print('TOTAL: %r' % (readycount, ))
             if readycount >= total:
                 decode, unpack = self.decode, self._unpack_chord_result
                 resl, _ = client.pipeline()     \
@@ -228,7 +231,7 @@ class RedisBackend(KeyValueStoreBackend):
             )
         except Exception as exc:
             app._tasks[callback.task].backend.fail_from_current_stack(
-                callback.id, exc=ChordError('Join error: {0!r}').format(exc),
+                callback.id, exc=ChordError('Join error: {0!r}'.format(exc)),
             )
 
     @property

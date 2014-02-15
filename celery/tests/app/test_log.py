@@ -255,7 +255,7 @@ class test_default_logger(AppCase):
     def test_setup_logger_no_handlers_file(self, *args):
         tempfile = mktemp(suffix='unittest', prefix='celery')
         _open = ('builtins.open' if sys.version_info[0] == 3
-                 else '__builtins__.open')
+                 else '__builtin__.open')
         with patch(_open) as osopen:
             with restore_logging():
                 files = defaultdict(StringIO)

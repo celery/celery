@@ -69,6 +69,8 @@ sentinel = mock.sentinel
 MagicMock = mock.MagicMock
 ANY = mock.ANY
 
+PY3 = sys.version_info[0] == 3
+
 CASE_REDEFINES_SETUP = """\
 {name} (subclass of AppCase) redefines private "setUp", should be: "setup"\
 """
@@ -178,11 +180,19 @@ def _bind(f, o):
     return bound_meth
 
 
+if PY3:  # pragma: no cover
+    def _get_class_fun(meth):
+        return meth
+else:
+    def _get_class_fun(meth):
+        return meth.__func__
+
+
 class MockCallbacks(object):
 
     def __new__(cls, *args, **kwargs):
         r = Mock(name=cls.__name__)
-        cls.__init__.__func__(r, *args, **kwargs)
+        _get_class_fun(cls.__init__)(r, *args, **kwargs)
         for key, value in items(vars(cls)):
             if key not in ('__dict__', '__weakref__', '__new__', '__init__'):
                 if inspect.ismethod(value) or inspect.isfunction(value):

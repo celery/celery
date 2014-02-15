@@ -74,6 +74,22 @@ class Redis(MockCallbacks):
     def pipeline(self):
         return self.Pipeline(self)
 
+    def _get_list(self, key):
+        try:
+            return self.keyspace[key]
+        except KeyError:
+            l = self.keyspace[key] = []
+            return l
+
+    def rpush(self, key, value):
+        self._get_list(key).append(value)
+
+    def lrange(self, key, start, stop):
+        return self._get_list(key)[start:stop]
+
+    def llen(self, key):
+        return len(self.keyspace.get(key) or [])
+
 
 class redis(object):
     Redis = Redis
