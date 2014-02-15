@@ -103,6 +103,12 @@ class events(default):
     CELERY_SEND_EVENTS = True
     CELERY_SEND_TASK_SENT_EVENT = True
 
+
 @template()
 class smallcache(default):
     CELERY_MAX_CACHED_RESULTS = 10
+
+
+@template()
+class execv(default):
+    CELERYD_FORCE_EXECV = True
