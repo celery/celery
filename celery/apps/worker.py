@@ -165,10 +165,10 @@ class Worker(WorkController):
 
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
-        print(''.join([
+        print(safe_str(''.join([
             string(self.colored.cyan(' \n', self.startup_info())),
             string(self.colored.reset(self.extra_info() or '')),
-        ]), file=sys.__stdout__)
+        ])), file=sys.__stdout__)
         self.set_process_status('-active-')
         self.install_platform_tweaks(self)
 
