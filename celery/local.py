@@ -157,7 +157,7 @@ class Proxy(object):
     __setattr__ = lambda x, n, v: setattr(x._get_current_object(), n, v)
     __delattr__ = lambda x, n: delattr(x._get_current_object(), n)
     __str__ = lambda x: str(x._get_current_object())
-    __lt__ = lambda x, o: x._get_current_object() < o
+    __lt_ = lambda x, o: x._get_current_object() < o
     __le__ = lambda x, o: x._get_current_object() <= o
     __eq__ = lambda x, o: x._get_current_object() == o
     __ne__ = lambda x, o: x._get_current_object() != o
@@ -212,11 +212,26 @@ class PromiseProxy(Proxy):
 
     """
 
+    __slots__ = ('__pending__', )
+
     def _get_current_object(self):
         try:
             return object.__getattribute__(self, '__thing')
         except AttributeError:
             return self.__evaluate__()
+
+    def __then__(self, fun, *args, **kwargs):
+        if self.__evaluated__():
+            return fun(*args, **kwargs)
+        from collections import deque
+        try:
+            pending = object.__getattribute__(self, '__pending__')
+        except AttributeError:
+            pending = None
+        if pending is None:
+            pending = deque()
+            object.__setattr__(self, '__pending__', pending)
+        pending.append((fun, args, kwargs))
 
     def __evaluated__(self):
         try:
@@ -243,6 +258,20 @@ class PromiseProxy(Proxy):
                 except AttributeError:  # pragma: no cover
                     # May mask errors so ignore
                     pass
+            try:
+                pending = object.__getattribute__(self, '__pending__')
+            except AttributeError:
+                pass
+            else:
+                try:
+                    while pending:
+                        fun, args, kwargs = pending.popleft()
+                        fun(*args, **kwargs)
+                finally:
+                    try:
+                        object.__delattr__(self, '__pending__')
+                    except AttributeError:
+                        pass
 
 
 def maybe_evaluate(obj):
