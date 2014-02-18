@@ -162,7 +162,7 @@ class test_Scheduler(AppCase):
         scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app))
         self.assertTrue(foo.apply_async.called)
 
-    def test_apply_async_should_not_sync(self):
+    def test_should_sync(self):
 
         @self.app.task(shared=False)
         def not_sync():

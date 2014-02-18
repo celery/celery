@@ -220,7 +220,8 @@ class Scheduler(object):
 
     def should_sync(self):
         return (not self._last_sync or
-                (monotonic() - self._last_sync) > self.sync_every)
+                 (monotonic() - self._last_sync) > self.sync_every) or \
+                 self.app.conf.CELERY_SYNC_EVERY_SCHEDULED_TASK
 
     def reserve(self, entry):
         new_entry = self.schedule[entry.name] = next(entry)
