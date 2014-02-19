@@ -516,15 +516,20 @@ class test_Consumer(AppCase):
         self.assertTrue(logger.critical.call_count)
 
     def test_receive_message_eta(self):
+        print('TEST RECEIVE MESSAGE ETA')
+        print('+CREATE MYKOMBUCONSUMER')
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
+        print('-CREATE MYKOMBUCONSUMER')
         l.steps.pop()
         l.event_dispatcher = mock_event_dispatcher()
         backend = Mock()
+        print('+ CREATE MESSAGE')
         m = create_message(
             backend, task=self.foo_task.name,
             args=[2, 4, 8], kwargs={},
             eta=(datetime.now() + timedelta(days=1)).isoformat(),
         )
+        print('- CREATE MESSAGE')
 
         try:
             print('+ BLUEPRINT START 1')
