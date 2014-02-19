@@ -124,6 +124,16 @@ def segfault():
     assert False, 'should not get here'
 
 
+@app.task
+def raising(exc=KeyError()):
+    raise exc
+
+
+@app.task
+def logs(msg):
+    print(msg)
+
+
 def marker(s, sep='-'):
     print('{0}{1}'.format(sep, s))
     while True:
