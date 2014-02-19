@@ -105,16 +105,14 @@ def add_unlock_chord_task(app):
                     )
                 except StopIteration:
                     reason = repr(exc)
-
-                app._tasks[callback.task].backend.fail_from_current_stack(
-                    callback.id, exc=ChordError(reason),
-                )
+                app.backend.chord_error_from_stack(callback,
+                                                    ChordError(reason))
             else:
                 try:
                     callback.delay(ret)
                 except Exception as exc:
-                    app._tasks[callback.task].backend.fail_from_current_stack(
-                        callback.id,
+                    app.backend.chord_error_from_stack(
+                        callback,
                         exc=ChordError('Callback error: {0!r}'.format(exc)),
                     )
         else:
