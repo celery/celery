@@ -710,6 +710,7 @@ class Task(object):
                    'loglevel': options.get('loglevel', 0),
                    'callbacks': maybe_list(link),
                    'errbacks': maybe_list(link_error),
+                   'headers': options.get('headers'),
                    'delivery_info': {'is_eager': True}}
         if self.accept_magic_kwargs:
             default_kwargs = {'task_name': task.name,
