@@ -916,6 +916,16 @@ Messaging library.
 :PyPI: http://pypi.python.org/pypi/kombu
 :docs: http://kombu.readthedocs.org
 
+amqp
+----
+
+Python AMQP 0.9.1 client.
+
+:git: https://github.com/celery/py-amqp
+:CI: http://travis-ci.org/#!/celery/py-amqp
+:PyPI: http://pypi.python.org/pypi/amqp
+:docs: http://amqp.readthedocs.org
+
 billiard
 --------
 
