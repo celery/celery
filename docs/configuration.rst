@@ -1818,6 +1818,16 @@ Can also be set via the :option:`--schedule` argument to
 
 .. setting:: CELERYBEAT_MAX_LOOP_INTERVAL
 
+CELERYBEAT_SYNC_EVERY
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The number of async scheduled tasks that should be run prior to forcing a sync.
+Defaults to 0 (sync based on timing - default of 3 minutes as determined by
+scheduler.sync_every). If set to 1, beats will call sync after every task
+execution.
+
+.. setting:: CELERYBEAT_SYNC_EVERY
+
 CELERYBEAT_MAX_LOOP_INTERVAL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
