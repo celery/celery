@@ -393,7 +393,7 @@ class State(object):
 
     def __init__(self, callback=None,
                  workers=None, tasks=None, taskheap=None,
-                 max_workers_in_memory=5000, max_tasks_in_memory=10000,
+                 max_workers_in_memory=5000, max_tasks_in_memory=1000,
                  on_node_join=None, on_node_leave=None):
         self.event_callback = callback
         self.workers = (LRUCache(max_workers_in_memory)
