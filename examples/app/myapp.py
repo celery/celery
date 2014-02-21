@@ -25,7 +25,8 @@ name using the fully qualified form::
 from celery import Celery
 
 app = Celery('myapp', broker='amqp://guest@localhost//')
-
+# New When celery > 3.1, must specify result_backend
+app.conf.CELERY_RESULT_BACKEND = 'amqp'
 
 @app.task()
 def add(x, y):
