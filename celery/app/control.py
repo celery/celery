@@ -125,8 +125,7 @@ class Control(object):
 
     def __init__(self, app=None):
         self.app = app
-        self.mailbox = self.Mailbox('celery', type='fanout',
-                                    accept=self.app.conf.CELERY_ACCEPT_CONTENT)
+        self.mailbox = self.Mailbox('celery', type='fanout', accept=['json'])
 
     @cached_property
     def inspect(self):
