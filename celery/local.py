@@ -157,7 +157,7 @@ class Proxy(object):
     __setattr__ = lambda x, n, v: setattr(x._get_current_object(), n, v)
     __delattr__ = lambda x, n: delattr(x._get_current_object(), n)
     __str__ = lambda x: str(x._get_current_object())
-    __lt_ = lambda x, o: x._get_current_object() < o
+    __lt__ = lambda x, o: x._get_current_object() < o
     __le__ = lambda x, o: x._get_current_object() <= o
     __eq__ = lambda x, o: x._get_current_object() == o
     __ne__ = lambda x, o: x._get_current_object() != o
