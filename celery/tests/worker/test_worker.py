@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import os
 import socket
@@ -516,49 +516,52 @@ class test_Consumer(AppCase):
         self.assertTrue(logger.critical.call_count)
 
     def test_receive_message_eta(self):
-        print('TEST RECEIVE MESSAGE ETA')
-        print('+CREATE MYKOMBUCONSUMER')
+        import sys
+        from functools import partial
+        pp = partial(print, file=sys.__stderr__)
+        pp('TEST RECEIVE MESSAGE ETA')
+        pp('+CREATE MYKOMBUCONSUMER')
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
-        print('-CREATE MYKOMBUCONSUMER')
+        pp('-CREATE MYKOMBUCONSUMER')
         l.steps.pop()
         l.event_dispatcher = mock_event_dispatcher()
         backend = Mock()
-        print('+ CREATE MESSAGE')
+        pp('+ CREATE MESSAGE')
         m = create_message(
             backend, task=self.foo_task.name,
             args=[2, 4, 8], kwargs={},
             eta=(datetime.now() + timedelta(days=1)).isoformat(),
         )
-        print('- CREATE MESSAGE')
+        pp('- CREATE MESSAGE')
 
         try:
-            print('+ BLUEPRINT START 1')
+            pp('+ BLUEPRINT START 1')
             l.blueprint.start(l)
-            print('- BLUEPRINT START 1')
+            pp('- BLUEPRINT START 1')
             p = l.app.conf.BROKER_CONNECTION_RETRY
             l.app.conf.BROKER_CONNECTION_RETRY = False
-            print('+ BLUEPRINT START 2')
+            pp('+ BLUEPRINT START 2')
             l.blueprint.start(l)
-            print('- BLUEPRINT START 2')
+            pp('- BLUEPRINT START 2')
             l.app.conf.BROKER_CONNECTION_RETRY = p
-            print('+ BLUEPRINT RESTART')
+            pp('+ BLUEPRINT RESTART')
             l.blueprint.restart(l)
-            print('- BLUEPRINT RESTART')
+            pp('- BLUEPRINT RESTART')
             l.event_dispatcher = mock_event_dispatcher()
-            print('+ GET ON MESSAGE')
+            pp('+ GET ON MESSAGE')
             callback = self._get_on_message(l)
-            print('- GET ON MESSAGE')
-            print('+ CALLBACK')
+            pp('- GET ON MESSAGE')
+            pp('+ CALLBACK')
             callback(m.decode(), m)
-            print('- CALLBACK')
+            pp('- CALLBACK')
         finally:
-            print('+ STOP TIMER')
+            pp('+ STOP TIMER')
             l.timer.stop()
-            print('- STOP TIMER')
+            pp('- STOP TIMER')
             try:
-                print('+ JOIN TIMER')
+                pp('+ JOIN TIMER')
                 l.timer.join()
-                print('- JOIN TIMER')
+                pp('- JOIN TIMER')
             except RuntimeError:
                 pass
 
