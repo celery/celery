@@ -658,6 +658,7 @@ class Gossip(bootsteps.ConsumerStep):
             self.state = c.app.events.State(
                 on_node_join=self.on_node_join,
                 on_node_leave=self.on_node_leave,
+                max_tasks_in_memory=1,
             )
             if c.hub:
                 c._mutex = DummyLock()
@@ -771,6 +772,10 @@ class Gossip(bootsteps.ConsumerStep):
 
     def on_message(self, prepare, message):
         _type = message.delivery_info['routing_key']
+
+        # For redis when `fanout_patterns=False` (See Issue #1882)
+        if _type.split('.', 1)[0] == 'task':
+            return
         try:
             handler = self.event_handlers[_type]
         except KeyError:
