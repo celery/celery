@@ -51,6 +51,7 @@ class default(object):
     CELERY_RESULT_SERIALIZER = 'json'
     CELERY_RESULT_PERSISTENT = True
     CELERY_TASK_RESULT_EXPIRES = 300
+    CELERY_MAX_CACHED_RESULTS = 10
     CELERY_QUEUES = [
         Queue(CSTRESS_QUEUE,
               exchange=Exchange(CSTRESS_QUEUE),
@@ -102,11 +103,6 @@ class confirms(default):
 class events(default):
     CELERY_SEND_EVENTS = True
     CELERY_SEND_TASK_SENT_EVENT = True
-
-
-@template()
-class smallcache(default):
-    CELERY_MAX_CACHED_RESULTS = 10
 
 
 @template()
