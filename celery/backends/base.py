@@ -508,7 +508,7 @@ class KeyValueStoreBackend(BaseBackend):
             return
         app = self.app
         if propagate is None:
-            propagate = self.app.conf.CELERY_CHORD_PROPAGATES
+            propagate = app.conf.CELERY_CHORD_PROPAGATES
         gid = task.request.group
         if not gid:
             return
@@ -516,7 +516,7 @@ class KeyValueStoreBackend(BaseBackend):
         try:
             deps = GroupResult.restore(gid, backend=task.backend)
         except Exception as exc:
-            callback = maybe_signature(task.request.chord, app=self.app)
+            callback = maybe_signature(task.request.chord, app=app)
             return self.chord_error_from_stack(
                 callback,
                 ChordError('Cannot restore group: {0!r}'.format(exc)),
@@ -525,14 +525,14 @@ class KeyValueStoreBackend(BaseBackend):
             try:
                 raise ValueError(gid)
             except ValueError as exc:
-                callback = maybe_signature(task.request.chord, app=self.app)
+                callback = maybe_signature(task.request.chord, app=app)
                 return self.chord_error_from_stack(
                     callback,
                     ChordError('GroupResult {0} no longer exists'.format(gid)),
                 )
         val = self.incr(key)
         if val >= len(deps):
-            callback = maybe_signature(task.request.chord, app=self.app)
+            callback = maybe_signature(task.request.chord, app=app)
             j = deps.join_native if deps.supports_native_join else deps.join
             try:
                 with allow_join_result():

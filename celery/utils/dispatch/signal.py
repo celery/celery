@@ -45,8 +45,8 @@ class Signal(object):  # pragma: no cover
 
     def _connect_proxy(self, fun, sender, weak, dispatch_uid):
         return self.connect(
-            fun, sender=sender._get_current_object(), weak=weak,
-                dispatch_uid=dispatch_uid,
+            fun, sender=sender._get_current_object(),
+            weak=weak, dispatch_uid=dispatch_uid,
         )
 
     def connect(self, *args, **kwargs):
