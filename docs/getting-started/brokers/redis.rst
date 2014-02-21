@@ -80,6 +80,19 @@ Caveats
     This setting will be the default in the future, so better to migrate
     sooner rather than later.
 
+- Workers will receive all task related events by default.
+
+    To avoid this you must set the ``fanout_patterns`` fanout option so that
+    the workers may only subscribe to worker related events::
+
+        BROKER_TRANSPORT_OPTIONS = {'fanout_patterns': True}
+
+    Note that this change is backward incompatible so all workers in the
+    cluster must have this option enabled, or else they will not be able to
+    communicate.
+
+    This option will be enabled by default in the future.
+
 - If a task is not acknowledged within the :ref:`redis-visibility_timeout`
   the task will be redelivered to another worker and executed.
 
