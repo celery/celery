@@ -190,10 +190,11 @@ class test_Scheduler(AppCase):
         not_sync.apply_async = Mock()
 
         s = mScheduler(app=self.app)
+        self.assertEqual(s.sync_every_tasks, 2)
         s._do_sync = Mock()
 
         s.apply_async(s.Entry(task=not_sync.name, app=self.app))
-        self.assertEqual(s._sync_every, 1)
+        self.assertEqual(s._tasks_since_sync, 1)
         s.apply_async(s.Entry(task=not_sync.name, app=self.app))
         s._do_sync.assert_called_with()
 
@@ -208,9 +209,10 @@ class test_Scheduler(AppCase):
         not_sync.apply_async = Mock()
 
         s = mScheduler(app=self.app)
+        self.assertEqual(s.sync_every_tasks, 1)
 
         s.apply_async(s.Entry(task=not_sync.name, app=self.app))
-        self.assertEqual(s._sync_every, 0)
+        self.assertEqual(s._tasks_since_sync, 0)
 
         self.app.conf.CELERYBEAT_SYNC_EVERY = 0
 

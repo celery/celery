@@ -161,18 +161,24 @@ class Scheduler(object):
     #: How often to sync the schedule (3 minutes by default)
     sync_every = 3 * 60
 
+    #: How many tasks can be called before a sync is forced.
+    sync_every_tasks = None
+
     _last_sync = None
-    _sync_every = 0
+    _tasks_since_sync = 0
 
     logger = logger  # compat
 
     def __init__(self, app, schedule=None, max_interval=None,
-                 Publisher=None, lazy=False, **kwargs):
+                 Publisher=None, lazy=False, sync_every_tasks=None, **kwargs):
         self.app = app
         self.data = maybe_evaluate({} if schedule is None else schedule)
         self.max_interval = (max_interval
                              or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
                              or self.max_interval)
+        self.sync_every_tasks = (
+            app.conf.CELERYBEAT_SYNC_EVERY if sync_every_tasks is None
+            else sync_every_tasks)
         self.Publisher = Publisher or app.amqp.TaskProducer
         if not lazy:
             self.setup_schedule()
@@ -220,12 +226,12 @@ class Scheduler(object):
         return min(remaining_times + [self.max_interval])
 
     def should_sync(self):
-        return (not self._last_sync or
-               (monotonic() - self._last_sync) > self.sync_every) \
-               or \
-               (self.app.conf.CELERYBEAT_SYNC_EVERY and
-                self._sync_every >= self.app.conf.CELERYBEAT_SYNC_EVERY)
-
+        return (
+            (not self._last_sync or
+               (monotonic() - self._last_sync) > self.sync_every) or
+            (self.sync_every_tasks and
+                self._tasks_since_sync >= self.sync_every_tasks)
+        )
 
     def reserve(self, entry):
         new_entry = self.schedule[entry.name] = next(entry)
@@ -252,7 +258,7 @@ class Scheduler(object):
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
                     entry, exc=exc)), sys.exc_info()[2])
         finally:
-            self._sync_every += 1
+            self._tasks_since_sync += 1
             if self.should_sync():
                 self._do_sync()
         return result
@@ -269,7 +275,7 @@ class Scheduler(object):
             self.sync()
         finally:
             self._last_sync = monotonic()
-            self._sync_every = 0
+            self._tasks_since_sync = 0
 
     def sync(self):
         pass
