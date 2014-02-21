@@ -162,6 +162,7 @@ class Scheduler(object):
     sync_every = 3 * 60
 
     _last_sync = None
+    _sync_every = 0
 
     logger = logger  # compat
 
@@ -220,7 +221,11 @@ class Scheduler(object):
 
     def should_sync(self):
         return (not self._last_sync or
-                (monotonic() - self._last_sync) > self.sync_every)
+               (monotonic() - self._last_sync) > self.sync_every) \
+               or \
+               (self.app.conf.CELERYBEAT_SYNC_EVERY and
+                self._sync_every >= self.app.conf.CELERYBEAT_SYNC_EVERY)
+
 
     def reserve(self, entry):
         new_entry = self.schedule[entry.name] = next(entry)
@@ -247,6 +252,7 @@ class Scheduler(object):
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
                     entry, exc=exc)), sys.exc_info()[2])
         finally:
+            self._sync_every += 1
             if self.should_sync():
                 self._do_sync()
         return result
@@ -263,6 +269,7 @@ class Scheduler(object):
             self.sync()
         finally:
             self._last_sync = monotonic()
+            self._sync_every = 0
 
     def sync(self):
         pass
