@@ -1,7 +1,10 @@
 from __future__ import absolute_import
 
-from contextlib import contextmanager
+import traceback
+import sys
 
+from contextlib import contextmanager
+from billiard.einfo import ExceptionInfo
 from celery import states
 from celery.exceptions import IncompleteStream, TimeoutError
 from celery.five import range
@@ -16,6 +19,7 @@ from celery.utils.serialization import pickle
 
 from celery.tests.case import AppCase, Mock, depends_on_current_app, patch
 
+PY3 = sys.version_info[0] == 3
 
 def mock_task(name, state, result):
     return dict(id=uuid(), name=name, state=state, result=result)
@@ -41,6 +45,37 @@ def make_mock_group(app, size=10):
     return [app.AsyncResult(task['id']) for task in tasks]
 
 
+def with_outer_frames(cb):
+    def outer_1():
+        return outer_2()
+
+    def outer_2():
+        return outer_3()
+
+    def outer_3():
+        return cb()
+
+    return outer_1
+
+
+def make_einfo(exc):
+    """
+    Make an ExceptionInfo with some "inner" frames we'll do assertions on.
+    """
+    def inner_1():
+        return inner_2()
+
+    def inner_2():
+        return inner_3()
+
+    def inner_3():
+        raise exc
+
+    try:
+        inner_1()
+    except:
+        return ExceptionInfo()
+
 class test_AsyncResult(AppCase):
 
     def setup(self):
@@ -48,8 +83,11 @@ class test_AsyncResult(AppCase):
         self.task2 = mock_task('task2', states.SUCCESS, 'quick')
         self.task3 = mock_task('task3', states.FAILURE, KeyError('brown'))
         self.task4 = mock_task('task3', states.RETRY, KeyError('red'))
+        # Exceptions that are wrapped in ExceptionInfo will carry the local traceback around.
+        # Note: old way (task3, task4) is still supported
+        self.task5 = mock_task('task3', states.FAILURE, make_einfo(KeyError('yellow')))
 
-        for task in (self.task1, self.task2, self.task3, self.task4):
+        for task in (self.task1, self.task2, self.task3, self.task4, self.task5):
             save_result(self.app, task)
 
         @self.app.task(shared=False)
@@ -160,10 +198,12 @@ class test_AsyncResult(AppCase):
         ok_res = self.app.AsyncResult(self.task1['id'])
         nok_res = self.app.AsyncResult(self.task3['id'])
         nok_res2 = self.app.AsyncResult(self.task4['id'])
+        nok_res3 = self.app.AsyncResult(self.task5['id'])
 
         self.assertTrue(ok_res.successful())
         self.assertFalse(nok_res.successful())
         self.assertFalse(nok_res2.successful())
+        self.assertFalse(nok_res3.successful())
 
         pending_res = self.app.AsyncResult(uuid())
         self.assertFalse(pending_res.successful())
@@ -184,12 +224,15 @@ class test_AsyncResult(AppCase):
         ok_res = self.app.AsyncResult(self.task1['id'])
         ok2_res = self.app.AsyncResult(self.task2['id'])
         nok_res = self.app.AsyncResult(self.task3['id'])
+        nok2_res = self.app.AsyncResult(self.task5['id'])
         self.assertEqual(repr(ok_res), '<AsyncResult: %s>' % (
             self.task1['id']))
         self.assertEqual(repr(ok2_res), '<AsyncResult: %s>' % (
             self.task2['id']))
         self.assertEqual(repr(nok_res), '<AsyncResult: %s>' % (
             self.task3['id']))
+        self.assertEqual(repr(nok2_res), '<AsyncResult: %s>' % (
+            self.task5['id']))
 
         pending_id = uuid()
         pending_res = self.app.AsyncResult(pending_id)
@@ -206,9 +249,11 @@ class test_AsyncResult(AppCase):
         ok_res = self.app.AsyncResult(self.task1['id'])
         nok_res = self.app.AsyncResult(self.task3['id'])
         nok_res2 = self.app.AsyncResult(self.task4['id'])
+        nok_res3 = self.app.AsyncResult(self.task5['id'])
         self.assertFalse(ok_res.traceback)
         self.assertTrue(nok_res.traceback)
         self.assertTrue(nok_res2.traceback)
+        self.assertTrue(nok_res3.traceback)
 
         pending_res = self.app.AsyncResult(uuid())
         self.assertFalse(pending_res.traceback)
@@ -218,6 +263,7 @@ class test_AsyncResult(AppCase):
         ok2_res = self.app.AsyncResult(self.task2['id'])
         nok_res = self.app.AsyncResult(self.task3['id'])
         nok2_res = self.app.AsyncResult(self.task4['id'])
+        nok3_res = self.app.AsyncResult(self.task5['id'])
 
         self.assertEqual(ok_res.get(), 'the')
         self.assertEqual(ok2_res.get(), 'quick')
@@ -226,6 +272,36 @@ class test_AsyncResult(AppCase):
         self.assertTrue(nok_res.get(propagate=False))
         self.assertIsInstance(nok2_res.result, KeyError)
         self.assertEqual(ok_res.info, 'the')
+
+        self.assertIsInstance(nok3_res.result, ExceptionInfo)
+        self.assertTrue(nok3_res.get(propagate=False))
+        try:
+            nok3_res.get()
+        except Exception:
+            err = traceback.format_exc()
+            self.assertIn('inner_1', err)
+            self.assertIn('inner_2', err)
+            self.assertIn('inner_3', err)
+            if PY3:
+                self.assertIn('The above exception was the direct cause of the following exception', err)
+        else:
+            self.fail("nok3_res.get() didn't raise exception !")
+
+        try:
+            with_outer_frames(nok3_res.get)()
+        except Exception:
+            err = traceback.format_exc()
+            self.assertIn('inner_1', err)
+            self.assertIn('inner_2', err)
+            self.assertIn('inner_3', err)
+            self.assertIn('outer_1', err)
+            self.assertIn('outer_2', err)
+            self.assertIn('outer_3', err)
+            if PY3:
+                self.assertIn('The above exception was the direct cause of the following exception', err)
+        else:
+            self.fail("nok3_res.get() didn't raise exception !")
+
 
     def test_get_timeout(self):
         res = self.app.AsyncResult(self.task4['id'])  # has RETRY state

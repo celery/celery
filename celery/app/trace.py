@@ -194,10 +194,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     from celery import canvas
     signature = canvas.maybe_signature  # maybe_ does not clone if already
 
-    def on_error(request, exc, uuid, state=FAILURE, call_errbacks=True):
+    def on_error(request, uuid, state=FAILURE, call_errbacks=True):
         if propagate:
             raise
-        I = Info(state, exc)
+        I = Info(state, ExceptionInfo())
         R = I.handle_error_state(task, eager=eager)
         if call_errbacks:
             group(
@@ -246,11 +246,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                 except Retry as exc:
-                    I, R, state, retval = on_error(
-                        task_request, exc, uuid, RETRY, call_errbacks=False,
+                    I, R, state, retval = on_error(task_request, uuid, RETRY, call_errbacks=False,
                     )
                 except Exception as exc:
-                    I, R, state, retval = on_error(task_request, exc, uuid)
+                    I, R, state, retval = on_error(task_request, uuid)
                 except BaseException as exc:
                     raise
                 else:
@@ -267,7 +266,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 uuid, retval, SUCCESS, request=task_request,
                             )
                     except EncodeError as exc:
-                        I, R, state, retval = on_error(task_request, exc, uuid)
+                        I, R, state, retval = on_error(task_request, uuid)
                     else:
                         if task_on_success:
                             task_on_success(retval, uuid, args, kwargs)

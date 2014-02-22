@@ -45,7 +45,7 @@ __all__ = ['BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend']
 
 EXCEPTION_ABLE_CODECS = frozenset(['pickle', 'yaml'])
 PY3 = sys.version_info >= (3, 0)
-
+EXCEPTIONINFO_RAISEABLE = hasattr(ExceptionInfo, 'raise_')
 
 def unpickle_backend(cls, args, kwargs):
     """Return an unpickled backend."""
@@ -197,9 +197,17 @@ class BaseBackend(object):
                 return self.get_result(task_id)
             elif status in states.PROPAGATE_STATES:
                 result = self.get_result(task_id)
-                if propagate:
-                    raise result
-                return result
+                if isinstance(result, ExceptionInfo):
+                    if propagate:
+                        if EXCEPTIONINFO_RAISEABLE:
+                            result.raise_()  # Raising exception. Frames below this are from the worker !
+                        else:
+                            raise result.exception
+                    return result.exception
+                else:
+                    if propagate:
+                        raise result
+                    return result
             # avoid hammering the CPU checking status.
             time.sleep(interval)
             time_elapsed += interval
