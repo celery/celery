@@ -18,6 +18,7 @@ import re
 import sys
 import threading
 import time
+import types
 import warnings
 
 from contextlib import contextmanager
@@ -45,12 +46,6 @@ from celery.five import (
 )
 from celery.utils.functional import noop
 from celery.utils.imports import qualname
-
-try:  # pragma: no cover
-    from django.utils.six import MovedModule
-except ImportError:  # pragma: no cover
-    class MovedModule(object):  # noqa
-        pass
 
 __all__ = [
     'Case', 'AppCase', 'Mock', 'MagicMock', 'ANY',
@@ -233,6 +228,18 @@ class _AssertRaisesBaseContext(object):
         self.expected_regex = expected_regex
 
 
+def _is_magic_module(m):
+    # some libraries create custom module types that are lazily
+    # lodaded, e.g. Django installs some modules in sys.modules that
+    # will load _tkinter and other shit when touched.
+
+    # pyflakes refuses to accept 'noqa' for this isinstance.
+    cls, modtype = m.__class__, types.ModuleType
+    return (not cls is modtype and (
+        '__getattr__' in vars(m.__class__) or
+        '__getattribute__' in vars(m.__class__)))
+
+
 class _AssertWarnsContext(_AssertRaisesBaseContext):
     """A context manager used to implement TestCase.assertWarns* methods."""
 
@@ -241,10 +248,17 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
         # to work properly.
         warnings.resetwarnings()
         for v in list(values(sys.modules)):
-            # do not evaluate Django moved modules:
-            if not isinstance(v, MovedModule):
-                if getattr(v, '__warningregistry__', None):
-                    v.__warningregistry__ = {}
+            # do not evaluate Django moved modules and other lazily
+            # initialized modules.
+            if v and not _is_magic_module(v):
+                # use raw __getattribute__ to protect even better from
+                # lazily loaded modules
+                try:
+                    object.__getattribute__(v, '__warningregistry__')
+                except AttributeError:
+                    pass
+                else:
+                    object.__setattr__(v, '__warningregistry__', {})
         self.warnings_manager = warnings.catch_warnings(record=True)
         self.warnings = self.warnings_manager.__enter__()
         warnings.simplefilter('always', self.expected)
