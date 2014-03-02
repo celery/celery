@@ -37,7 +37,7 @@ def _sqlalchemy_installed():
     return sqlalchemy
 _sqlalchemy_installed()
 
-from sqlalchemy.exc import DatabaseError, OperationalError, ResourceClosedError
+from sqlalchemy.exc import DatabaseError, OperationalError, ResourceClosedError, InvalidRequestError
 from sqlalchemy.orm.exc import StaleDataError
 
 
@@ -45,12 +45,10 @@ from sqlalchemy.orm.exc import StaleDataError
 def session_cleanup(session):
     try:
         yield
-    except (DatabaseError, OperationalError, ResourceClosedError, StaleDataError):
+    except Exception:
         session.rollback()
-        session.connection().invalidate()
-        session.close()
         raise
-    else:
+    finally:
         session.close()
 
 
@@ -63,8 +61,8 @@ def retry(fun):
         for retries in range(max_retries):
             try:
                 return fun(*args, **kwargs)
-            except (DatabaseError, OperationalError, ResourceClosedError, StaleDataError):
-                logger.critical(
+            except (DatabaseError, OperationalError, ResourceClosedError, StaleDataError, InvalidRequestError):
+                logger.warning(
                     "Failed operation %s. Retrying %s more times.",
                     fun.__name__, max_retries - retries - 1,
                     exc_info=True,
