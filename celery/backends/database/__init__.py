@@ -20,7 +20,7 @@ from celery.utils.timeutils import maybe_timedelta
 
 from .models import Task
 from .models import TaskSet
-from .session import ResultSession
+from .session import SessionManager
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ def _sqlalchemy_installed():
     return sqlalchemy
 _sqlalchemy_installed()
 
-from sqlalchemy.exc import DatabaseError, OperationalError, ResourceClosedError, InvalidRequestError
+from sqlalchemy.exc import DatabaseError, OperationalError, ResourceClosedError, InvalidRequestError, IntegrityError
 from sqlalchemy.orm.exc import StaleDataError
 
 
@@ -61,7 +61,10 @@ def retry(fun):
         for retries in range(max_retries):
             try:
                 return fun(*args, **kwargs)
-            except (DatabaseError, OperationalError, ResourceClosedError, StaleDataError, InvalidRequestError):
+            except (
+                DatabaseError, OperationalError, ResourceClosedError, StaleDataError, InvalidRequestError,
+                IntegrityError
+            ):
                 logger.warning(
                     "Failed operation %s. Retrying %s more times.",
                     fun.__name__, max_retries - retries - 1,
@@ -104,8 +107,8 @@ class DatabaseBackend(BaseBackend):
                 'Missing connection string! Do you have '
                 'CELERY_RESULT_DBURI set to a real value?')
 
-    def ResultSession(self):
-        return ResultSession(
+    def ResultSession(self, session_manager=SessionManager()):
+        return session_manager.session_factory(
             dburi=self.dburi,
             short_lived_sessions=self.short_lived_sessions,
             **self.engine_options
