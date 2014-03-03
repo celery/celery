@@ -29,10 +29,12 @@ class _after_fork(object):
 
     def __call__(self):
         self.registered = False  # child must reregister
+        for session in _SESSIONS:
+            session.close()
+        _SESSIONS.clear()
         for engine in list(_ENGINES.values()):
             engine.dispose()
         _ENGINES.clear()
-        _SESSIONS.clear()
 after_fork = _after_fork()
 
 
