@@ -556,12 +556,12 @@ class Task(object):
         )
 
     def subtask_from_request(self, request=None, args=None, kwargs=None,
-                             **extra_options):
+                             queue=None, **extra_options):
         request = self.request if request is None else request
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
         limit_hard, limit_soft = request.timelimit or (None, None)
-        options = dict({
+        options = {
             'task_id': request.id,
             'link': request.callbacks,
             'link_error': request.errbacks,
@@ -569,7 +569,10 @@ class Task(object):
             'chord': request.chord,
             'soft_time_limit': limit_soft,
             'time_limit': limit_hard,
-        }, **request.delivery_info or {})
+        }
+        options.update(
+            {'queue': queue} if queue else (request.delivery_info or {})
+        )
         return self.subtask(args, kwargs, options, type=self, **extra_options)
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
