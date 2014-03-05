@@ -273,7 +273,7 @@ class Celery(object):
         if not module_name:
             if silent:
                 return False
-            raise ImproperlyConfigured(ERR_ENVVAR_NOT_SET.format(module_name))
+            raise ImproperlyConfigured(ERR_ENVVAR_NOT_SET.format(variable_name))
         return self.config_from_object(module_name, silent=silent, force=force)
 
     def config_from_cmdline(self, argv, namespace='celery'):
