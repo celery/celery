@@ -49,7 +49,7 @@ both the app and tasks, like in the :ref:`tut-celery` tutorial.
 
 Let's break down what happens in the first module,
 first we import absolute imports from the future, so that our
-``celery.py`` module will not crash with the library:
+``celery.py`` module will not clash with the library:
 
 .. code-block:: python
 
