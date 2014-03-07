@@ -73,10 +73,10 @@ from __future__ import absolute_import
 from functools import wraps
 import itertools
 
-from celery import current_app, Task
 from celery.app.task import TaskType
 from celery.local import Proxy
 
+from celery import current_app, Task
 
 __all__ = ['ClassTask', 'auto_init']
 
@@ -139,14 +139,24 @@ class ClassTask(TaskType):
             """
             return self.apply_async(self._args, self._kwargs, **options)
 
+        def run(self):
+            """The `ClassTask` :meth:`run` method is not allowed to take
+            arguments. Rather, all class state must be established in
+            :meth:`__init__`.
+            """
+            raise NotImplementedError("ClassTasks must define the run method.")
+
         def __call__(self, *args, **kwargs):
             # override to instantiate class object, then init and run
             return self.__class__(*args, **kwargs).init().run()
 
+        def delay(self):
+            # ClassTask delay is not allowed to take arguments
+            return super(ClassTask.ClassTaskBase, self).delay()
+
         def apply_async(self, args=None, kwargs=None, task_id=None,
                         producer=None, link=None, link_error=None, **options):
             # override to pull _args and _kwargs off of the instance object
-            # args and kwargs are ignored
             _apl_as = super(ClassTask.ClassTaskBase, self).apply_async
             return _apl_as(self._args, self._kwargs, task_id, producer, link,
                            link_error, **options)
@@ -163,13 +173,6 @@ class ClassTask(TaskType):
             _retry = super(ClassTask.ClassTaskBase, self).retry
             return _retry(self._args, self._kwargs, exc, throw, eta, countdown,
                           max_retries, **options)
-
-        def subtask_from_request(self, request=None, args=None, kwargs=None,
-                                 **extra_options):
-            # override to pull _args and _kwargs off of the instance object
-            _sfr = super(ClassTask.ClassTaskBase, self).subtask_from_request
-            return _sfr(request, args=self._args, kwargs=self._kwargs,
-                        **extra_options)
 
         @classmethod
         def get_task(cls):
