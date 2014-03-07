@@ -1,3 +1,5 @@
 unittest2>=0.5.1
 nose
+coverage>=3.0
 mock>=1.0.1
+redis
