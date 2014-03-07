@@ -6,7 +6,7 @@ from kombu import Queue
 
 from celery import Task
 
-from celery.contrib.classtask import ClassTask
+from celery.contrib.classtask import ClassTask, auto_init
 from celery.exceptions import Retry
 from celery.five import items, string_t, with_metaclass
 from celery.result import EagerResult
@@ -14,6 +14,7 @@ from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601
 
 from celery.tests.case import AppCase, depends_on_current_app, patch
+
 
 @with_metaclass(ClassTask)
 class MockApplyTask(object):
@@ -61,6 +62,7 @@ class ClassTasksCase(AppCase):
         @with_metaclass(ClassTask)
         class Raising(object):
             shared = False
+
             def run(self):
                 raise KeyError('foo')
         self.Raising = Raising
@@ -71,8 +73,9 @@ class ClassTasksCase(AppCase):
             shared = False
             max_retries = 3
 
-            def __init__(self, arg1, arg2, kwarg=1, max_retries=None, care=True):
-                self.rmax = self.max_retries if max_retries is None else max_retries
+            def __init__(self, arg1, arg2, kwarg=1, max_retries=None,
+                         care=True):
+                self.rmax = max_retries or self.max_retries
                 self.care = care
                 self.arg1 = arg1
                 self.arg2 = arg2
@@ -150,10 +153,30 @@ class ClassTasksCase(AppCase):
                         raise self.retry(countdown=0, exc=exc)
         self.RetryTaskCustomexc = RetryTaskCustomexc
 
+        @with_metaclass(ClassTask)
+        class Math(object):
+            def __init__(self, arg1, arg2):
+                self.arg1 = arg1
+                self.arg2 = arg2
+
+            def add(self):
+                return self.arg1 + self.arg2
+
+            @property
+            def subtract(self):
+                return self.arg1 - self.arg2
+
+            @auto_init
+            def multiply(self):
+                return self.arg1 * self.arg2
+
+            def run(self):
+                return self.add()
+        self.Math = Math
+
 
 class MyCustomException(Exception):
     """Random custom exception."""
-
 
 
 class test_task_retries(ClassTasksCase):
@@ -257,6 +280,7 @@ class Xxx(object):
     def run(self):
         pass
 
+
 class test_tasks(ClassTasksCase):
 
     def now(self):
@@ -265,7 +289,8 @@ class test_tasks(ClassTasksCase):
     @depends_on_current_app
     def test_unpickle_task(self):
         import pickle
-        self.assertIs(pickle.loads(pickle.dumps(Xxx())), Xxx.app.tasks[Xxx.name])
+        self.assertIs(pickle.loads(pickle.dumps(Xxx())),
+                      Xxx.app.tasks[Xxx.name])
 
     def test_AsyncResult(self):
         task_id = uuid()
@@ -322,7 +347,7 @@ class test_tasks(ClassTasksCase):
             self.assertNextTaskDataEqual(consumer, presult, self.MyTask.name)
 
             # With arguments.
-            presult2 = self.MyTask(name='George Costanza 1').apply_async()
+            presult2 = self.MyTask(name='George Costanza 1').enqueue()
             self.assertNextTaskDataEqual(
                 consumer, presult2, self.MyTask.name, name='George Costanza 1',
             )
@@ -336,8 +361,8 @@ class test_tasks(ClassTasksCase):
 
             # With eta.
             eta_task = self.MyTask(name='George Costanza 2')
-            eta_eta=self.now() + timedelta(days=1)
-            eta_expires=self.now() + timedelta(days=2)
+            eta_eta = self.now() + timedelta(days=1)
+            eta_expires = self.now() + timedelta(days=2)
             presult2 = eta_task.apply_async(eta=eta_eta, expires=eta_expires)
             self.assertNextTaskDataEqual(
                 consumer, presult2, self.MyTask.name,
@@ -345,7 +370,7 @@ class test_tasks(ClassTasksCase):
             )
 
             # With countdown.
-            presult2 = self.MyTask(name='George Costanza 3').apply_async(
+            presult2 = self.MyTask(name='George Costanza 3').enqueue(
                 countdown=10, expires=12,
             )
             self.assertNextTaskDataEqual(
@@ -391,6 +416,7 @@ class test_tasks(ClassTasksCase):
     def test_annotate(self):
         with patch('celery.app.task.resolve_all_annotations') as anno:
             anno.return_value = [{'FOO': 'BAR'}]
+
             @with_metaclass(ClassTask)
             class ThisTask(object):
                 shared = False
@@ -483,3 +509,24 @@ class test_apply_task(ClassTasksCase):
         self.assertTrue(f.traceback)
         with self.assertRaises(KeyError):
             f.get()
+
+
+class test_classtask_specifics(ClassTasksCase):
+
+    def test_multiple_init_raises(self):
+        this_task = self.Math(2, 2)
+        this_task.init()
+        with self.assertRaises(RuntimeError):
+            this_task.init()
+        with self.assertRaises(RuntimeError):
+            this_task.init()
+
+    def test_auto_init(self):
+        this_task = self.Math(2, 3)
+        with self.assertRaises(AttributeError):
+            this_task.add()
+        with self.assertRaises(AttributeError):
+            this_task.subtract
+        self.assertEquals(6, this_task.multiply())
+        self.assertEquals(5, this_task.add())
+        self.assertEqual(-1, this_task.subtract)

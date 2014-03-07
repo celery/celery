@@ -5,8 +5,8 @@ celery.contrib.classtask
 
 Metaclass that supports creating tasks out of classes.
 
-Use of this metaclass turns a class and its subclasses into a celery task. With
-minimal differences, the task behaves similarly to a task created by the
+Use of this metaclass turns a class and its subclasses into a celery task.
+With minimal differences, the task behaves similarly to a task created by the
 `app.task` function decorator.
 
 
@@ -15,12 +15,12 @@ Key Concepts
 
 * This metaclass makes instance initialization "lazy".  That is, the
   conventional python object instantiation process is intercepted, and
-  :meth:`__init__` is explicitly _not_ called.  This delayed _initialization_ of
-  the instance object prevents unnecessary work being done in the synchronous
-  process.
+  :meth:`__init__` is explicitly _not_ called.  This delayed _initialization_
+  of the instance object prevents unnecessary work being done in the
+  synchronous process.
 * References to the `args` and `kwargs` given to __init__ are held by the
-  instance object. They are passed as parameters in the `task` message to fully
-  initialize the class in the external process.
+  instance object. They are passed as parameters in the `task` message to
+  fully initialize the class in the external process.
 * After class instantiation, :meth:`enqueue` may be called on the instance
   object analogously to :meth:`delay` or :meth:`apply_async`. :meth:`enqueue`
   takes no `args` or `kwargs`. It does however accept the same `options` as
@@ -37,11 +37,12 @@ Use
 3) To use your class, instantiate it as normal--i.e.
    `my_instance = MyClass(*args, **kwargs)`. Then call :meth:`enqueue` on the
    instantiated object--i.e. `my_instance.enqueue()`. The code in
-   :meth:`__init__` is *not* ran in-process, but rather delayed for the external
-   process to run.
-4) If for some reason you need MyClass initialized in-process, call :meth:`init`
-   on the instance object--i.e. `my_instance.init()`.  In this case, the
-   :meth:`__init__` code will run both in-process *and* in the external process.
+   :meth:`__init__` is *not* ran in-process, but rather delayed for the
+   external process to run.
+4) If for some reason you need MyClass initialized in-process, call
+   :meth:`init` on the instance object--i.e. `my_instance.init()`.  In this
+   case, the :meth:`__init__` code will run both in-process *and* in the
+   external process.
 5) One method decorator is provided as auxiliary to this metaclass.
    If a method is decorated with :decorator:`auto_init`, that method can
    be accessed without first calling :meth:`init`, and :meth:`init` will
@@ -62,9 +63,9 @@ Metaclass Strategy
   adds the additional methods (like enqueue and run_async) necessary to turn a
   generic class into a celery task.
 * Any attributes that might be "dangerous" to call before :meth:`__init__` is
-  called are wrapped to throw a runtime error if :meth:`__init__` is not called
-  before the attribute.  The "dangerous" attributes are any public bound
-  methods (those that do not begin with an underscore), and any
+  called are wrapped to throw a runtime error if :meth:`__init__` is not
+  called before the attribute.  The "dangerous" attributes are any public
+  bound methods (those that do not begin with an underscore), and any
   :decorator:`@properties`.
 
 """
@@ -74,6 +75,7 @@ from functools import wraps
 import itertools
 
 from celery.app.task import TaskType
+from celery.five import items
 from celery.local import Proxy
 
 from celery import current_app, Task
@@ -98,7 +100,7 @@ class ClassTask(TaskType):
         >>> b.mult()  # doctest:+ELLIPSIS
         Traceback (most recent call last):
         ...
-        AttributeError: The instance object <@task: async.Math of ttam:...> has not yet been initialized...
+        AttributeError: The instance object <@task: async.Math of ttam:...> has not yet been initialized...  # noqa
         >>> b.init().mult()
         8
         >>> b.enqueue().get()
@@ -109,8 +111,8 @@ class ClassTask(TaskType):
     class ClassTaskBase(Task):
 
         def init(self):
-            """Public method to explicitly call :meth:`__init__` on the instance
-            object.
+            """Public method to explicitly call :meth:`__init__` on the
+            instance object.
 
             :throws AttributeError: When the instance has already been
                                     initialized.
@@ -121,23 +123,26 @@ class ClassTask(TaskType):
             else:
                 # only initialize once. this is a safety precaution. if this
                 # error is thrown, you're doing something wrong.  perhaps at
-                # some point, this should be changed to simply logging an error
-                # rather than throwing a runtime exception
-                raise AttributeError("{} has already been initialized.\n"
-                                     "  args: {}\n"
-                                     "  kwargs: {}".format(self.__class__.__name__,
-                                                           self._args,
-                                                           self._kwargs))
+                # some point, this should be changed to simply logging an
+                # error rather than throwing a runtime exception
+                raise RuntimeError("{0} has already been initialized.\n"
+                                   "  args: {1}\n"
+                                   "  kwargs: {2}".format(
+                                       self.__class__.__name__,
+                                       self._args,
+                                       self._kwargs))
             return self  # return self to allow call chaining
 
-        def enqueue(self, **options):
+        def enqueue(self, task_id=None, producer=None, link=None,
+                    link_error=None, **options):
             """Used to execute the instance object. Analagous to :meth:`delay`
             and :meth:`apply_async`, but takes only the optional control
             arguments given to :meth:`apply_async`.  Any `args` and `kwargs`
             needed for execution should have been passed on object
             instantiation.
             """
-            return self.apply_async(self._args, self._kwargs, **options)
+            return self.apply_async(task_id, producer, link, link_error,
+                                    **options)
 
         def run(self):
             """The `ClassTask` :meth:`run` method is not allowed to take
@@ -167,34 +172,34 @@ class ClassTask(TaskType):
             _apl = super(ClassTask.ClassTaskBase, self).apply
             return _apl(self._args, self._kwargs, link, link_error, **options)
 
-        def retry(self, args=None, kwargs=None, exc=None, throw=True, eta=None,
-                  countdown=None, max_retries=None, **options):
+        def retry(self, args=None, kwargs=None, exc=None, throw=True,
+                  eta=None, countdown=None, max_retries=None, **options):
             # override to pull _args and _kwargs off of the instance object
             _retry = super(ClassTask.ClassTaskBase, self).retry
-            return _retry(self._args, self._kwargs, exc, throw, eta, countdown,
-                          max_retries, **options)
+            return _retry(self._args, self._kwargs, exc, throw, eta,
+                          countdown, max_retries, **options)
 
         @classmethod
         def get_task(cls):
             return cls._app.tasks[cls.name]
-
 
     @staticmethod
     def _ensure_init(attr):
         # wrapper (i.e. decorator) for methods and properties to make sure
         #   __init__ gets called before use
         # decided throwing an explicit runtime error is safer than guessing
-        #  whether a method is designed to be public or private (in theory, any
-        #  public method could auto-initialize the class)
+        #  whether a method is designed to be public or private (in theory,
+        #  any public method could auto-initialize the class)
         def wrapper(self, *args, **kwargs):
             if not self._initialized:
-                raise AttributeError("The instance object {} has not yet been "
-                                     "initialized. Either call .init() on the "
-                                     "object, or decorate the attribute being "
-                                     "accessed with @allow_access or "
-                                     "@initialize_class. WARNING: Using these "
-                                     "decorated methods within __init__ can "
-                                     "blow the stack.".format(repr(self)))
+                raise AttributeError("The instance object {0} has not yet "
+                                     "been initialized. Either call .init() "
+                                     "on the object, or decorate the "
+                                     "attribute being accessed with "
+                                     "@classmethod or @auto_init. WARNING: "
+                                     "Using these decorated methods within "
+                                     "__init__ can blow the stack."
+                                     "".format(repr(self)))
             return attr(self, *args, **kwargs)
         return wrapper
 
@@ -224,9 +229,8 @@ class ClassTask(TaskType):
         clsobj._initialized = False
 
         # wrap public methods and @properties with _ensure_init
-        dont_wrap = ('enqueue', 'init', 'apply_async', 'apply', 'retry',
-                     'subtask_from_request')
-        for key, value in vars(clsobj).iteritems():
+        dont_wrap = ('enqueue', 'init', 'apply_async', 'apply', 'retry')
+        for key, value in items(vars(clsobj)):
             if not key.startswith('_'):
                 if callable(value) and not (hasattr(value, '_auto_init')
                                             or key in dont_wrap
@@ -234,8 +238,9 @@ class ClassTask(TaskType):
                                             or isinstance(value, classmethod)):
                     setattr(clsobj, key, ClassTask._ensure_init(value))
                 elif isinstance(value, property):  # for class @properties
-                    setattr(clsobj, key, property(ClassTask._ensure_init(value.__get__),
-                                                  value.__set__, value.__delattr__))
+                    setattr(clsobj, key,
+                            property(ClassTask._ensure_init(value.__get__),
+                                     value.__set__, value.__delattr__))
         return clsobj
 
     def __call__(cls, *args, **kwargs):
