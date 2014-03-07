@@ -589,8 +589,10 @@ class Tasks(bootsteps.StartStopStep):
 
     def start(self, c):
         c.update_strategies()
+        auto_declare = False if c.app.conf.CELERYD_DISABLE_AUTO_DECLARE else True
         c.task_consumer = c.app.amqp.TaskConsumer(
             c.connection, on_decode_error=c.on_decode_error,
+            auto_declare=auto_declare,
         )
         c.qos = QoS(c.task_consumer.qos, c.initial_prefetch_count)
         c.qos.update()  # set initial prefetch count
