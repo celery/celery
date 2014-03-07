@@ -170,6 +170,7 @@ NAMESPACES = {
         'AUTOSCALER': Option('celery.worker.autoscale:Autoscaler'),
         'AUTORELOADER': Option('celery.worker.autoreload:Autoreloader'),
         'CONCURRENCY': Option(0, type='int'),
+        'DISABLE_AUTO_DECLARE': Option(False, type='bool'),
         'TIMER': Option(type='string'),
         'TIMER_PRECISION': Option(1.0, type='float'),
         'FORCE_EXECV': Option(False, type='bool'),
