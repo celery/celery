@@ -8,17 +8,37 @@ import re
 import sys
 
 from collections import Callable
+from functools import partial
+
+SAY = partial(print, file=sys.stderr)
 
 dirname = ''
 
-RE_CODE_BLOCK = re.compile(r'.. code-block:: (.+?)\s*$')
-RE_INCLUDE = re.compile(r'.. include:: (.+?)\s*$')
-RE_REFERENCE = re.compile(r':(.+?):`(.+?)`')
-UNITABLE = {'…': '...'}
+RE_CODE_BLOCK = re.compile(r'(\s*).. code-block:: (.+?)\s*$')
+RE_INCLUDE = re.compile(r'\s*.. include:: (.+?)\s*$')
+RE_REFERENCE = re.compile(r':(\w+):`(.+?)`')
+RE_NAMED_REF = re.compile('(.+?)\<(.+)\>')
+UNITABLE = {
+    '…': '...',
+    '“': '"',
+    '”': '"',
+}
 X = re.compile(re.escape('…'))
 HEADER = re.compile('^[\=\~\-]+$')
 UNIRE = re.compile('|'.join(re.escape(p) for p in UNITABLE),
                    re.UNICODE)
+REFBASE = 'http://docs.celeryproject.org/en/latest'
+REFS = {
+    'mailing-list':
+        'http://groups.google.com/groups/celery-users',
+    'irc-channel': 'getting-started/resources.html#irc',
+    'breakpoint-signal': 'tutorials/debugging.html',
+    'internals-guide': 'internals/guide.html',
+    'bundles': 'getting-started/introduction.html#bundles',
+    'reporting-bugs': 'contributing.html#reporting-bugs',
+}
+
+pending_refs = {}
 
 
 def _replace_handler(match, key=UNITABLE.__getitem__):
@@ -66,10 +86,55 @@ def replace_code_block(lines, pos, match):
     if lines[prev_line_with_text].endswith(':'):
         lines[prev_line_with_text] += ':'
     else:
-        lines[prev_line_with_text] += '::'
+        lines[prev_line_with_text] += match.group(1) + '::'
+
+
+def _deref_default(target):
+    return r'``{0}``'.format(target)
+
+
+def _deref_ref(target):
+    m = RE_NAMED_REF.match(target)
+    if m:
+        text, target = m.group(1).strip(), m.group(2).strip()
+    else:
+        text = target
+
+    try:
+        url = REFS[target]
+    except KeyError:
+        return _deref_default(target)
+
+    if '://' not in url:
+        url = '/'.join([REFBASE, url])
+    pending_refs[text] = url
+
+    return r'`{0}`_'.format(text)
+
+
+DEREF = {'ref': _deref_ref}
+
+
+def _deref(match):
+    return DEREF.get(match.group(1), _deref_default)(match.group(2))
+
+
+def deref_all(line):
+    return RE_REFERENCE.subn(_deref, line)[0]
+
+
+def resolve_ref(name, url):
+    return '\n.. _`{0}`: {1}\n'.format(name, url)
+
+
+def resolve_pending_refs(lines):
+    for line in lines:
+        yield line
+    for name, url in pending_refs.items():
+        yield resolve_ref(name, url)
+
 
 TO_RST_MAP = {RE_CODE_BLOCK: replace_code_block,
-              RE_REFERENCE: r'``\2``',
               RE_INCLUDE: include_file}
 
 
@@ -84,7 +149,8 @@ def _process(lines):
                     line = lines[i]
             else:
                 lines[i] = regex.sub(alt, line)
-    return asciify(lines)
+        lines[i] = deref_all(lines[i])
+    return resolve_pending_refs(asciify(lines))
 
 
 def sphinx_to_rst(fh):
