@@ -30,7 +30,7 @@ UNIRE = re.compile('|'.join(re.escape(p) for p in UNITABLE),
 REFBASE = 'http://docs.celeryproject.org/en/latest'
 REFS = {
     'mailing-list':
-        'http://groups.google.com/groups/celery-users',
+        'http://groups.google.com/group/celery-users',
     'irc-channel': 'getting-started/resources.html#irc',
     'breakpoint-signal': 'tutorials/debugging.html',
     'internals-guide': 'internals/guide.html',
