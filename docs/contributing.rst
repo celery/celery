@@ -207,8 +207,8 @@ spelling or other errors on the website/docs/code.
        get more diagnostic data. Some ideas:
 
        * Enable celery's :ref:`breakpoint signal <breakpoint_signal>` and use it
-         to inspect the process's state. This will allow you to open a :mod:`pdb`
-         session.
+         to inspect the process's state.  This will allow you to open a
+         :mod:`pdb` session.
        * Collect tracing data using strace_(Linux), dtruss (OSX) and ktrace(BSD),
          ltrace_ and lsof_.
 
@@ -513,6 +513,14 @@ the steps outlined here: http://bit.ly/koJoso
 
 Calculating test coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To calculate test coverage you must first install the :mod:`coverage` module.
+
+Installing the :mod:`coverage` module:
+
+.. code-block:: bash
+
+    $ pip install -U coverage
 
 Code coverage in HTML:
 
