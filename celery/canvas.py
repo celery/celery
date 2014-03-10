@@ -552,6 +552,9 @@ class chord(Signature):
         )
         self.subtask_type = 'chord'
 
+    def freeze(self, _id=None):
+        return self.body.freeze(_id)
+
     @classmethod
     def from_dict(self, d, app=None):
         args, d['kwargs'] = self._unpack_args(**kwdict(d['kwargs']))
