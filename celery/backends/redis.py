@@ -100,7 +100,9 @@ class RedisBackend(KeyValueStoreBackend):
             self.apply_chord = self._new_chord_apply
             self.on_chord_part_return = self._new_chord_return
 
-        self.connection_errors, self.channel_errors = get_redis_error_classes()
+        self.connection_errors, self.channel_errors = (
+            get_redis_error_classes() if get_redis_error_classes
+            else ((), ()))
 
     def _params_from_url(self, url, defaults):
         scheme, host, port, user, password, path, query = _parse_url(url)
