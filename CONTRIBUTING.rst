@@ -1053,7 +1053,7 @@ following:
 
 * Also add the previous version under the "versions" tab.
 
-.. _`mailing-list`: http://groups.google.com/groups/celery-users
+.. _`mailing-list`: http://groups.google.com/group/celery-users
 
 .. _`irc-channel`: http://docs.celeryproject.org/en/latest/getting-started/resources.html#irc
 
