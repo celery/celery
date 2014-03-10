@@ -57,14 +57,14 @@ class events(Command):
         celery events -d --app=proj
             dump events to screen.
         celery events -b amqp://
-        celery events -C <camera> [options]
+        celery events -c <camera> [options]
             run snapshot camera.
 
     Examples::
 
         celery events
         celery events -d
-        celery events -C mod.attr -F 1.0 --detach --maxrate=100/m -l info
+        celery events -c mod.attr -F 1.0 --detach --maxrate=100/m -l info
     """
     doc = __doc__
     supports_args = False
