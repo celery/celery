@@ -161,7 +161,7 @@ If you'd like to submit the information encrypted our PGP key is::
 Other bugs
 ----------
 
-Bugs can always be described to the ``mailing-list``, but the best
+Bugs can always be described to the `mailing-list`_, but the best
 way to report an issue and to ensure a timely response is to use the
 issue tracker.
 
@@ -175,7 +175,7 @@ and participate in the discussion.
 2) **Determine if your bug is really a bug.**
 
 You should not file a bug if you are requesting support.  For that you can use
-the ``mailing-list``, or ``irc-channel``.
+the `mailing-list`_, or `irc-channel`_.
 
 3) **Make sure your bug hasn't already been reported.**
 
@@ -206,15 +206,14 @@ spelling or other errors on the website/docs/code.
        hard to get or might not be that useful. Try to inspect the process to
        get more diagnostic data. Some ideas:
 
-       * Enable celery's ``breakpoint signal <breakpoint_signal>`` and use it
-         to inspect the process's state. This will allow you to open a ``pdb``
-         session.
+       * Enable celery's ``breakpoint_signal`` and use it
+         to inspect the process's state.  This will allow you to open a
+         ``pdb`` session.
        * Collect tracing data using strace_(Linux), dtruss (OSX) and ktrace(BSD),
          ltrace_ and lsof_.
 
     D) Include the output from the `celery report` command:
-
-        .. code-block:: bash
+        ::
 
             $ celery -A proj report
 
@@ -251,7 +250,7 @@ issue tracker.
 * Django-Celery: http://github.com/celery/django-celery/issues
 
 If you are unsure of the origin of the bug you can ask the
-``mailing-list``, or just use the Celery issue tracker.
+`mailing-list`_, or just use the Celery issue tracker.
 
 Contributors guide to the codebase
 ==================================
@@ -259,7 +258,7 @@ Contributors guide to the codebase
 There's a separate section for internal details,
 including details about the codebase and a style guide.
 
-Read ``internals-guide`` for more!
+Read `internals-guide`_ for more!
 
 .. _versions:
 
@@ -272,7 +271,7 @@ semver: http://semver.org.
 
 Stable releases are published at PyPI
 while development releases are only available in the GitHub git repository as tags.
-All version tags starts with “v”, so version 0.8.0 is the tag v0.8.0.
+All version tags starts with "v", so version 0.8.0 is the tag v0.8.0.
 
 .. _git-branches:
 
@@ -410,11 +409,7 @@ to upstream changes:
 ::
 
     $ cd celery
-::
-
     $ git remote add upstream git://github.com/celery/celery.git
-::
-
     $ git fetch upstream
 
 If you need to pull in new changes from upstream you should
@@ -432,8 +427,6 @@ If you need to work on a different branch than ``master`` you can
 fetch and checkout a remote branch like this::
 
     git checkout --track -b 3.0-devel origin/3.0-devel
-
-For a list of branches see ``git-branches``.
 
 .. _`Fork a Repo`: http://help.github.com/fork-a-repo/
 .. _`Rebasing merge commits in git`:
@@ -505,6 +498,13 @@ the steps outlined here: http://bit.ly/koJoso
 
 Calculating test coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To calculate test coverage you must first install the ``coverage`` module.
+
+Installing the ``coverage`` module:
+::
+
+    $ pip install -U coverage
 
 Code coverage in HTML:
 ::
@@ -606,21 +606,32 @@ it should be located in ``docs/reference/``.
 
 For example if reference is missing for the module ``celery.worker.awesome``
 and this module is considered part of the public API, use the following steps:
+
+
+Use an existing file as a template:
 ::
 
     $ cd docs/reference/
     $ cp celery.schedules.rst celery.worker.awesome.rst
+
+Edit the file using your favorite editor:
 ::
 
     $ vim celery.worker.awesome.rst
 
         # change every occurance of ``celery.schedules`` to
         # ``celery.worker.awesome``
+
+
+Edit the index using your favorite editor:
 ::
 
     $ vim index.rst
 
         # Add ``celery.worker.awesome`` to the index.
+
+
+Commit your changes:
 ::
 
     # Add the file to git
@@ -650,8 +661,7 @@ is following the conventions.
   style.
 
     Do this:
-
-    .. code-block:: python
+    ::
 
         def method(self, arg):
             """Short description.
@@ -661,16 +671,14 @@ is following the conventions.
             """
 
     or:
-
-    .. code-block:: python
+    ::
 
         def method(self, arg):
             """Short description."""
 
 
     but not this:
-
-    .. code-block:: python
+    ::
 
         def method(self, arg):
             """
@@ -682,8 +690,7 @@ is following the conventions.
 * Lines should not exceed 78 columns.
 
   You can enforce this in ``vim`` by setting the ``textwidth`` option:
-
-  .. code-block:: vim
+  ::
 
         set textwidth=78
 
@@ -709,8 +716,7 @@ is following the conventions.
     Within these sections the imports should be sorted by module name.
 
     Example:
-
-    .. code-block:: python
+    ::
 
         import threading
         import time
@@ -753,7 +759,9 @@ is following the conventions.
 
 * Note that we use "new-style` relative imports when the distribution
   does not support Python versions below 2.5
-::
+
+    This requires Python 2.5 or later:
+    ::
 
         from . import submodule
 
@@ -796,13 +804,12 @@ that require 3rd party libraries must be added.
 
 3) Document the new feature in ``docs/includes/installation.txt``
 
-    You must add your feature to the list in the ``bundles`` section
+    You must add your feature to the list in the `bundles`_ section
     of ``docs/includes/installation.txt``.
 
     After you've made changes to this file you need to render
     the distro ``README`` file:
-
-    .. code-block:: bash
+    ::
 
         $ pip install -U requirements/pkgutils.txt
         $ paver readme
@@ -826,7 +833,7 @@ regarding the official git repositories, PyPI packages
 Read the Docs pages.
 
 If the issue is not an emergency then it is better
-to ``report an issue <reporting-bugs>``.
+to `report an issue`_.
 
 
 Committers
@@ -892,6 +899,16 @@ Messaging library.
 :CI: http://travis-ci.org/#!/celery/kombu
 :PyPI: http://pypi.python.org/pypi/kombu
 :docs: http://kombu.readthedocs.org
+
+amqp
+----
+
+Python AMQP 0.9.1 client.
+
+:git: https://github.com/celery/py-amqp
+:CI: http://travis-ci.org/#!/celery/py-amqp
+:PyPI: http://pypi.python.org/pypi/amqp
+:docs: http://amqp.readthedocs.org
 
 billiard
 --------
@@ -977,7 +994,7 @@ Deprecated
 
 Old name for ``librabbitmq``.
 
-``None``
+:git: ``None``
 :PyPI: http://pypi.python.org/pypi/pylibrabbitmq
 
 .. _release-procedure:
@@ -1035,4 +1052,14 @@ following:
     for series 2.4.
 
 * Also add the previous version under the "versions" tab.
+
+.. _`mailing-list`: http://groups.google.com/groups/celery-users
+
+.. _`irc-channel`: http://docs.celeryproject.org/en/latest/getting-started/resources.html#irc
+
+.. _`internals-guide`: http://docs.celeryproject.org/en/latest/internals/guide.html
+
+.. _`bundles`: http://docs.celeryproject.org/en/latest/getting-started/introduction.html#bundles
+
+.. _`report an issue`: http://docs.celeryproject.org/en/latest/contributing.html#reporting-bugs
 
