@@ -177,7 +177,9 @@ class BaseBackend(object):
                      content_encoding=self.content_encoding,
                      accept=self.accept)
 
-    def wait_for(self, task_id, timeout=None, propagate=True, interval=0.5):
+    def wait_for(self, task_id,
+                 timeout=None, propagate=True, interval=0.5, no_ack=True,
+                 on_interval=None):
         """Wait for task and return its result.
 
         If the task raises an exception, this exception
@@ -200,6 +202,8 @@ class BaseBackend(object):
                 if propagate:
                     raise result
                 return result
+            if on_interval:
+                on_interval()
             # avoid hammering the CPU checking status.
             time.sleep(interval)
             time_elapsed += interval
@@ -430,7 +434,7 @@ class KeyValueStoreBackend(BaseBackend):
                         for i, value in enumerate(values)
                         if value is not None)
 
-    def get_many(self, task_ids, timeout=None, interval=0.5,
+    def get_many(self, task_ids, timeout=None, interval=0.5, no_ack=True,
                  READY_STATES=states.READY_STATES):
         interval = 0.5 if interval is None else interval
         ids = task_ids if isinstance(task_ids, set) else set(task_ids)

@@ -118,7 +118,8 @@ class AsyncResult(ResultBase):
                                 terminate=terminate, signal=signal,
                                 reply=wait, timeout=timeout)
 
-    def get(self, timeout=None, propagate=True, interval=0.5):
+    def get(self, timeout=None, propagate=True, interval=0.5, no_ack=True,
+            follow_parents=True):
         """Wait until task is ready, and return its result.
 
         .. warning::
@@ -133,6 +134,10 @@ class AsyncResult(ResultBase):
            retrieve the result.  Note that this does not have any effect
            when using the amqp result store backend, as it does not
            use polling.
+        :keyword no_ack: Enable amqp no ack (automatically acknowledge
+            message).  If this is :const:`False` then the message will
+            **not be acked**.
+        :keyword follow_parents: Reraise any exception raised by parent task.
 
         :raises celery.exceptions.TimeoutError: if `timeout` is not
             :const:`None` and the result does not arrive within `timeout`
@@ -143,14 +148,23 @@ class AsyncResult(ResultBase):
 
         """
         assert_will_not_block()
-        if propagate and self.parent:
-            for node in reversed(list(self._parents())):
-                node.get(propagate=True, timeout=timeout, interval=interval)
+        on_interval = None
+        if follow_parents and propagate and self.parent:
+            on_interval = self._maybe_reraise_parent_error
+            on_interval()
 
-        return self.backend.wait_for(self.id, timeout=timeout,
-                                     propagate=propagate,
-                                     interval=interval)
+        return self.backend.wait_for(
+            self.id, timeout=timeout,
+            propagate=propagate,
+            interval=interval,
+            on_interval=on_interval,
+            no_ack=no_ack,
+        )
     wait = get  # deprecated alias to :meth:`get`.
+
+    def _maybe_reraise_parent_error(self):
+        for node in reversed(list(self._parents())):
+            node.maybe_reraise()
 
     def _parents(self):
         node = self.parent
@@ -237,6 +251,10 @@ class AsyncResult(ResultBase):
     def failed(self):
         """Returns :const:`True` if the task failed."""
         return self.state == states.FAILURE
+
+    def maybe_reraise(self):
+        if self.state in states.PROPAGATE_STATES:
+            raise self.result
 
     def build_graph(self, intermediate=False, formatter=None):
         graph = DependencyGraph(
@@ -426,6 +444,10 @@ class ResultSet(ResultBase):
         """
         return any(result.failed() for result in self.results)
 
+    def maybe_reraise(self):
+        for result in self.results:
+            result.maybe_reraise()
+
     def waiting(self):
         """Are any of the tasks incomplete?
 
@@ -506,7 +528,8 @@ class ResultSet(ResultBase):
             if timeout and elapsed >= timeout:
                 raise TimeoutError('The operation timed out')
 
-    def get(self, timeout=None, propagate=True, interval=0.5, callback=None):
+    def get(self, timeout=None, propagate=True, interval=0.5,
+            callback=None, no_ack=True):
         """See :meth:`join`
 
         This is here for API compatibility with :class:`AsyncResult`,
@@ -516,9 +539,10 @@ class ResultSet(ResultBase):
         """
         return (self.join_native if self.supports_native_join else self.join)(
             timeout=timeout, propagate=propagate,
-            interval=interval, callback=callback)
+            interval=interval, callback=callback, no_ack=no_ack)
 
-    def join(self, timeout=None, propagate=True, interval=0.5, callback=None):
+    def join(self, timeout=None, propagate=True, interval=0.5,
+             callback=None, no_ack=True):
         """Gathers the results of all tasks as a list in order.
 
         .. note::
@@ -557,6 +581,10 @@ class ResultSet(ResultBase):
                            ``result = app.AsyncResult(task_id)`` (both will
                            take advantage of the backend cache anyway).
 
+        :keyword no_ack: Automatic message acknowledgement (Note that if this
+            is set to :const:`False` then the messages *will not be
+            acknowledged*).
+
         :raises celery.exceptions.TimeoutError: if ``timeout`` is not
             :const:`None` and the operation takes longer than ``timeout``
             seconds.
@@ -573,16 +601,17 @@ class ResultSet(ResultBase):
                 remaining = timeout - (monotonic() - time_start)
                 if remaining <= 0.0:
                     raise TimeoutError('join operation timed out')
-            value = result.get(timeout=remaining,
-                               propagate=propagate,
-                               interval=interval)
+            value = result.get(
+                timeout=remaining, propagate=propagate,
+                interval=interval, no_ack=no_ack,
+            )
             if callback:
                 callback(result.id, value)
             else:
                 results.append(value)
         return results
 
-    def iter_native(self, timeout=None, interval=0.5):
+    def iter_native(self, timeout=None, interval=0.5, no_ack=True):
         """Backend optimized version of :meth:`iterate`.
 
         .. versionadded:: 2.2
@@ -598,11 +627,12 @@ class ResultSet(ResultBase):
         if not results:
             return iter([])
         return results[0].backend.get_many(
-            set(r.id for r in results), timeout=timeout, interval=interval,
+            set(r.id for r in results),
+            timeout=timeout, interval=interval, no_ack=no_ack,
         )
 
     def join_native(self, timeout=None, propagate=True,
-                    interval=0.5, callback=None):
+                    interval=0.5, callback=None, no_ack=True):
         """Backend optimized version of :meth:`join`.
 
         .. versionadded:: 2.2
@@ -619,7 +649,7 @@ class ResultSet(ResultBase):
             (result.id, i) for i, result in enumerate(self.results)
         )
         acc = None if callback else [None for _ in range(len(self))]
-        for task_id, meta in self.iter_native(timeout, interval):
+        for task_id, meta in self.iter_native(timeout, interval, no_ack):
             value = meta['result']
             if propagate and meta['status'] in states.PROPAGATE_STATES:
                 raise value
