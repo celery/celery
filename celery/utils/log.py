@@ -282,4 +282,10 @@ def get_multiprocessing_logger():
 def reset_multiprocessing_logger():
     if mputil and hasattr(mputil, '_logger'):
         mputil._logger = None
+
+
+def current_process_index(base=1):
+    if current_process:
+        index = getattr(current_process(), 'index', None)
+        return index + base if index is not None else index
 ensure_process_aware_logger()

@@ -181,7 +181,7 @@ class Worker(WorkController):
             colorize = not self.no_color
         return self.app.log.setup(
             self.loglevel, self.logfile,
-            redirect_stdouts=False, colorize=colorize,
+            redirect_stdouts=False, colorize=colorize, hostname=self.hostname,
         )
 
     def purge_messages(self):

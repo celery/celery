@@ -11,8 +11,11 @@ from celery import Celery
 from celery import signals
 from celery.bin.base import Option
 from celery.exceptions import SoftTimeLimitExceeded
+from celery.utils.log import get_task_logger
 
 from .templates import use_template, template_names
+
+logger = get_task_logger(__name__)
 
 
 class App(Celery):
@@ -130,8 +133,8 @@ def raising(exc=KeyError()):
 
 
 @app.task
-def logs(msg):
-    print(msg)
+def logs(msg, p=False):
+    print(msg) if p else logger.info(msg)
 
 
 def marker(s, sep='-'):

@@ -10,12 +10,14 @@ from __future__ import absolute_import, print_function
 
 import numbers
 import os
+import re
 import socket
 import sys
 import traceback
 import warnings
 import datetime
 
+from collections import Callable
 from functools import partial, wraps
 from inspect import getargspec
 from pprint import pprint
@@ -60,6 +62,7 @@ WORKER_DIRECT_QUEUE_FORMAT = '{hostname}.dq'
 NODENAME_SEP = '@'
 
 NODENAME_DEFAULT = 'celery'
+RE_FORMAT = re.compile(r'%(\w)')
 
 
 def worker_direct(hostname):
@@ -343,6 +346,43 @@ def nodesplit(nodename):
 def default_nodename(hostname):
     name, host = nodesplit(hostname or '')
     return nodename(name or NODENAME_DEFAULT, host or socket.gethostname())
+
+
+def node_format(s, nodename, **extra):
+    name, host = nodesplit(nodename)
+    return host_format(
+        s, host, n=name or NODENAME_DEFAULT, **extra)
+
+
+def _fmt_process_index(prefix='', default='0'):
+    from .log import current_process_index
+    index = current_process_index()
+    return '{0}{1}'.format(prefix, index) if index else default
+_fmt_process_index_with_prefix = partial(_fmt_process_index, '-', '')
+
+
+def host_format(s, host=None, **extra):
+    host = host or socket.gethostname()
+    name, _, domain = host.partition('.')
+    keys = dict({
+        'h': host, 'n': name, 'd': domain,
+        'i': _fmt_process_index, 'I': _fmt_process_index_with_prefix,
+    }, **extra)
+    return simple_format(s, keys)
+
+
+def simple_format(s, keys, pattern=RE_FORMAT, expand=r'\1'):
+    if s:
+        keys.setdefault('%', '%')
+
+        def resolve(match):
+            resolver = keys[match.expand(expand)]
+            if isinstance(resolver, Callable):
+                return resolver()
+            return resolver
+
+        return pattern.sub(resolve, s)
+    return s
 
 
 # ------------------------------------------------------------------------ #

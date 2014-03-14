@@ -24,7 +24,7 @@ from kombu.utils.encoding import set_default_encoding_file
 from celery import signals
 from celery._state import get_current_task
 from celery.five import class_property, string_t
-from celery.utils import isatty
+from celery.utils import isatty, node_format
 from celery.utils.log import (
     get_logger, mlevel,
     ColorFormatter, ensure_process_aware_logger,
@@ -65,9 +65,9 @@ class Logging(object):
         self.colorize = self.app.conf.CELERYD_LOG_COLOR
 
     def setup(self, loglevel=None, logfile=None, redirect_stdouts=False,
-              redirect_level='WARNING', colorize=None):
+              redirect_level='WARNING', colorize=None, hostname=None):
         handled = self.setup_logging_subsystem(
-            loglevel, logfile, colorize=colorize,
+            loglevel, logfile, colorize=colorize, hostname=hostname,
         )
         if not handled:
             if redirect_stdouts:
@@ -87,10 +87,12 @@ class Logging(object):
             CELERY_LOG_REDIRECT_LEVEL=str(loglevel or ''),
         )
 
-    def setup_logging_subsystem(self, loglevel=None, logfile=None,
-                                format=None, colorize=None, **kwargs):
+    def setup_logging_subsystem(self, loglevel=None, logfile=None, format=None,
+                                colorize=None, hostname=None, **kwargs):
         if self.already_setup:
             return
+        if logfile and hostname:
+            logfile = node_format(logfile, hostname)
         self.already_setup = True
         loglevel = mlevel(loglevel or self.loglevel)
         format = format or self.format
@@ -107,6 +109,9 @@ class Logging(object):
 
             if self.app.conf.CELERYD_HIJACK_ROOT_LOGGER:
                 root.handlers = []
+                get_logger('celery').handlers = []
+                get_logger('celery.task').handlers = []
+                get_logger('celery.redirected').handlers = []
 
             # Configure root logger
             self._configure_logger(
@@ -228,8 +233,8 @@ class Logging(object):
         return WatchedFileHandler(logfile)
 
     def _has_handler(self, logger):
-        return (logger.handlers and
-                not isinstance(logger.handlers[0], NullHandler))
+        if logger.handlers:
+            return any(not isinstance(h, NullHandler) for h in logger.handlers)
 
     def _is_configured(self, logger):
         return self._has_handler(logger) and not getattr(
