@@ -382,6 +382,10 @@ and creating Celery applications.
         Finalizes the app by loading built-in tasks,
         and evaluating pending task decorators
 
+    .. method:: Celery.on_configure()
+
+        Optional callback for when the first time the configured is required.
+
     .. attribute:: Celery.Pickler
 
         Helper class used to pickle this application.
