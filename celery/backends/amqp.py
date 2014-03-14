@@ -226,7 +226,8 @@ class AMQPBackend(BaseBackend):
                                no_ack=no_ack, accept=self.accept) as consumer:
                 while 1:
                     try:
-                        return wait(conn, consumer, timeout, on_interval)[task_id]
+                        return wait(
+                            conn, consumer, timeout, on_interval)[task_id]
                     except KeyError:
                         continue
 
