@@ -365,7 +365,6 @@ class PersistentScheduler(Scheduler):
         try:
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
-            entries = self._store.setdefault('entries', {})
         except Exception as exc:
             error('Removing corrupted schedule file %r: %r',
                   self.schedule_filename, exc, exc_info=True)
@@ -373,15 +372,21 @@ class PersistentScheduler(Scheduler):
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
         else:
-            if '__version__' not in self._store:
-                warning('Reset: Account for new __version__ field')
-                self._store.clear()   # remove schedule at 2.2.2 upgrade.
-            if 'tz' not in self._store:
-                warning('Reset: Account for new tz field')
-                self._store.clear()   # remove schedule at 3.0.8 upgrade
-            if 'utc_enabled' not in self._store:
-                warning('Reset: Account for new utc_enabled field')
-                self._store.clear()   # remove schedule at 3.0.9 upgrade
+            try:
+                self._store['entries']
+            except KeyError:
+                # new schedule db
+                self._store['entries'] = {}
+            else:
+                if '__version__' not in self._store:
+                    warning('DB Reset: Account for new __version__ field')
+                    self._store.clear()   # remove schedule at 2.2.2 upgrade.
+                elif 'tz' not in self._store:
+                    warning('DB Reset: Account for new tz field')
+                    self._store.clear()   # remove schedule at 3.0.8 upgrade
+                elif 'utc_enabled' not in self._store:
+                    warning('DB Reset: Account for new utc_enabled field')
+                    self._store.clear()   # remove schedule at 3.0.9 upgrade
 
         tz = self.app.conf.CELERY_TIMEZONE
         stored_tz = self._store.get('tz')
