@@ -169,15 +169,18 @@ class AMQPBackend(BaseBackend):
 
             prev = latest = acc = None
             for i in range(backlog_limit):  # spool ffwd
-                prev, latest, acc = latest, acc, binding.get(
+                acc = binding.get(
                     accept=self.accept, no_ack=False,
                 )
                 if not acc:  # no more messages
                     break
+                if acc.payload['task_id'] == task_id:
+                    prev, latest = latest, acc
                 if prev:
                     # backends are not expected to keep history,
                     # so we delete everything except the most recent state.
                     prev.ack()
+                    prev = None
             else:
                 raise self.BacklogLimitExceeded(task_id)
 

@@ -183,29 +183,30 @@ class test_AMQPBackend(AppCase):
     def test_backlog_limit_exceeded(self):
         with self._result_context() as (results, backend, Message):
             for i in range(1001):
-                results.put(Message(status=states.RECEIVED))
+                results.put(Message(task_id='id', status=states.RECEIVED))
             with self.assertRaises(backend.BacklogLimitExceeded):
                 backend.get_task_meta('id')
 
     def test_poll_result(self):
         with self._result_context() as (results, backend, Message):
+            tid = uuid()
             # FFWD's to the latest state.
             state_messages = [
-                Message(status=states.RECEIVED, seq=1),
-                Message(status=states.STARTED, seq=2),
-                Message(status=states.FAILURE, seq=3),
+                Message(task_id=tid, status=states.RECEIVED, seq=1),
+                Message(task_id=tid, status=states.STARTED, seq=2),
+                Message(task_id=tid, status=states.FAILURE, seq=3),
             ]
             for state_message in state_messages:
                 results.put(state_message)
-            r1 = backend.get_task_meta(uuid())
+            r1 = backend.get_task_meta(tid)
             self.assertDictContainsSubset(
                 {'status': states.FAILURE, 'seq': 3}, r1,
                 'FFWDs to the last state',
             )
 
             # Caches last known state.
-            results.put(Message())
             tid = uuid()
+            results.put(Message(task_id=tid))
             backend.get_task_meta(tid)
             self.assertIn(tid, backend._cache, 'Caches last known state')
 

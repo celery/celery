@@ -87,6 +87,7 @@ class AsyncResult(ResultBase):
         self.backend = backend or self.app.backend
         self.task_name = task_name
         self.parent = parent
+        self._cache = None
 
     def as_tuple(self):
         parent = self.parent
@@ -153,13 +154,21 @@ class AsyncResult(ResultBase):
             on_interval = self._maybe_reraise_parent_error
             on_interval()
 
-        return self.backend.wait_for(
-            self.id, timeout=timeout,
-            propagate=propagate,
-            interval=interval,
-            on_interval=on_interval,
-            no_ack=no_ack,
-        )
+        if self._cache:
+            if propagate:
+                self.maybe_reraise()
+            return self.result
+
+        try:
+            return self.backend.wait_for(
+                self.id, timeout=timeout,
+                propagate=propagate,
+                interval=interval,
+                on_interval=on_interval,
+                no_ack=no_ack,
+            )
+        finally:
+            self._get_task_meta()  # update self._cache
     wait = get  # deprecated alias to :meth:`get`.
 
     def _maybe_reraise_parent_error(self):
@@ -298,6 +307,9 @@ class AsyncResult(ResultBase):
     def __reduce_args__(self):
         return self.id, self.backend, self.task_name, None, self.parent
 
+    def __del__(self):
+        self._cache = None
+
     @cached_property
     def graph(self):
         return self.build_graph()
@@ -308,22 +320,42 @@ class AsyncResult(ResultBase):
 
     @property
     def children(self):
-        children = self.backend.get_children(self.id)
+        return self._get_task_meta().get('children')
+
+    def _get_task_meta(self):
+        if self._cache is None:
+            meta = self.backend.get_task_meta(self.id)
+            if meta:
+                state = meta['status']
+                if state == states.SUCCESS or state in states.PROPAGATE_STATES:
+                    self._set_cache(meta)
+                    return self._set_cache(meta)
+            return meta
+        return self._cache
+
+    def _set_cache(self, d):
+        state, children = d['status'], d.get('children')
+        if state in states.EXCEPTION_STATES:
+            d['result'] = self.backend.exception_to_python(d['result'])
         if children:
-            return [result_from_tuple(child, self.app) for child in children]
+            d['children'] = [
+                result_from_tuple(child, self.app) for child in children
+            ]
+        self._cache = d
+        return d
 
     @property
     def result(self):
         """When the task has been executed, this contains the return value.
         If the task raised an exception, this will be the exception
         instance."""
-        return self.backend.get_result(self.id)
+        return self._get_task_meta()['result']
     info = result
 
     @property
     def traceback(self):
         """Get the traceback of a failed task."""
-        return self.backend.get_traceback(self.id)
+        return self._get_task_meta().get('traceback')
 
     @property
     def state(self):
@@ -355,7 +387,7 @@ class AsyncResult(ResultBase):
                 then contains the tasks return value.
 
         """
-        return self.backend.get_status(self.id)
+        return self._get_task_meta()['status']
     status = state
 
     @property
@@ -801,6 +833,10 @@ class EagerResult(AsyncResult):
         self._result = ret_value
         self._state = state
         self._traceback = traceback
+
+    def _get_task_meta(self):
+        return {'task_id': self.id, 'result': self._result, 'status':
+                self._state, 'traceback': self._traceback}
 
     def __reduce__(self):
         return self.__class__, self.__reduce_args__()
