@@ -39,7 +39,7 @@ if the execution was successful::
 
 or if there was an error::
 
-    {'status': 'failure': 'reason': 'Invalid moon alignment.'}
+    {'status': 'failure', 'reason': 'Invalid moon alignment.'}
 
 Enabling the HTTP task
 ----------------------
