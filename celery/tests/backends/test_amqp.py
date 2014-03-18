@@ -33,8 +33,8 @@ class test_AMQPBackend(AppCase):
         return AMQPBackend(self.app, **opts)
 
     def test_mark_as_done(self):
-        tb1 = self.create_backend()
-        tb2 = self.create_backend()
+        tb1 = self.create_backend(max_cached_results=1)
+        tb2 = self.create_backend(max_cached_results=1)
 
         tid = uuid()
 
@@ -175,7 +175,7 @@ class test_AMQPBackend(AppCase):
         class MockBackend(AMQPBackend):
             Queue = MockBinding
 
-        backend = MockBackend(self.app)
+        backend = MockBackend(self.app, max_cached_results=100)
         backend._republish = Mock()
 
         yield results, backend, Message
@@ -262,7 +262,7 @@ class test_AMQPBackend(AppCase):
                 b.drain_events(Connection(), consumer, timeout=0.1)
 
     def test_get_many(self):
-        b = self.create_backend()
+        b = self.create_backend(max_cached_results=10)
 
         tids = []
         for i in range(10):

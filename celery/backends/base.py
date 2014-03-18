@@ -52,6 +52,12 @@ def unpickle_backend(cls, args, kwargs):
     return cls(*args, app=current_app._get_current_object(), **kwargs)
 
 
+class _nulldict(dict):
+
+    def __setitem__(self, k, v):
+        pass
+
+
 class BaseBackend(object):
     READY_STATES = states.READY_STATES
     UNREADY_STATES = states.UNREADY_STATES
@@ -90,9 +96,8 @@ class BaseBackend(object):
         (self.content_type,
          self.content_encoding,
          self.encoder) = serializer_registry._encoders[self.serializer]
-        self._cache = LRUCache(
-            limit=max_cached_results or conf.CELERY_MAX_CACHED_RESULTS,
-        )
+        cmax = max_cached_results or conf.CELERY_MAX_CACHED_RESULTS
+        self._cache = _nulldict() if cmax == -1 else LRUCache(limit=cmax)
         self.accept = prepare_accept_content(
             conf.CELERY_ACCEPT_CONTENT if accept is None else accept,
         )

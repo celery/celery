@@ -234,9 +234,10 @@ class test_BaseBackend_dict(AppCase):
         self.assertIsInstance(self.b.prepare_value(g), self.app.GroupResult)
 
     def test_is_cached(self):
-        self.b._cache['foo'] = 1
-        self.assertTrue(self.b.is_cached('foo'))
-        self.assertFalse(self.b.is_cached('false'))
+        b = BaseBackend(app=self.app, max_cached_results=1)
+        b._cache['foo'] = 1
+        self.assertTrue(b.is_cached('foo'))
+        self.assertFalse(b.is_cached('false'))
 
 
 class test_KeyValueStoreBackend(AppCase):
