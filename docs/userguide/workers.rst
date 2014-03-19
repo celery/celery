@@ -134,6 +134,62 @@ The worker's main process overrides the following signals:
 | :sig:`USR2`  | Remote debug, see :mod:`celery.contrib.rdb`.    |
 +--------------+-------------------------------------------------+
 
+.. _worker-files:
+
+Variables in file paths
+=======================
+
+The file path arguments for :option:`--logfile`, :option:`--pidfile` and :option:`--statedb`
+can contain variables that the worker will expand:
+
+Node name replacements
+----------------------
+
+- ``%h``:  Hostname including domain name.
+- ``%n``:  Hostname only.
+- ``%d``:  Domain name only.
+- ``%i``:  Prefork pool process index or 0 if MainProcess.
+- ``%I``:  Prefork pool process index with separator.
+
+E.g. if the current hostname is ``george.example.com`` then
+these will expand to:
+
+- ``--logfile=%h.log`` -> :file:`george.example.com.log`
+- ``--logfile=%n.log`` -> :file:`george.log`
+- ``--logfile=%d`` -> :file:`example.com.log`
+
+.. _worker-files-process-index:
+
+Prefork pool process index
+--------------------------
+
+The prefork pool process index specifiers will expand into a different
+filename depending on the process that will eventually need to open the file.
+
+This can be used to specify one log file per child process.
+
+Note that the numbers will stay within the process limit even if processes
+exit or if autoscale/maxtasksperchild/time limits are used.  I.e. the number
+is the *process index* not the process count or pid.
+
+* ``%i`` - Pool process index or 0 if MainProcess.
+
+    Where ``-n worker1@example.com -c2 -f %n-%i.log`` will result in
+    three log files:
+
+        - :file:`worker1-0.log` (main process)
+        - :file:`worker1-1.log` (pool process 1)
+        - :file:`worker1-2.log` (pool process 2)
+
+* ``%I`` - Pool process index with separator.
+
+    Where ``-n worker1@example.com -c2 -f %n%I.log`` will result in
+    three log files:
+
+        - :file:`worker1.log` (main process)
+        - :file:`worker1-1.log`` (pool process 1)
+        - :file:`worker1-2.log`` (pool process 2)
+
 .. _worker-concurrency:
 
 Concurrency
@@ -333,6 +389,8 @@ name:
 
     celery multi start 2 -l info --statedb=/var/run/celery/%n.state
 
+
+See also :ref:`worker-files`
 
 Note that remote control commands must be working for revokes to work.
 Remote control commands are only supported by the RabbitMQ (amqp) and Redis

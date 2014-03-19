@@ -67,6 +67,8 @@ For a complete list of options supported by the Redis result backend, see
 Caveats
 =======
 
+.. _redis-caveat-fanout-prefix:
+
 - Broadcast messages will be seen by all virtual hosts by default.
 
     You have to set a transport option to prefix the messages so that
@@ -79,6 +81,8 @@ Caveats
 
     This setting will be the default in the future, so better to migrate
     sooner rather than later.
+
+.. _redis-caveat-fanout-patterns:
 
 - Workers will receive all task related events by default.
 
