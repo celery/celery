@@ -51,12 +51,12 @@ class default(object):
     CELERY_RESULT_SERIALIZER = 'json'
     CELERY_RESULT_PERSISTENT = True
     CELERY_TASK_RESULT_EXPIRES = 300
-    CELERY_MAX_CACHED_RESULTS = 10
     CELERY_QUEUES = [
         Queue(CSTRESS_QUEUE,
               exchange=Exchange(CSTRESS_QUEUE),
               routing_key=CSTRESS_QUEUE),
     ]
+    CELERY_MAX_CACHED_RESULTS = -1
     BROKER_URL = os.environ.get('CSTRESS_BROKER', 'amqp://')
     CELERY_RESULT_BACKEND = os.environ.get('CSTRESS_BACKEND', 'rpc://')
     CELERYD_PREFETCH_MULTIPLIER = int(os.environ.get('CSTRESS_PREFETCH', 10))
