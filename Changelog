@@ -51,6 +51,20 @@ new in Celery 3.1.
     This can be enabled by using the new ``%i`` and ``%I`` format specifiers
     for the log file name.  See :ref:`worker-files-process-index`.
 
+- **Redis**: New experimental chord join implementation.
+
+    This is an optimization for chords when using the Redis result backend,
+    where the join operation is now considerably faster and using less
+    resources than the previous strategy.
+
+    The new option can be set in the result backend URL:
+
+        CELERY_RESULT_BACKEND = 'redis://localhost?new_join=1'
+
+    This must be enabled manually as it's incompatible
+    with workers and clients not using it, so be sure to enable
+    the option in all clients and workers if you decide to use it.
+
 - **Multi**: With ``-opt:index`` (e.g. ``-c:1``) the index now always refers
   to the position of a node in the argument list.
 
