@@ -341,7 +341,7 @@ def eager_trace_task(task, uuid, args, kwargs, request=None, **opts):
 def report_internal_error(task, exc):
     _type, _value, _tb = sys.exc_info()
     try:
-        _value = task.backend.prepare_exception(exc)
+        _value = task.backend.prepare_exception(exc, 'pickle')
         exc_info = ExceptionInfo((_type, _value, _tb), internal=True)
         warn(RuntimeWarning(
             'Exception raised outside body: {0!r}:\n{1}'.format(

@@ -152,9 +152,10 @@ class BaseBackend(object):
                                  status=states.REVOKED, traceback=None,
                                  request=request)
 
-    def prepare_exception(self, exc):
+    def prepare_exception(self, exc, serializer=None):
         """Prepare exception for serialization."""
-        if self.serializer in EXCEPTION_ABLE_CODECS:
+        serializer = self.serializer if serializer is None else serializer
+        if serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
         return {'exc_type': type(exc).__name__, 'exc_message': str(exc)}
 
