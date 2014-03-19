@@ -73,7 +73,10 @@ class redis(default):
     CELERY_RESULT_BACKEND = os.environ.get(
         'CSTRESS_BACKEND', 'redis://?new_join=1',
     )
-    BROKER_TRANSPORT_OPTIONS = {'fanout_prefix': True}
+    BROKER_TRANSPORT_OPTIONS = {
+        'fanout_prefix': True,
+        'fanout_patterns': True,
+    }
 
 
 @template()
