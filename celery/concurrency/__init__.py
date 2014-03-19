@@ -22,6 +22,7 @@ ALIASES = {
     'threads': 'celery.concurrency.threads:TaskPool',
     'solo': 'celery.concurrency.solo:TaskPool',
     'processes': 'celery.concurrency.prefork:TaskPool',  # XXX compat alias
+    'workhorse': 'celery.concurrency.workhorse:TaskPool',
 }
 
 
