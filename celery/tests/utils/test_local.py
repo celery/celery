@@ -170,10 +170,10 @@ class test_Proxy(Case):
         class O(object):
 
             def __complex__(self):
-                return 10.333
+                return complex(10.333)
 
         o = Proxy(O)
-        self.assertEqual(o.__complex__(), 10.333)
+        self.assertEqual(o.__complex__(), complex(10.333))
 
     def test_index(self):
 
