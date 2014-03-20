@@ -13,8 +13,11 @@ from collections import deque
 
 from celery._state import get_current_worker_task
 from celery.utils import uuid
+from celery.utils.log import get_logger
 
 __all__ = ['shared_task', 'load_shared_tasks']
+
+logger = get_logger(__name__)
 
 #: global list of functions defining tasks that should be
 #: added to all apps.
@@ -105,12 +108,15 @@ def add_unlock_chord_task(app):
                     )
                 except StopIteration:
                     reason = repr(exc)
+                logger.error('Chord %r raised: %r', group_id, exc, exc_info=1)
                 app.backend.chord_error_from_stack(callback,
                                                    ChordError(reason))
             else:
                 try:
                     callback.delay(ret)
                 except Exception as exc:
+                    logger.error('Chord %r raised: %r', group_id, exc,
+                                 exc_info=1)
                     app.backend.chord_error_from_stack(
                         callback,
                         exc=ChordError('Callback error: {0!r}'.format(exc)),

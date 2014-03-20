@@ -35,6 +35,7 @@ from celery.result import (
 )
 from celery.utils import timeutils
 from celery.utils.functional import LRUCache
+from celery.utils.log import get_logger
 from celery.utils.serialization import (
     get_pickled_exception,
     get_pickleable_exception,
@@ -45,6 +46,8 @@ __all__ = ['BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend']
 
 EXCEPTION_ABLE_CODECS = frozenset(['pickle', 'yaml'])
 PY3 = sys.version_info >= (3, 0)
+
+logger = get_logger(__name__)
 
 
 def unpickle_backend(cls, args, kwargs):
@@ -527,6 +530,7 @@ class KeyValueStoreBackend(BaseBackend):
             deps = GroupResult.restore(gid, backend=task.backend)
         except Exception as exc:
             callback = maybe_signature(task.request.chord, app=app)
+            logger.error('Chord %r raised: %r', gid, exc, exc_info=1)
             return self.chord_error_from_stack(
                 callback,
                 ChordError('Cannot restore group: {0!r}'.format(exc)),
@@ -536,6 +540,8 @@ class KeyValueStoreBackend(BaseBackend):
                 raise ValueError(gid)
             except ValueError as exc:
                 callback = maybe_signature(task.request.chord, app=app)
+                logger.error('Chord callback %r raised: %r', gid, exc,
+                             exc_info=1)
                 return self.chord_error_from_stack(
                     callback,
                     ChordError('GroupResult {0} no longer exists'.format(gid)),
@@ -556,11 +562,13 @@ class KeyValueStoreBackend(BaseBackend):
                 except StopIteration:
                     reason = repr(exc)
 
+                logger.error('Chord %r raised: %r', gid, reason, exc_info=1)
                 self.chord_error_from_stack(callback, ChordError(reason))
             else:
                 try:
                     callback.delay(ret)
                 except Exception as exc:
+                    logger.error('Chord %r raised: %r', gid, exc, exc_info=1)
                     self.chord_error_from_stack(
                         callback,
                         ChordError('Callback error: {0!r}'.format(exc)),
