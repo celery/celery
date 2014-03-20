@@ -183,7 +183,7 @@ def add_group_task(app):
                     [stask.apply(group_id=group_id) for stask in taskit],
                 )
             with app.producer_or_acquire() as pub:
-                [stask.apply_async(group_id=group_id, publisher=pub,
+                [stask.apply_async(group_id=group_id, producer=pub,
                                    add_to_parent=False) for stask in taskit]
             parent = get_current_worker_task()
             if parent:
@@ -345,36 +345,24 @@ def add_chord_task(app):
             propagate = default_propagate if propagate is None else propagate
             group_id = uuid()
             AsyncResult = app.AsyncResult
-            prepare_member = self._prepare_member
 
             # - convert back to group if serialized
             tasks = header.tasks if isinstance(header, group) else header
             header = group([
                 maybe_signature(s, app=app).clone() for s in tasks
-            ])
+            ], app=self.app)
             # - eager applies the group inline
             if eager:
                 return header.apply(args=partial_args, task_id=group_id)
 
             body.setdefault('chord_size', len(header.tasks))
-            results = [AsyncResult(prepare_member(task, body, group_id))
-                       for task in header.tasks]
+            results = header.freeze(group_id=group_id, chord=body).results
 
             return self.backend.apply_chord(
                 header, partial_args, group_id,
                 body, interval=interval, countdown=countdown,
                 max_retries=max_retries, propagate=propagate, result=results,
             )
-
-        def _prepare_member(self, task, body, group_id):
-            opts = task.options
-            # d.setdefault would work but generating uuid's are expensive
-            try:
-                task_id = opts['task_id']
-            except KeyError:
-                task_id = opts['task_id'] = uuid()
-            opts.update(chord=body, group_id=group_id)
-            return task_id
 
         def apply_async(self, args=(), kwargs={}, task_id=None,
                         group_id=None, chord=None, **options):
