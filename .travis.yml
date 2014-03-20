@@ -1,24 +1,42 @@
 language: python
-python:
-  - 2.6
-  - 2.7
-  - 3.3
-  - pypy
+python: 2.7
+env:
+  global:
+    PYTHONUNBUFFERED=yes
+  matrix:
+    - TOXENV=2.6 
+    - TOXENV=2.7 
+    - TOXENV=3.3 
+    - TOXENV=3.4 
+    - TOXENV=pypy
 before_install:
   - |
-    deactivate
-    if python --version |& grep PyPy; then
+    if [[ $TOX_ENV = pypy ]]; then
+      deactivate
       sudo apt-add-repository --yes ppa:pypy/ppa
       sudo apt-get update
       sudo apt-get install pypy
       source ~/virtualenv/pypy/bin/activate
     fi
+    if [[ $TOX_ENV = 3.4 ]]; then
+      sudo apt-get update
+      sudo apt-get install python3.4-dev
+      source ~/virtualenv/python3.4
+      virtualenv ~/virtualenv/python3.4 --python=$(which python3.4)
+      source ~/virtualenv/python3.4/bin/activate
+    fi
     python --version
     uname -a
     lsb_release -a
-    sudo pip install tox
-script: tox -v -e $TRAVIS_PYTHON_VERSION -- -v
+install:
+  - pip install tox
+script:
+  - tox -v -- -v
 after_success:
   - .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
 notifications:
-  irc: "chat.freenode.net#celery"
+  irc:
+    channels:
+      - "chat.freenode.net#celery"
+    on_success: always
+    on_failure: always
