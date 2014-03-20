@@ -11,14 +11,14 @@ env:
     - TOXENV=pypy
 before_install:
   - |
-    if [[ $TOX_ENV = pypy ]]; then
+    if [[ $TOXENV = pypy ]]; then
       deactivate
       sudo apt-add-repository --yes ppa:pypy/ppa
       sudo apt-get update
       sudo apt-get install pypy
       source ~/virtualenv/pypy/bin/activate
     fi
-    if [[ $TOX_ENV = 3.4 ]]; then
+    if [[ $TOXENV = 3.4 ]]; then
       sudo apt-get update
       sudo apt-get install python3.4-dev
       source ~/virtualenv/python3.4
