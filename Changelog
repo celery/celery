@@ -102,6 +102,11 @@ new in Celery 3.1.
 - **Task**: ``Task.apply`` now properly sets ``request.headers``
   (Issue #1874).
 
+- **Worker**: Fixed ``UnicodeEncodeError`` occuring when worker is started
+  by `supervisord`.
+
+    Fix contributed by Codeb Fan.
+
 - **Beat**: No longer attempts to upgrade a newly created database file
   (Issue #1923).
 
