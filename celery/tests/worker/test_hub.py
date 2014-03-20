@@ -83,7 +83,7 @@ class test_LaxBoundedSemaphore(Case):
         x.grow(2)
         cb2.assert_called_with(2)
         cb3.assert_called_with(3)
-        self.assertEqual(x.value, 3)
+        self.assertEqual(x.value, 2)
         self.assertEqual(x.initial_value, 3)
 
         self.assertFalse(x._waiting)
