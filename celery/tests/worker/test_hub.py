@@ -54,7 +54,7 @@ class test_LaxBoundedSemaphore(Case):
         self.assertFalse(c3.called)
 
         x.release()
-        self.assertEqual(x.value, 1)
+        self.assertEqual(x.value, 0)
         c3.assert_called_with(3)
 
     def test_bounded(self):
