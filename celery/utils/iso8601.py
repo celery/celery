@@ -69,10 +69,9 @@ def parse_iso8601(datestring):
             hours = -hours
             minutes = -minutes
         tz = FixedOffset(minutes + hours * 60)
-    frac = groups['fraction']
-    groups['fraction'] = int(float('0.%s' % frac) * 1e6) if frac else 0
+    frac = groups['fraction'] or 0
     return datetime(
         int(groups['year']), int(groups['month']), int(groups['day']),
         int(groups['hour']), int(groups['minute']), int(groups['second']),
-        int(groups['fraction']), tz
+        int(frac), tz
     )
