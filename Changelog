@@ -19,6 +19,12 @@ new in Celery 3.1.
 
     - Now depends on :ref:`Kombu 3.0.14 <kombu:version-3.0.14>`.
 
+- **Results**:
+
+    Reliability improvements to the SQLAlchemy database backend. Previously the
+    connection from the MainProcess was improperly shared with the workers.
+    (Issue #1786)
+
 - **Redis:** Important note about events (Issue #1882).
 
     There is a new transport option for Redis that enables monitors
