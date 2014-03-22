@@ -644,7 +644,7 @@ class test_App(AppCase):
 
 class test_defaults(AppCase):
 
-    def test_str_to_bool(self):
+    def test_strtobool(self):
         for s in ('false', 'no', '0'):
             self.assertFalse(defaults.strtobool(s))
         for s in ('true', 'yes', '1'):

@@ -439,6 +439,7 @@ class test_Gossip(AppCase):
         c.app.events.State.assert_called_with(
             on_node_join=g.on_node_join,
             on_node_leave=g.on_node_leave,
+            max_tasks_in_memory=1,
         )
         g.update_state = Mock()
         worker = Mock()

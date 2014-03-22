@@ -35,7 +35,7 @@ from kombu.utils import cached_property, kwdict
 from celery import states
 from celery.five import class_property, items, values
 from celery.utils import deprecated
-from celery.utils.functional import LRUCache
+from celery.utils.functional import LRUCache, memoize
 from celery.utils.log import get_logger
 
 PYPY = hasattr(sys, 'pypy_version_info')
@@ -64,6 +64,14 @@ R_WORKER = '<Worker: {0.hostname} ({0.status_string} clock:{0.clock})'
 R_TASK = '<Task: {0.name}({0.uuid}) {0.state} clock:{0.clock}>'
 
 __all__ = ['Worker', 'Task', 'State', 'heartbeat_expires']
+
+
+@memoize(maxsize=1000, keyfun=lambda a, _: a[0])
+def _warn_drift(hostname, drift, local_received, timestamp):
+    # we use memoize here so the warning is only logged once per hostname
+    warn(DRIFT_WARNING, hostname, drift,
+         datetime.fromtimestamp(local_received),
+         datetime.fromtimestamp(timestamp))
 
 
 def heartbeat_expires(timestamp, freq=60,
@@ -158,9 +166,8 @@ class Worker(object):
                     return
                 drift = abs(int(local_received) - int(timestamp))
                 if drift > HEARTBEAT_DRIFT_MAX:
-                    warn(DRIFT_WARNING, self.hostname, drift,
-                         datetime.fromtimestamp(local_received),
-                         datetime.fromtimestamp(timestamp))
+                    _warn_drift(self.hostname, drift,
+                                local_received, timestamp)
                 if local_received:
                     hearts = len(heartbeats)
                     if hearts > hbmax - 1:

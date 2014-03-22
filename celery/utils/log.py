@@ -9,6 +9,7 @@
 from __future__ import absolute_import, print_function
 
 import logging
+import numbers
 import os
 import sys
 import threading
@@ -110,7 +111,7 @@ def get_task_logger(name):
 
 
 def mlevel(level):
-    if level and not isinstance(level, int):
+    if level and not isinstance(level, numbers.Integral):
         return LOG_LEVELS[level.upper()]
     return level
 
@@ -281,4 +282,10 @@ def get_multiprocessing_logger():
 def reset_multiprocessing_logger():
     if mputil and hasattr(mputil, '_logger'):
         mputil._logger = None
+
+
+def current_process_index(base=1):
+    if current_process:
+        index = getattr(current_process(), 'index', None)
+        return index + base if index is not None else index
 ensure_process_aware_logger()

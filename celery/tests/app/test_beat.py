@@ -162,7 +162,7 @@ class test_Scheduler(AppCase):
         scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app))
         self.assertTrue(foo.apply_async.called)
 
-    def test_apply_async_should_not_sync(self):
+    def test_should_sync(self):
 
         @self.app.task(shared=False)
         def not_sync():
@@ -180,6 +180,41 @@ class test_Scheduler(AppCase):
         s.should_sync.return_value = False
         s.apply_async(s.Entry(task=not_sync.name, app=self.app))
         self.assertFalse(s._do_sync.called)
+
+    def test_should_sync_increments_sync_every_counter(self):
+        self.app.conf.CELERYBEAT_SYNC_EVERY = 2
+
+        @self.app.task(shared=False)
+        def not_sync():
+            pass
+        not_sync.apply_async = Mock()
+
+        s = mScheduler(app=self.app)
+        self.assertEqual(s.sync_every_tasks, 2)
+        s._do_sync = Mock()
+
+        s.apply_async(s.Entry(task=not_sync.name, app=self.app))
+        self.assertEqual(s._tasks_since_sync, 1)
+        s.apply_async(s.Entry(task=not_sync.name, app=self.app))
+        s._do_sync.assert_called_with()
+
+        self.app.conf.CELERYBEAT_SYNC_EVERY = 0
+
+    def test_sync_task_counter_resets_on_do_sync(self):
+        self.app.conf.CELERYBEAT_SYNC_EVERY = 1
+
+        @self.app.task(shared=False)
+        def not_sync():
+            pass
+        not_sync.apply_async = Mock()
+
+        s = mScheduler(app=self.app)
+        self.assertEqual(s.sync_every_tasks, 1)
+
+        s.apply_async(s.Entry(task=not_sync.name, app=self.app))
+        self.assertEqual(s._tasks_since_sync, 0)
+
+        self.app.conf.CELERYBEAT_SYNC_EVERY = 0
 
     @patch('celery.app.base.Celery.send_task')
     def test_send_task(self, send_task):

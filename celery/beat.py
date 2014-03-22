@@ -161,17 +161,24 @@ class Scheduler(object):
     #: How often to sync the schedule (3 minutes by default)
     sync_every = 3 * 60
 
+    #: How many tasks can be called before a sync is forced.
+    sync_every_tasks = None
+
     _last_sync = None
+    _tasks_since_sync = 0
 
     logger = logger  # compat
 
     def __init__(self, app, schedule=None, max_interval=None,
-                 Publisher=None, lazy=False, **kwargs):
+                 Publisher=None, lazy=False, sync_every_tasks=None, **kwargs):
         self.app = app
         self.data = maybe_evaluate({} if schedule is None else schedule)
         self.max_interval = (max_interval
                              or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
                              or self.max_interval)
+        self.sync_every_tasks = (
+            app.conf.CELERYBEAT_SYNC_EVERY if sync_every_tasks is None
+            else sync_every_tasks)
         self.Publisher = Publisher or app.amqp.TaskProducer
         if not lazy:
             self.setup_schedule()
@@ -219,8 +226,12 @@ class Scheduler(object):
         return min(remaining_times + [self.max_interval])
 
     def should_sync(self):
-        return (not self._last_sync or
-                (monotonic() - self._last_sync) > self.sync_every)
+        return (
+            (not self._last_sync or
+               (monotonic() - self._last_sync) > self.sync_every) or
+            (self.sync_every_tasks and
+                self._tasks_since_sync >= self.sync_every_tasks)
+        )
 
     def reserve(self, entry):
         new_entry = self.schedule[entry.name] = next(entry)
@@ -247,6 +258,7 @@ class Scheduler(object):
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
                     entry, exc=exc)), sys.exc_info()[2])
         finally:
+            self._tasks_since_sync += 1
             if self.should_sync():
                 self._do_sync()
         return result
@@ -263,6 +275,7 @@ class Scheduler(object):
             self.sync()
         finally:
             self._last_sync = monotonic()
+            self._tasks_since_sync = 0
 
     def sync(self):
         pass
@@ -352,7 +365,6 @@ class PersistentScheduler(Scheduler):
         try:
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
-            entries = self._store.setdefault('entries', {})
         except Exception as exc:
             error('Removing corrupted schedule file %r: %r',
                   self.schedule_filename, exc, exc_info=True)
@@ -360,15 +372,21 @@ class PersistentScheduler(Scheduler):
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
         else:
-            if '__version__' not in self._store:
-                warning('Reset: Account for new __version__ field')
-                self._store.clear()   # remove schedule at 2.2.2 upgrade.
-            if 'tz' not in self._store:
-                warning('Reset: Account for new tz field')
-                self._store.clear()   # remove schedule at 3.0.8 upgrade
-            if 'utc_enabled' not in self._store:
-                warning('Reset: Account for new utc_enabled field')
-                self._store.clear()   # remove schedule at 3.0.9 upgrade
+            try:
+                self._store['entries']
+            except KeyError:
+                # new schedule db
+                self._store['entries'] = {}
+            else:
+                if '__version__' not in self._store:
+                    warning('DB Reset: Account for new __version__ field')
+                    self._store.clear()   # remove schedule at 2.2.2 upgrade.
+                elif 'tz' not in self._store:
+                    warning('DB Reset: Account for new tz field')
+                    self._store.clear()   # remove schedule at 3.0.8 upgrade
+                elif 'utc_enabled' not in self._store:
+                    warning('DB Reset: Account for new utc_enabled field')
+                    self._store.clear()   # remove schedule at 3.0.9 upgrade
 
         tz = self.app.conf.CELERY_TIMEZONE
         stored_tz = self._store.get('tz')

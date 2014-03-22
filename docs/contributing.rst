@@ -207,8 +207,8 @@ spelling or other errors on the website/docs/code.
        get more diagnostic data. Some ideas:
 
        * Enable celery's :ref:`breakpoint signal <breakpoint_signal>` and use it
-         to inspect the process's state. This will allow you to open a :mod:`pdb`
-         session.
+         to inspect the process's state.  This will allow you to open a
+         :mod:`pdb` session.
        * Collect tracing data using strace_(Linux), dtruss (OSX) and ktrace(BSD),
          ltrace_ and lsof_.
 
@@ -412,13 +412,7 @@ to upstream changes:
 .. code-block:: bash
 
     $ cd celery
-
-.. code-block:: bash
-
     $ git remote add upstream git://github.com/celery/celery.git
-
-.. code-block:: bash
-
     $ git fetch upstream
 
 If you need to pull in new changes from upstream you should
@@ -437,8 +431,6 @@ If you need to work on a different branch than ``master`` you can
 fetch and checkout a remote branch like this::
 
     git checkout --track -b 3.0-devel origin/3.0-devel
-
-For a list of branches see :ref:`git-branches`.
 
 .. _`Fork a Repo`: http://help.github.com/fork-a-repo/
 .. _`Rebasing merge commits in git`:
@@ -513,6 +505,14 @@ the steps outlined here: http://bit.ly/koJoso
 
 Calculating test coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To calculate test coverage you must first install the :mod:`coverage` module.
+
+Installing the :mod:`coverage` module:
+
+.. code-block:: bash
+
+    $ pip install -U coverage
 
 Code coverage in HTML:
 
@@ -625,10 +625,15 @@ it should be located in :file:`docs/reference/`.
 For example if reference is missing for the module ``celery.worker.awesome``
 and this module is considered part of the public API, use the following steps:
 
+
+Use an existing file as a template:
+
 .. code-block:: bash
 
     $ cd docs/reference/
     $ cp celery.schedules.rst celery.worker.awesome.rst
+
+Edit the file using your favorite editor:
 
 .. code-block:: bash
 
@@ -637,11 +642,17 @@ and this module is considered part of the public API, use the following steps:
         # change every occurance of ``celery.schedules`` to
         # ``celery.worker.awesome``
 
+
+Edit the index using your favorite editor:
+
 .. code-block:: bash
 
     $ vim index.rst
 
         # Add ``celery.worker.awesome`` to the index.
+
+
+Commit your changes:
 
 .. code-block:: bash
 
@@ -776,7 +787,9 @@ is following the conventions.
 * Note that we use "new-style` relative imports when the distribution
   does not support Python versions below 2.5
 
-.. code-block:: python
+    This requires Python 2.5 or later:
+
+    .. code-block:: python
 
         from . import submodule
 
@@ -915,6 +928,16 @@ Messaging library.
 :CI: http://travis-ci.org/#!/celery/kombu
 :PyPI: http://pypi.python.org/pypi/kombu
 :docs: http://kombu.readthedocs.org
+
+amqp
+----
+
+Python AMQP 0.9.1 client.
+
+:git: https://github.com/celery/py-amqp
+:CI: http://travis-ci.org/#!/celery/py-amqp
+:PyPI: http://pypi.python.org/pypi/amqp
+:docs: http://amqp.readthedocs.org
 
 billiard
 --------

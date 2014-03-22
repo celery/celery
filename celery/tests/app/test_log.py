@@ -2,6 +2,9 @@ from __future__ import absolute_import
 
 import sys
 import logging
+
+from collections import defaultdict
+from io import StringIO
 from tempfile import mktemp
 
 from celery import signals
@@ -248,14 +251,31 @@ class test_default_logger(AppCase):
                 l.info('The quick brown fox...')
                 self.assertIn('The quick brown fox...', stderr.getvalue())
 
-    def test_setup_logger_no_handlers_file(self):
-        with restore_logging():
-            l = self.get_logger()
-            l.handlers = []
-            tempfile = mktemp(suffix='unittest', prefix='celery')
-            l = self.setup_logger(logfile=tempfile, loglevel=0, root=False)
-            self.assertIsInstance(get_handlers(l)[0],
-                                  logging.FileHandler)
+    @patch('os.fstat')
+    def test_setup_logger_no_handlers_file(self, *args):
+        tempfile = mktemp(suffix='unittest', prefix='celery')
+        _open = ('builtins.open' if sys.version_info[0] == 3
+                 else '__builtin__.open')
+        with patch(_open) as osopen:
+            with restore_logging():
+                files = defaultdict(StringIO)
+
+                def open_file(filename, *args, **kwargs):
+                    f = files[filename]
+                    f.fileno = Mock()
+                    f.fileno.return_value = 99
+                    return f
+
+                osopen.side_effect = open_file
+                l = self.get_logger()
+                l.handlers = []
+                l = self.setup_logger(
+                    logfile=tempfile, loglevel=logging.INFO, root=False,
+                )
+                self.assertIsInstance(
+                    get_handlers(l)[0], logging.FileHandler,
+                )
+                self.assertIn(tempfile, files)
 
     def test_redirect_stdouts(self):
         with restore_logging():

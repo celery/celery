@@ -13,8 +13,11 @@ from collections import deque
 
 from celery._state import get_current_worker_task
 from celery.utils import uuid
+from celery.utils.log import get_logger
 
 __all__ = ['shared_task', 'load_shared_tasks']
+
+logger = get_logger(__name__)
 
 #: global list of functions defining tasks that should be
 #: added to all apps.
@@ -105,16 +108,17 @@ def add_unlock_chord_task(app):
                     )
                 except StopIteration:
                     reason = repr(exc)
-
-                app._tasks[callback.task].backend.fail_from_current_stack(
-                    callback.id, exc=ChordError(reason),
-                )
+                logger.error('Chord %r raised: %r', group_id, exc, exc_info=1)
+                app.backend.chord_error_from_stack(callback,
+                                                   ChordError(reason))
             else:
                 try:
                     callback.delay(ret)
                 except Exception as exc:
-                    app._tasks[callback.task].backend.fail_from_current_stack(
-                        callback.id,
+                    logger.error('Chord %r raised: %r', group_id, exc,
+                                 exc_info=1)
+                    app.backend.chord_error_from_stack(
+                        callback,
                         exc=ChordError('Callback error: {0!r}'.format(exc)),
                     )
         else:
@@ -179,7 +183,7 @@ def add_group_task(app):
                     [stask.apply(group_id=group_id) for stask in taskit],
                 )
             with app.producer_or_acquire() as pub:
-                [stask.apply_async(group_id=group_id, publisher=pub,
+                [stask.apply_async(group_id=group_id, producer=pub,
                                    add_to_parent=False) for stask in taskit]
             parent = get_current_worker_task()
             if parent:
@@ -340,36 +344,24 @@ def add_chord_task(app):
             app = self.app
             propagate = default_propagate if propagate is None else propagate
             group_id = uuid()
-            AsyncResult = app.AsyncResult
-            prepare_member = self._prepare_member
 
             # - convert back to group if serialized
             tasks = header.tasks if isinstance(header, group) else header
             header = group([
                 maybe_signature(s, app=app).clone() for s in tasks
-            ])
+            ], app=self.app)
             # - eager applies the group inline
             if eager:
                 return header.apply(args=partial_args, task_id=group_id)
 
-            results = [AsyncResult(prepare_member(task, body, group_id))
-                       for task in header.tasks]
+            body.setdefault('chord_size', len(header.tasks))
+            results = header.freeze(group_id=group_id, chord=body).results
 
             return self.backend.apply_chord(
                 header, partial_args, group_id,
                 body, interval=interval, countdown=countdown,
                 max_retries=max_retries, propagate=propagate, result=results,
             )
-
-        def _prepare_member(self, task, body, group_id):
-            opts = task.options
-            # d.setdefault would work but generating uuid's are expensive
-            try:
-                task_id = opts['task_id']
-            except KeyError:
-                task_id = opts['task_id'] = uuid()
-            opts.update(chord=body, group_id=group_id)
-            return task_id
 
         def apply_async(self, args=(), kwargs={}, task_id=None,
                         group_id=None, chord=None, **options):

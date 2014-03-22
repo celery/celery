@@ -11,12 +11,14 @@ except AttributeError:
 import importlib
 import inspect
 import logging
+import numbers
 import os
 import platform
 import re
 import sys
 import threading
 import time
+import types
 import warnings
 
 from contextlib import contextmanager
@@ -45,12 +47,6 @@ from celery.five import (
 from celery.utils.functional import noop
 from celery.utils.imports import qualname
 
-try:  # pragma: no cover
-    from django.utils.six import MovedModule
-except ImportError:  # pragma: no cover
-    class MovedModule(object):  # noqa
-        pass
-
 __all__ = [
     'Case', 'AppCase', 'Mock', 'MagicMock', 'ANY',
     'patch', 'call', 'sentinel', 'skip_unless_module',
@@ -67,6 +63,8 @@ call = mock.call
 sentinel = mock.sentinel
 MagicMock = mock.MagicMock
 ANY = mock.ANY
+
+PY3 = sys.version_info[0] == 3
 
 CASE_REDEFINES_SETUP = """\
 {name} (subclass of AppCase) redefines private "setUp", should be: "setup"\
@@ -170,6 +168,35 @@ def ContextMock(*args, **kwargs):
     return obj
 
 
+def _bind(f, o):
+    @wraps(f)
+    def bound_meth(*fargs, **fkwargs):
+        return f(o, *fargs, **fkwargs)
+    return bound_meth
+
+
+if PY3:  # pragma: no cover
+    def _get_class_fun(meth):
+        return meth
+else:
+    def _get_class_fun(meth):
+        return meth.__func__
+
+
+class MockCallbacks(object):
+
+    def __new__(cls, *args, **kwargs):
+        r = Mock(name=cls.__name__)
+        _get_class_fun(cls.__init__)(r, *args, **kwargs)
+        for key, value in items(vars(cls)):
+            if key not in ('__dict__', '__weakref__', '__new__', '__init__'):
+                if inspect.ismethod(value) or inspect.isfunction(value):
+                    r.__getattr__(key).side_effect = _bind(value, r)
+                else:
+                    r.__setattr__(key, value)
+        return r
+
+
 def skip_unless_module(module):
 
     def _inner(fun):
@@ -201,6 +228,18 @@ class _AssertRaisesBaseContext(object):
         self.expected_regex = expected_regex
 
 
+def _is_magic_module(m):
+    # some libraries create custom module types that are lazily
+    # lodaded, e.g. Django installs some modules in sys.modules that
+    # will load _tkinter and other shit when touched.
+
+    # pyflakes refuses to accept 'noqa' for this isinstance.
+    cls, modtype = m.__class__, types.ModuleType
+    return (not cls is modtype and (
+        '__getattr__' in vars(m.__class__) or
+        '__getattribute__' in vars(m.__class__)))
+
+
 class _AssertWarnsContext(_AssertRaisesBaseContext):
     """A context manager used to implement TestCase.assertWarns* methods."""
 
@@ -209,10 +248,17 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
         # to work properly.
         warnings.resetwarnings()
         for v in list(values(sys.modules)):
-            # do not evaluate Django moved modules:
-            if not isinstance(v, MovedModule):
-                if getattr(v, '__warningregistry__', None):
-                    v.__warningregistry__ = {}
+            # do not evaluate Django moved modules and other lazily
+            # initialized modules.
+            if v and not _is_magic_module(v):
+                # use raw __getattribute__ to protect even better from
+                # lazily loaded modules
+                try:
+                    object.__getattribute__(v, '__warningregistry__')
+                except AttributeError:
+                    pass
+                else:
+                    object.__setattr__(v, '__warningregistry__', {})
         self.warnings_manager = warnings.catch_warnings(record=True)
         self.warnings = self.warnings_manager.__enter__()
         warnings.simplefilter('always', self.expected)
@@ -782,7 +828,7 @@ def body_from_sig(app, sig, utc=True):
     if eta and isinstance(eta, datetime):
         eta = eta.isoformat()
     expires = sig.options.pop('expires', None)
-    if expires and isinstance(expires, int):
+    if expires and isinstance(expires, numbers.Real):
         expires = app.now() + timedelta(seconds=expires)
     if expires and isinstance(expires, datetime):
         expires = expires.isoformat()

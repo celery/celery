@@ -11,8 +11,11 @@ from celery import Celery
 from celery import signals
 from celery.bin.base import Option
 from celery.exceptions import SoftTimeLimitExceeded
+from celery.utils.log import get_task_logger
 
 from .templates import use_template, template_names
+
+logger = get_task_logger(__name__)
 
 
 class App(Celery):
@@ -122,6 +125,16 @@ def segfault():
     import ctypes
     ctypes.memset(0, 0, 1)
     assert False, 'should not get here'
+
+
+@app.task
+def raising(exc=KeyError()):
+    raise exc
+
+
+@app.task
+def logs(msg, p=False):
+    print(msg) if p else logger.info(msg)
 
 
 def marker(s, sep='-'):

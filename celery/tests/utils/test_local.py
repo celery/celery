@@ -170,10 +170,10 @@ class test_Proxy(Case):
         class O(object):
 
             def __complex__(self):
-                return 10.333
+                return complex(10.333)
 
         o = Proxy(O)
-        self.assertEqual(o.__complex__(), 10.333)
+        self.assertEqual(o.__complex__(), complex(10.333))
 
     def test_index(self):
 
@@ -328,6 +328,30 @@ class test_PromiseProxy(Case):
         self.assertEqual(p.attr, 123)
         self.assertEqual(p.attr, 123)
         self.assertEqual(X.evals, 1)
+
+    def test_callbacks(self):
+        source = Mock(name='source')
+        p = PromiseProxy(source)
+        cbA = Mock(name='cbA')
+        cbB = Mock(name='cbB')
+        cbC = Mock(name='cbC')
+        p.__then__(cbA, p)
+        p.__then__(cbB, p)
+        self.assertFalse(p.__evaluated__())
+        self.assertTrue(object.__getattribute__(p, '__pending__'))
+
+        self.assertTrue(repr(p))
+        with self.assertRaises(AttributeError):
+            object.__getattribute__(p, '__pending__')
+        cbA.assert_called_with(p)
+        cbB.assert_called_with(p)
+
+        self.assertTrue(p.__evaluated__())
+        p.__then__(cbC, p)
+        cbC.assert_called_with(p)
+
+        with self.assertRaises(AttributeError):
+            object.__getattribute__(p, '__pending__')
 
     def test_maybe_evaluate(self):
         x = PromiseProxy(lambda: 30)

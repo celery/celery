@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import os
 import socket
@@ -516,30 +516,56 @@ class test_Consumer(AppCase):
         self.assertTrue(logger.critical.call_count)
 
     def test_receive_message_eta(self):
+        import sys
+        from functools import partial
+        if os.environ.get('C_DEBUG_TEST'):
+            pp = partial(print, file=sys.__stderr__)
+        else:
+            def pp(*args, **kwargs):
+                pass
+        pp('TEST RECEIVE MESSAGE ETA')
+        pp('+CREATE MYKOMBUCONSUMER')
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
+        pp('-CREATE MYKOMBUCONSUMER')
         l.steps.pop()
         l.event_dispatcher = mock_event_dispatcher()
         backend = Mock()
+        pp('+ CREATE MESSAGE')
         m = create_message(
             backend, task=self.foo_task.name,
             args=[2, 4, 8], kwargs={},
             eta=(datetime.now() + timedelta(days=1)).isoformat(),
         )
+        pp('- CREATE MESSAGE')
 
         try:
+            pp('+ BLUEPRINT START 1')
             l.blueprint.start(l)
+            pp('- BLUEPRINT START 1')
             p = l.app.conf.BROKER_CONNECTION_RETRY
             l.app.conf.BROKER_CONNECTION_RETRY = False
+            pp('+ BLUEPRINT START 2')
             l.blueprint.start(l)
+            pp('- BLUEPRINT START 2')
             l.app.conf.BROKER_CONNECTION_RETRY = p
+            pp('+ BLUEPRINT RESTART')
             l.blueprint.restart(l)
+            pp('- BLUEPRINT RESTART')
             l.event_dispatcher = mock_event_dispatcher()
+            pp('+ GET ON MESSAGE')
             callback = self._get_on_message(l)
+            pp('- GET ON MESSAGE')
+            pp('+ CALLBACK')
             callback(m.decode(), m)
+            pp('- CALLBACK')
         finally:
+            pp('+ STOP TIMER')
             l.timer.stop()
+            pp('- STOP TIMER')
             try:
+                pp('+ JOIN TIMER')
                 l.timer.join()
+                pp('- JOIN TIMER')
             except RuntimeError:
                 pass
 

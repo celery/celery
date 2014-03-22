@@ -141,6 +141,7 @@ class AMQPBackend(BaseBackend):
         return [self._create_binding(task_id)]
 
     def wait_for(self, task_id, timeout=None, cache=True, propagate=True,
+                 no_ack=True, on_interval=None,
                  READY_STATES=states.READY_STATES,
                  PROPAGATE_STATES=states.PROPAGATE_STATES,
                  **kwargs):
@@ -150,7 +151,8 @@ class AMQPBackend(BaseBackend):
             meta = cached_meta
         else:
             try:
-                meta = self.consume(task_id, timeout=timeout)
+                meta = self.consume(task_id, timeout=timeout, no_ack=no_ack,
+                                    on_interval=on_interval)
             except socket.timeout:
                 raise TimeoutError('The operation timed out.')
 
@@ -167,15 +169,18 @@ class AMQPBackend(BaseBackend):
 
             prev = latest = acc = None
             for i in range(backlog_limit):  # spool ffwd
-                prev, latest, acc = latest, acc, binding.get(
+                acc = binding.get(
                     accept=self.accept, no_ack=False,
                 )
                 if not acc:  # no more messages
                     break
+                if acc.payload['task_id'] == task_id:
+                    prev, latest = latest, acc
                 if prev:
                     # backends are not expected to keep history,
                     # so we delete everything except the most recent state.
                     prev.ack()
+                    prev = None
             else:
                 raise self.BacklogLimitExceeded(task_id)
 
@@ -193,7 +198,7 @@ class AMQPBackend(BaseBackend):
     poll = get_task_meta  # XXX compat
 
     def drain_events(self, connection, consumer,
-                     timeout=None, now=monotonic, wait=None):
+                     timeout=None, on_interval=None, now=monotonic, wait=None):
         wait = wait or connection.drain_events
         results = {}
 
@@ -209,27 +214,30 @@ class AMQPBackend(BaseBackend):
             if timeout and now() - time_start >= timeout:
                 raise socket.timeout()
             wait(timeout=timeout)
+            if on_interval:
+                on_interval()
             if results:  # got event on the wanted channel.
                 break
         self._cache.update(results)
         return results
 
-    def consume(self, task_id, timeout=None):
+    def consume(self, task_id, timeout=None, no_ack=True, on_interval=None):
         wait = self.drain_events
         with self.app.pool.acquire_channel(block=True) as (conn, channel):
             binding = self._create_binding(task_id)
             with self.Consumer(channel, binding,
-                               no_ack=True, accept=self.accept) as consumer:
+                               no_ack=no_ack, accept=self.accept) as consumer:
                 while 1:
                     try:
-                        return wait(conn, consumer, timeout)[task_id]
+                        return wait(
+                            conn, consumer, timeout, on_interval)[task_id]
                     except KeyError:
                         continue
 
     def _many_bindings(self, ids):
         return [self._create_binding(task_id) for task_id in ids]
 
-    def get_many(self, task_ids, timeout=None,
+    def get_many(self, task_ids, timeout=None, no_ack=True,
                  now=monotonic, getfields=itemgetter('status', 'task_id'),
                  READY_STATES=states.READY_STATES,
                  PROPAGATE_STATES=states.PROPAGATE_STATES, **kwargs):
@@ -263,7 +271,7 @@ class AMQPBackend(BaseBackend):
 
             bindings = self._many_bindings(task_ids)
             with self.Consumer(channel, bindings, on_message=on_message,
-                               accept=self.accept, no_ack=True):
+                               accept=self.accept, no_ack=no_ack):
                 wait = conn.drain_events
                 popleft = results.popleft
                 while ids:

@@ -12,6 +12,7 @@ from __future__ import absolute_import, print_function
 import atexit
 import errno
 import math
+import numbers
 import os
 import platform as _platform
 import signal as _signal
@@ -609,7 +610,7 @@ class Signals(object):
 
     def signum(self, signal_name):
         """Get signal number from signal name."""
-        if isinstance(signal_name, int):
+        if isinstance(signal_name, numbers.Integral):
             return signal_name
         if not isinstance(signal_name, string_t) \
                 or not signal_name.isupper():

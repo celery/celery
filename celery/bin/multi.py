@@ -478,6 +478,18 @@ def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
                 p.namespaces[subns].update(ns_opts)
             p.namespaces.pop(ns_name)
 
+    # Numbers in args always refers to the index in the list of names.
+    # (e.g. `start foo bar baz -c:1` where 1 is foo, 2 is bar, and so on).
+    for ns_name, ns_opts in list(items(p.namespaces)):
+        if ns_name.isdigit():
+            ns_index = int(ns_name) - 1
+            if ns_index < 0:
+                raise KeyError('Indexes start at 1 got: %r' % (ns_name, ))
+            try:
+                p.namespaces[names[ns_index]].update(ns_opts)
+            except IndexError:
+                raise KeyError('No node at index %r' % (ns_name, ))
+
     for name in names:
         this_suffix = suffix
         if '@' in name:

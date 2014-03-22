@@ -288,8 +288,8 @@ class Request(object):
                         'hostname': self.hostname, 'is_eager': False,
                         'delivery_info': self.delivery_info})
         retval = trace_task(self.task, self.id, self.args, kwargs, request,
-                            **{'hostname': self.hostname,
-                               'loader': self.app.loader})
+                            hostname=self.hostname, loader=self.app.loader,
+                            app=self.app)
         self.acknowledge()
         return retval
 

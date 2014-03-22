@@ -56,6 +56,7 @@ class default(object):
               exchange=Exchange(CSTRESS_QUEUE),
               routing_key=CSTRESS_QUEUE),
     ]
+    CELERY_MAX_CACHED_RESULTS = -1
     BROKER_URL = os.environ.get('CSTRESS_BROKER', 'amqp://')
     CELERY_RESULT_BACKEND = os.environ.get('CSTRESS_BACKEND', 'rpc://')
     CELERYD_PREFETCH_MULTIPLIER = int(os.environ.get('CSTRESS_PREFETCH', 10))
@@ -69,8 +70,13 @@ class default(object):
 @template()
 class redis(default):
     BROKER_URL = os.environ.get('CSTRESS_BROKER', 'redis://')
-    CELERY_RESULT_BACKEND = os.environ.get('CSTRESS_bACKEND', 'redis://')
-    BROKER_TRANSPORT_OPTIONS = {'fanout_prefix': True}
+    CELERY_RESULT_BACKEND = os.environ.get(
+        'CSTRESS_BACKEND', 'redis://?new_join=1',
+    )
+    BROKER_TRANSPORT_OPTIONS = {
+        'fanout_prefix': True,
+        'fanout_patterns': True,
+    }
 
 
 @template()
@@ -100,3 +106,8 @@ class confirms(default):
 class events(default):
     CELERY_SEND_EVENTS = True
     CELERY_SEND_TASK_SENT_EVENT = True
+
+
+@template()
+class execv(default):
+    CELERYD_FORCE_EXECV = True

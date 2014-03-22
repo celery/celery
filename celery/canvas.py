@@ -194,7 +194,7 @@ class Signature(dict):
         return s
     partial = clone
 
-    def freeze(self, _id=None):
+    def freeze(self, _id=None, group_id=None, chord=None):
         opts = self.options
         try:
             tid = opts['task_id']
@@ -202,6 +202,10 @@ class Signature(dict):
             tid = opts['task_id'] = _id or uuid()
         if 'reply_to' not in opts:
             opts['reply_to'] = self.app.oid
+        if group_id:
+            opts['group_id'] = group_id
+        if chord:
+            opts['chord'] = chord
         return self.AsyncResult(tid)
     _freeze = freeze
 
@@ -502,16 +506,20 @@ class group(Signature):
     def __call__(self, *partial_args, **options):
         return self.apply_async(partial_args, **options)
 
-    def freeze(self, _id=None):
+    def freeze(self, _id=None, group_id=None, chord=None):
         opts = self.options
         try:
             gid = opts['task_id']
         except KeyError:
             gid = opts['task_id'] = uuid()
+        if group_id:
+            opts['group_id'] = group_id
+        if chord:
+            opts['chord'] = group_id
         new_tasks, results = [], []
         for task in self.tasks:
             task = maybe_signature(task, app=self._app).clone()
-            results.append(task._freeze())
+            results.append(task.freeze(group_id=group_id, chord=chord))
             new_tasks.append(task)
         self.tasks = self.kwargs['tasks'] = new_tasks
         return self.app.GroupResult(gid, results)
@@ -552,6 +560,9 @@ class chord(Signature):
         )
         self.subtask_type = 'chord'
 
+    def freeze(self, _id=None, group_id=None, chord=None):
+        return self.body.freeze(_id, group_id=group_id, chord=chord)
+
     @classmethod
     def from_dict(self, d, app=None):
         args, d['kwargs'] = self._unpack_args(**kwdict(d['kwargs']))
@@ -578,7 +589,9 @@ class chord(Signature):
                 app = self.body.type.app
         return app.tasks['celery.chord']
 
-    def apply_async(self, args=(), kwargs={}, task_id=None, **options):
+    def apply_async(self, args=(), kwargs={}, task_id=None,
+                    producer=None, publisher=None, connection=None,
+                    router=None, result_cls=None, **options):
         body = kwargs.get('body') or self.kwargs['body']
         kwargs = dict(self.kwargs, **kwargs)
         body = body.clone(**options)

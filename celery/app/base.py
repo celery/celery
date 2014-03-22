@@ -33,7 +33,6 @@ from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
 from celery.five import items, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
-from celery.utils import shadowsig
 from celery.utils.functional import first, maybe_list
 from celery.utils.imports import instantiate, symbol_by_name
 from celery.utils.objects import mro_lookup
@@ -238,7 +237,6 @@ class Celery(object):
             '__doc__': fun.__doc__,
             '__module__': fun.__module__,
             '__wrapped__': fun}, **options))()
-        shadowsig(T, fun)  # for inspect.getargspec
         task = self._tasks[T.name]  # return global instance.
         return task
 
@@ -275,7 +273,8 @@ class Celery(object):
         if not module_name:
             if silent:
                 return False
-            raise ImproperlyConfigured(ERR_ENVVAR_NOT_SET.format(module_name))
+            raise ImproperlyConfigured(
+                ERR_ENVVAR_NOT_SET.format(variable_name))
         return self.config_from_object(module_name, silent=silent, force=force)
 
     def config_from_cmdline(self, argv, namespace='celery'):

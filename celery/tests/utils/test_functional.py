@@ -72,21 +72,21 @@ class test_LRUCache(Case):
 
             def __init__(self, cache):
                 self.cache = cache
-                self._is_shutdown = Event()
-                self._is_stopped = Event()
+                self.__is_shutdown = Event()
+                self.__is_stopped = Event()
                 Thread.__init__(self)
 
             def run(self):
-                while not self._is_shutdown.isSet():
+                while not self.__is_shutdown.isSet():
                     try:
                         self.cache.data.popitem(last=False)
                     except KeyError:
                         break
-                self._is_stopped.set()
+                self.__is_stopped.set()
 
             def stop(self):
-                self._is_shutdown.set()
-                self._is_stopped.wait()
+                self.__is_shutdown.set()
+                self.__is_stopped.wait()
                 self.join(THREAD_TIMEOUT_MAX)
 
         burglar = Burglar(x)

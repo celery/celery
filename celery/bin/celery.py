@@ -9,6 +9,7 @@ The :program:`celery` umbrella command.
 from __future__ import absolute_import, unicode_literals
 
 import anyjson
+import numbers
 import os
 import sys
 
@@ -61,7 +62,7 @@ if DEBUG:  # pragma: no cover
 
 
 def determine_exit_status(ret):
-    if isinstance(ret, int):
+    if isinstance(ret, numbers.Integral):
         return ret
     return EX_OK if ret else EX_FAILURE
 

@@ -8,6 +8,8 @@
 """
 from __future__ import absolute_import
 
+import numbers
+
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
@@ -252,7 +254,7 @@ class TaskProducer(Producer):
             eta = now + timedelta(seconds=countdown)
             if self.utc:
                 eta = to_utc(eta).astimezone(self.app.timezone)
-        if isinstance(expires, (int, float)):
+        if isinstance(expires, numbers.Real):
             now = now or self.app.now()
             expires = now + timedelta(seconds=expires)
             if self.utc:

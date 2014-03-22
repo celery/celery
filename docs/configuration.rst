@@ -1142,12 +1142,8 @@ CELERY_MAX_CACHED_RESULTS
 Result backends caches ready results used by the client.
 
 This is the total number of results to cache before older results are evicted.
-The default is 5000.  0 or None means no limit.
-
-.. note::
-    
-    These results are kept in memory.  Reduce this setting if your Celery is utilizing
-    a large amount of memory.
+The default is 5000.  0 or None means no limit, and a value of :const:`-1`
+will disable the cache.
 
 .. setting:: CELERY_CHORD_PROPAGATES
 
@@ -1816,6 +1812,17 @@ suffix `.db` may be appended to the file name (depending on Python version).
 Can also be set via the :option:`--schedule` argument to
 :mod:`~celery.bin.beat`.
 
+.. setting:: CELERYBEAT_SYNC_EVERY
+
+CELERYBEAT_SYNC_EVERY
+~~~~~~~~~~~~~~~~~~~~~
+
+The number of periodic tasks that can be called before another database sync
+is issued.
+Defaults to 0 (sync based on timing - default of 3 minutes as determined by
+scheduler.sync_every). If set to 1, beat will call sync after every task
+message sent.
+
 .. setting:: CELERYBEAT_MAX_LOOP_INTERVAL
 
 CELERYBEAT_MAX_LOOP_INTERVAL
@@ -1823,7 +1830,6 @@ CELERYBEAT_MAX_LOOP_INTERVAL
 
 The maximum number of seconds :mod:`~celery.bin.beat` can sleep
 between checking the schedule.
-
 
 The default for this value is scheduler specific.
 For the default celery beat scheduler the value is 300 (5 minutes),
