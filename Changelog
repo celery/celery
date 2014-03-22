@@ -12,18 +12,12 @@ new in Celery 3.1.
 
 3.1.10
 ======
-:release-date: 2014-XX-XX XX:XX X.X UTC
-:release-by: XX
+:release-date: 2014-03-22 09:40 P.M UTC
+:release-by: Ask Solem
 
 - **Requirements**:
 
     - Now depends on :ref:`Kombu 3.0.14 <kombu:version-3.0.14>`.
-
-- **Results**:
-
-    Reliability improvements to the SQLAlchemy database backend. Previously the
-    connection from the MainProcess was improperly shared with the workers.
-    (Issue #1786)
 
 - **Redis:** Important note about events (Issue #1882).
 
@@ -50,7 +44,7 @@ new in Celery 3.1.
     This means that the global result cache can finally be disabled,
     and you can do so by setting :setting:`CELERY_MAX_CACHED_RESULTS` to
     :const:`-1`.  The lifetime of the cache will then be bound to the
-    lifetime of the result object, and this will be the default behavior
+    lifetime of the result object, which will be the default behavior
     in Celery 3.2.
 
 - **Events**: The "Substantial drift" warning message is now logged once
@@ -76,7 +70,7 @@ new in Celery 3.1.
     with workers and clients not using it, so be sure to enable
     the option in all clients and workers if you decide to use it.
 
-- **Multi**: With ``-opt:index`` (e.g. ``-c:1``) the index now always refers
+- **Multi**: With ``-opt:index`` (e.g. :option:`-c:1`) the index now always refers
   to the position of a node in the argument list.
 
     This means that referring to a number will work when specifying a list
@@ -113,6 +107,14 @@ new in Celery 3.1.
 
 - **Canvas**: A chord task raising an exception will now result in
   any errbacks (``link_error``) to the chord callback to also be called.
+
+- **Results**: Reliability improvements to the SQLAlchemy database backend
+  (Issue #1786).
+
+    Previously the connection from the ``MainProcess`` was improperly
+    inherited by child processes.
+
+    Fix contributed by Ionel Cristian Mărieș.
 
 - **Task**: Task callbacks and errbacks are now called using the group
   primitive.
