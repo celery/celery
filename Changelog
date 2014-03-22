@@ -38,9 +38,14 @@ new in Celery 3.1.
 
     This will be the default in Celery 3.2.
 
-- **Results**: 
+- **Results**: The :class:`@AsyncResult` object now keeps a local cache
+  of the final state of the task.
 
-    Max cached results default decreased to 100.
+    This means that the global result cache can finally be disabled,
+    and you can do so by setting :setting:`CELERY_MAX_CACHED_RESULTS` to
+    :const:`-1`.  The lifetime of the cache will then be bound to the
+    lifetime of the result object, and this will be the default behavior
+    in Celery 3.2.
 
 - **Events**: The "Substantial drift" warning message is now logged once
   per node name only (Issue #1802).
@@ -89,9 +94,16 @@ new in Celery 3.1.
 
     Fix contributed by Dmitry Malinovsky.
 
+- **Canvas**: Chords can now contain a group of other chords (Issue #1921).
+
+- **Canvas**: Chords can now be combined when using the amqp result backend
+  (a chord where the callback is also a chord).
+
 - **Canvas**: Calling ``result.get()`` for a chain task will now complete
   even if one of the tasks in the chain is ``ignore_result=True``
   (Issue #1905).
+
+- **Canvas**: Worker now also logs chord errors.
 
 - **Canvas**: A chord task raising an exception will now result in
   any errbacks (``link_error``) to the chord callback to also be called.
@@ -115,9 +127,6 @@ new in Celery 3.1.
   each sync.
 
     Contributed by Chris Clark.
-
-- **Canvas**: Chords can now be combined when using the amqp result backend
-  (a chord where the callback is also a chord).
 
 - **Commands**: :program:`celery inspect memdump` no longer crashes
   if the :mod:`psutil` module is not installed (Issue #1914).
