@@ -91,7 +91,7 @@ def exiting(status=0):
 
 
 @app.task
-def kill(sig=signal.SIGKILL):
+def kill(sig=getattr(signal, 'SIGKILL', None) or signal.SIGTERM):
     os.kill(os.getpid(), sig)
 
 
