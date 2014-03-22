@@ -37,7 +37,7 @@ def _sqlalchemy_installed():
     return sqlalchemy
 _sqlalchemy_installed()
 
-from sqlalchemy.exc import DatabaseError, OperationalError, ResourceClosedError, InvalidRequestError, IntegrityError
+from sqlalchemy.exc import DatabaseError, InvalidRequestError
 from sqlalchemy.orm.exc import StaleDataError
 
 
@@ -61,10 +61,7 @@ def retry(fun):
         for retries in range(max_retries):
             try:
                 return fun(*args, **kwargs)
-            except (
-                DatabaseError, OperationalError, ResourceClosedError, StaleDataError, InvalidRequestError,
-                IntegrityError
-            ):
+            except (DatabaseError, InvalidRequestError, StaleDataError):
                 logger.warning(
                     "Failed operation %s. Retrying %s more times.",
                     fun.__name__, max_retries - retries - 1,
