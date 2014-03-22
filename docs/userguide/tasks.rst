@@ -878,7 +878,7 @@ The task may raise :exc:`~@Ignore` to force the worker to ignore the
 task.  This means that no state will be recorded for the task, but the
 message is still acknowledged (removed from queue).
 
-This is can be used if you want to implement custom revoke-like
+This can be used if you want to implement custom revoke-like
 functionality, or manually store the result of a task.
 
 Example keeping revoked tasks in a Redis set:
