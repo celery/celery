@@ -518,7 +518,11 @@ class test_Consumer(AppCase):
     def test_receive_message_eta(self):
         import sys
         from functools import partial
-        pp = partial(print, file=sys.__stderr__)
+        if os.environ.get('C_DEBUG_TEST'):
+            pp = partial(print, file=sys.__stderr__)
+        else:
+            def pp(*args, **kwargs):
+                pass
         pp('TEST RECEIVE MESSAGE ETA')
         pp('+CREATE MYKOMBUCONSUMER')
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
