@@ -86,8 +86,8 @@ class Timer(threading.Thread):
             os._exit(1)
 
     def stop(self):
+        self._is_shutdown.set()
         if self.running:
-            self._is_shutdown.set()
             self._is_stopped.wait()
             self.join(THREAD_TIMEOUT_MAX)
             self.running = False
