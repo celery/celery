@@ -344,7 +344,6 @@ def add_chord_task(app):
             app = self.app
             propagate = default_propagate if propagate is None else propagate
             group_id = uuid()
-            AsyncResult = app.AsyncResult
 
             # - convert back to group if serialized
             tasks = header.tasks if isinstance(header, group) else header

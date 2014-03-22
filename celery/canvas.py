@@ -519,7 +519,6 @@ class group(Signature):
         new_tasks, results = [], []
         for task in self.tasks:
             task = maybe_signature(task, app=self._app).clone()
-            topts = task.options
             results.append(task.freeze(group_id=group_id, chord=chord))
             new_tasks.append(task)
         self.tasks = self.kwargs['tasks'] = new_tasks
@@ -591,8 +590,8 @@ class chord(Signature):
         return app.tasks['celery.chord']
 
     def apply_async(self, args=(), kwargs={}, task_id=None,
-            producer=None, publisher=None, connection=None,
-            router=None, result_cls=None, **options):
+                    producer=None, publisher=None, connection=None,
+                    router=None, result_cls=None, **options):
         body = kwargs.get('body') or self.kwargs['body']
         kwargs = dict(self.kwargs, **kwargs)
         body = body.clone(**options)
