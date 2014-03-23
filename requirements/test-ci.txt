@@ -4,3 +4,4 @@ redis
 #pymongo
 #SQLAlchemy
 PyOpenSSL
+python-signalfd
