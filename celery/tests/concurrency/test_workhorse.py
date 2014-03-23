@@ -56,7 +56,7 @@ class test_Workhorse(AppCase):
         error_callback = Mock()
         pool.apply_async(
             lambda x: time.sleep(x),
-            (2, ),
+            (5, ),
             {},
             accept_callback=accept_callback,
             correlation_id='asdf-1234',
