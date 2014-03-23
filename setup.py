@@ -172,7 +172,8 @@ if is_setuptools:
     specific_list = ['auth', 'cassandra', 'memcache', 'couchbase', 'threads',
                      'eventlet', 'gevent', 'msgpack', 'yaml', 'redis',
                      'mongodb', 'sqs', 'couchdb', 'beanstalk', 'zookeeper',
-                     'zeromq', 'sqlalchemy', 'librabbitmq', 'pyro', 'slmq']
+                     'zeromq', 'sqlalchemy', 'librabbitmq', 'pyro', 'slmq',
+                     'workhorse']
     extras_require = dict((x, extras(x + '.txt')) for x in specific_list)
     extra['extras_require'] = extras_require
 
