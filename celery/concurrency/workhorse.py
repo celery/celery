@@ -76,7 +76,7 @@ class Workhorse(object):
     _children = ()
 
     def __init__(self, target, args, kwargs):
-        self._name = self.name = 'Workhorse-%s' % Workhorse._counter.next()
+        self._name = self.name = 'Workhorse-%s' % next(Workhorse._counter)
         sys.stdout.flush()
         sys.stderr.flush()
         self.pid = os.fork()
