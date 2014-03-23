@@ -192,13 +192,25 @@ is the *process index* not the process count or pid.
 
 .. _worker-concurrency:
 
-Concurrency
-===========
+Concurrency and Pool choices
+============================
 
-By default multiprocessing is used to perform concurrent execution of tasks,
-but you can also use :ref:`Eventlet <concurrency-eventlet>`.  The number
-of worker processes/threads can be changed using the :option:`--concurrency`
-argument and defaults to the number of CPUs available on the machine.
+Celery has a number of pools to handle concurrency, each with its own tradeoffs.
+
+Prefork
+-------
+
+This is the *default pool*. It relies on billiard (a fork of multiprocessing) to have a set of processes running tasks in
+parallel. This is a good choice for:
+
+* CPU-bound tasks
+* Tasks that need isolation (example: tasks that could leak memory, crash the Python interpreter)
+
+Specific options:
+
+* :option:`--concurrency`: The number of worker processes, defaults to the number of CPUs available on the machine.
+* :option:`--maxtasksperchild` or :setting:`CELERYD_MAX_TASKS_PER_CHILD`: Maximum number of tasks a pool worker process
+  can execute before it’s replaced with a new one. Default is no limit.
 
 .. admonition:: Number of processes (multiprocessing/prefork pool)
 
@@ -209,6 +221,52 @@ argument and defaults to the number of CPUs available on the machine.
     For example 3 workers with 10 pool processes each.  You need to experiment
     to find the numbers that works best for you, as this varies based on
     application, work load, task run times and other factors.
+
+Threads
+-------
+
+This requires the ``threadpool`` package. You can install it with the threads extra, eg: ``pip install
+"celery[threads]"``. This is a good choice for I/O-bound tasks with moderate concurrency.
+
+Specific options:
+
+* :option:`--concurrency`: The number of threads in the pool.
+
+Eventlet / gevent
+-----------------
+
+These pools are good is you have I/O-bound tasks and need very high concurrency.
+
+Specific options:
+
+* :option:`--concurrency`: The maximum number of greenlets to run.
+
+.. admonition::
+
+    Never select these pool via the :setting:`CELERYD_POOL` setting.
+    You must use the `-P` option instead, otherwise the monkey patching
+    will happen too late and things will break in strange and silent ways.
+
+Solo
+----
+
+This pool runs everything serially. It's provided as an example for custom pool implementations. You should not use this
+normally.
+
+Workhorse
+---------
+
+This is a specialized pool implementation that only works on Linux and (*TODO*)BSDs. It relies on the fork, signalfd or
+(*TODO*)kqueue system calls - it cannot be used on Windows.
+
+This pool is a good choice where extreme task isolation is required (where you would use low values of
+:option:`--maxtasksperchild` or :setting:`CELERYD_MAX_TASKS_PER_CHILD` with the prefork pool). It has better performance
+than the prefork pool in those cases due to low overhead: no pipes are being setup for each subprocess, children are
+reaped very efficiently (via signalfd).
+
+Specific options:
+
+* :option:`--concurrency`: The maxiumum number of workers.
 
 .. _worker-remote-control:
 
