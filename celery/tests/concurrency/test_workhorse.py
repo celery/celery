@@ -1,6 +1,5 @@
 from __future__ import absolute_import
-import manhole
-manhole.install(oneshot_on='USR2')
+
 import errno
 import os
 import signal
