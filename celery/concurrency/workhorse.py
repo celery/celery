@@ -157,6 +157,10 @@ class TaskPool(BasePool):
     def register_with_event_loop(self, hub):
         hub.add_reader(self.sigfd, self.on_sigchld)
 
+    def on_close(self):
+        self.sigfh.close()
+        signalfd.sigprocmask(signalfd.SIG_BLOCK, [])
+
     def on_sigchld(self):
         pending = {}
 
@@ -236,7 +240,6 @@ class TaskPool(BasePool):
         except:
             self.terminate()
             raise
-    on_close = on_stop
 
     def terminate(self, timeout=5):
         for pid in self.workers:
@@ -244,7 +247,7 @@ class TaskPool(BasePool):
 
         while self.workers and timeout > 0:
             self.on_sigchld()
-            time.sleep(1)
+            time.sleep(0.2)
             timeout -= 1
 
         for pid in self.workers:
