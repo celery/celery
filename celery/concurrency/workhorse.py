@@ -190,7 +190,7 @@ class TaskPool(BasePool):
                     elif os.WIFSTOPPED(exit_code):
                         pending[pid] = os.WSTOPSIG(exit_code)
 
-        for pid, exit_code in pending.iteritems():
+        for pid, exit_code in pending.items():
             self.on_worker_exit(pid, exit_code)
 
     def on_worker_exit(self, pid, exit_code):
