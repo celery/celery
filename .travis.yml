@@ -31,7 +31,7 @@ before_install:
 install:
   - pip install tox
 script:
-  - tox -v -- -v
+  - tox -v -- nosetests --nocapture --nologcapture --no-path-adjustment --with-coverage --cover-inclusive --cover-erase --verbose
 after_success:
   - .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
 notifications:
