@@ -8,23 +8,30 @@ import time
 from itertools import count
 from logging import getLogger
 
-import signalfd
 from billiard import util
 from billiard.exceptions import WorkerLostError
 from billiard.process import _maybe_flush
 from billiard.process import _set_current_process
-from celery.concurrency.base import BasePool
-from celery.concurrency.prefork import _set_task_join_will_block
-from celery.concurrency.prefork import platforms, process_destructor
-from celery.concurrency.prefork import WORKER_SIGIGNORE
-from celery.concurrency.prefork import WORKER_SIGRESET
-from celery.five import monotonic
 
 from ctypes import c_char
 from ctypes import c_int32
 from ctypes import c_uint32
 from ctypes import c_uint64
 from ctypes import Structure
+
+from ..five import monotonic
+from ..five import reraise
+from .base import BasePool
+from .prefork import _set_task_join_will_block
+from .prefork import platforms
+from .prefork import process_destructor
+from .prefork import WORKER_SIGIGNORE
+from .prefork import WORKER_SIGRESET
+
+try:
+    import signalfd
+except ImportError as exc:
+    reraise(ImportError, ImportError("You must install the `python-signalfd` package."), sys.exc_info()[2])
 
 logger = getLogger(__name__)
 
