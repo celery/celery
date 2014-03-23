@@ -199,7 +199,7 @@ class TaskPool(BasePool):
             if exit_code == 0:
                 options['callback'](None)
             else:
-                logger.warn('Got SIGCHLD with exit_code:%r for pid:%r and task_id:%r', exit_code, pid, options['correlation_id'])
+                logger.warning('Got SIGCHLD with exit_code:%r for pid:%r and task_id:%r', exit_code, pid, options['correlation_id'])
                 options['error_callback'](ExcInfo(WorkerLostError(exit_code)))
             if self.active:
                 self.sem.release()
@@ -207,7 +207,7 @@ class TaskPool(BasePool):
 
     @staticmethod
     def terminate_job(pid, signum):
-        logger.warn("Killing pid:%s with signum:%s", pid, signum)
+        logger.warning("Killing pid:%s with signum:%s", pid, signum)
         try:
             os.kill(pid, signum)
         except OSError as exc:
@@ -229,7 +229,7 @@ class TaskPool(BasePool):
                     pid, exit_code = os.waitpid(pid, 0)
                 except OSError as exc:
                     if exc.errno != errno.ECHILD:
-                        logger.warn("Failed to wait for child process %s: %s", pid, exc)
+                        logger.warning("Failed to wait for child process %s: %s", pid, exc)
                     continue
                 else:
                     self.on_worker_exit(pid, exit_code)
