@@ -163,7 +163,8 @@ class TaskPool(BasePool):
         si = signalfd_siginfo()
         while True:
             try:
-                self.sigfh.readinto(si)
+                if not self.sigfh.readinto(si):
+                    break
             except IOError as exc:
                 if exc.errno != errno.EAGAIN:
                     raise
