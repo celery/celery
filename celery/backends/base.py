@@ -57,8 +57,9 @@ def unpickle_backend(cls, args, kwargs):
 
 class _nulldict(dict):
 
-    def __setitem__(self, k, v):
+    def ignore(self, *a, **kw):
         pass
+    __setitem__ = update = setdefault = ignore
 
 
 class BaseBackend(object):
