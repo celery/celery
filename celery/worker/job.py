@@ -454,11 +454,13 @@ class Request(object):
         )
         task = self.task
         if task.throws and isinstance(eobj, task.throws):
-            severity, exc_info = logging.INFO, None
-            description = 'raised expected'
+            do_send_mail, severity, exc_info, description = (
+                False, logging.INFO, None, 'raised expected',
+            )
         else:
-            severity = logging.ERROR
-            description = 'raised unexpected'
+            do_send_mail, severity, description = (
+                True, logging.ERROR, 'raised unexpected',
+            )
         format = self.error_msg
         if send_failed_event:
             self.send_event(
@@ -505,7 +507,8 @@ class Request(object):
                                    'hostname': self.hostname,
                                    'internal': internal}})
 
-        task.send_error_email(context, einfo.exception)
+        if do_send_mail:
+            task.send_error_email(context, einfo.exception)
 
     def acknowledge(self):
         """Acknowledge task."""
