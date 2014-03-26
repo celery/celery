@@ -247,6 +247,36 @@ start_beat () {
 }
 
 
+check_status () {
+    local failed=
+    local pid_file=$CELERYBEAT_PID_FILE
+    if [ ! -e $pid_file ]; then
+        echo "${SCRIPT_NAME} is stopped: no pids were found"
+        failed=true
+    elif [ ! -r $pid_file ]; then
+        echo "${SCRIPT_NAME} is in unknown state, user cannot read pid file."
+        failed=true
+    else
+        local pid=`cat "$pid_file"`
+        local cleaned_pid=`echo "$pid" | sed -e 's/[^0-9]//g'`
+        if [ -z "$pid" ] || [ "$cleaned_pid" != "$pid" ]; then
+            echo "${SCRIPT_NAME}: bad pid file ($pid_file)"
+            failed=true
+        else
+            local failed=
+            kill -0 $pid 2> /dev/null || failed=true
+            if [ "$failed" ]; then
+                echo "${SCRIPT_NAME} (pid $pid) is stopped, but pid file exists!"
+                failed=true
+            else
+                echo "${SCRIPT_NAME} (pid $pid) is running..."
+            fi
+        fi
+    fi
+
+    [ "$failed" ] && exit 1 || exit 0
+}
+
 
 case "$1" in
     start)
@@ -260,6 +290,9 @@ case "$1" in
     ;;
     reload|force-reload)
         echo "Use start+stop"
+    ;;
+    status)
+        check_status
     ;;
     restart)
         echo "Restarting celery periodic task scheduler"
@@ -277,7 +310,7 @@ case "$1" in
         check_paths
     ;;
     *)
-        echo "Usage: /etc/init.d/${SCRIPT_NAME} {start|stop|restart|create-paths}"
+        echo "Usage: /etc/init.d/${SCRIPT_NAME} {start|stop|restart|create-paths|status}"
         exit 64  # EX_USAGE
     ;;
 esac
