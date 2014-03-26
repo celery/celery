@@ -328,7 +328,6 @@ class AsyncResult(ResultBase):
             if meta:
                 state = meta['status']
                 if state == states.SUCCESS or state in states.PROPAGATE_STATES:
-                    self._set_cache(meta)
                     return self._set_cache(meta)
             return meta
         return self._cache
