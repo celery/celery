@@ -99,7 +99,7 @@ def migrate_tasks(source, dest, migrate=migrate_task, app=None,
                   queues=None, **kwargs):
     app = app_or_default(app)
     queues = prepare_queues(queues)
-    producer = app.amqp.TaskProducer(dest)
+    producer = app.amqp.Producer(dest)
     migrate = partial(migrate, producer, queues=queues)
 
     def on_declare_queue(queue):
@@ -186,7 +186,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
     app = app_or_default(app)
     queues = [_maybe_queue(app, queue) for queue in source or []] or None
     with app.connection_or_acquire(connection, pool=False) as conn:
-        producer = app.amqp.TaskProducer(conn)
+        producer = app.amqp.Producer(conn)
         state = State()
 
         def on_task(body, message):

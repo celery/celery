@@ -108,8 +108,8 @@ class test_AMQPBackend(AppCase):
             raise KeyError('foo')
 
         backend = AMQPBackend(self.app)
-        from celery.app.amqp import TaskProducer
-        prod, TaskProducer.publish = TaskProducer.publish, publish
+        from celery.app.amqp import Producer
+        prod, Producer.publish = Producer.publish, publish
         try:
             with self.assertRaises(KeyError):
                 backend.retry_policy['max_retries'] = None
@@ -119,7 +119,7 @@ class test_AMQPBackend(AppCase):
                 backend.retry_policy['max_retries'] = 10
                 backend.store_result('foo', 'bar', 'STARTED')
         finally:
-            TaskProducer.publish = prod
+            Producer.publish = prod
 
     def assertState(self, retval, state):
         self.assertEqual(retval['status'], state)

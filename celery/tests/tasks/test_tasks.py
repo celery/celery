@@ -381,11 +381,6 @@ class test_tasks(TasksCase):
         finally:
             self.mytask.pop_request()
 
-    def test_send_task_sent_event(self):
-        with self.app.connection() as conn:
-            self.app.conf.CELERY_SEND_TASK_SENT_EVENT = True
-            self.assertTrue(self.app.amqp.TaskProducer(conn).send_sent_event)
-
     def test_update_state(self):
 
         @self.app.task(shared=False)

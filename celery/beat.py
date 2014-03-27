@@ -179,7 +179,7 @@ class Scheduler(object):
         self.sync_every_tasks = (
             app.conf.CELERYBEAT_SYNC_EVERY if sync_every_tasks is None
             else sync_every_tasks)
-        self.Publisher = Publisher or app.amqp.TaskProducer
+        self.Publisher = Publisher or app.amqp.Producer
         if not lazy:
             self.setup_schedule()
 

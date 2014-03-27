@@ -302,26 +302,33 @@ class Celery(object):
                   eta=None, task_id=None, producer=None, connection=None,
                   router=None, result_cls=None, expires=None,
                   publisher=None, link=None, link_error=None,
-                  add_to_parent=True, reply_to=None, **options):
+                  add_to_parent=True, group_id=None, retries=0, chord=None,
+                  reply_to=None, time_limit=None, soft_time_limit=None,
+                  **options):
+        amqp = self.amqp
         task_id = task_id or uuid()
         producer = producer or publisher  # XXX compat
-        router = router or self.amqp.router
+        router = router or amqp.router
         conf = self.conf
         if conf.CELERY_ALWAYS_EAGER:  # pragma: no cover
             warnings.warn(AlwaysEagerIgnored(
                 'CELERY_ALWAYS_EAGER has no effect on send_task',
             ), stacklevel=2)
         options = router.route(options, name, args, kwargs)
+
+        message = amqp.create_task_message(
+            task_id, name, args, kwargs, countdown, eta, group_id,
+            expires, retries, chord,
+            maybe_list(link), maybe_list(link_error),
+            reply_to or self.oid, time_limit, soft_time_limit,
+            self.conf.CELERY_SEND_TASK_SENT_EVENT,
+        )
+
         if connection:
-            producer = self.amqp.TaskProducer(connection)
+            producer = amqp.Producer(connection)
         with self.producer_or_acquire(producer) as P:
             self.backend.on_task_call(P, task_id)
-            task_id = P.publish_task(
-                name, args, kwargs, countdown=countdown, eta=eta,
-                task_id=task_id, expires=expires,
-                callbacks=maybe_list(link), errbacks=maybe_list(link_error),
-                reply_to=reply_to or self.oid, **options
-            )
+            amqp.send_task_message(P, name, message, **options)
         result = (result_cls or self.AsyncResult)(task_id)
         if add_to_parent:
             parent = get_current_worker_task()

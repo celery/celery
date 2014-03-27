@@ -238,7 +238,6 @@ COMPAT_MODULES = {
             'redirect_stdouts_to_logger': 'log.redirect_stdouts_to_logger',
         },
         'messaging': {
-            'TaskPublisher': 'amqp.TaskPublisher',
             'TaskConsumer': 'amqp.TaskConsumer',
             'establish_connection': 'connection',
             'get_consumer_set': 'amqp.TaskConsumer',

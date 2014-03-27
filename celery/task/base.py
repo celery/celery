@@ -106,12 +106,19 @@ class Task(BaseTask):
                       exchange_type=None, **options):
         """Deprecated method to get the task publisher (now called producer).
 
-        Should be replaced with :class:`@amqp.TaskProducer`:
+        Should be replaced with :class:`@kombu.Producer`:
 
         .. code-block:: python
 
-            with celery.connection() as conn:
-                with celery.amqp.TaskProducer(conn) as prod:
+            with app.connection() as conn:
+                with app.amqp.Producer(conn) as prod:
+                    my_task.apply_async(producer=prod)
+
+            or event better is to use the :class:`@amqp.producer_pool`:
+
+            .. code-block:: python
+
+                with app.producer_or_acquire() as prod:
                     my_task.apply_async(producer=prod)
 
         """
@@ -119,7 +126,7 @@ class Task(BaseTask):
         if exchange_type is None:
             exchange_type = self.exchange_type
         connection = connection or self.establish_connection()
-        return self._get_app().amqp.TaskProducer(
+        return self._get_app().amqp.Producer(
             connection,
             exchange=exchange and Exchange(exchange, exchange_type),
             routing_key=self.routing_key, **options
