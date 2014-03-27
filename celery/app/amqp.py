@@ -355,7 +355,7 @@ class AMQP(object):
             },
             properties={
                 'correlation_id': task_id,
-                'reply_to': reply_to,
+                'reply_to': reply_to or '',
             },
             body=(args, kwargs),
             sent_event={
@@ -401,7 +401,7 @@ class AMQP(object):
             headers={},
             properties={
                 'correlation_id': task_id,
-                'reply_to': reply_to,
+                'reply_to': reply_to or '',
             },
             body={
                 'task': name,
