@@ -313,10 +313,10 @@ class AMQP(object):
 
     def as_task_v2(self, task_id, name, args=None, kwargs=None,
                    countdown=None, eta=None, group_id=None,
-                   expires=None, now=None, retries=0, chord=None,
+                   expires=None, retries=0, chord=None,
                    callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
-                   create_sent_event=False, timezone=None):
+                   create_sent_event=False, now=None, timezone=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -371,10 +371,10 @@ class AMQP(object):
 
     def as_task_v1(self, task_id, name, args=None, kwargs=None,
                    countdown=None, eta=None, group_id=None,
-                   expires=None, now=None, timezone=None, retries=0,
+                   expires=None, retries=0,
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
-                   create_sent_event=False):
+                   create_sent_event=False, now=None, timezone=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
