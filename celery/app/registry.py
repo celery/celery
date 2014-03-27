@@ -57,8 +57,8 @@ class TaskRegistry(dict):
         return self.filter_types('periodic')
 
     def filter_types(self, type):
-        return dict((name, task) for name, task in items(self)
-                    if getattr(task, 'type', 'regular') == type)
+        return {name: task for name, task in items(self)
+                if getattr(task, 'type', 'regular') == type}
 
 
 def _unpickle_task(name):

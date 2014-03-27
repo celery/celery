@@ -295,9 +295,10 @@ class Scheduler(object):
         return self.Entry(**dict(entry, name=name, app=self.app))
 
     def update_from_dict(self, dict_):
-        self.schedule.update(dict(
-            (name, self._maybe_entry(name, entry))
-            for name, entry in items(dict_)))
+        self.schedule.update({
+            name: self._maybe_entry(name, entry)
+            for name, entry in items(dict_)
+        })
 
     def merge_inplace(self, b):
         schedule = self.schedule

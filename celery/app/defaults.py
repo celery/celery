@@ -233,7 +233,7 @@ def flatten(d, ns=''):
                 stack.append((name + key + '_', value))
             else:
                 yield name + key, value
-DEFAULTS = dict((key, value.default) for key, value in flatten(NAMESPACES))
+DEFAULTS = {key: value.default for key, value in flatten(NAMESPACES)}
 
 
 def find_deprecated_settings(source):

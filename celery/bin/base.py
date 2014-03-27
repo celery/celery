@@ -373,9 +373,10 @@ class Command(object):
 
     def prepare_args(self, options, args):
         if options:
-            options = dict((k, self.expanduser(v))
-                           for k, v in items(vars(options))
-                           if not k.startswith('_'))
+            options = {
+                k: self.expanduser(v)
+                for k, v in items(vars(options)) if not k.startswith('_')
+            }
         args = [self.expanduser(arg) for arg in args]
         self.check_args(args)
         return options, args

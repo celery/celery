@@ -724,9 +724,10 @@ class Task(object):
                               'loglevel': options.get('loglevel', 0),
                               'delivery_info': {'is_eager': True}}
             supported_keys = fun_takes_kwargs(task.run, default_kwargs)
-            extend_with = dict((key, val)
-                               for key, val in items(default_kwargs)
-                               if key in supported_keys)
+            extend_with = {
+                key: val for key, val in items(default_kwargs)
+                if key in supported_keys
+            }
             kwargs.update(extend_with)
 
         tb = None

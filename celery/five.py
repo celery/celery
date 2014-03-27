@@ -127,7 +127,7 @@ else:
     exec_("""def reraise(tp, value, tb=None): raise tp, value, tb""")
 
 
-def with_metaclass(Type, skip_attrs=set(['__dict__', '__weakref__'])):
+def with_metaclass(Type, skip_attrs={'__dict__', '__weakref__'}):
     """Class decorator to set metaclass.
 
     Works with both Python 2 and Python 3 and it does not add
@@ -137,8 +137,8 @@ def with_metaclass(Type, skip_attrs=set(['__dict__', '__weakref__'])):
     """
 
     def _clone_with_metaclass(Class):
-        attrs = dict((key, value) for key, value in items(vars(Class))
-                     if key not in skip_attrs)
+        attrs = {key: value for key, value in items(vars(Class))
+                 if key not in skip_attrs}
         return Type(Class.__name__, Class.__bases__, attrs)
 
     return _clone_with_metaclass
@@ -191,7 +191,7 @@ MODULE_DEPRECATED = """
 The module %s is deprecated and will be removed in a future version.
 """
 
-DEFAULT_ATTRS = set(['__file__', '__path__', '__doc__', '__all__'])
+DEFAULT_ATTRS = {'__file__', '__path__', '__doc__', '__all__'}
 
 # im_func is no longer available in Py3.
 # instead the unbound method itself can be used.
@@ -327,8 +327,10 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
     pkg, _, modname = name.rpartition('.')
     cls_attrs['__module__'] = pkg
 
-    attrs = dict((attr_name, prepare_attr(attr) if prepare_attr else attr)
-                 for attr_name, attr in items(attrs))
+    attrs = {
+        attr_name: (prepare_attr(attr) if prepare_attr else attr)
+        for attr_name, attr in items(attrs)
+    }
     module = sys.modules[fqdn] = type(modname, (base, ), cls_attrs)(fqdn)
     module.__dict__.update(attrs)
     return module
@@ -350,8 +352,9 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={},
         ))),
     )
     new_module = create_module(name, attrs, cls_attrs=cattrs, base=base)
-    new_module.__dict__.update(dict((mod, get_compat_module(new_module, mod))
-                               for mod in compat_modules))
+    new_module.__dict__.update({
+        mod: get_compat_module(new_module, mod) for mod in compat_modules
+    })
     return old_module, new_module
 
 
@@ -375,7 +378,7 @@ def get_compat_module(pkg, name):
 def get_origins(defs):
     origins = {}
     for module, attrs in items(defs):
-        origins.update(dict((attr, module) for attr in attrs))
+        origins.update({attr: module for attr in attrs})
     return origins
 
 

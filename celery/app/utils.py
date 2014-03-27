@@ -117,11 +117,11 @@ class Settings(ConfigurationView):
 
     def table(self, with_defaults=False, censored=True):
         filt = filter_hidden_settings if censored else lambda v: v
-        return filt(dict(
-            (k, v) for k, v in items(
+        return filt({
+            k: v for k, v in items(
                 self if with_defaults else self.without_defaults())
             if k.isupper() and not k.startswith('_')
-        ))
+        })
 
     def humanize(self, with_defaults=False, censored=True):
         """Return a human readable string showing changes to the
@@ -182,7 +182,7 @@ def filter_hidden_settings(conf):
             return Connection(value).as_uri(mask=mask)
         return value
 
-    return dict((k, maybe_censor(k, v)) for k, v in items(conf))
+    return {k: maybe_censor(k, v) for k, v in items(conf)}
 
 
 def bugreport(app):

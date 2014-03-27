@@ -76,7 +76,7 @@ class WorkController(object):
     class Blueprint(bootsteps.Blueprint):
         """Worker bootstep blueprint."""
         name = 'Worker'
-        default_steps = set([
+        default_steps = {
             'celery.worker.components:Hub',
             'celery.worker.components:Queues',
             'celery.worker.components:Pool',
@@ -86,8 +86,7 @@ class WorkController(object):
             'celery.worker.components:Consumer',
             'celery.worker.autoscale:WorkerComponent',
             'celery.worker.autoreload:WorkerComponent',
-
-        ])
+        }
 
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app or self.app
@@ -190,8 +189,8 @@ class WorkController(object):
             prev += tuple(includes)
             [self.app.loader.import_task_module(m) for m in includes]
         self.include = includes
-        task_modules = set(task.__class__.__module__
-                           for task in values(self.app.tasks))
+        task_modules = {task.__class__.__module__
+                        for task in values(self.app.tasks)}
         self.app.conf.CELERY_INCLUDE = tuple(set(prev) | task_modules)
 
     def prepare_args(self, **kwargs):

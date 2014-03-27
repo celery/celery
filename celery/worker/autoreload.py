@@ -107,8 +107,8 @@ class StatMonitor(BaseMonitor):
 
     def find_changes(self):
         maybe_modified = self._maybe_modified
-        modified = dict((f, mt) for f, mt in self._mtimes()
-                        if maybe_modified(f, mt))
+        modified = {f: mt for f, mt in self._mtimes()
+                    if maybe_modified(f, mt)}
         if modified:
             self.on_change(modified)
             self.modify_times.update(modified)
@@ -131,7 +131,7 @@ class KQueueMonitor(BaseMonitor):
 
     def __init__(self, *args, **kwargs):
         super(KQueueMonitor, self).__init__(*args, **kwargs)
-        self.filemap = dict((f, None) for f in self.files)
+        self.filemap = {f: None for f in self.files}
         self.fdmap = {}
 
     def register_with_event_loop(self, hub):
@@ -257,13 +257,14 @@ class Autoreloader(bgThread):
 
     def on_init(self):
         files = self.file_to_module
-        files.update(dict(
-            (module_file(sys.modules[m]), m) for m in self.modules))
+        files.update({
+            module_file(sys.modules[m]): m for m in self.modules
+        })
 
         self._monitor = self.Monitor(
             files, self.on_change,
             shutdown_event=self._is_shutdown, **self.options)
-        self._hashes = dict([(f, file_hash(f)) for f in files])
+        self._hashes = {f: file_hash(f) for f in files}
 
     def register_with_event_loop(self, hub):
         if self._monitor is None:

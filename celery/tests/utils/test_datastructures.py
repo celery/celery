@@ -220,7 +220,7 @@ class test_LimitedSet(Case):
             s.purge()
             hp.assert_called_with(s._heap)
         with patch('celery.datastructures.heappop') as hp:
-            s._data = dict((i * 2, i * 2) for i in range(10))
+            s._data = {i * 2: i * 2 for i in range(10)}
             s.purge()
             self.assertEqual(hp.call_count, 10)
 

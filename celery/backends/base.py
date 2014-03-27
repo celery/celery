@@ -435,14 +435,16 @@ class KeyValueStoreBackend(BaseBackend):
     def _mget_to_results(self, values, keys):
         if hasattr(values, 'items'):
             # client returns dict so mapping preserved.
-            return dict((self._strip_prefix(k), self.decode(v))
-                        for k, v in items(values)
-                        if v is not None)
+            return {
+                self._strip_prefix(k): self.decode(v)
+                for k, v in items(values) if v is not None
+            }
         else:
             # client returns list so need to recreate mapping.
-            return dict((bytes_to_str(keys[i]), self.decode(value))
-                        for i, value in enumerate(values)
-                        if value is not None)
+            return {
+                bytes_to_str(keys[i]): self.decode(value)
+                for i, value in enumerate(values) if value is not None
+            }
 
     def get_many(self, task_ids, timeout=None, interval=0.5, no_ack=True,
                  READY_STATES=states.READY_STATES):
@@ -467,7 +469,7 @@ class KeyValueStoreBackend(BaseBackend):
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
                                                  for k in keys]), keys)
             cache.update(r)
-            ids.difference_update(set(bytes_to_str(v) for v in r))
+            ids.difference_update({bytes_to_str(v) for v in r})
             for key, value in items(r):
                 yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:

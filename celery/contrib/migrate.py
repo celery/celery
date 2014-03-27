@@ -250,7 +250,7 @@ def start_filter(app, conn, filter, limit=None, timeout=1.0,
     if isinstance(tasks, string_t):
         tasks = set(tasks.split(','))
     if tasks is None:
-        tasks = set([])
+        tasks = set()
 
     def update_state(body, message):
         state.count += 1

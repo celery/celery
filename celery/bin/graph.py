@@ -34,7 +34,7 @@ class graph(Command):
 
     def bootsteps(self, *args, **kwargs):
         worker = self.app.WorkController()
-        include = set(arg.lower() for arg in args or ['worker', 'consumer'])
+        include = {arg.lower() for arg in args or ['worker', 'consumer']}
         if 'worker' in include:
             graph = worker.blueprint.graph
             if 'consumer' in include:

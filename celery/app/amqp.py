@@ -65,7 +65,7 @@ class Queues(dict):
         self.ha_policy = ha_policy
         self.autoexchange = Exchange if autoexchange is None else autoexchange
         if isinstance(queues, (tuple, list)):
-            queues = dict((q.name, q) for q in queues)
+            queues = {q.name: q for q in queues}
         for name, q in items(queues or {}):
             self.add(q) if isinstance(q, Queue) else self.add_compat(name, **q)
 
@@ -156,8 +156,9 @@ class Queues(dict):
                         Can be iterable or string.
         """
         if include:
-            self._consume_from = dict((name, self[name])
-                                      for name in maybe_list(include))
+            self._consume_from = {
+                name: self[name] for name in maybe_list(include)
+            }
     select_subset = select  # XXX compat
 
     def deselect(self, exclude):

@@ -176,8 +176,8 @@ def lpmerge(L, R):
     """In place left precedent dictionary merge.
 
     Keeps values from `L`, if the value in `R` is :const:`None`."""
-    set = L.__setitem__
-    [set(k, v) for k, v in items(R) if v is not None]
+    setitem = L.__setitem__
+    [setitem(k, v) for k, v in items(R) if v is not None]
     return L
 
 
@@ -214,7 +214,7 @@ def cry(out=None, sepchr='=', seplen=49):  # pragma: no cover
 
     # get a map of threads by their ID so we can print their names
     # during the traceback dump
-    tmap = dict((t.ident, t) for t in threading.enumerate())
+    tmap = {t.ident: t for t in threading.enumerate()}
 
     sep = sepchr * seplen
     for tid, frame in items(sys._current_frames()):
@@ -276,9 +276,10 @@ def jsonify(obj,
     elif isinstance(obj, (tuple, list)):
         return [_jsonify(v) for v in obj]
     elif isinstance(obj, dict):
-        return dict((k, _jsonify(v, key=k))
-                    for k, v in items(obj)
-                    if (keyfilter(k) if keyfilter else 1))
+        return {
+            k: _jsonify(v, key=k) for k, v in items(obj)
+            if (keyfilter(k) if keyfilter else 1)
+        }
     elif isinstance(obj, datetime.datetime):
         # See "Date Time String Format" in the ECMA-262 specification.
         r = obj.isoformat()

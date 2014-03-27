@@ -186,9 +186,9 @@ class DependencyGraph(object):
         graph = DependencyGraph()
         components = self._tarjan72()
 
-        NC = dict((node, component)
-                  for component in components
-                  for node in component)
+        NC = {
+            node: component for component in components for node in component
+        }
         for component in components:
             graph.add_arc(component)
         for node in self:

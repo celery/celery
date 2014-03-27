@@ -14,11 +14,11 @@ class test_TaskConsumer(AppCase):
             self.app.conf.CELERY_ACCEPT_CONTENT = ['application/json']
             self.assertEqual(
                 self.app.amqp.TaskConsumer(conn).accept,
-                set(['application/json'])
+                {'application/json'},
             )
             self.assertEqual(
                 self.app.amqp.TaskConsumer(conn, accept=['json']).accept,
-                set(['application/json']),
+                {'application/json'},
             )
 
 

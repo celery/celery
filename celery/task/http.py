@@ -41,13 +41,13 @@ else:
 
     from urllib2 import Request, urlopen  # noqa
 
-    def utf8dict(tup):  # noqa
+    def utf8dict(tup, enc='utf-8'):  # noqa
         """With a dict's items() tuple return a new dict with any utf-8
         keys/values encoded."""
-        return dict(
-            (k.encode('utf-8'),
-             v.encode('utf-8') if isinstance(v, unicode) else v)  # noqa
-            for k, v in tup)
+        return {
+            k.encode(enc): (v.encode(enc) if isinstance(v, unicode) else v)
+            for k, v in tup
+        }
 
 
 class InvalidResponseError(Exception):

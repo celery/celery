@@ -221,8 +221,8 @@ class Request(object):
                           'delivery_info': self.delivery_info}
         fun = self.task.run
         supported_keys = fun_takes_kwargs(fun, default_kwargs)
-        extend_with = dict((key, val) for key, val in items(default_kwargs)
-                           if key in supported_keys)
+        extend_with = {key: val for key, val in items(default_kwargs)
+                       if key in supported_keys}
         kwargs.update(extend_with)
         return kwargs
 

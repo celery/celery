@@ -56,15 +56,14 @@ def query_task(state, ids, **kwargs):
     def reqinfo(state, req):
         return state, req.info()
 
-    reqs = dict((req.id, ('reserved', req.info()))
-                for req in _find_requests_by_id(
-                    ids, worker_state.reserved_requests))
-    reqs.update(dict(
-        (req.id, ('active', req.info()))
-        for req in _find_requests_by_id(
-            ids, worker_state.active_requests,
-        )
-    ))
+    reqs = {
+        req.id: ('reserved', req.info())
+        for req in _find_requests_by_id(ids, worker_state.reserved_requests)
+    }
+    reqs.update({
+        req.id: ('active', req.info())
+        for req in _find_requests_by_id(ids, worker_state.active_requests)
+    })
 
     return reqs
 
@@ -280,9 +279,10 @@ def dump_tasks(state, taskinfoitems=None, **kwargs):
     taskinfoitems = taskinfoitems or DEFAULT_TASK_INFO_ITEMS
 
     def _extract_info(task):
-        fields = dict((field, str(getattr(task, field, None)))
-                      for field in taskinfoitems
-                      if getattr(task, field, None) is not None)
+        fields = {
+            field: str(getattr(task, field, None)) for field in taskinfoitems
+            if getattr(task, field, None) is not None
+        }
         if fields:
             info = ['='.join(f) for f in items(fields)]
             return '{0} [{1}]'.format(task.name, ' '.join(info))

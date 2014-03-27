@@ -116,9 +116,9 @@ from celery.utils.text import pluralize
 
 __all__ = ['MultiTool']
 
-SIGNAMES = set(sig for sig in dir(signal)
-               if sig.startswith('SIG') and '_' not in sig)
-SIGMAP = dict((getattr(signal, name), name) for name in SIGNAMES)
+SIGNAMES = {sig for sig in dir(signal)
+            if sig.startswith('SIG') and '_' not in sig}
+SIGMAP = {getattr(signal, name): name for name in SIGNAMES}
 
 USAGE = """\
 usage: {prog_name} start <node1 node2 nodeN|range> [worker options]

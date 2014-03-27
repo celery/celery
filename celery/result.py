@@ -676,9 +676,9 @@ class ResultSet(ResultBase):
 
         """
         assert_will_not_block()
-        order_index = None if callback else dict(
-            (result.id, i) for i, result in enumerate(self.results)
-        )
+        order_index = None if callback else {
+            result.id: i for i, result in enumerate(self.results)
+        }
         acc = None if callback else [None for _ in range(len(self))]
         for task_id, meta in self.iter_native(timeout, interval, no_ack):
             value = meta['result']

@@ -141,7 +141,7 @@ class test_ControlPanel(AppCase):
         evd.groups = set()
         panel.handle('enable_events')
         self.assertIn('task', evd.groups)
-        evd.groups = set(['task'])
+        evd.groups = {'task'}
         self.assertIn('already enabled', panel.handle('enable_events')['ok'])
 
     def test_disable_events(self):
@@ -149,7 +149,7 @@ class test_ControlPanel(AppCase):
         panel = self.create_panel(consumer=consumer)
         evd = consumer.event_dispatcher
         evd.enabled = True
-        evd.groups = set(['task'])
+        evd.groups = {'task'}
         panel.handle('disable_events')
         self.assertNotIn('task', evd.groups)
         self.assertIn('already disabled', panel.handle('disable_events')['ok'])

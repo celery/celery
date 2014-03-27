@@ -265,8 +265,7 @@ def padlist(container, size, default=None):
 def mattrgetter(*attrs):
     """Like :func:`operator.itemgetter` but return :const:`None` on missing
     attributes instead of raising :exc:`AttributeError`."""
-    return lambda obj: dict((attr, getattr(obj, attr, None))
-                            for attr in attrs)
+    return lambda obj: {attr: getattr(obj, attr, None) for attr in attrs}
 
 
 def uniq(it):
@@ -303,4 +302,4 @@ class _regen(UserList, list):
 def dictfilter(d=None, **kw):
     """Remove all keys from dict ``d`` whose value is :const:`None`"""
     d = kw if d is None else (dict(d, **kw) if kw else d)
-    return dict((k, v) for k, v in items(d) if v is not None)
+    return {k: v for k, v in items(d) if v is not None}

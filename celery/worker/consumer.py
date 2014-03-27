@@ -550,7 +550,7 @@ class Heart(bootsteps.StartStopStep):
 class Mingle(bootsteps.StartStopStep):
     label = 'Mingle'
     requires = (Events, )
-    compatible_transports = set(['amqp', 'redis'])
+    compatible_transports = {'amqp', 'redis'}
 
     def __init__(self, c, without_mingle=False, **kwargs):
         self.enabled = not without_mingle and self.compatible_transport(c.app)
@@ -643,7 +643,7 @@ class Gossip(bootsteps.ConsumerStep):
     _cons_stamp_fields = itemgetter(
         'id', 'clock', 'hostname', 'pid', 'topic', 'action', 'cver',
     )
-    compatible_transports = set(['amqp', 'redis'])
+    compatible_transports = {'amqp', 'redis'}
 
     def __init__(self, c, without_gossip=False, interval=5.0, **kwargs):
         self.enabled = not without_gossip and self.compatible_transport(c.app)

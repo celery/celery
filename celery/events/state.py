@@ -222,7 +222,7 @@ class Worker(object):
     def _defaults(cls):
         """Deprecated, to be removed in 3.3"""
         source = cls()
-        return dict((k, getattr(source, k)) for k in cls._fields)
+        return {k: getattr(source, k) for k in cls._fields}
 
 
 @with_unique_field('uuid')
@@ -295,9 +295,9 @@ class Task(object):
             # this state logically happens-before the current state, so merge.
             keep = self.merge_rules.get(state)
             if keep is not None:
-                fields = dict(
-                    (k, v) for k, v in items(fields) if k in keep
-                )
+                fields = {
+                    k: v for k, v in items(fields) if k in keep
+                }
             for key, value in items(fields):
                 setattr(self, key, value)
         else:
@@ -323,9 +323,9 @@ class Task(object):
 
     def as_dict(self):
         get = object.__getattribute__
-        return dict(
-            (k, get(self, k)) for k in self._fields
-        )
+        return {
+            k: get(self, k) for k in self._fields
+        }
 
     def __reduce__(self):
         return _depickle_task, (self.__class__, self.as_dict())
@@ -379,7 +379,7 @@ class Task(object):
     def merge(self, state, timestamp, fields):
         keep = self.merge_rules.get(state)
         if keep is not None:
-            fields = dict((k, v) for k, v in items(fields) if k in keep)
+            fields = {k: v for k, v in items(fields) if k in keep}
         for key, value in items(fields):
             setattr(self, key, value)
 
@@ -387,7 +387,7 @@ class Task(object):
     def _defaults(cls):
         """Deprecated, to be removed in 3.3."""
         source = cls()
-        return dict((k, getattr(source, k)) for k in source._fields)
+        return {k: getattr(source, k) for k in source._fields}
 
 
 class State(object):
@@ -436,9 +436,10 @@ class State(object):
 
     def _clear_tasks(self, ready=True):
         if ready:
-            in_progress = dict(
-                (uuid, task) for uuid, task in self.itertasks()
-                if task.state not in states.READY_STATES)
+            in_progress = {
+                uuid: task for uuid, task in self.itertasks()
+                if task.state not in states.READY_STATES
+            }
             self.tasks.clear()
             self.tasks.update(in_progress)
         else:

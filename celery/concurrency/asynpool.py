@@ -347,8 +347,9 @@ class AsynPool(_pool.Pool):
         processes = self.cpu_count() if processes is None else processes
         self.synack = synack
         # create queue-pairs for all our processes in advance.
-        self._queues = dict((self.create_process_queues(), None)
-                            for _ in range(processes))
+        self._queues = {
+            self.create_process_queues(): None for _ in range(processes)
+        }
 
         # inqueue fileno -> process mapping
         self._fileno_to_inq = {}
@@ -912,7 +913,7 @@ class AsynPool(_pool.Pool):
             self._busy_workers.clear()
 
     def _flush_writer(self, proc, writer):
-        fds = set([proc.inq._writer])
+        fds = {proc.inq._writer}
         try:
             while fds:
                 if not proc._is_alive():
@@ -941,9 +942,9 @@ class AsynPool(_pool.Pool):
         """Grow the pool by ``n`` proceses."""
         diff = max(self._processes - len(self._queues), 0)
         if diff:
-            self._queues.update(
-                dict((self.create_process_queues(), None) for _ in range(diff))
-            )
+            self._queues.update({
+                self.create_process_queues(): None for _ in range(diff)
+            })
 
     def on_shrink(self, n):
         """Shrink the pool by ``n`` processes."""
@@ -1085,7 +1086,7 @@ class AsynPool(_pool.Pool):
         """
         resq = proc.outq._reader
         on_state_change = self._result_handler.on_state_change
-        fds = set([resq])
+        fds = {resq}
         while fds and not resq.closed and self._state != TERMINATE:
             readable, _, again = _select(fds, None, fds, timeout=0.01)
             if readable:

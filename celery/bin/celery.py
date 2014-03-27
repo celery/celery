@@ -572,10 +572,10 @@ class shell(Command):  # pragma: no cover
                        'signature': celery.signature}
 
         if not without_tasks:
-            self.locals.update(dict(
-                (task.__name__, task) for task in values(self.app.tasks)
-                if not task.name.startswith('celery.')),
-            )
+            self.locals.update({
+                task.__name__: task for task in values(self.app.tasks)
+                if not task.name.startswith('celery.')
+            })
 
         if force_python:
             return self.invoke_fallback_shell()

@@ -112,7 +112,7 @@ class EventDispatcher(object):
     You need to :meth:`close` this after use.
 
     """
-    DISABLED_TRANSPORTS = set(['sql'])
+    DISABLED_TRANSPORTS = {'sql'}
 
     app = None
 
@@ -300,7 +300,7 @@ class EventReceiver(ConsumerMixin):
         self.adjust_clock = self.clock.adjust
         self.forward_clock = self.clock.forward
         if accept is None:
-            accept = set([self.app.conf.CELERY_EVENT_SERIALIZER, 'json'])
+            accept = {self.app.conf.CELERY_EVENT_SERIALIZER, 'json'}
         self.accept = accept
 
     def _get_queue_arguments(self):
