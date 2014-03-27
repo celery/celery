@@ -250,7 +250,10 @@ class Suite(object):
             self.join(r, timeout=10)
         finally:
             # very big values so remove results from backend
-            r.forget()
+            try:
+                r.forget()
+            except NotImplementedError:
+                pass
 
     def bigtasks(self, wait=None):
         self._revoketerm(wait, False, False, BIG)
