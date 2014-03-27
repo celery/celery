@@ -13,8 +13,8 @@ version_info_t = namedtuple(
     'version_info_t', ('major', 'minor', 'micro', 'releaselevel', 'serial'),
 )
 
-SERIES = 'Cipater'
-VERSION = version_info_t(3, 1, 10, '', '')
+SERIES = 'DEV'
+VERSION = version_info_t(3, 2, 0, 'a1', '')
 __version__ = '{0.major}.{0.minor}.{0.micro}{0.releaselevel}'.format(VERSION)
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
