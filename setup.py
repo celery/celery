@@ -19,8 +19,8 @@ import codecs
 
 CELERY_COMPAT_PROGRAMS = int(os.environ.get('CELERY_COMPAT_PROGRAMS', 1))
 
-if sys.version_info < (2, 6):
-    raise Exception('Celery 3.1 requires Python 2.6 or higher.')
+if sys.version_info < (2, 7):
+    raise Exception('Celery 3.2 requires Python 2.7 or higher.')
 
 downgrade_packages = [
     'celery.app.task',
@@ -67,7 +67,6 @@ classes = """
     Topic :: Software Development :: Object Brokering
     Programming Language :: Python
     Programming Language :: Python :: 2
-    Programming Language :: Python :: 2.6
     Programming Language :: Python :: 2.7
     Programming Language :: Python :: 3
     Programming Language :: Python :: 3.3

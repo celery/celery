@@ -4,7 +4,6 @@ env:
   global:
     PYTHONUNBUFFERED=yes
   matrix:
-    - TOXENV=2.6
     - TOXENV=2.7
     - TOXENV=3.3
     - TOXENV=3.4
