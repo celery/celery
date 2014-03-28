@@ -793,6 +793,10 @@ class GroupResult(ResultSet):
             backend or (self.app.backend if self.app else current_app.backend)
         ).restore_group(id)
 
+    @property
+    def supports_native_join(self):
+        return False
+
 
 class TaskSetResult(GroupResult):
     """Deprecated version of :class:`GroupResult`"""
