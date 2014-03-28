@@ -298,7 +298,7 @@ class test_MongoBackend(AppCase):
         self.backend.taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
-        mock_collection = Mock()
+        self.backend.collections = mock_collection = Mock()
 
         mock_get_database.return_value = mock_database
         mock_database.__getitem__.return_value = mock_collection
@@ -309,7 +309,7 @@ class test_MongoBackend(AppCase):
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(
             MONGODB_COLLECTION)
-        mock_collection.assert_called_once_with()
+        self.assertTrue(mock_collection.remove.called)
 
     def test_get_database_authfailure(self):
         x = MongoBackend(app=self.app)

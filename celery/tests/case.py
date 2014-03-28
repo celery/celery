@@ -412,8 +412,12 @@ class AppCase(Case):
         self._current_app = current_app()
         self._default_app = _state.default_app
         trap = Trap()
+        self._prev_tls = _state._tls
         _state.set_default_app(trap)
-        _state._tls.current_app = trap
+
+        class NonTLS(object):
+            current_app = trap
+        _state._tls = NonTLS()
 
         self.app = self.Celery(set_as_current=False)
         if not self.contained:
@@ -447,13 +451,12 @@ class AppCase(Case):
                 if isinstance(backend.client, DummyClient):
                     backend.client.cache.clear()
                 backend._cache.clear()
-        from celery._state import (
-            _tls, set_default_app, _set_task_join_will_block,
-        )
-        _set_task_join_will_block(False)
+        from celery import _state
+        _state._set_task_join_will_block(False)
 
-        set_default_app(self._default_app)
-        _tls.current_app = self._current_app
+        _state.set_default_app(self._default_app)
+        _state._tls = self._prev_tls
+        _state._tls.current_app = self._current_app
         if self.app is not self._current_app:
             self.app.close()
         self.app = None
