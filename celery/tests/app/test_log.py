@@ -97,7 +97,7 @@ class test_ColorFormatter(AppCase):
     @patch('celery.utils.log.safe_str')
     @patch('logging.Formatter.formatException')
     def test_formatException_not_string(self, fe, safe_str):
-        x = ColorFormatter('HELLO')
+        x = ColorFormatter()
         value = KeyError()
         fe.return_value = value
         self.assertIs(x.formatException(value), value)
@@ -106,16 +106,19 @@ class test_ColorFormatter(AppCase):
 
     @patch('logging.Formatter.formatException')
     @patch('celery.utils.log.safe_str')
-    def test_formatException_string(self, safe_str, fe, value='HELLO'):
-        x = ColorFormatter(value)
-        fe.return_value = value
-        self.assertTrue(x.formatException(value))
+    def test_formatException_string(self, safe_str, fe):
+        x = ColorFormatter()
+        fe.return_value = 'HELLO'
+        try:
+            raise Exception()
+        except Exception:
+            self.assertTrue(x.formatException(sys.exc_info()))
         if sys.version_info[0] == 2:
             self.assertTrue(safe_str.called)
 
     @patch('logging.Formatter.format')
     def test_format_object(self, _format):
-        x = ColorFormatter(object())
+        x = ColorFormatter()
         x.use_color = True
         record = Mock()
         record.levelname = 'ERROR'
@@ -124,7 +127,7 @@ class test_ColorFormatter(AppCase):
 
     @patch('celery.utils.log.safe_str')
     def test_format_raises(self, safe_str):
-        x = ColorFormatter('HELLO')
+        x = ColorFormatter()
 
         def on_safe_str(s):
             try:
@@ -136,6 +139,7 @@ class test_ColorFormatter(AppCase):
         class Record(object):
             levelname = 'ERROR'
             msg = 'HELLO'
+            exc_info = 1
             exc_text = 'error text'
             stack_info = None
 
@@ -148,15 +152,15 @@ class test_ColorFormatter(AppCase):
         record = Record()
         safe_str.return_value = record
 
-        x.format(record)
-        self.assertIn('<Unrepresentable', record.msg)
+        msg = x.format(record)
+        self.assertIn('<Unrepresentable', msg)
         self.assertEqual(safe_str.call_count, 1)
 
     @patch('celery.utils.log.safe_str')
     def test_format_raises_no_color(self, safe_str):
         if sys.version_info[0] == 3:
             raise SkipTest('py3k')
-        x = ColorFormatter('HELLO', False)
+        x = ColorFormatter(use_color=False)
         record = Mock()
         record.levelname = 'ERROR'
         record.msg = 'HELLO'
