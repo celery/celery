@@ -26,7 +26,7 @@ from kombu.utils import cached_property, uuid
 from celery import platforms
 from celery import signals
 from celery._state import (
-    _task_stack, _tls, get_current_app, set_default_app,
+    _task_stack, get_current_app, _set_current_app, set_default_app,
     _register_app, get_current_worker_task,
 )
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
@@ -147,7 +147,7 @@ class Celery(object):
         _register_app(self)
 
     def set_current(self):
-        _tls.current_app = self
+        _set_current_app(self)
 
     def set_default(self):
         set_default_app(self)
