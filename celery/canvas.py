@@ -477,13 +477,13 @@ class group(Signature):
                 task['args'] = task._merge(d['args'])[0]
         return group(tasks, app=app, **kwdict(d['options']))
 
-    def apply_async(self, args=(), kwargs=None, **options):
+    def apply_async(self, args=(), kwargs=None, add_to_parent=True, **options):
         tasks = _maybe_clone(self.tasks, app=self._app)
         if not tasks:
             return self.freeze()
         type = self.type
-        return type(*type.prepare(dict(self.options, **options),
-                                  tasks, args))
+        return type(*type.prepare(dict(self.options, **options), tasks, args),
+                    add_to_parent=add_to_parent)
 
     def set_immutable(self, immutable):
         for task in self.tasks:

@@ -257,11 +257,27 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     try:
                         # callback tasks must be applied before the result is
                         # stored, so that result.children is populated.
-                        group(
-                            [signature(callback, app=app)
-                             for callback in task.request.callbacks or []],
-                            app=app,
-                        ).apply_async((retval, ))
+
+                        # groups are called inline and will store trail
+                        # separately, so need to call them separately
+                        # so that the trail's not added multiple times :(
+                        # (Issue #1936)
+                        callbacks = task.request.callbacks
+                        if callbacks:
+                            if len(task.request.callbacks) > 1:
+                                sigs, groups = [], []
+                                for sig in callbacks:
+                                    sig = signature(sig, app=app)
+                                    if isinstance(sig, group):
+                                        groups.append(sig)
+                                    else:
+                                        sigs.append(sig)
+                                for group_ in groups:
+                                    group.apply_async((retval, ))
+                                if sigs:
+                                    group(sigs).apply_async(retval, )
+                            else:
+                                signature(callbacks[0], app=app).delay(retval)
                         if publish_result:
                             store_result(
                                 uuid, retval, SUCCESS, request=task_request,
