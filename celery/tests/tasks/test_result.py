@@ -489,6 +489,7 @@ class test_GroupResult(AppCase):
         subtasks = [self.app.AsyncResult(uuid(), backend=backend)
                     for i in range(10)]
         ts = self.app.GroupResult(uuid(), subtasks)
+        ts.app.backend = backend
         backend.ids = [subtask.id for subtask in subtasks]
         res = ts.join_native()
         self.assertEqual(res, list(range(10)))
@@ -526,6 +527,7 @@ class test_GroupResult(AppCase):
         subtasks = [self.app.AsyncResult(uuid(), backend=backend)
                     for i in range(10)]
         ts = self.app.GroupResult(uuid(), subtasks)
+        ts.app.backend = backend
         backend.ids = [subtask.id for subtask in subtasks]
         self.assertEqual(len(list(ts.iter_native())), 10)
 
