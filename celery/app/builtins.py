@@ -171,7 +171,8 @@ def add_group_task(app):
         accept_magic_kwargs = False
         _decorated = True
 
-        def run(self, tasks, result, group_id, partial_args):
+        def run(self, tasks, result, group_id, partial_args,
+                add_to_parent=True):
             app = self.app
             result = result_from_tuple(result, app)
             # any partial args are added to all tasks in the group
@@ -186,7 +187,7 @@ def add_group_task(app):
                 [stask.apply_async(group_id=group_id, producer=pub,
                                    add_to_parent=False) for stask in taskit]
             parent = get_current_worker_task()
-            if parent:
+            if add_to_parent and parent:
                 parent.add_trail(result)
             return result
 
