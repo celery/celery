@@ -352,7 +352,7 @@ def default_nodename(hostname):
 def node_format(s, nodename, **extra):
     name, host = nodesplit(nodename)
     return host_format(
-        s, host, n=name or NODENAME_DEFAULT, **extra)
+        s, host, name or NODENAME_DEFAULT, **extra)
 
 
 def _fmt_process_index(prefix='', default='0'):
@@ -362,9 +362,10 @@ def _fmt_process_index(prefix='', default='0'):
 _fmt_process_index_with_prefix = partial(_fmt_process_index, '-', '')
 
 
-def host_format(s, host=None, **extra):
+def host_format(s, host=None, name=None, **extra):
     host = host or socket.gethostname()
-    name, _, domain = host.partition('.')
+    hname, _, domain = host.partition('.')
+    name = name or hname
     keys = dict({
         'h': host, 'n': name, 'd': domain,
         'i': _fmt_process_index, 'I': _fmt_process_index_with_prefix,

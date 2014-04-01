@@ -96,9 +96,9 @@ This is an example configuration for a Python project.
     # Extra command-line arguments to the worker
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
-    # %N will be replaced with the first part of the nodename.
-    CELERYD_LOG_FILE="/var/log/celery/%N.log"
-    CELERYD_PID_FILE="/var/run/celery/%N.pid"
+    # %n will be replaced with the first part of the nodename.
+    CELERYD_LOG_FILE="/var/log/celery/%n.log"
+    CELERYD_PID_FILE="/var/run/celery/%n.pid"
 
     # Workers should run as an unprivileged user.
     #   You need to create this user manually (or you can choose
@@ -153,10 +153,10 @@ Available options
     directory.
 
 * CELERYD_PID_FILE
-    Full path to the PID file. Default is /var/run/celery/%N.pid
+    Full path to the PID file. Default is /var/run/celery/%n.pid
 
 * CELERYD_LOG_FILE
-    Full path to the worker log file. Default is /var/log/celery/%N.log
+    Full path to the worker log file. Default is /var/log/celery/%n.log
 
 * CELERYD_LOG_LEVEL
     Worker log level. Default is INFO.
@@ -311,9 +311,9 @@ This is an example configuration for a Python project:
     # Extra command-line arguments to the worker
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
-    # %N will be replaced with the first part of the nodename.
-    CELERYD_LOG_FILE="/var/log/celery/%N.log"
-    CELERYD_PID_FILE="/var/run/celery/%N.pid"
+    # %n will be replaced with the first part of the nodename.
+    CELERYD_LOG_FILE="/var/log/celery/%n.log"
+    CELERYD_PID_FILE="/var/run/celery/%n.pid"
 
 .. _generic-systemd-celeryd-django-example:
 
@@ -339,9 +339,9 @@ This is an example configuration for those using `django-celery`:
     # Extra command-line arguments to the worker
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
-    # %N will be replaced with the first part of the nodename.
-    CELERYD_LOG_FILE="/var/log/celery/%N.log"
-    CELERYD_PID_FILE="/var/run/celery/%N.pid"
+    # %n will be replaced with the first part of the nodename.
+    CELERYD_LOG_FILE="/var/log/celery/%n.log"
+    CELERYD_PID_FILE="/var/run/celery/%n.pid"
 
 To add an environment variable such as DJANGO_SETTINGS_MODULE use the
 Environment in celery.service.
