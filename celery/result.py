@@ -658,7 +658,7 @@ class ResultSet(ResultBase):
         results = self.results
         if not results:
             return iter([])
-        return results[0].backend.get_many(
+        return self.backend.get_many(
             set(r.id for r in results),
             timeout=timeout, interval=interval, no_ack=no_ack,
         )
@@ -719,6 +719,10 @@ class ResultSet(ResultBase):
     @property
     def supports_native_join(self):
         return self.results[0].supports_native_join
+
+    @property
+    def backend(self):
+        return self.app.backend if self.app else self.results[0].backend
 
 
 class GroupResult(ResultSet):
