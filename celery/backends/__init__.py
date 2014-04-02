@@ -16,7 +16,6 @@ from celery.local import Proxy
 from celery._state import current_app
 from celery.five import reraise
 from celery.utils.imports import symbol_by_name
-from celery.utils.functional import memoize
 
 __all__ = ['get_backend_cls', 'get_backend_by_url']
 
@@ -41,7 +40,6 @@ BACKEND_ALIASES = {
 default_backend = Proxy(lambda: current_app.backend)
 
 
-@memoize(100)
 def get_backend_cls(backend=None, loader=None):
     """Get backend class by name/alias"""
     backend = backend or 'disabled'
