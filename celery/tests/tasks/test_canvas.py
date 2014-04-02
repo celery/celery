@@ -273,6 +273,9 @@ class test_group(CanvasCase):
     def test_call_empty_group(self):
         x = group(app=self.app)
         self.assertFalse(len(x()))
+        x.delay()
+        x.apply_async()
+        x()
 
     def test_skew(self):
         g = group([self.add.s(i, i) for i in range(10)])
