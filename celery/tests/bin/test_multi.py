@@ -8,7 +8,6 @@ from celery.bin.multi import (
     main,
     MultiTool,
     findsig,
-    abbreviations,
     parse_ns_range,
     format_opt,
     quote,
@@ -29,14 +28,6 @@ class test_functions(AppCase):
         self.assertEqual(findsig([]), signal.SIGTERM)
         self.assertEqual(findsig(['-s']), signal.SIGTERM)
         self.assertEqual(findsig(['-log']), signal.SIGTERM)
-
-    def test_abbreviations(self):
-        expander = abbreviations({'%s': 'START',
-                                  '%x': 'STOP'})
-        self.assertEqual(expander('foo%s'), 'fooSTART')
-        self.assertEqual(expander('foo%x'), 'fooSTOP')
-        self.assertEqual(expander('foo%y'), 'foo%y')
-        self.assertIsNone(expander(None))
 
     def test_parse_ns_range(self):
         self.assertEqual(parse_ns_range('1-3', True), ['1', '2', '3'])
@@ -78,6 +69,7 @@ class test_multi_args(AppCase):
 
     @patch('socket.gethostname')
     def test_parse(self, gethostname):
+        gethostname.return_value = 'example.com'
         p = NamespacedOptionParser([
             '-c:jerry,elaine', '5',
             '--loglevel:kramer=DEBUG',
@@ -120,12 +112,11 @@ class test_multi_args(AppCase):
         )
         expand = names[0][2]
         self.assertEqual(expand('%h'), '*P*jerry@*S*')
-        self.assertEqual(expand('%n'), 'jerry')
+        self.assertEqual(expand('%n'), '*P*jerry')
         names2 = list(multi_args(p, cmd='COMMAND', append='',
                       prefix='*P*', suffix='*S*'))
         self.assertEqual(names2[0][1][-1], '-- .disable_rate_limits=1')
 
-        gethostname.return_value = 'example.com'
         p2 = NamespacedOptionParser(['10', '-c:1', '5'])
         names3 = list(multi_args(p2, cmd='COMMAND'))
         self.assertEqual(len(names3), 10)
