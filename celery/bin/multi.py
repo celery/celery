@@ -47,6 +47,9 @@ Examples
     # specify fully qualified nodenames
     $ celery multi start foo@worker.example.com bar@worker.example.com -c 3
 
+    # fully qualified nodenames but using the current hostname
+    $ celery multi start foo@%h bar@%h
+
     # Advanced example starting 10 workers in the background:
     #   * Three of the workers processes the images and video queue
     #   * Two of the workers processes the data queue with loglevel DEBUG
