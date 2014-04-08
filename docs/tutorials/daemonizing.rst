@@ -211,7 +211,7 @@ This is an example configuration for a Python project:
     CELERYBEAT_CHDIR="/opt/Myproject/"
 
     # Extra arguments to celerybeat
-    CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
+    CELERYBEAT_OPTS="--schedule=/var/run/celery/celerybeat-schedule"
 
 .. _generic-initd-celerybeat-django-example:
 
@@ -265,7 +265,7 @@ Available options
 * CELERY_CREATE_LOGDIR
     Always create logfile directory.  By default only enable when no custom
     logfile location set.
-    
+
 .. _daemon-systemd-generic:
 
 Usage systemd
@@ -279,10 +279,10 @@ Service file: celery.service
 :Usage: `systemctl {start|stop|restart|status} celery.service`
 :Configuration file: /etc/conf.d/celery
 
-To create a temporary folders for the log and pid files change user and group in 
+To create a temporary folders for the log and pid files change user and group in
 /usr/lib/tmpfiles.d/celery.conf.
-To configure user, group, chdir change settings User, Group and WorkingDirectory defines 
-in /usr/lib/systemd/system/celery.service. 
+To configure user, group, chdir change settings User, Group and WorkingDirectory defines
+in /usr/lib/systemd/system/celery.service.
 
 .. _generic-systemd-celery-example:
 
