@@ -443,8 +443,10 @@ class test_funs(WorkerAppCase):
     def test_parse_options(self):
         cmd = worker()
         cmd.app = self.app
-        opts, args = cmd.parse_options('worker', ['--concurrency=512'])
+        opts, args = cmd.parse_options('worker', ['--concurrency=512',
+                                       '--heartbeat-interval=10'])
         self.assertEqual(opts.concurrency, 512)
+        self.assertEqual(opts.heartbeat_interval, 10)
 
     @disable_stdouts
     def test_main(self):
