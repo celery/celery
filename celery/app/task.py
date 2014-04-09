@@ -313,7 +313,7 @@ class Task(object):
     #: :setting:`CELERY_ACKS_LATE` setting.
     acks_late = None
 
-    #: List/tuple of expected exceptions.
+    #: Tuple of expected exceptions.
     #:
     #: These are errors that are expected in normal operation
     #: and that should not be regarded as a real error by the worker.
