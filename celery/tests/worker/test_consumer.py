@@ -164,11 +164,30 @@ class test_Heart(AppCase):
         with patch('celery.worker.heartbeat.Heart') as hcls:
             h = Heart(c)
             self.assertTrue(h.enabled)
+            self.assertEqual(h.heartbeat_interval, None)
             self.assertIsNone(c.heart)
 
             h.start(c)
             self.assertTrue(c.heart)
-            hcls.assert_called_with(c.timer, c.event_dispatcher)
+            hcls.assert_called_with(c.timer, c.event_dispatcher,
+                                    h.heartbeat_interval)
+            c.heart.start.assert_called_with()
+
+    def test_start_heartbeat_interval(self):
+        c = Mock()
+        c.timer = Mock()
+        c.event_dispatcher = Mock()
+
+        with patch('celery.worker.heartbeat.Heart') as hcls:
+            h = Heart(c, False, 20)
+            self.assertTrue(h.enabled)
+            self.assertEqual(h.heartbeat_interval, 20)
+            self.assertIsNone(c.heart)
+
+            h.start(c)
+            self.assertTrue(c.heart)
+            hcls.assert_called_with(c.timer, c.event_dispatcher,
+                                    h.heartbeat_interval)
             c.heart.start.assert_called_with()
 
 

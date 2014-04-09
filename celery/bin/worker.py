@@ -86,6 +86,10 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
     Do not send event heartbeats.
 
+.. cmdoption:: --heartbeat-interval
+
+    Interval in seconds at which to send worker heartbeat
+
 .. cmdoption:: --purge
 
     Purges all waiting tasks before the daemon is started.
@@ -245,6 +249,7 @@ class worker(Command):
             Option('--without-gossip', action='store_true', default=False),
             Option('--without-mingle', action='store_true', default=False),
             Option('--without-heartbeat', action='store_true', default=False),
+            Option('--heartbeat-interval', type='int'),
             Option('-O', dest='optimization'),
             Option('-D', '--detach', action='store_true'),
         ) + daemon_options() + tuple(self.app.user_options['worker'])
