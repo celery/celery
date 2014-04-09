@@ -129,7 +129,10 @@ class test_task_retries(TasksCase):
         try:
             with self.assertRaises(Retry):
                 import sys
-                sys.exc_clear()
+                try:
+                    sys.exc_clear()
+                except AttributeError:
+                    pass
                 self.retry_task_mockapply.retry(args=[4, 4], kwargs=None)
         finally:
             self.retry_task_mockapply.pop_request()
