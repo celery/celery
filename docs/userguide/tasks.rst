@@ -472,7 +472,7 @@ General
 
 .. attribute:: Task.throws
 
-    Optional list of expected error classes that should not be regarded
+    Optional tuple of expected error classes that should not be regarded
     as an actual error.
 
     Errors in this list will be reported as a failure to the result backend,
