@@ -296,7 +296,7 @@ def reclassmethod(method):
     return classmethod(fun_of_method(method))
 
 
-class MagicModule(ModuleType):
+class LazyModule(ModuleType):
     _compat_modules = ()
     _all_by_module = {}
     _direct = {}
@@ -322,7 +322,7 @@ class MagicModule(ModuleType):
 
 
 def create_module(name, attrs, cls_attrs=None, pkg=None,
-                  base=MagicModule, prepare_attr=None):
+                  base=LazyModule, prepare_attr=None):
     fqdn = '.'.join([pkg.__name__, name]) if pkg else name
     cls_attrs = {} if cls_attrs is None else cls_attrs
     pkg, _, modname = name.rpartition('.')
@@ -336,7 +336,7 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
 
 
 def recreate_module(name, compat_modules=(), by_module={}, direct={},
-                    base=MagicModule, **attrs):
+                    base=LazyModule, **attrs):
     old_module = sys.modules[name]
     origins = get_origins(by_module)
     compat_modules = COMPAT_MODULES.get(name, ())

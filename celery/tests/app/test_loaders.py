@@ -206,9 +206,11 @@ class test_DefaultLoader(AppCase):
         except ValueError:
             pass
         celery = sys.modules.pop('celery', None)
+        sys.modules.pop('celery.five', None)
         try:
             self.assertTrue(l.import_from_cwd('celery'))
             sys.modules.pop('celery', None)
+            sys.modules.pop('celery.five', None)
             sys.path.insert(0, os.getcwd())
             self.assertTrue(l.import_from_cwd('celery'))
         finally:
