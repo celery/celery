@@ -10,6 +10,7 @@
 from __future__ import absolute_import
 
 from collections import deque
+from copy import deepcopy
 
 from celery._state import get_current_worker_task
 from celery.utils import uuid
@@ -306,7 +307,10 @@ def add_chain_task(app):
             if link_error:
                 for task in tasks:
                     task.set(link_error=link_error)
-            tasks[0].apply_async(**options)
+            # copy kwargs and pop 'tasks' for passing it into the first task in a chain
+            prepared_kwargs = deepcopy(kwargs)
+            prepared_kwargs.pop('tasks')
+            tasks[0].apply_async(args=args, kwargs=prepared_kwargs, **options)
             return result
 
         def apply(self, args=(), kwargs={}, signature=maybe_signature,
