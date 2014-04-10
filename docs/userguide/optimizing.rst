@@ -223,5 +223,5 @@ worker option:
 
     $ celery -A proj worker -l info -Ofair
 
-With this option enabled the worker will only write to workers that are
+With this option enabled the worker will only write to processes that are
 available for work, disabling the prefetch behavior.
