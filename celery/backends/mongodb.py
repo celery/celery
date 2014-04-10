@@ -92,7 +92,6 @@ class MongoBackend(BaseBackend):
             self.options = dict(config, **config.pop('options', None) or {})
 
             # Set option defaults
-            self.options.setdefault('ssl', self.app.conf.BROKER_USE_SSL)
             self.options.setdefault('max_pool_size', self.max_pool_size)
             self.options.setdefault('auto_start_request', False)
 
