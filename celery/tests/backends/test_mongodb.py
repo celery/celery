@@ -196,9 +196,10 @@ class test_MongoBackend(AppCase):
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
         self.assertEqual(
-            ['status', 'task_id', 'date_done', 'traceback', 'result',
-             'children'],
-            list(ret_val.keys()))
+            list(sorted(['status', 'task_id', 'date_done', 'traceback',
+                         'result', 'children'])),
+            list(sorted(ret_val.keys())),
+        )
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_get_task_meta_for_no_result(self, mock_get_database):
