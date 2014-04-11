@@ -33,8 +33,6 @@ from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t
 from celery.utils.timeutils import maybe_timedelta
 
-from pymongo.errors import InvalidDocument
-
 from .base import BaseBackend
 
 __all__ = ['MongoBackend']
