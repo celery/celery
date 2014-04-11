@@ -214,9 +214,14 @@ class MongoBackend(BaseBackend):
         if not obj:
             return
 
+        if self.native_serialize:
+            result = self.decode(obj['result'])
+        else:
+            result = obj['result']
+
         meta = {
             'task_id': obj['_id'],
-            'result': self.decode(obj['result']),
+            'result': result,
             'date_done': obj['date_done'],
         }
 
