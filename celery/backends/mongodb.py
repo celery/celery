@@ -20,8 +20,10 @@ if pymongo:
         from bson.binary import Binary
     except ImportError:                     # pragma: no cover
         from pymongo.binary import Binary   # noqa
+    from pymongo.errors import InvalidDocument # noqa
 else:                                       # pragma: no cover
     Binary = None                           # noqa
+    InvalidDocument = None                  # noqa
 
 from kombu.syn import detect_environment
 from kombu.utils import cached_property
