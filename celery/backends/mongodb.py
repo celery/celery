@@ -165,8 +165,7 @@ class MongoBackend(BaseBackend):
                 )}
 
         try:
-            info = self.collection.save(meta)
-            print info
+            self.collection.save(meta)
         except InvalidDocument as exc:
             raise EncodeError(exc)
 
