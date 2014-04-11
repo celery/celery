@@ -188,8 +188,8 @@ class MongoBackend(BaseBackend):
             'status': obj['status'],
             'result': result,
             'date_done': obj['date_done'],
-            'traceback': self.decode(obj['traceback']),
-            'children': self.decode(obj['children']),
+            'traceback': traceback,
+            'children': children,
         }
 
         return meta
