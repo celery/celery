@@ -179,10 +179,9 @@ class MongoBackend(BaseBackend):
         if not obj:
             return {'status': states.PENDING, 'result': None}
 
-        if not self.native_serialize:
-            result = self.decode(obj['result'])
-        else:
-            result = obj['result']
+        result = self.native_serialize and self.decode(obj['result']) or obj['result']
+        traceback = self.native_serialize and self.decode(obj['traceback']) or obj['traceback']
+        children = self.native_serialize and self.decode(obj['children']) or obj['children']
 
         meta = {
             'task_id': obj['_id'],
