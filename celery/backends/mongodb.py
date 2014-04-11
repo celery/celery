@@ -20,12 +20,14 @@ if pymongo:
         from bson.binary import Binary
     except ImportError:                     # pragma: no cover
         from pymongo.binary import Binary   # noqa
+    from pymongo.errors import InvalidDocument # noqa
 else:                                       # pragma: no cover
     Binary = None                           # noqa
+    InvalidDocument = None                  # noqa
 
 from kombu.syn import detect_environment
 from kombu.utils import cached_property
-
+from kombu.exceptions import EncodeError 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t
@@ -34,6 +36,8 @@ from celery.utils.timeutils import maybe_timedelta
 from .base import BaseBackend
 
 __all__ = ['MongoBackend']
+
+BINARY_CODECS = frozenset(['pickle','msgpack'])
 
 
 class Bunch(object):
@@ -51,6 +55,8 @@ class MongoBackend(BaseBackend):
     taskmeta_collection = 'celery_taskmeta'
     max_pool_size = 10
     options = None
+
+    native_serialize = False
 
     supports_autoexpire = False
 
@@ -88,6 +94,8 @@ class MongoBackend(BaseBackend):
             self.taskmeta_collection = config.pop(
                 'taskmeta_collection', self.taskmeta_collection,
             )
+
+            self.native_serialize = config.pop('native_serialize', self.native_serialize)
 
             self.options = dict(config, **config.pop('options', None) or {})
 
@@ -132,18 +140,34 @@ class MongoBackend(BaseBackend):
             del(self.database)
             self._connection = None
 
+    def encode(self, data):
+        if not self.native_serialize:
+            payload = super(MongoBackend, self).encode(data)
+            #serializer which are in a unsupported format (pickle/binary)
+            if self.serializer in BINARY_CODECS:
+                return Binary(payload)
+
+            return payload
+        else:
+            return data
+
+
     def _store_result(self, task_id, result, status,
                       traceback=None, request=None, **kwargs):
         """Store return value and status of an executed task."""
         meta = {'_id': task_id,
                 'status': status,
-                'result': Binary(self.encode(result)),
+                'result': self.encode(result),
                 'date_done': datetime.utcnow(),
-                'traceback': Binary(self.encode(traceback)),
-                'children': Binary(self.encode(
+                'traceback': self.encode(traceback),
+                'children': self.encode(
                     self.current_task_children(request),
-                ))}
-        self.collection.save(meta)
+                )}
+
+        try:
+            self.collection.save(meta)
+        except InvalidDocument as exc:
+            raise EncodeError(exc)
 
         return result
 
@@ -154,13 +178,22 @@ class MongoBackend(BaseBackend):
         if not obj:
             return {'status': states.PENDING, 'result': None}
 
+        if not self.native_serialize:
+            result = self.decode(obj['result'])
+            traceback = self.decode(obj['traceback'])
+            children = self.decode(obj['children'])
+        else:
+            result = obj['result']
+            traceback = obj['traceback']
+            children =  obj['children']
+
         meta = {
             'task_id': obj['_id'],
             'status': obj['status'],
-            'result': self.decode(obj['result']),
+            'result': result,
             'date_done': obj['date_done'],
-            'traceback': self.decode(obj['traceback']),
-            'children': self.decode(obj['children']),
+            'traceback': traceback,
+            'children': children,
         }
 
         return meta
@@ -168,7 +201,7 @@ class MongoBackend(BaseBackend):
     def _save_group(self, group_id, result):
         """Save the group result."""
         meta = {'_id': group_id,
-                'result': Binary(self.encode(result)),
+                'result': self.encode(result),
                 'date_done': datetime.utcnow()}
         self.collection.save(meta)
 
@@ -180,9 +213,14 @@ class MongoBackend(BaseBackend):
         if not obj:
             return
 
+        if self.native_serialize:
+            result = self.decode(obj['result'])
+        else:
+            result = obj['result']
+
         meta = {
             'task_id': obj['_id'],
-            'result': self.decode(obj['result']),
+            'result': result,
             'date_done': obj['date_done'],
         }
 
