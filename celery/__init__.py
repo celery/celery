@@ -146,6 +146,7 @@ old_module, new_module = five.recreate_module(  # pragma: no cover
     __author__=__author__, __contact__=__contact__,
     __homepage__=__homepage__, __docformat__=__docformat__, five=five,
     VERSION=VERSION, SERIES=SERIES, VERSION_BANNER=VERSION_BANNER,
+    version_info_t=version_info_t,
     maybe_patch_concurrency=maybe_patch_concurrency,
     _find_option_with_arg=_find_option_with_arg,
 )
