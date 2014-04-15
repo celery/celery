@@ -15,6 +15,11 @@ new in Celery 3.1.
 :release-date: 2014-04-XX XX:XX X.X UTC
 :release-by: XXX
 
+- **MongoDB**: SSL configuration with non-MongoDB transport breaks MongoDB
+  results backend (Issue #1973).
+
+    Fix contributed by Brian Bouterse.
+
 .. _version-3.1.10:
 
 3.1.10
