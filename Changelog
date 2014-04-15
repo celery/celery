@@ -94,6 +94,11 @@ new in Celery 3.1.
 
     Fix contributed by Dmitry Malinovsky.
 
+- **MongoDB**: SSL configuration with non-MongoDB transport breaks MongoDB
+  results backend (Issue #1973).
+
+    Fix contributed by Brian Bouterse.
+
 - **Canvas**: Chords can now contain a group of other chords (Issue #1921).
 
 - **Canvas**: Chords can now be combined when using the amqp result backend
