@@ -596,9 +596,7 @@ class Tasks(bootsteps.StartStopStep):
         # - RabbitMQ 3.3 completely redefines how basic_qos works..
         # This will detect if the new qos smenatics is in effect,
         # and if so make sure the 'apply_global' flag is set on qos updates.
-        qos_global = not (
-            c.connection.transport.qos_semantics_matches_spec(
-                c.connection.connection))
+        qos_global = not c.connection.qos_semantics_matches_spec
 
         # set initial prefetch count
         c.connection.default_channel.basic_qos(
