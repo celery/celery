@@ -45,6 +45,9 @@ from .utils import (
     AppPickler, Settings, bugreport, _unpickle_app, _unpickle_app_v2, appstr,
 )
 
+# Load all builtin tasks
+from . import builtins  # noqa
+
 __all__ = ['Celery']
 
 _EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
