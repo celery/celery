@@ -98,7 +98,7 @@ class test_MongoBackend(AppCase):
 
             connection = self.backend._get_connection()
             mock_Connection.assert_called_once_with(
-                host='mongodb://localhost:27017', ssl=False, max_pool_size=10,
+                host='mongodb://localhost:27017', max_pool_size=10,
                 auto_start_request=False)
             self.assertEqual(sentinel.connection, connection)
 
@@ -113,7 +113,7 @@ class test_MongoBackend(AppCase):
 
             connection = self.backend._get_connection()
             mock_Connection.assert_called_once_with(
-                host=mongodb_uri, ssl=False, max_pool_size=10,
+                host=mongodb_uri, max_pool_size=10,
                 auto_start_request=False)
             self.assertEqual(sentinel.connection, connection)
 
