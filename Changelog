@@ -15,7 +15,7 @@ new in Celery 3.1.
 :release-date: 2014-04-16 11:00 P.M UTC
 :release-by: Ask Solem
 
-- Now compatible with RabbitMQ 3.3.0
+- **Now compatible with RabbitMQ 3.3.0**
 
     You need to run Celery 3.1.11 or later when using RabbitMQ 3.3,
     and if you use the ``librabbitmq`` module you also have to upgrade
