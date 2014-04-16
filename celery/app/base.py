@@ -27,7 +27,8 @@ from celery import platforms
 from celery import signals
 from celery._state import (
     _task_stack, get_current_app, _set_current_app, set_default_app,
-    _register_app, get_current_worker_task,
+    _register_app, get_current_worker_task, connect_on_app_finalize,
+    _announce_app_finalized,
 )
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
 from celery.five import items, values
@@ -38,7 +39,6 @@ from celery.utils.imports import instantiate, symbol_by_name
 from celery.utils.objects import mro_lookup
 
 from .annotations import prepare as prepare_annotations
-from .builtins import shared_task, load_shared_tasks
 from .defaults import DEFAULTS, find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import (
@@ -208,8 +208,8 @@ class Celery(object):
             # a differnt task instance.  This makes sure it will always use
             # the task instance from the current app.
             # Really need a better solution for this :(
-            from . import shared_task as proxies_to_curapp
-            return proxies_to_curapp(*args, _force_evaluate=True, **opts)
+            from . import shared_task
+            return shared_task(*args, _force_evaluate=True, **opts)
 
         def inner_create_task_cls(shared=True, filter=None, **opts):
             _filt = filter  # stupid 2to3
@@ -218,7 +218,7 @@ class Celery(object):
                 if shared:
                     cons = lambda app: app._task_from_fun(fun, **opts)
                     cons.__name__ = fun.__name__
-                    shared_task(cons)
+                    connect_on_app_finalize(cons)
                 if self.accept_magic_kwargs:  # compat mode
                     task = self._task_from_fun(fun, **opts)
                     if filter:
@@ -271,7 +271,7 @@ class Celery(object):
                 if auto and not self.autofinalize:
                     raise RuntimeError('Contract breach: app not finalized')
                 self.finalized = True
-                load_shared_tasks(self)
+                _announce_app_finalized(self)
 
                 pending = self._pending
                 while pending:
