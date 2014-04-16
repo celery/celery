@@ -176,14 +176,14 @@ class TaskType(type):
             # Hairy stuff,  here to be compatible with 2.x.
             # People should not use non-abstract task classes anymore,
             # use the task decorator.
-            from celery.app.builtins import shared_task
+            from celery._state import connect_on_app_finalize
             unique_name = '.'.join([task_module, name])
             if unique_name not in cls._creation_count:
                 # the creation count is used as a safety
                 # so that the same task is not added recursively
                 # to the set of constructors.
                 cls._creation_count[unique_name] = 1
-                shared_task(_CompatShared(
+                connect_on_app_finalize(_CompatShared(
                     unique_name,
                     lambda app: TaskType.__new__(cls, name, bases,
                                                  dict(attrs, _app=app)),

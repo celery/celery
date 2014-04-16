@@ -13,15 +13,12 @@ import os
 from celery.local import Proxy
 from celery import _state
 from celery._state import (
-    set_default_app,
     get_current_app as current_app,
     get_current_task as current_task,
-    _get_active_apps,
-    _task_stack,
+    connect_on_app_finalize, set_default_app, _get_active_apps, _task_stack,
 )
 from celery.utils import gen_task_name
 
-from .builtins import shared_task as _shared_task
 from .base import Celery, AppPickler
 
 __all__ = ['Celery', 'AppPickler', 'default_app', 'app_or_default',
@@ -128,7 +125,9 @@ def shared_task(*args, **kwargs):
             name = options.get('name')
             # Set as shared task so that unfinalized apps,
             # and future apps will load the task.
-            _shared_task(lambda app: app._task_from_fun(fun, **options))
+            connect_on_app_finalize(
+                lambda app: app._task_from_fun(fun, **options)
+            )
 
             # Force all finalized apps to take this task as well.
             for app in _get_active_apps():
