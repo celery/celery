@@ -385,6 +385,7 @@ class AMQP(object):
     def _create_task_sender(self):
         default_retry = self.app.conf.CELERY_TASK_PUBLISH_RETRY
         default_policy = self.app.conf.CELERY_TASK_PUBLISH_RETRY_POLICY
+        default_delivery_mode = self.app.conf.CELERY_DEFAULT_DELIVERY_MODE
         default_queue = self.default_queue
         queues = self.queues
         send_before_publish = signals.before_task_publish.send
@@ -421,6 +422,11 @@ class AMQP(object):
                     qname, queue = queue, queues[queue]
                 else:
                     qname = queue.name
+            if delivery_mode is None:
+                try:
+                    delivery_mode = queue.exchange.delivery_mode
+                except AttributeError:
+                    delivery_mode = default_delivery_mode
             exchange = exchange or queue.exchange.name
             routing_key = routing_key or queue.routing_key
             if declare is None and queue and not isinstance(queue, Broadcast):
