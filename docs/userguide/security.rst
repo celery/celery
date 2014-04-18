@@ -168,7 +168,7 @@ with the private key and certificate files located in `/etc/ssl`.
     CELERY_SECURITY_KEY = '/etc/ssl/private/worker.key'
     CELERY_SECURITY_CERTIFICATE = '/etc/ssl/certs/worker.pem'
     CELERY_SECURITY_CERT_STORE = '/etc/ssl/certs/*.pem'
-    from celery import setup_security
+    from celery.security import setup_security
     setup_security()
 
 .. note::
