@@ -37,5 +37,5 @@ notifications:
   irc:
     channels:
       - "chat.freenode.net#celery"
-    on_success: always
+    on_success: change
     on_failure: always
