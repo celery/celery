@@ -34,6 +34,7 @@ from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
 from celery.five import items, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
+from celery.utils.dispatch import Signal
 from celery.utils.functional import first, maybe_list
 from celery.utils.imports import instantiate, symbol_by_name
 from celery.utils.objects import mro_lookup
@@ -117,6 +118,15 @@ class Celery(object):
     _pool = None
     builtin_fixups = BUILTIN_FIXUPS
 
+    #: Signal sent when app is loading configuration.
+    on_configure = None
+
+    #: Signal sent after app has prepared the configuration.
+    on_after_configure = None
+
+    #: Signal sent after app has been finalized.
+    on_after_finalize = None
+
     def __init__(self, main=None, loader=None, backend=None,
                  amqp=None, events=None, log=None, control=None,
                  set_as_current=True, accept_magic_kwargs=False,
@@ -170,6 +180,13 @@ class Celery(object):
 
         if self.set_as_current:
             self.set_current()
+
+        # Signals
+        if self.on_configure is None:
+            # used to be a method pre 3.2
+            self.on_configure = Signal()
+        self.on_after_configure = Signal()
+        self.on_after_finalize = Signal()
 
         self.on_init()
         _register_app(self)
@@ -282,6 +299,8 @@ class Celery(object):
 
                 for task in values(self._tasks):
                     task.bind(self)
+
+                self.on_after_finalize.send(sender=self)
 
     def add_defaults(self, fun):
         if not callable(fun):
@@ -455,12 +474,12 @@ class Celery(object):
             self.loader)
         return backend(app=self, url=url)
 
-    def on_configure(self):
-        """Callback calld when the app loads configuration"""
-        pass
-
     def _get_config(self):
-        self.on_configure()
+        if isinstance(self.on_configure, Signal):
+            self.on_configure.send(sender=self)
+        else:
+            # used to be a method pre 3.2
+            self.on_configure()
         if self._config_source:
             self.loader.config_from_object(self._config_source)
         self.configured = True
@@ -474,6 +493,7 @@ class Celery(object):
         if self._preconf:
             for key, value in items(self._preconf):
                 setattr(s, key, value)
+        self.on_after_configure.send(sender=self, source=s)
         return s
 
     def _after_fork(self, obj_):

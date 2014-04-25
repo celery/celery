@@ -382,9 +382,17 @@ and creating Celery applications.
         Finalizes the app by loading built-in tasks,
         and evaluating pending task decorators
 
-    .. method:: Celery.on_configure()
+    .. signal:: on_configure
 
-        Optional callback for when the first time the configured is required.
+        Signal sent when app is loading configuration.
+
+    .. signal:: on_after_configure
+
+        Signal sent after app has prepared the configuration.
+
+    .. signal:: on_after_finalize
+
+        Signal sent after app has been finalized.
 
     .. attribute:: Celery.Pickler
 

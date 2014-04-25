@@ -23,7 +23,12 @@ def template(name=None):
 
 def use_template(app, template='default'):
     template = template.split(',')
-    app.after_configure = partial(mixin_templates, template[1:])
+
+    # mixin the rest of the templates when the config is needed
+    @app.on_after_configure.connect
+    def load_template(sender, source, **kwargs):
+        mixin_templates(template[1:], source)
+
     app.config_from_object(templates[template[0]])
 
 

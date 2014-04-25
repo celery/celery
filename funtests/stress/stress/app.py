@@ -33,7 +33,7 @@ class App(Celery):
             )
         )
         signals.user_preload_options.connect(self.on_preload_parsed)
-        self.after_configure = None
+        self.on_configure.connect(self._maybe_use_default_template)
 
     def on_preload_parsed(self, options=None, **kwargs):
         self.use_template(options['template'])
@@ -44,13 +44,7 @@ class App(Celery):
         use_template(self, name)
         self.template_selected = True
 
-    def _get_config(self):
-        ret = super(App, self)._get_config()
-        if self.after_configure:
-            self.after_configure(ret)
-        return ret
-
-    def on_configure(self):
+    def _maybe_use_default_template(self, **kwargs):
         if not self.template_selected:
             self.use_template('default')
 
