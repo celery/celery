@@ -30,6 +30,7 @@ logger = get_logger(__name__)
 C_FAKEFORK = os.environ.get('C_FAKEFORK')
 
 OPTION_LIST = daemon_options(default_pidfile='celeryd.pid') + (
+    Option('--workdir', default='/', dest='working_directory'),
     Option('--fake',
            default=False, action='store_true', dest='fake',
            help="Don't fork (for debugging purposes)"),
