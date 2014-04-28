@@ -175,7 +175,7 @@ class worker(Command):
         # parse options before detaching so errors can be handled.
         options, args = self.prepare_args(
             *self.parse_options(prog_name, argv, command))
-        self.maybe_detach([command] + sys.argv[1:])
+        self.maybe_detach([command] + argv)
         return self(*args, **options)
 
     def maybe_detach(self, argv, dopts=['-D', '--detach']):
