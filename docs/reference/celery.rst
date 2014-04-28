@@ -513,6 +513,10 @@ See :ref:`guide-canvas` for more about creating task workflows.
         Same as :meth:`apply_async` but executed the task inline instead
         of sending a task message.
 
+    .. method:: signature.eager(*args, \*\*kwargs)
+
+       Shortcut to :meth:`apply`.
+
     .. method:: signature.freeze(_id=None)
 
         Finalize the signature by adding a concrete task id.
