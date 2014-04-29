@@ -113,10 +113,10 @@ class Logging(object):
                 get_logger('celery.task').handlers = []
                 get_logger('celery.redirected').handlers = []
 
-            # Configure root logger
-            self._configure_logger(
-                root, logfile, loglevel, format, colorize, **kwargs
-            )
+                # Configure root logger
+                self._configure_logger(
+                    root, logfile, loglevel, format, colorize, **kwargs
+                )
 
             # Configure the multiprocessing logger
             self._configure_logger(
