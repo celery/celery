@@ -555,6 +555,12 @@ class Task(object):
             **dict(self._get_exec_options(), **options)
         )
 
+    def eager(self, *args, **kwargs):
+        """
+        Do a normal apply, like CELERY_ALWAYS_EAGER. Shortcut for apply like delay is a shortcut for apply_async
+        """
+        return self.apply(args, kwargs)
+
     def subtask_from_request(self, request=None, args=None, kwargs=None,
                              queue=None, **extra_options):
         request = self.request if request is None else request
