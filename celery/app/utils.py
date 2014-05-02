@@ -175,11 +175,12 @@ def filter_hidden_settings(conf):
     def maybe_censor(key, value, mask='*' * 8):
         if isinstance(value, Mapping):
             return filter_hidden_settings(value)
-        if isinstance(value, string_t) and HIDDEN_SETTINGS.search(key):
-            return mask
-        if isinstance(key, string_t) and 'BROKER_URL' in key.upper():
-            from kombu import Connection
-            return Connection(value).as_uri(mask=mask)
+        if isinstance(key, string_t):
+            if HIDDEN_SETTINGS.search(key):
+                return mask
+            if 'BROKER_URL' in key.upper():
+                from kombu import Connection
+                return Connection(value).as_uri(mask=mask)
         return value
 
     return {k: maybe_censor(k, v) for k, v in items(conf)}
