@@ -18,13 +18,6 @@ before_install:
       sudo apt-get install pypy
       source ~/virtualenv/pypy/bin/activate
     fi
-    if [[ $TOXENV = 3.4 ]]; then
-      sudo apt-get update
-      sudo apt-get install python3.4-dev
-      source ~/virtualenv/python3.4
-      virtualenv ~/virtualenv/python3.4 --python=$(which python3.4)
-      source ~/virtualenv/python3.4/bin/activate
-    fi
     python --version
     uname -a
     lsb_release -a
