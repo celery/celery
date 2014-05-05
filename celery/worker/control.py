@@ -14,7 +14,7 @@ import tempfile
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown
-from celery.five import UserDict, items
+from celery.five import UserDict, items, string_t
 from celery.platforms import signals as _signals
 from celery.utils import timeutils
 from celery.utils.functional import maybe_list
@@ -364,7 +364,7 @@ def active_queues(state):
 
 
 def _wanted_config_key(key):
-    return key.isupper() and not key.startswith('__')
+    return isinstance(key, string_t) and key.isupper() and not key.startswith('__')
 
 
 @Panel.register
