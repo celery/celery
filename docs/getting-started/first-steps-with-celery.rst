@@ -458,3 +458,8 @@ the task id after all).
 
         >>> result = task.delay(…)
         >>> print(result.backend)
+
+Segmentation fault at start when using RabbitMQ
+-----------------------------------------------
+
+Remove `python-librabbitmq` (https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=736348).
