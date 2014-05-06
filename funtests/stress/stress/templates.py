@@ -25,7 +25,7 @@ def use_template(app, template='default'):
     template = template.split(',')
 
     # mixin the rest of the templates when the config is needed
-    @app.on_after_configure.connect
+    @app.on_after_configure.connect(weak=False)
     def load_template(sender, source, **kwargs):
         mixin_templates(template[1:], source)
 
@@ -116,3 +116,11 @@ class events(default):
 @template()
 class execv(default):
     CELERYD_FORCE_EXECV = True
+
+
+@template()
+class sqs(default):
+    BROKER_URL='sqs://'
+    BROKER_TRANSPORT_OPTIONS = {
+        'region': os.environ.get('AWS_REGION', 'us-east-1'),
+    }
