@@ -142,3 +142,10 @@ class TaskPool(base.BasePool):
         self._quick_put(apply_target, target, args, kwargs,
                         callback, accept_callback,
                         self.getpid)
+
+    def _get_info(self):
+        return {
+            'max-concurrency': self.limit,
+            'free-threads': self._pool.free(),
+            'running-threads': self._pool.running(),
+        }
