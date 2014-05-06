@@ -1509,7 +1509,8 @@ Events
 CELERY_SEND_EVENTS
 ~~~~~~~~~~~~~~~~~~
 
-Send events so the worker can be monitored by tools like `celerymon`.
+Send task-related events so that tasks can be monitored using tools like
+`flower`.  Sets the default value for the workers :option:`-E` argument.
 
 .. setting:: CELERY_SEND_TASK_SENT_EVENT
 
