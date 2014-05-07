@@ -19,7 +19,7 @@ $ {new_argv}
 def _warn_deprecated(new):
     print(DEPRECATED_FMT.format(
         old=basename(sys.argv[0]), new=new,
-        new_argv=' '.join([new] + sys.argv[1:])),
+        new_argv=' '.join([new] + sys.argv[1:]))
     )
 
 
