@@ -470,7 +470,7 @@ See :ref:`guide-canvas` for more about creating task workflows.
 
     Signatures can also be created from tasks::
 
-        >>> add.subtask(args=(), kwargs={}, options={})
+        >>> add.signature(args=(), kwargs={}, options={})
 
     or the ``.s()`` shortcut::
 

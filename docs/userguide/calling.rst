@@ -95,7 +95,7 @@ called `add`, returning the sum of two arguments:
 .. topic:: There's another way…
 
     You will learn more about this later while reading about the :ref:`Canvas
-    <guide-canvas>`, but :class:`~celery.subtask`'s are objects used to pass around
+    <guide-canvas>`, but :class:`~celery.signature`'s are objects used to pass around
     the signature of a task invocation, (for example to send it over the
     network), and they also support the Calling API:
 
@@ -118,8 +118,8 @@ as a partial argument:
 
 .. sidebar:: What is ``s``?
 
-    The ``add.s`` call used here is called a subtask, I talk
-    more about subtasks in the :ref:`canvas guide <guide-canvas>`,
+    The ``add.s`` call used here is called a signature, I talk
+    more about signatures in the :ref:`canvas guide <guide-canvas>`,
     where you can also learn about :class:`~celery.chain`, which
     is a simpler way to chain tasks together.
 
@@ -447,7 +447,7 @@ Though this particular example is much better expressed as a group:
     >>> from celery import group
 
     >>> numbers = [(2, 2), (4, 4), (8, 8), (16, 16)]
-    >>> res = group(add.subtask(n) for i in numbers).apply_async()
+    >>> res = group(add.s(n) for i in numbers).apply_async()
 
     >>> res.get()
     [4, 8, 16, 32]

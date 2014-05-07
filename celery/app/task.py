@@ -555,8 +555,8 @@ class Task(object):
             **dict(self._get_exec_options(), **options)
         )
 
-    def subtask_from_request(self, request=None, args=None, kwargs=None,
-                             queue=None, **extra_options):
+    def signature_from_request(self, request=None, args=None, kwargs=None,
+                               queue=None, **extra_options):
         request = self.request if request is None else request
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
@@ -573,7 +573,10 @@ class Task(object):
         options.update(
             {'queue': queue} if queue else (request.delivery_info or {})
         )
-        return self.subtask(args, kwargs, options, type=self, **extra_options)
+        return self.signature(
+            args, kwargs, options, type=self, **extra_options
+        )
+    subtask_from_request = signature_from_request
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
               eta=None, countdown=None, max_retries=None, **options):
@@ -647,7 +650,7 @@ class Task(object):
             countdown = self.default_retry_delay
 
         is_eager = request.is_eager
-        S = self.subtask_from_request(
+        S = self.signature_from_request(
             request, args, kwargs,
             countdown=countdown, eta=eta, retries=retries,
             **options
@@ -748,20 +751,21 @@ class Task(object):
         return self._get_app().AsyncResult(task_id, backend=self.backend,
                                            task_name=self.name, **kwargs)
 
-    def subtask(self, args=None, *starargs, **starkwargs):
+    def signature(self, args=None, *starargs, **starkwargs):
         """Return :class:`~celery.signature` object for
         this task, wrapping arguments and execution options
         for a single task invocation."""
         starkwargs.setdefault('app', self.app)
         return signature(self, args, *starargs, **starkwargs)
+    subtask = signature
 
     def s(self, *args, **kwargs):
-        """``.s(*a, **k) -> .subtask(a, k)``"""
-        return self.subtask(args, kwargs)
+        """``.s(*a, **k) -> .signature(a, k)``"""
+        return self.signature(args, kwargs)
 
     def si(self, *args, **kwargs):
-        """``.si(*a, **k) -> .subtask(a, k, immutable=True)``"""
-        return self.subtask(args, kwargs, immutable=True)
+        """``.si(*a, **k) -> .signature(a, k, immutable=True)``"""
+        return self.signature(args, kwargs, immutable=True)
 
     def chunks(self, it, n):
         """Creates a :class:`~celery.canvas.chunks` task for this task."""

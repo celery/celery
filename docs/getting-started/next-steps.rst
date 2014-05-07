@@ -275,7 +275,7 @@ so that no message is sent::
 
 These three methods - :meth:`delay`, :meth:`apply_async`, and applying
 (``__call__``), represents the Celery calling API, which are also used for
-subtasks.
+signatures.
 
 A more detailed overview of the Calling API can be found in the
 :ref:`Calling User Guide <guide-calling>`.
@@ -380,16 +380,16 @@ Calling tasks is described in detail in the
 You just learned how to call a task using the tasks ``delay`` method,
 and this is often all you need, but sometimes you may want to pass the
 signature of a task invocation to another process or as an argument to another
-function, for this Celery uses something called *subtasks*.
+function, for this Celery uses something called *signatures*.
 
-A subtask wraps the arguments and execution options of a single task
+A signature wraps the arguments and execution options of a single task
 invocation in a way such that it can be passed to functions or even serialized
 and sent across the wire.
 
-You can create a subtask for the ``add`` task using the arguments ``(2, 2)``,
+You can create a signature for the ``add`` task using the arguments ``(2, 2)``,
 and a countdown of 10 seconds like this::
 
-    >>> add.subtask((2, 2), countdown=10)
+    >>> add.signature((2, 2), countdown=10)
     tasks.add(2, 2)
 
 There is also a shortcut using star arguments::
@@ -400,12 +400,12 @@ There is also a shortcut using star arguments::
 And there's that calling API again…
 -----------------------------------
 
-Subtask instances also supports the calling API, which means that they
+Signature instances also supports the calling API, which means that they
 have the ``delay`` and ``apply_async`` methods.
 
-But there is a difference in that the subtask may already have
+But there is a difference in that the signature may already have
 an argument signature specified.  The ``add`` task takes two arguments,
-so a subtask specifying two arguments would make a complete signature::
+so a signature specifying two arguments would make a complete signature::
 
     >>> s1 = add.s(2, 2)
     >>> res = s1.delay()
@@ -418,8 +418,8 @@ But, you can also make incomplete signatures to create what we call
     # incomplete partial: add(?, 2)
     >>> s2 = add.s(2)
 
-``s2`` is now a partial subtask that needs another argument to be complete,
-and this can be resolved when calling the subtask::
+``s2`` is now a partial signature that needs another argument to be complete,
+and this can be resolved when calling the signature::
 
     # resolves the partial: add(8, 2)
     >>> res = s2.delay(8)
@@ -435,14 +435,14 @@ existing keyword arguments, but with new arguments taking precedence::
     >>> s3 = add.s(2, 2, debug=True)
     >>> s3.delay(debug=False)   # debug is now False.
 
-As stated subtasks supports the calling API, which means that:
+As stated signatures supports the calling API, which means that:
 
-- ``subtask.apply_async(args=(), kwargs={}, **options)``
+- ``sig.apply_async(args=(), kwargs={}, **options)``
 
-    Calls the subtask with optional partial arguments and partial
+    Calls the signature with optional partial arguments and partial
     keyword arguments.  Also supports partial execution options.
 
-- ``subtask.delay(*args, **kwargs)``
+- ``sig.delay(*args, **kwargs)``
 
   Star argument version of ``apply_async``.  Any arguments will be prepended
   to the arguments in the signature, and keyword arguments is merged with any
@@ -466,7 +466,7 @@ The Primitives
         - :ref:`starmap <canvas-map>`
         - :ref:`chunks <canvas-chunks>`
 
-The primitives are subtasks themselves, so that they can be combined
+These primitives are signature objects themselves, so they can be combined
 in any number of ways to compose complex workflows.
 
 .. note::
@@ -556,7 +556,7 @@ to a chord:
     90
 
 
-Since these primitives are all of the subtask type they
+Since these primitives are all of the signature type they
 can be combined almost however you want, e.g::
 
     >>> upload_document.s(file) | group(apply_filter.s() for filter in filters)

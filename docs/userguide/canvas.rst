@@ -26,9 +26,6 @@ A :func:`~celery.signature` wraps the arguments, keyword arguments, and executio
 of a single task invocation in a way such that it can be passed to functions
 or even serialized and sent across the wire.
 
-Signatures are often nicknamed "subtasks" because they describe a task to be called
-within a task.
-
 - You can create a signature for the ``add`` task using its name like this::
 
         >>> from celery import signature
@@ -38,9 +35,9 @@ within a task.
   This task has a signature of arity 2 (two arguments): ``(2, 2)``,
   and sets the countdown execution option to 10.
 
-- or you can create one using the task's ``subtask`` method::
+- or you can create one using the task's ``signature`` method::
 
-        >>> add.subtask((2, 2), countdown=10)
+        >>> add.signature((2, 2), countdown=10)
         tasks.add(2, 2)
 
 - There is also a shortcut using star arguments::
@@ -55,7 +52,7 @@ within a task.
 
 - From any signature instance you can inspect the different fields::
 
-        >>> s = add.subtask((2, 2), {'debug': True}, countdown=10)
+        >>> s = add.signature((2, 2), {'debug': True}, countdown=10)
         >>> s.args
         (2, 2)
         >>> s.kwargs
@@ -82,10 +79,10 @@ within a task.
   ``apply_async`` takes the same arguments as the :meth:`Task.apply_async <@Task.apply_async>` method::
 
         >>> add.apply_async(args, kwargs, **options)
-        >>> add.subtask(args, kwargs, **options).apply_async()
+        >>> add.signature(args, kwargs, **options).apply_async()
 
         >>> add.apply_async((2, 2), countdown=1)
-        >>> add.subtask((2, 2), countdown=1).apply_async()
+        >>> add.signature((2, 2), countdown=1).apply_async()
 
 - You can't define options with :meth:`~@Task.s`, but a chaining
   ``set`` call takes care of that::
@@ -125,7 +122,7 @@ creates partials:
 - Any options added will be merged with the options in the signature,
   with the new options taking precedence::
 
-    >>> s = add.subtask((2, 2), countdown=10)
+    >>> s = add.signature((2, 2), countdown=10)
     >>> s.apply_async(countdown=1)  # countdown is now 1
 
 You can also clone signatures to create derivates:
@@ -147,7 +144,7 @@ Sometimes you want to specify a callback that does not take
 additional arguments, and in that case you can set the signature
 to be immutable::
 
-    >>> add.apply_async((2, 2), link=reset_buffers.subtask(immutable=True))
+    >>> add.apply_async((2, 2), link=reset_buffers.signature(immutable=True))
 
 The ``.si()`` shortcut can also be used to create immutable signatures::
 
@@ -289,7 +286,7 @@ Here's some examples:
     In that case you can mark the signature as immutable, so that the arguments
     cannot be changed::
 
-        >>> add.subtask((2, 2), immutable=True)
+        >>> add.signature((2, 2), immutable=True)
 
     There's also an ``.si`` shortcut for this::
 
@@ -419,7 +416,7 @@ The linked task will be applied with the result of its parent
 task as the first argument, which in the above case will result
 in ``mul(4, 16)`` since the result is 4.
 
-The results will keep track of what subtasks a task applies,
+The results will keep track of any subtasks called by the original task,
 and this can be accessed from the result instance::
 
     >>> res.children
@@ -456,7 +453,7 @@ You can also add *error callbacks* using the ``link_error`` argument::
 
     >>> add.apply_async((2, 2), link_error=log_error.s())
 
-    >>> add.subtask((2, 2), link_error=log_error.s())
+    >>> add.signature((2, 2), link_error=log_error.s())
 
 Since exceptions can only be serialized when pickle is used
 the error callbacks take the id of the parent task as argument instead:

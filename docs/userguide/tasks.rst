@@ -266,9 +266,9 @@ The request defines the following attributes:
 :called_directly: This flag is set to true if the task was not
                   executed by the worker.
 
-:callbacks: A list of subtasks to be called if this task returns successfully.
+:callbacks: A list of signatures to be called if this task returns successfully.
 
-:errback: A list of subtasks to be called if this task fails.
+:errback: A list of signatures to be called if this task fails.
 
 :utc: Set to true the caller has utc enabled (:setting:`CELERY_ENABLE_UTC`).
 
@@ -1297,7 +1297,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 
 Here I instead created a chain of tasks by linking together
-different :func:`~celery.subtask`'s.
+different :func:`~celery.signature`'s.
 You can read about chains and other powerful constructs
 at :ref:`designing-workflows`.
 
