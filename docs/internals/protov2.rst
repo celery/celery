@@ -50,6 +50,7 @@ Notes
 
 - ``correlation_id`` replaces ``task_id`` field.
 
+- ``root_id`` and ``parent_id`` fields helps keep track of workflows.
 
 - ``c_shadow`` lets you specify a different name for logs, monitors
   can be used for e.g. meta tasks that calls any function::
@@ -115,6 +116,8 @@ Definition
         'chord': (uuid)chord_id,
         'retries': (int)retries,
         'timelimit': (tuple)(soft, hard),
+        'root_id': (uuid)root_id,
+        'parent_id': (uuid)parent_id,
     }
 
     body = (args, kwargs)

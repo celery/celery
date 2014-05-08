@@ -93,6 +93,8 @@ class Context(object):
     headers = None
     delivery_info = None
     reply_to = None
+    root_id = None
+    parent_id = None
     correlation_id = None
     taskset = None   # compat alias to group
     group = None

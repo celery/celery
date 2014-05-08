@@ -351,7 +351,7 @@ class Celery(object):
                   publisher=None, link=None, link_error=None,
                   add_to_parent=True, group_id=None, retries=0, chord=None,
                   reply_to=None, time_limit=None, soft_time_limit=None,
-                  **options):
+                  root_id=None, parent_id=None, **options):
         amqp = self.amqp
         task_id = task_id or uuid()
         producer = producer or publisher  # XXX compat
@@ -369,6 +369,7 @@ class Celery(object):
             maybe_list(link), maybe_list(link_error),
             reply_to or self.oid, time_limit, soft_time_limit,
             self.conf.CELERY_SEND_TASK_SENT_EVENT,
+            root_id, parent_id,
         )
 
         if connection:
