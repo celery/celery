@@ -137,6 +137,7 @@ def add_chunk_task(app):
 
 @connect_on_app_finalize
 def add_group_task(app):
+    """No longer used, but here for backwards compatibility."""
     _app = app
     from celery.canvas import maybe_signature
     from celery.result import result_from_tuple
@@ -166,6 +167,7 @@ def add_group_task(app):
 
 @connect_on_app_finalize
 def add_chain_task(app):
+    """No longer used, but here for backwards compatibility."""
     _app = app
 
     class Chain(app.Task):
@@ -179,9 +181,7 @@ def add_chain_task(app):
 
 @connect_on_app_finalize
 def add_chord_task(app):
-    """Every chord is executed in a dedicated task, so that the chord
-    can be used as a signature, and this generates the task
-    responsible for that."""
+    """No longer used, but here for backwards compatibility."""
     from celery import group, chord as _chord
     from celery.canvas import maybe_signature
     _app = app
