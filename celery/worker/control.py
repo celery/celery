@@ -364,7 +364,9 @@ def active_queues(state):
 
 
 def _wanted_config_key(key):
-    return isinstance(key, string_t) and key.isupper() and not key.startswith('__')
+    return (isinstance(key, string_t) and
+            key.isupper() and
+            not key.startswith('__'))
 
 
 @Panel.register

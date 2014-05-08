@@ -103,6 +103,9 @@ Definition
     headers = {
         'lang': (string)'py'
         'c_type': (string)task,
+        'task_id': (uuid)task_id,
+        'root_id': (uuid)root_id,
+        'parent_id': (uuid)parent_id,
 
         # optional
         'c_meth': (string)unused,
@@ -116,8 +119,6 @@ Definition
         'chord': (uuid)chord_id,
         'retries': (int)retries,
         'timelimit': (tuple)(soft, hard),
-        'root_id': (uuid)root_id,
-        'parent_id': (uuid)parent_id,
     }
 
     body = (args, kwargs)

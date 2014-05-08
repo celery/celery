@@ -70,6 +70,7 @@ class default(object):
         'interval_max': 2,
         'interval_step': 0.1,
     }
+    CELERY_TASK_PROTOCOL = 2
 
 
 @template()

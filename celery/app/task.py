@@ -695,7 +695,7 @@ class Task(object):
 
         """
         # trace imports Task, so need to import inline.
-        from celery.app.trace import eager_trace_task
+        from celery.app.trace import build_tracer
 
         app = self._get_app()
         args = args or ()
@@ -736,12 +736,15 @@ class Task(object):
             kwargs.update(extend_with)
 
         tb = None
-        retval, info = eager_trace_task(task, task_id, args, kwargs,
-                                        app=self._get_app(),
-                                        request=request, propagate=throw)
+        tracer = build_tracer(
+            task.name, task, eager=True,
+            propagate=throw, app=self._get_app(),
+        )
+        ret = tracer(task_id, args, kwargs, request)
+        retval = ret.retval
         if isinstance(retval, ExceptionInfo):
             retval, tb = retval.exception, retval.traceback
-        state = states.SUCCESS if info is None else info.state
+        state = states.SUCCESS if ret.info is None else ret.info.state
         return EagerResult(task_id, retval, state, traceback=tb)
 
     def AsyncResult(self, task_id, **kwargs):

@@ -127,6 +127,8 @@ MINGLE_GET_FIELDS = itemgetter('clock', 'revoked')
 
 
 def dump_body(m, body):
+    # v2 protocol does not deserialize body
+    body = m.body if body is None else body
     if isinstance(body, buffer_t):
         body = bytes_t(body)
     return '{0} ({1}b)'.format(truncate(safe_repr(body), 1024),
@@ -445,7 +447,7 @@ class Consumer(object):
         on_invalid_task = self.on_invalid_task
         callbacks = self.on_task_message
 
-        def on_task_received(body, message):
+        def on_v1_task_received(body, message):
             try:
                 name = body['task']
             except (KeyError, TypeError):
@@ -460,6 +462,22 @@ class Consumer(object):
                 on_unknown_task(body, message, exc)
             except InvalidTaskError as exc:
                 on_invalid_task(body, message, exc)
+
+        def on_task_received(message):
+            headers = message.headers
+            try:
+                type_ = headers['c_type']
+            except KeyError:
+                return on_v1_task_received(message.payload, message)
+            try:
+                strategies[type_](
+                    message, None,
+                    message.ack_log_error, message.reject_log_error, callbacks,
+                )
+            except KeyError as exc:
+                on_unknown_task(None, message, exc)
+            except InvalidTaskError as exc:
+                on_invalid_task(None, message, exc)
 
         return on_task_received
 
@@ -541,8 +559,9 @@ class Heart(bootsteps.StartStopStep):
         c.heart = None
 
     def start(self, c):
-        c.heart = heartbeat.Heart(c.timer, c.event_dispatcher,
-            self.heartbeat_interval)
+        c.heart = heartbeat.Heart(
+            c.timer, c.event_dispatcher, self.heartbeat_interval,
+        )
         c.heart.start()
 
     def stop(self, c):

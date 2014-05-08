@@ -15,33 +15,68 @@ from __future__ import absolute_import
 # but in the end it only resulted in bad performance and horrible tracebacks,
 # so instead we now use one closure per task class.
 
+import logging
 import os
 import socket
 import sys
 
+from collections import namedtuple
 from warnings import warn
 
 from billiard.einfo import ExceptionInfo
 from kombu.exceptions import EncodeError
-from kombu.utils import kwdict
+from kombu.serialization import decode as decode_message
+from kombu.utils.encoding import safe_repr, safe_str
 
 from celery import current_app, group
 from celery import states, signals
 from celery._state import _task_stack
 from celery.app import set_default_app
 from celery.app.task import Task as BaseTask, Context
-from celery.exceptions import Ignore, Reject, Retry
+from celery.exceptions import Ignore, Reject, Retry, InvalidTaskError
+from celery.five import monotonic
 from celery.utils.log import get_logger
 from celery.utils.objects import mro_lookup
 from celery.utils.serialization import (
-    get_pickleable_exception,
-    get_pickleable_etype,
+    get_pickleable_exception, get_pickled_exception, get_pickleable_etype,
 )
+from celery.utils.text import truncate
 
-__all__ = ['TraceInfo', 'build_tracer', 'trace_task', 'eager_trace_task',
+__all__ = ['TraceInfo', 'build_tracer', 'trace_task',
            'setup_worker_optimizations', 'reset_worker_optimizations']
 
-_logger = get_logger(__name__)
+logger = get_logger(__name__)
+info = logger.info
+
+#: Format string used to log task success.
+LOG_SUCCESS = """\
+Task %(name)s[%(id)s] succeeded in %(runtime)ss: %(return_value)s\
+"""
+
+#: Format string used to log task failure.
+LOG_FAILURE = """\
+Task %(name)s[%(id)s] %(description)s: %(exc)s\
+"""
+
+#: Format string used to log task internal error.
+LOG_INTERNAL_ERROR = """\
+Task %(name)s[%(id)s] %(description)s: %(exc)s\
+"""
+
+#: Format string used to log task ignored.
+LOG_IGNORED = """\
+Task %(name)s[%(id)s] %(description)s\
+"""
+
+#: Format string used to log task rejected.
+LOG_REJECTED = """\
+Task %(name)s[%(id)s] %(exc)s\
+"""
+
+#: Format string used to log task retry.
+LOG_RETRY = """\
+Task %(name)s[%(id)s] retry: %(exc)s\
+"""
 
 send_prerun = signals.task_prerun.send
 send_postrun = signals.task_postrun.send
@@ -58,6 +93,8 @@ IGNORE_STATES = frozenset([IGNORED, RETRY, REJECTED])
 #: set by :func:`setup_worker_optimizations`
 _tasks = None
 _patched = {}
+
+trace_ok_t = namedtuple('trace_ok_t', ('retval', 'info', 'runtime', 'retstr'))
 
 
 def task_has_custom(task, attr):
@@ -100,6 +137,10 @@ class TraceInfo(object):
             task.on_retry(reason.exc, req.id, req.args, req.kwargs, einfo)
             signals.task_retry.send(sender=task, request=req,
                                     reason=reason, einfo=einfo)
+            info(LOG_RETRY, {
+                'id': req.id, 'name': task.name,
+                'exc': safe_repr(reason.exc),
+            })
             return einfo
         finally:
             del(tb)
@@ -123,14 +164,71 @@ class TraceInfo(object):
                                       kwargs=req.kwargs,
                                       traceback=tb,
                                       einfo=einfo)
+            self._log_error(task, einfo)
             return einfo
         finally:
             del(tb)
 
+    def _log_error(self, task, einfo):
+        req = task.request
+        eobj = einfo.exception = get_pickled_exception(einfo.exception)
+        exception, traceback, exc_info, internal, sargs, skwargs = (
+            safe_repr(eobj),
+            safe_str(einfo.traceback),
+            einfo.exc_info,
+            einfo.internal,
+            safe_repr(req.args),
+            safe_repr(req.kwargs),
+        )
+        if task.throws and isinstance(eobj, task.throws):
+            do_send_mail, severity, exc_info, description = (
+                False, logging.INFO, None, 'raised expected',
+            )
+        else:
+            do_send_mail, severity, description = (
+                True, logging.ERROR, 'raised unexpected',
+            )
+        format = LOG_FAILURE
+
+        if internal:
+            if isinstance(einfo.exception, Reject):
+                format = LOG_REJECTED
+                description = 'rejected'
+                severity = logging.WARN
+                exc_info = einfo
+            elif isinstance(einfo.exception, Ignore):
+                format = LOG_IGNORED
+                description = 'ignored'
+                severity = logging.INFO
+                exc_info = None
+            else:
+                format = LOG_INTERNAL_ERROR
+                description = 'INTERNAL ERROR'
+                severity = logging.CRITICAL
+
+        context = {
+            'hostname': req.hostname,
+            'id': req.id,
+            'name': task.name,
+            'exc': exception,
+            'traceback': traceback,
+            'args': sargs,
+            'kwargs': skwargs,
+            'description': description,
+            'internal': internal,
+        }
+
+        logger.log(severity, format.strip(), context,
+                   exc_info=exc_info,
+                   extra={'data': context})
+
+        task.send_error_email(context, einfo.exception)
+
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                  Info=TraceInfo, eager=False, propagate=False, app=None,
-                 IGNORE_STATES=IGNORE_STATES):
+                 monotonic=monotonic, truncate=truncate,
+                 trace_ok_t=trace_ok_t, IGNORE_STATES=IGNORE_STATES):
     """Return a function that traces task execution; catches all
     exceptions and updates result backend with the state and result
 
@@ -186,6 +284,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     push_task = _task_stack.push
     pop_task = _task_stack.pop
     on_chord_part_return = backend.on_chord_part_return
+    _does_info = logger.isEnabledFor(logging.INFO)
 
     prerun_receivers = signals.task_prerun.receivers
     postrun_receivers = signals.task_postrun.receivers
@@ -209,6 +308,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     def trace_task(uuid, args, kwargs, request=None):
         # R      - is the possibly prepared return value.
         # I      - is the Info object.
+        # T      - runtime
+        # Rstr   - textual representation of return value
         # retval - is the always unmodified return value.
         # state  - is the resulting task state.
 
@@ -216,9 +317,14 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         # for performance reasons, and because the function is so long
         # we want the main variables (I, and R) to stand out visually from the
         # the rest of the variables, so breaking PEP8 is worth it ;)
-        R = I = retval = state = None
-        kwargs = kwdict(kwargs)
+        R = I = T = Rstr = retval = state = None
+        time_start = monotonic()
         try:
+            try:
+                kwargs.items
+            except AttributeError:
+                raise InvalidTaskError(
+                    'Task keyword arguments is not a mapping')
             push_task(task)
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
@@ -289,6 +395,13 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             task_on_success(retval, uuid, args, kwargs)
                         if success_receivers:
                             send_success(sender=task, result=retval)
+                        if _does_info:
+                            T = monotonic() - time_start
+                            Rstr = truncate(safe_repr(R), 256)
+                            info(LOG_SUCCESS, {
+                                'id': uuid, 'name': name,
+                                'return_value': Rstr, 'runtime': T,
+                            })
 
                 # -* POST *-
                 if state not in IGNORE_STATES:
@@ -314,15 +427,15 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         except (KeyboardInterrupt, SystemExit, MemoryError):
                             raise
                         except Exception as exc:
-                            _logger.error('Process cleanup failed: %r', exc,
-                                          exc_info=True)
+                            logger.error('Process cleanup failed: %r', exc,
+                                         exc_info=True)
         except MemoryError:
             raise
         except Exception as exc:
             if eager:
                 raise
             R = report_internal_error(task, exc)
-        return R, I
+        return trace_ok_t(R, I, T, Rstr)
 
     return trace_task
 
@@ -342,16 +455,23 @@ def _trace_task_ret(name, uuid, args, kwargs, request={}, app=None, **opts):
 trace_task_ret = _trace_task_ret
 
 
-def _fast_trace_task(task, uuid, args, kwargs, request={}):
+def _fast_trace_task_v1(task, uuid, args, kwargs, request={}):
     # setup_worker_optimizations will point trace_task_ret to here,
     # so this is the function used in the worker.
-    return _tasks[task].__trace__(uuid, args, kwargs, request)[0]
+    R, I, T, Rstr = _tasks[task].__trace__(uuid, args, kwargs, request)[0]
+    # exception instance if error, else result text
+    return (R if I else Rstr), T
 
 
-def eager_trace_task(task, uuid, args, kwargs, request=None, **opts):
-    opts.setdefault('eager', True)
-    return build_tracer(task.name, task, **opts)(
-        uuid, args, kwargs, request)
+def _fast_trace_task(task, uuid, request, body, content_type,
+                     content_encoding, decode_message=decode_message,
+                     **extra_request):
+    args, kwargs = decode_message(body, content_type, content_encoding)
+    request.update(args=args, kwargs=kwargs, **extra_request)
+    R, I, T, Rstr = _tasks[task].__trace__(
+        uuid, args, kwargs, request,
+    )
+    return (R if I else Rstr), T
 
 
 def report_internal_error(task, exc):

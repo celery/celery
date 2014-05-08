@@ -297,6 +297,7 @@ class AMQP(object):
             headers={
                 'lang': 'py',
                 'c_type': name,
+                'task_id': task_id,
                 'eta': eta,
                 'expires': expires,
                 'callbacks': callbacks,

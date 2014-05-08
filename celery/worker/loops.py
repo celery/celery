@@ -37,7 +37,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     if heartbeat and connection.supports_heartbeats:
         hub.call_repeatedly(heartbeat / hbrate, hbtick, hbrate)
 
-    consumer.callbacks = [on_task_received]
+    consumer.on_message = on_task_received
     consumer.consume()
     obj.on_ready()
     obj.controller.register_with_event_loop(hub)
@@ -86,7 +86,7 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
     """Fallback blocking event loop for transports that doesn't support AIO."""
 
     on_task_received = obj.create_task_handler()
-    consumer.register_callback(on_task_received)
+    consumer.on_message = on_task_received
     consumer.consume()
 
     obj.on_ready()

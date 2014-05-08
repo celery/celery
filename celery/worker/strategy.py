@@ -11,12 +11,11 @@ from __future__ import absolute_import
 import logging
 
 from kombu.async.timer import to_timestamp
-from kombu.utils.encoding import safe_repr
 
 from celery.utils.log import get_logger
 from celery.utils.timeutils import timezone
 
-from .job import Request
+from .job import Request, RequestV1
 from .state import task_reserved
 
 __all__ = ['default']
@@ -29,7 +28,8 @@ def default(task, app, consumer,
             to_system_tz=timezone.to_system):
     hostname = consumer.hostname
     eventer = consumer.event_dispatcher
-    Req = Request
+    ReqV2 = Request
+    ReqV1 = RequestV1
     connection_errors = consumer.connection_errors
     _does_info = logger.isEnabledFor(logging.INFO)
     events = eventer and eventer.enabled
@@ -43,11 +43,17 @@ def default(task, app, consumer,
 
     def task_message_handler(message, body, ack, reject, callbacks,
                              to_timestamp=to_timestamp):
-        req = Req(body, on_ack=ack, on_reject=reject,
-                  app=app, hostname=hostname,
-                  eventer=eventer, task=task,
-                  connection_errors=connection_errors,
-                  message=message)
+        if body is None:
+            req = ReqV2(message,
+                        on_ack=ack, on_reject=reject, app=app,
+                        hostname=hostname, eventer=eventer, task=task,
+                        connection_errors=connection_errors)
+        else:
+            req = ReqV1(body,
+                        on_ack=ack, on_reject=reject, app=app,
+                        hostname=hostname, eventer=eventer, task=task,
+                        connection_errors=connection_errors,
+                        message=message)
         if req.revoked():
             return
 
@@ -58,7 +64,7 @@ def default(task, app, consumer,
             send_event(
                 'task-received',
                 uuid=req.id, name=req.name,
-                args=safe_repr(req.args), kwargs=safe_repr(req.kwargs),
+                args='', kwargs='',
                 retries=req.request_dict.get('retries', 0),
                 eta=req.eta and req.eta.isoformat(),
                 expires=req.expires and req.expires.isoformat(),

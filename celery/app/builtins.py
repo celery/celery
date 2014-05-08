@@ -64,7 +64,6 @@ def add_unlock_chord_task(app):
 
         # check if the task group is ready, and if so apply the callback.
         callback = maybe_signature(callback, app)
-        root_id = callback.options.get('root_id')
         deps = GroupResult(
             group_id,
             [result_from_tuple(r, app=app) for r in result],
