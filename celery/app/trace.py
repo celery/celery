@@ -467,10 +467,11 @@ def _trace_task_ret(name, uuid, request, body, content_type,
 trace_task_ret = _trace_task_ret
 
 
-def _fast_trace_task_v1(task, uuid, args, kwargs, request={}):
+def _fast_trace_task_v1(task, uuid, args, kwargs, request={}, _loc=_localized):
     # setup_worker_optimizations will point trace_task_ret to here,
     # so this is the function used in the worker.
-    R, I, T, Rstr = _tasks[task].__trace__(uuid, args, kwargs, request)[0]
+    tasks, _ = _loc
+    R, I, T, Rstr = tasks[task].__trace__(uuid, args, kwargs, request)[0]
     # exception instance if error, else result text
     return (1, R, T) if I else (0, Rstr, T)
 
@@ -479,11 +480,8 @@ def _fast_trace_task(task, uuid, request, body, content_type,
                      content_encoding, loads=loads_message, _loc=_localized,
                      **extra_request):
     tasks, accept = _loc
-    try:
-        args, kwargs = loads(body, content_type, content_encoding,
-                             accept=accept)
-    except Exception as exc:
-        print('OH NOEEES: %r' % (exc, ))
+    args, kwargs = loads(body, content_type, content_encoding,
+                         accept=accept)
     request.update(args=args, kwargs=kwargs, **extra_request)
     R, I, T, Rstr = tasks[task].__trace__(
         uuid, args, kwargs, request,

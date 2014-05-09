@@ -162,8 +162,7 @@ class HttpDispatch(object):
         return headers
 
 
-@shared_task(name='celery.http_dispatch', bind=True,
-             url=None, method=None, accept_magic_kwargs=False)
+@shared_task(name='celery.http_dispatch', bind=True, url=None, method=None)
 def dispatch(self, url=None, method='GET', **kwargs):
     """Task dispatching to an URL.
 

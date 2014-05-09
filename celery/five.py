@@ -210,15 +210,8 @@ def getappattr(path):
     return current_app._rgetattr(path)
 
 
-def _compat_task_decorator(*args, **kwargs):
-    from celery import current_app
-    kwargs.setdefault('accept_magic_kwargs', True)
-    return current_app.task(*args, **kwargs)
-
-
 def _compat_periodic_task_decorator(*args, **kwargs):
     from celery.task import periodic_task
-    kwargs.setdefault('accept_magic_kwargs', True)
     return periodic_task(*args, **kwargs)
 
 
@@ -228,7 +221,7 @@ COMPAT_MODULES = {
             'send_task': 'send_task',
         },
         'decorators': {
-            'task': _compat_task_decorator,
+            'task': 'task',
             'periodic_task': _compat_periodic_task_decorator,
         },
         'log': {

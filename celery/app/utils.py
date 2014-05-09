@@ -152,7 +152,6 @@ class AppPickler(object):
         return dict(main=main, loader=loader, backend=backend, amqp=amqp,
                     changes=changes, events=events, log=log, control=control,
                     set_as_current=False,
-                    accept_magic_kwargs=accept_magic_kwargs,
                     config_source=config_source)
 
     def construct(self, cls, **kwargs):

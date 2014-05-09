@@ -835,9 +835,6 @@ class test_Request(AppCase):
         self.assertEqual(p.args[1], tid)
         self.assertEqual(p.args[3], job.message.body)
 
-        job.task.accept_magic_kwargs = False
-        job.execute_using_pool(p)
-
     def _test_on_failure(self, exception):
         tid = uuid()
         job = self.xRequest(id=tid, args=[4])

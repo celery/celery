@@ -51,7 +51,6 @@ class Task(BaseTask):
     priority = None
     type = 'regular'
     disable_error_emails = False
-    accept_magic_kwargs = False
 
     from_config = BaseTask.from_config + (
         ('exchange_type', 'CELERY_DEFAULT_EXCHANGE_TYPE'),
@@ -178,8 +177,7 @@ class PeriodicTask(Task):
 
 def task(*args, **kwargs):
     """Deprecated decorator, please use :func:`celery.task`."""
-    return current_app.task(*args, **dict({'accept_magic_kwargs': False,
-                                           'base': Task}, **kwargs))
+    return current_app.task(*args, **dict({'base': Task}, **kwargs))
 
 
 def periodic_task(*args, **options):

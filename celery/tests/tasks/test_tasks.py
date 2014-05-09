@@ -363,10 +363,6 @@ class test_tasks(TasksCase):
         self.mytask.app.Task._app = None
         self.assertIn('unbound', repr(self.mytask.app.Task, ))
 
-    def test_bind_no_magic_kwargs(self):
-        self.mytask.accept_magic_kwargs = None
-        self.mytask.bind(self.mytask.app)
-
     def test_annotate(self):
         with patch('celery.app.task.resolve_all_annotations') as anno:
             anno.return_value = [{'FOO': 'BAR'}]

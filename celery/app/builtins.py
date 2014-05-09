@@ -144,7 +144,6 @@ def add_group_task(app):
     class Group(app.Task):
         app = _app
         name = 'celery.group'
-        accept_magic_kwargs = False
         _decorated = True
 
         def run(self, tasks, result, group_id, partial_args,
@@ -172,7 +171,6 @@ def add_chain_task(app):
     class Chain(app.Task):
         app = _app
         name = 'celery.chain'
-        accept_magic_kwargs = False
         _decorated = True
 
     return Chain
@@ -188,7 +186,6 @@ def add_chord_task(app):
     class Chord(app.Task):
         app = _app
         name = 'celery.chord'
-        accept_magic_kwargs = False
         ignore_result = False
         _decorated = True
 
