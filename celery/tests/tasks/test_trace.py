@@ -14,10 +14,11 @@ from celery.app.trace import (
 from celery.tests.case import AppCase, Mock, patch
 
 
-def trace(app, task, args=(), kwargs={}, propagate=False, **opts):
+def trace(app, task, args=(), kwargs={},
+          propagate=False, eager=True, request=None, **opts):
     t = build_tracer(task.name, task,
-                     eager=True, propagate=propagate, app=app, **opts)
-    ret = t('id-1', args, kwargs, None)
+                     eager=eager, propagate=propagate, app=app, **opts)
+    ret = t('id-1', args, kwargs, request)
     return ret.retval, ret.info
 
 

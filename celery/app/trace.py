@@ -25,7 +25,7 @@ from warnings import warn
 
 from billiard.einfo import ExceptionInfo
 from kombu.exceptions import EncodeError
-from kombu.serialization import decode as decode_message
+from kombu.serialization import loads as loads_message, prepare_accept_content
 from kombu.utils.encoding import safe_repr, safe_str
 
 from celery import current_app, group
@@ -78,6 +78,22 @@ LOG_RETRY = """\
 Task %(name)s[%(id)s] retry: %(exc)s\
 """
 
+log_policy_t = namedtuple(
+    'log_policy_t', ('format', 'description', 'severity', 'traceback', 'mail'),
+)
+
+log_policy_reject = log_policy_t(LOG_REJECTED, 'rejected', logging.WARN, 1, 1)
+log_policy_ignore = log_policy_t(LOG_IGNORED, 'ignored', logging.INFO, 0, 0)
+log_policy_internal = log_policy_t(
+    LOG_INTERNAL_ERROR, 'INTERNAL ERROR', logging.CRITICAL, 1, 1,
+)
+log_policy_expected = log_policy_t(
+    LOG_FAILURE, 'raised expected', logging.INFO, 0, 0,
+)
+log_policy_unexpected = log_policy_t(
+    LOG_FAILURE, 'raised unexpected', logging.ERROR, 1, 1,
+)
+
 send_prerun = signals.task_prerun.send
 send_postrun = signals.task_postrun.send
 send_success = signals.task_success.send
@@ -91,7 +107,7 @@ EXCEPTION_STATES = states.EXCEPTION_STATES
 IGNORE_STATES = frozenset([IGNORED, RETRY, REJECTED])
 
 #: set by :func:`setup_worker_optimizations`
-_tasks = None
+_localized = []
 _patched = {}
 
 trace_ok_t = namedtuple('trace_ok_t', ('retval', 'info', 'runtime', 'retstr'))
@@ -102,6 +118,19 @@ def task_has_custom(task, attr):
     defines ``attr`` (excluding the one in BaseTask)."""
     return mro_lookup(task.__class__, attr, stop=(BaseTask, object),
                       monkey_patched=['celery.app.task'])
+
+
+def get_log_policy(task, einfo, exc):
+    if isinstance(exc, Reject):
+        return log_policy_reject
+    elif isinstance(exc, Ignore):
+        return log_policy_ignore
+    elif einfo.internal:
+        return log_policy_internal
+    else:
+        if task.throws and isinstance(exc, task.throws):
+            return log_policy_expected
+        return log_policy_unexpected
 
 
 class TraceInfo(object):
@@ -172,39 +201,14 @@ class TraceInfo(object):
     def _log_error(self, task, einfo):
         req = task.request
         eobj = einfo.exception = get_pickled_exception(einfo.exception)
-        exception, traceback, exc_info, internal, sargs, skwargs = (
+        exception, traceback, exc_info, sargs, skwargs = (
             safe_repr(eobj),
             safe_str(einfo.traceback),
             einfo.exc_info,
-            einfo.internal,
             safe_repr(req.args),
             safe_repr(req.kwargs),
         )
-        if task.throws and isinstance(eobj, task.throws):
-            do_send_mail, severity, exc_info, description = (
-                False, logging.INFO, None, 'raised expected',
-            )
-        else:
-            do_send_mail, severity, description = (
-                True, logging.ERROR, 'raised unexpected',
-            )
-        format = LOG_FAILURE
-
-        if internal:
-            if isinstance(einfo.exception, Reject):
-                format = LOG_REJECTED
-                description = 'rejected'
-                severity = logging.WARN
-                exc_info = einfo
-            elif isinstance(einfo.exception, Ignore):
-                format = LOG_IGNORED
-                description = 'ignored'
-                severity = logging.INFO
-                exc_info = None
-            else:
-                format = LOG_INTERNAL_ERROR
-                description = 'INTERNAL ERROR'
-                severity = logging.CRITICAL
+        policy = get_log_policy(task, einfo, eobj)
 
         context = {
             'hostname': req.hostname,
@@ -214,15 +218,16 @@ class TraceInfo(object):
             'traceback': traceback,
             'args': sargs,
             'kwargs': skwargs,
-            'description': description,
-            'internal': internal,
+            'description': policy.description,
+            'internal': einfo.internal,
         }
 
-        logger.log(severity, format.strip(), context,
-                   exc_info=exc_info,
+        logger.log(policy.severity, policy.format.strip(), context,
+                   exc_info=exc_info if policy.traceback else None,
                    extra={'data': context})
 
-        task.send_error_email(context, einfo.exception)
+        if policy.mail:
+            task.send_error_email(context, einfo.exception)
 
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
@@ -444,14 +449,21 @@ def trace_task(task, uuid, args, kwargs, request={}, **opts):
     try:
         if task.__trace__ is None:
             task.__trace__ = build_tracer(task.name, task, **opts)
-        return task.__trace__(uuid, args, kwargs, request)[0]
+        return task.__trace__(uuid, args, kwargs, request)
     except Exception as exc:
         return report_internal_error(task, exc)
 
 
-def _trace_task_ret(name, uuid, args, kwargs, request={}, app=None, **opts):
-    return trace_task((app or current_app).tasks[name],
-                      uuid, args, kwargs, request, app=app, **opts)
+def _trace_task_ret(name, uuid, request, body, content_type,
+                    content_encoding, loads=loads_message, app=None,
+                    **extra_request):
+    app = app or current_app._get_current_object()
+    accept = prepare_accept_content(app.conf.CELERY_ACCEPT_CONTENT)
+    args, kwargs = loads(body, content_type, content_encoding, accept=accept)
+    request.update(args=args, kwargs=kwargs, **extra_request)
+    R, I, T, Rstr = trace_task(app.tasks[name],
+                               uuid, args, kwargs, request, app=app)
+    return (1, R, T) if I else (0, Rstr, T)
 trace_task_ret = _trace_task_ret
 
 
@@ -460,18 +472,23 @@ def _fast_trace_task_v1(task, uuid, args, kwargs, request={}):
     # so this is the function used in the worker.
     R, I, T, Rstr = _tasks[task].__trace__(uuid, args, kwargs, request)[0]
     # exception instance if error, else result text
-    return (R if I else Rstr), T
+    return (1, R, T) if I else (0, Rstr, T)
 
 
 def _fast_trace_task(task, uuid, request, body, content_type,
-                     content_encoding, decode_message=decode_message,
+                     content_encoding, loads=loads_message, _loc=_localized,
                      **extra_request):
-    args, kwargs = decode_message(body, content_type, content_encoding)
+    tasks, accept = _loc
+    try:
+        args, kwargs = loads(body, content_type, content_encoding,
+                             accept=accept)
+    except Exception as exc:
+        print('OH NOEEES: %r' % (exc, ))
     request.update(args=args, kwargs=kwargs, **extra_request)
-    R, I, T, Rstr = _tasks[task].__trace__(
+    R, I, T, Rstr = tasks[task].__trace__(
         uuid, args, kwargs, request,
     )
-    return (R if I else Rstr), T
+    return (1, R, T) if I else (0, Rstr, T)
 
 
 def report_internal_error(task, exc):
@@ -488,7 +505,6 @@ def report_internal_error(task, exc):
 
 
 def setup_worker_optimizations(app):
-    global _tasks
     global trace_task_ret
 
     # make sure custom Task.__call__ methods that calls super
@@ -508,7 +524,10 @@ def setup_worker_optimizations(app):
     app.finalize()
 
     # set fast shortcut to task registry
-    _tasks = app._tasks
+    _localized[:] = [
+        app._tasks,
+        prepare_accept_content(app.conf.CELERY_ACCEPT_CONTENT),
+    ]
 
     trace_task_ret = _fast_trace_task
     from celery.worker import job as job_module

@@ -13,7 +13,6 @@ import logging
 import socket
 import sys
 
-from billiard.einfo import ExceptionInfo
 from datetime import datetime
 from weakref import ref
 
@@ -83,7 +82,7 @@ DEFAULT_FIELDS = {
 class RequestV1(object):
     if not IS_PYPY:
         __slots__ = (
-            'app', 'name', 'id', 'root_id', 'parent_id',
+            'app', 'message', 'name', 'id', 'root_id', 'parent_id',
             'on_ack', 'hostname', 'eventer', 'connection_errors', 'task',
             'eta', 'expires', 'request_dict', 'acknowledged', 'on_reject',
             'utc', 'time_start', 'worker_pid', '_already_revoked',
@@ -94,9 +93,10 @@ class RequestV1(object):
 
 class Request(object):
     """A request for task execution."""
+    utc = True
     if not IS_PYPY:  # pragma: no cover
         __slots__ = (
-            'app', 'name', 'id', 'on_ack', 'payload',
+            'app', 'name', 'id', 'on_ack', 'body',
             'hostname', 'eventer', 'connection_errors', 'task', 'eta',
             'expires', 'request_dict', 'acknowledged', 'on_reject',
             'utc', 'time_start', 'worker_pid', 'timeouts',
@@ -111,9 +111,10 @@ class Request(object):
                  task=None, on_reject=noop, **opts):
         headers = message.headers
         self.app = app
+        self.message = message
         name = self.name = headers['c_type']
-        self.id = headers['task_id']
-        self.payload = message.body
+        self.id = headers['id']
+        self.body = message.body
         self.content_type = message.content_type
         self.content_encoding = message.content_encoding
         eta = headers.get('eta')
@@ -185,14 +186,14 @@ class Request(object):
         if self.revoked():
             raise TaskRevokedError(task_id)
 
-        payload = self.payload
+        body = self.body
         timeout, soft_timeout = self.timeouts
         timeout = timeout or task.time_limit
         soft_timeout = soft_timeout or task.soft_time_limit
         result = pool.apply_async(
             trace_task_ret,
             args=(self.name, task_id, self.request_dict,
-                  bytes(payload) if isinstance(payload, buffer) else payload,
+                  bytes(body) if isinstance(body, buffer) else body,
                   self.content_type, self.content_encoding),
             kwargs={'hostname': self.hostname, 'is_eager': False},
             accept_callback=self.on_accepted,
@@ -221,14 +222,14 @@ class Request(object):
         if not self.task.acks_late:
             self.acknowledge()
 
-        kwargs = self.kwargs
         request = self.request_dict
+        args, kwargs = self.message.payload
         request.update({'loglevel': loglevel, 'logfile': logfile,
                         'hostname': self.hostname, 'is_eager': False,
-                        'delivery_info': self.delivery_info})
-        retval = trace_task(self.task, self.id, self.args, kwargs, request,
+                        'args': args, 'kwargs': kwargs})
+        retval = trace_task(self.task, self.id, args, kwargs, request,
                             hostname=self.hostname, loader=self.app.loader,
-                            app=self.app)
+                            app=self.app)[0]
         self.acknowledge()
         return retval
 
@@ -313,22 +314,21 @@ class Request(object):
         if self.task.acks_late:
             self.acknowledge()
 
-    def on_success(self, ret_value, **kwargs):
+    def on_success(self, failed__retval__runtime, **kwargs):
         """Handler called if the task was successfully processed."""
-        if isinstance(ret_value, ExceptionInfo):
-            if isinstance(ret_value.exception, (
-                    SystemExit, KeyboardInterrupt)):
-                raise ret_value.exception
-            return self.on_failure(ret_value)
+        failed, retval, runtime = failed__retval__runtime
+        if failed:
+            if isinstance(retval.exception, (SystemExit, KeyboardInterrupt)):
+                raise retval.exception
+            return self.on_failure(retval)
         task_ready(self)
 
         if self.task.acks_late:
             self.acknowledge()
 
         if self.eventer and self.eventer.enabled:
-            result, runtime = ret_value
             self.send_event(
-                'task-succeeded', result=ret_value, runtime=runtime,
+                'task-succeeded', result=retval, runtime=runtime,
             )
 
     def on_retry(self, exc_info):
@@ -340,38 +340,36 @@ class Request(object):
                         exception=safe_repr(exc_info.exception.exc),
                         traceback=safe_str(exc_info.traceback))
 
-    def on_failure(self, exc_info):
+    def on_failure(self, exc_info, send_failed_event=True):
         """Handler called if the task raised an exception."""
         task_ready(self)
-        send_failed_event = True
 
-        if exc_info.internal:
-            if isinstance(exc_info.exception, MemoryError):
-                raise MemoryError('Process got: %s' % (exc_info.exception, ))
-            elif isinstance(exc_info.exception, Reject):
-                self.reject(requeue=exc_info.exception.requeue)
-            elif isinstance(exc_info.exception, Ignore):
-                self.acknowledge()
-        else:
-            exc = exc_info.exception
+        if isinstance(exc_info.exception, MemoryError):
+            raise MemoryError('Process got: %s' % (exc_info.exception, ))
+        elif isinstance(exc_info.exception, Reject):
+            return self.reject(requeue=exc_info.exception.requeue)
+        elif isinstance(exc_info.exception, Ignore):
+            return self.acknowledge()
 
-            if isinstance(exc, Retry):
-                return self.on_retry(exc_info)
+        exc = exc_info.exception
 
-            # These are special cases where the process would not have had
-            # time to write the result.
-            if self.store_errors:
-                if isinstance(exc, WorkerLostError):
-                    self.task.backend.mark_as_failure(
-                        self.id, exc, request=self,
-                    )
-                elif isinstance(exc, Terminated):
-                    self._announce_revoked(
-                        'terminated', True, string(exc), False)
-                    send_failed_event = False  # already sent revoked event
-            # (acks_late) acknowledge after result stored.
-            if self.task.acks_late:
-                self.acknowledge()
+        if isinstance(exc, Retry):
+            return self.on_retry(exc_info)
+
+        # These are special cases where the process would not have had
+        # time to write the result.
+        if self.store_errors:
+            if isinstance(exc, WorkerLostError):
+                self.task.backend.mark_as_failure(
+                    self.id, exc, request=self,
+                )
+            elif isinstance(exc, Terminated):
+                self._announce_revoked(
+                    'terminated', True, string(exc), False)
+                send_failed_event = False  # already sent revoked event
+        # (acks_late) acknowledge after result stored.
+        if self.task.acks_late:
+            self.acknowledge()
 
         if send_failed_event:
             self.send_event(

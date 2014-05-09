@@ -102,8 +102,8 @@ Definition
     }
     headers = {
         'lang': (string)'py'
-        'c_type': (string)task,
-        'task_id': (uuid)task_id,
+        'task': (string)task,
+        'id': (uuid)task_id,
         'root_id': (uuid)root_id,
         'parent_id': (uuid)parent_id,
 

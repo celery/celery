@@ -89,7 +89,7 @@ def default(task, app, consumer,
                     return limit_task(req, bucket, 1)
             task_reserved(req)
             if callbacks:
-                [callback() for callback in callbacks]
+                [callback(req) for callback in callbacks]
             handle(req)
 
     return task_message_handler

@@ -447,37 +447,30 @@ class Consumer(object):
         on_invalid_task = self.on_invalid_task
         callbacks = self.on_task_message
 
-        def on_v1_task_received(body, message):
-            try:
-                name = body['task']
-            except (KeyError, TypeError):
-                return on_unknown_message(body, message)
-
-            try:
-                strategies[name](message, body,
-                                 message.ack_log_error,
-                                 message.reject_log_error,
-                                 callbacks)
-            except KeyError as exc:
-                on_unknown_task(body, message, exc)
-            except InvalidTaskError as exc:
-                on_invalid_task(body, message, exc)
-
         def on_task_received(message):
-            headers = message.headers
+
+            # payload will only be set for v1 protocol, since v2
+            # will defer deserializing the message body to the pool.
+            payload = None
             try:
-                type_ = headers['c_type']
+                type_ = message.headers['c_type']   # protocol v2
+            except TypeError:
+                return on_unknown_message(None, message)
             except KeyError:
-                return on_v1_task_received(message.payload, message)
+                payload = message.payload
+                try:
+                    type_ = payload['task']         # protocol v1
+                except (TypeError, KeyError):
+                    return on_unknown_message(payload, message)
             try:
                 strategies[type_](
                     message, None,
                     message.ack_log_error, message.reject_log_error, callbacks,
                 )
             except KeyError as exc:
-                on_unknown_task(None, message, exc)
+                on_unknown_task(payload, message, exc)
             except InvalidTaskError as exc:
-                on_invalid_task(None, message, exc)
+                on_invalid_task(payload, message, exc)
 
         return on_task_received
 

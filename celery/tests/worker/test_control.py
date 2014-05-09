@@ -21,7 +21,7 @@ from celery.worker.state import revoked
 from celery.worker.control import Panel
 from celery.worker.pidbox import Pidbox, gPidbox
 
-from celery.tests.case import AppCase, Mock, call, patch
+from celery.tests.case import AppCase, Mock, TaskMessage, call, patch
 
 hostname = socket.gethostname()
 
@@ -250,12 +250,7 @@ class test_ControlPanel(AppCase):
         self.panel.handle('report')
 
     def test_active(self):
-        r = Request({
-            'task': self.mytask.name,
-            'id': 'do re mi',
-            'args': (),
-            'kwargs': {},
-        }, app=self.app)
+        r = Request(TaskMessage(self.mytask.name, 'do re mi'), app=self.app)
         worker_state.active_requests.add(r)
         try:
             self.assertTrue(self.panel.handle('dump_active'))
@@ -347,12 +342,7 @@ class test_ControlPanel(AppCase):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
         self.assertFalse(panel.handle('dump_schedule'))
-        r = Request({
-            'task': self.mytask.name,
-            'id': 'CAFEBABE',
-            'args': (),
-            'kwargs': {},
-        }, app=self.app)
+        r = Request(TaskMessage(self.mytask.name, 'CAFEBABE'), app=self.app)
         consumer.timer.schedule.enter_at(
             consumer.timer.Entry(lambda x: x, (r, )),
             datetime.now() + timedelta(seconds=10))
@@ -363,19 +353,14 @@ class test_ControlPanel(AppCase):
 
     def test_dump_reserved(self):
         consumer = Consumer(self.app)
-        worker_state.reserved_requests.add(Request({
-            'task': self.mytask.name,
-            'id': uuid(),
-            'args': (2, 2),
-            'kwargs': {},
-        }, app=self.app))
+        worker_state.reserved_requests.add(
+            Request(TaskMessage(self.mytask.name, args=(2, 2)), app=self.app),
+        )
         try:
             panel = self.create_panel(consumer=consumer)
             response = panel.handle('dump_reserved', {'safe': True})
             self.assertDictContainsSubset(
                 {'name': self.mytask.name,
-                 'args': (2, 2),
-                 'kwargs': {},
                  'hostname': socket.gethostname()},
                 response[0],
             )
