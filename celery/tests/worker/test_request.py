@@ -35,8 +35,8 @@ from celery.exceptions import (
 from celery.five import monotonic
 from celery.signals import task_revoked
 from celery.utils import uuid
-from celery.worker import job as module
-from celery.worker.job import Request, logger as req_logger
+from celery.worker import request as module
+from celery.worker.request import Request, logger as req_logger
 from celery.worker.state import revoked
 
 from celery.tests.case import (
@@ -247,7 +247,7 @@ class test_Request(AppCase):
             self.get_request(self.add.s(2, 2).set(expires='12345'))
 
     def test_valid_expires_with_utc_makes_aware(self):
-        with patch('celery.worker.job.maybe_make_aware') as mma:
+        with patch('celery.worker.request.maybe_make_aware') as mma:
             self.get_request(self.add.s(2, 2).set(expires=10))
             self.assertTrue(mma.called)
 
@@ -592,8 +592,8 @@ class test_Request(AppCase):
         with self.assertRaises(InvalidTaskError):
             raise req.execute().exception
 
-    @patch('celery.worker.job.error')
-    @patch('celery.worker.job.warn')
+    @patch('celery.worker.request.error')
+    @patch('celery.worker.request.warn')
     def test_on_timeout(self, warn, error):
 
         job = self.xRequest()

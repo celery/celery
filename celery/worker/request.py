@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.worker.job
-    ~~~~~~~~~~~~~~~~~
+    celery.worker.request
+    ~~~~~~~~~~~~~~~~~~~~~
 
     This module defines the :class:`Request` class,
     which specifies how tasks are executed.

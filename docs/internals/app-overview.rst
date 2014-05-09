@@ -226,7 +226,7 @@ App Dependency Tree
     * celery.apps.worker.Worker
         * celery.worker.WorkerController
             * celery.worker.consumer.Consumer
-                * celery.worker.job.TaskRequest
+                * celery.worker.request.Request
                 * celery.events.EventDispatcher
                 * celery.worker.control.ControlDispatch
                     * celery.woker.control.registry.Panel

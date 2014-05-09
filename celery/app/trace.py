@@ -530,9 +530,9 @@ def setup_worker_optimizations(app):
     ]
 
     trace_task_ret = _fast_trace_task
-    from celery.worker import job as job_module
-    job_module.trace_task_ret = _fast_trace_task
-    job_module.__optimize__()
+    from celery.worker import request as request_module
+    request_module.trace_task_ret = _fast_trace_task
+    request_module.__optimize__()
 
 
 def reset_worker_optimizations():
@@ -546,8 +546,8 @@ def reset_worker_optimizations():
         BaseTask.__call__ = _patched.pop('BaseTask.__call__')
     except KeyError:
         pass
-    from celery.worker import job as job_module
-    job_module.trace_task_ret = _trace_task_ret
+    from celery.worker import request as request_module
+    request_module.trace_task_ret = _trace_task_ret
 
 
 def _install_stack_protection():

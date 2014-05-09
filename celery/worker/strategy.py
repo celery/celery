@@ -15,7 +15,7 @@ from kombu.async.timer import to_timestamp
 from celery.utils.log import get_logger
 from celery.utils.timeutils import timezone
 
-from .job import Request, RequestV1
+from .request import Request, RequestV1
 from .state import task_reserved
 
 __all__ = ['default']

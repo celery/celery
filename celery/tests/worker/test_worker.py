@@ -24,7 +24,7 @@ from celery.utils import uuid
 from celery.worker import components
 from celery.worker import consumer
 from celery.worker.consumer import Consumer as __Consumer
-from celery.worker.job import Request
+from celery.worker.request import Request
 from celery.utils import worker_direct
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
