@@ -136,6 +136,30 @@ Provides arguments:
 
     Routing key used.
 
+.. signal:: after_message_received
+
+after_message_received
+~~~~~~~~~~~~~~~~~~~~~~
+
+Dispatched when the worker received a message.
+Can be used to pre-process a row message before it will be handled.
+Note that this is executed in the main worker process, thus
+it must be executed as fast as possible, and must not call any function
+that may block the process.
+
+Sender is None.
+
+Provides arguments:
+
+* message
+
+    The message instance.
+
+* body
+
+    The message body, see :ref:`task-message-protocol-v1`
+    for a reference of possible fields that can be defined.
+
 .. signal:: task_prerun
 
 task_prerun

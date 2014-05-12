@@ -40,6 +40,7 @@ from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
 from celery.utils.timeutils import humanize_seconds, rate
+from celery.signals import after_message_received
 
 from . import heartbeat, loops, pidbox
 from .state import task_reserved, maybe_shutdown, revoked, reserved_requests
@@ -61,6 +62,7 @@ CLOSE = bootsteps.CLOSE
 logger = get_logger(__name__)
 debug, info, warn, error, crit = (logger.debug, logger.info, logger.warning,
                                   logger.error, logger.critical)
+send_after_message_received = after_message_received.send
 
 CONNECTION_RETRY = """\
 consumer: Connection to broker lost. \
@@ -444,8 +446,13 @@ class Consumer(object):
         on_unknown_task = self.on_unknown_task
         on_invalid_task = self.on_invalid_task
         callbacks = self.on_task_message
+        after_message_received_receivers = after_message_received.receivers
 
         def on_task_received(body, message):
+            if after_message_received_receivers:
+                send_after_message_received(sender=None,
+                                            message=message,
+                                            body=body)
             try:
                 name = body['task']
             except (KeyError, TypeError):
