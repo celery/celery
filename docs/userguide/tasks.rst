@@ -514,10 +514,14 @@ General
     If it is an integer or float, it is interpreted as "tasks per second".
 
     The rate limits can be specified in seconds, minutes or hours
-    by appending `"/s"`, `"/m"` or `"/h"` to the value.
-    Example: `"100/m"` (hundred tasks a minute).  Default is the
-    :setting:`CELERY_DEFAULT_RATE_LIMIT` setting, which if not specified means
-    rate limiting for tasks is disabled by default.
+    by appending `"/s"`, `"/m"` or `"/h"` to the value.  Tasks will be evenly
+    distributed over the specified time frame.
+
+    Example: `"100/m"` (hundred tasks a minute). This will enforce a minimum
+    delay of 10ms between starting two tasks.
+    
+    Default is the :setting:`CELERY_DEFAULT_RATE_LIMIT` setting,
+    which if not specified means rate limiting for tasks is disabled by default.
 
 .. attribute:: Task.time_limit
 
