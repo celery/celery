@@ -16,6 +16,7 @@ from __future__ import absolute_import
 from .utils.dispatch import Signal
 
 __all__ = ['before_task_publish', 'after_task_publish',
+           'after_message_received',
            'task_prerun', 'task_postrun', 'task_success',
            'task_retry', 'task_failure', 'task_revoked', 'celeryd_init',
            'celeryd_after_setup', 'worker_init', 'worker_process_init',
@@ -32,6 +33,7 @@ before_task_publish = Signal(providing_args=[
 after_task_publish = Signal(providing_args=[
     'body', 'exchange', 'routing_key',
 ])
+after_message_received = Signal(providing_args=['message', 'body'])
 #: Deprecated, use after_task_publish instead.
 task_sent = Signal(providing_args=[
     'task_id', 'task', 'args', 'kwargs', 'eta', 'taskset',
