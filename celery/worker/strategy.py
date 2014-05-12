@@ -18,7 +18,6 @@ from celery.utils.timeutils import timezone
 
 from .job import Request
 from .state import task_reserved
-from celery import signals
 
 __all__ = ['default']
 
@@ -44,9 +43,6 @@ def default(task, app, consumer,
 
     def task_message_handler(message, body, ack, reject, callbacks,
                              to_timestamp=to_timestamp):
-        signals.after_message_received.send(sender=None,
-                                            message=message,
-                                            body=body)
         req = Req(body, on_ack=ack, on_reject=reject,
                   app=app, hostname=hostname,
                   eventer=eventer, task=task,

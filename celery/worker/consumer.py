@@ -31,7 +31,7 @@ from kombu.utils.compat import get_errno
 from kombu.utils.encoding import safe_repr, bytes_t
 from kombu.utils.limits import TokenBucket
 
-from celery import bootsteps
+from celery import bootsteps, signals
 from celery.app.trace import build_tracer
 from celery.canvas import signature
 from celery.exceptions import InvalidTaskError
@@ -446,6 +446,9 @@ class Consumer(object):
         callbacks = self.on_task_message
 
         def on_task_received(body, message):
+            signals.after_message_received.send(sender=None,
+                                                message=message,
+                                                body=body)
             try:
                 name = body['task']
             except (KeyError, TypeError):
