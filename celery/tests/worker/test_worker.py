@@ -293,6 +293,68 @@ class test_Consumer(AppCase):
         self.assertEqual(in_bucket.execute(), 2 * 4 * 8)
         self.assertTrue(self.timer.empty())
 
+    def test_after_message_received_signal_dummy(self):
+        from celery import signals
+
+        def on_after_message_received(**kwargs):
+            on_after_message_received.called = True
+        on_after_message_received.called = False
+        signals.after_message_received.connect(on_after_message_received)
+
+        l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
+        l.blueprint.state = RUN
+        l.event_dispatcher = mock_event_dispatcher()
+        m = create_message(Mock(), task=self.foo_task.name,
+                           args=[2, 4, 8], kwargs={})
+        l.update_strategies()
+        callback = self._get_on_message(l)
+        callback(m.decode(), m)
+
+        in_bucket = self.buffer.get_nowait()
+        self.assertIsInstance(in_bucket, Request)
+        self.assertEqual(in_bucket.name, self.foo_task.name)
+        self.assertEqual(in_bucket.execute(), 2 * 4 * 8)
+        self.assertTrue(self.timer.empty())
+        signals.after_message_received.disconnect(on_after_message_received)
+
+    def test_after_message_received_signal(self):
+        from celery import signals
+
+        def on_after_message_received(message, body, **kwargs):
+            if body['args'][2] == 8:
+                body['args'][2] = 16
+        signals.after_message_received.connect(on_after_message_received)
+
+        l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
+        l.blueprint.state = RUN
+        l.event_dispatcher = mock_event_dispatcher()
+        m1 = create_message(Mock(), task=self.foo_task.name,
+                            args=[2, 4, 8], kwargs={})
+        m2 = create_message(Mock(), task=self.foo_task.name,
+                            args=[2, 4, 4], kwargs={})
+        l.update_strategies()
+        callback = self._get_on_message(l)
+
+        callback(m1.decode(), m1)
+
+        in_bucket = self.buffer.get_nowait()
+        self.assertIsInstance(in_bucket, Request)
+        self.assertEqual(in_bucket.name, self.foo_task.name)
+        self.assertNotEqual(in_bucket.execute(), 2 * 4 * 8)
+        self.assertEqual(in_bucket.execute(), 2 * 4 * 16)
+        self.assertTrue(self.timer.empty())
+
+        callback(m2.decode(), m2)
+
+        in_bucket = self.buffer.get_nowait()
+        self.assertIsInstance(in_bucket, Request)
+        self.assertEqual(in_bucket.name, self.foo_task.name)
+        self.assertNotEqual(in_bucket.execute(), 2 * 4 * 16)
+        self.assertEqual(in_bucket.execute(), 2 * 4 * 4)
+
+        self.assertTrue(self.timer.empty())
+        signals.after_message_received.disconnect(on_after_message_received)
+
     def test_start_channel_error(self):
 
         class MockConsumer(Consumer):
