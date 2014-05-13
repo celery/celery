@@ -251,7 +251,9 @@ class PromiseProxy(Proxy):
             thing = Proxy._get_current_object(self)
             object.__setattr__(self, '__thing', thing)
             return thing
-        finally:
+        except:
+            raise
+        else:
             for attr in _clean:
                 try:
                     object.__delattr__(self, attr)
