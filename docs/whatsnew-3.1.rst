@@ -607,7 +607,7 @@ You install extras by specifying them inside brackets:
 
 .. code-block:: bash
 
-    $ pip install celery[redis,mongodb]
+    $ pip install "celery[redis,mongodb]"
 
 The above will install the dependencies for Redis and MongoDB.  You can list
 as many extras as you want.

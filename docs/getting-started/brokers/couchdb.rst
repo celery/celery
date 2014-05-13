@@ -22,7 +22,7 @@ the ``celery[couchdb]`` :ref:`bundle <bundles>`:
 
 .. code-block:: bash
 
-    $ pip install -U celery[couchdb]
+    $ pip install -U "celery[couchdb]"
 
 .. _broker-couchdb-configuration:
 
