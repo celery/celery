@@ -123,6 +123,7 @@ SIGMAP = dict((getattr(signal, name), name) for name in SIGNAMES)
 USAGE = """\
 usage: {prog_name} start <node1 node2 nodeN|range> [worker options]
        {prog_name} stop <n1 n2 nN|range> [-SIG (default: -TERM)]
+       {prog_name} stopwait <n1 n2 nN|range> [-SIG (default: -TERM)]
        {prog_name} restart <n1 n2 nN|range> [-SIG] [worker options]
        {prog_name} kill <n1 n2 nN|range>
 
