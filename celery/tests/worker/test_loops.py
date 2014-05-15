@@ -163,7 +163,7 @@ class test_asynloop(AppCase):
         x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
         exc = strategy.side_effect = KeyError(self.add.name)
         on_task(msg)
-        x.on_unknown_task.assert_called_with(None, msg, exc)
+        x.on_invalid_task.assert_called_with(None, msg, exc)
 
     def test_on_task_InvalidTaskError(self):
         x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))

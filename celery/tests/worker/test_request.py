@@ -248,7 +248,8 @@ class test_Request(AppCase):
 
     def test_valid_expires_with_utc_makes_aware(self):
         with patch('celery.worker.request.maybe_make_aware') as mma:
-            self.get_request(self.add.s(2, 2).set(expires=10))
+            self.get_request(self.add.s(2, 2).set(expires=10),
+                             maybe_make_aware=mma)
             self.assertTrue(mma.called)
 
     def test_maybe_expire_when_expires_is_None(self):

@@ -867,7 +867,7 @@ def TaskMessage(name, id=None, args=(), kwargs={}, **options):
     message = Mock(name='TaskMessage-{0}'.format(id))
     message.headers = {
         'id': id,
-        'c_type': name,
+        'task': name,
     }
     message.headers.update(options)
     message.content_type, message.content_encoding, message.body = dumps(

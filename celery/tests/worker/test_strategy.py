@@ -70,6 +70,7 @@ class test_default_strategy(AppCase):
         if limit:
             bucket = TokenBucket(rate(limit), capacity=1)
             consumer.task_buckets[sig.task] = bucket
+        consumer.controller.state.revoked = set()
         consumer.disable_rate_limits = not rate_limits
         consumer.event_dispatcher.enabled = events
         s = sig.type.start_strategy(self.app, consumer, task_reserved=reserved)
@@ -126,9 +127,10 @@ class test_default_strategy(AppCase):
     def test_when_revoked(self):
         task = self.add.s(2, 2)
         task.freeze()
-        state.revoked.add(task.id)
         try:
             with self._context(task) as C:
+                C.consumer.controller.state.revoked.add(task.id)
+                state.revoked.add(task.id)
                 C()
                 with self.assertRaises(ValueError):
                     C.get_request()
