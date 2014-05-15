@@ -306,7 +306,7 @@ class AMQP(object):
                 'group': group_id,
                 'chord': chord,
                 'retries': retries,
-                'timelimit': (time_limit, soft_time_limit),
+                'timelimit': [time_limit, soft_time_limit],
                 'root_id': root_id,
                 'parent_id': parent_id,
             },
