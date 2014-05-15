@@ -7,7 +7,6 @@ SKIP_FILES="celery.five.rst
             celery.task.rst
             celery.task.base.rst
             celery.task.sets.rst
-            celery.task.trace.rst
             celery.bin.rst
             celery.bin.celeryd_detach.rst
             celery.contrib.rst

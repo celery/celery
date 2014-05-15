@@ -40,11 +40,7 @@ class test_MagicModule(AppCase):
         def _test_decorators_task():
             pass
 
-        self.assertTrue(_test_decorators_task.accept_magic_kwargs)
-
     def test_decorators_periodic_task(self):
         @celery.decorators.periodic_task(run_every=3600)
         def _test_decorators_ptask():
             pass
-
-        self.assertTrue(_test_decorators_ptask.accept_magic_kwargs)

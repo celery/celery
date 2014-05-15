@@ -6,7 +6,7 @@ from celery import states
 from celery.exceptions import Ignore, Retry
 from celery.app.trace import (
     TraceInfo,
-    eager_trace_task,
+    build_tracer,
     trace_task,
     setup_worker_optimizations,
     reset_worker_optimizations,
@@ -14,9 +14,12 @@ from celery.app.trace import (
 from celery.tests.case import AppCase, Mock, patch
 
 
-def trace(app, task, args=(), kwargs={}, propagate=False, **opts):
-    return eager_trace_task(task, 'id-1', args, kwargs,
-                            propagate=propagate, app=app, **opts)
+def trace(app, task, args=(), kwargs={},
+          propagate=False, eager=True, request=None, **opts):
+    t = build_tracer(task.name, task,
+                     eager=eager, propagate=propagate, app=app, **opts)
+    ret = t('id-1', args, kwargs, request)
+    return ret.retval, ret.info
 
 
 class TraceCase(AppCase):

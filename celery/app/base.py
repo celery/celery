@@ -9,12 +9,10 @@
 from __future__ import absolute_import
 
 import os
-import sys
 import threading
 import warnings
 
 from collections import defaultdict, deque
-from contextlib import contextmanager
 from copy import deepcopy
 from operator import attrgetter
 
@@ -128,11 +126,13 @@ class Celery(object):
     #: Signal sent after app has been finalized.
     on_after_finalize = None
 
+    #: ignored
+    accept_magic_kwargs = False
+
     def __init__(self, main=None, loader=None, backend=None,
                  amqp=None, events=None, log=None, control=None,
-                 set_as_current=True, accept_magic_kwargs=False,
-                 tasks=None, broker=None, include=None, changes=None,
-                 config_source=None, fixups=None, task_cls=None,
+                 set_as_current=True, tasks=None, broker=None, include=None,
+                 changes=None, config_source=None, fixups=None, task_cls=None,
                  autofinalize=True, **kwargs):
         self.clock = LamportClock()
         self.main = main
@@ -145,7 +145,6 @@ class Celery(object):
         self.task_cls = task_cls or self.task_cls
         self.set_as_current = set_as_current
         self.registry_cls = symbol_by_name(self.registry_cls)
-        self.accept_magic_kwargs = accept_magic_kwargs
         self.user_options = defaultdict(set)
         self.steps = defaultdict(set)
         self.autofinalize = autofinalize
@@ -240,12 +239,6 @@ class Celery(object):
                     cons = lambda app: app._task_from_fun(fun, **opts)
                     cons.__name__ = fun.__name__
                     connect_on_app_finalize(cons)
-                if self.accept_magic_kwargs:  # compat mode
-                    task = self._task_from_fun(fun, **opts)
-                    if filter:
-                        task = filter(task)
-                    return task
-
                 if self.finalized or opts.get('_force_evaluate'):
                     ret = self._task_from_fun(fun, **opts)
                 else:
@@ -277,7 +270,6 @@ class Celery(object):
 
         T = type(fun.__name__, (base, ), dict({
             'app': self,
-            'accept_magic_kwargs': False,
             'run': fun if bind else staticmethod(fun),
             '_decorated': True,
             '__doc__': fun.__doc__,
@@ -352,7 +344,7 @@ class Celery(object):
                   publisher=None, link=None, link_error=None,
                   add_to_parent=True, group_id=None, retries=0, chord=None,
                   reply_to=None, time_limit=None, soft_time_limit=None,
-                  **options):
+                  root_id=None, parent_id=None, **options):
         amqp = self.amqp
         task_id = task_id or uuid()
         producer = producer or publisher  # XXX compat
@@ -370,6 +362,7 @@ class Celery(object):
             maybe_list(link), maybe_list(link_error),
             reply_to or self.oid, time_limit, soft_time_limit,
             self.conf.CELERY_SEND_TASK_SENT_EVENT,
+            root_id, parent_id,
         )
 
         if connection:
@@ -574,7 +567,6 @@ class Celery(object):
             'events': self.events_cls,
             'log': self.log_cls,
             'control': self.control_cls,
-            'accept_magic_kwargs': self.accept_magic_kwargs,
             'fixups': self.fixups,
             'config_source': self._config_source,
             'task_cls': self.task_cls,
@@ -585,7 +577,7 @@ class Celery(object):
         return (self.main, self.conf.changes,
                 self.loader_cls, self.backend_cls, self.amqp_cls,
                 self.events_cls, self.log_cls, self.control_cls,
-                self.accept_magic_kwargs, self._config_source)
+                False, self._config_source)
 
     @cached_property
     def Worker(self):

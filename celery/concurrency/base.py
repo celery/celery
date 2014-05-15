@@ -66,11 +66,13 @@ class BasePool(object):
 
     _state = None
     _pool = None
+    _does_debug = True
 
     #: only used by multiprocessing pool
     uses_semaphore = False
 
     task_join_will_block = True
+    body_can_be_buffer = False
 
     def __init__(self, limit=None, putlocks=True,
                  forking_enable=True, callbacks_propagate=(), **options):
@@ -79,7 +81,6 @@ class BasePool(object):
         self.options = options
         self.forking_enable = forking_enable
         self.callbacks_propagate = callbacks_propagate
-        self._does_debug = logger.isEnabledFor(logging.DEBUG)
 
     def on_start(self):
         pass
@@ -128,6 +129,7 @@ class BasePool(object):
         self.on_terminate()
 
     def start(self):
+        self._does_debug = logger.isEnabledFor(logging.DEBUG)
         self.on_start()
         self._state = self.RUN
 

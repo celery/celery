@@ -37,7 +37,6 @@ from amqp.utils import promise
 from billiard.pool import RUN, TERMINATE, ACK, NACK, WorkersJoined
 from billiard import pool as _pool
 from billiard.compat import buf_t, setblocking, isblocking
-from billiard.einfo import ExceptionInfo
 from billiard.queues import _SimpleQueue
 from kombu.async import READ, WRITE, ERR
 from kombu.serialization import pickle as _pickle
@@ -46,7 +45,6 @@ from kombu.utils.compat import get_errno
 from kombu.utils.eventio import SELECT_BAD_FD
 from celery.five import Counter, items, values
 from celery.utils.log import get_logger
-from celery.utils.text import truncate
 from celery.worker import state as worker_state
 
 try:
@@ -95,8 +93,6 @@ SCHED_STRATEGIES = {
     None: SCHED_STRATEGY_PREFETCH,
     'fair': SCHED_STRATEGY_FAIR,
 }
-
-RESULT_MAXLEN = 128
 
 Ack = namedtuple('Ack', ('id', 'fd', 'payload'))
 
@@ -169,11 +165,6 @@ class Worker(_pool.Worker):
         # to accept work, this will tell the parent that the inqueue fd
         # is writable.
         self.outq.put((WORKER_UP, (pid, )))
-
-    def prepare_result(self, result, RESULT_MAXLEN=RESULT_MAXLEN):
-        if not isinstance(result, ExceptionInfo):
-            return truncate(repr(result), RESULT_MAXLEN)
-        return result
 
 
 class ResultHandler(_pool.ResultHandler):

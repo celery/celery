@@ -35,7 +35,7 @@ Receives messages from the broker using `Kombu`_.
 .. _`Kombu`: http://pypi.python.org/pypi/kombu
 
 When a message is received it's converted into a
-:class:`celery.worker.job.TaskRequest` object.
+:class:`celery.worker.request.Request` object.
 
 Tasks with an ETA, or rate-limit are entered into the `timer`,
 messages that can be immediately processed are sent to the execution pool.

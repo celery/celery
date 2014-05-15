@@ -28,6 +28,14 @@ except ImportError:  # pragma: no cover
     def Counter():  # noqa
         return defaultdict(int)
 
+try:
+    buffer_t = buffer
+except NameError:  # pragma: no cover
+    # Py3 does not have buffer, but we only need isinstance.
+
+    class buffer_t(object):  # noqa
+        pass
+
 ############## py3k #########################################################
 import sys
 PY3 = sys.version_info[0] == 3
@@ -210,15 +218,8 @@ def getappattr(path):
     return current_app._rgetattr(path)
 
 
-def _compat_task_decorator(*args, **kwargs):
-    from celery import current_app
-    kwargs.setdefault('accept_magic_kwargs', True)
-    return current_app.task(*args, **kwargs)
-
-
 def _compat_periodic_task_decorator(*args, **kwargs):
     from celery.task import periodic_task
-    kwargs.setdefault('accept_magic_kwargs', True)
     return periodic_task(*args, **kwargs)
 
 
@@ -228,7 +229,7 @@ COMPAT_MODULES = {
             'send_task': 'send_task',
         },
         'decorators': {
-            'task': _compat_task_decorator,
+            'task': 'task',
             'periodic_task': _compat_periodic_task_decorator,
         },
         'log': {

@@ -269,7 +269,8 @@ class AMQP(object):
                    expires=None, retries=0, chord=None,
                    callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
-                   create_sent_event=False, now=None, timezone=None):
+                   create_sent_event=False, now=None, timezone=None,
+                   root_id=None, parent_id=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -295,7 +296,8 @@ class AMQP(object):
         return task_message(
             headers={
                 'lang': 'py',
-                'c_type': name,
+                'task': name,
+                'id': task_id,
                 'eta': eta,
                 'expires': expires,
                 'callbacks': callbacks,
@@ -304,7 +306,9 @@ class AMQP(object):
                 'group': group_id,
                 'chord': chord,
                 'retries': retries,
-                'timelimit': (time_limit, soft_time_limit),
+                'timelimit': [time_limit, soft_time_limit],
+                'root_id': root_id,
+                'parent_id': parent_id,
             },
             properties={
                 'correlation_id': task_id,
@@ -313,6 +317,8 @@ class AMQP(object):
             body=(args, kwargs),
             sent_event={
                 'uuid': task_id,
+                'root': root_id,
+                'parent': parent_id,
                 'name': name,
                 'args': safe_repr(args),
                 'kwargs': safe_repr(kwargs),
@@ -327,7 +333,8 @@ class AMQP(object):
                    expires=None, retries=0,
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
-                   create_sent_event=False, now=None, timezone=None):
+                   create_sent_event=False, now=None, timezone=None,
+                   root_id=None, parent_id=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
