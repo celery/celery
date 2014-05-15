@@ -125,3 +125,7 @@ class sqs(default):
     BROKER_TRANSPORT_OPTIONS = {
         'region': os.environ.get('AWS_REGION', 'us-east-1'),
     }
+
+@template()
+class proto1(default):
+    CELERY_TASK_PROTOCOL = 1

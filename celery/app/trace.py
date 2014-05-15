@@ -478,11 +478,16 @@ def _fast_trace_task_v1(task, uuid, args, kwargs, request={}, _loc=_localized):
 
 def _fast_trace_task(task, uuid, request, body, content_type,
                      content_encoding, loads=loads_message, _loc=_localized,
-                     **extra_request):
+                     hostname=None, **_):
     tasks, accept = _loc
-    args, kwargs = loads(body, content_type, content_encoding,
-                         accept=accept)
-    request.update(args=args, kwargs=kwargs, **extra_request)
+    if content_type:
+        args, kwargs = loads(body, content_type, content_encoding,
+                             accept=accept)
+    else:
+        args, kwargs = body
+    request.update({
+        'args': args, 'kwargs': kwargs, 'hostname': hostname,
+    })
     R, I, T, Rstr = tasks[task].__trace__(
         uuid, args, kwargs, request,
     )

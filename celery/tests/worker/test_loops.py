@@ -155,7 +155,7 @@ class test_asynloop(AppCase):
 
     def test_on_task_message_missing_name(self):
         x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
-        msg.headers.pop('c_type')
+        msg.headers.pop('task')
         on_task(msg)
         x.on_unknown_message.assert_called_with(((2, 2), {}), msg)
 

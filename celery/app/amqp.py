@@ -296,7 +296,7 @@ class AMQP(object):
         return task_message(
             headers={
                 'lang': 'py',
-                'c_type': name,
+                'task': name,
                 'id': task_id,
                 'eta': eta,
                 'expires': expires,

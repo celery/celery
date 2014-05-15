@@ -445,24 +445,32 @@ class Consumer(object):
             # will defer deserializing the message body to the pool.
             payload = None
             try:
-                type_ = message.headers['c_type']   # protocol v2
+                type_ = message.headers['task']                # protocol v2
             except TypeError:
                 return on_unknown_message(None, message)
             except KeyError:
                 payload = message.payload
                 try:
-                    type_ = payload['task']         # protocol v1
+                    type_, payload = payload['task'], payload  # protocol v1
                 except (TypeError, KeyError):
                     return on_unknown_message(payload, message)
             try:
-                strategies[type_](
-                    message, None,
-                    message.ack_log_error, message.reject_log_error, callbacks,
-                )
+                strategy = strategies[type_]
             except KeyError as exc:
-                on_unknown_task(payload, message, exc)
-            except InvalidTaskError as exc:
-                on_invalid_task(payload, message, exc)
+                return on_unknown_task(payload, message, exc)
+            else:
+                try:
+                    strategy(
+                        message, payload, message.ack_log_error,
+                        message.reject_log_error, callbacks,
+                    )
+                except InvalidTaskError as exc:
+                    return on_invalid_task(payload, message, exc)
+                except MemoryError:
+                    raise
+                except Exception as exc:
+                    # XXX handle as internal error?
+                    return on_invalid_task(payload, message, exc)
 
         return on_task_received
 

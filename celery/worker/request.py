@@ -44,9 +44,6 @@ debug, info, warn, error = (logger.debug, logger.info,
 _does_info = False
 _does_debug = False
 
-#: Max length of result representation
-RESULT_MAXLEN = 128
-
 
 def __optimize__():
     # this is also called by celery.app.trace.setup_worker_optimizations
@@ -65,75 +62,63 @@ task_accepted = state.task_accepted
 task_ready = state.task_ready
 revoked_tasks = state.revoked
 
-#: Use when no message object passed to :class:`Request`.
-DEFAULT_FIELDS = {
-    'headers': None,
-    'reply_to': None,
-    'correlation_id': None,
-    'delivery_info': {
-        'exchange': None,
-        'routing_key': None,
-        'priority': 0,
-        'redelivered': False,
-    },
-}
-
-
-class RequestV1(object):
-    if not IS_PYPY:
-        __slots__ = (
-            'app', 'message', 'name', 'id', 'root_id', 'parent_id',
-            'on_ack', 'hostname', 'eventer', 'connection_errors', 'task',
-            'eta', 'expires', 'request_dict', 'acknowledged', 'on_reject',
-            'utc', 'time_start', 'worker_pid', '_already_revoked',
-            '_terminate_on_ack', '_apply_result',
-            '_tzlocal', '__weakref__', '__dict__',
-        )
-
 
 class Request(object):
     """A request for task execution."""
-    utc = True
+    acknowledged = False
+    time_start = None
+    worker_pid = None
+    timeouts = (None, None)
+    _already_revoked = False
+    _terminate_on_ack = None
+    _apply_result = None
+    _tzlocal = None
+
     if not IS_PYPY:  # pragma: no cover
         __slots__ = (
             'app', 'name', 'id', 'on_ack', 'body',
             'hostname', 'eventer', 'connection_errors', 'task', 'eta',
-            'expires', 'request_dict', 'acknowledged', 'on_reject',
-            'utc', 'time_start', 'worker_pid', 'timeouts',
+            'expires', 'request_dict', 'on_reject', 'utc',
             'content_type', 'content_encoding',
-            '_already_revoked', '_terminate_on_ack', '_apply_result',
-            '_tzlocal', '__weakref__', '__dict__',
+            '__weakref__', '__dict__',
         )
 
     def __init__(self, message, on_ack=noop,
                  hostname=None, eventer=None, app=None,
                  connection_errors=None, request_dict=None,
-                 task=None, on_reject=noop, body=None, **opts):
-        headers = message.headers
+                 task=None, on_reject=noop, body=None,
+                 headers=None, decoded=False, utc=True,
+                 maybe_make_aware=maybe_make_aware,
+                 maybe_iso8601=maybe_iso8601, **opts):
+        if headers is None:
+            headers = message.headers
+        if body is None:
+            body = message.body
         self.app = app
         self.message = message
-        name = self.name = headers['c_type']
+        self.body = body
+        self.utc = utc
+        if decoded:
+            self.content_type = self.content_encoding = None
+        else:
+            self.content_type, self.content_encoding = (
+                message.content_type, message.content_encoding,
+                )
+
+        name = self.name = headers['task']
         self.id = headers['id']
-        self.body = message.body if body is None else body
-        self.content_type = message.content_type
-        self.content_encoding = message.content_encoding
-        eta = headers.get('eta')
-        expires = headers.get('expires')
-        self.timeouts = (headers['timeouts'] if 'timeouts' in headers
-                         else (None, None))
+        if 'timeouts' in headers:
+            self.timeouts = headers['timeouts']
         self.on_ack = on_ack
         self.on_reject = on_reject
         self.hostname = hostname or socket.gethostname()
         self.eventer = eventer
         self.connection_errors = connection_errors or ()
         self.task = task or self.app.tasks[name]
-        self.acknowledged = self._already_revoked = False
-        self.time_start = self.worker_pid = self._terminate_on_ack = None
-        self._apply_result = None
-        self._tzlocal = None
 
         # timezone means the message is timezone-aware, and the only timezone
         # supported at this point is UTC.
+        eta = headers.get('eta')
         if eta is not None:
             try:
                 eta = maybe_iso8601(eta)
@@ -143,6 +128,8 @@ class Request(object):
             self.eta = maybe_make_aware(eta, self.tzlocal)
         else:
             self.eta = None
+
+        expires = headers.get('expires')
         if expires is not None:
             try:
                 expires = maybe_iso8601(expires)
@@ -186,15 +173,13 @@ class Request(object):
         if self.revoked():
             raise TaskRevokedError(task_id)
 
-        body = self.body
         timeout, soft_timeout = self.timeouts
         timeout = timeout or task.time_limit
         soft_timeout = soft_timeout or task.soft_time_limit
         result = pool.apply_async(
             trace_task_ret,
             args=(self.name, task_id, self.request_dict, self.body,
-                  self.content_type, self.content_encoding),
-            kwargs={'hostname': self.hostname, 'is_eager': False},
+                  self.content_type, self.content_encoding, self.hostname),
             accept_callback=self.on_accepted,
             timeout_callback=self.on_timeout,
             callback=self.on_success,
@@ -449,3 +434,61 @@ class Request(object):
     def correlation_id(self):
         # used similarly to reply_to
         return self.request_dict['correlation_id']
+
+
+def create_request_cls(base, task, pool, hostname, eventer,
+                       ref=ref, revoked_tasks=revoked_tasks,
+                       task_ready=task_ready):
+    from celery.app.trace import trace_task_ret as trace
+    default_time_limit = task.time_limit
+    default_soft_time_limit = task.soft_time_limit
+    apply_async = pool.apply_async
+    acks_late = task.acks_late
+    std_kwargs = {'hostname': hostname, 'is_eager': False}
+    events = eventer and eventer.enabled
+
+    class Request(base):
+
+        def execute_using_pool(self, pool, **kwargs):
+            task_id = self.id
+            if (self.expires or task_id in revoked_tasks) and self.revoked():
+                raise TaskRevokedError(task_id)
+
+            timeout, soft_timeout = self.timeouts
+            timeout = timeout or default_time_limit
+            soft_timeout = soft_timeout or default_soft_time_limit
+            result = apply_async(
+                trace,
+                args=(self.name, task_id, self.request_dict, self.body,
+                      self.content_type, self.content_encoding),
+                kwargs=std_kwargs,
+                accept_callback=self.on_accepted,
+                timeout_callback=self.on_timeout,
+                callback=self.on_success,
+                error_callback=self.on_failure,
+                soft_timeout=soft_timeout,
+                timeout=timeout,
+                correlation_id=task_id,
+            )
+            # cannot create weakref to None
+            self._apply_result = ref(result) if result is not None else result
+            return result
+
+        def on_success(self, failed__retval__runtime, **kwargs):
+            failed, retval, runtime = failed__retval__runtime
+            if failed:
+                if isinstance(retval.exception, (
+                        SystemExit, KeyboardInterrupt)):
+                    raise retval.exception
+                return self.on_failure(retval, return_ok=True)
+            task_ready(self)
+
+            if acks_late:
+                self.acknowledge()
+
+            if events:
+                self.send_event(
+                    'task-succeeded', result=retval, runtime=runtime,
+                )
+
+    return Request
