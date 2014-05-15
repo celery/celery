@@ -609,9 +609,6 @@ class group(Signature):
             parent_task.add_trail(result)
         return result
 
-        return type(*type.prepare(dict(self.options, **options), tasks, args),
-                    add_to_parent=add_to_parent)
-
     def apply(self, args=(), kwargs={}, **options):
         app = self.app
         if not self.tasks:
