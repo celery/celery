@@ -12,6 +12,7 @@ import logging
 
 from kombu.async.timer import to_timestamp
 
+from celery.five import buffer_t
 from celery.utils.log import get_logger
 from celery.utils.timeutils import timezone
 
@@ -25,7 +26,7 @@ logger = get_logger(__name__)
 
 def default(task, app, consumer,
             info=logger.info, error=logger.error, task_reserved=task_reserved,
-            to_system_tz=timezone.to_system):
+            to_system_tz=timezone.to_system, bytes=bytes, buffer_t=buffer_t):
     hostname = consumer.hostname
     eventer = consumer.event_dispatcher
     ReqV2 = Request
@@ -40,14 +41,19 @@ def default(task, app, consumer,
     bucket = consumer.task_buckets[task.name]
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
+    body_can_be_buffer = consumer.pool.body_can_be_buffer
 
     def task_message_handler(message, body, ack, reject, callbacks,
                              to_timestamp=to_timestamp):
         if body is None:
+            body = message.body
+            if not body_can_be_buffer:
+                body = bytes(body) if isinstance(body, buffer_t) else body
             req = ReqV2(message,
                         on_ack=ack, on_reject=reject, app=app,
                         hostname=hostname, eventer=eventer, task=task,
-                        connection_errors=connection_errors)
+                        connection_errors=connection_errors,
+                        body=body)
         else:
             req = ReqV1(body,
                         on_ack=ack, on_reject=reject, app=app,

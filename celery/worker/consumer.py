@@ -35,7 +35,7 @@ from celery import bootsteps
 from celery.app.trace import build_tracer
 from celery.canvas import signature
 from celery.exceptions import InvalidTaskError
-from celery.five import items, values
+from celery.five import buffer_t, items, values
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
@@ -43,14 +43,6 @@ from celery.utils.timeutils import humanize_seconds, rate
 
 from . import heartbeat, loops, pidbox
 from .state import task_reserved, maybe_shutdown, revoked, reserved_requests
-
-try:
-    buffer_t = buffer
-except NameError:  # pragma: no cover
-    # Py3 does not have buffer, but we only need isinstance.
-
-    class buffer_t(object):  # noqa
-        pass
 
 __all__ = [
     'Consumer', 'Connection', 'Events', 'Heart', 'Control',

@@ -72,6 +72,7 @@ class BasePool(object):
     uses_semaphore = False
 
     task_join_will_block = True
+    body_can_be_buffer = False
 
     def __init__(self, limit=None, putlocks=True,
                  forking_enable=True, callbacks_propagate=(), **options):

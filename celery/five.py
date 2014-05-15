@@ -28,6 +28,14 @@ except ImportError:  # pragma: no cover
     def Counter():  # noqa
         return defaultdict(int)
 
+try:
+    buffer_t = buffer
+except NameError:  # pragma: no cover
+    # Py3 does not have buffer, but we only need isinstance.
+
+    class buffer_t(object):  # noqa
+        pass
+
 ############## py3k #########################################################
 import sys
 PY3 = sys.version_info[0] == 3

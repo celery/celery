@@ -108,13 +108,13 @@ class Request(object):
     def __init__(self, message, on_ack=noop,
                  hostname=None, eventer=None, app=None,
                  connection_errors=None, request_dict=None,
-                 task=None, on_reject=noop, **opts):
+                 task=None, on_reject=noop, body=None, **opts):
         headers = message.headers
         self.app = app
         self.message = message
         name = self.name = headers['c_type']
         self.id = headers['id']
-        self.body = message.body
+        self.body = message.body if body is None else body
         self.content_type = message.content_type
         self.content_encoding = message.content_encoding
         eta = headers.get('eta')
@@ -192,8 +192,7 @@ class Request(object):
         soft_timeout = soft_timeout or task.soft_time_limit
         result = pool.apply_async(
             trace_task_ret,
-            args=(self.name, task_id, self.request_dict,
-                  bytes(body) if isinstance(body, buffer) else body,
+            args=(self.name, task_id, self.request_dict, self.body,
                   self.content_type, self.content_encoding),
             kwargs={'hostname': self.hostname, 'is_eager': False},
             accept_callback=self.on_accepted,
