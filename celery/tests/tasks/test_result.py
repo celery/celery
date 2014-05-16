@@ -276,6 +276,12 @@ class test_ResultSet(AppCase):
         x.get()
         self.assertTrue(x.join_native.called)
 
+    def test_get_empty(self):
+        x = self.app.ResultSet([])
+        x.join = Mock()
+        x.get()
+        self.assertTrue(x.join.called)
+
     def test_add(self):
         x = self.app.ResultSet([1])
         x.add(2)
