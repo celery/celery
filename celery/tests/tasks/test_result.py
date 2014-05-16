@@ -278,7 +278,8 @@ class test_ResultSet(AppCase):
 
     def test_get_empty(self):
         x = self.app.ResultSet([])
-        x.join = Mock()
+        self.assertIsNone(x.supports_native_join)
+        x.join = Mock(name='join')
         x.get()
         self.assertTrue(x.join.called)
 
