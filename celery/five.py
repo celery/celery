@@ -14,9 +14,8 @@ __all__ = ['Counter', 'reload', 'UserList', 'UserDict', 'Queue', 'Empty',
            'zip_longest', 'map', 'string', 'string_t',
            'long_t', 'text_t', 'range', 'int_types', 'items', 'keys', 'values',
            'nextfun', 'reraise', 'WhateverIO', 'with_metaclass',
-           'OrderedDict', 'THREAD_TIMEOUT_MAX', 'format_d',
-           'class_property', 'reclassmethod', 'create_module',
-           'recreate_module', 'monotonic']
+           'THREAD_TIMEOUT_MAX', 'format_d', 'class_property', 'reclassmethod',
+           'create_module', 'recreate_module', 'monotonic']
 
 import io
 
@@ -151,10 +150,6 @@ def with_metaclass(Type, skip_attrs={'__dict__', '__weakref__'}):
 
     return _clone_with_metaclass
 
-
-############## collections.OrderedDict ######################################
-# was moved to kombu
-from kombu.utils.compat import OrderedDict  # noqa
 
 ############## threading.TIMEOUT_MAX #######################################
 try:

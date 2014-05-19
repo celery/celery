@@ -103,13 +103,12 @@ import signal
 import socket
 import sys
 
-from collections import defaultdict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 from functools import partial
 from subprocess import Popen
 from time import sleep
 
 from kombu.utils import cached_property
-from kombu.utils.compat import OrderedDict
 from kombu.utils.encoding import from_utf8
 
 from celery import VERSION_BANNER
