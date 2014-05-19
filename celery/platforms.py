@@ -317,9 +317,10 @@ class DaemonContext(object):
             if self.after_chdir:
                 self.after_chdir()
 
-            close_open_fds(self.stdfds)
-            for fd in self.stdfds:
-                self.redirect_to_null(maybe_fileno(fd))
+            if not self.fake:
+                close_open_fds(self.stdfds)
+                for fd in self.stdfds:
+                    self.redirect_to_null(maybe_fileno(fd))
 
             self._is_open = True
     __enter__ = open
