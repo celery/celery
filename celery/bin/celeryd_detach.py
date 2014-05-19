@@ -40,7 +40,8 @@ OPTION_LIST = daemon_options(default_pidfile='celeryd.pid') + (
 def detach(path, argv, logfile=None, pidfile=None, uid=None,
            gid=None, umask=0, working_directory=None, fake=False, app=None):
     fake = 1 if C_FAKEFORK else fake
-    with detached(logfile, pidfile, uid, gid, umask, working_directory, fake):
+    with detached(logfile, pidfile, uid, gid, umask, working_directory, fake,
+                  after_forkers=False):
         try:
             os.execv(path, [path] + argv)
         except Exception:
