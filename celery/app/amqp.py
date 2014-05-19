@@ -417,7 +417,9 @@ class AMQP(object):
                          compression=None, declare=None,
                          headers=None, **kwargs):
             retry = default_retry if retry is None else retry
-            headers, properties, body, sent_event = message
+            headers2, properties, body, sent_event = message
+            if headers:
+                headers2.update(headers)
             if kwargs:
                 properties.update(kwargs)
 
@@ -448,7 +450,7 @@ class AMQP(object):
                 send_before_publish(
                     sender=name, body=body,
                     exchange=exchange, routing_key=routing_key,
-                    declare=declare, headers=headers,
+                    declare=declare, headers=headers2,
                     properties=kwargs,  retry_policy=retry_policy,
                 )
             ret = producer.publish(
@@ -459,11 +461,11 @@ class AMQP(object):
                 compression=compression or default_compressor,
                 retry=retry, retry_policy=_rp,
                 delivery_mode=delivery_mode, declare=declare,
-                headers=headers,
+                headers=headers2,
                 **properties
             )
             if after_receivers:
-                send_after_publish(sender=name, body=body,
+                send_after_publish(sender=name, body=body, headers=headers2,
                                    exchange=exchange, routing_key=routing_key)
             if sent_receivers:  # XXX deprecated
                 send_task_sent(sender=name, task_id=body['id'], task=name,
