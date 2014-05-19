@@ -639,7 +639,7 @@ class chord(Signature):
 
 
 def signature(varies, *args, **kwargs):
-    if not (args or kwargs) and isinstance(varies, dict):
+    if isinstance(varies, dict):
         if isinstance(varies, Signature):
             return varies.clone()
         return Signature.from_dict(varies)
