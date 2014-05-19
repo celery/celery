@@ -386,5 +386,5 @@ from .imports import (          # noqa
     instantiate, import_from_cwd
 )
 from .functional import chunks, noop                    # noqa
-from kombu.utils import cached_property, kwdict, uuid   # noqa
+from kombu.utils import cached_property, uuid   # noqa
 gen_unique_id = uuid
