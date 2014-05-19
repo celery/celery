@@ -570,9 +570,19 @@ class group(Signature):
                 task['args'] = task._merge(d['args'])[0]
         return group(tasks, app=app, **kwdict(d['options']))
 
-    def _prepared(self, tasks, partial_args, group_id, root_id):
+    def _prepared(self, tasks, partial_args, group_id, root_id,
+            dict=dict, Signature=Signature, from_dict=Signature.from_dict):
         for task in tasks:
-            task = task.clone(partial_args)
+            if isinstance(task, dict):
+                if isinstance(task, Signature):
+                    # local sigs are always of type Signature, and we
+                    # clone them to make sure we do not modify the originals.
+                    task = task.clone()
+                else:
+                    # serialized sigs must be converted to Signature.
+                    task = from_dict(task)
+            if partial_args and not task.immutable:
+                task.args = tuple(partial_args) + tuple(task.args)
             yield task, task.freeze(group_id=group_id, root_id=root_id)
 
     def _apply_tasks(self, tasks, producer=None, app=None, **options):
@@ -792,7 +802,7 @@ class chord(Signature):
 
 
 def signature(varies, *args, **kwargs):
-    if not (args or kwargs) and isinstance(varies, dict):
+    if isinstance(varies, dict):
         if isinstance(varies, Signature):
             return varies.clone()
         return Signature.from_dict(varies)
@@ -804,9 +814,10 @@ def maybe_signature(d, app=None):
     if d is not None:
         if isinstance(d, dict):
             if not isinstance(d, Signature):
-                return signature(d, app=app)
+                d = signature(d)
         elif isinstance(d, list):
             return [maybe_signature(s, app=app) for s in d]
+
         if app is not None:
             d._app = app
         return d
