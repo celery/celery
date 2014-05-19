@@ -570,8 +570,8 @@ class group(Signature):
                 task['args'] = task._merge(d['args'])[0]
         return group(tasks, app=app, **kwdict(d['options']))
 
-    def _prepared(self, tasks, partial_args, group_id, root_id,
-            dict=dict, Signature=Signature, from_dict=Signature.from_dict):
+    def _prepared(self, tasks, partial_args, group_id, root_id, dict=dict,
+                  Signature=Signature, from_dict=Signature.from_dict):
         for task in tasks:
             if isinstance(task, dict):
                 if isinstance(task, Signature):
