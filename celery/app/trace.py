@@ -150,6 +150,12 @@ class TraceInfo(object):
             FAILURE: self.handle_failure,
         }[self.state](task, store_errors=store_errors)
 
+    def handle_reject(self, task, **kwargs):
+        self._log_error(task, ExceptionInfo())
+
+    def handle_ignore(self, task, **kwargs):
+        self._log_error(task, ExceptionInfo())
+
     def handle_retry(self, task, store_errors=True):
         """Handle retry exception."""
         # the exception raised is the Retry semi-predicate,
@@ -353,9 +359,11 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 except Reject as exc:
                     I, R = Info(REJECTED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
+                    I.handle_reject(task)
                 except Ignore as exc:
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
+                    I.handle_ignore(task)
                 except Retry as exc:
                     I, R, state, retval = on_error(
                         task_request, exc, uuid, RETRY, call_errbacks=False,
