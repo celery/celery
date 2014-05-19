@@ -24,7 +24,7 @@ the ``celery[beanstalk]`` :ref:`bundle <bundles>`:
 
 .. code-block:: bash
 
-    $ pip install -U celery[beanstalk]
+    $ pip install -U "celery[beanstalk]"
 
 .. _broker-beanstalk-configuration:
 

@@ -22,7 +22,7 @@ the ``celery[mongodb]`` :ref:`bundle <bundles>`:
 
 .. code-block:: bash
 
-    $ pip install -U celery[mongodb]
+    $ pip install -U "celery[mongodb]"
 
 .. _broker-mongodb-configuration:
 
