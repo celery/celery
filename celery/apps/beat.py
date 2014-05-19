@@ -10,7 +10,7 @@
     and so on.
 
 """
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, print_statement, unicode_literals
 
 import numbers
 import socket

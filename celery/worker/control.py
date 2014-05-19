@@ -227,7 +227,7 @@ def objgraph(state, num=200, max_depth=10, type='Request'):  # pragma: no cover
         import objgraph
     except ImportError:
         raise ImportError('Requires the objgraph library')
-    print('Dumping graph for type %r' % (type, ))
+    logger.info('Dumping graph for type %r', type)
     with tempfile.NamedTemporaryFile(prefix='cobjg',
                                      suffix='.png', delete=False) as fh:
         objects = objgraph.by_type(type)[:num]

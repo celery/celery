@@ -805,7 +805,6 @@ class test_Request(AppCase):
             args=[4],
             kwargs={},
         )
-        print(job.execute())
         self.assertIsInstance(job.execute(), ExceptionInfo)
         meta = self.mytask_raising.backend.get_task_meta(tid)
         self.assertEqual(meta['status'], states.FAILURE)
