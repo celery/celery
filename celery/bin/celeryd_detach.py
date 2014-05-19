@@ -41,7 +41,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
            gid=None, umask=None, working_directory=None, fake=False, app=None,
            executable=None):
     fake = 1 if C_FAKEFORK else fake
-    with detached(logfile, pidfile, uid, gid, umask, working_directory, fake):
+    with detached(logfile, pidfile, uid, gid, umask, working_directory, fake,
+                  after_forkers=False):
         try:
             if executable is not None:
                 path = executable

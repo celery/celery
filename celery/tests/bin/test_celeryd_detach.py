@@ -24,8 +24,10 @@ if not IS_WINDOWS:
 
             detach('/bin/boo', ['a', 'b', 'c'], logfile='/var/log',
                    pidfile='/var/pid')
-            detached.assert_called_with('/var/log', '/var/pid', None, None,
-                                        None, None, False)
+            detached.assert_called_with(
+                '/var/log', '/var/pid', None, None, None, None, False,
+                after_forkers=False,
+            )
             execv.assert_called_with('/bin/boo', ['/bin/boo', 'a', 'b', 'c'])
 
             execv.side_effect = Exception('foo')

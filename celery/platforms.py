@@ -36,6 +36,7 @@ _setproctitle = try_import('setproctitle')
 resource = try_import('resource')
 pwd = try_import('pwd')
 grp = try_import('grp')
+mputil = try_import('multiprocessing.util')
 
 __all__ = ['EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
            'IS_OSX', 'IS_WINDOWS', 'pyimplementation', 'LockFailed',
@@ -331,7 +332,8 @@ class DaemonContext(object):
     _is_open = False
 
     def __init__(self, pidfile=None, workdir=None, umask=None,
-                 fake=False, after_chdir=None, **kwargs):
+                 fake=False, after_chdir=None, after_forkers=True,
+                 **kwargs):
         if isinstance(umask, string_t):
             # octal or decimal, depending on initial zero.
             umask = int(umask, 8 if umask.startswith('0') else 10)
@@ -339,6 +341,7 @@ class DaemonContext(object):
         self.umask = umask
         self.fake = fake
         self.after_chdir = after_chdir
+        self.after_forkers = after_forkers
         self.stdfds = (sys.stdin, sys.stdout, sys.stderr)
 
     def redirect_to_null(self, fd):
@@ -365,6 +368,8 @@ class DaemonContext(object):
                 close_open_fds(keep)
                 for fd in self.stdfds:
                     self.redirect_to_null(maybe_fileno(fd))
+                if self.after_forkers and mputil is not None:
+                    mputil._run_after_forkers()
 
             self._is_open = True
     __enter__ = open
