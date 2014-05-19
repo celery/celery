@@ -124,7 +124,7 @@ class EventDispatcher(object):
 
     def __init__(self, connection=None, hostname=None, enabled=True,
                  channel=None, buffer_while_offline=True, app=None,
-                 serializer=None, groups=None):
+                 serializer=None, groups=None, delivery_mode=1):
         self.app = app_or_default(app or self.app)
         self.connection = connection
         self.channel = channel
@@ -139,6 +139,7 @@ class EventDispatcher(object):
         self.groups = set(groups or [])
         self.tzoffset = [-time.timezone, -time.altzone]
         self.clock = self.app.clock
+        self.delivery_mode = delivery_mode
         if not connection and channel:
             self.connection = channel.connection.client
         self.enabled = enabled
@@ -213,6 +214,7 @@ class EventDispatcher(object):
                 declare=[exchange],
                 serializer=self.serializer,
                 headers=self.headers,
+                delivery_mode=self.delivery_mode,
             )
 
     def send(self, type, blind=False, **fields):
