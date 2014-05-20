@@ -13,7 +13,6 @@ from __future__ import absolute_import
 import os
 import time
 import threading
-import warnings
 
 from collections import deque
 from contextlib import contextmanager
@@ -35,14 +34,6 @@ __all__ = ['Events', 'Event', 'EventDispatcher', 'EventReceiver']
 event_exchange = Exchange('celeryev', type='topic')
 
 _TZGETTER = itemgetter('utcoffset', 'timestamp')
-
-W_YAJL = """
-anyjson is currently using the yajl library.
-This json implementation is broken, it severely truncates floats
-so timestamps will not work.
-
-Please uninstall yajl or force anyjson to use a different library.
-"""
 
 CLIENT_CLOCK_SKEW = -1
 
@@ -151,12 +142,6 @@ class EventDispatcher(object):
             self.enable()
         self.headers = {'hostname': self.hostname}
         self.pid = os.getpid()
-        self.warn_if_yajl()
-
-    def warn_if_yajl(self):
-        import anyjson
-        if anyjson.implementation.name == 'yajl':
-            warnings.warn(UserWarning(W_YAJL))
 
     def __enter__(self):
         return self

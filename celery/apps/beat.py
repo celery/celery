@@ -99,7 +99,7 @@ class Beat(object):
                             scheduler_cls=self.scheduler_cls,
                             schedule_filename=self.schedule)
 
-        print(text_t(
+        print(text_t(   # noqa (pyflakes chokes on print)
             c.blue('__    ', c.magenta('-'),
             c.blue('    ... __   '), c.magenta('-'),
             c.blue('        _\n'),

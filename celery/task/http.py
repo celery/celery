@@ -8,7 +8,6 @@
 """
 from __future__ import absolute_import
 
-import anyjson
 import sys
 
 try:
@@ -16,6 +15,8 @@ try:
 except ImportError:  # pragma: no cover
     from urllib import urlencode              # noqa
     from urlparse import urlparse, parse_qsl  # noqa
+
+from kombu.utils import json
 
 from celery import shared_task, __version__ as celery_version
 from celery.five import items, reraise
@@ -62,7 +63,7 @@ class UnknownStatusError(InvalidResponseError):
     """The remote server gave an unknown status."""
 
 
-def extract_response(raw_response, loads=anyjson.loads):
+def extract_response(raw_response, loads=json.loads):
     """Extract the response text from a raw JSON response."""
     if not raw_response:
         raise InvalidResponseError('Empty response')
