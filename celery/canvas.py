@@ -12,7 +12,7 @@
 """
 from __future__ import absolute_import
 
-from collections import deque
+from collections import MutableSequence, deque
 from copy import deepcopy
 from functools import partial as _partial, reduce
 from operator import itemgetter
@@ -244,6 +244,8 @@ class Signature(dict):
 
     def append_to_list_option(self, key, value):
         items = self.options.setdefault(key, [])
+        if not isinstance(items, MutableSequence):
+            items = self.options[key] = [items]
         if value not in items:
             items.append(value)
         return value
