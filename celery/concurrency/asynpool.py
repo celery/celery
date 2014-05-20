@@ -528,7 +528,7 @@ class AsynPool(_pool.Pool):
 
         self.on_process_up = on_process_up
 
-        def _remove_from_index(obj, proc, index, remove_func, callback=None):
+        def _remove_from_index(obj, proc, index, remove_fun, callback=None):
             # this remove the file descriptors for a process from
             # the indices.  we have to make sure we don't overwrite
             # another processes fds, as the fds may be reused.
@@ -544,7 +544,7 @@ class AsynPool(_pool.Pool):
             except KeyError:
                 pass
             else:
-                remove_func(fd)
+                remove_fun(fd)
                 if callback is not None:
                     callback(fd)
             return fd
@@ -554,11 +554,11 @@ class AsynPool(_pool.Pool):
             if proc.dead:
                 return
             process_flush_queues(proc)
-            _remove_from_index(proc.outq._reader, proc, fileno_to_outq, remove_func=remove_reader)
+            _remove_from_index(proc.outq._reader, proc, fileno_to_outq, remove_fun=remove_reader)
             if proc.synq:
-                _remove_from_index(proc.synq._writer, proc, fileno_to_synq, remove_func=remove_writer)
+                _remove_from_index(proc.synq._writer, proc, fileno_to_synq, remove_fun=remove_writer)
             inq = _remove_from_index(proc.inq._writer, proc, fileno_to_inq,
-                                     remove_func=remove_writer,
+                                     remove_fun=remove_writer,
                                      callback=all_inqueues.discard)
             if inq:
                 busy_workers.discard(inq)
