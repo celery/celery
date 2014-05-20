@@ -286,7 +286,10 @@ class Signature(dict):
     def __reduce__(self):
         # for serialization, the task type is lazily loaded,
         # and not stored in the dict itself.
-        return subtask, (dict(self), )
+        return signature, (dict(self), )
+
+    def __json__(self):
+        return dict(self)
 
     def reprcall(self, *args, **kwargs):
         args, kwargs, _ = self._merge(args, kwargs, {})
