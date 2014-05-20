@@ -98,10 +98,10 @@ class Beat(object):
                             scheduler_cls=self.scheduler_cls,
                             schedule_filename=self.schedule)
 
-        print(str(c.blue('__    ', c.magenta('-'),
-                  c.blue('    ... __   '), c.magenta('-'),
-                  c.blue('        _\n'),
-                  c.reset(self.startup_info(beat)))))
+        print(unicode(c.blue('__    ', c.magenta('-'),
+              c.blue('    ... __   '), c.magenta('-'),
+              c.blue('        _\n'),
+              c.reset(self.startup_info(beat)))))
         self.setup_logging()
         if self.socket_timeout:
             logger.debug('Setting default socket timeout to %r',
