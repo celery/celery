@@ -246,32 +246,34 @@ class AMQShell(cmd.Cmd):
         return [cmd for cmd in names
                 if cmd.partition('.')[2].startswith(text)]
 
-    def dispatch(self, cmd, argline):
+    def dispatch(self, cmd, arglist):
         """Dispatch and execute the command.
 
         Lookup order is: :attr:`builtins` -> :attr:`amqp`.
 
         """
-        arglist = shlex.split(safe_str(argline))
+        if isinstance(arglist, string_t):
+            arglist = shlex.split(safe_str(arglist))
         if cmd in self.builtins:
             return getattr(self, self.builtins[cmd])(*arglist)
         fun, args, formatter = self.get_amqp_api_command(cmd, arglist)
         return formatter(fun(*args))
 
-    def parseline(self, line):
+    def parseline(self, parts):
         """Parse input line.
 
         :returns: tuple of three items:
             `(command_name, arglist, original_line)`
 
         """
-        parts = line.split()
         if parts:
-            return parts[0], ' '.join(parts[1:]), line
-        return '', '', line
+            return parts[0], parts[1:], ' '.join(parts)
+        return '', '', ''
 
     def onecmd(self, line):
         """Parse line and execute command."""
+        if isinstance(line, string_t):
+            line = shlex.split(safe_str(line))
         cmd, arg, line = self.parseline(line)
         if not line:
             return self.emptyline()
@@ -326,7 +328,7 @@ class AMQPAdmin(object):
     def run(self):
         shell = self.Shell(connect=self.connect, out=self.out)
         if self.args:
-            return shell.onecmd(' '.join(self.args))
+            return shell.onecmd(self.args)
         try:
             return shell.cmdloop()
         except KeyboardInterrupt:
