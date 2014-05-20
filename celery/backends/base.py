@@ -82,6 +82,9 @@ class BaseBackend(object):
     #: in this case.
     supports_autoexpire = False
 
+    #: If true the backend must support multiple replies
+    supports_multi = False
+
     #: Set to true if the backend is peristent by default.
     persistent = True
 

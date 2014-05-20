@@ -330,7 +330,8 @@ class Celery(object):
                   eta=None, task_id=None, producer=None, connection=None,
                   router=None, result_cls=None, expires=None,
                   publisher=None, link=None, link_error=None,
-                  add_to_parent=True, reply_to=None, **options):
+                  add_to_parent=True, reply_to=None, expected_replies=None,
+                  **options):
         task_id = task_id or uuid()
         producer = producer or publisher  # XXX compat
         router = router or self.amqp.router
@@ -350,7 +351,11 @@ class Celery(object):
                 callbacks=maybe_list(link), errbacks=maybe_list(link_error),
                 reply_to=reply_to or self.oid, **options
             )
-        result = (result_cls or self.AsyncResult)(task_id)
+        if self.backend.supports_multi:
+            result = (result_cls or self.MultiAsyncResult)(task_id,
+                                                           expected_replies)
+        else:
+            result = (result_cls or self.AsyncResult)(task_id)
         if add_to_parent:
             parent = get_current_worker_task()
             if parent:
@@ -589,6 +594,10 @@ class Celery(object):
     @cached_property
     def AsyncResult(self):
         return self.subclass_with_self('celery.result:AsyncResult')
+
+    @cached_property
+    def MultiAsyncResult(self):
+        return self.subclass_with_self('celery.result:MultiAsyncResult')
 
     @cached_property
     def ResultSet(self):

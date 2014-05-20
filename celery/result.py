@@ -81,7 +81,7 @@ class AsyncResult(ResultBase):
     backend = None
 
     def __init__(self, id, backend=None, task_name=None,
-                 app=None, parent=None):
+                 app=None, parent=None, expected_replies=None):
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
@@ -912,3 +912,401 @@ def result_from_tuple(r, app=None):
         return Result(id, parent=parent)
     return r
 from_serializable = result_from_tuple  # XXX compat
+
+
+class MultiAsyncResult(ResultBase):
+    '''
+    Query task state. Like AsyncResult, but also works with multi backends.
+
+    :param id: see :attr:`id`.
+    :keyword backend: see :attr:`backend`.
+
+    '''
+    app = None
+
+    #: The task's UUID.
+    id = None
+
+    #: The task result backend to use.
+    backend = None
+
+    def __init__(self, id, expected_replies=None,
+                 backend=None, task_name=None, app=None, parent=None):
+        self.app = app_or_default(app or self.app)
+        self.id = id
+        self.backend = backend or self.app.backend
+        self.backend_supports_multi = getattr(self.backend, 'supports_multi',
+                                              False)
+        self.task_name = task_name
+        self.parent = parent
+        self._cache = []
+        self.expected_replies = expected_replies
+        self.all_replies = copy(expected_replies)
+
+    def as_tuple(self):
+        parent = self.parent
+        return (self.id, parent and parent.as_tuple()), None
+
+    def forget(self):
+        '''
+        Forget about (and possibly remove the result of) this task.
+        '''
+        self._cache = []
+        self.backend.forget(self.id)
+
+    def revoke(self, connection=None, terminate=False, signal=None,
+               wait=False, timeout=None):
+        '''
+        Send revoke signal to all workers.
+
+        Any worker receiving the task, or having reserved the
+        task, *must* ignore it.
+
+        :keyword terminate: Also terminate the process currently working
+        on the task (if any).
+        :keyword signal: Name of signal to send to process if terminate.
+        Default is TERM.
+        :keyword wait: Wait for replies from workers. Will wait for 1 second
+        by default or you can specify a custom ``timeout``.
+        :keyword timeout: Time in seconds to wait for replies if ``wait``
+        enabled.
+
+        '''
+        self.app.control.revoke(self.id, connection=connection,
+                                terminate=terminate, signal=signal,
+                                reply=wait, timeout=timeout)
+
+    def get(self, timeout=None, propagate=True, interval=0.5, no_ack=True,
+            follow_parents=True):
+        '''
+        Wait until task is ready, and yield list of results.
+        If the ``timeout`` exceeded before all workers returned results,
+        this function will return an empty list. If some workers
+        has finished, will yield these results.
+
+        .. warning::
+
+        Waiting for tasks within a task may lead to deadlocks.
+        Please read :ref:`task-synchronous-subtasks`.
+
+        :keyword timeout: How long to wait, in seconds, before the
+        operation times out.
+        :keyword propagate: Re-raise exception if the task failed.
+        :keyword interval: Time to wait (in seconds) before retrying to
+        retrieve the result. Note that this does not have any effect
+        when using the amqp result store backend, as it does not
+        use polling.
+        :keyword no_ack: Enable amqp no ack (automatically acknowledge
+        message). If this is :const:`False` then the message will
+        **not be acked**.
+        :keyword follow_parents: Reraise any exception raised by parent task.
+
+        If the remote call raised an exception then that exception will
+        be re-raised.
+
+        '''
+        assert_will_not_block()
+        on_interval = None
+        if follow_parents and propagate and self.parent:
+            on_interval = self._maybe_reraise_parent_error
+            on_interval()
+
+        if self._cache:
+            if propagate:
+                self.maybe_reraise()
+            # First of all, if we have something to yield, yield it
+            for meta in self._cache:
+                yield meta
+            # If everybody replied, don't wait for more results
+            if len(self._cache) == self.all_replies:
+                return
+
+        kwargs = {'task_id': self.id,
+                  'timeout': timeout,
+                  'propagate': propagate,
+                  'interval': interval,
+                  'on_interval': on_interval,
+                  'no_ack': no_ack}
+        if self.backend_supports_multi:
+            kwargs['expected_replies'] = self.expected_replies
+        try:
+            i = 0
+            for reply in self.backend.wait_for(**kwargs):
+                # Backend may return an already cached reply, ignore it
+                if reply in self._cache:
+                    continue
+                i += 1
+                if propagate:
+                    self.maybe_reraise(reply)
+                yield reply
+        finally:
+            if self.expected_replies is not None:
+                self.expected_replies -= i
+            self._get_task_metas()  # update self._cache
+
+    def _maybe_reraise_parent_error(self):
+        for node in reversed(list(self._parents())):
+            node.maybe_reraise()
+
+    def _parents(self):
+        node = self.parent
+        while node:
+            yield node
+            node = node.parent
+
+    def collect(self, intermediate=False, **kwargs):
+        """Iterator, like :meth:`get` will wait for the task to complete,
+        but will also follow :class:`MultiAsyncResult` and
+        :class:`MultiResultSet` returned by the task,
+        yielding ``(result, value)`` tuples for each result in the tree.
+
+        An example would be having the following tasks:
+
+        .. code-block:: python
+
+        from celery import group
+        from proj.celery import app
+
+        @app.task(trail=True)
+        def A(how_many):
+        return group(B.s(i) for i in range(how_many))()
+
+        @app.task(trail=True)
+        def B(i):
+        return pow2.delay(i)
+
+        @app.task(trail=True)
+        def pow2(i):
+        return i ** 2
+
+        Note that the ``trail`` option must be enabled
+        so that the list of children is stored in ``result.children``.
+        This is the default but enabled explicitly for illustration.
+
+        Calling :meth:`collect` would return:
+
+        .. code-block:: python
+
+        >>> from celery.result import ResultBase
+        >>> from proj.tasks import A
+
+        >>> result = A.delay(10)
+        >>> [v for v in result.collect()
+        ... if not isinstance(v, (ResultBase, tuple))]
+        [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+
+        """
+        for _, R in self.iterdeps(intermediate=intermediate):
+            yield R, R.get(**kwargs)
+
+    def get_leaf(self):
+        value = None
+        for _, R in self.iterdeps():
+            value = R.get()
+        return value
+
+    # TODO: figure out how to do that properly
+    def iterdeps(self, intermediate=False):
+        stack = deque([(None, self)])
+
+        while stack:
+            parent, node = stack.popleft()
+            yield parent, node
+            if node.ready():
+                stack.extend((node, child) for child in node.children or [])
+            else:
+                if not intermediate:
+                    raise IncompleteStream()
+
+    def ready(self):
+        '''
+        Returns :const:`True` if the task has been executed on all workers.
+        If we don't know how many workers shoud reply, returns :const:`True`
+        if any already received result is ready.
+
+        If the task is still running, pending, or is waiting
+        for retry then :const:`False` is returned.
+
+        '''
+        iter_states = (state in self.backend.READY_STATES
+                       for state in self.states)
+        if self.expected_replies:
+            return len(iter_states) == self.expected_replies
+        else:
+            return any(iter_states)
+
+    def successful(self):
+        '''
+        Returns :const:`True` if all workers replied with SUCCESS state.
+        '''
+        return all(state == states.SUCCESS for state in self.states)
+
+    def partially_failed(self):
+        '''
+        Returns :const:`True` if some workers replied with FAILURE state.
+        '''
+        return any(state == states.FAILURE for state in self.states)
+
+    def failed(self):
+        '''
+        Returns :const:`True` if all workers replied with FAILURE state.
+        '''
+        return all(state == states.FAILURE for state in self.states)
+
+    def maybe_reraise(self, meta=None):
+        metas = (meta,) if meta else self._cache
+        for meta in metas:
+            if meta['status'] in states.PROPAGATE_STATES:
+                raise meta['result']
+
+    def build_graph(self, intermediate=False, formatter=None):
+        graph = DependencyGraph(
+            formatter=formatter or GraphFormatter(root=self.id, shape='oval'),
+        )
+        for parent, node in self.iterdeps(intermediate=intermediate):
+            graph.add_arc(node)
+            if parent:
+                graph.add_edge(parent, node)
+        return graph
+
+    def __str__(self):
+        """`str(self) -> self.id`"""
+        return str(self.id)
+
+    def __hash__(self):
+        """`hash(self) -> hash(self.id)`"""
+        return hash(self.id)
+
+    def __repr__(self):
+        return '<{0}: {1}>'.format(type(self).__name__, self.id)
+
+    def __eq__(self, other):
+        if isinstance(other, MultiAsyncResult):
+            return other.id == self.id
+        elif isinstance(other, string_t):
+            return other == self.id
+        return NotImplemented
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __copy__(self):
+        return self.__class__(
+            self.id, self.backend, self.task_name, self.app, self.parent,
+        )
+
+    def __reduce__(self):
+        return self.__class__, self.__reduce_args__()
+
+    def __reduce_args__(self):
+        return self.id, self.backend, self.task_name, None, self.parent
+
+    def __del__(self):
+        self._cache.clear()
+
+    @cached_property
+    def graph(self):
+        return self.build_graph()
+
+    @property
+    def supports_native_join(self):
+        return self.backend.supports_native_join
+
+    @property
+    def children(self):
+        return [meta['children'] for meta in self._get_task_metas()]
+
+    def _get_task_metas(self):
+        # If we don't know how many nodes should reply, compare with
+        # impossible value. This will result in unnecessary cache
+        # updates. TODO: figure out is it possible to decrease these updates
+        if (self.all_replies is None or
+                len(self._cache) != self.all_replies):
+            backend = self.backend
+            # Backend may not accept to collect multiple results
+            get_task_metas = getattr(backend, 'get_task_metas',
+                                     backend.get_task_meta)
+            metas = get_task_metas(self.id,
+                                   expected_replies=self.expected_replies)
+            if metas:
+                for meta in metas:
+                    state = meta['status']
+                    if (state == states.SUCCESS or
+                            state in states.PROPAGATE_STATES):
+                        self._set_cache(meta)
+            return metas
+        return self._cache
+
+    def _set_cache(self, meta):
+        if meta in self._cache:
+            return
+        state, children = meta['status'], meta.get('children')
+        if state in states.EXCEPTION_STATES:
+            meta['result'] = self.backend.exception_to_python(meta['result'])
+        if children:
+            meta['children'] = [
+                result_from_tuple(child, self.app) for child in children
+            ]
+        self._cache.append(meta)
+
+    @property
+    def results(self):
+        '''
+        When the task has been executed, this contains the list of
+        return values.  If the task raised an exception, this list will contain
+        the exception instance (or instances).
+        '''
+        return [meta['result'] for meta in self._get_task_metas()]
+
+    @property
+    def tracebacks(self):
+        '''
+        Get tracebacks of failed tasks.
+        '''
+        return [meta['traceback'] for meta in self._get_task_metas()
+                if meta['traceback']]
+
+    @property
+    def states(self):
+        '''
+        Get current states for the task.
+
+        Possible values includes:
+
+        *PENDING*
+
+        The task is waiting for execution.
+
+        *STARTED*
+
+        The task has been started.
+
+        *RETRY*
+
+        The task is to be retried, possibly because of failure.
+
+        *FAILURE*
+
+        The task raised an exception, or has exceeded the retry limit.
+        The :attr:`results` attribute then contains the
+        exception raised by the task.
+
+        *SUCCESS*
+
+        The task executed successfully. The :attr:`results` attribute
+        then contains the tasks return value.
+
+        '''
+        return [meta['status'] for meta in self._get_task_metas()]
+    statuses = states
+
+    @property
+    def task_id(self):
+        '''
+        compat alias to :attr:`id`
+        '''
+        return self.id
+
+    @task_id.setter  # noqa
+    def task_id(self, id):
+        self.id = id
