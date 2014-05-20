@@ -10,159 +10,15 @@
 """
 from __future__ import absolute_import
 
-__all__ = ['Counter', 'reload', 'UserList', 'UserDict', 'Queue', 'Empty',
-           'zip_longest', 'map', 'string', 'string_t',
-           'long_t', 'text_t', 'range', 'int_types', 'items', 'keys', 'values',
-           'nextfun', 'reraise', 'WhateverIO', 'with_metaclass',
-           'THREAD_TIMEOUT_MAX', 'format_d', 'class_property', 'reclassmethod',
-           'create_module', 'recreate_module', 'monotonic']
+__all__ = [
+    'class_property', 'reclassmethod', 'create_module', 'recreate_module',
+]
 
-import io
+# extends amqp.five
+from amqp.five import *  # noqa
+from amqp.five import __all__ as _all_five
 
-try:
-    from collections import Counter
-except ImportError:  # pragma: no cover
-    from collections import defaultdict
-
-    def Counter():  # noqa
-        return defaultdict(int)
-
-############## py3k #########################################################
-import sys
-PY3 = sys.version_info[0] == 3
-
-try:
-    reload = reload                         # noqa
-except NameError:                           # pragma: no cover
-    from imp import reload                  # noqa
-
-try:
-    from UserList import UserList           # noqa
-except ImportError:                         # pragma: no cover
-    from collections import UserList        # noqa
-
-try:
-    from UserDict import UserDict           # noqa
-except ImportError:                         # pragma: no cover
-    from collections import UserDict        # noqa
-
-
-from kombu.five import monotonic
-
-if PY3:  # pragma: no cover
-    import builtins
-
-    from queue import Queue, Empty
-    from itertools import zip_longest
-
-    map = map
-    string = str
-    string_t = str
-    long_t = int
-    text_t = str
-    range = range
-    int_types = (int, )
-    _byte_t = bytes
-
-    open_fqdn = 'builtins.open'
-
-    def items(d):
-        return d.items()
-
-    def keys(d):
-        return d.keys()
-
-    def values(d):
-        return d.values()
-
-    def nextfun(it):
-        return it.__next__
-
-    exec_ = getattr(builtins, 'exec')
-
-    def reraise(tp, value, tb=None):
-        if value.__traceback__ is not tb:
-            raise value.with_traceback(tb)
-        raise value
-
-else:
-    import __builtin__ as builtins  # noqa
-    from Queue import Queue, Empty  # noqa
-    from itertools import imap as map, izip_longest as zip_longest  # noqa
-    string = unicode                # noqa
-    string_t = basestring           # noqa
-    text_t = unicode                # noqa
-    long_t = long                   # noqa
-    range = xrange                  # noqa
-    int_types = (int, long)         # noqa
-    _byte_t = (str, bytes)          # noqa
-
-    open_fqdn = '__builtin__.open'
-
-    def items(d):                   # noqa
-        return d.iteritems()
-
-    def keys(d):                    # noqa
-        return d.iterkeys()
-
-    def values(d):                  # noqa
-        return d.itervalues()
-
-    def nextfun(it):                # noqa
-        return it.next
-
-    def exec_(code, globs=None, locs=None):  # pragma: no cover
-        """Execute code in a namespace."""
-        if globs is None:
-            frame = sys._getframe(1)
-            globs = frame.f_globals
-            if locs is None:
-                locs = frame.f_locals
-            del frame
-        elif locs is None:
-            locs = globs
-        exec("""exec code in globs, locs""")
-
-    exec_("""def reraise(tp, value, tb=None): raise tp, value, tb""")
-
-
-def with_metaclass(Type, skip_attrs={'__dict__', '__weakref__'}):
-    """Class decorator to set metaclass.
-
-    Works with both Python 2 and Python 3 and it does not add
-    an extra class in the lookup order like ``six.with_metaclass`` does
-    (that is -- it copies the original class instead of using inheritance).
-
-    """
-
-    def _clone_with_metaclass(Class):
-        attrs = {key: value for key, value in items(vars(Class))
-                 if key not in skip_attrs}
-        return Type(Class.__name__, Class.__bases__, attrs)
-
-    return _clone_with_metaclass
-
-
-############## threading.TIMEOUT_MAX #######################################
-try:
-    from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
-except ImportError:
-    THREAD_TIMEOUT_MAX = 1e10  # noqa
-
-############## format(int, ',d') ##########################
-
-if sys.version_info >= (2, 7):  # pragma: no cover
-    def format_d(i):
-        return format(i, ',d')
-else:  # pragma: no cover
-    def format_d(i):  # noqa
-        s = '%d' % i
-        groups = []
-        while s and s[-1].isdigit():
-            groups.append(s[-3:])
-            s = s[:-3]
-        return s + ','.join(reversed(groups))
-
+__all__ += _all_five
 
 ############## Module Generation ##########################
 
@@ -208,7 +64,6 @@ def getappattr(path):
 def _compat_periodic_task_decorator(*args, **kwargs):
     from celery.task import periodic_task
     return periodic_task(*args, **kwargs)
-
 
 COMPAT_MODULES = {
     'celery': {
@@ -368,16 +223,3 @@ def get_origins(defs):
     for module, attrs in items(defs):
         origins.update({attr: module for attr in attrs})
     return origins
-
-
-_SIO_write = io.StringIO.write
-_SIO_init = io.StringIO.__init__
-
-
-class WhateverIO(io.StringIO):
-
-    def __init__(self, v=None, *a, **kw):
-        _SIO_init(self, v.decode() if isinstance(v, _byte_t) else v, *a, **kw)
-
-    def write(self, data):
-        _SIO_write(self, data.decode() if isinstance(data, _byte_t) else data)
