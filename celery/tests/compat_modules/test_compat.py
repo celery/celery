@@ -10,7 +10,6 @@ from celery.task import (
     periodic_task,
     PeriodicTask
 )
-from celery.utils.timeutils import timedelta_seconds
 
 from celery.tests.case import AppCase, depends_on_current_app
 
@@ -51,8 +50,9 @@ class test_periodic_tasks(AppCase):
             self.now() - p.run_every.run_every,
         )
         self.assertTrue(due)
-        self.assertEqual(remaining,
-                         timedelta_seconds(p.run_every.run_every))
+        self.assertEqual(
+            remaining, p.run_every.run_every.total_seconds(),
+        )
 
     def test_schedule_repr(self):
         p = self.my_periodic

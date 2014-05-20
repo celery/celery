@@ -10,7 +10,6 @@ from celery import group
 from celery import uuid
 from celery.datastructures import AttributeDict
 from celery.exceptions import ImproperlyConfigured
-from celery.utils.timeutils import timedelta_seconds
 
 from celery.tests.case import (
     AppCase, Mock, MockCallbacks, SkipTest, depends_on_current_app, patch,
@@ -202,8 +201,10 @@ class test_RedisBackend(AppCase):
 
     def test_expires_is_None(self):
         b = self.Backend(expires=None, app=self.app, new_join=True)
-        self.assertEqual(b.expires, timedelta_seconds(
-            self.app.conf.CELERY_TASK_RESULT_EXPIRES))
+        self.assertEqual(
+            b.expires,
+            self.app.conf.CELERY_TASK_RESULT_EXPIRES.total_seconds(),
+        )
 
     def test_expires_is_timedelta(self):
         b = self.Backend(

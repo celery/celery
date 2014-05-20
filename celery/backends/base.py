@@ -33,7 +33,6 @@ from celery.five import items
 from celery.result import (
     GroupResult, ResultBase, allow_join_result, result_from_tuple,
 )
-from celery.utils import timeutils
 from celery.utils.functional import LRUCache
 from celery.utils.log import get_logger
 from celery.utils.serialization import (
@@ -226,7 +225,7 @@ class BaseBackend(object):
         if value is None:
             value = self.app.conf.CELERY_TASK_RESULT_EXPIRES
         if isinstance(value, timedelta):
-            value = timeutils.timedelta_seconds(value)
+            value = value.total_seconds()
         if value is not None and type:
             return type(value)
         return value

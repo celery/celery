@@ -22,7 +22,7 @@ from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.five import monotonic
 from celery.utils.log import get_logger
-from celery.utils.timeutils import maybe_timedelta, timedelta_seconds
+from celery.utils.timeutils import maybe_timedelta
 
 from .base import BaseBackend
 
@@ -148,14 +148,13 @@ class CassandraBackend(BaseBackend):
                     'children': self.encode(
                         self.current_task_children(request),
                     )}
+            ttl = self.expires and max(self.expires.total_seconds(), 0)
             if self.detailed_mode:
                 meta['result'] = result
-                cf.insert(task_id, {date_done: self.encode(meta)},
-                          ttl=self.expires and timedelta_seconds(self.expires))
+                cf.insert(task_id, {date_done: self.encode(meta)}, ttl=ttl)
             else:
                 meta['result'] = self.encode(result)
-                cf.insert(task_id, meta,
-                          ttl=self.expires and timedelta_seconds(self.expires))
+                cf.insert(task_id, meta, ttl=ttl)
 
         return self._retry_on_error(_do_store)
 
