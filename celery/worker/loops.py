@@ -57,10 +57,14 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     try:
         while blueprint.state == RUN and obj.connection:
             # shutdown if signal handlers told us to.
-            if state.should_stop:
-                raise WorkerShutdown()
-            elif state.should_terminate:
-                raise WorkerTerminate()
+            should_stop, should_terminate = (
+                state.should_stop, state.should_terminate,
+            )
+            # False == EX_OK, so must use is not False
+            if should_stop is not None and should_stop is not False:
+                raise WorkerShutdown(should_stop)
+            elif should_terminate is not None and should_stop is not False:
+                raise WorkerTerminate(should_terminate)
 
             # We only update QoS when there is no more messages to read.
             # This groups together qos calls, and makes sure that remote

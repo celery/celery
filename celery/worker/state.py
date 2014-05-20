@@ -60,15 +60,15 @@ revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 #: Update global state when a task has been reserved.
 task_reserved = reserved_requests.add
 
-should_stop = False
-should_terminate = False
+should_stop = None
+should_terminate = None
 
 
 def maybe_shutdown():
-    if should_stop:
-        raise WorkerShutdown()
-    elif should_terminate:
-        raise WorkerTerminate()
+    if should_stop is not None and should_stop is not False:
+        raise WorkerShutdown(should_stop)
+    elif should_terminate is not None and should_terminate is not False:
+        raise WorkerTerminate(should_terminate)
 
 
 def task_accepted(request, _all_total_count=all_total_count):

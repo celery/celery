@@ -464,6 +464,15 @@ class AppCase(Case):
             self._threads_at_setup, list(threading.enumerate()),
         )
 
+        # Make sure no test left the shutdown flags enabled.
+        from celery.worker import state as worker_state
+        # check for EX_OK
+        self.assertIsNot(worker_state.should_stop, False)
+        self.assertIsNot(worker_state.should_terminate, False)
+        # check for other true values
+        self.assertFalse(worker_state.should_stop)
+        self.assertFalse(worker_state.should_terminate)
+
     def _get_test_name(self):
         return '.'.join([self.__class__.__name__, self._testMethodName])
 

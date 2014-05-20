@@ -20,6 +20,7 @@ from celery.exceptions import (
     WorkerShutdown, WorkerTerminate, TaskRevokedError, InvalidTaskError,
 )
 from celery.five import Empty, range, Queue as FastQueue
+from celery.platforms import EX_FAILURE
 from celery.utils import uuid
 from celery.worker import components
 from celery.worker import consumer
@@ -864,7 +865,7 @@ class test_WorkController(AppCase):
         self.worker.blueprint = None
         self.worker._shutdown()
 
-    @patch('celery.platforms.create_pidlock')
+    @patch('celery.worker.create_pidlock')
     def test_use_pidfile(self, create_pidlock):
         create_pidlock.return_value = Mock()
         worker = self.create_worker(pidfile='pidfilelockfilepid')
@@ -1112,7 +1113,7 @@ class test_WorkController(AppCase):
         step.start.side_effect = TypeError()
         worker.stop = Mock()
         worker.start()
-        worker.stop.assert_called_with()
+        worker.stop.assert_called_with(exitcode=EX_FAILURE)
 
     def test_state(self):
         self.assertTrue(self.worker.state)

@@ -205,12 +205,14 @@ class worker(Command):
                     loglevel, '|'.join(
                         l for l in LOG_LEVELS if isinstance(l, string_t))))
 
-        return self.app.Worker(
+        worker = self.app.Worker(
             hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
             logfile=logfile,  # node format handled by celery.app.log.setup
             pidfile=self.node_format(pidfile, hostname),
             state_db=self.node_format(state_db, hostname), **kwargs
-        ).start()
+        )
+        worker.start()
+        return worker.exitcode
 
     def with_pool_option(self, argv):
         # this command support custom pools
