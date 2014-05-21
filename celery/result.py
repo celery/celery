@@ -63,6 +63,7 @@ class ResultBase(object):
     #: Parent result (if part of a chain)
     parent = None
 
+
 class AsyncResult(ResultBase):
     """Query task state.
 
@@ -134,7 +135,6 @@ class AsyncResult(ResultBase):
         parent = self.parent
         return (self.id, parent and parent.as_tuple()), None
     serializable = as_tuple   # XXX compat
-
 
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
