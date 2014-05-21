@@ -352,7 +352,7 @@ class AsyncResult(ResultBase):
         return self.backend.supports_native_join
         
     @property
-    def result(self)
+    def result(self):
         """When the task has been executed, this contains the return value.
         If the task raised an exception, this will be the exception
         instance."""
@@ -414,7 +414,7 @@ class AsyncResult(ResultBase):
         """compat alias to :attr:`id`"""
         return self.id
 
-    @task_id.setter # noqa
+    @task_id.setter  # noqa
     def task_id(self, id):
         self.id = id
 BaseAsyncResult = AsyncResult  # for backwards compatibility.
