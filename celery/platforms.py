@@ -24,7 +24,6 @@ from collections import namedtuple
 from billiard import current_process
 # fileno used to be in this module
 from kombu.utils import maybe_fileno
-from kombu.utils.compat import get_errno
 from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
@@ -531,7 +530,7 @@ def maybe_drop_privileges(uid=None, gid=None):
         try:
             setuid(0)
         except OSError as exc:
-            if get_errno(exc) != errno.EPERM:
+            if exc.errno != errno.EPERM:
                 raise
             pass  # Good: cannot restore privileges.
         else:
