@@ -180,7 +180,7 @@ class Scheduler(object):
         self.max_interval = (max_interval
                              or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
                              or self.max_interval)
-        self.Producer = Producer or app.amqp.TaskProducer
+        self.Producer = Producer or app.amqp.Producer
         self._heap = None
         self.sync_every_tasks = (
             app.conf.CELERYBEAT_SYNC_EVERY if sync_every_tasks is None
