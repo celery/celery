@@ -466,36 +466,40 @@ def _trace_task_ret(name, uuid, request, body, content_type,
                     content_encoding, loads=loads_message, app=None,
                     **extra_request):
     app = app or current_app._get_current_object()
-    accept = prepare_accept_content(app.conf.CELERY_ACCEPT_CONTENT)
-    args, kwargs = loads(body, content_type, content_encoding, accept=accept)
-    request.update(args=args, kwargs=kwargs, **extra_request)
+    embed = None
+    if content_type:
+        accept = prepare_accept_content(app.conf.CELERY_ACCEPT_CONTENT)
+        args, kwargs, embed = loads(
+            body, content_type, content_encoding, accept=accept,
+        )
+    else:
+        args, kwargs = body
+    hostname = socket.gethostname()
+    request.update({
+        'args': args, 'kwargs': kwargs,
+        'hostname': hostname, 'is_eager': False,
+    }, **embed or {})
     R, I, T, Rstr = trace_task(app.tasks[name],
                                uuid, args, kwargs, request, app=app)
     return (1, R, T) if I else (0, Rstr, T)
 trace_task_ret = _trace_task_ret
 
 
-def _fast_trace_task_v1(task, uuid, args, kwargs, request={}, _loc=_localized):
-    # setup_worker_optimizations will point trace_task_ret to here,
-    # so this is the function used in the worker.
-    tasks, _ = _loc
-    R, I, T, Rstr = tasks[task].__trace__(uuid, args, kwargs, request)[0]
-    # exception instance if error, else result text
-    return (1, R, T) if I else (0, Rstr, T)
-
-
 def _fast_trace_task(task, uuid, request, body, content_type,
                      content_encoding, loads=loads_message, _loc=_localized,
                      hostname=None, **_):
-    tasks, accept = _loc
+    embed = None
+    tasks, accept, hostname = _loc
     if content_type:
-        args, kwargs = loads(body, content_type, content_encoding,
-                             accept=accept)
+        args, kwargs, embed = loads(
+            body, content_type, content_encoding, accept=accept,
+        )
     else:
         args, kwargs = body
     request.update({
-        'args': args, 'kwargs': kwargs, 'hostname': hostname,
-    })
+        'args': args, 'kwargs': kwargs,
+        'hostname': hostname, 'is_eager': False,
+    }, **embed or {})
     R, I, T, Rstr = tasks[task].__trace__(
         uuid, args, kwargs, request,
     )
@@ -515,8 +519,10 @@ def report_internal_error(task, exc):
         del(_tb)
 
 
-def setup_worker_optimizations(app):
+def setup_worker_optimizations(app, hostname=None):
     global trace_task_ret
+
+    hostname = hostname or socket.gethostname()
 
     # make sure custom Task.__call__ methods that calls super
     # will not mess up the request/task stack.
@@ -538,6 +544,7 @@ def setup_worker_optimizations(app):
     _localized[:] = [
         app._tasks,
         prepare_accept_content(app.conf.CELERY_ACCEPT_CONTENT),
+        hostname,
     ]
 
     trace_task_ret = _fast_trace_task

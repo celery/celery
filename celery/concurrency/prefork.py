@@ -68,7 +68,7 @@ def process_initializer(app, hostname):
                   hostname=hostname)
     if os.environ.get('FORKED_BY_MULTIPROCESSING'):
         # pool did execv after fork
-        trace.setup_worker_optimizations(app)
+        trace.setup_worker_optimizations(app, hostname)
     else:
         app.set_current()
         set_default_app(app)

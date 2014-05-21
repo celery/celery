@@ -112,7 +112,7 @@ EXTRA_INFO_FMT = """
 class Worker(WorkController):
 
     def on_before_init(self, **kwargs):
-        trace.setup_worker_optimizations(self.app)
+        trace.setup_worker_optimizations(self.app, self.hostname)
 
         # this signal can be used to set up configuration for
         # workers by name.
@@ -144,7 +144,7 @@ class Worker(WorkController):
         self._custom_logging = self.setup_logging()
         # apply task execution optimizations
         # -- This will finalize the app!
-        trace.setup_worker_optimizations(self.app)
+        trace.setup_worker_optimizations(self.app, self.hostname)
 
     def on_start(self):
         if not self._custom_logging and self.redirect_stdouts:

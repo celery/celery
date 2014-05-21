@@ -300,11 +300,7 @@ class AMQP(object):
                 'id': task_id,
                 'eta': eta,
                 'expires': expires,
-                'callbacks': callbacks,
-                'errbacks': errbacks,
-                'chain': None,  # TODO
                 'group': group_id,
-                'chord': chord,
                 'retries': retries,
                 'timelimit': [time_limit, soft_time_limit],
                 'root_id': root_id,
@@ -314,7 +310,14 @@ class AMQP(object):
                 'correlation_id': task_id,
                 'reply_to': reply_to or '',
             },
-            body=(args, kwargs),
+            body=(
+                args, kwargs, {
+                    'callbacks': callbacks,
+                    'errbacks': errbacks,
+                    'chain': None,  # TODO
+                    'chord': chord,
+                },
+            ),
             sent_event={
                 'uuid': task_id,
                 'root': root_id,

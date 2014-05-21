@@ -21,7 +21,7 @@ Notes
 
 - Body is only for language specific data.
 
-    - Python stores args/kwargs in body.
+    - Python stores args/kwargs and embedded signatures in body.
 
     - If a message uses raw encoding then the raw data
       will be passed as a single argument to the function.
@@ -43,7 +43,7 @@ Notes
     when sending the next message::
 
         execute_task(message)
-        chain = message.headers['chain']
+        chain = embed['chain']
         if chain:
             sig = maybe_signature(chain.pop())
             sig.apply_async(chain=chain)
@@ -74,16 +74,6 @@ Notes
         return fun(*args, **kwargs)
 
 
-
-Undecided
----------
-
-- May consider moving callbacks/errbacks/chain into body.
-
-    Will huge lists in headers cause overhead?
-    The downside of keeping them in the body is that intermediates
-    won't be able to introspect these values.
-
 Definition
 ==========
 
@@ -93,35 +83,40 @@ Definition
     # 'class' header existing means protocol is v2
 
     properties = {
-        'correlation_id': (uuid)task_id,
-        'content_type': (string)mime,
-        'content_encoding': (string)encoding,
+        'correlation_id': uuid task_id,
+        'content_type': string mimetype,
+        'content_encoding': string encoding,
 
         # optional
-        'reply_to': (string)queue_or_url,
+        'reply_to': string queue_or_url,
     }
     headers = {
-        'lang': (string)'py'
-        'task': (string)task,
-        'id': (uuid)task_id,
-        'root_id': (uuid)root_id,
-        'parent_id': (uuid)parent_id,
+        'lang': string 'py'
+        'task': string task,
+        'id': uuid task_id,
+        'root_id': uuid root_id,
+        'parent_id': uuid parent_id,
+        'group': uuid group_id,
 
         # optional
-        'meth': (string)unused,
-        'shadow': (string)replace_name,
-        'eta': (iso8601)eta,
-        'expires'; (iso8601)expires,
-        'callbacks': (list)Signature,
-        'errbacks': (list)Signature,
-        'chain': (list)Signature,  # non-recursive, reversed list of signatures
-        'group': (uuid)group_id,
-        'chord': (uuid)chord_id,
-        'retries': (int)retries,
-        'timelimit': (tuple)(soft, hard),
+        'meth': string method_name,
+        'shadow': string alias_name,
+        'eta':  iso8601 eta,
+        'expires'; iso8601 expires,
+        'retries': int retries,
+        'timelimit': (soft, hard),
     }
 
-    body = (args, kwargs)
+    body = (
+        object[] args,
+        Mapping kwargs,
+        Mapping embed {
+            'callbacks': Signature[] callbacks,
+            'errbacks': Signature[] errbacks,
+            'chain': Signature[] chain,
+            'chord': Signature chord_callback,
+        }
+    )
 
 Example
 =======
@@ -132,15 +127,10 @@ Example
 
     task_id = uuid()
     basic_publish(
-        message=json.dumps([[2, 2], {}]),
+        message=json.dumps(([2, 2], {}, None),
         application_headers={
             'lang': 'py',
             'task': 'proj.tasks.add',
-            'chain': [
-                # reversed chain list
-                {'task': 'proj.tasks.add', 'args': (8, )},
-                {'task': 'proj.tasks.add', 'args': (4, )},
-            ]
         }
         properties={
             'correlation_id': task_id,

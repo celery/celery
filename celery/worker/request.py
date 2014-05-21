@@ -179,7 +179,7 @@ class Request(object):
         result = pool.apply_async(
             trace_task_ret,
             args=(self.name, task_id, self.request_dict, self.body,
-                  self.content_type, self.content_encoding, self.hostname),
+                  self.content_type, self.content_encoding),
             accept_callback=self.on_accepted,
             timeout_callback=self.on_timeout,
             callback=self.on_success,
@@ -444,7 +444,6 @@ def create_request_cls(base, task, pool, hostname, eventer,
     default_soft_time_limit = task.soft_time_limit
     apply_async = pool.apply_async
     acks_late = task.acks_late
-    std_kwargs = {'hostname': hostname, 'is_eager': False}
     events = eventer and eventer.enabled
 
     class Request(base):
@@ -461,7 +460,6 @@ def create_request_cls(base, task, pool, hostname, eventer,
                 trace,
                 args=(self.name, task_id, self.request_dict, self.body,
                       self.content_type, self.content_encoding),
-                kwargs=std_kwargs,
                 accept_callback=self.on_accepted,
                 timeout_callback=self.on_timeout,
                 callback=self.on_success,
