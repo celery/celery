@@ -104,7 +104,6 @@ class AsyncResult(ResultBase):
             self.result = self.backend.exception_to_python(meta['result'])
         else:
             self.result = meta['result']
-        self.info = self.result  # XXX compat
         self.traceback = meta.get('traceback')
         if children:
             self.children = [
