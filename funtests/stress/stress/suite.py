@@ -20,7 +20,7 @@ from celery.utils.timeutils import humanize_seconds
 
 from .app import (
     marker, _marker, add, any_, exiting, kill, sleeping,
-    sleeping_ignore_limits, segfault, any_returning,
+    sleeping_ignore_limits, segfault, any_returning, print_unicode
 )
 from .data import BIG, SMALL
 from .fbi import FBI
@@ -168,7 +168,7 @@ class Suite(object):
         )
 
     def manyshort(self):
-        self.join(group(add.s(i, i) for i in range(1000))(),
+        self.join(group(print_unicode.s() for i in range(1000))(),
                   timeout=10, propagate=True)
 
     def runtest(self, fun, n=50, index=0, repeats=1):
