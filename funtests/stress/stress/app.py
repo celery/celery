@@ -110,7 +110,7 @@ def retries(self):
 
 
 @app.task
-def unicode():
+def print_unicode():
     print('hiöäüß')
 
 
