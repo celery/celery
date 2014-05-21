@@ -14,6 +14,5 @@
     deprecation
     worker
     protocol
-    protov2
     app-overview
     reference/index
