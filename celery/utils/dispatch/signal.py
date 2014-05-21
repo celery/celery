@@ -4,7 +4,9 @@ from __future__ import absolute_import
 
 import weakref
 from . import saferef
+
 from celery.five import range
+from celery.local import PromiseProxy, Proxy
 
 __all__ = ['Signal']
 
@@ -12,6 +14,8 @@ WEAKREF_TYPES = (weakref.ReferenceType, saferef.BoundMethodWeakref)
 
 
 def _make_id(target):  # pragma: no cover
+    if isinstance(target, Proxy):
+        target = target._get_current_object()
     if hasattr(target, '__func__'):
         return (id(target.__self__), id(target.__func__))
     return id(target)
@@ -23,7 +27,7 @@ class Signal(object):  # pragma: no cover
 
     .. attribute:: receivers
         Internal attribute, holds a dictionary of
-        `{receriverkey (id): weakref(receiver)}` mappings.
+        `{receiverkey (id): weakref(receiver)}` mappings.
 
     """
 
@@ -38,6 +42,12 @@ class Signal(object):  # pragma: no cover
         if providing_args is None:
             providing_args = []
         self.providing_args = set(providing_args)
+
+    def _connect_proxy(self, fun, sender, weak, dispatch_uid):
+        return self.connect(
+            fun, sender=sender._get_current_object(),
+            weak=weak, dispatch_uid=dispatch_uid,
+        )
 
     def connect(self, *args, **kwargs):
         """Connect receiver to sender for signal.
@@ -73,6 +83,12 @@ class Signal(object):  # pragma: no cover
 
             def _connect_signal(fun):
                 receiver = fun
+
+                if isinstance(sender, PromiseProxy):
+                    sender.__then__(
+                        self._connect_proxy, fun, sender, weak, dispatch_uid,
+                    )
+                    return fun
 
                 if dispatch_uid:
                     lookup_key = (dispatch_uid, _make_id(sender))

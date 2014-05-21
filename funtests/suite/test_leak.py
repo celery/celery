@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 
 import gc
 import os
@@ -15,7 +15,7 @@ from celery.tests.case import SkipTest, unittest
 
 import suite  # noqa
 
-GET_RSIZE = '/bin/ps -p {pid} -o rss='
+GET_RSIZE = b'/bin/ps -p {pid} -o rss='
 
 
 class Sizes(list):

@@ -24,8 +24,10 @@ if not IS_WINDOWS:
 
             detach('/bin/boo', ['a', 'b', 'c'], logfile='/var/log',
                    pidfile='/var/pid')
-            detached.assert_called_with('/var/log', '/var/pid', None, None, 0,
-                                        None, False)
+            detached.assert_called_with(
+                '/var/log', '/var/pid', None, None, 0, None, False,
+                after_forkers=False,
+            )
             execv.assert_called_with('/bin/boo', ['/bin/boo', 'a', 'b', 'c'])
 
             execv.side_effect = Exception('foo')
@@ -85,6 +87,7 @@ class test_Command(AppCase):
         detach.assert_called_with(
             path=x.execv_path, uid=None, gid=None,
             umask=0, fake=False, logfile='/var/log', pidfile='celeryd.pid',
+            working_directory=None,
             argv=x.execv_argv + [
                 '-c', '1', '-lDEBUG',
                 '--logfile=/var/log', '--pidfile=celeryd.pid',

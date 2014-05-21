@@ -13,7 +13,6 @@ import threading
 import warnings
 
 from collections import defaultdict, deque
-from contextlib import contextmanager
 from copy import deepcopy
 from operator import attrgetter
 
@@ -26,24 +25,28 @@ from kombu.utils import cached_property, uuid
 from celery import platforms
 from celery import signals
 from celery._state import (
-    _task_stack, _tls, get_current_app, set_default_app,
-    _register_app, get_current_worker_task,
+    _task_stack, get_current_app, _set_current_app, set_default_app,
+    _register_app, get_current_worker_task, connect_on_app_finalize,
+    _announce_app_finalized,
 )
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
 from celery.five import items, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
+from celery.utils.dispatch import Signal
 from celery.utils.functional import first, maybe_list
 from celery.utils.imports import instantiate, symbol_by_name
-from celery.utils.objects import mro_lookup
+from celery.utils.objects import FallbackContext, mro_lookup
 
 from .annotations import prepare as prepare_annotations
-from .builtins import shared_task, load_shared_tasks
 from .defaults import DEFAULTS, find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import (
     AppPickler, Settings, bugreport, _unpickle_app, _unpickle_app_v2, appstr,
 )
+
+# Load all builtin tasks
+from . import builtins  # noqa
 
 __all__ = ['Celery']
 
@@ -58,6 +61,8 @@ and as such the configuration could not be loaded.
 Please set this variable and make it point to
 a configuration module."""
 
+_after_fork_registered = False
+
 
 def app_has_custom(app, attr):
     return mro_lookup(app.__class__, attr, stop=(Celery, object),
@@ -68,6 +73,29 @@ def _unpickle_appattr(reverse_name, args):
     """Given an attribute name and a list of args, gets
     the attribute from the current app and calls it."""
     return get_current_app()._rgetattr(reverse_name)(*args)
+
+
+def _global_after_fork():
+    # Previously every app would call:
+    #    `register_after_fork(app, app._after_fork)`
+    # but this created a leak as `register_after_fork` stores concrete object
+    # references and once registered an object cannot be removed without
+    # touching and iterating over the private afterfork registry list.
+    #
+    # See Issue #1949
+    from celery import _state
+    from multiprocessing.util import info
+    for app in _state.apps:
+        try:
+            app._after_fork()
+        except Exception as exc:
+            info('after forker raised exception: %r' % (exc, ), exc_info=1)
+
+
+def _ensure_after_fork():
+    global _after_fork_registered
+    _after_fork_registered = True
+    register_after_fork(_global_after_fork, _global_after_fork)
 
 
 class Celery(object):
@@ -89,11 +117,22 @@ class Celery(object):
     _pool = None
     builtin_fixups = BUILTIN_FIXUPS
 
+    #: Signal sent when app is loading configuration.
+    on_configure = None
+
+    #: Signal sent after app has prepared the configuration.
+    on_after_configure = None
+
+    #: Signal sent after app has been finalized.
+    on_after_finalize = None
+
+    #: ignored
+    accept_magic_kwargs = False
+
     def __init__(self, main=None, loader=None, backend=None,
                  amqp=None, events=None, log=None, control=None,
-                 set_as_current=True, accept_magic_kwargs=False,
-                 tasks=None, broker=None, include=None, changes=None,
-                 config_source=None, fixups=None, task_cls=None,
+                 set_as_current=True, tasks=None, broker=None, include=None,
+                 changes=None, config_source=None, fixups=None, task_cls=None,
                  autofinalize=True, **kwargs):
         self.clock = LamportClock()
         self.main = main
@@ -106,7 +145,6 @@ class Celery(object):
         self.task_cls = task_cls or self.task_cls
         self.set_as_current = set_as_current
         self.registry_cls = symbol_by_name(self.registry_cls)
-        self.accept_magic_kwargs = accept_magic_kwargs
         self.user_options = defaultdict(set)
         self.steps = defaultdict(set)
         self.autofinalize = autofinalize
@@ -143,11 +181,18 @@ class Celery(object):
         if self.set_as_current:
             self.set_current()
 
+        # Signals
+        if self.on_configure is None:
+            # used to be a method pre 3.2
+            self.on_configure = Signal()
+        self.on_after_configure = Signal()
+        self.on_after_finalize = Signal()
+
         self.on_init()
         _register_app(self)
 
     def set_current(self):
-        _tls.current_app = self
+        _set_current_app(self)
 
     def set_default(self):
         set_default_app(self)
@@ -183,8 +228,8 @@ class Celery(object):
             # a differnt task instance.  This makes sure it will always use
             # the task instance from the current app.
             # Really need a better solution for this :(
-            from . import shared_task as proxies_to_curapp
-            return proxies_to_curapp(*args, _force_evaluate=True, **opts)
+            from . import shared_task
+            return shared_task(*args, _force_evaluate=True, **opts)
 
         def inner_create_task_cls(shared=True, filter=None, **opts):
             _filt = filter  # stupid 2to3
@@ -193,13 +238,7 @@ class Celery(object):
                 if shared:
                     cons = lambda app: app._task_from_fun(fun, **opts)
                     cons.__name__ = fun.__name__
-                    shared_task(cons)
-                if self.accept_magic_kwargs:  # compat mode
-                    task = self._task_from_fun(fun, **opts)
-                    if filter:
-                        task = filter(task)
-                    return task
-
+                    connect_on_app_finalize(cons)
                 if self.finalized or opts.get('_force_evaluate'):
                     ret = self._task_from_fun(fun, **opts)
                 else:
@@ -231,11 +270,11 @@ class Celery(object):
 
         T = type(fun.__name__, (base, ), dict({
             'app': self,
-            'accept_magic_kwargs': False,
             'run': fun if bind else staticmethod(fun),
             '_decorated': True,
             '__doc__': fun.__doc__,
-            '__module__': fun.__module__}, **options))()
+            '__module__': fun.__module__,
+            '__wrapped__': fun}, **options))()
         task = self._tasks[T.name]  # return global instance.
         return task
 
@@ -245,7 +284,7 @@ class Celery(object):
                 if auto and not self.autofinalize:
                     raise RuntimeError('Contract breach: app not finalized')
                 self.finalized = True
-                load_shared_tasks(self)
+                _announce_app_finalized(self)
 
                 pending = self._pending
                 while pending:
@@ -253,6 +292,8 @@ class Celery(object):
 
                 for task in values(self._tasks):
                     task.bind(self)
+
+                self.on_after_finalize.send(sender=self)
 
     def add_defaults(self, fun):
         if not callable(fun):
@@ -272,7 +313,8 @@ class Celery(object):
         if not module_name:
             if silent:
                 return False
-            raise ImproperlyConfigured(ERR_ENVVAR_NOT_SET.format(module_name))
+            raise ImproperlyConfigured(
+                ERR_ENVVAR_NOT_SET.format(variable_name))
         return self.config_from_object(module_name, silent=silent, force=force)
 
     def config_from_cmdline(self, argv, namespace='celery'):
@@ -300,26 +342,34 @@ class Celery(object):
                   eta=None, task_id=None, producer=None, connection=None,
                   router=None, result_cls=None, expires=None,
                   publisher=None, link=None, link_error=None,
-                  add_to_parent=True, reply_to=None, **options):
+                  add_to_parent=True, group_id=None, retries=0, chord=None,
+                  reply_to=None, time_limit=None, soft_time_limit=None,
+                  root_id=None, parent_id=None, **options):
+        amqp = self.amqp
         task_id = task_id or uuid()
         producer = producer or publisher  # XXX compat
-        router = router or self.amqp.router
+        router = router or amqp.router
         conf = self.conf
         if conf.CELERY_ALWAYS_EAGER:  # pragma: no cover
             warnings.warn(AlwaysEagerIgnored(
                 'CELERY_ALWAYS_EAGER has no effect on send_task',
             ), stacklevel=2)
         options = router.route(options, name, args, kwargs)
+
+        message = amqp.create_task_message(
+            task_id, name, args, kwargs, countdown, eta, group_id,
+            expires, retries, chord,
+            maybe_list(link), maybe_list(link_error),
+            reply_to or self.oid, time_limit, soft_time_limit,
+            self.conf.CELERY_SEND_TASK_SENT_EVENT,
+            root_id, parent_id,
+        )
+
         if connection:
-            producer = self.amqp.TaskProducer(connection)
+            producer = amqp.Producer(connection)
         with self.producer_or_acquire(producer) as P:
             self.backend.on_task_call(P, task_id)
-            task_id = P.publish_task(
-                name, args, kwargs, countdown=countdown, eta=eta,
-                task_id=task_id, expires=expires,
-                callbacks=maybe_list(link), errbacks=maybe_list(link_error),
-                reply_to=reply_to or self.oid, **options
-            )
+            amqp.send_task_message(P, name, message, **options)
         result = (result_cls or self.AsyncResult)(task_id)
         if add_to_parent:
             parent = get_current_worker_task()
@@ -355,27 +405,20 @@ class Celery(object):
         )
     broker_connection = connection
 
-    @contextmanager
-    def connection_or_acquire(self, connection=None, pool=True,
-                              *args, **kwargs):
-        if connection:
-            yield connection
-        else:
-            if pool:
-                with self.pool.acquire(block=True) as connection:
-                    yield connection
-            else:
-                with self.connection() as connection:
-                    yield connection
+    def _acquire_connection(self, pool=True):
+        """Helper for :meth:`connection_or_acquire`."""
+        if pool:
+            return self.pool.acquire(block=True)
+        return self.connection()
+
+    def connection_or_acquire(self, connection=None, pool=True, *_, **__):
+        return FallbackContext(connection, self._acquire_connection, pool=pool)
     default_connection = connection_or_acquire  # XXX compat
 
-    @contextmanager
     def producer_or_acquire(self, producer=None):
-        if producer:
-            yield producer
-        else:
-            with self.amqp.producer_pool.acquire(block=True) as producer:
-                yield producer
+        return FallbackContext(
+            producer, self.amqp.producer_pool.acquire, block=True,
+        )
     default_producer = producer_or_acquire  # XXX compat
 
     def prepare_config(self, c):
@@ -418,12 +461,12 @@ class Celery(object):
             self.loader)
         return backend(app=self, url=url)
 
-    def on_configure(self):
-        """Callback calld when the app loads configuration"""
-        pass
-
     def _get_config(self):
-        self.on_configure()
+        if isinstance(self.on_configure, Signal):
+            self.on_configure.send(sender=self)
+        else:
+            # used to be a method pre 3.2
+            self.on_configure()
         if self._config_source:
             self.loader.config_from_object(self._config_source)
         self.configured = True
@@ -437,6 +480,7 @@ class Celery(object):
         if self._preconf:
             for key, value in items(self._preconf):
                 setattr(s, key, value)
+        self.on_after_configure.send(sender=self, source=s)
         return s
 
     def _after_fork(self, obj_):
@@ -523,7 +567,6 @@ class Celery(object):
             'events': self.events_cls,
             'log': self.log_cls,
             'control': self.control_cls,
-            'accept_magic_kwargs': self.accept_magic_kwargs,
             'fixups': self.fixups,
             'config_source': self._config_source,
             'task_cls': self.task_cls,
@@ -534,7 +577,7 @@ class Celery(object):
         return (self.main, self.conf.changes,
                 self.loader_cls, self.backend_cls, self.amqp_cls,
                 self.events_cls, self.log_cls, self.control_cls,
-                self.accept_magic_kwargs, self._config_source)
+                False, self._config_source)
 
     @cached_property
     def Worker(self):
@@ -581,7 +624,7 @@ class Celery(object):
     @property
     def pool(self):
         if self._pool is None:
-            register_after_fork(self, self._after_fork)
+            _ensure_after_fork()
             limit = self.conf.BROKER_POOL_LIMIT
             self._pool = self.connection().Pool(limit=limit)
         return self._pool

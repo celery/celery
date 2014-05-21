@@ -44,6 +44,7 @@ class Pidbox(object):
     def start(self, c):
         self.node.channel = c.connection.channel()
         self.consumer = self.node.listen(callback=self.on_message)
+        self.consumer.on_decode_error = c.on_decode_error
 
     def on_stop(self):
         pass

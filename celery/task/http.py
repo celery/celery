@@ -8,7 +8,6 @@
 """
 from __future__ import absolute_import
 
-import anyjson
 import sys
 
 try:
@@ -16,6 +15,8 @@ try:
 except ImportError:  # pragma: no cover
     from urllib import urlencode              # noqa
     from urlparse import urlparse, parse_qsl  # noqa
+
+from kombu.utils import json
 
 from celery import shared_task, __version__ as celery_version
 from celery.five import items, reraise
@@ -41,13 +42,13 @@ else:
 
     from urllib2 import Request, urlopen  # noqa
 
-    def utf8dict(tup):  # noqa
+    def utf8dict(tup, enc='utf-8'):  # noqa
         """With a dict's items() tuple return a new dict with any utf-8
         keys/values encoded."""
-        return dict(
-            (k.encode('utf-8'),
-             v.encode('utf-8') if isinstance(v, unicode) else v)  # noqa
-            for k, v in tup)
+        return {
+            k.encode(enc): (v.encode(enc) if isinstance(v, unicode) else v)
+            for k, v in tup
+        }
 
 
 class InvalidResponseError(Exception):
@@ -62,7 +63,7 @@ class UnknownStatusError(InvalidResponseError):
     """The remote server gave an unknown status."""
 
 
-def extract_response(raw_response, loads=anyjson.loads):
+def extract_response(raw_response, loads=json.loads):
     """Extract the response text from a raw JSON response."""
     if not raw_response:
         raise InvalidResponseError('Empty response')
@@ -162,8 +163,7 @@ class HttpDispatch(object):
         return headers
 
 
-@shared_task(name='celery.http_dispatch', bind=True,
-             url=None, method=None, accept_magic_kwargs=False)
+@shared_task(name='celery.http_dispatch', bind=True, url=None, method=None)
 def dispatch(self, url=None, method='GET', **kwargs):
     """Task dispatching to an URL.
 

@@ -24,6 +24,7 @@ __all__ = ['Task', 'PeriodicTask', 'task']
 #: list of methods that must be classmethods in the old API.
 _COMPAT_CLASSMETHODS = (
     'delay', 'apply_async', 'retry', 'apply', 'subtask_from_request',
+    'signature_from_request', 'signature',
     'AsyncResult', 'subtask', '_get_request', '_get_exec_options',
 )
 
@@ -50,7 +51,6 @@ class Task(BaseTask):
     priority = None
     type = 'regular'
     disable_error_emails = False
-    accept_magic_kwargs = False
 
     from_config = BaseTask.from_config + (
         ('exchange_type', 'CELERY_DEFAULT_EXCHANGE_TYPE'),
@@ -68,6 +68,16 @@ class Task(BaseTask):
     @class_property
     def request(cls):
         return cls._get_request()
+
+    @class_property
+    def backend(cls):
+        if cls._backend is None:
+            return cls.app.backend
+        return cls._backend
+
+    @backend.setter
+    def backend(cls, value):  # noqa
+        cls._backend = value
 
     @classmethod
     def get_logger(self, **kwargs):
@@ -96,12 +106,19 @@ class Task(BaseTask):
                       exchange_type=None, **options):
         """Deprecated method to get the task publisher (now called producer).
 
-        Should be replaced with :class:`@amqp.TaskProducer`:
+        Should be replaced with :class:`@kombu.Producer`:
 
         .. code-block:: python
 
-            with celery.connection() as conn:
-                with celery.amqp.TaskProducer(conn) as prod:
+            with app.connection() as conn:
+                with app.amqp.Producer(conn) as prod:
+                    my_task.apply_async(producer=prod)
+
+            or event better is to use the :class:`@amqp.producer_pool`:
+
+            .. code-block:: python
+
+                with app.producer_or_acquire() as prod:
                     my_task.apply_async(producer=prod)
 
         """
@@ -109,7 +126,7 @@ class Task(BaseTask):
         if exchange_type is None:
             exchange_type = self.exchange_type
         connection = connection or self.establish_connection()
-        return self._get_app().amqp.TaskProducer(
+        return self._get_app().amqp.Producer(
             connection,
             exchange=exchange and Exchange(exchange, exchange_type),
             routing_key=self.routing_key, **options
@@ -160,8 +177,7 @@ class PeriodicTask(Task):
 
 def task(*args, **kwargs):
     """Deprecated decorator, please use :func:`celery.task`."""
-    return current_app.task(*args, **dict({'accept_magic_kwargs': False,
-                                           'base': Task}, **kwargs))
+    return current_app.task(*args, **dict({'base': Task}, **kwargs))
 
 
 def periodic_task(*args, **options):

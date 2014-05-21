@@ -241,21 +241,21 @@ class test_Command(AppCase):
         with self.assertRaises(AttributeError):
             cmd.find_app(__name__)
 
-    def test_simple_format(self):
+    def test_host_format(self):
         cmd = MockCommand(app=self.app)
         with patch('socket.gethostname') as hn:
             hn.return_value = 'blacktron.example.com'
-            self.assertEqual(cmd.simple_format(''), '')
+            self.assertEqual(cmd.host_format(''), '')
             self.assertEqual(
-                cmd.simple_format('celery@%h'),
+                cmd.host_format('celery@%h'),
                 'celery@blacktron.example.com',
             )
             self.assertEqual(
-                cmd.simple_format('celery@%d'),
+                cmd.host_format('celery@%d'),
                 'celery@example.com',
             )
             self.assertEqual(
-                cmd.simple_format('celery@%n'),
+                cmd.host_format('celery@%n'),
                 'celery@blacktron',
             )
 

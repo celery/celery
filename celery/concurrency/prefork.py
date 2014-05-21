@@ -57,10 +57,15 @@ def process_initializer(app, hostname):
     # run once per process.
     app.loader.init_worker()
     app.loader.init_worker_process()
+    logfile = os.environ.get('CELERY_LOG_FILE') or None
+    if logfile and '%i' in logfile.lower():
+        # logfile path will differ so need to set up logging again.
+        app.log.already_setup = False
     app.log.setup(int(os.environ.get('CELERY_LOG_LEVEL', 0) or 0),
-                  os.environ.get('CELERY_LOG_FILE') or None,
+                  logfile,
                   bool(os.environ.get('CELERY_LOG_REDIRECT', False)),
-                  str(os.environ.get('CELERY_LOG_REDIRECT_LEVEL')))
+                  str(os.environ.get('CELERY_LOG_REDIRECT_LEVEL')),
+                  hostname=hostname)
     if os.environ.get('FORKED_BY_MULTIPROCESSING'):
         # pool did execv after fork
         trace.setup_worker_optimizations(app)

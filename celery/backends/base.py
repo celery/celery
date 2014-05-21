@@ -33,8 +33,8 @@ from celery.five import items
 from celery.result import (
     GroupResult, ResultBase, allow_join_result, result_from_tuple,
 )
-from celery.utils import timeutils
 from celery.utils.functional import LRUCache
+from celery.utils.log import get_logger
 from celery.utils.serialization import (
     get_pickled_exception,
     get_pickleable_exception,
@@ -46,10 +46,19 @@ __all__ = ['BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend']
 EXCEPTION_ABLE_CODECS = frozenset(['pickle', 'yaml'])
 PY3 = sys.version_info >= (3, 0)
 
+logger = get_logger(__name__)
+
 
 def unpickle_backend(cls, args, kwargs):
     """Return an unpickled backend."""
     return cls(*args, app=current_app._get_current_object(), **kwargs)
+
+
+class _nulldict(dict):
+
+    def ignore(self, *a, **kw):
+        pass
+    __setitem__ = update = setdefault = ignore
 
 
 class BaseBackend(object):
@@ -90,9 +99,8 @@ class BaseBackend(object):
         (self.content_type,
          self.content_encoding,
          self.encoder) = serializer_registry._encoders[self.serializer]
-        self._cache = LRUCache(
-            limit=max_cached_results or conf.CELERY_MAX_CACHED_RESULTS,
-        )
+        cmax = max_cached_results or conf.CELERY_MAX_CACHED_RESULTS
+        self._cache = _nulldict() if cmax == -1 else LRUCache(limit=cmax)
         self.accept = prepare_accept_content(
             conf.CELERY_ACCEPT_CONTENT if accept is None else accept,
         )
@@ -110,6 +118,21 @@ class BaseBackend(object):
         """Mark task as executed with failure. Stores the execption."""
         return self.store_result(task_id, exc, status=states.FAILURE,
                                  traceback=traceback, request=request)
+
+    def chord_error_from_stack(self, callback, exc=None):
+        from celery import group
+        app = self.app
+        backend = app._tasks[callback.task].backend
+        try:
+            group(
+                [app.signature(errback)
+                 for errback in callback.options.get('link_error') or []],
+                app=app,
+            ).apply_async((callback.id, ))
+        except Exception as eb_exc:
+            return backend.fail_from_current_stack(callback.id, exc=eb_exc)
+        else:
+            return backend.fail_from_current_stack(callback.id, exc=exc)
 
     def fail_from_current_stack(self, task_id, exc=None):
         type_, real_exc, tb = sys.exc_info()
@@ -132,18 +155,21 @@ class BaseBackend(object):
                                  status=states.REVOKED, traceback=None,
                                  request=request)
 
-    def prepare_exception(self, exc):
+    def prepare_exception(self, exc, serializer=None):
         """Prepare exception for serialization."""
-        if self.serializer in EXCEPTION_ABLE_CODECS:
+        serializer = self.serializer if serializer is None else serializer
+        if serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
         return {'exc_type': type(exc).__name__, 'exc_message': str(exc)}
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
+        if not isinstance(exc, BaseException):
+            exc = create_exception_cls(
+                from_utf8(exc['exc_type']), __name__)(exc['exc_message'])
         if self.serializer in EXCEPTION_ABLE_CODECS:
-            return get_pickled_exception(exc)
-        return create_exception_cls(
-            from_utf8(exc['exc_type']), __name__)(exc['exc_message'])
+            exc = get_pickled_exception(exc)
+        return exc
 
     def prepare_value(self, result):
         """Prepare value for storage."""
@@ -162,7 +188,9 @@ class BaseBackend(object):
                      content_encoding=self.content_encoding,
                      accept=self.accept)
 
-    def wait_for(self, task_id, timeout=None, propagate=True, interval=0.5):
+    def wait_for(self, task_id,
+                 timeout=None, propagate=True, interval=0.5, no_ack=True,
+                 on_interval=None):
         """Wait for task and return its result.
 
         If the task raises an exception, this exception
@@ -185,6 +213,8 @@ class BaseBackend(object):
                 if propagate:
                     raise result
                 return result
+            if on_interval:
+                on_interval()
             # avoid hammering the CPU checking status.
             time.sleep(interval)
             time_elapsed += interval
@@ -195,7 +225,7 @@ class BaseBackend(object):
         if value is None:
             value = self.app.conf.CELERY_TASK_RESULT_EXPIRES
         if isinstance(value, timedelta):
-            value = timeutils.timedelta_seconds(value)
+            value = value.total_seconds()
         if value is not None and type:
             return type(value)
         return value
@@ -311,7 +341,7 @@ class BaseBackend(object):
     def on_task_call(self, producer, task_id):
         return {}
 
-    def on_chord_part_return(self, task, propagate=False):
+    def on_chord_part_return(self, task, state, result, propagate=False):
         pass
 
     def fallback_chord_unlock(self, group_id, body, result=None,
@@ -374,17 +404,26 @@ class KeyValueStoreBackend(BaseBackend):
     def expire(self, key, value):
         pass
 
-    def get_key_for_task(self, task_id):
+    def get_key_for_task(self, task_id, key=''):
         """Get the cache key for a task by id."""
-        return self.task_keyprefix + self.key_t(task_id)
+        key_t = self.key_t
+        return key_t('').join([
+            self.task_keyprefix, key_t(task_id), key_t(key),
+        ])
 
-    def get_key_for_group(self, group_id):
+    def get_key_for_group(self, group_id, key=''):
         """Get the cache key for a group by id."""
-        return self.group_keyprefix + self.key_t(group_id)
+        key_t = self.key_t
+        return key_t('').join([
+            self.group_keyprefix, key_t(group_id), key_t(key),
+        ])
 
-    def get_key_for_chord(self, group_id):
+    def get_key_for_chord(self, group_id, key=''):
         """Get the cache key for the chord waiting on group with given id."""
-        return self.chord_keyprefix + self.key_t(group_id)
+        key_t = self.key_t
+        return key_t('').join([
+            self.chord_keyprefix, key_t(group_id), key_t(key),
+        ])
 
     def _strip_prefix(self, key):
         """Takes bytes, emits string."""
@@ -397,16 +436,18 @@ class KeyValueStoreBackend(BaseBackend):
     def _mget_to_results(self, values, keys):
         if hasattr(values, 'items'):
             # client returns dict so mapping preserved.
-            return dict((self._strip_prefix(k), self.decode(v))
-                        for k, v in items(values)
-                        if v is not None)
+            return {
+                self._strip_prefix(k): self.decode(v)
+                for k, v in items(values) if v is not None
+            }
         else:
             # client returns list so need to recreate mapping.
-            return dict((bytes_to_str(keys[i]), self.decode(value))
-                        for i, value in enumerate(values)
-                        if value is not None)
+            return {
+                bytes_to_str(keys[i]): self.decode(value)
+                for i, value in enumerate(values) if value is not None
+            }
 
-    def get_many(self, task_ids, timeout=None, interval=0.5,
+    def get_many(self, task_ids, timeout=None, interval=0.5, no_ack=True,
                  READY_STATES=states.READY_STATES):
         interval = 0.5 if interval is None else interval
         ids = task_ids if isinstance(task_ids, set) else set(task_ids)
@@ -429,7 +470,7 @@ class KeyValueStoreBackend(BaseBackend):
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
                                                  for k in keys]), keys)
             cache.update(r)
-            ids.difference_update(set(bytes_to_str(v) for v in r))
+            ids.difference_update({bytes_to_str(v) for v in r})
             for key, value in items(r):
                 yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:
@@ -479,12 +520,12 @@ class KeyValueStoreBackend(BaseBackend):
         self.save_group(group_id, self.app.GroupResult(group_id, result))
         return header(*partial_args, task_id=group_id)
 
-    def on_chord_part_return(self, task, propagate=None):
+    def on_chord_part_return(self, task, state, result, propagate=None):
         if not self.implements_incr:
             return
         app = self.app
         if propagate is None:
-            propagate = self.app.conf.CELERY_CHORD_PROPAGATES
+            propagate = app.conf.CELERY_CHORD_PROPAGATES
         gid = task.request.group
         if not gid:
             return
@@ -492,26 +533,26 @@ class KeyValueStoreBackend(BaseBackend):
         try:
             deps = GroupResult.restore(gid, backend=task.backend)
         except Exception as exc:
-            callback = maybe_signature(task.request.chord, app=self.app)
-            return app._tasks[callback.task].backend.fail_from_current_stack(
-                callback.id,
-                exc=ChordError('Cannot restore group: {0!r}'.format(exc)),
+            callback = maybe_signature(task.request.chord, app=app)
+            logger.error('Chord %r raised: %r', gid, exc, exc_info=1)
+            return self.chord_error_from_stack(
+                callback,
+                ChordError('Cannot restore group: {0!r}'.format(exc)),
             )
         if deps is None:
             try:
                 raise ValueError(gid)
             except ValueError as exc:
-                callback = maybe_signature(task.request.chord, app=self.app)
-                task = app._tasks[callback.task]
-                return task.backend.fail_from_current_stack(
-                    callback.id,
-                    exc=ChordError('GroupResult {0} no longer exists'.format(
-                        gid,
-                    ))
+                callback = maybe_signature(task.request.chord, app=app)
+                logger.error('Chord callback %r raised: %r', gid, exc,
+                             exc_info=1)
+                return self.chord_error_from_stack(
+                    callback,
+                    ChordError('GroupResult {0} no longer exists'.format(gid)),
                 )
         val = self.incr(key)
         if val >= len(deps):
-            callback = maybe_signature(task.request.chord, app=self.app)
+            callback = maybe_signature(task.request.chord, app=app)
             j = deps.join_native if deps.supports_native_join else deps.join
             try:
                 with allow_join_result():
@@ -525,16 +566,16 @@ class KeyValueStoreBackend(BaseBackend):
                 except StopIteration:
                     reason = repr(exc)
 
-                app._tasks[callback.task].backend.fail_from_current_stack(
-                    callback.id, exc=ChordError(reason),
-                )
+                logger.error('Chord %r raised: %r', gid, reason, exc_info=1)
+                self.chord_error_from_stack(callback, ChordError(reason))
             else:
                 try:
                     callback.delay(ret)
                 except Exception as exc:
-                    app._tasks[callback.task].backend.fail_from_current_stack(
-                        callback.id,
-                        exc=ChordError('Callback error: {0!r}'.format(exc)),
+                    logger.error('Chord %r raised: %r', gid, exc, exc_info=1)
+                    self.chord_error_from_stack(
+                        callback,
+                        ChordError('Callback error: {0!r}'.format(exc)),
                     )
             finally:
                 deps.delete()

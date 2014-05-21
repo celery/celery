@@ -35,7 +35,7 @@ that defines the Celery instance:
 
 .. literalinclude:: ../../examples/django/proj/celery.py
 
-Then you need to import this app in your :file:`proj/proj/__init__py`
+Then you need to import this app in your :file:`proj/proj/__init__.py`
 module.  This ensures that the app is loaded when Django starts
 so that the ``@shared_task`` decorator (mentioned later) will use it:
 
@@ -49,7 +49,7 @@ both the app and tasks, like in the :ref:`tut-celery` tutorial.
 
 Let's break down what happens in the first module,
 first we import absolute imports from the future, so that our
-``celery.py`` module will not crash with the library:
+``celery.py`` module will not clash with the library:
 
 .. code-block:: python
 

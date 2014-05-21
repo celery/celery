@@ -1,4 +1,5 @@
 # In CentOS, contents should be placed in the file /etc/sysconfig/celeryd
+# Available options: http://celery.readthedocs.org/en/latest/tutorials/daemonizing.html#available-options
 
 # Names of nodes to start (space-separated)
 #CELERYD_NODES="my_application-node_1"
@@ -6,11 +7,11 @@
 # Where to chdir at start. This could be the root of a virtualenv.
 #CELERYD_CHDIR="/path/to/my_application"
 
-# How to call celeryd-multi
-#CELERYD_MULTI="$CELERYD_CHDIR/bin/celeryd-multi"
+# Absolute or relative path to the celery program
+#CELERY_BIN="/usr/local/bin/celery"
 
-# Extra arguments
-#CELERYD_OPTS="--app=my_application.path.to.worker --time-limit=300 --concurrency=8 --loglevel=DEBUG"
+# App instance to use (value for --app argument).
+#CELERY_APP="my_application"
 
 # Create log/pid dirs, if they don't already exist
 #CELERY_CREATE_DIRS=1

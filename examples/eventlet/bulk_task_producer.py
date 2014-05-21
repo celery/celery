@@ -3,8 +3,6 @@ from eventlet import spawn_n, monkey_patch, Timeout
 from eventlet.queue import LightQueue
 from eventlet.event import Event
 
-from celery import current_app
-
 monkey_patch()
 
 
@@ -27,9 +25,16 @@ class Receipt(object):
 
 
 class ProducerPool(object):
+    """Usage::
+
+        >>> app = Celery(broker='amqp://')
+        >>> ProducerPool(app)
+
+    """
     Receipt = Receipt
 
-    def __init__(self, size=20):
+    def __init__(self, app, size=20):
+        self.app = app
         self.size = size
         self.inqueue = LightQueue()
         self._running = None
@@ -48,13 +53,12 @@ class ProducerPool(object):
         ]
 
     def _producer(self):
-        connection = current_app.connection()
-        publisher = current_app.amqp.TaskProducer(connection)
         inqueue = self.inqueue
 
-        while 1:
-            task, args, kwargs, options, receipt = inqueue.get()
-            result = task.apply_async(args, kwargs,
-                                      publisher=publisher,
-                                      **options)
-            receipt.finished(result)
+        with self.app.producer_or_acquire() as producer:
+            while 1:
+                task, args, kwargs, options, receipt = inqueue.get()
+                result = task.apply_async(args, kwargs,
+                                          producer=producer,
+                                          **options)
+                receipt.finished(result)

@@ -14,7 +14,7 @@ class test_PrivateKey(SecurityCase):
         PrivateKey(KEY2)
 
     def test_invalid_private_key(self):
-        self.assertRaises(TypeError, PrivateKey, None)
+        self.assertRaises((SecurityError, TypeError), PrivateKey, None)
         self.assertRaises(SecurityError, PrivateKey, '')
         self.assertRaises(SecurityError, PrivateKey, 'foo')
         self.assertRaises(SecurityError, PrivateKey, KEY1[:20] + KEY1[21:])

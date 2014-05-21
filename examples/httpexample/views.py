@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 
-from anyjson import dumps
+from json import dumps
 
 
 def multiply(request):

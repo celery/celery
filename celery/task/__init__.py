@@ -12,7 +12,7 @@
 from __future__ import absolute_import
 
 from celery._state import current_app, current_task as current
-from celery.five import MagicModule, recreate_module
+from celery.five import LazyModule, recreate_module
 from celery.local import Proxy
 
 __all__ = [
@@ -32,7 +32,7 @@ if STATICA_HACK:  # pragma: no cover
     from .sets import TaskSet
 
 
-class module(MagicModule):
+class module(LazyModule):
 
     def __call__(self, *args, **kwargs):
         return self.task(*args, **kwargs)

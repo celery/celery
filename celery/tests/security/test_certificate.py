@@ -16,7 +16,7 @@ class test_Certificate(SecurityCase):
         Certificate(CERT2)
 
     def test_invalid_certificate(self):
-        self.assertRaises(TypeError, Certificate, None)
+        self.assertRaises((SecurityError, TypeError), Certificate, None)
         self.assertRaises(SecurityError, Certificate, '')
         self.assertRaises(SecurityError, Certificate, 'foo')
         self.assertRaises(SecurityError, Certificate, CERT1[:20] + CERT1[21:])

@@ -66,15 +66,15 @@ class test_AsyncResult(AppCase):
     def test_children(self):
         x = self.app.AsyncResult('1')
         children = [EagerResult(str(i), i, states.SUCCESS) for i in range(3)]
+        x._cache = {'children': children, 'status': states.SUCCESS}
         x.backend = Mock()
-        x.backend.get_children.return_value = children
-        x.backend.READY_STATES = states.READY_STATES
         self.assertTrue(x.children)
         self.assertEqual(len(x.children), 3)
 
     def test_propagates_for_parent(self):
         x = self.app.AsyncResult(uuid())
         x.backend = Mock()
+        x.backend.get_task_meta.return_value = {}
         x.parent = EagerResult(uuid(), KeyError('foo'), states.FAILURE)
         with self.assertRaises(KeyError):
             x.get(propagate=True)
@@ -89,10 +89,11 @@ class test_AsyncResult(AppCase):
         x = self.app.AsyncResult(tid)
         child = [self.app.AsyncResult(uuid()).as_tuple()
                  for i in range(10)]
-        x.backend._cache[tid] = {'children': child}
+        x._cache = {'children': child}
         self.assertTrue(x.children)
         self.assertEqual(len(x.children), 10)
 
+        x._cache = {'status': states.SUCCESS}
         x.backend._cache[tid] = {'result': None}
         self.assertIsNone(x.children)
 
@@ -122,13 +123,11 @@ class test_AsyncResult(AppCase):
 
     def test_iterdeps(self):
         x = self.app.AsyncResult('1')
-        x.backend._cache['1'] = {'status': states.SUCCESS, 'result': None}
         c = [EagerResult(str(i), i, states.SUCCESS) for i in range(3)]
+        x._cache = {'status': states.SUCCESS, 'result': None, 'children': c}
         for child in c:
             child.backend = Mock()
             child.backend.get_children.return_value = []
-        x.backend.get_children = Mock()
-        x.backend.get_children.return_value = c
         it = x.iterdeps()
         self.assertListEqual(list(it), [
             (None, x),
@@ -136,7 +135,7 @@ class test_AsyncResult(AppCase):
             (x, c[1]),
             (x, c[2]),
         ])
-        x.backend._cache.pop('1')
+        x._cache = None
         x.ready = Mock()
         x.ready.return_value = False
         with self.assertRaises(IncompleteStream):
@@ -277,6 +276,13 @@ class test_ResultSet(AppCase):
         x.get()
         self.assertTrue(x.join_native.called)
 
+    def test_get_empty(self):
+        x = self.app.ResultSet([])
+        self.assertIsNone(x.supports_native_join)
+        x.join = Mock(name='join')
+        x.get()
+        self.assertTrue(x.join.called)
+
     def test_add(self):
         x = self.app.ResultSet([1])
         x.add(2)
@@ -311,17 +317,19 @@ class test_ResultSet(AppCase):
         x = self.app.ResultSet([r1, r2])
         with self.dummy_copy():
             with patch('celery.result.time') as _time:
-                with self.assertRaises(KeyError):
-                    list(x.iterate())
+                with self.assertPendingDeprecation():
+                    with self.assertRaises(KeyError):
+                        list(x.iterate())
                 _time.sleep.assert_called_with(10)
 
             backend.subpolling_interval = 0
             with patch('celery.result.time') as _time:
-                with self.assertRaises(KeyError):
-                    ready.return_value = False
-                    ready.side_effect = se
-                    list(x.iterate())
-                self.assertFalse(_time.sleep.called)
+                with self.assertPendingDeprecation():
+                    with self.assertRaises(KeyError):
+                        ready.return_value = False
+                        ready.side_effect = se
+                        list(x.iterate())
+                    self.assertFalse(_time.sleep.called)
 
     def test_times_out(self):
         r1 = self.app.AsyncResult(uuid)
@@ -330,8 +338,9 @@ class test_ResultSet(AppCase):
         x = self.app.ResultSet([r1])
         with self.dummy_copy():
             with patch('celery.result.time'):
-                with self.assertRaises(TimeoutError):
-                    list(x.iterate(timeout=1))
+                with self.assertPendingDeprecation():
+                    with self.assertRaises(TimeoutError):
+                        list(x.iterate(timeout=1))
 
     def test_add_discard(self):
         x = self.app.ResultSet([])
@@ -449,7 +458,8 @@ class test_GroupResult(AppCase):
     def test_iterate_raises(self):
         ar = MockAsyncResultFailure(uuid(), app=self.app)
         ts = self.app.GroupResult(uuid(), [ar])
-        it = ts.iterate()
+        with self.assertPendingDeprecation():
+            it = ts.iterate()
         with self.assertRaises(KeyError):
             next(it)
 
@@ -486,6 +496,7 @@ class test_GroupResult(AppCase):
         subtasks = [self.app.AsyncResult(uuid(), backend=backend)
                     for i in range(10)]
         ts = self.app.GroupResult(uuid(), subtasks)
+        ts.app.backend = backend
         backend.ids = [subtask.id for subtask in subtasks]
         res = ts.join_native()
         self.assertEqual(res, list(range(10)))
@@ -523,6 +534,7 @@ class test_GroupResult(AppCase):
         subtasks = [self.app.AsyncResult(uuid(), backend=backend)
                     for i in range(10)]
         ts = self.app.GroupResult(uuid(), subtasks)
+        ts.app.backend = backend
         backend.ids = [subtask.id for subtask in subtasks]
         self.assertEqual(len(list(ts.iter_native())), 10)
 
@@ -530,7 +542,8 @@ class test_GroupResult(AppCase):
         ar = MockAsyncResultSuccess(uuid(), app=self.app)
         ar2 = MockAsyncResultSuccess(uuid(), app=self.app)
         ts = self.app.GroupResult(uuid(), [ar, ar2])
-        it = ts.iterate()
+        with self.assertPendingDeprecation():
+            it = ts.iterate()
         self.assertEqual(next(it), 42)
         self.assertEqual(next(it), 42)
 
@@ -538,7 +551,8 @@ class test_GroupResult(AppCase):
         ar1 = EagerResult(uuid(), 42, states.SUCCESS)
         ar2 = EagerResult(uuid(), 42, states.SUCCESS)
         ts = self.app.GroupResult(uuid(), [ar1, ar2])
-        it = ts.iterate()
+        with self.assertPendingDeprecation():
+            it = ts.iterate()
         self.assertEqual(next(it), 42)
         self.assertEqual(next(it), 42)
 
@@ -560,7 +574,8 @@ class test_GroupResult(AppCase):
         self.assertListEqual(list(ts.iter_native()), [])
 
     def test_iterate_simple(self):
-        it = self.ts.iterate()
+        with self.assertPendingDeprecation():
+            it = self.ts.iterate()
         results = sorted(list(it))
         self.assertListEqual(results, list(range(self.size)))
 
@@ -610,7 +625,8 @@ class test_failed_AsyncResult(test_GroupResult):
         self.assertEqual(self.ts.completed_count(), len(self.ts) - 1)
 
     def test_iterate_simple(self):
-        it = self.ts.iterate()
+        with self.assertPendingDeprecation():
+            it = self.ts.iterate()
 
         def consume():
             return list(it)

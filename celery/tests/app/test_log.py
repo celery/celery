@@ -2,6 +2,9 @@ from __future__ import absolute_import
 
 import sys
 import logging
+
+from collections import defaultdict
+from io import StringIO
 from tempfile import mktemp
 
 from celery import signals
@@ -94,7 +97,7 @@ class test_ColorFormatter(AppCase):
     @patch('celery.utils.log.safe_str')
     @patch('logging.Formatter.formatException')
     def test_formatException_not_string(self, fe, safe_str):
-        x = ColorFormatter('HELLO')
+        x = ColorFormatter()
         value = KeyError()
         fe.return_value = value
         self.assertIs(x.formatException(value), value)
@@ -103,16 +106,19 @@ class test_ColorFormatter(AppCase):
 
     @patch('logging.Formatter.formatException')
     @patch('celery.utils.log.safe_str')
-    def test_formatException_string(self, safe_str, fe, value='HELLO'):
-        x = ColorFormatter(value)
-        fe.return_value = value
-        self.assertTrue(x.formatException(value))
+    def test_formatException_string(self, safe_str, fe):
+        x = ColorFormatter()
+        fe.return_value = 'HELLO'
+        try:
+            raise Exception()
+        except Exception:
+            self.assertTrue(x.formatException(sys.exc_info()))
         if sys.version_info[0] == 2:
             self.assertTrue(safe_str.called)
 
     @patch('logging.Formatter.format')
     def test_format_object(self, _format):
-        x = ColorFormatter(object())
+        x = ColorFormatter()
         x.use_color = True
         record = Mock()
         record.levelname = 'ERROR'
@@ -121,7 +127,7 @@ class test_ColorFormatter(AppCase):
 
     @patch('celery.utils.log.safe_str')
     def test_format_raises(self, safe_str):
-        x = ColorFormatter('HELLO')
+        x = ColorFormatter()
 
         def on_safe_str(s):
             try:
@@ -133,6 +139,7 @@ class test_ColorFormatter(AppCase):
         class Record(object):
             levelname = 'ERROR'
             msg = 'HELLO'
+            exc_info = 1
             exc_text = 'error text'
             stack_info = None
 
@@ -145,15 +152,15 @@ class test_ColorFormatter(AppCase):
         record = Record()
         safe_str.return_value = record
 
-        x.format(record)
-        self.assertIn('<Unrepresentable', record.msg)
+        msg = x.format(record)
+        self.assertIn('<Unrepresentable', msg)
         self.assertEqual(safe_str.call_count, 1)
 
     @patch('celery.utils.log.safe_str')
     def test_format_raises_no_color(self, safe_str):
         if sys.version_info[0] == 3:
             raise SkipTest('py3k')
-        x = ColorFormatter('HELLO', False)
+        x = ColorFormatter(use_color=False)
         record = Mock()
         record.levelname = 'ERROR'
         record.msg = 'HELLO'
@@ -248,14 +255,31 @@ class test_default_logger(AppCase):
                 l.info('The quick brown fox...')
                 self.assertIn('The quick brown fox...', stderr.getvalue())
 
-    def test_setup_logger_no_handlers_file(self):
-        with restore_logging():
-            l = self.get_logger()
-            l.handlers = []
-            tempfile = mktemp(suffix='unittest', prefix='celery')
-            l = self.setup_logger(logfile=tempfile, loglevel=0, root=False)
-            self.assertIsInstance(get_handlers(l)[0],
-                                  logging.FileHandler)
+    @patch('os.fstat')
+    def test_setup_logger_no_handlers_file(self, *args):
+        tempfile = mktemp(suffix='unittest', prefix='celery')
+        _open = ('builtins.open' if sys.version_info[0] == 3
+                 else '__builtin__.open')
+        with patch(_open) as osopen:
+            with restore_logging():
+                files = defaultdict(StringIO)
+
+                def open_file(filename, *args, **kwargs):
+                    f = files[filename]
+                    f.fileno = Mock()
+                    f.fileno.return_value = 99
+                    return f
+
+                osopen.side_effect = open_file
+                l = self.get_logger()
+                l.handlers = []
+                l = self.setup_logger(
+                    logfile=tempfile, loglevel=logging.INFO, root=False,
+                )
+                self.assertIsInstance(
+                    get_handlers(l)[0], logging.FileHandler,
+                )
+                self.assertIn(tempfile, files)
 
     def test_redirect_stdouts(self):
         with restore_logging():
@@ -336,7 +360,7 @@ class test_task_logger(test_default_logger):
         return self.app.log.setup_task_loggers(*args, **kwargs)
 
     def get_logger(self, *args, **kwargs):
-        return get_task_logger("test_task_logger")
+        return get_task_logger('test_task_logger')
 
 
 class test_patch_logger_cls(AppCase):

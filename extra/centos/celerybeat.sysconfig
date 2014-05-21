@@ -1,0 +1,15 @@
+# In CentOS, contents should be placed in the file /etc/sysconfig/celeryd
+# Available options: http://celery.readthedocs.org/en/latest/tutorials/daemonizing.html#init-script-celerybeat
+
+# Where the Django project is.
+#CELERYBEAT_CHDIR="/path/to/my_application"
+
+# Absolute or relative path to the celery program
+#CELERY_BIN="/usr/local/bin/celery"
+
+# App instance to use (value for --app argument).
+#CELERY_APP="my_application.path.to.worker"
+
+# Beat run as an unprivileged user
+#CELERYBEAT_USER="brandings"
+#CELERYBEAT_GROUP="brandings"

@@ -1,4 +1,8 @@
+from __future__ import print_function, unicode_literals
+
 import sys
+import traceback
+
 from paver.easy import task, sh, cmdopts, path, needs, options, Bunch
 from paver import doctools  # noqa
 from paver.setuputils import setup  # noqa
@@ -91,10 +95,35 @@ def clean_readme(options):
 
 
 @task
+def clean_contributing(options):
+    path('CONTRIBUTING.rst').unlink_p()
+
+
+@task
+def verify_readme(options):
+    with open('README.rst') as fp:
+        try:
+            fp.read().encode('ascii')
+        except Exception:
+            print('README contains non-ascii characters', file=sys.stderr)
+            print('Original exception below...', file=sys.stderr)
+            traceback.print_stack(file=sys.stderr)
+            sh('false')
+
+
+@task
 @needs('clean_readme')
 def readme(options):
     sh('{0} extra/release/sphinx-to-rst.py docs/templates/readme.txt \
             > README.rst'.format(sys.executable))
+    verify_readme()
+
+
+@task
+@needs('clean_contributing')
+def contributing(options):
+    sh('{0} extra/release/sphinx-to-rst.py docs/contributing.rst \
+            > CONTRIBUTING.rst'.format(sys.executable))
 
 
 @task
@@ -112,7 +141,7 @@ def bump(options):
 def test(options):
     cmd = 'CELERY_LOADER=default nosetests'
     if getattr(options, 'coverage', False):
-        cmd += ' --with-coverage3'
+        cmd += ' --with-coverage'
     if getattr(options, 'verbose', False):
         cmd += ' --verbosity=2'
     sh(cmd)
@@ -156,7 +185,7 @@ def gitcleanforce(options):
 
 @task
 @needs('flakes', 'autodoc', 'verifyindex',
-       'verifyconfigref', 'test', 'gitclean')
+       'verifyconfigref', 'verify_readme', 'test', 'gitclean')
 def releaseok(options):
     pass
 

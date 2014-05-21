@@ -170,7 +170,7 @@ class test_LimitedSet(Case):
 
     def setUp(self):
         if sys.platform == 'win32':
-            raise SkipTest('Not working in Windows')
+            raise SkipTest('Not working on Windows')
 
     def test_add(self):
         if sys.platform == 'win32':
@@ -220,7 +220,7 @@ class test_LimitedSet(Case):
             s.purge()
             hp.assert_called_with(s._heap)
         with patch('celery.datastructures.heappop') as hp:
-            s._data = dict((i * 2, i * 2) for i in range(10))
+            s._data = {i * 2: i * 2 for i in range(10)}
             s.purge()
             self.assertEqual(hp.call_count, 10)
 
@@ -231,7 +231,8 @@ class test_LimitedSet(Case):
         self.assertEqual(pickle.loads(pickle.dumps(s)), s)
 
     def test_iter(self):
-        raise SkipTest('Not working on Windows')
+        if sys.platform == 'win32':
+            raise SkipTest('Not working on Windows')
         s = LimitedSet(maxlen=3)
         items = ['foo', 'bar', 'baz', 'xaz']
         for item in items:

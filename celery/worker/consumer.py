@@ -26,8 +26,8 @@ from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.async.semaphore import DummyLock
 from kombu.common import QoS, ignore_errors
+from kombu.five import buffer_t, items, values
 from kombu.syn import _detect_environment
-from kombu.utils.compat import get_errno
 from kombu.utils.encoding import safe_repr, bytes_t
 from kombu.utils.limits import TokenBucket
 
@@ -35,7 +35,6 @@ from celery import bootsteps
 from celery.app.trace import build_tracer
 from celery.canvas import signature
 from celery.exceptions import InvalidTaskError
-from celery.five import items, values
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
@@ -43,14 +42,6 @@ from celery.utils.timeutils import humanize_seconds, rate
 
 from . import heartbeat, loops, pidbox
 from .state import task_reserved, maybe_shutdown, revoked, reserved_requests
-
-try:
-    buffer_t = buffer
-except NameError:  # pragma: no cover
-    # Py3 does not have buffer, but we only need isinstance.
-
-    class buffer_t(object):  # noqa
-        pass
 
 __all__ = [
     'Consumer', 'Connection', 'Events', 'Heart', 'Control',
@@ -111,14 +102,24 @@ The full contents of the message body was:
 %s
 """
 
+MESSAGE_DECODE_ERROR = """\
+Can't decode message body: %r [type:%r encoding:%r headers:%s]
+
+body: %s
+"""
+
 MESSAGE_REPORT = """\
-body: {0} {{content_type:{1} content_encoding:{2} delivery_info:{3}}}\
+body: {0}
+{{content_type:{1} content_encoding:{2}
+  delivery_info:{3} headers={4}}}
 """
 
 MINGLE_GET_FIELDS = itemgetter('clock', 'revoked')
 
 
 def dump_body(m, body):
+    # v2 protocol does not deserialize body
+    body = m.body if body is None else body
     if isinstance(body, buffer_t):
         body = bytes_t(body)
     return '{0} ({1}b)'.format(truncate(safe_repr(body), 1024),
@@ -228,7 +229,7 @@ class Consumer(object):
     def _update_prefetch_count(self, index=0):
         """Update prefetch count after pool/shrink grow operations.
 
-        Index must be the change in number of processes as a postive
+        Index must be the change in number of processes as a positive
         (increasing) or negative (decreasing) number.
 
         .. note::
@@ -269,7 +270,7 @@ class Consumer(object):
             try:
                 blueprint.start(self)
             except self.connection_errors as exc:
-                if isinstance(exc, OSError) and get_errno(exc) == errno.EMFILE:
+                if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
                     raise  # Too many open files
                 maybe_shutdown()
                 try:
@@ -320,9 +321,10 @@ class Consumer(object):
         :param exc: The original exception instance.
 
         """
-        crit("Can't decode message body: %r (type:%r encoding:%r raw:%r')",
+        crit(MESSAGE_DECODE_ERROR,
              exc, message.content_type, message.content_encoding,
-             dump_body(message, message.body), exc_info=1)
+             safe_repr(message.headers), dump_body(message, message.body),
+             exc_info=1)
         message.ack()
 
     def on_close(self):
@@ -407,7 +409,8 @@ class Consumer(object):
         return MESSAGE_REPORT.format(dump_body(message, body),
                                      safe_repr(message.content_type),
                                      safe_repr(message.content_encoding),
-                                     safe_repr(message.delivery_info))
+                                     safe_repr(message.delivery_info),
+                                     safe_repr(message.headers))
 
     def on_unknown_message(self, body, message):
         warn(UNKNOWN_FORMAT, self._message_report(body, message))
@@ -435,21 +438,38 @@ class Consumer(object):
         on_invalid_task = self.on_invalid_task
         callbacks = self.on_task_message
 
-        def on_task_received(body, message):
-            try:
-                name = body['task']
-            except (KeyError, TypeError):
-                return on_unknown_message(body, message)
+        def on_task_received(message):
 
+            # payload will only be set for v1 protocol, since v2
+            # will defer deserializing the message body to the pool.
+            payload = None
             try:
-                strategies[name](message, body,
-                                 message.ack_log_error,
-                                 message.reject_log_error,
-                                 callbacks)
+                type_ = message.headers['task']                # protocol v2
+            except TypeError:
+                return on_unknown_message(None, message)
+            except KeyError:
+                payload = message.payload
+                try:
+                    type_, payload = payload['task'], payload  # protocol v1
+                except (TypeError, KeyError):
+                    return on_unknown_message(payload, message)
+            try:
+                strategy = strategies[type_]
             except KeyError as exc:
-                on_unknown_task(body, message, exc)
-            except InvalidTaskError as exc:
-                on_invalid_task(body, message, exc)
+                return on_unknown_task(payload, message, exc)
+            else:
+                try:
+                    strategy(
+                        message, payload, message.ack_log_error,
+                        message.reject_log_error, callbacks,
+                    )
+                except InvalidTaskError as exc:
+                    return on_invalid_task(payload, message, exc)
+                except MemoryError:
+                    raise
+                except Exception as exc:
+                    # XXX handle as internal error?
+                    return on_invalid_task(payload, message, exc)
 
         return on_task_received
 
@@ -524,12 +544,16 @@ class Events(bootsteps.StartStopStep):
 class Heart(bootsteps.StartStopStep):
     requires = (Events, )
 
-    def __init__(self, c, without_heartbeat=False, **kwargs):
+    def __init__(self, c, without_heartbeat=False, heartbeat_interval=None,
+                 **kwargs):
         self.enabled = not without_heartbeat
+        self.heartbeat_interval = heartbeat_interval
         c.heart = None
 
     def start(self, c):
-        c.heart = heartbeat.Heart(c.timer, c.event_dispatcher)
+        c.heart = heartbeat.Heart(
+            c.timer, c.event_dispatcher, self.heartbeat_interval,
+        )
         c.heart.start()
 
     def stop(self, c):
@@ -540,7 +564,7 @@ class Heart(bootsteps.StartStopStep):
 class Mingle(bootsteps.StartStopStep):
     label = 'Mingle'
     requires = (Events, )
-    compatible_transports = set(['amqp', 'redis'])
+    compatible_transports = {'amqp', 'redis'}
 
     def __init__(self, c, without_mingle=False, **kwargs):
         self.enabled = not without_mingle and self.compatible_transport(c.app)
@@ -579,11 +603,27 @@ class Tasks(bootsteps.StartStopStep):
 
     def start(self, c):
         c.update_strategies()
+
+        # - RabbitMQ 3.3 completely redefines how basic_qos works..
+        # This will detect if the new qos smenatics is in effect,
+        # and if so make sure the 'apply_global' flag is set on qos updates.
+        qos_global = not c.connection.qos_semantics_matches_spec
+
+        # set initial prefetch count
+        c.connection.default_channel.basic_qos(
+            0, c.initial_prefetch_count, qos_global,
+        )
+
         c.task_consumer = c.app.amqp.TaskConsumer(
             c.connection, on_decode_error=c.on_decode_error,
         )
-        c.qos = QoS(c.task_consumer.qos, c.initial_prefetch_count)
-        c.qos.update()  # set initial prefetch count
+
+        def set_prefetch_count(prefetch_count):
+            return c.task_consumer.qos(
+                prefetch_count=prefetch_count,
+                apply_global=qos_global,
+            )
+        c.qos = QoS(set_prefetch_count, c.initial_prefetch_count)
 
     def stop(self, c):
         if c.task_consumer:
@@ -633,7 +673,7 @@ class Gossip(bootsteps.ConsumerStep):
     _cons_stamp_fields = itemgetter(
         'id', 'clock', 'hostname', 'pid', 'topic', 'action', 'cver',
     )
-    compatible_transports = set(['amqp', 'redis'])
+    compatible_transports = {'amqp', 'redis'}
 
     def __init__(self, c, without_gossip=False, interval=5.0, **kwargs):
         self.enabled = not without_gossip and self.compatible_transport(c.app)
@@ -648,6 +688,7 @@ class Gossip(bootsteps.ConsumerStep):
             self.state = c.app.events.State(
                 on_node_join=self.on_node_join,
                 on_node_leave=self.on_node_leave,
+                max_tasks_in_memory=1,
             )
             if c.hub:
                 c._mutex = DummyLock()
@@ -761,6 +802,10 @@ class Gossip(bootsteps.ConsumerStep):
 
     def on_message(self, prepare, message):
         _type = message.delivery_info['routing_key']
+
+        # For redis when `fanout_patterns=False` (See Issue #1882)
+        if _type.split('.', 1)[0] == 'task':
+            return
         try:
             handler = self.event_handlers[_type]
         except KeyError:

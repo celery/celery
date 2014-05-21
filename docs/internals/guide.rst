@@ -64,7 +64,7 @@ Naming
         Sometimes it makes sense to have a class mask as a function,
         and there is precedence for this in the stdlib (e.g.
         :class:`~contextlib.contextmanager`).  Celery examples include
-        :class:`~celery.subtask`, :class:`~celery.chord`,
+        :class:`~celery.signature`, :class:`~celery.chord`,
         ``inspect``, :class:`~kombu.utils.functional.promise` and more..
 
 - Factory functions and methods must be `CamelCase` (excluding verbs):
@@ -179,8 +179,8 @@ can't co-exist in the same process space, this later posed a problem
 for using Celery with frameworks that doesn't have this limitation.
 
 Therefore the app concept was introduced.  When using apps you use 'celery'
-objects instead of importing things from celery submodules, this sadly
-also means that Celery essentially has two API's.
+objects instead of importing things from celery submodules, this
+(unfortunately) also means that Celery essentially has two API's.
 
 Here's an example using Celery in single-mode:
 
@@ -305,3 +305,30 @@ Module Overview
 - celery.contrib
 
     Additional public code that doesn't fit into any other namespace.
+
+Worker overview
+===============
+
+* `celery.bin.worker:Worker`
+
+   This is the command-line interface to the worker.
+
+   Responsibilities:
+       * Daemonization when `--detach` set,
+       * dropping privileges when using `--uid`/`--gid` arguments
+       * Installs "concurrency patches" (eventlet/gevent monkey patches).
+
+  ``app.worker_main(argv)`` calls
+  ``instantiate('celery.bin.worker:Worker')(app).execute_from_commandline(argv)``
+
+* `app.Worker` -> `celery.apps.worker:Worker`
+
+   Responsibilities:
+   * sets up logging and redirects stdouts
+   * installs signal handlers (`TERM`/`HUP`/`STOP`/`USR1` (cry)/`USR2` (rdb))
+   * prints banner and warnings (e.g. pickle warning)
+   * handles the ``--purge`` argument
+
+* `app.WorkController` -> `celery.worker.WorkController`
+
+   This is the real worker, built up around bootsteps.

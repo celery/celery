@@ -26,12 +26,12 @@ from kombu.syn import detect_environment
 from celery import bootsteps
 from celery.bootsteps import RUN, TERMINATE
 from celery import concurrency as _concurrency
-from celery import platforms
 from celery import signals
 from celery.exceptions import (
     ImproperlyConfigured, WorkerTerminate, TaskRevokedError,
 )
 from celery.five import string_t, values
+from celery.platforms import EX_FAILURE, create_pidlock
 from celery.utils import default_nodename, worker_direct
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel, worker_logger as logger
@@ -73,10 +73,13 @@ class WorkController(object):
     pool = None
     semaphore = None
 
+    #: contains the exit code if a :exc:`SystemExit` event is handled.
+    exitcode = None
+
     class Blueprint(bootsteps.Blueprint):
         """Worker bootstep blueprint."""
         name = 'Worker'
-        default_steps = set([
+        default_steps = {
             'celery.worker.components:Hub',
             'celery.worker.components:Queues',
             'celery.worker.components:Pool',
@@ -86,8 +89,7 @@ class WorkController(object):
             'celery.worker.components:Consumer',
             'celery.worker.autoscale:WorkerComponent',
             'celery.worker.autoreload:WorkerComponent',
-
-        ])
+        }
 
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app or self.app
@@ -151,7 +153,7 @@ class WorkController(object):
 
     def on_start(self):
         if self.pidfile:
-            self.pidlock = platforms.create_pidlock(self.pidfile)
+            self.pidlock = create_pidlock(self.pidfile)
 
     def on_consumer_ready(self, consumer):
         pass
@@ -190,8 +192,8 @@ class WorkController(object):
             prev += tuple(includes)
             [self.app.loader.import_task_module(m) for m in includes]
         self.include = includes
-        task_modules = set(task.__class__.__module__
-                           for task in values(self.app.tasks))
+        task_modules = {task.__class__.__module__
+                        for task in values(self.app.tasks)}
         self.app.conf.CELERY_INCLUDE = tuple(set(prev) | task_modules)
 
     def prepare_args(self, **kwargs):
@@ -208,9 +210,11 @@ class WorkController(object):
             self.terminate()
         except Exception as exc:
             logger.error('Unrecoverable error: %r', exc, exc_info=True)
-            self.stop()
-        except (KeyboardInterrupt, SystemExit):
-            self.stop()
+            self.stop(exitcode=EX_FAILURE)
+        except SystemExit as exc:
+            self.stop(exitcode=exc.code)
+        except KeyboardInterrupt:
+            self.stop(exitcode=EX_FAILURE)
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
@@ -244,8 +248,10 @@ class WorkController(object):
         return (detect_environment() == 'default' and
                 self._conninfo.is_evented and not self.app.IS_WINDOWS)
 
-    def stop(self, in_sighandler=False):
+    def stop(self, in_sighandler=False, exitcode=None):
         """Graceful shutdown of the worker server."""
+        if exitcode is not None:
+            self.exitcode = exitcode
         if self.blueprint.state == RUN:
             self.signal_consumer_close()
             if not in_sighandler or self.pool.signal_safe:

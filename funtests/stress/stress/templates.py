@@ -23,7 +23,12 @@ def template(name=None):
 
 def use_template(app, template='default'):
     template = template.split(',')
-    app.after_configure = partial(mixin_templates, template[1:])
+
+    # mixin the rest of the templates when the config is needed
+    @app.on_after_configure.connect(weak=False)
+    def load_template(sender, source, **kwargs):
+        mixin_templates(template[1:], source)
+
     app.config_from_object(templates[template[0]])
 
 
@@ -56,6 +61,7 @@ class default(object):
               exchange=Exchange(CSTRESS_QUEUE),
               routing_key=CSTRESS_QUEUE),
     ]
+    CELERY_MAX_CACHED_RESULTS = -1
     BROKER_URL = os.environ.get('CSTRESS_BROKER', 'amqp://')
     CELERY_RESULT_BACKEND = os.environ.get('CSTRESS_BACKEND', 'rpc://')
     CELERYD_PREFETCH_MULTIPLIER = int(os.environ.get('CSTRESS_PREFETCH', 10))
@@ -64,13 +70,19 @@ class default(object):
         'interval_max': 2,
         'interval_step': 0.1,
     }
+    CELERY_TASK_PROTOCOL = 2
 
 
 @template()
 class redis(default):
     BROKER_URL = os.environ.get('CSTRESS_BROKER', 'redis://')
-    CELERY_RESULT_BACKEND = os.environ.get('CSTRESS_bACKEND', 'redis://')
-    BROKER_TRANSPORT_OPTIONS = {'fanout_prefix': True}
+    CELERY_RESULT_BACKEND = os.environ.get(
+        'CSTRESS_BACKEND', 'redis://?new_join=1',
+    )
+    BROKER_TRANSPORT_OPTIONS = {
+        'fanout_prefix': True,
+        'fanout_patterns': True,
+    }
 
 
 @template()
@@ -100,3 +112,20 @@ class confirms(default):
 class events(default):
     CELERY_SEND_EVENTS = True
     CELERY_SEND_TASK_SENT_EVENT = True
+
+
+@template()
+class execv(default):
+    CELERYD_FORCE_EXECV = True
+
+
+@template()
+class sqs(default):
+    BROKER_URL='sqs://'
+    BROKER_TRANSPORT_OPTIONS = {
+        'region': os.environ.get('AWS_REGION', 'us-east-1'),
+    }
+
+@template()
+class proto1(default):
+    CELERY_TASK_PROTOCOL = 1

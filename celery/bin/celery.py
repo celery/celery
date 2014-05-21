@@ -8,12 +8,14 @@ The :program:`celery` umbrella command.
 """
 from __future__ import absolute_import, unicode_literals
 
-import anyjson
+import numbers
 import os
 import sys
 
 from functools import partial
 from importlib import import_module
+
+from kombu.utils import json
 
 from celery.five import string_t, values
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
@@ -61,7 +63,7 @@ if DEBUG:  # pragma: no cover
 
 
 def determine_exit_status(ret):
-    if isinstance(ret, int):
+    if isinstance(ret, numbers.Integral):
         return ret
     return EX_OK if ret else EX_FAILURE
 
@@ -161,12 +163,12 @@ class call(Command):
         # Positional args.
         args = kw.get('args') or ()
         if isinstance(args, string_t):
-            args = anyjson.loads(args)
+            args = json.loads(args)
 
         # Keyword args.
         kwargs = kw.get('kwargs') or {}
         if isinstance(kwargs, string_t):
-            kwargs = anyjson.loads(kwargs)
+            kwargs = json.loads(kwargs)
 
         # Expires can be int/float.
         expires = kw.get('expires') or None
@@ -571,10 +573,10 @@ class shell(Command):  # pragma: no cover
                        'signature': celery.signature}
 
         if not without_tasks:
-            self.locals.update(dict(
-                (task.__name__, task) for task in values(self.app.tasks)
-                if not task.name.startswith('celery.')),
-            )
+            self.locals.update({
+                task.__name__: task for task in values(self.app.tasks)
+                if not task.name.startswith('celery.')
+            })
 
         if force_python:
             return self.invoke_fallback_shell()
@@ -702,7 +704,7 @@ class CeleryCommand(Command):
             helps = '{self.prog_name} {command} --help'
         else:
             helps = '{self.prog_name} --help'
-        self.error(self.colored.magenta("Error: {0}".format(exc)))
+        self.error(self.colored.magenta('Error: {0}'.format(exc)))
         self.error("""Please try '{0}'""".format(helps.format(
             self=self, command=command,
         )))
@@ -715,11 +717,33 @@ class CeleryCommand(Command):
                 if value.startswith('--'):
                     rest.append(value)
                 elif value.startswith('-'):
-                    rest.extend([value] + [argv[index + 1]])
-                    index += 1
+                    # we eat the next argument even though we don't know
+                    # if this option takes an argument or not.
+                    # instead we will assume what is the command name in the
+                    # return statements below.
+                    try:
+                        nxt = argv[index + 1]
+                        if nxt.startswith('-'):
+                            # is another option
+                            rest.append(value)
+                        else:
+                            # is (maybe) a value for this option
+                            rest.extend([value, nxt])
+                            index += 1
+                    except IndexError:
+                        rest.append(value)
+                        break
                 else:
-                    return argv[index:] + rest
+                    break
                 index += 1
+            if argv[index:]:
+                # if there are more arguments left then divide and swap
+                # we assume the first argument in argv[i:] is the command
+                # name.
+                return argv[index:] + rest
+            # if there are no more arguments then the last arg in rest'
+            # must be the command.
+            [rest.pop()] + rest
         return []
 
     def prepare_prog_name(self, name):

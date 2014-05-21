@@ -13,7 +13,6 @@ from __future__ import absolute_import
 import os
 import time
 import threading
-import warnings
 
 from collections import deque
 from contextlib import contextmanager
@@ -35,14 +34,6 @@ __all__ = ['Events', 'Event', 'EventDispatcher', 'EventReceiver']
 event_exchange = Exchange('celeryev', type='topic')
 
 _TZGETTER = itemgetter('utcoffset', 'timestamp')
-
-W_YAJL = """
-anyjson is currently using the yajl library.
-This json implementation is broken, it severely truncates floats
-so timestamps will not work.
-
-Please uninstall yajl or force anyjson to use a different library.
-"""
 
 CLIENT_CLOCK_SKEW = -1
 
@@ -112,7 +103,7 @@ class EventDispatcher(object):
     You need to :meth:`close` this after use.
 
     """
-    DISABLED_TRANSPORTS = set(['sql'])
+    DISABLED_TRANSPORTS = {'sql'}
 
     app = None
 
@@ -124,7 +115,7 @@ class EventDispatcher(object):
 
     def __init__(self, connection=None, hostname=None, enabled=True,
                  channel=None, buffer_while_offline=True, app=None,
-                 serializer=None, groups=None):
+                 serializer=None, groups=None, delivery_mode=1):
         self.app = app_or_default(app or self.app)
         self.connection = connection
         self.channel = channel
@@ -139,6 +130,7 @@ class EventDispatcher(object):
         self.groups = set(groups or [])
         self.tzoffset = [-time.timezone, -time.altzone]
         self.clock = self.app.clock
+        self.delivery_mode = delivery_mode
         if not connection and channel:
             self.connection = channel.connection.client
         self.enabled = enabled
@@ -150,12 +142,6 @@ class EventDispatcher(object):
             self.enable()
         self.headers = {'hostname': self.hostname}
         self.pid = os.getpid()
-        self.warn_if_yajl()
-
-    def warn_if_yajl(self):
-        import anyjson
-        if anyjson.implementation.name == 'yajl':
-            warnings.warn(UserWarning(W_YAJL))
 
     def __enter__(self):
         return self
@@ -213,6 +199,7 @@ class EventDispatcher(object):
                 declare=[exchange],
                 serializer=self.serializer,
                 headers=self.headers,
+                delivery_mode=self.delivery_mode,
             )
 
     def send(self, type, blind=False, **fields):
@@ -300,7 +287,7 @@ class EventReceiver(ConsumerMixin):
         self.adjust_clock = self.clock.adjust
         self.forward_clock = self.clock.forward
         if accept is None:
-            accept = set([self.app.conf.CELERY_EVENT_SERIALIZER, 'json'])
+            accept = {self.app.conf.CELERY_EVENT_SERIALIZER, 'json'}
         self.accept = accept
 
     def _get_queue_arguments(self):

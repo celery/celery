@@ -8,7 +8,6 @@ from copy import deepcopy
 from pickle import loads, dumps
 
 from amqp import promise
-from kombu import Exchange
 
 from celery import shared_task, current_app
 from celery import app as _app
@@ -252,14 +251,14 @@ class test_App(AppCase):
             _state._task_stack.pop()
 
     def test_task_not_shared(self):
-        with patch('celery.app.base.shared_task') as sh:
+        with patch('celery.app.base.connect_on_app_finalize') as sh:
             @self.app.task(shared=False)
             def foo():
                 pass
             self.assertFalse(sh.called)
 
     def test_task_compat_with_filter(self):
-        with self.Celery(accept_magic_kwargs=True) as app:
+        with self.Celery() as app:
             check = Mock()
 
             def filter(task):
@@ -272,7 +271,7 @@ class test_App(AppCase):
             check.assert_called_with(foo)
 
     def test_task_with_filter(self):
-        with self.Celery(accept_magic_kwargs=False) as app:
+        with self.Celery() as app:
             check = Mock()
 
             def filter(task):
@@ -336,10 +335,13 @@ class test_App(AppCase):
         def aawsX():
             pass
 
-        with patch('celery.app.amqp.TaskProducer.publish_task') as dt:
-            aawsX.apply_async((4, 5))
-            args = dt.call_args[0][1]
-            self.assertEqual(args, ('hello', 4, 5))
+        with patch('celery.app.amqp.AMQP.create_task_message') as create:
+            with patch('celery.app.amqp.AMQP.send_task_message') as send:
+                create.return_value = Mock(), Mock(), Mock(), Mock()
+                aawsX.apply_async((4, 5))
+                args = create.call_args[0][2]
+                self.assertEqual(args, ('hello', 4, 5))
+                self.assertTrue(send.called)
 
     def test_apply_async_adds_children(self):
         from celery._state import _task_stack
@@ -549,14 +551,14 @@ class test_App(AppCase):
         # Test passing in a string and make sure the string
         # gets there untouched
         self.app.conf.BROKER_FAILOVER_STRATEGY = 'foo-bar'
-        self.assertEquals(
+        self.assertEqual(
             self.app.connection('amqp:////value').failover_strategy,
             'foo-bar',
         )
 
         # Try passing in None
         self.app.conf.BROKER_FAILOVER_STRATEGY = None
-        self.assertEquals(
+        self.assertEqual(
             self.app.connection('amqp:////value').failover_strategy,
             itertools.cycle,
         )
@@ -566,7 +568,7 @@ class test_App(AppCase):
             yield True
 
         self.app.conf.BROKER_FAILOVER_STRATEGY = my_failover_strategy
-        self.assertEquals(
+        self.assertEqual(
             self.app.connection('amqp:////value').failover_strategy,
             my_failover_strategy,
         )
@@ -609,22 +611,23 @@ class test_App(AppCase):
             chan.close()
         assert conn.transport_cls == 'memory'
 
-        prod = self.app.amqp.TaskProducer(
-            conn, exchange=Exchange('foo_exchange'),
-            send_sent_event=True,
+        message = self.app.amqp.create_task_message(
+            'id', 'footask', (), {}, create_sent_event=True,
         )
 
+        prod = self.app.amqp.Producer(conn)
         dispatcher = Dispatcher()
-        self.assertTrue(prod.publish_task('footask', (), {},
-                                          exchange='moo_exchange',
-                                          routing_key='moo_exchange',
-                                          event_dispatcher=dispatcher))
+        self.app.amqp.send_task_message(
+            prod, 'footask', message,
+            exchange='moo_exchange', routing_key='moo_exchange',
+            event_dispatcher=dispatcher,
+        )
         self.assertTrue(dispatcher.sent)
         self.assertEqual(dispatcher.sent[0][0], 'task-sent')
-        self.assertTrue(prod.publish_task('footask', (), {},
-                                          event_dispatcher=dispatcher,
-                                          exchange='bar_exchange',
-                                          routing_key='bar_exchange'))
+        self.app.amqp.send_task_message(
+            prod, 'footask', message, event_dispatcher=dispatcher,
+            exchange='bar_exchange', routing_key='bar_exchange',
+        )
 
     def test_error_mail_sender(self):
         x = ErrorMail.subject % {'name': 'task_name',
@@ -644,7 +647,7 @@ class test_App(AppCase):
 
 class test_defaults(AppCase):
 
-    def test_str_to_bool(self):
+    def test_strtobool(self):
         for s in ('false', 'no', '0'):
             self.assertFalse(defaults.strtobool(s))
         for s in ('true', 'yes', '1'):

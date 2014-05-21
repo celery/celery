@@ -19,15 +19,6 @@ class test_backends(AppCase):
                 expect_cls,
             )
 
-    def test_get_backend_cache(self):
-        backends.get_backend_cls.clear()
-        hits = backends.get_backend_cls.hits
-        misses = backends.get_backend_cls.misses
-        self.assertTrue(backends.get_backend_cls('amqp', self.app.loader))
-        self.assertEqual(backends.get_backend_cls.misses, misses + 1)
-        self.assertTrue(backends.get_backend_cls('amqp', self.app.loader))
-        self.assertEqual(backends.get_backend_cls.hits, hits + 1)
-
     def test_unknown_backend(self):
         with self.assertRaises(ImportError):
             backends.get_backend_cls('fasodaopjeqijwqe', self.app.loader)

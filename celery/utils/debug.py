@@ -6,7 +6,7 @@
     Utilities for debugging memory usage.
 
 """
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 
@@ -41,8 +41,10 @@ _mem_sample = []
 def _on_blocking(signum, frame):
     import inspect
     raise RuntimeError(
-        'Blocking detection timed-out at: %s' % (
-            inspect.getframeinfo(frame), ))
+        'Blocking detection timed-out at: {0}'.format(
+            inspect.getframeinfo(frame)
+        )
+    )
 
 
 @contextmanager

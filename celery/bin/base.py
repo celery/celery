@@ -68,7 +68,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import random
 import re
-import socket
 import sys
 import warnings
 import json
@@ -86,7 +85,7 @@ from celery.five import items, string, string_t
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
 from celery.utils import term
 from celery.utils import text
-from celery.utils import NODENAME_DEFAULT, nodesplit
+from celery.utils import node_format, host_format
 from celery.utils.imports import symbol_by_name, import_from_cwd
 
 try:
@@ -106,7 +105,6 @@ Try --help?
 
 find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
 find_rst_ref = re.compile(r':\w+:`(.+?)`')
-find_sformat = re.compile(r'%(\w)')
 
 __all__ = ['Error', 'UsageError', 'Extensions', 'HelpFormatter',
            'Command', 'Option', 'daemon_options']
@@ -375,9 +373,10 @@ class Command(object):
 
     def prepare_args(self, options, args):
         if options:
-            options = dict((k, self.expanduser(v))
-                           for k, v in items(vars(options))
-                           if not k.startswith('_'))
+            options = {
+                k: self.expanduser(v)
+                for k, v in items(vars(options)) if not k.startswith('_')
+            }
         args = [self.expanduser(arg) for arg in args]
         self.check_args(args)
         return options, args
@@ -530,7 +529,12 @@ class Command(object):
                 opt = opts.get(arg)
                 if opt:
                     if opt.takes_value():
-                        acc[opt.dest] = args[index + 1]
+                        try:
+                            acc[opt.dest] = args[index + 1]
+                        except IndexError:
+                            raise ValueError(
+                                'Missing required argument for {0}'.format(
+                                    arg))
                         index += 1
                     elif opt.action == 'store_true':
                         acc[opt.dest] = True
@@ -561,20 +565,10 @@ class Command(object):
         pass
 
     def node_format(self, s, nodename, **extra):
-        name, host = nodesplit(nodename)
-        return self._simple_format(
-            s, host, n=name or NODENAME_DEFAULT, **extra)
+        return node_format(s, nodename, **extra)
 
-    def simple_format(self, s, **extra):
-        return self._simple_format(s, socket.gethostname(), **extra)
-
-    def _simple_format(self, s, host,
-                       match=find_sformat, expand=r'\1', **keys):
-        if s:
-            name, _, domain = host.partition('.')
-            keys = dict({'%': '%', 'h': host, 'n': name, 'd': domain}, **keys)
-            return match.sub(lambda m: keys[m.expand(expand)], s)
-        return s
+    def host_format(self, s, **extra):
+        return host_format(s, **extra)
 
     def _get_default_app(self, *args, **kwargs):
         from celery._state import get_current_app

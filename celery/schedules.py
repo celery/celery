@@ -9,6 +9,7 @@
 """
 from __future__ import absolute_import
 
+import numbers
 import re
 
 from collections import namedtuple
@@ -20,8 +21,8 @@ from . import current_app
 from .five import range, string_t
 from .utils import is_iterable
 from .utils.timeutils import (
-    timedelta_seconds, weekday, maybe_timedelta, remaining,
-    humanize_seconds, timezone, maybe_make_aware, ffwd
+    weekday, maybe_timedelta, remaining, humanize_seconds,
+    timezone, maybe_make_aware, ffwd
 )
 from .datastructures import AttributeDict
 
@@ -115,7 +116,7 @@ class schedule(object):
         """
         last_run_at = self.maybe_make_aware(last_run_at)
         rem_delta = self.remaining_estimate(last_run_at)
-        remaining_s = timedelta_seconds(rem_delta)
+        remaining_s = max(rem_delta.total_seconds(), 0)
         if remaining_s == 0:
             return schedstate(is_due=True, next=self.seconds)
         return schedstate(is_due=False, next=remaining_s)
@@ -141,7 +142,7 @@ class schedule(object):
 
     @property
     def seconds(self):
-        return timedelta_seconds(self.run_every)
+        return max(self.run_every.total_seconds(), 0)
 
     @property
     def human_seconds(self):
@@ -382,7 +383,7 @@ class crontab(schedule):
 
             int         (like 7)
             str         (like '3-5,*/15', '*', or 'monday')
-            set         (like set([0,15,30,45]))
+            set         (like {0,15,30,45}
             list        (like [8-17])
 
         And convert it to an (expanded) set representing all time unit
@@ -401,8 +402,8 @@ class crontab(schedule):
         week.
 
         """
-        if isinstance(cronspec, int):
-            result = set([cronspec])
+        if isinstance(cronspec, numbers.Integral):
+            result = {cronspec}
         elif isinstance(cronspec, string_t):
             result = crontab_parser(max_, min_).parse(cronspec)
         elif isinstance(cronspec, set):
@@ -561,11 +562,11 @@ class crontab(schedule):
 
         """
         rem_delta = self.remaining_estimate(last_run_at)
-        rem = timedelta_seconds(rem_delta)
+        rem = max(rem_delta.total_seconds(), 0)
         due = rem == 0
         if due:
             rem_delta = self.remaining_estimate(self.now())
-            rem = timedelta_seconds(rem_delta)
+            rem = max(rem_delta.total_seconds(), 0)
         return schedstate(due, rem)
 
     def __eq__(self, other):
@@ -583,7 +584,7 @@ class crontab(schedule):
 
 def maybe_schedule(s, relative=False, app=None):
     if s is not None:
-        if isinstance(s, int):
+        if isinstance(s, numbers.Integral):
             s = timedelta(seconds=s)
         if isinstance(s, timedelta):
             return schedule(s, relative, app=app)

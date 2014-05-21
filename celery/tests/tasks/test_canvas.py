@@ -59,6 +59,14 @@ class test_Signature(CanvasCase):
         self.assertEqual(SIG.options, {'task_id': 'TASK_ID'})
         self.assertEqual(SIG.subtask_type, '')
 
+    def test_link_on_scalar(self):
+        x = Signature('TASK', link=Signature('B'))
+        self.assertTrue(x.options['link'])
+        x.link(Signature('C'))
+        self.assertIsInstance(x.options['link'], list)
+        self.assertIn(Signature('B'), x.options['link'])
+        self.assertIn(Signature('C'), x.options['link'])
+
     def test_replace(self):
         x = Signature('TASK', ('A'), {})
         self.assertTupleEqual(x.replace(args=('B', )).args, ('B', ))
@@ -273,6 +281,9 @@ class test_group(CanvasCase):
     def test_call_empty_group(self):
         x = group(app=self.app)
         self.assertFalse(len(x()))
+        x.delay()
+        x.apply_async()
+        x()
 
     def test_skew(self):
         g = group([self.add.s(i, i) for i in range(10)])

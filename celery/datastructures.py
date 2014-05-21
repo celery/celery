@@ -186,9 +186,9 @@ class DependencyGraph(object):
         graph = DependencyGraph()
         components = self._tarjan72()
 
-        NC = dict((node, component)
-                  for component in components
-                  for node in component)
+        NC = {
+            node: component for component in components for node in component
+        }
         for component in components:
             graph.add_arc(component)
         for node in self:
@@ -555,7 +555,7 @@ class LimitedSet(object):
     """Kind-of Set with limitations.
 
     Good for when you need to test for membership (`a in set`),
-    but the list might become to big.
+    but the list might become too big.
 
     :keyword maxlen: Maximum number of members before we start
                      evicting expired members.

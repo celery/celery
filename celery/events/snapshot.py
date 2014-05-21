@@ -10,7 +10,7 @@
     in :mod:`djcelery.snapshots` in the `django-celery` distribution.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 from kombu.utils.limits import TokenBucket
 

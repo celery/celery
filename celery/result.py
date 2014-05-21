@@ -11,12 +11,11 @@ from __future__ import absolute_import
 import time
 import warnings
 
-from collections import deque
+from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
 
 from kombu.utils import cached_property
-from kombu.utils.compat import OrderedDict
 
 from . import current_app
 from . import states
@@ -87,6 +86,7 @@ class AsyncResult(ResultBase):
         self.backend = backend or self.app.backend
         self.task_name = task_name
         self.parent = parent
+        self._cache = None
 
     def as_tuple(self):
         parent = self.parent
@@ -95,6 +95,7 @@ class AsyncResult(ResultBase):
 
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
+        self._cache = None
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
@@ -118,7 +119,8 @@ class AsyncResult(ResultBase):
                                 terminate=terminate, signal=signal,
                                 reply=wait, timeout=timeout)
 
-    def get(self, timeout=None, propagate=True, interval=0.5):
+    def get(self, timeout=None, propagate=True, interval=0.5, no_ack=True,
+            follow_parents=True):
         """Wait until task is ready, and return its result.
 
         .. warning::
@@ -133,6 +135,10 @@ class AsyncResult(ResultBase):
            retrieve the result.  Note that this does not have any effect
            when using the amqp result store backend, as it does not
            use polling.
+        :keyword no_ack: Enable amqp no ack (automatically acknowledge
+            message).  If this is :const:`False` then the message will
+            **not be acked**.
+        :keyword follow_parents: Reraise any exception raised by parent task.
 
         :raises celery.exceptions.TimeoutError: if `timeout` is not
             :const:`None` and the result does not arrive within `timeout`
@@ -143,14 +149,31 @@ class AsyncResult(ResultBase):
 
         """
         assert_will_not_block()
-        if propagate and self.parent:
-            for node in reversed(list(self._parents())):
-                node.get(propagate=True, timeout=timeout, interval=interval)
+        on_interval = None
+        if follow_parents and propagate and self.parent:
+            on_interval = self._maybe_reraise_parent_error
+            on_interval()
 
-        return self.backend.wait_for(self.id, timeout=timeout,
-                                     propagate=propagate,
-                                     interval=interval)
+        if self._cache:
+            if propagate:
+                self.maybe_reraise()
+            return self.result
+
+        try:
+            return self.backend.wait_for(
+                self.id, timeout=timeout,
+                propagate=propagate,
+                interval=interval,
+                on_interval=on_interval,
+                no_ack=no_ack,
+            )
+        finally:
+            self._get_task_meta()  # update self._cache
     wait = get  # deprecated alias to :meth:`get`.
+
+    def _maybe_reraise_parent_error(self):
+        for node in reversed(list(self._parents())):
+            node.maybe_reraise()
 
     def _parents(self):
         node = self.parent
@@ -238,6 +261,10 @@ class AsyncResult(ResultBase):
         """Returns :const:`True` if the task failed."""
         return self.state == states.FAILURE
 
+    def maybe_reraise(self):
+        if self.state in states.PROPAGATE_STATES:
+            raise self.result
+
     def build_graph(self, intermediate=False, formatter=None):
         graph = DependencyGraph(
             formatter=formatter or GraphFormatter(root=self.id, shape='oval'),
@@ -280,6 +307,9 @@ class AsyncResult(ResultBase):
     def __reduce_args__(self):
         return self.id, self.backend, self.task_name, None, self.parent
 
+    def __del__(self):
+        self._cache = None
+
     @cached_property
     def graph(self):
         return self.build_graph()
@@ -290,22 +320,41 @@ class AsyncResult(ResultBase):
 
     @property
     def children(self):
-        children = self.backend.get_children(self.id)
+        return self._get_task_meta().get('children')
+
+    def _get_task_meta(self):
+        if self._cache is None:
+            meta = self.backend.get_task_meta(self.id)
+            if meta:
+                state = meta['status']
+                if state == states.SUCCESS or state in states.PROPAGATE_STATES:
+                    return self._set_cache(meta)
+            return meta
+        return self._cache
+
+    def _set_cache(self, d):
+        state, children = d['status'], d.get('children')
+        if state in states.EXCEPTION_STATES:
+            d['result'] = self.backend.exception_to_python(d['result'])
         if children:
-            return [result_from_tuple(child, self.app) for child in children]
+            d['children'] = [
+                result_from_tuple(child, self.app) for child in children
+            ]
+        self._cache = d
+        return d
 
     @property
     def result(self):
         """When the task has been executed, this contains the return value.
         If the task raised an exception, this will be the exception
         instance."""
-        return self.backend.get_result(self.id)
+        return self._get_task_meta()['result']
     info = result
 
     @property
     def traceback(self):
         """Get the traceback of a failed task."""
-        return self.backend.get_traceback(self.id)
+        return self._get_task_meta().get('traceback')
 
     @property
     def state(self):
@@ -337,7 +386,7 @@ class AsyncResult(ResultBase):
                 then contains the tasks return value.
 
         """
-        return self.backend.get_status(self.id)
+        return self._get_task_meta()['status']
     status = state
 
     @property
@@ -426,6 +475,10 @@ class ResultSet(ResultBase):
         """
         return any(result.failed() for result in self.results)
 
+    def maybe_reraise(self):
+        for result in self.results:
+            result.maybe_reraise()
+
     def waiting(self):
         """Are any of the tasks incomplete?
 
@@ -506,7 +559,8 @@ class ResultSet(ResultBase):
             if timeout and elapsed >= timeout:
                 raise TimeoutError('The operation timed out')
 
-    def get(self, timeout=None, propagate=True, interval=0.5, callback=None):
+    def get(self, timeout=None, propagate=True, interval=0.5,
+            callback=None, no_ack=True):
         """See :meth:`join`
 
         This is here for API compatibility with :class:`AsyncResult`,
@@ -516,9 +570,10 @@ class ResultSet(ResultBase):
         """
         return (self.join_native if self.supports_native_join else self.join)(
             timeout=timeout, propagate=propagate,
-            interval=interval, callback=callback)
+            interval=interval, callback=callback, no_ack=no_ack)
 
-    def join(self, timeout=None, propagate=True, interval=0.5, callback=None):
+    def join(self, timeout=None, propagate=True, interval=0.5,
+             callback=None, no_ack=True):
         """Gathers the results of all tasks as a list in order.
 
         .. note::
@@ -557,6 +612,10 @@ class ResultSet(ResultBase):
                            ``result = app.AsyncResult(task_id)`` (both will
                            take advantage of the backend cache anyway).
 
+        :keyword no_ack: Automatic message acknowledgement (Note that if this
+            is set to :const:`False` then the messages *will not be
+            acknowledged*).
+
         :raises celery.exceptions.TimeoutError: if ``timeout`` is not
             :const:`None` and the operation takes longer than ``timeout``
             seconds.
@@ -573,16 +632,17 @@ class ResultSet(ResultBase):
                 remaining = timeout - (monotonic() - time_start)
                 if remaining <= 0.0:
                     raise TimeoutError('join operation timed out')
-            value = result.get(timeout=remaining,
-                               propagate=propagate,
-                               interval=interval)
+            value = result.get(
+                timeout=remaining, propagate=propagate,
+                interval=interval, no_ack=no_ack,
+            )
             if callback:
                 callback(result.id, value)
             else:
                 results.append(value)
         return results
 
-    def iter_native(self, timeout=None, interval=0.5):
+    def iter_native(self, timeout=None, interval=0.5, no_ack=True):
         """Backend optimized version of :meth:`iterate`.
 
         .. versionadded:: 2.2
@@ -597,12 +657,13 @@ class ResultSet(ResultBase):
         results = self.results
         if not results:
             return iter([])
-        return results[0].backend.get_many(
-            set(r.id for r in results), timeout=timeout, interval=interval,
+        return self.backend.get_many(
+            set(r.id for r in results),
+            timeout=timeout, interval=interval, no_ack=no_ack,
         )
 
     def join_native(self, timeout=None, propagate=True,
-                    interval=0.5, callback=None):
+                    interval=0.5, callback=None, no_ack=True):
         """Backend optimized version of :meth:`join`.
 
         .. versionadded:: 2.2
@@ -615,11 +676,11 @@ class ResultSet(ResultBase):
 
         """
         assert_will_not_block()
-        order_index = None if callback else dict(
-            (result.id, i) for i, result in enumerate(self.results)
-        )
+        order_index = None if callback else {
+            result.id: i for i, result in enumerate(self.results)
+        }
         acc = None if callback else [None for _ in range(len(self))]
-        for task_id, meta in self.iter_native(timeout, interval):
+        for task_id, meta in self.iter_native(timeout, interval, no_ack):
             value = meta['result']
             if propagate and meta['status'] in states.PROPAGATE_STATES:
                 raise value
@@ -656,7 +717,14 @@ class ResultSet(ResultBase):
 
     @property
     def supports_native_join(self):
-        return self.results[0].supports_native_join
+        try:
+            return self.results[0].supports_native_join
+        except IndexError:
+            pass
+
+    @property
+    def backend(self):
+        return self.app.backend if self.app else self.results[0].backend
 
 
 class GroupResult(ResultSet):
@@ -771,6 +839,10 @@ class EagerResult(AsyncResult):
         self._result = ret_value
         self._state = state
         self._traceback = traceback
+
+    def _get_task_meta(self):
+        return {'task_id': self.id, 'result': self._result, 'status':
+                self._state, 'traceback': self._traceback}
 
     def __reduce__(self):
         return self.__class__, self.__reduce_args__()

@@ -47,7 +47,7 @@ messages, and every 10 seconds.
 
     from celery.contrib.batches import Batches
 
-    wot_api_target = "https://api.mywot.com/0.4/public_link_json"
+    wot_api_target = 'https://api.mywot.com/0.4/public_link_json'
 
     @app.task(base=Batches, flush_every=100, flush_interval=10)
     def wot_api(requests):
@@ -64,7 +64,7 @@ messages, and every 10 seconds.
         domains = [urlparse(url).netloc for url in urls]
         response = requests.get(
             wot_api_target,
-            params={"hosts": ('/').join(set(domains)) + '/'}
+            params={'hosts': ('/').join(set(domains)) + '/'}
         )
         return [response.json[domain] for domain in domains]
 
@@ -88,7 +88,7 @@ from itertools import count
 from celery.task import Task
 from celery.five import Empty, Queue
 from celery.utils.log import get_logger
-from celery.worker.job import Request
+from celery.worker.request import Request
 from celery.utils import noop
 
 __all__ = ['Batches']
@@ -226,7 +226,8 @@ class Batches(Task):
                 self.flush(requests)
         if not requests:
             logger.debug('Batches: Cancelling timer: Nothing in buffer.')
-            self._tref.cancel()  # cancel timer.
+            if self._tref:
+                self._tref.cancel()  # cancel timer.
             self._tref = None
 
     def apply_buffer(self, requests, args=(), kwargs={}):

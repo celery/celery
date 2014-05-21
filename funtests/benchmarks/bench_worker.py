@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 
 import os
 import sys
@@ -8,13 +8,6 @@ os.environ.update(
     NOSETPS='yes',
     USE_FAST_LOCALS='yes',
 )
-
-import anyjson
-JSONIMP = os.environ.get('JSONIMP')
-if JSONIMP:
-    anyjson.force_implementation(JSONIMP)
-
-print('anyjson implementation: {0!r}'.format(anyjson.implementation.name))
 
 from celery import Celery, group
 from celery.five import range

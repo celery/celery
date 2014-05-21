@@ -24,8 +24,12 @@ name using the fully qualified form::
 """
 from celery import Celery
 
-app = Celery('myapp', broker='amqp://guest@localhost//')
-
+app = Celery(
+    'myapp',
+    broker='amqp://guest@localhost//',
+    # add result backend here if needed.
+    #backend='rpc'
+)
 
 @app.task()
 def add(x, y):

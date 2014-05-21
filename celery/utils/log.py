@@ -9,6 +9,7 @@
 from __future__ import absolute_import, print_function
 
 import logging
+import numbers
 import os
 import sys
 import threading
@@ -110,7 +111,7 @@ def get_task_logger(name):
 
 
 def mlevel(level):
-    if level and not isinstance(level, int):
+    if level and not isinstance(level, numbers.Integral):
         return LOG_LEVELS[level.upper()]
     return level
 
@@ -134,11 +135,13 @@ class ColorFormatter(logging.Formatter):
         return r
 
     def format(self, record):
-        sformat = logging.Formatter.format
+        msg = logging.Formatter.format(self, record)
         color = self.colors.get(record.levelname)
 
+        # reset exception info later for other handlers...
+        einfo = sys.exc_info() if record.exc_info == 1 else record.exc_info
+
         if color and self.use_color:
-            msg = record.msg
             try:
                 # safe_str will repr the color object
                 # and color will break on non-string objects
@@ -146,18 +149,22 @@ class ColorFormatter(logging.Formatter):
                 # Issue #427
                 try:
                     if isinstance(msg, string_t):
-                        record.msg = text_t(color(safe_str(msg)))
-                    else:
-                        record.msg = safe_str(color(msg))
+                        return text_t(color(safe_str(msg)))
+                    return safe_str(color(msg))
                 except UnicodeDecodeError:
-                    record.msg = safe_str(msg)  # skip colors
+                    return safe_str(msg)  # skip colors
             except Exception as exc:
-                record.msg = '<Unrepresentable {0!r}: {1!r}>'.format(
-                    type(msg), exc)
-                record.exc_info = True
-            return sformat(self, record)
+                prev_msg, record.exc_info, record.msg = (
+                    record.msg, 1, '<Unrepresentable {0!r}: {1!r}>'.format(
+                        type(msg), exc
+                    ),
+                )
+                try:
+                    return logging.Formatter.format(self, record)
+                finally:
+                    record.msg, record.exc_info = prev_msg, einfo
         else:
-            return safe_str(sformat(self, record))
+            return safe_str(msg)
 
 
 class LoggingProxy(object):
@@ -281,4 +288,10 @@ def get_multiprocessing_logger():
 def reset_multiprocessing_logger():
     if mputil and hasattr(mputil, '_logger'):
         mputil._logger = None
+
+
+def current_process_index(base=1):
+    if current_process:
+        index = getattr(current_process(), 'index', None)
+        return index + base if index is not None else index
 ensure_process_aware_logger()

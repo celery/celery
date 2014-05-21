@@ -73,7 +73,7 @@ class DummyClient(object):
 
     def get_multi(self, keys):
         cache = self.cache
-        return dict((k, cache[k]) for k in keys if k in cache)
+        return {k: cache[k] for k in keys if k in cache}
 
     def set(self, key, value, *args, **kwargs):
         self.cache[key] = value

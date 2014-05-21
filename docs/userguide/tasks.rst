@@ -266,9 +266,9 @@ The request defines the following attributes:
 :called_directly: This flag is set to true if the task was not
                   executed by the worker.
 
-:callbacks: A list of subtasks to be called if this task returns successfully.
+:callbacks: A list of signatures to be called if this task returns successfully.
 
-:errback: A list of subtasks to be called if this task fails.
+:errback: A list of signatures to be called if this task fails.
 
 :utc: Set to true the caller has utc enabled (:setting:`CELERY_ENABLE_UTC`).
 
@@ -472,7 +472,7 @@ General
 
 .. attribute:: Task.throws
 
-    Optional list of expected error classes that should not be regarded
+    Optional tuple of expected error classes that should not be regarded
     as an actual error.
 
     Errors in this list will be reported as a failure to the result backend,
@@ -514,10 +514,14 @@ General
     If it is an integer or float, it is interpreted as "tasks per second".
 
     The rate limits can be specified in seconds, minutes or hours
-    by appending `"/s"`, `"/m"` or `"/h"` to the value.
-    Example: `"100/m"` (hundred tasks a minute).  Default is the
-    :setting:`CELERY_DEFAULT_RATE_LIMIT` setting, which if not specified means
-    rate limiting for tasks is disabled by default.
+    by appending `"/s"`, `"/m"` or `"/h"` to the value.  Tasks will be evenly
+    distributed over the specified time frame.
+
+    Example: `"100/m"` (hundred tasks a minute). This will enforce a minimum
+    delay of 10ms between starting two tasks.
+    
+    Default is the :setting:`CELERY_DEFAULT_RATE_LIMIT` setting,
+    which if not specified means rate limiting for tasks is disabled by default.
 
 .. attribute:: Task.time_limit
 
@@ -878,7 +882,7 @@ The task may raise :exc:`~@Ignore` to force the worker to ignore the
 task.  This means that no state will be recorded for the task, but the
 message is still acknowledged (removed from queue).
 
-This is can be used if you want to implement custom revoke-like
+This can be used if you want to implement custom revoke-like
 functionality, or manually store the result of a task.
 
 Example keeping revoked tasks in a Redis set:
@@ -902,7 +906,7 @@ Example that stores results manually:
     @app.task(bind=True)
     def get_tweets(self, user):
         timeline = twitter.get_timeline(user)
-        self.update_state(sate=states.SUCCESS, meta=timeline)
+        self.update_state(state=states.SUCCESS, meta=timeline)
         raise Ignore()
 
 .. _task-semipred-reject:
@@ -1297,7 +1301,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 
 Here I instead created a chain of tasks by linking together
-different :func:`~celery.subtask`'s.
+different :func:`~celery.signature`'s.
 You can read about chains and other powerful constructs
 at :ref:`designing-workflows`.
 

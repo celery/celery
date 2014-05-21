@@ -212,11 +212,26 @@ class PromiseProxy(Proxy):
 
     """
 
+    __slots__ = ('__pending__', )
+
     def _get_current_object(self):
         try:
             return object.__getattribute__(self, '__thing')
         except AttributeError:
             return self.__evaluate__()
+
+    def __then__(self, fun, *args, **kwargs):
+        if self.__evaluated__():
+            return fun(*args, **kwargs)
+        from collections import deque
+        try:
+            pending = object.__getattribute__(self, '__pending__')
+        except AttributeError:
+            pending = None
+        if pending is None:
+            pending = deque()
+            object.__setattr__(self, '__pending__', pending)
+        pending.append((fun, args, kwargs))
 
     def __evaluated__(self):
         try:
@@ -234,15 +249,31 @@ class PromiseProxy(Proxy):
                              '_Proxy__kwargs')):
         try:
             thing = Proxy._get_current_object(self)
+        except:
+            raise
+        else:
             object.__setattr__(self, '__thing', thing)
-            return thing
-        finally:
             for attr in _clean:
                 try:
                     object.__delattr__(self, attr)
                 except AttributeError:  # pragma: no cover
                     # May mask errors so ignore
                     pass
+            try:
+                pending = object.__getattribute__(self, '__pending__')
+            except AttributeError:
+                pass
+            else:
+                try:
+                    while pending:
+                        fun, args, kwargs = pending.popleft()
+                        fun(*args, **kwargs)
+                finally:
+                    try:
+                        object.__delattr__(self, '__pending__')
+                    except AttributeError:
+                        pass
+            return thing
 
 
 def maybe_evaluate(obj):

@@ -28,9 +28,9 @@ Notes
 
     - Java/C, etc. can use a thrift/protobuf document as the body
 
-- Dispatches to actor based on ``c_type``, ``c_meth`` headers
+- Dispatches to actor based on ``task``, ``meth`` headers
 
-    ``c_meth`` is unused by python, but may be used in the future
+    ``meth`` is unused by python, but may be used in the future
     to specify class+method pairs.
 
 - Chain gains a dedicated field.
@@ -50,8 +50,9 @@ Notes
 
 - ``correlation_id`` replaces ``task_id`` field.
 
+- ``root_id`` and ``parent_id`` fields helps keep track of workflows.
 
-- ``c_shadow`` lets you specify a different name for logs, monitors
+- ``shadow`` lets you specify a different name for logs, monitors
   can be used for e.g. meta tasks that calls any function::
 
     from celery.utils.imports import qualname
@@ -101,11 +102,14 @@ Definition
     }
     headers = {
         'lang': (string)'py'
-        'c_type': (string)task,
+        'task': (string)task,
+        'id': (uuid)task_id,
+        'root_id': (uuid)root_id,
+        'parent_id': (uuid)parent_id,
 
         # optional
-        'c_meth': (string)unused,
-        'c_shadow': (string)replace_name,
+        'meth': (string)unused,
+        'shadow': (string)replace_name,
         'eta': (iso8601)eta,
         'expires'; (iso8601)expires,
         'callbacks': (list)Signature,
@@ -131,7 +135,7 @@ Example
         message=json.dumps([[2, 2], {}]),
         application_headers={
             'lang': 'py',
-            'c_type': 'proj.tasks.add',
+            'task': 'proj.tasks.add',
             'chain': [
                 # reversed chain list
                 {'task': 'proj.tasks.add', 'args': (8, )},

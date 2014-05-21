@@ -15,6 +15,8 @@ import re
 from collections import Mapping
 from types import ModuleType
 
+from kombu.utils.url import maybe_sanitize_url
+
 from celery.datastructures import ConfigurationView
 from celery.five import items, string_t, values
 from celery.platforms import pyimplementation
@@ -117,11 +119,11 @@ class Settings(ConfigurationView):
 
     def table(self, with_defaults=False, censored=True):
         filt = filter_hidden_settings if censored else lambda v: v
-        return filt(dict(
-            (k, v) for k, v in items(
+        return filt({
+            k: v for k, v in items(
                 self if with_defaults else self.without_defaults())
             if k.isupper() and not k.startswith('_')
-        ))
+        })
 
     def humanize(self, with_defaults=False, censored=True):
         """Return a human readable string showing changes to the
@@ -152,7 +154,6 @@ class AppPickler(object):
         return dict(main=main, loader=loader, backend=backend, amqp=amqp,
                     changes=changes, events=events, log=log, control=control,
                     set_as_current=False,
-                    accept_magic_kwargs=accept_magic_kwargs,
                     config_source=config_source)
 
     def construct(self, cls, **kwargs):
@@ -175,14 +176,18 @@ def filter_hidden_settings(conf):
     def maybe_censor(key, value, mask='*' * 8):
         if isinstance(value, Mapping):
             return filter_hidden_settings(value)
-        if isinstance(value, string_t) and HIDDEN_SETTINGS.search(key):
-            return mask
-        if isinstance(key, string_t) and 'BROKER_URL' in key.upper():
-            from kombu import Connection
-            return Connection(value).as_uri(mask=mask)
+        if isinstance(key, string_t):
+            if HIDDEN_SETTINGS.search(key):
+                return mask
+            elif 'BROKER_URL' in key.upper():
+                from kombu import Connection
+                return Connection(value).as_uri(mask=mask)
+            elif key.upper() in ('CELERY_RESULT_BACKEND', 'CELERY_BACKEND'):
+                return maybe_sanitize_url(value, mask=mask)
+
         return value
 
-    return dict((k, maybe_censor(k, v)) for k, v in items(conf))
+    return {k: maybe_censor(k, v) for k, v in items(conf)}
 
 
 def bugreport(app):

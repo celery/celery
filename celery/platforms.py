@@ -12,6 +12,7 @@ from __future__ import absolute_import, print_function
 import atexit
 import errno
 import math
+import numbers
 import os
 import platform as _platform
 import signal as _signal
@@ -23,7 +24,6 @@ from collections import namedtuple
 from billiard import current_process
 # fileno used to be in this module
 from kombu.utils import maybe_fileno
-from kombu.utils.compat import get_errno
 from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
@@ -35,6 +35,7 @@ _setproctitle = try_import('setproctitle')
 resource = try_import('resource')
 pwd = try_import('pwd')
 grp = try_import('grp')
+mputil = try_import('multiprocessing.util')
 
 __all__ = ['EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
            'IS_OSX', 'IS_WINDOWS', 'pyimplementation', 'LockFailed',
@@ -49,6 +50,7 @@ EX_OK = getattr(os, 'EX_OK', 0)
 EX_FAILURE = 1
 EX_UNAVAILABLE = getattr(os, 'EX_UNAVAILABLE', 69)
 EX_USAGE = getattr(os, 'EX_USAGE', 64)
+EX_CANTCREAT = getattr(os, 'EX_CANTCREAT', 73)
 
 SYSTEM = _platform.system()
 IS_OSX = SYSTEM == 'Darwin'
@@ -258,7 +260,8 @@ def create_pidlock(pidfile):
 def _create_pidlock(pidfile):
     pidlock = Pidfile(pidfile)
     if pidlock.is_locked() and not pidlock.remove_if_stale():
-        raise SystemExit(PIDLOCKED.format(pidfile, pidlock.read_pid()))
+        print(PIDLOCKED.format(pidfile, pidlock.read_pid()), file=sys.stderr)
+        raise SystemExit(EX_CANTCREAT)
     pidlock.acquire()
     return pidlock
 
@@ -266,9 +269,10 @@ def _create_pidlock(pidfile):
 if hasattr(os, 'closerange'):
 
     def close_open_fds(keep=None):
-        keep = list(uniq(sorted(filter(None, (
-            maybe_fileno(f) for f in keep or []
-        )))))
+        # must make sure this is 0-inclusive (Issue #1882)
+        keep = list(uniq(sorted(
+            f for f in map(maybe_fileno, keep or []) if f is not None
+        )))
         maxfd = get_fdmax(default=2048)
         kL, kH = iter([-1] + keep), iter(keep + [maxfd])
         for low, high in zip_longest(kL, kH):
@@ -290,11 +294,13 @@ class DaemonContext(object):
     _is_open = False
 
     def __init__(self, pidfile=None, workdir=None, umask=None,
-                 fake=False, after_chdir=None, **kwargs):
+                 fake=False, after_chdir=None, after_forkers=True,
+                 **kwargs):
         self.workdir = workdir or DAEMON_WORKDIR
         self.umask = DAEMON_UMASK if umask is None else umask
         self.fake = fake
         self.after_chdir = after_chdir
+        self.after_forkers = after_forkers
         self.stdfds = (sys.stdin, sys.stdout, sys.stderr)
 
     def redirect_to_null(self, fd):
@@ -313,9 +319,12 @@ class DaemonContext(object):
             if self.after_chdir:
                 self.after_chdir()
 
-            close_open_fds(self.stdfds)
-            for fd in self.stdfds:
-                self.redirect_to_null(maybe_fileno(fd))
+            if not self.fake:
+                close_open_fds(self.stdfds)
+                for fd in self.stdfds:
+                    self.redirect_to_null(maybe_fileno(fd))
+                if self.after_forkers and mputil is not None:
+                    mputil._run_after_forkers()
 
             self._is_open = True
     __enter__ = open
@@ -521,7 +530,7 @@ def maybe_drop_privileges(uid=None, gid=None):
         try:
             setuid(0)
         except OSError as exc:
-            if get_errno(exc) != errno.EPERM:
+            if exc.errno != errno.EPERM:
                 raise
             pass  # Good: cannot restore privileges.
         else:
@@ -606,7 +615,7 @@ class Signals(object):
 
     def signum(self, signal_name):
         """Get signal number from signal name."""
-        if isinstance(signal_name, int):
+        if isinstance(signal_name, numbers.Integral):
             return signal_name
         if not isinstance(signal_name, string_t) \
                 or not signal_name.isupper():

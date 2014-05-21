@@ -177,7 +177,7 @@ For a complete listing of the command-line options available, do:
 
     $  celery worker --help
 
-There also several other commands available, and help is also available:
+There are also several other commands available, and help is also available:
 
 .. code-block:: bash
 

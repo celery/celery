@@ -11,12 +11,13 @@ from __future__ import absolute_import
 import logging
 
 from kombu.async.timer import to_timestamp
-from kombu.utils.encoding import safe_repr
+from kombu.five import buffer_t
 
+from celery.exceptions import InvalidTaskError
 from celery.utils.log import get_logger
 from celery.utils.timeutils import timezone
 
-from .job import Request
+from .request import Request, create_request_cls
 from .state import task_reserved
 
 __all__ = ['default']
@@ -24,12 +25,31 @@ __all__ = ['default']
 logger = get_logger(__name__)
 
 
+def proto1_to_proto2(message, body):
+    """Converts Task message protocol 1 arguments to protocol 2.
+
+    Returns tuple of ``(body, headers, already_decoded_status, utc)``
+
+    """
+    try:
+        args, kwargs = body['args'], body['kwargs']
+        kwargs.items
+    except KeyError:
+        raise InvalidTaskError('Message does not have args/kwargs')
+    except AttributeError:
+        raise InvalidTaskError(
+            'Task keyword arguments must be a mapping',
+        )
+    body['headers'] = message.headers
+    return (args, kwargs), body, True, body.get('utc', True)
+
+
 def default(task, app, consumer,
             info=logger.info, error=logger.error, task_reserved=task_reserved,
-            to_system_tz=timezone.to_system):
+            to_system_tz=timezone.to_system, bytes=bytes, buffer_t=buffer_t,
+            proto1_to_proto2=proto1_to_proto2):
     hostname = consumer.hostname
     eventer = consumer.event_dispatcher
-    Req = Request
     connection_errors = consumer.connection_errors
     _does_info = logger.isEnabledFor(logging.INFO)
     events = eventer and eventer.enabled
@@ -40,15 +60,28 @@ def default(task, app, consumer,
     bucket = consumer.task_buckets[task.name]
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
+    body_can_be_buffer = consumer.pool.body_can_be_buffer
+    Req = create_request_cls(Request, task, consumer.pool, hostname, eventer)
+
+    revoked_tasks = consumer.controller.state.revoked
 
     def task_message_handler(message, body, ack, reject, callbacks,
                              to_timestamp=to_timestamp):
-        req = Req(body, on_ack=ack, on_reject=reject,
-                  app=app, hostname=hostname,
-                  eventer=eventer, task=task,
-                  connection_errors=connection_errors,
-                  message=message)
-        if req.revoked():
+        if body is None:
+            body, headers, decoded, utc = (
+                message.body, message.headers, False, True,
+            )
+            if not body_can_be_buffer:
+                body = bytes(body) if isinstance(body, buffer_t) else body
+        else:
+            body, headers, decoded, utc = proto1_to_proto2(message, body)
+        req = Req(
+            message,
+            on_ack=ack, on_reject=reject, app=app, hostname=hostname,
+            eventer=eventer, task=task, connection_errors=connection_errors,
+            body=body, headers=headers, decoded=decoded, utc=utc,
+        )
+        if (req.expires or req.id in revoked_tasks) and req.revoked():
             return
 
         if _does_info:
@@ -58,7 +91,7 @@ def default(task, app, consumer,
             send_event(
                 'task-received',
                 uuid=req.id, name=req.name,
-                args=safe_repr(req.args), kwargs=safe_repr(req.kwargs),
+                args='', kwargs='',
                 retries=req.request_dict.get('retries', 0),
                 eta=req.eta and req.eta.isoformat(),
                 expires=req.expires and req.expires.isoformat(),
@@ -83,7 +116,7 @@ def default(task, app, consumer,
                     return limit_task(req, bucket, 1)
             task_reserved(req)
             if callbacks:
-                [callback() for callback in callbacks]
+                [callback(req) for callback in callbacks]
             handle(req)
 
     return task_message_handler

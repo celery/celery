@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from kombu.async import Hub, READ, WRITE, ERR
-from kombu.async.hub import repr_flag, _rcb
+from kombu.async.debug import callback_for, repr_flag, _rcb
 from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
 
 from celery.five import range
@@ -54,7 +54,11 @@ class test_LaxBoundedSemaphore(Case):
         self.assertFalse(c3.called)
 
         x.release()
+        self.assertEqual(x.value, 0)
+        x.release()
         self.assertEqual(x.value, 1)
+        x.release()
+        self.assertEqual(x.value, 2)
         c3.assert_called_with(3)
 
     def test_bounded(self):
@@ -83,7 +87,7 @@ class test_LaxBoundedSemaphore(Case):
         x.grow(2)
         cb2.assert_called_with(2)
         cb3.assert_called_with(3)
-        self.assertEqual(x.value, 3)
+        self.assertEqual(x.value, 2)
         self.assertEqual(x.initial_value, 3)
 
         self.assertFalse(x._waiting)
@@ -234,11 +238,11 @@ class test_Hub(Case):
         hub.readers = {6: reader}
         hub.writers = {7: writer}
 
-        self.assertEqual(hub._callback_for(6, READ), reader)
-        self.assertEqual(hub._callback_for(7, WRITE), writer)
+        self.assertEqual(callback_for(hub, 6, READ), reader)
+        self.assertEqual(callback_for(hub, 7, WRITE), writer)
         with self.assertRaises(KeyError):
-            hub._callback_for(6, WRITE)
-        self.assertEqual(hub._callback_for(6, WRITE, 'foo'), 'foo')
+            callback_for(hub, 6, WRITE)
+        self.assertEqual(callback_for(hub, 6, WRITE, 'foo'), 'foo')
 
     def test_add_remove_readers(self):
         hub = Hub()
@@ -251,7 +255,7 @@ class test_Hub(Case):
 
         P.register.assert_has_calls([
             call(10, hub.READ | hub.ERR),
-            call(File(11), hub.READ | hub.ERR),
+            call(11, hub.READ | hub.ERR),
         ], any_order=True)
 
         self.assertEqual(hub.readers[10], (read_A, (10, )))
@@ -289,7 +293,7 @@ class test_Hub(Case):
 
         P.register.assert_has_calls([
             call(20, hub.WRITE),
-            call(File(21), hub.WRITE),
+            call(21, hub.WRITE),
         ], any_order=True)
 
         self.assertEqual(hub.writers[20], (write_A, ()))

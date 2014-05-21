@@ -71,7 +71,7 @@ to process it.
     The taskset this task is part of (if any).
 
 * chord
-    :`subtask`:
+    :`Signature`:
 
     .. versionadded:: 2.3
 
@@ -88,18 +88,18 @@ to process it.
     should be used.
 
 * callbacks
-    :`<list>subtask`:
+    :`<list>Signature`:
 
     .. versionadded:: 3.0
 
-    A list of subtasks to apply if the task exited successfully.
+    A list of signatures to call if the task exited successfully.
 
 * errbacks
-    :`<list>subtask`:
+    :`<list>Signature`:
 
     .. versionadded:: 3.0
 
-    A list of subtasks to apply if an error occurs while executing the task.
+    A list of signatures to call if an error occurs while executing the task.
 
 * timelimit
     :`<tuple>(float, float)`:

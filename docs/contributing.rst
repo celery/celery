@@ -4,6 +4,22 @@
  Contributing
 ==============
 
+Welcome!
+
+This document is fairly extensive and you are not really expected
+to study this in detail for small contributions;
+
+    The most important rule is that contributing must be easy
+    and that the community is friendly and not nitpicking on details
+    such as coding style.
+
+If you're reporting a bug you should read the Reporting bugs section
+below to ensure that your bug report contains enough information
+to successfully diagnose the issue, and if you're contributing code
+you should try to mimic the conventions you see surrounding the code
+you are working on, but in the end all patches will be cleaned up by
+the person merging the changes so don't worry too much.
+
 .. contents::
     :local:
 
@@ -32,7 +48,7 @@ Be considerate.
 Your work will be used by other people, and you in turn will depend on the
 work of others.  Any decision you take will affect users and colleagues, and
 we expect you to take those consequences into account when making decisions.
-Even if it's not obvious at the time, our contributions to Ubuntu will impact
+Even if it's not obvious at the time, our contributions to Celery will impact
 the work of others.  For example, changes to code, infrastructure, policy,
 documentation and translations during a release may negatively impact
 others work.
@@ -106,8 +122,8 @@ Security
 --------
 
 You must never report security related issues, vulnerabilities or bugs
-including senstive information to the bug tracker, or elsewhere in public.
-Instead sensitive bugs must be sent by email to security@celeryproject.org.
+including sensitive information to the bug tracker, or elsewhere in public.
+Instead sensitive bugs must be sent by email to ``security@celeryproject.org``.
 
 If you'd like to submit the information encrypted our PGP key is::
 
@@ -149,38 +165,66 @@ Bugs can always be described to the :ref:`mailing-list`, but the best
 way to report an issue and to ensure a timely response is to use the
 issue tracker.
 
-1) Create a GitHub account.
+1) **Create a GitHub account.**
 
 You need to `create a GitHub account`_ to be able to create new issues
 and participate in the discussion.
 
 .. _`create a GitHub account`: https://github.com/signup/free
 
-2) Determine if your bug is really a bug.
+2) **Determine if your bug is really a bug.**
 
 You should not file a bug if you are requesting support.  For that you can use
 the :ref:`mailing-list`, or :ref:`irc-channel`.
 
-3) Make sure your bug hasn't already been reported.
+3) **Make sure your bug hasn't already been reported.**
 
 Search through the appropriate Issue tracker.  If a bug like yours was found,
 check if you have new information that could be reported to help
 the developers fix the bug.
 
-4) Collect information about the bug.
+4) **Check if you're using the latest version.**
+
+A bug could be fixed by some other improvements and fixes - it might not have an
+existing report in the bug tracker. Make sure you're using the latest releases of
+celery, billiard and kombu.
+
+5) **Collect information about the bug.**
 
 To have the best chance of having a bug fixed, we need to be able to easily
 reproduce the conditions that caused it.  Most of the time this information
 will be from a Python traceback message, though some bugs might be in design,
 spelling or other errors on the website/docs/code.
 
-If the error is from a Python traceback, include it in the bug report.
+    A) If the error is from a Python traceback, include it in the bug report.
 
-We also need to know what platform you're running (Windows, OSX, Linux, etc),
-the version of your Python interpreter, and the version of Celery, and related
-packages that you were running when the bug occurred.
+    B) We also need to know what platform you're running (Windows, OS X, Linux,
+       etc.), the version of your Python interpreter, and the version of Celery,
+       and related packages that you were running when the bug occurred.
 
-5) Submit the bug.
+    C) If you are reporting a race condition or a deadlock, tracebacks can be
+       hard to get or might not be that useful. Try to inspect the process to
+       get more diagnostic data. Some ideas:
+
+       * Enable celery's :ref:`breakpoint signal <breakpoint_signal>` and use it
+         to inspect the process's state.  This will allow you to open a
+         :mod:`pdb` session.
+       * Collect tracing data using strace_(Linux), dtruss (OSX) and ktrace(BSD),
+         ltrace_ and lsof_.
+
+    D) Include the output from the `celery report` command:
+
+        .. code-block:: bash
+
+            $ celery -A proj report
+
+        This will also include your configuration settings and it try to
+        remove values for keys known to be sensitive, but make sure you also
+        verify the information before submitting so that it doesn't contain
+        confidential information like API tokens and authentication
+        credentials.
+
+6) **Submit the bug.**
 
 By default `GitHub`_ will email you to let you know when new comments have
 been made on your bug. In the event you've turned this feature off, you
@@ -188,6 +232,9 @@ should check back on occasion to ensure you don't miss any questions a
 developer trying to fix the bug might ask.
 
 .. _`GitHub`: http://github.com
+.. _`strace`: http://en.wikipedia.org/wiki/Strace
+.. _`ltrace`: http://en.wikipedia.org/wiki/Ltrace
+.. _`lsof`: http://en.wikipedia.org/wiki/Lsof
 
 .. _issue-trackers:
 
@@ -198,9 +245,10 @@ Bugs for a package in the Celery ecosystem should be reported to the relevant
 issue tracker.
 
 * Celery: http://github.com/celery/celery/issues/
-* Django-Celery: http://github.com/celery/django-celery/issues
-* Celery-Pylons: http://bitbucket.org/ianschenck/celery-pylons/issues
 * Kombu: http://github.com/celery/kombu/issues
+* pyamqp: http://github.com/celery/pyamqp/issues
+* librabbitmq: http://github.com/celery/librabbitmq/issues
+* Django-Celery: http://github.com/celery/django-celery/issues
 
 If you are unsure of the origin of the bug you can ask the
 :ref:`mailing-list`, or just use the Celery issue tracker.
@@ -208,7 +256,7 @@ If you are unsure of the origin of the bug you can ask the
 Contributors guide to the codebase
 ==================================
 
-There's a seperate section for internal details,
+There's a separate section for internal details,
 including details about the codebase and a style guide.
 
 Read :ref:`internals-guide` for more!
@@ -281,18 +329,13 @@ for the 2.2.x series is named ``2.2``.  Previously these were named
 
 The versions we currently maintain is:
 
-* 2.3
+* 3.1
 
   This is the current series.
 
-* 2.2
+* 3.0
 
-  This is the previous series, and the last version to support Python 2.4.
-
-* 2.1
-
-  This is the last version to use the ``carrot`` AMQP library.
-  Recent versions use ``kombu``.
+  This is the previous series, and the last version to support Python 2.5.
 
 Archived branches
 -----------------
@@ -304,6 +347,12 @@ on a series that is no longer officially supported.
 An archived version is named ``X.Y-archived``.
 
 Our currently archived branches are:
+
+* 2.5-archived
+
+* 2.4-archived
+
+* 2.3-archived
 
 * 2.1-archived
 
@@ -363,13 +412,7 @@ to upstream changes:
 .. code-block:: bash
 
     $ cd celery
-
-.. code-block:: bash
-
     $ git remote add upstream git://github.com/celery/celery.git
-
-.. code-block:: bash
-
     $ git fetch upstream
 
 If you need to pull in new changes from upstream you should
@@ -388,8 +431,6 @@ If you need to work on a different branch than ``master`` you can
 fetch and checkout a remote branch like this::
 
     git checkout --track -b 3.0-devel origin/3.0-devel
-
-For a list of branches see :ref:`git-branches`.
 
 .. _`Fork a Repo`: http://help.github.com/fork-a-repo/
 .. _`Rebasing merge commits in git`:
@@ -465,11 +506,19 @@ the steps outlined here: http://bit.ly/koJoso
 Calculating test coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
+To calculate test coverage you must first install the :mod:`coverage` module.
+
+Installing the :mod:`coverage` module:
+
+.. code-block:: bash
+
+    $ pip install -U coverage
+
 Code coverage in HTML:
 
 .. code-block:: bash
 
-    $ nosetests --with-coverage3 --cover3-html
+    $ nosetests --with-coverage --cover-html
 
 The coverage output will then be located at
 :file:`celery/tests/cover/index.html`.
@@ -478,7 +527,7 @@ Code coverage in XML (Cobertura-style):
 
 .. code-block:: bash
 
-    $ nosetests --with-coverage3 --cover3-xml --cover3-xml-file=coverage.xml
+    $ nosetests --with-coverage --cover-xml --cover-xml-file=coverage.xml
 
 The coverage XML output will then be located at :file:`coverage.xml`
 
@@ -576,10 +625,15 @@ it should be located in :file:`docs/reference/`.
 For example if reference is missing for the module ``celery.worker.awesome``
 and this module is considered part of the public API, use the following steps:
 
+
+Use an existing file as a template:
+
 .. code-block:: bash
 
     $ cd docs/reference/
     $ cp celery.schedules.rst celery.worker.awesome.rst
+
+Edit the file using your favorite editor:
 
 .. code-block:: bash
 
@@ -588,11 +642,17 @@ and this module is considered part of the public API, use the following steps:
         # change every occurance of ``celery.schedules`` to
         # ``celery.worker.awesome``
 
+
+Edit the index using your favorite editor:
+
 .. code-block:: bash
 
     $ vim index.rst
 
         # Add ``celery.worker.awesome`` to the index.
+
+
+Commit your changes:
 
 .. code-block:: bash
 
@@ -727,7 +787,9 @@ is following the conventions.
 * Note that we use "new-style` relative imports when the distribution
   does not support Python versions below 2.5
 
-.. code-block:: python
+    This requires Python 2.5 or later:
+
+    .. code-block:: python
 
         from . import submodule
 
@@ -866,6 +928,16 @@ Messaging library.
 :CI: http://travis-ci.org/#!/celery/kombu
 :PyPI: http://pypi.python.org/pypi/kombu
 :docs: http://kombu.readthedocs.org
+
+amqp
+----
+
+Python AMQP 0.9.1 client.
+
+:git: https://github.com/celery/py-amqp
+:CI: http://travis-ci.org/#!/celery/py-amqp
+:PyPI: http://pypi.python.org/pypi/amqp
+:docs: http://amqp.readthedocs.org
 
 billiard
 --------

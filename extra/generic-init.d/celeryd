@@ -30,7 +30,7 @@
 #
 VERSION=10.0
 echo "celery init v${VERSION}."
-if [ "$EUID" != "0" ]; then
+if [ $(id -u) -ne 0 ]; then
     echo "Error: This program can only be used by the root user."
     echo "       Unprivileged users must use the 'celery multi' utility, "
     echo "       or 'celery worker --detach'."
@@ -58,10 +58,11 @@ CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/${SCRIPT_NAME}"}
 # Make sure executable configuration script is owned by root
 _config_sanity() {
     local path="$1"
-    local owner=$(stat -Lr "$path" | awk '{print $5}')
-    local perm=$(stat -Lr "$path" | awk '{print $3}')
+    local owner=$(ls -ld "$path" | awk '{print $3}')
+    local iwgrp=$(ls -ld "$path" | cut -b 6)
+    local iwoth=$(ls -ld "$path" | cut -b 9)
 
-    if [ "$owner" != "0" ]; then
+    if [ "$(id -u $owner)" != "0" ]; then
         echo "Error: Config script '$path' must be owned by root!"
         echo
         echo "Resolution:"
@@ -73,7 +74,7 @@ _config_sanity() {
         exit 1
     fi
 
-    if [ "$(($perm & 02))" -ne 0 ]; then  # S_IWOTH
+    if [ "$iwoth" != "-" ]; then  # S_IWOTH
         echo "Error: Config script '$path' cannot be writable by others!"
         echo
         echo "Resolution:"
@@ -84,7 +85,7 @@ _config_sanity() {
         echo "    $ sudo chmod 640 '$path'"
         exit 1
     fi
-    if [ "$(($perm & 020))" -ne 0 ]; then  # S_IWGRP
+    if [ "$iwgrp" != "-" ]; then  # S_IWGRP
         echo "Error: Config script '$path' cannot be writable by group!"
         echo
         echo "Resolution:"
@@ -291,6 +292,12 @@ check_status () {
 
     local one_failed=
     for pid_file in "$CELERYD_PID_DIR"/*.pid; do
+        if [ ! -r $pid_file ]; then
+            echo "${SCRIPT_NAME} is stopped: no pids were found"
+            one_failed=true
+            break
+        fi
+
         local node=`basename "$pid_file" .pid`
         local pid=`cat "$pid_file"`
         local cleaned_pid=`echo "$pid" | sed -e 's/[^0-9]//g'`

@@ -98,29 +98,11 @@ Deprecations
   Inferior to the ping remote control command.
   Will be removed in Celery 2.3.
 
-Removed deprecations
-====================
-
-* `celery.utils.timedelta_seconds`
-    Use: :func:`celery.utils.timeutils.timedelta_seconds`
-
-* `celery.utils.defaultdict`
-    Use: :func:`celery.utils.compat.defaultdict`
-
-* `celery.utils.all`
-    Use: :func:`celery.utils.compat.all`
-
-* `celery.task.apply_async`
-    Use app.send_task
-
-* `celery.task.tasks`
-    Use :data:`celery.registry.tasks`
-
 Aliases (Pending deprecation)
 =============================
 
 * celery.task.base
-    * .Task -> {app.create_task_cls}
+    * .Task -> {app.Task / :class:`celery.app.task.Task`}
 
 * celery.task.sets
     * .TaskSet -> {app.TaskSet}
@@ -226,7 +208,7 @@ App Dependency Tree
     * celery.apps.worker.Worker
         * celery.worker.WorkerController
             * celery.worker.consumer.Consumer
-                * celery.worker.job.TaskRequest
+                * celery.worker.request.Request
                 * celery.events.EventDispatcher
                 * celery.worker.control.ControlDispatch
                     * celery.woker.control.registry.Panel

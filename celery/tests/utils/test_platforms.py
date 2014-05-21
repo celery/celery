@@ -416,8 +416,10 @@ if not platforms.IS_WINDOWS:
             p = Pidfile.return_value = Mock()
             p.is_locked.return_value = True
             p.remove_if_stale.return_value = False
-            with self.assertRaises(SystemExit):
-                create_pidlock('/var/pid')
+            with override_stdouts() as (_, err):
+                with self.assertRaises(SystemExit):
+                    create_pidlock('/var/pid')
+                self.assertIn('already exists', err.getvalue())
 
             p.remove_if_stale.return_value = True
             ret = create_pidlock('/var/pid')

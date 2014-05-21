@@ -30,12 +30,12 @@ from time import time
 from weakref import ref
 
 from kombu.clocks import timetuple
-from kombu.utils import cached_property, kwdict
+from kombu.utils import cached_property
 
 from celery import states
 from celery.five import class_property, items, values
 from celery.utils import deprecated
-from celery.utils.functional import LRUCache
+from celery.utils.functional import LRUCache, memoize
 from celery.utils.log import get_logger
 
 PYPY = hasattr(sys, 'pypy_version_info')
@@ -54,8 +54,6 @@ Substantial drift from %s may mean clocks are out of sync.  Current drift is
 %s seconds.  [orig: %s recv: %s]
 """
 
-CAN_KWDICT = sys.version_info >= (2, 6, 5)
-
 logger = get_logger(__name__)
 warn = logger.warning
 
@@ -64,6 +62,14 @@ R_WORKER = '<Worker: {0.hostname} ({0.status_string} clock:{0.clock})'
 R_TASK = '<Task: {0.name}({0.uuid}) {0.state} clock:{0.clock}>'
 
 __all__ = ['Worker', 'Task', 'State', 'heartbeat_expires']
+
+
+@memoize(maxsize=1000, keyfun=lambda a, _: a[0])
+def _warn_drift(hostname, drift, local_received, timestamp):
+    # we use memoize here so the warning is only logged once per hostname
+    warn(DRIFT_WARNING, hostname, drift,
+         datetime.fromtimestamp(local_received),
+         datetime.fromtimestamp(timestamp))
 
 
 def heartbeat_expires(timestamp, freq=60,
@@ -78,7 +84,7 @@ def heartbeat_expires(timestamp, freq=60,
 
 
 def _depickle_task(cls, fields):
-    return cls(**(fields if CAN_KWDICT else kwdict(fields)))
+    return cls(**fields)
 
 
 def with_unique_field(attr):
@@ -158,9 +164,8 @@ class Worker(object):
                     return
                 drift = abs(int(local_received) - int(timestamp))
                 if drift > HEARTBEAT_DRIFT_MAX:
-                    warn(DRIFT_WARNING, self.hostname, drift,
-                         datetime.fromtimestamp(local_received),
-                         datetime.fromtimestamp(timestamp))
+                    _warn_drift(self.hostname, drift,
+                                local_received, timestamp)
                 if local_received:
                     hearts = len(heartbeats)
                     if hearts > hbmax - 1:
@@ -215,7 +220,7 @@ class Worker(object):
     def _defaults(cls):
         """Deprecated, to be removed in 3.3"""
         source = cls()
-        return dict((k, getattr(source, k)) for k in cls._fields)
+        return {k: getattr(source, k) for k in cls._fields}
 
 
 @with_unique_field('uuid')
@@ -288,9 +293,9 @@ class Task(object):
             # this state logically happens-before the current state, so merge.
             keep = self.merge_rules.get(state)
             if keep is not None:
-                fields = dict(
-                    (k, v) for k, v in items(fields) if k in keep
-                )
+                fields = {
+                    k: v for k, v in items(fields) if k in keep
+                }
             for key, value in items(fields):
                 setattr(self, key, value)
         else:
@@ -316,9 +321,9 @@ class Task(object):
 
     def as_dict(self):
         get = object.__getattribute__
-        return dict(
-            (k, get(self, k)) for k in self._fields
-        )
+        return {
+            k: get(self, k) for k in self._fields
+        }
 
     def __reduce__(self):
         return _depickle_task, (self.__class__, self.as_dict())
@@ -372,7 +377,7 @@ class Task(object):
     def merge(self, state, timestamp, fields):
         keep = self.merge_rules.get(state)
         if keep is not None:
-            fields = dict((k, v) for k, v in items(fields) if k in keep)
+            fields = {k: v for k, v in items(fields) if k in keep}
         for key, value in items(fields):
             setattr(self, key, value)
 
@@ -380,7 +385,7 @@ class Task(object):
     def _defaults(cls):
         """Deprecated, to be removed in 3.3."""
         source = cls()
-        return dict((k, getattr(source, k)) for k in source._fields)
+        return {k: getattr(source, k) for k in source._fields}
 
 
 class State(object):
@@ -429,9 +434,10 @@ class State(object):
 
     def _clear_tasks(self, ready=True):
         if ready:
-            in_progress = dict(
-                (uuid, task) for uuid, task in self.itertasks()
-                if task.state not in states.READY_STATES)
+            in_progress = {
+                uuid: task for uuid, task in self.itertasks()
+                if task.state not in states.READY_STATES
+            }
             self.tasks.clear()
             self.tasks.update(in_progress)
         else:

@@ -152,5 +152,13 @@ Michael Robellard, 2013/11/07
 Vsevolod Kulaga, 2013/11/16
 Ionel Cristian Mărieș, 2013/12/09
 Константин Подшумок, 2013/12/16
-Antoine Legrand, 2014/09/01
-Pepijn de Vos, 2014/15/01
+Antoine Legrand, 2014/01/09
+Pepijn de Vos, 2014/01/15
+Dan McGee, 2014/01/27
+Paul Kilgo, 2014/01/28
+Martin Davidsson, 2014/02/08
+Chris Clark, 2014/02/20
+Matthew Duggan, 2014/04/10
+Brian Bouterse, 2014/04/10
+Dmitry Malinovsky, 2014/04/28
+Luke Pomfrey, 2014/05/06

@@ -1,5 +1,6 @@
 coverage>=3.0
+coveralls
 redis
 #pymongo
 #SQLAlchemy
-#PyOpenSSL
+PyOpenSSL

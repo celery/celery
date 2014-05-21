@@ -54,65 +54,63 @@ class test_crontab_parser(AppCase):
 
     def test_parse_range_wraps(self):
         self.assertEqual(crontab_parser(12).parse('11-1'),
-                         set([11, 0, 1]))
+                         {11, 0, 1})
         self.assertEqual(crontab_parser(60, 1).parse('2-1'),
                          set(range(1, 60 + 1)))
 
     def test_parse_groups(self):
         self.assertEqual(crontab_parser().parse('1,2,3,4'),
-                         set([1, 2, 3, 4]))
+                         {1, 2, 3, 4})
         self.assertEqual(crontab_parser().parse('0,15,30,45'),
-                         set([0, 15, 30, 45]))
+                         {0, 15, 30, 45})
         self.assertEqual(crontab_parser(min_=1).parse('1,2,3,4'),
-                         set([1, 2, 3, 4]))
+                         {1, 2, 3, 4})
 
     def test_parse_steps(self):
         self.assertEqual(crontab_parser(8).parse('*/2'),
-                         set([0, 2, 4, 6]))
+                         {0, 2, 4, 6})
         self.assertEqual(crontab_parser().parse('*/2'),
-                         set(i * 2 for i in range(30)))
+                         {i * 2 for i in range(30)})
         self.assertEqual(crontab_parser().parse('*/3'),
-                         set(i * 3 for i in range(20)))
+                         {i * 3 for i in range(20)})
         self.assertEqual(crontab_parser(8, 1).parse('*/2'),
-                         set([1, 3, 5, 7]))
+                         {1, 3, 5, 7})
         self.assertEqual(crontab_parser(min_=1).parse('*/2'),
-                         set(i * 2 + 1 for i in range(30)))
+                         {i * 2 + 1 for i in range(30)})
         self.assertEqual(crontab_parser(min_=1).parse('*/3'),
-                         set(i * 3 + 1 for i in range(20)))
+                         {i * 3 + 1 for i in range(20)})
 
     def test_parse_composite(self):
-        self.assertEqual(crontab_parser(8).parse('*/2'), set([0, 2, 4, 6]))
-        self.assertEqual(crontab_parser().parse('2-9/5'), set([2, 7]))
-        self.assertEqual(crontab_parser().parse('2-10/5'), set([2, 7]))
+        self.assertEqual(crontab_parser(8).parse('*/2'), {0, 2, 4, 6})
+        self.assertEqual(crontab_parser().parse('2-9/5'), {2, 7})
+        self.assertEqual(crontab_parser().parse('2-10/5'), {2, 7})
         self.assertEqual(
             crontab_parser(min_=1).parse('55-5/3'),
-            set([55, 58, 1, 4]),
+            {55, 58, 1, 4},
         )
-        self.assertEqual(crontab_parser().parse('2-11/5,3'), set([2, 3, 7]))
+        self.assertEqual(crontab_parser().parse('2-11/5,3'), {2, 3, 7})
         self.assertEqual(
             crontab_parser().parse('2-4/3,*/5,0-21/4'),
-            set([0, 2, 4, 5, 8, 10, 12, 15, 16,
-                 20, 25, 30, 35, 40, 45, 50, 55]),
+            {0, 2, 4, 5, 8, 10, 12, 15, 16, 20, 25, 30, 35, 40, 45, 50, 55},
         )
         self.assertEqual(
             crontab_parser().parse('1-9/2'),
-            set([1, 3, 5, 7, 9]),
+            {1, 3, 5, 7, 9},
         )
-        self.assertEqual(crontab_parser(8, 1).parse('*/2'), set([1, 3, 5, 7]))
-        self.assertEqual(crontab_parser(min_=1).parse('2-9/5'), set([2, 7]))
-        self.assertEqual(crontab_parser(min_=1).parse('2-10/5'), set([2, 7]))
+        self.assertEqual(crontab_parser(8, 1).parse('*/2'), {1, 3, 5, 7})
+        self.assertEqual(crontab_parser(min_=1).parse('2-9/5'), {2, 7})
+        self.assertEqual(crontab_parser(min_=1).parse('2-10/5'), {2, 7})
         self.assertEqual(
             crontab_parser(min_=1).parse('2-11/5,3'),
-            set([2, 3, 7]),
+            {2, 3, 7},
         )
         self.assertEqual(
             crontab_parser(min_=1).parse('2-4/3,*/5,1-21/4'),
-            set([1, 2, 5, 6, 9, 11, 13, 16, 17,
-                 21, 26, 31, 36, 41, 46, 51, 56]),
+            {1, 2, 5, 6, 9, 11, 13, 16, 17, 21, 26, 31, 36, 41, 46, 51, 56},
         )
         self.assertEqual(
             crontab_parser(min_=1).parse('1-9/2'),
-            set([1, 3, 5, 7, 9]),
+            {1, 3, 5, 7, 9},
         )
 
     def test_parse_errors_on_empty_string(self):
@@ -148,11 +146,11 @@ class test_crontab_parser(AppCase):
     def test_expand_cronspec_eats_iterables(self):
         self.assertEqual(
             crontab._expand_cronspec(iter([1, 2, 3]), 100),
-            set([1, 2, 3]),
+            {1, 2, 3},
         )
         self.assertEqual(
             crontab._expand_cronspec(iter([1, 2, 3]), 100, 1),
-            set([1, 2, 3]),
+            {1, 2, 3},
         )
 
     def test_expand_cronspec_invalid_type(self):
@@ -408,7 +406,7 @@ class test_crontab_is_due(AppCase):
 
     def test_simple_crontab_spec(self):
         c = self.crontab(minute=30)
-        self.assertEqual(c.minute, set([30]))
+        self.assertEqual(c.minute, {30})
         self.assertEqual(c.hour, set(range(24)))
         self.assertEqual(c.day_of_week, set(range(7)))
         self.assertEqual(c.day_of_month, set(range(1, 32)))
@@ -416,13 +414,13 @@ class test_crontab_is_due(AppCase):
 
     def test_crontab_spec_minute_formats(self):
         c = self.crontab(minute=30)
-        self.assertEqual(c.minute, set([30]))
+        self.assertEqual(c.minute, {30})
         c = self.crontab(minute='30')
-        self.assertEqual(c.minute, set([30]))
+        self.assertEqual(c.minute, {30})
         c = self.crontab(minute=(30, 40, 50))
-        self.assertEqual(c.minute, set([30, 40, 50]))
-        c = self.crontab(minute=set([30, 40, 50]))
-        self.assertEqual(c.minute, set([30, 40, 50]))
+        self.assertEqual(c.minute, {30, 40, 50})
+        c = self.crontab(minute={30, 40, 50})
+        self.assertEqual(c.minute, {30, 40, 50})
 
     def test_crontab_spec_invalid_minute(self):
         with self.assertRaises(ValueError):
@@ -432,11 +430,11 @@ class test_crontab_is_due(AppCase):
 
     def test_crontab_spec_hour_formats(self):
         c = self.crontab(hour=6)
-        self.assertEqual(c.hour, set([6]))
+        self.assertEqual(c.hour, {6})
         c = self.crontab(hour='5')
-        self.assertEqual(c.hour, set([5]))
+        self.assertEqual(c.hour, {5})
         c = self.crontab(hour=(4, 8, 12))
-        self.assertEqual(c.hour, set([4, 8, 12]))
+        self.assertEqual(c.hour, {4, 8, 12})
 
     def test_crontab_spec_invalid_hour(self):
         with self.assertRaises(ValueError):
@@ -446,17 +444,17 @@ class test_crontab_is_due(AppCase):
 
     def test_crontab_spec_dow_formats(self):
         c = self.crontab(day_of_week=5)
-        self.assertEqual(c.day_of_week, set([5]))
+        self.assertEqual(c.day_of_week, {5})
         c = self.crontab(day_of_week='5')
-        self.assertEqual(c.day_of_week, set([5]))
+        self.assertEqual(c.day_of_week, {5})
         c = self.crontab(day_of_week='fri')
-        self.assertEqual(c.day_of_week, set([5]))
+        self.assertEqual(c.day_of_week, {5})
         c = self.crontab(day_of_week='tuesday,sunday,fri')
-        self.assertEqual(c.day_of_week, set([0, 2, 5]))
+        self.assertEqual(c.day_of_week, {0, 2, 5})
         c = self.crontab(day_of_week='mon-fri')
-        self.assertEqual(c.day_of_week, set([1, 2, 3, 4, 5]))
+        self.assertEqual(c.day_of_week, {1, 2, 3, 4, 5})
         c = self.crontab(day_of_week='*/2')
-        self.assertEqual(c.day_of_week, set([0, 2, 4, 6]))
+        self.assertEqual(c.day_of_week, {0, 2, 4, 6})
 
     def test_crontab_spec_invalid_dow(self):
         with self.assertRaises(ValueError):
@@ -470,13 +468,13 @@ class test_crontab_is_due(AppCase):
 
     def test_crontab_spec_dom_formats(self):
         c = self.crontab(day_of_month=5)
-        self.assertEqual(c.day_of_month, set([5]))
+        self.assertEqual(c.day_of_month, {5})
         c = self.crontab(day_of_month='5')
-        self.assertEqual(c.day_of_month, set([5]))
+        self.assertEqual(c.day_of_month, {5})
         c = self.crontab(day_of_month='2,4,6')
-        self.assertEqual(c.day_of_month, set([2, 4, 6]))
+        self.assertEqual(c.day_of_month, {2, 4, 6})
         c = self.crontab(day_of_month='*/5')
-        self.assertEqual(c.day_of_month, set([1, 6, 11, 16, 21, 26, 31]))
+        self.assertEqual(c.day_of_month, {1, 6, 11, 16, 21, 26, 31})
 
     def test_crontab_spec_invalid_dom(self):
         with self.assertRaises(ValueError):
@@ -490,15 +488,15 @@ class test_crontab_is_due(AppCase):
 
     def test_crontab_spec_moy_formats(self):
         c = self.crontab(month_of_year=1)
-        self.assertEqual(c.month_of_year, set([1]))
+        self.assertEqual(c.month_of_year, {1})
         c = self.crontab(month_of_year='1')
-        self.assertEqual(c.month_of_year, set([1]))
+        self.assertEqual(c.month_of_year, {1})
         c = self.crontab(month_of_year='2,4,6')
-        self.assertEqual(c.month_of_year, set([2, 4, 6]))
+        self.assertEqual(c.month_of_year, {2, 4, 6})
         c = self.crontab(month_of_year='*/2')
-        self.assertEqual(c.month_of_year, set([1, 3, 5, 7, 9, 11]))
+        self.assertEqual(c.month_of_year, {1, 3, 5, 7, 9, 11})
         c = self.crontab(month_of_year='2-12/2')
-        self.assertEqual(c.month_of_year, set([2, 4, 6, 8, 10, 12]))
+        self.assertEqual(c.month_of_year, {2, 4, 6, 8, 10, 12})
 
     def test_crontab_spec_invalid_moy(self):
         with self.assertRaises(ValueError):

@@ -141,45 +141,76 @@ Attributes
     This is only supported by async I/O enabled transports (amqp, redis),
     in which case the `worker.use_eventloop` attribute should be set.
 
-    Your bootstep must require the Hub bootstep to use this.
+    Your worker bootstep must require the Hub bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.components:Hub', )
 
 .. attribute:: pool
 
     The current process/eventlet/gevent/thread pool.
     See :class:`celery.concurrency.base.BasePool`.
 
-    Your bootstep must require the Pool bootstep to use this.
+    Your worker bootstep must require the Pool bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.components:Pool', )
 
 .. attribute:: timer
 
     :class:`~kombu.async.timer.Timer` used to schedule functions.
 
-    Your bootstep must require the Timer bootstep to use this.
+    Your worker bootstep must require the Timer bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.components:Timer', )
 
 .. attribute:: statedb
 
     :class:`Database <celery.worker.state.Persistent>`` to persist state between
     worker restarts.
 
-    This only exists if the ``statedb`` argument is enabled.
-    Your bootstep must require the Statedb bootstep to use this.
+    This is only defined if the ``statedb`` argument is enabled.
+
+    Your worker bootstep must require the Statedb bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.components:Statedb', )
 
 .. attribute:: autoscaler
 
     :class:`~celery.worker.autoscaler.Autoscaler` used to automatically grow
     and shrink the number of processes in the pool.
 
-    This only exists if the ``autoscale`` argument is enabled.
-    Your bootstep must require the Autoscaler bootstep to use this.
+    This is only defined if the ``autoscale`` argument is enabled.
+
+    Your worker bootstep must require the `Autoscaler` bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.autoscaler:Autoscaler', )
 
 .. attribute:: autoreloader
 
     :class:`~celery.worker.autoreloder.Autoreloader` used to automatically
     reload use code when the filesystem changes.
 
-    This only exists if the ``autoreload`` argument is enabled.
-    Your bootstep must require the Autoreloader bootstep to use this.
+    This is only defined if the ``autoreload`` argument is enabled.
+    Your worker bootstep must require the `Autoreloader` bootstep to use this;
 
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker.autoreloader:Autoreloader', )
 
 An example Worker bootstep could be:
 
@@ -285,24 +316,48 @@ Attributes
     This is only supported by async I/O enabled transports (amqp, redis),
     in which case the `worker.use_eventloop` attribute should be set.
 
-    Your bootstep must require the Hub bootstep to use this.
+    Your worker bootstep must require the Hub bootstep to use this:
+
+    .. code-block:: python
+
+        class WorkerStep(bootsteps.StartStopStep):
+            requires = ('celery.worker:Hub', )
+
 
 .. attribute:: connection
 
     The current broker connection (:class:`kombu.Connection`).
 
-    Your bootstep must require the 'Connection' bootstep to use this.
+    A consumer bootstep must require the 'Connection' bootstep
+    to use this:
+
+    .. code-block:: python
+
+        class Step(bootsteps.StartStopStep):
+            requires = ('celery.worker.consumer:Connection', )
 
 .. attribute:: event_dispatcher
 
     A :class:`@events.Dispatcher` object that can be used to send events.
 
-    Your bootstep must require the `Events` bootstep to use this.
+    A consumer bootstep must require the `Events` bootstep to use this.
+
+    .. code-block:: python
+
+        class Step(bootsteps.StartStopStep):
+            requires = ('celery.worker.consumer:Events', )
 
 .. attribute:: gossip
 
     Worker to worker broadcast communication
     (class:`~celery.worker.consumer.Gossip`).
+
+    A consumer bootstep must require the `Gossip` bootstep to use this.
+
+    .. code-block:: python
+
+        class Step(bootsteps.StartStopStep):
+            requires = ('celery.worker.consumer:Events', )
 
 .. attribute:: pool
 
@@ -318,13 +373,23 @@ Attributes
     Responsible for sending worker event heartbeats
     (:class:`~celery.worker.heartbeat.Heart`).
 
-    Your bootstep must require the `Heart` bootstep to use this.
+    Your consumer bootstep must require the `Heart` bootstep to use this:
+
+    .. code-block:: python
+
+        class Step(bootsteps.StartStopStep):
+            requires = ('celery.worker.consumer:Heart', )
 
 .. attribute:: task_consumer
 
     The :class:`kombu.Consumer` object used to consume task messages.
 
-    Your bootstep must require the `Tasks` bootstep to use this.
+    Your consumer bootstep must require the `Tasks` bootstep to use this:
+
+    .. code-block:: python
+
+        class Step(bootsteps.StartStopStep):
+            requires = ('celery.worker.consumer:Heart', )
 
 .. attribute:: strategies
 
@@ -339,7 +404,13 @@ Attributes
                 name, task, loader, hostname
             )
 
-    Your bootstep must require the `Tasks` bootstep to use this.
+    Your consumer bootstep must require the `Tasks` bootstep to use this:
+
+    .. code-block:: python
+
+        class Step(bootsteps.StartStopStep):
+            requires = ('celery.worker.consumer:Heart', )
+
 
 .. attribute:: task_buckets
 
@@ -392,7 +463,7 @@ Methods
 .. method:: apply_eta_task(request)
 
     Schedule eta task to execute based on the ``request.eta`` attribute.
-    (:class:`~celery.worker.job.Request`)
+    (:class:`~celery.worker.request.Request`)
 
 
 
@@ -536,12 +607,17 @@ Command-line programs
 Adding new command-line options
 -------------------------------
 
+.. _extending-command-options:
+
+Command-specific options
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 You can add additional command-line options to the ``worker``, ``beat`` and
 ``events`` commands by modifying the :attr:`~@Celery.user_options` attribute of the
 application instance.
 
 Celery commands uses the :mod:`optparse` module to parse command-line
-arguments, and so you have to use optparse specific option instances created
+arguments, and so you have to use :mod:`optparse` specific option instances created
 using :func:`optparse.make_option`.  Please see the :mod:`optparse`
 documentation to read about the fields supported.
 
@@ -550,7 +626,7 @@ Example adding a custom option to the :program:`celery worker` command:
 .. code-block:: python
 
     from celery import Celery
-    from celery.bin import Option
+    from celery.bin import Option  # <-- alias to optparse.make_option
 
     app = Celery(broker='amqp://')
 
@@ -558,6 +634,52 @@ Example adding a custom option to the :program:`celery worker` command:
         Option('--enable-my-option', action='store_true', default=False,
                help='Enable custom option.'),
     )
+
+
+All bootsteps will now receive this argument as a keyword argument to
+``Bootstep.__init__``:
+
+.. code-block:: python
+
+    from celery import bootsteps
+
+    class MyBootstep(bootsteps.Step):
+
+        def __init__(self, worker, enable_my_option=False, **options):
+            if enable_my_option:
+                party()
+
+    app.steps['worker'].add(MyBootstep)
+
+.. _extending-preload_options:
+
+Preload options
+~~~~~~~~~~~~~~~
+
+The :program:`celery` umbrella command supports the concept of 'preload
+options', which are special options passed to all subcommands and parsed
+outside of the main parsing step.
+
+The list of default preload options can be found in the API reference:
+:mod:`celery.bin.base`.
+
+You can add new preload options too, e.g. to specify a configuration template:
+
+.. code-block:: python
+
+    from celery import Celery
+    from celery import signals
+    from celery.bin import Option
+
+    app = Celery()
+    app.user_options['preload'].add(
+        Option('-Z', '--template', default='default',
+               help='Configuration template to use.'),
+    )
+
+    @signals.user_preload_options.connect
+    def on_preload_parsed(options, **kwargs):
+        use_template(options['template'])
 
 .. _extending-subcommands:
 
@@ -576,8 +698,8 @@ and then after installation, read from the system using the :mod:`pkg_resources`
 
 Celery recognizes ``celery.commands`` entry-points to install additional
 subcommands, where the value of the entry-point must point to a valid subclass
-of :class:`celery.bin.base.Command`.  Sadly there is limited documentation,
-but you can find inspiration from the various commands in the
+of :class:`celery.bin.base.Command`.  There is limited documentation,
+unfortunately, but you can find inspiration from the various commands in the
 :mod:`celery.bin` package.
 
 This is how the Flower_ monitoring extension adds the :program:`celery flower` command,

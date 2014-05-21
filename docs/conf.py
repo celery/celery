@@ -21,7 +21,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.coverage',
               'sphinx.ext.intersphinx',
-              'sphinxcontrib.issuetracker',
+              'celery.contrib.sphinx',
+              'githubsphinx',
               'celerydocs']
 
 
@@ -80,6 +81,7 @@ intersphinx_mapping = {
     'djcelery': ('http://django-celery.readthedocs.org/en/latest', None),
     'cyme': ('http://cyme.readthedocs.org/en/latest', None),
     'amqp': ('http://amqp.readthedocs.org/en/latest', None),
+    'flower': ('http://flower.readthedocs.org/en/latest', None),
 }
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -116,10 +118,7 @@ html_sidebars = {
 
 ### Issuetracker
 
-if False:
-    issuetracker = 'github'
-    issuetracker_project = 'celery/celery'
-    issuetracker_issue_pattern = r'[Ii]ssue #(\d+)'
+github_project = 'celery/celery'
 
 # -- Options for Epub output -------------------------------------------
 

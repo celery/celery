@@ -17,6 +17,7 @@ __all__ = ['TaskPool']
 
 class TaskPool(BasePool):
     """Solo task pool (blocking, inline, fast)."""
+    body_can_be_buffer = True
 
     def __init__(self, *args, **kwargs):
         super(TaskPool, self).__init__(*args, **kwargs)

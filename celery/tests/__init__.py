@@ -22,7 +22,7 @@ def setup():
         KOMBU_DISABLE_LIMIT_PROTECTION='yes',
     )
 
-    if os.environ.get('COVER_ALL_MODULES') or '--with-coverage3' in sys.argv:
+    if os.environ.get('COVER_ALL_MODULES') or '--with-coverage' in sys.argv:
         from warnings import catch_warnings
         with catch_warnings(record=True):
             import_all_modules()

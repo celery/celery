@@ -28,9 +28,12 @@ Example connecting to the :signal:`after_task_publish` signal:
     from celery.signals import after_task_publish
 
     @after_task_publish.connect
-    def task_sent_handler(sender=None, body=None, **kwargs):
-        print('after_task_publish for task id {body[id]}'.format(
-            body=body,
+    def task_sent_handler(sender=None, headers=None, body=None, **kwargs):
+        # information about task are located in headers for task messages
+        # using the task protocol version 2.
+        info = headers if 'task' in headers else body
+        print('after_task_publish for task id {info[id]}'.format(
+            info=info,
         ))
 
 
@@ -44,9 +47,12 @@ is published:
 .. code-block:: python
 
     @after_task_publish.connect(sender='proj.tasks.add')
-    def task_sent_handler(sender=None, body=None, **kwargs):
-        print('after_task_publish for task id {body[id]}'.format(
-            body=body,
+    def task_sent_handler(sender=None, headers=None, body=None, **kwargs):
+        # information about task are located in headers for task messages
+        # using the task protocol version 2.
+        info = headers if 'task' in headers else body
+        print('after_task_publish for task id {info[id]}'.format(
+            info=info,
         ))
 
 Signals use the same implementation as django.core.dispatch. As a result other
@@ -123,9 +129,16 @@ Sender is the name of the task being sent.
 
 Provides arguments:
 
+* headers
+
+    The task message headers, see :ref:`task-message-protocol-v2`
+    and :ref:`task-message-protocol-v1`.
+    for a reference of possible fields that can be defined.
+
 * body
 
-    The task message body, see :ref:`task-message-protocol-v1`
+    The task message body, see :ref:`task-message-protocol-v2`
+    and :ref:`task-message-protocol-v1`.
     for a reference of possible fields that can be defined.
 
 * exchange
@@ -143,7 +156,7 @@ task_prerun
 
 Dispatched before a task is executed.
 
-Sender is the task class being executed.
+Sender is the task object being executed.
 
 Provides arguments:
 
@@ -166,7 +179,7 @@ task_postrun
 
 Dispatched after a task has been executed.
 
-Sender is the task class executed.
+Sender is the task object executed.
 
 Provides arguments:
 
@@ -189,6 +202,32 @@ Provides arguments:
 
     Name of the resulting state.
 
+.. signal:: task_retry
+
+task_retry
+~~~~~~~~~~
+
+Dispatched when a task will be retried.
+
+Sender is the task object.
+
+Provides arguments:
+
+* request
+
+    The current task request.
+
+* reason
+
+    Reason for retry (usually an exception instance, but can always be
+    coerced to :class:`str`).
+
+* einfo
+
+    Detailed exception information, including traceback
+    (a :class:`billiard.einfo.ExceptionInfo` object).
+
+
 .. signal:: task_success
 
 task_success
@@ -196,7 +235,7 @@ task_success
 
 Dispatched when a task succeeds.
 
-Sender is the task class executed.
+Sender is the task object executed.
 
 Provides arguments
 
@@ -210,7 +249,7 @@ task_failure
 
 Dispatched when a task fails.
 
-Sender is the task class executed.
+Sender is the task object executed.
 
 Provides arguments:
 
@@ -239,13 +278,13 @@ task_revoked
 
 Dispatched when a task is revoked/terminated by the worker.
 
-Sender is the task class revoked/terminated.
+Sender is the task object revoked/terminated.
 
 Provides arguments:
 
 * request
 
-    This is a :class:`~celery.worker.job.Request` instance, and not
+    This is a :class:`~celery.worker.request.Request` instance, and not
     ``task.request``.   When using the prefork pool this signal
     is dispatched in the parent process, so ``task.request`` is not available
     and should not be used.  Use this object instead, which should have many

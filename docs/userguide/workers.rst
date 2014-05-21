@@ -86,15 +86,26 @@ command usually does the trick:
 Restarting the worker
 =====================
 
+To restart the worker you should send the `TERM` signal and start a new
+instance.  The easiest way to manage workers for development
+is by using `celery multi`:
+
+    .. code-block:: bash
+
+        $ celery multi start 1 -A proj -l info -c4 --pidfile=/var/run/celery/%n.pid
+        $ celery multi restart 1 --pidfile=/var/run/celery/%n.pid
+
+For production deployments you should be using init scripts or other process
+supervision systems (see :ref:`daemonizing`).
+
 Other than stopping then starting the worker to restart, you can also
-restart the worker using the :sig:`HUP` signal:
+restart the worker using the :sig:`HUP` signal, but note that the worker
+will be responsible for restarting itself so this is prone to problems and
+is not recommended in production:
 
 .. code-block:: bash
 
     $ kill -HUP $pid
-
-The worker will then replace itself with a new instance using the same
-arguments as it was started with.
 
 .. note::
 
@@ -122,6 +133,62 @@ The worker's main process overrides the following signals:
 +--------------+-------------------------------------------------+
 | :sig:`USR2`  | Remote debug, see :mod:`celery.contrib.rdb`.    |
 +--------------+-------------------------------------------------+
+
+.. _worker-files:
+
+Variables in file paths
+=======================
+
+The file path arguments for :option:`--logfile`, :option:`--pidfile` and :option:`--statedb`
+can contain variables that the worker will expand:
+
+Node name replacements
+----------------------
+
+- ``%h``:  Hostname including domain name.
+- ``%n``:  Hostname only.
+- ``%d``:  Domain name only.
+- ``%i``:  Prefork pool process index or 0 if MainProcess.
+- ``%I``:  Prefork pool process index with separator.
+
+E.g. if the current hostname is ``george.example.com`` then
+these will expand to:
+
+- ``--logfile=%h.log`` -> :file:`george.example.com.log`
+- ``--logfile=%n.log`` -> :file:`george.log`
+- ``--logfile=%d`` -> :file:`example.com.log`
+
+.. _worker-files-process-index:
+
+Prefork pool process index
+--------------------------
+
+The prefork pool process index specifiers will expand into a different
+filename depending on the process that will eventually need to open the file.
+
+This can be used to specify one log file per child process.
+
+Note that the numbers will stay within the process limit even if processes
+exit or if autoscale/maxtasksperchild/time limits are used.  I.e. the number
+is the *process index* not the process count or pid.
+
+* ``%i`` - Pool process index or 0 if MainProcess.
+
+    Where ``-n worker1@example.com -c2 -f %n-%i.log`` will result in
+    three log files:
+
+        - :file:`worker1-0.log` (main process)
+        - :file:`worker1-1.log` (pool process 1)
+        - :file:`worker1-2.log` (pool process 2)
+
+* ``%I`` - Pool process index with separator.
+
+    Where ``-n worker1@example.com -c2 -f %n%I.log`` will result in
+    three log files:
+
+        - :file:`worker1.log` (main process)
+        - :file:`worker1-1.log`` (pool process 1)
+        - :file:`worker1-2.log`` (pool process 2)
 
 .. _worker-concurrency:
 
@@ -322,6 +389,8 @@ name:
 
     celery multi start 2 -l info --statedb=/var/run/celery/%n.state
 
+
+See also :ref:`worker-files`
 
 Note that remote control commands must be working for revokes to work.
 Remote control commands are only supported by the RabbitMQ (amqp) and Redis
@@ -524,11 +593,11 @@ If you want to specify a specific worker you can use the
 
 The same can be accomplished dynamically using the :meth:`@control.add_consumer` method::
 
-    >>> myapp.control.add_consumer('foo', reply=True)
+    >>> app.control.add_consumer('foo', reply=True)
     [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
 
-    >>> myapp.control.add_consumer('foo', reply=True,
-    ...                            destination=['worker1@example.com'])
+    >>> app.control.add_consumer('foo', reply=True,
+    ...                          destination=['worker1@example.com'])
     [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
 
 
@@ -536,7 +605,7 @@ By now I have only shown examples using automatic queues,
 If you need more control you can also specify the exchange, routing_key and
 even other options::
 
-    >>> myapp.control.add_consumer(
+    >>> app.control.add_consumer(
     ...     queue='baz',
     ...     exchange='ex',
     ...     exchange_type='topic',
@@ -577,7 +646,7 @@ You can also cancel consumers programmatically using the
 
 .. code-block:: bash
 
-    >>> myapp.control.cancel_consumer('foo', reply=True)
+    >>> app.control.cancel_consumer('foo', reply=True)
     [{u'worker1.local': {u'ok': u"no longer consuming from u'foo'"}}]
 
 .. control:: active_queues
@@ -606,10 +675,10 @@ reply to the request:
 This can also be done programmatically by using the
 :meth:`@control.inspect.active_queues` method::
 
-    >>> myapp.inspect().active_queues()
+    >>> app.control.inspect().active_queues()
     [...]
 
-    >>> myapp.inspect(['worker1.local']).active_queues()
+    >>> app.control.inspect(['worker1.local']).active_queues()
     [...]
 
 .. _worker-autoreloading:

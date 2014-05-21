@@ -98,9 +98,18 @@ to improve performance:
 
     CELERY_QUEUES = (
         Queue('celery', routing_key='celery'),
-        Queue('transient', routing_key='transient',
-              delivery_mode=1),
+        Queue('transient', Exchange('transient', delivery_mode=1),
+              routing_key='transient', durable=False),
     )
+
+
+or by using :setting:`CELERY_ROUTES`:
+
+.. code-block:: python
+
+    CELERY_ROUTES = {
+        'proj.tasks.add': {'queue': 'celery', 'delivery_mode': 'transient'}
+    }
 
 
 The ``delivery_mode`` changes how the messages to this queue are delivered.
@@ -223,5 +232,5 @@ worker option:
 
     $ celery -A proj worker -l info -Ofair
 
-With this option enabled the worker will only write to workers that are
+With this option enabled the worker will only write to processes that are
 available for work, disabling the prefetch behavior.

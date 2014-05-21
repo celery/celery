@@ -59,7 +59,9 @@ def parse_iso8601(datestring):
         raise ValueError('unable to parse date string %r' % datestring)
     groups = m.groupdict()
     tz = groups['timezone']
-    if tz and tz != 'Z':
+    if tz == 'Z':
+        tz = FixedOffset(0)
+    elif tz:
         m = TIMEZONE_REGEX.match(tz)
         prefix, hours, minutes = m.groups()
         hours, minutes = int(hours), int(minutes)
@@ -67,10 +69,9 @@ def parse_iso8601(datestring):
             hours = -hours
             minutes = -minutes
         tz = FixedOffset(minutes + hours * 60)
-    frac = groups['fraction']
-    groups['fraction'] = int(float('0.%s' % frac) * 1e6) if frac else 0
+    frac = groups['fraction'] or 0
     return datetime(
         int(groups['year']), int(groups['month']), int(groups['day']),
         int(groups['hour']), int(groups['minute']), int(groups['second']),
-        int(groups['fraction']), tz
+        int(frac), tz
     )

@@ -42,16 +42,16 @@ class test_DatabaseBackend(AppCase):
         self.uri = 'sqlite:///test.db'
 
     def test_retry_helper(self):
-        from celery.backends.database import OperationalError
+        from celery.backends.database import DatabaseError
 
         calls = [0]
 
         @retry
         def raises():
             calls[0] += 1
-            raise OperationalError(1, 2, 3)
+            raise DatabaseError(1, 2, 3)
 
-        with self.assertRaises(OperationalError):
+        with self.assertRaises(DatabaseError):
             raises(max_retries=5)
         self.assertEqual(calls[0], 5)
 

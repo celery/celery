@@ -8,17 +8,21 @@
 """
 from __future__ import absolute_import
 
+import logging
+from contextlib import contextmanager
 from functools import wraps
 
 from celery import states
+from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.five import range
 from celery.utils.timeutils import maybe_timedelta
 
-from celery.backends.base import BaseBackend
+from .models import Task
+from .models import TaskSet
+from .session import SessionManager
 
-from .models import Task, TaskSet
-from .session import ResultSession
+logger = logging.getLogger(__name__)
 
 __all__ = ['DatabaseBackend']
 
@@ -33,7 +37,19 @@ def _sqlalchemy_installed():
     return sqlalchemy
 _sqlalchemy_installed()
 
-from sqlalchemy.exc import DatabaseError, OperationalError
+from sqlalchemy.exc import DatabaseError, InvalidRequestError
+from sqlalchemy.orm.exc import StaleDataError
+
+
+@contextmanager
+def session_cleanup(session):
+    try:
+        yield
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def retry(fun):
@@ -45,7 +61,12 @@ def retry(fun):
         for retries in range(max_retries):
             try:
                 return fun(*args, **kwargs)
-            except (DatabaseError, OperationalError):
+            except (DatabaseError, InvalidRequestError, StaleDataError):
+                logger.warning(
+                    "Failed operation %s. Retrying %s more times.",
+                    fun.__name__, max_retries - retries - 1,
+                    exc_info=True,
+                )
                 if retries + 1 >= max_retries:
                     raise
 
@@ -83,8 +104,8 @@ class DatabaseBackend(BaseBackend):
                 'Missing connection string! Do you have '
                 'CELERY_RESULT_DBURI set to a real value?')
 
-    def ResultSession(self):
-        return ResultSession(
+    def ResultSession(self, session_manager=SessionManager()):
+        return session_manager.session_factory(
             dburi=self.dburi,
             short_lived_sessions=self.short_lived_sessions,
             **self.engine_options
@@ -95,8 +116,9 @@ class DatabaseBackend(BaseBackend):
                       traceback=None, max_retries=3, **kwargs):
         """Store return value and status of an executed task."""
         session = self.ResultSession()
-        try:
-            task = session.query(Task).filter(Task.task_id == task_id).first()
+        with session_cleanup(session):
+            task = list(session.query(Task).filter(Task.task_id == task_id))
+            task = task and task[0]
             if not task:
                 task = Task(task_id)
                 session.add(task)
@@ -106,83 +128,70 @@ class DatabaseBackend(BaseBackend):
             task.traceback = traceback
             session.commit()
             return result
-        finally:
-            session.close()
 
     @retry
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
         session = self.ResultSession()
-        try:
-            task = session.query(Task).filter(Task.task_id == task_id).first()
-            if task is None:
+        with session_cleanup(session):
+            task = list(session.query(Task).filter(Task.task_id == task_id))
+            task = task and task[0]
+            if not task:
                 task = Task(task_id)
                 task.status = states.PENDING
                 task.result = None
             return task.to_dict()
-        finally:
-            session.close()
 
     @retry
     def _save_group(self, group_id, result):
         """Store the result of an executed group."""
         session = self.ResultSession()
-        try:
+        with session_cleanup(session):
             group = TaskSet(group_id, result)
             session.add(group)
             session.flush()
             session.commit()
             return result
-        finally:
-            session.close()
 
     @retry
     def _restore_group(self, group_id):
         """Get metadata for group by id."""
         session = self.ResultSession()
-        try:
+        with session_cleanup(session):
             group = session.query(TaskSet).filter(
                 TaskSet.taskset_id == group_id).first()
             if group:
                 return group.to_dict()
-        finally:
-            session.close()
 
     @retry
     def _delete_group(self, group_id):
         """Delete metadata for group by id."""
         session = self.ResultSession()
-        try:
+        with session_cleanup(session):
             session.query(TaskSet).filter(
                 TaskSet.taskset_id == group_id).delete()
             session.flush()
             session.commit()
-        finally:
-            session.close()
 
     @retry
     def _forget(self, task_id):
         """Forget about result."""
         session = self.ResultSession()
-        try:
+        with session_cleanup(session):
             session.query(Task).filter(Task.task_id == task_id).delete()
             session.commit()
-        finally:
-            session.close()
 
     def cleanup(self):
         """Delete expired metadata."""
         session = self.ResultSession()
         expires = self.expires
         now = self.app.now()
-        try:
+        with session_cleanup(session):
             session.query(Task).filter(
                 Task.date_done < (now - expires)).delete()
             session.query(TaskSet).filter(
                 TaskSet.date_done < (now - expires)).delete()
             session.commit()
-        finally:
-            session.close()
 
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(

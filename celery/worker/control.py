@@ -14,7 +14,7 @@ import tempfile
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown
-from celery.five import UserDict, items
+from celery.five import UserDict, items, string_t
 from celery.platforms import signals as _signals
 from celery.utils import timeutils
 from celery.utils.functional import maybe_list
@@ -22,8 +22,8 @@ from celery.utils.log import get_logger
 from celery.utils import jsonify
 
 from . import state as worker_state
+from .request import Request
 from .state import revoked
-from .job import Request
 
 __all__ = ['Panel']
 DEFAULT_TASK_INFO_ITEMS = ('exchange', 'routing_key', 'rate_limit')
@@ -56,15 +56,14 @@ def query_task(state, ids, **kwargs):
     def reqinfo(state, req):
         return state, req.info()
 
-    reqs = dict((req.id, ('reserved', req.info()))
-                for req in _find_requests_by_id(
-                    ids, worker_state.reserved_requests))
-    reqs.update(dict(
-        (req.id, ('active', req.info()))
-        for req in _find_requests_by_id(
-            ids, worker_state.active_requests,
-        )
-    ))
+    reqs = {
+        req.id: ('reserved', req.info())
+        for req in _find_requests_by_id(ids, worker_state.reserved_requests)
+    }
+    reqs.update({
+        req.id: ('active', req.info())
+        for req in _find_requests_by_id(ids, worker_state.active_requests)
+    })
 
     return reqs
 
@@ -228,7 +227,7 @@ def objgraph(state, num=200, max_depth=10, type='Request'):  # pragma: no cover
         import objgraph
     except ImportError:
         raise ImportError('Requires the objgraph library')
-    print('Dumping graph for type %r' % (type, ))
+    logger.info('Dumping graph for type %r', type)
     with tempfile.NamedTemporaryFile(prefix='cobjg',
                                      suffix='.png', delete=False) as fh:
         objects = objgraph.by_type(type)[:num]
@@ -280,9 +279,10 @@ def dump_tasks(state, taskinfoitems=None, **kwargs):
     taskinfoitems = taskinfoitems or DEFAULT_TASK_INFO_ITEMS
 
     def _extract_info(task):
-        fields = dict((field, str(getattr(task, field, None)))
-                      for field in taskinfoitems
-                      if getattr(task, field, None) is not None)
+        fields = {
+            field: str(getattr(task, field, None)) for field in taskinfoitems
+            if getattr(task, field, None) is not None
+        }
         if fields:
             info = ['='.join(f) for f in items(fields)]
             return '{0} [{1}]'.format(task.name, ' '.join(info))
@@ -364,7 +364,9 @@ def active_queues(state):
 
 
 def _wanted_config_key(key):
-    return key.isupper() and not key.startswith('__')
+    return (isinstance(key, string_t) and
+            key.isupper() and
+            not key.startswith('__'))
 
 
 @Panel.register

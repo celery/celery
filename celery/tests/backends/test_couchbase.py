@@ -129,8 +129,8 @@ class test_CouchBaseBackend(AppCase):
         url = 'couchbase://johndoe:mysecret@myhost:123/mycoolbucket'
         with self.Celery(backend=url) as app:
             x = app.backend
-            self.assertEqual(x.bucket, "mycoolbucket")
-            self.assertEqual(x.host, "myhost")
-            self.assertEqual(x.username, "johndoe")
-            self.assertEqual(x.password, "mysecret")
+            self.assertEqual(x.bucket, 'mycoolbucket')
+            self.assertEqual(x.host, 'myhost')
+            self.assertEqual(x.username, 'johndoe')
+            self.assertEqual(x.password, 'mysecret')
             self.assertEqual(x.port, 123)

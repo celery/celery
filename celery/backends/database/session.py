@@ -8,58 +8,55 @@
 """
 from __future__ import absolute_import
 
-from collections import defaultdict
-from multiprocessing.util import register_after_fork
+from billiard.util import register_after_fork
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 ResultModelBase = declarative_base()
 
-_SETUP = defaultdict(lambda: False)
-_ENGINES = {}
-_SESSIONS = {}
-
-__all__ = ['ResultSession', 'get_engine', 'create_session']
+__all__ = ['SessionManager']
 
 
-class _after_fork(object):
-    registered = False
+class SessionManager(object):
+    def __init__(self):
+        self._engines = {}
+        self._sessions = {}
+        self.forked = False
+        self.prepared = False
+        register_after_fork(self, self._after_fork)
 
-    def __call__(self):
-        self.registered = False  # child must reregister
-        for engine in list(_ENGINES.values()):
-            engine.dispose()
-        _ENGINES.clear()
-        _SESSIONS.clear()
-after_fork = _after_fork()
+    def _after_fork(self,):
+        self.forked = True
 
+    def get_engine(self, dburi, **kwargs):
+        if self.forked:
+            try:
+                return self._engines[dburi]
+            except KeyError:
+                engine = self._engines[dburi] = create_engine(dburi, **kwargs)
+                return engine
+        else:
+            kwargs['poolclass'] = NullPool
+            return create_engine(dburi, **kwargs)
 
-def get_engine(dburi, **kwargs):
-    try:
-        return _ENGINES[dburi]
-    except KeyError:
-        engine = _ENGINES[dburi] = create_engine(dburi, **kwargs)
-        after_fork.registered = True
-        register_after_fork(after_fork, after_fork)
-        return engine
+    def create_session(self, dburi, short_lived_sessions=False, **kwargs):
+        engine = self.get_engine(dburi, **kwargs)
+        if self.forked:
+            if short_lived_sessions or dburi not in self._sessions:
+                self._sessions[dburi] = sessionmaker(bind=engine)
+            return engine, self._sessions[dburi]
+        else:
+            return engine, sessionmaker(bind=engine)
 
+    def prepare_models(self, engine):
+        if not self.prepared:
+            ResultModelBase.metadata.create_all(engine)
+            self.prepared = True
 
-def create_session(dburi, short_lived_sessions=False, **kwargs):
-    engine = get_engine(dburi, **kwargs)
-    if short_lived_sessions or dburi not in _SESSIONS:
-        _SESSIONS[dburi] = sessionmaker(bind=engine)
-    return engine, _SESSIONS[dburi]
-
-
-def setup_results(engine):
-    if not _SETUP['results']:
-        ResultModelBase.metadata.create_all(engine)
-        _SETUP['results'] = True
-
-
-def ResultSession(dburi, **kwargs):
-    engine, session = create_session(dburi, **kwargs)
-    setup_results(engine)
-    return session()
+    def session_factory(self, dburi, **kwargs):
+        engine, session = self.create_session(dburi, **kwargs)
+        self.prepare_models(engine)
+        return session()

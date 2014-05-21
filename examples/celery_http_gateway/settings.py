@@ -1,5 +1,7 @@
 # Django settings for celery_http_gateway project.
 
+import django
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -13,23 +15,24 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-# 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_ENGINE = 'sqlite3'
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'development.db',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
+    }
+}
 
-# path to database file if using sqlite3.
-DATABASE_NAME = 'development.db'
-
-# Not used with sqlite3.
-DATABASE_USER = ''
-
-# Not used with sqlite3.
-DATABASE_PASSWORD = ''
-
-# Set to empty string for localhost. Not used with sqlite3.
-DATABASE_HOST = ''
-
-# Set to empty string for default. Not used with sqlite3.
-DATABASE_PORT = ''
+if django.VERSION[:3] < (1, 3):
+    DATABASE_ENGINE = DATABASES['default']['ENGINE']
+    DATABASE_NAME = DATABASES['default']['NAME']
+    DATABASE_USER = DATABASES['default']['USER']
+    DATABASE_PASSWORD = DATABASES['default']['PASSWORD']
+    DATABASE_HOST = DATABASES['default']['HOST']
+    DATABASE_PORT = DATABASES['default']['PORT']
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name

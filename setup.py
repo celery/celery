@@ -19,8 +19,8 @@ import codecs
 
 CELERY_COMPAT_PROGRAMS = int(os.environ.get('CELERY_COMPAT_PROGRAMS', 1))
 
-if sys.version_info < (2, 6):
-    raise Exception('Celery 3.1 requires Python 2.6 or higher.')
+if sys.version_info < (2, 7):
+    raise Exception('Celery 3.2 requires Python 2.7 or higher.')
 
 downgrade_packages = [
     'celery.app.task',
@@ -67,10 +67,10 @@ classes = """
     Topic :: Software Development :: Object Brokering
     Programming Language :: Python
     Programming Language :: Python :: 2
-    Programming Language :: Python :: 2.6
     Programming Language :: Python :: 2.7
     Programming Language :: Python :: 3
     Programming Language :: Python :: 3.3
+    Programming Language :: Python :: 3.4
     Programming Language :: Python :: Implementation :: CPython
     Programming Language :: Python :: Implementation :: PyPy
     Programming Language :: Python :: Implementation :: Jython
@@ -111,8 +111,7 @@ pats = {re_meta: add_default,
         re_vers: add_version,
         re_doc: add_doc}
 here = os.path.abspath(os.path.dirname(__file__))
-meta_fh = open(os.path.join(here, 'celery/__init__.py'))
-try:
+with open(os.path.join(here, 'celery/__init__.py')) as meta_fh:
     meta = {}
     for line in meta_fh:
         if line.strip() == '# -eof meta-':
@@ -121,8 +120,6 @@ try:
             m = pattern.match(line.strip())
             if m:
                 meta.update(handler(m))
-finally:
-    meta_fh.close()
 
 # -*- Installation Requires -*-
 
@@ -170,30 +167,13 @@ if CELERY_COMPAT_PROGRAMS:
 
 if is_setuptools:
     extras = lambda *p: reqs('extras', *p)
-    extra['extras_require'] = {
-        # Celery specific
-        'auth': extras('auth.txt'),
-        'cassandra': extras('cassandra.txt'),
-        'memcache': extras('memcache.txt'),
-        'couchbase': extras('couchbase.txt'),
-        'threads': extras('threads.txt'),
-        'eventlet': extras('eventlet.txt'),
-        'gevent': extras('gevent.txt'),
-
-        'msgpack': extras('msgpack.txt'),
-        'yaml': extras('yaml.txt'),
-        'redis': extras('redis.txt'),
-        'mongodb': extras('mongodb.txt'),
-        'sqs': extras('sqs.txt'),
-        'couchdb': extras('couchdb.txt'),
-        'beanstalk': extras('beanstalk.txt'),
-        'zookeeper': extras('zookeeper.txt'),
-        'zeromq': extras('zeromq.txt'),
-        'sqlalchemy': extras('sqlalchemy.txt'),
-        'librabbitmq': extras('librabbitmq.txt'),
-        'pyro': extras('pyro.txt'),
-        'slmq': extras('slmq.txt'),
-    }
+    # Celery specific
+    specific_list = ['auth', 'cassandra', 'memcache', 'couchbase', 'threads',
+                     'eventlet', 'gevent', 'msgpack', 'yaml', 'redis',
+                     'mongodb', 'sqs', 'couchdb', 'beanstalk', 'zookeeper',
+                     'zeromq', 'sqlalchemy', 'librabbitmq', 'pyro', 'slmq']
+    extras_require = dict((x, extras(x + '.txt')) for x in specific_list)
+    extra['extras_require'] = extras_require
 
 # -*- %%% -*-
 

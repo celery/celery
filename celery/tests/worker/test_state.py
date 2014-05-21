@@ -48,13 +48,42 @@ class MyPersistent(state.Persistent):
 class test_maybe_shutdown(AppCase):
 
     def teardown(self):
-        state.should_stop = False
-        state.should_terminate = False
+        state.should_stop = None
+        state.should_terminate = None
 
     def test_should_stop(self):
         state.should_stop = True
         with self.assertRaises(WorkerShutdown):
             state.maybe_shutdown()
+        state.should_stop = 0
+        with self.assertRaises(WorkerShutdown):
+            state.maybe_shutdown()
+        state.should_stop = False
+        try:
+            state.maybe_shutdown()
+        except SystemExit:
+            raise RuntimeError('should not have exited')
+        state.should_stop = None
+        try:
+            state.maybe_shutdown()
+        except SystemExit:
+            raise RuntimeError('should not have exited')
+
+        state.should_stop = 0
+        try:
+            state.maybe_shutdown()
+        except SystemExit as exc:
+            self.assertEqual(exc.code, 0)
+        else:
+            raise RuntimeError('should have exited')
+
+        state.should_stop = 303
+        try:
+            state.maybe_shutdown()
+        except SystemExit as exc:
+            self.assertEqual(exc.code, 303)
+        else:
+            raise RuntimeError('should have exited')
 
     def test_should_terminate(self):
         state.should_terminate = True

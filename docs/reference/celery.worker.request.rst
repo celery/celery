@@ -1,11 +1,11 @@
 =====================================
- celery.worker.job
+ celery.worker.request
 =====================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.worker.job
+.. currentmodule:: celery.worker.request
 
-.. automodule:: celery.worker.job
+.. automodule:: celery.worker.request
     :members:
     :undoc-members:

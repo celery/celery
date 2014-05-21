@@ -124,7 +124,7 @@ NAMESPACES = {
         'IMPORTS': Option((), type='tuple'),
         'INCLUDE': Option((), type='tuple'),
         'IGNORE_RESULT': Option(False, type='bool'),
-        'MAX_CACHED_RESULTS': Option(5000, type='int'),
+        'MAX_CACHED_RESULTS': Option(100, type='int'),
         'MESSAGE_COMPRESSION': Option(type='string'),
         'MONGODB_BACKEND_SETTINGS': Option(type='dict'),
         'REDIS_HOST': Option(type='string', **_REDIS_OLD),
@@ -146,6 +146,7 @@ NAMESPACES = {
         'SEND_TASK_ERROR_EMAILS': Option(False, type='bool'),
         'SEND_TASK_SENT_EVENT': Option(False, type='bool'),
         'STORE_ERRORS_EVEN_IF_IGNORED': Option(False, type='bool'),
+        'TASK_PROTOCOL': Option(1, type='int'),
         'TASK_PUBLISH_RETRY': Option(True, type='bool'),
         'TASK_PUBLISH_RETRY_POLICY': Option({
             'max_retries': 3,
@@ -196,6 +197,7 @@ NAMESPACES = {
         'SCHEDULE': Option({}, type='dict'),
         'SCHEDULER': Option('celery.beat:PersistentScheduler'),
         'SCHEDULE_FILENAME': Option('celerybeat-schedule'),
+        'SYNC_EVERY': Option(0, type='int'),
         'MAX_LOOP_INTERVAL': Option(0, type='float'),
         'LOG_LEVEL': Option('INFO', deprecate_by='2.4', remove_by='4.0',
                             alt='--loglevel argument'),
@@ -232,7 +234,7 @@ def flatten(d, ns=''):
                 stack.append((name + key + '_', value))
             else:
                 yield name + key, value
-DEFAULTS = dict((key, value.default) for key, value in flatten(NAMESPACES))
+DEFAULTS = {key: value.default for key, value in flatten(NAMESPACES)}
 
 
 def find_deprecated_settings(source):

@@ -62,7 +62,7 @@ class test_BaseBackend_interface(AppCase):
             self.b.forget('SOMExx-N0nex1stant-IDxx-')
 
     def test_on_chord_part_return(self):
-        self.b.on_chord_part_return(None)
+        self.b.on_chord_part_return(None, None, None)
 
     def test_apply_chord(self, unlock='celery.chord_unlock'):
         self.app.tasks[unlock] = Mock()
@@ -234,9 +234,10 @@ class test_BaseBackend_dict(AppCase):
         self.assertIsInstance(self.b.prepare_value(g), self.app.GroupResult)
 
     def test_is_cached(self):
-        self.b._cache['foo'] = 1
-        self.assertTrue(self.b.is_cached('foo'))
-        self.assertFalse(self.b.is_cached('false'))
+        b = BaseBackend(app=self.app, max_cached_results=1)
+        b._cache['foo'] = 1
+        self.assertTrue(b.is_cached('foo'))
+        self.assertFalse(b.is_cached('false'))
 
 
 class test_KeyValueStoreBackend(AppCase):
@@ -246,7 +247,7 @@ class test_KeyValueStoreBackend(AppCase):
 
     def test_on_chord_part_return(self):
         assert not self.b.implements_incr
-        self.b.on_chord_part_return(None)
+        self.b.on_chord_part_return(None, None, None)
 
     def test_get_store_delete_result(self):
         tid = uuid()
@@ -282,12 +283,14 @@ class test_KeyValueStoreBackend(AppCase):
     def test_chord_part_return_no_gid(self):
         self.b.implements_incr = True
         task = Mock()
+        state = 'SUCCESS'
+        result = 10
         task.request.group = None
         self.b.get_key_for_chord = Mock()
         self.b.get_key_for_chord.side_effect = AssertionError(
             'should not get here',
         )
-        self.assertIsNone(self.b.on_chord_part_return(task))
+        self.assertIsNone(self.b.on_chord_part_return(task, state, result))
 
     @contextmanager
     def _chord_part_context(self, b):
@@ -315,14 +318,14 @@ class test_KeyValueStoreBackend(AppCase):
 
     def test_chord_part_return_propagate_set(self):
         with self._chord_part_context(self.b) as (task, deps, _):
-            self.b.on_chord_part_return(task, propagate=True)
+            self.b.on_chord_part_return(task, 'SUCCESS', 10, propagate=True)
             self.assertFalse(self.b.expire.called)
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(propagate=True, timeout=3.0)
 
     def test_chord_part_return_propagate_default(self):
         with self._chord_part_context(self.b) as (task, deps, _):
-            self.b.on_chord_part_return(task, propagate=None)
+            self.b.on_chord_part_return(task, 'SUCCESS', 10, propagate=None)
             self.assertFalse(self.b.expire.called)
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(
@@ -334,7 +337,7 @@ class test_KeyValueStoreBackend(AppCase):
         with self._chord_part_context(self.b) as (task, deps, callback):
             deps._failed_join_report = lambda: iter([])
             deps.join_native.side_effect = KeyError('foo')
-            self.b.on_chord_part_return(task)
+            self.b.on_chord_part_return(task, 'SUCCESS', 10)
             self.assertTrue(self.b.fail_from_current_stack.called)
             args = self.b.fail_from_current_stack.call_args
             exc = args[1]['exc']
@@ -348,7 +351,7 @@ class test_KeyValueStoreBackend(AppCase):
                 self.app.AsyncResult('culprit'),
             ])
             deps.join_native.side_effect = KeyError('foo')
-            b.on_chord_part_return(task)
+            b.on_chord_part_return(task, 'SUCCESS', 10)
             self.assertTrue(b.fail_from_current_stack.called)
             args = b.fail_from_current_stack.call_args
             exc = args[1]['exc']

@@ -16,7 +16,7 @@
 #        when the second task is ready.)
 #
 #    >>> unlock_graph.apply_async((A.apply_async(),
-#    ...                           A_callback.subtask()), countdown=1)
+#    ...                           A_callback.s()), countdown=1)
 
 
 from celery import chord, group, task, signature, uuid

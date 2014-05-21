@@ -7,7 +7,7 @@
 .. admonition:: Experimental Status
 
     The SQS transport is in need of improvements in many areas and there
-    are several open bugs.  Sadly we don't have the resources or funds
+    are several open bugs.  Unfortunately we don't have the resources or funds
     required to improve the situation, so we're looking for contributors
     and partners willing to help.
 
@@ -156,7 +156,7 @@ at this point.
 
 .. warning::
 
-    Do not use the ``amqp`` backend with SQS.
+    Do not use the ``amqp`` result backend with SQS.
 
     It will create one queue for every task, and the queues will
     not be collected.  This could cost you money that would be better
