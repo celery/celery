@@ -29,7 +29,7 @@
 # Setting `prog` here allows you to symlink this init script, making it easy
 # to run multiple processes on the system.
 
-# If we're invoked via SysV-style runlevel scripts we need to follow the 
+# If we're invoked via SysV-style runlevel scripts we need to follow the
 # link from rcX.d before working out the script name.
 if [[ `dirname $0` == /etc/rc*.d ]]; then
     target="$(readlink $0)"
@@ -48,7 +48,7 @@ source /etc/init.d/functions
 SLEEP_SECONDS=5
 
 DEFAULT_PID_FILE="/var/run/celery/$prog-%n.pid"
-DEFAULT_LOG_FILE="/var/log/celery/$prog-%n.log"
+DEFAULT_LOG_FILE="/var/log/celery/$prog-%n%I.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
 DEFAULT_CELERYD="-m celery.bin.celeryd_detach"
