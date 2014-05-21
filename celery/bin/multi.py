@@ -508,7 +508,7 @@ def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
 
         expand = partial(
             node_format, nodename=nodename, N=shortname, d=hostname,
-            h=nodename,
+            h=nodename, i='%i', I='%I',
         )
         argv = ([expand(cmd)] +
                 [format_opt(opt, expand(value))
