@@ -92,7 +92,7 @@ class AsyncResult(ResultBase):
 
         self._history = []
         self._fulfilled = False
-        self._on_state_changes = promise(self._push_state)
+        self._on_state_change = promise(self._push_state)
         self._on_ready = promise()
         
         self._state = self._result = self._traceback = self.children = None
@@ -121,7 +121,7 @@ class AsyncResult(ResultBase):
 
     def send(self, meta):
         # pass to callbacks
-        self._on_state_changes(self, meta)
+        self._on_state_change(self, meta)
 
         # fulfilled?
         if self.is_final_state(meta):
