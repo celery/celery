@@ -22,7 +22,7 @@ class test_TaskConsumer(AppCase):
             )
 
 
-class test_PublisherPool(AppCase):
+class test_ProducerPool(AppCase):
 
     def test_setup_nolimit(self):
         self.app.conf.BROKER_POOL_LIMIT = None
