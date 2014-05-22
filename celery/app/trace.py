@@ -491,9 +491,11 @@ def _fast_trace_task(task, uuid, request, body, content_type,
     embed = None
     tasks, accept, hostname = _loc
     if content_type:
-        args, kwargs, embed = loads(
+        X = loads(
             body, content_type, content_encoding, accept=accept,
         )
+        print(X)
+        args, kwargs, embed = X
     else:
         args, kwargs = body
     request.update({

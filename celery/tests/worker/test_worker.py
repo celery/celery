@@ -912,7 +912,7 @@ class test_WorkController(AppCase):
                     os.environ['FORKED_BY_MULTIPROCESSING'] = "1"
                     try:
                         process_initializer(app, 'luke.worker.com')
-                        S.assert_called_with(app)
+                        S.assert_called_with(app, 'luke.worker.com')
                     finally:
                         os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
 

@@ -478,7 +478,7 @@ class Service(object):
                 interval = self.scheduler.tick()
                 if interval:
                     debug('beat: Waking up %s.',
-                        humanize_seconds(interval, prefix='in '))
+                          humanize_seconds(interval, prefix='in '))
                     time.sleep(interval)
         except (KeyboardInterrupt, SystemExit):
             self._is_shutdown.set()

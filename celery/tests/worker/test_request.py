@@ -619,6 +619,7 @@ class test_Request(AppCase):
         self.assertIs(trace.trace_task_ret, trace._fast_trace_task)
         tid = uuid()
         message = TaskMessage(self.mytask.name, tid, args=[4])
+        assert len(message.payload) == 3
         try:
             self.mytask.__trace__ = build_tracer(
                 self.mytask.name, self.mytask, self.app.loader, 'test',

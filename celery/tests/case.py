@@ -869,7 +869,8 @@ def restore_logging():
         root.handlers[:] = handlers
 
 
-def TaskMessage(name, id=None, args=(), kwargs={}, **options):
+def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
+                errbacks=None, chain=None, **options):
     from celery import uuid
     from kombu.serialization import dumps
     id = id or uuid()
@@ -878,9 +879,10 @@ def TaskMessage(name, id=None, args=(), kwargs={}, **options):
         'id': id,
         'task': name,
     }
+    embed = {'callbacks': callbacks, 'errbacks': errbacks, 'chain': chain}
     message.headers.update(options)
     message.content_type, message.content_encoding, message.body = dumps(
-        (args, kwargs), serializer='json',
+        (args, kwargs, embed), serializer='json',
     )
-    message.payload = (args, kwargs)
+    message.payload = (args, kwargs, embed)
     return message

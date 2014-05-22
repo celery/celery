@@ -207,10 +207,10 @@ class Request(object):
             self.acknowledge()
 
         request = self.request_dict
-        args, kwargs = self.message.payload
+        args, kwargs, embed = self.message.payload
         request.update({'loglevel': loglevel, 'logfile': logfile,
                         'hostname': self.hostname, 'is_eager': False,
-                        'args': args, 'kwargs': kwargs})
+                        'args': args, 'kwargs': kwargs}, **embed or {})
         retval = trace_task(self.task, self.id, args, kwargs, request,
                             hostname=self.hostname, loader=self.app.loader,
                             app=self.app)[0]
