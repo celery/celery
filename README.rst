@@ -82,7 +82,7 @@ getting started tutorials:
     http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
 
 Celery is...
-============
+==========
 
 - **Simple**
 
@@ -120,7 +120,7 @@ Celery is...
     schedulers, consumers, producers, autoscalers, broker transports and much more.
 
 It supports...
-==============
+============
 
     - **Message Transports**
 
