@@ -153,6 +153,13 @@ See ``python -m stress --help`` for a list of all available options.
 Options
 =======
 
+Using a different broker
+------------------------
+You can set the environment ``CSTRESS_BROKER`` to change the broker used::
+
+    $ CSTRESS_BROKER='amqp://' celery -A stress worker # …
+    $ CSTRESS_BROKER='amqp://' python -m stress
+
 Using a different result backend
 --------------------------------
 
