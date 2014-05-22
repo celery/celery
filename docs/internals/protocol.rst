@@ -161,13 +161,13 @@ Changes from version 1
 .. _task-message-protocol-v1:
 
 Version 1
-=========
+---------
 
 In version 1 of the protocol all fields are stored in the message body,
 which means workers and intermediate consumers must deserialize the payload
 to read the fields.
 
-Message Body
+Message body
 ~~~~~~~~~~~~
 
 * task

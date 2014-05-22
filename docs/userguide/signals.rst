@@ -88,7 +88,7 @@ Provides arguements:
     Task message body.
 
     This is a mapping containing the task message fields
-    (see :ref:`task-message-protocol-v1`).
+    (see :ref:`message-protocol-task-v1`).
 
 * exchange
 
@@ -131,14 +131,14 @@ Provides arguments:
 
 * headers
 
-    The task message headers, see :ref:`task-message-protocol-v2`
-    and :ref:`task-message-protocol-v1`.
+    The task message headers, see :ref:`message-protocol-task-v2`
+    and :ref:`message-protocol-task-v1`.
     for a reference of possible fields that can be defined.
 
 * body
 
-    The task message body, see :ref:`task-message-protocol-v2`
-    and :ref:`task-message-protocol-v1`.
+    The task message body, see :ref:`message-protocol-task-v2`
+    and :ref:`message-protocol-task-v1`.
     for a reference of possible fields that can be defined.
 
 * exchange

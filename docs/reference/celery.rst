@@ -382,15 +382,15 @@ and creating Celery applications.
         Finalizes the app by loading built-in tasks,
         and evaluating pending task decorators
 
-    .. signal:: on_configure
+    .. data:: on_configure
 
         Signal sent when app is loading configuration.
 
-    .. signal:: on_after_configure
+    .. data:: on_after_configure
 
         Signal sent after app has prepared the configuration.
 
-    .. signal:: on_after_finalize
+    .. data:: on_after_finalize
 
         Signal sent after app has been finalized.
 
