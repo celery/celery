@@ -90,14 +90,15 @@ class AsyncResult(ResultBase):
         self.task_name = task_name
         self.parent = parent
 
-        self._history = []
         self._fulfilled = False
         self._on_state_change = promise(self._push_state)
         self._on_ready = promise()
-        
+
+        # Caching attributes
         self._state = self._result = self._traceback = self.children = None
 
     def _push_state(self, meta):
+        # Update caching attributes
         state = self.state = meta['status']
         children = meta.get('children')
         if state in states.EXCEPTION_STATES:
@@ -109,7 +110,6 @@ class AsyncResult(ResultBase):
             self.children = [
                 result_from_tuple(child, self.app) for child in children
             ]
-        self._history.append(meta)
 
     def _mark_as_fulfilled(self):
         self._fulfilled = True
@@ -117,7 +117,7 @@ class AsyncResult(ResultBase):
 
     def is_final_state(self, state):
         # subclass can override this
-        return state['status'] in READY_STATES
+        return state['status'] in states.READY_STATES
 
     def send(self, meta):
         # pass to callbacks
@@ -137,7 +137,10 @@ class AsyncResult(ResultBase):
 
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
-        self._cache = None
+        self._result = None
+        self._traceback = None
+        self._state = None
+        self.children = ()
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
@@ -161,7 +164,8 @@ class AsyncResult(ResultBase):
                                 terminate=terminate, signal=signal,
                                 reply=wait, timeout=timeout)
 
-    def get(self, timeout=None, propagate=True, interval=0.5 follow_parents=True):
+    def get(self, timeout=None, propagate=True, interval=0.5, no_ack=True,
+            follow_parents=True):
         """Wait until task is ready, and return its result.
 
         .. warning::
@@ -173,9 +177,12 @@ class AsyncResult(ResultBase):
                           operation times out.
         :keyword propagate: Re-raise exception if the task failed.
         :keyword interval: Time to wait (in seconds) before retrying to
-           retrieve the result.  Note that this does not have any effect
-           when using the amqp result store backend, as it does not
-           use polling.
+            retrieve the result.  Note that this does not have any effect
+            when using the amqp result store backend, as it does not
+            use polling.
+        :keyword no_ack: Enable amqp no ack (automatically acknowledge
+            message). If this is :const:`False` then the message will
+            **not be acked**.
         :keyword follow_parents: Reraise any exception raised by parent task.
 
         :raises celery.exceptions.TimeoutError: if `timeout` is not
@@ -188,19 +195,22 @@ class AsyncResult(ResultBase):
         """
         assert_will_not_block()
         if follow_parents and propagate and self.parent:
-            self._maybe_reraise_parent_error()
+            on_interval = self._maybe_reraise_parent_error
+            on_interval()
 
-        started = now()
-        while True:
-            if timeout and now() - started >= timeout:
-                raise TimeoutError('The operation timed out')
-            if self._fulfilled:
-                if propagate:
-                    self.maybe_reraise()
-                return self.result
-            time.sleep(interval)
-            if follow_parents and propagate and self.parent:
-                self._maybe_reraise_parent_error()
+        if self._fulfilled:
+            if propagate:
+                self.maybe_reraise()
+            return self.result
+
+        return self.backend.wait_until_fulfilled(
+            self,
+            timeout=timeout,
+            propagate=propagate,
+            interval=interval,
+            on_interval=on_interval,
+            no_ack=no_ack,
+        )
     wait = get  # deprecated alias to :meth:`get`.
 
     def _maybe_reraise_parent_error(self):
@@ -339,9 +349,6 @@ class AsyncResult(ResultBase):
     def __reduce_args__(self):
         return self.id, self.backend, self.task_name, None, self.parent
 
-    def __del__(self):
-        self._history = None
-
     @cached_property
     def graph(self):
         return self.build_graph()
@@ -349,7 +356,7 @@ class AsyncResult(ResultBase):
     @property
     def supports_native_join(self):
         return self.backend.supports_native_join
-        
+
     @property
     def result(self):
         """When the task has been executed, this contains the return value.
@@ -357,16 +364,16 @@ class AsyncResult(ResultBase):
         instance."""
         return self._result
     info = result
-        
+
     @result.setter
     def result(self, new_result):
-        self._result = result
+        self._result = new_result
 
     @property
     def traceback(self):
         """Get the traceback of a failed task."""
         return self._traceback
-        
+
     @traceback.setter
     def traceback(self, new_traceback):
         self._traceback = new_traceback
@@ -403,11 +410,11 @@ class AsyncResult(ResultBase):
         """
         return self._state
     status = state
-    
+
     @state.setter
     def state(self, new_state):
         self._state = new_state
-        
+
     @property
     def task_id(self):
         """compat alias to :attr:`id`"""
