@@ -7,7 +7,7 @@ by Ask Solem
 
 .. |copy|   unicode:: U+000A9 .. COPYRIGHT SIGN
 
-Copyright |copy| 2009-2013, Ask Solem.
+Copyright |copy| 2009-2014, Ask Solem.
 
 All rights reserved.  This material may be copied or distributed only
 subject to the terms and conditions set forth in the `Creative Commons
