@@ -15,7 +15,7 @@ try:
 except ImportError:  # pragma: no cover
     Timeout = None  # noqa
 
-from celery.utils import timer2
+from kombu.async import timer as _timer
 
 from .base import apply_target, BasePool
 
@@ -35,7 +35,7 @@ def apply_timeout(target, args=(), kwargs={}, callback=None,
         return timeout_callback(False, timeout)
 
 
-class Schedule(timer2.Schedule):
+class Timer(_timer.Timer):
 
     def __init__(self, *args, **kwargs):
         from gevent.greenlet import Greenlet, GreenletExit
@@ -45,7 +45,7 @@ class Schedule(timer2.Schedule):
 
         self._Greenlet = _Greenlet
         self._GreenletExit = GreenletExit
-        super(Schedule, self).__init__(*args, **kwargs)
+        super(Timer, self).__init__(*args, **kwargs)
         self._queue = set()
 
     def _enter(self, eta, priority, entry):
@@ -76,19 +76,6 @@ class Schedule(timer2.Schedule):
     @property
     def queue(self):
         return self._queue
-
-
-class Timer(timer2.Timer):
-    Schedule = Schedule
-
-    def ensure_started(self):
-        pass
-
-    def stop(self):
-        self.schedule.clear()
-
-    def start(self):
-        pass
 
 
 class TaskPool(BasePool):

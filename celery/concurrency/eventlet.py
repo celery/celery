@@ -28,9 +28,10 @@ for mod in (mod for mod in sys.modules if mod.startswith(RACE_MODS)):
             import warnings
             warnings.warn(RuntimeWarning(W_RACE % side))
 
+from kombu.async import timer as _timer
+
 
 from celery import signals
-from celery.utils import timer2
 
 from . import base
 
@@ -41,12 +42,12 @@ def apply_target(target, args=(), kwargs={}, callback=None,
                              pid=getpid())
 
 
-class Schedule(timer2.Schedule):
+class Timer(_timer.Timer):
 
     def __init__(self, *args, **kwargs):
         from eventlet.greenthread import spawn_after
         from greenlet import GreenletExit
-        super(Schedule, self).__init__(*args, **kwargs)
+        super(Timer, self).__init__(*args, **kwargs)
 
         self.GreenletExit = GreenletExit
         self._spawn_after = spawn_after
@@ -81,28 +82,15 @@ class Schedule(timer2.Schedule):
             except (KeyError, self.GreenletExit):
                 pass
 
-    @property
-    def queue(self):
-        return self._queue
-
-
-class Timer(timer2.Timer):
-    Schedule = Schedule
-
-    def ensure_started(self):
-        pass
-
-    def stop(self):
-        self.schedule.clear()
-
     def cancel(self, tref):
         try:
             tref.cancel()
-        except self.schedule.GreenletExit:
+        except self.GreenletExit:
             pass
 
-    def start(self):
-        pass
+    @property
+    def queue(self):
+        return self._queue
 
 
 class TaskPool(base.BasePool):
