@@ -26,11 +26,9 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     """Non-blocking event loop consuming messages until connection is lost,
     or shutdown is requested."""
     update_qos = qos.update
-    readers, writers = hub.readers, hub.writers
     hbtick = connection.heartbeat_check
     errors = connection.connection_errors
     heartbeat = connection.get_heartbeat_interval()  # negotiated
-    hub_add, hub_remove = hub.add, hub.remove
 
     on_task_received = obj.create_task_handler()
 
