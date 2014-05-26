@@ -683,12 +683,6 @@ class OrderedDefaultDict(OrderedDict):
         super(OrderedDefaultDict, self).__init__(*args, **kwargs)
         self.default_factory = default_factory
 
-    def __getitem__(self, key):
-        try:
-            return super(OrderedDefaultDict, self).__getitem__(self, key)
-        except KeyError:
-            return self.__missing__(key)
-
     def __missing__(self, key):
         if self.default_factory is None:
             raise KeyError(key)
