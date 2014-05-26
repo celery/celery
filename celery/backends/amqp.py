@@ -169,6 +169,15 @@ class AMQPBackend(BaseBackend):
     def wait_until_complete(self, results, timeout=None, propagate=True,
                             no_ack=True, interval=0.5, on_interval=None,
                             now=monotonic):
+        unclaimed = self._unclaimed
+        if unclaimed:
+            for result in results:
+                metas = unclaimed.get(result.id)
+                if metas:
+                    for meta in metas:
+                        result.send(meta)
+                    # This task is not unclaimed anymore
+                    del unclaimed[result.id]
         ready_results = {result.id: result for result in results
                          if result.ready()}
         for result in ready_results.values():
@@ -190,8 +199,10 @@ class AMQPBackend(BaseBackend):
             if result:
                 result.send(meta)
                 if result.ready():
-                    current_result.append(meta)
+                    current_result.append(result)
                     del results_to_wait[task_id]  # Don't need to wait
+            else:
+                unclaimed[task_id].append(meta)
 
         bindings = self._many_bindings(results_to_wait)
         with self.app.pool.acquire_channel(block=True) as (conn, channel):

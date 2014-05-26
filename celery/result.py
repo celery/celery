@@ -207,7 +207,7 @@ class AsyncResult(ResultBase):
         ))
         if propagate:
             self.maybe_reraise()
-        return result['result']
+        return result.result
 
     wait = get  # deprecated alias to :meth:`get`.
 
