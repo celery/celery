@@ -34,6 +34,7 @@ class Task(ResultModelBase):
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
                           onupdate=datetime.utcnow, nullable=True)
     traceback = sa.Column(sa.Text, nullable=True)
+    hostname = sa.Column(sa.String(255), nullable=True)
 
     def __init__(self, task_id):
         self.task_id = task_id
@@ -43,7 +44,8 @@ class Task(ResultModelBase):
                 'status': self.status,
                 'result': self.result,
                 'traceback': self.traceback,
-                'date_done': self.date_done}
+                'date_done': self.date_done,
+                'hostname': self.hostname}
 
     def __repr__(self):
         return '<Task {0.task_id} state: {0.status}>'.format(self)

@@ -12,18 +12,16 @@ from __future__ import absolute_import
 
 import socket
 
-from collections import deque
 from operator import itemgetter
 
 from kombu import Exchange, Queue, Producer, Consumer
 
 from celery import states
-from celery.exceptions import TimeoutError
+from celery.result import AsyncResult
 from celery.five import range, monotonic
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.timeutils import maybe_s_to_ms
-from celery.datastructures import OrderedDefaultDict
 
 from .base import BaseBackend
 
@@ -89,9 +87,6 @@ class AMQPBackend(BaseBackend):
             'x-expires': maybe_s_to_ms(self.expires),
         })
 
-        # Unclaimed task results
-        self._unclaimed = OrderedDefaultDict(list)
-
     def _create_exchange(self, name, type='direct', delivery_mode=2):
         return self.Exchange(name=name,
                              type=type,
@@ -150,43 +145,23 @@ class AMQPBackend(BaseBackend):
                  READY_STATES=states.READY_STATES,
                  PROPAGATE_STATES=states.PROPAGATE_STATES,
                  **kwargs):
-        cached_meta = self._cache.get(task_id)
-        if cache and cached_meta and \
-                cached_meta['status'] in READY_STATES:
-            meta = cached_meta
-        else:
-            try:
-                meta = self.consume(task_id, timeout=timeout, no_ack=no_ack,
-                                    on_interval=on_interval)
-            except socket.timeout:
-                raise TimeoutError('The operation timed out.')
+        #XXX mark as deprecated
+        result = task_id
+        if not isinstance(task_id, AsyncResult):
+            result = AsyncResult(task_id)
+        reply = next(self.wait_until_complete(
+            (result,),
+            timeout=timeout,
+            propagate=propagate,
+            no_ack=no_ack,
+            on_interval=on_interval,
+        ))
+        return reply.result
 
-        if meta['status'] in PROPAGATE_STATES and propagate:
-            raise self.exception_to_python(meta['result'])
-        # consume() always returns READY_STATE.
-        return meta['result']
-
-    def wait_until_complete(self, results, timeout=None, propagate=True,
-                            no_ack=True, interval=0.5, on_interval=None,
-                            now=monotonic):
+    def consume(self, results, timeout=None, propagate=True,
+                no_ack=True, interval=0.5, on_interval=None,
+                now=monotonic):
         unclaimed = self._unclaimed
-        if unclaimed:
-            for result in results:
-                metas = unclaimed.get(result.id)
-                if metas:
-                    for meta in metas:
-                        result.send(meta)
-                    # This task is not unclaimed anymore
-                    del unclaimed[result.id]
-        ready_results = {result.id: result for result in results
-                         if result.ready()}
-        for result in ready_results.values():
-            yield result
-        if len(results) == len(ready_results):
-            return
-
-        results_to_wait = {result.id: result for result in results
-                           if not result.ready()}
 
         # Workaround for missing nonlocal in py2
         current_result = []
@@ -195,23 +170,23 @@ class AMQPBackend(BaseBackend):
             # XXX: uncomment when only py3 will be supported and use None
             # nonlocal current_result
             task_id = meta['task_id']
-            result = results_to_wait.get(task_id)
+            result = results.get(task_id)
             if result:
                 result.send(meta)
                 if result.ready():
                     current_result.append(result)
-                    del results_to_wait[task_id]  # Don't need to wait
+                    del results[task_id]  # Don't need to wait
             else:
                 unclaimed[task_id].append(meta)
 
-        bindings = self._many_bindings(results_to_wait)
+        bindings = self._many_bindings(results)
         with self.app.pool.acquire_channel(block=True) as (conn, channel):
             with self.Consumer(channel, bindings, no_ack=no_ack,
                                accept=self.accept) as consumer:
                 wait = conn.drain_events
                 consumer.callbacks[:] = [callback]
                 time_start = now()
-                while results_to_wait:
+                while results:
                     if timeout and now() - time_start >= timeout:
                         raise socket.timeout()
                     try:
@@ -226,6 +201,11 @@ class AMQPBackend(BaseBackend):
     def get_task_meta(self, result, backlog_limit=1000):
         # Polling and using basic_get
         task_id = result.id
+        unclaimed = self._unclaimed.get(task_id)
+        if unclaimed:
+            meta = unclaimed[-1]
+            result.send(meta)
+            return meta
         with self.app.pool.acquire_channel(block=True) as (_, channel):
             binding = self._create_binding(task_id)(channel)
             binding.declare()
@@ -255,43 +235,6 @@ class AMQPBackend(BaseBackend):
                 return result._cache
     poll = get_task_meta  # XXX compat
 
-    def drain_events(self, connection, consumer,
-                     timeout=None, on_interval=None, now=monotonic, wait=None):
-        wait = wait or connection.drain_events
-        results = {}
-
-        def callback(meta, message):
-            if meta['status'] in states.READY_STATES:
-                results[meta['task_id']] = meta
-
-        consumer.callbacks[:] = [callback]
-        time_start = now()
-
-        while 1:
-            # Total time spent may exceed a single call to wait()
-            if timeout and now() - time_start >= timeout:
-                raise socket.timeout()
-            wait(timeout=timeout)
-            if on_interval:
-                on_interval()
-            if results:  # got event on the wanted channel.
-                break
-        self._cache.update(results)
-        return results
-
-    def consume(self, task_id, timeout=None, no_ack=True, on_interval=None):
-        wait = self.drain_events
-        with self.app.pool.acquire_channel(block=True) as (conn, channel):
-            binding = self._create_binding(task_id)
-            with self.Consumer(channel, binding,
-                               no_ack=no_ack, accept=self.accept) as consumer:
-                while 1:
-                    try:
-                        return wait(
-                            conn, consumer, timeout, on_interval)[task_id]
-                    except KeyError:
-                        continue
-
     def _many_bindings(self, ids):
         return [self._create_binding(task_id) for task_id in ids]
 
@@ -299,47 +242,14 @@ class AMQPBackend(BaseBackend):
                  now=monotonic, getfields=itemgetter('status', 'task_id'),
                  READY_STATES=states.READY_STATES,
                  PROPAGATE_STATES=states.PROPAGATE_STATES, **kwargs):
-        with self.app.pool.acquire_channel(block=True) as (conn, channel):
-            ids = set(task_ids)
-            cached_ids = set()
-            mark_cached = cached_ids.add
-            for task_id in ids:
-                try:
-                    cached = self._cache[task_id]
-                except KeyError:
-                    pass
-                else:
-                    if cached['status'] in READY_STATES:
-                        yield task_id, cached
-                        mark_cached(task_id)
-            ids.difference_update(cached_ids)
-            results = deque()
-            push_result = results.append
-            push_cache = self._cache.__setitem__
-            to_exception = self.exception_to_python
-
-            def on_message(message):
-                body = message.decode()
-                state, uid = getfields(body)
-                if state in READY_STATES:
-                    if state in PROPAGATE_STATES:
-                        body['result'] = to_exception(body['result'])
-                    push_result(body) \
-                        if uid in task_ids else push_cache(uid, body)
-
-            bindings = self._many_bindings(task_ids)
-            with self.Consumer(channel, bindings, on_message=on_message,
-                               accept=self.accept, no_ack=no_ack):
-                wait = conn.drain_events
-                popleft = results.popleft
-                while ids:
-                    wait(timeout=timeout)
-                    while results:
-                        state = popleft()
-                        task_id = state['task_id']
-                        ids.discard(task_id)
-                        push_cache(task_id, state)
-                        yield task_id, state
+        #XXX mark as deprecated
+        results = []
+        for task_id in task_ids:
+            if not isinstance(task_id, AsyncResult):
+                task_id = AsyncResult(task_id)
+            results.append(task_id)
+        return self.wait_until_complete(results, timeout=timeout,
+                                        no_ack=no_ack, now=now)
 
     def reload_task_result(self, task_id):
         raise NotImplementedError(
