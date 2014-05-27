@@ -18,7 +18,6 @@ except ImportError:  # pragma: no cover
 import socket
 import time
 
-from celery.result import AsyncResult
 from celery.exceptions import ImproperlyConfigured
 from celery.five import monotonic
 from celery.utils.log import get_logger
@@ -162,8 +161,8 @@ class CassandraBackend(BaseBackend):
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
         result = task_id
-        if not isinstance(task_id, AsyncResult):
-            result = AsyncResult(task_id)
+        if not isinstance(task_id, self.AsyncResult):
+            result = self.AsyncResult(task_id)
 
         def _do_get():
             cf = self._get_column_family()

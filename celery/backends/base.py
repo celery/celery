@@ -32,7 +32,7 @@ from celery.exceptions import ChordError, TimeoutError, TaskRevokedError
 from celery.five import items, monotonic
 from celery.datastructures import OrderedDefaultDict
 from celery.result import (
-    GroupResult, ResultBase, allow_join_result, result_from_tuple, AsyncResult
+    GroupResult, ResultBase, allow_join_result, result_from_tuple
 )
 from celery.utils.log import get_logger
 from celery.utils.serialization import (
@@ -105,6 +105,8 @@ class BaseBackend(object):
 
         # Unclaimed task results
         self._unclaimed = OrderedDefaultDict(list)
+
+        self.AsyncResult = app.AsyncResult
 
     def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
@@ -208,7 +210,7 @@ class BaseBackend(object):
             result will be retrieved separately, which may cause performance
             issues.
 
-        :keyword results: List of AsyncResult instances.
+        :keyword results: List of app.AsyncResult instances.
         :keyword timeout: How long to wait, in seconds, before the
                           operation times out.
         :keyword interval: Time to wait (in seconds) before retrying to
@@ -378,8 +380,8 @@ class BaseBackend(object):
 
     def get_task_meta(self, task_id):
         result = task_id
-        if not isinstance(task_id, AsyncResult):
-            result = AsyncResult(task_id)
+        if not isinstance(task_id, self.AsyncResult):
+            result = self.AsyncResult(task_id)
         unclaimed = self._unclaimed.get(result.id)
         if unclaimed:
             return unclaimed[-1]

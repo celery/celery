@@ -12,7 +12,6 @@ import logging
 from contextlib import contextmanager
 from functools import wraps
 
-from celery.result import AsyncResult
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.five import range
@@ -134,8 +133,8 @@ class DatabaseBackend(BaseBackend):
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
         result = task_id
-        if not isinstance(task_id, AsyncResult):
-            result = AsyncResult(task_id)
+        if not isinstance(task_id, self.AsyncResult):
+            result = self.AsyncResult(task_id)
         session = self.ResultSession()
         with session_cleanup(session):
             task = list(session.query(Task).filter(Task.task_id == task_id))

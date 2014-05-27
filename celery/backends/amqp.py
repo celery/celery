@@ -17,7 +17,6 @@ from operator import itemgetter
 from kombu import Exchange, Queue, Producer, Consumer
 
 from celery import states
-from celery.result import AsyncResult
 from celery.five import range, monotonic
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
@@ -147,8 +146,8 @@ class AMQPBackend(BaseBackend):
                  **kwargs):
         #XXX mark as deprecated
         result = task_id
-        if not isinstance(task_id, AsyncResult):
-            result = AsyncResult(task_id)
+        if not isinstance(task_id, self.AsyncResult):
+            result = self.AsyncResult(task_id)
         reply = next(self.wait_until_complete(
             (result,),
             timeout=timeout,
@@ -247,8 +246,8 @@ class AMQPBackend(BaseBackend):
         #XXX mark as deprecated
         results = []
         for task_id in task_ids:
-            if not isinstance(task_id, AsyncResult):
-                task_id = AsyncResult(task_id)
+            if not isinstance(task_id, self.AsyncResult):
+                task_id = self.AsyncResult(task_id)
             results.append(task_id)
         return self.wait_until_complete(results, timeout=timeout,
                                         no_ack=no_ack, now=now)
