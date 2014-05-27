@@ -223,8 +223,9 @@ class AMQPBackend(BaseBackend):
                     if current_result:
                         yield current_result.pop()
 
-    def get_task_meta(self, task_id, backlog_limit=1000):
+    def get_task_meta(self, result, backlog_limit=1000):
         # Polling and using basic_get
+        task_id = result.id
         with self.app.pool.acquire_channel(block=True) as (_, channel):
             binding = self._create_binding(task_id)(channel)
             binding.declare()
@@ -238,6 +239,7 @@ class AMQPBackend(BaseBackend):
                     break
                 if acc.payload['task_id'] == task_id:
                     prev, latest = latest, acc
+                    result.send(acc.payload)
                 if prev:
                     # backends are not expected to keep history,
                     # so we delete everything except the most recent state.
@@ -247,16 +249,10 @@ class AMQPBackend(BaseBackend):
                 raise self.BacklogLimitExceeded(task_id)
 
             if latest:
-                payload = self._cache[task_id] = latest.payload
                 latest.requeue()
-                return payload
+                return latest.payload
             else:
-                # no new state, use previous
-                try:
-                    return self._cache[task_id]
-                except KeyError:
-                    # result probably pending.
-                    return {'status': states.PENDING, 'result': None}
+                return result._cache
     poll = get_task_meta  # XXX compat
 
     def drain_events(self, connection, consumer,

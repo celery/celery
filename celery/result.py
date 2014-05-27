@@ -92,13 +92,14 @@ class AsyncResult(ResultBase):
         self.task_name = task_name
         self.parent = parent
 
-        self._on_state_change = promise()
+        self._fulfilled = False
+        self._on_state_change = promise(self._set_cache)
         self._on_ready = promise()
 
-        self._cache = None
+        self._cache = {'status': states.PENDING, 'result': None}
 
     def _mark_as_fulfilled(self, meta):
-        self._set_cache(meta)
+        self._fulfilled = True
         self._on_ready(self)
 
     def is_final_state(self, state):
@@ -107,13 +108,15 @@ class AsyncResult(ResultBase):
 
     def send(self, meta):
         # pass to callbacks
-        self._on_state_change(self, meta)
+        self._on_state_change(meta)
 
         # fulfilled?
         if self.is_final_state(meta):
             self._mark_as_fulfilled(meta)
 
     def then(self, callback, error_callback=None):
+        if self.ready():
+            raise self.ResultFulfilledError
         return self._on_ready.then(callback, error_callback)
 
     @property
@@ -129,10 +132,8 @@ class AsyncResult(ResultBase):
 
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
-        self._result = None
-        self._traceback = None
-        self._state = None
-        self.children = ()
+        self._cache = {'status': states.PENDING, 'result': None}
+        self._fulfilled = False
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
@@ -188,6 +189,7 @@ class AsyncResult(ResultBase):
 
         """
         assert_will_not_block()
+        on_interval = None
         if follow_parents and propagate and self.parent:
             on_interval = self._maybe_reraise_parent_error
             on_interval()
@@ -195,7 +197,7 @@ class AsyncResult(ResultBase):
         if callback:
             self.then(callback)
 
-        if self._cache:
+        if self._fulfilled:
             if propagate:
                 self.maybe_reraise()
             return self.result
@@ -356,26 +358,40 @@ class AsyncResult(ResultBase):
     def supports_native_join(self):
         return self.backend.supports_native_join
 
+    def _get_task_meta(self):
+        self.backend.get_task_meta(self)  # will call self.send
+        return self._cache
+
+    def _set_cache(self, d):
+        state = d['status']
+        if self._cache['status'] != state:
+            # Not the same state, update cache
+            children = d.get('children')
+            if state in states.EXCEPTION_STATES:
+                d['result'] = self.backend.exception_to_python(d['result'])
+            if children:
+                d['children'] = [
+                    result_from_tuple(child, self.app) for child in children
+                ]
+            self._cache = d
+        return self._cache
+
+    @property
+    def children(self):
+        return self._get_task_meta().get('children')
+
     @property
     def result(self):
         """When the task has been executed, this contains the return value.
         If the task raised an exception, this will be the exception
         instance."""
-        return self._result
+        return self._get_task_meta()['result']
     info = result
-
-    @result.setter
-    def result(self, new_result):
-        self._result = new_result
 
     @property
     def traceback(self):
         """Get the traceback of a failed task."""
-        return self._traceback
-
-    @traceback.setter
-    def traceback(self, new_traceback):
-        self._traceback = new_traceback
+        return self._get_task_meta().get('traceback')
 
     @property
     def state(self):
@@ -407,12 +423,8 @@ class AsyncResult(ResultBase):
                 then contains the tasks return value.
 
         """
-        return self._state
+        return self._get_task_meta()['status']
     status = state
-
-    @state.setter
-    def state(self, new_state):
-        self._state = new_state
 
     @property
     def task_id(self):
@@ -422,6 +434,9 @@ class AsyncResult(ResultBase):
     @task_id.setter  # noqa
     def task_id(self, id):
         self.id = id
+
+    def __del__(self):
+        self._cache = None
 BaseAsyncResult = AsyncResult  # for backwards compatibility.
 
 
