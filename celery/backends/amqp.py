@@ -158,9 +158,11 @@ class AMQPBackend(BaseBackend):
         ))
         return reply.result
 
-    def consume(self, results, timeout=None, propagate=True,
-                no_ack=True, interval=0.5, on_interval=None,
-                now=monotonic):
+    def join_native(self, results, timeout=None, propagate=True,
+                    no_ack=True, interval=0.5, on_interval=None,
+                    now=monotonic):
+        results = {result.id: result for result in results
+                   if not result.ready()}
         unclaimed = self._unclaimed
 
         # Workaround for missing nonlocal in py2
@@ -179,7 +181,7 @@ class AMQPBackend(BaseBackend):
             else:
                 unclaimed[task_id].append(meta)
 
-        bindings = self._many_bindings(results)
+        bindings = self._many_bindings(id for id in results)
         with self.app.pool.acquire_channel(block=True) as (conn, channel):
             with self.Consumer(channel, bindings, no_ack=no_ack,
                                accept=self.accept) as consumer:

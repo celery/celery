@@ -73,7 +73,8 @@ class BaseBackend(object):
     #: argument which is for each pass.
     subpolling_interval = None
 
-    #: If true the backend must implement :meth:`get_many`.
+    #: If true the backend must implement
+    #: :meth:`join_native` or :meth:`get_many` (or just :meth:`mget`)
     supports_native_join = False
 
     #: If true the backend must automatically expire results.
@@ -193,6 +194,20 @@ class BaseBackend(object):
                             now=monotonic):
         """Wait for tasks and yield their results.
 
+        .. warning::
+
+            Collecting the results for different task types
+            using different backends may be **very** slow, since
+            each result is retrieved separately. Consider to collect
+            the results from the same backend.
+
+        .. note::
+
+            Even if you're using the same backend for the results, the backend
+            may not support collecting multiple results at once. Thus each
+            result will be retrieved separately, which may cause performance
+            issues.
+
         :keyword results: List of AsyncResult instances.
         :keyword timeout: How long to wait, in seconds, before the
                           operation times out.
@@ -228,16 +243,18 @@ class BaseBackend(object):
         if len(results) == len(ready_results):
             return
 
-        results_to_wait = {result.id: result for result in results
-                           if not result.ready()}
-        return self.consume(results_to_wait, timeout, interval, no_ack,
-                            on_interval, now)
+        for reply in self._maybe_join_native(results, timeout, interval,
+                                             no_ack, on_interval, now):
+            yield reply
 
-    def consume(self, results, timeout=None, interval=0.5, no_ack=True,
-                on_interval=None, now=monotonic):
-        """May be overriden in successors to change cosuming behavior.
-        See :class:`celery.backends.amqp.AMQPBackend` for example.
+    def join(self, results, timeout=None, interval=0.5, no_ack=True,
+             on_interval=None, now=monotonic):
+        """Slow, non-native method for collecting results.
+
+        May be overriden in successors to change cosuming behavior.
         """
+        results = {result.id: result for result in results
+                   if not result.ready()}
         time_start = now()
         while results:
             if timeout and now() - time_start >= timeout:
@@ -253,6 +270,47 @@ class BaseBackend(object):
             if on_interval:
                 on_interval()
             time.sleep(interval)
+
+    def join_native(self, results, timeout=None, interval=0.5,
+                    no_ack=True, on_interval=None, now=monotonic):
+        """Native method for collecting multiple results.
+
+        May be overriden in successors to change consuming behavior.
+        See :class:`celery.backends.amqp.AMQPBackend` for example.
+        """
+        results = {result.id: result for result in results
+                   if not result.ready()}
+        time_start = now()
+        while results:
+            if timeout and now() - time_start >= timeout:
+                raise TimeoutError('The operation timed out.')
+            for result in self.get_many([id for id in results]):
+                if result.ready():
+                    del results[result.id]
+                    yield result
+            if on_interval:
+                on_interval()
+            time.sleep(interval)
+
+    def _maybe_join_native(self, results, timeout=None, interval=0.5,
+                           no_ack=True, on_interval=None, now=monotonic):
+        # Check if backend does not support native join at first
+        if not results[0].backend.supports_native_join:
+            for reply in self.join(results, timeout=timeout,
+                                   interval=interval, no_ack=no_ack,
+                                   on_interval=on_interval, now=now):
+                yield reply
+    # Iterate through pairs, s -> (s0,s1),(s1,s2),...
+        for i, result in enumerate(results[:-1]):
+            if result.backend != results[i+1].backend:
+                for reply in self.join(results, timeout=timeout,
+                                       interval=interval, no_ack=no_ack,
+                                       on_interval=on_interval, now=now):
+                    yield reply
+        for reply in self.join_native(results, timeout=timeout,
+                                      interval=interval, no_ack=no_ack,
+                                      on_interval=on_interval, now=now):
+            yield reply
 
     def prepare_expires(self, value, type=None):
         if value is None:
@@ -478,12 +536,10 @@ class KeyValueStoreBackend(BaseBackend):
 
     def get_many(self, task_ids, timeout=None, interval=0.5, no_ack=True,
                  READY_STATES=states.READY_STATES):
-        #XXX mark as deprecated
-        results = [AsyncResult(task_id)
-                   if not isinstance(task_id, AsyncResult) else task_id
-                   for task_id in task_ids]
-        return self.wait_until_complete(results, timeout=timeout,
-                                        interval=interval, no_ack=no_ack)
+        return self._mget_to_results(self.mget(
+            (self.get_key_for_task(id) for id in task_ids),
+            task_ids,
+        ))
 
     def _forget(self, task_id):
         self.delete(self.get_key_for_task(task_id))
