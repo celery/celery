@@ -269,7 +269,10 @@ class _RemoteControl(Command):
         Option('--timeout', '-t', type='float',
                help='Timeout in seconds (float) waiting for reply'),
         Option('--destination', '-d',
-               help='Comma separated list of destination node names.'))
+               help='Comma separated list of destination node names.'),
+        Option('--json', '-j', action='store_true',
+               help='Use json as output format.'),
+    )
 
     def __init__(self, *args, **kwargs):
         self.show_body = kwargs.pop('show_body', True)
@@ -335,6 +338,7 @@ class _RemoteControl(Command):
         if self.app.connection().transport.driver_type == 'sql':
             raise self.Error('Broadcast not supported by SQL broker transport')
 
+        output_json = kwargs.get('json')
         destination = kwargs.get('destination')
         timeout = kwargs.get('timeout') or self.choices[method][0]
         if destination and isinstance(destination, string_t):
@@ -342,12 +346,16 @@ class _RemoteControl(Command):
 
         handler = getattr(self, method, self.call)
 
+        callback = None if output_json else self.say_remote_command_reply
+
         replies = handler(method, *args[1:], timeout=timeout,
                           destination=destination,
-                          callback=self.say_remote_command_reply)
+                          callback=callback)
         if not replies:
             raise self.Error('No nodes replied within time constraint.',
                              status=EX_UNAVAILABLE)
+        if output_json:
+            self.out(json.dumps(replies))
         return replies
 
 
