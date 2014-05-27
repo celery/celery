@@ -187,6 +187,7 @@ class Celery(object):
             self.on_configure = Signal()
         self.on_after_configure = Signal()
         self.on_after_finalize = Signal()
+        self.on_connect = Signal()
 
         self.on_init()
         _register_app(self)
@@ -383,6 +384,13 @@ class Celery(object):
                    transport_options=None, heartbeat=None,
                    login_method=None, failover_strategy=None, **kwargs):
         conf = self.conf
+
+        def on_connect(connection):
+            self.on_connect.send(sender=self, connection=connection)
+
+        if heartbeat is None and self.loader.worker_initialized:
+            heartbeat = conf.BROKER_HEARTBEAT
+
         return self.amqp.Connection(
             hostname or conf.BROKER_URL,
             userid or conf.BROKER_USER,
@@ -402,6 +410,7 @@ class Celery(object):
             connect_timeout=self.either(
                 'BROKER_CONNECTION_TIMEOUT', connect_timeout
             ),
+            on_connect=on_connect,
         )
     broker_connection = connection
 

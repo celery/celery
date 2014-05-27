@@ -165,7 +165,7 @@ class Consumer(object):
     def __init__(self, on_task_request,
                  init_callback=noop, hostname=None,
                  pool=None, app=None,
-                 timer=None, controller=None, hub=None, amqheartbeat=None,
+                 timer=None, controller=None, hub=None,
                  worker_options=None, disable_rate_limits=False,
                  initial_prefetch_count=2, prefetch_multiplier=1, **kwargs):
         self.app = app
@@ -184,7 +184,6 @@ class Consumer(object):
         self._does_info = logger.isEnabledFor(logging.INFO)
         self.on_task_request = on_task_request
         self.on_task_message = set()
-        self.amqheartbeat_rate = self.app.conf.BROKER_HEARTBEAT_CHECKRATE
         self.disable_rate_limits = disable_rate_limits
         self.initial_prefetch_count = initial_prefetch_count
         self.prefetch_multiplier = prefetch_multiplier
@@ -195,12 +194,6 @@ class Consumer(object):
         self.reset_rate_limits()
 
         self.hub = hub
-        if self.hub:
-            self.amqheartbeat = amqheartbeat
-            if self.amqheartbeat is None:
-                self.amqheartbeat = self.app.conf.BROKER_HEARTBEAT
-        else:
-            self.amqheartbeat = 0
 
         if not hasattr(self, 'loop'):
             self.loop = loops.asynloop if hub else loops.synloop
@@ -306,9 +299,9 @@ class Consumer(object):
             callback(self)
 
     def loop_args(self):
-        return (self, self.connection, self.task_consumer,
-                self.blueprint, self.hub, self.qos, self.amqheartbeat,
-                self.app.clock, self.amqheartbeat_rate)
+        return (self, self.connection, self.task_consumer, self.blueprint,
+                self.hub, self.qos, self.app.clock)
+
 
     def on_decode_error(self, message, exc):
         """Callback called if an error occurs while decoding
@@ -346,7 +339,7 @@ class Consumer(object):
         :setting:`BROKER_CONNECTION_RETRY` setting is enabled
 
         """
-        conn = self.app.connection(heartbeat=self.amqheartbeat)
+        conn = self.app.connection()
 
         # Callback called for each retry while the connection
         # can't be established.
@@ -478,11 +471,18 @@ class Consumer(object):
             self=self, state=self.blueprint.human_state(),
         )
 
+    def setup_heartbeat(self, connection, **kwargs):
+        logger.warning('Setting up heartbeat on %r' % connection.connection.transport)
+        def hbtick():
+            logger.warning('Heartbeat on %r' % connection.connection.transport)
+            connection.heartbeat_check()
+        self.timer.call_repeatedly(1, hbtick)
 
 class Connection(bootsteps.StartStopStep):
 
     def __init__(self, c, **kwargs):
         c.connection = None
+        c.app.on_connect.connect(c.setup_heartbeat)
 
     def start(self, c):
         c.connection = c.connect()

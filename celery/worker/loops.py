@@ -21,24 +21,14 @@ logger = get_logger(__name__)
 error = logger.error
 
 
-def asynloop(obj, connection, consumer, blueprint, hub, qos,
-             heartbeat, clock, hbrate=2.0, RUN=RUN):
+def asynloop(obj, connection, consumer, blueprint, hub, qos, clock, RUN=RUN):
     """Non-blocking event loop consuming messages until connection is lost,
     or shutdown is requested."""
     update_qos = qos.update
-    readers, writers = hub.readers, hub.writers
-    hbtick = connection.heartbeat_check
-    errors = connection.connection_errors
-    heartbeat = connection.get_heartbeat_interval()  # negotiated
-    hub_add, hub_remove = hub.add, hub.remove
-
     on_task_received = obj.create_task_handler()
-
-    if heartbeat and connection.supports_heartbeats:
-        hub.call_repeatedly(heartbeat / hbrate, hbtick, hbrate)
-
     consumer.on_message = on_task_received
     consumer.consume()
+
     obj.on_ready()
     obj.controller.register_with_event_loop(hub)
     obj.register_with_event_loop(hub)
@@ -51,7 +41,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
 
     # FIXME: Use loop.run_forever
     # Tried and works, but no time to test properly before release.
-    hub.propagate_errors = errors
+    hub.propagate_errors = connection.connection_errors
     loop = hub.create_loop()
 
     try:
@@ -85,10 +75,9 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
             )
 
 
-def synloop(obj, connection, consumer, blueprint, hub, qos,
-            heartbeat, clock, hbrate=2.0, **kwargs):
+def synloop(obj, connection, consumer, blueprint, hub, qos, clock, **kwargs):
     """Fallback blocking event loop for transports that doesn't support AIO."""
-
+    update_qos = qos.update
     on_task_received = obj.create_task_handler()
     consumer.on_message = on_task_received
     consumer.consume()
@@ -98,7 +87,7 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
     while blueprint.state == RUN and obj.connection:
         state.maybe_shutdown()
         if qos.prev != qos.value:
-            qos.update()
+            update_qos()
         try:
             connection.drain_events(timeout=2.0)
         except socket.timeout:
