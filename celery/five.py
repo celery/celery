@@ -20,7 +20,7 @@ from amqp.five import __all__ as _all_five
 
 __all__ += _all_five
 
-############## Module Generation ##########################
+#  ############# Module Generation ##########################
 
 # Utilities to dynamically
 # recreate modules, either for lazy loading or

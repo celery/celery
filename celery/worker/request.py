@@ -388,9 +388,11 @@ class Request(object):
                 'worker_pid': self.worker_pid}
 
     def __str__(self):
-        return '{0.name}[{0.id}]{1}{2}'.format(self,
-               ' eta:[{0}]'.format(self.eta) if self.eta else '',
-               ' expires:[{0}]'.format(self.expires) if self.expires else '')
+        return '{0.name}[{0.id}]{1}{2}'.format(
+            self,
+            ' eta:[{0}]'.format(self.eta) if self.eta else '',
+            ' expires:[{0}]'.format(self.expires) if self.expires else '',
+        )
     shortinfo = __str__
 
     def __repr__(self):

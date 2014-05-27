@@ -27,11 +27,12 @@ from celery import Celery
 app = Celery(
     'myapp',
     broker='amqp://guest@localhost//',
-    # add result backend here if needed.
-    #backend='rpc'
+    # ## add result backend here if needed.
+    # backend='rpc'
 )
 
-@app.task()
+
+@app.task
 def add(x, y):
     return x + y
 

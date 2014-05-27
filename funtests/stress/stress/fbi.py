@@ -64,4 +64,3 @@ class FBI(object):
             self.ffwd()
             for tid in ids:
                 print(self.state_of(tid), file=file)
-            #print(self.query(ids), file=file)

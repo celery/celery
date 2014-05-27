@@ -190,12 +190,12 @@ class BaseLoader(object):
             """Parse a single configuration definition from
             the command-line."""
 
-            ## find key/value
+            # ## find key/value
             # ns.key=value|ns_key=value (case insensitive)
             key, value = arg.split('=', 1)
             key = key.upper().replace('.', '_')
 
-            ## find namespace.
+            # ## find namespace.
             # .key=value|_key=value expands to default namespace.
             if key[0] == '_':
                 ns, key = namespace, key[1:]

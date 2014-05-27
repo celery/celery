@@ -48,8 +48,9 @@ def tdiff(then):
 
 @app.task(cur=0, time_start=None, queue='bench.worker', bare=True)
 def it(_, n):
-    i = it.cur  # use internal counter, as ordering can be skewed
-                # by previous runs, or the broker.
+    # use internal counter, as ordering can be skewed
+    # by previous runs, or the broker.
+    i = it.cur
     if i and not i % 5000:
         print('({0} so far: {1}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
         it.subt = time.time()

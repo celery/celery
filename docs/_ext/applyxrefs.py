@@ -49,7 +49,6 @@ def has_target(fn):
         if not readok:
             return (True, None)
 
-    #print fn, len(lines)
     if len(lines) < 1:
         print("Not touching empty file %s." % fn)
         return (True, None)
@@ -71,7 +70,6 @@ def main(argv=None):
             files.extend([(dirpath, f) for f in filenames])
     files.sort()
     files = [os.path.join(p, fn) for p, fn in files if fn.endswith('.txt')]
-    #print files
 
     for fn in files:
         if fn in DONT_TOUCH:

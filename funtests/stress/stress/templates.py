@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 import os
 
-from functools import partial
-
 from celery.five import items
 from kombu import Exchange, Queue
 from kombu.utils import symbol_by_name
@@ -121,10 +119,11 @@ class execv(default):
 
 @template()
 class sqs(default):
-    BROKER_URL='sqs://'
+    BROKER_URL = 'sqs://'
     BROKER_TRANSPORT_OPTIONS = {
         'region': os.environ.get('AWS_REGION', 'us-east-1'),
     }
+
 
 @template()
 class proto1(default):

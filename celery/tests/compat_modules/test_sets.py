@@ -135,8 +135,8 @@ class test_subtask(SetsCase):
         s = self.MockTask.subtask(
             (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
         )
-        s.args = list(s.args)                   # tuples are not preserved
-                                                # but this doesn't matter.
+        # tuples are not preserved, but this doesn't matter.
+        s.args = list(s.args)
         self.assertEqual(s, self.subtask(json.loads(json.dumps(s))))
 
     def test_repr(self):

@@ -595,7 +595,7 @@ class AsynPool(_pool.Pool):
         active_writers = self._active_writers
         busy_workers = self._busy_workers
         diff = all_inqueues.difference
-        add_reader, add_writer = hub.add_reader, hub.add_writer
+        add_writer = hub.add_writer
         hub_add, hub_remove = hub.add, hub.remove
         mark_write_fd_as_active = active_writes.add
         mark_write_gen_as_active = active_writers.add
@@ -638,8 +638,8 @@ class AsynPool(_pool.Pool):
 
             def on_poll_start():
                 if outbound and len(busy_workers) < len(all_inqueues):
-                    #print('ALL: %r ACTIVE: %r' % (len(all_inqueues),
-                    #                              len(active_writes)))
+                    #  print('ALL: %r ACTIVE: %r' % (len(all_inqueues),
+                    #                                len(active_writes)))
                     inactive = diff(active_writes)
                     [hub_add(fd, None, WRITE | ERR, consolidate=True)
                      for fd in inactive]
@@ -1134,8 +1134,6 @@ class AsynPool(_pool.Pool):
                     self._queues[self.create_process_queues()] = None
             except ValueError:
                 pass
-                # Not in queue map, make sure sockets are closed.
-                #self.destroy_queues((proc.inq, proc.outq, proc.synq))
             assert len(self._queues) == before
 
     def destroy_queues(self, queues, proc):

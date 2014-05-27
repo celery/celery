@@ -67,11 +67,6 @@ release = celery.__version__
 
 exclude_trees = ['.build']
 
-#unused_docs = [
-#    'xreftest.rst',
-#    'tutorials/otherqueues',
-#]
-
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = True
 
@@ -116,7 +111,7 @@ html_sidebars = {
            'sourcelink.html', 'searchbox.html'],
 }
 
-### Issuetracker
+# ## Issuetracker
 
 github_project = 'celery/celery'
 
@@ -142,13 +137,13 @@ epub_identifier = 'celeryproject.org'
 # A unique identification for the text.
 epub_uid = 'Celery Manual, Version {0}'.format(version)
 
-# HTML files that should be inserted before the pages created by sphinx.
-# The format is a list of tuples containing the path and title.
-#epub_pre_files = []
+# ## HTML files that should be inserted before the pages created by sphinx.
+# ## The format is a list of tuples containing the path and title.
+# epub_pre_files = []
 
-# HTML files shat should be inserted after the pages created by sphinx.
-# The format is a list of tuples containing the path and title.
-#epub_post_files = []
+# ## HTML files shat should be inserted after the pages created by sphinx.
+# ## The format is a list of tuples containing the path and title.
+# epub_post_files = []
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
