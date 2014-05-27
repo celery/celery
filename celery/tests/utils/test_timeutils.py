@@ -10,7 +10,6 @@ from celery.utils.timeutils import (
     humanize_seconds,
     maybe_iso8601,
     maybe_timedelta,
-    timedelta_seconds,
     timezone,
     rate,
     remaining,
@@ -82,19 +81,6 @@ class test_timeutils(Case):
                     (timedelta(seconds=2), dt))
         for delta, shoulda in deltamap:
             self.assertEqual(D(dt, delta), shoulda)
-
-    def test_timedelta_seconds(self):
-        deltamap = ((timedelta(seconds=1), 1),
-                    (timedelta(seconds=27), 27),
-                    (timedelta(minutes=3), 3 * 60),
-                    (timedelta(hours=4), 4 * 60 * 60),
-                    (timedelta(days=3), 3 * 86400))
-        for delta, seconds in deltamap:
-            self.assertEqual(timedelta_seconds(delta), seconds)
-
-    def test_timedelta_seconds_returns_0_on_negative_time(self):
-        delta = timedelta(days=-2)
-        self.assertEqual(timedelta_seconds(delta), 0)
 
     def test_humanize_seconds(self):
         t = ((4 * 60 * 60 * 24, '4.00 days'),

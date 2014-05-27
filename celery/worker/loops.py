@@ -37,7 +37,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     if heartbeat and connection.supports_heartbeats:
         hub.call_repeatedly(heartbeat / hbrate, hbtick, hbrate)
 
-    consumer.callbacks = [on_task_received]
+    consumer.on_message = on_task_received
     consumer.consume()
     obj.on_ready()
     obj.controller.register_with_event_loop(hub)
@@ -57,10 +57,14 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     try:
         while blueprint.state == RUN and obj.connection:
             # shutdown if signal handlers told us to.
-            if state.should_stop:
-                raise WorkerShutdown()
-            elif state.should_terminate:
-                raise WorkerTerminate()
+            should_stop, should_terminate = (
+                state.should_stop, state.should_terminate,
+            )
+            # False == EX_OK, so must use is not False
+            if should_stop is not None and should_stop is not False:
+                raise WorkerShutdown(should_stop)
+            elif should_terminate is not None and should_stop is not False:
+                raise WorkerTerminate(should_terminate)
 
             # We only update QoS when there is no more messages to read.
             # This groups together qos calls, and makes sure that remote
@@ -86,7 +90,7 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
     """Fallback blocking event loop for transports that doesn't support AIO."""
 
     on_task_received = obj.create_task_handler()
-    consumer.register_callback(on_task_received)
+    consumer.on_message = on_task_received
     consumer.consume()
 
     obj.on_ready()

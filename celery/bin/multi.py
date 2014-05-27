@@ -16,13 +16,13 @@ Examples
     # this.  The abbreviation %n will be expanded to the current
     # node name.
     $ celery multi start Leslie -E --pidfile=/var/run/celery/%n.pid
-                                    --logfile=/var/log/celery/%n.log
+                                   --logfile=/var/log/celery/%n%I.log
 
 
     # You need to add the same arguments when you restart,
     # as these are not persisted anywhere.
     $ celery multi restart Leslie -E --pidfile=/var/run/celery/%n.pid
-                                     --logfile=/var/run/celery/%n.log
+                                     --logfile=/var/run/celery/%n%I.log
 
     # To stop the node, you need to specify the same pidfile.
     $ celery multi stop Leslie --pidfile=/var/run/celery/%n.pid
@@ -103,13 +103,12 @@ import signal
 import socket
 import sys
 
-from collections import defaultdict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 from functools import partial
 from subprocess import Popen
 from time import sleep
 
 from kombu.utils import cached_property
-from kombu.utils.compat import OrderedDict
 from kombu.utils.encoding import from_utf8
 
 from celery import VERSION_BANNER
@@ -253,7 +252,7 @@ class MultiTool(object):
 
     def with_detacher_default_options(self, p):
         _setdefaultopt(p.options, ['--pidfile', '-p'], '%n.pid')
-        _setdefaultopt(p.options, ['--logfile', '-f'], '%n.log')
+        _setdefaultopt(p.options, ['--logfile', '-f'], '%n%I.log')
         p.options.setdefault(
             '--cmd',
             '-m {0}'.format(celery_exe('worker', '--detach')),
@@ -509,7 +508,7 @@ def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
 
         expand = partial(
             node_format, nodename=nodename, N=shortname, d=hostname,
-            h=nodename,
+            h=nodename, i='%i', I='%I',
         )
         argv = ([expand(cmd)] +
                 [format_opt(opt, expand(value))

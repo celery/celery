@@ -1,15 +1,15 @@
 #!/bin/sh
 # ============================================
-# celeryd - Starts the Celery worker daemon.
+#  celerybeat - Starts the Celery periodic task scheduler.
 # ============================================
 #
-# :Usage: /etc/init.d/celeryd {start|stop|restart|status}
-# :Configuration file: /etc/sysconfig/celeryd
+# :Usage: /etc/init.d/celerybeat {start|stop|restart|status}
+# :Configuration file: /etc/sysconfig/celerybeat
 #
 # See http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html
 
 ### BEGIN INIT INFO
-# Provides:          celeryd
+# Provides:          celerybeat
 # Required-Start:    $network $local_fs $remote_fs
 # Required-Stop:     $network $local_fs $remote_fs
 # Default-Start:     2 3 4 5
@@ -22,14 +22,14 @@
 # symlink it.  I.e., if my new application, "little-worker" needs an init, I
 # should just use:
 #
-#   ln -s /etc/init.d/celeryd /etc/init.d/little-worker
+#   ln -s /etc/init.d/celerybeat /etc/init.d/little-worker
 #
 # You can then configure this by manipulating /etc/sysconfig/little-worker.
 #
 # Setting `prog` here allows you to symlink this init script, making it easy
 # to run multiple processes on the system.
 
-# If we're invoked via SysV-style runlevel scripts we need to follow the
+# If we're invoked via SysV-style runlevel scripts we need to follow the 
 # link from rcX.d before working out the script name.
 if [[ `dirname $0` == /etc/rc*.d ]]; then
     target="$(readlink $0)"
@@ -47,11 +47,10 @@ source /etc/init.d/functions
 # some commands work asyncronously, so we'll wait this many seconds
 SLEEP_SECONDS=5
 
-DEFAULT_PID_FILE="/var/run/celery/$prog-%n.pid"
-DEFAULT_LOG_FILE="/var/log/celery/$prog-%n%I.log"
+DEFAULT_PID_FILE="/var/run/celery/$prog.pid"
+DEFAULT_LOG_FILE="/var/log/celery/$prog.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
-DEFAULT_CELERYD="-m celery.bin.celeryd_detach"
 
 CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/sysconfig/$prog"}
 
@@ -61,42 +60,42 @@ test -f "$CELERY_DEFAULTS" && . "$CELERY_DEFAULTS"
 CELERY_CREATE_DIRS=${CELERY_CREATE_DIRS:-0}
 CELERY_CREATE_RUNDIR=$CELERY_CREATE_DIRS
 CELERY_CREATE_LOGDIR=$CELERY_CREATE_DIRS
-if [ -z "$CELERYD_PID_FILE" ]; then
-    CELERYD_PID_FILE="$DEFAULT_PID_FILE"
+if [ -z "$CELERYBEAT_PID_FILE" ]; then
+    CELERYBEAT_PID_FILE="$DEFAULT_PID_FILE"
     CELERY_CREATE_RUNDIR=1
 fi
-if [ -z "$CELERYD_LOG_FILE" ]; then
-    CELERYD_LOG_FILE="$DEFAULT_LOG_FILE"
+if [ -z "$CELERYBEAT_LOG_FILE" ]; then
+    CELERYBEAT_LOG_FILE="$DEFAULT_LOG_FILE"
     CELERY_CREATE_LOGDIR=1
 fi
 
-CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-${CELERYD_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
-CELERYD_MULTI=${CELERYD_MULTI:-"${CELERY_BIN} multi"}
-CELERYD=${CELERYD:-$DEFAULT_CELERYD}
-CELERYD_NODES=${CELERYD_NODES:-$DEFAULT_NODES}
+CELERYBEAT_LOG_LEVEL=${CELERYBEAT_LOG_LEVEL:-${CELERYBEAT_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
+CELERYBEAT=${CELERYBEAT:-"${CELERY_BIN} beat"}
+CELERYBEAT=${CELERYBEAT:-$DEFAULT_CELERYBEAT}
+CELERYBEAT_NODES=${CELERYBEAT_NODES:-$DEFAULT_NODES}
 
 # This is used to change how Celery loads in the configs.  It does not need to
 # be set to be run.
 export CELERY_LOADER
 
 if [ -n "$2" ]; then
-    CELERYD_OPTS="$CELERYD_OPTS $2"
+    CELERYBEAT_OPTS="$CELERYBEAT_OPTS $2"
 fi
 
-CELERYD_LOG_DIR=`dirname $CELERYD_LOG_FILE`
-CELERYD_PID_DIR=`dirname $CELERYD_PID_FILE`
-CELERYD_OPTS=${CELERYD_OPTS:-"--app=$CELERY_APP"}
+CELERYBEAT_OPTS=${CELERYBEAT_OPTS:-"--app=$CELERY_APP"}
+CELERYBEAT_LOG_DIR=`dirname $CELERYBEAT_LOG_FILE`
+CELERYBEAT_PID_DIR=`dirname $CELERYBEAT_PID_FILE`
 
 # Extra start-stop-daemon options, like user/group.
-if [ -n "$CELERYD_USER" ]; then
-    DAEMON_OPTS="$DAEMON_OPTS --uid=$CELERYD_USER"
+if [ -n "$CELERYBEAT_USER" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --uid=$CELERYBEAT_USER"
 fi
-if [ -n "$CELERYD_GROUP" ]; then
-    DAEMON_OPTS="$DAEMON_OPTS --gid=$CELERYD_GROUP"
+if [ -n "$CELERYBEAT_GROUP" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --gid=$CELERYBEAT_GROUP"
 fi
 
-if [ -n "$CELERYD_CHDIR" ]; then
-    DAEMON_OPTS="$DAEMON_OPTS --workdir=$CELERYD_CHDIR"
+if [ -n "$CELERYBEAT_CHDIR" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --workdir=$CELERYBEAT_CHDIR"
 fi
 
 check_dev_null() {
@@ -122,14 +121,14 @@ create_default_dir() {
         echo "- Changing permissions of '$1' to 02755"
         chmod 02755 "$1"
         maybe_die "Couldn't change permissions for $1"
-        if [ -n "$CELERYD_USER" ]; then
-            echo "- Changing owner of '$1' to '$CELERYD_USER'"
-            chown "$CELERYD_USER" "$1"
+        if [ -n "$CELERYBEAT_USER" ]; then
+            echo "- Changing owner of '$1' to '$CELERYBEAT_USER'"
+            chown "$CELERYBEAT_USER" "$1"
             maybe_die "Couldn't change owner of $1"
         fi
-        if [ -n "$CELERYD_GROUP" ]; then
-            echo "- Changing group of '$1' to '$CELERYD_GROUP'"
-            chgrp "$CELERYD_GROUP" "$1"
+        if [ -n "$CELERYBEAT_GROUP" ]; then
+            echo "- Changing group of '$1' to '$CELERYBEAT_GROUP'"
+            chgrp "$CELERYBEAT_GROUP" "$1"
             maybe_die "Couldn't change group of $1"
         fi
     fi
@@ -138,42 +137,32 @@ create_default_dir() {
 
 check_paths() {
     if [ $CELERY_CREATE_LOGDIR -eq 1 ]; then
-        create_default_dir "$CELERYD_LOG_DIR"
+        create_default_dir "$CELERYBEAT_LOG_DIR"
     fi
     if [ $CELERY_CREATE_RUNDIR -eq 1 ]; then
-        create_default_dir "$CELERYD_PID_DIR"
+        create_default_dir "$CELERYBEAT_PID_DIR"
     fi
 }
 
 create_paths() {
-    create_default_dir "$CELERYD_LOG_DIR"
-    create_default_dir "$CELERYD_PID_DIR"
+    create_default_dir "$CELERYBEAT_LOG_DIR"
+    create_default_dir "$CELERYBEAT_PID_DIR"
 }
 
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
-
-_get_pid_files() {
-    [[ ! -d "$CELERYD_PID_DIR" ]] && return
-    echo $(ls -1 "$CELERYD_PID_DIR"/$prog-*.pid 2> /dev/null)
-}
-
 stop() {
-    local pid_files=$(_get_pid_files)
-    [[ -z "$pid_files" ]] && echo "$prog is stopped" && return 0
-
+    [[ ! -f "$CELERYBEAT_PID_FILE" ]] && echo "$prog is stopped" && return 0
+ 
     local one_failed=
-    for pid_file in $pid_files; do
-        local pid=$(cat "$pid_file")
-        echo -n $"Stopping $prog (pid $pid): "
+    echo -n $"Stopping $prog: "
 
-        # killproc comes from 'functions' and brings three nice features:
-        #  1. sending TERM, sleeping, then sleeping more if needed, then sending KILL
-        #  2. handling 'success' and 'failure' output
-        #  3. removes stale pid files, if any remain
-        killproc -p "$pid_file" -d "$SLEEP_SECONDS" $prog || one_failed=true
-        echo
-    done
+    # killproc comes from 'functions' and brings three nice features:
+    #  1. sending TERM, sleeping, then sleeping more if needed, then sending KILL
+    #  2. handling 'success' and 'failure' output
+    #  3. removes stale pid files, if any remain
+    killproc -p "$CELERYBEAT_PID_FILE" -d "$SLEEP_SECONDS" $prog || one_failed=true
+    echo
 
     [[ "$one_failed" ]] && return 1 || return 0
 }
@@ -182,42 +171,31 @@ start() {
     echo -n $"Starting $prog: "
 
     # If Celery is already running, bail out
-    local pid_files=$(_get_pid_files)
-    if [[ "$pid_files" ]]; then
-        echo -n $"$prog is already running. Use 'restart'."
+    if [[ -f "$CELERYBEAT_PID_FILE" ]]; then
+        echo -n "$prog is already running. Use 'restart'."
         failure
         echo
         return 1
     fi
 
-    $CELERYD_MULTI start $CELERYD_NODES $DAEMON_OPTS        \
-                         --pidfile="$CELERYD_PID_FILE"      \
-                         --logfile="$CELERYD_LOG_FILE"      \
-                         --loglevel="$CELERYD_LOG_LEVEL"    \
-                         --cmd="$CELERYD"                   \
-                         --quiet                            \
-                         $CELERYD_OPTS
+    $CELERYBEAT $CELERYBEAT_OPTS $DAEMON_OPTS --detach         \
+                         --pidfile="$CELERYBEAT_PID_FILE"      \
+                         --logfile="$CELERYBEAT_LOG_FILE"      \
+                         --loglevel="$CELERYBEAT_LOG_LEVEL"
 
     if [[ "$?" == "0" ]]; then
         # Sleep a few seconds to give Celery a chance to initialize itself.
         # This is useful to prevent scripts following this one from trying to
         # use Celery (or its pid files) too early.
         sleep $SLEEP_SECONDS
-        pid_files=$(_get_pid_files)
-        if [[ "$pid_files" ]]; then
-            for pid_file in $pid_files; do
-                local node=$(basename "$pid_file" .pid)
-                local pid=$(cat "$pid_file")
-                echo
-                echo -n "    $node (pid $pid):"
-                success
-            done
+        if [[ -f "$CELERYBEAT_PID_FILE" ]]; then
+            success
             echo
             return 0
-        else  # celeryd_multi succeeded but no pid files found
+        else  # celerybeat succeeded but no pid files found
             failure
         fi
-    else  # celeryd_multi did not succeed
+    else  # celerybeat did not succeed
         failure
     fi
     echo
@@ -225,12 +203,7 @@ start() {
 }
 
 check_status() {
-    local pid_files=$(_get_pid_files)
-    [[ -z "$pid_files" ]] && echo "$prog is stopped" && return 1
-    for pid_file in $pid_files; do
-        local node=$(basename "$pid_file" .pid)
-        status -p "$pid_file" $"$prog (node $node)" || return 1  # if one node is down celeryd is down
-    done
+    status -p "$CELERYBEAT_PID_FILE" $"$prog" || return 1
     return 0
 }
 

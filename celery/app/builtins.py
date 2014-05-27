@@ -9,10 +9,7 @@
 """
 from __future__ import absolute_import
 
-from collections import deque
-
 from celery._state import get_current_worker_task, connect_on_app_finalize
-from celery.utils import uuid
 from celery.utils.log import get_logger
 
 __all__ = []
@@ -44,7 +41,7 @@ def add_unlock_chord_task(app):
     It joins chords by creating a task chain polling the header for completion.
 
     """
-    from celery.canvas import signature
+    from celery.canvas import maybe_signature
     from celery.exceptions import ChordError
     from celery.result import allow_join_result, result_from_tuple
 
@@ -66,6 +63,7 @@ def add_unlock_chord_task(app):
             interval = unlock_chord.default_retry_delay
 
         # check if the task group is ready, and if so apply the callback.
+        callback = maybe_signature(callback, app)
         deps = GroupResult(
             group_id,
             [result_from_tuple(r, app=app) for r in result],
@@ -73,7 +71,7 @@ def add_unlock_chord_task(app):
         j = deps.join_native if deps.supports_native_join else deps.join
 
         if deps.ready():
-            callback = signature(callback, app=app)
+            callback = maybe_signature(callback, app=app)
             try:
                 with allow_join_result():
                     ret = j(timeout=3.0, propagate=propagate)
@@ -138,14 +136,14 @@ def add_chunk_task(app):
 
 @connect_on_app_finalize
 def add_group_task(app):
+    """No longer used, but here for backwards compatibility."""
     _app = app
-    from celery.canvas import maybe_signature, signature
+    from celery.canvas import maybe_signature
     from celery.result import result_from_tuple
 
     class Group(app.Task):
         app = _app
         name = 'celery.group'
-        accept_magic_kwargs = False
         _decorated = True
 
         def run(self, tasks, result, group_id, partial_args,
@@ -153,13 +151,8 @@ def add_group_task(app):
             app = self.app
             result = result_from_tuple(result, app)
             # any partial args are added to all tasks in the group
-            taskit = (signature(task, app=app).clone(partial_args)
+            taskit = (maybe_signature(task, app=app).clone(partial_args)
                       for i, task in enumerate(tasks))
-            if self.request.is_eager or app.conf.CELERY_ALWAYS_EAGER:
-                return app.GroupResult(
-                    result.id,
-                    [stask.apply(group_id=group_id) for stask in taskit],
-                )
             with app.producer_or_acquire() as pub:
                 [stask.apply_async(group_id=group_id, producer=pub,
                                    add_to_parent=False) for stask in taskit]
@@ -167,152 +160,32 @@ def add_group_task(app):
             if add_to_parent and parent:
                 parent.add_trail(result)
             return result
-
-        def prepare(self, options, tasks, args, **kwargs):
-            options['group_id'] = group_id = (
-                options.setdefault('task_id', uuid()))
-
-            def prepare_member(task):
-                task = maybe_signature(task, app=self.app)
-                task.options['group_id'] = group_id
-                return task, task.freeze()
-
-            try:
-                tasks, res = list(zip(
-                    *[prepare_member(task) for task in tasks]
-                ))
-            except ValueError:  # tasks empty
-                tasks, res = [], []
-            return (tasks, self.app.GroupResult(group_id, res), group_id, args)
-
-        def apply_async(self, partial_args=(), kwargs={}, **options):
-            if self.app.conf.CELERY_ALWAYS_EAGER:
-                return self.apply(partial_args, kwargs, **options)
-            tasks, result, gid, args = self.prepare(
-                options, args=partial_args, **kwargs
-            )
-            super(Group, self).apply_async((
-                list(tasks), result.as_tuple(), gid, args), **options
-            )
-            return result
-
-        def apply(self, args=(), kwargs={}, **options):
-            return super(Group, self).apply(
-                self.prepare(options, args=args, **kwargs),
-                **options).get()
     return Group
 
 
 @connect_on_app_finalize
 def add_chain_task(app):
-    from celery.canvas import (
-        Signature, chain, chord, group, maybe_signature, maybe_unroll_group,
-    )
-
+    """No longer used, but here for backwards compatibility."""
     _app = app
 
     class Chain(app.Task):
         app = _app
         name = 'celery.chain'
-        accept_magic_kwargs = False
         _decorated = True
 
-        def prepare_steps(self, args, tasks):
-            app = self.app
-            steps = deque(tasks)
-            next_step = prev_task = prev_res = None
-            tasks, results = [], []
-            i = 0
-            while steps:
-                # First task get partial args from chain.
-                task = maybe_signature(steps.popleft(), app=app)
-                task = task.clone() if i else task.clone(args)
-                res = task.freeze()
-                i += 1
-
-                if isinstance(task, group):
-                    task = maybe_unroll_group(task)
-                if isinstance(task, chain):
-                    # splice the chain
-                    steps.extendleft(reversed(task.tasks))
-                    continue
-
-                elif isinstance(task, group) and steps and \
-                        not isinstance(steps[0], group):
-                    # automatically upgrade group(..) | s to chord(group, s)
-                    try:
-                        next_step = steps.popleft()
-                        # for chords we freeze by pretending it's a normal
-                        # task instead of a group.
-                        res = Signature.freeze(next_step)
-                        task = chord(task, body=next_step, task_id=res.task_id)
-                    except IndexError:
-                        pass  # no callback, so keep as group
-                if prev_task:
-                    # link previous task to this task.
-                    prev_task.link(task)
-                    # set the results parent attribute.
-                    if not res.parent:
-                        res.parent = prev_res
-
-                if not isinstance(prev_task, chord):
-                    results.append(res)
-                    tasks.append(task)
-                prev_task, prev_res = task, res
-
-            return tasks, results
-
-        def apply_async(self, args=(), kwargs={}, group_id=None, chord=None,
-                        task_id=None, link=None, link_error=None, **options):
-            if self.app.conf.CELERY_ALWAYS_EAGER:
-                return self.apply(args, kwargs, **options)
-            options.pop('publisher', None)
-            tasks, results = self.prepare_steps(args, kwargs['tasks'])
-            result = results[-1]
-            if group_id:
-                tasks[-1].set(group_id=group_id)
-            if chord:
-                tasks[-1].set(chord=chord)
-            if task_id:
-                tasks[-1].set(task_id=task_id)
-                result = tasks[-1].type.AsyncResult(task_id)
-            # make sure we can do a link() and link_error() on a chain object.
-            if link:
-                tasks[-1].set(link=link)
-            # and if any task in the chain fails, call the errbacks
-            if link_error:
-                for task in tasks:
-                    task.set(link_error=link_error)
-            tasks[0].apply_async(**options)
-            return result
-
-        def apply(self, args=(), kwargs={}, signature=maybe_signature,
-                  **options):
-            app = self.app
-            last, fargs = None, args  # fargs passed to first task only
-            for task in kwargs['tasks']:
-                res = signature(task, app=app).clone(fargs).apply(
-                    last and (last.get(), ),
-                )
-                res.parent, last, fargs = last, res, None
-            return last
     return Chain
 
 
 @connect_on_app_finalize
 def add_chord_task(app):
-    """Every chord is executed in a dedicated task, so that the chord
-    can be used as a signature, and this generates the task
-    responsible for that."""
-    from celery import group
+    """No longer used, but here for backwards compatibility."""
+    from celery import group, chord as _chord
     from celery.canvas import maybe_signature
     _app = app
-    default_propagate = app.conf.CELERY_CHORD_PROPAGATES
 
     class Chord(app.Task):
         app = _app
         name = 'celery.chord'
-        accept_magic_kwargs = False
         ignore_result = False
         _decorated = True
 
@@ -320,53 +193,13 @@ def add_chord_task(app):
                 countdown=1, max_retries=None, propagate=None,
                 eager=False, **kwargs):
             app = self.app
-            propagate = default_propagate if propagate is None else propagate
-            group_id = uuid()
-
             # - convert back to group if serialized
             tasks = header.tasks if isinstance(header, group) else header
             header = group([
-                maybe_signature(s, app=app).clone() for s in tasks
+                maybe_signature(s, app=app) for s in tasks
             ], app=self.app)
-            # - eager applies the group inline
-            if eager:
-                return header.apply(args=partial_args, task_id=group_id)
-
-            body.setdefault('chord_size', len(header.tasks))
-            results = header.freeze(group_id=group_id, chord=body).results
-
-            return self.backend.apply_chord(
-                header, partial_args, group_id,
-                body, interval=interval, countdown=countdown,
-                max_retries=max_retries, propagate=propagate, result=results,
-            )
-
-        def apply_async(self, args=(), kwargs={}, task_id=None,
-                        group_id=None, chord=None, **options):
-            app = self.app
-            if app.conf.CELERY_ALWAYS_EAGER:
-                return self.apply(args, kwargs, **options)
-            header = kwargs.pop('header')
-            body = kwargs.pop('body')
-            header, body = (maybe_signature(header, app=app),
-                            maybe_signature(body, app=app))
-            # forward certain options to body
-            if chord is not None:
-                body.options['chord'] = chord
-            if group_id is not None:
-                body.options['group_id'] = group_id
-            [body.link(s) for s in options.pop('link', [])]
-            [body.link_error(s) for s in options.pop('link_error', [])]
-            body_result = body.freeze(task_id)
-            parent = super(Chord, self).apply_async((header, body, args),
-                                                    kwargs, **options)
-            body_result.parent = parent
-            return body_result
-
-        def apply(self, args=(), kwargs={}, propagate=True, **options):
-            body = kwargs['body']
-            res = super(Chord, self).apply(args, dict(kwargs, eager=True),
-                                           **options)
-            return maybe_signature(body, app=self.app).apply(
-                args=(res.get(propagate=propagate).get(), ))
+            body = maybe_signature(body, app=app)
+            ch = _chord(header, body)
+            return ch.run(header, body, partial_args, app, interval,
+                          countdown, max_retries, propagate, **kwargs)
     return Chord

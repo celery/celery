@@ -8,7 +8,6 @@
 """
 from __future__ import absolute_import
 
-import anyjson
 import imp as _imp
 import importlib
 import os
@@ -17,6 +16,7 @@ import sys
 
 from datetime import datetime
 
+from kombu.utils import json
 from kombu.utils import cached_property
 from kombu.utils.encoding import safe_str
 
@@ -178,7 +178,7 @@ class BaseLoader(object):
     def cmdline_config_parser(
             self, args, namespace='celery',
             re_type=re.compile(r'\((\w+)\)'),
-            extra_types={'json': anyjson.loads},
+            extra_types={'json': json.loads},
             override_types={'tuple': 'json',
                             'list': 'json',
                             'dict': 'json'}):

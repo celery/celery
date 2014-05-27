@@ -82,7 +82,7 @@ getting started tutorials:
     http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
 
 Celery is...
-============
+==========
 
 - **Simple**
 
@@ -120,7 +120,7 @@ Celery is...
     schedulers, consumers, producers, autoscalers, broker transports and much more.
 
 It supports...
-==============
+============
 
     - **Message Transports**
 
@@ -234,9 +234,9 @@ by using brackets.  Multiple bundles can be specified by separating them by
 commas.
 ::
 
-    $ pip install celery[librabbitmq]
+    $ pip install "celery[librabbitmq]"
 
-    $ pip install celery[librabbitmq,redis,auth,msgpack]
+    $ pip install "celery[librabbitmq,redis,auth,msgpack]"
 
 The following bundles are available:
 

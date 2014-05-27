@@ -7,11 +7,12 @@ from kombu.async import Hub, READ, WRITE, ERR
 from celery.bootsteps import CLOSE, RUN
 from celery.exceptions import InvalidTaskError, WorkerShutdown, WorkerTerminate
 from celery.five import Empty
+from celery.platforms import EX_FAILURE
 from celery.worker import state
 from celery.worker.consumer import Consumer
 from celery.worker.loops import asynloop, synloop
 
-from celery.tests.case import AppCase, Mock, body_from_sig
+from celery.tests.case import AppCase, Mock, task_message_from_sig
 
 
 class X(object):
@@ -107,7 +108,7 @@ def get_task_callback(*args, **kwargs):
     x = X(*args, **kwargs)
     x.blueprint.state = CLOSE
     asynloop(*x.args)
-    return x, x.consumer.callbacks[0]
+    return x, x.consumer.on_message
 
 
 class test_asynloop(AppCase):
@@ -132,45 +133,44 @@ class test_asynloop(AppCase):
 
     def task_context(self, sig, **kwargs):
         x, on_task = get_task_callback(self.app, **kwargs)
-        body = body_from_sig(self.app, sig)
-        message = Mock()
-        strategy = x.obj.strategies[sig.task] = Mock()
-        return x, on_task, body, message, strategy
+        message = task_message_from_sig(self.app, sig)
+        strategy = x.obj.strategies[sig.task] = Mock(name='strategy')
+        return x, on_task, message, strategy
 
     def test_on_task_received(self):
-        _, on_task, body, msg, strategy = self.task_context(self.add.s(2, 2))
-        on_task(body, msg)
+        _, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
+        on_task(msg)
         strategy.assert_called_with(
-            msg, body, msg.ack_log_error, msg.reject_log_error, [],
+            msg, None, msg.ack_log_error, msg.reject_log_error, [],
         )
 
     def test_on_task_received_executes_on_task_message(self):
         cbs = [Mock(), Mock(), Mock()]
-        _, on_task, body, msg, strategy = self.task_context(
+        _, on_task, msg, strategy = self.task_context(
             self.add.s(2, 2), on_task_message=cbs,
         )
-        on_task(body, msg)
+        on_task(msg)
         strategy.assert_called_with(
-            msg, body, msg.ack_log_error, msg.reject_log_error, cbs,
+            msg, None, msg.ack_log_error, msg.reject_log_error, cbs,
         )
 
     def test_on_task_message_missing_name(self):
-        x, on_task, body, msg, strategy = self.task_context(self.add.s(2, 2))
-        body.pop('task')
-        on_task(body, msg)
-        x.on_unknown_message.assert_called_with(body, msg)
+        x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
+        msg.headers.pop('task')
+        on_task(msg)
+        x.on_unknown_message.assert_called_with(msg.payload, msg)
 
     def test_on_task_not_registered(self):
-        x, on_task, body, msg, strategy = self.task_context(self.add.s(2, 2))
+        x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
         exc = strategy.side_effect = KeyError(self.add.name)
-        on_task(body, msg)
-        x.on_unknown_task.assert_called_with(body, msg, exc)
+        on_task(msg)
+        x.on_invalid_task.assert_called_with(None, msg, exc)
 
     def test_on_task_InvalidTaskError(self):
-        x, on_task, body, msg, strategy = self.task_context(self.add.s(2, 2))
+        x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
         exc = strategy.side_effect = InvalidTaskError()
-        on_task(body, msg)
-        x.on_invalid_task.assert_called_with(body, msg, exc)
+        on_task(msg)
+        x.on_invalid_task.assert_called_with(None, msg, exc)
 
     def test_should_terminate(self):
         x = X(self.app)
@@ -180,27 +180,27 @@ class test_asynloop(AppCase):
             with self.assertRaises(WorkerTerminate):
                 asynloop(*x.args)
         finally:
-            state.should_terminate = False
+            state.should_terminate = None
 
     def test_should_terminate_hub_close_raises(self):
         x = X(self.app)
         # XXX why aren't the errors propagated?!?
-        state.should_terminate = True
+        state.should_terminate = EX_FAILURE
         x.hub.close.side_effect = MemoryError()
         try:
             with self.assertRaises(WorkerTerminate):
                 asynloop(*x.args)
         finally:
-            state.should_terminate = False
+            state.should_terminate = None
 
     def test_should_stop(self):
         x = X(self.app)
-        state.should_stop = True
+        state.should_stop = 303
         try:
             with self.assertRaises(WorkerShutdown):
                 asynloop(*x.args)
         finally:
-            state.should_stop = False
+            state.should_stop = None
 
     def test_updates_qos(self):
         x = X(self.app)

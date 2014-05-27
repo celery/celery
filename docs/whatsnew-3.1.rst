@@ -1072,8 +1072,9 @@ In Other News
   (Issue #1555).
 
     The revoked signal is dispatched after the task request is removed from
-    the stack, so it must instead use the :class:`~celery.worker.job.Request`
-    object to get information about the task.
+    the stack, so it must instead use the
+    :class:`~celery.worker.request.Request` object to get information
+    about the task.
 
 - Worker: New :option:`-X` command line argument to exclude queues
   (Issue #1399).
@@ -1235,7 +1236,7 @@ Internal changes
     - Result backends (:class:`celery.backends.base.BaseBackend`)
     - :class:`celery.worker.WorkController`
     - :class:`celery.worker.Consumer`
-    - :class:`celery.worker.job.Request`
+    - :class:`celery.worker.request.Request`
 
     This means that you have to pass a specific app when instantiating
     these classes.

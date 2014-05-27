@@ -47,7 +47,7 @@
     celery.apps.beat
     celery.worker
     celery.worker.consumer
-    celery.worker.job
+    celery.worker.request
     celery.worker.state
     celery.worker.strategy
     celery.bin.base

@@ -70,6 +70,7 @@ class default(object):
         'interval_max': 2,
         'interval_step': 0.1,
     }
+    CELERY_TASK_PROTOCOL = 2
 
 
 @template()
@@ -124,3 +125,7 @@ class sqs(default):
     BROKER_TRANSPORT_OPTIONS = {
         'region': os.environ.get('AWS_REGION', 'us-east-1'),
     }
+
+@template()
+class proto1(default):
+    CELERY_TASK_PROTOCOL = 1

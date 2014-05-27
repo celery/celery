@@ -123,7 +123,7 @@ class mSchedulerSchedulingError(mScheduler):
 
 class mSchedulerRuntimeError(mScheduler):
 
-    def maybe_due(self, *args, **kwargs):
+    def is_due(self, *args, **kwargs):
         raise RuntimeError('dict modified while itervalues')
 
 
@@ -273,21 +273,15 @@ class test_Scheduler(AppCase):
                       schedule=always_due,
                       args=(1, 2),
                       kwargs={'foo': 'bar'})
-        self.assertEqual(scheduler.tick(), 1)
+        self.assertEqual(scheduler.tick(), 0)
 
     @patch('celery.beat.error')
     def test_due_tick_SchedulingError(self, error):
         scheduler = mSchedulerSchedulingError(app=self.app)
         scheduler.add(name='test_due_tick_SchedulingError',
                       schedule=always_due)
-        self.assertEqual(scheduler.tick(), 1)
+        self.assertEqual(scheduler.tick(), 0)
         self.assertTrue(error.called)
-
-    def test_due_tick_RuntimeError(self):
-        scheduler = mSchedulerRuntimeError(app=self.app)
-        scheduler.add(name='test_due_tick_RuntimeError',
-                      schedule=always_due)
-        self.assertEqual(scheduler.tick(), scheduler.max_interval)
 
     def test_pending_tick(self):
         scheduler = mScheduler(app=self.app)

@@ -596,14 +596,14 @@ execute:
 
 .. code-block:: bash
 
-    $ paver flake8
+    $ make flakecheck
 
-To not return a negative exit code when this command fails use the
-:option:`-E` option, this can be convenient while developing:
+To not return a negative exit code when this command fails use
+the ``flakes`` target instead:
 
 .. code-block:: bash
 
-    $ paver flake8 -E
+    $ make flakes§
 
 API reference
 ~~~~~~~~~~~~~
@@ -613,8 +613,8 @@ reference please execute:
 
 .. code-block:: bash
 
-    $ paver autodoc
-    $ paver verifyindex
+    $ make apicheck
+    $ make indexcheck
 
 If files are missing you can add them by copying an existing reference file.
 
@@ -841,7 +841,7 @@ that require 3rd party libraries must be added.
     .. code-block:: bash
 
         $ pip install -U requirements/pkgutils.txt
-        $ paver readme
+        $ make readme
 
 
 That's all that needs to be done, but remember that if your feature
@@ -1042,12 +1042,12 @@ The version number must be updated two places:
 
 After you have changed these files you must render
 the :file:`README` files.  There is a script to convert sphinx syntax
-to generic reStructured Text syntax, and the paver task `readme`
+to generic reStructured Text syntax, and the make target `readme`
 does this for you:
 
 .. code-block:: bash
 
-    $ paver readme
+    $ make readme
 
 Now commit the changes:
 
@@ -1067,10 +1067,9 @@ Releasing
 
 Commands to make a new public stable release::
 
-    $ paver releaseok  # checks pep8, autodoc index, runs tests and more
-    $ paver removepyc  # Remove .pyc files
-    $ git clean -xdn   # Check that there's no left-over files in the repo
-    $ python setup.py sdist upload  # Upload package to PyPI
+    $ make distcheck  # checks pep8, autodoc index, runs tests and more
+    $ make dist  # NOTE: Runs git clean -xdf and removes files not in the repo.
+    $ python setup.py sdist bdist_wheel upload  # Upload package to PyPI
 
 If this is a new release series then you also need to do the
 following:

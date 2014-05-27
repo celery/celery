@@ -28,9 +28,12 @@ Example connecting to the :signal:`after_task_publish` signal:
     from celery.signals import after_task_publish
 
     @after_task_publish.connect
-    def task_sent_handler(sender=None, body=None, **kwargs):
-        print('after_task_publish for task id {body[id]}'.format(
-            body=body,
+    def task_sent_handler(sender=None, headers=None, body=None, **kwargs):
+        # information about task are located in headers for task messages
+        # using the task protocol version 2.
+        info = headers if 'task' in headers else body
+        print('after_task_publish for task id {info[id]}'.format(
+            info=info,
         ))
 
 
@@ -44,9 +47,12 @@ is published:
 .. code-block:: python
 
     @after_task_publish.connect(sender='proj.tasks.add')
-    def task_sent_handler(sender=None, body=None, **kwargs):
-        print('after_task_publish for task id {body[id]}'.format(
-            body=body,
+    def task_sent_handler(sender=None, headers=None, body=None, **kwargs):
+        # information about task are located in headers for task messages
+        # using the task protocol version 2.
+        info = headers if 'task' in headers else body
+        print('after_task_publish for task id {info[id]}'.format(
+            info=info,
         ))
 
 Signals use the same implementation as django.core.dispatch. As a result other
@@ -82,7 +88,7 @@ Provides arguements:
     Task message body.
 
     This is a mapping containing the task message fields
-    (see :ref:`task-message-protocol-v1`).
+    (see :ref:`message-protocol-task-v1`).
 
 * exchange
 
@@ -123,9 +129,16 @@ Sender is the name of the task being sent.
 
 Provides arguments:
 
+* headers
+
+    The task message headers, see :ref:`message-protocol-task-v2`
+    and :ref:`message-protocol-task-v1`.
+    for a reference of possible fields that can be defined.
+
 * body
 
-    The task message body, see :ref:`task-message-protocol-v1`
+    The task message body, see :ref:`message-protocol-task-v2`
+    and :ref:`message-protocol-task-v1`.
     for a reference of possible fields that can be defined.
 
 * exchange
@@ -271,7 +284,7 @@ Provides arguments:
 
 * request
 
-    This is a :class:`~celery.worker.job.Request` instance, and not
+    This is a :class:`~celery.worker.request.Request` instance, and not
     ``task.request``.   When using the prefork pool this signal
     is dispatched in the parent process, so ``task.request`` is not available
     and should not be used.  Use this object instead, which should have many

@@ -1110,6 +1110,14 @@ compression schemes registered in the Kombu compression registry.
 
 The default is to send uncompressed messages.
 
+.. setting:: CELERY_TASK_PROTOCOL
+
+CELERY_TASK_PROTOCOL
+~~~~~~~~~~~~~~~~~~~~
+
+Default task message protocol version.
+Supports protocols: 1 and 2 (default is 1 for backwards compatibility).
+
 .. setting:: CELERY_TASK_RESULT_EXPIRES
 
 CELERY_TASK_RESULT_EXPIRES

@@ -2,8 +2,9 @@ from __future__ import absolute_import
 
 import sys
 
-from anyjson import dumps
 from datetime import datetime
+
+from kombu.utils.json import dumps
 
 from celery import __main__
 from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK

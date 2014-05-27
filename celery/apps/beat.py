@@ -10,13 +10,14 @@
     and so on.
 
 """
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import numbers
 import socket
 import sys
 
 from celery import VERSION_BANNER, platforms, beat
+from celery.five import text_t
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
 from celery.utils.timeutils import humanize_seconds
@@ -98,10 +99,12 @@ class Beat(object):
                             scheduler_cls=self.scheduler_cls,
                             schedule_filename=self.schedule)
 
-        print(str(c.blue('__    ', c.magenta('-'),
-                  c.blue('    ... __   '), c.magenta('-'),
-                  c.blue('        _\n'),
-                  c.reset(self.startup_info(beat)))))
+        print(text_t(   # noqa (pyflakes chokes on print)
+            c.blue('__    ', c.magenta('-'),
+            c.blue('    ... __   '), c.magenta('-'),
+            c.blue('        _\n'),
+            c.reset(self.startup_info(beat))),
+        ))
         self.setup_logging()
         if self.socket_timeout:
             logger.debug('Setting default socket timeout to %r',

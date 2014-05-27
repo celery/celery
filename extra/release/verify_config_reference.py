@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 
 from fileinput import input as _input
 from sys import exit, stderr
@@ -27,8 +27,9 @@ def is_ignored(setting, option):
 def find_undocumented_settings(directive='.. setting:: '):
     settings = dict(flatten(NAMESPACES))
     all = set(settings)
+    inp = (l.decode('utf-8') for l in _input())
     documented = set(
-        line.strip()[len(directive):].strip() for line in _input()
+        line.strip()[len(directive):].strip() for line in inp
         if line.strip().startswith(directive)
     )
     return [setting for setting in all ^ documented

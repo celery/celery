@@ -26,8 +26,8 @@ from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.async.semaphore import DummyLock
 from kombu.common import QoS, ignore_errors
+from kombu.five import buffer_t, items, values
 from kombu.syn import _detect_environment
-from kombu.utils.compat import get_errno
 from kombu.utils.encoding import safe_repr, bytes_t
 from kombu.utils.limits import TokenBucket
 
@@ -35,7 +35,6 @@ from celery import bootsteps
 from celery.app.trace import build_tracer
 from celery.canvas import signature
 from celery.exceptions import InvalidTaskError
-from celery.five import items, values
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
@@ -43,14 +42,6 @@ from celery.utils.timeutils import humanize_seconds, rate
 
 from . import heartbeat, loops, pidbox
 from .state import task_reserved, maybe_shutdown, revoked, reserved_requests
-
-try:
-    buffer_t = buffer
-except NameError:  # pragma: no cover
-    # Py3 does not have buffer, but we only need isinstance.
-
-    class buffer_t(object):  # noqa
-        pass
 
 __all__ = [
     'Consumer', 'Connection', 'Events', 'Heart', 'Control',
@@ -127,6 +118,8 @@ MINGLE_GET_FIELDS = itemgetter('clock', 'revoked')
 
 
 def dump_body(m, body):
+    # v2 protocol does not deserialize body
+    body = m.body if body is None else body
     if isinstance(body, buffer_t):
         body = bytes_t(body)
     return '{0} ({1}b)'.format(truncate(safe_repr(body), 1024),
@@ -277,7 +270,7 @@ class Consumer(object):
             try:
                 blueprint.start(self)
             except self.connection_errors as exc:
-                if isinstance(exc, OSError) and get_errno(exc) == errno.EMFILE:
+                if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
                     raise  # Too many open files
                 maybe_shutdown()
                 try:
@@ -445,21 +438,38 @@ class Consumer(object):
         on_invalid_task = self.on_invalid_task
         callbacks = self.on_task_message
 
-        def on_task_received(body, message):
-            try:
-                name = body['task']
-            except (KeyError, TypeError):
-                return on_unknown_message(body, message)
+        def on_task_received(message):
 
+            # payload will only be set for v1 protocol, since v2
+            # will defer deserializing the message body to the pool.
+            payload = None
             try:
-                strategies[name](message, body,
-                                 message.ack_log_error,
-                                 message.reject_log_error,
-                                 callbacks)
+                type_ = message.headers['task']                # protocol v2
+            except TypeError:
+                return on_unknown_message(None, message)
+            except KeyError:
+                payload = message.payload
+                try:
+                    type_, payload = payload['task'], payload  # protocol v1
+                except (TypeError, KeyError):
+                    return on_unknown_message(payload, message)
+            try:
+                strategy = strategies[type_]
             except KeyError as exc:
-                on_unknown_task(body, message, exc)
-            except InvalidTaskError as exc:
-                on_invalid_task(body, message, exc)
+                return on_unknown_task(payload, message, exc)
+            else:
+                try:
+                    strategy(
+                        message, payload, message.ack_log_error,
+                        message.reject_log_error, callbacks,
+                    )
+                except InvalidTaskError as exc:
+                    return on_invalid_task(payload, message, exc)
+                except MemoryError:
+                    raise
+                except Exception as exc:
+                    # XXX handle as internal error?
+                    return on_invalid_task(payload, message, exc)
 
         return on_task_received
 
@@ -541,8 +551,9 @@ class Heart(bootsteps.StartStopStep):
         c.heart = None
 
     def start(self, c):
-        c.heart = heartbeat.Heart(c.timer, c.event_dispatcher,
-            self.heartbeat_interval)
+        c.heart = heartbeat.Heart(
+            c.timer, c.event_dispatcher, self.heartbeat_interval,
+        )
         c.heart.start()
 
     def stop(self, c):

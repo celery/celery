@@ -10,32 +10,8 @@ from celery.task import (
     periodic_task,
     PeriodicTask
 )
-from celery.utils.timeutils import timedelta_seconds
 
 from celery.tests.case import AppCase, depends_on_current_app
-
-
-class test_Task(AppCase):
-
-    def test_base_task_inherits_magic_kwargs_from_app(self):
-        from celery.task import Task as OldTask
-
-        class timkX(OldTask):
-            abstract = True
-
-        with self.Celery(set_as_current=False,
-                         accept_magic_kwargs=True) as app:
-            timkX.bind(app)
-            # see #918
-            self.assertFalse(timkX.accept_magic_kwargs)
-
-            from celery import Task as NewTask
-
-            class timkY(NewTask):
-                abstract = True
-
-            timkY.bind(app)
-            self.assertFalse(timkY.accept_magic_kwargs)
 
 
 @depends_on_current_app
@@ -74,8 +50,9 @@ class test_periodic_tasks(AppCase):
             self.now() - p.run_every.run_every,
         )
         self.assertTrue(due)
-        self.assertEqual(remaining,
-                         timedelta_seconds(p.run_every.run_every))
+        self.assertEqual(
+            remaining, p.run_every.run_every.total_seconds(),
+        )
 
     def test_schedule_repr(self):
         p = self.my_periodic

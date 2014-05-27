@@ -269,7 +269,8 @@ class AMQP(object):
                    expires=None, retries=0, chord=None,
                    callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
-                   create_sent_event=False, now=None, timezone=None):
+                   create_sent_event=False, now=None, timezone=None,
+                   root_id=None, parent_id=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -295,24 +296,32 @@ class AMQP(object):
         return task_message(
             headers={
                 'lang': 'py',
-                'c_type': name,
+                'task': name,
+                'id': task_id,
                 'eta': eta,
                 'expires': expires,
-                'callbacks': callbacks,
-                'errbacks': errbacks,
-                'chain': None,  # TODO
                 'group': group_id,
-                'chord': chord,
                 'retries': retries,
-                'timelimit': (time_limit, soft_time_limit),
+                'timelimit': [time_limit, soft_time_limit],
+                'root_id': root_id,
+                'parent_id': parent_id,
             },
             properties={
                 'correlation_id': task_id,
                 'reply_to': reply_to or '',
             },
-            body=(args, kwargs),
+            body=(
+                args, kwargs, {
+                    'callbacks': callbacks,
+                    'errbacks': errbacks,
+                    'chain': None,  # TODO
+                    'chord': chord,
+                },
+            ),
             sent_event={
                 'uuid': task_id,
+                'root': root_id,
+                'parent': parent_id,
                 'name': name,
                 'args': safe_repr(args),
                 'kwargs': safe_repr(kwargs),
@@ -327,7 +336,8 @@ class AMQP(object):
                    expires=None, retries=0,
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
-                   create_sent_event=False, now=None, timezone=None):
+                   create_sent_event=False, now=None, timezone=None,
+                   root_id=None, parent_id=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -410,7 +420,9 @@ class AMQP(object):
                          compression=None, declare=None,
                          headers=None, **kwargs):
             retry = default_retry if retry is None else retry
-            headers, properties, body, sent_event = message
+            headers2, properties, body, sent_event = message
+            if headers:
+                headers2.update(headers)
             if kwargs:
                 properties.update(kwargs)
 
@@ -441,7 +453,7 @@ class AMQP(object):
                 send_before_publish(
                     sender=name, body=body,
                     exchange=exchange, routing_key=routing_key,
-                    declare=declare, headers=headers,
+                    declare=declare, headers=headers2,
                     properties=kwargs,  retry_policy=retry_policy,
                 )
             ret = producer.publish(
@@ -452,11 +464,11 @@ class AMQP(object):
                 compression=compression or default_compressor,
                 retry=retry, retry_policy=_rp,
                 delivery_mode=delivery_mode, declare=declare,
-                headers=headers,
+                headers=headers2,
                 **properties
             )
             if after_receivers:
-                send_after_publish(sender=name, body=body,
+                send_after_publish(sender=name, body=body, headers=headers2,
                                    exchange=exchange, routing_key=routing_key)
             if sent_receivers:  # XXX deprecated
                 send_task_sent(sender=name, task_id=body['id'], task=name,

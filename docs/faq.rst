@@ -129,22 +129,9 @@ broker this is a natural dependency.
 
 .. _`amqp`: http://pypi.python.org/pypi/amqp
 
-- `anyjson`_
-
-anyjson is an utility library to select the best possible
-JSON implementation.
-
-.. _`anyjson`: http://pypi.python.org/pypi/anyjson
-
-
 .. note::
 
-    For compatibility reasons additional packages may be installed
-    if you are running on older Python versions,
-    for example Python 2.6 depends on the ``importlib``,
-    and ``ordereddict`` libraries.
-
-    Also, to handle the dependencies for popular configuration
+    To handle the dependencies for popular configuration
     choices Celery defines a number of "bundle" packages,
     see :ref:`bundles`.
 

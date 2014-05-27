@@ -124,7 +124,7 @@ class test_AMQShell(AppCase):
         self.assertNotIn('FOO', self.fh.getvalue())
 
     def test_run(self):
-        a = self.create_adm('queue.declare foo')
+        a = self.create_adm('queue.declare',  'foo')
         a.run()
         self.assertIn('ok', self.fh.getvalue())
 

@@ -11,21 +11,20 @@ from __future__ import absolute_import
 import time
 import warnings
 
-from collections import deque
+from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
 
 from amqp.promise import promise
 
 from kombu.utils import cached_property
-from kombu.utils.compat import OrderedDict
 
 from . import current_app
 from . import states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .datastructures import DependencyGraph, GraphFormatter
-from .exceptions import IncompleteStream, TimeoutError
+from .exceptions import IncompleteStream, TimeoutError, ResultFulfilledError
 from .five import items, range, string_t, monotonic
 from .utils import deprecated
 
@@ -76,6 +75,9 @@ class AsyncResult(ResultBase):
     #: Error raised for timeouts.
     TimeoutError = TimeoutError
 
+    #: Error raised when trying to add a callback to ready result
+    ResultFulfilledError = ResultFulfilledError
+
     #: The task's UUID.
     id = None
 
@@ -90,29 +92,13 @@ class AsyncResult(ResultBase):
         self.task_name = task_name
         self.parent = parent
 
-        self._fulfilled = False
-        self._on_state_change = promise(self._push_state)
+        self._on_state_change = promise()
         self._on_ready = promise()
 
-        # Caching attributes
-        self._state = self._result = self._traceback = self.children = None
+        self._cache = None
 
-    def _push_state(self, meta):
-        # Update caching attributes
-        state = self.state = meta['status']
-        children = meta.get('children')
-        if state in states.EXCEPTION_STATES:
-            self.result = self.backend.exception_to_python(meta['result'])
-        else:
-            self.result = meta['result']
-        self.traceback = meta.get('traceback')
-        if children:
-            self.children = [
-                result_from_tuple(child, self.app) for child in children
-            ]
-
-    def _mark_as_fulfilled(self):
-        self._fulfilled = True
+    def _mark_as_fulfilled(self, meta):
+        self._set_cache(meta)
         self._on_ready(self)
 
     def is_final_state(self, state):
@@ -125,10 +111,16 @@ class AsyncResult(ResultBase):
 
         # fulfilled?
         if self.is_final_state(meta):
-            self._mark_as_fulfilled()
+            self._mark_as_fulfilled(meta)
 
-    def then(self, on_ready, on_error=None):
-        return self._on_ready.then(on_ready, on_error)
+    def then(self, callback, error_callback=None):
+        return self._on_ready.then(callback, error_callback)
+
+    @property
+    def on_state_change(self):
+        if self.ready():
+            raise self.ResultFulfilledError
+        return self._on_state_change
 
     def as_tuple(self):
         parent = self.parent
@@ -165,7 +157,7 @@ class AsyncResult(ResultBase):
                                 reply=wait, timeout=timeout)
 
     def get(self, timeout=None, propagate=True, interval=0.5, no_ack=True,
-            follow_parents=True):
+            follow_parents=True, callback=None):
         """Wait until task is ready, and return its result.
 
         .. warning::
@@ -184,6 +176,8 @@ class AsyncResult(ResultBase):
             message). If this is :const:`False` then the message will
             **not be acked**.
         :keyword follow_parents: Reraise any exception raised by parent task.
+        :keyword callback: Callback that should be called when the result
+            successfully become fulfilled.
 
         :raises celery.exceptions.TimeoutError: if `timeout` is not
             :const:`None` and the result does not arrive within `timeout`
@@ -198,19 +192,24 @@ class AsyncResult(ResultBase):
             on_interval = self._maybe_reraise_parent_error
             on_interval()
 
-        if self._fulfilled:
+        if callback:
+            self.then(callback)
+
+        if self._cache:
             if propagate:
                 self.maybe_reraise()
             return self.result
 
-        return self.backend.wait_until_fulfilled(
-            self,
+        result = next(self.backend.wait_until_complete(
+            (self,),
             timeout=timeout,
-            propagate=propagate,
             interval=interval,
             on_interval=on_interval,
             no_ack=no_ack,
-        )
+        ))
+        if propagate:
+            self.maybe_reraise()
+        return result.result
     wait = get  # deprecated alias to :meth:`get`.
 
     def _maybe_reraise_parent_error(self):
@@ -743,7 +742,10 @@ class ResultSet(ResultBase):
 
     @property
     def supports_native_join(self):
-        return self.results[0].supports_native_join
+        try:
+            return self.results[0].supports_native_join
+        except IndexError:
+            pass
 
     @property
     def backend(self):

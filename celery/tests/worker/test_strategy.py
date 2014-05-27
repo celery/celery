@@ -8,7 +8,7 @@ from kombu.utils.limits import TokenBucket
 from celery.worker import state
 from celery.utils.timeutils import rate
 
-from celery.tests.case import AppCase, Mock, patch, body_from_sig
+from celery.tests.case import AppCase, Mock, patch, task_message_from_sig
 
 
 class test_default_strategy(AppCase):
@@ -22,17 +22,16 @@ class test_default_strategy(AppCase):
 
     class Context(object):
 
-        def __init__(self, sig, s, reserved, consumer, message, body):
+        def __init__(self, sig, s, reserved, consumer, message):
             self.sig = sig
             self.s = s
             self.reserved = reserved
             self.consumer = consumer
             self.message = message
-            self.body = body
 
         def __call__(self, **kwargs):
             return self.s(
-                self.message, self.body,
+                self.message, None,
                 self.message.ack, self.message.reject, [], **kwargs
             )
 
@@ -71,15 +70,14 @@ class test_default_strategy(AppCase):
         if limit:
             bucket = TokenBucket(rate(limit), capacity=1)
             consumer.task_buckets[sig.task] = bucket
+        consumer.controller.state.revoked = set()
         consumer.disable_rate_limits = not rate_limits
         consumer.event_dispatcher.enabled = events
         s = sig.type.start_strategy(self.app, consumer, task_reserved=reserved)
         self.assertTrue(s)
 
-        message = Mock()
-        body = body_from_sig(self.app, sig, utc=utc)
-
-        yield self.Context(sig, s, reserved, consumer, message, body)
+        message = task_message_from_sig(self.app, sig, utc=utc)
+        yield self.Context(sig, s, reserved, consumer, message)
 
     def test_when_logging_disabled(self):
         with patch('celery.worker.strategy.logger') as logger:
@@ -129,9 +127,10 @@ class test_default_strategy(AppCase):
     def test_when_revoked(self):
         task = self.add.s(2, 2)
         task.freeze()
-        state.revoked.add(task.id)
         try:
             with self._context(task) as C:
+                C.consumer.controller.state.revoked.add(task.id)
+                state.revoked.add(task.id)
                 C()
                 with self.assertRaises(ValueError):
                     C.get_request()

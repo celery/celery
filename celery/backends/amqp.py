@@ -23,6 +23,7 @@ from celery.five import range, monotonic
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.timeutils import maybe_s_to_ms
+from celery.datastructures import OrderedDefaultDict
 
 from .base import BaseBackend
 
@@ -88,6 +89,9 @@ class AMQPBackend(BaseBackend):
             'x-expires': maybe_s_to_ms(self.expires),
         })
 
+        # Unclaimed task results
+        self._unclaimed = OrderedDefaultDict(list)
+
     def _create_exchange(self, name, type='direct', delivery_mode=2):
         return self.Exchange(name=name,
                              type=type,
@@ -126,7 +130,8 @@ class AMQPBackend(BaseBackend):
                 {'task_id': task_id, 'status': status,
                  'result': self.encode_result(result, status),
                  'traceback': traceback,
-                 'children': self.current_task_children(request)},
+                 'children': self.current_task_children(request),
+                 'hostname': request.hostname if request else None},
                 exchange=self.exchange,
                 routing_key=routing_key,
                 correlation_id=correlation_id,
@@ -160,6 +165,63 @@ class AMQPBackend(BaseBackend):
             raise self.exception_to_python(meta['result'])
         # consume() always returns READY_STATE.
         return meta['result']
+
+    def wait_until_complete(self, results, timeout=None, propagate=True,
+                            no_ack=True, interval=0.5, on_interval=None,
+                            now=monotonic):
+        unclaimed = self._unclaimed
+        if unclaimed:
+            for result in results:
+                metas = unclaimed.get(result.id)
+                if metas:
+                    for meta in metas:
+                        result.send(meta)
+                    # This task is not unclaimed anymore
+                    del unclaimed[result.id]
+        ready_results = {result.id: result for result in results
+                         if result.ready()}
+        for result in ready_results.values():
+            yield result
+        if len(results) == len(ready_results):
+            return
+
+        results_to_wait = {result.id: result for result in results
+                           if not result.ready()}
+
+        # Workaround for missing nonlocal in py2
+        current_result = []
+
+        def callback(meta, message):
+            # XXX: uncomment when only py3 will be supported and use None
+            # nonlocal current_result
+            task_id = meta['task_id']
+            result = results_to_wait.get(task_id)
+            if result:
+                result.send(meta)
+                if result.ready():
+                    current_result.append(result)
+                    del results_to_wait[task_id]  # Don't need to wait
+            else:
+                unclaimed[task_id].append(meta)
+
+        bindings = self._many_bindings(results_to_wait)
+        with self.app.pool.acquire_channel(block=True) as (conn, channel):
+            with self.Consumer(channel, bindings, no_ack=no_ack,
+                               accept=self.accept) as consumer:
+                wait = conn.drain_events
+                consumer.callbacks[:] = [callback]
+                time_start = now()
+                while results_to_wait:
+                    if timeout and now() - time_start >= timeout:
+                        raise socket.timeout()
+                    try:
+                        wait(timeout=interval)  # XXX: does interval fit this?
+                    except socket.timeout:
+                        pass
+                    if on_interval:
+                        on_interval()
+                    if current_result:
+                        yield current_result.pop()
 
     def get_task_meta(self, task_id, backlog_limit=1000):
         # Polling and using basic_get

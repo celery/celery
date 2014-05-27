@@ -138,7 +138,7 @@ TO_RST_MAP = {RE_CODE_BLOCK: replace_code_block,
               RE_INCLUDE: include_file}
 
 
-def _process(lines):
+def _process(lines, encoding='utf-8'):
     lines = list(lines)                                 # non-destructive
     for i, line in enumerate(lines):
         for regex, alt in TO_RST_MAP.items():
@@ -150,18 +150,21 @@ def _process(lines):
             else:
                 lines[i] = regex.sub(alt, line)
         lines[i] = deref_all(lines[i])
-    return resolve_pending_refs(asciify(lines))
+    if encoding == 'ascii':
+        lines = asciify(lines)
+    return resolve_pending_refs(lines)
 
 
-def sphinx_to_rst(fh):
-    return ''.join(_process(fh))
+def sphinx_to_rst(fh, encoding='utf-8'):
+    return ''.join(_process(fh, encoding))
 
 
 if __name__ == '__main__':
     global dirname
     dirname = os.path.dirname(sys.argv[1])
+    encoding = 'ascii' if '--ascii' in sys.argv else 'utf-8'
     fh = codecs.open(sys.argv[1], encoding='utf-8')
     try:
-        print(sphinx_to_rst(fh))
+        print(sphinx_to_rst(fh, encoding).encode('utf-8'))
     finally:
         fh.close()

@@ -109,7 +109,7 @@ new in Celery 3.1.
     Celery), so if you do enable it then make sure you do so on all
     nodes.
 
-    See :ref:`redis-caveats-fanout-patterns`.
+    See :ref:`redis-caveat-fanout-patterns`.
 
     This will be the default in Celery 3.2.
 

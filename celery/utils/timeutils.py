@@ -6,7 +6,7 @@
     This module contains various utilities related to dates and times.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import numbers
 import os
@@ -16,7 +16,6 @@ from calendar import monthrange
 from datetime import date, datetime, timedelta, tzinfo
 
 from kombu.utils import cached_property, reprcall
-from kombu.utils.compat import timedelta_seconds
 
 from pytz import timezone as _timezone, AmbiguousTimeError
 
@@ -26,7 +25,7 @@ from .functional import dictfilter
 from .iso8601 import parse_iso8601
 from .text import pluralize
 
-__all__ = ['LocalTimezone', 'timezone', 'maybe_timedelta', 'timedelta_seconds',
+__all__ = ['LocalTimezone', 'timezone', 'maybe_timedelta',
            'delta_resolution', 'remaining', 'rate', 'weekday',
            'humanize_seconds', 'maybe_iso8601', 'is_naive', 'make_aware',
            'localize', 'to_utc', 'maybe_make_aware', 'ffwd', 'utcoffset',
@@ -149,7 +148,7 @@ def delta_resolution(dt, delta):
     which will just return the original datetime.
 
     """
-    delta = timedelta_seconds(delta)
+    delta = max(delta.total_seconds(), 0)
 
     resolutions = ((3, lambda x: x / 86400),
                    (4, lambda x: x / 3600),

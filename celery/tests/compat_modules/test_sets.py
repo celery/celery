@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 
-import anyjson
 import warnings
+
+from kombu.utils import json
 
 from celery import uuid
 from celery.result import TaskSetResult
@@ -136,7 +137,7 @@ class test_subtask(SetsCase):
         )
         s.args = list(s.args)                   # tuples are not preserved
                                                 # but this doesn't matter.
-        self.assertEqual(s, self.subtask(anyjson.loads(anyjson.dumps(s))))
+        self.assertEqual(s, self.subtask(json.loads(json.dumps(s))))
 
     def test_repr(self):
         s = self.MockTask.subtask((2, ), {'cache': True})

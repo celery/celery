@@ -48,7 +48,7 @@ from celery.utils.functional import noop
 from celery.utils.imports import qualname
 
 __all__ = [
-    'Case', 'AppCase', 'Mock', 'MagicMock', 'ANY',
+    'Case', 'AppCase', 'Mock', 'MagicMock', 'ANY', 'TaskMessage',
     'patch', 'call', 'sentinel', 'skip_unless_module',
     'wrap_logger', 'with_environ', 'sleepdeprived',
     'skip_if_environ', 'todo', 'skip', 'skip_if',
@@ -56,7 +56,7 @@ __all__ = [
     'replace_module_value', 'sys_platform', 'reset_modules',
     'patch_modules', 'mock_context', 'mock_open', 'patch_many',
     'assert_signal_called', 'skip_if_pypy',
-    'skip_if_jython', 'body_from_sig', 'restore_logging',
+    'skip_if_jython', 'task_message_from_sig', 'restore_logging',
 ]
 patch = mock.patch
 call = mock.call
@@ -464,6 +464,15 @@ class AppCase(Case):
             self._threads_at_setup, list(threading.enumerate()),
         )
 
+        # Make sure no test left the shutdown flags enabled.
+        from celery.worker import state as worker_state
+        # check for EX_OK
+        self.assertIsNot(worker_state.should_stop, False)
+        self.assertIsNot(worker_state.should_terminate, False)
+        # check for other true values
+        self.assertFalse(worker_state.should_stop)
+        self.assertFalse(worker_state.should_terminate)
+
     def _get_test_name(self):
         return '.'.join([self.__class__.__name__, self._testMethodName])
 
@@ -819,7 +828,7 @@ def skip_if_jython(fun):
     return _inner
 
 
-def body_from_sig(app, sig, utc=True):
+def task_message_from_sig(app, sig, utc=True):
     sig.freeze()
     callbacks = sig.options.pop('link', None)
     errbacks = sig.options.pop('link_error', None)
@@ -835,17 +844,14 @@ def body_from_sig(app, sig, utc=True):
         expires = app.now() + timedelta(seconds=expires)
     if expires and isinstance(expires, datetime):
         expires = expires.isoformat()
-    return {
-        'task': sig.task,
-        'id': sig.id,
-        'args': sig.args,
-        'kwargs': sig.kwargs,
-        'callbacks': [dict(s) for s in callbacks] if callbacks else None,
-        'errbacks': [dict(s) for s in errbacks] if errbacks else None,
-        'eta': eta,
-        'utc': utc,
-        'expires': expires,
-    }
+    return TaskMessage(
+        sig.task, id=sig.id, args=sig.args,
+        kwargs=sig.kwargs,
+        callbacks=[dict(s) for s in callbacks] if callbacks else None,
+        errbacks=[dict(s) for s in errbacks] if errbacks else None,
+        eta=eta,
+        expires=expires,
+    )
 
 
 @contextmanager
@@ -861,3 +867,22 @@ def restore_logging():
         sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__ = outs
         root.level = level
         root.handlers[:] = handlers
+
+
+def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
+                errbacks=None, chain=None, **options):
+    from celery import uuid
+    from kombu.serialization import dumps
+    id = id or uuid()
+    message = Mock(name='TaskMessage-{0}'.format(id))
+    message.headers = {
+        'id': id,
+        'task': name,
+    }
+    embed = {'callbacks': callbacks, 'errbacks': errbacks, 'chain': chain}
+    message.headers.update(options)
+    message.content_type, message.content_encoding, message.body = dumps(
+        (args, kwargs, embed), serializer='json',
+    )
+    message.payload = (args, kwargs, embed)
+    return message

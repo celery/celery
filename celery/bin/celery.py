@@ -8,13 +8,14 @@ The :program:`celery` umbrella command.
 """
 from __future__ import absolute_import, unicode_literals
 
-import anyjson
 import numbers
 import os
 import sys
 
 from functools import partial
 from importlib import import_module
+
+from kombu.utils import json
 
 from celery.five import string_t, values
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
@@ -162,12 +163,12 @@ class call(Command):
         # Positional args.
         args = kw.get('args') or ()
         if isinstance(args, string_t):
-            args = anyjson.loads(args)
+            args = json.loads(args)
 
         # Keyword args.
         kwargs = kw.get('kwargs') or {}
         if isinstance(kwargs, string_t):
-            kwargs = anyjson.loads(kwargs)
+            kwargs = json.loads(kwargs)
 
         # Expires can be int/float.
         expires = kw.get('expires') or None

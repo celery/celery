@@ -30,7 +30,7 @@ from time import time
 from weakref import ref
 
 from kombu.clocks import timetuple
-from kombu.utils import cached_property, kwdict
+from kombu.utils import cached_property
 
 from celery import states
 from celery.five import class_property, items, values
@@ -53,8 +53,6 @@ DRIFT_WARNING = """\
 Substantial drift from %s may mean clocks are out of sync.  Current drift is
 %s seconds.  [orig: %s recv: %s]
 """
-
-CAN_KWDICT = sys.version_info >= (2, 6, 5)
 
 logger = get_logger(__name__)
 warn = logger.warning
@@ -86,7 +84,7 @@ def heartbeat_expires(timestamp, freq=60,
 
 
 def _depickle_task(cls, fields):
-    return cls(**(fields if CAN_KWDICT else kwdict(fields)))
+    return cls(**fields)
 
 
 def with_unique_field(attr):

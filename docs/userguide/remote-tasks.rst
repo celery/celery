@@ -59,7 +59,7 @@ With this information you could define a simple task in Django:
 .. code-block:: python
 
     from django.http import HttpResponse
-    from anyjson import serialize
+    from json import dumps
 
 
     def multiply(request):
@@ -67,7 +67,7 @@ With this information you could define a simple task in Django:
         y = int(request.GET['y'])
         result = x * y
         response = {'status': 'success', 'retval': result}
-        return HttpResponse(serialize(response), mimetype='application/json')
+        return HttpResponse(dumps(response), mimetype='application/json')
 
 .. _webhook-rails-example:
 

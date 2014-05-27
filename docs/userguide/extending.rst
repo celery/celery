@@ -463,7 +463,7 @@ Methods
 .. method:: apply_eta_task(request)
 
     Schedule eta task to execute based on the ``request.eta`` attribute.
-    (:class:`~celery.worker.job.Request`)
+    (:class:`~celery.worker.request.Request`)
 
 
 

@@ -15,6 +15,8 @@ import re
 from collections import Mapping
 from types import ModuleType
 
+from kombu.utils.url import maybe_sanitize_url
+
 from celery.datastructures import ConfigurationView
 from celery.five import items, string_t, values
 from celery.platforms import pyimplementation
@@ -152,7 +154,6 @@ class AppPickler(object):
         return dict(main=main, loader=loader, backend=backend, amqp=amqp,
                     changes=changes, events=events, log=log, control=control,
                     set_as_current=False,
-                    accept_magic_kwargs=accept_magic_kwargs,
                     config_source=config_source)
 
     def construct(self, cls, **kwargs):
@@ -178,9 +179,12 @@ def filter_hidden_settings(conf):
         if isinstance(key, string_t):
             if HIDDEN_SETTINGS.search(key):
                 return mask
-            if 'BROKER_URL' in key.upper():
+            elif 'BROKER_URL' in key.upper():
                 from kombu import Connection
                 return Connection(value).as_uri(mask=mask)
+            elif key.upper() in ('CELERY_RESULT_BACKEND', 'CELERY_BACKEND'):
+                return maybe_sanitize_url(value, mask=mask)
+
         return value
 
     return {k: maybe_censor(k, v) for k, v in items(conf)}

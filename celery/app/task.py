@@ -20,7 +20,7 @@ from celery.exceptions import MaxRetriesExceededError, Reject, Retry
 from celery.five import class_property, items, with_metaclass
 from celery.local import Proxy
 from celery.result import EagerResult
-from celery.utils import gen_task_name, fun_takes_kwargs, uuid, maybe_reraise
+from celery.utils import gen_task_name, uuid, maybe_reraise
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.mail import ErrorMail
@@ -93,6 +93,8 @@ class Context(object):
     headers = None
     delivery_info = None
     reply_to = None
+    root_id = None
+    parent_id = None
     correlation_id = None
     taskset = None   # compat alias to group
     group = None
@@ -235,10 +237,6 @@ class Task(object):
     #: If :const:`True` the task is an abstract base class.
     abstract = True
 
-    #: If disabled the worker will not forward magic keyword arguments.
-    #: Deprecated and scheduled for removal in v4.0.
-    accept_magic_kwargs = False
-
     #: Maximum number of retries before giving up.  If set to :const:`None`,
     #: it will **never** stop retrying.
     max_retries = 3
@@ -343,6 +341,9 @@ class Task(object):
             'CELERY_STORE_ERRORS_EVEN_IF_IGNORED'),
     )
 
+    #: ignored
+    accept_magic_kwargs = False
+
     _backend = None  # set by backend property.
 
     __bound__ = False
@@ -360,8 +361,6 @@ class Task(object):
         for attr_name, config_name in self.from_config:
             if getattr(self, attr_name, None) is None:
                 setattr(self, attr_name, conf[config_name])
-        if self.accept_magic_kwargs is None:
-            self.accept_magic_kwargs = app.accept_magic_kwargs
 
         # decorate with annotations from config.
         if not was_bound:
@@ -693,7 +692,7 @@ class Task(object):
 
         """
         # trace imports Task, so need to import inline.
-        from celery.app.trace import eager_trace_task
+        from celery.app.trace import build_tracer
 
         app = self._get_app()
         args = args or ()
@@ -718,28 +717,16 @@ class Task(object):
                    'errbacks': maybe_list(link_error),
                    'headers': options.get('headers'),
                    'delivery_info': {'is_eager': True}}
-        if self.accept_magic_kwargs:
-            default_kwargs = {'task_name': task.name,
-                              'task_id': task_id,
-                              'task_retries': retries,
-                              'task_is_eager': True,
-                              'logfile': options.get('logfile'),
-                              'loglevel': options.get('loglevel', 0),
-                              'delivery_info': {'is_eager': True}}
-            supported_keys = fun_takes_kwargs(task.run, default_kwargs)
-            extend_with = {
-                key: val for key, val in items(default_kwargs)
-                if key in supported_keys
-            }
-            kwargs.update(extend_with)
-
         tb = None
-        retval, info = eager_trace_task(task, task_id, args, kwargs,
-                                        app=self._get_app(),
-                                        request=request, propagate=throw)
+        tracer = build_tracer(
+            task.name, task, eager=True,
+            propagate=throw, app=self._get_app(),
+        )
+        ret = tracer(task_id, args, kwargs, request)
+        retval = ret.retval
         if isinstance(retval, ExceptionInfo):
             retval, tb = retval.exception, retval.traceback
-        state = states.SUCCESS if info is None else info.state
+        state = states.SUCCESS if ret.info is None else ret.info.state
         return EagerResult(task_id, retval, state, traceback=tb)
 
     def AsyncResult(self, task_id, **kwargs):

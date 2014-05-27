@@ -22,8 +22,8 @@ from celery.utils.log import get_logger
 from celery.utils import jsonify
 
 from . import state as worker_state
+from .request import Request
 from .state import revoked
-from .job import Request
 
 __all__ = ['Panel']
 DEFAULT_TASK_INFO_ITEMS = ('exchange', 'routing_key', 'rate_limit')
@@ -227,7 +227,7 @@ def objgraph(state, num=200, max_depth=10, type='Request'):  # pragma: no cover
         import objgraph
     except ImportError:
         raise ImportError('Requires the objgraph library')
-    print('Dumping graph for type %r' % (type, ))
+    logger.info('Dumping graph for type %r', type)
     with tempfile.NamedTemporaryFile(prefix='cobjg',
                                      suffix='.png', delete=False) as fh:
         objects = objgraph.by_type(type)[:num]
@@ -364,7 +364,9 @@ def active_queues(state):
 
 
 def _wanted_config_key(key):
-    return isinstance(key, string_t) and key.isupper() and not key.startswith('__')
+    return (isinstance(key, string_t) and
+            key.isupper() and
+            not key.startswith('__'))
 
 
 @Panel.register

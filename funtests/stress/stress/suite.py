@@ -6,11 +6,9 @@ import random
 import socket
 import sys
 
-from collections import defaultdict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 from itertools import count
 from time import sleep
-
-from kombu.utils.compat import OrderedDict
 
 from celery import group, VERSION_BANNER
 from celery.exceptions import TimeoutError
@@ -21,7 +19,7 @@ from celery.utils.timeutils import humanize_seconds
 
 from .app import (
     marker, _marker, add, any_, exiting, kill, sleeping,
-    sleeping_ignore_limits, any_returning,
+    sleeping_ignore_limits, any_returning, print_unicode
 )
 from .data import BIG, SMALL
 from .fbi import FBI
@@ -105,11 +103,11 @@ class BaseSuite(object):
                 except AttributeError:
                     pass
                 else:
-                    for group in groups:
-                        acc[group].append(meth)
+                    for g in groups:
+                        acc[g].append(meth)
         # sort the tests by the order in which they are defined in the class
-        for group in values(acc):
-            group[:] = sorted(group, key=lambda m: m.__func__.__testsort__)
+        for g in values(acc):
+            g[:] = sorted(g, key=lambda m: m.__func__.__testsort__)
         self.groups = dict(
             (name, testgroup(*tests)) for name, tests in items(acc)
         )
@@ -238,6 +236,8 @@ class BaseSuite(object):
 
 
 _creation_counter = count(0)
+
+
 def testcase(*groups):
     if not groups:
         raise ValueError('@testcase requires at least one group name')
@@ -264,7 +264,7 @@ class Suite(BaseSuite):
 
     @testcase('all', 'green')
     def manyshort(self):
-        self.join(group(add.s(i, i) for i in range(1000))(),
+        self.join(group(print_unicode.s(i, i) for i in range(1000))(),
                   timeout=10, propagate=True)
 
     @testcase('all')

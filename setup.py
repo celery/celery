@@ -1,17 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-try:
-    from setuptools import setup, find_packages
-    from setuptools.command.test import test
-    is_setuptools = True
-except ImportError:
-    raise
-    from ez_setup import use_setuptools
-    use_setuptools()
-    from setuptools import setup, find_packages           # noqa
-    from setuptools.command.test import test              # noqa
-    is_setuptools = False
+from setuptools import setup, find_packages
 
 import os
 import sys
@@ -21,6 +11,8 @@ CELERY_COMPAT_PROGRAMS = int(os.environ.get('CELERY_COMPAT_PROGRAMS', 1))
 
 if sys.version_info < (2, 7):
     raise Exception('Celery 3.2 requires Python 2.7 or higher.')
+
+# -*- Upgrading from older versions -*-
 
 downgrade_packages = [
     'celery.app.task',
@@ -53,6 +45,9 @@ except:
 finally:
     sys.path[:] = orig_path
 
+PY3 = sys.version_info[0] == 3
+JYTHON = sys.platform.startswith('java')
+PYPY = hasattr(sys, 'pypy_version_info')
 
 NAME = 'celery'
 entrypoints = {}
@@ -75,15 +70,8 @@ classes = """
     Programming Language :: Python :: Implementation :: PyPy
     Programming Language :: Python :: Implementation :: Jython
     Operating System :: OS Independent
-    Operating System :: POSIX
-    Operating System :: Microsoft :: Windows
-    Operating System :: MacOS :: MacOS X
 """
 classifiers = [s.strip() for s in classes.split('\n') if s]
-
-PY3 = sys.version_info[0] == 3
-JYTHON = sys.platform.startswith('java')
-PYPY = hasattr(sys, 'pypy_version_info')
 
 # -*- Distribution Meta -*-
 
@@ -122,8 +110,6 @@ with open(os.path.join(here, 'celery/__init__.py')) as meta_fh:
                 meta.update(handler(m))
 
 # -*- Installation Requires -*-
-
-py_version = sys.version_info
 
 
 def strip_comments(l):
@@ -165,15 +151,16 @@ if CELERY_COMPAT_PROGRAMS:
         'celeryd-multi = celery.__main__:_compat_multi',
     ])
 
-if is_setuptools:
-    extras = lambda *p: reqs('extras', *p)
-    # Celery specific
-    specific_list = ['auth', 'cassandra', 'memcache', 'couchbase', 'threads',
-                     'eventlet', 'gevent', 'msgpack', 'yaml', 'redis',
-                     'mongodb', 'sqs', 'couchdb', 'beanstalk', 'zookeeper',
-                     'zeromq', 'sqlalchemy', 'librabbitmq', 'pyro', 'slmq']
-    extras_require = dict((x, extras(x + '.txt')) for x in specific_list)
-    extra['extras_require'] = extras_require
+# -*- Extras -*-
+
+extras = lambda *p: reqs('extras', *p)
+# Celery specific
+specific_list = ['auth', 'cassandra', 'memcache', 'couchbase', 'threads',
+                 'eventlet', 'gevent', 'msgpack', 'yaml', 'redis',
+                 'mongodb', 'sqs', 'couchdb', 'beanstalk', 'zookeeper',
+                 'zeromq', 'sqlalchemy', 'librabbitmq', 'pyro', 'slmq']
+extras_require = dict((x, extras(x + '.txt')) for x in specific_list)
+extra['extras_require'] = extras_require
 
 # -*- %%% -*-
 
@@ -187,6 +174,7 @@ setup(
     platforms=['any'],
     license='BSD',
     packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
+    include_package_data=False,
     zip_safe=False,
     install_requires=install_requires,
     tests_require=tests_require,

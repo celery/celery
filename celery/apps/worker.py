@@ -22,6 +22,7 @@ from functools import partial
 
 from billiard import current_process
 from kombu.utils.encoding import safe_str
+from kombu.utils.url import maybe_sanitize_url
 
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
@@ -30,7 +31,7 @@ from celery.exceptions import (
 )
 from celery.five import string, string_t
 from celery.loaders.app import AppLoader
-from celery.platforms import check_privileges
+from celery.platforms import EX_FAILURE, EX_OK, check_privileges
 from celery.utils import cry, isatty
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
@@ -111,7 +112,7 @@ EXTRA_INFO_FMT = """
 class Worker(WorkController):
 
     def on_before_init(self, **kwargs):
-        trace.setup_worker_optimizations(self.app)
+        trace.setup_worker_optimizations(self.app, self.hostname)
 
         # this signal can be used to set up configuration for
         # workers by name.
@@ -143,7 +144,7 @@ class Worker(WorkController):
         self._custom_logging = self.setup_logging()
         # apply task execution optimizations
         # -- This will finalize the app!
-        trace.setup_worker_optimizations(self.app)
+        trace.setup_worker_optimizations(self.app, self.hostname)
 
     def on_start(self):
         if not self._custom_logging and self.redirect_stdouts:
@@ -227,7 +228,9 @@ class Worker(WorkController):
             hostname=safe_str(self.hostname),
             version=VERSION_BANNER,
             conninfo=self.app.connection().as_uri(),
-            results=self.app.conf.CELERY_RESULT_BACKEND or 'disabled',
+            results=maybe_sanitize_url(
+                self.app.conf.CELERY_RESULT_BACKEND or 'disabled',
+            ),
             concurrency=concurrency,
             platform=safe_str(_platform.platform()),
             events=events,
@@ -277,7 +280,7 @@ class Worker(WorkController):
 
 
 def _shutdown_handler(worker, sig='TERM', how='Warm',
-                      exc=WorkerShutdown, callback=None):
+                      exc=WorkerShutdown, callback=None, exitcode=EX_OK):
 
     def _handle_request(*args):
         with in_sighandler():
@@ -288,9 +291,9 @@ def _shutdown_handler(worker, sig='TERM', how='Warm',
                 safe_say('worker: {0} shutdown (MainProcess)'.format(how))
             if active_thread_count() > 1:
                 setattr(state, {'Warm': 'should_stop',
-                                'Cold': 'should_terminate'}[how], True)
+                                'Cold': 'should_terminate'}[how], exitcode)
             else:
-                raise exc()
+                raise exc(exitcode)
     _handle_request.__name__ = str('worker_{0}'.format(how))
     platforms.signals[sig] = _handle_request
 install_worker_term_handler = partial(
@@ -299,6 +302,7 @@ install_worker_term_handler = partial(
 if not is_jython:  # pragma: no cover
     install_worker_term_hard_handler = partial(
         _shutdown_handler, sig='SIGQUIT', how='Cold', exc=WorkerTerminate,
+        exitcode=EX_FAILURE,
     )
 else:  # pragma: no cover
     install_worker_term_handler = \
@@ -310,7 +314,8 @@ def on_SIGINT(worker):
     install_worker_term_hard_handler(worker, sig='SIGINT')
 if not is_jython:  # pragma: no cover
     install_worker_int_handler = partial(
-        _shutdown_handler, sig='SIGINT', callback=on_SIGINT
+        _shutdown_handler, sig='SIGINT', callback=on_SIGINT,
+        exitcode=EX_FAILURE,
     )
 else:  # pragma: no cover
     install_worker_int_handler = lambda *a, **kw: None
@@ -332,7 +337,7 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
         import atexit
         atexit.register(_reload_current_worker)
         from celery.worker import state
-        state.should_stop = True
+        state.should_stop = EX_OK
     platforms.signals[sig] = restart_worker_sig_handler
 
 

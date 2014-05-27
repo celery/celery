@@ -341,6 +341,7 @@ class test_PromiseProxy(Case):
         self.assertTrue(object.__getattribute__(p, '__pending__'))
 
         self.assertTrue(repr(p))
+        self.assertTrue(p.__evaluated__())
         with self.assertRaises(AttributeError):
             object.__getattribute__(p, '__pending__')
         cbA.assert_called_with(p)

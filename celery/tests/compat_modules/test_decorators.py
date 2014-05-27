@@ -27,7 +27,6 @@ class test_decorators(AppCase):
     def assertCompatDecorator(self, decorator, type, **opts):
         task = decorator(**opts)(add)
         self.assertEqual(task(8, 8), 16)
-        self.assertTrue(task.accept_magic_kwargs)
         self.assertIsInstance(task, type)
 
     def test_task(self):
