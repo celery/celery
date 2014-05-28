@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 from celery.concurrency.gevent import (
-    Schedule,
     Timer,
     TaskPool,
     apply_timeout,
@@ -43,7 +42,7 @@ class test_gevent_patch(GeventCase):
                 self.assertTrue(patch_all.called)
 
 
-class test_Schedule(AppCase):
+class test_Timer(AppCase):
 
     def test_sched(self):
         with mock_module(*gevent_modules):
@@ -51,7 +50,7 @@ class test_Schedule(AppCase):
                             'gevent.greenlet.GreenletExit') as (greenlet,
                                                                 GreenletExit):
                 greenlet.Greenlet = object
-                x = Schedule()
+                x = Timer()
                 greenlet.Greenlet = Mock()
                 x._Greenlet.spawn_later = Mock()
                 x._GreenletExit = KeyError
@@ -98,18 +97,6 @@ class test_TaskPool(AppCase):
 
                 x._pool = [4, 5, 6]
                 self.assertEqual(x.num_processes, 3)
-
-
-class test_Timer(AppCase):
-
-    def test_timer(self):
-        with mock_module(*gevent_modules):
-            x = Timer()
-            x.ensure_started()
-            x.schedule = Mock()
-            x.start()
-            x.stop()
-            x.schedule.clear.assert_called_with()
 
 
 class test_apply_timeout(AppCase):

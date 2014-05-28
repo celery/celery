@@ -5,7 +5,6 @@ import sys
 from celery.app.defaults import is_pypy
 from celery.concurrency.eventlet import (
     apply_target,
-    Schedule,
     Timer,
     TaskPool,
 )
@@ -54,14 +53,14 @@ eventlet_modules = (
 )
 
 
-class test_Schedule(EventletCase):
+class test_Timer(EventletCase):
 
     def test_sched(self):
         with mock_module(*eventlet_modules):
             with patch_many('eventlet.greenthread.spawn_after',
                             'greenlet.GreenletExit') as (spawn_after,
                                                          GreenletExit):
-                x = Schedule()
+                x = Timer()
                 x.GreenletExit = KeyError
                 entry = Mock()
                 g = x._enter(1, 0, entry)
@@ -99,20 +98,3 @@ class test_TaskPool(EventletCase):
     def test_apply_target(self, base):
         apply_target(Mock(), getpid=Mock())
         self.assertTrue(base.apply_target.called)
-
-
-class test_Timer(EventletCase):
-
-    def test_timer(self):
-        x = Timer()
-        x.ensure_started()
-        x.schedule = Mock()
-        x.start()
-        x.stop()
-        x.schedule.clear.assert_called_with()
-
-        tref = Mock()
-        x.cancel(tref)
-        x.schedule.GreenletExit = KeyError
-        tref.cancel.side_effect = KeyError()
-        x.cancel(tref)
