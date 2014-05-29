@@ -131,6 +131,16 @@ class TaskPool(base.BasePool):
                         callback, accept_callback,
                         self.getpid)
 
+    def grow(self, n=1):
+        limit = self.limit + n
+        self._pool.resize(limit)
+        self.limit = limit
+
+    def shrink(self, n=1):
+        limit = self.limit - n
+        self._pool.resize(limit)
+        self.limit = limit
+
     def _get_info(self):
         return {
             'max-concurrency': self.limit,
