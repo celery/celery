@@ -1,44 +1,37 @@
 # -*- coding: utf-8 -*-
 """
     celery.backends.riak
-    ~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~
 
     Riak result store backend.
 
 """
-from __future__ import absolute_import, print_function
-
-from datetime import datetime
+from __future__ import absolute_import
 
 try:
     import riak
-    from riak import RiakClient, RiakNode
+    from riak import RiakClient
     from riak.resolver import last_written_resolver
 except ImportError:  # pragma: no cover
-    riak = None      # noqa
+    riak = RiakClient = last_written_resolver = None  # noqa
 
 from kombu.utils.url import _parse_url
 
-from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.timeutils import maybe_timedelta
 
 from .base import KeyValueStoreBackend
 
+E_BUCKET_NAME = """\
+Riak bucket names must be composed of ASCII characters only, not: {0!r}\
+"""
 
-class NonAsciiBucket(Exception):
-    """ Bucket must ne ascii charchters only. """
-
-
-class Validators(object):
-
-    @classmethod
-    def validate_riak_bucket_name(cls, bucket_name):
-        try:
-            bucket_name.decode('ascii')
-        except UnicodeDecodeError as ude:
-            return False
-        return True
+def is_ascii(s):
+    try:
+        s.decode('ascii')
+    except UnicodeDecodeError:
+        return False
+    return True
 
 
 class RiakBackend(KeyValueStoreBackend):
@@ -47,7 +40,7 @@ class RiakBackend(KeyValueStoreBackend):
     protocol = 'pbc'
 
     #: default Riak bucket name (`default`)
-    bucket_name = "celery"
+    bucket_name = 'celery'
 
     #: default Riak server hostname (`localhost`)
     host = 'localhost'
@@ -94,13 +87,13 @@ class RiakBackend(KeyValueStoreBackend):
         self.protocol = protocol or config.get('protocol', self.protocol)
 
         # riak bucket must be ascii letters or numbers only
-        if not Validators.validate_riak_bucket_name(self.bucket_name):
-            raise NonAsciiBucket("Riak bucket names must be ASCII characters")
+        if not is_ascii(self.bucket_name):
+            raise ValueError(E_BUCKET_NAME.format(self.bucket_name))
 
         self._client = None
 
     def _get_client(self):
-        """Get client connection"""
+        """Get client connection."""
         if self._client is None or not self._client.is_alive():
             self._client = RiakClient(protocol=self.protocol,
                                       host=self.host,
@@ -109,7 +102,7 @@ class RiakBackend(KeyValueStoreBackend):
         return self._client
 
     def _get_bucket(self):
-        """Connect to our bucket"""
+        """Connect to our bucket."""
         if (
             self._client is None or not self._client.is_alive()
             or not self._bucket
@@ -129,8 +122,6 @@ class RiakBackend(KeyValueStoreBackend):
         return self.bucket.get(key).data
 
     def set(self, key, value):
-        # RiakBucket.new(key=None, data=None, content_type='application/json',
-        # encoded_data=None)
         _key = self.bucket.new(key, data=value)
         _key.store()
 

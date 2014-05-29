@@ -5,11 +5,10 @@ from __future__ import absolute_import, with_statement
 from mock import MagicMock, Mock, patch, sentinel
 from nose import SkipTest
 
-from celery import Celery
 from celery.backends import riak as module
-from celery.backends.riak import RiakBackend, riak, NonAsciiBucket
+from celery.backends.riak import RiakBackend, riak
 from celery.exceptions import ImproperlyConfigured
-from celery.tests.utils import AppCase
+from celery.tests.case import AppCase
 
 
 RIAK_BUCKET = 'riak_bucket'
@@ -17,12 +16,14 @@ RIAK_BUCKET = 'riak_bucket'
 
 class test_RiakBackend(AppCase):
 
-    def setUp(self):
+    def setup(self):
         if riak is None:
             raise SkipTest('riak is not installed.')
-        from celery.app import current_app
-        self.app = self._current_app = current_app()
-        self.backend = RiakBackend(app=self.app)
+        self.app.conf.CELERY_RESULT_BACKEND = 'riak://'
+
+    @property
+    def backend(self):
+        return self.app.backend
 
     def test_init_no_riak(self):
         """
@@ -36,26 +37,20 @@ class test_RiakBackend(AppCase):
             module.riak = prev
 
     def test_init_no_settings(self):
-        """
-        test init no settings
-        """
-        celery = Celery(set_as_current=False)
-        celery.conf.CELERY_RIAK_BACKEND_SETTINGS = []
+        """Test init no settings."""
+        self.app.conf.CELERY_RIAK_BACKEND_SETTINGS = []
         with self.assertRaises(ImproperlyConfigured):
-            RiakBackend(app=celery)
+            RiakBackend(app=self.app)
 
     def test_init_settings_is_None(self):
         """
         Test init settings is None
         """
-        celery = Celery(set_as_current=False)
-        celery.conf.CELERY_RIAK_BACKEND_SETTINGS = None
-        RiakBackend(app=celery)
+        self.app.conf.CELERY_RIAK_BACKEND_SETTINGS = None
+        self.assertTrue(self.app.backend)
 
     def test_get_client_client_exists(self):
-        """
-        Test get existing client
-        """
+        """Test get existing client."""
         with patch('riak.client.RiakClient') as mock_connection:
             self.backend._client = sentinel._client
 
@@ -66,62 +61,55 @@ class test_RiakBackend(AppCase):
             self.assertFalse(mock_connection.called)
 
     def test_get(self):
-        """
-        Test get
+        """Test get
+
         RiakBackend.get
         should return  and take two params
         db conn to riak is mocked
         TODO Should test on key not exists
         """
-        celery = Celery(set_as_current=False)
-
-        celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
-
-        backend = RiakBackend(app=celery)
-        backend._client = Mock()
-        backend._bucket = Mock()
-        mocked_get = backend._bucket.get = Mock()
+        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
+        self.backend._client = Mock(name='_client')
+        self.backend._bucket = Mock(name='_bucket')
+        mocked_get = self.backend._bucket.get = Mock(name='bucket.get')
         mocked_get.return_value.data = sentinel.retval
         # should return None
-        self.assertEqual(backend.get('1f3fab'), sentinel.retval)
-        backend._bucket.get.assert_called_once_with('1f3fab')
+        self.assertEqual(self.backend.get('1f3fab'), sentinel.retval)
+        self.backend._bucket.get.assert_called_once_with('1f3fab')
 
     def test_set(self):
-        """
-        Test set
+        """Test set
+
         RiakBackend.set
         should return None and take two params
-        db conn to couchbase is mocked
+        db conn to couchbase is mocked.
+
         """
-        celery = Celery(set_as_current=False)
-        celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
-        backend = RiakBackend(app=celery)
-        backend._client = MagicMock()
-        backend._bucket = MagicMock()
-        backend._bucket.set = MagicMock()
+        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
+        self.backend._client = MagicMock()
+        self.backend._bucket = MagicMock()
+        self.backend._bucket.set = MagicMock()
         # should return None
-        self.assertIsNone(backend.set(sentinel.key, sentinel.value))
+        self.assertIsNone(self.backend.set(sentinel.key, sentinel.value))
 
     def test_delete(self):
-        """
-        Test get
+        """Test get
+
         RiakBackend.get
         should return  and take two params
         db conn to couchbase is mocked
         TODO Should test on key not exists
+
         """
-        celery = Celery(set_as_current=False)
+        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
 
-        celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
-
-        backend = RiakBackend(app=celery)
-        backend._client = Mock()
-        backend._bucket = Mock()
-        mocked_delete = backend._client.delete = Mock()
+        self.backend._client = Mock(name='_client')
+        self.backend._bucket = Mock(name='_bucket')
+        mocked_delete = self.backend._client.delete = Mock('client.delete')
         mocked_delete.return_value = None
         # should return None
-        self.assertIsNone(backend.delete('1f3fab'))
-        backend._bucket.delete.assert_called_once_with('1f3fab')
+        self.assertIsNone(self.backend.delete('1f3fab'))
+        self.backend._bucket.delete.assert_called_once_with('1f3fab')
 
     def test_config_params(self):
         """
@@ -129,21 +117,22 @@ class test_RiakBackend(AppCase):
         celery.conf.CELERY_RIAK_BACKEND_SETTINGS
         is properly set
         """
-        celery = Celery(set_as_current=False)
-        celery.conf.CELERY_RIAK_BACKEND_SETTINGS = {'bucket': 'mycoolbucket',
-                                                    'host': 'there.host.com',
-                                                    'port': '1234'}
-        backend = RiakBackend(app=celery)
-        self.assertEqual(backend.bucket_name, "mycoolbucket")
-        self.assertEqual(backend.host, 'there.host.com')
-        self.assertEqual(backend.port, 1234)
+        self.app.conf.CELERY_RIAK_BACKEND_SETTINGS = {
+            'bucket': 'mycoolbucket',
+            'host': 'there.host.com',
+            'port': '1234',
+        }
+        self.assertEqual(self.backend.bucket_name, 'mycoolbucket')
+        self.assertEqual(self.backend.host, 'there.host.com')
+        self.assertEqual(self.backend.port, 1234)
 
     def test_backend_by_url(self, url='riak://myhost/mycoolbucket'):
         """
         test get backend by url
         """
+        from celery import backends
         from celery.backends.riak import RiakBackend
-        backend, url_ = backends.get_backend_by_url(url)
+        backend, url_ = backends.get_backend_by_url(url, self.app.loader)
         self.assertIs(backend, RiakBackend)
         self.assertEqual(url_, url)
 
@@ -151,24 +140,20 @@ class test_RiakBackend(AppCase):
         """
         test get backend params by url
         """
-        celery = Celery(set_as_current=False,
-                        backend='riak://myhost:123/mycoolbucket')
-        backend = celery.backend
-        self.assertEqual(backend.bucket_name, "mycoolbucket")
-        self.assertEqual(backend.host, "myhost")
-        self.assertEqual(backend.port, 123)
+        self.app.conf.CELERY_RESULT_BACKEND = 'riak://myhost:123/mycoolbucket'
+        self.assertEqual(self.backend.bucket_name, 'mycoolbucket')
+        self.assertEqual(self.backend.host, 'myhost')
+        self.assertEqual(self.backend.port, 123)
 
     def test_non_ASCII_bucket_raises(self):
-        """
-        test celery.conf.CELERY_RIAK_BACKEND_SETTINGS
+        """test celery.conf.CELERY_RIAK_BACKEND_SETTINGS and
         celery.conf.CELERY_RIAK_BACKEND_SETTINGS
         is properly set
         """
-        with self.assertRaises(NonAsciiBucket):
-            celery = Celery(set_as_current=False)
-            celery.conf.CELERY_RIAK_BACKEND_SETTINGS = {
-                'bucket': 'héhé',
-                'host': 'there.host.com',
-                'port': '1234',
-            }
-            RiakBackend(app=celery)
+        self.app.conf.CELERY_RIAK_BACKEND_SETTINGS = {
+            'bucket': 'héhé',
+            'host': 'there.host.com',
+            'port': '1234',
+        }
+        with self.assertRaises(ValueError):
+            RiakBackend(app=self.app)

@@ -84,6 +84,9 @@ Test {0} Modified handlers for the root logger\
 """
 
 CELERY_TEST_CONFIG = {
+    'BROKER_URL': 'memory://',
+    'CELERY_RESULT_BACKEND': 'cache+memory://',
+
     #: Don't want log output when running suite.
     'CELERYD_HIJACK_ROOT_LOGGER': False,
     'CELERY_SEND_TASK_ERROR_EMAILS': False,
@@ -124,12 +127,8 @@ class UnitLogging(symbol_by_name(Celery.log_cls)):
         self.already_setup = True
 
 
-def UnitApp(name=None, broker=None, backend=None,
-            set_as_current=False, log=UnitLogging, **kwargs):
-
+def UnitApp(name=None, set_as_current=False, log=UnitLogging, **kwargs):
     app = Celery(name or 'celery.tests',
-                 broker=broker or 'memory://',
-                 backend=backend or 'cache+memory://',
                  set_as_current=set_as_current,
                  log=log,
                  **kwargs)
