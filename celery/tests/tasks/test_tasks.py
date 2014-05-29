@@ -358,11 +358,6 @@ class test_tasks(TasksCase):
         finally:
             self.mytask.pop_request()
 
-    def test_task_class_repr(self):
-        self.assertIn('class Task of', repr(self.mytask.app.Task))
-        self.mytask.app.Task._app = None
-        self.assertIn('unbound', repr(self.mytask.app.Task, ))
-
     def test_annotate(self):
         with patch('celery.app.task.resolve_all_annotations') as anno:
             anno.return_value = [{'FOO': 'BAR'}]

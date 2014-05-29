@@ -27,8 +27,7 @@ def add_backend_cleanup_task(app):
     :program:`celery beat` to be running).
 
     """
-    @app.task(name='celery.backend_cleanup',
-              shared=False, _force_evaluate=True)
+    @app.task(name='celery.backend_cleanup', shared=False, lazy=False)
     def backend_cleanup():
         app.backend.cleanup()
     return backend_cleanup
@@ -48,7 +47,7 @@ def add_unlock_chord_task(app):
     default_propagate = app.conf.CELERY_CHORD_PROPAGATES
 
     @app.task(name='celery.chord_unlock', max_retries=None, shared=False,
-              default_retry_delay=1, ignore_result=True, _force_evaluate=True)
+              default_retry_delay=1, ignore_result=True, lazy=False)
     def unlock_chord(group_id, callback, interval=None, propagate=None,
                      max_retries=None, result=None,
                      Result=app.AsyncResult, GroupResult=app.GroupResult,
@@ -106,7 +105,7 @@ def add_unlock_chord_task(app):
 def add_map_task(app):
     from celery.canvas import signature
 
-    @app.task(name='celery.map', shared=False, _force_evaluate=True)
+    @app.task(name='celery.map', shared=False, lazy=False)
     def xmap(task, it):
         task = signature(task, app=app).type
         return [task(item) for item in it]
@@ -117,7 +116,7 @@ def add_map_task(app):
 def add_starmap_task(app):
     from celery.canvas import signature
 
-    @app.task(name='celery.starmap', shared=False, _force_evaluate=True)
+    @app.task(name='celery.starmap', shared=False, lazy=False)
     def xstarmap(task, it):
         task = signature(task, app=app).type
         return [task(*item) for item in it]
@@ -128,7 +127,7 @@ def add_starmap_task(app):
 def add_chunk_task(app):
     from celery.canvas import chunks as _chunks
 
-    @app.task(name='celery.chunks', shared=False, _force_evaluate=True)
+    @app.task(name='celery.chunks', shared=False, lazy=False)
     def chunks(task, it, n):
         return _chunks.apply_chunks(task, it, n)
     return chunks
@@ -137,43 +136,35 @@ def add_chunk_task(app):
 @connect_on_app_finalize
 def add_group_task(app):
     """No longer used, but here for backwards compatibility."""
-    _app = app
     from celery.canvas import maybe_signature
     from celery.result import result_from_tuple
 
-    class Group(app.Task):
-        app = _app
-        name = 'celery.group'
-        _decorated = True
-
-        def run(self, tasks, result, group_id, partial_args,
-                add_to_parent=True):
-            app = self.app
-            result = result_from_tuple(result, app)
-            # any partial args are added to all tasks in the group
-            taskit = (maybe_signature(task, app=app).clone(partial_args)
-                      for i, task in enumerate(tasks))
-            with app.producer_or_acquire() as pub:
-                [stask.apply_async(group_id=group_id, producer=pub,
-                                   add_to_parent=False) for stask in taskit]
-            parent = get_current_worker_task()
-            if add_to_parent and parent:
-                parent.add_trail(result)
-            return result
-    return Group
+    @app.task(name='celery.group', bind=True, shared=False, lazy=False)
+    def group(self, tasks, result, group_id, partial_args, add_to_parent=True):
+        app = self.app
+        result = result_from_tuple(result, app)
+        # any partial args are added to all tasks in the group
+        taskit = (maybe_signature(task, app=app).clone(partial_args)
+                  for i, task in enumerate(tasks))
+        with app.producer_or_acquire() as producer:
+            [stask.apply_async(group_id=group_id, producer=producer,
+                               add_to_parent=False) for stask in taskit]
+        parent = get_current_worker_task()
+        if add_to_parent and parent:
+            parent.add_trail(result)
+        return result
+    return group
 
 
 @connect_on_app_finalize
 def add_chain_task(app):
     """No longer used, but here for backwards compatibility."""
-    _app = app
 
-    class Chain(app.Task):
-        app = _app
-        name = 'celery.chain'
-        _decorated = True
+    @app.task(name='celery.chain', shared=False, lazy=False)
+    def chain(*args, **kwargs):
+        raise NotImplementedError('chain is not a real task')
+    return chain
 
-    return Chain
 
 
 @connect_on_app_finalize
@@ -183,23 +174,19 @@ def add_chord_task(app):
     from celery.canvas import maybe_signature
     _app = app
 
-    class Chord(app.Task):
-        app = _app
-        name = 'celery.chord'
-        ignore_result = False
-        _decorated = True
-
-        def run(self, header, body, partial_args=(), interval=None,
-                countdown=1, max_retries=None, propagate=None,
-                eager=False, **kwargs):
-            app = self.app
-            # - convert back to group if serialized
-            tasks = header.tasks if isinstance(header, group) else header
-            header = group([
-                maybe_signature(s, app=app) for s in tasks
-            ], app=self.app)
-            body = maybe_signature(body, app=app)
-            ch = _chord(header, body)
-            return ch.run(header, body, partial_args, app, interval,
-                          countdown, max_retries, propagate, **kwargs)
-    return Chord
+    @app.task(name='celery.chord', bind=True, ignore_result=False,
+              shared=False, lazy=False)
+    def chord(self, header, body, partial_args=(), interval=None,
+              countdown=1, max_retries=None, propagate=None,
+              eager=False, **kwargs):
+        app = self.app
+        # - convert back to group if serialized
+        tasks = header.tasks if isinstance(header, group) else header
+        header = group([
+            maybe_signature(s, app=app) for s in tasks
+        ], app=self.app)
+        body = maybe_signature(body, app=app)
+        ch = _chord(header, body)
+        return ch.run(header, body, partial_args, app, interval,
+                      countdown, max_retries, propagate, **kwargs)
+    return chord

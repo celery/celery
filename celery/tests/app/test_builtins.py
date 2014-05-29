@@ -78,7 +78,7 @@ class test_chunks(BuiltinsCase):
 class test_group(BuiltinsCase):
 
     def setup(self):
-        self.task = builtins.add_group_task(self.app)()
+        self.task = builtins.add_group_task(self.app)
         super(test_group, self).setup()
 
     def test_apply_async_eager(self):
@@ -125,7 +125,7 @@ class test_chain(BuiltinsCase):
 
     def setup(self):
         BuiltinsCase.setup(self)
-        self.task = builtins.add_chain_task(self.app)()
+        self.task = builtins.add_chain_task(self.app)
 
     def test_apply_async(self):
         c = self.add.s(2, 2) | self.add.s(4) | self.add.s(8)
@@ -181,7 +181,7 @@ class test_chain(BuiltinsCase):
 class test_chord(BuiltinsCase):
 
     def setup(self):
-        self.task = builtins.add_chord_task(self.app)()
+        self.task = builtins.add_chord_task(self.app)
         super(test_chord, self).setup()
 
     def test_apply_async(self):

@@ -298,6 +298,7 @@ def jsonify(obj,
 
 def gen_task_name(app, name, module_name):
     """Generate task name from name/module pair."""
+    module_name = module_name or '__main__'
     try:
         module = sys.modules[module_name]
     except KeyError:

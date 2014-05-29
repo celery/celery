@@ -33,6 +33,7 @@ from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
 from celery.five import items, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
+from celery.utils import gen_task_name
 from celery.utils.dispatch import Signal
 from celery.utils.functional import first, maybe_list
 from celery.utils.imports import instantiate, symbol_by_name
@@ -224,16 +225,16 @@ class Celery(object):
 
     def task(self, *args, **opts):
         """Creates new task class from any callable."""
-        if _EXECV and not opts.get('_force_evaluate'):
+        if _EXECV and opts.get('lazy', True):
             # When using execv the task in the original module will point to a
             # different app, so doing things like 'add.request' will point to
-            # a differnt task instance.  This makes sure it will always use
+            # a different task instance.  This makes sure it will always use
             # the task instance from the current app.
             # Really need a better solution for this :(
             from . import shared_task
-            return shared_task(*args, _force_evaluate=True, **opts)
+            return shared_task(*args, lazy=False, **opts)
 
-        def inner_create_task_cls(shared=True, filter=None, **opts):
+        def inner_create_task_cls(shared=True, filter=None, lazy=True, **opts):
             _filt = filter  # stupid 2to3
 
             def _create_task_cls(fun):
@@ -241,7 +242,7 @@ class Celery(object):
                     cons = lambda app: app._task_from_fun(fun, **opts)
                     cons.__name__ = fun.__name__
                     connect_on_app_finalize(cons)
-                if self.finalized or opts.get('_force_evaluate'):
+                if not lazy or self.finalized:
                     ret = self._task_from_fun(fun, **opts)
                 else:
                     # return a proxy object that evaluates on first use
@@ -264,19 +265,25 @@ class Celery(object):
                     sum([len(args), len(opts)])))
         return inner_create_task_cls(**opts)
 
-    def _task_from_fun(self, fun, **options):
+    def _task_from_fun(self, fun, name=None, **options):
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
         base = options.pop('base', None) or self.Task
         bind = options.pop('bind', False)
 
+        name = name or gen_task_name(self, fun.__name__, fun.__module__)
+
         T = type(fun.__name__, (base, ), dict({
             'app': self,
+            'name': name,
             'run': fun if bind else staticmethod(fun),
             '_decorated': True,
             '__doc__': fun.__doc__,
             '__module__': fun.__module__,
             '__wrapped__': fun}, **options))()
+        if T.name not in self._tasks:
+            self._tasks.register(T)
+            T.bind(self)  # connects task to this app
         task = self._tasks[T.name]  # return global instance.
         return task
 
