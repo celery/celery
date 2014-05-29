@@ -698,11 +698,15 @@ class test_Request(AppCase):
                 raise Retry(str(exc), exc=exc)
             except Retry as exc:
                 w = TraceInfo(states.RETRY, exc)
-                w.handle_retry(self.mytask, store_errors=False)
+                w.handle_retry(
+                    self.mytask, self.mytask.request, store_errors=False,
+                )
                 self.assertEqual(
                     self.mytask.backend.get_status(tid), states.PENDING,
                 )
-                w.handle_retry(self.mytask, store_errors=True)
+                w.handle_retry(
+                    self.mytask, self.mytask.request, store_errors=True,
+                )
                 self.assertEqual(
                     self.mytask.backend.get_status(tid), states.RETRY,
                 )
@@ -718,11 +722,15 @@ class test_Request(AppCase):
                 raise ValueError('foo')
             except Exception as exc:
                 w = TraceInfo(states.FAILURE, exc)
-                w.handle_failure(self.mytask, store_errors=False)
+                w.handle_failure(
+                    self.mytask, self.mytask.request, store_errors=False,
+                )
                 self.assertEqual(
                     self.mytask.backend.get_status(tid), states.PENDING,
                 )
-                w.handle_failure(self.mytask, store_errors=True)
+                w.handle_failure(
+                    self.mytask, self.mytask.request, store_errors=True,
+                )
                 self.assertEqual(
                     self.mytask.backend.get_status(tid), states.FAILURE,
                 )

@@ -172,9 +172,9 @@ class test_TraceInfo(TraceCase):
     def test_handle_error_state(self):
         x = self.TI(states.FAILURE)
         x.handle_failure = Mock()
-        x.handle_error_state(self.add_cast)
+        x.handle_error_state(self.add_cast, self.add_cast.request)
         x.handle_failure.assert_called_with(
-            self.add_cast,
+            self.add_cast, self.add_cast.request,
             store_errors=self.add_cast.store_errors_even_if_ignored,
         )
 
