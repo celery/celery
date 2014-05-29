@@ -155,11 +155,13 @@ if CELERY_COMPAT_PROGRAMS:
 
 extras = lambda *p: reqs('extras', *p)
 # Celery specific
-specific_list = ['auth', 'cassandra', 'memcache', 'couchbase', 'threads',
-                 'eventlet', 'gevent', 'msgpack', 'yaml', 'redis',
-                 'mongodb', 'sqs', 'couchdb', 'beanstalk', 'zookeeper',
-                 'zeromq', 'sqlalchemy', 'librabbitmq', 'pyro', 'slmq']
-extras_require = dict((x, extras(x + '.txt')) for x in specific_list)
+features = {
+    'auth', 'cassandra', 'memcache', 'couchbase', 'threads',
+    'eventlet', 'gevent', 'msgpack', 'yaml', 'redis',
+    'mongodb', 'sqs', 'couchdb', 'riak', 'beanstalk', 'zookeeper',
+    'zeromq', 'sqlalchemy', 'librabbitmq', 'pyro', 'slmq',
+}
+extras_require = {x: extras(x + '.txt') for x in features}
 extra['extras_require'] = extras_require
 
 # -*- %%% -*-

@@ -628,6 +628,71 @@ Example configuration
         'max_retries': 10
     }
 
+.. _conf-riak-result-backend:
+
+Riak backend settings
+---------------------
+
+.. note::
+
+    The Riak backend requires the :mod:`riak` library:
+    http://pypi.python.org/pypi/riak/
+
+    To install the riak package use `pip` or `easy_install`:
+
+    .. code-block:: bash
+
+        $ pip install riak
+
+This backend requires the :setting:`CELERY_RESULT_BACKEND`
+setting to be set to a Riak URL::
+
+    CELERY_RESULT_BACKEND = "riak://host:port/bucket"
+
+For example::
+
+    CELERY_RESULT_BACKEND = "riak://localhost/celery
+
+which is the same as::
+
+    CELERY_RESULT_BACKEND = "riak://"
+
+The fields of the URL is defined as folows:
+
+- *host*
+
+Host name or IP address of the Riak server. e.g. `"localhost"`.
+
+- *port*
+
+Port to the Riak server using the protobuf protocol. Default is 8087.
+
+- *bucket*
+
+Bucket name to use. Default is `celery`.
+The bucket needs to be a string with ascii characters only.
+
+Altenatively, this backend can be configured with the following configuration directives.
+
+.. setting:: CELERY_RIAK_BACKEND_SETTINGS
+
+CELERY_RIAK_BACKEND_SETTINGS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is a dict supporting the following keys:
+
+* host
+    The host name of the Riak server. Defaults to "localhost".
+
+* port
+    The port the Riak server is listening to. Defaults to 8087.
+
+* bucket
+    The bucket name to connect to. Defaults to "celery".
+
+* protocol
+    The protocol to use to connect to the Riak server. This is not configurable
+    via :setting:`CELERY_RESULT_BACKEND`
 
 .. _conf-ironcache-result-backend:
 
