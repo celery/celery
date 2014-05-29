@@ -235,7 +235,7 @@ class test_tasks(TasksCase):
 
     def assertNextTaskDataEqual(self, consumer, presult, task_name,
                                 test_eta=False, test_expires=False, **kwargs):
-        next_task = consumer.queues[0].get(accept=['pickle'])
+        next_task = consumer.queues[0].get(accept=['pickle', 'json'])
         task_data = next_task.decode()
         self.assertEqual(task_data['id'], presult.id)
         self.assertEqual(task_data['task'], task_name)

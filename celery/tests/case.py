@@ -93,6 +93,7 @@ CELERY_TEST_CONFIG = {
     'CELERY_QUEUES': (
         Queue('testcelery', routing_key='testcelery'),
     ),
+    'CELERY_ACCEPT_CONTENT': ('json', 'pickle'),
     'CELERY_ENABLE_UTC': True,
     'CELERY_TIMEZONE': 'UTC',
     'CELERYD_LOG_COLOR': False,

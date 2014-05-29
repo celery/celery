@@ -40,6 +40,7 @@ class test_DatabaseBackend(AppCase):
         if DatabaseBackend is None:
             raise SkipTest('sqlalchemy not installed')
         self.uri = 'sqlite:///test.db'
+        self.app.conf.CELERY_RESULT_SERIALIZER = 'pickle'
 
     def test_retry_helper(self):
         from celery.backends.database import DatabaseError

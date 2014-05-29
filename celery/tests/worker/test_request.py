@@ -210,6 +210,7 @@ class MockEventDispatcher(object):
 class test_Request(AppCase):
 
     def setup(self):
+        self.app.conf.CELERY_RESULT_SERIALIZER = 'pickle'
 
         @self.app.task(shared=False)
         def add(x, y, **kw_):
@@ -807,6 +808,7 @@ class test_Request(AppCase):
             kwargs={},
         )
         self.assertIsInstance(job.execute(), ExceptionInfo)
+        assert self.mytask_raising.backend.serializer == 'pickle'
         meta = self.mytask_raising.backend.get_task_meta(tid)
         self.assertEqual(meta['status'], states.FAILURE)
         self.assertIsInstance(meta['result'], KeyError)

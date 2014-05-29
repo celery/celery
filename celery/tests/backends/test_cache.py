@@ -31,6 +31,7 @@ class SomeClass(object):
 class test_CacheBackend(AppCase):
 
     def setup(self):
+        self.app.conf.CELERY_RESULT_SERIALIZER = 'pickle'
         self.tb = CacheBackend(backend='memory://', app=self.app)
         self.tid = uuid()
 
