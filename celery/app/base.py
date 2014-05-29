@@ -75,7 +75,7 @@ def _unpickle_appattr(reverse_name, args):
     return get_current_app()._rgetattr(reverse_name)(*args)
 
 
-def _global_after_fork():
+def _global_after_fork(obj):
     # Previously every app would call:
     #    `register_after_fork(app, app._after_fork)`
     # but this created a leak as `register_after_fork` stores concrete object
@@ -84,12 +84,14 @@ def _global_after_fork():
     #
     # See Issue #1949
     from celery import _state
-    from multiprocessing.util import info
-    for app in _state.apps:
+    from multiprocessing import util as mputil
+    for app in _state._apps:
         try:
-            app._after_fork()
+            app._after_fork(obj)
         except Exception as exc:
-            info('after forker raised exception: %r' % (exc, ), exc_info=1)
+            if mputil._logger:
+                mputil._logger.info(
+                    'after forker raised exception: %r', exc, exc_info=1)
 
 
 def _ensure_after_fork():
