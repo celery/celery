@@ -265,26 +265,25 @@ class Celery(object):
                     sum([len(args), len(opts)])))
         return inner_create_task_cls(**opts)
 
-    def _task_from_fun(self, fun, name=None, **options):
+    def _task_from_fun(self, fun, name=None, base=None, bind=False, **options):
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
-        base = options.pop('base', None) or self.Task
-        bind = options.pop('bind', False)
-
         name = name or gen_task_name(self, fun.__name__, fun.__module__)
+        base = base or self.Task
 
-        T = type(fun.__name__, (base, ), dict({
-            'app': self,
-            'name': name,
-            'run': fun if bind else staticmethod(fun),
-            '_decorated': True,
-            '__doc__': fun.__doc__,
-            '__module__': fun.__module__,
-            '__wrapped__': fun}, **options))()
-        if T.name not in self._tasks:
-            self._tasks.register(T)
-            T.bind(self)  # connects task to this app
-        task = self._tasks[T.name]  # return global instance.
+        if name not in self._tasks:
+            task = type(fun.__name__, (base, ), dict({
+                'app': self,
+                'name': name,
+                'run': fun if bind else staticmethod(fun),
+                '_decorated': True,
+                '__doc__': fun.__doc__,
+                '__module__': fun.__module__,
+                '__wrapped__': fun}, **options))()
+            self._tasks[task.name] = task
+            task.bind(self)  # connects task to this app
+        else:
+            task = self._tasks[name]
         return task
 
     def finalize(self, auto=False):

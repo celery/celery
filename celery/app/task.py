@@ -43,6 +43,9 @@ R_UNBOUND_TASK = '<unbound {0.__name__}{flags}>'
 R_SELF_TASK = '<@task {0.name} bound to other {0.__self__}>'
 R_INSTANCE = '<@task: {0.name} of {app}{flags}>'
 
+#: Here for backwards compatibility as tasks no longer use a custom metaclass.
+TaskType = type
+
 
 def _strflags(flags, default=''):
     if flags:
