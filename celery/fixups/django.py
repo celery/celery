@@ -134,13 +134,16 @@ class DjangoWorkerFixup(object):
         )
 
     def validate_models(self):
+        import django
+        try:
+            django.setup()
+        except AttributeError:
+            pass
         s = io.StringIO()
         try:
             from django.core.management.validation import get_validation_errors
         except ImportError:
-            import django
             from django.core.management.base import BaseCommand
-            django.setup()
             cmd = BaseCommand()
             cmd.stdout, cmd.stderr = sys.stdout, sys.stderr
             cmd.check()
