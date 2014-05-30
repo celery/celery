@@ -13,6 +13,7 @@ ignore = frozenset([
     'BROKER_PASSWORD',
     'BROKER_VHOST',
     'BROKER_PORT',
+    'CELERY_CHORD_PROPAGATES',
     'CELERY_REDIS_HOST',
     'CELERY_REDIS_PORT',
     'CELERY_REDIS_DB',
