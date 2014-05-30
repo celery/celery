@@ -706,6 +706,13 @@ In Other News
         >>> g()
         <GroupResult: e1094b1d-08fc-4e14-838e-6d601b99da6d [70c0fb3d-b60e-4b22-8df7-aa25b9abc86d, 58fcd260-2e32-4308-a2ea-f5be4a24f7f4]>
 
+- Chord exception behavior defined (Issue #1172).
+
+    From this version the chord callback will change state to FAILURE
+    when a task part of a chord raises an exception.
+
+    See more at :ref:`chord-errors`.
+
 -  New ability to specify additional command line options
    to the worker and beat programs.
 
