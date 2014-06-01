@@ -132,11 +132,14 @@ class Celery(object):
     #: ignored
     accept_magic_kwargs = False
 
+    #: Dictionary contains default configuration values
+    _defaults = DEFAULTS
+
     def __init__(self, main=None, loader=None, backend=None,
                  amqp=None, events=None, log=None, control=None,
                  set_as_current=True, tasks=None, broker=None, include=None,
                  changes=None, config_source=None, fixups=None, task_cls=None,
-                 autofinalize=True, **kwargs):
+                 autofinalize=True, defaults=None, **kwargs):
         self.clock = LamportClock()
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
@@ -155,6 +158,7 @@ class Celery(object):
         self.configured = False
         self._config_source = config_source
         self._pending_defaults = deque()
+        self._defaults = defaults or self._defaults
 
         self.finalized = False
         self._finalize_mutex = threading.Lock()
@@ -479,7 +483,7 @@ class Celery(object):
             self.loader.config_from_object(self._config_source)
         self.configured = True
         s = Settings({}, [self.prepare_config(self.loader.conf),
-                          deepcopy(DEFAULTS)])
+                          deepcopy(self._defaults)])
 
         # load lazy config dict initializers.
         pending = self._pending_defaults
