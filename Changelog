@@ -8,6 +8,93 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _verison-3.1.12:
+
+3.1.12
+======
+:release-date: 2014-XX-XX XX:XX X.M UTC
+:release-by:
+
+- **App**: Connections were not being closed after fork due to an error in the
+  after fork handler (Issue #2055).
+
+- **Canvas**: ``Signature.link`` now works when the link option is a scalar
+  value (Issue #2019).
+
+- **Prefork pool**: Fixed race conditions for when file descriptors are
+  removed from the event loop.
+
+    Fix contributed by Roger Hu.
+
+- **Programs**: :program:`celery worker --detach` no longer closes open file
+  descriptors when :envvar:`C_FAKEFORK` is used so that the workers output
+  can be seen.
+
+- **Programs**: The default working directory for :program:`celery worker
+  --detach` is now the current working directory, not ``/``.
+
+- **Canvas**: ``signature(s, app=app)`` did not upgrade serialized signatures
+  to their original class (``subtask_type``) when the ``app`` keyword argument
+  was used.
+
+- **Control**: The ``duplicate nodename`` warning emitted by control commands
+  now shows the duplicate node name.
+
+- **Tasks**: Can now call ``ResultSet.get()`` on a result set without members.
+
+    Fix contributed by Alexey Kotlyarov.
+
+- **App**: Fixed strange traceback mangling issue for
+  ``app.connection_or_acquire``.
+
+- **Programs**: The :program:`celery multi stopwait` command is now documented
+  in usage.
+
+- **Other**: Fixed cleanup problem with ``PromiseProxy`` when an error is
+  raised while trying to evaluate the promise.
+
+- **Other**: The utility used to censor configuration values now handles
+  non-string keys.
+
+    Fix contributed by Luke Pomfrey.
+
+- **Other**: The ``inspect conf`` command did not handle non-string keys well.
+
+    Fix contributed by Jay Farrimond.
+
+- **Programs**: Fixed argument handling problem in
+  :program:`celery worker --detach`.
+
+    Fix contributed by Dmitry Malinovsky.
+
+- **Programs**: :program:`celery worker --detach` did not forward working
+  directory option (Issue #2003).
+
+- **Worker**: The ``requires`` attribute for boot steps were not being handled
+  correctly (Issue #2002).
+
+- **Eventlet**: The eventlet pool now implements statistics for
+  :program:``celery inspect stats``.
+
+    Contributed by Mher Movsisyan.
+
+- **Documentation**: Clarified ``Task.rate_limit`` behavior.
+
+    Contributed by Jonas Haag.
+
+- **Documentation**: ``AbortableTask`` examples now updated to use the new
+  API (Issue #1993).
+
+- **Documentation**: The security documentation examples used an out of date
+  import.
+
+    Fix contributed by Ian Dees.
+
+- **Init scripts**: The CentOS init scripts did not quote
+  :envvar:`CELERY_CHDIR`.
+
+    Fix contributed by ffeast.
+
 .. _version-3.1.11:
 
 3.1.11
