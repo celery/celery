@@ -274,9 +274,12 @@ def hello(state, from_node, revoked=None, **kwargs):
 
 
 @Panel.register
-def dump_tasks(state, taskinfoitems=None, **kwargs):
-    tasks = state.app.tasks
+def dump_tasks(state, taskinfoitems=None, builtins=False, **kwargs):
+    reg = state.app.tasks
     taskinfoitems = taskinfoitems or DEFAULT_TASK_INFO_ITEMS
+
+    tasks = reg if builtins else (
+        task for task in reg if not task.startswith('celery.'))
 
     def _extract_info(task):
         fields = {
@@ -288,7 +291,7 @@ def dump_tasks(state, taskinfoitems=None, **kwargs):
             return '{0} [{1}]'.format(task.name, ' '.join(info))
         return task.name
 
-    return [_extract_info(tasks[task]) for task in sorted(tasks)]
+    return [_extract_info(reg[task]) for task in sorted(tasks)]
 
 
 @Panel.register
