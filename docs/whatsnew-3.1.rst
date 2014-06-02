@@ -76,7 +76,7 @@ so I cannot recommend them for production use.
 The next version of Celery 3.2 will focus on performance and removing
 rarely used parts of the library.  Work has also started on a new message
 protocol, supporting multiple languages and more.  The initial draft can
-be found :ref:`here <protov2draft>`.
+be found :ref:`here <message-protocol-task-v2`.
 
 This has probably been the hardest release I've worked on, so no
 introduction to this changelog would be complete without a massive
@@ -1212,8 +1212,9 @@ Fixes
 - Eventlet/gevent/solo/threads pools now properly handles :exc:`BaseException`
   errors raised by tasks.
 
-- Autoscale and ``pool_grow``/``pool_shrink`` remote control commands
-  will now also automatically increase and decrease the consumer prefetch count.
+- :control:`autoscale` and :control:`pool_grow`/:control:`pool_shrink` remote
+  control commands will now also automatically increase and decrease the
+  consumer prefetch count.
 
     Fix contributed by Daniel M. Taub.
 

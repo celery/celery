@@ -371,7 +371,7 @@ Fixes
   objects with a broken ``__repr__`` does not crash the worker, or otherwise
   make errors hard to understand (Issue #298).
 
-* Remote control command ``active_queues``: did not account for queues added
+* Remote control command :control:`active_queues`: did not account for queues added
   at runtime.
 
     In addition the dictionary replied by this command now has a different

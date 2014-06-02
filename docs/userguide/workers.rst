@@ -290,12 +290,16 @@ Of course, using the higher-level interface to set rate limits is much
 more convenient, but there are commands that can only be requested
 using :meth:`~@control.broadcast`.
 
+Commands
+========
+
 .. control:: revoke
 
-Revoking tasks
-==============
-pool support: all
-broker support: *amqp, redis*
+``revoke``: Revoking tasks
+--------------------------
+:pool support: all
+:broker support: *amqp, redis*
+:command: :program:`celery -A proj control revoke <task_id>`
 
 All worker nodes keeps a memory of revoked task ids, either in-memory or
 persistent on disk (see :ref:`worker-persistent-revokes`).
@@ -580,7 +584,7 @@ named "``foo``" you can use the :program:`celery control` program:
 
 .. code-block:: bash
 
-    $ celery control add_consumer foo
+    $ celery -A proj control add_consumer foo
     -> worker1.local: OK
         started consuming from u'foo'
 
@@ -589,7 +593,7 @@ If you want to specify a specific worker you can use the
 
 .. code-block:: bash
 
-    $ celery control add_consumer foo -d worker1.local
+    $ celery -A proj control add_consumer foo -d worker1.local
 
 The same can be accomplished dynamically using the :meth:`@control.add_consumer` method::
 
@@ -631,14 +635,14 @@ you can use the :program:`celery control` program:
 
 .. code-block:: bash
 
-    $ celery control cancel_consumer foo
+    $ celery -A proj control cancel_consumer foo
 
 The :option:`--destination` argument can be used to specify a worker, or a
 list of workers, to act on the command:
 
 .. code-block:: bash
 
-    $ celery control cancel_consumer foo -d worker1.local
+    $ celery -A proj control cancel_consumer foo -d worker1.local
 
 
 You can also cancel consumers programmatically using the

@@ -457,7 +457,7 @@ New remote control commands
 These commands were previously experimental, but they have proven
 stable and is now documented as part of the offical API.
 
-- ``add_consumer``/``cancel_consumer``
+- :control:`add_consumer`/:control:`cancel_consumer`
 
     Tells workers to consume from a new queue, or cancel consuming from a
     queue.  This command has also been changed so that the worker remembers
@@ -486,7 +486,7 @@ stable and is now documented as part of the offical API.
         Remember that a control command without *destination* will be
         sent to **all workers**.
 
-- ``autoscale``
+- :control:`autoscale`
 
     Tells workers with `--autoscale` enabled to change autoscale
     max/min concurrency settings.
@@ -504,7 +504,7 @@ stable and is now documented as part of the offical API.
 
         $ celery control -d w1.example.com autoscale 10 5
 
-- ``pool_grow``/``pool_shrink``
+- :control:`pool_grow`/:control:`pool_shrink`
 
     Tells workers to add or remove pool processes.
 
@@ -523,8 +523,8 @@ stable and is now documented as part of the offical API.
         $ celery control -d w1.example.com pool_grow 2
         $ celery control -d w1.example.com pool_shrink 2
 
-- :program:`celery control` now supports ``rate_limit`` & ``time_limit``
-  commands.
+- :program:`celery control` now supports :control:`rate_limit` and
+  :control:`time_limit` commands.
 
     See ``celery control --help`` for details.
 
