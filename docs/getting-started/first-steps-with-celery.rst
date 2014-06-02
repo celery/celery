@@ -379,7 +379,7 @@ for the task at runtime:
 
 .. code-block:: bash
 
-    $ celery control rate_limit tasks.add 10/m
+    $ celery -A tasks control rate_limit tasks.add 10/m
     worker@example.com: OK
         new rate limit set successfully
 
