@@ -295,3 +295,82 @@ The MIME-types supported by default are shown in the following table.
     pickle          application/x-python-serialize
     msgpack         application/x-msgpack
     =============== =================================
+
+.. _message-protocol-event:
+
+Event Messages
+==============
+
+Event messages are always JSON serialized and can contain arbitrary message
+body fields.
+
+Since version 3.2. the body can consist of either a single mapping (one event),
+or a list of mappings (multiple events).
+
+There are also standard fields that must always be present in an event
+message:
+
+Standard body fields
+--------------------
+
+- *string* ``type``
+
+    The type of event.  This is a string containing the *category* and
+    *action* separated by a dash delimeter (e.g. ``task-succeeded``).
+
+- *string* ``hostname``
+
+    The fully qualified hostname of where the event occurred at.
+
+- *unsigned long long* ``clock``
+
+    The logical clock value for this event (Lamport timestamp).
+
+- *float* ``timestamp``
+
+    The UNIX timestamp corresponding to the time of when the event occurred.
+
+- *signed short* ``utcoffset``
+
+    This field describes the timezone of the originating host, and is
+    specified as the number of hours ahead of/behind UTC.  E.g. ``-2`` or
+    ``+1``.
+
+- *unsigned long long* ``pid``
+
+    The process id of the process the event originated in.
+
+Standard event types
+--------------------
+
+For a list of standard event types and their fields see the
+:ref:`event-reference`.
+
+Example message
+---------------
+
+This is the message fields for a ``task-succeeded`` event:
+
+.. code-block:: python
+
+    properties = {
+        'routing_key': 'task.succeeded',
+        'exchange': 'celeryev',
+        'content_type': 'application/json',
+        'content_encoding': 'utf-8',
+        'delivery_mode': 1,
+    }
+    headers = {
+        'hostname': 'worker1@george.vandelay.com',
+    }
+    body = {
+        'type': 'task-succeeded',
+        'hostname': 'worker1@george.vandelay.com',
+        'pid': 6335,
+        'clock': 393912923921,
+        'timestamp': 1401717709.101747,
+        'utcoffset': -1,
+        'uuid': '9011d855-fdd1-4f8f-adb3-a413b499eafb',
+        'retval': '4',
+        'runtime': 0.0003212,
+    )
