@@ -73,6 +73,11 @@ new in Celery 3.1.
 - **Worker**: The ``requires`` attribute for boot steps were not being handled
   correctly (Issue #2002).
 
+- **Eventlet**: The eventlet pool now supports the ``pool_grow`` and
+  ``pool_shrink`` remote control commands.
+
+    Contributed by Mher Movsisyan.
+
 - **Eventlet**: The eventlet pool now implements statistics for
   :program:``celery inspect stats``.
 
