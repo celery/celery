@@ -239,7 +239,6 @@ def chunks(it, n):
         [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10]]
 
     """
-    # XXX This function is not used anymore, at least not by Celery itself.
     for first in it:
         yield [first] + list(islice(it, n - 1))
 

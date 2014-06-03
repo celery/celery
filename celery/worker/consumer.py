@@ -371,6 +371,14 @@ class Consumer(object):
             conn.transport.register_with_event_loop(conn.connection, self.hub)
         return conn
 
+    def _flush_events(self):
+        if self.event_dispatcher:
+            self.event_dispatcher.flush()
+
+    def on_send_event_buffered(self):
+        if self.hub:
+            self.hub._ready.add(self._flush_events)
+
     def add_task_queue(self, queue, exchange=None, exchange_type=None,
                        routing_key=None, **options):
         cset = self.task_consumer
@@ -516,6 +524,8 @@ class Events(bootsteps.StartStopStep):
         dis = c.event_dispatcher = c.app.events.Dispatcher(
             c.connect(), hostname=c.hostname,
             enabled=self.send_events, groups=self.groups,
+            buffer_group=['task'] if c.hub else None,
+            on_send_buffered=c.on_send_event_buffered if c.hub else None,
         )
         if prev:
             dis.extend_buffer(prev)
