@@ -232,13 +232,13 @@ class Scheduler(object):
         while H:
             event = H[0]
             entry = event[2]
-            is_due, next_time_to_run = self.is_due(entry)
+            is_due, next_time_to_check = self.is_due(entry)
             if is_due:
                 verify = heappop(H)
                 if verify is event:
                     next_entry = self.reserve(entry)
                     self.apply_entry(entry, producer=self.producer)
-                    checked_H.append(event_t(next_time_to_run, event[1], next_entry))
+                    checked_H.append(event_t(next_time_to_check, event[1], next_entry))
                 else:
                     checked_H.append(verify)
             else:
@@ -253,7 +253,7 @@ class Scheduler(object):
         if next_is_due:
             yield 0
         else:
-            yield min(next_time_to_run or max_interval, max_interval)
+            yield min(next_time_to_check or max_interval, max_interval)
     
     def tick(self, *args, **kwargs):
         if self._ticker is None:

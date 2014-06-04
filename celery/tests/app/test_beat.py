@@ -69,15 +69,15 @@ class test_ScheduleEntry(AppCase):
         entry = self.create_entry(schedule=timedelta(seconds=10))
         self.assertIs(entry.app, self.app)
         self.assertIs(entry.schedule.app, self.app)
-        due1, next_time_to_run1 = entry.is_due()
+        due1, next_time_to_check1 = entry.is_due()
         self.assertFalse(due1)
-        self.assertGreater(next_time_to_run1, 9)
+        self.assertGreater(next_time_to_check1, 9)
 
         next_run_at = entry.last_run_at - timedelta(seconds=10)
         next_entry = entry.next(next_run_at)
-        due2, next_time_to_run2 = next_entry.is_due()
+        due2, next_time_to_check2 = next_entry.is_due()
         self.assertTrue(due2)
-        self.assertGreater(next_time_to_run2, 9)
+        self.assertGreater(next_time_to_check2, 9)
 
     def test_repr(self):
         entry = self.create_entry()
