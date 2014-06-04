@@ -223,13 +223,14 @@ class Scheduler(object):
                               for e in values(self.schedule)]
             heapify(H)
         checked_H = []
-        
+
         while H:
             event = H[0]
             entry = event[2]
             is_due, next_time_to_check = self.is_due(entry)
             if next_time_to_check is not None and next_time_to_check <= 0:
-                raise RuntimeError("next_time_to_run value returned by {0.name}.is_due must be > 0".format(entry))
+                raise RuntimeError("next_time_to_run value returned by " +
+                                   "{0.name}.is_due must be > 0".format(entry))
             if is_due:
                 verify = heappop(H)
                 if verify is event:
@@ -240,7 +241,7 @@ class Scheduler(object):
                     checked_H.append(verify)
             else:
                 break
-        
+
         for event in checked_H:
             heappush(H, event)
         
@@ -251,7 +252,7 @@ class Scheduler(object):
             yield 0
         else:
             yield min(next_time_to_check or max_interval, max_interval)
-    
+
     def tick(self, *args, **kwargs):
         """Run a tick, that is one iteration of the scheduler.
 

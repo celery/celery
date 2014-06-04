@@ -114,7 +114,7 @@ class mScheduler(beat.Scheduler):
                           'kwargs': kwargs,
                           'options': options})
         return self.app.AsyncResult(uuid())
-    
+
     def apply_entry(self, entry, producer=None):
         self.applied.append(entry.name)
         beat.Scheduler.apply_entry(self, entry, producer=producer)
@@ -287,7 +287,7 @@ class test_Scheduler(AppCase):
                       schedule=always_due)
         self.assertEqual(scheduler.tick(), 0)
         self.assertTrue(error.called)
-    
+
     def test_due_tick_RuntimeError(self):
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_due_tick_RuntimeError',
