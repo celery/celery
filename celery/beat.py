@@ -223,27 +223,37 @@ class Scheduler(object):
                 H = self._heap = [event_t(e.is_due()[1] or 0, 5, e)
                                   for e in values(self.schedule)]
                 heapify(H)
+            prev_time_to_check = None
             checked_H = []
 
             while H:
                 event = H[0]
-                entry = event[2]
-                is_due, next_time_to_check = self.is_due(entry)
-                if next_time_to_check is not None and next_time_to_check <= 0:
-                    raise RuntimeError("next_time_to_run value returned by " +
-                                       "%s.is_due must be > 0" % entry.name)
-                if is_due:
-                    verify = heappop(H)
-                    if verify is event:
-                        next_entry = self.reserve(entry)
-                        self.apply_entry(entry, producer=self.producer)
-                        checked_H.append(event_t(next_time_to_check,
-                                                 event[1],
-                                                next_entry))
-                    else:
-                        checked_H.append(verify)
-                else:
+                next_time_to_check = event[0]
+                if prev_time_to_check is not None and \
+                   next_time_to_check > prev_time_to_check:
                     break
+                else:
+                    entry = event[2]
+                    is_due, next_time_to_check = self.is_due(entry)
+                    if next_time_to_check is not None and \
+                       next_time_to_check <= 0:
+                        raise RuntimeError("next_time_to_run value returned " +
+                                           "by %s.is_due must be > 0"
+                                           % entry.name)
+                    elif is_due:
+                        if prev_time_to_check is None:
+                            prev_time_to_check = next_time_to_check
+                        verify = heappop(H)
+                        if verify is event:
+                            next_entry = self.reserve(entry)
+                            self.apply_entry(entry, producer=self.producer)
+                            checked_H.append(event_t(next_time_to_check,
+                                             event[1],
+                                             next_entry))
+                        else:
+                            checked_H.append(verify)
+                    else:
+                        break
 
             for event in checked_H:
                 heappush(H, event)
