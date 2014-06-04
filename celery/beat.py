@@ -216,42 +216,45 @@ class Scheduler(object):
     def _tick(self, event_t=event_t, min=min,
              heappop=heapq.heappop, heappush=heapq.heappush,
              heapify=heapq.heapify):
-        max_interval = self.max_interval
-        H = self._heap
-        if H is None:
-            H = self._heap = [event_t(e.is_due()[1] or 0, 5, e)
-                              for e in values(self.schedule)]
-            heapify(H)
-        checked_H = []
+        while True:
+            max_interval = self.max_interval
+            H = self._heap
+            if H is None:
+                H = self._heap = [event_t(e.is_due()[1] or 0, 5, e)
+                                  for e in values(self.schedule)]
+                heapify(H)
+            checked_H = []
 
-        while H:
-            event = H[0]
-            entry = event[2]
-            is_due, next_time_to_check = self.is_due(entry)
-            if next_time_to_check is not None and next_time_to_check <= 0:
-                raise RuntimeError("next_time_to_run value returned by " +
-                                   "{0.name}.is_due must be > 0".format(entry))
-            if is_due:
-                verify = heappop(H)
-                if verify is event:
-                    next_entry = self.reserve(entry)
-                    self.apply_entry(entry, producer=self.producer)
-                    checked_H.append(event_t(next_time_to_check, event[1], next_entry))
+            while H:
+                event = H[0]
+                entry = event[2]
+                is_due, next_time_to_check = self.is_due(entry)
+                if next_time_to_check is not None and next_time_to_check <= 0:
+                    raise RuntimeError("next_time_to_run value returned by " +
+                                       "%s.is_due must be > 0" % entry.name)
+                if is_due:
+                    verify = heappop(H)
+                    if verify is event:
+                        next_entry = self.reserve(entry)
+                        self.apply_entry(entry, producer=self.producer)
+                        checked_H.append(event_t(next_time_to_check,
+                                                 event[1],
+                                                next_entry))
+                    else:
+                        checked_H.append(verify)
                 else:
-                    checked_H.append(verify)
-            else:
-                break
+                    break
 
-        for event in checked_H:
-            heappush(H, event)
-        
-        next_event = H[0]
-        next_entry = next_event[2]
-        next_is_due = self.is_due(next_entry)[0]
-        if next_is_due:
-            yield 0
-        else:
-            yield min(next_time_to_check or max_interval, max_interval)
+            for event in checked_H:
+                heappush(H, event)
+
+            next_event = H[0]
+            next_entry = next_event[2]
+            next_is_due = self.is_due(next_entry)[0]
+            if next_is_due:
+                yield 0
+            else:
+                yield min(next_time_to_check or max_interval, max_interval)
 
     def tick(self, *args, **kwargs):
         """Run a tick, that is one iteration of the scheduler.
