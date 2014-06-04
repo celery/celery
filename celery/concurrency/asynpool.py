@@ -20,7 +20,6 @@ from __future__ import absolute_import
 
 import errno
 import os
-import random
 import select
 import socket
 import struct
@@ -668,7 +667,7 @@ class AsynPool(_pool.Pool):
                 pass
         self.on_inqueue_close = on_inqueue_close
 
-        def schedule_writes(ready_fds, shuffle=random.shuffle, curindex=[0]):
+        def schedule_writes(ready_fds, curindex=[0]):
             # Schedule write operation to ready file descriptor.
             # The file descriptor is writeable, but that does not
             # mean the process is currently reading from the socket.
