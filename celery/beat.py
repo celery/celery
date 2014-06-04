@@ -216,11 +216,6 @@ class Scheduler(object):
     def _tick(self, event_t=event_t, min=min,
              heappop=heapq.heappop, heappush=heapq.heappush,
              heapify=heapq.heapify):
-        """Run a tick, that is one iteration of the scheduler.
-
-        Executes all due tasks.
-
-        """
         max_interval = self.max_interval
         H = self._heap
         if H is None:
@@ -258,6 +253,11 @@ class Scheduler(object):
             yield min(next_time_to_check or max_interval, max_interval)
     
     def tick(self, *args, **kwargs):
+        """Run a tick, that is one iteration of the scheduler.
+
+        Executes all due tasks.
+
+        """
         if self._ticker is None:
             self._ticker = self._tick(*args, **kwargs)
         return next(self._ticker)
