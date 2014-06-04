@@ -226,20 +226,33 @@ class Scheduler(object):
             H = self._heap = [event_t(e.is_due()[1] or 0, 5, e)
                               for e in values(self.schedule)]
             heapify(H)
-        event = H[0]
-        entry = event[2]
-        is_due, next_time_to_run = self.is_due(entry)
-        if is_due:
-            verify = heappop(H)
-            if verify is event:
-                next_entry = self.reserve(entry)
-                self.apply_entry(entry, producer=self.producer)
-                heappush(H, event_t(next_time_to_run, event[1], next_entry))
-                return 0
+        checked_H = []
+        
+        while H:
+            event = H[0]
+            entry = event[2]
+            is_due, next_time_to_run = self.is_due(entry)
+            if is_due:
+                verify = heappop(H)
+                if verify is event:
+                    next_entry = self.reserve(entry)
+                    self.apply_entry(entry, producer=self.producer)
+                    checked_H.append(event_t(next_time_to_run, event[1], next_entry))
+                else:
+                    checked_H.append(verify)
             else:
-                heappush(H, verify)
-                return min(verify[0], max_interval)
-        return min(next_time_to_run or max_interval, max_interval)
+                break
+        
+        for event in checked_H:
+            heappush(H, event)
+        
+        next_event = H[0]
+        next_entry = next_event[2]
+        next_is_due = self.is_due(next_entry)[0]
+        if next_is_due:
+            return 0
+        else:
+            return min(next_time_to_run or max_interval, max_interval)
 
     def should_sync(self):
         return (

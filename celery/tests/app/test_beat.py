@@ -105,6 +105,7 @@ class mScheduler(beat.Scheduler):
 
     def __init__(self, *args, **kwargs):
         self.sent = []
+        self.applied = []
         beat.Scheduler.__init__(self, *args, **kwargs)
 
     def send_task(self, name=None, args=None, kwargs=None, **options):
@@ -113,6 +114,10 @@ class mScheduler(beat.Scheduler):
                           'kwargs': kwargs,
                           'options': options})
         return self.app.AsyncResult(uuid())
+    
+    def apply_entry(self, entry, producer=None):
+        self.applied.append(entry.name)
+        beat.Scheduler.apply_entry(self, entry, producer=producer)
 
 
 class mSchedulerSchedulingError(mScheduler):
@@ -304,6 +309,18 @@ class test_Scheduler(AppCase):
                  for i, j in enumerate(nums))
         scheduler.update_from_dict(s)
         self.assertEqual(scheduler.tick(), min(nums))
+
+    def test_apply_tasks(self):
+        scheduler = mScheduler(app=self.app)
+        dups = [36, 36]
+        nums = [600, 300, 650, 120, 250]
+        s = dict(('test_apply_tasks%s' % i,
+                 {'schedule': mocked_schedule(j in dups, j)})
+                 for i, j in enumerate(dups + nums))
+        scheduler.update_from_dict(s)
+        scheduler.tick()
+        for i, j in enumerate(dups):
+            self.assertIn('test_apply_tasks%s' % i, scheduler.applied)
 
     def test_schedule_no_remain(self):
         scheduler = mScheduler(app=self.app)
