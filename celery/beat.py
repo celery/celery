@@ -233,6 +233,8 @@ class Scheduler(object):
             event = H[0]
             entry = event[2]
             is_due, next_time_to_check = self.is_due(entry)
+            if next_time_to_check is not None and next_time_to_check <= 0:
+                raise RuntimeError("next_time_to_run value returned by {0.name}.is_due must be > 0".format(entry))
             if is_due:
                 verify = heappop(H)
                 if verify is event:

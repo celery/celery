@@ -287,6 +287,13 @@ class test_Scheduler(AppCase):
                       schedule=always_due)
         self.assertEqual(scheduler.tick(), 0)
         self.assertTrue(error.called)
+    
+    def test_due_tick_RuntimeError(self):
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='test_due_tick_RuntimeError',
+                      schedule=mocked_schedule(True, 0))
+        with self.assertRaises(RuntimeError):
+            scheduler.tick()
 
     def test_pending_tick(self):
         scheduler = mScheduler(app=self.app)
