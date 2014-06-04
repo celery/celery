@@ -182,6 +182,7 @@ class Scheduler(object):
                              or self.max_interval)
         self.Producer = Producer or app.amqp.Producer
         self._heap = None
+        self._ticker = None
         self.sync_every_tasks = (
             app.conf.CELERYBEAT_SYNC_EVERY if sync_every_tasks is None
             else sync_every_tasks)
@@ -212,7 +213,7 @@ class Scheduler(object):
     def is_due(self, entry):
         return entry.is_due()
 
-    def tick(self, event_t=event_t, min=min,
+    def _tick(self, event_t=event_t, min=min,
              heappop=heapq.heappop, heappush=heapq.heappush,
              heapify=heapq.heapify):
         """Run a tick, that is one iteration of the scheduler.
@@ -250,9 +251,14 @@ class Scheduler(object):
         next_entry = next_event[2]
         next_is_due = self.is_due(next_entry)[0]
         if next_is_due:
-            return 0
+            yield 0
         else:
-            return min(next_time_to_run or max_interval, max_interval)
+            yield min(next_time_to_run or max_interval, max_interval)
+    
+    def tick(self, *args, **kwargs):
+        if self._ticker is None:
+            self._ticker = self._tick(*args, **kwargs)
+        return next(self._ticker)
 
     def should_sync(self):
         return (
