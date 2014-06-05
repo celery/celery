@@ -23,7 +23,7 @@ You can start the worker in the foreground by executing the command:
 
 .. code-block:: bash
 
-    $ celery --app=app worker -l info
+    $ celery -A proj worker -l info
 
 For a full list of available command-line options see
 :mod:`~celery.bin.worker`, or simply do:
@@ -38,9 +38,9 @@ host name with the :option:`--hostname|-n` argument:
 
 .. code-block:: bash
 
-    $ celery worker --loglevel=INFO --concurrency=10 -n worker1.%h
-    $ celery worker --loglevel=INFO --concurrency=10 -n worker2.%h
-    $ celery worker --loglevel=INFO --concurrency=10 -n worker3.%h
+    $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker1.%h
+    $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker2.%h
+    $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker3.%h
 
 The hostname argument can expand the following variables:
 
@@ -560,7 +560,7 @@ by giving a comma separated list of queues to the :option:`-Q` option:
 
 .. code-block:: bash
 
-    $ celery worker -l info -Q foo,bar,baz
+    $ celery -A proj worker -l info -Q foo,bar,baz
 
 If the queue name is defined in :setting:`CELERY_QUEUES` it will use that
 configuration, but if it's not defined in the list of queues Celery will
@@ -663,7 +663,7 @@ the :control:`active_queues` control command:
 
 .. code-block:: bash
 
-    $ celery inspect active_queues
+    $ celery -A proj inspect active_queues
     [...]
 
 Like all other remote control commands this also supports the
@@ -672,7 +672,7 @@ reply to the request:
 
 .. code-block:: bash
 
-    $ celery inspect active_queues -d worker1.local
+    $ celery -A proj inspect active_queues -d worker1.local
     [...]
 
 

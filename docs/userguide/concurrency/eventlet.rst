@@ -44,7 +44,7 @@ You can enable the Eventlet pool by using the ``-P`` option to
 
 .. code-block:: bash
 
-    $ celery worker -P eventlet -c 1000
+    $ celery -A proj worker -P eventlet -c 1000
 
 .. _eventlet-examples:
 
