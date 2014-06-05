@@ -1166,8 +1166,8 @@ yourself:
 
 .. code-block:: python
 
-    >>> from celery import current_app
-    >>> current_app.tasks
+    >>> from proj.celery import app
+    >>> app.tasks
     {'celery.chord_unlock':
         <@task: celery.chord_unlock>,
      'celery.backend_cleanup':

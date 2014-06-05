@@ -55,10 +55,14 @@ must also export them (e.g. ``export DISPLAY=":0"``)
     .. code-block:: bash
 
         $ celery multi start worker1 \
+            -A proj \
             --pidfile="$HOME/run/celery/%n.pid" \
             --logfile="$HOME/log/celery/%n.log"
 
-        $ celery multi restart worker1 --pidfile="$HOME/run/celery/%n.pid"
+        $ celery multi restart worker1 \
+            -A proj \
+            --logfile="$HOME/log/celery/%n%I.log" \
+            --pidfile="$HOME/run/celery/%n.pid
 
         $ celery multi stopwait worker1 --pidfile="$HOME/run/celery/%n.pid"
 

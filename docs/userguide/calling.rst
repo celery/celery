@@ -463,7 +463,7 @@ the workers :option:`-Q` argument:
 
 .. code-block:: bash
 
-    $ celery worker -l info -Q celery,priority.high
+    $ celery -A proj worker -l info -Q celery,priority.high
 
 .. seealso::
 
