@@ -8,7 +8,9 @@ from celery.five import items
 from kombu import Exchange, Queue
 from kombu.utils import symbol_by_name
 
-CSTRESS_QUEUE = os.environ.get('CSTRESS_QUEUE_NAME', 'c.stress')
+CSTRESS_TRANS = os.environ.get('CSTRESS_TRANS', False)
+default_queue = 'c.stress.trans' if CSTRESS_TRANS else 'c.stress'
+CSTRESS_QUEUE = os.environ.get('CSTRESS_QUEUE_NAME', default_queue)
 
 templates = {}
 
@@ -54,7 +56,9 @@ class default(object):
     CELERY_QUEUES = [
         Queue(CSTRESS_QUEUE,
               exchange=Exchange(CSTRESS_QUEUE),
-              routing_key=CSTRESS_QUEUE),
+              routing_key=CSTRESS_QUEUE,
+              durable=not CSTRESS_TRANS,
+              no_ack=CSTRESS_TRANS),
     ]
     CELERY_MAX_CACHED_RESULTS = -1
     BROKER_URL = os.environ.get('CSTRESS_BROKER', 'amqp://')
@@ -65,6 +69,8 @@ class default(object):
         'interval_max': 2,
         'interval_step': 0.1,
     }
+    if CSTRESS_TRANS:
+        CELERY_DEFAULT_DELIVERY_MODE = 1
 
 
 @template()
