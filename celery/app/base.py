@@ -268,7 +268,7 @@ class Celery(object):
     def _task_from_fun(self, fun, name=None, base=None, bind=False, **options):
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
-        name = name or self.gen_task_name(self, fun.__name__, fun.__module__)
+        name = name or self.gen_task_name(fun.__name__, fun.__module__)
         base = base or self.Task
 
         if name not in self._tasks:
