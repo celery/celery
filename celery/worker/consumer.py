@@ -827,7 +827,7 @@ class Gossip(bootsteps.ConsumerStep):
                     message.payload['hostname'])
         if hostname != self.hostname:
             type, event = prepare(message.payload)
-            obj, subject = self.update_state(event)
+            self.update_state(event)
         else:
             self.clock.forward()
 
