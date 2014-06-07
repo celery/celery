@@ -215,6 +215,55 @@ on the automatic naming:
     def add(x, y):
         return x + y
 
+.. _task-name-generator-info:
+
+Changing the automatic naming behavior
+--------------------------------------
+
+.. versionadded:: 3.2
+
+There are some cases when the default automatic naming is not suitable.
+Consider you have many tasks within many different modules::
+
+    project/
+           /__init__.py
+           /celery.py
+           /moduleA/
+                   /__init__.py
+                   /tasks.py
+           /moduleB/
+                   /__init__.py
+                   /tasks.py
+
+Using the default automatic naming, each task will have a generated name
+like `moduleA.tasks.taskA`, `moduleA.tasks.taskB`, `moduleB.tasks.test`
+and so on. You may want to get rid of having `tasks` in all task names.
+As pointed above, you can explicitly give names for all tasks, or you
+can change the automatic naming behavior by overriding
+:meth:`~@Celery.gen_task_name`. Continuing with the example, `celery.py`
+may contain:
+
+.. code-block:: python
+
+    from celery import Celery
+
+    class MyCelery(Celery):
+
+        def gen_task_name(self, name, module):
+            if module.endswith('.tasks'):
+                module = module[:-6]
+            return super(MyCelery, self).gen_task_name(name, module)
+
+    app = MyCelery('main')
+
+So each task will have a name like `moduleA.taskA`, `moduleA.taskB` and
+`moduleB.test`.
+
+.. warning::
+
+    Make sure that your `gen_task_name` is a pure function, which means
+    that for the same input it must always return the same output.
+
 .. _task-request-info:
 
 Context

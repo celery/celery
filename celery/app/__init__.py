@@ -17,7 +17,6 @@ from celery._state import (
     get_current_task as current_task,
     connect_on_app_finalize, set_default_app, _get_active_apps, _task_stack,
 )
-from celery.utils import gen_task_name
 
 from .base import Celery, AppPickler
 
@@ -140,7 +139,7 @@ def shared_task(*args, **kwargs):
             def task_by_cons():
                 app = current_app()
                 return app.tasks[
-                    name or gen_task_name(app, fun.__name__, fun.__module__)
+                    name or app.gen_task_name(fun.__name__, fun.__module__)
                 ]
             return Proxy(task_by_cons)
         return __inner
