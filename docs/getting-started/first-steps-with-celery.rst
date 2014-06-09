@@ -350,7 +350,7 @@ contain any syntax errors, you can try to import it:
 
 For a complete reference of configuration options, see :ref:`configuration`.
 
-To demonstrate the power of configuration files, this how you would
+To demonstrate the power of configuration files, this is how you would
 route a misbehaving task to a dedicated queue:
 
 :file:`celeryconfig.py`:
