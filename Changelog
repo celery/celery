@@ -15,6 +15,10 @@ new in Celery 3.1.
 :release-date: 2014-XX-XX XX:XX X.M UTC
 :release-by:
 
+- **Requirements**
+
+    Now depends on :ref:`Kombu 3.0.19 <kombu:version-3.0.19>`.
+
 - **App**: Connections were not being closed after fork due to an error in the
   after fork handler (Issue #2055).
 
