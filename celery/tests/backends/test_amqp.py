@@ -276,7 +276,7 @@ class test_AMQPBackend(AppCase):
                 'status': states.SUCCESS,
                 'result': i,
                 'traceback': None,
-                'task_id': tid,
+                'task_id': task_id,
                 'children': None,
             })
             for i, task_id in enumerate(tids)
