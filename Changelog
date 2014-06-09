@@ -26,6 +26,13 @@ new in Celery 3.1.
 
     Fix contributed by Roger Hu.
 
+- **Prefork pool**: Improved solution for dividing tasks between child
+  processes.
+
+    This change should improve performance when there are many child
+    processes, and also decrease the chance that two subsequent tasks are
+    written to the same child process.
+
 - **Programs**: :program:`celery worker --detach` no longer closes open file
   descriptors when :envvar:`C_FAKEFORK` is used so that the workers output
   can be seen.
@@ -69,6 +76,9 @@ new in Celery 3.1.
 
 - **Programs**: :program:`celery worker --detach` did not forward working
   directory option (Issue #2003).
+
+- **Programs**: :program:`celery inspect registered` no longer includes
+  the list of built-in tasks.
 
 - **Worker**: The ``requires`` attribute for boot steps were not being handled
   correctly (Issue #2002).
