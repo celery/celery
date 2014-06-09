@@ -12,8 +12,8 @@ new in Celery 3.1.
 
 3.1.12
 ======
-:release-date: 2014-XX-XX XX:XX X.M UTC
-:release-by:
+:release-date: 2014-06-09 06:30 P.M UTC
+:release-by: Ask Solem
 
 - **Requirements**
 
@@ -21,6 +21,18 @@ new in Celery 3.1.
 
 - **App**: Connections were not being closed after fork due to an error in the
   after fork handler (Issue #2055).
+
+    This could manifest itself by causing framing errors when using RabbitMQ.
+    (``Unexpected frame``).
+
+- **Django**: ``django.setup()`` was being called too late when
+  using Django 1.7 (Issue #1802).
+
+- **Django**: Fixed problems with event timezones when using Django
+  (``Substantial drift``).
+
+    Celery did not take into account that Django modifies the
+    ``time.timeone`` attributes and friends.
 
 - **Canvas**: ``Signature.link`` now works when the link option is a scalar
   value (Issue #2019).
@@ -36,6 +48,10 @@ new in Celery 3.1.
     This change should improve performance when there are many child
     processes, and also decrease the chance that two subsequent tasks are
     written to the same child process.
+
+- **Worker**: Now ignores unknown event types, instead of crashing.
+
+    Fix contributed by Illes Solt.
 
 - **Programs**: :program:`celery worker --detach` no longer closes open file
   descriptors when :envvar:`C_FAKEFORK` is used so that the workers output
