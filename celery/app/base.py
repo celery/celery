@@ -9,12 +9,10 @@
 from __future__ import absolute_import
 
 import os
-import sys
 import threading
 import warnings
 
 from collections import defaultdict, deque
-from contextlib import contextmanager
 from copy import deepcopy
 from operator import attrgetter
 

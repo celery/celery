@@ -28,7 +28,7 @@ except ImportError:  # pragma: no cover
     def Counter():  # noqa
         return defaultdict(int)
 
-############## py3k #########################################################
+# ############# py3k #########################################################
 import sys
 PY3 = sys.version_info[0] == 3
 
@@ -144,17 +144,17 @@ def with_metaclass(Type, skip_attrs=set(['__dict__', '__weakref__'])):
     return _clone_with_metaclass
 
 
-############## collections.OrderedDict ######################################
+# ############# collections.OrderedDict ######################################
 # was moved to kombu
 from kombu.utils.compat import OrderedDict  # noqa
 
-############## threading.TIMEOUT_MAX #######################################
+# ############# threading.TIMEOUT_MAX ########################################
 try:
     from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
 except ImportError:
     THREAD_TIMEOUT_MAX = 1e10  # noqa
 
-############## format(int, ',d') ##########################
+# ############# format(int, ',d') ############################################
 
 if sys.version_info >= (2, 7):  # pragma: no cover
     def format_d(i):
@@ -169,7 +169,7 @@ else:  # pragma: no cover
         return s + ','.join(reversed(groups))
 
 
-############## Module Generation ##########################
+# ############# Module Generation ############################################
 
 # Utilities to dynamically
 # recreate modules, either for lazy loading or

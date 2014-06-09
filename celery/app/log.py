@@ -176,8 +176,8 @@ class Logging(object):
             formatter=TaskFormatter, **kwargs
         )
         logger.setLevel(loglevel)
-        logger.propagate = int(propagate)    # this is an int for some reason.
-                                             # better to not question why.
+        # this is an int for some reason, better not question why.
+        logger.propagate = int(propagate)
         signals.after_setup_task_logger.send(
             sender=None, logger=logger,
             loglevel=loglevel, logfile=logfile,

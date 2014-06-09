@@ -38,7 +38,7 @@ class Task(BaseTask):
     __bound__ = False
     __v2_compat__ = True
 
-    #- Deprecated compat. attributes -:
+    # - Deprecated compat. attributes -:
 
     queue = None
     routing_key = None
