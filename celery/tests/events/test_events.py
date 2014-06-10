@@ -91,8 +91,6 @@ class test_EventDispatcher(AppCase):
         for ev in evs:
             self.assertTrue(producer.has_event(ev))
 
-        buf = eventer._outbound_buffer = Mock()
-        buf.popleft.side_effect = IndexError()
         eventer.flush()
 
     def test_enter_exit(self):

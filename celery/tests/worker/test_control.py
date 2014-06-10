@@ -119,7 +119,7 @@ class test_ControlPanel(AppCase):
     def setup(self):
         self.panel = self.create_panel(consumer=Consumer(self.app))
 
-        @self.app.task(rate_limit=200, shared=False)
+        @self.app.task(name='c.unittest.mytask', rate_limit=200, shared=False)
         def mytask():
             pass
         self.mytask = mytask
