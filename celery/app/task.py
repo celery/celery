@@ -580,7 +580,7 @@ class Task(object):
         except Exception as exc:
             if is_eager:
                 raise
-            raise Reject(exc, requeue=True)
+            raise Reject(exc, requeue=False)
         ret = Retry(exc=exc, when=eta or countdown)
         if throw:
             raise ret
