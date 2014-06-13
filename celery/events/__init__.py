@@ -297,7 +297,7 @@ class EventReceiver(ConsumerMixin):
 
     def __init__(self, channel, handlers=None, routing_key='#',
                  node_id=None, app=None, queue_prefix='celeryev',
-                 accept=None):
+                 accept=None, queue_ttl=None, queue_expires=None):
         self.app = app_or_default(app or self.app)
         self.channel = maybe_channel(channel)
         self.handlers = {} if handlers is None else handlers
@@ -305,12 +305,15 @@ class EventReceiver(ConsumerMixin):
         self.node_id = node_id or uuid()
         self.queue_prefix = queue_prefix
         self.exchange = get_exchange(self.connection or self.app.connection())
-        self.queue = Queue('.'.join([self.queue_prefix, self.node_id]),
-                           exchange=self.exchange,
-                           routing_key=self.routing_key,
-                           auto_delete=True,
-                           durable=False,
-                           queue_arguments=self._get_queue_arguments())
+        self.queue = Queue(
+            '.'.join([self.queue_prefix, self.node_id]),
+            exchange=self.exchange,
+            routing_key=self.routing_key,
+            auto_delete=True, durable=False,
+            queue_arguments=self._get_queue_arguments(
+                ttl=queue_ttl, expires=queue_expires,
+            ),
+        )
         self.clock = self.app.clock
         self.adjust_clock = self.clock.adjust
         self.forward_clock = self.clock.forward
@@ -318,11 +321,16 @@ class EventReceiver(ConsumerMixin):
             accept = {self.app.conf.CELERY_EVENT_SERIALIZER, 'json'}
         self.accept = accept
 
-    def _get_queue_arguments(self):
+    def _get_queue_arguments(self, ttl=None, expires=None):
         conf = self.app.conf
         return dictfilter({
-            'x-message-ttl': maybe_s_to_ms(conf.CELERY_EVENT_QUEUE_TTL),
-            'x-expires': maybe_s_to_ms(conf.CELERY_EVENT_QUEUE_EXPIRES),
+            'x-message-ttl': maybe_s_to_ms(
+                ttl if ttl is not None else conf.CELERY_EVENT_QUEUE_TTL,
+            ),
+            'x-expires': maybe_s_to_ms(
+                expires if expires is not None
+                else conf.CELERY_EVENT_QUEUE_EXPIRES,
+            ),
         })
 
     def process(self, type, event):
