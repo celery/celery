@@ -186,7 +186,6 @@ class ResultHandler(_pool.ResultHandler):
         else:
             buf = bufv = BytesIO()
         # header
-        assert not isblocking(fd)
 
         while Hr < 4:
             try:
