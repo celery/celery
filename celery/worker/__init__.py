@@ -281,7 +281,12 @@ class WorkController(object):
                 logger.debug('importing module %s', module)
                 imp(module)
             elif reload:
-                logger.debug('reloading module %s', module)
+                if reloader is not None and hasattr(reloader, 'rsplit'):
+                    m, n = reloader.rsplit('.', 1)
+                    if m in sys.modules and hasattr(sys.modules[m], n):
+                        reloader = getattr(sys.modules[m], n)
+                    assert callable(reloader)
+                logger.debug("reloading module %s", module)
                 reload_from_cwd(sys.modules[module], reloader)
 
         if self.consumer:
