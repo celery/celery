@@ -961,26 +961,6 @@ Example::
 
 .. setting:: BROKER_TRANSPORT
 
-BROKER_FAILOVER_STRATEGY
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Default failover strategy for the broker Connection object. If supplied,
-may map to a key in 'kombu.connection.failover_strategies', or be a reference
-to any method that yields a single item from a supplied list.
-
-Example::
-
-    # Random failover strategy
-    def random_failover_strategy(servers):
-        it = list(it)  # don't modify callers list
-        shuffle = random.shuffle
-        for _ in repeat(None):
-            shuffle(it)
-            yield it[0]
-
-    BROKER_FAILOVER_STRATEGY=random_failover_strategy
-
-
 BROKER_TRANSPORT
 ~~~~~~~~~~~~~~~~
 :Aliases: ``BROKER_BACKEND``
