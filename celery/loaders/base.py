@@ -16,7 +16,8 @@ import sys
 
 from datetime import datetime
 
-from kombu.utils import json
+#from kombu.utils import json
+import json
 from kombu.utils import cached_property
 from kombu.utils.encoding import safe_str
 

@@ -32,7 +32,7 @@ from celery.exceptions import (
 )
 from celery.five import string_t, values
 from celery.platforms import EX_FAILURE, create_pidlock
-from celery.utils import default_nodename, worker_direct
+from celery.utils import default_nodename, worker_direct, instantiate
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel, worker_logger as logger
 from celery.utils.threads import default_socket_timeout
@@ -107,6 +107,7 @@ class WorkController(object):
     def setup_instance(self, queues=None, ready_callback=None, pidfile=None,
                        include=None, use_eventloop=None, exclude_queues=None,
                        **kwargs):
+        self.dependency_tracker = instantiate(self.dependency_tracker_cls)
         self.pidfile = pidfile
         self.setup_queues(queues, exclude_queues)
         self.setup_includes(str_to_list(include))
@@ -190,7 +191,10 @@ class WorkController(object):
         prev = tuple(self.app.conf.CELERY_INCLUDE)
         if includes:
             prev += tuple(includes)
+            # Collect tasks dependencies
+            self.dependency_tracker.enable()
             [self.app.loader.import_task_module(m) for m in includes]
+            self.dependency_tracker.freeze()
         self.include = includes
         task_modules = {task.__class__.__module__
                         for task in values(self.app.tasks)}
@@ -275,6 +279,7 @@ class WorkController(object):
     def reload(self, modules=None, reload=False, reloader=None):
         modules = self.app.loader.task_modules if modules is None else modules
         imp = self.app.loader.import_from_cwd
+        reloader = reloader or self.dependency_tracker.reload
 
         for module in set(modules or ()):
             if module not in sys.modules:
@@ -348,7 +353,8 @@ class WorkController(object):
                        schedule_filename=None, scheduler_cls=None,
                        task_time_limit=None, task_soft_time_limit=None,
                        max_tasks_per_child=None, prefetch_multiplier=None,
-                       disable_rate_limits=None, worker_lost_wait=None, **_kw):
+                       disable_rate_limits=None, worker_lost_wait=None,
+                       dependency_tracker_cls=None, **_kw):
         self.concurrency = self._getopt('concurrency', concurrency)
         self.loglevel = self._getopt('log_level', loglevel)
         self.logfile = self._getopt('log_file', logfile)
@@ -386,6 +392,9 @@ class WorkController(object):
         )
         self.worker_lost_wait = self._getopt(
             'worker_lost_wait', worker_lost_wait,
+        )
+        self.dependency_tracker_cls = self._getopt(
+            'dependency_tracker', dependency_tracker_cls,
         )
 
     def _getopt(self, key, value):
