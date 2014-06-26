@@ -15,8 +15,7 @@ import sys
 from functools import partial
 from importlib import import_module
 
-#from kombu.utils import json
-import json
+from kombu.utils import json
 
 from celery.five import string_t, values
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
