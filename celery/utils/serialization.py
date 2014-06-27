@@ -8,6 +8,7 @@
 """
 from __future__ import absolute_import
 
+from base64 import b64encode as base64encode, b64decode as base64decode
 from inspect import getmro
 from itertools import takewhile
 
@@ -15,6 +16,8 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle  # noqa
+
+from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
 from .encoding import safe_repr
 
@@ -165,3 +168,11 @@ def get_pickled_exception(exc):
     if isinstance(exc, UnpickleableExceptionWrapper):
         return exc.restore()
     return exc
+
+
+def b64encode(s):
+    return bytes_to_str(base64encode(str_to_bytes(s)))
+
+
+def b64decode(s):
+    return base64decode(str_to_bytes(s))

@@ -8,24 +8,15 @@
 """
 from __future__ import absolute_import
 
-import base64
-
 from kombu.serialization import registry, dumps, loads
 from kombu.utils.encoding import bytes_to_str, str_to_bytes, ensure_bytes
 
 from .certificate import Certificate, FSCertStore
 from .key import PrivateKey
 from .utils import reraise_errors
+from celery.utils.serialization import b64encode, b64decode
 
 __all__ = ['SecureSerializer', 'register_auth']
-
-
-def b64encode(s):
-    return bytes_to_str(base64.b64encode(str_to_bytes(s)))
-
-
-def b64decode(s):
-    return base64.b64decode(str_to_bytes(s))
 
 
 class SecureSerializer(object):
