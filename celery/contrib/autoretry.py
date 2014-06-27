@@ -33,7 +33,7 @@ from functools import wraps
 def autoretry(on=None, retry_kwargs=None):
 
     def decorator(task):
-        if not on:
+        if not on or hasattr(task, '_orig_run'):
             return task.run
 
         autoretry_exceptions = tuple(on)  # except only works with tuples

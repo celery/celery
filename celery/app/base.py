@@ -38,6 +38,7 @@ from celery.utils.dispatch import Signal
 from celery.utils.functional import first, maybe_list
 from celery.utils.imports import instantiate, symbol_by_name
 from celery.utils.objects import FallbackContext, mro_lookup
+from celery.contrib.autoretry import autoretry
 
 from .annotations import prepare as prepare_annotations
 from .defaults import DEFAULTS, find_deprecated_settings
@@ -282,6 +283,12 @@ class Celery(object):
                 '__wrapped__': fun}, **options))()
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app
+
+            autoretry_on = options.get('autoretry_on')
+            retry_kwargs = options.get('retry_kwargs')
+
+            if autoretry_on:
+                task = autoretry(autoretry_on, retry_kwargs)(task)
         else:
             task = self._tasks[name]
         return task
