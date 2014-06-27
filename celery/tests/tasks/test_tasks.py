@@ -100,6 +100,19 @@ class TasksCase(AppCase):
                     raise self.retry(countdown=0, exc=exc)
         self.retry_task_customexc = retry_task_customexc
 
+        @self.app.task(on=(ZeroDivisionError,), shared=False)
+        def autoretry_task_no_kwargs(a, b):
+            self.iterations += 1
+            return a/b
+        self.autoretry_task_no_kwargs
+
+        @self.app.task(on=(ZeroDivisionError,),
+                       retry_kwargs={'max_retries': 5}, shared=False)
+        def autoretry_task(a, b):
+            self.iterations += 1
+            return a/b
+        self.autoretry_task
+
 
 class MyCustomException(Exception):
     """Random custom exception."""
@@ -192,6 +205,18 @@ class test_task_retries(TasksCase):
         with self.assertRaises(self.retry_task.MaxRetriesExceededError):
             result.get()
         self.assertEqual(self.retry_task.iterations, 2)
+
+    def test_autoretry_no_kwargs(self):
+        self.autoretry_task_no_kwargs.max_retries = 3
+        self.autoretry_task_no_kwargs.iterations = 0
+        self.autoretry_task_no_kwargs.apply((1, 0))
+        self.assertEqual(self.autoretry_task_no_kwargs.iterations, 4)
+
+    def test_autoretry(self):
+        self.autoretry_task_no_kwargs.max_retries = 3
+        self.autoretry_task_no_kwargs.iterations = 0
+        self.autoretry_task_no_kwargs.apply((1, 0))
+        self.assertEqual(self.autoretry_task_no_kwargs.iterations, 6)
 
 
 class test_canvas_utils(TasksCase):
