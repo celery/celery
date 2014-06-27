@@ -33,7 +33,7 @@ class test_autoretry(TasksCase):
         self.assertEqual(self.autoretry_task_no_kwargs.iterations, 4)
 
     def test_autoretry(self):
-        self.autoretry_task_no_kwargs.max_retries = 3
-        self.autoretry_task_no_kwargs.iterations = 0
-        self.autoretry_task_no_kwargs.apply((1, 0))
-        self.assertEqual(self.autoretry_task_no_kwargs.iterations, 6)
+        self.autoretry_tasks.max_retries = 3
+        self.autoretry_task.iterations = 0
+        self.autoretry_task.apply((1, 0))
+        self.assertEqual(self.autoretry_task.iterations, 6)
