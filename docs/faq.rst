@@ -275,9 +275,15 @@ most systems), it usually contains a message describing the reason.
 Does it work on FreeBSD?
 ------------------------
 
-**Answer:** The prefork pool requires a working POSIX semaphore
-implementation which isn't enabled in FreeBSD by default. You have to enable
-POSIX semaphores in the kernel and manually recompile multiprocessing.
+**Answer:** Depends
+
+When using the RabbitMQ (AMQP) and Redis transports it should work
+out of the box.
+
+For other transports the compatibility prefork pool is
+used which requires a working POSIX semaphore implementation, and this isn't
+enabled in FreeBSD by default. You have to enable
+POSIX semaphores in the kernel and manually recompile billiard.
 
 Luckily, Viktor Petersson has written a tutorial to get you started with
 Celery on FreeBSD here:
