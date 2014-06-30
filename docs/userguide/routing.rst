@@ -402,7 +402,7 @@ using the ``basic.publish`` command::
 
 Now that the message is sent you can retrieve it again.  You can use the
 ``basic.get``` command here, which polls for new messages on the queue
-(which is alright for maintainence tasks, for services you'd want to use
+(which is alright for maintenance tasks, for services you'd want to use
 ``basic.consume`` instead)
 
 Pop a message off the queue::

@@ -47,7 +47,7 @@ The API defines a standard set of execution options, as well as three methods:
         executes 10 seconds from now.
 
     - ``T.apply_async(eta=now + timedelta(seconds=10))``
-        executes 10 seconds from now, specifed using ``eta``
+        executes 10 seconds from now, specified using ``eta``
 
     - ``T.apply_async(countdown=60, expires=120)``
         executes in one minute from now, but expires after 2 minutes.
@@ -447,7 +447,7 @@ Though this particular example is much better expressed as a group:
     >>> from celery import group
 
     >>> numbers = [(2, 2), (4, 4), (8, 8), (16, 16)]
-    >>> res = group(add.s(n) for i in numbers).apply_async()
+    >>> res = group(add.s(n) for n in numbers).apply_async()
 
     >>> res.get()
     [4, 8, 16, 32]
