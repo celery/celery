@@ -335,7 +335,7 @@ AMQP backend settings
 .. note::
 
     The AMQP backend requires RabbitMQ 1.1.0 or higher to automatically
-    expire results.  If you are running an older version of RabbitmQ
+    expire results.  If you are running an older version of RabbitMQ
     you should disable result expiration like this:
 
         CELERY_TASK_RESULT_EXPIRES = None
@@ -455,7 +455,7 @@ which is the same as::
 
     CELERY_RESULT_BACKEND = 'redis://'
 
-The fields of the URL is defined as folows:
+The fields of the URL are defined as follows:
 
 - *host*
 
@@ -657,7 +657,7 @@ which is the same as::
 
     CELERY_RESULT_BACKEND = "riak://"
 
-The fields of the URL is defined as folows:
+The fields of the URL are defined as follows:
 
 - *host*
 

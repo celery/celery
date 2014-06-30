@@ -92,7 +92,7 @@ When the worker starts you should see a banner and some messages::
 
      [2012-06-08 16:23:51,078: WARNING/MainProcess] celery@halcyon.local has started.
 
--- The *broker* is the URL you specifed in the broker argument in our ``celery``
+-- The *broker* is the URL you specified in the broker argument in our ``celery``
 module, you can also specify a different broker on the command-line by using
 the :option:`-b` option.
 

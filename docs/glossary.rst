@@ -51,7 +51,7 @@ Glossary
         Idempotence is a mathematical property that describes a function that
         can be called multiple times without changing the result.
         Practically it means that a function can be repeated many times without
-        unintented effects, but not necessarily side-effect free in the pure
+        unintended effects, but not necessarily side-effect free in the pure
         sense (compare to :term:`nullipotent`).
 
     nullipotent

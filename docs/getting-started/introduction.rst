@@ -281,7 +281,7 @@ Quickjump
         - :ref:`see a list of running workers <monitoring-control>`
         - :ref:`purge all messages <monitoring-control>`
         - :ref:`inspect what the workers are doing <monitoring-control>`
-        - :ref:`see what tasks a worker has registerd <monitoring-control>`
+        - :ref:`see what tasks a worker has registered <monitoring-control>`
         - :ref:`migrate tasks to a new broker <monitoring-control>`
         - :ref:`see a list of event message types <event-reference>`
         - :ref:`contribute to Celery <contributing>`

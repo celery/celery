@@ -768,7 +768,7 @@ will take some time so other transports still use a threading-based solution.
 
     Add callback to be called when ``fd`` is readable.
 
-    The callback will stay registered until explictly removed using
+    The callback will stay registered until explicitly removed using
     :meth:`hub.remove(fd) <hub.remove>`, or the fd is automatically discarded
     because it's no longer valid.
 
