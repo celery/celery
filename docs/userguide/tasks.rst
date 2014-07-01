@@ -518,10 +518,15 @@ General
     distributed over the specified time frame.
 
     Example: `"100/m"` (hundred tasks a minute). This will enforce a minimum
-    delay of 10ms between starting two tasks.
+    delay of 600ms between starting two tasks on the same worker instance.
     
     Default is the :setting:`CELERY_DEFAULT_RATE_LIMIT` setting,
     which if not specified means rate limiting for tasks is disabled by default.
+
+    Note that this is a *per worker instance* rate limit, and not a global
+    rate limit. To enforce a global rate limit (e.g. for an API with a
+    maximum number of  requests per second), you must restrict to a given
+    queue.
 
 .. attribute:: Task.time_limit
 
