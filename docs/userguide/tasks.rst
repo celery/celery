@@ -491,30 +491,20 @@ This may not be acceptable all the time, since you may have a lot of such
 tasks.
 
 Fortunately, you can tell Celery to automatically retry a task using
-:func:`autoretry <~celery.contrib.autoretry.autoretry>` decorator:
+`autoretry_for` argument in `~@Celery.task` decorator:
 
 .. code-block:: python
 
-    @autoretry(on=(ZeroDivisionError,))
-    @app.task
-    def div(a, b):
-        return a / b
-
-Also you can specify autoretry directly in `~@Celery.task` decorator:
-
-.. code-block:: python
-
-    @app.task(autoretry_on=(ZeroDivisionError,))
+    @app.task(autoretry_for(ZeroDivisionError,))
     def div(a, b):
         return a / b
 
 If you want to specify custom arguments for internal `~@Task.retry`
-call, pass `retry_kwargs` argument to :func:`autoretry
-<~celery.contrib.autoretry.autoretry>` or `~@Celery.task` decorators:
+call, pass `retry_kwargs` argument to `~@Celery.task` decorator:
 
 .. code-block:: python
 
-    @app.task(autoretry_on=(ZeroDivisionError,),
+    @app.task(autoretry_for=(ZeroDivisionError,),
               retry_kwargs={'max_retries': 5})
     def div(a, b):
         return a / b

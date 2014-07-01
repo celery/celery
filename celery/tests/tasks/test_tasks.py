@@ -100,18 +100,18 @@ class TasksCase(AppCase):
                     raise self.retry(countdown=0, exc=exc)
         self.retry_task_customexc = retry_task_customexc
 
-        @self.app.task(on=(ZeroDivisionError,), shared=False)
+        @self.app.task(autoretry_for=(ZeroDivisionError,), shared=False)
         def autoretry_task_no_kwargs(a, b):
             self.iterations += 1
             return a/b
-        self.autoretry_task_no_kwargs
+        self.autoretry_task_no_kwargs = autoretry_task_no_kwargs
 
-        @self.app.task(on=(ZeroDivisionError,),
+        @self.app.task(autoretry_for=(ZeroDivisionError,),
                        retry_kwargs={'max_retries': 5}, shared=False)
         def autoretry_task(a, b):
             self.iterations += 1
             return a/b
-        self.autoretry_task
+        self.autoretry_task = autoretry_task
 
 
 class MyCustomException(Exception):
