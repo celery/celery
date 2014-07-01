@@ -136,10 +136,23 @@ To route a task to the `feed_tasks` queue, you can add an entry in the
 You can also override this using the `routing_key` argument to
 :meth:`Task.apply_async`, or :func:`~celery.execute.send_task`:
 
+.. code-block:: python
+
     >>> from feeds.tasks import import_feed
     >>> import_feed.apply_async(args=['http://cnn.com/rss'],
     ...                         queue='feed_tasks',
     ...                         routing_key='feed.import')
+
+Or by setting the `queue` and `routing_key` arguments directly
+on the task itself:
+
+.. code-block:: python
+
+    @task(queue='feed_tasks', routing_key='feed.import')
+    def my_task():
+        pass
+
+The arguments will be used as a default in a call to `apply_async`.
 
 
 To make server `z` consume from the feed queue exclusively you can
