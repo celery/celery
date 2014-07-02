@@ -476,6 +476,7 @@ class Task(object):
             'chord': request.chord,
             'soft_time_limit': limit_soft,
             'time_limit': limit_hard,
+            'reply_to': request.reply_to,
         }
         options.update(
             {'queue': queue} if queue else (request.delivery_info or {})
