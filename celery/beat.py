@@ -232,6 +232,8 @@ class Scheduler(object):
             H = self._heap = [event_t(adjust(e.is_due()[1]) or 0, 5, e)
                               for e in values(self.schedule)]
             heapify(H)
+        if not H:
+            return max_interval
         event = H[0]
         entry = event[2]
         is_due, next_time_to_run = self.is_due(entry)
