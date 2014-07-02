@@ -26,6 +26,7 @@ E_BUCKET_NAME = """\
 Riak bucket names must be composed of ASCII characters only, not: {0!r}\
 """
 
+
 def is_ascii(s):
     try:
         s.decode('ascii')
