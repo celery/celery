@@ -355,7 +355,7 @@ class Celery(object):
                   publisher=None, link=None, link_error=None,
                   add_to_parent=True, group_id=None, retries=0, chord=None,
                   reply_to=None, time_limit=None, soft_time_limit=None,
-                  root_id=None, parent_id=None, **options):
+                  root_id=None, parent_id=None, route_name=None, **options):
         amqp = self.amqp
         task_id = task_id or uuid()
         producer = producer or publisher  # XXX compat
@@ -365,7 +365,7 @@ class Celery(object):
             warnings.warn(AlwaysEagerIgnored(
                 'CELERY_ALWAYS_EAGER has no effect on send_task',
             ), stacklevel=2)
-        options = router.route(options, name, args, kwargs)
+        options = router.route(options, route_name or name, args, kwargs)
 
         message = amqp.create_task_message(
             task_id, name, args, kwargs, countdown, eta, group_id,

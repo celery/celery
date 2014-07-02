@@ -99,6 +99,10 @@ def maybe_unroll_group(g):
         return g.tasks[0] if size == 1 else g
 
 
+def task_name_from(task):
+    return getattr(task, 'name', task)
+
+
 class Signature(dict):
     """Class that wraps the arguments and execution options
     for a single task invocation.
@@ -230,7 +234,7 @@ class Signature(dict):
     def set_immutable(self, immutable):
         self.immutable = immutable
 
-    def apply_async(self, args=(), kwargs={}, **options):
+    def apply_async(self, args=(), kwargs={}, route_name=None, **options):
         try:
             _apply = self._apply_async
         except IndexError:  # no tasks for chain, etc to find type
@@ -240,7 +244,17 @@ class Signature(dict):
             args, kwargs, options = self._merge(args, kwargs, options)
         else:
             args, kwargs, options = self.args, self.kwargs, self.options
-        return _apply(args, kwargs, **options)
+        route_name = route_name or self.route_name_for(args, kwargs, options)
+        return _apply(args, kwargs, route_name=route_name, **options)
+
+    def route_name_for(self, args, kwargs, options):
+        """Can be used to override the name used for routing the task
+        to a queue.
+
+        If this returns :const:`None` the name of the task will be used.
+
+        """
+        pass
 
     def append_to_list_option(self, key, value):
         items = self.options.setdefault(key, [])
@@ -308,6 +322,11 @@ class Signature(dict):
 
     def __repr__(self):
         return self.reprcall()
+
+    @property
+    def name(self):
+        # for duck typing compatibility with Task.name
+        return self.task
 
     @cached_property
     def type(self):
@@ -485,11 +504,15 @@ class _basemap(Signature):
             {'task': task, 'it': regen(it)}, immutable=True, **options
         )
 
+    def route_name_for(self, args, kwargs, options):
+        return task_name_from(self.kwargs.get('task'))
+
     def apply_async(self, args=(), kwargs={}, **opts):
         # need to evaluate generators
         task, it = self._unpack_args(self.kwargs)
         return self.type.apply_async(
-            (), {'task': task, 'it': list(it)}, **opts
+            (), {'task': task, 'it': list(it)},
+            route_name=self.route_name_for(args, kwargs, opts), **opts
         )
 
     @classmethod
@@ -532,11 +555,17 @@ class chunks(Signature):
     def from_dict(self, d, app=None):
         return chunks(*self._unpack_args(d['kwargs']), app=app, **d['options'])
 
+    def route_name_for(self, args, kwargs, options):
+        return task_name_from(self.kwargs.get('task'))
+
     def apply_async(self, args=(), kwargs={}, **opts):
-        return self.group().apply_async(args, kwargs, **opts)
+        return self.group().apply_async(
+            args, kwargs,
+            route_name=self.route_name_for(args, kwargs, opts), **opts
+        )
 
     def __call__(self, **options):
-        return self.group()(**options)
+        return self.apply_async(**options)
 
     def group(self):
         # need to evaluate generators
