@@ -171,6 +171,7 @@ class test_xmap_xstarmap(CanvasCase):
             s.apply_async(foo=1)
             s.type.apply_async.assert_called_with(
                 (), {'task': self.add.s(), 'it': args}, foo=1,
+                route_name=self.add.name,
             )
 
             self.assertEqual(type.from_dict(dict(s)), s)
@@ -192,10 +193,10 @@ class test_chunks(CanvasCase):
         gr = x.group.return_value = Mock()
 
         x.apply_async()
-        gr.apply_async.assert_called_with((), {})
-
+        gr.apply_async.assert_called_with((), {}, route_name=self.add.name)
+        gr.apply_async.reset_mock()
         x()
-        gr.assert_called_with()
+        gr.apply_async.assert_called_with((), {}, route_name=self.add.name)
 
         self.app.conf.CELERY_ALWAYS_EAGER = True
         chunks.apply_chunks(app=self.app, **x['kwargs'])
