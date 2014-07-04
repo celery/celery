@@ -140,7 +140,6 @@ class Celery(object):
         self.clock = LamportClock()
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
-        self.backend_cls = backend or self.backend_cls
         self.events_cls = events or self.events_cls
         self.loader_cls = loader or self.loader_cls
         self.log_cls = log or self.log_cls
@@ -173,6 +172,8 @@ class Celery(object):
         self._preconf = changes or {}
         if broker:
             self._preconf['BROKER_URL'] = broker
+        if backend:
+            self._preconf['CELERY_RESULT_BACKEND'] = backend
         if include:
             self._preconf['CELERY_IMPORTS'] = include
 
