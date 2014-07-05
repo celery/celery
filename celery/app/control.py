@@ -16,6 +16,8 @@ from kombu.utils import cached_property
 
 from celery.exceptions import DuplicateNodenameWarning
 from celery.utils.text import pluralize
+from celery.matcher import match
+from celery.five import items
 
 __all__ = ['Inspect', 'Control', 'flatten_reply']
 
@@ -43,13 +45,16 @@ class Inspect(object):
     app = None
 
     def __init__(self, destination=None, timeout=1, callback=None,
-                 connection=None, app=None, limit=None):
+                 connection=None, app=None, limit=None, pattern=None,
+                 matcher=None):
         self.app = app or self.app
         self.destination = destination
         self.timeout = timeout
         self.callback = callback
         self.connection = connection
         self.limit = limit
+        self.pattern = pattern
+        self.matcher = matcher
 
     def _prepare(self, reply):
         if not reply:
@@ -58,6 +63,11 @@ class Inspect(object):
         if self.destination and \
                 not isinstance(self.destination, (list, tuple)):
             return by_node.get(self.destination)
+        if self.pattern:
+            pattern = self.pattern
+            matcher = self.matcher
+            return {node: reply for node, reply in items(by_node)
+                    if match(node, pattern, matcher)}
         return by_node
 
     def _request(self, command, **kwargs):
@@ -69,6 +79,7 @@ class Inspect(object):
             connection=self.connection,
             limit=self.limit,
             timeout=self.timeout, reply=True,
+            pattern=self.pattern, matcher=self.matcher,
         ))
 
     def report(self):
@@ -284,7 +295,8 @@ class Control(object):
 
     def broadcast(self, command, arguments=None, destination=None,
                   connection=None, reply=False, timeout=1, limit=None,
-                  callback=None, channel=None, **extra_kwargs):
+                  callback=None, channel=None, pattern=None, matcher=None,
+                  **extra_kwargs):
         """Broadcast a control command to the celery workers.
 
         :param command: Name of command to send.
@@ -298,6 +310,8 @@ class Control(object):
         :keyword limit: Limit number of replies.
         :keyword callback: Callback called immediately for each reply
             received.
+        :keyword pattern: Pattern defines hosts to send the command to.
+        :keyword matcher: Matching method for pattern.
 
         """
         with self.app.connection_or_acquire(connection) as conn:
@@ -305,4 +319,5 @@ class Control(object):
             return self.mailbox(conn)._broadcast(
                 command, arguments, destination, reply, timeout,
                 limit, callback, channel=channel,
+                pattern=pattern, matcher=matcher,
             )
