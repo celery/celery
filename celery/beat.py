@@ -229,7 +229,7 @@ class Scheduler(object):
         max_interval = self.max_interval
         H = self._heap
         if H is None:
-            H = self._heap = [event_t(adjust(e.is_due()[1]) or 0, 5, e)
+            H = self._heap = [event_t(self.adjust(e.is_due()[1]) or 0, 5, e)
                               for e in values(self.schedule)]
             heapify(H)
         while 1:
