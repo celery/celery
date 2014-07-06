@@ -247,7 +247,7 @@ To start the :program:`celery beat` service:
 
 .. code-block:: bash
 
-    $ celery beat
+    $ celery -A proj beat
 
 You can also start embed `beat` inside the worker by enabling
 workers `-B` option, this is convenient if you will never run
@@ -256,7 +256,7 @@ reason is not recommended for production use:
 
 .. code-block:: bash
 
-    $ celery worker -B
+    $ celery -A proj worker -B
 
 Beat needs to store the last run times of the tasks in a local database
 file (named `celerybeat-schedule` by default), so it needs access to
@@ -265,7 +265,7 @@ location for this file:
 
 .. code-block:: bash
 
-    $ celery beat -s /home/celery/var/run/celerybeat-schedule
+    $ celery -A proj beat -s /home/celery/var/run/celerybeat-schedule
 
 
 .. note::

@@ -275,9 +275,15 @@ most systems), it usually contains a message describing the reason.
 Does it work on FreeBSD?
 ------------------------
 
-**Answer:** The prefork pool requires a working POSIX semaphore
-implementation which isn't enabled in FreeBSD by default. You have to enable
-POSIX semaphores in the kernel and manually recompile multiprocessing.
+**Answer:** Depends
+
+When using the RabbitMQ (AMQP) and Redis transports it should work
+out of the box.
+
+For other transports the compatibility prefork pool is
+used which requires a working POSIX semaphore implementation, and this isn't
+enabled in FreeBSD by default. You have to enable
+POSIX semaphores in the kernel and manually recompile billiard.
 
 Luckily, Viktor Petersson has written a tutorial to get you started with
 Celery on FreeBSD here:
@@ -361,14 +367,14 @@ all configured task queues:
 
 .. code-block:: bash
 
-    $ celery purge
+    $ celery -A proj purge
 
 or programatically:
 
 .. code-block:: python
 
-    >>> from celery import current_app as celery
-    >>> celery.control.purge()
+    >>> from proj.celery import app
+    >>> app.control.purge()
     1753
 
 If you only want to purge messages from a specific queue
@@ -376,7 +382,7 @@ you have to use the AMQP API or the :program:`celery amqp` utility:
 
 .. code-block:: bash
 
-    $ celery amqp queue.purge <queue name>
+    $ celery -A proj amqp queue.purge <queue name>
 
 The number 1753 is the number of messages deleted.
 
@@ -680,8 +686,8 @@ Can I cancel the execution of a task?
 
 or if you only have the task id::
 
-    >>> from celery import current_app as celery
-    >>> celery.control.revoke(task_id)
+    >>> from proj.celery import app
+    >>> app.control.revoke(task_id)
 
 .. _faq-node-not-receiving-broadcast-commands:
 
@@ -698,8 +704,8 @@ using the :option:`-n` argument to :mod:`~celery.bin.worker`:
 
 .. code-block:: bash
 
-    $ celery worker -n worker1@%h
-    $ celery worker -n worker2@%h
+    $ celery -A proj worker -n worker1@%h
+    $ celery -A proj worker -n worker2@%h
 
 where ``%h`` is automatically expanded into the current hostname.
 

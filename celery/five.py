@@ -174,7 +174,7 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
         attr_name: (prepare_attr(attr) if prepare_attr else attr)
         for attr_name, attr in items(attrs)
     }
-    module = sys.modules[fqdn] = type(modname, (base, ), cls_attrs)(fqdn)
+    module = sys.modules[fqdn] = type(modname, (base, ), cls_attrs)(name)
     module.__dict__.update(attrs)
     return module
 

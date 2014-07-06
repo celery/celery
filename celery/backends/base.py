@@ -351,9 +351,10 @@ class BaseBackend(object):
             (group_id, body, ), kwargs, countdown=countdown,
         )
 
-    def apply_chord(self, header, partial_args, group_id, body, **options):
-        result = header(*partial_args, task_id=group_id)
-        self.fallback_chord_unlock(group_id, body, **options)
+    def apply_chord(self, header, partial_args, group_id, body,
+                    options={}, **kwargs):
+        result = header(*partial_args, task_id=group_id, **options or {})
+        self.fallback_chord_unlock(group_id, body, **kwargs)
         return result
 
     def current_task_children(self, request=None):
@@ -516,9 +517,9 @@ class KeyValueStoreBackend(BaseBackend):
             return meta
 
     def _apply_chord_incr(self, header, partial_args, group_id, body,
-                          result=None, **options):
+                          result=None, options={}, **kwargs):
         self.save_group(group_id, self.app.GroupResult(group_id, result))
-        return header(*partial_args, task_id=group_id)
+        return header(*partial_args, task_id=group_id, **options or {})
 
     def on_chord_part_return(self, task, state, result, propagate=None):
         if not self.implements_incr:

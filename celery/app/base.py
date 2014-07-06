@@ -140,7 +140,6 @@ class Celery(object):
         self.clock = LamportClock()
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
-        self.backend_cls = backend or self.backend_cls
         self.events_cls = events or self.events_cls
         self.loader_cls = loader or self.loader_cls
         self.log_cls = log or self.log_cls
@@ -173,6 +172,8 @@ class Celery(object):
         self._preconf = changes or {}
         if broker:
             self._preconf['BROKER_URL'] = broker
+        if backend:
+            self._preconf['CELERY_RESULT_BACKEND'] = backend
         if include:
             self._preconf['CELERY_IMPORTS'] = include
 
@@ -268,7 +269,7 @@ class Celery(object):
     def _task_from_fun(self, fun, name=None, base=None, bind=False, **options):
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
-        name = name or gen_task_name(self, fun.__name__, fun.__module__)
+        name = name or self.gen_task_name(fun.__name__, fun.__module__)
         base = base or self.Task
 
         if name not in self._tasks:
@@ -285,6 +286,9 @@ class Celery(object):
         else:
             task = self._tasks[name]
         return task
+
+    def gen_task_name(self, name, module):
+        return gen_task_name(self, name, module)
 
     def finalize(self, auto=False):
         with self._finalize_mutex:
@@ -352,7 +356,7 @@ class Celery(object):
                   publisher=None, link=None, link_error=None,
                   add_to_parent=True, group_id=None, retries=0, chord=None,
                   reply_to=None, time_limit=None, soft_time_limit=None,
-                  root_id=None, parent_id=None, **options):
+                  root_id=None, parent_id=None, route_name=None, **options):
         amqp = self.amqp
         task_id = task_id or uuid()
         producer = producer or publisher  # XXX compat
@@ -362,7 +366,7 @@ class Celery(object):
             warnings.warn(AlwaysEagerIgnored(
                 'CELERY_ALWAYS_EAGER has no effect on send_task',
             ), stacklevel=2)
-        options = router.route(options, name, args, kwargs)
+        options = router.route(options, route_name or name, args, kwargs)
 
         message = amqp.create_task_message(
             task_id, name, args, kwargs, countdown, eta, group_id,

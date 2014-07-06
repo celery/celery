@@ -74,7 +74,7 @@ The :program:`celery` program can be used to start the worker:
 
 .. code-block:: bash
 
-    $ celery worker --app=proj -l info
+    $ celery -A proj worker -l info
 
 When the worker starts you should see a banner and some messages::
 
@@ -92,7 +92,7 @@ When the worker starts you should see a banner and some messages::
 
      [2012-06-08 16:23:51,078: WARNING/MainProcess] celery@halcyon.local has started.
 
--- The *broker* is the URL you specifed in the broker argument in our ``celery``
+-- The *broker* is the URL you specified in the broker argument in our ``celery``
 module, you can also specify a different broker on the command-line by using
 the :option:`-b` option.
 
@@ -160,7 +160,7 @@ You can restart it too:
 
 .. code-block:: bash
 
-    $ celery multi restart w1 -A proj -l info
+    $ celery  multi restart w1 -A proj -l info
     celery multi v3.1.1 (Cipater)
     > Stopping nodes...
         > w1.halcyon.local: TERM -> 64024
@@ -201,7 +201,7 @@ you are encouraged to put these in a dedicated directory:
     $ mkdir -p /var/run/celery
     $ mkdir -p /var/log/celery
     $ celery multi start w1 -A proj -l info --pidfile=/var/run/celery/%n.pid \
-                                            --logfile=/var/log/celery/%n.pid
+                                            --logfile=/var/log/celery/%n%I.log
 
 With the multi command you can start multiple workers, and there is a powerful
 command-line syntax to specify arguments for different workers too,

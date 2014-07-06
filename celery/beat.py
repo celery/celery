@@ -210,16 +210,26 @@ class Scheduler(object):
         else:
             debug('%s sent. id->%s', entry.task, result.id)
 
+    def adjust(self, n, drift=-0.010):
+        if n and n > 0:
+            return n + drift
+        return n
+
     def is_due(self, entry):
         return entry.is_due()
 
     def _tick(self, event_t=event_t, min=min,
              heappop=heapq.heappop, heappush=heapq.heappush,
              heapify=heapq.heapify):
+        """Run a tick, that is one iteration of the scheduler.
+
+        Executes all due tasks.
+
+        """
         max_interval = self.max_interval
         H = self._heap
         if H is None:
-            H = self._heap = [event_t(e.is_due()[1] or 0, 5, e)
+            H = self._heap = [event_t(adjust(e.is_due()[1]) or 0, 5, e)
                               for e in values(self.schedule)]
             heapify(H)
         while 1:
@@ -499,7 +509,7 @@ class Service(object):
         try:
             while not self._is_shutdown.is_set():
                 interval = self.scheduler.tick()
-                if interval:
+                if interval and interval > 0.0:
                     debug('beat: Waking up %s.',
                           humanize_seconds(interval, prefix='in '))
                     time.sleep(interval)

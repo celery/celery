@@ -299,7 +299,7 @@ class test_Scheduler(AppCase):
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_pending_tick',
                       schedule=always_pending)
-        self.assertEqual(scheduler.tick(), 1)
+        self.assertEqual(scheduler.tick(), 1 - 0.010)
 
     def test_honors_max_interval(self):
         scheduler = mScheduler(app=self.app)
@@ -315,7 +315,7 @@ class test_Scheduler(AppCase):
                  {'schedule': mocked_schedule(False, j)})
                  for i, j in enumerate(nums))
         scheduler.update_from_dict(s)
-        self.assertEqual(scheduler.tick(), min(nums))
+        self.assertEqual(scheduler.tick(), min(nums) - 0.010)
 
     def test_apply_tasks(self):
         scheduler = mScheduler(app=self.app)

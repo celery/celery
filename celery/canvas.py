@@ -99,6 +99,10 @@ def maybe_unroll_group(g):
         return g.tasks[0] if size == 1 else g
 
 
+def task_name_from(task):
+    return getattr(task, 'name', task)
+
+
 class Signature(dict):
     """Class that wraps the arguments and execution options
     for a single task invocation.
@@ -230,7 +234,7 @@ class Signature(dict):
     def set_immutable(self, immutable):
         self.immutable = immutable
 
-    def apply_async(self, args=(), kwargs={}, **options):
+    def apply_async(self, args=(), kwargs={}, route_name=None, **options):
         try:
             _apply = self._apply_async
         except IndexError:  # no tasks for chain, etc to find type
@@ -308,6 +312,11 @@ class Signature(dict):
 
     def __repr__(self):
         return self.reprcall()
+
+    @property
+    def name(self):
+        # for duck typing compatibility with Task.name
+        return self.task
 
     @cached_property
     def type(self):
@@ -489,7 +498,8 @@ class _basemap(Signature):
         # need to evaluate generators
         task, it = self._unpack_args(self.kwargs)
         return self.type.apply_async(
-            (), {'task': task, 'it': list(it)}, **opts
+            (), {'task': task, 'it': list(it)},
+            route_name=task_name_from(self.kwargs.get('task')), **opts
         )
 
     @classmethod
@@ -533,10 +543,13 @@ class chunks(Signature):
         return chunks(*self._unpack_args(d['kwargs']), app=app, **d['options'])
 
     def apply_async(self, args=(), kwargs={}, **opts):
-        return self.group().apply_async(args, kwargs, **opts)
+        return self.group().apply_async(
+            args, kwargs,
+            route_name=task_name_from(self.kwargs.get('task')), **opts
+        )
 
     def __call__(self, **options):
-        return self.group()(**options)
+        return self.apply_async(**options)
 
     def group(self):
         # need to evaluate generators
@@ -804,6 +817,9 @@ class chord(Signature):
         root_id = body.options.get('root_id')
         if 'chord_size' not in body:
             body['chord_size'] = self.__length_hint__()
+        options = dict(self.options, **options) if options else self.options
+        if options:
+            body.options.update(options)
 
         results = header.freeze(
             group_id=group_id, chord=body, root_id=root_id).results
@@ -812,7 +828,8 @@ class chord(Signature):
         parent = app.backend.apply_chord(
             header, partial_args, group_id, body,
             interval=interval, countdown=countdown,
-            max_retries=max_retries, propagate=propagate, result=results)
+            options=options, max_retries=max_retries,
+            propagate=propagate, result=results)
         bodyres.parent = parent
         return bodyres
 

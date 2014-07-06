@@ -476,6 +476,7 @@ class Task(object):
             'chord': request.chord,
             'soft_time_limit': limit_soft,
             'time_limit': limit_hard,
+            'reply_to': request.reply_to,
         }
         options.update(
             {'queue': queue} if queue else (request.delivery_info or {})
@@ -580,7 +581,7 @@ class Task(object):
         except Exception as exc:
             if is_eager:
                 raise
-            raise Reject(exc, requeue=True)
+            raise Reject(exc, requeue=False)
         ret = Retry(exc=exc, when=eta or countdown)
         if throw:
             raise ret

@@ -685,7 +685,8 @@ class Gossip(bootsteps.ConsumerStep):
     )
     compatible_transports = {'amqp', 'redis'}
 
-    def __init__(self, c, without_gossip=False, interval=5.0, **kwargs):
+    def __init__(self, c, without_gossip=False,
+                 interval=5.0, heartbeat_interval=2.0, **kwargs):
         self.enabled = not without_gossip and self.compatible_transport(c.app)
         self.app = c.app
         c.gossip = self
@@ -704,6 +705,7 @@ class Gossip(bootsteps.ConsumerStep):
                 c._mutex = DummyLock()
             self.update_state = self.state.event
         self.interval = interval
+        self.heartbeat_interval = heartbeat_interval
         self._tref = None
         self.consensus_requests = defaultdict(list)
         self.consensus_replies = {}
@@ -802,7 +804,8 @@ class Gossip(bootsteps.ConsumerStep):
 
     def get_consumers(self, channel):
         self.register_timer()
-        ev = self.Receiver(channel, routing_key='worker.#')
+        ev = self.Receiver(channel, routing_key='worker.#',
+                           queue_ttl=self.heartbeat_interval)
         return [kombu.Consumer(
             channel,
             queues=[ev.queue],
@@ -827,7 +830,7 @@ class Gossip(bootsteps.ConsumerStep):
                     message.payload['hostname'])
         if hostname != self.hostname:
             type, event = prepare(message.payload)
-            obj, subject = self.update_state(event)
+            self.update_state(event)
         else:
             self.clock.forward()
 

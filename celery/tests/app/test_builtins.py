@@ -89,7 +89,6 @@ class test_group(BuiltinsCase):
 
     def test_apply(self):
         x = group([self.add.s(4, 4), self.add.s(8, 8)])
-        x.name = self.task.name
         res = x.apply()
         self.assertEqual(res.get(), [8, 16])
 

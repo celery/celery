@@ -185,9 +185,9 @@ class RedisBackend(KeyValueStoreBackend):
         return retval
 
     def _new_chord_apply(self, header, partial_args, group_id, body,
-                         result=None, **options):
+                         result=None, options={}, **kwargs):
         # avoids saving the group in the redis db.
-        return header(*partial_args, task_id=group_id)
+        return header(*partial_args, task_id=group_id, **options or {})
 
     def _new_chord_return(self, task, state, result, propagate=None,
                           PROPAGATE_STATES=states.PROPAGATE_STATES):

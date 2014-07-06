@@ -19,7 +19,7 @@ many messages in advance and even if the worker is killed -- caused by power fai
 or otherwise -- the message will be redelivered to another worker.
 
 Ideally task functions should be :term:`idempotent`, which means that
-the function will not cause unintented effects even if called
+the function will not cause unintended effects even if called
 multiple times with the same arguments.
 Since the worker cannot detect if your tasks are idempotent, the default
 behavior is to acknowledge the message in advance, before it's executed,
@@ -214,6 +214,55 @@ on the automatic naming:
     @task(name='proj.tasks.add')
     def add(x, y):
         return x + y
+
+.. _task-name-generator-info:
+
+Changing the automatic naming behavior
+--------------------------------------
+
+.. versionadded:: 3.2
+
+There are some cases when the default automatic naming is not suitable.
+Consider you have many tasks within many different modules::
+
+    project/
+           /__init__.py
+           /celery.py
+           /moduleA/
+                   /__init__.py
+                   /tasks.py
+           /moduleB/
+                   /__init__.py
+                   /tasks.py
+
+Using the default automatic naming, each task will have a generated name
+like `moduleA.tasks.taskA`, `moduleA.tasks.taskB`, `moduleB.tasks.test`
+and so on. You may want to get rid of having `tasks` in all task names.
+As pointed above, you can explicitly give names for all tasks, or you
+can change the automatic naming behavior by overriding
+:meth:`~@Celery.gen_task_name`. Continuing with the example, `celery.py`
+may contain:
+
+.. code-block:: python
+
+    from celery import Celery
+
+    class MyCelery(Celery):
+
+        def gen_task_name(self, name, module):
+            if module.endswith('.tasks'):
+                module = module[:-6]
+            return super(MyCelery, self).gen_task_name(name, module)
+
+    app = MyCelery('main')
+
+So each task will have a name like `moduleA.taskA`, `moduleA.taskB` and
+`moduleB.test`.
+
+.. warning::
+
+    Make sure that your `gen_task_name` is a pure function, which means
+    that for the same input it must always return the same output.
 
 .. _task-request-info:
 
@@ -518,10 +567,15 @@ General
     distributed over the specified time frame.
 
     Example: `"100/m"` (hundred tasks a minute). This will enforce a minimum
-    delay of 10ms between starting two tasks.
+    delay of 600ms between starting two tasks on the same worker instance.
     
     Default is the :setting:`CELERY_DEFAULT_RATE_LIMIT` setting,
     which if not specified means rate limiting for tasks is disabled by default.
+
+    Note that this is a *per worker instance* rate limit, and not a global
+    rate limit. To enforce a global rate limit (e.g. for an API with a
+    maximum number of  requests per second), you must restrict to a given
+    queue.
 
 .. attribute:: Task.time_limit
 
@@ -1166,8 +1220,8 @@ yourself:
 
 .. code-block:: python
 
-    >>> from celery import current_app
-    >>> current_app.tasks
+    >>> from proj.celery import app
+    >>> app.tasks
     {'celery.chord_unlock':
         <@task: celery.chord_unlock>,
      'celery.backend_cleanup':

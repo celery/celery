@@ -18,7 +18,6 @@ from celery.app.task import Context, Task as BaseTask, _reprtask
 from celery.five import class_property, reclassmethod, with_metaclass
 from celery.local import Proxy
 from celery.schedules import maybe_schedule
-from celery.utils import gen_task_name
 from celery.utils.log import get_task_logger
 
 __all__ = ['Context', 'Task', 'TaskType', 'PeriodicTask', 'task']
@@ -86,7 +85,7 @@ class TaskType(type):
         # - Automatically generate missing/empty name.
         task_name = attrs.get('name')
         if not task_name:
-            attrs['name'] = task_name = gen_task_name(app, name, task_module)
+            attrs['name'] = task_name = app.gen_task_name(name, task_module)
 
         if not attrs.get('_decorated'):
             # non decorated tasks must also be shared in case

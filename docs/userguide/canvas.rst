@@ -109,7 +109,7 @@ creates partials:
 - Any arguments added will be prepended to the args in the signature::
 
     >>> partial = add.s(2)          # incomplete signature
-    >>> partial.delay(4)            # 2 + 4
+    >>> partial.delay(4)            # 4 + 2
     >>> partial.apply_async((4, ))  # same
 
 - Any keyword arguments added will be merged with the kwargs in the signature,
@@ -125,7 +125,7 @@ creates partials:
     >>> s = add.signature((2, 2), countdown=10)
     >>> s.apply_async(countdown=1)  # countdown is now 1
 
-You can also clone signatures to create derivates:
+You can also clone signatures to create derivatives:
 
     >>> s = add.s(2)
     proj.tasks.add(2)

@@ -182,7 +182,7 @@ Example 2: Using a configuration module
 
 .. tip::
 
-    Using the name of a module is recomended
+    Using the name of a module is recommended
     as this means that the module doesn't need to be serialized
     when the prefork pool is used.  If you're
     experiencing configuration pickle errors then please try using
