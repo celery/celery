@@ -325,7 +325,8 @@ class test_Scheduler(AppCase):
                  {'schedule': mocked_schedule(j in dups, j)})
                  for i, j in enumerate(dups + nums))
         scheduler.update_from_dict(s)
-        scheduler.tick()
+        while scheduler.tick() == 0:
+            pass
         for i, j in enumerate(dups):
             self.assertIn('test_apply_tasks%s' % i, scheduler.applied)
 
