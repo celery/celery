@@ -227,8 +227,8 @@ class Scheduler(object):
 
             while H:
                 event = H[0]
-                if prev_time and event.time != prev_time:
-                    yield 0
+                if prev_time and event.time > prev_time:
+                    yield self.is_due(event[2])[1]
                     break
                 entry = event[2]
                 is_due, next_time_to_check = self.is_due(entry)
@@ -244,6 +244,8 @@ class Scheduler(object):
                         to_push.append(event_t(next_time_to_check,
                                                event[1],
                                                next_entry))
+                    else:
+                        to_push.append(verify)
                     yield 0
                 else:
                     yield min(next_time_to_check or max_interval, max_interval)
