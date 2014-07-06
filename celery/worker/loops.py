@@ -21,7 +21,7 @@ logger = get_logger(__name__)
 error = logger.error
 
 
-def asynloop(obj, connection, consumer, blueprint, hub, qos,
+def asynloop(obj, connection, consumers, blueprint, hub, qos,
              heartbeat, clock, hbrate=2.0, RUN=RUN):
     """Non-blocking event loop consuming messages until connection is lost,
     or shutdown is requested."""
@@ -30,13 +30,13 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     errors = connection.connection_errors
     heartbeat = connection.get_heartbeat_interval()  # negotiated
 
-    on_task_received = obj.create_task_handler()
-
     if heartbeat and connection.supports_heartbeats:
         hub.call_repeatedly(heartbeat / hbrate, hbtick, hbrate)
 
-    consumer.on_message = on_task_received
-    consumer.consume()
+    handler = obj.create_task_handler()
+    for consumer in consumers:
+        consumer.on_message = handler
+        consumer.consume()
     obj.on_ready()
     obj.controller.register_with_event_loop(hub)
     obj.register_with_event_loop(hub)
@@ -83,13 +83,13 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
             )
 
 
-def synloop(obj, connection, consumer, blueprint, hub, qos,
+def synloop(obj, connection, consumers, blueprint, hub, qos,
             heartbeat, clock, hbrate=2.0, **kwargs):
     """Fallback blocking event loop for transports that doesn't support AIO."""
-
-    on_task_received = obj.create_task_handler()
-    consumer.on_message = on_task_received
-    consumer.consume()
+    handler = obj.create_task_handler()
+    for consumer in consumers:
+        consumer.on_message = handler
+        consumer.consume()
 
     obj.on_ready()
 

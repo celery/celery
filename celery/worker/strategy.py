@@ -47,7 +47,7 @@ def proto1_to_proto2(message, body):
 def default(task, app, consumer,
             info=logger.info, error=logger.error, task_reserved=task_reserved,
             to_system_tz=timezone.to_system, bytes=bytes, buffer_t=buffer_t,
-            proto1_to_proto2=proto1_to_proto2):
+            proto1_to_proto2=proto1_to_proto2, pre_kwargs=None):
     hostname = consumer.hostname
     eventer = consumer.event_dispatcher
     connection_errors = consumer.connection_errors
@@ -75,6 +75,9 @@ def default(task, app, consumer,
                 body = bytes(body) if isinstance(body, buffer_t) else body
         else:
             body, headers, decoded, utc = proto1_to_proto2(message, body)
+        if pre_kwargs:
+            # Inject predefined keyword arguments
+            body['kwargs'].update(pre_kwargs)
         req = Req(
             message,
             on_ack=ack, on_reject=reject, app=app, hostname=hostname,
@@ -120,3 +123,8 @@ def default(task, app, consumer,
             handle(req)
 
     return task_message_handler
+
+
+def control(task, app, consumer, **kwargs):
+    kwargs['pre_kwargs'] = {'state': app.control._state}  # XXX compat
+    return default(task, app, consumer, **kwargs)

@@ -24,6 +24,7 @@ from time import sleep
 
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
+from kombu import Queue
 from kombu.async.semaphore import DummyLock
 from kombu.common import QoS, ignore_errors
 from kombu.five import buffer_t, items, values
@@ -39,8 +40,9 @@ from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
 from celery.utils.timeutils import humanize_seconds, rate
+from celery.datastructures import AttributeDict
 
-from . import heartbeat, loops, pidbox
+from . import heartbeat, loops
 from .state import task_reserved, maybe_shutdown, revoked, reserved_requests
 
 __all__ = [
@@ -306,8 +308,9 @@ class Consumer(object):
             callback(self)
 
     def loop_args(self):
-        return (self, self.connection, self.task_consumer,
-                self.blueprint, self.hub, self.qos, self.amqheartbeat,
+        consumers = (self.task_consumer, self.control_consumer)
+        return (self, self.connection, consumers, self.blueprint,
+                self.hub, self.qos, self.amqheartbeat,
                 self.app.clock, self.amqheartbeat_rate)
 
     def on_decode_error(self, message, exc):
@@ -664,14 +667,39 @@ class Agent(bootsteps.StartStopStep):
 
 
 class Control(bootsteps.StartStopStep):
-    requires = (Tasks, )
+    requires = (Mingle, )
 
     def __init__(self, c, **kwargs):
-        self.is_green = c.pool is not None and c.pool.is_green
-        self.box = (pidbox.gPidbox if self.is_green else pidbox.Pidbox)(c)
-        self.start = self.box.start
-        self.stop = self.box.stop
-        self.shutdown = self.box.shutdown
+        c.control_consumer = None
+        control = c.app.control
+        self.exchange = control.exchange
+        self.namespace = control.namespace
+        self.queue_fmt = control.queue_fmt
+
+    def start(self, c):
+        c.update_strategies()
+
+        hostname = c.hostname
+        app = c.app
+        app.control._state = AttributeDict(app=app, hostname=hostname,
+                                           consumer=c)  # XXX compat
+        queue = Queue(self.queue_fmt.format(hostname, self.namespace),
+                      exchange=self.exchange, durable=False, auto_delete=True)
+        c.control_consumer = c.app.amqp.TaskConsumer(
+            c.connection, on_decode_error=c.on_decode_error, queues=[queue]
+        )
+
+    def stop(self, c):
+        if c.control_consumer:
+            debug('Cancelling control consumer...')
+            ignore_errors(c, c.control_consumer.cancel)
+
+    def shutdown(self, c):
+        if c.task_consumer:
+            self.stop(c)
+            debug('Closing control consumer channel...')
+            ignore_errors(c, c.control_consumer.close)
+            c.task_consumer = None
 
     def include_if(self, c):
         return c.app.conf.CELERY_ENABLE_REMOTE_CONTROL

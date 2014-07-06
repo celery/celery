@@ -1,136 +1,54 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.app.control
-    ~~~~~~~~~~~~~~~~~~~
-
-    Client for worker remote control commands.
-    Server implementation is in :mod:`celery.worker.control`.
-
-"""
 from __future__ import absolute_import
 
-import warnings
-
-from kombu.pidbox import Mailbox
+from kombu import Exchange
 from kombu.utils import cached_property
 
-from celery.exceptions import DuplicateNodenameWarning
-from celery.utils.text import pluralize
+from celery.app.task import Task
 
-__all__ = ['Inspect', 'Control', 'flatten_reply']
+from .inspect import Inspect
+from .result import ControlResult
 
-W_DUPNODE = """\
-Received multiple replies from node name: {0!r}.
-Please make sure you give each node a unique nodename using the `-n` option.\
-"""
+__all__ = ['Control', 'ControlTask']
 
 
-def flatten_reply(reply):
-    nodes, dupes = {}, set()
-    for item in reply:
-        [dupes.add(name) for name in item if name in nodes]
-        nodes.update(item)
-    if dupes:
-        warnings.warn(DuplicateNodenameWarning(
-            W_DUPNODE.format(
-                pluralize(len(dupes), 'name'), ', '.join(sorted(dupes)),
-            ),
-        ))
-    return nodes
+class ControlTask(Task):
+    """Base class for all remote control tasks."""
 
-
-class Inspect(object):
-    app = None
-
-    def __init__(self, destination=None, timeout=1, callback=None,
-                 connection=None, app=None, limit=None):
-        self.app = app or self.app
-        self.destination = destination
-        self.timeout = timeout
-        self.callback = callback
-        self.connection = connection
-        self.limit = limit
-
-    def _prepare(self, reply):
-        if not reply:
-            return
-        by_node = flatten_reply(reply)
-        if self.destination and \
-                not isinstance(self.destination, (list, tuple)):
-            return by_node.get(self.destination)
-        return by_node
-
-    def _request(self, command, **kwargs):
-        return self._prepare(self.app.control.broadcast(
-            command,
-            arguments=kwargs,
-            destination=self.destination,
-            callback=self.callback,
-            connection=self.connection,
-            limit=self.limit,
-            timeout=self.timeout, reply=True,
-        ))
-
-    def report(self):
-        return self._request('report')
-
-    def clock(self):
-        return self._request('clock')
-
-    def active(self, safe=False):
-        return self._request('dump_active', safe=safe)
-
-    def scheduled(self, safe=False):
-        return self._request('dump_schedule', safe=safe)
-
-    def reserved(self, safe=False):
-        return self._request('dump_reserved', safe=safe)
-
-    def stats(self):
-        return self._request('stats')
-
-    def revoked(self):
-        return self._request('dump_revoked')
-
-    def registered(self, *taskinfoitems):
-        return self._request('dump_tasks', taskinfoitems=taskinfoitems)
-    registered_tasks = registered
-
-    def ping(self):
-        return self._request('ping')
-
-    def active_queues(self):
-        return self._request('active_queues')
-
-    def query_task(self, ids):
-        return self._request('query_task', ids=ids)
-
-    def conf(self, with_defaults=False):
-        return self._request('dump_conf', with_defaults=with_defaults)
-
-    def hello(self, from_node, revoked=None):
-        return self._request('hello', from_node=from_node, revoked=revoked)
-
-    def memsample(self):
-        return self._request('memsample')
-
-    def memdump(self, samples=10):
-        return self._request('memdump', samples=samples)
-
-    def objgraph(self, type='Request', n=200, max_depth=10):
-        return self._request('objgraph', num=n, max_depth=max_depth, type=type)
+    Strategy = 'celery.worker.strategy:control'
 
 
 class Control(object):
-    Mailbox = Mailbox
+
+    app = None
+
+    namespace = 'celery'
+    exchange_fmt = '{}.pidbox'
+    exchange_type = 'fanout'
+    queue_fmt = '{}.{}.pidbox'
+
+    Result = ControlResult
+
+    # State that must be passed to all handlers
+    _state = None  # XXX compat
 
     def __init__(self, app=None):
-        self.app = app
-        self.mailbox = self.Mailbox('celery', type='fanout', accept=['json'])
+        self.app = app or self.app
+
+    @cached_property
+    def exchange(self):
+        return Exchange(self.exchange_fmt.format(self.namespace),
+                        self.exchange_type, durable=False,
+                        delivery_mode='transient')
 
     @cached_property
     def inspect(self):
         return self.app.subclass_with_self(Inspect, reverse='control.inspect')
+
+    def register(self, *args, **opts):
+        """Creates new control task class from any callable."""
+        opts['base'] = ControlTask
+        return self.app.task(*args, **opts)
 
     def purge(self, connection=None):
         """Discard all waiting tasks.
@@ -300,9 +218,13 @@ class Control(object):
             received.
 
         """
-        with self.app.connection_or_acquire(connection) as conn:
-            arguments = dict(arguments or {}, **extra_kwargs)
-            return self.mailbox(conn)._broadcast(
-                command, arguments, destination, reply, timeout,
-                limit, callback, channel=channel,
-            )
+        if not command.startswith('celery.'):
+            command = 'celery.' + command
+        kwargs = dict(arguments or {}, **extra_kwargs)
+        result = self.app.send_task(command, kwargs=kwargs,
+                                    connection=connection,
+                                    result_cls=self.Result)
+        if not reply:
+            return result
+        # TODO implement ControlResult class that will handle
+        # destination, limit, callback and timeout arguments

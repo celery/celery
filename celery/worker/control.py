@@ -14,12 +14,13 @@ import tempfile
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown
-from celery.five import UserDict, items, string_t
+from celery.five import items, string_t
 from celery.platforms import signals as _signals
 from celery.utils import timeutils
 from celery.utils.functional import maybe_list
 from celery.utils.log import get_logger
 from celery.utils import jsonify
+from celery.app.control import shared_controller
 
 from . import state as worker_state
 from .request import Request
@@ -30,13 +31,11 @@ DEFAULT_TASK_INFO_ITEMS = ('exchange', 'routing_key', 'rate_limit')
 logger = get_logger(__name__)
 
 
-class Panel(UserDict):
-    data = dict()  # Global registry.
+class Panel(object):  # XXX compat
 
     @classmethod
     def register(cls, method, name=None):
-        cls.data[name or method.__name__] = method
-        return method
+        return shared_controller(method, name=name)
 
 
 def _find_requests_by_id(ids, requests):
@@ -49,26 +48,17 @@ def _find_requests_by_id(ids, requests):
                 break
 
 
-@Panel.register
+@shared_controller
 def query_task(state, ids, **kwargs):
     ids = maybe_list(ids)
 
-    def reqinfo(state, req):
-        return state, req.info()
+    reserved = 'reserved', worker_state.reserved_requests
+    active = 'active', worker_state.active_requests
 
-    reqs = {
-        req.id: ('reserved', req.info())
-        for req in _find_requests_by_id(ids, worker_state.reserved_requests)
-    }
-    reqs.update({
-        req.id: ('active', req.info())
-        for req in _find_requests_by_id(ids, worker_state.active_requests)
-    })
-
-    return reqs
+    return {req.id: (status, req.info()) for status, req in (reserved, active)}
 
 
-@Panel.register
+@shared_controller
 def revoke(state, task_id, terminate=False, signal=None, **kwargs):
     """Revoke task by task id."""
     # supports list argument since 3.1
@@ -102,12 +92,12 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
     return {'ok': 'tasks {0} flagged as revoked'.format(idstr)}
 
 
-@Panel.register
+@shared_controller
 def report(state):
     return {'ok': state.app.bugreport()}
 
 
-@Panel.register
+@shared_controller
 def enable_events(state):
     dispatcher = state.consumer.event_dispatcher
     if 'task' not in dispatcher.groups:
@@ -117,7 +107,7 @@ def enable_events(state):
     return {'ok': 'task events already enabled'}
 
 
-@Panel.register
+@shared_controller
 def disable_events(state):
     dispatcher = state.consumer.event_dispatcher
     if 'task' in dispatcher.groups:
@@ -127,14 +117,14 @@ def disable_events(state):
     return {'ok': 'task events already disabled'}
 
 
-@Panel.register
+@shared_controller
 def heartbeat(state):
     logger.debug('Heartbeat requested by remote.')
     dispatcher = state.consumer.event_dispatcher
     dispatcher.send('worker-heartbeat', freq=5, **worker_state.SOFTWARE_INFO)
 
 
-@Panel.register
+@shared_controller
 def rate_limit(state, task_name, rate_limit, **kwargs):
     """Set new rate limit for a task type.
 
@@ -168,7 +158,7 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
     return {'ok': 'new rate limit set successfully'}
 
 
-@Panel.register
+@shared_controller
 def time_limit(state, task_name=None, hard=None, soft=None, **kwargs):
     try:
         task = state.app.tasks[task_name]
@@ -185,7 +175,7 @@ def time_limit(state, task_name=None, hard=None, soft=None, **kwargs):
     return {'ok': 'time limits set successfully'}
 
 
-@Panel.register
+@shared_controller
 def dump_schedule(state, safe=False, **kwargs):
 
     def prepare_entries():
@@ -202,7 +192,7 @@ def dump_schedule(state, safe=False, **kwargs):
     return list(prepare_entries())
 
 
-@Panel.register
+@shared_controller
 def dump_reserved(state, safe=False, **kwargs):
     reserved = worker_state.reserved_requests - worker_state.active_requests
     if not reserved:
@@ -210,18 +200,18 @@ def dump_reserved(state, safe=False, **kwargs):
     return [request.info(safe=safe) for request in reserved]
 
 
-@Panel.register
+@shared_controller
 def dump_active(state, safe=False, **kwargs):
     return [request.info(safe=safe)
             for request in worker_state.active_requests]
 
 
-@Panel.register
+@shared_controller
 def stats(state, **kwargs):
     return state.consumer.controller.stats()
 
 
-@Panel.register
+@shared_controller
 def objgraph(state, num=200, max_depth=10, type='Request'):  # pragma: no cover
     try:
         import objgraph
@@ -239,13 +229,13 @@ def objgraph(state, num=200, max_depth=10, type='Request'):  # pragma: no cover
         return {'filename': fh.name}
 
 
-@Panel.register
+@shared_controller
 def memsample(state, **kwargs):  # pragma: no cover
     from celery.utils.debug import sample_mem
     return sample_mem()
 
 
-@Panel.register
+@shared_controller
 def memdump(state, samples=10, **kwargs):  # pragma: no cover
     from celery.utils.debug import memdump
     out = io.StringIO()
@@ -253,17 +243,17 @@ def memdump(state, samples=10, **kwargs):  # pragma: no cover
     return out.getvalue()
 
 
-@Panel.register
+@shared_controller
 def clock(state, **kwargs):
     return {'clock': state.app.clock.value}
 
 
-@Panel.register
+@shared_controller
 def dump_revoked(state, **kwargs):
     return list(worker_state.revoked)
 
 
-@Panel.register
+@shared_controller
 def hello(state, from_node, revoked=None, **kwargs):
     if from_node != state.hostname:
         logger.info('sync with %s', from_node)
@@ -273,7 +263,7 @@ def hello(state, from_node, revoked=None, **kwargs):
                 'clock': state.app.clock.forward()}
 
 
-@Panel.register
+@shared_controller
 def dump_tasks(state, taskinfoitems=None, builtins=False, **kwargs):
     reg = state.app.tasks
     taskinfoitems = taskinfoitems or DEFAULT_TASK_INFO_ITEMS
@@ -294,12 +284,12 @@ def dump_tasks(state, taskinfoitems=None, builtins=False, **kwargs):
     return [_extract_info(reg[task]) for task in sorted(tasks)]
 
 
-@Panel.register
+@shared_controller
 def ping(state, **kwargs):
     return {'ok': 'pong'}
 
 
-@Panel.register
+@shared_controller
 def pool_grow(state, n=1, **kwargs):
     if state.consumer.controller.autoscaler:
         state.consumer.controller.autoscaler.force_scale_up(n)
@@ -309,7 +299,7 @@ def pool_grow(state, n=1, **kwargs):
     return {'ok': 'pool will grow'}
 
 
-@Panel.register
+@shared_controller
 def pool_shrink(state, n=1, **kwargs):
     if state.consumer.controller.autoscaler:
         state.consumer.controller.autoscaler.force_scale_down(n)
@@ -319,7 +309,7 @@ def pool_shrink(state, n=1, **kwargs):
     return {'ok': 'pool will shrink'}
 
 
-@Panel.register
+@shared_controller
 def pool_restart(state, modules=None, reload=False, reloader=None, **kwargs):
     if state.app.conf.CELERYD_POOL_RESTARTS:
         state.consumer.controller.reload(modules, reload, reloader=reloader)
@@ -328,7 +318,7 @@ def pool_restart(state, modules=None, reload=False, reloader=None, **kwargs):
         raise ValueError('Pool restarts not enabled')
 
 
-@Panel.register
+@shared_controller
 def autoscale(state, max=None, min=None):
     autoscaler = state.consumer.controller.autoscaler
     if autoscaler:
@@ -337,13 +327,13 @@ def autoscale(state, max=None, min=None):
     raise ValueError('Autoscale not enabled')
 
 
-@Panel.register
+@shared_controller
 def shutdown(state, msg='Got shutdown from remote', **kwargs):
     logger.warning(msg)
     raise WorkerShutdown(msg)
 
 
-@Panel.register
+@shared_controller
 def add_consumer(state, queue, exchange=None, exchange_type=None,
                  routing_key=None, **options):
     state.consumer.add_task_queue(queue, exchange, exchange_type,
@@ -351,13 +341,13 @@ def add_consumer(state, queue, exchange=None, exchange_type=None,
     return {'ok': 'add consumer {0}'.format(queue)}
 
 
-@Panel.register
+@shared_controller
 def cancel_consumer(state, queue=None, **_):
     state.consumer.cancel_task_queue(queue)
     return {'ok': 'no longer consuming from {0}'.format(queue)}
 
 
-@Panel.register
+@shared_controller
 def active_queues(state):
     """Return information about the queues a worker consumes from."""
     if state.consumer.task_consumer:
@@ -372,14 +362,14 @@ def _wanted_config_key(key):
             not key.startswith('__'))
 
 
-@Panel.register
+@shared_controller
 def dump_conf(state, with_defaults=False, **kwargs):
     return jsonify(state.app.conf.table(with_defaults=with_defaults),
                    keyfilter=_wanted_config_key,
                    unknown_type_filter=safe_repr)
 
 
-@Panel.register
+@shared_controller
 def election(state, id, topic, action=None, **kwargs):
     if state.consumer.gossip:
         state.consumer.gossip.election(id, topic, action)
