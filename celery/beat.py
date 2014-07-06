@@ -233,12 +233,13 @@ class Scheduler(object):
                               for e in values(self.schedule)]
             heapify(H)
         while 1:
+            print(H)
             prev_time, to_push = None, []
 
             while H:
                 event = H[0]
                 if prev_time and event.time > prev_time:
-                    yield self.is_due(event[2])[1]
+                    yield min(self.is_due(event[2])[1], max_interval)
                     break
                 entry = event[2]
                 is_due, next_time_to_check = self.is_due(entry)
