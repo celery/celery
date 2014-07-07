@@ -430,7 +430,7 @@ class test_App(AppCase):
                              {'foo': 'bar'})
 
     def test_compat_setting_CELERY_BACKEND(self):
-
+        self.app._preconf = {}  # removes result backend set by AppCase
         self.app.config_from_object(Object(CELERY_BACKEND='set_by_us'))
         self.assertEqual(self.app.conf.CELERY_RESULT_BACKEND, 'set_by_us')
 

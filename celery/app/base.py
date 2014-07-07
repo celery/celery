@@ -451,17 +451,14 @@ class Celery(object):
         self.on_configure()
         if self._config_source:
             self.loader.config_from_object(self._config_source)
+        defaults = dict(deepcopy(DEFAULTS), **self._preconf)
         self.configured = True
         s = Settings({}, [self.prepare_config(self.loader.conf),
-                          deepcopy(DEFAULTS)])
-
+                          defaults])
         # load lazy config dict initializers.
         pending = self._pending_defaults
         while pending:
             s.add_defaults(maybe_evaluate(pending.popleft()()))
-        if self._preconf:
-            for key, value in items(self._preconf):
-                setattr(s, key, value)
         return s
 
     def _after_fork(self, obj_):
