@@ -408,7 +408,7 @@ See :ref:`guide-canvas` for more about creating task workflows.
     A group is lazy so you must call it to take action and evaluate
     the group.
 
-    Will return a `group` task that when called will then call of the
+    Will return a `group` task that when called will then call all of the
     tasks in the group (and return a :class:`GroupResult` instance
     that can be used to inspect the state of the group).
 
