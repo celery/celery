@@ -38,12 +38,12 @@ The cache key expires after some time in case something unexpected happens
 
     LOCK_EXPIRE = 60 * 5 # Lock expires in 5 minutes
 
-    @task
-    def import_feed(feed_url):
+    @task(bind=True)
+    def import_feed(self, feed_url):
         # The cache key consists of the task name and the MD5 digest
         # of the feed URL.
         feed_url_digest = md5(feed_url).hexdigest()
-        lock_id = '{0}-lock-{1}'.format(__name__, feed_url_hexdigest)
+        lock_id = '{0}-lock-{1}'.format(self.name, feed_url_hexdigest)
 
         # cache.add fails if the key already exists
         acquire_lock = lambda: cache.add(lock_id, 'true', LOCK_EXPIRE)
