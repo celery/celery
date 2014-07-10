@@ -466,6 +466,8 @@ class chain(Signature):
     def from_dict(self, d, app=None):
         tasks = d['kwargs']['tasks']
         if d['args'] and tasks:
+            # make sure that tasks are made into signatures (Issue #2076)
+            tasks[0] = signature(tasks[0])
             # partial args passed on to first task in chain (Issue #1057).
             tasks[0]['args'] = tasks[0]._merge(d['args'])[0]
         return chain(*d['kwargs']['tasks'], app=app, **d['options'])
@@ -591,6 +593,8 @@ class group(Signature):
         if d['args'] and tasks:
             # partial args passed on to all tasks in the group (Issue #1057).
             for task in tasks:
+                # make sure that tasks are made into signatures (Issue #2076)
+                task = signature(task)
                 task['args'] = task._merge(d['args'])[0]
         return group(tasks, app=app, **d['options'])
 
