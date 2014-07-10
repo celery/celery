@@ -30,7 +30,7 @@ from celery._state import (
     _announce_app_finalized,
 )
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
-from celery.five import items, values
+from celery.five import values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils.functional import first, maybe_list

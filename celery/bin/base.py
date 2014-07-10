@@ -56,7 +56,8 @@ in any command that also has a `--detach` option.
 
 .. cmdoption:: --umask
 
-    Effective umask of the process after detaching. Default is 0.
+    Effective umask (in octal) of the process after detaching.  Inherits
+    the umask of the parent process by default.
 
 .. cmdoption:: --workdir
 
@@ -648,5 +649,5 @@ def daemon_options(default_pidfile=None, default_logfile=None):
         Option('--pidfile', default=default_pidfile),
         Option('--uid', default=None),
         Option('--gid', default=None),
-        Option('--umask', default=0, type='int'),
+        Option('--umask', default=None),
     )
