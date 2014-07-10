@@ -309,7 +309,7 @@ if not current_app.IS_WINDOWS:
         @patch('os.dup2')
         def test_open(self, dup2, open, close, umask,
                       chdir, _exit, setsid, fork):
-            x = DaemonContext(workdir='/opt/workdir')
+            x = DaemonContext(workdir='/opt/workdir', umask=022)
 
             fork.return_value = 0
             with x:
@@ -321,7 +321,7 @@ if not current_app.IS_WINDOWS:
             self.assertFalse(_exit.called)
 
             chdir.assert_called_with(x.workdir)
-            umask.assert_called_with(x.umask)
+            umask.assert_called_with(022)
             self.assertTrue(dup2.called)
 
             fork.reset_mock()

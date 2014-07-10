@@ -151,7 +151,7 @@ class test_call(AppCase):
         iso = now.isoformat()
         a.run('tasks.add', expires=iso)
         self.assertEqual(send_task.call_args[1]['expires'], now)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             a.run('tasks.add', expires='foobaribazibar')
 
 

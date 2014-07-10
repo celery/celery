@@ -27,8 +27,8 @@ if not current_app.IS_WINDOWS:
 
             detach('/bin/boo', ['a', 'b', 'c'], logfile='/var/log',
                    pidfile='/var/pid')
-            detached.assert_called_with('/var/log', '/var/pid', None, None, 0,
-                                        None, False)
+            detached.assert_called_with('/var/log', '/var/pid', None, None,
+                                        None, None, False)
             execv.assert_called_with('/bin/boo', ['/bin/boo', 'a', 'b', 'c'])
 
             execv.side_effect = Exception('foo')
@@ -87,7 +87,7 @@ class test_Command(Case):
         self.assertTrue(exit.called)
         detach.assert_called_with(
             path=x.execv_path, uid=None, gid=None,
-            umask=0, fake=False, logfile='/var/log', pidfile='celeryd.pid',
+            umask=None, fake=False, logfile='/var/log', pidfile='celeryd.pid',
             argv=['-m', 'celery.bin.celeryd', '-c', '1', '-lDEBUG',
                   '--logfile=/var/log', '--pidfile=celeryd.pid',
                   '--', '.disable_rate_limits=1'],
