@@ -13,6 +13,29 @@ new in Celery 3.1.
 3.1.13
 ======
 
+Security Fixes
+--------------
+
+* [Security: `CELERYSA-0002`_] Insecure default umask.
+
+    The built-in utility used to daemonize the Celery worker service sets
+    an insecure umask by default (umask 0).
+
+    This means that any files or directories created by the worker will
+    end up having world-writable permissions.
+
+    Special thanks to Red Hat for originally discovering and reporting the
+    issue!
+
+    This version will no longer set a default umask by default, so if unset
+    the umask of the parent process will be used.
+
+.. _`CELERYSA-0002`:
+    http://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0002.txt
+
+News
+----
+
 - **Requirements**
 
     - Now depends on :ref:`Kombu 3.0.21 <kombu:version-3.0.21>`.
