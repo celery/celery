@@ -1,0 +1,90 @@
+=========================================
+ CELERYSA-0002: Celery Security Advisory
+=========================================
+:contact: security@celeryproject.org
+:CVE id: TBA
+:date: 2014-07-10 05:00:00 P.M UTC
+
+Details
+=======
+
+:package: celery
+:vulnerability: Environment error
+:problem type: local
+:risk: low
+:versions-affected: 2.5, 3.0, 3.1
+
+Description
+===========
+
+The built-in utility used to daemonize the Celery worker service sets
+an insecure umask by default (umask 0).
+
+This means that any files or directories created by the worker will
+end up having world-writable permissions.
+
+In practice this means that local users will be able to modify and possibly
+corrupt the files created by user tasks.
+
+This is not immediately exploitable but can be if those files are later
+evaluated as a program, for example a task that creates Python program files
+that are later executed.
+
+Patches are now available for all maintained versions (see below),
+and users are urged to upgrade, even if not directly
+affected.
+
+Acknowledgements
+================
+
+Special thanks to Red Hat for originally discovering and reporting the issue.
+
+Systems affected
+================
+
+Users of Celery versions 3.0, and 3.1, except the recently
+released 3.1.13, are affected if daemonizing the
+Celery programs using the `--detach` argument or using the `celery multi` program
+to start workers in the background, without setting a custom `--umask`
+argument.
+
+Solution
+========
+
+NOTE:
+    Not all users of Celery will use it to create files, but if you do
+    then files may already have been created with insecure permissions.
+
+    So after upgrading, or using the workaround, then please make sure
+    that files already created are not world writable.
+
+To work around the issue you can set a custom umask using the ``--umask``
+argument:
+
+    $ celery worker -l info --detach --umask=16   # (022)
+
+Or you can upgrade to a more recent version:
+
+- Users of the 3.1 series should upgrade to 3.1.13:
+
+    * ``pip install -U celery``, or
+    * ``easy_install -U celery``, or
+    * http://pypi.python.org/pypi/celery/3.1.13
+
+- Users of the 3.0 series should upgrade to 3.0.25:
+
+    * ``pip install -U celery==3.0.25``, or
+    * ``easy_install -U celery==3.0.25``, or
+    * http://pypi.python.org/pypi/celery/3.0.25
+
+Distribution package maintainers are urged to provide their users
+with updated packages.
+
+Please direct questions to the celery-users mailing-list:
+http://groups.google.com/group/celery-users/,
+
+or if you are planning to report a new security related issue we request that
+you keep the information confidential by contacting
+security@celeryproject.org instead.
+
+Thank you!
