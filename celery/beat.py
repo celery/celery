@@ -463,7 +463,7 @@ class Service(object):
                 interval = interval + drift if interval else interval
                 if interval and interval > 0:
                     debug('beat: Waking up %s.',
-                        humanize_seconds(interval, prefix='in '))
+                          humanize_seconds(interval, prefix='in '))
                     time.sleep(interval)
         except (KeyboardInterrupt, SystemExit):
             self._is_shutdown.set()
