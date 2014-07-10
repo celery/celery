@@ -296,7 +296,8 @@ class DaemonContext(object):
                  fake=False, after_chdir=None, after_forkers=True,
                  **kwargs):
         if isinstance(umask, string_t):
-            umask = int(umask, 8)  # convert str -> octal
+            # octal or decimal, depending on initial zero.
+            umask = int(umask, 8 if umask.startswith('0') else 10)
         self.workdir = workdir or DAEMON_WORKDIR
         self.umask = umask
         self.fake = fake
