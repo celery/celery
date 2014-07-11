@@ -160,3 +160,8 @@ Martin Davidsson, 2014/02/08
 Chris Clark, 2014/02/20
 Matthew Duggan, 2014/04/10
 Brian Bouterse, 2014/04/10
+Dmitry Malinovsky, 2014/04/28
+Luke Pomfrey, 2014/05/06
+Alexey Kotlyarov, 2014/05/16
+Ross Deane, 2014/07/11
+Tadej Janež, 2014/08/08
