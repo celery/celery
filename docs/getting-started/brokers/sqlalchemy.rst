@@ -32,7 +32,7 @@ an SQLAlchemy database URI.
 
 Please see `SQLAlchemy: Supported Databases`_ for a table of supported databases.
 
-Here's a list of examples using a selection of other `SQLAlchemy Connection String`_'s:
+Here's a list of examples using a selection of other `SQLAlchemy Connection Strings`_:
 
 .. code-block:: python
 
@@ -51,7 +51,7 @@ Here's a list of examples using a selection of other `SQLAlchemy Connection Stri
 .. _`SQLAlchemy: Supported Databases`:
     http://www.sqlalchemy.org/docs/core/engines.html#supported-databases
 
-.. _`SQLAlchemy Connection String`:
+.. _`SQLAlchemy Connection Strings`:
     http://www.sqlalchemy.org/docs/core/engines.html#database-urls
 
 .. _sqlalchemy-results-configuration:
