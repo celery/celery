@@ -373,7 +373,7 @@ class Celery(object):
             expires, retries, chord,
             maybe_list(link), maybe_list(link_error),
             reply_to or self.oid, time_limit, soft_time_limit,
-            self.conf.CELERY_SEND_TASK_SENT_EVENT,
+            self.conf.CELERY_SEND_TASK_SENT_EVENT, None, None,
             root_id, parent_id,
         )
 
