@@ -164,6 +164,12 @@ workers, note that the first worker to start will receive four times the
 number of messages initially.  Thus the tasks may not be fairly distributed
 to the workers.
 
+To disable prefetching, set CELERYD_PREFETCH_MULTIPLIER to 1.  Setting 
+CELERYD_PREFETCH_MULTIPLIER to 0 will allow the worker to keep consuming
+as many messages as it wants.
+
+For more on prefetching, read :ref:`optimizing-prefetch-limit`
+
 .. note::
 
     Tasks with ETA/countdown are not affected by prefetch limits.
