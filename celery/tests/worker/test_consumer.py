@@ -83,10 +83,13 @@ class test_Consumer(AppCase):
         with patch('celery.worker.consumer.task_reserved') as reserved:
             bucket.can_consume.return_value = False
             bucket.expected_time.return_value = 3.33
+            limit_order = c._limit_order
             c._limit_task(request, bucket, 4)
+            self.assertEqual(c._limit_order, limit_order + 1)
             bucket.can_consume.assert_called_with(4)
             c.timer.call_after.assert_called_with(
-                3.33, c._limit_task, (request, bucket, 4),
+                3.33, c._limit_move_to_pool, (request, ),
+                priority=c._limit_order,
             )
             bucket.expected_time.assert_called_with(4)
             self.assertFalse(reserved.called)
