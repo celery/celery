@@ -209,7 +209,7 @@ class WorkController(object):
         except WorkerTerminate:
             self.terminate()
         except Exception as exc:
-            logger.error('Unrecoverable error: %r', exc, exc_info=True)
+            logger.critical('Unrecoverable error: %r', exc, exc_info=True)
             self.stop(exitcode=EX_FAILURE)
         except SystemExit as exc:
             self.stop(exitcode=exc.code)
