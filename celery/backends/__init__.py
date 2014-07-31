@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 import sys
 
-from kombu.utils.url import _parse_url
+from kombu.utils.url import urlparse
 
 from celery.local import Proxy
 from celery._state import current_app
@@ -57,8 +57,9 @@ def get_backend_by_url(backend=None, loader=None):
     url = None
     if backend and '://' in backend:
         url = backend
-        if '+' in url[:url.index('://')]:
+        scheme, _, _ = url.partition('://')
+        if '+' in scheme:
             backend, url = url.split('+', 1)
         else:
-            backend, _, _, _, _, _, _ = _parse_url(url)
+            backend = scheme
     return get_backend_cls(backend, loader), url
