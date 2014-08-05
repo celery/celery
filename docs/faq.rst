@@ -99,7 +99,7 @@ many performance and stability improvements.  It is an eventual goal
 that these improvements will be merged back into Python one day.
 
 It is also used for compatibility with older Python versions
-that doesn't come with the multiprocessing module.
+that don't come with the multiprocessing module.
 
 .. _`billiard`: http://pypi.python.org/pypi/billiard
 
@@ -587,7 +587,7 @@ Why do workers delete tasks from the queue if they are unable to process them?
 **Answer**:
 
 The worker rejects unknown tasks, messages with encoding errors and messages
-that doesn't contain the proper fields (as per the task message protocol).
+that don't contain the proper fields (as per the task message protocol).
 
 If it did not reject them they could be redelivered again and again,
 causing a loop.
