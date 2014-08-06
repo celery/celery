@@ -12,7 +12,6 @@ import logging
 from contextlib import contextmanager
 from functools import wraps
 
-from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.five import range
@@ -113,7 +112,7 @@ class DatabaseBackend(BaseBackend):
 
     @retry
     def _store_result(self, task_id, result, status,
-                      traceback=None, max_retries=3, **kwargs):
+                      traceback=None, request=None, max_retries=3, **kwargs):
         """Store return value and status of an executed task."""
         session = self.ResultSession()
         with session_cleanup(session):
@@ -126,21 +125,24 @@ class DatabaseBackend(BaseBackend):
             task.result = result
             task.status = status
             task.traceback = traceback
+            task.hostname = request.hostname if request else None
             session.commit()
             return result
 
     @retry
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
+        result = task_id
+        if not isinstance(task_id, self.AsyncResult):
+            result = self.AsyncResult(task_id)
         session = self.ResultSession()
         with session_cleanup(session):
             task = list(session.query(Task).filter(Task.task_id == task_id))
             task = task and task[0]
             if not task:
-                task = Task(task_id)
-                task.status = states.PENDING
-                task.result = None
-            return task.to_dict()
+                return result._cache
+            result.send(task.to_dict())
+            return result._cache
 
     @retry
     def _save_group(self, group_id, result):

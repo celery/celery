@@ -26,7 +26,6 @@ else:                                       # pragma: no cover
 from kombu.syn import detect_environment
 from kombu.utils import cached_property
 
-from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t
 from celery.utils.timeutils import maybe_timedelta
@@ -134,6 +133,7 @@ class MongoBackend(BaseBackend):
     def _store_result(self, task_id, result, status,
                       traceback=None, request=None, **kwargs):
         """Store return value and status of an executed task."""
+        hostname = request.hostname if request else None
         meta = {'_id': task_id,
                 'status': status,
                 'result': Binary(self.encode(result)),
@@ -141,17 +141,21 @@ class MongoBackend(BaseBackend):
                 'traceback': Binary(self.encode(traceback)),
                 'children': Binary(self.encode(
                     self.current_task_children(request),
-                ))}
+                )),
+                'hostname': Binary(self.encode(hostname))}
         self.collection.save(meta)
 
         return result
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
+        result = task_id
+        if not isinstance(task_id, self.AsyncResult):
+            result = self.AsyncResult(task_id)
 
-        obj = self.collection.find_one({'_id': task_id})
+        obj = self.collection.find_one({'_id': result.id})
         if not obj:
-            return {'status': states.PENDING, 'result': None}
+            return result._cache
 
         meta = {
             'task_id': obj['_id'],
@@ -160,7 +164,9 @@ class MongoBackend(BaseBackend):
             'date_done': obj['date_done'],
             'traceback': self.decode(obj['traceback']),
             'children': self.decode(obj['children']),
+            'hostname': self.decode(obj['hostname']),
         }
+        result.send(meta)
 
         return meta
 

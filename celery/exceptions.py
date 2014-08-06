@@ -169,3 +169,7 @@ class FixupWarning(UserWarning):
 
 class DuplicateNodenameWarning(UserWarning):
     """Multiple workers are using the same nodename."""
+
+
+class ResultFulfilledError(Exception):
+    """Result is fulfilled"""

@@ -18,7 +18,6 @@ except ImportError:  # pragma: no cover
 import socket
 import time
 
-from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.five import monotonic
 from celery.utils.log import get_logger
@@ -147,7 +146,8 @@ class CassandraBackend(BaseBackend):
                     'traceback': self.encode(traceback),
                     'children': self.encode(
                         self.current_task_children(request),
-                    )}
+                    ),
+                    'hostname': request.hostname if request else None}
             ttl = self.expires and max(self.expires.total_seconds(), 0)
             if self.detailed_mode:
                 meta['result'] = result
@@ -160,27 +160,33 @@ class CassandraBackend(BaseBackend):
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
+        result = task_id
+        if not isinstance(task_id, self.AsyncResult):
+            result = self.AsyncResult(task_id)
 
         def _do_get():
             cf = self._get_column_family()
             try:
                 if self.detailed_mode:
-                    row = cf.get(task_id, column_reversed=True, column_count=1)
+                    row = cf.get(result.id, column_reversed=True,
+                                 column_count=1)
                     meta = self.decode(list(row.values())[0])
-                    meta['task_id'] = task_id
+                    meta['task_id'] = result.id
                 else:
-                    obj = cf.get(task_id)
+                    obj = cf.get(result.id)
                     meta = {
-                        'task_id': task_id,
+                        'task_id': result.id,
                         'status': obj['status'],
                         'result': self.decode(obj['result']),
                         'date_done': obj['date_done'],
                         'traceback': self.decode(obj['traceback']),
                         'children': self.decode(obj['children']),
+                        'hostname': self.decode(obj['hostname']),
                     }
+                result.send(meta)
             except (KeyError, pycassa.NotFoundException):
-                meta = {'status': states.PENDING, 'result': None}
-            return meta
+                pass
+            return result._cache
 
         return self._retry_on_error(_do_get)
 

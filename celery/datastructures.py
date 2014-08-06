@@ -10,8 +10,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
 import time
+from copy import deepcopy
 
-from collections import defaultdict, Mapping, MutableMapping, MutableSet
+from collections import (OrderedDict, defaultdict, Mapping, MutableMapping,
+                         MutableSet)
 from heapq import heappush, heappop
 from functools import partial
 from itertools import chain
@@ -665,3 +667,43 @@ class LimitedSet(object):
             self.maxlen, self.expires, self._data, self._heap,
         )
 MutableSet.register(LimitedSet)
+
+
+# Taken from
+# http://stackoverflow.com/questions/6190331/can-i-do-an-ordered-default-dict-in-python  # noqa
+class OrderedDefaultDict(OrderedDict):
+    '''
+    OrderedDict that allows to specify default factory for missing keys,
+    like defaultdict.
+    '''
+
+    def __init__(self, default_factory=None, *args, **kwargs):
+        if default_factory is not None and not callable(default_factory):
+            raise TypeError('default_factory must be callable')
+        super(OrderedDefaultDict, self).__init__(*args, **kwargs)
+        self.default_factory = default_factory
+
+    def __missing__(self, key):
+        if self.default_factory is None:
+            raise KeyError(key)
+        value = self[key] = self.default_factory()
+        return value
+
+    def __reduce__(self):
+        return (type(self),
+                (self.default_factory,) if self.default_factory else (),
+                None, None, items(self))
+
+    def copy(self):
+        return self.__copy__()
+
+    def __copy__(self):
+        return type(self)(self.default_factory, self)
+
+    def __deepcopy__(self, memo):
+        return type(self)(self.default_factory, deepcopy(items(self)))
+
+    def __repr__(self):
+        return 'OrderedDefaultDict({0}, {1})'.format(
+            self.default_factory, OrderedDict.__repr__(self)
+        )

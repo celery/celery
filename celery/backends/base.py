@@ -29,11 +29,11 @@ from celery import states
 from celery import current_app, maybe_signature
 from celery.app import current_task
 from celery.exceptions import ChordError, TimeoutError, TaskRevokedError
-from celery.five import items
+from celery.five import items, monotonic
+from celery.datastructures import OrderedDefaultDict
 from celery.result import (
-    GroupResult, ResultBase, allow_join_result, result_from_tuple,
+    GroupResult, ResultBase, allow_join_result, result_from_tuple
 )
-from celery.utils.functional import LRUCache
 from celery.utils.log import get_logger
 from celery.utils.serialization import (
     get_pickled_exception,
@@ -73,7 +73,8 @@ class BaseBackend(object):
     #: argument which is for each pass.
     subpolling_interval = None
 
-    #: If true the backend must implement :meth:`get_many`.
+    #: If true the backend must implement
+    #: :meth:`join_native` or :meth:`get_many` (or just :meth:`mget`)
     supports_native_join = False
 
     #: If true the backend must automatically expire results.
@@ -91,19 +92,21 @@ class BaseBackend(object):
         'interval_max': 1,
     }
 
-    def __init__(self, app, serializer=None,
-                 max_cached_results=None, accept=None, **kwargs):
+    def __init__(self, app, serializer=None, accept=None, **kwargs):
         self.app = app
         conf = self.app.conf
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         (self.content_type,
          self.content_encoding,
          self.encoder) = serializer_registry._encoders[self.serializer]
-        cmax = max_cached_results or conf.CELERY_MAX_CACHED_RESULTS
-        self._cache = _nulldict() if cmax == -1 else LRUCache(limit=cmax)
         self.accept = prepare_accept_content(
             conf.CELERY_ACCEPT_CONTENT if accept is None else accept,
         )
+
+        # Unclaimed task results
+        self._unclaimed = OrderedDefaultDict(list)
+
+        self.AsyncResult = app.AsyncResult
 
     def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
@@ -188,38 +191,128 @@ class BaseBackend(object):
                      content_encoding=self.content_encoding,
                      accept=self.accept)
 
-    def wait_for(self, task_id,
-                 timeout=None, propagate=True, interval=0.5, no_ack=True,
-                 on_interval=None):
-        """Wait for task and return its result.
+    def wait_until_complete(self, results, timeout=None,
+                            interval=0.5, no_ack=True, on_interval=None,
+                            now=monotonic):
+        """Wait for tasks and yield their results.
 
-        If the task raises an exception, this exception
-        will be re-raised by :func:`wait_for`.
+        .. warning::
 
+            Collecting the results for different task types
+            using different backends may be **very** slow, since
+            each result is retrieved separately. Consider to collect
+            the results from the same backend.
+
+        .. note::
+
+            Even if you're using the same backend for the results, the backend
+            may not support collecting multiple results at once. Thus each
+            result will be retrieved separately, which may cause performance
+            issues.
+
+        :keyword results: List of app.AsyncResult instances.
+        :keyword timeout: How long to wait, in seconds, before the
+                          operation times out.
+        :keyword interval: Time to wait (in seconds) before retrying to
+            retrieve the result. Note that this does not have any effect
+            when using the amqp result store backend, as it does not
+            use polling.
+        :keyword no_ack: Enable amqp no ack (automatically acknowledge
+            message). If this is :const:`False` then the message will
+            **not be acked**.
+
+        :raises celery.exceptions.TimeoutError: if `timeout` is not
+            :const:`None` and the result does not arrive within `timeout`
+            seconds.
         If `timeout` is not :const:`None`, this raises the
         :class:`celery.exceptions.TimeoutError` exception if the operation
         takes longer than `timeout` seconds.
 
         """
 
-        time_elapsed = 0.0
+        unclaimed = self._unclaimed
+        if unclaimed:
+            for result in results:
+                metas = unclaimed.get(result.id)
+                if metas:
+                    for meta in metas:
+                        result.send(meta)
+                    # This task is not unclaimed anymore
+                    del unclaimed[result.id]
+        ready_results = [result for result in results if result.ready()]
+        for result in ready_results:
+            yield result
+        if len(results) == len(ready_results):
+            return
 
-        while 1:
-            status = self.get_status(task_id)
-            if status == states.SUCCESS:
-                return self.get_result(task_id)
-            elif status in states.PROPAGATE_STATES:
-                result = self.get_result(task_id)
-                if propagate:
-                    raise result
-                return result
+        for reply in self._maybe_join_native(results, timeout, interval,
+                                             no_ack, on_interval, now):
+            yield reply
+
+    def join(self, results, timeout=None, interval=0.5, no_ack=True,
+             on_interval=None, now=monotonic):
+        """Slow, non-native method for collecting results.
+
+        May be overriden in successors to change cosuming behavior.
+        """
+        results = {result.id: result for result in results
+                   if not result.ready()}
+        time_start = now()
+        while results:
+            if timeout and now() - time_start >= timeout:
+                raise TimeoutError('The operation timed out.')
+            for task_id in results:
+                meta = self.get_result(task_id)
+                if meta:
+                    result = results[task_id]
+                    result.send(meta)
+                    if result.ready():
+                        del results[task_id]
+                        yield result
             if on_interval:
                 on_interval()
-            # avoid hammering the CPU checking status.
             time.sleep(interval)
-            time_elapsed += interval
-            if timeout and time_elapsed >= timeout:
+
+    def join_native(self, results, timeout=None, interval=0.5,
+                    no_ack=True, on_interval=None, now=monotonic):
+        """Native method for collecting multiple results.
+
+        May be overriden in successors to change consuming behavior.
+        See :class:`celery.backends.amqp.AMQPBackend` for example.
+        """
+        results = {result.id: result for result in results
+                   if not result.ready()}
+        time_start = now()
+        while results:
+            if timeout and now() - time_start >= timeout:
                 raise TimeoutError('The operation timed out.')
+            for result in self.get_many([id for id in results]):
+                if result.ready():
+                    del results[result.id]
+                    yield result
+            if on_interval:
+                on_interval()
+            time.sleep(interval)
+
+    def _maybe_join_native(self, results, timeout=None, interval=0.5,
+                           no_ack=True, on_interval=None, now=monotonic):
+        # Check if backend does not support native join at first
+        if not results[0].backend.supports_native_join:
+            for reply in self.join(results, timeout=timeout,
+                                   interval=interval, no_ack=no_ack,
+                                   on_interval=on_interval, now=now):
+                yield reply
+    # Iterate through pairs, s -> (s0,s1),(s1,s2),...
+        for i, result in enumerate(results[:-1]):
+            if result.backend != results[i+1].backend:
+                for reply in self.join(results, timeout=timeout,
+                                       interval=interval, no_ack=no_ack,
+                                       on_interval=on_interval, now=now):
+                    yield reply
+        for reply in self.join_native(results, timeout=timeout,
+                                      interval=interval, no_ack=no_ack,
+                                      on_interval=on_interval, now=now):
+            yield reply
 
     def prepare_expires(self, value, type=None):
         if value is None:
@@ -243,7 +336,8 @@ class BaseBackend(object):
             return self.prepare_value(result)
 
     def is_cached(self, task_id):
-        return task_id in self._cache
+        #XXX mark as deprecated
+        return False
 
     def store_result(self, task_id, result, status,
                      traceback=None, request=None, **kwargs):
@@ -254,7 +348,7 @@ class BaseBackend(object):
         return result
 
     def forget(self, task_id):
-        self._cache.pop(task_id, None)
+        self._unclaimed.pop(task_id, None)
         self._forget(task_id)
 
     def _forget(self, task_id):
@@ -262,14 +356,17 @@ class BaseBackend(object):
 
     def get_status(self, task_id):
         """Get the status of a task."""
+        #XXX mark as deprecated, AsyncResult.status should be used
         return self.get_task_meta(task_id)['status']
 
     def get_traceback(self, task_id):
         """Get the traceback for a failed task."""
+        #XXX mark as deprecated, AsyncResult.traceback should be used
         return self.get_task_meta(task_id).get('traceback')
 
     def get_result(self, task_id):
         """Get the result of a task."""
+        #XXX mark as deprecated, AsyncResult.result should be used
         meta = self.get_task_meta(task_id)
         if meta['status'] in self.EXCEPTION_STATES:
             return self.exception_to_python(meta['result'])
@@ -278,46 +375,38 @@ class BaseBackend(object):
 
     def get_children(self, task_id):
         """Get the list of subtasks sent by a task."""
-        try:
-            return self.get_task_meta(task_id)['children']
-        except KeyError:
-            pass
+        #XXX mark as deprecated, AsyncResult.children should be used
+        return self.get_task_meta(task_id).get('children')
 
-    def get_task_meta(self, task_id, cache=True):
-        if cache:
-            try:
-                return self._cache[task_id]
-            except KeyError:
-                pass
+    def get_task_meta(self, task_id):
+        result = task_id
+        if not isinstance(task_id, self.AsyncResult):
+            result = self.AsyncResult(task_id)
+        unclaimed = self._unclaimed.get(result.id)
+        if unclaimed:
+            return unclaimed[-1]
 
-        meta = self._get_task_meta_for(task_id)
-        if cache and meta.get('status') == states.SUCCESS:
-            self._cache[task_id] = meta
-        return meta
+        return self._get_task_meta_for(result)
 
     def reload_task_result(self, task_id):
         """Reload task result, even if it has been previously fetched."""
-        self._cache[task_id] = self.get_task_meta(task_id, cache=False)
+        #XXX mark as deprecated, AsyncResult.result will reload if necessary
+        self._unclaimed[task_id] = self.get_task_meta(task_id)
 
     def reload_group_result(self, group_id):
         """Reload group result, even if it has been previously fetched."""
-        self._cache[group_id] = self.get_group_meta(group_id, cache=False)
+        self._unclaimed[group_id] = self.get_group_meta(group_id)
 
-    def get_group_meta(self, group_id, cache=True):
-        if cache:
-            try:
-                return self._cache[group_id]
-            except KeyError:
-                pass
+    def get_group_meta(self, group_id):
+        unclaimed = self._unclaimed.get(group_id)
+        if unclaimed:
+            return unclaimed[-1]
 
-        meta = self._restore_group(group_id)
-        if cache and meta is not None:
-            self._cache[group_id] = meta
-        return meta
+        return self._restore_group(group_id)
 
-    def restore_group(self, group_id, cache=True):
+    def restore_group(self, group_id):
         """Get the result for a group."""
-        meta = self.get_group_meta(group_id, cache=cache)
+        meta = self.get_group_meta(group_id)
         if meta:
             return meta['result']
 
@@ -326,7 +415,7 @@ class BaseBackend(object):
         return self._save_group(group_id, result)
 
     def delete_group(self, group_id):
-        self._cache.pop(group_id, None)
+        self._unclaimed.pop(group_id, None)
         return self._delete_group(group_id)
 
     def cleanup(self):
@@ -450,34 +539,10 @@ class KeyValueStoreBackend(BaseBackend):
 
     def get_many(self, task_ids, timeout=None, interval=0.5, no_ack=True,
                  READY_STATES=states.READY_STATES):
-        interval = 0.5 if interval is None else interval
-        ids = task_ids if isinstance(task_ids, set) else set(task_ids)
-        cached_ids = set()
-        cache = self._cache
-        for task_id in ids:
-            try:
-                cached = cache[task_id]
-            except KeyError:
-                pass
-            else:
-                if cached['status'] in READY_STATES:
-                    yield bytes_to_str(task_id), cached
-                    cached_ids.add(task_id)
-
-        ids.difference_update(cached_ids)
-        iterations = 0
-        while ids:
-            keys = list(ids)
-            r = self._mget_to_results(self.mget([self.get_key_for_task(k)
-                                                 for k in keys]), keys)
-            cache.update(r)
-            ids.difference_update({bytes_to_str(v) for v in r})
-            for key, value in items(r):
-                yield bytes_to_str(key), value
-            if timeout and iterations * interval >= timeout:
-                raise TimeoutError('Operation timed out ({0})'.format(timeout))
-            time.sleep(interval)  # don't busy loop.
-            iterations += 1
+        return self._mget_to_results(self.mget(
+            (self.get_key_for_task(id) for id in task_ids),
+            task_ids,
+        ))
 
     def _forget(self, task_id):
         self.delete(self.get_key_for_task(task_id))
@@ -485,7 +550,8 @@ class KeyValueStoreBackend(BaseBackend):
     def _store_result(self, task_id, result, status,
                       traceback=None, request=None, **kwargs):
         meta = {'status': status, 'result': result, 'traceback': traceback,
-                'children': self.current_task_children(request)}
+                'children': self.current_task_children(request),
+                'hostname': request.hostname if request else None}
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
 
@@ -497,12 +563,12 @@ class KeyValueStoreBackend(BaseBackend):
     def _delete_group(self, group_id):
         self.delete(self.get_key_for_group(group_id))
 
-    def _get_task_meta_for(self, task_id):
+    def _get_task_meta_for(self, result):
         """Get task metadata for a task by id."""
-        meta = self.get(self.get_key_for_task(task_id))
-        if not meta:
-            return {'status': states.PENDING, 'result': None}
-        return self.decode(meta)
+        meta = self.get(self.get_key_for_task(result.id))
+        meta = self.decode(meta)
+        result.send(meta)
+        return result._cache
 
     def _restore_group(self, group_id):
         """Get task metadata for a task by id."""
