@@ -136,9 +136,11 @@ class DjangoWorkerFixup(object):
     def validate_models(self):
         import django
         try:
-            django.setup()
+            django_setup = django.setup
         except AttributeError:
             pass
+        else:
+            django_setup()
         s = io.StringIO()
         try:
             from django.core.management.validation import get_validation_errors
@@ -166,6 +168,12 @@ class DjangoWorkerFixup(object):
         return self
 
     def on_worker_process_init(self, **kwargs):
+        # Child process must validate models again if on Windows,
+        # or if they were started using execv.
+        if os.environ.get('FORKED_BY_MULTIPROCESSING'):
+            self.validate_models()
+
+        # close connections:
         # the parent process may have established these,
         # so need to close them.
 
