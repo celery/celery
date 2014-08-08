@@ -9,6 +9,8 @@
 from __future__ import absolute_import
 
 from datetime import datetime
+from functools import wraps
+import time
 
 try:
     import pymongo
@@ -40,6 +42,33 @@ class Bunch(object):
 
     def __init__(self, **kw):
         self.__dict__.update(kw)
+
+
+def auto_retry(f):
+    ''' Forces decorated function to retry if mongo throws error '''
+    @wraps(f)
+    def wrapper(*args, **kwds):
+        retries = kwds.pop("retries", None)
+        retry_interval = kwds.pop("retry_interval", 5)
+        error = None
+        while retries is None or retries >= 0:
+            try:
+                return f(*args, **kwds)
+            except pymongo.errors.ConnectionFailure as e:
+                error = e
+            if retries is not None:
+                retries -= 1
+            time.sleep(retry_interval)
+        raise error
+    return wrapper
+
+
+def auto_retry_methods(*methods):
+    def decorate(klass):
+        for method in methods:
+            setattr(klass, method, auto_retry(getattr(klass, method)))
+        return klass
+    return decorate
 
 
 class MongoBackend(BaseBackend):
@@ -127,8 +156,8 @@ class MongoBackend(BaseBackend):
         if self._connection is not None:
             # MongoDB connection will be closed automatically when object
             # goes out of scope
-            del(self.collection)
-            del(self.database)
+            del self.collection
+            del self.database
             self._connection = None
 
     def _store_result(self, task_id, result, status,
@@ -139,9 +168,8 @@ class MongoBackend(BaseBackend):
                 'result': Binary(self.encode(result)),
                 'date_done': datetime.utcnow(),
                 'traceback': Binary(self.encode(traceback)),
-                'children': Binary(self.encode(
-                    self.current_task_children(request),
-                ))}
+                'children': Binary(self.encode(self.current_task_children(request)))
+        }
         self.collection.save(meta)
 
         return result
@@ -231,9 +259,16 @@ class MongoBackend(BaseBackend):
         return self._get_database()
 
     @cached_property
+    @auto_retry
     def collection(self):
         """Get the metadata task collection."""
-        collection = self.database[self.taskmeta_collection]
+        collection = auto_retry_methods(
+            "remove",
+            "find_one",
+            "save",
+            "count",
+            "ensure_index")(
+                self.database[self.taskmeta_collection])
 
         # Ensure an index on date_done is there, if not process the index
         # in the background. Once completed cleanup will be much faster
