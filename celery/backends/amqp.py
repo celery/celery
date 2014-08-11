@@ -213,7 +213,10 @@ class AMQPBackend(BaseBackend):
             # Total time spent may exceed a single call to wait()
             if timeout and now() - time_start >= timeout:
                 raise socket.timeout()
-            wait(timeout=timeout)
+            try:
+                wait(timeout=1)
+            except socket.timeout:
+                pass
             if on_interval:
                 on_interval()
             if results:  # got event on the wanted channel.
