@@ -78,11 +78,13 @@ This is an example configuration for a Python project.
 .. code-block:: bash
 
     # Names of nodes to start
-    #   most will only start one node:
+    #   most people will only start one node:
     CELERYD_NODES="worker1"
     #   but you can also start multiple and configure settings
-    #   for each in CELERYD_OPTS (see `celery multi --help` for examples).
-    CELERYD_NODES="worker1 worker2 worker3"
+    #   for each in CELERYD_OPTS (see `celery multi --help` for examples):
+    #CELERYD_NODES="worker1 worker2 worker3"
+    #   alternatively, you can specify the number of nodes to start:
+    #CELERYD_NODES=10
 
     # Absolute or relative path to the 'celery' command:
     CELERY_BIN="/usr/local/bin/celery"
@@ -99,6 +101,9 @@ This is an example configuration for a Python project.
 
     # Extra command-line arguments to the worker
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
+
+    # Set logging level to DEBUG
+    #CELERYD_LOG_LEVEL="DEBUG"
 
     # %n will be replaced with the first part of the nodename.
     CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
