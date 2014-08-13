@@ -281,7 +281,10 @@ class WorkController(object):
         if self.consumer:
             self.consumer.update_strategies()
             self.consumer.reset_rate_limits()
-        self.pool.restart()
+        try:
+            self.pool.restart()
+        except NotImplementedError:
+            pass
 
     def info(self):
         return {'total': self.state.total_count,
