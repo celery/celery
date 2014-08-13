@@ -376,8 +376,34 @@ for which documentation can be found in the :mod:`logging`
 module.
 
 You can also use :func:`print`, as anything written to standard
-out/-err will be redirected to logging system (you can disable this,
+out/-err will be redirected to the logging system (you can disable this,
 see :setting:`CELERY_REDIRECT_STDOUTS`).
+
+.. note::
+
+    The worker will not update the redirection if you create a logger instance
+    somewhere in your task or task module.
+
+    If you want to redirect ``sys.stdout`` and ``sys.stderr`` to a custom
+    logger you have to enable this manually, for example:
+
+    .. code-block:: python
+
+        import sys
+
+        logger = get_task_logger(__name__)
+
+        @app.task(bind=True)
+        def add(self, x, y):
+            old_outs = sys.stdout, sys.stderr
+            rlevel = self.app.conf.CELERY_REDIRECT_STDOUTS_LEVEL
+            try:
+                self.app.log.redirect_stdouts_to_logger(logger, rlevel)
+                print('Adding {0} + {1}'.format(x, y))
+                return x + y
+            finally:
+                sys.stdout, sys.stderr = old_outs
+
 
 .. _task-retry:
 
