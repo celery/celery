@@ -574,15 +574,18 @@ class Task(object):
                 "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
                     self.name, request.id, S.args, S.kwargs))
 
-        # If task was executed eagerly using apply(),
-        # then the retry must also be executed eagerly.
-        try:
-            S.apply().get() if is_eager else S.apply_async()
-        except Exception as exc:
-            if is_eager:
-                raise
-            raise Reject(exc, requeue=False)
         ret = Retry(exc=exc, when=eta or countdown)
+
+        if is_eager:
+            # if task was executed eagerly using apply(),
+            # then the retry must also be executed eagerly.
+            S.apply().get()
+            return ret
+
+        try:
+            S.apply_async()
+        except Exception as exc:
+            raise Reject(exc, requeue=False)
         if throw:
             raise ret
         return ret
