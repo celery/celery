@@ -613,7 +613,7 @@ Command-specific options
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can add additional command-line options to the ``worker``, ``beat`` and
-``events`` commands by modifying the :attr:`~@Celery.user_options` attribute of the
+``events`` commands by modifying the :attr:`~@user_options` attribute of the
 application instance.
 
 Celery commands uses the :mod:`optparse` module to parse command-line

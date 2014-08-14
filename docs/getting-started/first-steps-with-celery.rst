@@ -316,7 +316,7 @@ you can also imagine your SysAdmin making simple changes to the configuration
 in the event of system trouble.
 
 You can tell your Celery instance to use a configuration module,
-by calling the :meth:`~@Celery.config_from_object` method:
+by calling the :meth:`@config_from_object` method:
 
 .. code-block:: python
 

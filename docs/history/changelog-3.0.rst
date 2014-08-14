@@ -353,7 +353,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - The ``pool_restart`` remote control command now reports
   an error if the :setting:`CELERYD_POOL_RESTARTS` setting is not set.
 
-- ``celery.conf.add_defaults`` can now be used with non-dict objects.
+- :meth:`@add_defaults`` can now be used with non-dict objects.
 
 - Fixed compatibility problems in the Proxy class (Issue #1087).
 
@@ -1108,7 +1108,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - App instances now supports the with statement.
 
-    This calls the new :meth:`~celery.Celery.close` method at exit, which
+    This calls the new :meth:`@close` method at exit, which
     cleans up after the app like closing pool connections.
 
     Note that this is only necessary when dynamically creating apps,
@@ -1411,16 +1411,16 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
                 }
             }
 
-- New :meth:`@Celery.add_defaults` method can add new default configuration
+- New :meth:`@add_defaults` method can add new default configuration
   dicts to the applications configuration.
 
     For example::
 
         config = {'FOO': 10}
 
-        celery.add_defaults(config)
+        app.add_defaults(config)
 
-    is the same as ``celery.conf.update(config)`` except that data will not be
+    is the same as ``app.conf.update(config)`` except that data will not be
     copied, and that it will not be pickled when the worker spawns child
     processes.
 
@@ -1429,7 +1429,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
         def initialize_config():
             # insert heavy stuff that can't be done at import time here.
 
-        celery.add_defaults(initialize_config)
+        app.add_defaults(initialize_config)
 
     which means the same as the above except that it will not happen
     until the celery configuration is actually used.
@@ -1437,8 +1437,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     As an example, Celery can lazily use the configuration of a Flask app::
 
         flask_app = Flask()
-        celery = Celery()
-        celery.add_defaults(lambda: flask_app.config)
+        app = Celery()
+        app.add_defaults(lambda: flask_app.config)
 
 - Revoked tasks were not marked as revoked in the result backend (Issue #871).
 
@@ -1455,8 +1455,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - New method names:
 
-    - ``Celery.default_connection()`` ➠  :meth:`~@Celery.connection_or_acquire`.
-    - ``Celery.default_producer()``   ➠  :meth:`~@Celery.producer_or_acquire`.
+    - ``Celery.default_connection()`` ➠  :meth:`~@connection_or_acquire`.
+    - ``Celery.default_producer()``   ➠  :meth:`~@producer_or_acquire`.
 
     The old names still work for backward compatibility.
 
