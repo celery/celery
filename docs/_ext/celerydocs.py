@@ -23,7 +23,7 @@ APPATTRS = {
     'signature': 'celery.canvas.Signature',
 }
 
-APPDIRECT = {
+APPDIRECT = set([
     'on_configure', 'on_after_configure', 'on_after_finalize',
     'set_current', 'set_default', 'close', 'on_init', 'start',
     'worker_main', 'task', 'gen_task_name', 'finalize',
@@ -35,9 +35,9 @@ APPDIRECT = {
     'subclass_with_self', 'annotations', 'current_task', 'oid',
     'timezone', '__reduce_keys__', 'fixups', 'finalized', 'configured',
     'autofinalize', 'steps', 'user_options', 'main', 'clock',
-}
+])
 
-APPATTRS.update({x: 'celery.Celery.{0}'.format(x) for x in APPDIRECT})
+APPATTRS.update(dict((x, 'celery.Celery.{0}'.format(x)) for x in APPDIRECT))
 
 ABBRS = {
     'Celery': 'celery.Celery',
