@@ -51,7 +51,13 @@ def appstr(app):
 
 
 class Settings(ConfigurationView):
-    """Celery settings object."""
+    """Celery settings object.
+
+    .. seealso:
+
+        :ref:`configuration` for a full list of configuration keys.
+
+    """
 
     @property
     def CELERY_RESULT_BACKEND(self):

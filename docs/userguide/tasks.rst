@@ -45,7 +45,7 @@ Basics
 ======
 
 You can easily create a task from any callable by using
-the :meth:`~@Celery.task` decorator:
+the :meth:`~@task` decorator:
 
 .. code-block:: python
 
@@ -240,7 +240,7 @@ like `moduleA.tasks.taskA`, `moduleA.tasks.taskB`, `moduleB.tasks.test`
 and so on. You may want to get rid of having `tasks` in all task names.
 As pointed above, you can explicitly give names for all tasks, or you
 can change the automatic naming behavior by overriding
-:meth:`~@Celery.gen_task_name`. Continuing with the example, `celery.py`
+:meth:`@gen_task_name`. Continuing with the example, `celery.py`
 may contain:
 
 .. code-block:: python
@@ -261,7 +261,7 @@ So each task will have a name like `moduleA.taskA`, `moduleA.taskB` and
 
 .. warning::
 
-    Make sure that your `gen_task_name` is a pure function, which means
+    Make sure that your :meth:`@gen_task_name` is a pure function, which means
     that for the same input it must always return the same output.
 
 .. _task-request-info:

@@ -810,7 +810,7 @@ Inspecting workers
 uses remote control commands under the hood.
 
 You can also use the ``celery`` command to inspect workers,
-and it supports the same commands as the :class:`@Celery.control` interface.
+and it supports the same commands as the :class:`@control` interface.
 
 .. code-block:: python
 
