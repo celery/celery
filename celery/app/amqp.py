@@ -269,8 +269,8 @@ class AMQP(object):
                    expires=None, retries=0, chord=None,
                    callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
-                   create_sent_event=False, now=None, timezone=None,
-                   root_id=None, parent_id=None):
+                   create_sent_event=False, root_id=None, parent_id=None,
+                   now=None, timezone=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -336,8 +336,8 @@ class AMQP(object):
                    expires=None, retries=0,
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
-                   create_sent_event=False, now=None, timezone=None,
-                   root_id=None, parent_id=None):
+                   create_sent_event=False, root_id=None, parent_id=None,
+                   now=None, timezone=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
