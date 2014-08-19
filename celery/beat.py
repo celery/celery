@@ -219,7 +219,7 @@ class Scheduler(object):
 
     def tick(self, event_t=event_t, min=min,
              heappop=heapq.heappop, heappush=heapq.heappush,
-             heapify=heapq.heapify):
+             heapify=heapq.heapify, mktime=time.mktime):
         """Run a tick, that is one iteration of the scheduler.
 
         Executes one due task per call.
@@ -228,7 +228,7 @@ class Scheduler(object):
         """
 
         def _when(entry, next_time_to_run):
-            return (time.mktime(entry.schedule.now().timetuple())
+            return (mktime(entry.schedule.now().timetuple())
                     + (adjust(next_time_to_run) or 0))
 
         adjust = self.adjust
@@ -249,7 +249,8 @@ class Scheduler(object):
             if verify is event:
                 next_entry = self.reserve(entry)
                 self.apply_entry(entry, producer=self.producer)
-                heappush(H, event_t(_when(next_entry, next_time_to_run), event[1], next_entry))
+                heappush(H, event_t(_when(next_entry, next_time_to_run),
+                                    event[1], next_entry))
                 return 0
             else:
                 heappush(H, verify)
