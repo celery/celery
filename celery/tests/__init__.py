@@ -7,6 +7,8 @@ import warnings
 
 from importlib import import_module
 
+PYPY3 = getattr(sys, 'pypy_version_info', None) and sys.version_info[0] > 3
+
 try:
     WindowsError = WindowsError  # noqa
 except NameError:
@@ -16,13 +18,16 @@ except NameError:
 
 
 def setup():
+    using_coverage = (
+        os.environ.get('COVER_ALL_MODULES') or '--with-coverage' in sys.argv
+    )
     os.environ.update(
         # warn if config module not found
         C_WNOCONF='yes',
         KOMBU_DISABLE_LIMIT_PROTECTION='yes',
     )
 
-    if os.environ.get('COVER_ALL_MODULES') or '--with-coverage' in sys.argv:
+    if using_coverage and not PYPY3:
         from warnings import catch_warnings
         with catch_warnings(record=True):
             import_all_modules()
