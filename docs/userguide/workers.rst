@@ -55,6 +55,9 @@ these will expand to:
     - ``worker1.%n`` -> ``worker1.george``
     - ``worker1.%d`` -> ``worker1.example.com``
 
+.. note:: If you're storing the worker invokation command in a supervisord configuration file, the ``%`` sign must be escaped by adding a second one.
+   Thus, ``%h`` must be written ``%%h``
+
 .. _worker-stopping:
 
 Stopping the worker
