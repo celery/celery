@@ -455,6 +455,11 @@ class Consumer(object):
 
         def on_task_received(message):
 
+            # On Python 3, message.headers is a mapping from bytes -> bytes
+            # so we need to decode it to str. No encoding is specified by AMQP
+            # so we use UTF-8 (TODO: specify encoding in message properties)
+            message.headers = {k.decode('utf-8'): v.decode('utf-8') for k, v in message.headers.items()}
+
             # payload will only be set for v1 protocol, since v2
             # will defer deserializing the message body to the pool.
             payload = None
