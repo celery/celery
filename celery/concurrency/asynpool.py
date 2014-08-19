@@ -1089,7 +1089,7 @@ class AsynPool(_pool.Pool):
         all tasks that have not been started will be discarded.
 
         In Celery this is called whenever the transport connection is lost
-        (consumer restart).
+        (consumer restart), and when a process is terminated.
 
         """
         resq = proc.outq._reader
