@@ -172,10 +172,7 @@ class MongoBackend(BaseBackend):
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
-        # if collection don't contain it try searching in the
-        # group_collection it could be a groupresult instead
-        obj = self.collection.find_one({'_id': task_id}) or \
-            self.group_collection.find_one({'_id': task_id})
+        obj = self.collection.find_one({'_id': task_id})
         if obj:
             return {
                 'task_id': obj['_id'],
