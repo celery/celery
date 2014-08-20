@@ -180,13 +180,6 @@ class test_AMQPBackend(AppCase):
 
         yield results, backend, Message
 
-    def test_backlog_limit_exceeded(self):
-        with self._result_context() as (results, backend, Message):
-            for i in range(1001):
-                results.put(Message(task_id='id', status=states.RECEIVED))
-            with self.assertRaises(backend.BacklogLimitExceeded):
-                backend.get_task_meta('id')
-
     def test_poll_result(self):
         with self._result_context() as (results, backend, Message):
             tid = uuid()
