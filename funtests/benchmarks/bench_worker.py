@@ -8,7 +8,7 @@ os.environ.update(
     USE_FAST_LOCALS='yes',
 )
 
-from celery import Celery, group
+from celery import Celery
 from celery.five import range
 from kombu.five import monotonic
 
@@ -71,7 +71,6 @@ def bench_apply(n=DEFAULT_ITS):
     task = it._get_current_object()
     with app.producer_or_acquire() as producer:
         [task.apply_async((i, n), producer=producer) for i in range(n)]
-    #group(s(i, n) for i in range(n))()
     print('-- apply {0} tasks: {1}s'.format(n, monotonic() - time_start))
 
 
