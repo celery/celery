@@ -94,7 +94,10 @@ def _patch_eventlet():
 
 def _patch_gevent():
     from gevent import monkey, version_info
-    monkey.patch_all()
+    patch_thread=True
+    if os.getenv('GEVENT_PATCHTHREAD','Y') == "N":
+        patch_thread=False
+    monkey.patch_all(thread=patch_thread)
     if version_info[0] == 0:  # pragma: no cover
         # Signals aren't working in gevent versions <1.0,
         # and are not monkey patched by patch_all()
