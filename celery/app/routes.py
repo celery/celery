@@ -74,7 +74,7 @@ class Router(object):
     def route(self, options, task, args=(), kwargs={}):
         options = self.expand_destination(options)  # expands 'queue'
         if self.routes:
-            route = self.lookup_route(task, args, kwargs)
+            route = self.lookup_route(task, args, kwargs, options)
             if route:  # expands 'queue' in route.
                 return lpmerge(self.expand_destination(route), options)
         if 'queue' not in options:
@@ -102,8 +102,8 @@ class Router(object):
                         'Queue {0!r} missing from task_queues'.format(queue))
         return route
 
-    def lookup_route(self, task, args=None, kwargs=None):
-        return _first_route(self.routes, task, args, kwargs)
+    def lookup_route(self, task, args=None, kwargs=None, options=None):
+        return _first_route(self.routes, task, args, kwargs, options)
 
 
 def prepare(routes):
