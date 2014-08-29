@@ -136,17 +136,16 @@ class CassandraBackend(BaseBackend):
         """Store return value and status of an executed task."""
 
         def _do_store():
-            detailed = self.detailed_mode
             cf = self._get_column_family()
             date_done = self.app.now()
             meta = {'status': status,
                     'date_done': date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
                     'traceback': self.encode(traceback),
-                    'result': result if detailed else self.encode(result),
+                    'result': self.encode(result),
                     'children': self.encode(
                         self.current_task_children(request),
                     )}
-            if detailed:
+            if self.detailed_mode:
                 cf.insert(
                     task_id, {date_done: self.encode(meta)}, ttl=self.expires,
                 )
@@ -163,11 +162,10 @@ class CassandraBackend(BaseBackend):
             try:
                 if self.detailed_mode:
                     row = cf.get(task_id, column_reversed=True, column_count=1)
-                    meta = self.decode(list(row.values())[0])
-                    meta['task_id'] = task_id
+                    return self.decode(list(row.values())[0])
                 else:
                     obj = cf.get(task_id)
-                    meta = self.meta_from_decoded({
+                    return self.meta_from_decoded({
                         'task_id': task_id,
                         'status': obj['status'],
                         'result': self.decode(obj['result']),
@@ -176,8 +174,7 @@ class CassandraBackend(BaseBackend):
                         'children': self.decode(obj['children']),
                     })
             except (KeyError, pycassa.NotFoundException):
-                meta = {'status': states.PENDING, 'result': None}
-            return meta
+                return {'status': states.PENDING, 'result': None}
 
         return self._retry_on_error(_do_get)
 
