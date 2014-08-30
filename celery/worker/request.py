@@ -220,7 +220,7 @@ class Request(object):
     def maybe_expire(self):
         """If expired, mark the task as revoked."""
         if self.expires:
-            now = datetime.now(tz_or_local(self.tzlocal) if self.utc else None)
+            now = datetime.now(self.expires.tzinfo)
             if now > self.expires:
                 revoked_tasks.add(self.id)
                 return True
