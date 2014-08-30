@@ -371,6 +371,7 @@ class AMQP(object):
                 'id': task_id,
                 'args': args,
                 'kwargs': kwargs,
+                'group': group_id,
                 'retries': retries,
                 'eta': eta,
                 'expires': expires,
