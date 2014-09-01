@@ -450,9 +450,9 @@ class chain(Signature):
             if link_error:
                 task.set(link_error=link_error)
 
-            if not isinstance(prev_task, chord):
-                results.append(res)
-                tasks.append(task)
+            tasks.append(task)
+            results.append(res)
+
             prev_task, prev_res = task, res
 
         return tasks, results
