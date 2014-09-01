@@ -357,8 +357,8 @@ class BaseBackend(object):
 
     def apply_chord(self, header, partial_args, group_id, body,
                     options={}, **kwargs):
-        options['task_id'] = group_id
-        result = header(*partial_args, **options or {})
+        fixed_options = dict((k,v) for k,v in options.items() if k!='task_id')
+        result = header(*partial_args, task_id=group_id, **fixed_options or {})
         self.fallback_chord_unlock(group_id, body, **kwargs)
         return result
 
