@@ -602,7 +602,7 @@ def _maybe_group(tasks):
     elif isinstance(tasks, Signature):
         tasks = [tasks]
     else:
-        tasks = regen(tasks)
+        tasks = map(signature, regen(tasks))
     return tasks
 
 
