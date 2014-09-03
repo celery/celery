@@ -16,7 +16,7 @@ In this tutorial you will learn the absolute basics of using Celery.
 You will learn about;
 
 - Choosing and installing a message transport (broker).
-- Installing Celery and creating your first task
+- Installing Celery and creating your first task.
 - Starting the worker and calling tasks.
 - Keeping track of tasks as they transition through different states,
   and inspecting return values.
@@ -37,7 +37,7 @@ showcase Celery's capabilities.
 Choosing a Broker
 =================
 
-Celery requires a solution to send and receive messages, usually this
+Celery requires a solution to send and receive messages; usually this
 comes in the form of a separate service called a *message broker*.
 
 There are several choices available, including:
@@ -118,8 +118,8 @@ with standard Python tools like ``pip`` or ``easy_install``:
 Application
 ===========
 
-The first thing you need is a Celery instance, this is called the celery
-application or just app in short.  Since this instance is used as
+The first thing you need is a Celery instance, which is called the celery
+application or just "app" for short.  Since this instance is used as
 the entry-point for everything you want to do in Celery, like creating tasks and
 managing workers, it must be possible for other modules to import it.
 
@@ -230,7 +230,7 @@ you choose to use a configuration module)::
 
     app = Celery('tasks', backend='amqp', broker='amqp://')
 
-or if you want to use Redis as the result backend, but still use RabbitMQ as
+Or if you want to use Redis as the result backend, but still use RabbitMQ as
 the message broker (a popular combination)::
 
     app = Celery('tasks', backend='redis://localhost', broker='amqp://')
