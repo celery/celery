@@ -691,7 +691,6 @@ class AsynPool(_pool.Pool):
 
             for i in range(total):
                 ready_fd = ready_fds[curindex[0] % total]
-                curindex[0] += 1
                 if ready_fd in active_writes:
                     # already writing to this fd
                     continue
@@ -725,6 +724,7 @@ class AsynPool(_pool.Pool):
                             # another process.
                             put_message(job)
                             continue
+                        curindex[0] += 1
                         cor = _write_job(proc, ready_fd, job)
                         job._writer = ref(cor)
                         mark_write_gen_as_active(cor)
