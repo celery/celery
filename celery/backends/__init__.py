@@ -10,8 +10,6 @@ from __future__ import absolute_import
 
 import sys
 
-from kombu.utils.url import urlparse
-
 from celery.local import Proxy
 from celery._state import current_app
 from celery.five import reraise
