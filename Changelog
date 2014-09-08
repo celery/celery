@@ -8,6 +8,40 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.14:
+
+3.1.14
+======
+
+- **Requirements**
+
+    - Now depends on :ref:`Kombu 3.0.22 <kombu:version-3.0.22>`.
+
+- **Init scripts**: The generic worker init scripts ``status`` command
+  now gets an accurate pidfile list (Issue #1942).
+
+- **Init scripts**: The generic beat script now implements the ``status``
+   command.
+
+    Contributed by John Whitlock.
+
+- **Commands**: Multi now writes informational output to stdout instead of stderr.
+
+- **Worker**: Now ignores not implemented error for ``pool.restart``
+  (Issue #2153).
+
+- **Task**: Retry no longer raises retry exception when executed in eager
+  mode (Issue #2164).
+
+- **AMQP Result backend**: Now ensured ``on_interval`` is called at least
+  every second for blocking calls to properly propagate parent errors.
+
+- **Django**: Compatibility with Django 1.7 on Windows (Issue #2126).
+
+- **Programs**: `--umask` argument can be now specified in both octal (if starting
+  with 0) or decimal.
+
+
 .. _version-3.1.13:
 
 3.1.13
