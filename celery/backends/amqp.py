@@ -26,13 +26,9 @@ from celery.utils.timeutils import maybe_s_to_ms
 
 from .base import BaseBackend
 
-__all__ = ['BacklogLimitExceeded', 'AMQPBackend']
+__all__ = ['AMQPBackend']
 
 logger = get_logger(__name__)
-
-
-class BacklogLimitExceeded(Exception):
-    """Too much state history to fast-forward."""
 
 
 def repair_uuid(s):
@@ -52,8 +48,6 @@ class AMQPBackend(BaseBackend):
     Queue = NoCacheQueue
     Consumer = Consumer
     Producer = Producer
-
-    BacklogLimitExceeded = BacklogLimitExceeded
 
     persistent = True
     supports_autoexpire = True
@@ -161,14 +155,14 @@ class AMQPBackend(BaseBackend):
         # consume() always returns READY_STATE.
         return meta['result']
 
-    def get_task_meta(self, task_id, backlog_limit=1000):
+    def get_task_meta(self, task_id):
         # Polling and using basic_get
         with self.app.pool.acquire_channel(block=True) as (_, channel):
             binding = self._create_binding(task_id)(channel)
             binding.declare()
 
             prev = latest = acc = None
-            for i in range(backlog_limit):  # spool ffwd
+            while True:  # spool ffwd
                 acc = binding.get(
                     accept=self.accept, no_ack=False,
                 )
@@ -181,8 +175,6 @@ class AMQPBackend(BaseBackend):
                     # so we delete everything except the most recent state.
                     prev.ack()
                     prev = None
-            else:
-                raise self.BacklogLimitExceeded(task_id)
 
             if latest:
                 payload = self._cache[task_id] = latest.payload
