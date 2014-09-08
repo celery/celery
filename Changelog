@@ -12,6 +12,8 @@ new in Celery 3.1.
 
 3.1.14
 ======
+:release-date: 2014-09-08 03:00 P.M UTC
+:release-by: Ask Solem
 
 - **Requirements**
 
@@ -333,7 +335,7 @@ News
     Celery), so if you do enable it then make sure you do so on all
     nodes.
 
-    See :ref:`redis-caveats-fanout-patterns`.
+    See :ref:`redis-caveats`.
 
     This will be the default in Celery 3.2.
 

@@ -76,7 +76,7 @@ so I cannot recommend them for production use.
 The next version of Celery 3.2 will focus on performance and removing
 rarely used parts of the library.  Work has also started on a new message
 protocol, supporting multiple languages and more.  The initial draft can
-be found :ref:`here <message-protocol-task-v2`.
+be found :ref:`here <protov2draft>`.
 
 This has probably been the hardest release I've worked on, so no
 introduction to this changelog would be complete without a massive
