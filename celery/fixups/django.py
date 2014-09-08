@@ -45,6 +45,7 @@ class DjangoFixup(object):
     def __init__(self, app):
         self.app = app
         self.app.set_default()
+        self._worker_fixup = None
 
     def install(self):
         # Need to add project directory to path
@@ -53,12 +54,20 @@ class DjangoFixup(object):
         self.app.loader.now = self.now
         self.app.loader.mail_admins = self.mail_admins
 
+        signals.import_modules.connect(self.on_import_modules)
         signals.worker_init.connect(self.on_worker_init)
         return self
 
+    @cached_property
+    def worker_fixup(self):
+        return DjangoWorkerFixup(self.app)
+
+    def on_import_modules(self, **kwargs):
+        # call django.setup() before task modules are imported
+        self.worker_fixup.validate_models()
+
     def on_worker_init(self, **kwargs):
-        # keep reference
-        self._worker_fixup = DjangoWorkerFixup(self.app).install()
+        self.worker_fixup.install()
 
     def now(self, utc=False):
         return datetime.utcnow() if utc else self._now()
@@ -162,7 +171,6 @@ class DjangoWorkerFixup(object):
         signals.task_prerun.connect(self.on_task_prerun)
         signals.task_postrun.connect(self.on_task_postrun)
         signals.worker_process_init.connect(self.on_worker_process_init)
-        self.validate_models()
         self.close_database()
         self.close_cache()
         return self
