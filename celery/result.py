@@ -164,7 +164,6 @@ class AsyncResult(ResultBase):
 
         meta = self.backend.wait_for(
             self.id, timeout=timeout,
-            propagate=propagate,
             interval=interval,
             on_interval=on_interval,
             no_ack=no_ack,
