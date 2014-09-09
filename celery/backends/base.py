@@ -190,8 +190,7 @@ class BaseBackend(object):
                      accept=self.accept)
 
     def wait_for(self, task_id,
-                 timeout=None, propagate=True, interval=0.5, no_ack=True,
-                 on_interval=None):
+                 timeout=None, interval=0.5, no_ack=True, on_interval=None):
         """Wait for task and return its result.
 
         If the task raises an exception, this exception
@@ -206,14 +205,9 @@ class BaseBackend(object):
         time_elapsed = 0.0
 
         while 1:
-            status = self.get_status(task_id)
-            if status == states.SUCCESS:
-                return self.get_result(task_id)
-            elif status in states.PROPAGATE_STATES:
-                result = self.get_result(task_id)
-                if propagate:
-                    raise result
-                return result
+            meta = self.get_task_meta(task_id)
+            if meta['status'] in states.READY_STATES:
+                return meta
             if on_interval:
                 on_interval()
             # avoid hammering the CPU checking status.
