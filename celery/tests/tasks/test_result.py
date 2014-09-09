@@ -73,15 +73,18 @@ class test_AsyncResult(AppCase):
 
     def test_propagates_for_parent(self):
         x = self.app.AsyncResult(uuid())
-        x.backend = Mock()
+        x.backend = Mock(name='backend')
         x.backend.get_task_meta.return_value = {}
+        x.backend.wait_for.return_value = {
+            'status': states.SUCCESS, 'result': 84,
+        }
         x.parent = EagerResult(uuid(), KeyError('foo'), states.FAILURE)
         with self.assertRaises(KeyError):
             x.get(propagate=True)
         self.assertFalse(x.backend.wait_for.called)
 
         x.parent = EagerResult(uuid(), 42, states.SUCCESS)
-        x.get(propagate=True)
+        self.assertEqual(x.get(propagate=True), 84)
         self.assertTrue(x.backend.wait_for.called)
 
     def test_get_children(self):

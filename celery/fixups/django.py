@@ -60,7 +60,9 @@ class DjangoFixup(object):
 
     @cached_property
     def worker_fixup(self):
-        return DjangoWorkerFixup(self.app)
+        if self._worker_fixup is None:
+            self._worker_fixup = DjangoWorkerFixup(self.app)
+        return self._worker_fixup
 
     def on_import_modules(self, **kwargs):
         # call django.setup() before task modules are imported

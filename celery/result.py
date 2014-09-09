@@ -171,10 +171,10 @@ class AsyncResult(ResultBase):
         if meta:
             self._maybe_set_cache(meta)
             status = meta['status']
-            if status in EXCEPTION_STATES:
-                return self.backend.exception_to_python(meta['result'])
             if status in PROPAGATE_STATES and propagate:
                 raise self.backend.exception_to_python(meta['result'])
+            if status in EXCEPTION_STATES:
+                return self.backend.exception_to_python(meta['result'])
             return meta['result']
     wait = get  # deprecated alias to :meth:`get`.
 
