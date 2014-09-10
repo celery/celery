@@ -136,10 +136,14 @@ concrete app instance:
 Using the Django ORM/Cache as a result backend.
 -----------------------------------------------
 
-The ``django-celery`` library defines result backends that
-uses the Django ORM and Django Cache frameworks.
+If you want to store task results in the Django database then
+you still need to install the ``django-celery`` library for that
+(alternatively you can use the SQLAlchemy result backend).
 
-To use this with your project you need to follow these four steps:
+The ``django-celery`` library implements result backends using
+the Django ORM and the Django Cache frameworks.
+
+To use this extension in your project you need to follow these four steps:
 
 1. Install the ``django-celery`` library:
 
