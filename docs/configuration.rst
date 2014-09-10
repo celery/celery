@@ -221,6 +221,10 @@ Can be one of the following:
     Use `Couchbase`_ to store the results.
     See :ref:`conf-couchbase-result-backend`.
 
+* couchdb
+    Use `CouchDB`_ to store the results.
+    See :ref:`conf-couchdb-result-backend`.
+
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
@@ -772,6 +776,54 @@ This is a dict supporting the following keys:
 * password
     Password to authenticate to the Couchbase server (optional).
 
+
+.. _conf-couchdb-result-backend:
+
+CouchDB backend settings
+------------------------
+
+.. note::
+
+    The CouchDB backend requires the :mod:`pycouchdb` library:
+    https://pypi.python.org/pypi/pycouchdb
+
+    To install the couchbase package use `pip` or `easy_install`:
+
+    .. code-block:: bash
+
+        $ pip install pycouchdb
+
+This backend can be configured via the :setting:`CELERY_RESULT_BACKEND`
+set to a couchbase URL::
+
+    CELERY_RESULT_BACKEND = 'couchdb://username:password@host:port/container'
+
+
+.. setting:: CELERY_COUCHDB_BACKEND_SETTINGS
+
+CELERY_COUCHDB_BACKEND_SETTINGS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is a dict supporting the following keys:
+
+* scheme
+    http or https. Defaults to ``http``.
+
+* host
+    Host name of the CouchDB server. Defaults to ``localhost``.
+
+* port
+    The port the CouchDB server is listening to. Defaults to ``8091``.
+
+* container
+    The default container the CouchDB server is writing to.
+    Defaults to ``default``.
+
+* username
+    User name to authenticate to the CouchDB server as (optional).
+
+* password
+    Password to authenticate to the CouchDB server (optional).
 
 .. _conf-messaging:
 
