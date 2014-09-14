@@ -8,6 +8,20 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.15:
+
+3.1.15
+======
+:release-date: 2014-09-14 11:00 P.M UTC
+:release-by: Ask Solem
+
+- **Django**: Now makes sure ``django.setup()`` is called
+  before importing any task modules (Django 1.7 compatibility, Issue #2227)
+
+- **Results**: ``result.get()`` was misbehaving by calling
+ ``backend.get_task_meta`` in a finally call leading to
+ AMQP result backend queues not being properly cleaned up (Issue #2245).
+
 .. _version-3.1.14:
 
 3.1.14
