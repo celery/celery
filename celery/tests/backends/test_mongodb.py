@@ -11,7 +11,7 @@ from celery.backends.mongodb import MongoBackend, Bunch, pymongo
 from celery.exceptions import ImproperlyConfigured
 from celery.tests.case import (
     AppCase, MagicMock, Mock, SkipTest, ANY,
-    call, depends_on_current_app, patch, sentinel,
+    depends_on_current_app, patch, sentinel,
 )
 
 COLLECTION = 'taskmeta_celery'
