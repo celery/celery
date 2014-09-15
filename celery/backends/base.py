@@ -335,6 +335,9 @@ class BaseBackend(object):
     def on_task_call(self, producer, task_id):
         return {}
 
+    def add_to_chord(self, chord_id, result):
+        raise NotImplementedError('Backend does not support add_to_chord')
+
     def on_chord_part_return(self, task, state, result, propagate=False):
         pass
 

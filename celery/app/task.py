@@ -16,7 +16,7 @@ from celery import current_app
 from celery import states
 from celery._state import _task_stack
 from celery.canvas import signature
-from celery.exceptions import MaxRetriesExceededError, Reject, Retry
+from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
 from celery.five import class_property, items
 from celery.result import EagerResult
 from celery.utils import uuid, maybe_reraise
@@ -685,6 +685,33 @@ class Task(object):
         req = self.request
         with self.app.events.default_dispatcher(hostname=req.hostname) as d:
             return d.send(type_, uuid=req.id, **fields)
+
+    def replace_in_chord(self, sig):
+        sig.freeze(self.request.id,
+                   group_id=self.request.group,
+                   chord=self.request.chord,
+                   root_id=self.request.root_id)
+        sig.delay()
+        raise Ignore('Chord member replaced by new task')
+
+    def add_to_chord(self, sig, lazy=False):
+        """Add signature to the chord the current task is a member of.
+
+        :param sig: Signature to extend chord with.
+        :param lazy: If enabled the new task will not actually be called,
+                      and ``sig.delay()`` must be called manually.
+
+        Currently only supported by the Redis result backend when
+        ``?new_join=1`` is enabled.
+
+        """
+        if not self.request.chord:
+            raise ValueError('Current task is not member of any chord')
+        result = sig.freeze(group_id=self.request.group,
+                            chord=self.request.chord,
+                            root_id=self.request.root_id)
+        self.backend.add_to_chord(self.request.group, result)
+        return sig.delay() if not lazy else sig
 
     def update_state(self, task_id=None, state=None, meta=None):
         """Update task state.

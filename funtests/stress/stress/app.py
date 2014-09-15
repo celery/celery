@@ -121,6 +121,17 @@ def segfault():
     assert False, 'should not get here'
 
 
+@app.task(bind=True)
+def chord_adds(self, x):
+    self.add_to_chord(add.s(x, x))
+    return 42
+
+
+@app.task(bind=True)
+def chord_replace(self, x):
+    return self.replace_in_chord(add.s(x, x))
+
+
 @app.task
 def raising(exc=KeyError()):
     raise exc
