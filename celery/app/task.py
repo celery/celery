@@ -590,6 +590,17 @@ class Task(object):
             raise ret
         return ret
 
+    def replace(self, sig):
+        request = self.request
+        sig.set_immutable(True)
+        chord_id, request.chord = request.chord, None
+        group_id, request.group = request.group, None
+        callbacks, request.callbacks = request.callbacks, [sig]
+        if group_id or chord_id:
+            sig.set(group=group_id, chord=chord_id)
+        sig |= callbacks[0]
+        return sig
+
     def apply(self, args=None, kwargs=None,
               link=None, link_error=None, **options):
         """Execute this task locally, by blocking until the task returns.
