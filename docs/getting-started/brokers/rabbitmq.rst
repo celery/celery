@@ -56,6 +56,10 @@ allow that user access to that virtual host:
 
 .. code-block:: bash
 
+    $ sudo rabbitmqctl set_user_tags myuser mytag
+
+.. code-block:: bash
+
     $ sudo rabbitmqctl set_permissions -p myvhost myuser ".*" ".*" ".*"
 
 See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
