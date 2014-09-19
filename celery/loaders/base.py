@@ -153,7 +153,7 @@ class BaseLoader(object):
             return symbol_by_name(path, imp=imp)
 
         # Not sure if path is just a module name or if it includes an
-        # attribute name (e.g. ``os.path``, vs, ``os.path.abspath``
+        # attribute name (e.g. ``os.path``, vs, ``os.path.abspath``).
         try:
             return imp(path)
         except ImportError:
