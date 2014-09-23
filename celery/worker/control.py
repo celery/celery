@@ -111,7 +111,7 @@ def report(state):
 @Panel.register
 def enable_events(state):
     dispatcher = state.consumer.event_dispatcher
-    if 'task' not in dispatcher.groups:
+    if dispatcher.groups and 'task' not in dispatcher.groups:
         dispatcher.groups.add('task')
         logger.info('Events of group {task} enabled by remote.')
         return {'ok': 'task events enabled'}
