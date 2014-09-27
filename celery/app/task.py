@@ -659,7 +659,7 @@ class Task(object):
                 # first try to reraise the original exception
                 maybe_reraise()
                 # or if not in an except block then raise the custom exc.
-                raise exc()
+                raise exc
             raise self.MaxRetriesExceededError(
                 "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
                     self.name, request.id, S.args, S.kwargs))
