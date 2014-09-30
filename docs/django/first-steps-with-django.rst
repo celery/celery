@@ -62,15 +62,15 @@ for the :program:`celery` command-line program:
 
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.settings')
 
-You don't need this line, but it saves you from always passing in the
-settings module to the celery program.  It must always come before
-creating the app instances, which is what we do next:
+Specifying the settings here means the ``celery`` command line program
+will know where your Django project is.  This statement must always appear before
+the app instance is created, which is what we do next:
 
 .. code-block:: python
 
     app = Celery('proj')
 
-This is our instance of the library, you can have many instances
+This is your instance of the library, you can have many instances
 but there's probably no reason for that when using Django.
 
 We also add the Django settings module as a configuration source
