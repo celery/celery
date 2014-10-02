@@ -140,6 +140,9 @@ class test_ControlPanel(AppCase):
         evd = consumer.event_dispatcher
         evd.groups = set()
         panel.handle('enable_events')
+        self.assertFalse(evd.groups)
+        evd.groups = set(['worker'])
+        panel.handle('enable_events')
         self.assertIn('task', evd.groups)
         evd.groups = set(['task'])
         self.assertIn('already enabled', panel.handle('enable_events')['ok'])
