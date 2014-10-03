@@ -211,7 +211,7 @@ class RedisBackend(KeyValueStoreBackend):
         try:
             callback = maybe_signature(request.chord, app=app)
             total = callback['chord_size']
-            if readycount >= total:
+            if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
                 resl, _ = client.pipeline()     \
                     .lrange(jkey, 0, total)     \
