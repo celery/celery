@@ -582,19 +582,24 @@ class chord(Signature):
         return (header, body), kwargs
 
     @property
-    def type(self):
-        if self._type:
-            return self._type
+    def app(self):
         # we will be able to fix this mess in 3.2 when we no longer
         # require an actual task implementation for chord/group
         if self._app:
-            app = self._app
-        else:
+            return self._app
+        app = None if self.body is None else self.body.app
+        if app is None:
             try:
-                app = self.tasks[0].type.app
+                app = self.tasks[0].app
             except IndexError:
-                app = self.body.type.app
-        return app.tasks['celery.chord']
+                app = None
+        return app if app is not None else current_app
+
+    @property
+    def type(self):
+        if self._type:
+            return self._type
+        return self.app.tasks['celery.chord']
 
     def apply_async(self, args=(), kwargs={}, task_id=None,
                     producer=None, publisher=None, connection=None,
