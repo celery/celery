@@ -8,6 +8,37 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.16:
+
+3.1.16
+======
+:release-date: 2014-10-03 06:00 P.M UTC
+:release-by: Ask Solem
+
+- **Worker**: 3.1.15 broke ``-Ofair`` behavior (Issue #2286).
+
+    This regression could result in all tasks executing
+    in a single child process if ``-Ofair`` was enabled.
+
+- **Canvas**: ``celery.signature`` now properly forwards app argument
+  in all cases.
+
+- **Task**: ``.retry()`` did not raise the exception correctly
+  when called without a current exception.
+
+    Fix contributed by Andrea Rabbaglietti.
+
+- **Worker**: The ``enable_events`` remote control command
+  disabled worker-related events by mistake (Issue #2272).
+
+    Fix contributed by Konstantinos Koukopoulos.
+
+- **Django**: Adds support for Django 1.7 class names in INSTALLED_APPS
+  when using ``app.autodiscover_tasks()``  (Issue #2248).
+
+- **Sphinx**: ``celery.contrib.sphinx`` now uses ``getfullargspec``
+  on Python 3 (Issue #2302).
+
 .. _version-3.1.15:
 
 3.1.15
@@ -16,7 +47,7 @@ new in Celery 3.1.
 :release-by: Ask Solem
 
 - **Django**: Now makes sure ``django.setup()`` is called
-  before importing any task modules (Django 1.7 compatibility, Issue #2227)
+  before importing any task modules (Django 1.7 compatibility, Issue #2227) 
 
 - **Results**: ``result.get()`` was misbehaving by calling
  ``backend.get_task_meta`` in a finally call leading to
