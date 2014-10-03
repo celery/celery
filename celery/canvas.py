@@ -181,7 +181,7 @@ class Signature(dict):
                 dict(self.kwargs, **kwargs) if kwargs else self.kwargs,
                 dict(self.options, **options) if options else self.options)
 
-    def clone(self, args=(), kwargs={}, **opts):
+    def clone(self, args=(), kwargs={}, app=None, **opts):
         # need to deepcopy options so origins links etc. is not modified.
         if args or kwargs or opts:
             args, kwargs, opts = self._merge(args, kwargs, opts)
@@ -190,7 +190,8 @@ class Signature(dict):
         s = Signature.from_dict({'task': self.task, 'args': tuple(args),
                                  'kwargs': kwargs, 'options': deepcopy(opts),
                                  'subtask_type': self.subtask_type,
-                                 'immutable': self.immutable}, app=self._app)
+                                 'immutable': self.immutable},
+                                app=app or self._app)
         s._type = self._type
         return s
     partial = clone
@@ -541,14 +542,17 @@ class group(Signature):
         return repr(self.tasks)
 
     @property
+    def app(self):
+        return self._app or (self.tasks[0].app if self.tasks else current_app)
+
+    @property
     def type(self):
         if self._type:
             return self._type
         # taking the app from the first task in the list, there may be a
         # better solution for this, e.g. to consolidate tasks with the same
         # app and apply them in batches.
-        app = self._app if self._app else self.tasks[0].type.app
-        return app.tasks[self['task']]
+        return self.app.tasks[self['task']]
 
 
 @Signature.register_type
@@ -641,12 +645,12 @@ class chord(Signature):
     body = _getitem_property('kwargs.body')
 
 
-def signature(varies, *args, **kwargs):
+def signature(varies, args=(), kwargs={}, options={}, app=None, **kw):
     if isinstance(varies, dict):
         if isinstance(varies, Signature):
-            return varies.clone()
-        return Signature.from_dict(varies)
-    return Signature(varies, *args, **kwargs)
+            return varies.clone(app=app)
+        return Signature.from_dict(varies, app=app)
+    return Signature(varies, args, kwargs, options, app=app, **kw)
 subtask = signature   # XXX compat
 
 
@@ -660,5 +664,4 @@ def maybe_signature(d, app=None):
         if app is not None:
             d._app = app
         return d
-
 maybe_subtask = maybe_signature  # XXX compat
