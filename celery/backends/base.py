@@ -549,7 +549,11 @@ class KeyValueStoreBackend(BaseBackend):
                     ChordError('GroupResult {0} no longer exists'.format(gid)),
                 )
         val = self.incr(key)
-        if val >= len(deps):
+        size = len(deps)
+        if val > size:
+            logger.warning('Chord counter incremented too many times for %r',
+                           gid)
+        elif val == size:
             callback = maybe_signature(task.request.chord, app=app)
             j = deps.join_native if deps.supports_native_join else deps.join
             try:
