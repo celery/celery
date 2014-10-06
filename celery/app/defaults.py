@@ -47,6 +47,11 @@ _REDIS_OLD = {'deprecate_by': '2.5', 'remove_by': '4.0',
 searchresult = namedtuple('searchresult', ('namespace', 'key', 'type'))
 
 
+# logging: processName first introduced in Py 2.6.2 (Issue #1644).
+if sys.version_info() < (2, 6, 2):
+    DEFAULT_PROCESS_LOG_FMT = DEFAULT_LOG_FMT
+
+
 class Option(object):
     alt = None
     deprecate_by = None
