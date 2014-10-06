@@ -27,8 +27,7 @@ from celery.five import class_property, string_t
 from celery.utils import isatty, node_format
 from celery.utils.log import (
     get_logger, mlevel,
-    ColorFormatter, ensure_process_aware_logger,
-    LoggingProxy, get_multiprocessing_logger,
+    ColorFormatter, LoggingProxy, get_multiprocessing_logger,
     reset_multiprocessing_logger,
 )
 from celery.utils.term import colored
@@ -98,7 +97,6 @@ class Logging(object):
         format = format or self.format
         colorize = self.supports_color(colorize, logfile)
         reset_multiprocessing_logger()
-        ensure_process_aware_logger()
         receivers = signals.setup_logging.send(
             sender=None, loglevel=loglevel, logfile=logfile,
             format=format, colorize=colorize,
