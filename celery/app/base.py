@@ -52,9 +52,9 @@ from . import builtins  # noqa
 __all__ = ['Celery']
 
 _EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
-BUILTIN_FIXUPS = frozenset([
+BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
-])
+}
 
 ERR_ENVVAR_NOT_SET = """\
 The environment variable {0!r} is not set,

@@ -263,7 +263,6 @@ class test_autodiscovery(Case):
                 imp.return_value.__path__ = 'foo'
                 base.find_related_module(base, 'tasks')
 
-
                 def se1(val):
                     imp.side_effect = AttributeError()
 

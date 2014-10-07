@@ -141,7 +141,7 @@ class test_ControlPanel(AppCase):
         evd.groups = set()
         panel.handle('enable_events')
         self.assertFalse(evd.groups)
-        evd.groups = set(['worker'])
+        evd.groups = {'worker'}
         panel.handle('enable_events')
         self.assertIn('task', evd.groups)
         evd.groups = {'task'}

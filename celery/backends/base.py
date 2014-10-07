@@ -43,7 +43,7 @@ from celery.utils.serialization import (
 
 __all__ = ['BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend']
 
-EXCEPTION_ABLE_CODECS = frozenset(['pickle'])
+EXCEPTION_ABLE_CODECS = frozenset({'pickle'})
 PY3 = sys.version_info >= (3, 0)
 
 logger = get_logger(__name__)

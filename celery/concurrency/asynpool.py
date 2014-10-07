@@ -76,7 +76,7 @@ except (ImportError, NameError):  # pragma: no cover
 logger = get_logger(__name__)
 error, debug = logger.error, logger.debug
 
-UNAVAIL = frozenset([errno.EAGAIN, errno.EINTR])
+UNAVAIL = frozenset({errno.EAGAIN, errno.EINTR})
 
 #: Constant sent by child process when started (ready to accept work)
 WORKER_UP = 15

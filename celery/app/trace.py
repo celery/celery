@@ -104,7 +104,7 @@ REJECTED = states.REJECTED
 RETRY = states.RETRY
 FAILURE = states.FAILURE
 EXCEPTION_STATES = states.EXCEPTION_STATES
-IGNORE_STATES = frozenset([IGNORED, RETRY, REJECTED])
+IGNORE_STATES = frozenset({IGNORED, RETRY, REJECTED})
 
 #: set by :func:`setup_worker_optimizations`
 _localized = []
