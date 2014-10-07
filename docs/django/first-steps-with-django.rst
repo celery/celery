@@ -98,11 +98,11 @@ With the line above Celery will automatically discover tasks in reusable
 apps if you follow the ``tasks.py`` convention::
 
     - app1/
-        - app1/tasks.py
-        - app1/models.py
+        - tasks.py
+        - models.py
     - app2/
-        - app2/tasks.py
-        - app2/models.py
+        - tasks.py
+        - models.py
 
 This way you do not have to manually add the individual modules
 to the :setting:`CELERY_IMPORTS` setting.  The ``lambda`` so that the
