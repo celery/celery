@@ -81,6 +81,9 @@ class AsyncResult(ResultBase):
 
     def __init__(self, id, backend=None, task_name=None,
                  app=None, parent=None):
+        if id is None:
+            raise ValueError(
+                'AsyncResult requires valid id, not {0}'.format(type(id)))
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
