@@ -474,7 +474,6 @@ class Request(object):
                 format = self.rejected_msg
                 description = 'rejected'
                 severity = logging.WARN
-                exc_info = einfo
                 self.reject(requeue=einfo.exception.requeue)
             elif isinstance(einfo.exception, Ignore):
                 format = self.ignored_msg
