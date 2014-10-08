@@ -145,15 +145,14 @@ class CassandraBackend(BaseBackend):
             meta = {'status': status,
                     'date_done': date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
                     'traceback': self.encode(traceback),
+                    'result': self.encode(result),
                     'children': self.encode(
                         self.current_task_children(request),
                     )}
             ttl = self.expires and max(self.expires.total_seconds(), 0)
             if self.detailed_mode:
-                meta['result'] = result
                 cf.insert(task_id, {date_done: self.encode(meta)}, ttl=ttl)
             else:
-                meta['result'] = self.encode(result)
                 cf.insert(task_id, meta, ttl=ttl)
 
         return self._retry_on_error(_do_store)
@@ -166,18 +165,18 @@ class CassandraBackend(BaseBackend):
             try:
                 if self.detailed_mode:
                     row = cf.get(task_id, column_reversed=True, column_count=1)
-                    meta = self.decode(list(row.values())[0])
-                    meta['task_id'] = task_id
+                    obj = self.decode(list(row.values())[0])
                 else:
                     obj = cf.get(task_id)
-                    meta = {
-                        'task_id': task_id,
-                        'status': obj['status'],
-                        'result': self.decode(obj['result']),
-                        'date_done': obj['date_done'],
-                        'traceback': self.decode(obj['traceback']),
-                        'children': self.decode(obj['children']),
-                    }
+
+                meta = {
+                    'task_id': task_id,
+                    'status': obj['status'],
+                    'result': self.decode(obj['result']),
+                    'date_done': obj['date_done'],
+                    'traceback': self.decode(obj['traceback']),
+                    'children': self.decode(obj['children']),
+                }
             except (KeyError, pycassa.NotFoundException):
                 meta = {'status': states.PENDING, 'result': None}
             return meta
