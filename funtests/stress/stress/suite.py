@@ -214,7 +214,7 @@ class Suite(object):
 
     def always_timeout(self):
         self.join(
-            group(sleeping.s(1).set(time_limit=0.1)
+            group(sleeping.s(1).set(time_limit=0.001)
                   for _ in range(100))(),
             timeout=10, propagate=True,
         )
