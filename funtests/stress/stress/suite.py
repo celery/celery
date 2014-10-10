@@ -19,7 +19,7 @@ from celery.utils.timeutils import humanize_seconds
 
 from .app import (
     marker, _marker, add, any_, exiting, kill, sleeping,
-    sleeping_ignore_limits, any_returning, print_unicode
+    sleeping_ignore_limits, any_returning
 )
 from .data import BIG, SMALL
 from .fbi import FBI
@@ -264,8 +264,17 @@ class Suite(BaseSuite):
 
     @testcase('all', 'green')
     def manyshort(self):
-        self.join(group(print_unicode.s(i, i) for i in range(1000))(),
+        self.join(group(add.s(i, i) for i in range(1000))(),
                   timeout=10, propagate=True)
+
+    @testcase('all')
+    def always_timeout(self):
+        self.join(
+            group(sleeping.s(1).set(time_limit=0.1)
+                  for _ in range(100)
+            )(),
+            timeout=10, propagate=True,
+        )
 
     @testcase('all')
     def termbysig(self):
