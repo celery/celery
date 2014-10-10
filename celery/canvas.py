@@ -208,7 +208,7 @@ class Signature(dict):
             opts['group_id'] = group_id
         if chord:
             opts['chord'] = chord
-        return self.AsyncResult(tid)
+        return self.app.AsyncResult(tid)
     _freeze = freeze
 
     def replace(self, args=None, kwargs=None, options=None):
@@ -354,11 +354,11 @@ class chain(Signature):
 
     @classmethod
     def from_dict(self, d, app=None):
-        tasks = d['kwargs']['tasks']
+        tasks = [maybe_signature(t, app=app) for t in d['kwargs']['tasks']]
         if d['args'] and tasks:
             # partial args passed on to first task in chain (Issue #1057).
             tasks[0]['args'] = tasks[0]._merge(d['args'])[0]
-        return chain(*d['kwargs']['tasks'], app=app, **kwdict(d['options']))
+        return chain(*tasks, app=app, **kwdict(d['options']))
 
     @property
     def type(self):
@@ -474,7 +474,7 @@ class group(Signature):
 
     @classmethod
     def from_dict(self, d, app=None):
-        tasks = d['kwargs']['tasks']
+        tasks = [maybe_signature(t, app=app) for t in d['kwargs']['tasks']]
         if d['args'] and tasks:
             # partial args passed on to all tasks in the group (Issue #1057).
             for task in tasks:
