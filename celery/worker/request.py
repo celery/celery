@@ -369,7 +369,6 @@ class Request(object):
     def acknowledge(self):
         """Acknowledge task."""
         if not self.acknowledged:
-            print('!!!!ACKING TASK!!!!')
             self.on_ack(logger, self.connection_errors)
             self.acknowledged = True
 
