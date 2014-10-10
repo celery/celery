@@ -376,6 +376,7 @@ class chain(Signature):
             task_id=None, link=None, link_error=None,
             publisher=None, producer=None, root_id=None, app=None, **options):
         app = app or self.app
+        args = tuple(args) + tuple(self.args)
         tasks, results = self.prepare_steps(
             args, self.tasks, root_id, link_error,
         )
@@ -467,10 +468,6 @@ class chain(Signature):
 
     @classmethod
     def from_dict(self, d, app=None):
-        tasks = d['kwargs']['tasks']
-        if d['args'] and tasks:
-            # partial args passed on to first task in chain (Issue #1057).
-            tasks[0]['args'] = tasks[0]._merge(d['args'])[0]
         return chain(*d['kwargs']['tasks'], app=app, **d['options'])
 
     @property
