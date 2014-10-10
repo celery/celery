@@ -20,7 +20,7 @@ from celery.utils.timeutils import humanize_seconds
 
 from .app import (
     marker, _marker, add, any_, exiting, kill, sleeping,
-    sleeping_ignore_limits, segfault, any_returning, print_unicode
+    sleeping_ignore_limits, segfault, any_returning,
 )
 from .data import BIG, SMALL
 from .fbi import FBI
@@ -101,6 +101,7 @@ class Suite(object):
                 self.bigtasksbigvalue,
                 self.smalltasks,
                 self.timelimits,
+                self.always_timeout,
                 self.timelimits_soft,
                 self.revoketermfast,
                 self.revoketermslow,
@@ -168,7 +169,7 @@ class Suite(object):
         )
 
     def manyshort(self):
-        self.join(group(print_unicode.s() for i in range(1000))(),
+        self.join(group(add.si(i, i) for i in range(1000))(),
                   timeout=10, propagate=True)
 
     def runtest(self, fun, n=50, index=0, repeats=1):
@@ -210,6 +211,13 @@ class Suite(object):
                         self.progress = Progress(
                             fun, i + 1, n, index, repeats, runtime, elapsed, 1,
                         )
+
+    def always_timeout(self):
+        self.join(
+            group(sleeping.s(1).set(time_limit=0.1)
+                  for _ in range(100))(),
+            timeout=10, propagate=True,
+        )
 
     def termbysig(self):
         self._evil_groupmember(kill)
