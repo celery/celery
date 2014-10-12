@@ -81,6 +81,9 @@ class AsyncResult(ResultBase):
 
     def __init__(self, id, backend=None, task_name=None,
                  app=None, parent=None):
+        if id is None:
+            raise ValueError(
+                'AsyncResult requires valid id, not {0}'.format(type(id)))
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
@@ -119,8 +122,10 @@ class AsyncResult(ResultBase):
                                 terminate=terminate, signal=signal,
                                 reply=wait, timeout=timeout)
 
-    def get(self, timeout=None, propagate=True, interval=0.5, no_ack=True,
-            follow_parents=True):
+    def get(self, timeout=None, propagate=True, interval=0.5,
+            no_ack=True, follow_parents=True,
+            EXCEPTION_STATES=states.EXCEPTION_STATES,
+            PROPAGATE_STATES=states.PROPAGATE_STATES):
         """Wait until task is ready, and return its result.
 
         .. warning::
@@ -159,16 +164,20 @@ class AsyncResult(ResultBase):
                 self.maybe_reraise()
             return self.result
 
-        try:
-            return self.backend.wait_for(
-                self.id, timeout=timeout,
-                propagate=propagate,
-                interval=interval,
-                on_interval=on_interval,
-                no_ack=no_ack,
-            )
-        finally:
-            self._get_task_meta()  # update self._cache
+        meta = self.backend.wait_for(
+            self.id, timeout=timeout,
+            interval=interval,
+            on_interval=on_interval,
+            no_ack=no_ack,
+        )
+        if meta:
+            self._maybe_set_cache(meta)
+            status = meta['status']
+            if status in PROPAGATE_STATES and propagate:
+                raise self.backend.exception_to_python(meta['result'])
+            if status in EXCEPTION_STATES:
+                return self.backend.exception_to_python(meta['result'])
+            return meta['result']
     wait = get  # deprecated alias to :meth:`get`.
 
     def _maybe_reraise_parent_error(self):
@@ -322,14 +331,16 @@ class AsyncResult(ResultBase):
     def children(self):
         return self._get_task_meta().get('children')
 
+    def _maybe_set_cache(self, meta):
+        if meta:
+            state = meta['status']
+            if state == states.SUCCESS or state in states.PROPAGATE_STATES:
+                return self._set_cache(meta)
+        return meta
+
     def _get_task_meta(self):
         if self._cache is None:
-            meta = self.backend.get_task_meta(self.id)
-            if meta:
-                state = meta['status']
-                if state == states.SUCCESS or state in states.PROPAGATE_STATES:
-                    return self._set_cache(meta)
-            return meta
+            return self._maybe_set_cache(self.backend.get_task_meta(self.id))
         return self._cache
 
     def _set_cache(self, d):

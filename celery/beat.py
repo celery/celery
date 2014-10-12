@@ -220,12 +220,20 @@ class Scheduler(object):
 
     def _tick(self, event_t=event_t, min=min,
              heappop=heapq.heappop, heappush=heapq.heappush,
-             heapify=heapq.heapify):
+             heapify=heapq.heapify, mktime=time.mktime):
         """Run a tick, that is one iteration of the scheduler.
 
-        Executes all due tasks.
+        Executes one due task per call.
 
+        Returns preferred delay in seconds for next call.
         """
+        adjust = self.adjust
+
+        def _when(entry, next_time_to_run):
+            return (mktime(entry.schedule.now().timetuple())
+                    + (adjust(next_time_to_run) or 0))
+
+        adjust = self.adjust
         max_interval = self.max_interval
         H = self._heap
         if H is None:

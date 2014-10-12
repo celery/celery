@@ -76,7 +76,7 @@ except (ImportError, NameError):  # pragma: no cover
 logger = get_logger(__name__)
 error, debug = logger.error, logger.debug
 
-UNAVAIL = frozenset([errno.EAGAIN, errno.EINTR])
+UNAVAIL = frozenset({errno.EAGAIN, errno.EINTR})
 
 #: Constant sent by child process when started (ready to accept work)
 WORKER_UP = 15
@@ -1089,7 +1089,7 @@ class AsynPool(_pool.Pool):
         all tasks that have not been started will be discarded.
 
         In Celery this is called whenever the transport connection is lost
-        (consumer restart).
+        (consumer restart), and when a process is terminated.
 
         """
         resq = proc.outq._reader

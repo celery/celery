@@ -5,7 +5,7 @@ from sys import exit, stderr
 
 from celery.app.defaults import NAMESPACES, flatten
 
-ignore = frozenset([
+ignore = {
     'CELERYD_AGENT',
     'CELERYD_POOL_PUTLOCKS',
     'BROKER_HOST',
@@ -18,7 +18,7 @@ ignore = frozenset([
     'CELERY_REDIS_PORT',
     'CELERY_REDIS_DB',
     'CELERY_REDIS_PASSWORD',
-])
+}
 
 
 def is_ignored(setting, option):

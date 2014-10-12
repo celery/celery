@@ -56,6 +56,10 @@ allow that user access to that virtual host:
 
 .. code-block:: bash
 
+    $ sudo rabbitmqctl set_user_tags myuser mytag
+
+.. code-block:: bash
+
     $ sudo rabbitmqctl set_permissions -p myvhost myuser ".*" ".*" ".*"
 
 See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
@@ -89,6 +93,12 @@ Finally, we can install rabbitmq using :program:`brew`:
 .. _`Homebrew documentation`: https://github.com/Homebrew/homebrew/wiki/Installation
 
 .. _rabbitmq-osx-system-hostname:
+
+After you have installed rabbitmq with brew you need to add the following to your path to be able to start and stop the broker. Add it to your .bash_profile or .profile
+
+.. code-block:: bash
+
+    `PATH=$PATH:/usr/local/sbin`
 
 Configuring the system host name
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

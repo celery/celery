@@ -30,7 +30,7 @@ from celery._state import (
     _announce_app_finalized,
 )
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
-from celery.five import items, values
+from celery.five import values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import gen_task_name
@@ -52,9 +52,9 @@ from . import builtins  # noqa
 __all__ = ['Celery']
 
 _EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
-BUILTIN_FIXUPS = frozenset([
+BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
-])
+}
 
 ERR_ENVVAR_NOT_SET = """\
 The environment variable {0!r} is not set,
@@ -373,8 +373,7 @@ class Celery(object):
             expires, retries, chord,
             maybe_list(link), maybe_list(link_error),
             reply_to or self.oid, time_limit, soft_time_limit,
-            self.conf.CELERY_SEND_TASK_SENT_EVENT,
-            root_id, parent_id,
+            self.conf.CELERY_SEND_TASK_SENT_EVENT, root_id, parent_id,
         )
 
         if connection:
@@ -481,17 +480,14 @@ class Celery(object):
             self.on_configure()
         if self._config_source:
             self.loader.config_from_object(self._config_source)
+        defaults = dict(deepcopy(DEFAULTS), **self._preconf)
         self.configured = True
         s = Settings({}, [self.prepare_config(self.loader.conf),
-                          deepcopy(DEFAULTS)])
-
+                          defaults])
         # load lazy config dict initializers.
         pending = self._pending_defaults
         while pending:
             s.add_defaults(maybe_evaluate(pending.popleft()()))
-        if self._preconf:
-            for key, value in items(self._preconf):
-                setattr(s, key, value)
         self.on_after_configure.send(sender=self, source=s)
         return s
 

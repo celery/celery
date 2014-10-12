@@ -164,6 +164,12 @@ workers, note that the first worker to start will receive four times the
 number of messages initially.  Thus the tasks may not be fairly distributed
 to the workers.
 
+To disable prefetching, set CELERYD_PREFETCH_MULTIPLIER to 1.  Setting 
+CELERYD_PREFETCH_MULTIPLIER to 0 will allow the worker to keep consuming
+as many messages as it wants.
+
+For more on prefetching, read :ref:`optimizing-prefetch-limit`
+
 .. note::
 
     Tasks with ETA/countdown are not affected by prefetch limits.
@@ -779,13 +785,20 @@ Message Routing
 CELERY_QUEUES
 ~~~~~~~~~~~~~
 
-The mapping of queues the worker consumes from.  This is a dictionary
-of queue name/options.  See :ref:`guide-routing` for more information.
+Most users will not want to specify this setting and should rather use
+the :ref:`automatic routing facilities <routing-automatic>`.
+
+If you really want to configure advanced routing, this setting should
+be a list of :class:`kombu.Queue` objects the worker will consume from.
+
+Note that workers can be overriden this setting via the `-Q` option,
+or individual queues from this list (by name) can be excluded using
+the `-X` option.
+
+Also see :ref:`routing-basics` for more information.
 
 The default is a queue/exchange/binding key of ``celery``, with
 exchange type ``direct``.
-
-You don't have to care about this unless you want custom routing facilities.
 
 .. setting:: CELERY_ROUTES
 
@@ -960,26 +973,6 @@ Example::
     BROKER_FAILOVER_STRATEGY=random_failover_strategy
 
 .. setting:: BROKER_TRANSPORT
-
-BROKER_FAILOVER_STRATEGY
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Default failover strategy for the broker Connection object. If supplied,
-may map to a key in 'kombu.connection.failover_strategies', or be a reference
-to any method that yields a single item from a supplied list.
-
-Example::
-
-    # Random failover strategy
-    def random_failover_strategy(servers):
-        it = list(it)  # don't modify callers list
-        shuffle = random.shuffle
-        for _ in repeat(None):
-            shuffle(it)
-            yield it[0]
-
-    BROKER_FAILOVER_STRATEGY=random_failover_strategy
-
 
 BROKER_TRANSPORT
 ~~~~~~~~~~~~~~~~

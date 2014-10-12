@@ -2,13 +2,12 @@
 
 from __future__ import absolute_import, with_statement
 
-from mock import MagicMock, Mock, patch, sentinel
-from nose import SkipTest
-
 from celery.backends import riak as module
 from celery.backends.riak import RiakBackend, riak
 from celery.exceptions import ImproperlyConfigured
-from celery.tests.case import AppCase
+from celery.tests.case import (
+    AppCase, MagicMock, Mock, SkipTest, patch, sentinel,
+)
 
 
 RIAK_BUCKET = 'riak_bucket'

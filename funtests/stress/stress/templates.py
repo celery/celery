@@ -91,7 +91,7 @@ class redis(default):
 
 @template()
 class redistore(default):
-    CELERY_RESULT_BACKEND = 'redis://'
+    CELERY_RESULT_BACKEND = 'redis://?new_join=1'
 
 
 @template()

@@ -8,6 +8,190 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.13:
+
+3.1.13
+======
+
+Security Fixes
+--------------
+
+* [Security: `CELERYSA-0002`_] Insecure default umask.
+
+    The built-in utility used to daemonize the Celery worker service sets
+    an insecure umask by default (umask 0).
+
+    This means that any files or directories created by the worker will
+    end up having world-writable permissions.
+
+    Special thanks to Red Hat for originally discovering and reporting the
+    issue!
+
+    This version will no longer set a default umask by default, so if unset
+    the umask of the parent process will be used.
+
+.. _`CELERYSA-0002`:
+    http://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0002.txt
+
+News
+----
+
+- **Requirements**
+
+    - Now depends on :ref:`Kombu 3.0.21 <kombu:version-3.0.21>`.
+
+    - Now depends on :mod:`billiard` 3.3.0.18.
+
+
+- **App**: ``backend`` argument now also sets the :setting:`CELERY_RESULT_BACKEND`
+  setting.
+
+- **Task**: ``signature_from_request`` now propagates ``reply_to`` so that
+  the RPC backend works with retried tasks (Issue #2113).
+
+- **Task**: ``retry`` will no longer attempt to requeue the task if sending
+  the retry message fails.
+
+    Unrelated exceptions being raised could cause a message loop, so it was
+    better to remove this behavior.
+
+- **Beat**: Accounts for standard 1ms drift by always waking up 0.010s
+  earlier.
+
+    This will adjust the latency so that the periodic tasks will not move
+    1ms after every invocation.
+
+- Documentation fixes
+
+    Contributed by Yuval Greenfield, Lucas Wiman, nicholsonjf
+
+- **Worker**: Removed an outdated assert statement that could lead to errors
+  being masked (Issue #2086).
+
+
+
+.. _version-3.1.12:
+
+3.1.12
+======
+:release-date: 2014-06-09 10:12 P.M UTC
+:release-by: Ask Solem
+
+- **Requirements**
+
+    Now depends on :ref:`Kombu 3.0.19 <kombu:version-3.0.19>`.
+
+- **App**: Connections were not being closed after fork due to an error in the
+  after fork handler (Issue #2055).
+
+    This could manifest itself by causing framing errors when using RabbitMQ.
+    (``Unexpected frame``).
+
+- **Django**: ``django.setup()`` was being called too late when
+  using Django 1.7 (Issue #1802).
+
+- **Django**: Fixed problems with event timezones when using Django
+  (``Substantial drift``).
+
+    Celery did not take into account that Django modifies the
+    ``time.timeone`` attributes and friends.
+
+- **Canvas**: ``Signature.link`` now works when the link option is a scalar
+  value (Issue #2019).
+
+- **Prefork pool**: Fixed race conditions for when file descriptors are
+  removed from the event loop.
+
+    Fix contributed by Roger Hu.
+
+- **Prefork pool**: Improved solution for dividing tasks between child
+  processes.
+
+    This change should improve performance when there are many child
+    processes, and also decrease the chance that two subsequent tasks are
+    written to the same child process.
+
+- **Worker**: Now ignores unknown event types, instead of crashing.
+
+    Fix contributed by Illes Solt.
+
+- **Programs**: :program:`celery worker --detach` no longer closes open file
+  descriptors when :envvar:`C_FAKEFORK` is used so that the workers output
+  can be seen.
+
+- **Programs**: The default working directory for :program:`celery worker
+  --detach` is now the current working directory, not ``/``.
+
+- **Canvas**: ``signature(s, app=app)`` did not upgrade serialized signatures
+  to their original class (``subtask_type``) when the ``app`` keyword argument
+  was used.
+
+- **Control**: The ``duplicate nodename`` warning emitted by control commands
+  now shows the duplicate node name.
+
+- **Tasks**: Can now call ``ResultSet.get()`` on a result set without members.
+
+    Fix contributed by Alexey Kotlyarov.
+
+- **App**: Fixed strange traceback mangling issue for
+  ``app.connection_or_acquire``.
+
+- **Programs**: The :program:`celery multi stopwait` command is now documented
+  in usage.
+
+- **Other**: Fixed cleanup problem with ``PromiseProxy`` when an error is
+  raised while trying to evaluate the promise.
+
+- **Other**: The utility used to censor configuration values now handles
+  non-string keys.
+
+    Fix contributed by Luke Pomfrey.
+
+- **Other**: The ``inspect conf`` command did not handle non-string keys well.
+
+    Fix contributed by Jay Farrimond.
+
+- **Programs**: Fixed argument handling problem in
+  :program:`celery worker --detach`.
+
+    Fix contributed by Dmitry Malinovsky.
+
+- **Programs**: :program:`celery worker --detach` did not forward working
+  directory option (Issue #2003).
+
+- **Programs**: :program:`celery inspect registered` no longer includes
+  the list of built-in tasks.
+
+- **Worker**: The ``requires`` attribute for boot steps were not being handled
+  correctly (Issue #2002).
+
+- **Eventlet**: The eventlet pool now supports the ``pool_grow`` and
+  ``pool_shrink`` remote control commands.
+
+    Contributed by Mher Movsisyan.
+
+- **Eventlet**: The eventlet pool now implements statistics for
+  :program:``celery inspect stats``.
+
+    Contributed by Mher Movsisyan.
+
+- **Documentation**: Clarified ``Task.rate_limit`` behavior.
+
+    Contributed by Jonas Haag.
+
+- **Documentation**: ``AbortableTask`` examples now updated to use the new
+  API (Issue #1993).
+
+- **Documentation**: The security documentation examples used an out of date
+  import.
+
+    Fix contributed by Ian Dees.
+
+- **Init scripts**: The CentOS init scripts did not quote
+  :envvar:`CELERY_CHDIR`.
+
+    Fix contributed by ffeast.
+
 .. _version-3.1.11:
 
 3.1.11

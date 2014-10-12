@@ -177,6 +177,9 @@ class RedisBackend(KeyValueStoreBackend):
     def expire(self, key, value):
         return self.client.expire(key, value)
 
+    def add_to_chord(self, group_id, result):
+        self.client.incr(self.get_key_for_group(group_id, '.t'), 1)
+
     def _unpack_chord_result(self, tup, decode,
                              PROPAGATE_STATES=states.PROPAGATE_STATES):
         _, tid, state, retval = decode(tup)
@@ -187,7 +190,8 @@ class RedisBackend(KeyValueStoreBackend):
     def _new_chord_apply(self, header, partial_args, group_id, body,
                          result=None, options={}, **kwargs):
         # avoids saving the group in the redis db.
-        return header(*partial_args, task_id=group_id, **options or {})
+        options['task_id'] = group_id
+        return header(*partial_args, **options or {})
 
     def _new_chord_return(self, task, state, result, propagate=None,
                           PROPAGATE_STATES=states.PROPAGATE_STATES):
@@ -201,21 +205,27 @@ class RedisBackend(KeyValueStoreBackend):
 
         client = self.client
         jkey = self.get_key_for_group(gid, '.j')
+        tkey = self.get_key_for_group(gid, '.t')
         result = self.encode_result(result, state)
-        _, readycount, _ = client.pipeline()                            \
+        _, readycount, totaldiff, _, _ = client.pipeline()              \
             .rpush(jkey, self.encode([1, tid, state, result]))          \
             .llen(jkey)                                                 \
+            .get(tkey)                                                  \
             .expire(jkey, 86400)                                        \
+            .expire(tkey, 86400)                                        \
             .execute()
+
+        totaldiff = int(totaldiff or 0)
 
         try:
             callback = maybe_signature(request.chord, app=app)
-            total = callback['chord_size']
-            if readycount >= total:
+            total = callback['chord_size'] + totaldiff
+            if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
-                resl, _ = client.pipeline()     \
+                resl, _, _ = client.pipeline()  \
                     .lrange(jkey, 0, total)     \
                     .delete(jkey)               \
+                    .delete(tkey)               \
                     .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])

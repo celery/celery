@@ -140,7 +140,7 @@ class AMQPBackend(BaseBackend):
     def on_reply_declare(self, task_id):
         return [self._create_binding(task_id)]
 
-    def wait_for(self, task_id, timeout=None, cache=True, propagate=True,
+    def wait_for(self, task_id, timeout=None, cache=True,
                  no_ack=True, on_interval=None,
                  READY_STATES=states.READY_STATES,
                  PROPAGATE_STATES=states.PROPAGATE_STATES,
@@ -148,18 +148,13 @@ class AMQPBackend(BaseBackend):
         cached_meta = self._cache.get(task_id)
         if cache and cached_meta and \
                 cached_meta['status'] in READY_STATES:
-            meta = cached_meta
+            return cached_meta
         else:
             try:
-                meta = self.consume(task_id, timeout=timeout, no_ack=no_ack,
+                return self.consume(task_id, timeout=timeout, no_ack=no_ack,
                                     on_interval=on_interval)
             except socket.timeout:
                 raise TimeoutError('The operation timed out.')
-
-        if meta['status'] in PROPAGATE_STATES and propagate:
-            raise self.exception_to_python(meta['result'])
-        # consume() always returns READY_STATE.
-        return meta['result']
 
     def get_task_meta(self, task_id, backlog_limit=1000):
         # Polling and using basic_get
@@ -213,7 +208,10 @@ class AMQPBackend(BaseBackend):
             # Total time spent may exceed a single call to wait()
             if timeout and now() - time_start >= timeout:
                 raise socket.timeout()
-            wait(timeout=timeout)
+            try:
+                wait(timeout=1)
+            except socket.timeout:
+                pass
             if on_interval:
                 on_interval()
             if results:  # got event on the wanted channel.

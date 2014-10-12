@@ -656,7 +656,7 @@ decorator executes inline like before, however for custom apps the @task
 decorator now returns a special PromiseProxy object that is only evaluated
 on access.
 
-All promises will be evaluated when `app.finalize` is called, or implicitly
+All promises will be evaluated when :meth:`@finalize` is called, or implicitly
 when the task registry is first used.
 
 

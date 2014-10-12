@@ -69,6 +69,7 @@ Jeff Terrace <jterrace@gmail.com>
 Jerzy Kozera <jerzy.kozera@gmail.com>
 Jesper Noehr <jesper@noehr.org>
 John Watson <johnw@mahalo.com>
+John Whitlock <john-whitlock@ieee.org>
 Jonas Haag <jonas@lophus.org>
 Jonas Obrist <me@ojii.ch>
 Jonatan Heyman <jonatan@heyman.info>

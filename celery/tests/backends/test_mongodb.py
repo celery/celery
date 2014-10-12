@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 
 import datetime
-import uuid
 
 from pickle import loads, dumps
 
+from celery import uuid
 from celery import states
 from celery.backends import mongodb as module
 from celery.backends.mongodb import MongoBackend, Bunch, pymongo
@@ -15,13 +15,14 @@ from celery.tests.case import (
 )
 
 COLLECTION = 'taskmeta_celery'
-TASK_ID = str(uuid.uuid1())
+TASK_ID = uuid()
 MONGODB_HOST = 'localhost'
 MONGODB_PORT = 27017
 MONGODB_USER = 'mongo'
 MONGODB_PASSWORD = '1234'
 MONGODB_DATABASE = 'testing'
 MONGODB_COLLECTION = 'collection1'
+MONGODB_GROUP_COLLECTION = 'group_collection1'
 
 
 class test_MongoBackend(AppCase):
@@ -65,13 +66,6 @@ class test_MongoBackend(AppCase):
     def test_init_settings_is_None(self):
         self.app.conf.CELERY_MONGODB_BACKEND_SETTINGS = None
         MongoBackend(app=self.app)
-
-    def test_restore_group_no_entry(self):
-        x = MongoBackend(app=self.app)
-        x.collection = Mock()
-        fo = x.collection.find_one = Mock()
-        fo.return_value = None
-        self.assertIsNone(x._restore_group('1f3fab'))
 
     @depends_on_current_app
     def test_reduce(self):
@@ -220,29 +214,36 @@ class test_MongoBackend(AppCase):
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_save_group(self, mock_get_database):
-        self.backend.taskmeta_collection = MONGODB_COLLECTION
+        self.backend.groupmeta_collection = MONGODB_GROUP_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
         mock_collection = Mock()
 
         mock_get_database.return_value = mock_database
         mock_database.__getitem__.return_value = mock_collection
-
+        res = [self.app.AsyncResult(i) for i in range(3)]
         ret_val = self.backend._save_group(
-            sentinel.taskset_id, sentinel.result)
-
+            sentinel.taskset_id, res,
+        )
         mock_get_database.assert_called_once_with()
-        mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
+        mock_database.__getitem__.assert_called_once_with(
+            MONGODB_GROUP_COLLECTION,
+        )
         mock_collection.save.assert_called_once_with(ANY)
-        self.assertEqual(sentinel.result, ret_val)
+        self.assertEqual(res, ret_val)
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_restore_group(self, mock_get_database):
-        self.backend.taskmeta_collection = MONGODB_COLLECTION
+        self.backend.groupmeta_collection = MONGODB_GROUP_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
         mock_collection = Mock()
-        mock_collection.find_one.return_value = MagicMock()
+        mock_collection.find_one.return_value = {
+            '_id': sentinel.taskset_id,
+            'result': [uuid(), uuid()],
+            'date_done': 1,
+        }
+        self.backend.decode.side_effect = lambda r: r
 
         mock_get_database.return_value = mock_database
         mock_database.__getitem__.return_value = mock_collection
@@ -250,12 +251,11 @@ class test_MongoBackend(AppCase):
         ret_val = self.backend._restore_group(sentinel.taskset_id)
 
         mock_get_database.assert_called_once_with()
-        mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
         mock_collection.find_one.assert_called_once_with(
             {'_id': sentinel.taskset_id})
         self.assertEqual(
-            ['date_done', 'result', 'task_id'],
-            list(ret_val.keys()),
+            list(sorted(['date_done', 'result', 'task_id'])),
+            list(sorted(ret_val.keys())),
         )
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
@@ -271,7 +271,6 @@ class test_MongoBackend(AppCase):
         self.backend._delete_group(sentinel.taskset_id)
 
         mock_get_database.assert_called_once_with()
-        mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
         mock_collection.remove.assert_called_once_with(
             {'_id': sentinel.taskset_id})
 
@@ -297,19 +296,20 @@ class test_MongoBackend(AppCase):
     def test_cleanup(self, mock_get_database):
         datetime.datetime = self._reset['datetime']
         self.backend.taskmeta_collection = MONGODB_COLLECTION
+        self.backend.groupmeta_collection = MONGODB_GROUP_COLLECTION
 
-        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_database = Mock(spec=['__getitem__', '__setitem__'],
+                             name='MD')
         self.backend.collections = mock_collection = Mock()
 
         mock_get_database.return_value = mock_database
+        mock_database.__getitem__ = Mock(name='MD.__getitem__')
         mock_database.__getitem__.return_value = mock_collection
 
         self.backend.app.now = datetime.datetime.utcnow
         self.backend.cleanup()
 
         mock_get_database.assert_called_once_with()
-        mock_database.__getitem__.assert_called_once_with(
-            MONGODB_COLLECTION)
         self.assertTrue(mock_collection.remove.called)
 
     def test_get_database_authfailure(self):

@@ -99,7 +99,7 @@ many performance and stability improvements.  It is an eventual goal
 that these improvements will be merged back into Python one day.
 
 It is also used for compatibility with older Python versions
-that doesn't come with the multiprocessing module.
+that don't come with the multiprocessing module.
 
 .. _`billiard`: http://pypi.python.org/pypi/billiard
 
@@ -425,7 +425,7 @@ using the tasks current result backend.
 
 If you need to specify a custom result backend, or you want to use
 the current application's default backend you can use
-:class:`@Celery.AsyncResult`:
+:class:`@AsyncResult`:
 
     >>> result = app.AsyncResult(task_id)
     >>> result.get()
@@ -587,7 +587,7 @@ Why do workers delete tasks from the queue if they are unable to process them?
 **Answer**:
 
 The worker rejects unknown tasks, messages with encoding errors and messages
-that doesn't contain the proper fields (as per the task message protocol).
+that don't contain the proper fields (as per the task message protocol).
 
 If it did not reject them they could be redelivered again and again,
 causing a loop.
@@ -600,12 +600,11 @@ queue for exchange, so that rejected messages is moved there.
 Can I call a task by name?
 -----------------------------
 
-**Answer**: Yes. Use :func:`celery.execute.send_task`.
+**Answer**: Yes. Use :meth:`@send_task`.
 You can also call a task by name from any language
 that has an AMQP client.
 
-    >>> from celery.execute import send_task
-    >>> send_task("tasks.add", args=[2, 2], kwargs={})
+    >>> app.send_task('tasks.add', args=[2, 2], kwargs={})
     <AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d>
 
 .. _faq-get-current-task-id:

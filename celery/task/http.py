@@ -25,7 +25,7 @@ from celery.utils.log import get_task_logger
 __all__ = ['InvalidResponseError', 'RemoteExecuteError', 'UnknownStatusError',
            'HttpDispatch', 'dispatch', 'URL']
 
-GET_METHODS = frozenset(['GET', 'HEAD'])
+GET_METHODS = {'GET', 'HEAD'}
 logger = get_task_logger(__name__)
 
 

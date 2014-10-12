@@ -55,6 +55,10 @@ these will expand to:
     - ``worker1.%n`` -> ``worker1.george``
     - ``worker1.%d`` -> ``worker1.example.com``
 
+.. admonition:: Note for :program:`supervisord` users.
+
+   The ``%`` sign must be escaped by adding a second one: `%%h`.
+
 .. _worker-stopping:
 
 Stopping the worker
@@ -810,7 +814,7 @@ Inspecting workers
 uses remote control commands under the hood.
 
 You can also use the ``celery`` command to inspect workers,
-and it supports the same commands as the :class:`@Celery.control` interface.
+and it supports the same commands as the :class:`@control` interface.
 
 .. code-block:: python
 

@@ -49,7 +49,7 @@ class test_RPCBackend(AppCase):
         self.assertEqual(queue.exchange, self.b.exchange)
         self.assertEqual(queue.routing_key, self.b.oid)
         self.assertFalse(queue.durable)
-        self.assertFalse(queue.auto_delete)
+        self.assertTrue(queue.auto_delete)
 
     def test_many_bindings(self):
         self.assertListEqual(

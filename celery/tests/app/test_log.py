@@ -19,7 +19,6 @@ from celery.utils.log import (
     task_logger,
     in_sighandler,
     logger_isa,
-    ensure_process_aware_logger,
 )
 from celery.tests.case import (
     AppCase, Mock, SkipTest,
@@ -361,14 +360,6 @@ class test_task_logger(test_default_logger):
 
     def get_logger(self, *args, **kwargs):
         return get_task_logger('test_task_logger')
-
-
-class test_patch_logger_cls(AppCase):
-
-    def test_patches(self):
-        ensure_process_aware_logger()
-        with in_sighandler():
-            logging.getLoggerClass().log(get_logger('test'))
 
 
 class MockLogger(logging.Logger):

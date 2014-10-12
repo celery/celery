@@ -27,14 +27,12 @@ from .asynpool import AsynPool
 __all__ = ['TaskPool', 'process_initializer', 'process_destructor']
 
 #: List of signals to reset when a child process starts.
-WORKER_SIGRESET = frozenset(['SIGTERM',
-                             'SIGHUP',
-                             'SIGTTIN',
-                             'SIGTTOU',
-                             'SIGUSR1'])
+WORKER_SIGRESET = {
+    'SIGTERM', 'SIGHUP', 'SIGTTIN', 'SIGTTOU', 'SIGUSR1',
+}
 
 #: List of signals to ignore when a child process starts.
-WORKER_SIGIGNORE = frozenset(['SIGINT'])
+WORKER_SIGIGNORE = {'SIGINT'}
 
 logger = get_logger(__name__)
 warning, debug = logger.warning, logger.debug

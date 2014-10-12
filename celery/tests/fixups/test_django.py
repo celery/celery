@@ -93,9 +93,7 @@ class test_DjangoFixup(FixupCase):
                 f.on_worker_init()
                 DWF.assert_called_with(f.app)
                 DWF.return_value.install.assert_called_with()
-                self.assertIs(
-                    f._worker_fixup, DWF.return_value.install.return_value,
-                )
+                self.assertIs(f._worker_fixup, DWF.return_value)
 
 
 class test_DjangoWorkerFixup(FixupCase):

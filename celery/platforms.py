@@ -56,7 +56,6 @@ SYSTEM = _platform.system()
 IS_OSX = SYSTEM == 'Darwin'
 IS_WINDOWS = SYSTEM == 'Windows'
 
-DAEMON_UMASK = 0
 DAEMON_WORKDIR = '/'
 
 PIDFILE_FLAGS = os.O_CREAT | os.O_EXCL | os.O_WRONLY
@@ -296,8 +295,11 @@ class DaemonContext(object):
     def __init__(self, pidfile=None, workdir=None, umask=None,
                  fake=False, after_chdir=None, after_forkers=True,
                  **kwargs):
+        if isinstance(umask, string_t):
+            # octal or decimal, depending on initial zero.
+            umask = int(umask, 8 if umask.startswith('0') else 10)
         self.workdir = workdir or DAEMON_WORKDIR
-        self.umask = DAEMON_UMASK if umask is None else umask
+        self.umask = umask
         self.fake = fake
         self.after_chdir = after_chdir
         self.after_forkers = after_forkers
@@ -314,7 +316,8 @@ class DaemonContext(object):
                 self._detach()
 
             os.chdir(self.workdir)
-            os.umask(self.umask)
+            if self.umask is not None:
+                os.umask(self.umask)
 
             if self.after_chdir:
                 self.after_chdir()

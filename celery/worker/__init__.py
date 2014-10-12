@@ -209,7 +209,7 @@ class WorkController(object):
         except WorkerTerminate:
             self.terminate()
         except Exception as exc:
-            logger.error('Unrecoverable error: %r', exc, exc_info=True)
+            logger.critical('Unrecoverable error: %r', exc, exc_info=True)
             self.stop(exitcode=EX_FAILURE)
         except SystemExit as exc:
             self.stop(exitcode=exc.code)
@@ -287,7 +287,10 @@ class WorkController(object):
         if self.consumer:
             self.consumer.update_strategies()
             self.consumer.reset_rate_limits()
-        self.pool.restart()
+        try:
+            self.pool.restart()
+        except NotImplementedError:
+            pass
 
     def info(self):
         return {'total': self.state.total_count,

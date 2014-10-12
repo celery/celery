@@ -27,7 +27,7 @@ from .term import colored
 
 __all__ = ['ColorFormatter', 'LoggingProxy', 'base_logger',
            'set_in_sighandler', 'in_sighandler', 'get_logger',
-           'get_task_logger', 'mlevel', 'ensure_process_aware_logger',
+           'get_task_logger', 'mlevel',
            'get_multiprocessing_logger', 'reset_multiprocessing_logger']
 
 _process_aware = False
@@ -252,35 +252,6 @@ class LoggingProxy(object):
         return False
 
 
-def ensure_process_aware_logger(force=False):
-    """Make sure process name is recorded when loggers are used."""
-    global _process_aware
-    if force or not _process_aware:
-        logging._acquireLock()
-        try:
-            _process_aware = True
-            Logger = logging.getLoggerClass()
-            if getattr(Logger, '_process_aware', False):  # pragma: no cover
-                return
-
-            class ProcessAwareLogger(Logger):
-                _signal_safe = True
-                _process_aware = True
-
-                def makeRecord(self, *args, **kwds):
-                    record = Logger.makeRecord(self, *args, **kwds)
-                    record.processName = current_process()._name
-                    return record
-
-                def log(self, *args, **kwargs):
-                    if _in_sighandler:
-                        return
-                    return Logger.log(self, *args, **kwargs)
-            logging.setLoggerClass(ProcessAwareLogger)
-        finally:
-            logging._releaseLock()
-
-
 def get_multiprocessing_logger():
     return mputil.get_logger() if mputil else None
 
@@ -294,4 +265,3 @@ def current_process_index(base=1):
     if current_process:
         index = getattr(current_process(), 'index', None)
         return index + base if index is not None else index
-ensure_process_aware_logger()
