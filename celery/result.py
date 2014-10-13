@@ -417,13 +417,13 @@ class ResultSet(ResultBase):
     :param results: List of result instances.
 
     """
-    app = None
+    _app = None
 
     #: List of results in in the set.
     results = None
 
     def __init__(self, results, app=None, **kwargs):
-        self.app = app_or_default(app or self.app)
+        self.app = app
         self.results = results
 
     def add(self, result):
@@ -732,6 +732,17 @@ class ResultSet(ResultBase):
             return self.results[0].supports_native_join
         except IndexError:
             pass
+
+    @property
+    def app(self):
+        if self._app is None:
+            self._app = (self.results[0].app if self.results else
+                         current_app._get_current_object())
+        return self._app
+
+    @app.setter
+    def app(self, app):  # noqa
+        self._app = app
 
     @property
     def backend(self):
