@@ -470,6 +470,8 @@ class chain(Signature):
     def from_dict(self, d, app=None):
         tasks = d['kwargs']['tasks']
         if tasks:
+            if isinstance(tasks, tuple):  # aaaargh
+                tasks = d['kwargs']['tasks'] = list(tasks)
             # First task must be signature object to get app
             tasks[0] = maybe_signature(tasks[0], app=app)
         return chain(*tasks, app=app, **d['options'])
