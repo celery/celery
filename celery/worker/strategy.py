@@ -41,6 +41,10 @@ def proto1_to_proto2(message, body):
             'Task keyword arguments must be a mapping',
         )
     body['headers'] = message.headers
+    try:
+        body['group'] = body['taskset']
+    except KeyError:
+        pass
     return (args, kwargs), body, True, body.get('utc', True)
 
 
