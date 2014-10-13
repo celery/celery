@@ -468,7 +468,11 @@ class chain(Signature):
 
     @classmethod
     def from_dict(self, d, app=None):
-        return chain(*d['kwargs']['tasks'], app=app, **d['options'])
+        tasks = d['kwargs']['tasks']
+        if tasks:
+            # First task must be signature object to get app
+            tasks[0] = maybe_signature(tasks[0], app=app)
+        return chain(*tasks, app=app, **d['options'])
 
     @property
     def app(self):
