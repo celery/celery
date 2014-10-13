@@ -423,7 +423,7 @@ class ResultSet(ResultBase):
     results = None
 
     def __init__(self, results, app=None, **kwargs):
-        self.app = app
+        self._app = app
         self.results = results
 
     def add(self, result):
