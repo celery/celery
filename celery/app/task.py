@@ -494,10 +494,15 @@ class Task(object):
                               ``queue`` argument only used to specify custom
                               routing keys to topic exchanges.
 
-        :keyword queue: The queue to route the task to.  This must be a key
-                        present in :setting:`CELERY_QUEUES`, or
-                        :setting:`CELERY_CREATE_MISSING_QUEUES` must be
-                        enabled.  See :ref:`guide-routing` for more
+        :keyword queue: The queue specified by name that must exist as a key
+                        in :setting:`CELERY_QUEUES`. If queue is not in
+                        :setting: `CELERY_QUEUES` then if
+                        :setting:`CELERY_CREATE_MISSING_QUEUES` is enabled
+                        the queue will be created, which can cause problems
+                        if another dispatching client created the queue
+                        already. To send to a dedicated worker queue
+                        use the queue name provided by the ``worker_direct``
+                        helper function. To See :ref:`guide-routing` for more
                         information.
 
         :keyword exchange: Named custom exchange to send the task to.
