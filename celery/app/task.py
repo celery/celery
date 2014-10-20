@@ -12,7 +12,7 @@ import sys
 
 from billiard.einfo import ExceptionInfo
 
-from celery import current_app
+from celery import current_app, group
 from celery import states
 from celery._state import _task_stack
 from celery.canvas import signature
@@ -687,30 +687,27 @@ class Task(object):
             return d.send(type_, uuid=req.id, **fields)
 
     def replace(self, sig):
-        request = self.request
-        sig.set_immutable(True)
-        chord_id, request.chord = request.chord, None
-        group_id, request.group = request.group, None
-        callbacks, request.callbacks = request.callbacks, [sig]
-        if group_id or chord_id:
-            sig.set(group=group_id, chord=chord_id)
-        sig |= callbacks[0]
-        return sig
+        """Replace the current task, with a new task inheriting the
+        same task id.
 
-    def replace_in_chord(self, sig):
-        """Replace the current task (which must be a member of a chord)
-        with a new task.
+        :param sig: :class:`@signature`
 
-        Note that this will raise :exc:`~@Ignore`, so the best practice
-        is to always use ``return self.replace_in_chord(...)`` to convey
+        Note: This will raise :exc:`~@Ignore`, so the best practice
+        is to always use ``raise self.replace_in_chord(...)`` to convey
         to the reader that the task will not continue after being replaced.
 
         :param: Signature of new task.
 
         """
+        chord = self.request.chord
+        if isinstance(sig, group):
+            sig |= self.app.tasks['celery.accumulate'].s(index=0).set(
+                chord=chord,
+            )
+            chord = None
         sig.freeze(self.request.id,
                    group_id=self.request.group,
-                   chord=self.request.chord,
+                   chord=chord,
                    root_id=self.request.root_id)
         sig.delay()
         raise Ignore('Chord member replaced by new task')

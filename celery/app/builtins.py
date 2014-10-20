@@ -34,6 +34,16 @@ def add_backend_cleanup_task(app):
 
 
 @connect_on_app_finalize
+def add_accumulate_task(app):
+    """This task is used by Task.replace when replacing a task with
+    a group, to "collect" results."""
+    @app.task(bind=True, name='celery.accumulate', shared=False, lazy=False)
+    def accumulate(self, *args, **kwargs):
+        index = kwargs.get('index')
+        return args[index] if index is not None else args
+
+
+@connect_on_app_finalize
 def add_unlock_chord_task(app):
     """This task is used by result backends without native chord support.
 
