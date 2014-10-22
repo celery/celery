@@ -31,6 +31,7 @@ from celery.bin.amqp import amqp
 from celery.bin.beat import beat
 from celery.bin.events import events
 from celery.bin.graph import graph
+from celery.bin.logtool import logtool
 from celery.bin.worker import worker
 
 __all__ = ['CeleryCommand', 'main']
@@ -58,7 +59,7 @@ command_classes = [
 ]
 if DEBUG:  # pragma: no cover
     command_classes.append(
-        ('Debug', ['graph'], 'red'),
+        ('Debug', ['graph', 'logtool'], 'red'),
     )
 
 
@@ -670,6 +671,7 @@ class CeleryCommand(Command):
         'help': help,
         'inspect': inspect,
         'list': list_,
+        'logtool': logtool,
         'migrate': migrate,
         'multi': multi,
         'purge': purge,

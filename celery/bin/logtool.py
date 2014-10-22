@@ -14,9 +14,6 @@ import re
 from collections import Counter
 from fileinput import FileInput
 
-from celery.datastructures import DependencyGraph, GraphFormatter
-from celery.five import items
-
 from .base import Command
 
 __all__ = ['logtool']
@@ -47,6 +44,7 @@ class _task_counts(list):
     @property
     def format(self):
         return '\n'.join('{0}: {1}'.format(*i) for i in self)
+
 
 def task_info(line):
     m = RE_TASK_INFO.match(line)
@@ -143,7 +141,9 @@ class logtool(Command):
         if not what:
             raise self.UsageError('missing action')
         elif what not in map:
-            raise self.Error('no action {0} in {1}'.format(what, '|'.join(map)))
+            raise self.Error(
+                'action {0} not in {1}'.format(what, '|'.join(map)),
+            )
 
         return map[what](files)
 
