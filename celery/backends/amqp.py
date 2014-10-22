@@ -256,10 +256,10 @@ class AMQPBackend(BaseBackend):
             results = deque()
             push_result = results.append
             push_cache = self._cache.__setitem__
-            decode_result = self.decode_result
+            decode_result = self.meta_from_decoded
 
             def on_message(message):
-                body = decode_result(message.body)
+                body = decode_result(message.decode())
                 state, uid = getfields(body)
                 if state in READY_STATES:
                     push_result(body) \
