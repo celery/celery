@@ -376,7 +376,7 @@ class chain(Signature):
             task_id=None, link=None, link_error=None,
             publisher=None, producer=None, root_id=None, app=None, **options):
         app = app or self.app
-        args = tuple(args) + tuple(self.args)
+        args = tuple(args) + tuple(self.args) if args else self.args
         tasks, results = self.prepare_steps(
             args, self.tasks, root_id, link_error,
         )
@@ -778,6 +778,7 @@ class chord(Signature):
     def apply_async(self, args=(), kwargs={}, task_id=None,
                     producer=None, publisher=None, connection=None,
                     router=None, result_cls=None, **options):
+        args = tuple(args) + tuple(self.args) if args else self.args
         body = kwargs.get('body') or self.kwargs['body']
         kwargs = dict(self.kwargs, **kwargs)
         body = body.clone(**options)
