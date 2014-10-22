@@ -742,7 +742,7 @@ to the :exc:`~@ChordError` exception:
       File "*/celery/result.py", line 120, in get
         interval=interval)
       File "*/celery/backends/amqp.py", line 150, in wait_for
-        raise self.exception_to_python(meta['result'])
+        raise meta['result']
     celery.exceptions.ChordError: Dependency 97de6f3f-ea67-4517-a21c-d867c61fcb47
         raised ValueError('something something',)
 
