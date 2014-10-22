@@ -181,11 +181,13 @@ class BaseBackend(object):
         _, _, payload = dumps(data, serializer=self.serializer)
         return payload
 
-    def decode_result(self, payload):
-        meta = self.decode(payload)
+    def meta_from_decoded(self, meta):
         if meta['status'] in self.EXCEPTION_STATES:
             meta['result'] = self.exception_to_python(meta['result'])
         return meta
+
+    def decode_result(self, payload):
+        return self.meta_from_decoded(self.decode(payload))
 
     def decode(self, payload):
         payload = PY3 and payload or str(payload)
