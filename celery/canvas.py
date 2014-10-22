@@ -618,7 +618,8 @@ class group(Signature):
                         task.args = tuple(partial_args) + tuple(task.args)
                     yield task, task.freeze(group_id=group_id, root_id=root_id)
 
-    def _apply_tasks(self, tasks, producer=None, app=None, **options):
+    def _apply_tasks(self, tasks, producer=None, app=None,
+                     add_to_parent=None, **options):
         app = app or self.app
         with app.producer_or_acquire(producer) as producer:
             for sig, res in tasks:

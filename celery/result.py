@@ -174,9 +174,7 @@ class AsyncResult(ResultBase):
             self._maybe_set_cache(meta)
             status = meta['status']
             if status in PROPAGATE_STATES and propagate:
-                raise self.backend.exception_to_python(meta['result'])
-            if status in EXCEPTION_STATES:
-                return self.backend.exception_to_python(meta['result'])
+                raise meta['result']
             return meta['result']
     wait = get  # deprecated alias to :meth:`get`.
 
@@ -345,8 +343,6 @@ class AsyncResult(ResultBase):
 
     def _set_cache(self, d):
         state, children = d['status'], d.get('children')
-        if state in states.EXCEPTION_STATES:
-            d['result'] = self.backend.exception_to_python(d['result'])
         if children:
             d['children'] = [
                 result_from_tuple(child, self.app) for child in children

@@ -181,6 +181,12 @@ class BaseBackend(object):
         _, _, payload = dumps(data, serializer=self.serializer)
         return payload
 
+    def decode_result(self, payload):
+        meta = self.decode(payload)
+        if meta['status'] in self.EXCEPTION_STATES:
+            meta['result'] = self.exception_to_python(meta['result'])
+        return meta
+
     def decode(self, payload):
         payload = PY3 and payload or str(payload)
         return loads(payload,
@@ -264,11 +270,7 @@ class BaseBackend(object):
 
     def get_result(self, task_id):
         """Get the result of a task."""
-        meta = self.get_task_meta(task_id)
-        if meta['status'] in self.EXCEPTION_STATES:
-            return self.exception_to_python(meta['result'])
-        else:
-            return meta['result']
+        return self.get_task_meta(task_id).get('result')
 
     def get_children(self, task_id):
         """Get the list of subtasks sent by a task."""
@@ -436,13 +438,13 @@ class KeyValueStoreBackend(BaseBackend):
         if hasattr(values, 'items'):
             # client returns dict so mapping preserved.
             return {
-                self._strip_prefix(k): self.decode(v)
+                self._strip_prefix(k): self.decode_result(v)
                 for k, v in items(values) if v is not None
             }
         else:
             # client returns list so need to recreate mapping.
             return {
-                bytes_to_str(keys[i]): self.decode(value)
+                bytes_to_str(keys[i]): self.decode_result(value)
                 for i, value in enumerate(values) if value is not None
             }
 
@@ -500,7 +502,7 @@ class KeyValueStoreBackend(BaseBackend):
         meta = self.get(self.get_key_for_task(task_id))
         if not meta:
             return {'status': states.PENDING, 'result': None}
-        return self.decode(meta)
+        return self.decode_result(meta)
 
     def _restore_group(self, group_id):
         """Get task metadata for a task by id."""

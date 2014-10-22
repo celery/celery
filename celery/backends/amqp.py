@@ -256,14 +256,12 @@ class AMQPBackend(BaseBackend):
             results = deque()
             push_result = results.append
             push_cache = self._cache.__setitem__
-            to_exception = self.exception_to_python
+            decode_result = self.decode_result
 
             def on_message(message):
-                body = message.decode()
+                body = decode_result(message.body)
                 state, uid = getfields(body)
                 if state in READY_STATES:
-                    if state in PROPAGATE_STATES:
-                        body['result'] = to_exception(body['result'])
                     push_result(body) \
                         if uid in task_ids else push_cache(uid, body)
 
