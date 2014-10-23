@@ -34,6 +34,7 @@ APPDIRECT = {
     'select_queues', 'either', 'bugreport', 'create_task_cls',
     'subclass_with_self', 'annotations', 'current_task', 'oid',
     'timezone', '__reduce_keys__', 'fixups', 'finalized', 'configured',
+    'add_periodic_task',
     'autofinalize', 'steps', 'user_options', 'main', 'clock',
 }
 
