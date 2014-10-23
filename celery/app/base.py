@@ -692,6 +692,10 @@ class Celery(object):
             self._load_config()
         return self._conf
 
+    @conf.setter
+    def conf(self, d):  # noqa
+        self._conf = d
+
     @cached_property
     def control(self):
         return instantiate(self.control_cls, app=self)
