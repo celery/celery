@@ -46,7 +46,6 @@ from pdb import Pdb
 from billiard import current_process
 
 from celery.five import range
-from celery.platforms import ignore_errno
 
 __all__ = ['CELERY_RDB_HOST', 'CELERY_RDB_PORT', 'default_port',
            'Rdb', 'debugger', 'set_trace']
@@ -152,12 +151,6 @@ class Rdb(Pdb):
         self.set_quit()
         return 1
     do_q = do_exit = do_quit
-
-    def set_trace(self, frame=None):
-        if frame is None:
-            frame = _frame().f_back
-        with ignore_errno(errno.ECONNRESET):
-            Pdb.set_trace(self, frame)
 
     def set_quit(self):
         # this raises a BdbQuit exception that we are unable to catch.
