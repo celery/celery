@@ -65,14 +65,16 @@ def shorten(S, newtarget, src_dict):
     return S
 
 
-def get_abbr(pre, rest, type):
+def get_abbr(pre, rest, type, orig=None):
     if pre:
         for d in APPATTRS, ABBRS:
             try:
                 return d[pre], rest, d
             except KeyError:
                 pass
-        raise KeyError(pre)
+        raise KeyError('Unknown abbreviation: {0} ({1})'.format(
+            '.'.join([pre, rest]) if orig is None else orig, type,
+        ))
     else:
         for d in APPATTRS, ABBRS:
             try:
@@ -83,6 +85,7 @@ def get_abbr(pre, rest, type):
 
 
 def resolve(S, type):
+    orig = S
     if S.startswith('@'):
         S = S.lstrip('@-')
         try:
@@ -90,7 +93,7 @@ def resolve(S, type):
         except ValueError:
             pre, rest = '', S
 
-        target, rest, src = get_abbr(pre, rest, type)
+        target, rest, src = get_abbr(pre, rest, type, orig)
         return '.'.join([target, rest]) if rest else target, src
     return S, None
 
