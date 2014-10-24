@@ -170,14 +170,14 @@ class CassandraBackend(BaseBackend):
                     meta['task_id'] = task_id
                 else:
                     obj = cf.get(task_id)
-                    meta = {
+                    meta = self.meta_from_decoded({
                         'task_id': task_id,
                         'status': obj['status'],
                         'result': self.decode(obj['result']),
                         'date_done': obj['date_done'],
                         'traceback': self.decode(obj['traceback']),
                         'children': self.decode(obj['children']),
-                    }
+                    })
             except (KeyError, pycassa.NotFoundException):
                 meta = {'status': states.PENDING, 'result': None}
             return meta

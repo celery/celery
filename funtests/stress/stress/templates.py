@@ -50,6 +50,7 @@ def template_names():
 
 @template()
 class default(object):
+    BROKER_HEARTBEAT=2
     CELERY_ACCEPT_CONTENT = ['json']
     CELERY_DEFAULT_QUEUE = CSTRESS_QUEUE
     CELERY_TASK_SERIALIZER = 'json'

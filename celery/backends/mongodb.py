@@ -174,14 +174,14 @@ class MongoBackend(BaseBackend):
         """Get task metadata for a task by id."""
         obj = self.collection.find_one({'_id': task_id})
         if obj:
-            return {
+            return self.meta_from_decoded({
                 'task_id': obj['_id'],
                 'status': obj['status'],
                 'result': self.decode(obj['result']),
                 'date_done': obj['date_done'],
                 'traceback': self.decode(obj['traceback']),
                 'children': self.decode(obj['children']),
-            }
+            })
         return {'status': states.PENDING, 'result': None}
 
     def _save_group(self, group_id, result):
