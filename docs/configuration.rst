@@ -794,20 +794,18 @@ CouchDB backend settings
         $ pip install pycouchdb
 
 This backend can be configured via the :setting:`CELERY_RESULT_BACKEND`
-set to a couchbase URL::
+set to a couchdb URL::
 
     CELERY_RESULT_BACKEND = 'couchdb://username:password@host:port/container'
 
 
-.. setting:: CELERY_COUCHDB_BACKEND_SETTINGS
+The URL is formed out of the following parts:
 
-CELERY_COUCHDB_BACKEND_SETTINGS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* username
+    User name to authenticate to the CouchDB server as (optional).
 
-This is a dict supporting the following keys:
-
-* scheme
-    http or https. Defaults to ``http``.
+* password
+    Password to authenticate to the CouchDB server (optional).
 
 * host
     Host name of the CouchDB server. Defaults to ``localhost``.
@@ -819,11 +817,6 @@ This is a dict supporting the following keys:
     The default container the CouchDB server is writing to.
     Defaults to ``default``.
 
-* username
-    User name to authenticate to the CouchDB server as (optional).
-
-* password
-    Password to authenticate to the CouchDB server (optional).
 
 .. _conf-messaging:
 

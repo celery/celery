@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from celery.backends import couchdb as module
-from celery.backends.couchdb import CouchDBBackend
+from celery.backends.couchdb import CouchBackend
 from celery.exceptions import ImproperlyConfigured
 from celery import backends
 from celery.tests.case import (
@@ -16,32 +16,21 @@ except ImportError:
 COUCHDB_CONTAINER = 'celery_container'
 
 
-class test_CouchDBBackend(AppCase):
+class test_CouchBackend(AppCase):
 
     def setup(self):
         if pycouchdb is None:
             raise SkipTest('pycouchdb is not installed.')
-        self.backend = CouchDBBackend(app=self.app)
+        self.backend = CouchBackend(app=self.app)
 
     def test_init_no_pycouchdb(self):
         """test init no pycouchdb raises"""
         prev, module.pycouchdb = module.pycouchdb, None
         try:
             with self.assertRaises(ImproperlyConfigured):
-                CouchDBBackend(app=self.app)
+                CouchBackend(app=self.app)
         finally:
             module.pycouchdb = prev
-
-    def test_init_no_settings(self):
-        """test init no settings"""
-        self.app.conf.CELERY_COUCHDB_BACKEND_SETTINGS = []
-        with self.assertRaises(ImproperlyConfigured):
-            CouchDBBackend(app=self.app)
-
-    def test_init_settings_is_None(self):
-        """Test init settings is None"""
-        self.app.conf.CELERY_COUCHDB_BACKEND_SETTINGS = None
-        CouchDBBackend(app=self.app)
 
     def test_get_container_exists(self):
         with patch('pycouchdb.client.Database') as mock_Connection:
@@ -55,13 +44,12 @@ class test_CouchDBBackend(AppCase):
     def test_get(self):
         """test_get
 
-        CouchDBBackend.get should return  and take two params
+        CouchBackend.get should return  and take two params
         db conn to couchdb is mocked.
         TODO Should test on key not exists
 
         """
-        self.app.conf.CELERY_COUCHDB_BACKEND_SETTINGS = {}
-        x = CouchDBBackend(app=self.app)
+        x = CouchBackend(app=self.app)
         x._connection = Mock()
         mocked_get = x._connection.get = Mock()
         mocked_get.return_value = sentinel.retval
@@ -72,13 +60,12 @@ class test_CouchDBBackend(AppCase):
     def test_delete(self):
         """test_delete
 
-        CouchDBBackend.delete should return and take two params
+        CouchBackend.delete should return and take two params
         db conn to pycouchdb is mocked.
         TODO Should test on key not exists
 
         """
-        self.app.conf.CELERY_COUCHDB_BACKEND_SETTINGS = {}
-        x = CouchDBBackend(app=self.app)
+        x = CouchBackend(app=self.app)
         x._connection = Mock()
         mocked_delete = x._connection.delete = Mock()
         mocked_delete.return_value = None
@@ -86,29 +73,10 @@ class test_CouchDBBackend(AppCase):
         self.assertIsNone(x.delete('1f3fab'))
         x._connection.delete.assert_called_once_with('1f3fab')
 
-    def test_config_params(self):
-        """test_config_params
-
-        celery.conf.CELERY_COUCHDB_BACKEND_SETTINGS is properly set
-        """
-        self.app.conf.CELERY_COUCHDB_BACKEND_SETTINGS = {
-            'container': 'mycoolcontainer',
-            'host': ['here.host.com', 'there.host.com'],
-            'username': 'johndoe',
-            'password': 'mysecret',
-            'port': '1234',
-        }
-        x = CouchDBBackend(app=self.app)
-        self.assertEqual(x.container, 'mycoolcontainer')
-        self.assertEqual(x.host, ['here.host.com', 'there.host.com'],)
-        self.assertEqual(x.username, 'johndoe',)
-        self.assertEqual(x.password, 'mysecret')
-        self.assertEqual(x.port, 1234)
-
     def test_backend_by_url(self, url='couchdb://myhost/mycoolcontainer'):
-        from celery.backends.couchdb import CouchDBBackend
+        from celery.backends.couchdb import CouchBackend
         backend, url_ = backends.get_backend_by_url(url, self.app.loader)
-        self.assertIs(backend, CouchDBBackend)
+        self.assertIs(backend, CouchBackend)
         self.assertEqual(url_, url)
 
     def test_backend_params_by_url(self):

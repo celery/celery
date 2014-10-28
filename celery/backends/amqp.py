@@ -80,10 +80,6 @@ class AMQPBackend(BaseBackend):
         )
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         self.auto_delete = auto_delete
-
-        self.expires = None
-        if 'expires' not in kwargs or kwargs['expires'] is not None:
-            self.expires = self.prepare_expires(kwargs.get('expires'))
         self.queue_arguments = dictfilter({
             'x-expires': maybe_s_to_ms(self.expires),
         })

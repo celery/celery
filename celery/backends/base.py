@@ -91,8 +91,9 @@ class BaseBackend(object):
         'interval_max': 1,
     }
 
-    def __init__(self, app, serializer=None,
-                 max_cached_results=None, accept=None, **kwargs):
+    def __init__(self, app,
+                 serializer=None, max_cached_results=None, accept=None,
+                 expires=None, expires_type=None, **kwargs):
         self.app = app
         conf = self.app.conf
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
@@ -101,6 +102,8 @@ class BaseBackend(object):
          self.encoder) = serializer_registry._encoders[self.serializer]
         cmax = max_cached_results or conf.CELERY_MAX_CACHED_RESULTS
         self._cache = _nulldict() if cmax == -1 else LRUCache(limit=cmax)
+
+        self.expires = self.prepare_expires(expires, expires_type)
         self.accept = prepare_accept_content(
             conf.CELERY_ACCEPT_CONTENT if accept is None else accept,
         )

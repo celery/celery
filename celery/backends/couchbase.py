@@ -20,7 +20,6 @@ except ImportError:
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
-from celery.utils.timeutils import maybe_timedelta
 
 from .base import KeyValueStoreBackend
 
@@ -48,9 +47,6 @@ class CouchBaseBackend(KeyValueStoreBackend):
 
         """
         super(CouchBaseBackend, self).__init__(*args, **kwargs)
-
-        self.expires = kwargs.get('expires') or maybe_timedelta(
-            self.app.conf.CELERY_TASK_RESULT_EXPIRES)
 
         if Couchbase is None:
             raise ImproperlyConfigured(

@@ -22,7 +22,6 @@ from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.five import monotonic
 from celery.utils.log import get_logger
-from celery.utils.timeutils import maybe_timedelta
 
 from .base import BaseBackend
 
@@ -59,9 +58,6 @@ class CassandraBackend(BaseBackend):
 
         """
         super(CassandraBackend, self).__init__(**kwargs)
-
-        self.expires = kwargs.get('expires') or maybe_timedelta(
-            self.app.conf.CELERY_TASK_RESULT_EXPIRES)
 
         if not pycassa:
             raise ImproperlyConfigured(
@@ -140,21 +136,22 @@ class CassandraBackend(BaseBackend):
         """Store return value and status of an executed task."""
 
         def _do_store():
+            detailed = self.detailed_mode
             cf = self._get_column_family()
             date_done = self.app.now()
             meta = {'status': status,
                     'date_done': date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
                     'traceback': self.encode(traceback),
+                    'result': result if detailed else self.encode(result),
                     'children': self.encode(
                         self.current_task_children(request),
                     )}
-            ttl = self.expires and max(self.expires.total_seconds(), 0)
-            if self.detailed_mode:
-                meta['result'] = result
-                cf.insert(task_id, {date_done: self.encode(meta)}, ttl=ttl)
+            if detailed:
+                cf.insert(
+                    task_id, {date_done: self.encode(meta)}, ttl=self.expires,
+                )
             else:
-                meta['result'] = self.encode(result)
-                cf.insert(task_id, meta, ttl=ttl)
+                cf.insert(task_id, meta, ttl=self.expires)
 
         return self._retry_on_error(_do_store)
 

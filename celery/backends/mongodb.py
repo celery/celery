@@ -31,7 +31,6 @@ from kombu.exceptions import EncodeError
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t
-from celery.utils.timeutils import maybe_timedelta
 
 from .base import BaseBackend
 
@@ -60,7 +59,7 @@ class MongoBackend(BaseBackend):
 
     _connection = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         """Initialize MongoDB backend instance.
 
         :raises celery.exceptions.ImproperlyConfigured: if
@@ -69,9 +68,7 @@ class MongoBackend(BaseBackend):
         """
         self.options = {}
 
-        super(MongoBackend, self).__init__(*args, **kwargs)
-        self.expires = kwargs.get('expires') or maybe_timedelta(
-            self.app.conf.CELERY_TASK_RESULT_EXPIRES)
+        super(MongoBackend, self).__init__(**kwargs)
 
         if not pymongo:
             raise ImproperlyConfigured(

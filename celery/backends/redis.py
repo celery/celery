@@ -57,9 +57,9 @@ class RedisBackend(KeyValueStoreBackend):
     implements_incr = True
 
     def __init__(self, host=None, port=None, db=None, password=None,
-                 expires=None, max_connections=None, url=None,
+                 max_connections=None, url=None,
                  connection_pool=None, new_join=False, **kwargs):
-        super(RedisBackend, self).__init__(**kwargs)
+        super(RedisBackend, self).__init__(expires_type=int, **kwargs)
         conf = self.app.conf
         if self.redis is None:
             raise ImproperlyConfigured(REDIS_MISSING)
@@ -90,7 +90,6 @@ class RedisBackend(KeyValueStoreBackend):
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
         self.url = url
-        self.expires = self.prepare_expires(expires, type=int)
 
         try:
             new_join = strtobool(self.connparams.pop('new_join'))
