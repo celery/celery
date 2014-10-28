@@ -206,6 +206,25 @@ Features
     - Revoke or terminate tasks
 
 - HTTP API
+
+    - List workers
+    - Shut down a worker
+    - Restart worker’s pool
+    - Grow worker’s pool
+    - Shrink worker’s pool
+    - Autoscale worker pool
+    - Start consuming from a queue
+    - Stop consuming from a queue
+    - List tasks
+    - List (seen) task types
+    - Get a task info
+    - Execute a task
+    - Execute a task by name
+    - Get a task result
+    - Change soft and hard time limits for a task
+    - Change rate limit for a task
+    - Revoke a task
+
 - OpenID authentication
 
 **Screenshots**
