@@ -332,7 +332,7 @@ def add_chord_task(app):
             if eager:
                 return header.apply(args=partial_args, task_id=group_id)
 
-            body.setdefault('chord_size', len(header.tasks))
+            body.chord_size = len(header.tasks)
             results = header.freeze(group_id=group_id, chord=body).results
 
             return self.backend.apply_chord(
