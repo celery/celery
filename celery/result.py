@@ -340,7 +340,7 @@ class AsyncResult(ResultBase):
         return self._cache
 
     def _set_cache(self, d):
-        state, children = d['status'], d.get('children')
+        children = d.get('children')
         if children:
             d['children'] = [
                 result_from_tuple(child, self.app) for child in children
