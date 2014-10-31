@@ -95,7 +95,7 @@ class MongoBackend(BaseBackend):
             self.options.setdefault('max_pool_size', self.max_pool_size)
             self.options.setdefault('auto_start_request', False)
 
-        url = kwargs.get('url')
+        url = kwargs.get('url') or self.app.conf.get('CELERY_RESULT_BACKEND')
         if url:
             # Specifying backend as an URL
             self.host = url

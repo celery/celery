@@ -66,6 +66,11 @@ class test_MongoBackend(AppCase):
         self.app.conf.CELERY_MONGODB_BACKEND_SETTINGS = None
         MongoBackend(app=self.app)
 
+    def test_init_with_results_backend_and_no_url(self):
+        self.app.conf.CELERY_RESULT_BACKEND = 'mongodb://myhost:27017/mydb'
+        backend = MongoBackend(app=self.app)
+        self.assertEqual(backend.host, self.app.conf.CELERY_RESULT_BACKEND)
+
     def test_restore_group_no_entry(self):
         x = MongoBackend(app=self.app)
         x.collection = Mock()
