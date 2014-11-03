@@ -43,7 +43,7 @@ import sys
 
 from pdb import Pdb
 
-from billiard import current_process
+from billiard.process import current_process
 
 from celery.five import range
 

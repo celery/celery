@@ -21,7 +21,7 @@ from celery.utils.log import (
     logger_isa,
 )
 from celery.tests.case import (
-    AppCase, Mock, SkipTest,
+    AppCase, Mock, SkipTest, mask_modules,
     get_handlers, override_stdouts, patch, wrap_logger, restore_logging,
 )
 
@@ -209,11 +209,8 @@ class test_default_logger(AppCase):
     def test_setup_logging_subsystem_no_mputil(self):
         from celery.utils import log as logtools
         with restore_logging():
-            mputil, logtools.mputil = logtools.mputil, None
-            try:
+            with mask_modules('billiard.util'):
                 self.app.log.setup_logging_subsystem()
-            finally:
-                logtools.mputil = mputil
 
     def _assertLog(self, logger, logmsg, loglevel=logging.ERROR):
 

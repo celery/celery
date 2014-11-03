@@ -90,7 +90,7 @@ C_BENCH_EVERY = int(os.environ.get('C_BENCH_EVERY') or
 if C_BENCH:  # pragma: no cover
     import atexit
 
-    from billiard import current_process
+    from billiard.process import current_process
     from celery.five import monotonic
     from celery.utils.debug import memdump, sample_mem
 

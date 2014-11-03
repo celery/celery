@@ -20,7 +20,7 @@ import warnings
 
 from functools import partial
 
-from billiard import current_process
+from billiard.process import current_process
 from kombu.utils.encoding import safe_str
 from kombu.utils.url import maybe_sanitize_url
 

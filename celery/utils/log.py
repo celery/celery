@@ -16,7 +16,6 @@ import threading
 import traceback
 
 from contextlib import contextmanager
-from billiard import current_process, util as mputil
 from kombu.five import values
 from kombu.log import get_logger as _get_logger, LOG_LEVELS
 from kombu.utils.encoding import safe_str
@@ -253,15 +252,33 @@ class LoggingProxy(object):
 
 
 def get_multiprocessing_logger():
-    return mputil.get_logger() if mputil else None
+    try:
+        from billiard import util
+    except ImportError:
+            pass
+    else:
+        return util.get_logger()
 
 
 def reset_multiprocessing_logger():
-    if mputil and hasattr(mputil, '_logger'):
-        mputil._logger = None
+    try:
+        from billiard import util
+    except ImportError:
+        pass
+    else:
+        if hasattr(util, '_logger'):
+            util._logger = None
+
+
+def current_process():
+    try:
+        from billiard import process
+    except ImportError:
+        pass
+    else:
+        return process.current_process()
 
 
 def current_process_index(base=1):
-    if current_process:
-        index = getattr(current_process(), 'index', None)
-        return index + base if index is not None else index
+    index = getattr(current_process(), 'index', None)
+    return index + base if index is not None else index

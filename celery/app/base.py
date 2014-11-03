@@ -17,7 +17,10 @@ from copy import deepcopy
 from operator import attrgetter
 
 from amqp import promise
-from billiard.util import register_after_fork
+try:
+    from billiard.util import register_after_fork
+except ImportError:
+    register_after_fork = None
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
 from kombu.utils import cached_property, uuid
@@ -98,7 +101,8 @@ def _global_after_fork(obj):
 def _ensure_after_fork():
     global _after_fork_registered
     _after_fork_registered = True
-    register_after_fork(_global_after_fork, _global_after_fork)
+    if register_after_fork is not None:
+        register_after_fork(_global_after_fork, _global_after_fork)
 
 
 class Celery(object):

@@ -63,13 +63,16 @@ def _app_or_default(app=None):
 
 def _app_or_default_trace(app=None):  # pragma: no cover
     from traceback import print_stack
-    from billiard import current_process
+    try:
+        from billiard.process import current_process
+    except ImportError:
+        current_process = None
     if app is None:
         if getattr(_state._tls, 'current_app', None):
             print('-- RETURNING TO CURRENT APP --')  # noqa+
             print_stack()
             return _state._tls.current_app
-        if current_process()._name == 'MainProcess':
+        if not current_process or current_process()._name == 'MainProcess':
             raise Exception('DEFAULT APP')
         print('-- RETURNING TO DEFAULT APP --')      # noqa+
         print_stack()
