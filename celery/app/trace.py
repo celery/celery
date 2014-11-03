@@ -337,7 +337,8 @@ def trace_task(task, uuid, args, kwargs, request={}, **opts):
 
 
 def _trace_task_ret(name, uuid, args, kwargs, request={}, app=None, **opts):
-    return trace_task((app or current_app).tasks[name],
+    app = app or current_app
+    return trace_task(app.tasks[name],
                       uuid, args, kwargs, request, app=app, **opts)
 trace_task_ret = _trace_task_ret
 
