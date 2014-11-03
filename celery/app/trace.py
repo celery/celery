@@ -392,7 +392,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 for group_ in groups:
                                     group.apply_async((retval, ))
                                 if sigs:
-                                    group(sigs).apply_async(retval, )
+                                    group(sigs).apply_async((retval, ))
                             else:
                                 signature(callbacks[0], app=app).delay(retval)
                         if publish_result:
