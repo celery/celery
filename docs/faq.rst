@@ -834,9 +834,23 @@ executing jobs and shut down as soon as possible. No tasks should be lost.
 
 You should never stop :mod:`~celery.bin.worker` with the :sig:`KILL` signal
 (:option:`-9`), unless you've tried :sig:`TERM` a few times and waited a few
-minutes to let it get a chance to shut down.  As if you do tasks may be
-terminated mid-execution, and they will not be re-run unless you have the
-`acks_late` option set (`Task.acks_late` / :setting:`CELERY_ACKS_LATE`).
+minutes to let it get a chance to shut down.
+
+Also make sure you kill the main worker process, not its child processes.
+You can direct a kill signal to a specific child process if you know the
+process is currently executing a task the worker shutdown is depending on,
+but this also means that a ``WorkerLostError`` state will be set for the
+task so the task will not run again.
+
+Identifying the type of process is easier if you have installed the
+``setproctitle`` module:
+
+.. code-block:: bash
+
+    pip install setproctitle
+
+With this library installed you will be able to see the type of process in ps
+listings, but the worker must be restarted for this to take effect.
 
 .. seealso::
 
