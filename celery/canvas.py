@@ -436,8 +436,7 @@ class chain(Signature):
                 # splice the chain
                 steps.extendleft(reversed(task.tasks))
                 continue
-            elif isinstance(task, group) and steps and \
-                    not isinstance(steps[0], group):
+            elif isinstance(task, group) and steps:
                 # automatically upgrade group(...) | s to chord(group, s)
                 try:
                     next_step = steps.popleft()
