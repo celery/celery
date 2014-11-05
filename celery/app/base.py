@@ -605,7 +605,7 @@ class Celery(object):
         when unpickling."""
         return {
             'main': self.main,
-            'changes': self._conf.changes if self._conf else {},
+            'changes': self._conf.changes if self._conf else self._preconf,
             'loader': self.loader_cls,
             'backend': self.backend_cls,
             'amqp': self.amqp_cls,
