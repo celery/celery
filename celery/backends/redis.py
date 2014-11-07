@@ -85,7 +85,7 @@ class RedisBackend(KeyValueStoreBackend):
             'port': _get('PORT') or 6379,
             'db': _get('DB') or 0,
             'password': _get('PASSWORD'),
-            'max_connections': max_connections,
+            'max_connections': self.max_connections,
         }
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
