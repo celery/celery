@@ -461,12 +461,8 @@ class Request(object):
             do_send_mail, severity, description = (
                 True, logging.ERROR, 'raised unexpected',
             )
-        format = self.error_msg
-        if send_failed_event:
-            self.send_event(
-                'task-failed', exception=exception, traceback=traceback,
-            )
 
+        format = self.error_msg
         if internal:
             if isinstance(einfo.exception, MemoryError):
                 raise MemoryError('Process got: %s' % (einfo.exception, ))
@@ -474,17 +470,25 @@ class Request(object):
                 format = self.rejected_msg
                 description = 'rejected'
                 severity = logging.WARN
+                send_failed_event = False
                 self.reject(requeue=einfo.exception.requeue)
             elif isinstance(einfo.exception, Ignore):
                 format = self.ignored_msg
                 description = 'ignored'
                 severity = logging.INFO
                 exc_info = None
+                send_failed_event = False
                 self.acknowledge()
             else:
                 format = self.internal_error_msg
                 description = 'INTERNAL ERROR'
                 severity = logging.CRITICAL
+
+        if send_failed_event:
+            self.send_event(
+                'task-failed', exception=exception, traceback=traceback,
+            )
+
 
         context = {
             'hostname': self.hostname,
