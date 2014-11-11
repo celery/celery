@@ -39,6 +39,9 @@ new in Celery 3.1.
 - **Sphinx**: ``celery.contrib.sphinx`` now uses ``getfullargspec``
   on Python 3 (Issue #2302).
 
+- **Redis/Cache Backends**: Chords will now run at most once if one or more tasks
+  in the chord are executed multiple times for some reason.
+
 .. _version-3.1.15:
 
 3.1.15
