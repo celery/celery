@@ -179,6 +179,7 @@ NAMESPACES = {
         'LOG_FORMAT': Option(DEFAULT_PROCESS_LOG_FMT),
         'LOG_COLOR': Option(type='bool'),
         'MAX_TASKS_PER_CHILD': Option(type='int'),
+        'MAX_MEMORY_PER_CHILD': Option(type='int'),
         'POOL': Option(DEFAULT_POOL),
         'POOL_PUTLOCKS': Option(True, type='bool'),
         'POOL_RESTARTS': Option(False, type='bool'),

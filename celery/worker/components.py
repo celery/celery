@@ -156,6 +156,7 @@ class Pool(bootsteps.StartStopStep):
             w.pool_cls, w.min_concurrency,
             initargs=(w.app, w.hostname),
             maxtasksperchild=w.max_tasks_per_child,
+            max_memory_per_child=w.max_memory_per_child,
             timeout=w.task_time_limit,
             soft_timeout=w.task_soft_time_limit,
             putlocks=w.pool_putlocks and threaded,

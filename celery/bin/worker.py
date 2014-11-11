@@ -109,6 +109,14 @@ The :program:`celery worker` command (previously known as ``celeryd``)
     Maximum number of tasks a pool worker can execute before it's
     terminated and replaced by a new worker.
 
+.. cmdoption:: --maxmemperchild
+
+    Maximum amount of resident memory, in KiB, that may be consumed by a
+    child process before it will be replaced by a new one. If a single
+    task causes a child process to exceed this limit, the task will be
+    completed and the child process will be replaced afterwards.
+    Default: no limit.
+
 .. cmdoption:: --pidfile
 
     Optional file used to store the workers pid.
@@ -244,6 +252,8 @@ class worker(Command):
                    default=conf.CELERYD_MAX_TASKS_PER_CHILD, type='int'),
             Option('--prefetch-multiplier', dest='prefetch_multiplier',
                    default=conf.CELERYD_PREFETCH_MULTIPLIER, type='int'),
+            Option('--maxmemperchild', dest='max_memory_per_child',
+                   default=conf.CELERYD_MAX_MEMORY_PER_CHILD, type='int'),
             Option('--queues', '-Q', default=[]),
             Option('--exclude-queues', '-X', default=[]),
             Option('--include', '-I', default=[]),
