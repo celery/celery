@@ -1256,6 +1256,8 @@ This is the total number of results to cache before older results are evicted.
 The default is 5000.  0 or None means no limit, and a value of :const:`-1`
 will disable the cache.
 
+.. setting:: CELERY_TRACK_STARTED
+
 CELERY_TRACK_STARTED
 ~~~~~~~~~~~~~~~~~~~~
 
