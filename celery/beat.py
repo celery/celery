@@ -17,7 +17,8 @@ import traceback
 
 from threading import Event, Thread
 
-from billiard import Process, ensure_multiprocessing
+from billiard import ensure_multiprocessing
+from billiard.process import Process
 from billiard.common import reset_signals
 from kombu.utils import cached_property, reprcall
 from kombu.utils.functional import maybe_evaluate
