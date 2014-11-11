@@ -38,7 +38,7 @@ from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import gen_task_name
 from celery.utils.dispatch import Signal
-from celery.utils.functional import first, maybe_list
+from celery.utils.functional import first, maybe_list, head_from_fun
 from celery.utils.imports import instantiate, symbol_by_name
 from celery.utils.objects import FallbackContext, mro_lookup
 
@@ -286,6 +286,7 @@ class Celery(object):
                 '_decorated': True,
                 '__doc__': fun.__doc__,
                 '__module__': fun.__module__,
+                '__header__': staticmethod(head_from_fun(fun)),
                 '__wrapped__': fun}, **options))()
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app

@@ -448,6 +448,13 @@ class Task(object):
             be replaced by a local :func:`apply` call instead.
 
         """
+        try:
+            check_arguments = self.__header__
+        except AttributeError:
+            pass
+        else:
+            check_arguments(*args or (), **kwargs or {})
+
         app = self._get_app()
         if app.conf.CELERY_ALWAYS_EAGER:
             return self.apply(args, kwargs, task_id=task_id or uuid(),

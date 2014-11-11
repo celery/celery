@@ -6,13 +6,14 @@
     Utilities for functions.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import sys
 import threading
 
 from collections import OrderedDict
-from functools import wraps
+from functools import partial, wraps
+from inspect import getargspec, isfunction, ismethod
 from itertools import islice
 
 from kombu.utils import cached_property
@@ -22,9 +23,14 @@ from celery.five import UserDict, UserList, items, keys
 
 __all__ = ['LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
            'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
-           'regen', 'dictfilter', 'lazy', 'maybe_evaluate']
+           'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun']
 
 KEYWORD_MARK = object()
+
+FUNHEAD_TEMPLATE = """
+def {fun_name}({fun_args}):
+    return {fun_value}
+"""
 
 
 class LRUCache(UserDict):
@@ -302,3 +308,40 @@ def dictfilter(d=None, **kw):
     """Remove all keys from dict ``d`` whose value is :const:`None`"""
     d = kw if d is None else (dict(d, **kw) if kw else d)
     return {k: v for k, v in items(d) if v is not None}
+
+
+def _argsfromspec(spec, replace_defaults=True):
+    if spec.defaults:
+        split = len(spec.defaults)
+        defaults = (list(range(len(spec.defaults))) if replace_defaults
+                    else spec.defaults)
+        positional = spec.args[:-split]
+        optional = list(zip(spec.args[-split:], defaults))
+    else:
+        positional, optional = spec.args, []
+    return ', '.join(filter(None, [
+        ', '.join(positional),
+        ', '.join('{0}={1}'.format(k, v) for k, v in optional),
+        '*{0}'.format(spec.varargs) if spec.varargs else None,
+        '**{0}'.format(spec.keywords) if spec.keywords else None,
+    ]))
+
+
+def head_from_fun(fun, debug=True):
+    if not isfunction(fun) and hasattr(fun, '__call__'):
+        name, fun = fun.__class__.__name__, fun.__call__
+    else:
+        name = fun.__name__
+    spec = getargspec(fun)
+    definition = FUNHEAD_TEMPLATE.format(
+        fun_name=name,
+        fun_args=_argsfromspec(getargspec(fun)),
+        fun_value=1,
+    )
+    if debug:
+        print(definition, file=sys.stderr)
+    namespace = {'__name__': 'headof_{0}'.format(name)}
+    exec(definition, namespace)
+    result = namespace[name]
+    result._source = definition
+    return result
