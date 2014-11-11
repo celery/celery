@@ -1665,6 +1665,17 @@ CELERYD_MAX_TASKS_PER_CHILD
 Maximum number of tasks a pool worker process can execute before
 it's replaced with a new one.  Default is no limit.
 
+.. setting:: CELERYD_MAX_MEMORY_PER_CHILD
+
+CELERYD_MAX_MEMORY_PER_CHILD
+~~~~~~~~~~~~~~~~~~~~~
+
+Maximum amount of resident memory that may be consumed by a
+worker before it will be replaced by a new worker. If a single
+task causes a worker to exceed this limit, the task will be
+completed, and the worker will be replaced afterwards. Default:
+no limit.
+
 .. setting:: CELERYD_TASK_TIME_LIMIT
 
 CELERYD_TASK_TIME_LIMIT

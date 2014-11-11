@@ -350,7 +350,8 @@ class WorkController(object):
                        schedule_filename=None, scheduler_cls=None,
                        task_time_limit=None, task_soft_time_limit=None,
                        max_tasks_per_child=None, prefetch_multiplier=None,
-                       disable_rate_limits=None, worker_lost_wait=None, **_kw):
+                       disable_rate_limits=None, worker_lost_wait=None,
+                       max_memory_per_child=None, **_kw):
         self.concurrency = self._getopt('concurrency', concurrency)
         self.loglevel = self._getopt('log_level', loglevel)
         self.logfile = self._getopt('log_file', logfile)
@@ -379,6 +380,9 @@ class WorkController(object):
         )
         self.max_tasks_per_child = self._getopt(
             'max_tasks_per_child', max_tasks_per_child,
+        )
+        self.max_memory_per_child = self._getopt(
+            'max_memory_per_child', max_memory_per_child,
         )
         self.prefetch_multiplier = int(self._getopt(
             'prefetch_multiplier', prefetch_multiplier,
