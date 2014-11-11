@@ -1260,24 +1260,6 @@ to have different import categories.
 The modules in this setting are imported after the modules in
 :setting:`CELERY_IMPORTS`.
 
-.. setting:: CELERYD_FORCE_EXECV
-
-CELERYD_FORCE_EXECV
-~~~~~~~~~~~~~~~~~~~
-
-On Unix the prefork pool will fork, so that child processes
-start with the same memory as the parent process.
-
-This can cause problems as there is a known deadlock condition
-with pthread locking primitives when `fork()` is combined with threads.
-
-You should enable this setting if you are experiencing hangs (deadlocks),
-especially in combination with time limits or having a max tasks per child limit.
-
-This option will be enabled by default in a later version.
-
-This is not a problem on Windows, as it does not have `fork()`.
-
 .. setting:: CELERYD_WORKER_LOST_WAIT
 
 CELERYD_WORKER_LOST_WAIT
