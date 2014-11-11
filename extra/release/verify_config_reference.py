@@ -18,6 +18,7 @@ ignore = {
     'CELERY_REDIS_PORT',
     'CELERY_REDIS_DB',
     'CELERY_REDIS_PASSWORD',
+    'CELERYD_FORCE_EXECV',
 }
 
 
