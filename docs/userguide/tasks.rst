@@ -523,6 +523,16 @@ General
 
         Logged with severity ``ERROR``, with traceback included.
 
+.. attribute:: Task.trail
+
+    By default the task will keep track of subtasks called
+    (``task.request.children``), and this will be stored with the final result
+    in the result backend, available to the client via
+    ``AsyncResult.children``.
+
+    This list of task can grow quite big for tasks starting many subtasks,
+    and you can set this attribute to False to disable it.
+
 .. attribute:: Task.default_retry_delay
 
     Default time in seconds before a retry of the task
