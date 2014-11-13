@@ -451,7 +451,6 @@ class chain(Signature):
             root_id = res.id if root_id is None else root_id
             i += 1
 
-
             if prev_task:
                 # link previous task to this task.
                 prev_task.link(task)

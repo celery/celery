@@ -13,7 +13,7 @@ import threading
 
 from collections import OrderedDict
 from functools import partial, wraps
-from inspect import getargspec, isfunction, ismethod
+from inspect import getargspec, isfunction
 from itertools import islice
 
 from kombu.utils import cached_property
@@ -327,12 +327,11 @@ def _argsfromspec(spec, replace_defaults=True):
     ]))
 
 
-def head_from_fun(fun, debug=True):
+def head_from_fun(fun, bound=False, debug=False):
     if not isfunction(fun) and hasattr(fun, '__call__'):
         name, fun = fun.__class__.__name__, fun.__call__
     else:
         name = fun.__name__
-    spec = getargspec(fun)
     definition = FUNHEAD_TEMPLATE.format(
         fun_name=name,
         fun_args=_argsfromspec(getargspec(fun)),
@@ -344,4 +343,6 @@ def head_from_fun(fun, debug=True):
     exec(definition, namespace)
     result = namespace[name]
     result._source = definition
+    if bound:
+        return partial(result, object())
     return result

@@ -286,7 +286,7 @@ class Celery(object):
                 '_decorated': True,
                 '__doc__': fun.__doc__,
                 '__module__': fun.__module__,
-                '__header__': staticmethod(head_from_fun(fun)),
+                '__header__': staticmethod(head_from_fun(fun, bound=bind)),
                 '__wrapped__': fun}, **options))()
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app

@@ -332,8 +332,13 @@ class test_App(AppCase):
 
     def test_apply_async_has__self__(self):
         @self.app.task(__self__='hello', shared=False)
-        def aawsX():
+        def aawsX(x, y):
             pass
+
+        with self.assertRaises(TypeError):
+            aawsX.apply_async(())
+        with self.assertRaises(TypeError):
+            aawsX.apply_async((2, ))
 
         with patch('celery.app.amqp.AMQP.create_task_message') as create:
             with patch('celery.app.amqp.AMQP.send_task_message') as send:
@@ -346,11 +351,11 @@ class test_App(AppCase):
     def test_apply_async_adds_children(self):
         from celery._state import _task_stack
 
-        @self.app.task(shared=False)
+        @self.app.task(bind=True, shared=False)
         def a3cX1(self):
             pass
 
-        @self.app.task(shared=False)
+        @self.app.task(bind=True, shared=False)
         def a3cX2(self):
             pass
 

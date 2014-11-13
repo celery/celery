@@ -207,7 +207,6 @@ class test_default_logger(AppCase):
             self.app.log.setup_logging_subsystem(colorize=True)
 
     def test_setup_logging_subsystem_no_mputil(self):
-        from celery.utils import log as logtools
         with restore_logging():
             with mask_modules('billiard.util'):
                 self.app.log.setup_logging_subsystem()
