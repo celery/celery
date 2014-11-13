@@ -150,7 +150,7 @@ class Celery(object):
         if not isinstance(self._tasks, TaskRegistry):
             self._tasks = TaskRegistry(self._tasks or {})
 
-        # If the class defins a custom __reduce_args__ we need to use
+        # If the class defines a custom __reduce_args__ we need to use
         # the old way of pickling apps, which is pickling a list of
         # args instead of the new way that pickles a dict of keywords.
         self._using_v1_reduce = app_has_custom(self, '__reduce_args__')
