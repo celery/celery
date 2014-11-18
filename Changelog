@@ -8,6 +8,18 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.17:
+
+3.1.17
+======
+
+- **Requirements**
+
+    - Now depends on :ref:`Kombu 3.0.24 <kombu:version-3.0.24>`.
+
+    - Now depends on :mod:`billiard` 3.3.0.19.
+
+
 .. _version-3.1.16:
 
 3.1.16
