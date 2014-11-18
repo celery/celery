@@ -61,7 +61,6 @@ def default(task, app, consumer,
     call_at = consumer.timer.call_at
     apply_eta_task = consumer.apply_eta_task
     rate_limits_enabled = not consumer.disable_rate_limits
-    bucket = consumer.task_buckets[task.name]
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
     body_can_be_buffer = consumer.pool.body_can_be_buffer
@@ -116,6 +115,7 @@ def default(task, app, consumer,
                 call_at(eta, apply_eta_task, (req, ), priority=6)
         else:
             if rate_limits_enabled:
+                bucket = consumer.task_buckets[task.name]
                 if bucket:
                     return limit_task(req, bucket, 1)
             task_reserved(req)
