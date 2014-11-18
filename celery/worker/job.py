@@ -489,7 +489,6 @@ class Request(object):
                 'task-failed', exception=exception, traceback=traceback,
             )
 
-
         context = {
             'hostname': self.hostname,
             'id': self.id,
