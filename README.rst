@@ -34,7 +34,7 @@ any language.  So far there's RCelery_ for the Ruby programming language, and a
 `PHP client`, but language interoperability can also be achieved
 by using webhooks.
 
-.. _RCelery: https://github.com/leapfrogonline/rcelery
+.. _RCelery: http://leapfrogdevelopment.github.com/rcelery/
 .. _`PHP client`: https://github.com/gjedeer/celery-php
 .. _`using webhooks`:
     http://docs.celeryproject.org/en/latest/userguide/remote-tasks.html
