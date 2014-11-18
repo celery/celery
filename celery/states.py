@@ -112,9 +112,6 @@ class state(str):
 
     """
 
-    def compare(self, other, fun):
-        return fun(precedence(self), precedence(other))
-
     def __gt__(self, other):
         return precedence(self) < precedence(other)
 
