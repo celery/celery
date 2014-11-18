@@ -26,7 +26,11 @@ new in Celery 3.1.
 
     - Now depends on :ref:`Kombu 3.0.24 <kombu:version-3.0.24>`.
 
+        Includes new Qpid transport.
+
     - Now depends on :mod:`billiard` 3.3.0.19.
+
+    - ``celery[librabbitmq]`` now depends on librabbitmq 1.6.1.
 
 - **Task**: The timing for ETA/countdown tasks were off after the example ``LocalTimezone``
   implementation in the Python documentation no longer works in Python 3.4.
@@ -44,6 +48,12 @@ new in Celery 3.1.
 
 - **Canvas**: chain and group now handles json serialized signatures
   (Issue #2076).
+
+- **Results**: ``.join_native()`` would accidentally treat the ``STARTED``
+  state as being ready (Issue #2326).
+
+    This could lead to the chord callback being called with invalid arguments
+    if using chords with the :setting:`CELERY_TRACK_STARTED` setting.
 
 - **Canvas**: The ``chord_size`` attribute is now set for all canvas primitives,
   making sure more combinations will work with the ``new_join`` optimization
@@ -64,6 +74,11 @@ new in Celery 3.1.
     caused errors when attempting to retrieve results.
 
     Fix contributed by Gino Ledesma.
+
+- **Mongodb Result backend**: Pickling the backend instance will now include
+  the original url (Issue #2347).
+
+    Fix contributed by Sukrit Khera.
 
 - **Task**: Exception info was not properly set for tasks raising
   :exc:`~celery.exceptions.Reject` (Issue #2043).
