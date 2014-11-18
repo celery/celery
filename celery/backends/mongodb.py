@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 try:
     import pymongo
@@ -225,10 +225,10 @@ class MongoBackend(BaseBackend):
     def cleanup(self):
         """Delete expired metadata."""
         self.collection.remove(
-            {'date_done': {'$lt': self.app.now() - self.expires}},
+            {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
         self.group_collection.remove(
-            {'date_done': {'$lt': self.app.now() - self.expires}},
+            {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
 
     def __reduce__(self, args=(), kwargs={}):
@@ -271,3 +271,7 @@ class MongoBackend(BaseBackend):
         # in the background. Once completed cleanup will be much faster
         collection.ensure_index('date_done', background='true')
         return collection
+
+    @cached_property
+    def expires_delta(self):
+        return timedelta(seconds=self.expires)
