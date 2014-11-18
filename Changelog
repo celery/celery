@@ -13,12 +13,80 @@ new in Celery 3.1.
 3.1.17
 ======
 
+.. admonition:: CELERYD_FORCE_EXECV should not be used.
+
+    Please disable this option if you're using the RabbitMQ or Redis
+    transports.
+
+    Keeping this option enabled in 3.1 means the async based worker will
+    be disabled, so using is more likely to lead to trouble than doing
+    anything good.
+
 - **Requirements**
 
     - Now depends on :ref:`Kombu 3.0.24 <kombu:version-3.0.24>`.
 
     - Now depends on :mod:`billiard` 3.3.0.19.
 
+- **Task**: The timing for ETA/countdown tasks were off after the example ``LocalTimezone``
+  implementation in the Python documentation no longer works in Python 3.4.
+  (Issue #2306).
+
+- **Task**: Raising :exc:`~celery.exceptions.Ignore` no longer sends
+  ``task-failed`` event (Issue #2365).
+
+- **Redis result backend**: Fixed errors about unbound local ``self``.
+
+    Fix contributed by Thomas French.
+
+- **Task**: Callbacks was not called properly if ``link`` was a list of
+  signatures (Issuse #2350).
+
+- **Canvas**: chain and group now handles json serialized signatures
+  (Issue #2076).
+
+- **Canvas**: The ``chord_size`` attribute is now set for all canvas primitives,
+  making sure more combinations will work with the ``new_join`` optimization
+  for Redis (Issue #2339).
+
+- **Task**: Fixed problem with app not being properly propagated to
+  ``trace_task`` in all cases.
+
+    Fix contributed by kristaps.
+
+- **Worker**: Expires from task message now associated with a timezone.
+
+    Fix contributed by Albert Wang.
+
+- **Cassandra result backend**: Fixed problems when using detailed mode.
+
+    When using the Cassandra backend in detailed mode, a regression
+    caused errors when attempting to retrieve results.
+
+    Fix contributed by Gino Ledesma.
+
+- **Task**: Exception info was not properly set for tasks raising
+  :exc:`~celery.exceptions.Reject` (Issue #2043).
+
+- **Worker**: The set of revokes tasks are now deduplicated when loading from
+  the worker state database (Issue #2336).
+
+- **celery.contrib.rdb**: Fixed problems with ``rdb.set_trace`` calling stop
+  from the wrong frame.
+
+    Fix contributed by llllllllll.
+
+- **Canvas**: ``chain`` and ``chord`` can now be immutable.
+
+- **Canvas**: ``chord.apply_async`` will now keep partial args set in
+  ``self.args`` (Issue #2299).
+
+- **Results**: Small refactoring so that results are decoded the same way in
+  all result backends.
+
+- **Logging**: The ``processName`` format was introduced in Py2.6.2 so for
+  compatibility this format is now excluded when using earlier versions
+  (Issue #1644).
 
 .. _version-3.1.16:
 
