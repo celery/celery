@@ -469,7 +469,8 @@ class KeyValueStoreBackend(BaseBackend):
             cache.update(r)
             ids.difference_update(set(bytes_to_str(v) for v in r))
             for key, value in items(r):
-                yield bytes_to_str(key), value
+                if value['status'] in READY_STATES:
+                    yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:
                 raise TimeoutError('Operation timed out ({0})'.format(timeout))
             time.sleep(interval)  # don't busy loop.
