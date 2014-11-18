@@ -17,6 +17,7 @@ import sys
 import traceback
 
 from collections import namedtuple
+from functools import total_ordering
 from threading import Event, Thread
 
 from billiard import ensure_multiprocessing
@@ -50,6 +51,7 @@ class SchedulingError(Exception):
     """An error occured while scheduling a task."""
 
 
+@total_ordering
 class ScheduleEntry(object):
     """An entry in the scheduler.
 
@@ -140,6 +142,11 @@ class ScheduleEntry(object):
             self,
             call=reprcall(self.task, self.args or (), self.kwargs or {}),
         )
+
+    def __lt__(self, other):
+        if isinstance(other, ScheduleEntry):
+            return id(self) < id(other)
+        return NotImplemented
 
 
 class Scheduler(object):
