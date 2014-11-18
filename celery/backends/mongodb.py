@@ -56,7 +56,7 @@ class MongoBackend(BaseBackend):
 
     _connection = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, app=None, url=None, **kwargs):
         """Initialize MongoDB backend instance.
 
         :raises celery.exceptions.ImproperlyConfigured: if
@@ -64,7 +64,7 @@ class MongoBackend(BaseBackend):
 
         """
         self.options = {}
-        super(MongoBackend, self).__init__(*args, **kwargs)
+        super(MongoBackend, self).__init__(app, **kwargs)
         self.expires = kwargs.get('expires') or maybe_timedelta(
             self.app.conf.CELERY_TASK_RESULT_EXPIRES)
 
@@ -95,10 +95,10 @@ class MongoBackend(BaseBackend):
             self.options.setdefault('max_pool_size', self.max_pool_size)
             self.options.setdefault('auto_start_request', False)
 
-        url = kwargs.get('url')
-        if url:
+        self.url = url
+        if self.url:
             # Specifying backend as an URL
-            self.host = url
+            self.host = self.url
 
     def _get_connection(self):
         """Connect to the MongoDB server."""
@@ -210,9 +210,9 @@ class MongoBackend(BaseBackend):
         )
 
     def __reduce__(self, args=(), kwargs={}):
-        kwargs.update(
-            dict(expires=self.expires))
-        return super(MongoBackend, self).__reduce__(args, kwargs)
+        return super(MongoBackend, self).__reduce__(
+            args, dict(kwargs, expires=self.expires, url=self.url),
+        )
 
     def _get_database(self):
         conn = self._get_connection()
