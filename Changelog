@@ -17,18 +17,18 @@ new in Celery 3.1.
 
 .. admonition:: Do not enable the :setting:`CELERYD_FORCE_EXECV` setting!
 
-    Please disable this option if you're using the RabbitMQ or Redis
-    transport.
+    Please review your configuration and disable this option if you're using the
+    RabbitMQ or Redis transport.
 
-    Keeping this option enabled after 3.1 means the async based worker will
-    be disabled, which is more likely to lead to trouble than doing good.
+    Keeping this option enabled after 3.1 means the async based prefork pool will
+    be disabled, which can easily cause instability.
 
 - **Requirements**
 
     - Now depends on :ref:`Kombu 3.0.24 <kombu:version-3.0.24>`.
 
-        Includes new Qpid transport backported from the future 3.2 version
-        for Python 2.6 compatibility.
+        Includes the new Qpid transport coming in Celery 3.2, backported to
+        support those who may still require Python 2.6 compatibility.
 
     - Now depends on :mod:`billiard` 3.3.0.19.
 
