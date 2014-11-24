@@ -163,7 +163,7 @@ class Worker(object):
                 if not local_received or not timestamp:
                     return
                 drift = abs(int(local_received) - int(timestamp))
-                if drift > HEARTBEAT_DRIFT_MAX:
+                if drift > max_drift:
                     _warn_drift(self.hostname, drift,
                                 local_received, timestamp)
                 if local_received:

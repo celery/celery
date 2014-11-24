@@ -236,6 +236,7 @@ Can be one of the following:
 .. _`Redis`: http://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
 .. _`IronCache`: http://www.iron.io/cache
+.. _`CouchDB`: http://www.couchdb.com/
 .. _`Couchbase`: http://www.couchbase.com/
 
 

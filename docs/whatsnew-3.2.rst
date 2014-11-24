@@ -1,4 +1,4 @@
-.. _whatsnew-3.1:
+.. _whatsnew-3.2:
 
 ===========================================
  What's new in Celery 3.2 (TBA)

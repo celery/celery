@@ -135,8 +135,8 @@ If you're looking for versions prior to 3.1.x you should go to :ref:`history`.
   before importing any task modules (Django 1.7 compatibility, Issue #2227) 
 
 - **Results**: ``result.get()`` was misbehaving by calling
- ``backend.get_task_meta`` in a finally call leading to
- AMQP result backend queues not being properly cleaned up (Issue #2245).
+  ``backend.get_task_meta`` in a finally call leading to
+  AMQP result backend queues not being properly cleaned up (Issue #2245).
 
 .. _version-3.1.14:
 

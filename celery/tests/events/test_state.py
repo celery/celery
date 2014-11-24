@@ -324,9 +324,9 @@ class test_State(AppCase):
         tA, tB, tC = r.uids
         r.play()
         now = list(state.tasks_by_time(reverse=False))
-        self.assertEqual(now[0][0], tB)
-        self.assertEqual(now[1][0], tC)
-        self.assertEqual(now[2][0], tA)
+        self.assertEqual(now[0][0], tA)
+        self.assertEqual(now[1][0], tB)
+        self.assertEqual(now[2][0], tC)
         for _ in range(1000):
             shuffle(r.uids)
             tA, tB, tC = r.uids
