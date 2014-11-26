@@ -521,7 +521,7 @@ by changing its :meth:`@Task` attribute:
     >>> app.Task
     <unbound MyBaseTask>
 
-    >>> @x.task
+    >>> @app.task
     ... def add(x, y):
     ...     return x + y
 
