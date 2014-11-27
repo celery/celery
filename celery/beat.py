@@ -249,25 +249,22 @@ class Scheduler(object):
                               for e in values(self.schedule)]
             heapify(H)
         while 1:
-            print(H)
             prev_time, to_push = None, []
+            next_tick = max_interval
 
             while H:
                 event = H[0]
-                if prev_time and event.time > prev_time:
-                    yield min(self.is_due(event[2])[1], max_interval)
-                    break
                 entry = event[2]
                 is_due, next_time_to_check = self.is_due(entry)
                 if next_time_to_check is not None and next_time_to_check <= 0:
                     raise RuntimeError("next_time_to_check value returned by " +
                                        "%s.is_due must be > 0" % entry.name)
+                next_tick = min(next_time_to_check, next_tick)
                 if is_due:
                     verify = heappop(H)
                     if verify is event:
                         next_entry = self.reserve(entry)
                         self.apply_entry(entry, producer=self.producer)
-                        prev_time = event.time
                         to_push.append(event_t(next_time_to_check,
                                                event[1],
                                                next_entry))
@@ -275,7 +272,7 @@ class Scheduler(object):
                         to_push.append(verify)
                     yield 0
                 else:
-                    yield min(next_time_to_check or max_interval, max_interval)
+                    yield min(next_tick or max_interval, max_interval)
                     break
 
             for event in to_push:
