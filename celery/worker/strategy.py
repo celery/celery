@@ -41,6 +41,10 @@ def proto1_to_proto2(message, body):
             'Task keyword arguments must be a mapping',
         )
     body['headers'] = message.headers
+    try:
+        body['group'] = body['taskset']
+    except KeyError:
+        pass
     return (args, kwargs), body, True, body.get('utc', True)
 
 
@@ -57,7 +61,7 @@ def default(task, app, consumer,
     call_at = consumer.timer.call_at
     apply_eta_task = consumer.apply_eta_task
     rate_limits_enabled = not consumer.disable_rate_limits
-    bucket = consumer.task_buckets[task.name]
+    get_bucket = consumer.task_buckets.__getitem__
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
     body_can_be_buffer = consumer.pool.body_can_be_buffer
@@ -112,6 +116,7 @@ def default(task, app, consumer,
                 call_at(eta, apply_eta_task, (req, ), priority=6)
         else:
             if rate_limits_enabled:
+                bucket = get_bucket(task.name)
                 if bucket:
                     return limit_task(req, bucket, 1)
             task_reserved(req)

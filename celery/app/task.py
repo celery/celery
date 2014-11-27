@@ -12,7 +12,7 @@ import sys
 
 from billiard.einfo import ExceptionInfo
 
-from celery import current_app
+from celery import current_app, group
 from celery import states
 from celery._state import _task_stack
 from celery.canvas import signature
@@ -432,7 +432,7 @@ class Task(object):
         :keyword link_error: A single, or a list of tasks to apply
                       if an error occurs while executing the task.
 
-        :keyword producer: :class:`~@kombu.Producer` instance to use.
+        :keyword producer: :class:`kombu.Producer` instance to use.
         :keyword add_to_parent: If set to True (default) and the task
             is applied while executing another task, then the result
             will be appended to the parent tasks ``request.children``
@@ -448,6 +448,13 @@ class Task(object):
             be replaced by a local :func:`apply` call instead.
 
         """
+        try:
+            check_arguments = self.__header__
+        except AttributeError:
+            pass
+        else:
+            check_arguments(*args or (), **kwargs or {})
+
         app = self._get_app()
         if app.conf.CELERY_ALWAYS_EAGER:
             return self.apply(args, kwargs, task_id=task_id or uuid(),
@@ -506,6 +513,9 @@ class Task(object):
         :keyword eta: Explicit time and date to run the retry at
                       (must be a :class:`~datetime.datetime` instance).
         :keyword max_retries: If set, overrides the default retry limit.
+            A value of :const:`None`, means "use the default", so if you want
+            infinite retries you would have to set the :attr:`max_retries`
+            attribute of the task to :const:`None` first.
         :keyword time_limit: If set, overrides the default time limit.
         :keyword soft_time_limit: If set, overrides the default soft
                                   time limit.
@@ -687,30 +697,27 @@ class Task(object):
             return d.send(type_, uuid=req.id, **fields)
 
     def replace(self, sig):
-        request = self.request
-        sig.set_immutable(True)
-        chord_id, request.chord = request.chord, None
-        group_id, request.group = request.group, None
-        callbacks, request.callbacks = request.callbacks, [sig]
-        if group_id or chord_id:
-            sig.set(group=group_id, chord=chord_id)
-        sig |= callbacks[0]
-        return sig
+        """Replace the current task, with a new task inheriting the
+        same task id.
 
-    def replace_in_chord(self, sig):
-        """Replace the current task (which must be a member of a chord)
-        with a new task.
+        :param sig: :class:`@signature`
 
-        Note that this will raise :exc:`~@Ignore`, so the best practice
-        is to always use ``return self.replace_in_chord(...)`` to convey
+        Note: This will raise :exc:`~@Ignore`, so the best practice
+        is to always use ``raise self.replace_in_chord(...)`` to convey
         to the reader that the task will not continue after being replaced.
 
         :param: Signature of new task.
 
         """
+        chord = self.request.chord
+        if isinstance(sig, group):
+            sig |= self.app.tasks['celery.accumulate'].s(index=0).set(
+                chord=chord,
+            )
+            chord = None
         sig.freeze(self.request.id,
                    group_id=self.request.group,
-                   chord=self.request.chord,
+                   chord=chord,
                    root_id=self.request.root_id)
         sig.delay()
         raise Ignore('Chord member replaced by new task')

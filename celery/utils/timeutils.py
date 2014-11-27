@@ -10,6 +10,7 @@ from __future__ import absolute_import, print_function
 
 import numbers
 import os
+import sys
 import time as _time
 
 from calendar import monthrange
@@ -17,7 +18,7 @@ from datetime import date, datetime, timedelta, tzinfo
 
 from kombu.utils import cached_property, reprcall
 
-from pytz import timezone as _timezone, AmbiguousTimeError
+from pytz import timezone as _timezone, AmbiguousTimeError, FixedOffset
 
 from celery.five import string_t
 
@@ -30,6 +31,9 @@ __all__ = ['LocalTimezone', 'timezone', 'maybe_timedelta',
            'humanize_seconds', 'maybe_iso8601', 'is_naive', 'make_aware',
            'localize', 'to_utc', 'maybe_make_aware', 'ffwd', 'utcoffset',
            'adjust_timestamp', 'maybe_s_to_ms']
+
+PY3 = sys.version_info[0] == 3
+PY33 = sys.version_info >= (3, 3)
 
 C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
 
@@ -55,6 +59,7 @@ class LocalTimezone(tzinfo):
 
     Used only when UTC is not enabled.
     """
+    _offset_cache = {}
 
     def __init__(self):
         # This code is moved in __init__ to execute it as late as possible
@@ -68,22 +73,33 @@ class LocalTimezone(tzinfo):
         tzinfo.__init__(self)
 
     def __repr__(self):
-        return '<LocalTimezone>'
+        return '<LocalTimezone: UTC{0:+03d}>'.format(
+            int(self.DSTOFFSET.total_seconds() / 3600),
+        )
 
     def utcoffset(self, dt):
-        if self._isdst(dt):
-            return self.DSTOFFSET
-        else:
-            return self.STDOFFSET
+        return self.DSTOFFSET if self._isdst(dt) else self.STDOFFSET
 
     def dst(self, dt):
-        if self._isdst(dt):
-            return self.DSTDIFF
-        else:
-            return ZERO
+        return self.DSTDIFF if self._isdst(dt) else ZERO
 
     def tzname(self, dt):
         return _time.tzname[self._isdst(dt)]
+
+    if PY3:
+
+        def fromutc(self, dt):
+            # The base tzinfo class no longer implements a DST
+            # offset aware .fromutc() in Python3 (Issue #2306).
+
+            # I'd rather rely on pytz to do this, than port
+            # the C code from cpython's fromutc [asksol]
+            offset = int(self.utcoffset(dt).seconds / 60.0)
+            try:
+                tz = self._offset_cache[offset]
+            except KeyError:
+                tz = self._offset_cache[offset] = FixedOffset(offset)
+            return tz.fromutc(dt.replace(tzinfo=tz))
 
     def _isdst(self, dt):
         tt = (dt.year, dt.month, dt.day,
@@ -106,8 +122,17 @@ class _Zone(object):
             dt = make_aware(dt, orig or self.utc)
         return localize(dt, self.tz_or_local(local))
 
-    def to_system(self, dt):
-        return localize(dt, self.local)
+    if PY33:
+
+        def to_system(self, dt):
+            # tz=None is a special case since Python 3.3, and will
+            # convert to the current local timezone (Issue #2306).
+            return dt.astimezone(tz=None)
+
+    else:
+
+        def to_system(self, dt):  # noqa
+            return localize(dt, self.local)
 
     def to_local_fallback(self, dt):
         if is_naive(dt):

@@ -261,12 +261,12 @@ class test_tasks(TasksCase):
             IncompleteTask().run()
 
     def test_task_kwargs_must_be_dictionary(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             self.increment_counter.apply_async([], 'str')
 
     def test_task_args_must_be_list(self):
         with self.assertRaises(ValueError):
-            self.increment_counter.apply_async('str', {})
+            self.increment_counter.apply_async('s', {})
 
     def test_regular_task(self):
         self.assertIsInstance(self.mytask, Task)

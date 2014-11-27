@@ -72,8 +72,8 @@ add_function_parentheses = True
 
 intersphinx_mapping = {
     'python': ('http://docs.python.org/dev', None),
-    'kombu': ('http://kombu.readthedocs.org/en/latest/', None),
-    'djcelery': ('http://django-celery.readthedocs.org/en/latest', None),
+    'kombu': ('http://kombu.readthedocs.org/en/master/', None),
+    'djcelery': ('http://django-celery.readthedocs.org/en/master', None),
     'cyme': ('http://cyme.readthedocs.org/en/latest', None),
     'amqp': ('http://amqp.readthedocs.org/en/latest', None),
     'flower': ('http://flower.readthedocs.org/en/latest', None),

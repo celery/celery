@@ -57,9 +57,9 @@ class RedisBackend(KeyValueStoreBackend):
     implements_incr = True
 
     def __init__(self, host=None, port=None, db=None, password=None,
-                 expires=None, max_connections=None, url=None,
+                 max_connections=None, url=None,
                  connection_pool=None, new_join=False, **kwargs):
-        super(RedisBackend, self).__init__(**kwargs)
+        super(RedisBackend, self).__init__(expires_type=int, **kwargs)
         conf = self.app.conf
         if self.redis is None:
             raise ImproperlyConfigured(REDIS_MISSING)
@@ -85,12 +85,11 @@ class RedisBackend(KeyValueStoreBackend):
             'port': _get('PORT') or 6379,
             'db': _get('DB') or 0,
             'password': _get('PASSWORD'),
-            'max_connections': max_connections,
+            'max_connections': self.max_connections,
         }
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
         self.url = url
-        self.expires = self.prepare_expires(expires, type=int)
 
         try:
             new_join = strtobool(self.connparams.pop('new_join'))
@@ -181,8 +180,11 @@ class RedisBackend(KeyValueStoreBackend):
         self.client.incr(self.get_key_for_group(group_id, '.t'), 1)
 
     def _unpack_chord_result(self, tup, decode,
+                             EXCEPTION_STATES=states.EXCEPTION_STATES,
                              PROPAGATE_STATES=states.PROPAGATE_STATES):
         _, tid, state, retval = decode(tup)
+        if state in EXCEPTION_STATES:
+            retval = self.exception_to_python(retval)
         if state in PROPAGATE_STATES:
             raise ChordError('Dependency {0} raised {1!r}'.format(tid, retval))
         return retval

@@ -141,6 +141,7 @@ NAMESPACES = {
         'RESULT_EXCHANGE_TYPE': Option('direct'),
         'RESULT_SERIALIZER': Option('json'),
         'RESULT_PERSISTENT': Option(None, type='bool'),
+        'RIAK_BACKEND_SETTINGS': Option(type='dict'),
         'ROUTES': Option(type='any'),
         'SEND_EVENTS': Option(False, type='bool'),
         'SEND_TASK_ERROR_EMAILS': Option(False, type='bool'),

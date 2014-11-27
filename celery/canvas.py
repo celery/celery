@@ -103,6 +103,12 @@ def task_name_from(task):
     return getattr(task, 'name', task)
 
 
+def _upgrade(fields, sig):
+    """Used by custom signatures in .from_dict, to keep common fields."""
+    sig.update(chord_size=fields.get('chord_size'))
+    return sig
+
+
 class Signature(dict):
     """Class that wraps the arguments and execution options
     for a single task invocation.
@@ -162,7 +168,8 @@ class Signature(dict):
              kwargs=kwargs or {},
              options=dict(options or {}, **ex),
              subtask_type=subtask_type,
-             immutable=immutable)
+             immutable=immutable,
+             chord_size=None)
 
     def __call__(self, *partial_args, **partial_kwargs):
         args, kwargs, _ = self._merge(partial_args, partial_kwargs, None)
@@ -194,6 +201,7 @@ class Signature(dict):
         s = Signature.from_dict({'task': self.task, 'args': tuple(args),
                                  'kwargs': kwargs, 'options': deepcopy(opts),
                                  'subtask_type': self.subtask_type,
+                                 'chord_size': self.chord_size,
                                  'immutable': self.immutable}, app=self._app)
         s._type = self._type
         return s
@@ -345,6 +353,7 @@ class Signature(dict):
     kwargs = _getitem_property('kwargs')
     options = _getitem_property('options')
     subtask_type = _getitem_property('subtask_type')
+    chord_size = _getitem_property('chord_size')
     immutable = _getitem_property('immutable')
 
 
@@ -376,29 +385,22 @@ class chain(Signature):
             task_id=None, link=None, link_error=None,
             publisher=None, producer=None, root_id=None, app=None, **options):
         app = app or self.app
-        args = tuple(args) + tuple(self.args)
+        args = (tuple(args) + tuple(self.args)
+                if args and not self.immutable else self.args)
         tasks, results = self.prepare_steps(
-            args, self.tasks, root_id, link_error,
+            args, self.tasks, root_id, link_error, app,
+            task_id, group_id, chord,
         )
-        if not results:
-            return
-        result = results[-1]
-        last_task = tasks[-1]
-        if group_id:
-            last_task.set(group_id=group_id)
-        if chord:
-            last_task.set(chord=chord)
-        if task_id:
-            last_task.set(task_id=task_id)
-            result = last_task.type.AsyncResult(task_id)
-        # make sure we can do a link() and link_error() on a chain object.
-        if link:
-            tasks[-1].set(link=link)
-        tasks[0].apply_async(**options)
-        return result
+        if results:
+            # make sure we can do a link() and link_error() on a chain object.
+            if link:
+                tasks[-1].set(link=link)
+            tasks[0].apply_async(**options)
+            return results[-1]
 
     def prepare_steps(self, args, tasks,
                       root_id=None, link_error=None, app=None,
+                      last_task_id=None, group_id=None, chord_body=None,
                       from_dict=Signature.from_dict):
         app = app or self.app
         steps = deque(tasks)
@@ -407,39 +409,47 @@ class chain(Signature):
         i = 0
         while steps:
             task = steps.popleft()
+
             if not isinstance(task, Signature):
                 task = from_dict(task, app=app)
-            if not i:  # first task
-                # first task gets partial args from chain
-                task = task.clone(args)
-                res = task.freeze(root_id=root_id)
-                root_id = res.id if root_id is None else root_id
-            else:
-                task = task.clone()
-                res = task.freeze(root_id=root_id)
-            i += 1
-
             if isinstance(task, group):
                 task = maybe_unroll_group(task)
+
+            # first task gets partial args from chain
+            task = task.clone(args) if not i else task.clone()
 
             if isinstance(task, chain):
                 # splice the chain
                 steps.extendleft(reversed(task.tasks))
                 continue
-            elif isinstance(task, group) and steps and \
-                    not isinstance(steps[0], group):
+            elif isinstance(task, group) and steps:
                 # automatically upgrade group(...) | s to chord(group, s)
                 try:
                     next_step = steps.popleft()
                     # for chords we freeze by pretending it's a normal
                     # signature instead of a group.
-                    res = Signature.freeze(next_step)
+                    res = Signature.freeze(next_step, root_id=root_id)
                     task = chord(
                         task, body=next_step,
                         task_id=res.task_id, root_id=root_id,
                     )
                 except IndexError:
                     pass  # no callback, so keep as group.
+
+            if steps:
+                res = task.freeze(root_id=root_id)
+            else:
+                # chain(task_id=id) means task id is set for the last task
+                # in the chain.  If the chord is part of a chord/group
+                # then that chord/group must synchronize based on the
+                # last task in the chain, so we only set the group_id and
+                # chord callback for the last task.
+                res = task.freeze(
+                    last_task_id,
+                    root_id=root_id, group_id=group_id, chord=chord_body,
+                )
+            root_id = res.id if root_id is None else root_id
+            i += 1
 
             if prev_task:
                 # link previous task to this task.
@@ -468,7 +478,13 @@ class chain(Signature):
 
     @classmethod
     def from_dict(self, d, app=None):
-        return chain(*d['kwargs']['tasks'], app=app, **d['options'])
+        tasks = d['kwargs']['tasks']
+        if tasks:
+            if isinstance(tasks, tuple):  # aaaargh
+                tasks = d['kwargs']['tasks'] = list(tasks)
+            # First task must be signature object to get app
+            tasks[0] = maybe_signature(tasks[0], app=app)
+        return _upgrade(d, chain(*tasks, app=app, **d['options']))
 
     @property
     def app(self):
@@ -504,7 +520,9 @@ class _basemap(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
-        return cls(*cls._unpack_args(d['kwargs']), app=app, **d['options'])
+        return _upgrade(
+            d, cls(*cls._unpack_args(d['kwargs']), app=app, **d['options']),
+        )
 
 
 @Signature.register_type
@@ -540,7 +558,10 @@ class chunks(Signature):
 
     @classmethod
     def from_dict(self, d, app=None):
-        return chunks(*self._unpack_args(d['kwargs']), app=app, **d['options'])
+        return _upgrade(
+            d, chunks(*self._unpack_args(
+                d['kwargs']), app=app, **d['options']),
+        )
 
     def apply_async(self, args=(), kwargs={}, **opts):
         return self.group().apply_async(
@@ -587,7 +608,9 @@ class group(Signature):
 
     @classmethod
     def from_dict(self, d, app=None):
-        return group(d['kwargs']['tasks'], app=app, **d['options'])
+        return _upgrade(
+            d, group(d['kwargs']['tasks'], app=app, **d['options']),
+        )
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app, dict=dict,
                   Signature=Signature, from_dict=Signature.from_dict):
@@ -612,7 +635,8 @@ class group(Signature):
                         task.args = tuple(partial_args) + tuple(task.args)
                     yield task, task.freeze(group_id=group_id, root_id=root_id)
 
-    def _apply_tasks(self, tasks, producer=None, app=None, **options):
+    def _apply_tasks(self, tasks, producer=None, app=None,
+                     add_to_parent=None, **options):
         app = app or self.app
         with app.producer_or_acquire(producer) as producer:
             for sig, res in tasks:
@@ -748,7 +772,7 @@ class chord(Signature):
     @classmethod
     def from_dict(self, d, app=None):
         args, d['kwargs'] = self._unpack_args(**d['kwargs'])
-        return self(*args, app=app, **d)
+        return _upgrade(d, self(*args, app=app, **d))
 
     @staticmethod
     def _unpack_args(header=None, body=None, **kwargs):
@@ -771,6 +795,8 @@ class chord(Signature):
     def apply_async(self, args=(), kwargs={}, task_id=None,
                     producer=None, publisher=None, connection=None,
                     router=None, result_cls=None, **options):
+        args = (tuple(args) + tuple(self.args)
+                if args and not self.immutable else self.args)
         body = kwargs.get('body') or self.kwargs['body']
         kwargs = dict(self.kwargs, **kwargs)
         body = body.clone(**options)
@@ -810,8 +836,7 @@ class chord(Signature):
                      if propagate is None else propagate)
         group_id = uuid()
         root_id = body.options.get('root_id')
-        if 'chord_size' not in body:
-            body['chord_size'] = self.__length_hint__()
+        body.chord_size = self.__length_hint__()
         options = dict(self.options, **options) if options else self.options
         if options:
             body.options.update(options)

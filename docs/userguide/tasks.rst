@@ -877,8 +877,9 @@ Use :meth:`~@Task.update_state` to update a task's state::
     @app.task(bind=True)
     def upload_files(self, filenames):
         for i, file in enumerate(filenames):
-            self.update_state(state='PROGRESS',
-                meta={'current': i, 'total': len(filenames)})
+            if not self.request.called_directly:
+                self.update_state(state='PROGRESS',
+                    meta={'current': i, 'total': len(filenames)})
 
 
 Here I created the state `"PROGRESS"`, which tells any application
@@ -986,7 +987,8 @@ Example that stores results manually:
     @app.task(bind=True)
     def get_tweets(self, user):
         timeline = twitter.get_timeline(user)
-        self.update_state(state=states.SUCCESS, meta=timeline)
+        if not self.request.called_directly:
+            self.update_state(state=states.SUCCESS, meta=timeline)
         raise Ignore()
 
 .. _task-semipred-reject:

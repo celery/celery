@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 try:
     import pymongo
@@ -31,7 +31,6 @@ from kombu.exceptions import EncodeError
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t
-from celery.utils.timeutils import maybe_timedelta
 
 from .base import BaseBackend
 
@@ -60,7 +59,7 @@ class MongoBackend(BaseBackend):
 
     _connection = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, app=None, url=None, **kwargs):
         """Initialize MongoDB backend instance.
 
         :raises celery.exceptions.ImproperlyConfigured: if
@@ -69,9 +68,7 @@ class MongoBackend(BaseBackend):
         """
         self.options = {}
 
-        super(MongoBackend, self).__init__(*args, **kwargs)
-        self.expires = kwargs.get('expires') or maybe_timedelta(
-            self.app.conf.CELERY_TASK_RESULT_EXPIRES)
+        super(MongoBackend, self).__init__(app, **kwargs)
 
         if not pymongo:
             raise ImproperlyConfigured(
@@ -103,10 +100,10 @@ class MongoBackend(BaseBackend):
             self.options.setdefault('max_pool_size', self.max_pool_size)
             self.options.setdefault('auto_start_request', False)
 
-        url = kwargs.get('url')
-        if url:
+        self.url = url
+        if self.url:
             # Specifying backend as an URL
-            self.host = url
+            self.host = self.url
 
     def _get_connection(self):
         """Connect to the MongoDB server."""
@@ -174,14 +171,14 @@ class MongoBackend(BaseBackend):
         """Get task metadata for a task by id."""
         obj = self.collection.find_one({'_id': task_id})
         if obj:
-            return {
+            return self.meta_from_decoded({
                 'task_id': obj['_id'],
                 'status': obj['status'],
                 'result': self.decode(obj['result']),
                 'date_done': obj['date_done'],
                 'traceback': self.decode(obj['traceback']),
                 'children': self.decode(obj['children']),
-            }
+            })
         return {'status': states.PENDING, 'result': None}
 
     def _save_group(self, group_id, result):
@@ -228,16 +225,16 @@ class MongoBackend(BaseBackend):
     def cleanup(self):
         """Delete expired metadata."""
         self.collection.remove(
-            {'date_done': {'$lt': self.app.now() - self.expires}},
+            {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
         self.group_collection.remove(
-            {'date_done': {'$lt': self.app.now() - self.expires}},
+            {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
 
     def __reduce__(self, args=(), kwargs={}):
-        kwargs.update(
-            dict(expires=self.expires))
-        return super(MongoBackend, self).__reduce__(args, kwargs)
+        return super(MongoBackend, self).__reduce__(
+            args, dict(kwargs, expires=self.expires, url=self.url),
+        )
 
     def _get_database(self):
         conn = self._get_connection()
@@ -274,3 +271,7 @@ class MongoBackend(BaseBackend):
         # in the background. Once completed cleanup will be much faster
         collection.ensure_index('date_done', background='true')
         return collection
+
+    @cached_property
+    def expires_delta(self):
+        return timedelta(seconds=self.expires)

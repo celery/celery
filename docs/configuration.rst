@@ -221,6 +221,10 @@ Can be one of the following:
     Use `Couchbase`_ to store the results.
     See :ref:`conf-couchbase-result-backend`.
 
+* couchdb
+    Use `CouchDB`_ to store the results.
+    See :ref:`conf-couchdb-result-backend`.
+
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
@@ -232,6 +236,7 @@ Can be one of the following:
 .. _`Redis`: http://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
 .. _`IronCache`: http://www.iron.io/cache
+.. _`CouchDB`: http://www.couchdb.com/
 .. _`Couchbase`: http://www.couchbase.com/
 
 
@@ -773,6 +778,47 @@ This is a dict supporting the following keys:
     Password to authenticate to the Couchbase server (optional).
 
 
+.. _conf-couchdb-result-backend:
+
+CouchDB backend settings
+------------------------
+
+.. note::
+
+    The CouchDB backend requires the :mod:`pycouchdb` library:
+    https://pypi.python.org/pypi/pycouchdb
+
+    To install the couchbase package use `pip` or `easy_install`:
+
+    .. code-block:: bash
+
+        $ pip install pycouchdb
+
+This backend can be configured via the :setting:`CELERY_RESULT_BACKEND`
+set to a couchdb URL::
+
+    CELERY_RESULT_BACKEND = 'couchdb://username:password@host:port/container'
+
+
+The URL is formed out of the following parts:
+
+* username
+    User name to authenticate to the CouchDB server as (optional).
+
+* password
+    Password to authenticate to the CouchDB server (optional).
+
+* host
+    Host name of the CouchDB server. Defaults to ``localhost``.
+
+* port
+    The port the CouchDB server is listening to. Defaults to ``8091``.
+
+* container
+    The default container the CouchDB server is writing to.
+    Defaults to ``default``.
+
+
 .. _conf-messaging:
 
 Message Routing
@@ -1211,6 +1257,8 @@ This is the total number of results to cache before older results are evicted.
 The default is 5000.  0 or None means no limit, and a value of :const:`-1`
 will disable the cache.
 
+.. setting:: CELERY_TRACK_STARTED
+
 CELERY_TRACK_STARTED
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -1315,24 +1363,6 @@ to have different import categories.
 
 The modules in this setting are imported after the modules in
 :setting:`CELERY_IMPORTS`.
-
-.. setting:: CELERYD_FORCE_EXECV
-
-CELERYD_FORCE_EXECV
-~~~~~~~~~~~~~~~~~~~
-
-On Unix the prefork pool will fork, so that child processes
-start with the same memory as the parent process.
-
-This can cause problems as there is a known deadlock condition
-with pthread locking primitives when `fork()` is combined with threads.
-
-You should enable this setting if you are experiencing hangs (deadlocks),
-especially in combination with time limits or having a max tasks per child limit.
-
-This option will be enabled by default in a later version.
-
-This is not a problem on Windows, as it does not have `fork()`.
 
 .. setting:: CELERYD_WORKER_LOST_WAIT
 

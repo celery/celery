@@ -318,6 +318,25 @@ class test_State(AppCase):
         self.assertEqual(now[1][0], tC)
         self.assertEqual(now[2][0], tB)
 
+    def test_task_descending_clock_ordering(self):
+        state = State()
+        r = ev_logical_clock_ordering(state)
+        tA, tB, tC = r.uids
+        r.play()
+        now = list(state.tasks_by_time(reverse=False))
+        self.assertEqual(now[0][0], tA)
+        self.assertEqual(now[1][0], tB)
+        self.assertEqual(now[2][0], tC)
+        for _ in range(1000):
+            shuffle(r.uids)
+            tA, tB, tC = r.uids
+            r.rewind_with_offset(r.current_clock + 1, r.uids)
+            r.play()
+        now = list(state.tasks_by_time(reverse=False))
+        self.assertEqual(now[0][0], tB)
+        self.assertEqual(now[1][0], tC)
+        self.assertEqual(now[2][0], tA)
+
     def test_worker_online_offline(self):
         r = ev_worker_online_offline(State())
         next(r)

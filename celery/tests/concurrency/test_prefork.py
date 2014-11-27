@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import errno
+import select
 import socket
 import time
 
@@ -8,7 +9,7 @@ from itertools import cycle
 
 from celery.five import items, range
 from celery.utils.functional import noop
-from celery.tests.case import AppCase, Mock, SkipTest, call, patch
+from celery.tests.case import AppCase, Mock, SkipTest, patch
 try:
     from celery.concurrency import prefork as mp
     from celery.concurrency import asynpool
@@ -147,67 +148,83 @@ class test_AsynPool(PoolCase):
         list(g)
         self.assertFalse(asynpool.gen_not_started(g))
 
-    def test_select(self):
+    @patch('select.select', create=True)
+    def test_select(self, __select):
         ebadf = socket.error()
         ebadf.errno = errno.EBADF
-        with patch('select.select') as select:
-            select.return_value = ([3], [], [])
+        with patch('select.poll', create=True) as poller:
+            poll = poller.return_value = Mock(name='poll.poll')
+            poll.poll.return_value = [(3, select.POLLIN)]
             self.assertEqual(
-                asynpool._select({3}),
-                ([3], [], 0),
+                asynpool._select({3}, poll=poller),
+                ({3}, set(), 0),
             )
 
-            select.return_value = ([], [], [3])
+            poll.poll.return_value = [(3, select.POLLERR)]
             self.assertEqual(
-                asynpool._select({3}, None, {3}),
-                ([3], [], 0),
+                asynpool._select({3}, None, {3}, poll=poller),
+                ({3}, set(), 0),
             )
 
             eintr = socket.error()
             eintr.errno = errno.EINTR
-            select.side_effect = eintr
+            poll.poll.side_effect = eintr
 
             readers = {3}
-            self.assertEqual(asynpool._select(readers), ([], [], 1))
+            self.assertEqual(
+                asynpool._select(readers, poll=poller),
+                (set(), set(), 1),
+            )
             self.assertIn(3, readers)
 
-        with patch('select.select') as select:
-            select.side_effect = ebadf
-            readers = {3}
-            self.assertEqual(asynpool._select(readers), ([], [], 1))
-            select.assert_has_calls([call([3], [], [], 0)])
-            self.assertNotIn(3, readers)
+        with patch('select.poll') as poller:
+            poll = poller.return_value = Mock(name='poll.poll')
+            poll.poll.side_effect = ebadf
+            with patch('select.select') as selcheck:
+                selcheck.side_effect = ebadf
+                readers = {3}
+                self.assertEqual(
+                    asynpool._select(readers, poll=poller),
+                    (set(), set(), 1),
+                )
+                self.assertNotIn(3, readers)
 
-        with patch('select.select') as select:
-            select.side_effect = MemoryError()
+        with patch('select.poll') as poller:
+            poll = poller.return_value = Mock(name='poll.poll')
+            poll.poll.side_effect = MemoryError()
             with self.assertRaises(MemoryError):
-                asynpool._select({1})
+                asynpool._select({1}, poll=poller)
 
-        with patch('select.select') as select:
+        with patch('select.poll') as poller:
+            poll = poller.return_value = Mock(name='poll.poll')
+            with patch('select.select') as selcheck:
 
-            def se(*args):
-                select.side_effect = MemoryError()
-                raise ebadf
-            select.side_effect = se
-            with self.assertRaises(MemoryError):
-                asynpool._select({3})
+                def se(*args):
+                    selcheck.side_effect = MemoryError()
+                    raise ebadf
+                poll.poll.side_effect = se
+                with self.assertRaises(MemoryError):
+                    asynpool._select({3}, poll=poller)
 
-        with patch('select.select') as select:
+        with patch('select.poll') as poller:
+            poll = poller.return_value = Mock(name='poll.poll')
+            with patch('select.select') as selcheck:
 
-            def se2(*args):
-                select.side_effect = socket.error()
-                select.side_effect.errno = 1321
-                raise ebadf
-            select.side_effect = se2
+                def se2(*args):
+                    selcheck.side_effect = socket.error()
+                    selcheck.side_effect.errno = 1321
+                    raise ebadf
+                poll.poll.side_effect = se2
+                with self.assertRaises(socket.error):
+                    asynpool._select({3}, poll=poller)
+
+        with patch('select.poll') as poller:
+            poll = poller.return_value = Mock(name='poll.poll')
+
+            poll.poll.side_effect = socket.error()
+            poll.poll.side_effect.errno = 34134
             with self.assertRaises(socket.error):
-                asynpool._select({3})
-
-        with patch('select.select') as select:
-
-            select.side_effect = socket.error()
-            select.side_effect.errno = 34134
-            with self.assertRaises(socket.error):
-                asynpool._select({3})
+                asynpool._select({3}, poll=poller)
 
     def test_promise(self):
         fun = Mock()

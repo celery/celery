@@ -6,7 +6,7 @@ import sys
 
 from functools import wraps
 
-from billiard import current_process
+from billiard.process import current_process
 from kombu import Exchange, Queue
 
 from celery import platforms

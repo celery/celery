@@ -80,10 +80,6 @@ class AMQPBackend(BaseBackend):
         )
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         self.auto_delete = auto_delete
-
-        self.expires = None
-        if 'expires' not in kwargs or kwargs['expires'] is not None:
-            self.expires = self.prepare_expires(kwargs.get('expires'))
         self.queue_arguments = dictfilter({
             'x-expires': maybe_s_to_ms(self.expires),
         })
@@ -256,14 +252,12 @@ class AMQPBackend(BaseBackend):
             results = deque()
             push_result = results.append
             push_cache = self._cache.__setitem__
-            to_exception = self.exception_to_python
+            decode_result = self.meta_from_decoded
 
             def on_message(message):
-                body = message.decode()
+                body = decode_result(message.decode())
                 state, uid = getfields(body)
                 if state in READY_STATES:
-                    if state in PROPAGATE_STATES:
-                        body['result'] = to_exception(body['result'])
                     push_result(body) \
                         if uid in task_ids else push_cache(uid, body)
 

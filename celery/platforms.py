@@ -21,7 +21,10 @@ import warnings
 
 from collections import namedtuple
 
-from billiard import current_process
+try:
+    from billiard.process import current_process
+except ImportError:
+    current_process = None
 # fileno used to be in this module
 from kombu.utils import maybe_fileno
 from kombu.utils.encoding import safe_str
@@ -706,8 +709,8 @@ else:
         """
         if hostname:
             progname = '{0}: {1}'.format(progname, hostname)
-        return set_process_title(
-            '{0}:{1}'.format(progname, current_process().name), info=info)
+        name = current_process().name if current_process else 'MainProcess'
+        return set_process_title('{0}:{1}'.format(progname, name), info=info)
 
 
 def get_errno_name(n):
