@@ -5,7 +5,7 @@
 ================
 
 .. contents::
-    :local:
+:local:
 
 Introduction
 ============
@@ -220,19 +220,19 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 | ``crontab(minute=0, hour='*/3,8-17')``  | Execute every hour divisible by 3, and     |
 |                                         | every hour during office hours (8am-5pm).  |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0, 0, day_of_month='2')``  | Execute on the second day of every month.  |
+| ``crontab(0, 0, day_of_month='2')``     | Execute on the second day of every month.  |
 |                                         |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0, 0,'``                   | Execute on every even numbered day.        |
+| ``crontab(0, 0,``                       | Execute on every even numbered day.        |
 |         ``day_of_month='2-30/3')``      |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0, 0,``                    | Execute on the first and third weeks of    |
+| ``crontab(0, 0,``                       | Execute on the first and third weeks of    |
 |         ``day_of_month='1-7,15-21')``   | the month.                                 |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0, 0, day_of_month='11',`` | Execute on 11th of May every year.         |
+| ``crontab(0, 0, day_of_month='11',``    | Execute on 11th of May every year.         |
 |          ``month_of_year='5')``         |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0, 0,``                    | Execute on the first month of every        |
+| ``crontab(0, 0,``                       | Execute on the first month of every        |
 |         ``month_of_year='*/3')``        | quarter.                                   |
 +-----------------------------------------+--------------------------------------------+
 
