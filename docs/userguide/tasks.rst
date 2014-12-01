@@ -541,6 +541,34 @@ call, pass `retry_kwargs` argument to `~@Celery.task` decorator:
 
 .. _task-options:
 
+Conflation
+==========
+
+Often multiple instances of the same task can be created, either
+directly or through :ref:`Periodic Tasks <guide-beat>`. If you only want one of
+them to execute and the others are effectively noops you can use a
+conflating task. This task type will not execute any tasks which were
+scheduled before the most recent execution occured.
+
+For instance synchornisation tasks which poll a remote system for
+updates and which have become backed up may be a good candidate for
+this task type to reduce unnecessary load.
+
+The conflation key can be set on the task itself or can be inferred,
+the former is useful if you have subclasses of the task
+
+.. code-block:: python
+
+    from celery.contrib.conflator import Conflator
+
+    class ConflatingTask(Conflator):
+
+          conflation_key = "system_update"
+
+          def run(self):
+              something_that_takes_a_while()
+
+
 List of Options
 ===============
 
