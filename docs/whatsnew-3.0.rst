@@ -117,7 +117,7 @@ and ``amqplib``.
 Hopefully this can be extended to include additional broker transports
 in the future.
 
-For increased reliability the :setting:`CELERY_FORCE_EXECV` setting is enabled
+For increased reliability the :setting:`CELERYD_FORCE_EXECV` setting is enabled
 by default if the eventloop is not used.
 
 New ``celery`` umbrella command
@@ -828,7 +828,7 @@ In Other News
         i = celery.control.inspect(connection=Connection('redis://'))
         i.active_queues()
 
-- :setting:`CELERY_FORCE_EXECV` is now enabled by default.
+- :setting:`CELERYD_FORCE_EXECV` is now enabled by default.
 
     If the old behavior is wanted the setting can be set to False,
     or the new :option:`--no-execv` to :program:`celery worker`.
