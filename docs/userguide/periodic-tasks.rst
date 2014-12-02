@@ -5,7 +5,7 @@
 ================
 
 .. contents::
-:local:
+    :local:
 
 Introduction
 ============
