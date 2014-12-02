@@ -319,7 +319,7 @@ class Task(object):
 
     def __call__(self, *args, **kwargs):
         _task_stack.push(self)
-        self.push_request()
+        self.push_request(args=args, kwargs=kwargs)
         try:
             # add self if this is a bound task
             if self.__self__ is not None:
