@@ -310,10 +310,7 @@ class Request(object):
         if self.task.acks_late:
             self.acknowledge()
 
-        if self.eventer and self.eventer.enabled:
-            self.send_event(
-                'task-succeeded', result=retval, runtime=runtime,
-            )
+        self.send_event('task-succeeded', result=retval, runtime=runtime)
 
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
