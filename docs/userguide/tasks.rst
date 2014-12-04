@@ -1125,7 +1125,7 @@ base class for new task types.
         abstract = True
 
         def after_return(self, *args, **kwargs):
-            print('Task returned: {0!r}'.format(self.request)
+            print('Task returned: {0!r}'.format(self.request))
 
 
     @app.task(base=DebugTask)
