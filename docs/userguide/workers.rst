@@ -191,8 +191,8 @@ is the *process index* not the process count or pid.
     three log files:
 
         - :file:`worker1.log` (main process)
-        - :file:`worker1-1.log`` (pool process 1)
-        - :file:`worker1-2.log`` (pool process 2)
+        - :file:`worker1-1.log` (pool process 1)
+        - :file:`worker1-2.log` (pool process 2)
 
 .. _worker-concurrency:
 
