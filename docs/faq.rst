@@ -767,7 +767,7 @@ to use both.
 
 `Task.retry` is used to retry tasks, notably for expected errors that
 is catchable with the `try:` block. The AMQP transaction is not used
-for these errors: **if the task raises an exception it is still acknowledged!**.
+for these errors: **if the task raises an exception it is still acknowledged!**
 
 The `acks_late` setting would be used when you need the task to be
 executed again if the worker (for some reason) crashes mid-execution.
