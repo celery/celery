@@ -206,7 +206,7 @@ class Worker(WorkController):
     def startup_info(self):
         app = self.app
         concurrency = string(self.concurrency)
-        appr = '{0}:0x{1:x}'.format(app.main or '__main__', id(app))
+        appr = '{0}:{1:#x}'.format(app.main or '__main__', id(app))
         if not isinstance(app.loader, AppLoader):
             loader = qualname(app.loader)
             if loader.startswith('celery.loaders'):
