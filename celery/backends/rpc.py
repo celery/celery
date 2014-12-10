@@ -62,3 +62,41 @@ class RPCBackend(amqp.AMQPBackend):
     @cached_property
     def oid(self):
         return self.app.oid
+
+    def get_task_meta(self, task_id, backlog_limit=1000):
+        # Polling and using basic_get
+        with self.app.pool.acquire_channel(block=True) as (_, channel):
+            binding = self._create_binding(task_id)(channel)
+            binding.declare()
+
+            # Discard all but the latest message per task id
+            latest_by_id = dict()
+            prev = acc = None
+            for i in range(backlog_limit):  # spool ffwd
+                acc = binding.get(
+                    accept=self.accept, no_ack=False,
+                )
+                if not acc:  # no more messages
+                    break
+                _id = acc.payload.get('task_id')
+                if _id:
+                    prev, latest_by_id[_id] = latest_by_id.get(_id), acc
+                if prev:
+                    # backends are not expected to keep history,
+                    # so we delete everything except the most recent state.
+                    prev.ack()
+                    prev = None
+            else:
+                raise self.BacklogLimitExceeded(task_id)
+
+            for id, msg in latest_by_id.items():
+                self._cache[id] = msg.payload
+                msg.requeue()
+                
+            # If we found updated state for our task_id it's in the cache now
+            try:
+                return self._cache[task_id]
+            except KeyError:
+                # result probably pending.
+                return {'status': states.PENDING, 'result': None}
+    poll = get_task_meta  # XXX compat
