@@ -1,11 +1,10 @@
 import socket
 
-from mock import Mock
 import amqp
 
 from celery.beat.scheduler.failover.amqp_failover import AMQPFailoverStrategy
 
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock
 
 
 class test_AMQPFailoverStrategy(AppCase):
