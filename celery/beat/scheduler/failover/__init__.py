@@ -4,6 +4,3 @@
 
 
 """
-
-from amqp_failover import AMQPFailoverStrategy
-from redis_failover import RedisFailoverStrategy
