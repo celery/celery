@@ -26,14 +26,14 @@ from billiard.common import reset_signals
 from kombu.utils import cached_property, reprcall
 from kombu.utils.functional import maybe_evaluate
 
-from . import __version__
-from . import platforms
-from . import signals
-from .five import items, reraise, values, monotonic
-from .schedules import maybe_schedule, crontab
-from .utils.imports import instantiate
-from .utils.timeutils import humanize_seconds
-from .utils.log import get_logger, iter_open_logger_fds
+from .. import __version__
+from .. import platforms
+from .. import signals
+from ..five import items, reraise, values, monotonic
+from ..schedules import maybe_schedule, crontab
+from ..utils.imports import instantiate
+from ..utils.timeutils import humanize_seconds
+from ..utils.log import get_logger, iter_open_logger_fds
 
 __all__ = ['SchedulingError', 'ScheduleEntry', 'Scheduler',
            'PersistentScheduler', 'Service', 'EmbeddedService']
