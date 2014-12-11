@@ -1,6 +1,5 @@
-from mock import Mock
-
 from celery.app.utils import Settings
+from celery.tests.case import Mock
 
 from celery.beat.scheduler.failover.amqp_failover import AMQPFailoverStrategy
 from celery.beat.scheduler.failover.failover_strategy_factory import FailoverStrategyFactory
