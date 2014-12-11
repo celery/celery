@@ -30,7 +30,7 @@ class HAScheduler(Scheduler):
     def __init__(self, *args, **kwargs):
         super(HAScheduler, self).__init__(*args, **kwargs)
         self.failover_strategy_factory = FailoverStrategyFactory(self.app)
-        self.failover_strategy = self.failover_strategy_factory.get_failover_strategy('%s.celery.beat.master' % self.app.name)
+        self.failover_strategy = self.failover_strategy_factory.get_failover_strategy('%s.celery.beat.master' % self.app.main)
 
 
     def apply_entry(self, entry, *args, **kwargs):
