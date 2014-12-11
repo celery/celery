@@ -1,6 +1,5 @@
 from kombu import uuid
 
-from mock import Mock
 
 from celery.app.defaults import flatten
 
@@ -9,7 +8,7 @@ from celery.app.utils import Settings
 from celery.beat.scheduler.failover.base_failover import BaseFailoverStrategy
 from celery.beat.scheduler.ha_scheduler import HAScheduler
 from celery.tests.app.test_beat import always_due
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, Mock
 
 locked = False
 
