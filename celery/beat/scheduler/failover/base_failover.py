@@ -6,6 +6,7 @@
 """
 
 from celery.utils.log import get_logger
+from celery.five import with_metaclass
 
 logger = get_logger(__name__)
 
@@ -20,8 +21,8 @@ class BaseFailoverStrategyMeta(type):
         return m
 
 
+@with_metaclass(BaseFailoverStrategyMeta)
 class BaseFailoverStrategy(object):
-    __metaclass__ = BaseFailoverStrategyMeta
     connection_type = None
 
 
