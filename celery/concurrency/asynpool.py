@@ -179,7 +179,6 @@ def _select(readers=None, writers=None, err=None, timeout=0,
 
 class Worker(_pool.Worker):
     """Pool worker process."""
-    dead = False
 
     def on_loop_start(self, pid):
         # our version sends a WORKER_UP message when the process is ready
@@ -350,6 +349,11 @@ class AsynPool(_pool.Pool):
     """Pool version that uses AIO instead of helper threads."""
     ResultHandler = ResultHandler
     Worker = Worker
+
+    def WorkerProcess(self, worker):
+        worker = super(AsynPool, self).WorkerProcess(worker)
+        worker.dead = False
+        return worker
 
     def __init__(self, processes=None, synack=False,
                  sched_strategy=None, *args, **kwargs):
