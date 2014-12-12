@@ -1618,7 +1618,7 @@ CELERY_EVENT_QUEUE_EXPIRES
 :transports supported: ``amqp``
 
 
-Expiry time in seconds (int/float) for when a monitor clients
+Expiry time in seconds (int/float) for when after a monitor clients
 event queue will be deleted (``x-expires``).
 
 Default is never, relying on the queue autodelete setting.
