@@ -14,5 +14,5 @@ class RedisFailoverStrategy(BaseFailoverStrategy):
     connection_type = "redis"
 
     def is_master(self):
-        return super(RedisFailoverStrategy, self).is_master()
+        return True
 
