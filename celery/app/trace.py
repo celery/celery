@@ -368,6 +368,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     )
                 except Exception as exc:
                     I, R, state, retval = on_error(task_request, exc, uuid)
+                    if task_request.chord:
+                        on_chord_part_return(task, state, exc)
                 except BaseException as exc:
                     raise
                 else:
@@ -402,6 +404,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     except EncodeError as exc:
                         I, R, state, retval = on_error(task_request, exc, uuid)
                     else:
+                        if task_request.chord:
+                            on_chord_part_return(task, state, retval)
                         if task_on_success:
                             task_on_success(retval, uuid, args, kwargs)
                         if success_receivers:
@@ -416,8 +420,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
                 # -* POST *-
                 if state not in IGNORE_STATES:
-                    if task_request.chord:
-                        on_chord_part_return(task, state, R)
                     if task_after_return:
                         task_after_return(
                             state, retval, uuid, args, kwargs, None,
