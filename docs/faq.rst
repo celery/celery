@@ -760,7 +760,7 @@ to use both.
 
 `Task.retry` is used to retry tasks, notably for expected errors that
 is catchable with the `try:` block. The AMQP transaction is not used
-for these errors: **if the task raises an exception it is still acknowledged!**.
+for these errors: **if the task raises an exception it is still acknowledged!**
 
 The `acks_late` setting would be used when you need the task to be
 executed again if the worker (for some reason) crashes mid-execution.
@@ -786,7 +786,7 @@ scenario of course, but you can probably imagine something far more
 sinister. So for ease of programming we have less reliability;
 It's a good default, users who require it and know what they
 are doing can still enable acks_late (and in the future hopefully
-use manual acknowledgement)
+use manual acknowledgement).
 
 In addition `Task.retry` has features not available in AMQP
 transactions: delay between retries, max retries, etc.
