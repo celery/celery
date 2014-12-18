@@ -247,7 +247,7 @@ class MultiTool(object):
         self.note('> Starting nodes...')
         for node in multi_args(p, cmd):
             self.note('\t> {0}: '.format(node.name), newline=False)
-            retcode = self.waitexec(node.argv)
+            retcode = self.waitexec(node.argv, path=p.options['--executable'])
             self.note(retcode and self.FAILED or self.OK)
             retcodes.append(retcode)
         self.retcode = int(any(retcodes))
@@ -259,6 +259,7 @@ class MultiTool(object):
             '--cmd',
             '-m {0}'.format(celery_exe('worker', '--detach')),
         )
+        _setdefaultopt(p.options, ['--executable'], sys.executable)
 
     def signal_node(self, nodename, pid, sig):
         try:
@@ -379,7 +380,7 @@ class MultiTool(object):
         def on_node_shutdown(nodename, argv, pid):
             self.note(self.colored.blue(
                 '> Restarting node {0}: '.format(nodename)), newline=False)
-            retval = self.waitexec(argv)
+            retval = self.waitexec(argv, path=p.options['--executable'])
             self.note(retval and self.FAILED or self.OK)
             retvals.append(retval)
 

@@ -63,6 +63,10 @@ in any command that also has a `--detach` option.
 
     Optional directory to change to after detaching.
 
+.. cmdoption:: --executable
+
+    Executable to use for the detached process.
+
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -650,4 +654,5 @@ def daemon_options(default_pidfile=None, default_logfile=None):
         Option('--uid', default=None),
         Option('--gid', default=None),
         Option('--umask', default=None),
+        Option('--executable', default=None),
     )
