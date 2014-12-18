@@ -240,7 +240,7 @@ class test_MultiTool(AppCase):
 
         waitexec.return_value = 0
         callback('jerry', ['arg'], 13)
-        waitexec.assert_called_with(['arg'])
+        waitexec.assert_called_with(['arg'], path=sys.executable)
         self.assertIn('OK', self.fh.getvalue())
         self.fh.seek(0)
         self.fh.truncate()
