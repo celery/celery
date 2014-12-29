@@ -75,7 +75,7 @@ Note that this is executed in the process sending the task.
 
 Sender is the name of the task being sent.
 
-Provides arguements:
+Provides arguments:
 
 * body
 
