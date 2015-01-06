@@ -439,6 +439,10 @@ class Task(object):
             attribute.  Trailing can also be disabled by default using the
             :attr:`trail` attribute
         :keyword publisher: Deprecated alias to ``producer``.
+        
+        :rtype :class:`celery.result.AsyncResult`: if 
+            :setting:`CELERY_ALWAYS_EAGER` is not set, otherwise 
+            :class:`celery.result.EagerResult`:
 
         Also supports all keyword arguments supported by
         :meth:`kombu.Producer.publish`.
