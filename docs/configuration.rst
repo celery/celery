@@ -299,8 +299,11 @@ the :setting:`CELERY_RESULT_ENGINE_OPTIONS` setting::
     # echo enables verbose logging from SQLAlchemy.
     CELERY_RESULT_ENGINE_OPTIONS = {'echo': True}
 
-
 .. setting:: CELERY_RESULT_DB_SHORT_LIVED_SESSIONS
+
+Short lived sessions
+~~~~~~~~~~~~~~~~~~~~
+
     CELERY_RESULT_DB_SHORT_LIVED_SESSIONS = True
 
 Short lived sessions are disabled by default.  If enabled they can drastically reduce
