@@ -10,6 +10,15 @@ new in Celery 3.1.
 
 .. _version-3.1.17:
 
+3.1.18
+======
+:release-date: TBD
+:release-by: Ask Solem
+
+- **Worker**: Properly recycle Django database connection in the worker when CONN_MAX_AGE is used.
+
+    Fix contributed by Luke Burden.
+
 3.1.17
 ======
 :release-date: 2014-11-19 03:30 P.M UTC
