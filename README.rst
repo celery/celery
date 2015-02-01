@@ -4,6 +4,8 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
+|build-status| |coverage-status|
+
 :Version: 3.2.0a1 (Cipater)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
@@ -425,3 +427,7 @@ file in the top distribution directory for the full license text.
     :alt: Bitdeli badge
     :target: https://bitdeli.com/free
 
+.. |build-status| image:: https://travis-ci.org/celery/celery.svg?branch=master
+   :target: https://travis-ci.org/celery/celery
+.. |coverage-status| image:: https://coveralls.io/repos/celery/celery/badge.svg
+   :target: https://coveralls.io/r/celery/celery
