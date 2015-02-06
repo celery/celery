@@ -18,6 +18,7 @@ except ImportError:
     Couchbase = Connection = NotFoundError = None   # noqa
 
 from kombu.utils.url import _parse_url
+from kombu.utils.encoding import bytes_to_str
 
 from celery.exceptions import ImproperlyConfigured
 
@@ -98,15 +99,15 @@ class CouchBaseBackend(KeyValueStoreBackend):
 
     def get(self, key):
         try:
-            return self.connection.get(key).value
+            return self.connection.get(bytes_to_str(key)).value
         except NotFoundError:
             return None
 
     def set(self, key, value):
-        self.connection.set(key, value)
+        self.connection.set(bytes_to_str(key), value)
 
     def mget(self, keys):
         return [self.get(key) for key in keys]
 
     def delete(self, key):
-        self.connection.delete(key)
+        self.connection.delete(bytes_to_str(key))
