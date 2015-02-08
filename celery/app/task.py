@@ -12,11 +12,11 @@ import sys
 
 from billiard.einfo import ExceptionInfo
 
-from celery import current_app
+from celery import current_app, group
 from celery import states
 from celery._state import _task_stack
 from celery.canvas import signature
-from celery.exceptions import MaxRetriesExceededError, Reject, Retry
+from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
 from celery.five import class_property, items
 from celery.result import EagerResult
 from celery.utils import uuid, maybe_reraise
@@ -432,7 +432,7 @@ class Task(object):
         :keyword link_error: A single, or a list of tasks to apply
                       if an error occurs while executing the task.
 
-        :keyword producer: :class:~@kombu.Producer` instance to use.
+        :keyword producer: :class:`kombu.Producer` instance to use.
         :keyword add_to_parent: If set to True (default) and the task
             is applied while executing another task, then the result
             will be appended to the parent tasks ``request.children``
@@ -448,6 +448,13 @@ class Task(object):
             be replaced by a local :func:`apply` call instead.
 
         """
+        try:
+            check_arguments = self.__header__
+        except AttributeError:
+            pass
+        else:
+            check_arguments(*args or (), **kwargs or {})
+
         app = self._get_app()
         if app.conf.CELERY_ALWAYS_EAGER:
             return self.apply(args, kwargs, task_id=task_id or uuid(),
@@ -506,6 +513,9 @@ class Task(object):
         :keyword eta: Explicit time and date to run the retry at
                       (must be a :class:`~datetime.datetime` instance).
         :keyword max_retries: If set, overrides the default retry limit.
+            A value of :const:`None`, means "use the default", so if you want
+            infinite retries you would have to set the :attr:`max_retries`
+            attribute of the task to :const:`None` first.
         :keyword time_limit: If set, overrides the default time limit.
         :keyword soft_time_limit: If set, overrides the default soft
                                   time limit.
@@ -569,20 +579,23 @@ class Task(object):
                 # first try to reraise the original exception
                 maybe_reraise()
                 # or if not in an except block then raise the custom exc.
-                raise exc()
+                raise exc
             raise self.MaxRetriesExceededError(
                 "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
                     self.name, request.id, S.args, S.kwargs))
 
-        # If task was executed eagerly using apply(),
-        # then the retry must also be executed eagerly.
-        try:
-            S.apply().get() if is_eager else S.apply_async()
-        except Exception as exc:
-            if is_eager:
-                raise
-            raise Reject(exc, requeue=False)
         ret = Retry(exc=exc, when=eta or countdown)
+
+        if is_eager:
+            # if task was executed eagerly using apply(),
+            # then the retry must also be executed eagerly.
+            S.apply().get()
+            return ret
+
+        try:
+            S.apply_async()
+        except Exception as exc:
+            raise Reject(exc, requeue=False)
         if throw:
             raise ret
         return ret
@@ -682,6 +695,51 @@ class Task(object):
         req = self.request
         with self.app.events.default_dispatcher(hostname=req.hostname) as d:
             return d.send(type_, uuid=req.id, **fields)
+
+    def replace(self, sig):
+        """Replace the current task, with a new task inheriting the
+        same task id.
+
+        :param sig: :class:`@signature`
+
+        Note: This will raise :exc:`~@Ignore`, so the best practice
+        is to always use ``raise self.replace_in_chord(...)`` to convey
+        to the reader that the task will not continue after being replaced.
+
+        :param: Signature of new task.
+
+        """
+        chord = self.request.chord
+        if isinstance(sig, group):
+            sig |= self.app.tasks['celery.accumulate'].s(index=0).set(
+                chord=chord,
+            )
+            chord = None
+        sig.freeze(self.request.id,
+                   group_id=self.request.group,
+                   chord=chord,
+                   root_id=self.request.root_id)
+        sig.delay()
+        raise Ignore('Chord member replaced by new task')
+
+    def add_to_chord(self, sig, lazy=False):
+        """Add signature to the chord the current task is a member of.
+
+        :param sig: Signature to extend chord with.
+        :param lazy: If enabled the new task will not actually be called,
+                      and ``sig.delay()`` must be called manually.
+
+        Currently only supported by the Redis result backend when
+        ``?new_join=1`` is enabled.
+
+        """
+        if not self.request.chord:
+            raise ValueError('Current task is not member of any chord')
+        result = sig.freeze(group_id=self.request.group,
+                            chord=self.request.chord,
+                            root_id=self.request.root_id)
+        self.backend.add_to_chord(self.request.group, result)
+        return sig.delay() if not lazy else sig
 
     def update_state(self, task_id=None, state=None, meta=None):
         """Update task state.

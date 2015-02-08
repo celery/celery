@@ -47,11 +47,17 @@ HIDDEN_SETTINGS = re.compile(
 
 def appstr(app):
     """String used in __repr__ etc, to id app instances."""
-    return '{0}:0x{1:x}'.format(app.main or '__main__', id(app))
+    return '{0}:{1:#x}'.format(app.main or '__main__', id(app))
 
 
 class Settings(ConfigurationView):
-    """Celery settings object."""
+    """Celery settings object.
+
+    .. seealso:
+
+        :ref:`configuration` for a full list of configuration keys.
+
+    """
 
     @property
     def CELERY_RESULT_BACKEND(self):

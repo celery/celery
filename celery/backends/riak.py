@@ -18,7 +18,6 @@ except ImportError:  # pragma: no cover
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
-from celery.utils.timeutils import maybe_timedelta
 
 from .base import KeyValueStoreBackend
 
@@ -59,9 +58,6 @@ class RiakBackend(KeyValueStoreBackend):
             module :mod:`riak` is not available.
         """
         super(RiakBackend, self).__init__(*args, **kwargs)
-
-        self.expires = kwargs.get('expires') or maybe_timedelta(
-            self.app.conf.CELERY_TASK_RESULT_EXPIRES)
 
         if not riak:
             raise ImproperlyConfigured(

@@ -52,8 +52,6 @@ class test_Rdb(Case):
                 rdb.set_trace()
                 rdb.set_trace(Mock())
                 pset.side_effect = SockErr
-                pset.side_effect.errno = errno.ECONNRESET
-                rdb.set_trace()
                 pset.side_effect.errno = errno.ENOENT
                 with self.assertRaises(SockErr):
                     rdb.set_trace()

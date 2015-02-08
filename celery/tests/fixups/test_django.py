@@ -93,9 +93,7 @@ class test_DjangoFixup(FixupCase):
                 f.on_worker_init()
                 DWF.assert_called_with(f.app)
                 DWF.return_value.install.assert_called_with()
-                self.assertIs(
-                    f._worker_fixup, DWF.return_value.install.return_value,
-                )
+                self.assertIs(f._worker_fixup, DWF.return_value)
 
 
 class test_DjangoWorkerFixup(FixupCase):
@@ -207,9 +205,12 @@ class test_DjangoWorkerFixup(FixupCase):
 
     def test__close_database(self):
         with self.fixup_context(self.app) as (f, _, _):
-            conns = f._db.connections = [Mock(), Mock(), Mock()]
+            conns = [Mock(), Mock(), Mock()]
             conns[1].close.side_effect = KeyError('already closed')
             f.database_errors = (KeyError, )
+
+            f._db.connections = Mock() # ConnectionHandler
+            f._db.connections.all.side_effect = lambda: conns
 
             f._close_database()
             conns[0].close.assert_called_with()

@@ -167,8 +167,10 @@ class MultiTool(object):
     retcode = 0  # Final exit code.
 
     def __init__(self, env=None, fh=None, quiet=False, verbose=False,
-                 no_color=False, nosplash=False):
-        self.fh = fh or sys.stderr
+                 no_color=False, nosplash=False, stdout=None, stderr=None):
+        """fh is an old alias to stdout."""
+        self.stdout = self.fh = stdout or fh or sys.stdout
+        self.stderr = stderr or sys.stderr
         self.env = env
         self.nosplash = nosplash
         self.quiet = quiet
@@ -213,8 +215,11 @@ class MultiTool(object):
 
         return self.retcode
 
-    def say(self, m, newline=True):
-        print(m, file=self.fh, end='\n' if newline else '')
+    def say(self, m, newline=True, file=None):
+        print(m, file=file or self.stdout, end='\n' if newline else '')
+
+    def carp(self, m, newline=True, file=None):
+        return self.say(m, newline, file or self.stderr)
 
     def names(self, argv, cmd):
         p = NamespacedOptionParser(argv)
@@ -245,7 +250,7 @@ class MultiTool(object):
         self.note('> Starting nodes...')
         for node in multi_args(p, cmd):
             self.note('\t> {0}: '.format(node.name), newline=False)
-            retcode = self.waitexec(node.argv)
+            retcode = self.waitexec(node.argv, path=p.options['--executable'])
             self.note(retcode and self.FAILED or self.OK)
             retcodes.append(retcode)
         self.retcode = int(any(retcodes))
@@ -257,6 +262,7 @@ class MultiTool(object):
             '--cmd',
             '-m {0}'.format(celery_exe('worker', '--detach')),
         )
+        _setdefaultopt(p.options, ['--executable'], sys.executable)
 
     def signal_node(self, nodename, pid, sig):
         try:
@@ -377,7 +383,7 @@ class MultiTool(object):
         def on_node_shutdown(nodename, argv, pid):
             self.note(self.colored.blue(
                 '> Restarting node {0}: '.format(nodename)), newline=False)
-            retval = self.waitexec(argv)
+            retval = self.waitexec(argv, path=p.options['--executable'])
             self.note(retval and self.FAILED or self.OK)
             retvals.append(retval)
 
@@ -424,7 +430,7 @@ class MultiTool(object):
 
     def error(self, msg=None):
         if msg:
-            self.say(msg)
+            self.carp(msg)
         self.usage()
         self.retcode = 1
         return 1

@@ -32,7 +32,10 @@ Use ``.. autotask::`` to manually document a task.
 """
 from __future__ import absolute_import
 
-from inspect import formatargspec, getargspec
+try:
+    from inspect import formatargspec, getfullargspec as getargspec
+except ImportError:  # Py2
+    from inspect import formatargspec, getargspec  # noqa
 
 from sphinx.domains.python import PyModulelevel
 from sphinx.ext.autodoc import FunctionDocumenter

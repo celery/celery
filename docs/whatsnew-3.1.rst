@@ -76,7 +76,7 @@ so I cannot recommend them for production use.
 The next version of Celery 3.2 will focus on performance and removing
 rarely used parts of the library.  Work has also started on a new message
 protocol, supporting multiple languages and more.  The initial draft can
-be found :ref:`here <message-protocol-task-v2`.
+be found :ref:`here <message-protocol-task-v2>`.
 
 This has probably been the hardest release I've worked on, so no
 introduction to this changelog would be complete without a massive
@@ -716,7 +716,7 @@ In Other News
 -  New ability to specify additional command line options
    to the worker and beat programs.
 
-    The :attr:`@Celery.user_options` attribute can be used
+    The :attr:`@user_options` attribute can be used
     to add additional command-line arguments, and expects
     optparse-style options:
 
@@ -1053,7 +1053,7 @@ In Other News
     This is the mapping of parsed command line arguments, and can be used to
     prepare new preload arguments (``app.user_options['preload']``).
 
-- New callback: ``Celery.on_configure``.
+- New callback: :meth:`@on_configure`.
 
     This callback is called when an app is about to be configured (a
     configuration key is required).
@@ -1264,7 +1264,7 @@ Internal changes
     This removes a lot of duplicate functionality.
 
 - The ``Celery.with_default_connection`` method has been removed in favor
-  of ``with app.connection_or_acquire``.
+  of ``with app.connection_or_acquire`` (:meth:`@connection_or_acquire`)
 
 - The ``celery.results.BaseDictBackend`` class has been removed and is replaced by
   :class:`celery.results.BaseBackend`.

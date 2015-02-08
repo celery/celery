@@ -45,6 +45,7 @@ class DjangoFixup(object):
     def __init__(self, app):
         self.app = app
         self.app.set_default()
+        self._worker_fixup = None
 
     def install(self):
         # Need to add project directory to path
@@ -53,12 +54,22 @@ class DjangoFixup(object):
         self.app.loader.now = self.now
         self.app.loader.mail_admins = self.mail_admins
 
+        signals.import_modules.connect(self.on_import_modules)
         signals.worker_init.connect(self.on_worker_init)
         return self
 
+    @cached_property
+    def worker_fixup(self):
+        if self._worker_fixup is None:
+            self._worker_fixup = DjangoWorkerFixup(self.app)
+        return self._worker_fixup
+
+    def on_import_modules(self, **kwargs):
+        # call django.setup() before task modules are imported
+        self.worker_fixup.validate_models()
+
     def on_worker_init(self, **kwargs):
-        # keep reference
-        self._worker_fixup = DjangoWorkerFixup(self.app).install()
+        self.worker_fixup.install()
 
     def now(self, utc=False):
         return datetime.utcnow() if utc else self._now()
@@ -136,9 +147,11 @@ class DjangoWorkerFixup(object):
     def validate_models(self):
         import django
         try:
-            django.setup()
+            django_setup = django.setup
         except AttributeError:
             pass
+        else:
+            django_setup()
         s = io.StringIO()
         try:
             from django.core.management.validation import get_validation_errors
@@ -160,12 +173,17 @@ class DjangoWorkerFixup(object):
         signals.task_prerun.connect(self.on_task_prerun)
         signals.task_postrun.connect(self.on_task_postrun)
         signals.worker_process_init.connect(self.on_worker_process_init)
-        self.validate_models()
         self.close_database()
         self.close_cache()
         return self
 
     def on_worker_process_init(self, **kwargs):
+        # Child process must validate models again if on Windows,
+        # or if they were started using execv.
+        if os.environ.get('FORKED_BY_MULTIPROCESSING'):
+            self.validate_models()
+
+        # close connections:
         # the parent process may have established these,
         # so need to close them.
 
@@ -209,7 +227,7 @@ class DjangoWorkerFixup(object):
 
     def _close_database(self):
         try:
-            funs = [conn.close for conn in self._db.connections]
+            funs = [conn.close for conn in self._db.connections.all()]
         except AttributeError:
             if hasattr(self._db, 'close_old_connections'):  # django 1.6
                 funs = [self._db.close_old_connections]

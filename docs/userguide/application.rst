@@ -67,7 +67,8 @@ This is only a problem in a limited set of use cases:
     #. If the module that the task is defined in is run as a program.
     #. If the application is created in the Python shell (REPL).
 
-For example here, where the tasks module is also used to start a worker:
+For example here, where the tasks module is also used to start a worker
+with :meth:`@worker_main`:
 
 :file:`tasks.py`:
 
@@ -114,7 +115,7 @@ There are several options you can set that will change how
 Celery works.  These options can be set directly on the app instance,
 or you can use a dedicated configuration module.
 
-The configuration is available as :attr:`@Celery.conf`::
+The configuration is available as :attr:`@conf`::
 
     >>> app.conf.CELERY_TIMEZONE
     'Europe/London'
@@ -137,7 +138,7 @@ that are consulted in order:
     #. The configuration module (if any)
     #. The default configuration (:mod:`celery.app.defaults`).
 
-You can even add new default sources by using the :meth:`@Celery.add_defaults`
+You can even add new default sources by using the :meth:`@add_defaults`
 method.
 
 .. seealso::
@@ -148,13 +149,13 @@ method.
 ``config_from_object``
 ----------------------
 
-The :meth:`@Celery.config_from_object` method loads configuration
+The :meth:`@config_from_object` method loads configuration
 from a configuration object.
 
 This can be a configuration module, or any object with configuration attributes.
 
 Note that any configuration that was previous set will be reset when
-:meth:`~@Celery.config_from_object` is called.  If you want to set additional
+:meth:`~@config_from_object` is called.  If you want to set additional
 configuration you should do so after.
 
 Example 1: Using the name of a module
@@ -216,7 +217,7 @@ Example 3:  Using a configuration class/object
 ``config_from_envvar``
 ----------------------
 
-The :meth:`@Celery.config_from_envvar` takes the configuration module name
+The :meth:`@config_from_envvar` takes the configuration module name
 from an environment variable
 
 For example -- to load configuration from a module specified in the
@@ -288,9 +289,9 @@ Creating a :class:`@Celery` instance will only do the following:
     #. Create the task registry.
     #. Set itself as the current app (but not if the ``set_as_current``
        argument was disabled)
-    #. Call the :meth:`@Celery.on_init` callback (does nothing by default).
+    #. Call the :meth:`@on_init` callback (does nothing by default).
 
-The :meth:`~@Celery.task` decorator does not actually create the
+The :meth:`@task` decorator does not actually create the
 tasks at the point when it's called, instead it will defer the creation
 of the task to happen either when the task is used, or after the
 application has been *finalized*,
@@ -317,7 +318,7 @@ you use the task, or access an attribute (in this case :meth:`repr`):
     True
 
 *Finalization* of the app happens either explicitly by calling
-:meth:`@Celery.finalize` -- or implicitly by accessing the :attr:`~@Celery.tasks`
+:meth:`@finalize` -- or implicitly by accessing the :attr:`@tasks`
 attribute.
 
 Finalizing the object will:
@@ -464,8 +465,8 @@ chain breaks:
 Abstract Tasks
 ==============
 
-All tasks created using the :meth:`~@Celery.task` decorator
-will inherit from the applications base :attr:`~@Celery.Task` class.
+All tasks created using the :meth:`~@task` decorator
+will inherit from the applications base :attr:`~@Task` class.
 
 You can specify a different base class with the ``base`` argument:
 
@@ -504,7 +505,7 @@ Once a task is bound to an app it will read configuration to set default values
 and so on.
 
 It's also possible to change the default base class for an application
-by changing its :meth:`@Celery.Task` attribute:
+by changing its :meth:`@Task` attribute:
 
 .. code-block:: python
 
@@ -520,7 +521,7 @@ by changing its :meth:`@Celery.Task` attribute:
     >>> app.Task
     <unbound MyBaseTask>
 
-    >>> @x.task
+    >>> @app.task
     ... def add(x, y):
     ...     return x + y
 

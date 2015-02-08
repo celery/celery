@@ -317,7 +317,7 @@ exception, in fact ``result.get()`` will propagate any errors by default::
     File "/opt/devel/celery/celery/result.py", line 113, in get
         interval=interval)
     File "/opt/devel/celery/celery/backends/amqp.py", line 138, in wait_for
-        raise self.exception_to_python(meta['result'])
+        raise meta['result']
     TypeError: add() takes exactly 2 arguments (1 given)
 
 If you don't wish for the errors to propagate then you can disable that

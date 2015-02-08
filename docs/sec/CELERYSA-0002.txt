@@ -61,7 +61,7 @@ NOTE:
 To work around the issue you can set a custom umask using the ``--umask``
 argument:
 
-    $ celery worker -l info --detach --umask=16   # (022)
+    $ celery worker -l info --detach --umask=18   # (022)
 
 Or you can upgrade to a more recent version:
 

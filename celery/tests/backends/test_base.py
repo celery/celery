@@ -188,6 +188,11 @@ class test_BaseBackend_dict(AppCase):
         b.save_group('foofoo', 'xxx')
         b._save_group.assert_called_with('foofoo', 'xxx')
 
+    def test_add_to_chord_interface(self):
+        b = BaseBackend(self.app)
+        with self.assertRaises(NotImplementedError):
+            b.add_to_chord('group_id', 'sig')
+
     def test_forget_interface(self):
         b = BaseBackend(self.app)
         with self.assertRaises(NotImplementedError):

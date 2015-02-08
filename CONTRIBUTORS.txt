@@ -163,3 +163,17 @@ Brian Bouterse, 2014/04/10
 Dmitry Malinovsky, 2014/04/28
 Luke Pomfrey, 2014/05/06
 Alexey Kotlyarov, 2014/05/16
+Ross Deane, 2014/07/11
+Tadej Janež, 2014/08/08
+Akexander Koshelev, 2014/08/19
+Davide Quarta, 2014/08/19
+John Whitlock, 2014/08/19
+Konstantinos Koukopoulos, 2014/08/24
+Albert Yee Wang, 2014/08/29
+Andrea Rabbaglietti, 2014/10/02
+Joe Jevnik, 2014/10/22
+Nathan Van Gheem, 2014/10/28
+Gino Ledesma, 2014/10/28
+Thomas French, 2014/11/10
+Michael Permana, 2014/11/6
+Luke Burden, 2015/01/24

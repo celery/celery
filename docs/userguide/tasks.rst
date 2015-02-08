@@ -45,7 +45,7 @@ Basics
 ======
 
 You can easily create a task from any callable by using
-the :meth:`~@Celery.task` decorator:
+the :meth:`~@task` decorator:
 
 .. code-block:: python
 
@@ -240,7 +240,7 @@ like `moduleA.tasks.taskA`, `moduleA.tasks.taskB`, `moduleB.tasks.test`
 and so on. You may want to get rid of having `tasks` in all task names.
 As pointed above, you can explicitly give names for all tasks, or you
 can change the automatic naming behavior by overriding
-:meth:`~@Celery.gen_task_name`. Continuing with the example, `celery.py`
+:meth:`@gen_task_name`. Continuing with the example, `celery.py`
 may contain:
 
 .. code-block:: python
@@ -261,7 +261,7 @@ So each task will have a name like `moduleA.taskA`, `moduleA.taskB` and
 
 .. warning::
 
-    Make sure that your `gen_task_name` is a pure function, which means
+    Make sure that your :meth:`@gen_task_name` is a pure function, which means
     that for the same input it must always return the same output.
 
 .. _task-request-info:
@@ -376,8 +376,34 @@ for which documentation can be found in the :mod:`logging`
 module.
 
 You can also use :func:`print`, as anything written to standard
-out/-err will be redirected to logging system (you can disable this,
+out/-err will be redirected to the logging system (you can disable this,
 see :setting:`CELERY_REDIRECT_STDOUTS`).
+
+.. note::
+
+    The worker will not update the redirection if you create a logger instance
+    somewhere in your task or task module.
+
+    If you want to redirect ``sys.stdout`` and ``sys.stderr`` to a custom
+    logger you have to enable this manually, for example:
+
+    .. code-block:: python
+
+        import sys
+
+        logger = get_task_logger(__name__)
+
+        @app.task(bind=True)
+        def add(self, x, y):
+            old_outs = sys.stdout, sys.stderr
+            rlevel = self.app.conf.CELERY_REDIRECT_STDOUTS_LEVEL
+            try:
+                self.app.log.redirect_stdouts_to_logger(logger, rlevel)
+                print('Adding {0} + {1}'.format(x, y))
+                return x + y
+            finally:
+                sys.stdout, sys.stderr = old_outs
+
 
 .. _task-retry:
 
@@ -851,8 +877,9 @@ Use :meth:`~@Task.update_state` to update a task's state::
     @app.task(bind=True)
     def upload_files(self, filenames):
         for i, file in enumerate(filenames):
-            self.update_state(state='PROGRESS',
-                meta={'current': i, 'total': len(filenames)})
+            if not self.request.called_directly:
+                self.update_state(state='PROGRESS',
+                    meta={'current': i, 'total': len(filenames)})
 
 
 Here I created the state `"PROGRESS"`, which tells any application
@@ -960,7 +987,8 @@ Example that stores results manually:
     @app.task(bind=True)
     def get_tweets(self, user):
         timeline = twitter.get_timeline(user)
-        self.update_state(state=states.SUCCESS, meta=timeline)
+        if not self.request.called_directly:
+            self.update_state(state=states.SUCCESS, meta=timeline)
         raise Ignore()
 
 .. _task-semipred-reject:

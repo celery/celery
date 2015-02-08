@@ -201,7 +201,7 @@ class Task(BaseTask):
                       exchange_type=None, **options):
         """Deprecated method to get the task publisher (now called producer).
 
-        Should be replaced with :class:`@kombu.Producer`:
+        Should be replaced with :class:`kombu.Producer`:
 
         .. code-block:: python
 

@@ -8,7 +8,6 @@ env:
     - TOXENV=3.3
     - TOXENV=3.4
     - TOXENV=pypy
-    - TOXENV=pypy3
 before_install:
   - |
     python --version

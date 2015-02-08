@@ -74,19 +74,50 @@ schedule manually.
 Entries
 =======
 
-To schedule a task periodically you have to add an entry to the
-:setting:`CELERYBEAT_SCHEDULE` setting.
+To call a task periodically you have to add an entry to the
+beat schedule list.
+
+.. code-block:: python
+
+    from celery import Celery
+    from celery.schedules import crontab
+
+    app = Celery()
+
+    @app.on_after_configure.connect
+    def setup_periodic_tasks(sender, **kwargs):
+        # Calls test('hello') every 10 seconds.
+        sender.add_periodic_task(10.0, test.s('hello'), name='add every 10')
+
+        # Calls test('world') every 30 seconds
+        sender.add_periodic_task(30.0, test.s('world'), expires=10)
+
+        # Executes every Monday morning at 7:30 A.M
+        sender.add_periodic_task(
+            crontab(hour=7, minute=30, day_of_week=1),
+            test.s('Happy Mondays!'),
+        )
+
+    @app.task
+    def test(arg):
+        print(arg)
+
+
+Setting these up from within the ``on_after_configure`` handler means
+that we will not evaluate the app at module level when using ``test.s()``.
+
+The `@add_periodic_task` function will add the entry to the
+:setting:`CELERYBEAT_SCHEDULE` setting behind the scenes, which also
+can be used to set up periodic tasks manually:
 
 Example: Run the `tasks.add` task every 30 seconds.
 
 .. code-block:: python
 
-    from datetime import timedelta
-
     CELERYBEAT_SCHEDULE = {
         'add-every-30-seconds': {
             'task': 'tasks.add',
-            'schedule': timedelta(seconds=30),
+            'schedule': 30.0,
             'args': (16, 16)
         },
     }
@@ -220,20 +251,20 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 | ``crontab(minute=0, hour='*/3,8-17')``  | Execute every hour divisible by 3, and     |
 |                                         | every hour during office hours (8am-5pm).  |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(day_of_month='2')``           | Execute on the second day of every month.  |
+| ``crontab(0, 0, day_of_month='2')``     | Execute on the second day of every month.  |
 |                                         |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(day_of_month='2-30/3')``      | Execute on every even numbered day.        |
-|                                         |                                            |
+| ``crontab(0, 0,``                       | Execute on every even numbered day.        |
+|         ``day_of_month='2-30/3')``      |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(day_of_month='1-7,15-21')``   | Execute on the first and third weeks of    |
-|                                         | the month.                                 |
+| ``crontab(0, 0,``                       | Execute on the first and third weeks of    |
+|         ``day_of_month='1-7,15-21')``   | the month.                                 |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(day_of_month='11',``          | Execute on 11th of May every year.         |
-|         ``month_of_year='5')``          |                                            |
+| ``crontab(0, 0, day_of_month='11',``    | Execute on 11th of May every year.         |
+|          ``month_of_year='5')``         |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(month_of_year='*/3')``        | Execute on the first month of every        |
-|                                         | quarter.                                   |
+| ``crontab(0, 0,``                       | Execute on the first month of every        |
+|         ``month_of_year='*/3')``        | quarter.                                   |
 +-----------------------------------------+--------------------------------------------+
 
 See :class:`celery.schedules.crontab` for more documentation.

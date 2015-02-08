@@ -17,7 +17,10 @@ from copy import deepcopy
 from operator import attrgetter
 
 from amqp import promise
-from billiard.util import register_after_fork
+try:
+    from billiard.util import register_after_fork
+except ImportError:
+    register_after_fork = None
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
 from kombu.utils import cached_property, uuid
@@ -35,7 +38,7 @@ from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import gen_task_name
 from celery.utils.dispatch import Signal
-from celery.utils.functional import first, maybe_list
+from celery.utils.functional import first, maybe_list, head_from_fun
 from celery.utils.imports import instantiate, symbol_by_name
 from celery.utils.objects import FallbackContext, mro_lookup
 
@@ -52,9 +55,9 @@ from . import builtins  # noqa
 __all__ = ['Celery']
 
 _EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
-BUILTIN_FIXUPS = frozenset([
+BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
-])
+}
 
 ERR_ENVVAR_NOT_SET = """\
 The environment variable {0!r} is not set,
@@ -98,7 +101,8 @@ def _global_after_fork(obj):
 def _ensure_after_fork():
     global _after_fork_registered
     _after_fork_registered = True
-    register_after_fork(_global_after_fork, _global_after_fork)
+    if register_after_fork is not None:
+        register_after_fork(_global_after_fork, _global_after_fork)
 
 
 class Celery(object):
@@ -118,6 +122,7 @@ class Celery(object):
     registry_cls = TaskRegistry
     _fixups = None
     _pool = None
+    _conf = None
     builtin_fixups = BUILTIN_FIXUPS
 
     #: Signal sent when app is loading configuration.
@@ -154,6 +159,7 @@ class Celery(object):
         self.configured = False
         self._config_source = config_source
         self._pending_defaults = deque()
+        self._pending_periodic_tasks = deque()
 
         self.finalized = False
         self._finalize_mutex = threading.Lock()
@@ -162,7 +168,7 @@ class Celery(object):
         if not isinstance(self._tasks, TaskRegistry):
             self._tasks = TaskRegistry(self._tasks or {})
 
-        # If the class defins a custom __reduce_args__ we need to use
+        # If the class defines a custom __reduce_args__ we need to use
         # the old way of pickling apps, which is pickling a list of
         # args instead of the new way that pickles a dict of keywords.
         self._using_v1_reduce = app_has_custom(self, '__reduce_args__')
@@ -280,6 +286,7 @@ class Celery(object):
                 '_decorated': True,
                 '__doc__': fun.__doc__,
                 '__module__': fun.__module__,
+                '__header__': staticmethod(head_from_fun(fun, bound=bind)),
                 '__wrapped__': fun}, **options))()
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app
@@ -311,13 +318,13 @@ class Celery(object):
         if not callable(fun):
             d, fun = fun, lambda: d
         if self.configured:
-            return self.conf.add_defaults(fun())
+            return self._conf.add_defaults(fun())
         self._pending_defaults.append(fun)
 
     def config_from_object(self, obj, silent=False, force=False):
         self._config_source = obj
         if force or self.configured:
-            del(self.conf)
+            self._conf = None
             return self.loader.config_from_object(obj, silent=silent)
 
     def config_from_envvar(self, variable_name, silent=False, force=False):
@@ -330,7 +337,9 @@ class Celery(object):
         return self.config_from_object(module_name, silent=silent, force=force)
 
     def config_from_cmdline(self, argv, namespace='celery'):
-        self.conf.update(self.loader.cmdline_config_parser(argv, namespace))
+        (self._conf if self.configured else self.conf).update(
+            self.loader.cmdline_config_parser(argv, namespace)
+        )
 
     def setup_security(self, allowed_serializers=None, key=None, cert=None,
                        store=None, digest='sha1', serializer='json'):
@@ -373,8 +382,7 @@ class Celery(object):
             expires, retries, chord,
             maybe_list(link), maybe_list(link_error),
             reply_to or self.oid, time_limit, soft_time_limit,
-            self.conf.CELERY_SEND_TASK_SENT_EVENT,
-            root_id, parent_id,
+            self.conf.CELERY_SEND_TASK_SENT_EVENT, root_id, parent_id,
         )
 
         if connection:
@@ -441,18 +449,19 @@ class Celery(object):
         return self.loader.now(utc=self.conf.CELERY_ENABLE_UTC)
 
     def mail_admins(self, subject, body, fail_silently=False):
-        if self.conf.ADMINS:
-            to = [admin_email for _, admin_email in self.conf.ADMINS]
+        conf = self.conf
+        if conf.ADMINS:
+            to = [admin_email for _, admin_email in conf.ADMINS]
             return self.loader.mail_admins(
                 subject, body, fail_silently, to=to,
-                sender=self.conf.SERVER_EMAIL,
-                host=self.conf.EMAIL_HOST,
-                port=self.conf.EMAIL_PORT,
-                user=self.conf.EMAIL_HOST_USER,
-                password=self.conf.EMAIL_HOST_PASSWORD,
-                timeout=self.conf.EMAIL_TIMEOUT,
-                use_ssl=self.conf.EMAIL_USE_SSL,
-                use_tls=self.conf.EMAIL_USE_TLS,
+                sender=conf.SERVER_EMAIL,
+                host=conf.EMAIL_HOST,
+                port=conf.EMAIL_PORT,
+                user=conf.EMAIL_HOST_USER,
+                password=conf.EMAIL_HOST_PASSWORD,
+                timeout=conf.EMAIL_TIMEOUT,
+                use_ssl=conf.EMAIL_USE_SSL,
+                use_tls=conf.EMAIL_USE_TLS,
             )
 
     def select_queues(self, queues=None):
@@ -473,7 +482,7 @@ class Celery(object):
             self.loader)
         return backend(app=self, url=url)
 
-    def _get_config(self):
+    def _load_config(self):
         if isinstance(self.on_configure, Signal):
             self.on_configure.send(sender=self)
         else:
@@ -483,12 +492,19 @@ class Celery(object):
             self.loader.config_from_object(self._config_source)
         defaults = dict(deepcopy(DEFAULTS), **self._preconf)
         self.configured = True
-        s = Settings({}, [self.prepare_config(self.loader.conf),
-                          defaults])
+        s = self._conf = Settings(
+            {}, [self.prepare_config(self.loader.conf), defaults],
+        )
         # load lazy config dict initializers.
-        pending = self._pending_defaults
-        while pending:
-            s.add_defaults(maybe_evaluate(pending.popleft()()))
+        pending_def = self._pending_defaults
+        while pending_def:
+            s.add_defaults(maybe_evaluate(pending_def.popleft()()))
+
+        # load lazy periodic tasks
+        pending_beat = self._pending_periodic_tasks
+        while pending_beat:
+            pargs, pkwargs = pending_beat.popleft()
+            self._add_periodic_task(*pargs, **pkwargs)
         self.on_after_configure.send(sender=self, source=s)
         return s
 
@@ -507,6 +523,27 @@ class Celery(object):
     def signature(self, *args, **kwargs):
         kwargs['app'] = self
         return self.canvas.signature(*args, **kwargs)
+
+    def add_periodic_task(self, *args, **kwargs):
+        if not self.configured:
+            return self._pending_periodic_tasks.append((args, kwargs))
+        return self._add_periodic_task(*args, **kwargs)
+
+    def _add_periodic_task(self, schedule, sig,
+                           args=(), kwargs={}, name=None, **opts):
+        from .task import Task
+
+        sig = (self.signature(sig.name, args, kwargs)
+               if isinstance(sig, Task) else sig.clone(args, kwargs))
+
+        name = name or ':'.join([sig.name, ','.join(map(str, sig.args))])
+        self._conf.CELERYBEAT_SCHEDULE[name] = {
+            'schedule': schedule,
+            'task': sig.name,
+            'args': sig.args,
+            'kwargs': sig.kwargs,
+            'options': dict(sig.options, **opts),
+        }
 
     def create_task_cls(self):
         """Creates a base task class using default configuration
@@ -569,7 +606,7 @@ class Celery(object):
         when unpickling."""
         return {
             'main': self.main,
-            'changes': self.conf.changes,
+            'changes': self._conf.changes if self._conf else self._preconf,
             'loader': self.loader_cls,
             'backend': self.backend_cls,
             'amqp': self.amqp_cls,
@@ -583,7 +620,7 @@ class Celery(object):
 
     def __reduce_args__(self):
         """Deprecated method, please use :meth:`__reduce_keys__` instead."""
-        return (self.main, self.conf.changes,
+        return (self.main, self._conf.changes if self._conf else {},
                 self.loader_cls, self.backend_cls, self.amqp_cls,
                 self.events_cls, self.log_cls, self.control_cls,
                 False, self._config_source)
@@ -654,9 +691,15 @@ class Celery(object):
     def backend(self):
         return self._get_backend()
 
-    @cached_property
+    @property
     def conf(self):
-        return self._get_config()
+        if self._conf is None:
+            self._load_config()
+        return self._conf
+
+    @conf.setter
+    def conf(self, d):  # noqa
+        self._conf = d
 
     @cached_property
     def control(self):
@@ -692,5 +735,5 @@ class Celery(object):
         if not tz:
             return (timezone.get_timezone('UTC') if conf.CELERY_ENABLE_UTC
                     else timezone.local)
-        return timezone.get_timezone(self.conf.CELERY_TIMEZONE)
+        return timezone.get_timezone(conf.CELERY_TIMEZONE)
 App = Celery  # compat

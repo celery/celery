@@ -164,6 +164,12 @@ workers, note that the first worker to start will receive four times the
 number of messages initially.  Thus the tasks may not be fairly distributed
 to the workers.
 
+To disable prefetching, set CELERYD_PREFETCH_MULTIPLIER to 1.  Setting 
+CELERYD_PREFETCH_MULTIPLIER to 0 will allow the worker to keep consuming
+as many messages as it wants.
+
+For more on prefetching, read :ref:`optimizing-prefetch-limit`
+
 .. note::
 
     Tasks with ETA/countdown are not affected by prefetch limits.
@@ -215,6 +221,10 @@ Can be one of the following:
     Use `Couchbase`_ to store the results.
     See :ref:`conf-couchbase-result-backend`.
 
+* couchdb
+    Use `CouchDB`_ to store the results.
+    See :ref:`conf-couchdb-result-backend`.
+
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
@@ -226,6 +236,7 @@ Can be one of the following:
 .. _`Redis`: http://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
 .. _`IronCache`: http://www.iron.io/cache
+.. _`CouchDB`: http://www.couchdb.com/
 .. _`Couchbase`: http://www.couchbase.com/
 
 
@@ -767,6 +778,47 @@ This is a dict supporting the following keys:
     Password to authenticate to the Couchbase server (optional).
 
 
+.. _conf-couchdb-result-backend:
+
+CouchDB backend settings
+------------------------
+
+.. note::
+
+    The CouchDB backend requires the :mod:`pycouchdb` library:
+    https://pypi.python.org/pypi/pycouchdb
+
+    To install the couchbase package use `pip` or `easy_install`:
+
+    .. code-block:: bash
+
+        $ pip install pycouchdb
+
+This backend can be configured via the :setting:`CELERY_RESULT_BACKEND`
+set to a couchdb URL::
+
+    CELERY_RESULT_BACKEND = 'couchdb://username:password@host:port/container'
+
+
+The URL is formed out of the following parts:
+
+* username
+    User name to authenticate to the CouchDB server as (optional).
+
+* password
+    Password to authenticate to the CouchDB server (optional).
+
+* host
+    Host name of the CouchDB server. Defaults to ``localhost``.
+
+* port
+    The port the CouchDB server is listening to. Defaults to ``8091``.
+
+* container
+    The default container the CouchDB server is writing to.
+    Defaults to ``default``.
+
+
 .. _conf-messaging:
 
 Message Routing
@@ -779,13 +831,20 @@ Message Routing
 CELERY_QUEUES
 ~~~~~~~~~~~~~
 
-The mapping of queues the worker consumes from.  This is a dictionary
-of queue name/options.  See :ref:`guide-routing` for more information.
+Most users will not want to specify this setting and should rather use
+the :ref:`automatic routing facilities <routing-automatic>`.
+
+If you really want to configure advanced routing, this setting should
+be a list of :class:`kombu.Queue` objects the worker will consume from.
+
+Note that workers can be overriden this setting via the `-Q` option,
+or individual queues from this list (by name) can be excluded using
+the `-X` option.
+
+Also see :ref:`routing-basics` for more information.
 
 The default is a queue/exchange/binding key of ``celery``, with
 exchange type ``direct``.
-
-You don't have to care about this unless you want custom routing facilities.
 
 .. setting:: CELERY_ROUTES
 
@@ -1198,6 +1257,8 @@ This is the total number of results to cache before older results are evicted.
 The default is 5000.  0 or None means no limit, and a value of :const:`-1`
 will disable the cache.
 
+.. setting:: CELERY_TRACK_STARTED
+
 CELERY_TRACK_STARTED
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -1302,24 +1363,6 @@ to have different import categories.
 
 The modules in this setting are imported after the modules in
 :setting:`CELERY_IMPORTS`.
-
-.. setting:: CELERYD_FORCE_EXECV
-
-CELERYD_FORCE_EXECV
-~~~~~~~~~~~~~~~~~~~
-
-On Unix the prefork pool will fork, so that child processes
-start with the same memory as the parent process.
-
-This can cause problems as there is a known deadlock condition
-with pthread locking primitives when `fork()` is combined with threads.
-
-You should enable this setting if you are experiencing hangs (deadlocks),
-especially in combination with time limits or having a max tasks per child limit.
-
-This option will be enabled by default in a later version.
-
-This is not a problem on Windows, as it does not have `fork()`.
 
 .. setting:: CELERYD_WORKER_LOST_WAIT
 
@@ -1575,7 +1618,7 @@ CELERY_EVENT_QUEUE_EXPIRES
 :transports supported: ``amqp``
 
 
-Expiry time in seconds (int/float) for when a monitor clients
+Expiry time in seconds (int/float) for when after a monitor clients
 event queue will be deleted (``x-expires``).
 
 Default is never, relying on the queue autodelete setting.

@@ -269,15 +269,15 @@ class AMQP(object):
                    expires=None, retries=0, chord=None,
                    callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
-                   create_sent_event=False, now=None, timezone=None,
-                   root_id=None, parent_id=None):
+                   create_sent_event=False, root_id=None, parent_id=None,
+                   now=None, timezone=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
         if not isinstance(args, (list, tuple)):
-            raise ValueError('task args must be a list or tuple')
+            raise TypeError('task args must be a list or tuple')
         if not isinstance(kwargs, Mapping):
-            raise ValueError('task keyword arguments must be a mapping')
+            raise TypeError('task keyword arguments must be a mapping')
         if countdown:  # convert countdown to ETA
             now = now or self.app.now()
             timezone = timezone or self.app.timezone
@@ -336,8 +336,8 @@ class AMQP(object):
                    expires=None, retries=0,
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
-                   create_sent_event=False, now=None, timezone=None,
-                   root_id=None, parent_id=None):
+                   create_sent_event=False, root_id=None, parent_id=None,
+                   now=None, timezone=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc

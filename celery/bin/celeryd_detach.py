@@ -38,11 +38,14 @@ OPTION_LIST = daemon_options(default_pidfile='celeryd.pid') + (
 
 
 def detach(path, argv, logfile=None, pidfile=None, uid=None,
-           gid=None, umask=None, working_directory=None, fake=False, app=None):
+           gid=None, umask=None, working_directory=None, fake=False, app=None,
+           executable=None):
     fake = 1 if C_FAKEFORK else fake
     with detached(logfile, pidfile, uid, gid, umask, working_directory, fake,
                   after_forkers=False):
         try:
+            if executable is not None:
+                path = executable
             os.execv(path, [path] + argv)
         except Exception:
             if app is None:

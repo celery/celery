@@ -6,7 +6,7 @@ import sys
 
 from functools import wraps
 
-from billiard import current_process
+from billiard.process import current_process
 from kombu import Exchange, Queue
 
 from celery import platforms
@@ -18,7 +18,6 @@ from celery.exceptions import (
     ImproperlyConfigured, WorkerShutdown, WorkerTerminate,
 )
 from celery.platforms import EX_FAILURE, EX_OK
-from celery.utils.log import ensure_process_aware_logger
 from celery.worker import state
 
 from celery.tests.case import (
@@ -30,8 +29,6 @@ from celery.tests.case import (
     skip_if_pypy,
     skip_if_jython,
 )
-
-ensure_process_aware_logger()
 
 
 class WorkerAppCase(AppCase):

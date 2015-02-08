@@ -28,6 +28,7 @@ import time
 
 from collections import deque, namedtuple
 from io import BytesIO
+from numbers import Integral
 from pickle import HIGHEST_PROTOCOL
 from time import sleep
 from weakref import WeakValueDictionary, ref
@@ -76,7 +77,7 @@ except (ImportError, NameError):  # pragma: no cover
 logger = get_logger(__name__)
 error, debug = logger.error, logger.debug
 
-UNAVAIL = frozenset([errno.EAGAIN, errno.EINTR])
+UNAVAIL = frozenset({errno.EAGAIN, errno.EINTR})
 
 #: Constant sent by child process when started (ready to accept work)
 WORKER_UP = 15
@@ -109,8 +110,11 @@ def _get_job_writer(job):
         return writer()  # is a weakref
 
 
-def _select(readers=None, writers=None, err=None, timeout=0):
-    """Simple wrapper to :class:`~select.select`.
+def _select(readers=None, writers=None, err=None, timeout=0,
+            poll=select.poll, POLLIN=select.POLLIN,
+            POLLOUT=select.POLLOUT, POLLERR=select.POLLERR):
+    """Simple wrapper to :class:`~select.select`, using :`~select.poll`
+    as the implementation.
 
     :param readers: Set of reader fds to test if readable.
     :param writers: Set of writer fds to test if writable.
@@ -131,32 +135,50 @@ def _select(readers=None, writers=None, err=None, timeout=0):
     readers = set() if readers is None else readers
     writers = set() if writers is None else writers
     err = set() if err is None else err
+    poller = poll()
+    register = poller.register
+
+    if readers:
+        [register(fd, POLLIN) for fd in readers]
+    if writers:
+        [register(fd, POLLOUT) for fd in writers]
+    if err:
+        [register(fd, POLLERR) for fd in err]
+
+    R, W = set(), set()
+    timeout = 0 if timeout and timeout < 0 else round(timeout * 1e3)
     try:
-        r, w, e = select.select(readers, writers, err, timeout)
-        if e:
-            r = list(set(r) | set(e))
-        return r, w, 0
+        events = poller.poll(timeout)
+        for fd, event in events:
+            if not isinstance(fd, Integral):
+                fd = fd.fileno()
+            if event & POLLIN:
+                R.add(fd)
+            if event & POLLOUT:
+                W.add(fd)
+            if event & POLLERR:
+                R.add(fd)
+        return R, W, 0
     except (select.error, socket.error) as exc:
         if exc.errno == errno.EINTR:
-            return [], [], 1
+            return set(), set(), 1
         elif exc.errno in SELECT_BAD_FD:
             for fd in readers | writers | err:
                 try:
                     select.select([fd], [], [], 0)
                 except (select.error, socket.error) as exc:
-                    if exc.errno not in SELECT_BAD_FD:
+                    if getattr(exc, 'errno', None) not in SELECT_BAD_FD:
                         raise
                     readers.discard(fd)
                     writers.discard(fd)
                     err.discard(fd)
-            return [], [], 1
+            return set(), set(), 1
         else:
             raise
 
 
 class Worker(_pool.Worker):
     """Pool worker process."""
-    dead = False
 
     def on_loop_start(self, pid):
         # our version sends a WORKER_UP message when the process is ready
@@ -327,6 +349,11 @@ class AsynPool(_pool.Pool):
     """Pool version that uses AIO instead of helper threads."""
     ResultHandler = ResultHandler
     Worker = Worker
+
+    def WorkerProcess(self, worker):
+        worker = super(AsynPool, self).WorkerProcess(worker)
+        worker.dead = False
+        return worker
 
     def __init__(self, processes=None, synack=False,
                  sched_strategy=None, *args, **kwargs):
@@ -1089,7 +1116,7 @@ class AsynPool(_pool.Pool):
         all tasks that have not been started will be discarded.
 
         In Celery this is called whenever the transport connection is lost
-        (consumer restart).
+        (consumer restart), and when a process is terminated.
 
         """
         resq = proc.outq._reader

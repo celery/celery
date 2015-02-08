@@ -28,7 +28,7 @@
 #
 # You can then configure this by manipulating /etc/default/little-worker.
 #
-VERSION=10.0
+VERSION=10.1
 echo "celery init v${VERSION}."
 if [ $(id -u) -ne 0 ]; then
     echo "Error: This program can only be used by the root user."
@@ -199,15 +199,21 @@ create_paths() {
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
+_get_pidfiles () {
+    # note: multi < 3.1.14 output to stderr, not stdout, hence the redirect.
+    ${CELERYD_MULTI} expand "${CELERYD_PID_FILE}" ${CELERYD_NODES} 2>&1
+}
+
+
 _get_pids() {
     found_pids=0
     my_exitcode=0
 
-    for pid_file in "$CELERYD_PID_DIR"/*.pid; do
-        local pid=`cat "$pid_file"`
+    for pidfile in $(_get_pidfiles); do
+        local pid=`cat "$pidfile"`
         local cleaned_pid=`echo "$pid" | sed -e 's/[^0-9]//g'`
         if [ -z "$pid" ] || [ "$cleaned_pid" != "$pid" ]; then
-            echo "bad pid file ($pid_file)"
+            echo "bad pid file ($pidfile)"
             one_failed=true
             my_exitcode=1
         else
@@ -267,6 +273,8 @@ kill_workers() {
 
 
 restart_workers_graceful () {
+    echo "WARNING: Use with caution in production"
+    echo "The workers will attempt to restart, but they may not be able to."
     local worker_pids=
     worker_pids=`_get_pids`
     [ "$one_failed" ] && exit 1
@@ -291,27 +299,27 @@ check_status () {
     found_pids=0
 
     local one_failed=
-    for pid_file in "$CELERYD_PID_DIR"/*.pid; do
-        if [ ! -r $pid_file ]; then
-            echo "${SCRIPT_NAME} is stopped: no pids were found"
+    for pidfile in $(_get_pidfiles); do
+        if [ ! -r $pidfile ]; then
+            echo "${SCRIPT_NAME} down: no pidfiles found"
             one_failed=true
             break
         fi
 
-        local node=`basename "$pid_file" .pid`
-        local pid=`cat "$pid_file"`
+        local node=`basename "$pidfile" .pid`
+        local pid=`cat "$pidfile"`
         local cleaned_pid=`echo "$pid" | sed -e 's/[^0-9]//g'`
         if [ -z "$pid" ] || [ "$cleaned_pid" != "$pid" ]; then
-            echo "bad pid file ($pid_file)"
+            echo "bad pid file ($pidfile)"
             one_failed=true
         else
             local failed=
             kill -0 $pid 2> /dev/null || failed=true
             if [ "$failed" ]; then
-                echo "${SCRIPT_NAME} (node $node) (pid $pid) is stopped, but pid file exists!"
+                echo "${SCRIPT_NAME} (node $node) (pid $pid) is down, but pidfile exists!"
                 one_failed=true
             else
-                echo "${SCRIPT_NAME} (node $node) (pid $pid) is running..."
+                echo "${SCRIPT_NAME} (node $node) (pid $pid) is up..."
             fi
         fi
     done

@@ -298,12 +298,12 @@ and creating Celery applications.
 
     .. attribute:: Celery.AsyncResult
 
-        Create new result instance. See :class:`~celery.result.AsyncResult`.
+        Create new result instance. See :class:`celery.result.AsyncResult`.
 
     .. attribute:: Celery.GroupResult
 
         Create new group result instance.
-        See :class:`~celery.result.GroupResult`.
+        See :class:`celery.result.GroupResult`.
 
     .. method:: Celery.worker_main(argv=None)
 
