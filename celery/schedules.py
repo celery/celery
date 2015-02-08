@@ -22,7 +22,7 @@ from .five import range, string_t
 from .utils import is_iterable
 from .utils.timeutils import (
     weekday, maybe_timedelta, remaining, humanize_seconds,
-    timezone, maybe_make_aware, ffwd
+    timezone, maybe_make_aware, ffwd, localize
 )
 from .datastructures import AttributeDict
 
@@ -591,3 +591,113 @@ def maybe_schedule(s, relative=False, app=None):
         else:
             s.app = app
     return s
+
+
+SOLAR_INVALID_LATITUDE = """\
+Argument latitude {lat} is invalid, must be between -90 and 90.\
+"""
+
+SOLAR_INVALID_LONGITUDE = """\
+Argument longitude {lon} is invalid, must be between -180 and 180.\
+"""
+
+SOLAR_INVALID_EVENT = """\
+Argument event \"{event}\" is invalid, must be one of {all_events}.\
+"""
+
+class solar(schedule):
+    """A solar event can be used as the `run_every` value of a
+    :class:`PeriodicTask` to schedule based on certain solar events."""
+    
+    all_events = ['dawn_astronomical',
+    	'dawn_nautical',
+    	'dawn_civil',
+    	'sunrise',
+    	'solar_noon',
+    	'sunset',
+    	'dusk_civil',
+    	'dusk_nautical',
+    	'dusk_astronomical']
+    horizons = {'dawn_astronomical': '-18',
+    	'dawn_nautical': '-12',
+    	'dawn_civil': '-6',
+    	'sunrise': '-0:34',
+    	'solar_noon': '0',
+    	'sunset': '-0:34',
+    	'dusk_civil': '-6',
+    	'dusk_nautical': '-12',
+    	'dusk_astronomical': '18'}
+    methods = {'dawn_astronomical': 'next_rising',
+    	'dawn_nautical': 'next_rising',
+    	'dawn_civil': 'next_rising',
+    	'sunrise': 'next_rising',
+    	'solar_noon': 'next_transit',
+    	'sunset': 'next_setting',
+    	'dusk_civil': 'next_setting',
+    	'dusk_nautical': 'next_setting',
+    	'dusk_astronomical': 'next_setting'}
+    use_center = {'dawn_astronomical': True,
+    	'dawn_nautical': True,
+    	'dawn_civil': True,
+    	'sunrise': False,
+    	'solar_noon': True,
+    	'sunset': False,
+    	'dusk_civil': True,
+    	'dusk_nautical': True,
+    	'dusk_astronomical': True}
+    
+    def __init__(self, event, lat, lon):
+    	import ephem
+    	self.event = event
+    	self.lat = lat
+    	self.lon = lon
+    	
+    	if event not in all_events:
+    		raise ValueError(SOLAR_INVALID_EVENT.format(event=event, all_events=', '.join(all_events)))
+    	if lat < -90 or lat > 90:
+    		raise ValueError(SOLAR_INVALID_LATITUDE.format(lat=lat))
+    	if lon < -180 or lon > 180:
+    		raise ValueError(SOLAR_INVALID_LONGITUDE.format(lon=lon))
+    	
+    	cal = ephem.Observer()
+    	cal.lat = str(lat)
+    	cal.lon = str(lon)
+    	cal.elev = 0
+    	cal.horizon = horizons[event]
+    	cal.pressure = 0
+    	self.cal = cal
+    	
+    	self.method = methods[event]
+    	self.use_center = use_center[event]
+    
+    def remaining_estimate(self, last_run_at):
+        """Returns when the periodic task should run next as a timedelta,
+        or when it should next be checked (if it shouldn't be run today)"""
+    	last_run_at = self.maybe_make_aware(last_run_at)
+    	last_run_at_utc = localize(last_run_at, timezone.utc)
+    	self.cal.date = last_run_at_utc
+    	try:
+    		next_utc = getattr(self.cal, self.method)(ephem.Sun(), start=last_run_at_utc, use_center=self.use_center)
+    	except ephem.CircumpolarError:
+    		"""Sun will not rise/set today. Check again tomorrow
+    		(specifically, after the next anti-transit)"""
+    		next_utc = self.cal.next_antitransit(ephem.Sun()) + timedelta(minutes=1)
+    	next = self.maybe_make_aware(next_utc)
+    	now = self.maybe_make_aware(self.now())
+    	delta = next - now
+    	return delta
+
+    def is_due(self, last_run_at):
+        """Returns tuple of two items `(is_due, next_time_to_run)`,
+        where next time to run is in seconds.
+
+        See :meth:`celery.schedules.schedule.is_due` for more information.
+
+        """
+        rem_delta = self.remaining_estimate(last_run_at)
+        rem = max(rem_delta.total_seconds(), 0)
+        due = rem == 0
+        if due:
+            rem_delta = self.remaining_estimate(self.now())
+            rem = max(rem_delta.total_seconds(), 0)
+        return schedstate(due, rem)
