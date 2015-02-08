@@ -622,67 +622,67 @@ class solar(schedule):
 
     
     _all_events = ['dawn_astronomical',
-    	'dawn_nautical',
-    	'dawn_civil',
-    	'sunrise',
-    	'solar_noon',
-    	'sunset',
-    	'dusk_civil',
-    	'dusk_nautical',
-    	'dusk_astronomical']
+        'dawn_nautical',
+        'dawn_civil',
+        'sunrise',
+        'solar_noon',
+        'sunset',
+        'dusk_civil',
+        'dusk_nautical',
+        'dusk_astronomical']
     _horizons = {'dawn_astronomical': '-18',
-    	'dawn_nautical': '-12',
-    	'dawn_civil': '-6',
-    	'sunrise': '-0:34',
-    	'solar_noon': '0',
-    	'sunset': '-0:34',
-    	'dusk_civil': '-6',
-    	'dusk_nautical': '-12',
-    	'dusk_astronomical': '18'}
+        'dawn_nautical': '-12',
+        'dawn_civil': '-6',
+        'sunrise': '-0:34',
+        'solar_noon': '0',
+        'sunset': '-0:34',
+        'dusk_civil': '-6',
+        'dusk_nautical': '-12',
+        'dusk_astronomical': '18'}
     _methods = {'dawn_astronomical': 'next_rising',
-    	'dawn_nautical': 'next_rising',
-    	'dawn_civil': 'next_rising',
-    	'sunrise': 'next_rising',
-    	'solar_noon': 'next_transit',
-    	'sunset': 'next_setting',
-    	'dusk_civil': 'next_setting',
-    	'dusk_nautical': 'next_setting',
-    	'dusk_astronomical': 'next_setting'}
+        'dawn_nautical': 'next_rising',
+        'dawn_civil': 'next_rising',
+        'sunrise': 'next_rising',
+        'solar_noon': 'next_transit',
+        'sunset': 'next_setting',
+        'dusk_civil': 'next_setting',
+        'dusk_nautical': 'next_setting',
+        'dusk_astronomical': 'next_setting'}
     _use_center_l = {'dawn_astronomical': True,
-    	'dawn_nautical': True,
-    	'dawn_civil': True,
-    	'sunrise': False,
-    	'solar_noon': True,
-    	'sunset': False,
-    	'dusk_civil': True,
-    	'dusk_nautical': True,
-    	'dusk_astronomical': True}
+        'dawn_nautical': True,
+        'dawn_civil': True,
+        'sunrise': False,
+        'solar_noon': True,
+        'sunset': False,
+        'dusk_civil': True,
+        'dusk_nautical': True,
+        'dusk_astronomical': True}
     
     def __init__(self, event, lat, lon, nowfun=None, app=None):
-    	self.ephem = __import__('ephem')
-    	self.event = event
-    	self.lat = lat
-    	self.lon = lon
-    	self.nowfun = nowfun
-    	self._app = app
-    	
-    	if event not in self._all_events:
-    		raise ValueError(SOLAR_INVALID_EVENT.format(event=event, all_events=', '.join(self._all_events)))
-    	if lat < -90 or lat > 90:
-    		raise ValueError(SOLAR_INVALID_LATITUDE.format(lat=lat))
-    	if lon < -180 or lon > 180:
-    		raise ValueError(SOLAR_INVALID_LONGITUDE.format(lon=lon))
-    	
-    	cal = self.ephem.Observer()
-    	cal.lat = str(lat)
-    	cal.lon = str(lon)
-    	cal.elev = 0
-    	cal.horizon = self._horizons[event]
-    	cal.pressure = 0
-    	self.cal = cal
-    	
-    	self.method = self._methods[event]
-    	self.use_center = self._use_center_l[event]
+        self.ephem = __import__('ephem')
+        self.event = event
+        self.lat = lat
+        self.lon = lon
+        self.nowfun = nowfun
+        self._app = app
+        
+        if event not in self._all_events:
+            raise ValueError(SOLAR_INVALID_EVENT.format(event=event, all_events=', '.join(self._all_events)))
+        if lat < -90 or lat > 90:
+            raise ValueError(SOLAR_INVALID_LATITUDE.format(lat=lat))
+        if lon < -180 or lon > 180:
+            raise ValueError(SOLAR_INVALID_LONGITUDE.format(lon=lon))
+        
+        cal = self.ephem.Observer()
+        cal.lat = str(lat)
+        cal.lon = str(lon)
+        cal.elev = 0
+        cal.horizon = self._horizons[event]
+        cal.pressure = 0
+        self.cal = cal
+        
+        self.method = self._methods[event]
+        self.use_center = self._use_center_l[event]
 
     def now(self):
         return (self.nowfun or self.app.now)()
@@ -699,19 +699,19 @@ class solar(schedule):
         """Returns when the periodic task should run next as a timedelta,
         or if it shouldn't run today (e.g. the sun does not rise today),
         returns the time when the next check should take place"""
-    	last_run_at = self.maybe_make_aware(last_run_at)
-    	last_run_at_utc = localize(last_run_at, timezone.utc)
-    	self.cal.date = last_run_at_utc
-    	try:
-    		next_utc = getattr(self.cal, self.method)(self.ephem.Sun(), start=last_run_at_utc, use_center=self.use_center)
-    	except self.ephem.CircumpolarError:
-    		"""Sun will not rise/set today. Check again tomorrow
-    		(specifically, after the next anti-transit)"""
-    		next_utc = self.cal.next_antitransit(self.ephem.Sun()) + timedelta(minutes=1)
-    	next = self.maybe_make_aware(next_utc.datetime())
-    	now = self.maybe_make_aware(self.now())
-    	delta = next - now
-    	return delta
+        last_run_at = self.maybe_make_aware(last_run_at)
+        last_run_at_utc = localize(last_run_at, timezone.utc)
+        self.cal.date = last_run_at_utc
+        try:
+            next_utc = getattr(self.cal, self.method)(self.ephem.Sun(), start=last_run_at_utc, use_center=self.use_center)
+        except self.ephem.CircumpolarError:
+            """Sun will not rise/set today. Check again tomorrow
+            (specifically, after the next anti-transit)"""
+            next_utc = self.cal.next_antitransit(self.ephem.Sun()) + timedelta(minutes=1)
+        next = self.maybe_make_aware(next_utc.datetime())
+        now = self.maybe_make_aware(self.now())
+        delta = next - now
+        return delta
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
