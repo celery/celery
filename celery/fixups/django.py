@@ -227,7 +227,7 @@ class DjangoWorkerFixup(object):
 
     def _close_database(self):
         try:
-            funs = [conn.close for conn in self._db.connections]
+            funs = [conn.close for conn in self._db.connections.all()]
         except AttributeError:
             if hasattr(self._db, 'close_old_connections'):  # django 1.6
                 funs = [self._db.close_old_connections]
