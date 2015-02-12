@@ -505,6 +505,14 @@ class Command(object):
     def parse_preload_options(self, args):
         return self.preparse_options(args, self.preload_options)
 
+    def add_append_opt(self, acc, opt, value):
+        default = opt.default or []
+
+        if opt.dest not in acc:
+           acc[opt.dest] = default
+
+        acc[opt.dest].append(value)
+
     def preparse_options(self, args, options):
         acc = {}
         opts = {}
@@ -520,13 +528,19 @@ class Command(object):
                     key, value = arg.split('=', 1)
                     opt = opts.get(key)
                     if opt:
-                        acc[opt.dest] = value
+                        if opt.action == 'append':
+                            self.add_append_opt(acc, opt, value)
+                        else:
+                            acc[opt.dest] = value
                 else:
                     opt = opts.get(arg)
                     if opt and opt.takes_value():
                         # optparse also supports ['--opt', 'value']
                         # (Issue #1668)
-                        acc[opt.dest] = args[index + 1]
+                        if opt.action == 'append':
+                            self.add_append_opt(acc, opt, args[index + 1])
+                        else:
+                            acc[opt.dest] = args[index + 1]
                         index += 1
                     elif opt and opt.action == 'store_true':
                         acc[opt.dest] = True
