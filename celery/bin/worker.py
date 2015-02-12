@@ -242,6 +242,8 @@ class worker(Command):
                    default=conf.CELERYD_TASK_SOFT_TIME_LIMIT, type='float'),
             Option('--maxtasksperchild', dest='max_tasks_per_child',
                    default=conf.CELERYD_MAX_TASKS_PER_CHILD, type='int'),
+            Option('--prefetch-multiplier', dest='prefetch_multiplier',
+                   default=conf.CELERYD_PREFETCH_MULTIPLIER, type='int'),
             Option('--queues', '-Q', default=[]),
             Option('--exclude-queues', '-X', default=[]),
             Option('--include', '-I', default=[]),
