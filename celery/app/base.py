@@ -279,15 +279,16 @@ class Celery(object):
         base = base or self.Task
 
         if name not in self._tasks:
+            run = fun if bind else staticmethod(fun)
             task = type(fun.__name__, (base, ), dict({
                 'app': self,
                 'name': name,
-                'run': fun if bind else staticmethod(fun),
+                'run': run,
                 '_decorated': True,
                 '__doc__': fun.__doc__,
                 '__module__': fun.__module__,
                 '__header__': staticmethod(head_from_fun(fun, bound=bind)),
-                '__wrapped__': fun}, **options))()
+                '__wrapped__': run}, **options))()
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app
         else:
