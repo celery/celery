@@ -74,6 +74,12 @@ class LRUCache(UserDict):
                 for item in islice(iter(data), len(data) - limit):
                     data.pop(item)
 
+    def popitem(self, last=True, _needs_lock=IS_PYPY):
+        if not _needs_lock:
+            return self.data.popitem(last)
+        with self.mutex:
+            return self.data.popitem(last)
+
     def __setitem__(self, key, value):
         # remove least recently used key.
         with self.mutex:
