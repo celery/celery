@@ -24,7 +24,18 @@ __all__ = ['LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
            'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
            'regen', 'dictfilter', 'lazy', 'maybe_evaluate']
 
+IS_PYPY = hasattr(sys, 'pypy_version_info')
+
 KEYWORD_MARK = object()
+
+
+class DummyContext(object):
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        pass
 
 
 class LRUCache(UserDict):
@@ -75,12 +86,15 @@ class LRUCache(UserDict):
                 pass
     iteritems = _iterate_items
 
-    def _iterate_values(self):
-        for k in self:
-            try:
-                yield self.data[k]
-            except KeyError:  # pragma: no cover
-                pass
+    def _iterate_values(self, _need_lock=IS_PYPY):
+        ctx = self.mutex if _need_lock else DummyContext()
+        with ctx:
+            for k in self:
+                try:
+                    yield self.data[k]
+                except KeyError:  # pragma: no cover
+                    pass
+
     itervalues = _iterate_values
 
     def _iterate_keys(self):
