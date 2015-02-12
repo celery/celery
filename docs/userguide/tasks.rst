@@ -1509,15 +1509,19 @@ depending on state from the current transaction*:
             transaction.commit()
             expand_abbreviations.delay(article.pk)
 
-Note that Django 1.6 and later enable autocommit mode by default
-(deprecating `commit_on_success` and `commit_manually`), automatically
-wrapping each SQL query in its own transaction, avoiding the race
-condition by default and making it less likely that you'll encounter
-the above problem. However, enabling `ATOMIC_REQUESTS` on the database
-connection will bring back the transaction per request model and the
-race condition along with it. In this case, the simplest solution is
-just to use the `@transaction.non_atomic_requests` to switch it back
-to autocommit for that view.
+.. note::
+    Django 1.6 (and later) now enables autocommit mode by default,
+    and ``commit_on_success``/``commit_manually`` are depreacated.
+
+    This means each SQL query is wrapped and executed in individual
+    transactions, making it less likely to experience the
+    problem described above.
+
+    However, enabling ``ATOMIC_REQUESTS`` on the database
+    connection will bring back the transaction-per-request model and the
+    race condition along with it.  In this case, the simple solution is
+    using the ``@transaction.non_atomic_requests`` decorator to go back
+    to autocommit for that view only.
 
 .. _task-example:
 
