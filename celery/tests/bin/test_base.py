@@ -314,3 +314,19 @@ class test_Command(AppCase):
         cmd.preload_options = (Option('-s', action='store', dest='silent'), )
         acc = cmd.parse_preload_options(['-s', 'yes'])
         self.assertEqual(acc.get('silent'), 'yes')
+
+    def test_parse_preload_options_with_equals_and_append(self):
+        cmd = Command()
+        opt = Option('--zoom', action='append', default=[])
+        cmd.preload_options = (opt,)
+        acc = cmd.parse_preload_options(['--zoom=1', '--zoom=2'])
+
+        self.assertEqual(acc, {'zoom': ['1', '2']})
+
+    def test_parse_preload_options_without_equals_and_append(self):
+        cmd = Command()
+        opt = Option('--zoom', action='append', default=[])
+        cmd.preload_options = (opt,)
+        acc = cmd.parse_preload_options(['--zoom', '1', '--zoom', '2'])
+
+        self.assertEqual(acc, {'zoom': ['1', '2']})
