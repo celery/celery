@@ -287,22 +287,6 @@ class test_Worker(WorkerAppCase):
             worker = self.Worker(app=self.app)
             worker.on_start()
             _exit.assert_called_with(1)
-            from celery import platforms
-            platforms.C_FORCE_ROOT = True
-            try:
-                with self.assertWarnsRegex(
-                        RuntimeWarning,
-                        r'absolutely not recommended'):
-                    worker = self.Worker(app=self.app)
-                    worker.on_start()
-            finally:
-                platforms.C_FORCE_ROOT = False
-            self.app.conf.CELERY_ACCEPT_CONTENT = ['json']
-            with self.assertWarnsRegex(
-                    RuntimeWarning,
-                    r'absolutely not recommended'):
-                worker = self.Worker(app=self.app)
-                worker.on_start()
 
     @disable_stdouts
     def test_redirect_stdouts(self):
