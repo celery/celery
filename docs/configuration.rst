@@ -485,6 +485,49 @@ CELERY_REDIS_MAX_CONNECTIONS
 Maximum number of connections available in the Redis connection
 pool used for sending and retrieving results.
 
+.. setting:: CELERY_REDIS_LOCK_TTL
+
+CELERY_REDIS_LOCK_TTL
+~~~~~~~~~~~~~~~~~~~~~
+
+When asked to wait for a result of a task, the non-polling Redis backend
+checks the state of the task and, if it's not ready yet, it subscribes to
+notifications of task state updates. As notifications are not persistent,
+and there may be a slight delay between retrieving the initial state and
+subscribing, the notification of task completion may be lost during this
+delay. To avoid it, the backend have to place a lock on the result entry
+before retrieving the inital state and release it after subsribing to
+notifications. It also have to place a lock before the set operation
+which updates the task state and result and publishes a notification,
+and release it after.
+
+If some operation crashes before releasing the lock, following operations
+on the same task may block indefinitely, so we generally need to set up
+an expiration time for each lock. It should not be much larger than the
+locked operation should take. Usually you should not alter this setting
+if you're not sure what you're doing.
+
+Default is `0.1` s (100 milliseconds).
+
+Can be any (floating point) number of seconds or `None` (this disables
+expiration times and may lead to the blocking behavior).
+
+.. setting:: CELERY_REDIS_SET_LOCK_TIMEOUT
+
+CELERY_REDIS_SET_LOCK_TIMEOUT
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+How long to wait for a lock on the result entry required to perform the set
+operation. (See :setting:`CELERY_REDIS_LOCK_TTL` for the explanation of
+locking.) Usually you should not alter this setting if you're not sure what
+you're doing.
+
+Default is `0.5` s (500 milliseconds).
+
+Can be any (floating point) number of seconds or `None` (this will lead to
+blocking behavior if some other operation on the result has crashed without
+releasing the lock or setting its expiration time).
+
 .. _conf-mongodb-result-backend:
 
 MongoDB backend settings
