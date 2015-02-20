@@ -204,7 +204,7 @@ class RedisLock(object):
             return 0
         end
     """.format(ACQUIRED_SIGNAL)
-    ACQUIRE_SCRIPT_SHA = sha1(ACQUIRE_SCRIPT).hexdigest()
+    ACQUIRE_SCRIPT_SHA = sha1(ensure_bytes(ACQUIRE_SCRIPT)).hexdigest()
 
     RELEASE_SCRIPT = """
         local token = redis.call('get', KEYS[1])
@@ -221,7 +221,7 @@ class RedisLock(object):
             return 0
         end
     """.format(RELEASED_SIGNAL)
-    RELEASE_SCRIPT_SHA = sha1(RELEASE_SCRIPT).hexdigest()
+    RELEASE_SCRIPT_SHA = sha1(ensure_bytes(RELEASE_SCRIPT)).hexdigest()
 
     def __init__(self, client, name, expire=None, timeout=None,
                  thread_local=True, signal_key=None, **kwargs):
@@ -347,7 +347,7 @@ class RedisLock(object):
                                      args=(token, self.expire or ''))
         pipe = self.client.pipeline()
         pipe.watch(self.name)
-        current_token = pipe.get(self.name)
+        current_token = ensure_bytes(pipe.get(self.name))
         if current_token != token:
             # lock is already held by someone else
             pipe.reset()
@@ -455,7 +455,7 @@ class RedisBackend(KeyValueStoreBackend):
         end
         redis.call('publish', KEYS[1], ARGV[1])
     """
-    SET_SCRIPT_SHA = sha1(SET_SCRIPT).hexdigest()
+    SET_SCRIPT_SHA = sha1(ensure_bytes(SET_SCRIPT)).hexdigest()
 
     #: redis-py client module.
     redis = redis
