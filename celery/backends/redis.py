@@ -459,6 +459,8 @@ class RedisBackend(KeyValueStoreBackend):
 
     #: redis-py client module.
     redis = redis
+    #: redis client implementation.
+    redis_client = RedisClient
 
     #: Maximium number of connections in the pool.
     max_connections = None
@@ -722,7 +724,7 @@ class RedisBackend(KeyValueStoreBackend):
 
     @cached_property
     def client(self):
-        return RedisClient(
+        return self.redis_client(
             connection_pool=self.ConnectionPool(**self.connparams),
         )
 

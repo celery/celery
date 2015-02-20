@@ -41,6 +41,23 @@ class Pipeline(object):
         return [step(*a, **kw) for step, a, kw in self.steps]
 
 
+class Lock(object):
+    def __init__(self, *args, **kwargs):
+        self.acquired = False
+
+    def acquire(self, *args, **kwargs):
+        if not self.acquired:
+            self.acquired = True
+        return self.acquired
+
+    def release(self, *args, **kwargs):
+        if self.acquired:
+            self.acquired = False
+            return True
+        else:
+            return False
+
+
 class Redis(MockCallbacks):
     Connection = Connection
     Pipeline = Pipeline
@@ -54,10 +71,15 @@ class Redis(MockCallbacks):
         self.expiry = {}
         self.connection = self.Connection()
 
+        self.supports_lua = False
+        self.supports_pttl = False
+        self.improved_ttl = False
+
     def get(self, key):
         return self.keyspace.get(key)
 
-    def setex(self, key, value, expires):
+    # note: the arguments order is like in redis.StrictRedis, not redis.Redis
+    def setex(self, key, expires, value):
         self.set(key, value)
         self.expire(key, expires)
 
@@ -90,6 +112,9 @@ class Redis(MockCallbacks):
     def llen(self, key):
         return len(self.keyspace.get(key) or [])
 
+    def lock(self, *args, **kwargs):
+        return Lock()
+
 
 class redis(object):
     Redis = Redis
@@ -112,6 +137,7 @@ class test_RedisBackend(AppCase):
 
         class _RedisBackend(RedisBackend):
             redis = redis
+            redis_client = Redis
 
         return _RedisBackend
 
