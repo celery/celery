@@ -109,11 +109,16 @@ class test_trace(TraceCase):
             pass
         empty.backend = Mock()
 
-        sig = {'chord_size': None, 'task': 'empty', 'args': (), 'options': {}, 'subtask_type': None, 'kwargs': {}, 'immutable': False}
-        callbacks = [
-            sig,
-            {'chord_size': None, 'task': 'celery.group', 'args': (), 'options': {}, 'subtask_type': 'group', 'kwargs': {'tasks': (empty(), empty())}, 'immutable': False}
-        ]
+        sig = {
+            'chord_size': None, 'task': 'empty', 'args': (), 'options': {},
+            'subtask_type': None, 'kwargs': {}, 'immutable': False
+        }
+        group_sig = {
+            'chord_size': None, 'task': 'celery.group', 'args': (),
+            'options': {}, 'subtask_type': 'group',
+            'kwargs': {'tasks': (empty(), empty())}, 'immutable': False
+        }
+        callbacks = [sig, group_sig]
 
         # should not raise an exception
         self.trace(empty, [], {}, request={'callbacks': callbacks})
