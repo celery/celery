@@ -93,6 +93,31 @@ class test_trace(TraceCase):
         finally:
             signals.task_success.receivers[:] = []
 
+    def test_multiple_callbacks(self):
+        """
+        Regression test on trace with multiple callbacks
+
+        Uses the signature of the following canvas:
+            chain(
+                empty.subtask(link=empty.subtask()),
+                group(empty.subtask(), empty.subtask())
+            )
+        """
+
+        @self.app.task(shared=False)
+        def empty(*args, **kwargs):
+            pass
+        empty.backend = Mock()
+
+        sig = {'chord_size': None, 'task': 'empty', 'args': (), 'options': {}, 'subtask_type': None, 'kwargs': {}, 'immutable': False}
+        callbacks = [
+            sig,
+            {'chord_size': None, 'task': 'celery.group', 'args': (), 'options': {}, 'subtask_type': 'group', 'kwargs': {'tasks': (empty(), empty())}, 'immutable': False}
+        ]
+
+        # should not raise an exception
+        self.trace(empty, [], {}, request={'callbacks': callbacks})
+
     def test_when_chord_part(self):
 
         @self.app.task(shared=False)
