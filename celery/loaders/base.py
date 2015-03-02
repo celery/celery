@@ -13,20 +13,16 @@ import importlib
 import os
 import re
 import sys
-
 from datetime import datetime
-
-from kombu.utils import json
-from kombu.utils import cached_property
-from kombu.utils.encoding import safe_str
 
 from celery import signals
 from celery.datastructures import DictAttribute, force_mapping
 from celery.five import reraise, string_t
 from celery.utils.functional import maybe_list
-from celery.utils.imports import (
-    import_from_cwd, symbol_by_name, NotAPackage, find_module,
-)
+from celery.utils.imports import (NotAPackage, find_module, import_from_cwd,
+                                  symbol_by_name)
+from kombu.utils import cached_property, json
+from kombu.utils.encoding import safe_str
 
 __all__ = ['BaseLoader']
 
@@ -42,6 +38,7 @@ Did you mean '{suggest}'?
 
 
 class BaseLoader(object):
+
     """The base class for loaders.
 
     Loaders handles,
@@ -286,7 +283,7 @@ def find_related_module(package, related_name):
         package, _, _ = package.rpartition('.')
 
     try:
-        pkg_path = importlib.import_module(package).__path__
+        pkg_path = list(importlib.import_module(package).__path__)
     except AttributeError:
         return
 
