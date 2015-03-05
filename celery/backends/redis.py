@@ -190,7 +190,7 @@ class RedisBackend(KeyValueStoreBackend):
         )
 
     def on_connection_error(self, max_retries, exc, intervals, retries):
-        if self.connparams['sentinel']:
+        if self.sentinel is not None:
             # reset cache property so that sentinel provides a new connection during next call
             del self.client
             return None
