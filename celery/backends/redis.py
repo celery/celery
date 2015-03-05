@@ -185,6 +185,7 @@ class RedisBackend(KeyValueStoreBackend):
         max_retries = retry_policy.get('max_retries')
         return retry_over_time(
             fun, self.connection_errors, args, {},
+            partial(self.on_connection_error, max_retries),
             **retry_policy
         )
 
