@@ -191,15 +191,12 @@ class RedisBackend(KeyValueStoreBackend):
 
     def on_connection_error(self, max_retries, exc, intervals, retries):
         if self.sentinel is not None:
-            # reset cache property so that sentinel provides a new connection during next call
             del self.client
-            return None
-        else:
-            tts = next(intervals)
-            error('Connection to Redis lost: Retry (%s/%s) %s.',
-                  retries, max_retries or 'Inf',
-                  humanize_seconds(tts, 'in '))
-            return tts
+        tts = next(intervals)
+        error('Connection to Redis lost: Retry (%s/%s) %s.',
+              retries, max_retries or 'Inf',
+              humanize_seconds(tts, 'in '))
+        return tts
 
     def set(self, key, value, **retry_policy):
         return self.ensure(self._set, (key, value), **retry_policy)
