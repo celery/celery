@@ -297,10 +297,12 @@ class RedisBackend(KeyValueStoreBackend):
     @cached_property
     def sentinel_client(self):
         sentinels = [(self.connparams['host'], self.connparams['port'])]
-        sentinels.extend([hostport.split(':') for hostport in \
-            self.connparams.get('extra_sentinels', "").split(',')
-        ])
-
+        sentinels.extend(
+            map(lambda hp: hp if len(hp) == 2 else [hp, RedisBackend.SENTINEL_DEFAULT_PORT],
+                [hostport.split(':') for hostport in \
+                self.connparams.get('extra_sentinels', "").split(',')]
+            )
+        )
         sentinel_args = self._dict_filter_prefix(self.connparams, 'sentinel_')
         redis_connection_args = self._dict_filter_prefix(self.connparams, 'redis_')
 
