@@ -199,6 +199,10 @@ Can be one of the following:
     Use `Redis`_ to store the results.
     See :ref:`conf-redis-result-backend`.
 
+* sentinel
+    Use `Sentinel`_ to store the results in `Redis`_
+    See :ref:`conf-sentinel-result-backend`.
+
 * amqp
     Send results back as AMQP messages
     See :ref:`conf-amqp-result-backend`.
@@ -224,6 +228,7 @@ Can be one of the following:
 .. _`memcached`: http://memcached.org
 .. _`MongoDB`: http://mongodb.org
 .. _`Redis`: http://redis.io
+.. _`Sentinel`: http://redis.io/topics/sentinel
 .. _`Cassandra`: http://cassandra.apache.org/
 .. _`IronCache`: http://www.iron.io/cache
 .. _`Couchbase`: http://www.couchbase.com/
@@ -484,6 +489,97 @@ CELERY_REDIS_MAX_CONNECTIONS
 
 Maximum number of connections available in the Redis connection
 pool used for sending and retrieving results.
+
+.. _conf-sentinel-result-backend:
+
+Sentinel backend settings
+-------------------------
+
+Configuring the backend URL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. note::
+
+    The Redis backend requires the :mod:`redis` library:
+    http://pypi.python.org/pypi/redis/
+
+    To install the redis package use `pip` or `easy_install`:
+
+    .. code-block:: bash
+
+        $ pip install redis
+
+This backend requires the :setting:`CELERY_RESULT_BACKEND`
+settings to be set to a Sentinel URL:
+
+    CELERY_RESULT_BACKEND = 'sentinel://:password@host:port/db'
+
+For example::
+
+    CELERY_RESULT_BACKEND = 'sentinel://localhost/0'
+
+which is the same than::
+
+    CELERY_RESULT_BACKEND = 'redis://localhost:26379/0?master=mymaster'
+    CELERY_RESULT_BACKEND = 'redis://'
+
+The fields of the URL is defined as follow:
+
+- *host*
+
+Host name or IP adress of a Sentinel server. Default is `localhost`.
+
+- *port*
+
+Port to the Sentinel server. Default is `26379`.
+
+- *db*
+
+Redis database to connect to. Default value is 0.
+
+- *password*:
+
+Password used to connect to the Redis master.
+
+- *master*:
+
+Redis master alias specified in Sentinel configuration
+with 'monitor' directive. Default value is `mymaster`.
+
+- *extra_sentinels*:
+
+Specifies additional Sentinel servers to implement high-availability.
+For instance:
+
+    CELERY_RESULT_BACKEND = 'sentinel://host1/celery?extra_sentinels=host2,host3:40000'
+
+The URL specifies a cluster of sentinels, properly configured to connect to
+the 'celery' redis master, made of the following servers:
+
+  - host1:26379
+
+  - host2:26379
+
+  - host3:40000
+
+- *min_other_sentinels*:
+
+Specifies the minimum number of Sentinel peers to consider a
+response valid. Default is 0.
+
+- *sentinel_* prefixed options:
+
+URL parameters starting with `sentinel_` are given to the
+`redis.sentinel.Sentinel` constructor in the `sentinel_kwargs`
+parameter. The `sentinel_` prefix is removed from those options
+before being passed to Redis API.
+
+- *redis_* prefixed options:
+
+URL parameters starting with `redis_` are given to the
+`redis.sentinel.Sentinel` constructor in the `**kwargs` parameter.
+The `redis_` prefix is removed from those options
+before being passed to Redis API.
 
 .. _conf-mongodb-result-backend:
 
