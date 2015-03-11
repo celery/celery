@@ -64,7 +64,7 @@ class RedisBackend(KeyValueStoreBackend):
     def __init__(self, host=None, port=None, db=None, password=None,
                  expires=None, max_connections=None, url=None,
                  connection_pool=None, new_join=False,
-                 sentinel=False, extra_sentinels=None, cluster_name=None, **kwargs):
+                 sentinel=False, extra_sentinels=None, master=None, **kwargs):
         super(RedisBackend, self).__init__(**kwargs)
         conf = self.app.conf
         if self.redis is None:
@@ -109,7 +109,7 @@ class RedisBackend(KeyValueStoreBackend):
             self.connparams.pop('sentinel')
             self.sentinel = None
         else:
-            self.connparams.setdefault('cluster_name', _get("CLUSTER_NAME") or 'mymaster'),
+            self.connparams.setdefault('master', _get("MASTER") or 'mymaster'),
             self.connparams.setdefault('extra_sentinels', _get('EXTRA_SENTINELS') or extra_sentinels)
             self.connparams.setdefault(
                 'min_other_sentinels',
@@ -317,7 +317,7 @@ class RedisBackend(KeyValueStoreBackend):
     def client(self):
         if self.sentinel is not None:
             return self.sentinel_client.master_for(
-                self.connparams['cluster_name'],
+                self.connparams['master'],
                 redis_class=redis.Redis
             )
         else:
