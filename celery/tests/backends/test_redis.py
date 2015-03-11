@@ -133,15 +133,16 @@ class test_RedisBackend(AppCase):
             self.Backend(app=self.app, new_join=True)
 
     def test_url(self):
-        x = self.Backend(
-            'redis://:bosco@vandelay.com:123//1', app=self.app,
-            new_join=True,
-        )
-        self.assertTrue(x.connparams)
-        self.assertEqual(x.connparams['host'], 'vandelay.com')
-        self.assertEqual(x.connparams['db'], 1)
-        self.assertEqual(x.connparams['port'], 123)
-        self.assertEqual(x.connparams['password'], 'bosco')
+        for scheme in ['redis', 'sentinel']:
+            x = self.Backend(
+                scheme + '://:bosco@vandelay.com:123//1', app=self.app,
+                new_join=True,
+            )
+            self.assertTrue(x.connparams)
+            self.assertEqual(x.connparams['host'], 'vandelay.com')
+            self.assertEqual(x.connparams['db'], 1)
+            self.assertEqual(x.connparams['port'], 123)
+            self.assertEqual(x.connparams['password'], 'bosco')
 
     def test_socket_url(self):
         x = self.Backend(
