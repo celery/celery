@@ -152,6 +152,8 @@ class RedisBackend(KeyValueStoreBackend):
             connparams.pop('port', None)
         else:
             connparams['db'] = path
+        if scheme == 'sentinel':
+            connparams['sentinel'] = True
 
         # db may be string and start with / like in kombu.
         db = connparams.get('db') or 0
