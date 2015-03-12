@@ -112,6 +112,19 @@ class RedisBackend(KeyValueStoreBackend):
         else:
             self.connparams.setdefault('master', _get("MASTER") or 'mymaster'),
             self.connparams.setdefault('extra_sentinels', _get('EXTRA_SENTINELS') or extra_sentinels)
+            if self.connparams['extra_sentinels'] is None:
+                self.connparams['extra_sentinels'] = []
+            if isinstance(self.connparams['extra_sentinels'], string_t):
+                # extra_sentinels can be specified as a string: host1,host2:123
+                self.connparams['extra_sentinels'] = self.connparams['extra_sentinels'].split(',')
+            for i in range(len(self.connparams['extra_sentinels'])):
+                # extra_sentinels can also be specified as a list of tuple/string for instance:
+                #   [ "host1:123", (host2,456), (host3,)]
+                if isinstance(self.connparams['extra_sentinels'][i], string_t):
+                    hostport = self.connparams['extra_sentinels'][i].split(':')
+                    if len(hostport) == 1:
+                        hostport.append(RedisBackend.SENTINEL_DEFAULT_PORT)
+                    self.connparams['extra_sentinels'][i] = hostport
             self.connparams.setdefault(
                 'min_other_sentinels',
                 int(_get('MIN_OTHER_SENTINELS') or 0)
@@ -297,12 +310,7 @@ class RedisBackend(KeyValueStoreBackend):
     @cached_property
     def sentinel_client(self):
         sentinels = [(self.connparams['host'], self.connparams['port'])]
-        sentinels.extend(
-            map(lambda hp: hp if len(hp) == 2 else [hp, RedisBackend.SENTINEL_DEFAULT_PORT],
-                [hostport.split(':') for hostport in \
-                self.connparams.get('extra_sentinels', "").split(',')]
-            )
-        )
+        sentinels.extend(self.connparams['extra_sentinels'])
         sentinel_args = self._dict_filter_prefix(self.connparams, 'sentinel_')
         redis_connection_args = self._dict_filter_prefix(self.connparams, 'redis_')
 
