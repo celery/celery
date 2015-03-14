@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-import io
+import StringIO
 import os
 import sys
 import warnings
@@ -152,7 +152,7 @@ class DjangoWorkerFixup(object):
             pass
         else:
             django_setup()
-        s = io.StringIO()
+        s = StringIO.StringIO()
         try:
             from django.core.management.validation import get_validation_errors
         except ImportError:
