@@ -1,9 +1,13 @@
 from __future__ import absolute_import
 
-import StringIO
 import os
 import sys
 import warnings
+
+if sys.version_info[0] < 3:
+    from StringIO import StringIO
+else:
+    from io import StringIO
 
 from kombu.utils import cached_property, symbol_by_name
 
