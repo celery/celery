@@ -4,7 +4,7 @@ import os
 import sys
 import warnings
 
-if sys.version_info[0] < 3:
+if sys.version_info[0] < 3 and not hasattr(sys, 'pypy_version_info'):
     from StringIO import StringIO
 else:
     from io import StringIO
