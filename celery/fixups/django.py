@@ -1,9 +1,13 @@
 from __future__ import absolute_import
 
-import io
 import os
 import sys
 import warnings
+
+if sys.version_info[0] < 3 and not hasattr(sys, 'pypy_version_info'):
+    from StringIO import StringIO
+else:
+    from io import StringIO
 
 from kombu.utils import cached_property, symbol_by_name
 
@@ -152,7 +156,7 @@ class DjangoWorkerFixup(object):
             pass
         else:
             django_setup()
-        s = io.StringIO()
+        s = StringIO()
         try:
             from django.core.management.validation import get_validation_errors
         except ImportError:
