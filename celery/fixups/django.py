@@ -156,7 +156,7 @@ class DjangoWorkerFixup(object):
             pass
         else:
             django_setup()
-        s = StringIO.StringIO()
+        s = StringIO()
         try:
             from django.core.management.validation import get_validation_errors
         except ImportError:
