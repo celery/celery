@@ -81,12 +81,12 @@ class AsyncResult(ResultBase):
     backend = None
 
     def __init__(self, id, backend=None, task_name=None,
-                 app=None, parent=None):
+                 app=None, parent=None, options=None):
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
         self.task_name = task_name
-        self.parent = parent
+        self.parent = parent or (options.get('parent', None) if options is not None else None)
         self._cache = None
 
     def as_tuple(self):
