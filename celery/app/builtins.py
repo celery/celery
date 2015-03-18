@@ -12,6 +12,7 @@ from __future__ import absolute_import
 from collections import deque
 
 from celery._state import get_current_worker_task, connect_on_app_finalize
+from celery.app.utils import send_last_as
 from celery.utils import uuid
 from celery.utils.log import get_logger
 
@@ -182,7 +183,7 @@ def add_group_task(app):
             def prepare_member(task):
                 task = maybe_signature(task, app=self.app)
                 task.options['group_id'] = group_id
-                return task, task.freeze()
+                return task, send_last_as(task)
 
             try:
                 tasks, res = list(zip(
