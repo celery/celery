@@ -252,7 +252,10 @@ def add_chain_task(app):
                         next_step = steps.popleft()
                         # for chords we freeze by pretending it's a normal
                         # task instead of a group.
+                        grp_res = res
                         res = Signature.freeze(next_step)
+                        res.parent = next_step.options['parent'] = grp_res
+
                         task = chord(task, body=next_step, task_id=res.task_id)
                     except IndexError:
                         pass  # no callback, so keep as group
@@ -263,9 +266,8 @@ def add_chain_task(app):
                     if not res.parent:
                         res.parent = prev_res
 
-                if not isinstance(prev_task, chord):
-                    results.append(res)
-                    tasks.append(task)
+                results.append(res)
+                tasks.append(task)
                 prev_task, prev_res = task, res
 
             return tasks, results
@@ -341,7 +343,12 @@ def add_chord_task(app):
                 return header.apply(args=partial_args, task_id=group_id)
 
             body['chord_size'] = len(header.tasks)
-            results = header.freeze(group_id=group_id, chord=body).results
+            # For not lose parent
+            gr_result = header.freeze(group_id=group_id, chord=body)
+            results = gr_result.results
+            body['parent'] = gr_result
+            body.options['parent'] = gr_result
+            body.freeze()
 
             return self.backend.apply_chord(
                 header, partial_args, group_id,

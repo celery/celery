@@ -217,7 +217,7 @@ class Signature(dict):
             opts['group_id'] = group_id
         if chord:
             opts['chord'] = chord
-        return self.app.AsyncResult(tid)
+        return self.app.AsyncResult(tid, options=opts)
     _freeze = freeze
 
     def replace(self, args=None, kwargs=None, options=None):
@@ -530,7 +530,10 @@ class group(Signature):
         try:
             gid = opts['task_id']
         except KeyError:
-            gid = opts['task_id'] = uuid()
+            if _id:
+                gid = _id
+            else:
+                gid = opts['task_id'] = uuid()
         if group_id:
             opts['group_id'] = group_id
         if chord:
