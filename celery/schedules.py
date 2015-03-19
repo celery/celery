@@ -613,13 +613,13 @@ class solar(schedule):
         sunrise, solar_noon, sunset, dusk_civil, dusk_nautical,
         dusk_astronomical
     :param lat: The latitude of the observer.
-    :param lon: The longitude of the observer.    
+    :param lon: The longitude of the observer.
     :param nowfun: Function returning the current date and time
         (class:`~datetime.datetime`).
     :param app: Celery app instance.
     """
 
-    
+
     _all_events = ['dawn_astronomical',
         'dawn_nautical',
         'dawn_civil',
@@ -656,7 +656,7 @@ class solar(schedule):
         'dusk_civil': True,
         'dusk_nautical': True,
         'dusk_astronomical': True}
-    
+
     def __init__(self, event, lat, lon, nowfun=None, app=None):
         self.ephem = __import__('ephem')
         self.event = event
@@ -664,14 +664,14 @@ class solar(schedule):
         self.lon = lon
         self.nowfun = nowfun
         self._app = app
-        
+
         if event not in self._all_events:
             raise ValueError(SOLAR_INVALID_EVENT.format(event=event, all_events=', '.join(self._all_events)))
         if lat < -90 or lat > 90:
             raise ValueError(SOLAR_INVALID_LATITUDE.format(lat=lat))
         if lon < -180 or lon > 180:
             raise ValueError(SOLAR_INVALID_LONGITUDE.format(lon=lon))
-        
+
         cal = self.ephem.Observer()
         cal.lat = str(lat)
         cal.lon = str(lon)
@@ -679,13 +679,13 @@ class solar(schedule):
         cal.horizon = self._horizons[event]
         cal.pressure = 0
         self.cal = cal
-        
+
         self.method = self._methods[event]
         self.use_center = self._use_center_l[event]
 
     def now(self):
         return (self.nowfun or self.app.now)()
-    
+
     def __reduce__(self):
         return (self.__class__, (self.event,
                                  self.lat,

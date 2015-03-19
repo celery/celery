@@ -281,12 +281,12 @@ sunset, dawn or dusk, you can use the
 .. code-block:: python
 
     from celery.schedules import solar
-    
+
     CELERYBEAT_SCHEDULE = {
     	# Executes at sunset in Melbourne
     	'add-at-melbourne-sunset': {
     		'task': 'tasks.add',
-    		'schedule': solar('sunset', -37.81753, 144.96715),  
+    		'schedule': solar('sunset', -37.81753, 144.96715),
     		'args': (16, 16),
     	},
     }
