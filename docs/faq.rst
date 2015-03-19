@@ -281,8 +281,9 @@ When using the RabbitMQ (AMQP) and Redis transports it should work
 out of the box.
 
 For other transports the compatibility prefork pool is
-used which requires a working POSIX semaphore implementation, and this isn't
-enabled in FreeBSD by default. You have to enable
+used which requires a working POSIX semaphore implementation,
+this is enabled in FreeBSD by default since FreeBSD 8.x.
+For older version of FreeBSD, you have to enable
 POSIX semaphores in the kernel and manually recompile billiard.
 
 Luckily, Viktor Petersson has written a tutorial to get you started with
