@@ -158,7 +158,14 @@ class DjangoWorkerFixup(object):
         except ImportError:
             from django.core.management.base import BaseCommand
             cmd = BaseCommand()
-            cmd.stdout, cmd.stderr = sys.stdout, sys.stderr
+            try:
+                # since django 1.5
+                from django.core.management.base import OutputWrapper
+                cmd.stdout = OutputWrapper(sys.stdout)
+                cmd.stderr = OutputWrapper(sys.stderr)
+            except ImportError:
+                cmd.stdout, cmd.stderr = sys.stdout, sys.stderr
+
             cmd.check()
         else:
             num_errors = get_validation_errors(s, None)
