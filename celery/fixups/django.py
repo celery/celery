@@ -160,10 +160,16 @@ class DjangoWorkerFixup(object):
         try:
             from django.core.management.validation import get_validation_errors
         except ImportError:
-            from django.core.management.base import BaseCommand, OutputWrapper
+            from django.core.management.base import BaseCommand
             cmd = BaseCommand()
-            cmd.stdout = OutputWrapper(sys.stdout)
-            cmd.stderr = OutputWrapper(sys.stderr)
+            try:
+                # since django 1.5
+                from django.core.management.base import OutputWrapper
+                cmd.stdout = OutputWrapper(sys.stdout)
+                cmd.stderr = OutputWrapper(sys.stderr)
+            except ImportError:
+                cmd.stdout, cmd.stderr = sys.stdout, sys.stderr
+
             cmd.check()
         else:
             num_errors = get_validation_errors(s, None)
