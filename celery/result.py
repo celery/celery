@@ -580,7 +580,7 @@ class ResultSet(ResultBase):
             interval=interval, callback=callback, no_ack=no_ack, on_message=on_message)
 
     def join(self, timeout=None, propagate=True, interval=0.5,
-             callback=None, no_ack=True):
+             callback=None, no_ack=True, on_message=None):
         """Gathers the results of all tasks as a list in order.
 
         .. note::
@@ -631,6 +631,9 @@ class ResultSet(ResultBase):
         assert_will_not_block()
         time_start = monotonic()
         remaining = None
+
+        if on_message is not None:
+            raise Exception('Your backend not suppored on_message callback')
 
         results = []
         for result in self.results:
