@@ -252,6 +252,10 @@ def add_chain_task(app):
                         next_step = steps.popleft()
                         # for chords we freeze by pretending it's a normal
                         # task instead of a group.
+                        if prev_task:
+                            task.options['parent'] = prev_res
+                            if not res.parent:
+                                res.parent = prev_res
                         grp_res = res
                         res = Signature.freeze(next_step)
                         res.parent = next_step.options['parent'] = grp_res
