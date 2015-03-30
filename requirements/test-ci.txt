@@ -1,4 +1,7 @@
 coverage>=3.0
 coveralls
 redis
+#riak >=2.0
+#pymongo
+#SQLAlchemy
 PyOpenSSL
