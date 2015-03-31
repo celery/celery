@@ -321,7 +321,7 @@ class test_AMQPBackend(AppCase):
                 on_message_results[body['task_id']] = []
             on_message_results[body['task_id']].append( (body['status'], body['result']) )
 
-        b.get_many(tids, timeout=1, on_message=on_message)
+        res = list(b.get_many(tids, timeout=1, on_message=on_message))
         self.assertEqual(sorted(on_message_results), sorted(expected_messages))
 
     def test_get_many_raises_outer_block(self):
