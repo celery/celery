@@ -4,10 +4,11 @@ import os
 
 from celery import Celery
 
-from django.conf import settings
-
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.settings')
+
+# load the settings after we tell it which settings to load.
+from django.conf import settings
 
 app = Celery('proj')
 
