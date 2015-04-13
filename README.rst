@@ -185,7 +185,7 @@ development easier, and sometimes they add important hooks like closing
 database connections at ``fork``.
 
 .. _`Django`: http://djangoproject.com/
-.. _`Pylons`: http://pylonshq.com/
+.. _`Pylons`: http://www.pylonsproject.org/
 .. _`Flask`: http://flask.pocoo.org/
 .. _`web2py`: http://web2py.com/
 .. _`Bottle`: http://bottlepy.org/

@@ -180,3 +180,6 @@ Bert Vanderbauwhede, 2014/12/18
 John Anderson, 2014/12/27
 Luke Burden, 2015/01/24
 Mickaël Penhard, 2015/02/15
+Mark Parncutt, 2015/02/16
+Samuel Jaillet, 2015/03/24
+Ilya Georgievsky, 2015/03/31

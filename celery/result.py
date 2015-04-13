@@ -567,7 +567,7 @@ class ResultSet(ResultBase):
                 raise TimeoutError('The operation timed out')
 
     def get(self, timeout=None, propagate=True, interval=0.5,
-            callback=None, no_ack=True):
+            callback=None, no_ack=True, on_message=None):
         """See :meth:`join`
 
         This is here for API compatibility with :class:`AsyncResult`,
@@ -577,10 +577,10 @@ class ResultSet(ResultBase):
         """
         return (self.join_native if self.supports_native_join else self.join)(
             timeout=timeout, propagate=propagate,
-            interval=interval, callback=callback, no_ack=no_ack)
+            interval=interval, callback=callback, no_ack=no_ack, on_message=on_message)
 
     def join(self, timeout=None, propagate=True, interval=0.5,
-             callback=None, no_ack=True):
+             callback=None, no_ack=True, on_message=None):
         """Gathers the results of all tasks as a list in order.
 
         .. note::
@@ -632,6 +632,9 @@ class ResultSet(ResultBase):
         time_start = monotonic()
         remaining = None
 
+        if on_message is not None:
+            raise Exception('Your backend not suppored on_message callback')
+
         results = []
         for result in self.results:
             remaining = None
@@ -649,7 +652,8 @@ class ResultSet(ResultBase):
                 results.append(value)
         return results
 
-    def iter_native(self, timeout=None, interval=0.5, no_ack=True):
+    def iter_native(self, timeout=None, interval=0.5, no_ack=True,
+                    on_message=None):
         """Backend optimized version of :meth:`iterate`.
 
         .. versionadded:: 2.2
@@ -667,10 +671,12 @@ class ResultSet(ResultBase):
         return self.backend.get_many(
             set(r.id for r in results),
             timeout=timeout, interval=interval, no_ack=no_ack,
+            on_message=on_message,
         )
 
     def join_native(self, timeout=None, propagate=True,
-                    interval=0.5, callback=None, no_ack=True):
+                    interval=0.5, callback=None, no_ack=True,
+                    on_message=None):
         """Backend optimized version of :meth:`join`.
 
         .. versionadded:: 2.2
@@ -687,7 +693,8 @@ class ResultSet(ResultBase):
             result.id: i for i, result in enumerate(self.results)
         }
         acc = None if callback else [None for _ in range(len(self))]
-        for task_id, meta in self.iter_native(timeout, interval, no_ack):
+        for task_id, meta in self.iter_native(timeout, interval, no_ack,
+                                              on_message):
             value = meta['result']
             if propagate and meta['status'] in states.PROPAGATE_STATES:
                 raise value
