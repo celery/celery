@@ -633,7 +633,7 @@ class ResultSet(ResultBase):
         remaining = None
 
         if on_message is not None:
-            raise Exception('Your backend not suppored on_message callback')
+            raise Exception('Your backend not supported on_message callback')
 
         results = []
         for result in self.results:
