@@ -1550,7 +1550,7 @@ depending on state from the current transaction*:
 
 .. note::
     Django 1.6 (and later) now enables autocommit mode by default,
-    and ``commit_on_success``/``commit_manually`` are depreacated.
+    and ``commit_on_success``/``commit_manually`` are deprecated.
 
     This means each SQL query is wrapped and executed in individual
     transactions, making it less likely to experience the
