@@ -77,9 +77,9 @@ def in_sighandler():
         set_in_sighandler(False)
 
 
-def logger_isa(l, p):
+def logger_isa(l, p, max=1000):
     this, seen = l, set()
-    while this:
+    for _ in range(max):
         if this == p:
             return True
         else:
@@ -89,6 +89,10 @@ def logger_isa(l, p):
                 )
             seen.add(this)
             this = this.parent
+            if not this:
+                break
+    else:
+        raise RuntimeError('Logger hierarchy exceeds {0}'.format(max))
     return False
 
 
