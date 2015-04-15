@@ -1528,7 +1528,7 @@ depending on state from the current transaction*:
 Example
 =======
 
-Let's take a real wold example; A blog where comments posted needs to be
+Let's take a real world example; A blog where comments posted needs to be
 filtered for spam.  When the comment is created, the spam filter runs in the
 background, so the user doesn't have to wait for it to finish.
 
