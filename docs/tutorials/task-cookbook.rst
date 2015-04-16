@@ -31,7 +31,7 @@ The cache key expires after some time in case something unexpected happens
     from celery import task
     from celery.utils.log import get_task_logger
     from django.core.cache import cache
-    from django.utils.hashcompat import md5_constructor as md5
+    from hashlib import md5
     from djangofeeds.models import Feed
 
     logger = get_task_logger(__name__)
