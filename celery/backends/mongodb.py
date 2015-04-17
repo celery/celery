@@ -78,9 +78,14 @@ class MongoBackend(BaseBackend):
 
         self.url = url
 
-        # default options
-        self.options.setdefault('max_pool_size', self.max_pool_size)
-        self.options.setdefault('auto_start_request', False)
+
+        # default options according to pymongo version
+        if pymongo.version_tuple >= (3,):
+            self.options.setdefault('maxPoolSize', self.max_pool_size)
+        else:
+            self.options.setdefault('max_pool_size', self.max_pool_size)
+            self.options.setdefault('auto_start_request', False)
+
 
         # update conf with mongo uri data, only if uri was given
         if self.url:
