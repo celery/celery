@@ -103,7 +103,7 @@ class Request(object):
         else:
             self.content_type, self.content_encoding = (
                 message.content_type, message.content_encoding,
-                )
+            )
 
         name = self.name = headers['task']
         self.id = headers['id']
