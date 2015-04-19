@@ -17,7 +17,6 @@ import os
 import platform as _platform
 import signal as _signal
 import sys
-import warnings
 
 from collections import namedtuple
 
@@ -77,15 +76,6 @@ worker accepts messages serialized with pickle is a very bad idea!
 
 If you really want to continue then you have to set the C_FORCE_ROOT
 environment variable (but please think about this before you do).
-
-User information: uid={uid} euid={euid} gid={gid} egid={egid}
-"""
-
-ROOT_DISCOURAGED = """\
-You are running the worker with superuser privileges, which is
-absolutely not recommended!
-
-Please specify a different user using the -u option.
 
 User information: uid={uid} euid={euid} gid={gid} egid={egid}
 """
@@ -725,6 +715,3 @@ def check_privileges(accept_content):
                     ), file=sys.stderr)
                 finally:
                     os._exit(1)
-        warnings.warn(RuntimeWarning(ROOT_DISCOURAGED.format(
-            uid=uid, euid=euid, gid=gid, egid=egid,
-        )))
