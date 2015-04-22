@@ -84,17 +84,17 @@ class LRUCache(UserDict):
     def __iter__(self):
         return iter(self.data)
 
-    def _iterate_items(self):
-        for k in self:
-            try:
-                yield (k, self.data[k])
-            except KeyError:  # pragma: no cover
-                pass
+    def _iterate_items(self, _need_lock=IS_PYPY):
+        with self.mutex if _need_lock else DummyContext():
+            for k in self:
+                try:
+                    yield (k, self.data[k])
+                except KeyError:  # pragma: no cover
+                    pass
     iteritems = _iterate_items
 
     def _iterate_values(self, _need_lock=IS_PYPY):
-        ctx = self.mutex if _need_lock else DummyContext()
-        with ctx:
+        with self.mutex if _need_lock else DummyContext():
             for k in self:
                 try:
                     yield self.data[k]
