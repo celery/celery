@@ -111,8 +111,9 @@ def _get_job_writer(job):
 
 
 def _select(readers=None, writers=None, err=None, timeout=0,
-            poll=select.poll, POLLIN=select.POLLIN,
-            POLLOUT=select.POLLOUT, POLLERR=select.POLLERR):
+            poll=getattr(select, 'poll', select.select),
+            POLLIN=select.POLLIN, POLLOUT=select.POLLOUT,
+            POLLERR=select.POLLERR):
     """Simple wrapper to :class:`~select.select`, using :`~select.poll`
     as the implementation.
 
