@@ -92,8 +92,11 @@ class MongoBackend(BaseBackend):
             self.options = dict(config, **config.pop('options', None) or {})
 
             # Set option defaults
-            self.options.setdefault('max_pool_size', self.max_pool_size)
-            self.options.setdefault('auto_start_request', False)
+            if pymongo.version_tuple >= (3, ):
+                self.options.setdefault('maxPoolSize', self.max_pool_size)
+            else:
+                self.options.setdefault('max_pool_size', self.max_pool_size)
+                self.options.setdefault('auto_start_request', False)
 
         self.url = url
         if self.url:
