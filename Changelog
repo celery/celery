@@ -19,6 +19,8 @@ new in Celery 3.1.
 
     - Now depends on :ref:`Kombu 3.0.25 <kombu:version-3.0.25>`.
 
+    - Now depends on :mod:`billiard` 3.3.0.20.
+
 - **Worker**: Properly recycle Django database connection in the worker when CONN_MAX_AGE is used.
 
     Fix contributed by Luke Burden.
