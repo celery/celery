@@ -16,7 +16,6 @@ import threading
 import traceback
 
 from contextlib import contextmanager
-from billiard import current_process, util as mputil
 from kombu.five import values
 from kombu.log import get_logger as _get_logger, LOG_LEVELS
 from kombu.utils.encoding import safe_str
@@ -27,7 +26,7 @@ from .term import colored
 
 __all__ = ['ColorFormatter', 'LoggingProxy', 'base_logger',
            'set_in_sighandler', 'in_sighandler', 'get_logger',
-           'get_task_logger', 'mlevel', 'ensure_process_aware_logger',
+           'get_task_logger', 'mlevel',
            'get_multiprocessing_logger', 'reset_multiprocessing_logger']
 
 _process_aware = False
@@ -78,9 +77,9 @@ def in_sighandler():
         set_in_sighandler(False)
 
 
-def logger_isa(l, p):
+def logger_isa(l, p, max=1000):
     this, seen = l, set()
-    while this:
+    for _ in range(max):
         if this == p:
             return True
         else:
@@ -90,6 +89,10 @@ def logger_isa(l, p):
                 )
             seen.add(this)
             this = this.parent
+            if not this:
+                break
+    else:
+        raise RuntimeError('Logger hierarchy exceeds {0}'.format(max))
     return False
 
 
@@ -252,46 +255,34 @@ class LoggingProxy(object):
         return False
 
 
-def ensure_process_aware_logger(force=False):
-    """Make sure process name is recorded when loggers are used."""
-    global _process_aware
-    if force or not _process_aware:
-        logging._acquireLock()
-        try:
-            _process_aware = True
-            Logger = logging.getLoggerClass()
-            if getattr(Logger, '_process_aware', False):  # pragma: no cover
-                return
-
-            class ProcessAwareLogger(Logger):
-                _signal_safe = True
-                _process_aware = True
-
-                def makeRecord(self, *args, **kwds):
-                    record = Logger.makeRecord(self, *args, **kwds)
-                    record.processName = current_process()._name
-                    return record
-
-                def log(self, *args, **kwargs):
-                    if _in_sighandler:
-                        return
-                    return Logger.log(self, *args, **kwargs)
-            logging.setLoggerClass(ProcessAwareLogger)
-        finally:
-            logging._releaseLock()
-
-
 def get_multiprocessing_logger():
-    return mputil.get_logger() if mputil else None
+    try:
+        from billiard import util
+    except ImportError:
+            pass
+    else:
+        return util.get_logger()
 
 
 def reset_multiprocessing_logger():
-    if mputil and hasattr(mputil, '_logger'):
-        mputil._logger = None
+    try:
+        from billiard import util
+    except ImportError:
+        pass
+    else:
+        if hasattr(util, '_logger'):
+            util._logger = None
+
+
+def current_process():
+    try:
+        from billiard import process
+    except ImportError:
+        pass
+    else:
+        return process.current_process()
 
 
 def current_process_index(base=1):
-    if current_process:
-        index = getattr(current_process(), 'index', None)
-        return index + base if index is not None else index
-ensure_process_aware_logger()
+    index = getattr(current_process(), 'index', None)
+    return index + base if index is not None else index

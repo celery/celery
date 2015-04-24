@@ -23,9 +23,6 @@ Definition
 
 .. code-block:: python
 
-    # protocol v2 implies UTC=True
-    # 'class' header existing means protocol is v2
-
     properties = {
         'correlation_id': uuid task_id,
         'content_type': string mimetype,
@@ -101,6 +98,11 @@ Changes from version 1
     and make decisions based on the headers without decoding
     the payload (which may be language specific, e.g. serialized by the
     Python specific pickle serializer).
+
+- Always UTC
+
+    There's no ``utc`` flag anymore, so any time information missing timezone
+    will be expected to be in UTC time.
 
 - Body is only for language specific data.
 

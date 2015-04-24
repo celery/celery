@@ -877,8 +877,9 @@ Use :meth:`~@Task.update_state` to update a task's state::
     @app.task(bind=True)
     def upload_files(self, filenames):
         for i, file in enumerate(filenames):
-            self.update_state(state='PROGRESS',
-                meta={'current': i, 'total': len(filenames)})
+            if not self.request.called_directly:
+                self.update_state(state='PROGRESS',
+                    meta={'current': i, 'total': len(filenames)})
 
 
 Here I created the state `"PROGRESS"`, which tells any application
@@ -986,7 +987,8 @@ Example that stores results manually:
     @app.task(bind=True)
     def get_tweets(self, user):
         timeline = twitter.get_timeline(user)
-        self.update_state(state=states.SUCCESS, meta=timeline)
+        if not self.request.called_directly:
+            self.update_state(state=states.SUCCESS, meta=timeline)
         raise Ignore()
 
 .. _task-semipred-reject:
@@ -1162,7 +1164,7 @@ base class for new task types.
         abstract = True
 
         def after_return(self, *args, **kwargs):
-            print('Task returned: {0!r}'.format(self.request)
+            print('Task returned: {0!r}'.format(self.request))
 
 
     @app.task(base=DebugTask)
@@ -1546,12 +1548,26 @@ depending on state from the current transaction*:
             transaction.commit()
             expand_abbreviations.delay(article.pk)
 
+.. note::
+    Django 1.6 (and later) now enables autocommit mode by default,
+    and ``commit_on_success``/``commit_manually`` are deprecated.
+
+    This means each SQL query is wrapped and executed in individual
+    transactions, making it less likely to experience the
+    problem described above.
+
+    However, enabling ``ATOMIC_REQUESTS`` on the database
+    connection will bring back the transaction-per-request model and the
+    race condition along with it.  In this case, the simple solution is
+    using the ``@transaction.non_atomic_requests`` decorator to go back
+    to autocommit for that view only.
+
 .. _task-example:
 
 Example
 =======
 
-Let's take a real wold example; A blog where comments posted needs to be
+Let's take a real world example; A blog where comments posted needs to be
 filtered for spam.  When the comment is created, the spam filter runs in the
 background, so the user doesn't have to wait for it to finish.
 

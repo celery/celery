@@ -12,7 +12,8 @@ from celery.datastructures import AttributeDict
 from celery.exceptions import ImproperlyConfigured
 
 from celery.tests.case import (
-    AppCase, Mock, MockCallbacks, SkipTest, depends_on_current_app, patch,
+    AppCase, Mock, MockCallbacks, SkipTest,
+    call, depends_on_current_app, patch,
 )
 
 
@@ -194,6 +195,12 @@ class test_RedisBackend(AppCase):
         self.assertEqual(b.on_chord_part_return, b._new_chord_return)
         self.assertEqual(b.apply_chord, b._new_chord_apply)
 
+    def test_add_to_chord(self):
+        b = self.Backend('redis://?new_join=True', app=self.app)
+        gid = uuid()
+        b.add_to_chord(gid, 'sig')
+        b.client.incr.assert_called_with(b.get_key_for_group(gid, '.t'), 1)
+
     def test_default_is_old_join(self):
         b = self.Backend(app=self.app)
         self.assertNotEqual(b.on_chord_part_return, b._new_chord_return)
@@ -250,9 +257,12 @@ class test_RedisBackend(AppCase):
             self.assertTrue(b.client.rpush.call_count)
             b.client.rpush.reset_mock()
         self.assertTrue(b.client.lrange.call_count)
-        gkey = b.get_key_for_group('group_id', '.j')
-        b.client.delete.assert_called_with(gkey)
-        b.client.expire.assert_called_witeh(gkey, 86400)
+        jkey = b.get_key_for_group('group_id', '.j')
+        tkey = b.get_key_for_group('group_id', '.t')
+        b.client.delete.assert_has_calls([call(jkey), call(tkey)])
+        b.client.expire.assert_has_calls([
+            call(jkey, 86400), call(tkey, 86400),
+        ])
 
     def test_process_cleanup(self):
         self.Backend(app=self.app, new_join=True).process_cleanup()

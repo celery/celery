@@ -54,7 +54,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Celery'
-copyright = '2009-2014, Ask Solem & Contributors'
+copyright = '2009-2015, Ask Solem & Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -72,8 +72,8 @@ add_function_parentheses = True
 
 intersphinx_mapping = {
     'python': ('http://docs.python.org/dev', None),
-    'kombu': ('http://kombu.readthedocs.org/en/latest/', None),
-    'djcelery': ('http://django-celery.readthedocs.org/en/latest', None),
+    'kombu': ('http://kombu.readthedocs.org/en/master/', None),
+    'djcelery': ('http://django-celery.readthedocs.org/en/master', None),
     'cyme': ('http://cyme.readthedocs.org/en/latest', None),
     'amqp': ('http://amqp.readthedocs.org/en/latest', None),
     'flower': ('http://flower.readthedocs.org/en/latest', None),

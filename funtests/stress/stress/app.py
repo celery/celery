@@ -121,6 +121,17 @@ def segfault():
     assert False, 'should not get here'
 
 
+@app.task(bind=True)
+def chord_adds(self, x):
+    self.add_to_chord(add.s(x, x))
+    return 42
+
+
+@app.task(bind=True)
+def chord_replace(self, x):
+    return self.replace_in_chord(add.s(x, x))
+
+
 @app.task
 def raising(exc=KeyError()):
     raise exc
@@ -138,3 +149,7 @@ def marker(s, sep='-'):
             return _marker.delay(s, sep)
         except Exception as exc:
             print("Retrying marker.delay(). It failed to start: %s" % exc)
+
+@app.on_after_configure.connect
+def setup_periodic_tasks(sender, **kwargs):
+    sender.add_periodic_task(10, add.s(2, 2), expires=10)

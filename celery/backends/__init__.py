@@ -10,8 +10,6 @@ from __future__ import absolute_import
 
 import sys
 
-from kombu.utils.url import urlparse
-
 from celery.local import Proxy
 from celery._state import current_app
 from celery.five import reraise
@@ -33,6 +31,7 @@ BACKEND_ALIASES = {
     'database': 'celery.backends.database:DatabaseBackend',
     'cassandra': 'celery.backends.cassandra:CassandraBackend',
     'couchbase': 'celery.backends.couchbase:CouchBaseBackend',
+    'couchdb': 'celery.backends.couchdb:CouchDBBackend',
     'riak': 'celery.backends.riak:RiakBackend',
     'disabled': 'celery.backends.base:DisabledBackend',
 }

@@ -176,15 +176,15 @@ class test_MultiTool(AppCase):
         self.assertFalse(self.fh.getvalue())
 
     def test_error(self):
-        self.t.say = Mock()
+        self.t.carp = Mock()
         self.t.usage = Mock()
         self.assertEqual(self.t.error('foo'), 1)
-        self.t.say.assert_called_with('foo')
+        self.t.carp.assert_called_with('foo')
         self.t.usage.assert_called_with()
 
-        self.t.say = Mock()
+        self.t.carp = Mock()
         self.assertEqual(self.t.error(), 1)
-        self.assertFalse(self.t.say.called)
+        self.assertFalse(self.t.carp.called)
 
         self.assertEqual(self.t.retcode, 1)
 
@@ -240,7 +240,7 @@ class test_MultiTool(AppCase):
 
         waitexec.return_value = 0
         callback('jerry', ['arg'], 13)
-        waitexec.assert_called_with(['arg'])
+        waitexec.assert_called_with(['arg'], path=sys.executable)
         self.assertIn('OK', self.fh.getvalue())
         self.fh.seek(0)
         self.fh.truncate()

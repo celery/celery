@@ -90,6 +90,7 @@ from celery.five import Empty, Queue
 from celery.utils.log import get_logger
 from celery.worker.request import Request
 from celery.utils import noop
+from celery.worker.strategy import proto1_to_proto2
 
 __all__ = ['Batches']
 
@@ -163,8 +164,8 @@ class SimpleRequest(object):
 
     @classmethod
     def from_request(cls, request):
-        return cls(request.id, request.name, request.args,
-                   request.kwargs, request.delivery_info, request.hostname)
+        return cls(request.id, request.name, request.body[0],
+                   request.body[1], request.delivery_info, request.hostname)
 
 
 class Batches(Task):
@@ -196,10 +197,21 @@ class Batches(Task):
         flush_buffer = self._do_flush
 
         def task_message_handler(message, body, ack, reject, callbacks, **kw):
-            request = Req(body, on_ack=ack, app=app, hostname=hostname,
-                          events=eventer, task=task,
-                          connection_errors=connection_errors,
-                          delivery_info=message.delivery_info)
+            if body is None:
+                body, headers, decoded, utc = (
+                    message.body, message.headers, False, True,
+                )
+                if not body_can_be_buffer:
+                    body = bytes(body) if isinstance(body, buffer_t) else body
+            else:
+                body, headers, decoded, utc = proto1_to_proto2(message, body)
+
+            request = Req(
+                message,
+                on_ack=ack, on_reject=reject, app=app, hostname=hostname,
+                eventer=eventer, task=task, connection_errors=connection_errors,
+                body=body, headers=headers, decoded=decoded, utc=utc,
+            )
             put_buffer(request)
 
             if self._tref is None:     # first request starts flush timer.

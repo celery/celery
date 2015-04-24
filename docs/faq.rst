@@ -281,8 +281,9 @@ When using the RabbitMQ (AMQP) and Redis transports it should work
 out of the box.
 
 For other transports the compatibility prefork pool is
-used which requires a working POSIX semaphore implementation, and this isn't
-enabled in FreeBSD by default. You have to enable
+used which requires a working POSIX semaphore implementation,
+this is enabled in FreeBSD by default since FreeBSD 8.x.
+For older version of FreeBSD, you have to enable
 POSIX semaphores in the kernel and manually recompile billiard.
 
 Luckily, Viktor Petersson has written a tutorial to get you started with
@@ -760,7 +761,7 @@ to use both.
 
 `Task.retry` is used to retry tasks, notably for expected errors that
 is catchable with the `try:` block. The AMQP transaction is not used
-for these errors: **if the task raises an exception it is still acknowledged!**.
+for these errors: **if the task raises an exception it is still acknowledged!**
 
 The `acks_late` setting would be used when you need the task to be
 executed again if the worker (for some reason) crashes mid-execution.
@@ -786,7 +787,7 @@ scenario of course, but you can probably imagine something far more
 sinister. So for ease of programming we have less reliability;
 It's a good default, users who require it and know what they
 are doing can still enable acks_late (and in the future hopefully
-use manual acknowledgement)
+use manual acknowledgement).
 
 In addition `Task.retry` has features not available in AMQP
 transactions: delay between retries, max retries, etc.
@@ -827,9 +828,23 @@ executing jobs and shut down as soon as possible. No tasks should be lost.
 
 You should never stop :mod:`~celery.bin.worker` with the :sig:`KILL` signal
 (:option:`-9`), unless you've tried :sig:`TERM` a few times and waited a few
-minutes to let it get a chance to shut down.  As if you do tasks may be
-terminated mid-execution, and they will not be re-run unless you have the
-`acks_late` option set (`Task.acks_late` / :setting:`CELERY_ACKS_LATE`).
+minutes to let it get a chance to shut down.
+
+Also make sure you kill the main worker process, not its child processes.
+You can direct a kill signal to a specific child process if you know the
+process is currently executing a task the worker shutdown is depending on,
+but this also means that a ``WorkerLostError`` state will be set for the
+task so the task will not run again.
+
+Identifying the type of process is easier if you have installed the
+``setproctitle`` module:
+
+.. code-block:: bash
+
+    pip install setproctitle
+
+With this library installed you will be able to see the type of process in ps
+listings, but the worker must be restarted for this to take effect.
 
 .. seealso::
 

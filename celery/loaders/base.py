@@ -153,7 +153,7 @@ class BaseLoader(object):
             return symbol_by_name(path, imp=imp)
 
         # Not sure if path is just a module name or if it includes an
-        # attribute name (e.g. ``os.path``, vs, ``os.path.abspath``
+        # attribute name (e.g. ``os.path``, vs, ``os.path.abspath``).
         try:
             return imp(path)
         except ImportError:
@@ -277,6 +277,13 @@ def autodiscover_tasks(packages, related_name='tasks'):
 def find_related_module(package, related_name):
     """Given a package name and a module name, tries to find that
     module."""
+
+    # Django 1.7 allows for speciying a class name in INSTALLED_APPS.
+    # (Issue #2248).
+    try:
+        importlib.import_module(package)
+    except ImportError:
+        package, _, _ = package.rpartition('.')
 
     try:
         pkg_path = importlib.import_module(package).__path__

@@ -104,7 +104,7 @@ REJECTED = states.REJECTED
 RETRY = states.RETRY
 FAILURE = states.FAILURE
 EXCEPTION_STATES = states.EXCEPTION_STATES
-IGNORE_STATES = frozenset([IGNORED, RETRY, REJECTED])
+IGNORE_STATES = frozenset({IGNORED, RETRY, REJECTED})
 
 #: set by :func:`setup_worker_optimizations`
 _localized = []
@@ -368,6 +368,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     )
                 except Exception as exc:
                     I, R, state, retval = on_error(task_request, exc, uuid)
+                    if task_request.chord:
+                        on_chord_part_return(task, state, exc)
                 except BaseException as exc:
                     raise
                 else:
@@ -392,7 +394,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 for group_ in groups:
                                     group.apply_async((retval, ))
                                 if sigs:
-                                    group(sigs).apply_async(retval, )
+                                    group(sigs).apply_async((retval, ))
                             else:
                                 signature(callbacks[0], app=app).delay(retval)
                         if publish_result:
@@ -402,6 +404,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     except EncodeError as exc:
                         I, R, state, retval = on_error(task_request, exc, uuid)
                     else:
+                        if task_request.chord:
+                            on_chord_part_return(task, state, retval)
                         if task_on_success:
                             task_on_success(retval, uuid, args, kwargs)
                         if success_receivers:
@@ -416,8 +420,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
                 # -* POST *-
                 if state not in IGNORE_STATES:
-                    if task_request.chord:
-                        on_chord_part_return(task, state, R)
                     if task_after_return:
                         task_after_return(
                             state, retval, uuid, args, kwargs, None,

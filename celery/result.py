@@ -81,6 +81,9 @@ class AsyncResult(ResultBase):
 
     def __init__(self, id, backend=None, task_name=None,
                  app=None, parent=None):
+        if id is None:
+            raise ValueError(
+                'AsyncResult requires valid id, not {0}'.format(type(id)))
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
@@ -119,8 +122,10 @@ class AsyncResult(ResultBase):
                                 terminate=terminate, signal=signal,
                                 reply=wait, timeout=timeout)
 
-    def get(self, timeout=None, propagate=True, interval=0.5, no_ack=True,
-            follow_parents=True):
+    def get(self, timeout=None, propagate=True, interval=0.5,
+            no_ack=True, follow_parents=True,
+            EXCEPTION_STATES=states.EXCEPTION_STATES,
+            PROPAGATE_STATES=states.PROPAGATE_STATES):
         """Wait until task is ready, and return its result.
 
         .. warning::
@@ -159,16 +164,18 @@ class AsyncResult(ResultBase):
                 self.maybe_reraise()
             return self.result
 
-        try:
-            return self.backend.wait_for(
-                self.id, timeout=timeout,
-                propagate=propagate,
-                interval=interval,
-                on_interval=on_interval,
-                no_ack=no_ack,
-            )
-        finally:
-            self._get_task_meta()  # update self._cache
+        meta = self.backend.wait_for(
+            self.id, timeout=timeout,
+            interval=interval,
+            on_interval=on_interval,
+            no_ack=no_ack,
+        )
+        if meta:
+            self._maybe_set_cache(meta)
+            status = meta['status']
+            if status in PROPAGATE_STATES and propagate:
+                raise meta['result']
+            return meta['result']
     wait = get  # deprecated alias to :meth:`get`.
 
     def _maybe_reraise_parent_error(self):
@@ -322,20 +329,20 @@ class AsyncResult(ResultBase):
     def children(self):
         return self._get_task_meta().get('children')
 
+    def _maybe_set_cache(self, meta):
+        if meta:
+            state = meta['status']
+            if state == states.SUCCESS or state in states.PROPAGATE_STATES:
+                return self._set_cache(meta)
+        return meta
+
     def _get_task_meta(self):
         if self._cache is None:
-            meta = self.backend.get_task_meta(self.id)
-            if meta:
-                state = meta['status']
-                if state == states.SUCCESS or state in states.PROPAGATE_STATES:
-                    return self._set_cache(meta)
-            return meta
+            return self._maybe_set_cache(self.backend.get_task_meta(self.id))
         return self._cache
 
     def _set_cache(self, d):
-        state, children = d['status'], d.get('children')
-        if state in states.EXCEPTION_STATES:
-            d['result'] = self.backend.exception_to_python(d['result'])
+        children = d.get('children')
         if children:
             d['children'] = [
                 result_from_tuple(child, self.app) for child in children
@@ -406,13 +413,13 @@ class ResultSet(ResultBase):
     :param results: List of result instances.
 
     """
-    app = None
+    _app = None
 
     #: List of results in in the set.
     results = None
 
     def __init__(self, results, app=None, **kwargs):
-        self.app = app_or_default(app or self.app)
+        self._app = app
         self.results = results
 
     def add(self, result):
@@ -560,7 +567,7 @@ class ResultSet(ResultBase):
                 raise TimeoutError('The operation timed out')
 
     def get(self, timeout=None, propagate=True, interval=0.5,
-            callback=None, no_ack=True):
+            callback=None, no_ack=True, on_message=None):
         """See :meth:`join`
 
         This is here for API compatibility with :class:`AsyncResult`,
@@ -570,10 +577,10 @@ class ResultSet(ResultBase):
         """
         return (self.join_native if self.supports_native_join else self.join)(
             timeout=timeout, propagate=propagate,
-            interval=interval, callback=callback, no_ack=no_ack)
+            interval=interval, callback=callback, no_ack=no_ack, on_message=on_message)
 
     def join(self, timeout=None, propagate=True, interval=0.5,
-             callback=None, no_ack=True):
+             callback=None, no_ack=True, on_message=None):
         """Gathers the results of all tasks as a list in order.
 
         .. note::
@@ -625,6 +632,9 @@ class ResultSet(ResultBase):
         time_start = monotonic()
         remaining = None
 
+        if on_message is not None:
+            raise Exception('Your backend not supported on_message callback')
+
         results = []
         for result in self.results:
             remaining = None
@@ -642,7 +652,8 @@ class ResultSet(ResultBase):
                 results.append(value)
         return results
 
-    def iter_native(self, timeout=None, interval=0.5, no_ack=True):
+    def iter_native(self, timeout=None, interval=0.5, no_ack=True,
+                    on_message=None):
         """Backend optimized version of :meth:`iterate`.
 
         .. versionadded:: 2.2
@@ -660,10 +671,12 @@ class ResultSet(ResultBase):
         return self.backend.get_many(
             set(r.id for r in results),
             timeout=timeout, interval=interval, no_ack=no_ack,
+            on_message=on_message,
         )
 
     def join_native(self, timeout=None, propagate=True,
-                    interval=0.5, callback=None, no_ack=True):
+                    interval=0.5, callback=None, no_ack=True,
+                    on_message=None):
         """Backend optimized version of :meth:`join`.
 
         .. versionadded:: 2.2
@@ -680,7 +693,8 @@ class ResultSet(ResultBase):
             result.id: i for i, result in enumerate(self.results)
         }
         acc = None if callback else [None for _ in range(len(self))]
-        for task_id, meta in self.iter_native(timeout, interval, no_ack):
+        for task_id, meta in self.iter_native(timeout, interval, no_ack,
+                                              on_message):
             value = meta['result']
             if propagate and meta['status'] in states.PROPAGATE_STATES:
                 raise value
@@ -721,6 +735,17 @@ class ResultSet(ResultBase):
             return self.results[0].supports_native_join
         except IndexError:
             pass
+
+    @property
+    def app(self):
+        if self._app is None:
+            self._app = (self.results[0].app if self.results else
+                         current_app._get_current_object())
+        return self._app
+
+    @app.setter
+    def app(self, app):  # noqa
+        self._app = app
 
     @property
     def backend(self):

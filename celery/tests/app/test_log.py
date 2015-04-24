@@ -19,10 +19,9 @@ from celery.utils.log import (
     task_logger,
     in_sighandler,
     logger_isa,
-    ensure_process_aware_logger,
 )
 from celery.tests.case import (
-    AppCase, Mock, SkipTest,
+    AppCase, Mock, SkipTest, mask_modules,
     get_handlers, override_stdouts, patch, wrap_logger, restore_logging,
 )
 
@@ -208,13 +207,9 @@ class test_default_logger(AppCase):
             self.app.log.setup_logging_subsystem(colorize=True)
 
     def test_setup_logging_subsystem_no_mputil(self):
-        from celery.utils import log as logtools
         with restore_logging():
-            mputil, logtools.mputil = logtools.mputil, None
-            try:
+            with mask_modules('billiard.util'):
                 self.app.log.setup_logging_subsystem()
-            finally:
-                logtools.mputil = mputil
 
     def _assertLog(self, logger, logmsg, loglevel=logging.ERROR):
 
@@ -361,14 +356,6 @@ class test_task_logger(test_default_logger):
 
     def get_logger(self, *args, **kwargs):
         return get_task_logger('test_task_logger')
-
-
-class test_patch_logger_cls(AppCase):
-
-    def test_patches(self):
-        ensure_process_aware_logger()
-        with in_sighandler():
-            logging.getLoggerClass().log(get_logger('test'))
 
 
 class MockLogger(logging.Logger):

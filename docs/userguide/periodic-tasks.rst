@@ -74,19 +74,50 @@ schedule manually.
 Entries
 =======
 
-To schedule a task periodically you have to add an entry to the
-:setting:`CELERYBEAT_SCHEDULE` setting.
+To call a task periodically you have to add an entry to the
+beat schedule list.
+
+.. code-block:: python
+
+    from celery import Celery
+    from celery.schedules import crontab
+
+    app = Celery()
+
+    @app.on_after_configure.connect
+    def setup_periodic_tasks(sender, **kwargs):
+        # Calls test('hello') every 10 seconds.
+        sender.add_periodic_task(10.0, test.s('hello'), name='add every 10')
+
+        # Calls test('world') every 30 seconds
+        sender.add_periodic_task(30.0, test.s('world'), expires=10)
+
+        # Executes every Monday morning at 7:30 A.M
+        sender.add_periodic_task(
+            crontab(hour=7, minute=30, day_of_week=1),
+            test.s('Happy Mondays!'),
+        )
+
+    @app.task
+    def test(arg):
+        print(arg)
+
+
+Setting these up from within the ``on_after_configure`` handler means
+that we will not evaluate the app at module level when using ``test.s()``.
+
+The `@add_periodic_task` function will add the entry to the
+:setting:`CELERYBEAT_SCHEDULE` setting behind the scenes, which also
+can be used to set up periodic tasks manually:
 
 Example: Run the `tasks.add` task every 30 seconds.
 
 .. code-block:: python
 
-    from datetime import timedelta
-
     CELERYBEAT_SCHEDULE = {
         'add-every-30-seconds': {
             'task': 'tasks.add',
-            'schedule': timedelta(seconds=30),
+            'schedule': 30.0,
             'args': (16, 16)
         },
     }
@@ -220,23 +251,125 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 | ``crontab(minute=0, hour='*/3,8-17')``  | Execute every hour divisible by 3, and     |
 |                                         | every hour during office hours (8am-5pm).  |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0, 0, day_of_month='2')``  | Execute on the second day of every month.  |
+| ``crontab(0, 0, day_of_month='2')``     | Execute on the second day of every month.  |
 |                                         |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0, 0,'``                   | Execute on every even numbered day.        |
+| ``crontab(0, 0,``                       | Execute on every even numbered day.        |
 |         ``day_of_month='2-30/3')``      |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0, 0,``                    | Execute on the first and third weeks of    |
+| ``crontab(0, 0,``                       | Execute on the first and third weeks of    |
 |         ``day_of_month='1-7,15-21')``   | the month.                                 |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0, 0, day_of_month='11',`` | Execute on 11th of May every year.         |
+| ``crontab(0, 0, day_of_month='11',``    | Execute on 11th of May every year.         |
 |          ``month_of_year='5')``         |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0, 0,``                    | Execute on the first month of every        |
+| ``crontab(0, 0,``                       | Execute on the first month of every        |
 |         ``month_of_year='*/3')``        | quarter.                                   |
 +-----------------------------------------+--------------------------------------------+
 
 See :class:`celery.schedules.crontab` for more documentation.
+
+.. _beat-solar:
+
+Solar schedules
+=================
+
+If you have a task that should be executed according to sunrise,
+sunset, dawn or dusk, you can use the
+:class:`~celery.schedules.solar` schedule type:
+
+.. code-block:: python
+
+    from celery.schedules import solar
+
+    CELERYBEAT_SCHEDULE = {
+    	# Executes at sunset in Melbourne
+    	'add-at-melbourne-sunset': {
+    		'task': 'tasks.add',
+    		'schedule': solar('sunset', -37.81753, 144.96715),
+    		'args': (16, 16),
+    	},
+    }
+
+The arguments are simply: ``solar(event, latitude, longitude)``
+
+Be sure to use the correct sign for latitude and longitude:
+
++---------------+-------------------+----------------------+
+| **Sign**      | **Argument**      | **Meaning**          |
++---------------+-------------------+----------------------+
+| ``+``         | ``latitude``      | North                |
++---------------+-------------------+----------------------+
+| ``-``         | ``latitude``      | South                |
++---------------+-------------------+----------------------+
+| ``+``         | ``longitude``     | East                 |
++---------------+-------------------+----------------------+
+| ``-``         | ``longitude``     | West                 |
++---------------+-------------------+----------------------+
+
+Possible event types are:
+
++-----------------------------------------+--------------------------------------------+
+| **Event**                               | **Meaning**                                |
++-----------------------------------------+--------------------------------------------+
+| ``dawn_astronomical``                   | Execute at the moment after which the sky  |
+|                                         | is no longer completely dark. This is when |
+|                                         | the sun is 18 degrees below the horizon.   |
++-----------------------------------------+--------------------------------------------+
+| ``dawn_nautical``                       | Execute when there is enough sunlight for  |
+|                                         | the horizon and some objects to be         |
+|                                         | distinguishable; formally, when the sun is |
+|                                         | 12 degrees below the horizon.              |
++-----------------------------------------+--------------------------------------------+
+| ``dawn_civil``                          | Execute when there is enough light for     |
+|                                         | objects to be distinguishable so that      |
+|                                         | outdoor activities can commence;           |
+|                                         | formally, when the Sun is 6 degrees below  |
+|                                         | the horizon.                               |
++-----------------------------------------+--------------------------------------------+
+| ``sunrise``                             | Execute when the upper edge of the sun     |
+|                                         | appears over the eastern horizon in the    |
+|                                         | morning.                                   |
++-----------------------------------------+--------------------------------------------+
+| ``solar_noon``                          | Execute when the sun is highest above the  |
+|                                         | horizon on that day.                       |
++-----------------------------------------+--------------------------------------------+
+| ``sunset``                              | Execute when the trailing edge of the sun  |
+|                                         | disappears over the western horizon in the |
+|                                         | evening.                                   |
++-----------------------------------------+--------------------------------------------+
+| ``dusk_civil``                          | Execute at the end of civil twilight, when |
+|                                         | objects are still distinguishable and some |
+|                                         | stars and planets are visible. Formally,   |
+|                                         | when the sun is 6 degrees below the        |
+|                                         | horizon.                                   |
++-----------------------------------------+--------------------------------------------+
+| ``dusk_nautical``                       | Execute when the sun is 12 degrees below   |
+|                                         | the horizon. Objects are no longer         |
+|                                         | distinguishable, and the horizon is no     |
+|                                         | longer visible to the naked eye.           |
++-----------------------------------------+--------------------------------------------+
+| ``dusk_astronomical``                   | Execute at the moment after which the sky  |
+|                                         | becomes completely dark; formally, when    |
+|                                         | the sun is 18 degrees below the horizon.   |
++-----------------------------------------+--------------------------------------------+
+
+All solar events are calculated using UTC, and are therefore
+unaffected by your timezone setting.
+
+In polar regions, the sun may not rise or set every day. The scheduler
+is able to handle these cases, i.e. a ``sunrise`` event won't run on a day
+when the sun doesn't rise. The one exception is ``solar_noon``, which is
+formally defined as the moment the sun transits the celestial meridian,
+and will occur every day even if the sun is below the horizon.
+
+Twilight is defined as the period between dawn and sunrise, and between
+sunset and dusk. You can schedule an event according to "twilight"
+depending on your definition of twilight (civil, nautical or astronomical),
+and whether you want the event to take place at the beginning or end
+of twilight, using the appropriate event from the list above.
+
+See :class:`celery.schedules.solar` for more documentation.
 
 .. _beat-starting:
 

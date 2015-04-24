@@ -8,7 +8,10 @@
 """
 from __future__ import absolute_import
 
-from billiard.util import register_after_fork
+try:
+    from billiard.util import register_after_fork
+except ImportError:
+    register_after_fork = None
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -26,7 +29,8 @@ class SessionManager(object):
         self._sessions = {}
         self.forked = False
         self.prepared = False
-        register_after_fork(self, self._after_fork)
+        if register_after_fork is not None:
+            register_after_fork(self, self._after_fork)
 
     def _after_fork(self,):
         self.forked = True
@@ -39,8 +43,7 @@ class SessionManager(object):
                 engine = self._engines[dburi] = create_engine(dburi, **kwargs)
                 return engine
         else:
-            kwargs['poolclass'] = NullPool
-            return create_engine(dburi, **kwargs)
+            return create_engine(dburi, poolclass=NullPool)
 
     def create_session(self, dburi, short_lived_sessions=False, **kwargs):
         engine = self.get_engine(dburi, **kwargs)

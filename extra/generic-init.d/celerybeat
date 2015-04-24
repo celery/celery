@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh -e
 # =========================================================
 #  celerybeat - Starts the Celery periodic task scheduler.
 # =========================================================
@@ -202,14 +202,17 @@ create_paths () {
     create_default_dir "$CELERYBEAT_PID_DIR"
 }
 
+is_running() {
+    pid=$1
+    ps $pid > /dev/null 2>&1
+}
 
 wait_pid () {
     pid=$1
     forever=1
     i=0
     while [ $forever -gt 0 ]; do
-        kill -0 $pid 1>/dev/null 2>&1
-        if [ $? -eq 1 ]; then
+        if ! is_running $pid; then
             echo "OK"
             forever=0
         else

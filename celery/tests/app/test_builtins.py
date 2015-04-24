@@ -84,7 +84,7 @@ class test_group(BuiltinsCase):
     def test_apply_async_eager(self):
         self.task.apply = Mock()
         self.app.conf.CELERY_ALWAYS_EAGER = True
-        self.task.apply_async()
+        self.task.apply_async((1, 2, 3, 4, 5))
         self.assertTrue(self.task.apply.called)
 
     def test_apply(self):

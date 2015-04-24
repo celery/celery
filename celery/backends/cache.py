@@ -129,7 +129,7 @@ class CacheBackend(KeyValueStoreBackend):
         return self.client.delete(key)
 
     def _apply_chord_incr(self, header, partial_args, group_id, body, **opts):
-        self.client.set(self.get_key_for_chord(group_id), '0', time=86400)
+        self.client.set(self.get_key_for_chord(group_id), 0, time=86400)
         return super(CacheBackend, self)._apply_chord_incr(
             header, partial_args, group_id, body, **opts
         )

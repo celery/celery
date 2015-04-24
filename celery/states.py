@@ -112,9 +112,6 @@ class state(str):
 
     """
 
-    def compare(self, other, fun):
-        return fun(precedence(self), precedence(other))
-
     def __gt__(self, other):
         return precedence(self) < precedence(other)
 
@@ -144,10 +141,10 @@ RETRY = 'RETRY'
 IGNORED = 'IGNORED'
 REJECTED = 'REJECTED'
 
-READY_STATES = frozenset([SUCCESS, FAILURE, REVOKED])
-UNREADY_STATES = frozenset([PENDING, RECEIVED, STARTED, RETRY])
-EXCEPTION_STATES = frozenset([RETRY, FAILURE, REVOKED])
-PROPAGATE_STATES = frozenset([FAILURE, REVOKED])
+READY_STATES = frozenset({SUCCESS, FAILURE, REVOKED})
+UNREADY_STATES = frozenset({PENDING, RECEIVED, STARTED, RETRY})
+EXCEPTION_STATES = frozenset({RETRY, FAILURE, REVOKED})
+PROPAGATE_STATES = frozenset({FAILURE, REVOKED})
 
-ALL_STATES = frozenset([PENDING, RECEIVED, STARTED,
-                        SUCCESS, FAILURE, RETRY, REVOKED])
+ALL_STATES = frozenset({PENDING, RECEIVED, STARTED,
+                        SUCCESS, FAILURE, RETRY, REVOKED})

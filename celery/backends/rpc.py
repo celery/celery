@@ -57,7 +57,7 @@ class RPCBackend(amqp.AMQPBackend):
     @property
     def binding(self):
         return self.Queue(self.oid, self.exchange, self.oid,
-                          durable=False, auto_delete=False)
+                          durable=False, auto_delete=True)
 
     @cached_property
     def oid(self):

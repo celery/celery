@@ -21,15 +21,18 @@ import warnings
 
 from collections import namedtuple
 
-from billiard import current_process
+try:
+    from billiard.process import current_process
+except ImportError:
+    current_process = None
+from billiard.compat import get_fdmax, close_open_fds
 # fileno used to be in this module
 from kombu.utils import maybe_fileno
 from kombu.utils.encoding import safe_str
 from contextlib import contextmanager
 
 from .local import try_import
-from .five import items, range, reraise, string_t, zip_longest
-from .utils.functional import uniq
+from .five import items, reraise, string_t
 
 _setproctitle = try_import('setproctitle')
 resource = try_import('resource')
@@ -105,26 +108,6 @@ def pyimplementation():
 
 class LockFailed(Exception):
     """Raised if a pidlock can't be acquired."""
-
-
-def get_fdmax(default=None):
-    """Return the maximum number of open file descriptors
-    on this system.
-
-    :keyword default: Value returned if there's no file
-                      descriptor limit.
-
-    """
-    try:
-        return os.sysconf('SC_OPEN_MAX')
-    except:
-        pass
-    if resource is None:  # Windows
-        return default
-    fdmax = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
-    if fdmax == resource.RLIM_INFINITY:
-        return default
-    return fdmax
 
 
 class Pidfile(object):
@@ -263,30 +246,6 @@ def _create_pidlock(pidfile):
         raise SystemExit(EX_CANTCREAT)
     pidlock.acquire()
     return pidlock
-
-
-if hasattr(os, 'closerange'):
-
-    def close_open_fds(keep=None):
-        # must make sure this is 0-inclusive (Issue #1882)
-        keep = list(uniq(sorted(
-            f for f in map(maybe_fileno, keep or []) if f is not None
-        )))
-        maxfd = get_fdmax(default=2048)
-        kL, kH = iter([-1] + keep), iter(keep + [maxfd])
-        for low, high in zip_longest(kL, kH):
-            if low + 1 != high:
-                os.closerange(low + 1, high)
-
-else:
-
-    def close_open_fds(keep=None):  # noqa
-        keep = [maybe_fileno(f)
-                for f in (keep or []) if maybe_fileno(f) is not None]
-        for fd in reversed(range(get_fdmax(default=2048))):
-            if fd not in keep:
-                with ignore_errno(errno.EBADF):
-                    os.close(fd)
 
 
 class DaemonContext(object):
@@ -706,8 +665,8 @@ else:
         """
         if hostname:
             progname = '{0}: {1}'.format(progname, hostname)
-        return set_process_title(
-            '{0}:{1}'.format(progname, current_process().name), info=info)
+        name = current_process().name if current_process else 'MainProcess'
+        return set_process_title('{0}:{1}'.format(progname, name), info=info)
 
 
 def get_errno_name(n):

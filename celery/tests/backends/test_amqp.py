@@ -234,15 +234,14 @@ class test_AMQPBackend(AppCase):
         with self.assertRaises(TimeoutError):
             b.wait_for(tid, timeout=0.1)
         b.store_result(tid, 42, states.SUCCESS)
-        self.assertEqual(b.wait_for(tid, timeout=1), 42)
+        self.assertEqual(b.wait_for(tid, timeout=1)['result'], 42)
         b.store_result(tid, 56, states.SUCCESS)
-        self.assertEqual(b.wait_for(tid, timeout=1), 42,
+        self.assertEqual(b.wait_for(tid, timeout=1)['result'], 42,
                          'result is cached')
-        self.assertEqual(b.wait_for(tid, timeout=1, cache=False), 56)
+        self.assertEqual(b.wait_for(tid, timeout=1, cache=False)['result'], 56)
         b.store_result(tid, KeyError('foo'), states.FAILURE)
-        with self.assertRaises(KeyError):
-            b.wait_for(tid, timeout=1, cache=False)
-        self.assertTrue(b.wait_for(tid, timeout=1, propagate=False))
+        res = b.wait_for(tid, timeout=1, cache=False)
+        self.assertEqual(res['status'], states.FAILURE)
         b.store_result(tid, KeyError('foo'), states.PENDING)
         with self.assertRaises(TimeoutError):
             b.wait_for(tid, timeout=0.01, cache=False)
@@ -294,6 +293,36 @@ class test_AMQPBackend(AppCase):
             tids = [uuid()]
             b.store_result(tids[0], i, states.PENDING)
             list(b.get_many(tids, timeout=0.01))
+
+    def test_get_many_on_message(self):
+        b = self.create_backend(max_cached_results=10)
+
+        tids = []
+        for i in range(10):
+            tid = uuid()
+            b.store_result(tid, '', states.PENDING)
+            b.store_result(tid, 'comment_%i_1' % i, states.STARTED)
+            b.store_result(tid, 'comment_%i_2' % i, states.STARTED)
+            b.store_result(tid, 'final result %i' % i, states.SUCCESS)
+            tids.append(tid)
+
+
+        expected_messages = {}
+        for i, _tid in enumerate(tids):
+            expected_messages[_tid] = []
+            expected_messages[_tid].append( (states.PENDING, '') )
+            expected_messages[_tid].append( (states.STARTED, 'comment_%i_1' % i) )
+            expected_messages[_tid].append( (states.STARTED, 'comment_%i_2' % i) )
+            expected_messages[_tid].append( (states.SUCCESS, 'final result %i' % i) )
+
+        on_message_results = {}
+        def on_message(body):
+            if not body['task_id'] in on_message_results:
+                on_message_results[body['task_id']] = []
+            on_message_results[body['task_id']].append( (body['status'], body['result']) )
+
+        res = list(b.get_many(tids, timeout=1, on_message=on_message))
+        self.assertEqual(sorted(on_message_results), sorted(expected_messages))
 
     def test_get_many_raises_outer_block(self):
 

@@ -57,9 +57,9 @@ class RedisBackend(KeyValueStoreBackend):
     implements_incr = True
 
     def __init__(self, host=None, port=None, db=None, password=None,
-                 expires=None, max_connections=None, url=None,
+                 max_connections=None, url=None,
                  connection_pool=None, new_join=False, **kwargs):
-        super(RedisBackend, self).__init__(**kwargs)
+        super(RedisBackend, self).__init__(expires_type=int, **kwargs)
         conf = self.app.conf
         if self.redis is None:
             raise ImproperlyConfigured(REDIS_MISSING)
@@ -85,12 +85,11 @@ class RedisBackend(KeyValueStoreBackend):
             'port': _get('PORT') or 6379,
             'db': _get('DB') or 0,
             'password': _get('PASSWORD'),
-            'max_connections': max_connections,
+            'max_connections': self.max_connections,
         }
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
         self.url = url
-        self.expires = self.prepare_expires(expires, type=int)
 
         try:
             new_join = strtobool(self.connparams.pop('new_join'))
@@ -177,9 +176,15 @@ class RedisBackend(KeyValueStoreBackend):
     def expire(self, key, value):
         return self.client.expire(key, value)
 
+    def add_to_chord(self, group_id, result):
+        self.client.incr(self.get_key_for_group(group_id, '.t'), 1)
+
     def _unpack_chord_result(self, tup, decode,
+                             EXCEPTION_STATES=states.EXCEPTION_STATES,
                              PROPAGATE_STATES=states.PROPAGATE_STATES):
         _, tid, state, retval = decode(tup)
+        if state in EXCEPTION_STATES:
+            retval = self.exception_to_python(retval)
         if state in PROPAGATE_STATES:
             raise ChordError('Dependency {0} raised {1!r}'.format(tid, retval))
         return retval
@@ -187,7 +192,8 @@ class RedisBackend(KeyValueStoreBackend):
     def _new_chord_apply(self, header, partial_args, group_id, body,
                          result=None, options={}, **kwargs):
         # avoids saving the group in the redis db.
-        return header(*partial_args, task_id=group_id, **options or {})
+        options['task_id'] = group_id
+        return header(*partial_args, **options or {})
 
     def _new_chord_return(self, task, state, result, propagate=None,
                           PROPAGATE_STATES=states.PROPAGATE_STATES):
@@ -201,21 +207,27 @@ class RedisBackend(KeyValueStoreBackend):
 
         client = self.client
         jkey = self.get_key_for_group(gid, '.j')
+        tkey = self.get_key_for_group(gid, '.t')
         result = self.encode_result(result, state)
-        _, readycount, _ = client.pipeline()                            \
+        _, readycount, totaldiff, _, _ = client.pipeline()              \
             .rpush(jkey, self.encode([1, tid, state, result]))          \
             .llen(jkey)                                                 \
+            .get(tkey)                                                  \
             .expire(jkey, 86400)                                        \
+            .expire(tkey, 86400)                                        \
             .execute()
+
+        totaldiff = int(totaldiff or 0)
 
         try:
             callback = maybe_signature(request.chord, app=app)
-            total = callback['chord_size']
-            if readycount >= total:
+            total = callback['chord_size'] + totaldiff
+            if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
-                resl, _ = client.pipeline()     \
+                resl, _, _ = client.pipeline()  \
                     .lrange(jkey, 0, total)     \
                     .delete(jkey)               \
+                    .delete(tkey)               \
                     .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])

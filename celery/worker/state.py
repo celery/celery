@@ -27,8 +27,7 @@ from celery.five import Counter
 
 __all__ = ['SOFTWARE_INFO', 'reserved_requests', 'active_requests',
            'total_count', 'revoked', 'task_reserved', 'maybe_shutdown',
-           'task_accepted', 'task_ready', 'task_reserved', 'task_ready',
-           'Persistent']
+           'task_accepted', 'task_reserved', 'task_ready', 'Persistent']
 
 #: Worker software/platform information.
 SOFTWARE_INFO = {'sw_ident': 'py-celery',
@@ -90,7 +89,7 @@ C_BENCH_EVERY = int(os.environ.get('C_BENCH_EVERY') or
 if C_BENCH:  # pragma: no cover
     import atexit
 
-    from billiard import current_process
+    from billiard.process import current_process
     from celery.five import monotonic
     from celery.utils.debug import memdump, sample_mem
 

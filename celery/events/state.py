@@ -163,7 +163,7 @@ class Worker(object):
                 if not local_received or not timestamp:
                     return
                 drift = abs(int(local_received) - int(timestamp))
-                if drift > HEARTBEAT_DRIFT_MAX:
+                if drift > max_drift:
                     _warn_drift(self.hostname, drift,
                                 local_received, timestamp)
                 if local_received:
@@ -601,11 +601,15 @@ class State(object):
             if limit and index + 1 >= limit:
                 break
 
-    def tasks_by_time(self, limit=None):
+    def tasks_by_time(self, limit=None, reverse=True):
         """Generator giving tasks ordered by time,
         in ``(uuid, Task)`` tuples."""
+        _heap = self._taskheap
+        if reverse:
+            _heap = reversed(_heap)
+
         seen = set()
-        for evtup in islice(reversed(self._taskheap), 0, limit):
+        for evtup in islice(_heap, 0, limit):
             task = evtup[3]()
             if task is not None:
                 uuid = task.uuid
@@ -614,24 +618,24 @@ class State(object):
                     seen.add(uuid)
     tasks_by_timestamp = tasks_by_time
 
-    def tasks_by_type(self, name, limit=None):
+    def tasks_by_type(self, name, limit=None, reverse=True):
         """Get all tasks by type.
 
         Return a list of ``(uuid, Task)`` tuples.
 
         """
         return islice(
-            ((uuid, task) for uuid, task in self.tasks_by_time()
+            ((uuid, task) for uuid, task in self.tasks_by_time(reverse=reverse)
              if task.name == name),
             0, limit,
         )
 
-    def tasks_by_worker(self, hostname, limit=None):
+    def tasks_by_worker(self, hostname, limit=None, reverse=True):
         """Get all tasks by worker.
 
         """
         return islice(
-            ((uuid, task) for uuid, task in self.tasks_by_time()
+            ((uuid, task) for uuid, task in self.tasks_by_time(reverse=reverse)
              if task.worker.hostname == hostname),
             0, limit,
         )
