@@ -176,6 +176,12 @@ class MongoBackend(BaseBackend):
             return data
         return super(MongoBackend, self).encode(data)
 
+    def decode_result(self, payload):
+        meta = self.decode(payload)
+        if meta['status'] in self.EXCEPTION_STATES:
+            meta['result'] = self.exception_to_python(meta['result'])
+        return meta
+
     def decode(self, data):
         if self.serializer == 'bson':
             return data
@@ -208,7 +214,7 @@ class MongoBackend(BaseBackend):
             return self.meta_from_decoded({
                 'task_id': obj['_id'],
                 'status': obj['status'],
-                'result': self.decode(obj['result']),
+                'result': self.decode_result(obj['result']),
                 'date_done': obj['date_done'],
                 'traceback': self.decode(obj['traceback']),
                 'children': self.decode(obj['children']),
@@ -232,7 +238,7 @@ class MongoBackend(BaseBackend):
         obj = self.group_collection.find_one({'_id': group_id})
         if obj:
             tasks = [self.app.AsyncResult(task)
-                     for task in self.decode(obj['result'])]
+                     for task in self.decode_result(obj['result'])]
 
             return {
                 'task_id': obj['_id'],
