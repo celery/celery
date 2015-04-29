@@ -98,8 +98,9 @@ class test_MongoBackend(AppCase):
 
             connection = self.backend._get_connection()
             mock_Connection.assert_called_once_with(
-                host='mongodb://localhost:27017', max_pool_size=10,
-                auto_start_request=False)
+                host='mongodb://localhost:27017',
+                **self.backend._prepare_client_options()
+            )
             self.assertEqual(sentinel.connection, connection)
 
     def test_get_connection_no_connection_mongodb_uri(self):
@@ -113,8 +114,8 @@ class test_MongoBackend(AppCase):
 
             connection = self.backend._get_connection()
             mock_Connection.assert_called_once_with(
-                host=mongodb_uri, max_pool_size=10,
-                auto_start_request=False)
+                host=mongodb_uri, **self.backend._prepare_client_options()
+            )
             self.assertEqual(sentinel.connection, connection)
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
