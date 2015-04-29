@@ -283,7 +283,20 @@ def find_related_module(package, related_name):
     try:
         importlib.import_module(package)
     except ImportError:
-        package, _, _ = package.rpartition('.')
+        package, _, kls = package.rpartition('.')
+        # This must be an AppConfig object - use the name attribute
+        try:
+            mod = __import__(package, fromlist=[kls])
+            config = getattr(mod, kls)
+            mro = [
+                ".".join([mro.__module__, mro.__name__])
+                for mro in config.__mro__
+            ]
+            if 'django.apps.config.AppConfig' in mro:
+                package = config.name
+        except ImportError:
+            # Not a django AppConfig, so not what we expected.
+            return
 
     try:
         pkg_path = importlib.import_module(package).__path__
