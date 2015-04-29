@@ -110,7 +110,7 @@ def _get_job_writer(job):
         return writer()  # is a weakref
 
 
-if hasattr(select, 'poll', None):
+if hasattr(select, 'poll'):
     def _select_imp(readers=None, writers=None, err=None, timeout=0,
                     poll=select.poll, POLLIN=select.POLLIN,
                     POLLOUT=select.POLLOUT, POLLERR=select.POLLERR):
@@ -146,7 +146,7 @@ else:
 
 
 def _select(readers=None, writers=None, err=None, timeout=0,
-            _select_imp=_select_imp):
+            poll=_select_imp):
     """Simple wrapper to :class:`~select.select`, using :`~select.poll`
     as the implementation.
 
@@ -170,7 +170,7 @@ def _select(readers=None, writers=None, err=None, timeout=0,
     writers = set() if writers is None else writers
     err = set() if err is None else err
     try:
-        return _select_imp(readers, writers, err, timeout)
+        return poll(readers, writers, err, timeout)
     except (select.error, socket.error) as exc:
         if exc.errno == errno.EINTR:
             return set(), set(), 1
