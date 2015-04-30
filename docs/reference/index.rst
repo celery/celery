@@ -40,6 +40,7 @@
     celery.contrib.sphinx
     celery.contrib.rdb
     celery.contrib.methods
+    celery.contrib.django
     celery.events
     celery.events.state
     celery.beat
