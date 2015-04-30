@@ -1104,7 +1104,7 @@ manner using TCP/IP alone, so AMQP defines something called heartbeats
 that's is used both by the client and the broker to detect if
 a connection was closed.
 
-Hartbeats are disabled by default.
+Heartbeats are disabled by default.
 
 If the heartbeat value is 10 seconds, then
 the heartbeat will be monitored at the interval specified
