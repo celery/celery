@@ -203,7 +203,7 @@ class Beat(bootsteps.StartStopStep):
         from celery.beat import EmbeddedService
         if w.pool_cls.__module__.endswith(('gevent', 'eventlet')):
             raise ImproperlyConfigured(ERR_B_GREEN)
-        b = w.beat = EmbeddedService(app=w.app,
+        b = w.beat = EmbeddedService(w.app,
                                      schedule_filename=w.schedule_filename,
                                      scheduler_cls=w.scheduler_cls)
         return b
