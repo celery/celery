@@ -643,6 +643,18 @@ class RedisBackend(KeyValueStoreBackend):
         script.sha = self.SET_SCRIPT_SHA
         return script
 
+    def _store_result(self, task_id, result, status,
+                      traceback=None, request=None, **kwargs):
+        store_result = super(RedisBackend, self)._store_result(task_id,
+                                result, status, traceback=traceback,
+                                request=request, **kwargs)
+        if (status in states.PROPAGATE_STATES and
+            request and request.callbacks):
+            for cb in request.callbacks:
+                task_key = self.get_key_for_task(cb['options']['task_id'])
+                self.client.publish(task_key, '')
+        return store_result
+
     def delete(self, key):
         self.client.delete(key)
 
@@ -806,7 +818,10 @@ class RedisBackend(KeyValueStoreBackend):
                     message['type'] == 'message' and
                     message['channel'] == task_key
                     ):
-                    meta = self.decode_result(message['data'])
+                    if message['data']:
+                        meta = self.decode_result(message['data'])
+                    else:
+                        meta = self.get_task_meta(task_id)
                     if meta['status'] in states.READY_STATES:
                         break
                 if on_interval:
@@ -900,14 +915,27 @@ class RedisBackend(KeyValueStoreBackend):
                 if message and message['type'] == 'message':
                     key = key_tasks.get(message['channel'])
                     if key in ids:
-                        value = self.decode_result(message['data'])
                         ids.remove(key)
-                        yield bytes_to_str(key), value
+                        if message['data']:
+                            value = self.decode_result(message['data'])
+                            yield bytes_to_str(key), value
                 if timeout:
                     elapsed = time() - started_at
                     if elapsed >= timeout or elapsed < 0.0:
-                        raise TimeoutError('The operation timed out '
-                                           '({0}s).'.format(timeout))
+                        # ensure we have not missed any notifications
+                        id_list = list(ids)
+                        r = self._mget_to_results(
+                                self.mget([self.get_key_for_task(t)
+                                           for t in id_list]),
+                                id_list
+                            )
+                        cache.update(r)
+                        ids.difference_update(set(bytes_to_str(v) for v in r))
+                        if ids:
+                            raise TimeoutError('The operation timed out '
+                                               '({0}s).'.format(timeout))
+                        for key, value in items(r):
+                            yield bytes_to_str(key), value
                     block_for = timeout - elapsed
         finally:
             pubsub.unsubscribe()
