@@ -13,6 +13,7 @@ from celery import states
 from celery.backends.amqp import AMQPBackend
 from celery.exceptions import TimeoutError
 from celery.five import Empty, Queue, range
+from celery.result import AsyncResult
 from celery.utils import uuid
 
 from celery.tests.case import (
@@ -246,10 +247,20 @@ class test_AMQPBackend(AppCase):
         with self.assertRaises(TimeoutError):
             b.wait_for(tid, timeout=0.01, cache=False)
 
+    def test_drain_events_decodes_exceptions_in_meta(self):
+        tid = uuid()
+        b = self.create_backend(serializer="json")
+        b.store_result(tid, RuntimeError("aap"), states.FAILURE)
+        result = AsyncResult(tid, backend=b)
+
+        with self.assertRaises(Exception) as cm:
+            result.get()
+
+        self.assertEqual(cm.exception.__class__.__name__, "RuntimeError")
+        self.assertEqual(str(cm.exception), "aap")
+
     def test_drain_events_remaining_timeouts(self):
-
         class Connection(object):
-
             def drain_events(self, timeout=None):
                 pass
 
