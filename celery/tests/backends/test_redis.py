@@ -46,9 +46,11 @@ class Lock(object):
         self.acquired = False
 
     def acquire(self, *args, **kwargs):
-        if not self.acquired:
+        if self.acquired:
+            return False
+        else:
             self.acquired = True
-        return self.acquired
+            return True
 
     def release(self, *args, **kwargs):
         if self.acquired:
