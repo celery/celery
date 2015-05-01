@@ -459,13 +459,16 @@ It is essential that you protect against unauthorized
 access to your broker, databases and other services transmitting pickled
 data.
 
-For the task messages you can set the :setting:`CELERY_TASK_SERIALIZER`
-setting to "json" or "yaml" instead of pickle. There is
-currently no alternative solution for task results (but writing a
-custom result backend using JSON is a simple task)
-
 Note that this is not just something you should be aware of with Celery, for
 example also Django uses pickle for its cache client.
+
+For the task messages you can set the :setting:`CELERY_TASK_SERIALIZER`
+setting to "json" or "yaml" instead of pickle.
+
+Similarly for task results you can set :setting:`CELERY_RESULT_SERIALIZER`.
+
+For more details of the formats used and the lookup order when
+checking which format to use for a task see :ref:`calling-serializers`
 
 Can messages be encrypted?
 --------------------------
