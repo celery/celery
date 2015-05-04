@@ -291,7 +291,7 @@ def add_chain_task(app):
             app = self.app
             last, fargs = None, args  # fargs passed to first task only
             for task in kwargs['tasks']:
-                res = signature(task, app=app).clone(fargs).apply(
+                res = signature(task, app=app).clone(fargs, async=False).apply(
                     last and (last.get(), ),
                 )
                 res.parent, last, fargs = last, res, None

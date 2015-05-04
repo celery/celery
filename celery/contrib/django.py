@@ -74,18 +74,30 @@ class DjangoModelBaseTask(Task):
 
         return super(DjangoModelBaseTask, self).augment_args_for_run(args, kwargs)
 
-    def augment_args_for_send(self, args, kwargs):
+    def augment_args_for_send(self, args, kwargs, async=True):
         """
         Augment the args/kwargs prior to sending the task to the broker.
         """
+        if not async:
+            return super(DjangoModelBaseTask, self).augment_args_for_send(args, kwargs, async=async)
+
         if self.__self__ is not None:
             if not kwargs:
                 kwargs = {}
             kwargs['__app_label__'] = self.__self__._meta.app_label
             kwargs['__model_name__'] = self.__self__._meta.model_name
             kwargs['__auto_field__'] = getattr(self.__self__, self.__self__._meta.auto_field.attname)
+
         return args, kwargs
 
+    def augment_args_for_merge(self, signature, args, kwargs, options):
+        if signature.immutable:
+            return (signature.args, signature.kwargs,
+                    dict(signature.options, **options) if options else signature.options)
+        # Ensure self is passed as the first argument.
+        return (tuple(signature.args[:1]) + tuple(args) + tuple(signature.args[1:]) if args else signature.args,
+                dict(signature.kwargs, **kwargs) if kwargs else signature.kwargs,
+                dict(signature.options, **options) if options else signature.options)
 
 def model_task(*args, **kwargs):
     return current_app.task(*args, **dict(kwargs, filter=task_method, base=DjangoModelBaseTask))

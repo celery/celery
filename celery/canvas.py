@@ -181,19 +181,16 @@ class Signature(dict):
         return self.type.apply(args, kwargs, **options)
 
     def _merge(self, args=(), kwargs={}, options={}):
-        if self.immutable:
-            return (self.args, self.kwargs,
-                    dict(self.options, **options) if options else self.options)
-        return (tuple(args) + tuple(self.args) if args else self.args,
-                dict(self.kwargs, **kwargs) if kwargs else self.kwargs,
-                dict(self.options, **options) if options else self.options)
+        return self.type.augment_args_for_merge(self, args, kwargs, options)
 
-    def clone(self, args=(), kwargs={}, app=None, **opts):
+    def clone(self, args=(), kwargs={}, app=None, async=True, **opts):
         # need to deepcopy options so origins links etc. is not modified.
         if args or kwargs or opts:
             args, kwargs, opts = self._merge(args, kwargs, opts)
         else:
             args, kwargs, opts = self.args, self.kwargs, self.options
+        if async:
+            args, kwargs = self.type.augment_args_for_send(args, kwargs, async=async)
         s = Signature.from_dict({'task': self.task, 'args': tuple(args),
                                  'kwargs': kwargs, 'options': deepcopy(opts),
                                  'subtask_type': self.subtask_type,

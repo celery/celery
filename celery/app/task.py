@@ -225,7 +225,7 @@ class Task(object):
 
     #: This is the instance bound to if the task is a method of a class.
     __self__ = None
-
+    
     #: The application instance associated with this task class.
     _app = None
 
@@ -560,7 +560,7 @@ class Task(object):
             args = (self.__self__, ) + args
         return args, kwargs
 
-    def augment_args_for_send(self, args, kwargs):
+    def augment_args_for_send(self, args, kwargs, async=True):
         """
         Augment the args/kwargs prior to sending the task to the broker.
         """
@@ -569,6 +569,14 @@ class Task(object):
             args = args if isinstance(args, tuple) else tuple(args or ())
             args = (self.__self__, ) + args
         return args, kwargs
+
+    def augment_args_for_merge(self, signature, args=(), kwargs={}, options={}):
+        if signature.immutable:
+            return (signature.args, signature.kwargs,
+                    dict(signature.options, **options) if options else signature.options)
+        return (tuple(args) + tuple(signature.args) if args else signature.args,
+                dict(signature.kwargs, **kwargs) if kwargs else signature.kwargs,
+                dict(signature.options, **options) if options else signature.options)
 
     def subtask_from_request(self, request=None, args=None, kwargs=None,
                              queue=None, **extra_options):
@@ -745,7 +753,8 @@ class Task(object):
                                if key in supported_keys)
             kwargs.update(extend_with)
 
-        args, kwargs = self.augment_args_for_send(args, kwargs)
+        # Needs to be refactored - only works some of the time.
+        args, kwargs = self.augment_args_for_send(args, kwargs, async=False)
 
         tb = None
         retval, info = eager_trace_task(task, task_id, args, kwargs,
