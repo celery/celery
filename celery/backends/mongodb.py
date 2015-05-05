@@ -9,6 +9,7 @@
 from __future__ import absolute_import
 
 from datetime import datetime
+from celery.contrib.abortable import ABORTED
 
 try:
     import pymongo
@@ -134,15 +135,44 @@ class MongoBackend(BaseBackend):
     def _store_result(self, task_id, result, status,
                       traceback=None, request=None, **kwargs):
         """Store return value and status of an executed task."""
-        meta = {'_id': task_id,
-                'status': status,
-                'result': Binary(self.encode(result)),
-                'date_done': datetime.utcnow(),
-                'traceback': Binary(self.encode(traceback)),
-                'children': Binary(self.encode(
-                    self.current_task_children(request),
-                ))}
-        self.collection.save(meta)
+        meta = None
+        if status is None:
+            meta = {'_id': task_id,
+                    'result': Binary(self.encode(result)),
+                    'date_done': datetime.utcnow(),
+                    'traceback': Binary(self.encode(traceback)),
+                    'children': Binary(self.encode(
+                        self.current_task_children(request),
+                    ))}
+        elif status == ABORTED:
+            meta = {'_id': task_id,
+                    'status': status,
+                    ABORTED: True,
+                    'result': Binary(self.encode(result)),
+                    'date_done': datetime.utcnow(),
+                    'traceback': Binary(self.encode(traceback)),
+                    'children': Binary(self.encode(
+                        self.current_task_children(request),
+                    ))}
+        else:
+            meta = {'_id': task_id,
+                    'status': status,
+                    'result': Binary(self.encode(result)),
+                    'date_done': datetime.utcnow(),
+                    'traceback': Binary(self.encode(traceback)),
+                    'children': Binary(self.encode(
+                        self.current_task_children(request),
+                    ))}
+
+        if meta is None:
+            return None
+        # else:
+
+        if self.collection.find_one({'_id': task_id}) is None:
+            self.collection.save(meta)
+        else:
+            del(meta["_id"])
+            self.collection.update({"_id": task_id}, {'$set': meta})
 
         return result
 
@@ -155,11 +185,12 @@ class MongoBackend(BaseBackend):
 
         meta = {
             'task_id': obj['_id'],
-            'status': obj['status'],
+            'status': obj.get('status', states.PENDING),
             'result': self.decode(obj['result']),
             'date_done': obj['date_done'],
             'traceback': self.decode(obj['traceback']),
             'children': self.decode(obj['children']),
+            ABORTED: obj.get(ABORTED, False),
         }
 
         return meta
