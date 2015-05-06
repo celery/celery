@@ -27,9 +27,6 @@ def setup():
         with catch_warnings(record=True):
             import_all_modules()
         warnings.resetwarnings()
-    from celery.tests.case import Trap
-    from celery._state import set_default_app
-    set_default_app(Trap())
 
 
 def teardown():

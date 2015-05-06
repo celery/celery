@@ -487,6 +487,9 @@ class KeyValueStoreBackend(BaseBackend):
                       traceback=None, request=None, **kwargs):
         meta = {'status': status, 'result': result, 'traceback': traceback,
                 'children': self.current_task_children(request)}
+        if status == 'ABORTED':
+            meta['ABORTED'] = True
+
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
 

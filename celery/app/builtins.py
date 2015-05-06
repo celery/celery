@@ -352,6 +352,7 @@ def add_chord_task(app):
             results = gr_result.results
             body['parent'] = gr_result
             body.options['parent'] = gr_result
+            body.app = app
             body.freeze()
 
             return self.backend.apply_chord(

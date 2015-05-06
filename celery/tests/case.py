@@ -110,12 +110,6 @@ CELERY_TEST_CONFIG = {
 }
 
 
-class Trap(object):
-
-    def __getattr__(self, name):
-        raise RuntimeError('Test depends on current_app')
-
-
 class UnitLogging(symbol_by_name(Celery.log_cls)):
 
     def __init__(self, *args, **kwargs):
@@ -411,7 +405,7 @@ class AppCase(Case):
             _state.task_join_will_block = lambda: False
         self._current_app = current_app()
         self._default_app = _state.default_app
-        trap = Trap()
+        trap = self._default_app
         self._prev_tls = _state._tls
         _state.set_default_app(trap)
 
