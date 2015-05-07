@@ -438,7 +438,8 @@ class AMQP(object):
                 try:
                     delivery_mode = queue.exchange.delivery_mode
                 except AttributeError:
-                    delivery_mode = default_delivery_mode
+                    pass
+                delivery_mode = delivery_mode or default_delivery_mode
             exchange = exchange or queue.exchange.name
             routing_key = routing_key or queue.routing_key
             if declare is None and queue and not isinstance(queue, Broadcast):
