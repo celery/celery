@@ -99,5 +99,6 @@ class DjangoModelBaseTask(Task):
                 dict(signature.kwargs, **kwargs) if kwargs else signature.kwargs,
                 dict(signature.options, **options) if options else signature.options)
 
+
 def model_task(*args, **kwargs):
     return current_app.task(*args, **dict(kwargs, filter=task_method, base=DjangoModelBaseTask))
