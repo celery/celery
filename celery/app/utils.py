@@ -258,3 +258,12 @@ def find_app(app, symbol_by_name=symbol_by_name, imp=import_from_cwd):
         else:
             return found
     return sym
+
+
+def send_last_as(task, group_id=None, chord_arg=None):
+    from celery import chain, chord
+    if isinstance(task, chain):
+        return send_last_as(task.kwargs['tasks'][-1], group_id, chord_arg)
+    elif isinstance(task, chord):
+        return send_last_as(task.kwargs['body'], group_id, chord_arg)
+    return task.freeze(group_id=group_id, chord=chord_arg)

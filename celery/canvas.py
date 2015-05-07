@@ -21,6 +21,7 @@ from itertools import chain as _chain
 from kombu.utils import cached_property, fxrange, kwdict, reprcall, uuid
 
 from celery._state import current_app
+from celery.app.utils import send_last_as
 from celery.utils.functional import (
     maybe_list, is_list, regen,
     chunks as _chunks,
@@ -216,7 +217,7 @@ class Signature(dict):
             opts['group_id'] = group_id
         if chord:
             opts['chord'] = chord
-        return self.app.AsyncResult(tid)
+        return self.app.AsyncResult(tid, options=opts)
     _freeze = freeze
 
     def replace(self, args=None, kwargs=None, options=None):
@@ -529,7 +530,10 @@ class group(Signature):
         try:
             gid = opts['task_id']
         except KeyError:
-            gid = opts['task_id'] = uuid()
+            if _id:
+                gid = _id
+            else:
+                gid = opts['task_id'] = uuid()
         if group_id:
             opts['group_id'] = group_id
         if chord:
@@ -537,7 +541,8 @@ class group(Signature):
         new_tasks, results = [], []
         for task in self.tasks:
             task = maybe_signature(task, app=self._app).clone()
-            results.append(task.freeze(group_id=group_id, chord=chord))
+            object_res = send_last_as(task, group_id=group_id, chord_arg=chord)
+            results.append(object_res)
             new_tasks.append(task)
         self.tasks = self.kwargs['tasks'] = new_tasks
         return self.app.GroupResult(gid, results)

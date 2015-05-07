@@ -177,7 +177,7 @@ class test_MongoBackend(AppCase):
 
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
-        mock_collection.save.assert_called_once_with(ANY)
+        mock_collection.update.assert_called_once_with(ANY, ANY)
         self.assertEqual(sentinel.result, ret_val)
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
@@ -197,7 +197,7 @@ class test_MongoBackend(AppCase):
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
         self.assertEqual(
-            list(sorted(['status', 'task_id', 'date_done', 'traceback',
+            list(sorted(['ABORTED', 'status', 'task_id', 'date_done', 'traceback',
                          'result', 'children'])),
             list(sorted(ret_val.keys())),
         )
@@ -254,9 +254,11 @@ class test_MongoBackend(AppCase):
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
         mock_collection.find_one.assert_called_once_with(
             {'_id': sentinel.taskset_id})
+        list_key = list(ret_val.keys())
+        list_key.sort()
         self.assertEqual(
             ['date_done', 'result', 'task_id'],
-            list(ret_val.keys()),
+            list_key,
         )
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')

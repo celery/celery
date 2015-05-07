@@ -118,7 +118,7 @@ class AbortableAsyncResult(AsyncResult):
 
     def is_aborted(self):
         """Return :const:`True` if the task is (being) aborted."""
-        return self.state == ABORTED
+        return self._get_task_meta().get(ABORTED, False)
 
     def abort(self):
         """Set the state of the task to :const:`ABORTED`.

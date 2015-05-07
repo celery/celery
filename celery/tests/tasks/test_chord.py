@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from celery import group
 from celery import canvas
 from celery import result
+from celery.canvas import Signature
 from celery.exceptions import ChordError, Retry
 from celery.five import range
 from celery.result import AsyncResult, GroupResult, EagerResult
@@ -227,7 +228,7 @@ class test_Chord_task(ChordCase):
         self.app.backend.cleanup.__name__ = 'cleanup'
         Chord = self.app.tasks['celery.chord']
 
-        body = dict()
+        body = Signature()
         Chord(group(self.add.subtask((i, i)) for i in range(5)), body)
         Chord([self.add.subtask((j, j)) for j in range(5)], body)
         self.assertEqual(self.app.backend.apply_chord.call_count, 2)
