@@ -772,6 +772,8 @@ Also see :ref:`routing-basics` for more information.
 The default is a queue/exchange/binding key of ``celery``, with
 exchange type ``direct``.
 
+See also :setting:`CELERY_ROUTES`
+
 .. setting:: CELERY_ROUTES
 
 CELERY_ROUTES
@@ -779,7 +781,91 @@ CELERY_ROUTES
 
 A list of routers, or a single router used to route tasks to queues.
 When deciding the final destination of a task the routers are consulted
-in order.  See :ref:`routers` for more information.
+in order.
+
+A router can be specified as either:
+
+*  A router class instances
+*  A string which provides the path to a router class
+*  A dict containing router specification. It will be converted to a :class:`celery.routes.MapRoute` instance.
+
+Examples:
+
+.. code-block:: python
+
+    CELERY_ROUTES = {"celery.ping": "default",
+                     "mytasks.add": "cpu-bound",
+                     "video.encode": {
+                         "queue": "video",
+                         "exchange": "media"
+                         "routing_key": "media.video.encode"}}
+
+    CELERY_ROUTES = ("myapp.tasks.Router", {"celery.ping": "default})
+
+Where ``myapp.tasks.Router`` could be:
+
+.. code-block:: python
+
+    class Router(object):
+
+        def route_for_task(self, task, args=None, kwargs=None):
+            if task == "celery.ping":
+                return "default"
+
+``route_for_task`` may return a string or a dict. A string then means
+it's a queue name in :setting:`CELERY_QUEUES`, a dict means it's a custom route.
+
+When sending tasks, the routers are consulted in order. The first
+router that doesn't return ``None`` is the route to use. The message options
+is then merged with the found route settings, where the routers settings
+have priority.
+
+Example if :func:`~celery.execute.apply_async` has these arguments:
+
+.. code-block:: python
+
+   Task.apply_async(immediate=False, exchange="video",
+                    routing_key="video.compress")
+
+and a router returns:
+
+.. code-block:: python
+
+    {"immediate": True, "exchange": "urgent"}
+
+the final message options will be:
+
+.. code-block:: python
+
+    immediate=True, exchange="urgent", routing_key="video.compress"
+
+(and any default message options defined in the
+:class:`~celery.task.base.Task` class)
+
+Values defined in :setting:`CELERY_ROUTES` have precedence over values defined in
+:setting:`CELERY_QUEUES` when merging the two.
+
+With the follow settings:
+
+.. code-block:: python
+
+    CELERY_QUEUES = {"cpubound": {"exchange": "cpubound",
+                                  "routing_key": "cpubound"}}
+
+    CELERY_ROUTES = {"tasks.add": {"queue": "cpubound",
+                                   "routing_key": "tasks.add",
+                                   "serializer": "json"}}
+
+The final routing options for ``tasks.add`` will become:
+
+.. code-block:: python
+
+    {"exchange": "cpubound",
+     "routing_key": "tasks.add",
+     "serializer": "json"}
+
+See :ref:`routers` for more examples.
+
 
 .. setting:: CELERY_QUEUE_HA_POLICY
 
