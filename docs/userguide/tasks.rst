@@ -618,8 +618,9 @@ General
 
 .. attribute:: Task.backend
 
-    The result store backend to use for this task.  Defaults to the
-    :setting:`CELERY_RESULT_BACKEND` setting.
+    The result store backend to use for this task. An instance of one of the
+    backend classes in `celery.backends`. Defaults to `app.backend` which is
+    defined by the :setting:`CELERY_RESULT_BACKEND` setting.
 
 .. attribute:: Task.acks_late
 
