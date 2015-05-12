@@ -360,7 +360,7 @@ class Task(object):
         return self.apply_async(args, kwargs)
 
     def apply_async(self, args=None, kwargs=None, task_id=None, producer=None,
-                    link=None, link_error=None, **options):
+                    link=None, link_error=None, shadow=None, **options):
         """Apply tasks asynchronously by sending a message.
 
         :keyword args: The positional arguments to pass on to the
@@ -383,6 +383,9 @@ class Task(object):
                           that describes the absolute time and date of when
                           the task should expire.  The task will not be
                           executed after the expiration time.
+
+        :keyword shadow: Override task name used in logs/monitoring
+            (default from :meth:`shadow_name`).
 
         :keyword connection: Re-use existing broker connection instead
                              of establishing a new one.
@@ -440,9 +443,9 @@ class Task(object):
             attribute.  Trailing can also be disabled by default using the
             :attr:`trail` attribute
         :keyword publisher: Deprecated alias to ``producer``.
-        
-        :rtype :class:`celery.result.AsyncResult`: if 
-            :setting:`CELERY_ALWAYS_EAGER` is not set, otherwise 
+
+        :rtype :class:`celery.result.AsyncResult`: if
+            :setting:`CELERY_ALWAYS_EAGER` is not set, otherwise
             :class:`celery.result.EagerResult`:
 
         Also supports all keyword arguments supported by
@@ -468,11 +471,38 @@ class Task(object):
         if self.__self__ is not None:
             args = args if isinstance(args, tuple) else tuple(args or ())
             args = (self.__self__, ) + args
+        final_options = self._get_exec_options()
+        if options:
+            final_options = dict(final_options, **options)
         return app.send_task(
             self.name, args, kwargs, task_id=task_id, producer=producer,
             link=link, link_error=link_error, result_cls=self.AsyncResult,
-            **dict(self._get_exec_options(), **options)
+            shadow=shadow or self.shadow_name(args, kwargs, final_options),
+            **final_options
         )
+
+    def shadow_name(self, args, kwargs, options):
+        """Override for custom task name in worker logs/monitoring.
+
+        :param args: Task positional arguments.
+        :param kwargs: Task keyword arguments.
+        :param options: Task execution options.
+
+        **Example**:
+
+        .. code-block:: python
+
+            from celery.utils.imports import qualname
+
+            def shadow_name(task, args, kwargs, options):
+                return qualname(args[0])
+
+            @app.task(shadow_name=shadow_name, serializer='pickle')
+            def apply_function_async(fun, *args, **kwargs):
+                return fun(*args, **kwargs)
+
+        """
+        pass
 
     def signature_from_request(self, request=None, args=None, kwargs=None,
                                queue=None, **extra_options):
