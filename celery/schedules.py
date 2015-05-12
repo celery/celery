@@ -47,6 +47,18 @@ CRON_REPR = """\
 {0._orig_day_of_month} {0._orig_month_of_year} (m/h/d/dM/MY)>\
 """
 
+SOLAR_INVALID_LATITUDE = """\
+Argument latitude {lat} is invalid, must be between -90 and 90.\
+"""
+
+SOLAR_INVALID_LONGITUDE = """\
+Argument longitude {lon} is invalid, must be between -180 and 180.\
+"""
+
+SOLAR_INVALID_EVENT = """\
+Argument event "{event}" is invalid, must be one of {all_events}.\
+"""
+
 
 def cronfield(s):
     return '*' if s is None else s
@@ -592,17 +604,6 @@ def maybe_schedule(s, relative=False, app=None):
             s.app = app
     return s
 
-SOLAR_INVALID_LATITUDE = """\
-Argument latitude {lat} is invalid, must be between -90 and 90.\
-"""
-
-SOLAR_INVALID_LONGITUDE = """\
-Argument longitude {lon} is invalid, must be between -180 and 180.\
-"""
-
-SOLAR_INVALID_EVENT = """\
-Argument event \"{event}\" is invalid, must be one of {all_events}.\
-"""
 
 class solar(schedule):
     """A solar event can be used as the `run_every` value of a
@@ -619,8 +620,8 @@ class solar(schedule):
     :param app: Celery app instance.
     """
 
-
-    _all_events = ['dawn_astronomical',
+    _all_events = [
+        'dawn_astronomical',
         'dawn_nautical',
         'dawn_civil',
         'sunrise',
@@ -628,8 +629,10 @@ class solar(schedule):
         'sunset',
         'dusk_civil',
         'dusk_nautical',
-        'dusk_astronomical']
-    _horizons = {'dawn_astronomical': '-18',
+        'dusk_astronomical',
+    ]
+    _horizons = {
+        'dawn_astronomical': '-18',
         'dawn_nautical': '-12',
         'dawn_civil': '-6',
         'sunrise': '-0:34',
@@ -637,8 +640,10 @@ class solar(schedule):
         'sunset': '-0:34',
         'dusk_civil': '-6',
         'dusk_nautical': '-12',
-        'dusk_astronomical': '18'}
-    _methods = {'dawn_astronomical': 'next_rising',
+        'dusk_astronomical': '18',
+    }
+    _methods = {
+        'dawn_astronomical': 'next_rising',
         'dawn_nautical': 'next_rising',
         'dawn_civil': 'next_rising',
         'sunrise': 'next_rising',
@@ -646,8 +651,10 @@ class solar(schedule):
         'sunset': 'next_setting',
         'dusk_civil': 'next_setting',
         'dusk_nautical': 'next_setting',
-        'dusk_astronomical': 'next_setting'}
-    _use_center_l = {'dawn_astronomical': True,
+        'dusk_astronomical': 'next_setting',
+    }
+    _use_center_l = {
+        'dawn_astronomical': True,
         'dawn_nautical': True,
         'dawn_civil': True,
         'sunrise': False,
@@ -655,7 +662,8 @@ class solar(schedule):
         'sunset': False,
         'dusk_civil': True,
         'dusk_nautical': True,
-        'dusk_astronomical': True}
+        'dusk_astronomical': True,
+    }
 
     def __init__(self, event, lat, lon, nowfun=None, app=None):
         self.ephem = __import__('ephem')
@@ -666,7 +674,9 @@ class solar(schedule):
         self._app = app
 
         if event not in self._all_events:
-            raise ValueError(SOLAR_INVALID_EVENT.format(event=event, all_events=', '.join(self._all_events)))
+            raise ValueError(SOLAR_INVALID_EVENT.format(
+                event=event, all_events=', '.join(self._all_events),
+            ))
         if lat < -90 or lat > 90:
             raise ValueError(SOLAR_INVALID_LATITUDE.format(lat=lat))
         if lon < -180 or lon > 180:
@@ -687,12 +697,13 @@ class solar(schedule):
         return (self.nowfun or self.app.now)()
 
     def __reduce__(self):
-        return (self.__class__, (self.event,
-                                 self.lat,
-                                 self.lon), None)
+        return (self.__class__, (
+            self.event, self.lat, self.lon), None)
 
     def __repr__(self):
-        return "<solar: " + self.event + " at latitude " + str(self.lat) + ", longitude " + str(self.lon) + ">"
+        return '<solar: {0} at latitude {1}, longitude: {2}>'.format(
+            self.event, self.lat, self.lon,
+        )
 
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta,
@@ -702,11 +713,17 @@ class solar(schedule):
         last_run_at_utc = localize(last_run_at, timezone.utc)
         self.cal.date = last_run_at_utc
         try:
-            next_utc = getattr(self.cal, self.method)(self.ephem.Sun(), start=last_run_at_utc, use_center=self.use_center)
+            next_utc = getattr(self.cal, self.method)(
+                self.ephem.Sun(),
+                start=last_run_at_utc, use_center=self.use_center,
+            )
         except self.ephem.CircumpolarError:
             """Sun will not rise/set today. Check again tomorrow
             (specifically, after the next anti-transit)."""
-            next_utc = self.cal.next_antitransit(self.ephem.Sun()) + timedelta(minutes=1)
+            next_utc = (
+                self.cal.next_antitransit(self.ephem.Sun()) +
+                timedelta(minutes=1)
+            )
         next = self.maybe_make_aware(next_utc.datetime())
         now = self.maybe_make_aware(self.now())
         delta = next - now

@@ -129,7 +129,7 @@ class MongoBackend(BaseBackend):
             if pymongo.version_tuple >= (3, ):
                 return {'maxPoolSize': self.max_pool_size}
             else:  # pragma: no cover
-                return {'max_pool_size': max_pool_size,
+                return {'max_pool_size': self.max_pool_size,
                         'auto_start_request': False}
 
     def _get_connection(self):
