@@ -1239,7 +1239,7 @@ A built-in periodic task will delete the results after this time
 A value of :const:`None` or 0 means results will never expire (depending
 on backend specifications).
 
-Default is to expire after 1 day.
+Default is to expire after 12 hours.
 
 .. note::
 
