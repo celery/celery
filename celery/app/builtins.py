@@ -26,7 +26,7 @@ def add_backend_cleanup_task(app):
     backend.
 
     If the configured backend requires periodic cleanup this task is also
-    automatically configured to run every day at midnight (requires
+    automatically configured to run every day at 4am (requires
     :program:`celery beat` to be running).
 
     """
