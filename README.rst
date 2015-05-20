@@ -406,7 +406,6 @@ Maintainers
 - @chrisgogreen
 - @PMickael
 - @malinoff
-- @raghuramos1987
 - And you? We really need more: https://github.com/celery/celery/issues/2534 
 
 
