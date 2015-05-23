@@ -10,6 +10,7 @@ else:
     from io import StringIO
 
 from kombu.utils import cached_property, symbol_by_name
+from kombu.five import string
 
 from datetime import datetime
 from importlib import import_module
@@ -17,6 +18,7 @@ from importlib import import_module
 from celery import signals
 from celery.app import default_app
 from celery.exceptions import FixupWarning
+from celery.utils.imports import dot
 
 __all__ = ['DjangoFixup', 'fixup']
 
@@ -36,7 +38,8 @@ def _maybe_close_fd(fh):
 
 def fixup(app, env='DJANGO_SETTINGS_MODULE'):
     SETTINGS_MODULE = os.environ.get(env)
-    if SETTINGS_MODULE and 'django' not in app.loader_cls.lower():
+    if SETTINGS_MODULE and \
+        'django' not in (app.loader_cls.lower() if isinstance(app.loader_cls, string) else dot(app.loader_cls)):
         try:
             import django  # noqa
         except ImportError:

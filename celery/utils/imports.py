@@ -14,6 +14,7 @@ import os
 import sys
 
 from contextlib import contextmanager
+from inspect import getmodule
 
 from kombu.utils import symbol_by_name
 
@@ -112,3 +113,7 @@ def module_file(module):
     """Return the correct original file name of a module."""
     name = module.__file__
     return name[:-1] if name.endswith('.pyc') else name
+
+def dot(cls):
+    """It is basically kombu.utils.symbol_by_name reversed"""
+    return getmodule(cls).__name__ + ':' + cls.__name__
