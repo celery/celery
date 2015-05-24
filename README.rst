@@ -401,12 +401,18 @@ http://wiki.github.com/celery/celery/
 Maintainers
 ===========
 
-- @ask (primary maintainer)
-- @thedrow
-- @chrisgogreen
-- @PMickael
-- @malinoff
+- `@ask`_ (primary maintainer)
+- `@thedrow`_
+- `@chrisgogreen`_
+- `@PMickael`_
+- `@malinoff`_
 - And you? We really need more: https://github.com/celery/celery/issues/2534 
+
+.. _`@ask`: http://github.com/ask
+.. _`@thedrow`: http://github.com/thedrow
+.. _`@chrisgogreen`: http://github.com/chrisgogreen
+.. _`@PMickael`: http://github.com/PMickael
+.. _`@malinoff`: http://github.com/malinoff
 
 
 .. _contributing-short:
