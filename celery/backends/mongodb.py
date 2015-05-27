@@ -32,7 +32,7 @@ from kombu.utils import cached_property
 from kombu.exceptions import EncodeError
 from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.five import string_t
+from celery.five import string_t, items
 from celery.utils.timeutils import maybe_timedelta
 
 from .base import BaseBackend
@@ -108,14 +108,9 @@ class MongoBackend(BaseBackend):
 
         self.url = url
 
-
-        # default options according to pymongo version
-        if pymongo.version_tuple >= (3,):
-            self.options.setdefault('maxPoolSize', self.max_pool_size)
-        else:
-            self.options.setdefault('max_pool_size', self.max_pool_size)
-            self.options.setdefault('auto_start_request', False)
-
+        # Set option defaults
+        for key, value in items(self._prepare_client_options()):
+            self.options.setdefault(key, value)
 
         # update conf with mongo uri data, only if uri was given
         if self.url:
@@ -159,6 +154,13 @@ class MongoBackend(BaseBackend):
 
             self.options.update(config.pop('options', {}))
             self.options.update(config)
+
+    def _prepare_client_options(self):
+            if pymongo.version_tuple >= (3, ):
+                return {'maxPoolSize': self.max_pool_size}
+            else:  # pragma: no cover
+                return {'max_pool_size': self.max_pool_size,
+                        'auto_start_request': False}
 
     def _get_connection(self):
         """Connect to the MongoDB server."""

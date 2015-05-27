@@ -209,7 +209,7 @@ class test_DjangoWorkerFixup(FixupCase):
             conns[1].close.side_effect = KeyError('already closed')
             f.database_errors = (KeyError, )
 
-            f._db.connections = Mock() # ConnectionHandler
+            f._db.connections = Mock()  # ConnectionHandler
             f._db.connections.all.side_effect = lambda: conns
 
             f._close_database()

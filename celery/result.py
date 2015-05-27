@@ -577,7 +577,9 @@ class ResultSet(ResultBase):
         """
         return (self.join_native if self.supports_native_join else self.join)(
             timeout=timeout, propagate=propagate,
-            interval=interval, callback=callback, no_ack=no_ack, on_message=on_message)
+            interval=interval, callback=callback, no_ack=no_ack,
+            on_message=on_message,
+        )
 
     def join(self, timeout=None, propagate=True, interval=0.5,
              callback=None, no_ack=True, on_message=None):

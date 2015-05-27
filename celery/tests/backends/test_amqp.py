@@ -306,22 +306,30 @@ class test_AMQPBackend(AppCase):
             b.store_result(tid, 'final result %i' % i, states.SUCCESS)
             tids.append(tid)
 
-
         expected_messages = {}
         for i, _tid in enumerate(tids):
             expected_messages[_tid] = []
-            expected_messages[_tid].append( (states.PENDING, '') )
-            expected_messages[_tid].append( (states.STARTED, 'comment_%i_1' % i) )
-            expected_messages[_tid].append( (states.STARTED, 'comment_%i_2' % i) )
-            expected_messages[_tid].append( (states.SUCCESS, 'final result %i' % i) )
+            expected_messages[_tid].append((states.PENDING, ''))
+            expected_messages[_tid].append(
+                (states.STARTED, 'comment_%i_1' % i),
+            )
+            expected_messages[_tid].append(
+                (states.STARTED, 'comment_%i_2' % i),
+            )
+            expected_messages[_tid].append(
+                (states.SUCCESS, 'final result %i' % i),
+            )
 
         on_message_results = {}
+
         def on_message(body):
             if not body['task_id'] in on_message_results:
                 on_message_results[body['task_id']] = []
-            on_message_results[body['task_id']].append( (body['status'], body['result']) )
+            on_message_results[body['task_id']].append(
+                (body['status'], body['result']),
+            )
 
-        res = list(b.get_many(tids, timeout=1, on_message=on_message))
+        list(b.get_many(tids, timeout=1, on_message=on_message))
         self.assertEqual(sorted(on_message_results), sorted(expected_messages))
 
     def test_get_many_raises_outer_block(self):

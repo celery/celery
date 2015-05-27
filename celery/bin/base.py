@@ -509,7 +509,7 @@ class Command(object):
         default = opt.default or []
 
         if opt.dest not in acc:
-           acc[opt.dest] = default
+            acc[opt.dest] = default
 
         acc[opt.dest].append(value)
 

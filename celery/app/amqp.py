@@ -270,7 +270,7 @@ class AMQP(object):
                    callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
-                   now=None, timezone=None):
+                   shadow=None, now=None, timezone=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -337,7 +337,7 @@ class AMQP(object):
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
-                   now=None, timezone=None):
+                   shadow=None, now=None, timezone=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -438,7 +438,8 @@ class AMQP(object):
                 try:
                     delivery_mode = queue.exchange.delivery_mode
                 except AttributeError:
-                    delivery_mode = default_delivery_mode
+                    pass
+                delivery_mode = delivery_mode or default_delivery_mode
             exchange = exchange or queue.exchange.name
             routing_key = routing_key or queue.routing_key
             if declare is None and queue and not isinstance(queue, Broadcast):

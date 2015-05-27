@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import errno
-import select
 import socket
 import time
 
@@ -154,46 +153,46 @@ class test_AsynPool(PoolCase):
         ebadf.errno = errno.EBADF
         with patch('select.poll', create=True) as poller:
             poll = poller.return_value = Mock(name='poll.poll')
-            poll.poll.return_value = [(3, select.POLLIN)]
+            poll.return_value = {3}, set(), 0
             self.assertEqual(
-                asynpool._select({3}, poll=poller),
+                asynpool._select({3}, poll=poll),
                 ({3}, set(), 0),
             )
 
-            poll.poll.return_value = [(3, select.POLLERR)]
+            poll.return_value = {3}, set(), 0
             self.assertEqual(
-                asynpool._select({3}, None, {3}, poll=poller),
+                asynpool._select({3}, None, {3}, poll=poll),
                 ({3}, set(), 0),
             )
 
             eintr = socket.error()
             eintr.errno = errno.EINTR
-            poll.poll.side_effect = eintr
+            poll.side_effect = eintr
 
             readers = {3}
             self.assertEqual(
-                asynpool._select(readers, poll=poller),
+                asynpool._select(readers, poll=poll),
                 (set(), set(), 1),
             )
             self.assertIn(3, readers)
 
         with patch('select.poll') as poller:
             poll = poller.return_value = Mock(name='poll.poll')
-            poll.poll.side_effect = ebadf
+            poll.side_effect = ebadf
             with patch('select.select') as selcheck:
                 selcheck.side_effect = ebadf
                 readers = {3}
                 self.assertEqual(
-                    asynpool._select(readers, poll=poller),
+                    asynpool._select(readers, poll=poll),
                     (set(), set(), 1),
                 )
                 self.assertNotIn(3, readers)
 
         with patch('select.poll') as poller:
             poll = poller.return_value = Mock(name='poll.poll')
-            poll.poll.side_effect = MemoryError()
+            poll.side_effect = MemoryError()
             with self.assertRaises(MemoryError):
-                asynpool._select({1}, poll=poller)
+                asynpool._select({1}, poll=poll)
 
         with patch('select.poll') as poller:
             poll = poller.return_value = Mock(name='poll.poll')
@@ -202,9 +201,9 @@ class test_AsynPool(PoolCase):
                 def se(*args):
                     selcheck.side_effect = MemoryError()
                     raise ebadf
-                poll.poll.side_effect = se
+                poll.side_effect = se
                 with self.assertRaises(MemoryError):
-                    asynpool._select({3}, poll=poller)
+                    asynpool._select({3}, poll=poll)
 
         with patch('select.poll') as poller:
             poll = poller.return_value = Mock(name='poll.poll')
@@ -214,17 +213,17 @@ class test_AsynPool(PoolCase):
                     selcheck.side_effect = socket.error()
                     selcheck.side_effect.errno = 1321
                     raise ebadf
-                poll.poll.side_effect = se2
+                poll.side_effect = se2
                 with self.assertRaises(socket.error):
-                    asynpool._select({3}, poll=poller)
+                    asynpool._select({3}, poll=poll)
 
         with patch('select.poll') as poller:
             poll = poller.return_value = Mock(name='poll.poll')
 
-            poll.poll.side_effect = socket.error()
-            poll.poll.side_effect.errno = 34134
+            poll.side_effect = socket.error()
+            poll.side_effect.errno = 34134
             with self.assertRaises(socket.error):
-                asynpool._select({3}, poll=poller)
+                asynpool._select({3}, poll=poll)
 
     def test_promise(self):
         fun = Mock()

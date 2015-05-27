@@ -85,6 +85,8 @@ from __future__ import absolute_import
 
 from itertools import count
 
+from kombu.five import buffer_t
+
 from celery.task import Task
 from celery.five import Empty, Queue
 from celery.utils.log import get_logger
@@ -195,6 +197,7 @@ class Batches(Task):
         timer = consumer.timer
         put_buffer = self._buffer.put
         flush_buffer = self._do_flush
+        body_can_be_buffer = consumer.pool.body_can_be_buffer
 
         def task_message_handler(message, body, ack, reject, callbacks, **kw):
             if body is None:
@@ -209,8 +212,9 @@ class Batches(Task):
             request = Req(
                 message,
                 on_ack=ack, on_reject=reject, app=app, hostname=hostname,
-                eventer=eventer, task=task, connection_errors=connection_errors,
+                eventer=eventer, task=task,
                 body=body, headers=headers, decoded=decoded, utc=utc,
+                connection_errors=connection_errors,
             )
             put_buffer(request)
 
