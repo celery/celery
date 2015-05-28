@@ -53,6 +53,8 @@ DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
 DEFAULT_CELERYD="-m celery.bin.celeryd_detach"
 
+CELERY_BIN="/usr/bin/celery"
+
 CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/sysconfig/$prog"}
 
 test -f "$CELERY_DEFAULTS" && . "$CELERY_DEFAULTS"
@@ -158,7 +160,7 @@ _get_pid_files() {
     echo $(ls -1 "$CELERYD_PID_DIR"/$prog-*.pid 2> /dev/null)
 }
 
-stop() {
+kill() {
     local pid_files=$(_get_pid_files)
     [[ -z "$pid_files" ]] && echo "$prog is stopped" && return 0
 
@@ -176,6 +178,37 @@ stop() {
     done
 
     [[ "$one_failed" ]] && return 1 || return 0
+}
+
+sendcmd() {
+    cmd=$1
+    $CELERYD_MULTI $cmd $CELERYD_NODES $DAEMON_OPTS         \
+                         --pidfile="$CELERYD_PID_FILE"      \
+                         --logfile="$CELERYD_LOG_FILE"      \
+                         --loglevel="$CELERYD_LOG_LEVEL"    \
+                         --cmd="$CELERYD"                   \
+                         $CELERYD_OPTS
+
+    if [[ "$?" == "0" ]]; then
+        success
+        return 0
+    else
+        failure
+    fi
+    echo
+    return 1
+}
+
+stop() {
+    sendcmd stop
+}
+
+stopwait() {
+    sendcmd stopwait
+}
+
+restart() {
+    sendcmd restart
 }
 
 start() {
@@ -247,6 +280,25 @@ case "$1" in
         stop
     ;;
 
+
+    stopwait)
+        check_dev_null
+        check_paths
+        stopwait
+    ;;
+
+    kill)
+        check_dev_null
+        check_paths
+        sendcmd kill
+    ;;
+
+    forcekill)
+        check_dev_null
+        check_paths
+        kill
+    ;;
+
     status)
         check_status
     ;;
@@ -254,11 +306,13 @@ case "$1" in
     restart)
         check_dev_null
         check_paths
-        stop && start
+        restart
     ;;
 
     *)
-        echo "Usage: /etc/init.d/$prog {start|stop|restart|status}"
+        echo "Usage: /etc/init.d/$prog {start|stop|stopwait|restart|kill|forcekill|status}"
+        echo "start, stop, stopwait, restart and kill send celery multi commands"
+        echo "forcekill and status use init tools"
         exit 3
     ;;
 esac
