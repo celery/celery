@@ -318,7 +318,7 @@ the `terminate` option is set.
     a task is stuck.  It's not for terminating the task,
     it's for terminating the process that is executing the task, and that
     process may have already started processing another task at the point
-    when the signal is sent, so for this rason you must never call this
+    when the signal is sent, so for this reason you must never call this
     programatically.
 
 If `terminate` is set the worker child process processing the task
