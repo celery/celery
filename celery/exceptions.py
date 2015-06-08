@@ -16,22 +16,33 @@ from billiard.exceptions import (  # noqa
     SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError, Terminated,
 )
 
-__all__ = ['SecurityError', 'Ignore', 'QueueNotFound',
-           'WorkerShutdown', 'WorkerTerminate',
-           'ImproperlyConfigured', 'NotRegistered', 'AlreadyRegistered',
-           'TimeoutError', 'MaxRetriesExceededError', 'Retry',
-           'TaskRevokedError', 'NotConfigured', 'AlwaysEagerIgnored',
-           'InvalidTaskError', 'ChordError', 'CPendingDeprecationWarning',
-           'CDeprecationWarning', 'FixupWarning', 'DuplicateNodenameWarning',
-           'SoftTimeLimitExceeded', 'TimeLimitExceeded', 'WorkerLostError',
-           'Terminated']
+__all__ = [
+    'CeleryError', 'CeleryWarning', 'TaskPredicate',
+    'SecurityError', 'Ignore', 'QueueNotFound',
+    'WorkerShutdown', 'WorkerTerminate',
+    'ImproperlyConfigured', 'NotRegistered', 'AlreadyRegistered',
+    'TimeoutError', 'MaxRetriesExceededError', 'Retry',
+    'TaskRevokedError', 'NotConfigured', 'AlwaysEagerIgnored',
+    'InvalidTaskError', 'ChordError', 'CPendingDeprecationWarning',
+    'CDeprecationWarning', 'FixupWarning', 'DuplicateNodenameWarning',
+    'SoftTimeLimitExceeded', 'TimeLimitExceeded', 'WorkerLostError',
+    'Terminated',
+]
 
 UNREGISTERED_FMT = """\
 Task of kind {0} is not registered, please make sure it's imported.\
 """
 
 
-class SecurityError(Exception):
+class CeleryError(Exception):
+    pass
+
+
+class CeleryWarning(UserWarning):
+    pass
+
+
+class SecurityError(CeleryError):
     """Security related exceptions.
 
     Handle with care.
@@ -39,59 +50,11 @@ class SecurityError(Exception):
     """
 
 
-class Ignore(Exception):
-    """A task can raise this to ignore doing state updates."""
+class TaskPredicate(CeleryError):
+    pass
 
 
-class Reject(Exception):
-    """A task can raise this if it wants to reject/requeue the message."""
-
-    def __init__(self, reason=None, requeue=False):
-        self.reason = reason
-        self.requeue = requeue
-        super(Reject, self).__init__(reason, requeue)
-
-    def __repr__(self):
-        return 'reject requeue=%s: %s' % (self.requeue, self.reason)
-
-
-class WorkerTerminate(SystemExit):
-    """Signals that the worker should terminate immediately."""
-SystemTerminate = WorkerTerminate  # XXX compat
-
-
-class WorkerShutdown(SystemExit):
-    """Signals that the worker should perform a warm shutdown."""
-
-
-class QueueNotFound(KeyError):
-    """Task routed to a queue not in CELERY_QUEUES."""
-
-
-class ImproperlyConfigured(ImportError):
-    """Celery is somehow improperly configured."""
-
-
-class NotRegistered(KeyError):
-    """The task is not registered."""
-
-    def __repr__(self):
-        return UNREGISTERED_FMT.format(self)
-
-
-class AlreadyRegistered(Exception):
-    """The task is already registered."""
-
-
-class TimeoutError(Exception):
-    """The operation timed out."""
-
-
-class MaxRetriesExceededError(Exception):
-    """The tasks max restart limit has been exceeded."""
-
-
-class Retry(Exception):
+class Retry(TaskPredicate):
     """The task is to be retried later."""
 
     #: Optional message describing context of retry.
@@ -131,27 +94,79 @@ class Retry(Exception):
 RetryTaskError = Retry   # XXX compat
 
 
-class TaskRevokedError(Exception):
+class Ignore(TaskPredicate):
+    """A task can raise this to ignore doing state updates."""
+
+
+class Reject(TaskPredicate):
+    """A task can raise this if it wants to reject/requeue the message."""
+
+    def __init__(self, reason=None, requeue=False):
+        self.reason = reason
+        self.requeue = requeue
+        super(Reject, self).__init__(reason, requeue)
+
+    def __repr__(self):
+        return 'reject requeue=%s: %s' % (self.requeue, self.reason)
+
+
+class WorkerTerminate(SystemExit):
+    """Signals that the worker should terminate immediately."""
+SystemTerminate = WorkerTerminate  # XXX compat
+
+
+class WorkerShutdown(SystemExit):
+    """Signals that the worker should perform a warm shutdown."""
+
+
+class QueueNotFound(KeyError):
+    """Task routed to a queue not in CELERY_QUEUES."""
+
+
+class ImproperlyConfigured(ImportError):
+    """Celery is somehow improperly configured."""
+
+
+class NotRegistered(KeyError, CeleryError):
+    """The task is not registered."""
+
+    def __repr__(self):
+        return UNREGISTERED_FMT.format(self)
+
+
+class AlreadyRegistered(CeleryError):
+    """The task is already registered."""
+
+
+class TimeoutError(CeleryError):
+    """The operation timed out."""
+
+
+class MaxRetriesExceededError(CeleryError):
+    """The tasks max restart limit has been exceeded."""
+
+
+class TaskRevokedError(CeleryError):
     """The task has been revoked, so no result available."""
 
 
-class NotConfigured(UserWarning):
+class NotConfigured(CeleryWarning):
     """Celery has not been configured, as no config module has been found."""
 
 
-class AlwaysEagerIgnored(UserWarning):
+class AlwaysEagerIgnored(CeleryWarning):
     """send_task ignores CELERY_ALWAYS_EAGER option"""
 
 
-class InvalidTaskError(Exception):
+class InvalidTaskError(CeleryError):
     """The task has invalid data or is not properly constructed."""
 
 
-class IncompleteStream(Exception):
+class IncompleteStream(CeleryError):
     """Found the end of a stream of data, but the data is not yet complete."""
 
 
-class ChordError(Exception):
+class ChordError(CeleryError):
     """A task part of the chord raised an exception."""
 
 
@@ -163,9 +178,9 @@ class CDeprecationWarning(DeprecationWarning):
     pass
 
 
-class FixupWarning(UserWarning):
+class FixupWarning(CeleryWarning):
     pass
 
 
-class DuplicateNodenameWarning(UserWarning):
+class DuplicateNodenameWarning(CeleryWarning):
     """Multiple workers are using the same nodename."""
