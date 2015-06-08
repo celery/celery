@@ -471,13 +471,15 @@ class Task(object):
         if self.__self__ is not None:
             args = args if isinstance(args, tuple) else tuple(args or ())
             args = (self.__self__, ) + args
+            shadow = shadow or self.shadow_name(args, kwargs, final_options)
+
         final_options = self._get_exec_options()
         if options:
             final_options = dict(final_options, **options)
         return app.send_task(
             self.name, args, kwargs, task_id=task_id, producer=producer,
             link=link, link_error=link_error, result_cls=self.AsyncResult,
-            shadow=shadow or self.shadow_name(args, kwargs, final_options),
+            shadow=shadow,
             **final_options
         )
 
@@ -625,6 +627,8 @@ class Task(object):
             # if task was executed eagerly using apply(),
             # then the retry must also be executed eagerly.
             S.apply().get()
+            if throw:
+                raise ret
             return ret
 
         try:
