@@ -33,7 +33,7 @@ from celery._state import (
     _announce_app_finalized,
 )
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
-from celery.five import values
+from celery.five import items, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import gen_task_name
@@ -508,6 +508,10 @@ class Celery(object):
         while pending_beat:
             pargs, pkwargs = pending_beat.popleft()
             self._add_periodic_task(*pargs, **pkwargs)
+        # Settings.__setitem__ method, set Settings.change
+        if self._preconf:
+            for key, value in items(self._preconf):
+                setattr(s, key, value)
         self.on_after_configure.send(sender=self, source=s)
         return s
 
