@@ -465,6 +465,7 @@ class Celery(object):
                 timeout=conf.EMAIL_TIMEOUT,
                 use_ssl=conf.EMAIL_USE_SSL,
                 use_tls=conf.EMAIL_USE_TLS,
+                charset=conf.EMAIL_CHARSET,
             )
 
     def select_queues(self, queues=None):
