@@ -1635,6 +1635,7 @@ The default is 2 seconds.
 
 EMAIL_CHARSET
 ~~~~~~~~~~~~~
+.. versionadded:: 3.2.0
 
 Charset for outgoing emails. Default is "us-ascii".
 
