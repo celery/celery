@@ -136,7 +136,7 @@ concrete app instance:
 Using the Django ORM/Cache as a result backend.
 -----------------------------------------------
 
-The ``django-celery`` library defines result backends that
+The [``django-celery``](https://github.com/celery/django-celery) library defines result backends that
 uses the Django ORM and Django Cache frameworks.
 
 To use this with your project you need to follow these four steps:
