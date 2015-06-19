@@ -115,6 +115,13 @@ class test_Consumer(AppCase):
             c.start()
             sleep.assert_called_with(1)
 
+    def test_no_retry_raises_error(self):
+        self.app.conf.BROKER_CONNECTION_RETRY = False
+        c = self.get_consumer()
+        c.blueprint.start.side_effect = socket.error()
+        with self.assertRaises(socket.error):
+            c.start()
+
     def _closer(self, c):
         def se(*args, **kwargs):
             c.blueprint.state = CLOSE

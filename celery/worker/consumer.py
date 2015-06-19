@@ -277,6 +277,10 @@ class Consumer(object):
             try:
                 blueprint.start(self)
             except self.connection_errors as exc:
+                # If we're not retrying connections, no need to catch
+                # connection errors
+                if not self.app.conf.BROKER_CONNECTION_RETRY:
+                    raise
                 if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
                     raise  # Too many open files
                 maybe_shutdown()

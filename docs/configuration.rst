@@ -1633,6 +1633,15 @@ to the SMTP server when sending emails.
 
 The default is 2 seconds.
 
+EMAIL_CHARSET
+~~~~~~~~~~~~~
+.. versionadded:: 3.2.0
+
+Charset for outgoing emails. Default is "us-ascii".
+
+.. setting:: EMAIL_CHARSET
+
+
 .. _conf-example-error-mail-config:
 
 Example E-Mail configuration
