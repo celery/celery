@@ -190,6 +190,7 @@ class Scheduler(object):
                              or self.max_interval)
         self.Producer = Producer or app.amqp.Producer
         self._heap = None
+        self._ticker = None
         self.sync_every_tasks = (
             app.conf.CELERYBEAT_SYNC_EVERY if sync_every_tasks is None
             else sync_every_tasks)
@@ -225,7 +226,7 @@ class Scheduler(object):
     def is_due(self, entry):
         return entry.is_due()
 
-    def tick(self, event_t=event_t, min=min,
+    def _tick(self, event_t=event_t, min=min,
              heappop=heapq.heappop, heappush=heapq.heappush,
              heapify=heapq.heapify, mktime=time.mktime):
         """Run a tick, that is one iteration of the scheduler.
@@ -234,6 +235,7 @@ class Scheduler(object):
 
         Returns preferred delay in seconds for next call.
         """
+        adjust = self.adjust
 
         def _when(entry, next_time_to_run):
             return (mktime(entry.schedule.now().timetuple())
@@ -243,27 +245,48 @@ class Scheduler(object):
         max_interval = self.max_interval
         H = self._heap
         if H is None:
-            H = self._heap = [event_t(_when(e, e.is_due()[1]) or 0, 5, e)
+            H = self._heap = [event_t(self.adjust(e.is_due()[1]) or 0, 5, e)
                               for e in values(self.schedule)]
             heapify(H)
-        if not H:
-            return max_interval
+        while 1:
+            prev_time, to_push = None, []
+            next_tick = max_interval
 
-        event = H[0]
-        entry = event[2]
-        is_due, next_time_to_run = self.is_due(entry)
-        if is_due:
-            verify = heappop(H)
-            if verify is event:
-                next_entry = self.reserve(entry)
-                self.apply_entry(entry, producer=self.producer)
-                heappush(H, event_t(_when(next_entry, next_time_to_run),
-                                    event[1], next_entry))
-                return 0
-            else:
-                heappush(H, verify)
-                return min(verify[0], max_interval)
-        return min(adjust(next_time_to_run) or max_interval, max_interval)
+            while H:
+                event = H[0]
+                entry = event[2]
+                is_due, next_time_to_check = self.is_due(entry)
+                if next_time_to_check is not None and next_time_to_check <= 0:
+                    raise RuntimeError("next_time_to_check value returned by " +
+                                       "%s.is_due must be > 0" % entry.name)
+                next_tick = min(next_time_to_check, next_tick)
+                if is_due:
+                    verify = heappop(H)
+                    if verify is event:
+                        next_entry = self.reserve(entry)
+                        self.apply_entry(entry, producer=self.producer)
+                        to_push.append(event_t(next_time_to_check,
+                                               event[1],
+                                               next_entry))
+                    else:
+                        to_push.append(verify)
+                    yield 0
+                else:
+                    yield min(next_tick or max_interval, max_interval)
+                    break
+
+            for event in to_push:
+                heappush(H, event)
+
+    def tick(self, *args, **kwargs):
+        """Run a tick, that is one iteration of the scheduler.
+
+        Executes all due tasks.
+
+        """
+        if self._ticker is None:
+            self._ticker = self._tick(*args, **kwargs)
+        return next(self._ticker)
 
     def should_sync(self):
         return (

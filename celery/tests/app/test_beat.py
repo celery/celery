@@ -69,15 +69,15 @@ class test_ScheduleEntry(AppCase):
         entry = self.create_entry(schedule=timedelta(seconds=10))
         self.assertIs(entry.app, self.app)
         self.assertIs(entry.schedule.app, self.app)
-        due1, next_time_to_run1 = entry.is_due()
+        due1, next_time_to_check1 = entry.is_due()
         self.assertFalse(due1)
-        self.assertGreater(next_time_to_run1, 9)
+        self.assertGreater(next_time_to_check1, 9)
 
         next_run_at = entry.last_run_at - timedelta(seconds=10)
         next_entry = entry.next(next_run_at)
-        due2, next_time_to_run2 = next_entry.is_due()
+        due2, next_time_to_check2 = next_entry.is_due()
         self.assertTrue(due2)
-        self.assertGreater(next_time_to_run2, 9)
+        self.assertGreater(next_time_to_check2, 9)
 
     def test_repr(self):
         entry = self.create_entry()
@@ -105,6 +105,7 @@ class mScheduler(beat.Scheduler):
 
     def __init__(self, *args, **kwargs):
         self.sent = []
+        self.applied = []
         beat.Scheduler.__init__(self, *args, **kwargs)
 
     def send_task(self, name=None, args=None, kwargs=None, **options):
@@ -113,6 +114,10 @@ class mScheduler(beat.Scheduler):
                           'kwargs': kwargs,
                           'options': options})
         return self.app.AsyncResult(uuid())
+
+    def apply_entry(self, entry, producer=None):
+        self.applied.append(entry.name)
+        beat.Scheduler.apply_entry(self, entry, producer=producer)
 
 
 class mSchedulerSchedulingError(mScheduler):
@@ -283,6 +288,13 @@ class test_Scheduler(AppCase):
         self.assertEqual(scheduler.tick(), 0)
         self.assertTrue(error.called)
 
+    def test_due_tick_RuntimeError(self):
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='test_due_tick_RuntimeError',
+                      schedule=mocked_schedule(True, 0))
+        with self.assertRaises(RuntimeError):
+            scheduler.tick()
+
     def test_pending_tick(self):
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_pending_tick',
@@ -304,6 +316,19 @@ class test_Scheduler(AppCase):
                  for i, j in enumerate(nums))
         scheduler.update_from_dict(s)
         self.assertEqual(scheduler.tick(), min(nums) - 0.010)
+
+    def test_apply_tasks(self):
+        scheduler = mScheduler(app=self.app)
+        dups = [36, 36]
+        nums = [600, 300, 650, 120, 250]
+        s = dict(('test_apply_tasks%s' % i,
+                 {'schedule': mocked_schedule(j in dups, j)})
+                 for i, j in enumerate(dups + nums))
+        scheduler.update_from_dict(s)
+        while scheduler.tick() == 0:
+            pass
+        for i, j in enumerate(dups):
+            self.assertIn('test_apply_tasks%s' % i, scheduler.applied)
 
     def test_schedule_no_remain(self):
         scheduler = mScheduler(app=self.app)

@@ -567,7 +567,7 @@ class crontab(schedule):
         return remaining(*self.remaining_delta(last_run_at, ffwd=ffwd))
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items `(is_due, next_time_to_run)`,
+        """Returns tuple of two items `(is_due, next_time_to_check)`,
         where next time to run is in seconds.
 
         See :meth:`celery.schedules.schedule.is_due` for more information.
