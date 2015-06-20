@@ -164,19 +164,19 @@ Framework Integration
 Celery is easy to integrate with web frameworks, some of which even have
 integration packages:
 
-    +--------------------+------------------------+
-    | `Django`_          | not needed             |
-    +--------------------+------------------------+
-    | `Pyramid`_         | `pyramid_celery`_      |
-    +--------------------+------------------------+
-    | `Pylons`_          | `celery-pylons`_       |
-    +--------------------+------------------------+
-    | `Flask`_           | not needed             |
-    +--------------------+------------------------+
-    | `web2py`_          | `web2py-celery`_       |
-    +--------------------+------------------------+
-    | `Tornado`_         | `tornado-celery`_      |
-    +--------------------+------------------------+
+    +--------------------+----------------------------------------------------+
+    | `Django`_          | not needed                                         |
+    +--------------------+----------------------------------------------------+
+    | `Pyramid`_         | `pyramid_celery`_                                  |
+    +--------------------+----------------------------------------------------+
+    | `Pylons`_          | `celery-pylons`_                                   |
+    +--------------------+----------------------------------------------------+
+    | `Flask`_           | not needed                                         |
+    +--------------------+----------------------------------------------------+
+    | `web2py`_          | `web2py-celery`_                                   |
+    +--------------------+----------------------------------------------------+
+    | `Tornado`_         | `tornado-celery`_ | `another tornado-celery`_      |
+    +--------------------+----------------------------------------------------+
 
 The integration packages are not strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
@@ -194,6 +194,7 @@ database connections at ``fork``.
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: http://github.com/mher/tornado-celery/
+.. _`another tornado-celery`: https://github.com/mayflaver/tornado-celery
 
 .. _celery-documentation:
 
