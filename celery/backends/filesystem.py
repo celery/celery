@@ -7,6 +7,8 @@
 """
 from __future__ import absolute_import
 
+from kombu.utils.encoding import ensure_bytes
+
 from celery.exceptions import ImproperlyConfigured
 from celery.backends.base import KeyValueStoreBackend
 from celery.utils import uuid
@@ -81,7 +83,7 @@ class FilesystemBackend(KeyValueStoreBackend):
 
     def set(self, key, value):
         with self.open(self._filename(key), 'wb') as outfile:
-            outfile.write(value)
+            outfile.write(ensure_bytes(value))
 
     def mget(self, keys):
         for key in keys:
