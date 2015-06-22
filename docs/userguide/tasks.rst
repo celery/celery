@@ -733,48 +733,31 @@ Result Backends
 If you want to keep track of tasks or need the return values, then Celery
 must store or send the states somewhere so that they can be retrieved later.
 There are several built-in result backends to choose from: SQLAlchemy/Django ORM,
-Memcached, RabbitMQ (amqp), MongoDB, and Redis -- or you can define your own.
+Memcached, RabbitMQ/QPid (rpc), MongoDB, and Redis -- or you can define your own.
 
 No backend works well for every use case.
 You should read about the strengths and weaknesses of each backend, and choose
 the most appropriate for your needs.
 
-
 .. seealso::
 
     :ref:`conf-result-backend`
 
-RabbitMQ Result Backend
-~~~~~~~~~~~~~~~~~~~~~~~
+RPC Result Backend (RabbitMQ/QPid)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The RabbitMQ result backend (amqp) is special as it does not actually *store*
+The RPC result backend (`rpc://`) is special as it does not actually *store*
 the states, but rather sends them as messages.  This is an important difference as it
-means that a result *can only be retrieved once*; If you have two processes
-waiting for the same result, one of the processes will never receive the
-result!
+means that a result *can only be retrieved once*, and *only by the client
+that initiated the task*. Two different processes can not wait for the same result.
 
 Even with that limitation, it is an excellent choice if you need to receive
 state changes in real-time.  Using messaging means the client does not have to
 poll for new states.
 
-There are several other pitfalls you should be aware of when using the
-RabbitMQ result backend:
-
-* Every new task creates a new queue on the server, with thousands of tasks
-  the broker may be overloaded with queues and this will affect performance in
-  negative ways. If you're using RabbitMQ then each queue will be a separate
-  Erlang process, so if you're planning to keep many results simultaneously you
-  may have to increase the Erlang process limit, and the maximum number of file
-  descriptors your OS allows.
-
-* Old results will be cleaned automatically, based on the
-  :setting:`CELERY_TASK_RESULT_EXPIRES` setting.  By default this is set to
-  expire after 1 day: if you have a very busy cluster you should lower
-  this value.
-
-For a list of options supported by the RabbitMQ result backend, please see
-:ref:`conf-amqp-result-backend`.
-
+The messages are transient (non-persistent) by default, so the results will
+disappear if the broker restarts. You can configure the result backend to send
+persistent messages using the :setting:`CELERY_RESULT_PERSISTENT` setting.
 
 Database Result Backend
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -793,7 +776,6 @@ limitations.
   means the transaction will not see changes by other transactions until the
   transaction is committed.  It is recommended that you change to the
   `READ-COMMITTED` isolation level.
-
 
 .. _task-builtin-states:
 
