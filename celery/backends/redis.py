@@ -131,6 +131,7 @@ class RedisBackend(KeyValueStoreBackend):
 
         # Query parameters override other parameters
         connparams.update(query)
+        connparams.update(socket_timeout=5)
         return connparams
 
     def get(self, key):
