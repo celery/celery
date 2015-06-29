@@ -118,7 +118,7 @@ class BaseBackend(object):
                                  status=states.SUCCESS, request=request)
 
     def mark_as_failure(self, task_id, exc, traceback=None, request=None):
-        """Mark task as executed with failure. Stores the execption."""
+        """Mark task as executed with failure. Stores the exception."""
         return self.store_result(task_id, exc, status=states.FAILURE,
                                  traceback=traceback, request=request)
 
