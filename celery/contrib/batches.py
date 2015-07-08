@@ -13,6 +13,12 @@ Experimental task class that buffers messages and processes them as a list.
 
     In the future we hope to add the ability to direct batching tasks
     to a channel with different QoS requirements than the task channel.
+    
+    Until then, you can create a worker solely for your batches task 
+    and override the default `CELERYD_PREFETCH_MULTIPLIER` setting by 
+    executing the worker on startup like this::
+    
+        $ celery worker -l info -- celeryd.prefetch_multiplier=0
 
 **Simple Example**
 
