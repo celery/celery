@@ -887,7 +887,7 @@ You can get a list of tasks waiting to be scheduled by using
 Dump of reserved tasks
 ----------------------
 
-Reserved tasks are tasks that has been received, but is still waiting to be
+Reserved tasks are tasks that have been received, but are still waiting to be
 executed.
 
 You can get a list of these using
