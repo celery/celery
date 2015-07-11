@@ -262,7 +262,7 @@ class Consumer(object):
             hold = bucket.expected_time(tokens)
             pri = self._limit_order = (self._limit_order + 1) % 10
             self.timer.call_after(
-                hold, self._limit_move_to_pool, (request, ),
+                hold, self._limit_move_to_pool, (request,),
                 priority=pri,
             )
         else:
@@ -300,7 +300,7 @@ class Consumer(object):
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
-            self, 'register_with_event_loop', args=(hub, ),
+            self, 'register_with_event_loop', args=(hub,),
             description='Hub.register',
         )
 
@@ -522,7 +522,7 @@ class Connection(bootsteps.StartStopStep):
 
 
 class Events(bootsteps.StartStopStep):
-    requires = (Connection, )
+    requires = (Connection,)
 
     def __init__(self, c, send_events=None, **kwargs):
         self.send_events = True
@@ -563,7 +563,7 @@ class Events(bootsteps.StartStopStep):
 
 
 class Heart(bootsteps.StartStopStep):
-    requires = (Events, )
+    requires = (Events,)
 
     def __init__(self, c, without_heartbeat=False, heartbeat_interval=None,
                  **kwargs):
@@ -584,7 +584,7 @@ class Heart(bootsteps.StartStopStep):
 
 class Mingle(bootsteps.StartStopStep):
     label = 'Mingle'
-    requires = (Events, )
+    requires = (Events,)
     compatible_transports = {'amqp', 'redis'}
 
     def __init__(self, c, without_mingle=False, **kwargs):
@@ -617,7 +617,7 @@ class Mingle(bootsteps.StartStopStep):
 
 
 class Tasks(bootsteps.StartStopStep):
-    requires = (Mingle, )
+    requires = (Mingle,)
 
     def __init__(self, c, **kwargs):
         c.task_consumer = c.qos = None
@@ -664,7 +664,7 @@ class Tasks(bootsteps.StartStopStep):
 
 class Agent(bootsteps.StartStopStep):
     conditional = True
-    requires = (Connection, )
+    requires = (Connection,)
 
     def __init__(self, c, **kwargs):
         self.agent_cls = self.enabled = c.app.conf.CELERYD_AGENT
@@ -675,7 +675,7 @@ class Agent(bootsteps.StartStopStep):
 
 
 class Control(bootsteps.StartStopStep):
-    requires = (Tasks, )
+    requires = (Tasks,)
 
     def __init__(self, c, **kwargs):
         self.is_green = c.pool is not None and c.pool.is_green
@@ -690,7 +690,7 @@ class Control(bootsteps.StartStopStep):
 
 class Gossip(bootsteps.ConsumerStep):
     label = 'Gossip'
-    requires = (Mingle, )
+    requires = (Mingle,)
     _cons_stamp_fields = itemgetter(
         'id', 'clock', 'hostname', 'pid', 'topic', 'action', 'cver',
     )

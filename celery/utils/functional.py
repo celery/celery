@@ -158,7 +158,7 @@ def memoize(maxsize=None, keyfun=None, Cache=LRUCache):
             if keyfun:
                 key = keyfun(args, kwargs)
             else:
-                key = args + (KEYWORD_MARK, ) + tuple(sorted(kwargs.items()))
+                key = args + (KEYWORD_MARK,) + tuple(sorted(kwargs.items()))
             try:
                 with mutex:
                     value = cache[key]
@@ -314,7 +314,7 @@ class _regen(UserList, list):
         self.__it = it
 
     def __reduce__(self):
-        return list, (self.data, )
+        return list, (self.data,)
 
     def __length_hint__(self):
         return self.__it.__length_hint__()

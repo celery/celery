@@ -693,7 +693,7 @@ def ignore_errno(*errnos, **kwargs):
     :keyword types: A tuple of exceptions to ignore (when the errno matches),
                     defaults to :exc:`Exception`.
     """
-    types = kwargs.get('types') or (Exception, )
+    types = kwargs.get('types') or (Exception,)
     errnos = [get_errno_name(errno) for errno in errnos]
     try:
         yield

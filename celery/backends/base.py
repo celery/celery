@@ -131,7 +131,7 @@ class BaseBackend(object):
                 [app.signature(errback)
                  for errback in callback.options.get('link_error') or []],
                 app=app,
-            ).apply_async((callback.id, ))
+            ).apply_async((callback.id,))
         except Exception as eb_exc:
             return backend.fail_from_current_stack(callback.id, exc=eb_exc)
         else:
@@ -352,7 +352,7 @@ class BaseBackend(object):
                               countdown=1, **kwargs):
         kwargs['result'] = [r.as_tuple() for r in result]
         self.app.tasks['celery.chord_unlock'].apply_async(
-            (group_id, body, ), kwargs, countdown=countdown,
+            (group_id, body,), kwargs, countdown=countdown,
         )
 
     def apply_chord(self, header, partial_args, group_id, body,

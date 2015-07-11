@@ -338,7 +338,7 @@ class test_App(AppCase):
         with self.assertRaises(TypeError):
             aawsX.apply_async(())
         with self.assertRaises(TypeError):
-            aawsX.apply_async((2, ))
+            aawsX.apply_async((2,))
 
         with patch('celery.app.amqp.AMQP.create_task_message') as create:
             with patch('celery.app.amqp.AMQP.send_task_message') as send:

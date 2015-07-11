@@ -192,7 +192,7 @@ class test_Hub(Case):
         hub.timer = Mock()
         hub.scheduler = iter([(0, eback)])
         with self.assertRaises(KeyError):
-            hub.fire_timers(propagate=(KeyError, ))
+            hub.fire_timers(propagate=(KeyError,))
 
         eback.side_effect = ValueError('foo')
         hub.scheduler = iter([(0, eback)])
@@ -258,8 +258,8 @@ class test_Hub(Case):
             call(11, hub.READ | hub.ERR),
         ], any_order=True)
 
-        self.assertEqual(hub.readers[10], (read_A, (10, )))
-        self.assertEqual(hub.readers[11], (read_B, (11, )))
+        self.assertEqual(hub.readers[10], (read_A, (10,)))
+        self.assertEqual(hub.readers[11], (read_B, (11,)))
 
         hub.remove(10)
         self.assertNotIn(10, hub.readers)

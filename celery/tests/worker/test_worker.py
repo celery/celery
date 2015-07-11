@@ -39,7 +39,7 @@ def MockStep(step=None):
     step = Mock() if step is None else step
     step.blueprint = Mock()
     step.blueprint.name = 'MockNS'
-    step.name = 'MockStep(%s)' % (id(step), )
+    step.name = 'MockStep(%s)' % (id(step),)
     return step
 
 
@@ -333,7 +333,7 @@ class test_Consumer(AppCase):
                          send_events=False, pool=BasePool(), app=self.app)
         l.controller = l.app.WorkController()
         l.pool = l.controller.pool = Mock()
-        l.channel_errors = (KeyError, )
+        l.channel_errors = (KeyError,)
         with self.assertRaises(KeyError):
             l.start()
         l.timer.stop()
@@ -354,7 +354,7 @@ class test_Consumer(AppCase):
         l.controller = l.app.WorkController()
         l.pool = l.controller.pool = Mock()
 
-        l.connection_errors = (KeyError, )
+        l.connection_errors = (KeyError,)
         self.assertRaises(SyntaxError, l.start)
         l.timer.stop()
 
@@ -424,8 +424,8 @@ class test_Consumer(AppCase):
 
     def test_ignore_errors(self):
         l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
-        l.connection_errors = (AttributeError, KeyError, )
-        l.channel_errors = (SyntaxError, )
+        l.connection_errors = (AttributeError, KeyError,)
+        l.channel_errors = (SyntaxError,)
         ignore_errors(l, Mock(side_effect=AttributeError('foo')))
         ignore_errors(l, Mock(side_effect=KeyError('foo')))
         ignore_errors(l, Mock(side_effect=SyntaxError('foo')))
@@ -547,7 +547,7 @@ class test_Consumer(AppCase):
 
         l.event_dispatcher = mock_event_dispatcher()
         l.update_strategies()
-        l.connection_errors = (socket.error, )
+        l.connection_errors = (socket.error,)
         m.reject = Mock()
         m.reject.side_effect = socket.error('foo')
         callback = self._get_on_message(l)
@@ -631,7 +631,7 @@ class test_Consumer(AppCase):
         chan = con.node.channel = Mock()
         l.connection = Mock()
         chan.close.side_effect = socket.error('foo')
-        l.connection_errors = (socket.error, )
+        l.connection_errors = (socket.error,)
         con.reset()
         chan.close.assert_called_with()
 
@@ -716,7 +716,7 @@ class test_Consumer(AppCase):
     def test_connect_errback(self, sleep, connect):
         l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         from kombu.transport.memory import Transport
-        Transport.connection_errors = (ChannelError, )
+        Transport.connection_errors = (ChannelError,)
 
         def effect():
             if connect.call_count > 1:

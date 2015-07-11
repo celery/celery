@@ -251,7 +251,7 @@ class crontab_parser(object):
             m = regex.match(part)
             if m:
                 return handler(m.groups())
-        return self._expand_range((part, ))
+        return self._expand_range((part,))
 
     def _expand_range(self, toks):
         fr = self._expand_number(toks[0])

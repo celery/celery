@@ -196,7 +196,7 @@ class Worker(_pool.Worker):
         # our version sends a WORKER_UP message when the process is ready
         # to accept work, this will tell the parent that the inqueue fd
         # is writable.
-        self.outq.put((WORKER_UP, (pid, )))
+        self.outq.put((WORKER_UP, (pid,)))
 
 
 class ResultHandler(_pool.ResultHandler):
@@ -644,8 +644,8 @@ class AsynPool(_pool.Pool):
         revoked_tasks = worker_state.revoked
         getpid = os.getpid
 
-        precalc = {ACK: self._create_payload(ACK, (0, )),
-                   NACK: self._create_payload(NACK, (0, ))}
+        precalc = {ACK: self._create_payload(ACK, (0,)),
+                   NACK: self._create_payload(NACK, (0,))}
 
         def _put_back(job, _time=time.time):
             # puts back at the end of the queue
@@ -854,7 +854,7 @@ class AsynPool(_pool.Pool):
             cor = _write_ack(fd, msg, callback=callback)
             mark_write_gen_as_active(cor)
             mark_write_fd_as_active(fd)
-            callback.args = (cor, )
+            callback.args = (cor,)
             add_writer(fd, cor)
         self.send_ack = send_ack
 
@@ -1225,7 +1225,7 @@ class AsynPool(_pool.Pool):
     def _help_stuff_finish_args(self):
         # Pool._help_stuff_finished is a classmethod so we have to use this
         # trick to modify the arguments passed to it.
-        return (self._pool, )
+        return (self._pool,)
 
     @classmethod
     def _help_stuff_finish(cls, pool):

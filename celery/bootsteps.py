@@ -21,7 +21,7 @@ from .utils.log import get_logger
 
 try:
     from greenlet import GreenletExit
-    IGNORE_ERRORS = (GreenletExit, )
+    IGNORE_ERRORS = (GreenletExit,)
 except ImportError:  # pragma: no cover
     IGNORE_ERRORS = ()
 
@@ -393,7 +393,7 @@ class StartStopStep(Step):
 
 
 class ConsumerStep(StartStopStep):
-    requires = ('celery.worker.consumer:Connection', )
+    requires = ('celery.worker.consumer:Connection',)
     consumers = None
 
     def get_consumers(self, channel):

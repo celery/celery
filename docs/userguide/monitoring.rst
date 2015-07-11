@@ -584,7 +584,7 @@ Combining these you can easily process events in real-time:
             task = state.tasks.get(event['uuid'])
 
             print('TASK FAILED: %s[%s] %s' % (
-                task.name, task.uuid, task.info(), ))
+                task.name, task.uuid, task.info(),))
 
         with app.connection() as connection:
             recv = app.events.Receiver(connection, handlers={
@@ -620,7 +620,7 @@ You can listen to specific events by specifying the handlers:
             task = state.tasks.get(event['uuid'])
 
             print('TASK FAILED: %s[%s] %s' % (
-                task.name, task.uuid, task.info(), ))
+                task.name, task.uuid, task.info(),))
 
         with app.connection() as connection:
             recv = app.events.Receiver(connection, handlers={

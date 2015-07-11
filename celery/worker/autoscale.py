@@ -39,7 +39,7 @@ AUTOSCALE_KEEPALIVE = float(os.environ.get('AUTOSCALE_KEEPALIVE', 30))
 class WorkerComponent(bootsteps.StartStopStep):
     label = 'Autoscaler'
     conditional = True
-    requires = (Pool, )
+    requires = (Pool,)
 
     def __init__(self, w, **kwargs):
         self.enabled = w.autoscale

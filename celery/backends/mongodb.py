@@ -126,7 +126,7 @@ class MongoBackend(BaseBackend):
             self.options.update(config)
 
     def _prepare_client_options(self):
-            if pymongo.version_tuple >= (3, ):
+            if pymongo.version_tuple >= (3,):
                 return {'maxPoolSize': self.max_pool_size}
             else:  # pragma: no cover
                 return {'max_pool_size': self.max_pool_size,

@@ -328,7 +328,7 @@ class Request(object):
         task_ready(self)
 
         if isinstance(exc_info.exception, MemoryError):
-            raise MemoryError('Process got: %s' % (exc_info.exception, ))
+            raise MemoryError('Process got: %s' % (exc_info.exception,))
         elif isinstance(exc_info.exception, Reject):
             return self.reject(requeue=exc_info.exception.requeue)
         elif isinstance(exc_info.exception, Ignore):

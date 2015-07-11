@@ -41,7 +41,7 @@ The API defines a standard set of execution options, as well as three methods:
     - ``T.delay(arg, kwarg=value)``
         always a shortcut to ``.apply_async``.
 
-    - ``T.apply_async((arg, ), {'kwarg': value})``
+    - ``T.apply_async((arg,), {'kwarg': value})``
 
     - ``T.apply_async(countdown=10)``
         executes 10 seconds from now.

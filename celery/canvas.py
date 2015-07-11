@@ -280,12 +280,12 @@ class Signature(dict):
         if isinstance(other, group):
             other = maybe_unroll_group(other)
         if not isinstance(self, chain) and isinstance(other, chain):
-            return chain((self, ) + other.tasks, app=self._app)
+            return chain((self,) + other.tasks, app=self._app)
         elif isinstance(other, chain):
             return chain(*self.tasks + other.tasks, app=self._app)
         elif isinstance(other, Signature):
             if isinstance(self, chain):
-                return chain(*self.tasks + (other, ), app=self._app)
+                return chain(*self.tasks + (other,), app=self._app)
             return chain(self, other, app=self._app)
         return NotImplemented
 
@@ -299,7 +299,7 @@ class Signature(dict):
     def __reduce__(self):
         # for serialization, the task type is lazily loaded,
         # and not stored in the dict itself.
-        return signature, (dict(self), )
+        return signature, (dict(self),)
 
     def __json__(self):
         return dict(self)
@@ -484,7 +484,7 @@ class chain(Signature):
         last, fargs = None, args
         for task in self.tasks:
             res = task.clone(fargs).apply(
-                last and (last.get(), ), **dict(self.options, **options))
+                last and (last.get(),), **dict(self.options, **options))
             res.parent, last, fargs = last, res, None
         return last
 
@@ -835,7 +835,7 @@ class chord(Signature):
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks))
         return body.apply(
-            args=(tasks.apply().get(propagate=propagate), ),
+            args=(tasks.apply().get(propagate=propagate),),
         )
 
     def _traverse_tasks(self, tasks, value=None):

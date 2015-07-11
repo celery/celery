@@ -253,7 +253,7 @@ class Celery(object):
                     ret = self._task_from_fun(fun, **opts)
                 else:
                     # return a proxy object that evaluates on first use
-                    ret = PromiseProxy(self._task_from_fun, (fun, ), opts,
+                    ret = PromiseProxy(self._task_from_fun, (fun,), opts,
                                        __doc__=fun.__doc__)
                     self._pending.append(ret)
                 if _filt:
@@ -280,7 +280,7 @@ class Celery(object):
 
         if name not in self._tasks:
             run = fun if bind else staticmethod(fun)
-            task = type(fun.__name__, (base, ), dict({
+            task = type(fun.__name__, (base,), dict({
                 'app': self,
                 'name': name,
                 'run': run,
@@ -583,7 +583,7 @@ class Celery(object):
         if not keep_reduce:
             attrs['__reduce__'] = __reduce__
 
-        return type(name or Class.__name__, (Class, ), attrs)
+        return type(name or Class.__name__, (Class,), attrs)
 
     def _rgetattr(self, path):
         return attrgetter(path)(self)

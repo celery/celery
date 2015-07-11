@@ -112,7 +112,7 @@ class ExeMockPool(MockPool):
     def apply_async(self, target, args=(), kwargs={}, callback=noop):
         from threading import Timer
         res = target(*args, **kwargs)
-        Timer(0.1, callback, (res, )).start()
+        Timer(0.1, callback, (res,)).start()
         return MockResult(res, next(self._current_proc))
 
 
@@ -227,7 +227,7 @@ class test_AsynPool(PoolCase):
 
     def test_promise(self):
         fun = Mock()
-        x = asynpool.promise(fun, (1, ), {'foo': 1})
+        x = asynpool.promise(fun, (1,), {'foo': 1})
         x()
         self.assertTrue(x.ready)
         fun.assert_called_with(1, foo=1)
@@ -235,7 +235,7 @@ class test_AsynPool(PoolCase):
     def test_Worker(self):
         w = asynpool.Worker(Mock(), Mock())
         w.on_loop_start(1234)
-        w.outq.put.assert_called_with((asynpool.WORKER_UP, (1234, )))
+        w.outq.put.assert_called_with((asynpool.WORKER_UP, (1234,)))
 
 
 class test_ResultHandler(PoolCase):
@@ -287,7 +287,7 @@ class test_TaskPool(PoolCase):
     def test_apply_async(self):
         pool = TaskPool(10)
         pool.start()
-        pool.apply_async(lambda x: x, (2, ), {})
+        pool.apply_async(lambda x: x, (2,), {})
 
     def test_grow_shrink(self):
         pool = TaskPool(10)

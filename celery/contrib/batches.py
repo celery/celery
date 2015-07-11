@@ -230,7 +230,7 @@ class Batches(Task):
 
     def flush(self, requests):
         return self.apply_buffer(requests, ([SimpleRequest.from_request(r)
-                                             for r in requests], ))
+                                             for r in requests],))
 
     def _do_flush(self):
         logger.debug('Batches: Wake-up to flush buffer...')

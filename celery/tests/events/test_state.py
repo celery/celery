@@ -253,8 +253,8 @@ class test_Task(AppCase):
         self.assertEqual(sorted(list(task._info_fields)),
                          sorted(task.info().keys()))
 
-        self.assertEqual(sorted(list(task._info_fields + ('received', ))),
-                         sorted(task.info(extra=('received', ))))
+        self.assertEqual(sorted(list(task._info_fields + ('received',))),
+                         sorted(task.info(extra=('received',))))
 
         self.assertEqual(sorted(['args', 'kwargs']),
                          sorted(task.info(['args', 'kwargs']).keys()))

@@ -204,7 +204,7 @@ def skip_unless_module(module):
             try:
                 importlib.import_module(module)
             except ImportError:
-                raise SkipTest('Does not have %s' % (module, ))
+                raise SkipTest('Does not have %s' % (module,))
 
             return fun(*args, **kwargs)
 
@@ -362,11 +362,11 @@ class Case(unittest.TestCase):
         errors = []
         if missing:
             errors.append(
-                'Expected, but missing:\n    %s' % (safe_repr(missing), )
+                'Expected, but missing:\n    %s' % (safe_repr(missing),)
             )
         if unexpected:
             errors.append(
-                'Unexpected, but present:\n    %s' % (safe_repr(unexpected), )
+                'Unexpected, but present:\n    %s' % (safe_repr(unexpected),)
             )
         if errors:
             standardMsg = '\n'.join(errors)

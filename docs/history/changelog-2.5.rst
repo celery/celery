@@ -76,7 +76,7 @@ News
 
         @task_sent.connect
         def on_task_sent(**kwargs):
-            print("sent task: %r" % (kwargs, ))
+            print("sent task: %r" % (kwargs,))
 
 - Invalid task messages are now rejected instead of acked.
 
@@ -96,8 +96,8 @@ News
 
     .. code-block:: python
 
-        >>> s = add.subtask((5, ))
-        >>> new = s.clone(args=(10, ), countdown=5})
+        >>> s = add.subtask((5,))
+        >>> new = s.clone(args=(10,), countdown=5})
         >>> new.args
         (10, 5)
 

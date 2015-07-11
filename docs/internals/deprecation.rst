@@ -122,7 +122,7 @@ for example::
 
     @task()
     def add(x, y, task_id=None):
-        print("My task id is %r" % (task_id, ))
+        print("My task id is %r" % (task_id,))
 
 should be rewritten into::
 

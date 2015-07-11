@@ -27,7 +27,7 @@ It should contain all you need to run a basic Celery set-up.
     BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 
     # List of modules to import when celery starts.
-    CELERY_IMPORTS = ('myapp.tasks', )
+    CELERY_IMPORTS = ('myapp.tasks',)
 
     ## Using the database to store task state and results.
     CELERY_RESULT_BACKEND = 'db+sqlite:///results.db'

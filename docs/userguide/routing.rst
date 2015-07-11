@@ -535,11 +535,11 @@ becomes -->
 You install router classes by adding them to the :setting:`CELERY_ROUTES`
 setting::
 
-    CELERY_ROUTES = (MyRouter(), )
+    CELERY_ROUTES = (MyRouter(),)
 
 Router classes can also be added by name::
 
-    CELERY_ROUTES = ('myapp.routers.MyRouter', )
+    CELERY_ROUTES = ('myapp.routers.MyRouter',)
 
 
 For simple task name -> route mappings like the router example above,
@@ -548,10 +548,12 @@ same behavior:
 
 .. code-block:: python
 
-    CELERY_ROUTES = ({'myapp.tasks.compress_video': {
-                            'queue': 'video',
-                            'routing_key': 'video.compress'
-                     }}, )
+    CELERY_ROUTES = (
+        {'myapp.tasks.compress_video': {
+            'queue': 'video',
+            'routing_key': 'video.compress',
+        }},
+    )
 
 The routers will then be traversed in order, it will stop at the first router
 returning a true value, and use that as the final route for the task.
@@ -567,7 +569,7 @@ copies of tasks to all workers connected to it:
 
     from kombu.common import Broadcast
 
-    CELERY_QUEUES = (Broadcast('broadcast_tasks'), )
+    CELERY_QUEUES = (Broadcast('broadcast_tasks'),)
 
     CELERY_ROUTES = {'tasks.reload_cache': {'queue': 'broadcast_tasks'}}
 

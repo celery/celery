@@ -46,7 +46,7 @@ To open several URLs at once you can do::
     >>> result = group(urlopen.s(url)
     ...                     for url in LIST_OF_URLS).apply_async()
     >>> for incoming_result in result.iter_native():
-    ...     print(incoming_result, )
+    ...     print(incoming_result)
 
 * `webcrawler.crawl`
 

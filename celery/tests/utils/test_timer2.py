@@ -23,12 +23,12 @@ class test_Entry(Case):
         self.assertTupleEqual(scratch[0], (4, 4, 'baz'))
 
     def test_cancel(self):
-        tref = timer2.Entry(lambda x: x, (1, ), {})
+        tref = timer2.Entry(lambda x: x, (1,), {})
         tref.cancel()
         self.assertTrue(tref.cancelled)
 
     def test_repr(self):
-        tref = timer2.Entry(lambda x: x(1, ), {})
+        tref = timer2.Entry(lambda x: x(1,), {})
         self.assertTrue(repr(tref))
 
 

@@ -50,7 +50,7 @@ def prepare(annotations):
     if annotations is None:
         return ()
     elif not isinstance(annotations, (list, tuple)):
-        annotations = (annotations, )
+        annotations = (annotations,)
     return [expand_annotation(anno) for anno in annotations]
 
 

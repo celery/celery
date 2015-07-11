@@ -238,7 +238,7 @@ class AMQP(object):
         if not queues and conf.CELERY_DEFAULT_QUEUE:
             queues = (Queue(conf.CELERY_DEFAULT_QUEUE,
                             exchange=self.default_exchange,
-                            routing_key=conf.CELERY_DEFAULT_ROUTING_KEY), )
+                            routing_key=conf.CELERY_DEFAULT_ROUTING_KEY),)
         autoexchange = (self.autoexchange if autoexchange is None
                         else autoexchange)
         return self.queues_cls(

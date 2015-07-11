@@ -17,7 +17,7 @@ from celery.result import EagerResult
 from celery.tests.case import AppCase, Mock
 
 SIG = Signature({'task': 'TASK',
-                 'args': ('A1', ),
+                 'args': ('A1',),
                  'kwargs': {'K1': 'V1'},
                  'options': {'task_id': 'TASK_ID'},
                  'subtask_type': ''})
@@ -54,7 +54,7 @@ class test_Signature(CanvasCase):
 
     def test_getitem_property(self):
         self.assertEqual(SIG.task, 'TASK')
-        self.assertEqual(SIG.args, ('A1', ))
+        self.assertEqual(SIG.args, ('A1',))
         self.assertEqual(SIG.kwargs, {'K1': 'V1'})
         self.assertEqual(SIG.options, {'task_id': 'TASK_ID'})
         self.assertEqual(SIG.subtask_type, '')
@@ -69,7 +69,7 @@ class test_Signature(CanvasCase):
 
     def test_replace(self):
         x = Signature('TASK', ('A'), {})
-        self.assertTupleEqual(x.replace(args=('B', )).args, ('B', ))
+        self.assertTupleEqual(x.replace(args=('B',)).args, ('B',))
         self.assertDictEqual(
             x.replace(kwargs={'FOO': 'BAR'}).kwargs,
             {'FOO': 'BAR'},
@@ -130,7 +130,7 @@ class test_Signature(CanvasCase):
 
     def test_merge_immutable(self):
         x = self.add.si(2, 2, foo=1)
-        args, kwargs, options = x._merge((4, ), {'bar': 2}, {'task_id': 3})
+        args, kwargs, options = x._merge((4,), {'bar': 2}, {'task_id': 3})
         self.assertTupleEqual(args, (2, 2))
         self.assertDictEqual(kwargs, {'foo': 1})
         self.assertDictEqual(options, {'task_id': 3})
@@ -247,7 +247,7 @@ class test_chain(CanvasCase):
         x = dict(self.add.s(2, 2) | self.add.s(4))
         x['args'] = None
         self.assertIsInstance(chain.from_dict(x), chain)
-        x['args'] = (2, )
+        x['args'] = (2,)
         self.assertIsInstance(chain.from_dict(x), chain)
 
     def test_accepts_generator_argument(self):

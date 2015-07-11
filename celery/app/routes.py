@@ -92,5 +92,5 @@ def prepare(routes):
     if routes is None:
         return ()
     if not isinstance(routes, (list, tuple)):
-        routes = (routes, )
+        routes = (routes,)
     return [expand_route(route) for route in routes]

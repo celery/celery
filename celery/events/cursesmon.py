@@ -236,7 +236,7 @@ class CursesMonitor(object):  # pragma: no cover
                 if ch != -1:
                     if ch in (10, curses.KEY_ENTER):            # enter
                         break
-                    if ch in (27, ):
+                    if ch in (27,):
                         buffer = str()
                         break
                     buffer += chr(ch)

@@ -84,16 +84,16 @@ rq = lambda s: s.strip("\"'")
 
 def add_default(m):
     attr_name, attr_value = m.groups()
-    return ((attr_name, rq(attr_value)), )
+    return ((attr_name, rq(attr_value)),)
 
 
 def add_version(m):
     v = list(map(rq, m.groups()[0].split(', ')))
-    return (('VERSION', '.'.join(v[0:3]) + ''.join(v[3:])), )
+    return (('VERSION', '.'.join(v[0:3]) + ''.join(v[3:])),)
 
 
 def add_doc(m):
-    return (('doc', m.groups()[0]), )
+    return (('doc', m.groups()[0]),)
 
 pats = {re_meta: add_default,
         re_vers: add_version,

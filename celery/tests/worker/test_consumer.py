@@ -37,7 +37,7 @@ class test_Consumer(AppCase):
         consumer.blueprint = Mock()
         consumer._restart_state = Mock()
         consumer.connection = _amqp_connection()
-        consumer.connection_errors = (socket.error, OSError, )
+        consumer.connection_errors = (socket.error, OSError,)
         return consumer
 
     def test_taskbuckets_defaultdict(self):
@@ -88,7 +88,7 @@ class test_Consumer(AppCase):
             self.assertEqual(c._limit_order, limit_order + 1)
             bucket.can_consume.assert_called_with(4)
             c.timer.call_after.assert_called_with(
-                3.33, c._limit_move_to_pool, (request, ),
+                3.33, c._limit_move_to_pool, (request,),
                 priority=c._limit_order,
             )
             bucket.expected_time.assert_called_with(4)

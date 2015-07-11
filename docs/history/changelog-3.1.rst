@@ -422,7 +422,7 @@ News
   exceptions.
 
 - **Worker**: No longer sends task error emails for expected errors (in
-  ``@task(throws=(..., )))``.
+  ``@task(throws=(...,)))``.
 
 - **Canvas**: Fixed problem with exception deserialization when using
   the JSON serializer (Issue #1987).

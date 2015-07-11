@@ -198,7 +198,7 @@ class test_ControlPanel(AppCase):
         panel = self.create_panel(consumer=consumer)
         consumer.event_dispatcher.enabled = True
         panel.handle('heartbeat')
-        self.assertIn(('worker-heartbeat', ),
+        self.assertIn(('worker-heartbeat',),
                       consumer.event_dispatcher.send.call_args)
 
     def test_time_limit(self):
@@ -347,10 +347,10 @@ class test_ControlPanel(AppCase):
         self.assertFalse(panel.handle('dump_schedule'))
         r = Request(TaskMessage(self.mytask.name, 'CAFEBABE'), app=self.app)
         consumer.timer.schedule.enter_at(
-            consumer.timer.Entry(lambda x: x, (r, )),
+            consumer.timer.Entry(lambda x: x, (r,)),
             datetime.now() + timedelta(seconds=10))
         consumer.timer.schedule.enter_at(
-            consumer.timer.Entry(lambda x: x, (object(), )),
+            consumer.timer.Entry(lambda x: x, (object(),)),
             datetime.now() + timedelta(seconds=10))
         self.assertTrue(panel.handle('dump_schedule'))
 

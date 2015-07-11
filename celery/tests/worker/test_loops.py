@@ -42,7 +42,7 @@ class X(object):
         )
         self.consumer.callbacks = []
         self.obj.strategies = {}
-        self.connection.connection_errors = (socket.error, )
+        self.connection.connection_errors = (socket.error,)
         self.hub.readers = {}
         self.hub.writers = {}
         self.hub.consolidate = set()
@@ -217,7 +217,7 @@ class test_asynloop(AppCase):
         x.hub.on_tick.add(x.closer(mod=2))
         asynloop(*x.args)
         x.qos.update.assert_called_with()
-        x.hub.fire_timers.assert_called_with(propagate=(socket.error, ))
+        x.hub.fire_timers.assert_called_with(propagate=(socket.error,))
 
     def test_poll_empty(self):
         x = X(self.app)

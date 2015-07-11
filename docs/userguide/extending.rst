@@ -65,7 +65,7 @@ whenever the connection is established:
     mechanisms.  The first one is the ``callbacks`` argument which accepts
     a list of callbacks with a ``(body, message)`` signature,
     the second one is the ``on_message`` argument which takes a single
-    callback with a ``(message, )`` signature.  The latter will not
+    callback with a ``(message,)`` signature.  The latter will not
     automatically decode and deserialize the payload which is useful
     in many cases:
 
@@ -146,7 +146,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.components:Hub', )
+            requires = ('celery.worker.components:Hub',)
 
 .. attribute:: pool
 
@@ -158,7 +158,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.components:Pool', )
+            requires = ('celery.worker.components:Pool',)
 
 .. attribute:: timer
 
@@ -169,7 +169,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.components:Timer', )
+            requires = ('celery.worker.components:Timer',)
 
 .. attribute:: statedb
 
@@ -183,7 +183,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.components:Statedb', )
+            requires = ('celery.worker.components:Statedb',)
 
 .. attribute:: autoscaler
 
@@ -197,7 +197,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.autoscaler:Autoscaler', )
+            requires = ('celery.worker.autoscaler:Autoscaler',)
 
 .. attribute:: autoreloader
 
@@ -210,7 +210,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.autoreloader:Autoreloader', )
+            requires = ('celery.worker.autoreloader:Autoreloader',)
 
 An example Worker bootstep could be:
 
@@ -219,7 +219,7 @@ An example Worker bootstep could be:
     from celery import bootsteps
 
     class ExampleWorkerStep(bootsteps.StartStopStep):
-        requires = ('Pool', )
+        requires = ('Pool',)
 
         def __init__(self, worker, **kwargs):
             print('Called when the WorkController instance is constructed')
@@ -252,7 +252,7 @@ Another example could use the timer to wake up at regular intervals:
 
 
     class DeadlockDetection(bootsteps.StartStopStep):
-        requires = ('Timer', )
+        requires = ('Timer',)
 
         def __init__(self, worker, deadlock_timeout=3600):
             self.timeout = deadlock_timeout
@@ -262,7 +262,7 @@ Another example could use the timer to wake up at regular intervals:
         def start(self, worker):
             # run every 30 seconds.
             self.tref = worker.timer.call_repeatedly(
-                30.0, self.detect, (worker, ), priority=10,
+                30.0, self.detect, (worker,), priority=10,
             )
 
         def stop(self, worker):
@@ -321,7 +321,7 @@ Attributes
     .. code-block:: python
 
         class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker:Hub', )
+            requires = ('celery.worker:Hub',)
 
 
 .. attribute:: connection
@@ -334,7 +334,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Connection', )
+            requires = ('celery.worker.consumer:Connection',)
 
 .. attribute:: event_dispatcher
 
@@ -345,7 +345,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Events', )
+            requires = ('celery.worker.consumer:Events',)
 
 .. attribute:: gossip
 
@@ -357,7 +357,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Events', )
+            requires = ('celery.worker.consumer:Events',)
 
 .. attribute:: pool
 
@@ -378,7 +378,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Heart', )
+            requires = ('celery.worker.consumer:Heart',)
 
 .. attribute:: task_consumer
 
@@ -389,7 +389,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Heart', )
+            requires = ('celery.worker.consumer:Heart',)
 
 .. attribute:: strategies
 
@@ -409,7 +409,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Heart', )
+            requires = ('celery.worker.consumer:Heart',)
 
 
 .. attribute:: task_buckets

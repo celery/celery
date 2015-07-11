@@ -162,7 +162,7 @@ class logtool(Command):
         audit = Audit()
         audit.run(files)
         for task_id in audit.incomplete_tasks():
-            self.error('Did not complete: %r' % (task_id, ))
+            self.error('Did not complete: %r' % (task_id,))
 
     def debug(self, files):
         Audit(on_debug=self.out).run(files)

@@ -264,7 +264,7 @@ class RedisBackend(KeyValueStoreBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         return super(RedisBackend, self).__reduce__(
-            (self.url, ), {'expires': self.expires},
+            (self.url,), {'expires': self.expires},
         )
 
     @deprecated_property(3.2, 3.3)

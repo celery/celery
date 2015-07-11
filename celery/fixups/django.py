@@ -143,7 +143,7 @@ class DjangoWorkerFixup(object):
         except (ImportError, AttributeError):
             self._close_old_connections = None
         self.database_errors = (
-            (DatabaseError, ) +
+            (DatabaseError,) +
             _my_database_errors +
             _pg_database_errors +
             _lite_database_errors +

@@ -130,23 +130,23 @@ class test_trace(TraceCase):
 
     def test_trace_SystemExit(self):
         with self.assertRaises(SystemExit):
-            self.trace(self.raises, (SystemExit(), ), {})
+            self.trace(self.raises, (SystemExit(),), {})
 
     def test_trace_Retry(self):
         exc = Retry('foo', 'bar')
-        _, info = self.trace(self.raises, (exc, ), {})
+        _, info = self.trace(self.raises, (exc,), {})
         self.assertEqual(info.state, states.RETRY)
         self.assertIs(info.retval, exc)
 
     def test_trace_exception(self):
         exc = KeyError('foo')
-        _, info = self.trace(self.raises, (exc, ), {})
+        _, info = self.trace(self.raises, (exc,), {})
         self.assertEqual(info.state, states.FAILURE)
         self.assertIs(info.retval, exc)
 
     def test_trace_exception_propagate(self):
         with self.assertRaises(KeyError):
-            self.trace(self.raises, (KeyError('foo'), ), {}, propagate=True)
+            self.trace(self.raises, (KeyError('foo'),), {}, propagate=True)
 
     @patch('celery.app.trace.build_tracer')
     @patch('celery.app.trace.report_internal_error')
@@ -167,7 +167,7 @@ class test_trace(TraceCase):
 class test_TraceInfo(TraceCase):
 
     class TI(TraceInfo):
-        __slots__ = TraceInfo.__slots__ + ('__dict__', )
+        __slots__ = TraceInfo.__slots__ + ('__dict__',)
 
     def test_handle_error_state(self):
         x = self.TI(states.FAILURE)

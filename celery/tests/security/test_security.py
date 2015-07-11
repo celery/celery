@@ -103,8 +103,8 @@ class test_security(SecurityCase):
 
     def test_reraise_errors(self):
         with self.assertRaises(SecurityError):
-            with reraise_errors(errors=(KeyError, )):
+            with reraise_errors(errors=(KeyError,)):
                 raise KeyError('foo')
         with self.assertRaises(KeyError):
-            with reraise_errors(errors=(ValueError, )):
+            with reraise_errors(errors=(ValueError,)):
                 raise KeyError('bar')

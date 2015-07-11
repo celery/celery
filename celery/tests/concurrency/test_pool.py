@@ -66,7 +66,7 @@ class test_TaskPool(AppCase):
         self.assertIsInstance(scratchpad[1]['ret_value'],
                               ExceptionInfo)
         self.assertEqual(scratchpad[1]['ret_value'].exception.args,
-                         ('FOO EXCEPTION', ))
+                         ('FOO EXCEPTION',))
 
         self.assertEqual(res3.get(), 400)
         time.sleep(0.5)

@@ -430,7 +430,7 @@ chain breaks:
 
         >>> from celery.execute import apply_async
 
-        >>> apply_async(hello, ('world!', ))
+        >>> apply_async(hello, ('world!',))
 
     or you could also create a ``Task`` class to set
     certain options, or override other behavior

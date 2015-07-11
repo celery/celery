@@ -29,7 +29,7 @@ class test_periodic_tasks(AppCase):
 
     def test_must_have_run_every(self):
         with self.assertRaises(NotImplementedError):
-            type('Foo', (PeriodicTask, ), {'__module__': __name__})
+            type('Foo', (PeriodicTask,), {'__module__': __name__})
 
     def test_remaining_estimate(self):
         s = self.my_periodic.run_every

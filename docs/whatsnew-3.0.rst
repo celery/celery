@@ -315,7 +315,7 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
         # (2 + 2) * 8 / 2
         >>> res = chain(add.subtask((2, 2)),
-                        mul.subtask((8, )),
+                        mul.subtask((8,)),
                         div.subtask((2,))).apply_async()
         >>> res.get() == 16
 
@@ -633,7 +633,7 @@ without also initializing the app environment::
         abstract = True
 
         def __call__(self, *args, **kwargs):
-            print('CALLING %r' % (self, ))
+            print('CALLING %r' % (self,))
             return self.run(*args, **kwargs)
 
     >>> DebugTask
@@ -742,7 +742,7 @@ In Other News
 
             @wraps(fun)
             def _inner(*args, **kwargs):
-                print('ARGS: %r' % (args, ))
+                print('ARGS: %r' % (args,))
             return _inner
 
         CELERY_ANNOTATIONS = {

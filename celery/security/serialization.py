@@ -33,7 +33,7 @@ class SecureSerializer(object):
         """serialize data structure into string"""
         assert self._key is not None
         assert self._cert is not None
-        with reraise_errors('Unable to serialize: {0!r}', (Exception, )):
+        with reraise_errors('Unable to serialize: {0!r}', (Exception,)):
             content_type, content_encoding, body = dumps(
                 bytes_to_str(data), serializer=self._serializer)
             # What we sign is the serialized body, not the body itself.
@@ -48,7 +48,7 @@ class SecureSerializer(object):
     def deserialize(self, data):
         """deserialize data structure from string"""
         assert self._cert_store is not None
-        with reraise_errors('Unable to deserialize: {0!r}', (Exception, )):
+        with reraise_errors('Unable to deserialize: {0!r}', (Exception,)):
             payload = self._unpack(data)
             signature, signer, body = (payload['signature'],
                                        payload['signer'],
