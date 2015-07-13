@@ -39,7 +39,7 @@ class CouchBaseBackend(KeyValueStoreBackend):
     timeout = 2.5
     transcoder = None
     # supports_autoexpire = False
-    
+
     # Use str as couchbase key not bytes
     key_t = str_t
 

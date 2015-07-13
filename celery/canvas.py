@@ -392,7 +392,7 @@ class chain(Signature):
 
         try:
             tasks, results = self._frozen
-        except (AttributeError, ValueError):
+        except (AttributeError, ValueError, TypeError):
             tasks, results = self.prepare_steps(
                 args, self.tasks, root_id, link_error, app,
                 task_id, group_id, chord,
