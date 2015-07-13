@@ -390,13 +390,14 @@ class chain(Signature):
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)
 
-        try:
-            tasks, results = self._frozen
-        except (AttributeError, ValueError, TypeError):
+        if self._frozen:
+            tasks, result = self._frozen
+        else:
             tasks, results = self.prepare_steps(
                 args, self.tasks, root_id, link_error, app,
                 task_id, group_id, chord,
             )
+
         if results:
             # make sure we can do a link() and link_error() on a chain object.
             if link:
