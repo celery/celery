@@ -741,7 +741,7 @@ class Task(object):
         :param sig: :class:`@signature`
 
         Note: This will raise :exc:`~@Ignore`, so the best practice
-        is to always use ``raise self.replace_in_chord(...)`` to convey
+        is to always use ``raise self.replace(...)`` to convey
         to the reader that the task will not continue after being replaced.
 
         :param: Signature of new task.
