@@ -126,7 +126,7 @@ Task.replace
 
     A new builtin task (`celery.accumulate` was added for this purpose)
 
-    Closes #81
+    Closes #817
 
 
 Optimized Beat implementation
