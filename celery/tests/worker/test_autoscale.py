@@ -107,7 +107,7 @@ class test_Autoscaler(AppCase):
         state.reserved_requests.clear()
         x.body()
         self.assertEqual(x.pool.num_processes, 10)
-        x._last_action = monotonic() - 10000
+        x._last_scale_up = monotonic() - 10000
         x.body()
         self.assertEqual(x.pool.num_processes, 3)
         self.assertTrue(worker.consumer._update_prefetch_count.called)
@@ -141,7 +141,7 @@ class test_Autoscaler(AppCase):
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.scale_up(3)
-        x._last_action = monotonic() - 10000
+        x._last_scale_up = monotonic() - 10000
         x.pool.shrink_raises_ValueError = True
         x.scale_down(1)
         self.assertTrue(debug.call_count)
@@ -156,7 +156,7 @@ class test_Autoscaler(AppCase):
         self.assertEqual(x.processes, 5)
         x.force_scale_down(3)
         self.assertEqual(x.processes, 2)
-        x.update(3, None)
+        x.update(None, 3)
         self.assertEqual(x.processes, 3)
         x.force_scale_down(1000)
         self.assertEqual(x.min_concurrency, 0)
