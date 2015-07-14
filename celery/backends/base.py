@@ -535,7 +535,7 @@ class KeyValueStoreBackend(BaseBackend):
                           result=None, options={}, **kwargs):
         self.save_group(group_id, self.app.GroupResult(group_id, result))
 
-        fixed_options = dict((k,v) for k,v in options.items() if k != 'task_id')
+        fixed_options = {k: v for k,v in options.items() if k != 'task_id'}
 
         return header(*partial_args, task_id=group_id, **fixed_options or {})
 
