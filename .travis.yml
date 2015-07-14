@@ -1,4 +1,8 @@
 language: python
+sudo: false
+cache:
+  directories:
+    - $HOME/.cache/pip
 python: 2.7
 env:
   global:
@@ -8,11 +12,6 @@ env:
     - TOXENV=3.3
     - TOXENV=3.4
     - TOXENV=pypy
-before_install:
-  - |
-    python --version
-    uname -a
-    lsb_release -a
 install:
   - pip install tox
 script:
