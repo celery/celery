@@ -391,7 +391,7 @@ class chain(Signature):
                 if args and not self.immutable else self.args)
 
         if self._frozen:
-            tasks, result = self._frozen
+            tasks, results = self._frozen
         else:
             tasks, results = self.prepare_steps(
                 args, self.tasks, root_id, link_error, app,
