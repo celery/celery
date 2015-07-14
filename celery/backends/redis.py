@@ -199,6 +199,7 @@ class RedisBackend(KeyValueStoreBackend):
     def _new_chord_return(self, task, state, result, propagate=None,
                           PROPAGATE_STATES=states.PROPAGATE_STATES):
         app = self.app
+        # FIXME: propagate is Unused
         if propagate is None:
             propagate = self.app.conf.CELERY_CHORD_PROPAGATES
         request = task.request
