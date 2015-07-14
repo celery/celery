@@ -196,11 +196,8 @@ class RedisBackend(KeyValueStoreBackend):
         options['task_id'] = group_id
         return header(*partial_args, **options or {})
 
-    def _new_chord_return(self, task, state, result, propagate=None,
-                          PROPAGATE_STATES=states.PROPAGATE_STATES):
+    def _new_chord_return(self, task, state, result, propagate=None):
         app = self.app
-        if propagate is None:
-            propagate = self.app.conf.CELERY_CHORD_PROPAGATES
         request = task.request
         tid, gid = request.id, request.group
         if not gid or not tid:
