@@ -434,6 +434,22 @@ class test_crontab_remaining_estimate(AppCase):
         )
         self.assertEqual(next, datetime(2010, 5, 29, 0, 5))
 
+    def test_invalid_specification(self):
+        # *** WARNING ***
+        # This test triggers an infinite loop in case of a regression
+        with self.assertRaises(RuntimeError):
+            next = self.next_ocurrance(
+                self.crontab(day_of_month=31, month_of_year=4),
+                datetime(2010, 1, 28, 14, 30, 15),
+            )
+
+    def test_leapyear(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=30, hour=14, day_of_month=29, month_of_year=2),
+            datetime(2012, 2, 29, 14, 30),
+        )
+        self.assertEqual(next, datetime(2016, 2, 29, 14, 30))
+
 
 class test_crontab_is_due(AppCase):
 
