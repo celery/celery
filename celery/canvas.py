@@ -408,13 +408,14 @@ class chain(Signature):
     def freeze(self, _id=None, group_id=None, chord=None, root_id=None):
         _, results = self._frozen = self.prepare_steps(
             self.args, self.tasks, root_id, None, self.app, _id, group_id, chord,
+            clone=False,
         )
         return results[-1]
 
     def prepare_steps(self, args, tasks,
                       root_id=None, link_error=None, app=None,
                       last_task_id=None, group_id=None, chord_body=None,
-                      from_dict=Signature.from_dict):
+                      clone=True, from_dict=Signature.from_dict):
         app = app or self.app
         steps = deque(tasks)
         next_step = prev_task = prev_res = None
@@ -429,7 +430,8 @@ class chain(Signature):
                 task = maybe_unroll_group(task)
 
             # first task gets partial args from chain
-            task = task.clone(args) if not i else task.clone()
+            if clone:
+                task = task.clone(args) if not i else task.clone()
 
             if isinstance(task, chain):
                 # splice the chain
@@ -655,7 +657,7 @@ class group(Signature):
             for sig, res in tasks:
                 sig.apply_async(producer=producer, add_to_parent=False,
                                 **options)
-                yield res
+                yield res  # <-- r.parent, etc set in the frozen result.
 
     def _freeze_gid(self, options):
         # remove task_id and use that as the group_id,
