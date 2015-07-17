@@ -432,6 +432,8 @@ class chain(Signature):
             # first task gets partial args from chain
             if clone:
                 task = task.clone(args) if not i else task.clone()
+            elif not i:
+                task.args = tuple(args) + tuple(task.args)
 
             if isinstance(task, chain):
                 # splice the chain
