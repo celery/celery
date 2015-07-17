@@ -453,7 +453,7 @@ class crontab(schedule):
             return False
 
         def roll_over():
-            while 1:
+            for _ in range(2000):
                 flag = (datedata.dom == len(days_of_month) or
                         day_out_of_range(datedata.year,
                                          months_of_year[datedata.moy],
@@ -470,6 +470,10 @@ class crontab(schedule):
                         datedata.year += 1
                 else:
                     break
+            else:
+                # Tried 2000 times, we're most likely in an infinite loop
+                raise RuntimeError('unable to rollover, '
+                                   'time specification is probably invalid')
 
         if last_run_at.month in self.month_of_year:
             datedata.dom = bisect(days_of_month, last_run_at.day)
