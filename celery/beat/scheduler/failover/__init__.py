@@ -1,0 +1,4 @@
+"""
+    celery.beat.scheduler.failover
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""
