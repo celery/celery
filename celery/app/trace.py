@@ -273,7 +273,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                     else:
                                         sigs.append(sig)
                                 for group_ in groups:
-                                    group.apply_async((retval, ))
+                                    group_.apply_async((retval, ))
                                 if sigs:
                                     group(sigs).apply_async((retval, ))
                             else:

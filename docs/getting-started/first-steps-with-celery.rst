@@ -223,12 +223,12 @@ built-in result backends to choose from: `SQLAlchemy`_/`Django`_ ORM,
 .. _`SQLAlchemy`: http://www.sqlalchemy.org/
 .. _`Django`: http://djangoproject.com
 
-For this example you will use the `amqp` result backend, which sends states
-as messages.  The backend is specified via the ``backend`` argument to
+For this example you will use the `rpc` result backend, which sends states
+back as transient messages.  The backend is specified via the ``backend`` argument to
 :class:`@Celery`, (or via the :setting:`CELERY_RESULT_BACKEND` setting if
 you choose to use a configuration module)::
 
-    app = Celery('tasks', backend='amqp', broker='amqp://')
+    app = Celery('tasks', backend='rpc://', broker='amqp://')
 
 Or if you want to use Redis as the result backend, but still use RabbitMQ as
 the message broker (a popular combination)::
@@ -333,7 +333,7 @@ current directory or on the Python path, it could look like this:
 .. code-block:: python
 
     BROKER_URL = 'amqp://'
-    CELERY_RESULT_BACKEND = 'amqp://'
+    CELERY_RESULT_BACKEND = 'rpc://'
 
     CELERY_TASK_SERIALIZER = 'json'
     CELERY_RESULT_SERIALIZER = 'json'

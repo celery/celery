@@ -8,16 +8,67 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
-.. _version-3.1.17:
+.. _version-3.1.18:
 
 3.1.18
 ======
-:release-date: TBD
+:release-date: 2015-04-22 05:30 P.M UTC
 :release-by: Ask Solem
 
-- **Worker**: Properly recycle Django database connection in the worker when CONN_MAX_AGE is used.
+- **Requirements**
+
+    - Now depends on :ref:`Kombu 3.0.25 <kombu:version-3.0.25>`.
+
+    - Now depends on :mod:`billiard` 3.3.0.20.
+
+- **Django**: Now supports Django 1.8 (Issue #2536).
+
+    Fix contributed by Bence Tamas and Mickaël Penhard.
+
+- **Results**: MongoDB result backend now compatible with pymongo 3.0.
+
+    Fix contributed by Fatih Sucu.
+
+- **Tasks**: Fixed bug only happening when a task has multiple callbacks
+  (Issue #2515).
+
+    Fix contributed by NotSqrt.
+
+- **Commands**: Preload options now support ``--arg value`` syntax.
+
+    Fix contributed by John Anderson.
+
+- **Compat**: A typo caused ``celery.log.setup_logging_subsystem`` to be
+  undefined.
+
+    Fix contributed by Gunnlaugur Thor Briem.
+
+- **init scripts**: The celerybeat generic init script now uses
+  ``/bin/sh`` instead of bash (Issue #2496).
+
+    Fix contributed by Jelle Verstraaten.
+
+- **Django**: Fixed a :exc:`TypeError` sometimes occurring in logging
+  when validating models.
+
+    Fix contributed by Alexander.
+
+- **Commands**: Worker now supports new ``--executable`` argument that can
+  be used with ``--detach``.
+
+    Contributed by Bert Vanderbauwhede.
+
+- **Canvas**: Fixed crash in chord unlock fallback task (Issue #2404).
+
+- **Worker**: Fixed rare crash occurring with ``--autoscale`` enabled
+  (Issue #2411).
+
+- **Django**: Properly recycle worker Django database connections when the
+  Django ``CONN_MAX_AGE`` setting is enabled (Issue #2453).
 
     Fix contributed by Luke Burden.
+
+.. _version-3.1.17:
 
 3.1.17
 ======

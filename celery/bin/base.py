@@ -505,11 +505,7 @@ class Command(object):
         return self.preparse_options(args, self.preload_options)
 
     def add_append_opt(self, acc, opt, value):
-        default = opt.default or []
-
-        if opt.dest not in acc:
-           acc[opt.dest] = default
-
+        acc.setdefault(opt.dest, opt.default or [])
         acc[opt.dest].append(value)
 
     def preparse_options(self, args, options):

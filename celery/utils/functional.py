@@ -24,7 +24,18 @@ __all__ = ['LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
            'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
            'regen', 'dictfilter', 'lazy', 'maybe_evaluate']
 
+IS_PYPY = hasattr(sys, 'pypy_version_info')
+
 KEYWORD_MARK = object()
+
+
+class DummyContext(object):
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        pass
 
 
 class LRUCache(UserDict):
@@ -57,6 +68,12 @@ class LRUCache(UserDict):
                 for item in islice(iter(data), len(data) - limit):
                     data.pop(item)
 
+    def popitem(self, last=True, _needs_lock=IS_PYPY):
+        if not _needs_lock:
+            return self.data.popitem(last)
+        with self.mutex:
+            return self.data.popitem(last)
+
     def __setitem__(self, key, value):
         # remove least recently used key.
         with self.mutex:
@@ -67,20 +84,23 @@ class LRUCache(UserDict):
     def __iter__(self):
         return iter(self.data)
 
-    def _iterate_items(self):
-        for k in self:
-            try:
-                yield (k, self.data[k])
-            except KeyError:  # pragma: no cover
-                pass
+    def _iterate_items(self, _need_lock=IS_PYPY):
+        with self.mutex if _need_lock else DummyContext():
+            for k in self:
+                try:
+                    yield (k, self.data[k])
+                except KeyError:  # pragma: no cover
+                    pass
     iteritems = _iterate_items
 
-    def _iterate_values(self):
-        for k in self:
-            try:
-                yield self.data[k]
-            except KeyError:  # pragma: no cover
-                pass
+    def _iterate_values(self, _need_lock=IS_PYPY):
+        with self.mutex if _need_lock else DummyContext():
+            for k in self:
+                try:
+                    yield self.data[k]
+                except KeyError:  # pragma: no cover
+                    pass
+
     itervalues = _iterate_values
 
     def _iterate_keys(self):

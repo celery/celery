@@ -31,7 +31,7 @@ The cache key expires after some time in case something unexpected happens
     from celery import task
     from celery.utils.log import get_task_logger
     from django.core.cache import cache
-    from django.utils.hashcompat import md5_constructor as md5
+    from hashlib import md5
     from djangofeeds.models import Feed
 
     logger = get_task_logger(__name__)
@@ -42,7 +42,7 @@ The cache key expires after some time in case something unexpected happens
     def import_feed(feed_url):
         # The cache key consists of the task name and the MD5 digest
         # of the feed URL.
-        feed_url_digest = md5(feed_url).hexdigest()
+        feed_url_hexdigest = md5(feed_url).hexdigest()
         lock_id = '{0}-lock-{1}'.format(self.name, feed_url_hexdigest)
 
         # cache.add fails if if the key already exists

@@ -79,7 +79,7 @@ class test_LRUCache(Case):
             def run(self):
                 while not self.__is_shutdown.isSet():
                     try:
-                        self.cache.data.popitem(last=False)
+                        self.cache.popitem(last=False)
                     except KeyError:
                         break
                 self.__is_stopped.set()

@@ -183,17 +183,13 @@ The backend used to store task results (tombstones).
 Disabled by default.
 Can be one of the following:
 
+* rpc
+    Send results back as AMQP messages
+    See :ref:`conf-rpc-result-backend`.
+
 * database
     Use a relational database supported by `SQLAlchemy`_.
     See :ref:`conf-database-result-backend`.
-
-* cache
-    Use `memcached`_ to store the results.
-    See :ref:`conf-cache-result-backend`.
-
-* mongodb
-    Use `MongoDB`_ to store the results.
-    See :ref:`conf-mongodb-result-backend`.
 
 * redis
     Use `Redis`_ to store the results.
@@ -203,9 +199,13 @@ Can be one of the following:
     Use `Sentinel`_ to store the results in `Redis`_
     See :ref:`conf-sentinel-result-backend`.
 
-* amqp
-    Send results back as AMQP messages
-    See :ref:`conf-amqp-result-backend`.
+* cache
+    Use `memcached`_ to store the results.
+    See :ref:`conf-cache-result-backend`.
+
+* mongodb
+    Use `MongoDB`_ to store the results.
+    See :ref:`conf-mongodb-result-backend`.
 
 * cassandra
     Use `Cassandra`_ to store the results.
@@ -218,6 +218,10 @@ Can be one of the following:
 * couchbase
     Use `Couchbase`_ to store the results.
     See :ref:`conf-couchbase-result-backend`.
+
+* amqp
+    Older AMQP backend (badly) emulating a database-based backend.
+    See :ref:`conf-amqp-result-backend`.
 
 .. warning:
 
@@ -335,35 +339,12 @@ you to customize the table names:
         'group': 'myapp_groupmeta',
     }
 
+.. _conf-rpc-result-backend:
+
+RPC backend settings
+--------------------
+
 .. _conf-amqp-result-backend:
-
-AMQP backend settings
----------------------
-
-.. note::
-
-    The AMQP backend requires RabbitMQ 1.1.0 or higher to automatically
-    expire results.  If you are running an older version of RabbitmQ
-    you should disable result expiration like this:
-
-        CELERY_TASK_RESULT_EXPIRES = None
-
-.. setting:: CELERY_RESULT_EXCHANGE
-
-CELERY_RESULT_EXCHANGE
-~~~~~~~~~~~~~~~~~~~~~~
-
-Name of the exchange to publish results in.  Default is `celeryresults`.
-
-.. setting:: CELERY_RESULT_EXCHANGE_TYPE
-
-CELERY_RESULT_EXCHANGE_TYPE
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The exchange type of the result exchange.  Default is to use a `direct`
-exchange.
-
-.. setting:: CELERY_RESULT_PERSISTENT
 
 CELERY_RESULT_PERSISTENT
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -377,8 +358,9 @@ Example configuration
 
 .. code-block:: python
 
-    CELERY_RESULT_BACKEND = 'amqp'
-    CELERY_TASK_RESULT_EXPIRES = 18000  # 5 hours.
+    CELERY_RESULT_BACKEND = 'rpc://'
+    CELERY_RESULT_PERSISTENT = False
+
 
 .. _conf-cache-result-backend:
 
@@ -800,6 +782,55 @@ This is a dict supporting the following keys:
 * password
     Password to authenticate to the Couchbase server (optional).
 
+AMQP backend settings
+---------------------
+
+.. admonition:: Do not use in production.
+
+    This is the old AMQP result backend that creates one queue per task,
+    if you want to send results back as message please consider using the
+    RPC backend instead, or if you need the results to be persistent
+    use a result backend designed for that purpose (e.g. Redis, or a database).
+
+.. note::
+
+    The AMQP backend requires RabbitMQ 1.1.0 or higher to automatically
+    expire results.  If you are running an older version of RabbitMQ
+    you should disable result expiration like this:
+
+        CELERY_TASK_RESULT_EXPIRES = None
+
+.. setting:: CELERY_RESULT_EXCHANGE
+
+CELERY_RESULT_EXCHANGE
+~~~~~~~~~~~~~~~~~~~~~~
+
+Name of the exchange to publish results in.  Default is `celeryresults`.
+
+.. setting:: CELERY_RESULT_EXCHANGE_TYPE
+
+CELERY_RESULT_EXCHANGE_TYPE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The exchange type of the result exchange.  Default is to use a `direct`
+exchange.
+
+.. setting:: CELERY_RESULT_PERSISTENT
+
+CELERY_RESULT_PERSISTENT
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If set to :const:`True`, result messages will be persistent.  This means the
+messages will not be lost after a broker restart.  The default is for the
+results to be transient.
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    CELERY_RESULT_BACKEND = 'amqp'
+    CELERY_TASK_RESULT_EXPIRES = 18000  # 5 hours.
 
 .. _conf-messaging:
 
@@ -1040,7 +1071,7 @@ manner using TCP/IP alone, so AMQP defines something called heartbeats
 that's is used both by the client and the broker to detect if
 a connection was closed.
 
-Hartbeats are disabled by default.
+Heartbeats are disabled by default.
 
 If the heartbeat value is 10 seconds, then
 the heartbeat will be monitored at the interval specified

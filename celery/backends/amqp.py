@@ -180,7 +180,8 @@ class AMQPBackend(BaseBackend):
                 raise self.BacklogLimitExceeded(task_id)
 
             if latest:
-                payload = self._cache[task_id] = latest.payload
+                payload = self._cache[task_id] = \
+                    self.meta_from_decoded(latest.payload)
                 latest.requeue()
                 return payload
             else:
