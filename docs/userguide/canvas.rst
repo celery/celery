@@ -911,11 +911,11 @@ while calling ``.apply_async`` will create a dedicated
 task so that the individual tasks are applied in a worker
 instead::
 
-    >>> add.chunks(zip(range(100), range(100), 10)).apply_async()
+    >>> add.chunks(zip(range(100), range(100)), 10).apply_async()
 
 You can also convert chunks to a group::
 
-    >>> group = add.chunks(zip(range(100), range(100), 10)).group()
+    >>> group = add.chunks(zip(range(100), range(100)), 10).group()
 
 and with the group skew the countdown of each task by increments
 of one::
