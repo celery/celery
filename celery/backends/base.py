@@ -167,11 +167,12 @@ class BaseBackend(object):
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
-        if not isinstance(exc, BaseException):
-            exc = create_exception_cls(
-                from_utf8(exc['exc_type']), __name__)(exc['exc_message'])
-        if self.serializer in EXCEPTION_ABLE_CODECS:
-            exc = get_pickled_exception(exc)
+        if exc:
+            if not isinstance(exc, BaseException):
+                exc = create_exception_cls(
+                    from_utf8(exc['exc_type']), __name__)(exc['exc_message'])
+            if self.serializer in EXCEPTION_ABLE_CODECS:
+                exc = get_pickled_exception(exc)
         return exc
 
     def prepare_value(self, result):
