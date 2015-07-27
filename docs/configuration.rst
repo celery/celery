@@ -1352,7 +1352,8 @@ Time (in seconds, or a :class:`~datetime.timedelta` object) for when after
 stored task tombstones will be deleted.
 
 A built-in periodic task will delete the results after this time
-(:class:`celery.task.backend_cleanup`).
+(``celery.backend_cleanup``), assuming that ``celery beat`` is
+enabled.  The task runs daily at 4am.
 
 A value of :const:`None` or 0 means results will never expire (depending
 on backend specifications).
