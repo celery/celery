@@ -280,7 +280,7 @@ It has an input and an output, where you must connect the input to a broker and 
 the output to a result backend if so wanted.  But if you look closely at the back
 there's a lid revealing loads of sliders, dials and buttons: this is the configuration.
 
-The default configuration should be good enough for most uses, but there's
+The default configuration should be good enough for most uses, but there are
 many things to tweak so Celery works just the way you want it to.
 Reading about the options available is a good idea to get familiar with what
 can be configured. You can read about the options in the
