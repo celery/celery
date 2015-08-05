@@ -310,9 +310,15 @@ class test_MongoBackend(AppCase):
         mock_get_database.assert_called_once_with()
         mock_collection.find_one.assert_called_once_with(
             {'_id': sentinel.taskset_id})
+<<<<<<< HEAD
         self.assertEqual(
             list(sorted(['date_done', 'result', 'task_id'])),
             list(sorted(ret_val.keys())),
+=======
+        self.assertItemsEqual(
+            ['date_done', 'result', 'task_id'],
+            list(ret_val.keys()),
+>>>>>>> e758762... Fix for https://github.com/celery/celery/issues/2743
         )
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
@@ -380,3 +386,42 @@ class test_MongoBackend(AppCase):
         with self.assertRaises(ImproperlyConfigured):
             x._get_database()
         db.authenticate.assert_called_with('jerry', 'cere4l')
+
+    @patch('celery.backends.mongodb.detect_environment')
+    def test_prepare_client_options_for_ver_2(self, m_detect_env):
+        m_detect_env.return_value = 'default'
+        with patch('pymongo.version_tuple', new=(2, 6, 3)):
+            options = self.backend._prepare_client_options()
+            self.assertDictEqual(options, {
+                'max_pool_size': self.backend.max_pool_size,
+                'auto_start_request': False
+            })
+
+    @patch('celery.backends.mongodb.detect_environment')
+    def test_prepare_client_options_for_ver_2_with_gevent(self, m_detect_env):
+        m_detect_env.return_value = 'gevent'
+        with patch('pymongo.version_tuple', new=(2, 6, 3)):
+            options = self.backend._prepare_client_options()
+            self.assertDictEqual(options, {
+                'max_pool_size': self.backend.max_pool_size,
+                'auto_start_request': False,
+                'use_greenlets': True
+            })
+
+    @patch('celery.backends.mongodb.detect_environment')
+    def test_prepare_client_options_for_ver_3(self, m_detect_env):
+        m_detect_env.return_value = 'default'
+        with patch('pymongo.version_tuple', new=(3, 0, 3)):
+            options = self.backend._prepare_client_options()
+            self.assertDictEqual(options, {
+                'maxPoolSize': self.backend.max_pool_size
+            })
+
+    @patch('celery.backends.mongodb.detect_environment')
+    def test_prepare_client_options_for_ver_3_with_gevent(self, m_detect_env):
+        m_detect_env.return_value = 'gevent'
+        with patch('pymongo.version_tuple', new=(3, 0, 3)):
+            options = self.backend._prepare_client_options()
+            self.assertDictEqual(options, {
+                'maxPoolSize': self.backend.max_pool_size
+            })

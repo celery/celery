@@ -10,7 +10,6 @@ from __future__ import absolute_import
 
 from datetime import datetime, timedelta
 
-from kombu.syn import detect_environment
 from kombu.utils import cached_property
 from kombu.exceptions import EncodeError
 from celery import states
@@ -157,9 +156,6 @@ class MongoBackend(BaseBackend):
             # don't change self.options
             conf = dict(self.options)
             conf['host'] = host
-
-            if detect_environment() != 'default':
-                conf['use_greenlets'] = True
 
             self._connection = MongoClient(**conf)
 
