@@ -310,15 +310,9 @@ class test_MongoBackend(AppCase):
         mock_get_database.assert_called_once_with()
         mock_collection.find_one.assert_called_once_with(
             {'_id': sentinel.taskset_id})
-<<<<<<< HEAD
-        self.assertEqual(
-            list(sorted(['date_done', 'result', 'task_id'])),
-            list(sorted(ret_val.keys())),
-=======
         self.assertItemsEqual(
             ['date_done', 'result', 'task_id'],
             list(ret_val.keys()),
->>>>>>> e758762... Fix for https://github.com/celery/celery/issues/2743
         )
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
