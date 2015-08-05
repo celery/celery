@@ -104,8 +104,13 @@ class MongoBackend(BaseBackend):
             if pymongo.version_tuple >= (3, ):
                 return {'maxPoolSize': self.max_pool_size}
             else:  # pragma: no cover
-                return {'max_pool_size': max_pool_size,
-                        'auto_start_request': False}
+                options = {
+                    'max_pool_size': self.max_pool_size,
+                    'auto_start_request': False
+                }
+                if detect_environment() != 'default':
+                    options['use_greenlets'] = True
+                return options
 
     def _get_connection(self):
         """Connect to the MongoDB server."""
@@ -124,8 +129,6 @@ class MongoBackend(BaseBackend):
                 url = 'mongodb://{0}:{1}'.format(url, self.port)
             if url == 'mongodb://':
                 url = url + 'localhost'
-            if detect_environment() != 'default':
-                self.options['use_greenlets'] = True
             self._connection = MongoClient(host=url, **self.options)
 
         return self._connection
