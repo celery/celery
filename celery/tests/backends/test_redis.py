@@ -251,7 +251,7 @@ class test_RedisBackend(AppCase):
         self.assertTrue(b.client.lrange.call_count)
         gkey = b.get_key_for_group('group_id', '.j')
         b.client.delete.assert_called_with(gkey)
-        b.client.expire.assert_called_witeh(gkey, 86400)
+        b.client.expire.assert_called_with(gkey, 86400)
 
     def test_process_cleanup(self):
         self.Backend(app=self.app, new_join=True).process_cleanup()
