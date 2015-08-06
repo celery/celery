@@ -130,6 +130,10 @@ class RedisBackend(KeyValueStoreBackend):
         db = db.strip('/') if isinstance(db, string_t) else db
         connparams['db'] = int(db)
 
+        for key in ['socket_timeout', 'socket_connect_timeout']:
+            if key in query:
+                query[key] = float(query[key])
+
         # Query parameters override other parameters
         connparams.update(query)
         return connparams
