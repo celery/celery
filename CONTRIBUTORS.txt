@@ -189,4 +189,5 @@ Alexander Lebedev, 2015/04/25
 Frantisek Holop, 2015/05/21
 Feanil Patel, 2015/05/21
 Jocelyn Delalande, 2015/06/03
+Justin Patrin, 2015/08/06
 Juan Rossi, 2015/08/10
