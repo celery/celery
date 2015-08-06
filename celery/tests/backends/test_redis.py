@@ -37,6 +37,12 @@ class Pipeline(object):
             return self
         return add_step
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        pass
+
     def execute(self):
         return [step(*a, **kw) for step, a, kw in self.steps]
 
