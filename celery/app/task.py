@@ -444,6 +444,9 @@ class Task(object):
             :attr:`trail` attribute
         :keyword publisher: Deprecated alias to ``producer``.
 
+        :keyword headers: Message headers to be sent in the
+            task (a :class:`dict`)
+
         :rtype :class:`celery.result.AsyncResult`: if
             :setting:`CELERY_ALWAYS_EAGER` is not set, otherwise
             :class:`celery.result.EagerResult`:
