@@ -407,8 +407,8 @@ class chain(Signature):
 
     def freeze(self, _id=None, group_id=None, chord=None, root_id=None):
         _, results = self._frozen = self.prepare_steps(
-            self.args, self.tasks, root_id, None, self.app, _id, group_id, chord,
-            clone=False,
+            self.args, self.tasks, root_id, None,
+            self.app, _id, group_id, chord, clone=False,
         )
         return results[-1]
 
