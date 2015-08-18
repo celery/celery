@@ -1754,6 +1754,14 @@ event queue will be deleted (``x-expires``).
 
 Default is never, relying on the queue autodelete setting.
 
+.. setting:: CELERY_EVENT_QUEUE_PREFIX
+
+CELERY_EVENT_QUEUE_PREFIX
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The prefix to use for event receivers' queue name.
+The default is ``celeryev``.
+
 .. setting:: CELERY_EVENT_SERIALIZER
 
 CELERY_EVENT_SERIALIZER

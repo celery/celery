@@ -296,7 +296,7 @@ class EventReceiver(ConsumerMixin):
     app = None
 
     def __init__(self, channel, handlers=None, routing_key='#',
-                 node_id=None, app=None, queue_prefix='celeryev',
+                 node_id=None, app=None, queue_prefix=None,
                  accept=None, queue_ttl=None, queue_expires=None):
         self.app = app_or_default(app or self.app)
         self.channel = maybe_channel(channel)
@@ -304,6 +304,10 @@ class EventReceiver(ConsumerMixin):
         self.routing_key = routing_key
         self.node_id = node_id or uuid()
         self.queue_prefix = queue_prefix
+        if queue_prefix:
+            self.queue_prefix = queue_prefix
+        else:
+            self.queue_prefix = self.app.conf.CELERY_EVENT_QUEUE_PREFIX
         self.exchange = get_exchange(self.connection or self.app.connection())
         self.queue = Queue(
             '.'.join([self.queue_prefix, self.node_id]),

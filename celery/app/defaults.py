@@ -120,6 +120,7 @@ NAMESPACES = {
         'ENABLE_REMOTE_CONTROL': Option(True, type='bool'),
         'EVENT_SERIALIZER': Option('json'),
         'EVENT_QUEUE_EXPIRES': Option(60.0, type='float'),
+        'EVENT_QUEUE_PREFIX': Option('celeryev'),
         'EVENT_QUEUE_TTL': Option(5.0, type='float'),
         'IMPORTS': Option((), type='tuple'),
         'INCLUDE': Option((), type='tuple'),
