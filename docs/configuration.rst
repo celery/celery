@@ -96,6 +96,7 @@ rush in moving to the new settings format.
 ``CELERY_MONGODB_BACKEND_SETTINGS``    :setting:`mongodb_backend_settings`
 ``CELERY_EVENT_QUEUE_EXPIRES``         :setting:`event_queue_expires`
 ``CELERY_EVENT_QUEUE_TTL``             :setting:`event_queue_ttl`
+``CELERY_EVENT_QUEUE_PREFIX``          :setting:`event_queue_prefix`
 ``CELERY_EVENT_SERIALIZER``            :setting:`event_serializer`
 ``CELERY_REDIS_DB``                    :setting:`redis_db`
 ``CELERY_REDIS_HOST``                  :setting:`redis_host`
@@ -2094,6 +2095,15 @@ Expiry time in seconds (int/float) for when after a monitor clients
 event queue will be deleted (``x-expires``).
 
 Default is never, relying on the queue auto-delete setting.
+
+.. setting:: event_queue_prefix
+
+``event_queue_prefix``
+~~~~~~~~~~~~~~~~~~~~~~
+
+The prefix to use for event receiver queue names.
+
+The default is ``celeryev``.
 
 .. setting:: event_serializer
 

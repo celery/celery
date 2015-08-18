@@ -161,6 +161,7 @@ NAMESPACES = Namespace(
 
         queue_expires=Option(60.0, type='float'),
         queue_ttl=Option(5.0, type='float'),
+        queue_prefix=Option('celeryev'),
         serializer=Option('json'),
     ),
     redis=Namespace(

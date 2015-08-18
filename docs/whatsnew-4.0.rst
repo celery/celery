@@ -900,6 +900,11 @@ In Other News
     The default is 5 seconds, but can be changed using the
     :setting:`event_queue_ttl` setting.
 
+- **Events**: New :setting:`event_queue_prefix` setting can now be used
+  to change the default ``celeryev`` queue prefix for event receiver queues.
+
+    Contributed by Takeshi Kanemoto.
+
 - **Events**: Event monitors now sets the :setting:`event_queue_expires`
   setting by default.
 
