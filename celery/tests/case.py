@@ -232,7 +232,7 @@ def _is_magic_module(m):
     # will load _tkinter and other shit when touched.
 
     # pyflakes refuses to accept 'noqa' for this isinstance.
-    cls, modtype = m.__class__, types.ModuleType
+    cls, modtype = getattr(m, '__class__', None), types.ModuleType
     return (cls is not modtype and (
         '__getattr__' in vars(m.__class__) or
         '__getattribute__' in vars(m.__class__)))
