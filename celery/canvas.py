@@ -93,7 +93,7 @@ def maybe_unroll_group(g):
         try:
             size = g.tasks.__length_hint__()
         except (AttributeError, TypeError):
-            pass
+            return g
         else:
             return list(g.tasks)[0] if size == 1 else g
     else:
