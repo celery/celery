@@ -607,7 +607,7 @@ def _maybe_group(tasks):
     elif isinstance(tasks, Signature):
         tasks = [tasks]
     else:
-        tasks = map(signature, regen(tasks))
+        tasks = [signature(t) for t in regen(tasks)]
     return tasks
 
 
