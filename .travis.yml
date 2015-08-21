@@ -17,7 +17,7 @@ install:
 script:
   - tox -v -- -v
 after_success:
-  - .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
+  - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV
 notifications:
   irc:
     channels:
