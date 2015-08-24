@@ -9,6 +9,7 @@
 from __future__ import absolute_import
 
 import sys
+import six
 try:  # pragma: no cover
     import cassandra
 except ImportError:  # pragma: no cover
@@ -157,16 +158,18 @@ class NewCassandraBackend(BaseBackend):
         self._get_connection(write=True)
 
         import sys
-        if sys.version_info > (3,):
-            buffer = memoryview
+        if six.PY3:
+            buf = lambda x: bytes(x, 'utf8')
+        else:
+            buf = buffer
 
         self._session.execute(self._write_stmt, (
             task_id,
             status,
-            buffer(self.encode(result)),
+            buf(self.encode(result)),
             self.app.now(),
-            buffer(self.encode(traceback)),
-            buffer(self.encode(self.current_task_children(request)))
+            buf(self.encode(traceback)),
+            buf(self.encode(self.current_task_children(request)))
         ))
 
     def _get_task_meta_for(self, task_id):
@@ -181,11 +184,11 @@ class NewCassandraBackend(BaseBackend):
 
         return self.meta_from_decoded({
             'task_id': task_id,
-            'status': str(status),
-            'result': self.decode(str(result)),
+            'status': status,
+            'result': self.decode(result),
             'date_done': date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
-            'traceback': self.decode(str(traceback)),
-            'children': self.decode(str(children)),
+            'traceback': self.decode(traceback),
+            'children': self.decode(children),
         })
 
     def __reduce__(self, args=(), kwargs={}):
