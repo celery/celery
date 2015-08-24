@@ -17,6 +17,7 @@ except ImportError:  # pragma: no cover
 
 import socket
 import time
+import warnings
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
@@ -97,6 +98,9 @@ class CassandraBackend(BaseBackend):
                 'Cassandra backend not configured.')
 
         self._column_family = None
+
+        warnings.warn("cassandra backend is deprecated. Use new_cassandra instead.",
+                      DeprecationWarning)
 
     def _retry_on_error(self, fun, *args, **kwargs):
         ts = monotonic() + self._retry_timeout
