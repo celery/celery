@@ -175,12 +175,12 @@ class NewCassandraBackend(BaseBackend):
         status, result, date_done, traceback, children = res[0]
 
         return self.meta_from_decoded({
-                    'task_id': task_id,
-                    'status': str(status),
-                    'result': self.decode(str(result)),
-                    'date_done': date_done,
-                    'traceback': self.decode(str(traceback)),
-                    'children': self.decode(str(children)),
+            'task_id': task_id,
+            'status': str(status),
+            'result': self.decode(str(result)),
+            'date_done': date_done,
+            'traceback': self.decode(str(traceback)),
+            'children': self.decode(str(children)),
         })
 
     def __reduce__(self, args=(), kwargs={}):

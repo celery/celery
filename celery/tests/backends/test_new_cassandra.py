@@ -5,11 +5,13 @@ from pickle import loads, dumps
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.tests.case import (
-    AppCase, Mock, mock_module, depends_on_current_app, MagicMock
+    AppCase, Mock, mock_module, depends_on_current_app
 )
+
 
 class Object(object):
     pass
+
 
 class test_NewCassandraBackend(AppCase):
 
@@ -80,7 +82,6 @@ class test_NewCassandraBackend(AppCase):
             meta = x._get_task_meta_for('task_id')
             self.assertEqual(meta['status'], states.PENDING)
 
-
     def test_store_result(self):
         with mock_module('cassandra'):
             from celery.backends import new_cassandra as mod
@@ -89,7 +90,7 @@ class test_NewCassandraBackend(AppCase):
             x = mod.NewCassandraBackend(app=self.app)
             x._connection = True
             session = x._session = Mock()
-            execute = session.execute = Mock()
+            session.execute = Mock()
             x._store_result('task_id', 'result', states.SUCCESS)
 
     def test_process_cleanup(self):
