@@ -30,6 +30,7 @@ BACKEND_ALIASES = {
     'db': 'celery.backends.database:DatabaseBackend',
     'database': 'celery.backends.database:DatabaseBackend',
     'cassandra': 'celery.backends.cassandra:CassandraBackend',
+    'new_cassandra': 'celery.backends.new_cassandra:NewCassandraBackend',
     'couchbase': 'celery.backends.couchbase:CouchBaseBackend',
     'couchdb': 'celery.backends.couchdb:CouchDBBackend',
     'riak': 'celery.backends.riak:RiakBackend',
