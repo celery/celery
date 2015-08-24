@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 
 
 class NewCassandraBackend(BaseBackend):
-    """New Cassandra backend utilizing DataStax's driver
+    """New Cassandra backend utilizing DataStax driver
 
     .. attribute:: servers
 
@@ -38,7 +38,7 @@ class NewCassandraBackend(BaseBackend):
     servers = []
     keyspace = None
     table = None
-    supports_autoexpire = True
+    supports_autoexpire = True      # autoexpire supported via entry_ttl
 
     def __init__(self, servers=None, keyspace=None, table=None, entry_ttl=None,
                  port=9042, **kwargs):
@@ -103,8 +103,11 @@ class NewCassandraBackend(BaseBackend):
             self._session = None
 
     def _get_connection(self, write=False):
-        # only writers can create the table to get rid of two processes
-        # creating table at same time and Cassandra choking on that
+        """
+        Prepare the connection for action
+
+        :param write: bool - are we a writer?
+        """
         if self._connection is None:
             self._connection = cassandra.cluster.Cluster(self.servers,
                                                          port=self.port)
@@ -123,6 +126,14 @@ class NewCassandraBackend(BaseBackend):
             self._read_stmt.consistency_level = self.read_consistency
 
             if write:
+                # Only possible writers "workers" are allowed to issue
+                # CREATE TABLE. This is to prevent conflicting situations
+                # where both task-creator and task-executor would issue it
+                # at the same time.
+
+                # Anyway, if you are doing anything critical, you should
+                # have probably created this table in advance, in which case
+                # this query will be a no-op (instant fail with AlreadyExists)
                 self._make_stmt = cassandra.query.SimpleStatement(
                     '''CREATE TABLE '''+self.table+''' (
                         task_id text,
@@ -145,9 +156,12 @@ class NewCassandraBackend(BaseBackend):
         self._get_connection(write=True)
 
         self._session.execute(self._write_stmt, (
-            task_id, status, buffer(self.encode(result)),
+            task_id,
+            status,
+            buffer(self.encode(result)),
             self.app.now().strftime('%Y-%m-%dT%H:%M:%SZ'),
-            buffer(self.encode(traceback)), buffer(self.encode(self.current_task_children(request)))
+            buffer(self.encode(traceback)),
+            buffer(self.encode(self.current_task_children(request)))
         ))
 
     def _get_task_meta_for(self, task_id):
