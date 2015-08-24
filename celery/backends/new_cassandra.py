@@ -36,9 +36,6 @@ class NewCassandraBackend(BaseBackend):
         module :mod:`cassandra` is not available.
 
     """
-    servers = []
-    keyspace = None
-    table = None
     supports_autoexpire = True      # autoexpire supported via entry_ttl
 
     def __init__(self, servers=None, keyspace=None, table=None, entry_ttl=None,
@@ -58,16 +55,13 @@ class NewCassandraBackend(BaseBackend):
 
         conf = self.app.conf
         self.servers = (servers or
-                        conf.get('CASSANDRA_SERVERS') or
-                        self.servers)
+                        conf.get('CASSANDRA_SERVERS'))
         self.port = (port or
                      conf.get('CASSANDRA_PORT'))
         self.keyspace = (keyspace or
-                         conf.get('CASSANDRA_KEYSPACE') or
-                         self.keyspace)
+                         conf.get('CASSANDRA_KEYSPACE'))
         self.table = (table or
-                      conf.get('CASSANDRA_TABLE') or
-                      self.table)
+                      conf.get('CASSANDRA_TABLE'))
         expires = (entry_ttl or conf.get('CASSANDRA_ENTRY_TTL', None))
 
         if expires is not None:
