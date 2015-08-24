@@ -213,6 +213,10 @@ Can be one of the following:
     Use `Cassandra`_ to store the results.
     See :ref:`conf-cassandra-result-backend`.
 
+* new_cassandra
+    Use `Cassandra`_ to store the results, using other backend than _cassandra_.
+    See :ref:`conf-cassandra-result-backend`.
+
 * ironcache
     Use `IronCache`_ to store the results.
     See :ref:`conf-ironcache-result-backend`.
@@ -544,6 +548,16 @@ Cassandra backend settings
 
         $ pip install pycassa
 
+    If you are using new_cassandra, :mod:`cassandra-driver` is required instead:
+    https://pypi.python.org/pypi/cassandra-driver
+
+    To install, use `pip` or `easy_install`:
+
+    .. code-block:: bash
+
+        $ pip install cassandra-driver
+
+
 This backend requires the following configuration directives to be set.
 
 .. setting:: CASSANDRA_SERVERS
@@ -554,6 +568,10 @@ CASSANDRA_SERVERS
 List of ``host:port`` Cassandra servers. e.g.::
 
     CASSANDRA_SERVERS = ['localhost:9160']
+
+Omit the ``port`` part when using new_cassandra. e.g.::
+
+    CASSANDRA_SERVERS = ['localhost']
 
 .. setting:: CASSANDRA_KEYSPACE
 
@@ -601,12 +619,16 @@ use the ``TimeUUID`` type as a comparator::
 
     create column family task_results with comparator = TimeUUIDType;
 
+new_cassandra uses detailed mode by default, and that cannot be disabled.
+
 CASSANDRA_OPTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Options to be passed to the `pycassa connection pool`_ (optional).
 
 .. _`pycassa connection pool`: http://pycassa.github.com/pycassa/api/pycassa/pool.html
+
+Not used in new_cassandra
 
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~

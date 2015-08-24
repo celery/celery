@@ -96,10 +96,41 @@ class NewCassandraBackend(BaseBackend):
                 'Cassandra backend not configured.')
 
         self._connection = None
+        self._session = None
 
     def _get_connection(self):
         if self._connection is None:
             self._connection = cassandra.Cluster(self.servers, port=self.port)
+            self._session = self._connection.connect(self.keyspace)
+
+            self._write_stmt = self._session.prepare('''INSERT INTO '''+
+                self.column_family+''' (task_id,status, result,date_done,'''
+                '''traceback, children) VALUES (?, ?, ?, ?, ?, ?) '''
+                '''USING TTL '''+str(self.expires),
+                consistency_level=self.write_consistency)
+
+            self._make_stmt = self._session.prepare(
+                '''CREATE TABLE '''+self.column_family+''' (
+                    task_id text,
+                    status text,
+                    result text,
+                    date_done timestamp,
+                    traceback text,
+                    children text,
+                    PRIMARY KEY ((task_id), date_done)
+                ) WITH CLUSTERING ORDER BY (date_done DESC)
+                  WITH default_time_to_live = '''+str(self.expires)+';')
+
+            self._read_stmt = self._session.prepare(
+                '''SELECT task_id, status, result, date_done, traceback, children
+                   FROM '''+self.column_family+'''
+                   WHERE task_id=? LIMIT 1''',
+                   consistency_level=self.read_consistency)
+
+            try:
+                self._session.execute(self._make_stmt)
+            except cassandra.AlreadyExists:
+                pass
 
     def _retry_on_error(self, fun, *args, **kwargs):
         ts = monotonic() + self._retry_timeout
@@ -122,45 +153,32 @@ class NewCassandraBackend(BaseBackend):
             self._get_connection()
             date_done = self.app.now()
 
-
-
-            meta = {'status': status,
-                    'date_done': date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                    'traceback': self.encode(traceback),
-                    'result': self.encode(result),
-                    'children': self.encode(
-                        self.current_task_children(request),
-                    )}
-            if self.detailed_mode:
-                cf.insert(
-                    task_id, {date_done: self.encode(meta)}, ttl=self.expires,
-                )
-            else:
-                cf.insert(task_id, meta, ttl=self.expires)
-
+            self._session.execute(self._write_stmt, (
+                task_id, status, result,
+                self.app.now().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                traceback, self.encode(self.current_task_children(request))
+            ))
         return self._retry_on_error(_do_store)
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
 
         def _do_get():
-            cf = self._get_column_family()
-            try:
-                if self.detailed_mode:
-                    row = cf.get(task_id, column_reversed=True, column_count=1)
-                    return self.decode(list(row.values())[0])
-                else:
-                    obj = cf.get(task_id)
-                    return self.meta_from_decoded({
-                        'task_id': task_id,
-                        'status': obj['status'],
-                        'result': self.decode(obj['result']),
-                        'date_done': obj['date_done'],
-                        'traceback': self.decode(obj['traceback']),
-                        'children': self.decode(obj['children']),
-                    })
-            except (KeyError, pycassa.NotFoundException):
+
+            res = self._session.execute(self._read_stmt, (task_id, ))
+            if not res:
                 return {'status': states.PENDING, 'result': None}
+
+            task_id, status, result, date_done, traceback, children = res[0]
+
+            return self.meta_from_decoded({
+                        'task_id': task_id,
+                        'status': status,
+                        'result': self.decode(result),
+                        'date_done': date_done,
+                        'traceback': self.decode(traceback),
+                        'children': self.decode(children),
+            })
 
         return self._retry_on_error(_do_get)
 
