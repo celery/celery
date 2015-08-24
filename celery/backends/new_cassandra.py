@@ -122,7 +122,7 @@ class NewCassandraBackend(BaseBackend):
             self._read_stmt = cassandra.query.SimpleStatement(
                 '''SELECT status, result, date_done, traceback, children
                    FROM '''+self.table+'''
-                   WHERE task_id=%s''')
+                   WHERE task_id=%s LIMIT 1''')
             self._read_stmt.consistency_level = self.read_consistency
 
             if write:
@@ -139,11 +139,12 @@ class NewCassandraBackend(BaseBackend):
                         task_id text,
                         status text,
                         result blob,
-                        date_done text,
+                        date_done timestamp,
                         traceback blob,
                         children blob,
-                        PRIMARY KEY (task_id)
-                    );''')
+                        PRIMARY KEY ((task_id), date_done)
+                    )
+                    WITH CLUSTERING ORDER BY (date_done DESC);''')
                 self._make_stmt.consistency_level = self.write_consistency
                 try:
                     self._session.execute(self._make_stmt)
@@ -159,7 +160,7 @@ class NewCassandraBackend(BaseBackend):
             task_id,
             status,
             buffer(self.encode(result)),
-            self.app.now().strftime('%Y-%m-%dT%H:%M:%SZ'),
+            self.app.now(),
             buffer(self.encode(traceback)),
             buffer(self.encode(self.current_task_children(request)))
         ))
@@ -178,7 +179,7 @@ class NewCassandraBackend(BaseBackend):
             'task_id': task_id,
             'status': str(status),
             'result': self.decode(str(result)),
-            'date_done': date_done,
+            'date_done': date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
             'traceback': self.decode(str(traceback)),
             'children': self.decode(str(children)),
         })
