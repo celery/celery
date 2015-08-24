@@ -8,6 +8,7 @@
 """
 from __future__ import absolute_import
 
+import sys
 try:  # pragma: no cover
     import cassandra
 except ImportError:  # pragma: no cover
@@ -16,7 +17,6 @@ except ImportError:  # pragma: no cover
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.log import get_logger
-
 from .base import BaseBackend
 
 __all__ = ['NewCassandraBackend']
@@ -155,6 +155,10 @@ class NewCassandraBackend(BaseBackend):
                       traceback=None, request=None, **kwargs):
         """Store return value and status of an executed task."""
         self._get_connection(write=True)
+
+        import sys
+        if sys.version_info > (3,):
+            buffer = memoryview
 
         self._session.execute(self._write_stmt, (
             task_id,
