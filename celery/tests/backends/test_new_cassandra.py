@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from pickle import loads, dumps
-
+from datetime import datetime
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.tests.case import (
@@ -72,7 +72,7 @@ class test_NewCassandraBackend(AppCase):
             session = x._session = Mock()
             execute = session.execute = Mock()
             execute.return_value = [
-                [states.SUCCESS, '1', 'date', '', None]
+                [states.SUCCESS, '1', datetime.now(), '', None]
             ]
             x.decode = Mock()
             meta = x._get_task_meta_for('task_id')
