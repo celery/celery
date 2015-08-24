@@ -8,7 +8,6 @@ from celery.tests.case import (
     AppCase, Mock, mock_module, depends_on_current_app
 )
 
-
 class Object(object):
     pass
 
