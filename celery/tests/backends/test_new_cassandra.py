@@ -72,8 +72,7 @@ class test_NewCassandraBackend(AppCase):
             session = x._session = Mock()
             execute = session.execute = Mock()
             execute.return_value = [
-                [states.SUCCESS, '1', datetime.now(), six.binary_type(''),
-                 six.binary_type('')]
+                [states.SUCCESS, '1', datetime.now(), b'', b'']
             ]
             x.decode = Mock()
             meta = x._get_task_meta_for('task_id')
