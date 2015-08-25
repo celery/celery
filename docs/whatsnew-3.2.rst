@@ -99,6 +99,11 @@ Bla bla
 
 - blah blah
 
+New Cassandra Backend
+=====================
+New Cassandra backend will be called new_cassandra and utilize python-driver.
+Old backend is now deprecated.
+
 
 Event Batching
 ==============
