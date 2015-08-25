@@ -437,12 +437,17 @@ class Task(object):
                       if an error occurs while executing the task.
 
         :keyword producer: :class:`kombu.Producer` instance to use.
+
         :keyword add_to_parent: If set to True (default) and the task
             is applied while executing another task, then the result
             will be appended to the parent tasks ``request.children``
             attribute.  Trailing can also be disabled by default using the
             :attr:`trail` attribute
+
         :keyword publisher: Deprecated alias to ``producer``.
+
+        :keyword headers: Message headers to be sent in the
+            task (a :class:`dict`)
 
         :rtype :class:`celery.result.AsyncResult`: if
             :setting:`CELERY_ALWAYS_EAGER` is not set, otherwise
