@@ -105,7 +105,7 @@ class NewCassandraBackend(BaseBackend):
             # We are forced to do concatenation below, as formatting would
             # blow up on superficial %s that will be processed by Cassandra
             self._write_stmt = cassandra.query.SimpleStatement(
-                'INSERT INTO %s (task_id, status, result,'''
+                'INSERT INTO '+self.table+''' (task_id, status, result,'''
                 ''' date_done, traceback, children) VALUES'''
                 ' (%s, %s, %s, %s, %s, %s) '+self.cqlexpires+';')
             self._write_stmt.consistency_level = self.write_consistency
