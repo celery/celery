@@ -637,7 +637,6 @@ Cassandra backend settings
 
         $ pip install pycassa
 
-
 This backend requires the following configuration directives to be set.
 
 .. setting:: CASSANDRA_SERVERS
@@ -648,10 +647,6 @@ CASSANDRA_SERVERS
 List of ``host:port`` Cassandra servers. e.g.::
 
     CASSANDRA_SERVERS = ['localhost:9160']
-
-Omit the ``port`` part when using new_cassandra. e.g.::
-
-    CASSANDRA_SERVERS = ['localhost']
 
 .. setting:: CASSANDRA_KEYSPACE
 
@@ -698,8 +693,6 @@ To use this mode, you need to configure your ColumnFamily to
 use the ``TimeUUID`` type as a comparator::
 
     create column family task_results with comparator = TimeUUIDType;
-
-new_cassandra uses detailed mode by default, and that cannot be disabled.
 
 CASSANDRA_OPTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
