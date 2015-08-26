@@ -521,7 +521,7 @@ class test_schedule(AppCase):
         self.assertTrue(d.tzinfo)
         x.utc_enabled = False
         d2 = x.maybe_make_aware(datetime.utcnow())
-        self.assertIsNone(d2.tzinfo)
+        self.assertTrue(d2.tzinfo)
 
     def test_to_local(self):
         x = schedule(10, app=self.app)
