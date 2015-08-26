@@ -158,7 +158,8 @@ class MongoBackend(BaseBackend):
             conf['host'] = host
 
             if detect_environment() != 'default':
-                conf['use_greenlets'] = True
+                if pymongo.version_tuple < (3, ):
+                    conf['use_greenlets'] = True
 
             self._connection = MongoClient(**conf)
 
