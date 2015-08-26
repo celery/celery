@@ -102,7 +102,10 @@ import sys
 
 from collections import defaultdict, namedtuple
 from subprocess import Popen
-from time import sleep
+import threading
+
+import watchdog.observers
+import watchdog.events
 
 from kombu.utils import cached_property
 from kombu.utils.compat import OrderedDict
@@ -281,7 +284,7 @@ class MultiTool(object):
             raise
         return True
 
-    def shutdown_nodes(self, nodes, sig=signal.SIGTERM, retry=None,
+    def shutdown_nodes(self, nodes, sig=signal.SIGTERM, wait=False,
                        callback=None):
         if not nodes:
             return
@@ -290,12 +293,23 @@ class MultiTool(object):
         def on_down(node):
             P.discard(node)
             if callback:
-                callback(*node)
+                callback(*node[:3])
+
+        if wait:
+            handlers = []
+            observer = watchdog.observers.Observer()
+            for node in P:
+                _, _, _, pidfile = node
+                pidfile = os.path.abspath(pidfile)
+                handler = PidfileDeleteHandler(node, pidfile)
+                observer.schedule(handler, os.path.dirname(pidfile))
+                handlers.append(handler)
+            observer.start()
 
         self.note(self.colored.blue('> Stopping nodes...'))
         for node in list(P):
             if node in P:
-                nodename, _, pid = node
+                nodename, _, pid, _ = node
                 self.note('\t> {0}: {1} -> {2}'.format(
                     nodename, SIGMAP[sig][3:], pid))
                 if not self.signal_node(nodename, pid, sig):
@@ -304,27 +318,20 @@ class MultiTool(object):
         def note_waiting():
             left = len(P)
             if left:
-                pids = ', '.join(str(pid) for _, _, pid in P)
+                pids = ', '.join(str(pid) for _, _, pid, _ in P)
                 self.note(self.colored.blue(
                     '> Waiting for {0} {1} -> {2}...'.format(
                         left, pluralize(left, 'node'), pids)), newline=False)
 
-        if retry:
-            note_waiting()
-            its = 0
-            while P:
-                for node in P:
-                    its += 1
-                    self.note('.', newline=False)
-                    nodename, _, pid = node
-                    if not self.node_alive(pid):
-                        self.note('\n\t> {0}: {1}'.format(nodename, self.OK))
-                        on_down(node)
-                        note_waiting()
-                        break
-                if P and not its % len(P):
-                    sleep(float(retry))
-            self.note('')
+        if wait:
+            for handler in handlers:
+                note_waiting()
+                handler.lock.acquire()
+                nodename, _, _, _ = handler.node
+                self.note('\n\t> {0}: {1}'.format(nodename, self.OK))
+                on_down(handler.node)
+            observer.stop()
+            observer.join()
 
     def getpids(self, p, cmd, callback=None):
         _setdefaultopt(p.options, ['--pidfile', '-p'], '%N.pid')
@@ -344,7 +351,7 @@ class MultiTool(object):
             except ValueError:
                 pass
             if pid:
-                nodes.append((node.name, tuple(node.argv), pid))
+                nodes.append((node.name, tuple(node.argv), pid, pidfile))
             else:
                 self.note('> {0.name}: {1}'.format(node, self.DOWN))
                 if callback:
@@ -355,20 +362,20 @@ class MultiTool(object):
     def kill(self, argv, cmd):
         self.splash()
         p = NamespacedOptionParser(argv)
-        for nodename, _, pid in self.getpids(p, cmd):
+        for nodename, _, pid, _ in self.getpids(p, cmd):
             self.note('Killing node {0} ({1})'.format(nodename, pid))
             self.signal_node(nodename, pid, signal.SIGKILL)
 
-    def stop(self, argv, cmd, retry=None, callback=None):
+    def stop(self, argv, cmd, wait=False, callback=None):
         self.splash()
         p = NamespacedOptionParser(argv)
-        return self._stop_nodes(p, cmd, retry=retry, callback=callback)
+        return self._stop_nodes(p, cmd, wait=wait, callback=callback)
 
-    def _stop_nodes(self, p, cmd, retry=None, callback=None):
+    def _stop_nodes(self, p, cmd, wait=False, callback=None):
         restargs = p.args[len(p.values):]
         self.shutdown_nodes(self.getpids(p, cmd, callback=callback),
                             sig=findsig(restargs),
-                            retry=retry,
+                            wait=wait,
                             callback=callback)
 
     def restart(self, argv, cmd):
@@ -384,14 +391,14 @@ class MultiTool(object):
             self.note(retval and self.FAILED or self.OK)
             retvals.append(retval)
 
-        self._stop_nodes(p, cmd, retry=2, callback=on_node_shutdown)
+        self._stop_nodes(p, cmd, wait=True, callback=on_node_shutdown)
         self.retval = int(any(retvals))
 
     def stopwait(self, argv, cmd):
         self.splash()
         p = NamespacedOptionParser(argv)
         self.with_detacher_default_options(p)
-        return self._stop_nodes(p, cmd, retry=2)
+        return self._stop_nodes(p, cmd, wait=True)
     stop_verify = stopwait  # compat
 
     def expand(self, argv, cmd=None):
@@ -640,6 +647,17 @@ def _setdefaultopt(d, alt, value):
         except KeyError:
             pass
     return d.setdefault(alt[0], value)
+
+
+class PidfileDeleteHandler(watchdog.events.FileSystemEventHandler):
+    def __init__(self, node, pidfile):
+        self.lock = threading.Semaphore(0)
+        self.node = node
+        self.pidfile = pidfile
+
+    def on_deleted(self, event):
+        if not event.is_directory and event.src_path == self.pidfile:
+            self.lock.release()
 
 
 if __name__ == '__main__':              # pragma: no cover

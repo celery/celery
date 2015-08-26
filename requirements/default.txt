@@ -1,3 +1,4 @@
 pytz>dev
 billiard>=3.3.0.20,<3.4
 kombu>=3.0.25,<3.1
+watchdog>0.8.0
