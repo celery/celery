@@ -714,6 +714,10 @@ class ResultSet(ResultBase):
     def __len__(self):
         return len(self.results)
 
+    def __bool__(self):
+        return True
+    __nonzero__ = __bool__  # Included for Py2 backwards compatibility
+
     def __eq__(self, other):
         if isinstance(other, ResultSet):
             return other.results == self.results
