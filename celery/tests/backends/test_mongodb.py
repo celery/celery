@@ -254,7 +254,7 @@ class test_MongoBackend(AppCase):
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
         mock_collection.find_one.assert_called_once_with(
             {'_id': sentinel.taskset_id})
-        self.assertEqual(
+        self.assertItemsEqual(
             ['date_done', 'result', 'task_id'],
             list(ret_val.keys()),
         )
@@ -324,3 +324,42 @@ class test_MongoBackend(AppCase):
         with self.assertRaises(ImproperlyConfigured):
             x._get_database()
         db.authenticate.assert_called_with('jerry', 'cere4l')
+
+    @patch('celery.backends.mongodb.detect_environment')
+    def test_prepare_client_options_for_ver_2(self, m_detect_env):
+        m_detect_env.return_value = 'default'
+        with patch('pymongo.version_tuple', new=(2, 6, 3)):
+            options = self.backend._prepare_client_options()
+            self.assertDictEqual(options, {
+                'max_pool_size': self.backend.max_pool_size,
+                'auto_start_request': False
+            })
+
+    @patch('celery.backends.mongodb.detect_environment')
+    def test_prepare_client_options_for_ver_2_with_gevent(self, m_detect_env):
+        m_detect_env.return_value = 'gevent'
+        with patch('pymongo.version_tuple', new=(2, 6, 3)):
+            options = self.backend._prepare_client_options()
+            self.assertDictEqual(options, {
+                'max_pool_size': self.backend.max_pool_size,
+                'auto_start_request': False,
+                'use_greenlets': True
+            })
+
+    @patch('celery.backends.mongodb.detect_environment')
+    def test_prepare_client_options_for_ver_3(self, m_detect_env):
+        m_detect_env.return_value = 'default'
+        with patch('pymongo.version_tuple', new=(3, 0, 3)):
+            options = self.backend._prepare_client_options()
+            self.assertDictEqual(options, {
+                'maxPoolSize': self.backend.max_pool_size
+            })
+
+    @patch('celery.backends.mongodb.detect_environment')
+    def test_prepare_client_options_for_ver_3_with_gevent(self, m_detect_env):
+        m_detect_env.return_value = 'gevent'
+        with patch('pymongo.version_tuple', new=(3, 0, 3)):
+            options = self.backend._prepare_client_options()
+            self.assertDictEqual(options, {
+                'maxPoolSize': self.backend.max_pool_size
+            })
