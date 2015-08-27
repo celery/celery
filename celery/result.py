@@ -778,6 +778,10 @@ class GroupResult(ResultSet):
     def __reduce_args__(self):
         return self.id, self.results
 
+    def __bool__(self):
+        return bool(self.id or self.results)
+    __nonzero__ = __bool__  # Included for Py2 backwards compatibility
+
     def __eq__(self, other):
         if isinstance(other, GroupResult):
             return other.id == self.id and other.results == self.results
