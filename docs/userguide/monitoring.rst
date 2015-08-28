@@ -487,7 +487,7 @@ Here is an example camera, dumping the snapshot to screen:
                 return
             print('Workers: {0}'.format(pformat(state.workers, indent=4)))
             print('Tasks: {0}'.format(pformat(state.tasks, indent=4)))
-            print('Total: {0.event_count} events, %s {0.task_count}'.format(
+            print('Total: {0.event_count} events, {0.task_count} tasks'.format(
                 state))
 
 See the API reference for :mod:`celery.events.state` to read more
