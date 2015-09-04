@@ -57,6 +57,7 @@ class DjangoFixup(object):
         # Need to add project directory to path
         sys.path.append(os.getcwd())
 
+        self._settings = symbol_by_name('django.conf:settings')
         self.app.loader.now = self.now
         self.app.loader.mail_admins = self.mail_admins
 
@@ -82,6 +83,14 @@ class DjangoFixup(object):
 
     def mail_admins(self, subject, body, fail_silently=False, **kwargs):
         return self._mail_admins(subject, body, fail_silently=fail_silently)
+
+    def autodiscover_tasks(self):
+        try:
+            from django.apps import apps
+        except ImportError:
+            return self._settings.INSTALLED_APPS
+        else:
+            return [config.name for config in apps.get_app_configs()]
 
     @cached_property
     def _mail_admins(self):

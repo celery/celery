@@ -348,17 +348,31 @@ class Celery(object):
         return setup_security(allowed_serializers, key, cert,
                               store, digest, serializer, app=self)
 
-    def autodiscover_tasks(self, packages, related_name='tasks', force=False):
+    def autodiscover_tasks(self, packages=None,
+                           related_name='tasks', force=False):
         if force:
             return self._autodiscover_tasks(packages, related_name)
         signals.import_modules.connect(promise(
             self._autodiscover_tasks, (packages, related_name),
         ), weak=False, sender=self)
 
-    def _autodiscover_tasks(self, packages, related_name='tasks', **kwargs):
-        # argument may be lazy
-        packages = packages() if callable(packages) else packages
-        self.loader.autodiscover_tasks(packages, related_name)
+    def _autodiscover_tasks(self, packages, related_name, **kwargs):
+        if packages:
+            return self._autodiscover_tasks_from_names(packages, related_name)
+        return self._autodiscover_tasks_from_fixups(related_name)
+
+    def _autodiscover_tasks_from_names(self, packages, related_name):
+        # packages argument can be lazy
+        return self.loader.autodiscover_tasks(
+            packages() if callable(packages) else packages, related_name,
+        )
+
+    def _autodiscover_tasks_from_fixups(self, related_name):
+        return self._autodiscover_tasks_from_names([
+            pkg for fixup in self._fixups
+                for pkg in fixup.autodiscover_tasks()
+                    if hasattr(fixup, 'autodiscover_tasks')
+        ], related_name=related_name)
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
                   eta=None, task_id=None, producer=None, connection=None,

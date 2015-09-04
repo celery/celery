@@ -92,10 +92,10 @@ autodiscover these modules:
 
 .. code-block:: python
 
-    app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+    app.autodiscover_tasks()
 
-With the line above Celery will automatically discover tasks in reusable
-apps if you follow the ``tasks.py`` convention::
+With the line above Celery will automatically discover tasks from all
+of your installed apps, following the ``tasks.py`` convention::
 
     - app1/
         - tasks.py
@@ -103,6 +103,7 @@ apps if you follow the ``tasks.py`` convention::
     - app2/
         - tasks.py
         - models.py
+
 
 This way you do not have to manually add the individual modules
 to the :setting:`CELERY_IMPORTS` setting.  The ``lambda`` so that the
