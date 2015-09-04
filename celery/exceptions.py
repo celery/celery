@@ -21,12 +21,12 @@ __all__ = [
     'SecurityError', 'Ignore', 'QueueNotFound',
     'WorkerShutdown', 'WorkerTerminate',
     'ImproperlyConfigured', 'NotRegistered', 'AlreadyRegistered',
-    'TimeoutError', 'MaxRetriesExceededError', 'Retry',
+    'TimeoutError', 'MaxRetriesExceededError', 'Retry', 'Reject',
     'TaskRevokedError', 'NotConfigured', 'AlwaysEagerIgnored',
     'InvalidTaskError', 'ChordError', 'CPendingDeprecationWarning',
     'CDeprecationWarning', 'FixupWarning', 'DuplicateNodenameWarning',
     'SoftTimeLimitExceeded', 'TimeLimitExceeded', 'WorkerLostError',
-    'Terminated',
+    'Terminated', 'IncompleteStream'
 ]
 
 UNREGISTERED_FMT = """\
