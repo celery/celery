@@ -46,7 +46,7 @@ class test_Mailer(Case):
         mailer = Mailer(use_ssl=False, use_tls=False)
         mailer._send(msg)
 
-        client.sendmail.assert_called_With(msg.sender, msg.to, str(msg))
+        client.sendmail.assert_called_with(msg.sender, msg.to, str(msg))
 
         client.quit.side_effect = SSLError()
         mailer._send(msg)
