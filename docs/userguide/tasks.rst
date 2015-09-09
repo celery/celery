@@ -1309,7 +1309,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
     def update_page_info(url):
         # fetch_page -> parse_page -> store_page
-        chain = fetch_page.s() | parse_page.s() | store_page_info.s(url)
+        chain = fetch_page.s(url) | parse_page.s() | store_page_info.s(url)
         chain()
 
     @app.task()
