@@ -269,7 +269,7 @@ prefix:
 
     CELERY_RESULT_BACKEND = 'db+scheme://user:password@host:port/dbname'
 
-Examples:
+Examples::
 
     # sqlite (filename)
     CELERY_RESULT_BACKEND = 'db+sqlite:///results.sqlite'
