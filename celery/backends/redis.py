@@ -28,10 +28,12 @@ try:
     import redis
     from redis.exceptions import ConnectionError
     from kombu.transport.redis import get_redis_error_classes
+    from redis import sentinel as sentinel_mod
 except ImportError:                 # pragma: no cover
     redis = None                    # noqa
     ConnectionError = None          # noqa
     get_redis_error_classes = None  # noqa
+    sentinel_mod = None             # noqa
 
 __all__ = ['RedisBackend']
 
@@ -56,9 +58,13 @@ class RedisBackend(KeyValueStoreBackend):
     supports_native_join = True
     implements_incr = True
 
+    REDIS_DEFAULT_PORT = 6379
+    SENTINEL_DEFAULT_PORT = 26379
+
     def __init__(self, host=None, port=None, db=None, password=None,
                  expires=None, max_connections=None, url=None,
-                 connection_pool=None, new_join=False, **kwargs):
+                 connection_pool=None, new_join=False,
+                 sentinel=False, extra_sentinels=None, master=None, **kwargs):
         super(RedisBackend, self).__init__(**kwargs)
         conf = self.app.conf
         if self.redis is None:
@@ -82,13 +88,49 @@ class RedisBackend(KeyValueStoreBackend):
 
         self.connparams = {
             'host': _get('HOST') or 'localhost',
-            'port': _get('PORT') or 6379,
             'db': _get('DB') or 0,
             'password': _get('PASSWORD'),
             'max_connections': self.max_connections,
+            'sentinel': _get('SENTINEL') or str(sentinel),
         }
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
+
+        self.connparams['sentinel'] = strtobool(self.connparams.get('sentinel', False))
+        # resolve default port
+        if not self.connparams.get('path', '').startswith('/'): # no socket connection
+            if 'port' not in self.connparams:
+                self.connparams['port'] = _get('DB') or (\
+                    RedisBackend.SENTINEL_DEFAULT_PORT \
+                    if self.connparams['sentinel']
+                    else RedisBackend.REDIS_DEFAULT_PORT
+                )
+
+        if not self.connparams['sentinel']:
+            self.connparams.pop('sentinel')
+            self.sentinel = None
+        else:
+            self.connparams.setdefault('master', _get("MASTER") or 'mymaster'),
+            self.connparams.setdefault('extra_sentinels', _get('EXTRA_SENTINELS') or extra_sentinels)
+            if self.connparams['extra_sentinels'] is None:
+                self.connparams['extra_sentinels'] = []
+            if isinstance(self.connparams['extra_sentinels'], string_t):
+                # extra_sentinels can be specified as a string: host1,host2:123
+                self.connparams['extra_sentinels'] = self.connparams['extra_sentinels'].split(',')
+            for i in range(len(self.connparams['extra_sentinels'])):
+                # extra_sentinels can also be specified as a list of tuple/string for instance:
+                #   [ "host1:123", (host2,456), (host3,)]
+                if isinstance(self.connparams['extra_sentinels'][i], string_t):
+                    hostport = self.connparams['extra_sentinels'][i].split(':')
+                    if len(hostport) == 1:
+                        hostport.append(RedisBackend.SENTINEL_DEFAULT_PORT)
+                    self.connparams['extra_sentinels'][i] = hostport
+            self.connparams.setdefault(
+                'min_other_sentinels',
+                int(_get('MIN_OTHER_SENTINELS') or 0)
+            )
+            self.sentinel = sentinel_mod
+
         self.url = url
         self.expires = self.prepare_expires(expires, type=int)
 
@@ -124,6 +166,8 @@ class RedisBackend(KeyValueStoreBackend):
             connparams.pop('port', None)
         else:
             connparams['db'] = path
+        if scheme == 'sentinel':
+            connparams['sentinel'] = True
 
         # db may be string and start with / like in kombu.
         db = connparams.get('db') or 0
@@ -135,9 +179,21 @@ class RedisBackend(KeyValueStoreBackend):
         return connparams
 
     def get(self, key):
-        return self.client.get(key)
+        if self.sentinel:
+            return self.ensure(self._get, (key,))
+        else:
+            return self._get(key)
 
     def mget(self, keys):
+        if self.sentinel:
+            return self.ensure(self._mget, (keys,))
+        else:
+            return self._mget(keys)
+
+    def _get(self, key):
+        return self.client.get(key)
+
+    def _mget(self, keys):
         return self.client.mget(keys)
 
     def ensure(self, fun, args, **policy):
@@ -150,6 +206,8 @@ class RedisBackend(KeyValueStoreBackend):
         )
 
     def on_connection_error(self, max_retries, exc, intervals, retries):
+        if self.sentinel is not None:
+            del self.client
         tts = next(intervals)
         error('Connection to Redis lost: Retry (%s/%s) %s.',
               retries, max_retries or 'Inf',
@@ -246,11 +304,36 @@ class RedisBackend(KeyValueStoreBackend):
             self._ConnectionPool = self.redis.ConnectionPool
         return self._ConnectionPool
 
+    def _dict_filter_prefix(self, dico, prefix):
+        return dict((k[len(prefix):], v) for k, v in dico.items() if k.startswith(prefix))
+
+    @cached_property
+    def sentinel_client(self):
+        sentinels = [(self.connparams['host'], self.connparams['port'])]
+        sentinels.extend(self.connparams['extra_sentinels'])
+        sentinel_args = self._dict_filter_prefix(self.connparams, 'sentinel_')
+        redis_connection_args = self._dict_filter_prefix(self.connparams, 'redis_')
+
+        return self.sentinel.Sentinel(
+            sentinels,
+            min_other_sentinels=self.connparams['min_other_sentinels'],
+            sentinel_kwargs=sentinel_args,
+            **redis_connection_args
+        )
+
+
     @cached_property
     def client(self):
-        return self.redis.Redis(
-            connection_pool=self.ConnectionPool(**self.connparams),
-        )
+        if self.sentinel is not None:
+            return self.sentinel_client.master_for(
+                self.connparams['master'],
+                redis_class=redis.Redis
+            )
+        else:
+            return self.redis.Redis(
+                connection_pool=self.ConnectionPool(**self.connparams),
+            )
+
 
     def __reduce__(self, args=(), kwargs={}):
         return super(RedisBackend, self).__reduce__(
