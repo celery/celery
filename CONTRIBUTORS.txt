@@ -180,3 +180,13 @@ Bert Vanderbauwhede, 2014/12/18
 John Anderson, 2014/12/27
 Luke Burden, 2015/01/24
 Mickaël Penhard, 2015/02/15
+Mark Parncutt, 2015/02/16
+Samuel Jaillet, 2015/03/24
+Ilya Georgievsky, 2015/03/31
+Fatih Sucu, 2015/04/17
+James Pulec, 2015/04/19
+Alexander Lebedev, 2015/04/25
+Frantisek Holop, 2015/05/21
+Feanil Patel, 2015/05/21
+Jocelyn Delalande, 2015/06/03
+Juan Rossi, 2015/08/10

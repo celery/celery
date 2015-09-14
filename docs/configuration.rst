@@ -999,9 +999,40 @@ will be performed every 5 seconds (twice the heartbeat sending rate).
 
 BROKER_USE_SSL
 ~~~~~~~~~~~~~~
+:transports supported: ``pyamqp``
 
-Use SSL to connect to the broker.  Off by default.  This may not be supported
-by all transports.
+
+Toggles SSL usage on broker connection and SSL settings.
+
+If ``True`` the connection will use SSL with default SSL settings.
+If set to a dict, will configure SSL connection according to the specified
+policy. The format used is python `ssl.wrap_socket()
+options <https://docs.python.org/3/library/ssl.html#ssl.wrap_socket>`_.
+
+Default is ``False`` (no SSL).
+
+Note that SSL socket is generally served on a separate port by the broker.
+
+Example providing a client cert and validating the server cert against a custom
+certificate authority:
+
+.. code-block:: python
+
+    import ssl
+
+    BROKER_USE_SSL = {
+      'keyfile': '/var/ssl/private/worker-key.pem',
+      'certfile': '/var/ssl/amqp-server-cert.pem',
+      'ca_certs': '/var/ssl/myca.pem',
+      'cert_reqs': ssl.CERT_REQUIRED
+    }
+
+.. warning::
+
+    Be careful using ``BROKER_USE_SSL=True``, it is possible that your default
+    configuration do not validate the server cert at all, please read Python
+    `ssl module security
+    considerations <https://docs.python.org/3/library/ssl.html#ssl-security>`_.
 
 .. setting:: BROKER_POOL_LIMIT
 
