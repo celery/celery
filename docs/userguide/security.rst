@@ -46,6 +46,9 @@ If your broker supports fine-grained access control, like RabbitMQ,
 this is something you should look at enabling. See for example
 http://www.rabbitmq.com/access-control.html.
 
+If supported by your broker backend, you can enable end-to-end SSL encryption
+and authentication using :setting:`BROKER_USE_SSL`.
+
 Client
 ------
 
