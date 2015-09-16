@@ -1214,9 +1214,6 @@ Handlers
 
     The return value of this handler is ignored.
 
-on_retry
-~~~~~~~~
-
 .. _task-how-they-work:
 
 How it works
