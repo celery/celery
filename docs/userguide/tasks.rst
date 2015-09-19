@@ -496,6 +496,45 @@ override this default.
             raise self.retry(exc=exc, countdown=60)  # override the default and
                                                      # retry in 1 minute
 
+Autoretrying
+------------
+
+.. versionadded:: 3.2
+
+Sometimes you may want to retry a task on particular exception. To do so,
+you should wrap a task body with `try-except` statement, for example:
+
+.. code-block:: python
+
+    @app.task
+    def div(a, b):
+        try:
+            return a / b
+        except ZeroDivisionError as exc:
+            raise div.retry(exc=exc)
+
+This may not be acceptable all the time, since you may have a lot of such
+tasks.
+
+Fortunately, you can tell Celery to automatically retry a task using
+`autoretry_for` argument in `~@Celery.task` decorator:
+
+.. code-block:: python
+
+    @app.task(autoretry_for(ZeroDivisionError,))
+    def div(a, b):
+        return a / b
+
+If you want to specify custom arguments for internal `~@Task.retry`
+call, pass `retry_kwargs` argument to `~@Celery.task` decorator:
+
+.. code-block:: python
+
+    @app.task(autoretry_for=(ZeroDivisionError,),
+              retry_kwargs={'max_retries': 5})
+    def div(a, b):
+        return a / b
+
 .. _task-options:
 
 List of Options
