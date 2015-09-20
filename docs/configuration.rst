@@ -1514,6 +1514,8 @@ CELERYD_TASK_TIME_LIMIT
 Task hard time limit in seconds.  The worker processing the task will
 be killed and replaced with a new one when this is exceeded.
 
+Default is ``None``, meaning there is no upper time limit
+
 .. setting:: CELERYD_TASK_SOFT_TIME_LIMIT
 
 CELERYD_TASK_SOFT_TIME_LIMIT
@@ -1537,6 +1539,8 @@ Example:
             return do_work()
         except SoftTimeLimitExceeded:
             cleanup_in_a_hurry()
+
+Default is ``None``, meaning there is no upper time limit
 
 .. setting:: CELERY_STORE_ERRORS_EVEN_IF_IGNORED
 
