@@ -696,7 +696,7 @@ def replace_module_value(module, name, value=None):
         yield
     finally:
         if prev is not None:
-            setattr(sys, name, prev)
+            setattr(module, name, prev)
         if not has_prev:
             try:
                 delattr(module, name)
