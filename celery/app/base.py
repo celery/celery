@@ -15,6 +15,7 @@ import warnings
 from collections import defaultdict, deque
 from copy import deepcopy
 from operator import attrgetter
+from functools import wraps
 
 from amqp import promise
 try:
@@ -291,6 +292,20 @@ class Celery(object):
                 '__wrapped__': run}, **options))()
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app
+
+            autoretry_for = tuple(options.get('autoretry_for', ()))
+            retry_kwargs = options.get('retry_kwargs', {})
+
+            if autoretry_for and not hasattr(task, '_orig_run'):
+
+                @wraps(task.run)
+                def run(*args, **kwargs):
+                    try:
+                        return task._orig_run(*args, **kwargs)
+                    except autoretry_for as exc:
+                        raise task.retry(exc=exc, **retry_kwargs)
+
+                task._orig_run, task.run = task.run, run
         else:
             task = self._tasks[name]
         return task
