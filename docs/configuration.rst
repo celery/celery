@@ -396,6 +396,9 @@ Using multiple memcached servers:
 
 The "memory" backend stores the cache in memory only:
 
+.. code-block:: python
+
+    CELERY_RESULT_BACKEND = 'cache'
     CELERY_CACHE_BACKEND = 'memory'
 
 CELERY_CACHE_BACKEND_OPTIONS
