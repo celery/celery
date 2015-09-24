@@ -120,6 +120,10 @@ class test_asynloop(AppCase):
             return x + y
         self.add = add
 
+    def test_drain_after_consume(self):
+        x, _ = get_task_callback(self.app)
+        x.connection.drain_events.assert_called_with()
+
     def test_setup_heartbeat(self):
         x = X(self.app, heartbeat=10)
         x.hub.call_repeatedly = Mock(name='x.hub.call_repeatedly()')
