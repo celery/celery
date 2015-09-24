@@ -47,6 +47,11 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     if not obj.restart_count and not obj.pool.did_start_ok():
         raise WorkerLostError('Could not start worker processes')
 
+    # consumer.consume() may have prefetched up to our
+    # limit - drain an event so we are in a clean state
+    # prior to starting our event loop.
+    connection.drain_events()
+
     # FIXME: Use loop.run_forever
     # Tried and works, but no time to test properly before release.
     hub.propagate_errors = errors
