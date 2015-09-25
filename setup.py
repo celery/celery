@@ -116,12 +116,23 @@ def strip_comments(l):
     return l.split('#', 1)[0].strip()
 
 
-def reqs(*f):
+def _pip_requirement(req):
+    if req.startswith('-r '):
+        _, path = req.split()
+        return reqs(*path.split('/'))
+    return [req]
+
+
+def _reqs(*f):
     return [
-        r for r in (
+        _pip_requirement(r) for r in (
             strip_comments(l) for l in open(
                 os.path.join(os.getcwd(), 'requirements', *f)).readlines()
         ) if r]
+
+
+def reqs(*f):
+    return [req for subreq in _reqs(*f) for req in subreq]
 
 install_requires = reqs('default.txt')
 if JYTHON:
@@ -163,6 +174,8 @@ features = {
 }
 extras_require = {x: extras(x + '.txt') for x in features}
 extra['extras_require'] = extras_require
+
+print(tests_require)
 
 # -*- %%% -*-
 

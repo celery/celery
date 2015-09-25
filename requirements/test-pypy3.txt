@@ -1,1 +1,1 @@
-mock
+-r deps/mock.txt
