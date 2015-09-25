@@ -8,6 +8,8 @@
 """
 from __future__ import absolute_import
 
+import sys
+
 try:
     import riak
     from riak import RiakClient
@@ -25,10 +27,25 @@ E_BUCKET_NAME = """\
 Riak bucket names must be composed of ASCII characters only, not: {0!r}\
 """
 
+if sys.version_info[0] == 3:
+
+    def to_bytes(s):
+        return s.encode() if isinstance(s, str) else s
+
+
+    def str_decode(s, encoding):
+        return to_bytes(s).decode(encoding)
+
+else:
+
+    def str_decode(s, encoding):
+        return s.decode("ascii")
+
+
 
 def is_ascii(s):
     try:
-        s.decode('ascii')
+        str_decode(s, 'ascii')
     except UnicodeDecodeError:
         return False
     return True
