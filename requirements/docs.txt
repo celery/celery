@@ -1,3 +1,3 @@
 Sphinx
--r requirements/extras/sqlalchemy.txt
--r requirements/dev.txt
+-r extras/sqlalchemy.txt
+-r dev.txt
