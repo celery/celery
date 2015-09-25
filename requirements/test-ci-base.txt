@@ -5,3 +5,4 @@ coveralls
 -r extras/mongodb.txt
 -r extras/riak.txt
 -r extras/sqlalchemy.txt
+-r dev.txt

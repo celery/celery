@@ -1,0 +1,2 @@
+-r test-ci-base.txt
+-r extras/auth.txt
