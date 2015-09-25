@@ -1,2 +1,2 @@
 Sphinx
-SQLAlchemy
+-r extras/sqlalchemy.txt
