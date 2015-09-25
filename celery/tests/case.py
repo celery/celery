@@ -1,4 +1,4 @@
-/isrom __future__ import absolute_import
+from __future__ import absolute_import
 
 try:
     import unittest  # noqa
