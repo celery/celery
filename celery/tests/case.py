@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+/isrom __future__ import absolute_import
 
 try:
     import unittest  # noqa
@@ -234,10 +234,15 @@ def _is_magic_module(m):
     # will load _tkinter and other shit when touched.
 
     # pyflakes refuses to accept 'noqa' for this isinstance.
-    cls, modtype = m.__class__, types.ModuleType
-    return (cls is not modtype and (
-        '__getattr__' in vars(m.__class__) or
-        '__getattribute__' in vars(m.__class__)))
+    cls, modtype = type(m), types.ModuleType
+    try:
+        variables = vars(cls)
+    except TypeError:
+        return True
+    else:
+        return (cls is not modtype and (
+            '__getattr__' in variables or
+            '__getattribute__' in variables))
 
 
 class _AssertWarnsContext(_AssertRaisesBaseContext):
@@ -676,7 +681,7 @@ def replace_module_value(module, name, value=None):
         yield
     finally:
         if prev is not None:
-            setattr(sys, name, prev)
+            setattr(module, name, prev)
         if not has_prev:
             try:
                 delattr(module, name)
