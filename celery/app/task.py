@@ -230,6 +230,9 @@ class Task(object):
     #: Default task expiry time.
     expires = None
 
+    #: Task request stack, the current request will be the topmost.
+    request_stack = None
+
     #: Some may expect a request to exist even if the task has not been
     #: called.  This should probably be deprecated.
     _default_request = None
@@ -466,7 +469,7 @@ class Task(object):
         except AttributeError:
             pass
         else:
-            check_arguments(*args or (), **kwargs or {})
+            check_arguments(*(args or ()), **(kwargs or {}))
 
         app = self._get_app()
         if app.conf.CELERY_ALWAYS_EAGER:
