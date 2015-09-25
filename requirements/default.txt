@@ -1,3 +1,6 @@
 pytz>dev
 billiard>dev
 kombu>dev
+
+# remove before release
+amqp>dev
