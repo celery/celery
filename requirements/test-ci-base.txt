@@ -1,7 +1,6 @@
 coverage>=3.0
 coveralls
 -r extras/redis.txt
--r extras/cassandra.txt
 -r extras/mongodb.txt
 -r extras/riak.txt
 -r extras/sqlalchemy.txt
