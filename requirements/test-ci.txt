@@ -5,6 +5,5 @@ coveralls
 -r extras/couchbase.txt
 -r extras/couchdb.txt
 -r extras/mongodb.txt
--r extras/redis.txt
 -r extras/riak.txt
 -r extras/sqlalchemy.txt
