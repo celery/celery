@@ -3,7 +3,8 @@ sudo: false
 cache:
   directories:
     - $HOME/.cache/pip
-python: 2.7
+python:
+    - '3.5'
 env:
   global:
     PYTHONUNBUFFERED=yes
@@ -12,10 +13,10 @@ env:
     - TOXENV=3.3
     - TOXENV=3.4
     - TOXENV=pypy
-install:
-  - pip install tox
-script:
-  - tox -v -- -v
+    - TOXENV=3.5
+    - TOXENV=pypy3
+install: pip install -U tox
+script: tox -v -- -v
 after_success:
   - .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
 notifications:
