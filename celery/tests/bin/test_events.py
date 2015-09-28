@@ -32,7 +32,7 @@ class test_events(AppCase):
     def test_run_top(self):
         try:
             import curses  # noqa
-        except ImportError:
+        except (ImportError, OSError):
             raise SkipTest('curses monitor requires curses')
 
         @_old_patch('celery.events.cursesmon', 'evtop',
