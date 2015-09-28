@@ -162,7 +162,8 @@ class test_Hub(Case):
         e1, e2, e3 = Mock(), Mock(), Mock()
         entries = [e1, e2, e3]
 
-        reset = lambda: [m.reset() for m in [e1, e2, e3]]
+        def reset():
+            return [m.reset() for m in [e1, e2, e3]]
 
         def se():
             while 1:

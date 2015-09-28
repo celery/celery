@@ -318,7 +318,8 @@ if not is_jython:  # pragma: no cover
         exitcode=EX_FAILURE,
     )
 else:  # pragma: no cover
-    install_worker_int_handler = lambda *a, **kw: None
+    def install_worker_int_handler(*args, **kwargs):
+        pass
 
 
 def _reload_current_worker():

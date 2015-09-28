@@ -64,7 +64,7 @@ class test_LRUCache(Case):
         self.assertEqual(list(x.keys()), [3, 6, 7])
 
     def assertSafeIter(self, method, interval=0.01, size=10000):
-        if sys.version_info >= (3,5):
+        if sys.version_info >= (3, 5):
             raise SkipTest('Fails on Py3.5')
         from threading import Thread, Event
         from time import sleep

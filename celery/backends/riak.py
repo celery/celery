@@ -32,7 +32,6 @@ if sys.version_info[0] == 3:
     def to_bytes(s):
         return s.encode() if isinstance(s, str) else s
 
-
     def str_decode(s, encoding):
         return to_bytes(s).decode(encoding)
 
@@ -40,7 +39,6 @@ else:
 
     def str_decode(s, encoding):
         return s.decode("ascii")
-
 
 
 def is_ascii(s):
@@ -118,8 +116,8 @@ class RiakBackend(KeyValueStoreBackend):
     def _get_bucket(self):
         """Connect to our bucket."""
         if (
-            self._client is None or not self._client.is_alive()
-            or not self._bucket
+            self._client is None or not self._client.is_alive() or
+            not self._bucket
         ):
             self._bucket = self.client.bucket(self.bucket_name)
         return self._bucket

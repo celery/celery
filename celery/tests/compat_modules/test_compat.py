@@ -2,16 +2,13 @@ from __future__ import absolute_import
 
 from datetime import timedelta
 
-import sys
-sys.modules.pop('celery.task', None)
-
 from celery.schedules import schedule
 from celery.task import (
     periodic_task,
     PeriodicTask
 )
 
-from celery.tests.case import AppCase, depends_on_current_app
+from celery.tests.case import AppCase, depends_on_current_app  # noqa
 
 
 @depends_on_current_app

@@ -10,7 +10,9 @@ from celery.five import range
 from celery.result import AsyncResult, GroupResult, EagerResult
 from celery.tests.case import AppCase, Mock
 
-passthru = lambda x: x
+
+def passthru(x):
+    return x
 
 
 class ChordCase(AppCase):

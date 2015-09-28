@@ -4,11 +4,6 @@ import os
 import sys
 import warnings
 
-if sys.version_info[0] < 3 and not hasattr(sys, 'pypy_version_info'):
-    from StringIO import StringIO
-else:
-    from io import StringIO
-
 from kombu.utils import cached_property, symbol_by_name
 
 from datetime import datetime
@@ -17,6 +12,12 @@ from importlib import import_module
 from celery import signals
 from celery.app import default_app
 from celery.exceptions import FixupWarning
+
+if sys.version_info[0] < 3 and not hasattr(sys, 'pypy_version_info'):
+    from StringIO import StringIO
+else:
+    from io import StringIO
+
 
 __all__ = ['DjangoFixup', 'fixup']
 

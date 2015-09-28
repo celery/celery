@@ -10,14 +10,24 @@
 """
 from __future__ import absolute_import
 
-__all__ = [
-    'class_property', 'reclassmethod', 'create_module', 'recreate_module',
-]
+import operator
+import sys
+
+from importlib import import_module
+from types import ModuleType
 
 # extends amqp.five
 from amqp.five import *  # noqa
 from amqp.five import __all__ as _all_five
 
+try:
+    from functools import reduce
+except ImportError:
+    pass
+
+__all__ = [
+    'class_property', 'reclassmethod', 'create_module', 'recreate_module',
+]
 __all__ += _all_five
 
 #  ############# Module Generation ##########################
@@ -26,17 +36,8 @@ __all__ += _all_five
 # recreate modules, either for lazy loading or
 # to create old modules at runtime instead of
 # having them litter the source tree.
-import operator
-import sys
 
 # import fails in python 2.5. fallback to reduce in stdlib
-try:
-    from functools import reduce
-except ImportError:
-    pass
-
-from importlib import import_module
-from types import ModuleType
 
 MODULE_DEPRECATED = """
 The module %s is deprecated and will be removed in a future version.

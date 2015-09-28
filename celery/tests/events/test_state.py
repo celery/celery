@@ -26,7 +26,8 @@ except TypeError:  # pragma: no cover
     # Py2.6: Must first convert float to str
     _float_to_decimal = str
 else:
-    _float_to_decimal = lambda f: f  # noqa
+    def _float_to_decimal(f):  # noqa
+        return f
 
 
 class replay(object):

@@ -10,6 +10,15 @@ from __future__ import absolute_import
 
 from datetime import datetime, timedelta
 
+from kombu.syn import detect_environment
+from kombu.utils import cached_property
+from kombu.exceptions import EncodeError
+from celery import states
+from celery.exceptions import ImproperlyConfigured
+from celery.five import string_t, items
+
+from .base import BaseBackend
+
 try:
     import pymongo
 except ImportError:  # pragma: no cover
@@ -24,15 +33,6 @@ if pymongo:
 else:                                       # pragma: no cover
     Binary = None                           # noqa
     InvalidDocument = None                  # noqa
-
-from kombu.syn import detect_environment
-from kombu.utils import cached_property
-from kombu.exceptions import EncodeError
-from celery import states
-from celery.exceptions import ImproperlyConfigured
-from celery.five import string_t, items
-
-from .base import BaseBackend
 
 __all__ = ['MongoBackend']
 

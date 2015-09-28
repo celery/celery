@@ -185,9 +185,9 @@ class Scheduler(object):
                  Producer=None, lazy=False, sync_every_tasks=None, **kwargs):
         self.app = app
         self.data = maybe_evaluate({} if schedule is None else schedule)
-        self.max_interval = (max_interval
-                             or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
-                             or self.max_interval)
+        self.max_interval = (max_interval or
+                             app.conf.CELERYBEAT_MAX_LOOP_INTERVAL or
+                             self.max_interval)
         self.Producer = Producer or app.amqp.Producer
         self._heap = None
         self.sync_every_tasks = (
@@ -236,8 +236,8 @@ class Scheduler(object):
         """
 
         def _when(entry, next_time_to_run):
-            return (mktime(entry.schedule.now().timetuple())
-                    + (adjust(next_time_to_run) or 0))
+            return (mktime(entry.schedule.now().timetuple()) +
+                    (adjust(next_time_to_run) or 0))
 
         adjust = self.adjust
         max_interval = self.max_interval
@@ -474,8 +474,8 @@ class Service(object):
     def __init__(self, app, max_interval=None, schedule_filename=None,
                  scheduler_cls=None):
         self.app = app
-        self.max_interval = (max_interval
-                             or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL)
+        self.max_interval = (max_interval or
+                             app.conf.CELERYBEAT_MAX_LOOP_INTERVAL)
         self.scheduler_cls = scheduler_cls or self.scheduler_cls
         self.schedule_filename = (
             schedule_filename or app.conf.CELERYBEAT_SCHEDULE_FILENAME)
