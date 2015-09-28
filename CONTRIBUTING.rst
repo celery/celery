@@ -586,7 +586,7 @@ To not return a negative exit code when this command fails use
 the ``flakes`` target instead:
 ::
 
-    $ make flakes§
+    $ make flakes
 
 API reference
 ~~~~~~~~~~~~~
