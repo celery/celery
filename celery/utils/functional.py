@@ -150,7 +150,6 @@ class LRUCache(UserDict):
 def memoize(maxsize=None, keyfun=None, Cache=LRUCache):
 
     def _memoize(fun):
-        mutex = threading.Lock()
         cache = Cache(limit=maxsize)
 
         @wraps(fun)
@@ -160,13 +159,11 @@ def memoize(maxsize=None, keyfun=None, Cache=LRUCache):
             else:
                 key = args + (KEYWORD_MARK,) + tuple(sorted(kwargs.items()))
             try:
-                with mutex:
-                    value = cache[key]
+                value = cache[key]
             except KeyError:
                 value = fun(*args, **kwargs)
                 _M.misses += 1
-                with mutex:
-                    cache[key] = value
+                cache[key] = value
             else:
                 _M.hits += 1
             return value
