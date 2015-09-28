@@ -1,8 +1,6 @@
 language: python
 sudo: false
-cache:
-  directories:
-    - $HOME/.cache/pip
+cache: false
 python:
     - '3.5'
 env:
@@ -15,7 +13,7 @@ env:
     - TOXENV=pypy
     - TOXENV=3.5
     - TOXENV=pypy3
-install: pip install -U tox
+install: travis_retry pip install -U tox
 script: tox -v -- -v
 after_success:
   - .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
