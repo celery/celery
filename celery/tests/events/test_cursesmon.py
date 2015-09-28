@@ -14,7 +14,7 @@ class test_CursesDisplay(AppCase):
     def setup(self):
         try:
             import curses  # noqa
-        except ImportError:
+        except (ImportError, OSError):
             raise SkipTest('curses monitor requires curses')
 
         from celery.events import cursesmon
