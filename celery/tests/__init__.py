@@ -92,6 +92,6 @@ def import_all_modules(name=__name__, file=__file__,
                 pass
             except OSError as exc:
                 warnings.warn(UserWarning(
-                    'Ignored error importing module {0}: {1!r}').format(
+                    'Ignored error importing module {0}: {1!r}'.format(
                         module, exc,
-                    ))
+                    )))
