@@ -34,6 +34,7 @@ BACKEND_ALIASES = {
     'couchdb': 'celery.backends.couchdb:CouchDBBackend',
     'riak': 'celery.backends.riak:RiakBackend',
     'disabled': 'celery.backends.base:DisabledBackend',
+    'elasticsearch': 'celery.backends.elasticsearch:ElasticsearchBackend',
 }
 
 #: deprecated alias to ``current_app.backend``.
