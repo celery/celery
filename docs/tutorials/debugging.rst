@@ -52,7 +52,7 @@ information::
 If you telnet the port specified you will be presented
 with a `pdb` shell:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ telnet localhost 6900
     Connected to localhost.

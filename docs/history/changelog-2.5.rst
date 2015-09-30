@@ -94,7 +94,7 @@ News
 
     Example:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> s = add.subtask((5,))
         >>> new = s.clone(args=(10,), countdown=5})
@@ -145,7 +145,7 @@ Fixes
     Like with the worker it is now possible to configure celery settings
     on the command-line for celery control|inspect
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery inspect -- broker.pool_limit=30
 

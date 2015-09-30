@@ -43,14 +43,14 @@ With this route enabled import feed tasks will be routed to the
 
 Now you can start server `z` to only process the feeds queue like this:
 
-.. code-block:: bash
+.. code-block:: console
 
     user@z:/$ celery -A proj worker -Q feeds
 
 You can specify as many queues as you want, so you can make this server
 process the default queue as well:
 
-.. code-block:: bash
+.. code-block:: console
 
     user@z:/$ celery -A proj worker -Q feeds,celery
 
@@ -82,7 +82,7 @@ are declared.
 
 A queue named `"video"` will be created with the following settings:
 
-.. code-block:: python
+.. code-block:: javascript
 
     {'exchange': 'video',
      'exchange_type': 'direct',
@@ -145,13 +145,13 @@ You can also override this using the `routing_key` argument to
 To make server `z` consume from the feed queue exclusively you can
 start it with the ``-Q`` option:
 
-.. code-block:: bash
+.. code-block:: console
 
     user@z:/$ celery -A proj worker -Q feed_tasks --hostname=z@%h
 
 Servers `x` and `y` must be configured to consume from the default queue:
 
-.. code-block:: bash
+.. code-block:: console
 
     user@x:/$ celery -A proj worker -Q default --hostname=x@%h
     user@y:/$ celery -A proj worker -Q default --hostname=y@%h
@@ -159,7 +159,7 @@ Servers `x` and `y` must be configured to consume from the default queue:
 If you want, you can even have your feed processing worker handle regular
 tasks as well, maybe in times when there's a lot of work to do:
 
-.. code-block:: python
+.. code-block:: console
 
     user@z:/$ celery -A proj worker -Q feed_tasks,default --hostname=z@%h
 
@@ -209,7 +209,7 @@ metadata -- like the number of retries or an ETA.
 
 This is an example task message represented as a Python dictionary:
 
-.. code-block:: python
+.. code-block:: javascript
 
     {'task': 'myapp.tasks.add',
      'id': '54086c5e-6193-4575-8308-dbab76798756',
@@ -365,7 +365,7 @@ but different implementation may not implement all commands.
 You can write commands directly in the arguments to :program:`celery amqp`,
 or just start with no arguments to start it in shell-mode:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj amqp
     -> connecting to amqp://guest@localhost:5672/.
@@ -379,7 +379,7 @@ hit the `tab` key to show a list of possible matches.
 
 Let's create a queue you can send messages to:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj amqp
     1> exchange.declare testexchange direct
@@ -395,7 +395,9 @@ the routing key ``testkey``.
 
 From now on all messages sent to the exchange ``testexchange`` with routing
 key ``testkey`` will be moved to this queue.  You can send a message by
-using the ``basic.publish`` command::
+using the ``basic.publish`` command:
+
+.. code-block:: console
 
     4> basic.publish 'This is a message!' testexchange testkey
     ok.
@@ -405,7 +407,9 @@ Now that the message is sent you can retrieve it again.  You can use the
 (which is alright for maintenance tasks, for services you'd want to use
 ``basic.consume`` instead)
 
-Pop a message off the queue::
+Pop a message off the queue:
+
+.. code-block:: console
 
     5> basic.get testqueue
     {'body': 'This is a message!',
@@ -428,12 +432,16 @@ This tag is used to acknowledge the message.  Also note that
 delivery tags are not unique across connections, so in another client
 the delivery tag `1` might point to a different message than in this channel.
 
-You can acknowledge the message you received using ``basic.ack``::
+You can acknowledge the message you received using ``basic.ack``:
+
+.. code-block:: console
 
     6> basic.ack 1
     ok.
 
-To clean up after our test session you should delete the entities you created::
+To clean up after our test session you should delete the entities you created:
+
+.. code-block:: console
 
     7> queue.delete testqueue
     ok. 0 messages deleted.
@@ -533,11 +541,15 @@ becomes -->
 
 
 You install router classes by adding them to the :setting:`CELERY_ROUTES`
-setting::
+setting:
+
+.. code-block:: python
 
     CELERY_ROUTES = (MyRouter(),)
 
-Router classes can also be added by name::
+Router classes can also be added by name:
+
+.. code-block:: python
 
     CELERY_ROUTES = ('myapp.routers.MyRouter',)
 

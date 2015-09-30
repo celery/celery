@@ -17,7 +17,7 @@ same process space.
 
 Let's create one now:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from celery import Celery
     >>> app = Celery()
@@ -43,7 +43,7 @@ registry*.
 
 Whenever you define a task, that task will also be added to the local registry:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> @app.task
     ... def add(x, y):
@@ -93,7 +93,7 @@ the tasks will be named starting with "``tasks``" (the real name of the module):
 
 You can specify another name for the main module:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app = Celery('tasks')
     >>> app.main
@@ -236,7 +236,7 @@ environment variable named :envvar:`CELERY_CONFIG_MODULE`:
 
 You can then specify the configuration module to use via the environment:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ CELERY_CONFIG_MODULE="celeryconfig.prod" celery worker -l info
 
@@ -252,7 +252,7 @@ passwords and API keys.
 Celery comes with several utilities used for presenting the configuration,
 one is :meth:`~celery.app.utils.Settings.humanize`:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app.conf.humanize(with_defaults=False, censored=True)
 
@@ -263,7 +263,7 @@ default keys and values by changing the ``with_defaults`` argument.
 If you instead want to work with the configuration as a dictionary, then you
 can use the :meth:`~celery.app.utils.Settings.table` method:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app.conf.table(with_defaults=False, censored=True)
 
@@ -299,7 +299,7 @@ application has been *finalized*,
 This example shows how the task is not created until
 you use the task, or access an attribute (in this case :meth:`repr`):
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> @app.task
     >>> def add(x, y):
@@ -410,7 +410,7 @@ In development you can set the :envvar:`CELERY_TRACE_APP`
 environment variable to raise an exception if the app
 chain breaks:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ CELERY_TRACE_APP=1 celery worker -l info
 
@@ -423,7 +423,7 @@ chain breaks:
     For example, in the beginning it was possible to use any callable as
     a task:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         def hello(to):
             return 'hello {0}'.format(to)
@@ -507,7 +507,7 @@ and so on.
 It's also possible to change the default base class for an application
 by changing its :meth:`@Task` attribute:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from celery import Celery, Task
 

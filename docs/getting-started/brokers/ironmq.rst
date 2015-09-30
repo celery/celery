@@ -11,7 +11,7 @@ Installation
 
 For IronMQ support, you'll need the [iron_celery](http://github.com/iron-io/iron_celery) library:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install iron_celery
 

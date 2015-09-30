@@ -515,7 +515,7 @@ class Signals(object):
 
     **Examples**:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> from celery.platforms import signals
 

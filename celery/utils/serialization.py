@@ -86,7 +86,7 @@ class UnpickleableExceptionWrapper(Exception):
 
     **Example**
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> def pickle_it(raising_function):
         ...     try:

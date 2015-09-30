@@ -63,7 +63,7 @@ schedule manually.
     The database scheduler will not reset when timezone related settings
     change, so you must do this manually:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ python manage.py shell
         >>> from djcelery.models import PeriodicTask
@@ -283,12 +283,12 @@ sunset, dawn or dusk, you can use the
     from celery.schedules import solar
 
     CELERYBEAT_SCHEDULE = {
-    	# Executes at sunset in Melbourne
-    	'add-at-melbourne-sunset': {
-    		'task': 'tasks.add',
-    		'schedule': solar('sunset', -37.81753, 144.96715),
-    		'args': (16, 16),
-    	},
+        # Executes at sunset in Melbourne
+        'add-at-melbourne-sunset': {
+            'task': 'tasks.add',
+            'schedule': solar('sunset', -37.81753, 144.96715),
+            'args': (16, 16),
+        },
     }
 
 The arguments are simply: ``solar(event, latitude, longitude)``
@@ -378,7 +378,7 @@ Starting the Scheduler
 
 To start the :program:`celery beat` service:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj beat
 
@@ -387,7 +387,7 @@ workers `-B` option, this is convenient if you will never run
 more than one worker node, but it's not commonly used and for that
 reason is not recommended for production use:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -B
 
@@ -396,7 +396,7 @@ file (named `celerybeat-schedule` by default), so it needs access to
 write in the current directory, or alternatively you can specify a custom
 location for this file:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj beat -s /home/celery/var/run/celerybeat-schedule
 
@@ -418,7 +418,7 @@ which is simply keeping track of the last run times in a local database file
 `django-celery` also ships with a scheduler that stores the schedule in the
 Django database:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj beat -S djcelery.schedulers.DatabaseScheduler
 

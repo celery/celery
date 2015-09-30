@@ -73,7 +73,9 @@ these can be specified as arguments to the decorator:
     if you don't know what that is then please read :ref:`first-steps`.
 
     If you're using Django or are still using the "old" module based celery API,
-    then you can import the task decorator like this::
+    then you can import the task decorator like this:
+
+    .. code-block:: python
 
         from celery import task
 
@@ -106,7 +108,7 @@ will be generated out of the function name if a custom name is not provided.
 
 For example:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> @app.task(name='sum-of-two-numbers')
     >>> def add(x, y):
@@ -119,13 +121,15 @@ A best practice is to use the module name as a namespace,
 this way names won't collide if there's already a task with that name
 defined in another module.
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> @app.task(name='tasks.add')
     >>> def add(x, y):
     ...     return x + y
 
-You can tell the name of the task by investigating its name attribute::
+You can tell the name of the task by investigating its name attribute:
+
+.. code-block:: pycon
 
     >>> add.name
     'tasks.add'
@@ -168,7 +172,7 @@ If you install the app under the name ``project.myapp`` then the
 tasks module will be imported as ``project.myapp.tasks``,
 so you must make sure you always import the tasks using the same name:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from project.myapp.tasks import mytask   # << GOOD
 
@@ -177,7 +181,7 @@ so you must make sure you always import the tasks using the same name:
 The second example will cause the task to be named differently
 since the worker and the client imports the modules under different names:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from project.myapp.tasks import mytask
     >>> mytask.name
@@ -894,7 +898,9 @@ The name of the state is usually an uppercase string.  As an example
 you could have a look at :mod:`abortable tasks <~celery.contrib.abortable>`
 which defines its own custom :state:`ABORTED` state.
 
-Use :meth:`~@Task.update_state` to update a task's state::
+Use :meth:`~@Task.update_state` to update a task's state:.
+
+.. code-block:: python
 
     @app.task(bind=True)
     def upload_files(self, filenames):
@@ -1268,7 +1274,7 @@ All defined tasks are listed in a registry.  The registry contains
 a list of task names and their task classes.  You can investigate this registry
 yourself:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from proj.celery import app
     >>> app.tasks
@@ -1503,7 +1509,9 @@ that automatically expands some abbreviations in it:
         article.save()
 
 First, an author creates an article and saves it, then the author
-clicks on a button that initiates the abbreviation task::
+clicks on a button that initiates the abbreviation task:
+
+.. code-block:: pycon
 
     >>> article = Article.objects.get(id=102)
     >>> expand_abbreviations.delay(article)
@@ -1523,6 +1531,8 @@ re-fetch the article in the task body:
         article = Article.objects.get(id=article_id)
         article.body.replace('MyCorp', 'My Corporation')
         article.save()
+
+.. code-block:: pycon
 
     >>> expand_abbreviations(article_id)
 

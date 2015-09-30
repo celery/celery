@@ -154,7 +154,7 @@ and creating Celery applications.
         :keyword force:  Force reading configuration immediately.
             By default the configuration will be read only when required.
 
-        .. code-block:: python
+        .. code-block:: pycon
 
             >>> celery.config_from_object("myapp.celeryconfig")
 
@@ -169,7 +169,7 @@ and creating Celery applications.
         The value of the environment variable must be the name
         of a module to import.
 
-        .. code-block:: python
+        .. code-block:: pycon
 
             >>> os.environ["CELERY_CONFIG_MODULE"] = "myapp.celeryconfig"
             >>> celery.config_from_envvar("CELERY_CONFIG_MODULE")

@@ -108,7 +108,7 @@ A subclass can change the default value:
 
 and the value can be set at instantiation:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> producer = TaskProducer(serializer='msgpack')
 

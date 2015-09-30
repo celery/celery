@@ -434,7 +434,7 @@ Configuring the backend URL
 
     To install the redis package use `pip` or `easy_install`:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install redis
 
@@ -540,7 +540,7 @@ Cassandra backend settings
 
     To install the pycassa package use `pip` or `easy_install`:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install pycassa
 
@@ -636,7 +636,7 @@ Riak backend settings
 
     To install the riak package use `pip` or `easy_install`:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install riak
 
@@ -702,7 +702,7 @@ IronCache backend settings
 
     To install the iron_celery package use `pip` or `easy_install`:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install iron_celery
 
@@ -729,7 +729,7 @@ Couchbase backend settings
 
     To install the couchbase package use `pip` or `easy_install`:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install couchbase
 
@@ -775,7 +775,7 @@ CouchDB backend settings
 
     To install the couchbase package use `pip` or `easy_install`:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install pycouchdb
 
@@ -967,7 +967,7 @@ With the follow settings:
 
 The final routing options for ``tasks.add`` will become:
 
-.. code-block:: python
+.. code-block:: javascript
 
     {"exchange": "cpubound",
      "routing_key": "tasks.add",

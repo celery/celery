@@ -219,7 +219,7 @@ class AsyncResult(ResultBase):
 
         Calling :meth:`collect` would return:
 
-        .. code-block:: python
+        .. code-block:: pycon
 
             >>> from celery.result import ResultBase
             >>> from proj.tasks import A

@@ -580,7 +580,7 @@ class Task(object):
 
         **Example**
 
-        .. code-block:: python
+        .. code-block:: pycon
 
             >>> from imaginary_twitter_lib import Twitter
             >>> from proj.celery import app

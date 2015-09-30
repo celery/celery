@@ -160,7 +160,9 @@ option:
 
 
 In addition, both the ``link`` and ``link_error`` options can be expressed
-as a list::
+as a list:
+
+.. code-block:: python
 
     add.apply_async((2, 2), link=[add.s(16), other_task.s()])
 
@@ -177,7 +179,7 @@ The ETA (estimated time of arrival) lets you set a specific date and time that
 is the earliest time at which your task will be executed.  `countdown` is
 a shortcut to set eta by seconds into the future.
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> result = add.apply_async((2, 2), countdown=3)
     >>> result.get()    # this takes at least 3 seconds to return
@@ -195,7 +197,7 @@ While `countdown` is an integer, `eta` must be a :class:`~datetime.datetime`
 object, specifying an exact date and time (including millisecond precision,
 and timezone information):
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from datetime import datetime, timedelta
 
@@ -211,7 +213,7 @@ The `expires` argument defines an optional expiry time,
 either as seconds after task publish, or a specific date and time using
 :class:`~datetime.datetime`:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> # Task expires after one minute from now.
     >>> add.apply_async((10, 10), expires=60)
@@ -385,7 +387,7 @@ to use when sending a task:
 
 Example setting a custom serializer for a single task invocation:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> add.apply_async((10, 10), serializer='json')
 
@@ -442,7 +444,7 @@ publisher:
 
 Though this particular example is much better expressed as a group:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from celery import group
 
@@ -466,7 +468,7 @@ Simple routing (name <-> name) is accomplished using the ``queue`` option::
 You can then assign workers to the ``priority.high`` queue by using
 the workers :option:`-Q` argument:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -l info -Q celery,priority.high
 

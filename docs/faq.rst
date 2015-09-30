@@ -306,7 +306,7 @@ Why aren't my tasks processed?
 **Answer:** With RabbitMQ you can see how many consumers are currently
 receiving tasks by running the following command:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ rabbitmqctl list_queues -p <myvhost> name messages consumers
     Listing queues ...
@@ -366,13 +366,13 @@ How do I purge all waiting tasks?
 **Answer:** You can use the ``celery purge`` command to purge
 all configured task queues:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj purge
 
 or programatically:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from proj.celery import app
     >>> app.control.purge()
@@ -381,7 +381,7 @@ or programatically:
 If you only want to purge messages from a specific queue
 you have to use the AMQP API or the :program:`celery amqp` utility:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj amqp queue.purge <queue name>
 
@@ -523,7 +523,7 @@ setting.
 If you don't use the results for a task, make sure you set the
 `ignore_result` option:
 
-.. code-block python
+.. code-block:: python
 
     @app.task(ignore_result=True)
     def mytask():
@@ -705,7 +705,7 @@ control commands will be received in round-robin between them.
 To work around this you can explicitly set the nodename for every worker
 using the :option:`-n` argument to :mod:`~celery.bin.worker`:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -n worker1@%h
     $ celery -A proj worker -n worker2@%h
@@ -842,9 +842,9 @@ task so the task will not run again.
 Identifying the type of process is easier if you have installed the
 ``setproctitle`` module:
 
-.. code-block:: bash
+.. code-block:: console
 
-    pip install setproctitle
+    $ pip install setproctitle
 
 With this library installed you will be able to see the type of process in ps
 listings, but the worker must be restarted for this to take effect.

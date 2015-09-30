@@ -666,7 +666,7 @@ Important Notes
     If you telnet the port specified you will be presented
     with a ``pdb`` shell:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ telnet localhost 6900
         Connected to localhost.
@@ -711,7 +711,7 @@ Important Notes
         If you would like to remove the old exchange you can do so
         by executing the following command:
 
-        .. code-block:: bash
+        .. code-block:: console
 
             $ camqadm exchange.delete celeryevent
 
@@ -721,7 +721,7 @@ Important Notes
   Configuration options must appear after the last argument, separated
   by two dashes:
 
-  .. code-block:: bash
+  .. code-block:: console
 
       $ celery worker -l info -I tasks -- broker.host=localhost broker.vhost=/app
 
@@ -924,7 +924,7 @@ News
 
     For example:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery worker --config=celeryconfig.py --loader=myloader.Loader
 

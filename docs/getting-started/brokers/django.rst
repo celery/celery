@@ -34,7 +34,7 @@ configuration values.
 
 #. Sync your database schema:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ python manage.py syncdb
 

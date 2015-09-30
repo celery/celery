@@ -56,7 +56,7 @@ Detailed information about using RabbitMQ with Celery:
 If you are using Ubuntu or Debian install RabbitMQ by executing this
 command:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ sudo apt-get install rabbitmq-server
 
@@ -111,7 +111,7 @@ Installing Celery
 Celery is on the Python Package Index (PyPI), so it can be installed
 with standard Python tools like ``pip`` or ``easy_install``:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install celery
 
@@ -157,7 +157,7 @@ Running the celery worker server
 You now run the worker by executing our program with the ``worker``
 argument:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A tasks worker --loglevel=info
 
@@ -173,13 +173,13 @@ for more information).
 
 For a complete listing of the command-line options available, do:
 
-.. code-block:: bash
+.. code-block:: console
 
     $  celery worker --help
 
 There are also several other commands available, and help is also available:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery help
 
@@ -344,7 +344,7 @@ current directory or on the Python path, it could look like this:
 To verify that your configuration file works properly, and doesn't
 contain any syntax errors, you can try to import it:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ python -m celeryconfig
 
@@ -377,7 +377,7 @@ If you are using RabbitMQ or Redis as the
 broker then you can also direct the workers to set a new rate limit
 for the task at runtime:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A tasks control rate_limit tasks.add 10/m
     worker@example.com: OK
@@ -411,7 +411,7 @@ Worker does not start: Permission Error
 
     A simple workaround is to create a symbolic link:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         # ln -s /run/shm /dev/shm
 
