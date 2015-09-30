@@ -162,7 +162,7 @@ You can also clone signatures to create derivatives:
     proj.tasks.add(2)
 
     >>> s.clone(args=(4,), kwargs={'debug': True})
-    proj.tasks.add(2, 4, debug=True)
+    proj.tasks.add(4, 2, debug=True)
 
 Immutability
 ------------
