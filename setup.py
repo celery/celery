@@ -84,16 +84,16 @@ rq = lambda s: s.strip("\"'")
 
 def add_default(m):
     attr_name, attr_value = m.groups()
-    return ((attr_name, rq(attr_value)), )
+    return ((attr_name, rq(attr_value)),)
 
 
 def add_version(m):
     v = list(map(rq, m.groups()[0].split(', ')))
-    return (('VERSION', '.'.join(v[0:3]) + ''.join(v[3:])), )
+    return (('VERSION', '.'.join(v[0:3]) + ''.join(v[3:])),)
 
 
 def add_doc(m):
-    return (('doc', m.groups()[0]), )
+    return (('doc', m.groups()[0]),)
 
 pats = {re_meta: add_default,
         re_vers: add_version,
@@ -116,12 +116,23 @@ def strip_comments(l):
     return l.split('#', 1)[0].strip()
 
 
-def reqs(*f):
+def _pip_requirement(req):
+    if req.startswith('-r '):
+        _, path = req.split()
+        return reqs(*path.split('/'))
+    return [req]
+
+
+def _reqs(*f):
     return [
-        r for r in (
+        _pip_requirement(r) for r in (
             strip_comments(l) for l in open(
                 os.path.join(os.getcwd(), 'requirements', *f)).readlines()
         ) if r]
+
+
+def reqs(*f):
+    return [req for subreq in _reqs(*f) for req in subreq]
 
 install_requires = reqs('default.txt')
 if JYTHON:
@@ -163,6 +174,8 @@ features = {
 }
 extras_require = {x: extras(x + '.txt') for x in features}
 extra['extras_require'] = extras_require
+
+print(tests_require)
 
 # -*- %%% -*-
 

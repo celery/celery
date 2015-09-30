@@ -127,5 +127,6 @@ class test_leaks(LeakFunCase):
         finally:
             self.app.conf.BROKER_POOL_LIMIT = pool_limit
 
+
 if __name__ == '__main__':
     unittest.main()

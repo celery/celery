@@ -478,7 +478,7 @@ class test_EmbeddedService(AppCase):
 
         from billiard.process import Process
 
-        s = beat.EmbeddedService(app=self.app)
+        s = beat.EmbeddedService(self.app)
         self.assertIsInstance(s, Process)
         self.assertIsInstance(s.service, beat.Service)
         s.service = MockService()
@@ -499,7 +499,7 @@ class test_EmbeddedService(AppCase):
         self.assertTrue(s._popen.terminated)
 
     def test_start_stop_threaded(self):
-        s = beat.EmbeddedService(thread=True, app=self.app)
+        s = beat.EmbeddedService(self.app, thread=True)
         from threading import Thread
         self.assertIsInstance(s, Thread)
         self.assertIsInstance(s.service, beat.Service)
@@ -521,7 +521,7 @@ class test_schedule(AppCase):
         self.assertTrue(d.tzinfo)
         x.utc_enabled = False
         d2 = x.maybe_make_aware(datetime.utcnow())
-        self.assertIsNone(d2.tzinfo)
+        self.assertTrue(d2.tzinfo)
 
     def test_to_local(self):
         x = schedule(10, app=self.app)

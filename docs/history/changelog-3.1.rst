@@ -371,7 +371,7 @@ News
     and if you use the ``librabbitmq`` module you also have to upgrade
     to librabbitmq 1.5.0:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install -U librabbitmq
 
@@ -422,7 +422,7 @@ News
   exceptions.
 
 - **Worker**: No longer sends task error emails for expected errors (in
-  ``@task(throws=(..., )))``.
+  ``@task(throws=(...,)))``.
 
 - **Canvas**: Fixed problem with exception deserialization when using
   the JSON serializer (Issue #1987).
@@ -507,9 +507,9 @@ News
     This means that referring to a number will work when specifying a list
     of node names and not just for a number range:
 
-    .. code-block:: bash
+    .. code-block:: console
 
-        celery multi start A B C D -c:1 4 -c:2-4 8
+        $ celery multi start A B C D -c:1 4 -c:2-4 8
 
     In this example ``1`` refers to node A (as it's the first node in the
     list).
@@ -735,7 +735,7 @@ News
     Example using command-line configuration to set a broker heartbeat
     from :program:`celery multi`:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery multi start 1 -c3 -- broker.heartbeat=30
 
@@ -915,7 +915,7 @@ Fixes
 
     Example:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj worker -n foo@%h --logfile=%n.log --statedb=%n.db
 

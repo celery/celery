@@ -1,4 +1,8 @@
+"""Tests for the CouchBaseBackend."""
+
 from __future__ import absolute_import
+
+from kombu.utils.encoding import str_t
 
 from celery.backends import couchbase as module
 from celery.backends.couchbase import CouchBaseBackend
@@ -18,32 +22,42 @@ COUCHBASE_BUCKET = 'celery_bucket'
 
 class test_CouchBaseBackend(AppCase):
 
+    """CouchBaseBackend TestCase."""
+
     def setup(self):
+        """Skip the test if couchbase cannot be imported."""
         if couchbase is None:
             raise SkipTest('couchbase is not installed.')
         self.backend = CouchBaseBackend(app=self.app)
 
     def test_init_no_couchbase(self):
-        """test init no couchbase raises"""
-        prev, module.couchbase = module.couchbase, None
+        """
+        Test init no couchbase raises.
+
+        If celery.backends.couchbase cannot import the couchbase client, it
+        sets the couchbase.Couchbase to None and then handles this in the
+        CouchBaseBackend __init__ method.
+        """
+        prev, module.Couchbase = module.Couchbase, None
         try:
             with self.assertRaises(ImproperlyConfigured):
                 CouchBaseBackend(app=self.app)
         finally:
-            module.couchbase = prev
+            module.Couchbase = prev
 
     def test_init_no_settings(self):
-        """test init no settings"""
+        """Test init no settings."""
         self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = []
         with self.assertRaises(ImproperlyConfigured):
             CouchBaseBackend(app=self.app)
 
     def test_init_settings_is_None(self):
-        """Test init settings is None"""
+        """Test init settings is None."""
         self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
         CouchBaseBackend(app=self.app)
 
     def test_get_connection_connection_exists(self):
+        """Test _get_connection works."""
         with patch('couchbase.connection.Connection') as mock_Connection:
             self.backend._connection = sentinel._connection
 
@@ -53,12 +67,13 @@ class test_CouchBaseBackend(AppCase):
             self.assertFalse(mock_Connection.called)
 
     def test_get(self):
-        """test_get
+        """
+        Test get method.
 
         CouchBaseBackend.get should return  and take two params
         db conn to couchbase is mocked.
-        TODO Should test on key not exists
 
+        TODO Should test on key not exists
         """
         self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
         x = CouchBaseBackend(app=self.app)
@@ -70,11 +85,11 @@ class test_CouchBaseBackend(AppCase):
         x._connection.get.assert_called_once_with('1f3fab')
 
     def test_set(self):
-        """test_set
+        """
+        Test set method.
 
         CouchBaseBackend.set should return None and take two params
         db conn to couchbase is mocked.
-
         """
         self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
         x = CouchBaseBackend(app=self.app)
@@ -84,12 +99,13 @@ class test_CouchBaseBackend(AppCase):
         self.assertIsNone(x.set(sentinel.key, sentinel.value))
 
     def test_delete(self):
-        """test_delete
+        """
+        Test delete method.
 
         CouchBaseBackend.delete should return and take two params
         db conn to couchbase is mocked.
-        TODO Should test on key not exists
 
+        TODO Should test on key not exists.
         """
         self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
         x = CouchBaseBackend(app=self.app)
@@ -101,9 +117,10 @@ class test_CouchBaseBackend(AppCase):
         x._connection.delete.assert_called_once_with('1f3fab')
 
     def test_config_params(self):
-        """test_config_params
+        """
+        Test config params are correct.
 
-        celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS is properly set
+        celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS is properly set.
         """
         self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {
             'bucket': 'mycoolbucket',
@@ -120,12 +137,14 @@ class test_CouchBaseBackend(AppCase):
         self.assertEqual(x.port, 1234)
 
     def test_backend_by_url(self, url='couchbase://myhost/mycoolbucket'):
+        """Test that a CouchBaseBackend is loaded from the couchbase url."""
         from celery.backends.couchbase import CouchBaseBackend
         backend, url_ = backends.get_backend_by_url(url, self.app.loader)
         self.assertIs(backend, CouchBaseBackend)
         self.assertEqual(url_, url)
 
     def test_backend_params_by_url(self):
+        """Test config params are correct from config url."""
         url = 'couchbase://johndoe:mysecret@myhost:123/mycoolbucket'
         with self.Celery(backend=url) as app:
             x = app.backend
@@ -134,3 +153,22 @@ class test_CouchBaseBackend(AppCase):
             self.assertEqual(x.username, 'johndoe')
             self.assertEqual(x.password, 'mysecret')
             self.assertEqual(x.port, 123)
+
+    def test_correct_key_types(self):
+        """
+        Test that the key is the correct type for the couchbase python API.
+
+        We check that get_key_for_task, get_key_for_chord, and
+        get_key_for_group always returns a python string. Need to use str_t
+        for cross Python reasons.
+        """
+        keys = [
+            self.backend.get_key_for_task('task_id', bytes('key')),
+            self.backend.get_key_for_chord('group_id', bytes('key')),
+            self.backend.get_key_for_group('group_id', bytes('key')),
+            self.backend.get_key_for_task('task_id', 'key'),
+            self.backend.get_key_for_chord('group_id', 'key'),
+            self.backend.get_key_for_group('group_id', 'key'),
+        ]
+        for key in keys:
+            self.assertIsInstance(key, str_t)

@@ -159,7 +159,7 @@ in init scripts.  The rest will be removed in 3.2.
 If this is not a new installation then you may want to remove the old
 commands:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip uninstall celery
     $ # repeat until it fails
@@ -250,7 +250,7 @@ Caveats
     You can disable this prefetching behavior by enabling the :option:`-Ofair`
     worker option:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj worker -l info -Ofair
 
@@ -325,9 +325,9 @@ but if you would like to experiment with it you should know that:
 
     Instead you use the :program:`celery` command directly:
 
-    .. code-block:: bash
+    .. code-block:: console
 
-        celery -A proj worker -l info
+        $ celery -A proj worker -l info
 
     For this to work your app module must store the  :envvar:`DJANGO_SETTINGS_MODULE`
     environment variable, see the example in the :ref:`Django
@@ -410,14 +410,14 @@ If a custom name is not specified then the
 worker will use the name 'celery' by default, resulting in a
 fully qualified node name of 'celery@hostname':
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery worker -n example.com
     celery@example.com
 
 To also set the name you must include the @:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery worker -n worker1@example.com
     worker1@example.com
@@ -431,7 +431,7 @@ Remember that the ``-n`` argument also supports simple variable
 substitutions, so if the current hostname is *george.example.com*
 then the ``%h`` macro will expand into that:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery worker -n worker1@%h
     worker1@george.example.com
@@ -556,7 +556,7 @@ Time limits can now be set by the client
 Two new options have been added to the Calling API: ``time_limit`` and
 ``soft_time_limit``:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> res = add.apply_async((2, 2), time_limit=10, soft_time_limit=8)
 
@@ -605,7 +605,7 @@ setuptools extras.
 
 You install extras by specifying them inside brackets:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install celery[redis,mongodb]
 
@@ -659,9 +659,9 @@ This means that:
 
 now does the same as calling the task directly:
 
-.. code-block:: python
+.. code-block:: pycon
 
-    add(2, 2)
+    >>> add(2, 2)
 
 In Other News
 -------------
@@ -685,7 +685,7 @@ In Other News
 
     Regular signature:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> s = add.s(2, 2)
         >>> result = s.freeze()
@@ -696,7 +696,7 @@ In Other News
 
     Group:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> g = group(add.s(2, 2), add.s(4, 4))
         >>> result = g.freeze()
@@ -767,9 +767,9 @@ In Other News
 
     A dispatcher instantiated as follows:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
-        app.events.Dispatcher(connection, groups=['worker'])
+        >>> app.events.Dispatcher(connection, groups=['worker'])
 
     will only send worker related events and silently drop any attempts
     to send events related to any other group.
@@ -814,7 +814,7 @@ In Other News
 
     Example:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery inspect conf
 
@@ -923,7 +923,7 @@ In Other News
 
     You can create graphs from the currently installed bootsteps:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         # Create graph of currently installed bootsteps in both the worker
         # and consumer namespaces.
@@ -937,7 +937,7 @@ In Other News
 
     Or graphs of workers in a cluster:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         # Create graph from the current cluster
         $ celery graph workers | dot -T png -o workers.png
@@ -986,11 +986,11 @@ In Other News
     The :envvar:`C_IMPDEBUG` can be set to trace imports as they
     occur:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ C_IMDEBUG=1 celery worker -l info
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ C_IMPDEBUG=1 celery shell
 
@@ -1089,7 +1089,7 @@ In Other News
     The :option:`-X` argument is the inverse of the :option:`-Q` argument
     and accepts a list of queues to exclude (not consume from):
 
-    .. code-block:: bash
+    .. code-block:: console
 
         # Consume from all queues in CELERY_QUEUES, but not the 'foo' queue.
         $ celery worker -A proj -l info -X foo
@@ -1098,13 +1098,13 @@ In Other News
 
     This means that you can now do:
 
-    .. code-block:: bash
+    .. code-block:: console
 
             $ C_FAKEFORK=1 celery multi start 10
 
     or:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ C_FAKEFORK=1 /etc/init.d/celeryd start
 

@@ -63,7 +63,7 @@ schedule manually.
     The database scheduler will not reset when timezone related settings
     change, so you must do this manually:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ python manage.py shell
         >>> from djcelery.models import PeriodicTask
@@ -269,6 +269,108 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 
 See :class:`celery.schedules.crontab` for more documentation.
 
+.. _beat-solar:
+
+Solar schedules
+=================
+
+If you have a task that should be executed according to sunrise,
+sunset, dawn or dusk, you can use the
+:class:`~celery.schedules.solar` schedule type:
+
+.. code-block:: python
+
+    from celery.schedules import solar
+
+    CELERYBEAT_SCHEDULE = {
+        # Executes at sunset in Melbourne
+        'add-at-melbourne-sunset': {
+            'task': 'tasks.add',
+            'schedule': solar('sunset', -37.81753, 144.96715),
+            'args': (16, 16),
+        },
+    }
+
+The arguments are simply: ``solar(event, latitude, longitude)``
+
+Be sure to use the correct sign for latitude and longitude:
+
++---------------+-------------------+----------------------+
+| **Sign**      | **Argument**      | **Meaning**          |
++---------------+-------------------+----------------------+
+| ``+``         | ``latitude``      | North                |
++---------------+-------------------+----------------------+
+| ``-``         | ``latitude``      | South                |
++---------------+-------------------+----------------------+
+| ``+``         | ``longitude``     | East                 |
++---------------+-------------------+----------------------+
+| ``-``         | ``longitude``     | West                 |
++---------------+-------------------+----------------------+
+
+Possible event types are:
+
++-----------------------------------------+--------------------------------------------+
+| **Event**                               | **Meaning**                                |
++-----------------------------------------+--------------------------------------------+
+| ``dawn_astronomical``                   | Execute at the moment after which the sky  |
+|                                         | is no longer completely dark. This is when |
+|                                         | the sun is 18 degrees below the horizon.   |
++-----------------------------------------+--------------------------------------------+
+| ``dawn_nautical``                       | Execute when there is enough sunlight for  |
+|                                         | the horizon and some objects to be         |
+|                                         | distinguishable; formally, when the sun is |
+|                                         | 12 degrees below the horizon.              |
++-----------------------------------------+--------------------------------------------+
+| ``dawn_civil``                          | Execute when there is enough light for     |
+|                                         | objects to be distinguishable so that      |
+|                                         | outdoor activities can commence;           |
+|                                         | formally, when the Sun is 6 degrees below  |
+|                                         | the horizon.                               |
++-----------------------------------------+--------------------------------------------+
+| ``sunrise``                             | Execute when the upper edge of the sun     |
+|                                         | appears over the eastern horizon in the    |
+|                                         | morning.                                   |
++-----------------------------------------+--------------------------------------------+
+| ``solar_noon``                          | Execute when the sun is highest above the  |
+|                                         | horizon on that day.                       |
++-----------------------------------------+--------------------------------------------+
+| ``sunset``                              | Execute when the trailing edge of the sun  |
+|                                         | disappears over the western horizon in the |
+|                                         | evening.                                   |
++-----------------------------------------+--------------------------------------------+
+| ``dusk_civil``                          | Execute at the end of civil twilight, when |
+|                                         | objects are still distinguishable and some |
+|                                         | stars and planets are visible. Formally,   |
+|                                         | when the sun is 6 degrees below the        |
+|                                         | horizon.                                   |
++-----------------------------------------+--------------------------------------------+
+| ``dusk_nautical``                       | Execute when the sun is 12 degrees below   |
+|                                         | the horizon. Objects are no longer         |
+|                                         | distinguishable, and the horizon is no     |
+|                                         | longer visible to the naked eye.           |
++-----------------------------------------+--------------------------------------------+
+| ``dusk_astronomical``                   | Execute at the moment after which the sky  |
+|                                         | becomes completely dark; formally, when    |
+|                                         | the sun is 18 degrees below the horizon.   |
++-----------------------------------------+--------------------------------------------+
+
+All solar events are calculated using UTC, and are therefore
+unaffected by your timezone setting.
+
+In polar regions, the sun may not rise or set every day. The scheduler
+is able to handle these cases, i.e. a ``sunrise`` event won't run on a day
+when the sun doesn't rise. The one exception is ``solar_noon``, which is
+formally defined as the moment the sun transits the celestial meridian,
+and will occur every day even if the sun is below the horizon.
+
+Twilight is defined as the period between dawn and sunrise, and between
+sunset and dusk. You can schedule an event according to "twilight"
+depending on your definition of twilight (civil, nautical or astronomical),
+and whether you want the event to take place at the beginning or end
+of twilight, using the appropriate event from the list above.
+
+See :class:`celery.schedules.solar` for more documentation.
+
 .. _beat-starting:
 
 Starting the Scheduler
@@ -276,7 +378,7 @@ Starting the Scheduler
 
 To start the :program:`celery beat` service:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj beat
 
@@ -285,7 +387,7 @@ workers `-B` option, this is convenient if you will never run
 more than one worker node, but it's not commonly used and for that
 reason is not recommended for production use:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -B
 
@@ -294,7 +396,7 @@ file (named `celerybeat-schedule` by default), so it needs access to
 write in the current directory, or alternatively you can specify a custom
 location for this file:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj beat -s /home/celery/var/run/celerybeat-schedule
 
@@ -316,7 +418,7 @@ which is simply keeping track of the last run times in a local database file
 `django-celery` also ships with a scheduler that stores the schedule in the
 Django database:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj beat -S djcelery.schedulers.DatabaseScheduler
 

@@ -238,7 +238,7 @@ class AMQP(object):
         if not queues and conf.CELERY_DEFAULT_QUEUE:
             queues = (Queue(conf.CELERY_DEFAULT_QUEUE,
                             exchange=self.default_exchange,
-                            routing_key=conf.CELERY_DEFAULT_ROUTING_KEY), )
+                            routing_key=conf.CELERY_DEFAULT_ROUTING_KEY),)
         autoexchange = (self.autoexchange if autoexchange is None
                         else autoexchange)
         return self.queues_cls(
@@ -270,7 +270,7 @@ class AMQP(object):
                    callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
-                   now=None, timezone=None):
+                   shadow=None, now=None, timezone=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -337,7 +337,7 @@ class AMQP(object):
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
-                   now=None, timezone=None):
+                   shadow=None, now=None, timezone=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -371,6 +371,7 @@ class AMQP(object):
                 'id': task_id,
                 'args': args,
                 'kwargs': kwargs,
+                'group': group_id,
                 'retries': retries,
                 'eta': eta,
                 'expires': expires,
@@ -438,7 +439,8 @@ class AMQP(object):
                 try:
                     delivery_mode = queue.exchange.delivery_mode
                 except AttributeError:
-                    delivery_mode = default_delivery_mode
+                    pass
+                delivery_mode = delivery_mode or default_delivery_mode
             exchange = exchange or queue.exchange.name
             routing_key = routing_key or queue.routing_key
             if declare is None and queue and not isinstance(queue, Broadcast):

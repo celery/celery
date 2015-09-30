@@ -125,7 +125,9 @@ Changes from version 1
 
     This is fixed in the new message protocol by specifying
     a list of signatures, each task will then pop a task off the list
-    when sending the next message::
+    when sending the next message:
+
+    .. code-block:: python
 
         execute_task(message)
         chain = embed['chain']
@@ -138,25 +140,27 @@ Changes from version 1
 - ``root_id`` and ``parent_id`` fields helps keep track of workflows.
 
 - ``shadow`` lets you specify a different name for logs, monitors
-  can be used for e.g. meta tasks that calls any function::
+  can be used for e.g. meta tasks that calls any function:
 
-    from celery.utils.imports import qualname
+    .. code-block:: python
 
-    class PickleTask(Task):
-        abstract = True
+        from celery.utils.imports import qualname
 
-        def unpack_args(self, fun, args=()):
-            return fun, args
+        class PickleTask(Task):
+            abstract = True
 
-        def apply_async(self, args, kwargs, **options):
-            fun, real_args = self.unpack_args(*args)
-            return super(PickleTask, self).apply_async(
-                (fun, real_args, kwargs), shadow=qualname(fun), **options
-            )
+            def unpack_args(self, fun, args=()):
+                return fun, args
 
-    @app.task(base=PickleTask)
-    def call(fun, args, kwargs):
-        return fun(*args, **kwargs)
+            def apply_async(self, args, kwargs, **options):
+                fun, real_args = self.unpack_args(*args)
+                return super(PickleTask, self).apply_async(
+                    (fun, real_args, kwargs), shadow=qualname(fun), **options
+                )
+
+        @app.task(base=PickleTask)
+        def call(fun, args, kwargs):
+            return fun(*args, **kwargs)
 
 
 .. _message-protocol-task-v1:

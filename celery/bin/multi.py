@@ -6,79 +6,79 @@
 Examples
 ========
 
-.. code-block:: bash
+.. code-block:: console
 
-    # Single worker with explicit name and events enabled.
+    $ # Single worker with explicit name and events enabled.
     $ celery multi start Leslie -E
 
-    # Pidfiles and logfiles are stored in the current directory
-    # by default.  Use --pidfile and --logfile argument to change
-    # this.  The abbreviation %n will be expanded to the current
-    # node name.
+    $ # Pidfiles and logfiles are stored in the current directory
+    $ # by default.  Use --pidfile and --logfile argument to change
+    $ # this.  The abbreviation %n will be expanded to the current
+    $ # node name.
     $ celery multi start Leslie -E --pidfile=/var/run/celery/%n.pid
                                    --logfile=/var/log/celery/%n%I.log
 
 
-    # You need to add the same arguments when you restart,
-    # as these are not persisted anywhere.
+    $ # You need to add the same arguments when you restart,
+    $ # as these are not persisted anywhere.
     $ celery multi restart Leslie -E --pidfile=/var/run/celery/%n.pid
                                      --logfile=/var/run/celery/%n%I.log
 
-    # To stop the node, you need to specify the same pidfile.
+    $ # To stop the node, you need to specify the same pidfile.
     $ celery multi stop Leslie --pidfile=/var/run/celery/%n.pid
 
-    # 3 workers, with 3 processes each
+    $ # 3 workers, with 3 processes each
     $ celery multi start 3 -c 3
     celery worker -n celery1@myhost -c 3
     celery worker -n celery2@myhost -c 3
     celery worker -n celery3@myhost -c 3
 
-    # start 3 named workers
+    $ # start 3 named workers
     $ celery multi start image video data -c 3
     celery worker -n image@myhost -c 3
     celery worker -n video@myhost -c 3
     celery worker -n data@myhost -c 3
 
-    # specify custom hostname
+    $ # specify custom hostname
     $ celery multi start 2 --hostname=worker.example.com -c 3
     celery worker -n celery1@worker.example.com -c 3
     celery worker -n celery2@worker.example.com -c 3
 
-    # specify fully qualified nodenames
+    $ # specify fully qualified nodenames
     $ celery multi start foo@worker.example.com bar@worker.example.com -c 3
 
-    # fully qualified nodenames but using the current hostname
+    $ # fully qualified nodenames but using the current hostname
     $ celery multi start foo@%h bar@%h
 
-    # Advanced example starting 10 workers in the background:
-    #   * Three of the workers processes the images and video queue
-    #   * Two of the workers processes the data queue with loglevel DEBUG
-    #   * the rest processes the default' queue.
+    $ # Advanced example starting 10 workers in the background:
+    $ #   * Three of the workers processes the images and video queue
+    $ #   * Two of the workers processes the data queue with loglevel DEBUG
+    $ #   * the rest processes the default' queue.
     $ celery multi start 10 -l INFO -Q:1-3 images,video -Q:4,5 data
         -Q default -L:4,5 DEBUG
 
-    # You can show the commands necessary to start the workers with
-    # the 'show' command:
+    $ # You can show the commands necessary to start the workers with
+    $ # the 'show' command:
     $ celery multi show 10 -l INFO -Q:1-3 images,video -Q:4,5 data
         -Q default -L:4,5 DEBUG
 
-    # Additional options are added to each celery worker' comamnd,
-    # but you can also modify the options for ranges of, or specific workers
+    $ # Additional options are added to each celery worker' comamnd,
+    $ # but you can also modify the options for ranges of, or specific workers
 
-    # 3 workers: Two with 3 processes, and one with 10 processes.
+    $ # 3 workers: Two with 3 processes, and one with 10 processes.
     $ celery multi start 3 -c 3 -c:1 10
     celery worker -n celery1@myhost -c 10
     celery worker -n celery2@myhost -c 3
     celery worker -n celery3@myhost -c 3
 
-    # can also specify options for named workers
+    $ # can also specify options for named workers
     $ celery multi start image video data -c 3 -c:image 10
     celery worker -n image@myhost -c 10
     celery worker -n video@myhost -c 3
     celery worker -n data@myhost -c 3
 
-    # ranges and lists of workers in options is also allowed:
-    # (-c:1-3 can also be written as -c:1,2,3)
+    $ # ranges and lists of workers in options is also allowed:
+    $ # (-c:1-3 can also be written as -c:1,2,3)
     $ celery multi start 5 -c 3  -c:1-3 10
     celery worker -n celery1@myhost -c 10
     celery worker -n celery2@myhost -c 10
@@ -86,7 +86,7 @@ Examples
     celery worker -n celery4@myhost -c 3
     celery worker -n celery5@myhost -c 3
 
-    # lists also works with named workers
+    $ # lists also works with named workers
     $ celery multi start foo bar baz xuzzy -c 3 -c:foo,bar,baz 10
     celery worker -n foo@myhost -c 10
     celery worker -n bar@myhost -c 10
@@ -160,7 +160,7 @@ if sys.version_info < (2, 7):
 
 
 def celery_exe(*args):
-    return ' '.join((CELERY_EXE, ) + args)
+    return ' '.join((CELERY_EXE,) + args)
 
 
 class MultiTool(object):
@@ -494,11 +494,11 @@ def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
         if ns_name.isdigit():
             ns_index = int(ns_name) - 1
             if ns_index < 0:
-                raise KeyError('Indexes start at 1 got: %r' % (ns_name, ))
+                raise KeyError('Indexes start at 1 got: %r' % (ns_name,))
             try:
                 p.namespaces[names[ns_index]].update(ns_opts)
             except IndexError:
-                raise KeyError('No node at index %r' % (ns_name, ))
+                raise KeyError('No node at index %r' % (ns_name,))
 
     for name in names:
         hostname = suffix

@@ -23,7 +23,7 @@ def add_backend_cleanup_task(app):
     backend.
 
     If the configured backend requires periodic cleanup this task is also
-    automatically configured to run every day at midnight (requires
+    automatically configured to run every day at 4am (requires
     :program:`celery beat` to be running).
 
     """
@@ -84,8 +84,8 @@ def add_unlock_chord_task(app):
             ready = deps.ready()
         except Exception as exc:
             raise self.retry(
-                    exc=exc, countdown=interval, max_retries=max_retries,
-                )
+                exc=exc, countdown=interval, max_retries=max_retries,
+            )
         else:
             if not ready:
                 raise self.retry(countdown=interval, max_retries=max_retries)

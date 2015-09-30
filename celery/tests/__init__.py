@@ -90,3 +90,8 @@ def import_all_modules(name=__name__, file=__file__,
                 import_module(module)
             except ImportError:
                 pass
+            except OSError as exc:
+                warnings.warn(UserWarning(
+                    'Ignored error importing module {0}: {1!r}'.format(
+                        module, exc,
+                    )))

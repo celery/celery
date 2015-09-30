@@ -596,7 +596,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - ``subtask.id`` added as an alias to ``subtask['options'].id``
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> s = add.s(2, 2)
         >>> s.id = 'my-id'
@@ -690,9 +690,9 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     Previously it would incorrectly add a regular result instead of a group
     result, but now this works:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
-        # [4 + 4, 4 + 8, 16 + 8]
+        >>> # [4 + 4, 4 + 8, 16 + 8]
         >>> res = (add.s(2, 2) | group(add.s(4), add.s(8), add.s(16)))()
         >>> res
         <GroupResult: a0acf905-c704-499e-b03a-8d445e6398f7 [
@@ -704,14 +704,14 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Example:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> c1 = (add.s(2) | add.s(4))
         >>> c2 = (add.s(8) | add.s(16))
 
         >>> c3 = (c1 | c2)
 
-        # 8 + 2 + 4 + 8 + 16
+        >>> # 8 + 2 + 4 + 8 + 16
         >>> assert c3(8).get() == 38
 
 - Subtasks can now be used with unregistered tasks.
@@ -891,7 +891,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     Users can force paths to be created by calling the ``create-paths``
     subcommand:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ sudo /etc/init.d/celeryd create-paths
 
@@ -971,7 +971,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     Previously calling a chord/group/chain would modify the ids of subtasks
     so that:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> c = chord([add.s(2, 2), add.s(4, 4)], xsum.s())
         >>> c()
@@ -1077,7 +1077,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     You can do this by executing the following command:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ python manage.py shell
         >>> from djcelery.models import PeriodicTask

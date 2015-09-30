@@ -137,7 +137,8 @@ class test_Signals(Case):
 
     @patch('signal.signal')
     def test_setitem(self, set):
-        handle = lambda *a: a
+        def handle(*args):
+            return args
         signals['INT'] = handle
         set.assert_called_with(signal.SIGINT, handle)
 

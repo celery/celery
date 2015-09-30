@@ -10,7 +10,7 @@ Signals
 Signals allows decoupled applications to receive notifications when
 certain actions occur elsewhere in the application.
 
-Celery ships with many signals that you application can hook into
+Celery ships with many signals that your application can hook into
 to augment behavior of certain actions.
 
 .. _signal-basics:

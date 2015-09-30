@@ -230,6 +230,9 @@ class Task(object):
     #: Default task expiry time.
     expires = None
 
+    #: Task request stack, the current request will be the topmost.
+    request_stack = None
+
     #: Some may expect a request to exist even if the task has not been
     #: called.  This should probably be deprecated.
     _default_request = None
@@ -319,7 +322,7 @@ class Task(object):
 
     def __call__(self, *args, **kwargs):
         _task_stack.push(self)
-        self.push_request()
+        self.push_request(args=args, kwargs=kwargs)
         try:
             # add self if this is a bound task
             if self.__self__ is not None:
@@ -360,7 +363,7 @@ class Task(object):
         return self.apply_async(args, kwargs)
 
     def apply_async(self, args=None, kwargs=None, task_id=None, producer=None,
-                    link=None, link_error=None, **options):
+                    link=None, link_error=None, shadow=None, **options):
         """Apply tasks asynchronously by sending a message.
 
         :keyword args: The positional arguments to pass on to the
@@ -384,17 +387,21 @@ class Task(object):
                           the task should expire.  The task will not be
                           executed after the expiration time.
 
+        :keyword shadow: Override task name used in logs/monitoring
+            (default from :meth:`shadow_name`).
+
         :keyword connection: Re-use existing broker connection instead
                              of establishing a new one.
 
         :keyword retry: If enabled sending of the task message will be retried
                         in the event of connection loss or failure.  Default
                         is taken from the :setting:`CELERY_TASK_PUBLISH_RETRY`
-                        setting.  Note you need to handle the
+                        setting.  Note that you need to handle the
                         producer/connection manually for this to work.
 
         :keyword retry_policy:  Override the retry policy used.  See the
-                                :setting:`CELERY_TASK_PUBLISH_RETRY` setting.
+                                :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`
+                                setting.
 
         :keyword routing_key: Custom routing key used to route the task to a
                               worker server. If in combination with a
@@ -433,15 +440,20 @@ class Task(object):
                       if an error occurs while executing the task.
 
         :keyword producer: :class:`kombu.Producer` instance to use.
+
         :keyword add_to_parent: If set to True (default) and the task
             is applied while executing another task, then the result
             will be appended to the parent tasks ``request.children``
             attribute.  Trailing can also be disabled by default using the
             :attr:`trail` attribute
+
         :keyword publisher: Deprecated alias to ``producer``.
-        
-        :rtype :class:`celery.result.AsyncResult`: if 
-            :setting:`CELERY_ALWAYS_EAGER` is not set, otherwise 
+
+        :keyword headers: Message headers to be sent in the
+            task (a :class:`dict`)
+
+        :rtype :class:`celery.result.AsyncResult`: if
+            :setting:`CELERY_ALWAYS_EAGER` is not set, otherwise
             :class:`celery.result.EagerResult`:
 
         Also supports all keyword arguments supported by
@@ -457,7 +469,7 @@ class Task(object):
         except AttributeError:
             pass
         else:
-            check_arguments(*args or (), **kwargs or {})
+            check_arguments(*(args or ()), **(kwargs or {}))
 
         app = self._get_app()
         if app.conf.CELERY_ALWAYS_EAGER:
@@ -466,12 +478,40 @@ class Task(object):
         # add 'self' if this is a "task_method".
         if self.__self__ is not None:
             args = args if isinstance(args, tuple) else tuple(args or ())
-            args = (self.__self__, ) + args
+            args = (self.__self__,) + args
+            shadow = shadow or self.shadow_name(args, kwargs, options)
+
+        preopts = self._get_exec_options()
+        options = dict(preopts, **options) if options else preopts
         return app.send_task(
             self.name, args, kwargs, task_id=task_id, producer=producer,
             link=link, link_error=link_error, result_cls=self.AsyncResult,
-            **dict(self._get_exec_options(), **options)
+            shadow=shadow,
+            **options
         )
+
+    def shadow_name(self, args, kwargs, options):
+        """Override for custom task name in worker logs/monitoring.
+
+        :param args: Task positional arguments.
+        :param kwargs: Task keyword arguments.
+        :param options: Task execution options.
+
+        **Example**:
+
+        .. code-block:: python
+
+            from celery.utils.imports import qualname
+
+            def shadow_name(task, args, kwargs, options):
+                return qualname(args[0])
+
+            @app.task(shadow_name=shadow_name, serializer='pickle')
+            def apply_function_async(fun, *args, **kwargs):
+                return fun(*args, **kwargs)
+
+        """
+        pass
 
     def signature_from_request(self, request=None, args=None, kwargs=None,
                                queue=None, **extra_options):
@@ -488,9 +528,10 @@ class Task(object):
             'soft_time_limit': limit_soft,
             'time_limit': limit_hard,
             'reply_to': request.reply_to,
+            'headers': request.headers,
         }
         options.update(
-            {'queue': queue} if queue else (request.delivery_info or {})
+            {'queue': queue} if queue else (request.delivery_info or {}),
         )
         return self.signature(
             args, kwargs, options, type=self, **extra_options
@@ -539,19 +580,19 @@ class Task(object):
 
         **Example**
 
-        .. code-block:: python
+        .. code-block:: pycon
 
             >>> from imaginary_twitter_lib import Twitter
             >>> from proj.celery import app
 
-            >>> @app.task()
-            ... def tweet(auth, message):
+            >>> @app.task(bind=True)
+            ... def tweet(self, auth, message):
             ...     twitter = Twitter(oauth=auth)
             ...     try:
             ...         twitter.post_status_update(message)
             ...     except twitter.FailWhale as exc:
             ...         # Retry in 5 minutes.
-            ...         raise tweet.retry(countdown=60 * 5, exc=exc)
+            ...         raise self.retry(countdown=60 * 5, exc=exc)
 
         Although the task will never return above as `retry` raises an
         exception to notify the worker, we use `raise` in front of the retry
@@ -594,6 +635,8 @@ class Task(object):
             # if task was executed eagerly using apply(),
             # then the retry must also be executed eagerly.
             S.apply().get()
+            if throw:
+                raise ret
             return ret
 
         try:
@@ -624,7 +667,7 @@ class Task(object):
         args = args or ()
         # add 'self' if this is a bound method.
         if self.__self__ is not None:
-            args = (self.__self__, ) + tuple(args)
+            args = (self.__self__,) + tuple(args)
         kwargs = kwargs or {}
         task_id = options.get('task_id') or uuid()
         retries = options.get('retries', 0)
@@ -707,7 +750,7 @@ class Task(object):
         :param sig: :class:`@signature`
 
         Note: This will raise :exc:`~@Ignore`, so the best practice
-        is to always use ``raise self.replace_in_chord(...)`` to convey
+        is to always use ``raise self.replace(...)`` to convey
         to the reader that the task will not continue after being replaced.
 
         :param: Signature of new task.
@@ -818,9 +861,8 @@ class Task(object):
         :param status: Current task state.
         :param retval: Task return value/exception.
         :param task_id: Unique id of the task.
-        :param args: Original arguments for the task that failed.
-        :param kwargs: Original keyword arguments for the task
-                       that failed.
+        :param args: Original arguments for the task.
+        :param kwargs: Original keyword arguments for the task.
 
         :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
                         instance, containing the traceback (if any).

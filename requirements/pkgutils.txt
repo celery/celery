@@ -2,5 +2,5 @@ setuptools>=1.3.2
 wheel
 flake8
 flakeplus
-tox
+tox>=2.1.1
 Sphinx-PyPI-upload

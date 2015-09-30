@@ -118,7 +118,7 @@ class BaseBackend(object):
                                  status=states.SUCCESS, request=request)
 
     def mark_as_failure(self, task_id, exc, traceback=None, request=None):
-        """Mark task as executed with failure. Stores the execption."""
+        """Mark task as executed with failure. Stores the exception."""
         return self.store_result(task_id, exc, status=states.FAILURE,
                                  traceback=traceback, request=request)
 
@@ -131,7 +131,7 @@ class BaseBackend(object):
                 [app.signature(errback)
                  for errback in callback.options.get('link_error') or []],
                 app=app,
-            ).apply_async((callback.id, ))
+            ).apply_async((callback.id,))
         except Exception as eb_exc:
             return backend.fail_from_current_stack(callback.id, exc=eb_exc)
         else:
@@ -167,11 +167,12 @@ class BaseBackend(object):
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
-        if not isinstance(exc, BaseException):
-            exc = create_exception_cls(
-                from_utf8(exc['exc_type']), __name__)(exc['exc_message'])
-        if self.serializer in EXCEPTION_ABLE_CODECS:
-            exc = get_pickled_exception(exc)
+        if exc:
+            if not isinstance(exc, BaseException):
+                exc = create_exception_cls(
+                    from_utf8(exc['exc_type']), __name__)(exc['exc_message'])
+            if self.serializer in EXCEPTION_ABLE_CODECS:
+                exc = get_pickled_exception(exc)
         return exc
 
     def prepare_value(self, result):
@@ -352,13 +353,13 @@ class BaseBackend(object):
                               countdown=1, **kwargs):
         kwargs['result'] = [r.as_tuple() for r in result]
         self.app.tasks['celery.chord_unlock'].apply_async(
-            (group_id, body, ), kwargs, countdown=countdown,
+            (group_id, body,), kwargs, countdown=countdown,
         )
 
     def apply_chord(self, header, partial_args, group_id, body,
                     options={}, **kwargs):
-        options['task_id'] = group_id
-        result = header(*partial_args, **options or {})
+        fixed_options = {k: v for k, v in items(options) if k != 'task_id'}
+        result = header(*partial_args, task_id=group_id, **fixed_options or {})
         self.fallback_chord_unlock(group_id, body, **kwargs)
         return result
 
@@ -461,6 +462,7 @@ class KeyValueStoreBackend(BaseBackend):
             }
 
     def get_many(self, task_ids, timeout=None, interval=0.5, no_ack=True,
+                 on_message=None,
                  READY_STATES=states.READY_STATES):
         interval = 0.5 if interval is None else interval
         ids = task_ids if isinstance(task_ids, set) else set(task_ids)
@@ -485,6 +487,8 @@ class KeyValueStoreBackend(BaseBackend):
             cache.update(r)
             ids.difference_update({bytes_to_str(v) for v in r})
             for key, value in items(r):
+                if on_message is not None:
+                    on_message(value)
                 yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:
                 raise TimeoutError('Operation timed out ({0})'.format(timeout))
@@ -531,7 +535,10 @@ class KeyValueStoreBackend(BaseBackend):
     def _apply_chord_incr(self, header, partial_args, group_id, body,
                           result=None, options={}, **kwargs):
         self.save_group(group_id, self.app.GroupResult(group_id, result))
-        return header(*partial_args, task_id=group_id, **options or {})
+
+        fixed_options = {k: v for k, v in items(options) if k != 'task_id'}
+
+        return header(*partial_args, task_id=group_id, **fixed_options or {})
 
     def on_chord_part_return(self, task, state, result, propagate=None):
         if not self.implements_incr:

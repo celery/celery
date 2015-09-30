@@ -113,7 +113,7 @@ def default(task, app, consumer,
                 req.acknowledge()
             else:
                 consumer.qos.increment_eventually()
-                call_at(eta, apply_eta_task, (req, ), priority=6)
+                call_at(eta, apply_eta_task, (req,), priority=6)
         else:
             if rate_limits_enabled:
                 bucket = get_bucket(task.name)

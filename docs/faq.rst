@@ -281,8 +281,9 @@ When using the RabbitMQ (AMQP) and Redis transports it should work
 out of the box.
 
 For other transports the compatibility prefork pool is
-used which requires a working POSIX semaphore implementation, and this isn't
-enabled in FreeBSD by default. You have to enable
+used which requires a working POSIX semaphore implementation,
+this is enabled in FreeBSD by default since FreeBSD 8.x.
+For older version of FreeBSD, you have to enable
 POSIX semaphores in the kernel and manually recompile billiard.
 
 Luckily, Viktor Petersson has written a tutorial to get you started with
@@ -305,7 +306,7 @@ Why aren't my tasks processed?
 **Answer:** With RabbitMQ you can see how many consumers are currently
 receiving tasks by running the following command:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ rabbitmqctl list_queues -p <myvhost> name messages consumers
     Listing queues ...
@@ -365,13 +366,13 @@ How do I purge all waiting tasks?
 **Answer:** You can use the ``celery purge`` command to purge
 all configured task queues:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj purge
 
 or programatically:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from proj.celery import app
     >>> app.control.purge()
@@ -380,7 +381,7 @@ or programatically:
 If you only want to purge messages from a specific queue
 you have to use the AMQP API or the :program:`celery amqp` utility:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj amqp queue.purge <queue name>
 
@@ -445,13 +446,16 @@ It is essential that you protect against unauthorized
 access to your broker, databases and other services transmitting pickled
 data.
 
-For the task messages you can set the :setting:`CELERY_TASK_SERIALIZER`
-setting to "json" or "yaml" instead of pickle. There is
-currently no alternative solution for task results (but writing a
-custom result backend using JSON is a simple task)
-
 Note that this is not just something you should be aware of with Celery, for
 example also Django uses pickle for its cache client.
+
+For the task messages you can set the :setting:`CELERY_TASK_SERIALIZER`
+setting to "json" or "yaml" instead of pickle.
+
+Similarly for task results you can set :setting:`CELERY_RESULT_SERIALIZER`.
+
+For more details of the formats used and the lookup order when
+checking which format to use for a task see :ref:`calling-serializers`
 
 Can messages be encrypted?
 --------------------------
@@ -519,7 +523,7 @@ setting.
 If you don't use the results for a task, make sure you set the
 `ignore_result` option:
 
-.. code-block python
+.. code-block:: python
 
     @app.task(ignore_result=True)
     def mytask():
@@ -701,7 +705,7 @@ control commands will be received in round-robin between them.
 To work around this you can explicitly set the nodename for every worker
 using the :option:`-n` argument to :mod:`~celery.bin.worker`:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -n worker1@%h
     $ celery -A proj worker -n worker2@%h
@@ -838,9 +842,9 @@ task so the task will not run again.
 Identifying the type of process is easier if you have installed the
 ``setproctitle`` module:
 
-.. code-block:: bash
+.. code-block:: console
 
-    pip install setproctitle
+    $ pip install setproctitle
 
 With this library installed you will be able to see the type of process in ps
 listings, but the worker must be restarted for this to take effect.

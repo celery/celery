@@ -220,6 +220,7 @@ NAMESPACES = {
         'TIMEOUT': Option(2, type='float'),
         'USE_SSL': Option(False, type='bool'),
         'USE_TLS': Option(False, type='bool'),
+        'CHARSET': Option('us-ascii'),
     },
     'SERVER_EMAIL': Option('celery@localhost'),
     'ADMINS': Option((), type='tuple'),

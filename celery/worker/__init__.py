@@ -218,7 +218,7 @@ class WorkController(object):
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
-            self, 'register_with_event_loop', args=(hub, ),
+            self, 'register_with_event_loop', args=(hub,),
             description='hub.register',
         )
 

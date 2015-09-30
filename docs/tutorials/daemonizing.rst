@@ -52,7 +52,7 @@ must also export them (e.g. ``export DISPLAY=":0"``)
     instead they can use the :program:`celery multi` utility (or
     :program:`celery worker --detach`):
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery multi start worker1 \
             -A proj \
@@ -368,7 +368,7 @@ Troubleshooting
 If you can't get the init scripts to work, you should try running
 them in *verbose mode*:
 
-.. code-block:: bash
+.. code-block:: console
 
     # sh -x /etc/init.d/celeryd start
 
@@ -381,9 +381,9 @@ not be able to see them anywhere.  For this situation you can use
 the :envvar:`C_FAKEFORK` environment variable to skip the
 daemonization step:
 
-.. code-block:: bash
+.. code-block:: console
 
-    C_FAKEFORK=1 sh -x /etc/init.d/celeryd start
+    # C_FAKEFORK=1 sh -x /etc/init.d/celeryd start
 
 
 and now you should be able to see the errors.

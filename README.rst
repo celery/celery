@@ -166,26 +166,26 @@ Framework Integration
 Celery is easy to integrate with web frameworks, some of which even have
 integration packages:
 
-    +--------------------+------------------------+
-    | `Django`_          | not needed             |
-    +--------------------+------------------------+
-    | `Pyramid`_         | `pyramid_celery`_      |
-    +--------------------+------------------------+
-    | `Pylons`_          | `celery-pylons`_       |
-    +--------------------+------------------------+
-    | `Flask`_           | not needed             |
-    +--------------------+------------------------+
-    | `web2py`_          | `web2py-celery`_       |
-    +--------------------+------------------------+
-    | `Tornado`_         | `tornado-celery`_      |
-    +--------------------+------------------------+
+    +--------------------+----------------------------------------------------+
+    | `Django`_          | not needed                                         |
+    +--------------------+----------------------------------------------------+
+    | `Pyramid`_         | `pyramid_celery`_                                  |
+    +--------------------+----------------------------------------------------+
+    | `Pylons`_          | `celery-pylons`_                                   |
+    +--------------------+----------------------------------------------------+
+    | `Flask`_           | not needed                                         |
+    +--------------------+----------------------------------------------------+
+    | `web2py`_          | `web2py-celery`_                                   |
+    +--------------------+----------------------------------------------------+
+    | `Tornado`_         | `tornado-celery`_ | `another tornado-celery`_      |
+    +--------------------+----------------------------------------------------+
 
 The integration packages are not strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
 database connections at ``fork``.
 
 .. _`Django`: http://djangoproject.com/
-.. _`Pylons`: http://pylonshq.com/
+.. _`Pylons`: http://www.pylonsproject.org/
 .. _`Flask`: http://flask.pocoo.org/
 .. _`web2py`: http://web2py.com/
 .. _`Bottle`: http://bottlepy.org/
@@ -196,6 +196,7 @@ database connections at ``fork``.
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: http://github.com/mher/tornado-celery/
+.. _`another tornado-celery`: https://github.com/mayflaver/tornado-celery
 
 .. _celery-documentation:
 
@@ -394,6 +395,26 @@ Wiki
 ====
 
 http://wiki.github.com/celery/celery/
+
+
+.. _maintainers:
+
+Maintainers
+===========
+
+- `@ask`_ (primary maintainer)
+- `@thedrow`_
+- `@chrisgogreen`_
+- `@PMickael`_
+- `@malinoff`_
+- And you? We really need more: https://github.com/celery/celery/issues/2534 
+
+.. _`@ask`: http://github.com/ask
+.. _`@thedrow`: http://github.com/thedrow
+.. _`@chrisgogreen`: http://github.com/chrisgogreen
+.. _`@PMickael`: http://github.com/PMickael
+.. _`@malinoff`: http://github.com/malinoff
+
 
 .. _contributing-short:
 

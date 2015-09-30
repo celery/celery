@@ -175,7 +175,7 @@ class Worker(WorkController):
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
-        print('{0} ready.'.format(safe_str(self.hostname), ))
+        print('{0} ready.'.format(safe_str(self.hostname),))
 
     def setup_logging(self, colorize=None):
         if colorize is None and self.no_color is not None:
@@ -318,7 +318,8 @@ if not is_jython:  # pragma: no cover
         exitcode=EX_FAILURE,
     )
 else:  # pragma: no cover
-    install_worker_int_handler = lambda *a, **kw: None
+    def install_worker_int_handler(*args, **kwargs):
+        pass
 
 
 def _reload_current_worker():

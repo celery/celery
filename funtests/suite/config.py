@@ -12,7 +12,7 @@ CELERY_QUEUES = {'testcelery': {'routing_key': 'testcelery'}}
 
 CELERYD_LOG_COLOR = False
 
-CELERY_IMPORTS = ('celery.tests.functional.tasks', )
+CELERY_IMPORTS = ('celery.tests.functional.tasks',)
 
 
 @atexit.register

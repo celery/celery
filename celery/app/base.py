@@ -15,6 +15,7 @@ import warnings
 from collections import defaultdict, deque
 from copy import deepcopy
 from operator import attrgetter
+from functools import wraps
 
 from amqp import promise
 try:
@@ -33,7 +34,7 @@ from celery._state import (
     _announce_app_finalized,
 )
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
-from celery.five import values
+from celery.five import items, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import gen_task_name
@@ -246,14 +247,15 @@ class Celery(object):
 
             def _create_task_cls(fun):
                 if shared:
-                    cons = lambda app: app._task_from_fun(fun, **opts)
+                    def cons(app):
+                        return app._task_from_fun(fun, **opts)
                     cons.__name__ = fun.__name__
                     connect_on_app_finalize(cons)
                 if not lazy or self.finalized:
                     ret = self._task_from_fun(fun, **opts)
                 else:
                     # return a proxy object that evaluates on first use
-                    ret = PromiseProxy(self._task_from_fun, (fun, ), opts,
+                    ret = PromiseProxy(self._task_from_fun, (fun,), opts,
                                        __doc__=fun.__doc__)
                     self._pending.append(ret)
                 if _filt:
@@ -280,7 +282,7 @@ class Celery(object):
 
         if name not in self._tasks:
             run = fun if bind else staticmethod(fun)
-            task = type(fun.__name__, (base, ), dict({
+            task = type(fun.__name__, (base,), dict({
                 'app': self,
                 'name': name,
                 'run': run,
@@ -291,6 +293,20 @@ class Celery(object):
                 '__wrapped__': run}, **options))()
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app
+
+            autoretry_for = tuple(options.get('autoretry_for', ()))
+            retry_kwargs = options.get('retry_kwargs', {})
+
+            if autoretry_for and not hasattr(task, '_orig_run'):
+
+                @wraps(task.run)
+                def run(*args, **kwargs):
+                    try:
+                        return task._orig_run(*args, **kwargs)
+                    except autoretry_for as exc:
+                        raise task.retry(exc=exc, **retry_kwargs)
+
+                task._orig_run, task.run = task.run, run
         else:
             task = self._tasks[name]
         return task
@@ -348,17 +364,31 @@ class Celery(object):
         return setup_security(allowed_serializers, key, cert,
                               store, digest, serializer, app=self)
 
-    def autodiscover_tasks(self, packages, related_name='tasks', force=False):
+    def autodiscover_tasks(self, packages=None,
+                           related_name='tasks', force=False):
         if force:
             return self._autodiscover_tasks(packages, related_name)
         signals.import_modules.connect(promise(
             self._autodiscover_tasks, (packages, related_name),
         ), weak=False, sender=self)
 
-    def _autodiscover_tasks(self, packages, related_name='tasks', **kwargs):
-        # argument may be lazy
-        packages = packages() if callable(packages) else packages
-        self.loader.autodiscover_tasks(packages, related_name)
+    def _autodiscover_tasks(self, packages, related_name, **kwargs):
+        if packages:
+            return self._autodiscover_tasks_from_names(packages, related_name)
+        return self._autodiscover_tasks_from_fixups(related_name)
+
+    def _autodiscover_tasks_from_names(self, packages, related_name):
+        # packages argument can be lazy
+        return self.loader.autodiscover_tasks(
+            packages() if callable(packages) else packages, related_name,
+        )
+
+    def _autodiscover_tasks_from_fixups(self, related_name):
+        return self._autodiscover_tasks_from_names([
+            pkg for fixup in self._fixups
+            for pkg in fixup.autodiscover_tasks()
+            if hasattr(fixup, 'autodiscover_tasks')
+        ], related_name=related_name)
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
                   eta=None, task_id=None, producer=None, connection=None,
@@ -366,7 +396,8 @@ class Celery(object):
                   publisher=None, link=None, link_error=None,
                   add_to_parent=True, group_id=None, retries=0, chord=None,
                   reply_to=None, time_limit=None, soft_time_limit=None,
-                  root_id=None, parent_id=None, route_name=None, **options):
+                  root_id=None, parent_id=None, route_name=None,
+                  shadow=None, **options):
         amqp = self.amqp
         task_id = task_id or uuid()
         producer = producer or publisher  # XXX compat
@@ -383,7 +414,8 @@ class Celery(object):
             expires, retries, chord,
             maybe_list(link), maybe_list(link_error),
             reply_to or self.oid, time_limit, soft_time_limit,
-            self.conf.CELERY_SEND_TASK_SENT_EVENT, root_id, parent_id,
+            self.conf.CELERY_SEND_TASK_SENT_EVENT,
+            root_id, parent_id, shadow,
         )
 
         if connection:
@@ -463,6 +495,7 @@ class Celery(object):
                 timeout=conf.EMAIL_TIMEOUT,
                 use_ssl=conf.EMAIL_USE_SSL,
                 use_tls=conf.EMAIL_USE_TLS,
+                charset=conf.EMAIL_CHARSET,
             )
 
     def select_queues(self, queues=None):
@@ -506,6 +539,10 @@ class Celery(object):
         while pending_beat:
             pargs, pkwargs = pending_beat.popleft()
             self._add_periodic_task(*pargs, **pkwargs)
+        # Settings.__setitem__ method, set Settings.change
+        if self._preconf:
+            for key, value in items(self._preconf):
+                setattr(s, key, value)
         self.on_after_configure.send(sender=self, source=s)
         return s
 
@@ -580,7 +617,7 @@ class Celery(object):
         if not keep_reduce:
             attrs['__reduce__'] = __reduce__
 
-        return type(name or Class.__name__, (Class, ), attrs)
+        return type(name or Class.__name__, (Class,), attrs)
 
     def _rgetattr(self, path):
         return attrgetter(path)(self)

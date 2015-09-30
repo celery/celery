@@ -114,7 +114,7 @@ class test_DjangoWorkerFixup(FixupCase):
         self.app.conf = {'CELERY_DB_REUSE_MAX': None}
         self.app.loader = Mock()
         with self.fixup_context(self.app) as (f, _, _):
-            with patch_many('celery.fixups.django.signals') as (sigs, ):
+            with patch_many('celery.fixups.django.signals') as (sigs,):
                 f.install()
                 sigs.beat_embedded_init.connect.assert_called_with(
                     f.close_database,
@@ -207,9 +207,9 @@ class test_DjangoWorkerFixup(FixupCase):
         with self.fixup_context(self.app) as (f, _, _):
             conns = [Mock(), Mock(), Mock()]
             conns[1].close.side_effect = KeyError('already closed')
-            f.database_errors = (KeyError, )
+            f.database_errors = (KeyError,)
 
-            f._db.connections = Mock() # ConnectionHandler
+            f._db.connections = Mock()  # ConnectionHandler
             f._db.connections.all.side_effect = lambda: conns
 
             f._close_database()

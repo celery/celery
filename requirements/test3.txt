@@ -1,1 +1,1 @@
-nose
+-r deps/nose.txt

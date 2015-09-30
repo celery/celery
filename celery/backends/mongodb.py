@@ -10,6 +10,15 @@ from __future__ import absolute_import
 
 from datetime import datetime, timedelta
 
+from kombu.syn import detect_environment
+from kombu.utils import cached_property
+from kombu.exceptions import EncodeError
+from celery import states
+from celery.exceptions import ImproperlyConfigured
+from celery.five import string_t, items
+
+from .base import BaseBackend
+
 try:
     import pymongo
 except ImportError:  # pragma: no cover
@@ -25,15 +34,6 @@ else:                                       # pragma: no cover
     Binary = None                           # noqa
     InvalidDocument = None                  # noqa
 
-from kombu.syn import detect_environment
-from kombu.utils import cached_property
-from kombu.exceptions import EncodeError
-from celery import states
-from celery.exceptions import ImproperlyConfigured
-from celery.five import string_t
-
-from .base import BaseBackend
-
 __all__ = ['MongoBackend']
 
 
@@ -45,6 +45,7 @@ class Bunch(object):
 
 class MongoBackend(BaseBackend):
 
+    mongo_host = None
     host = 'localhost'
     port = 27017
     user = None
@@ -75,6 +76,29 @@ class MongoBackend(BaseBackend):
                 'You need to install the pymongo library to use the '
                 'MongoDB backend.')
 
+        self.url = url
+
+        # Set option defaults
+        for key, value in items(self._prepare_client_options()):
+            self.options.setdefault(key, value)
+
+        # update conf with mongo uri data, only if uri was given
+        if self.url:
+            uri_data = pymongo.uri_parser.parse_uri(self.url)
+            # build the hosts list to create a mongo connection
+            hostslist = [
+                "{0}:{1}".format(x[0], x[1]) for x in uri_data['nodelist']
+            ]
+            self.user = uri_data['username']
+            self.password = uri_data['password']
+            self.mongo_host = hostslist
+            if uri_data['database']:
+                # if no database is provided in the uri, use default
+                self.database_name = uri_data['database']
+
+            self.options.update(uri_data['options'])
+
+        # update conf with specific settings
         config = self.app.conf.get('CELERY_MONGODB_BACKEND_SETTINGS')
         if config is not None:
             if not isinstance(config, dict):
@@ -82,8 +106,13 @@ class MongoBackend(BaseBackend):
                     'MongoDB backend settings should be grouped in a dict')
             config = dict(config)  # do not modify original
 
+            if 'host' in config or 'port' in config:
+                # these should take over uri conf
+                self.mongo_host = None
+
             self.host = config.pop('host', self.host)
-            self.port = int(config.pop('port', self.port))
+            self.port = config.pop('port', self.port)
+            self.mongo_host = config.pop('mongo_host', self.mongo_host)
             self.user = config.pop('user', self.user)
             self.password = config.pop('password', self.password)
             self.database_name = config.pop('database', self.database_name)
@@ -94,37 +123,45 @@ class MongoBackend(BaseBackend):
                 'groupmeta_collection', self.groupmeta_collection,
             )
 
-            self.options = dict(config, **config.pop('options', None) or {})
+            self.options.update(config.pop('options', {}))
+            self.options.update(config)
 
-            # Set option defaults
-            self.options.setdefault('max_pool_size', self.max_pool_size)
-            self.options.setdefault('auto_start_request', False)
-
-        self.url = url
-        if self.url:
-            # Specifying backend as an URL
-            self.host = self.url
+    def _prepare_client_options(self):
+            if pymongo.version_tuple >= (3,):
+                return {'maxPoolSize': self.max_pool_size}
+            else:  # pragma: no cover
+                return {'max_pool_size': self.max_pool_size,
+                        'auto_start_request': False}
 
     def _get_connection(self):
         """Connect to the MongoDB server."""
         if self._connection is None:
             from pymongo import MongoClient
 
-            # The first pymongo.Connection() argument (host) can be
-            # a list of ['host:port'] elements or a mongodb connection
-            # URI. If this is the case, don't use self.port
-            # but let pymongo get the port(s) from the URI instead.
-            # This enables the use of replica sets and sharding.
-            # See pymongo.Connection() for more info.
-            url = self.host
-            if isinstance(url, string_t) \
-                    and not url.startswith('mongodb://'):
-                url = 'mongodb://{0}:{1}'.format(url, self.port)
-            if url == 'mongodb://':
-                url = url + 'localhost'
+            host = self.mongo_host
+            if not host:
+                # The first pymongo.Connection() argument (host) can be
+                # a list of ['host:port'] elements or a mongodb connection
+                # URI. If this is the case, don't use self.port
+                # but let pymongo get the port(s) from the URI instead.
+                # This enables the use of replica sets and sharding.
+                # See pymongo.Connection() for more info.
+                host = self.host
+                if isinstance(host, string_t) \
+                   and not host.startswith('mongodb://'):
+                    host = 'mongodb://{0}:{1}'.format(host, self.port)
+
+                if host == 'mongodb://':
+                    host += 'localhost'
+
+            # don't change self.options
+            conf = dict(self.options)
+            conf['host'] = host
+
             if detect_environment() != 'default':
-                self.options['use_greenlets'] = True
-            self._connection = MongoClient(host=url, **self.options)
+                conf['use_greenlets'] = True
+
+            self._connection = MongoClient(**conf)
 
         return self._connection
 

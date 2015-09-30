@@ -29,7 +29,7 @@ logger = get_logger('celery.evcam')
 
 class Polaroid(object):
     timer = None
-    shutter_signal = Signal(providing_args=('state', ))
+    shutter_signal = Signal(providing_args=('state',))
     cleanup_signal = Signal()
     clear_after = False
 

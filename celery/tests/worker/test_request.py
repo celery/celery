@@ -72,7 +72,7 @@ class test_mro_lookup(Case):
 
         A.x = 10
         self.assertEqual(mro_lookup(C, 'x'), A)
-        self.assertIsNone(mro_lookup(C, 'x', stop=(A, )))
+        self.assertIsNone(mro_lookup(C, 'x', stop=(A,)))
         B.x = 10
         self.assertEqual(mro_lookup(C, 'x'), B)
         C.x = 10
@@ -183,7 +183,7 @@ class test_trace_task(AppCase):
             self.app, uuid(), self.mytask_raising.name, [4], {},
         )
         self.assertIsInstance(ret, ExceptionInfo)
-        self.assertTupleEqual(ret.exception.args, (4, ))
+        self.assertTupleEqual(ret.exception.args, (4,))
 
     def test_execute_ignore_result(self):
 
@@ -234,7 +234,7 @@ class test_Request(AppCase):
             on_reject=Mock(name='on_reject'),
             eventer=Mock(name='eventer'),
             app=self.app,
-            connection_errors=(socket.error, ),
+            connection_errors=(socket.error,),
             task=sig.type,
             **kwargs
         )

@@ -60,7 +60,7 @@ class Timer(bootsteps.Step):
 
 
 class Hub(bootsteps.StartStopStep):
-    requires = (Timer, )
+    requires = (Timer,)
 
     def __init__(self, w, **kwargs):
         w.hub = None
@@ -100,7 +100,7 @@ class Queues(bootsteps.Step):
     """This bootstep initializes the internal queues
     used by the worker."""
     label = 'Queues (intra)'
-    requires = (Hub, )
+    requires = (Hub,)
 
     def create(self, w):
         w.process_task = w._process_task
@@ -123,7 +123,7 @@ class Pool(bootsteps.StartStopStep):
         * min_concurrency
 
     """
-    requires = (Queues, )
+    requires = (Queues,)
 
     def __init__(self, w, autoscale=None, autoreload=None,
                  no_execv=False, optimization=None, **kwargs):
@@ -203,7 +203,7 @@ class Beat(bootsteps.StartStopStep):
         from celery.beat import EmbeddedService
         if w.pool_cls.__module__.endswith(('gevent', 'eventlet')):
             raise ImproperlyConfigured(ERR_B_GREEN)
-        b = w.beat = EmbeddedService(app=w.app,
+        b = w.beat = EmbeddedService(w.app,
                                      schedule_filename=w.schedule_filename,
                                      scheduler_cls=w.scheduler_cls)
         return b

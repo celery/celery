@@ -3,7 +3,7 @@ Keys and certificates for tests (KEY1 is a private key of CERT1, etc.)
 
 Generated with:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ openssl genrsa -des3 -passout pass:test -out key1.key 1024
     $ openssl req -new -key key1.key -out key1.csr -passin pass:test
@@ -103,8 +103,8 @@ class test_security(SecurityCase):
 
     def test_reraise_errors(self):
         with self.assertRaises(SecurityError):
-            with reraise_errors(errors=(KeyError, )):
+            with reraise_errors(errors=(KeyError,)):
                 raise KeyError('foo')
         with self.assertRaises(KeyError):
-            with reraise_errors(errors=(ValueError, )):
+            with reraise_errors(errors=(ValueError,)):
                 raise KeyError('bar')

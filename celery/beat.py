@@ -21,7 +21,7 @@ from functools import total_ordering
 from threading import Event, Thread
 
 from billiard import ensure_multiprocessing
-from billiard.process import Process
+from billiard.context import Process
 from billiard.common import reset_signals
 from kombu.utils import cached_property, reprcall
 from kombu.utils.functional import maybe_evaluate
@@ -185,9 +185,9 @@ class Scheduler(object):
                  Producer=None, lazy=False, sync_every_tasks=None, **kwargs):
         self.app = app
         self.data = maybe_evaluate({} if schedule is None else schedule)
-        self.max_interval = (max_interval
-                             or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
-                             or self.max_interval)
+        self.max_interval = (max_interval or
+                             app.conf.CELERYBEAT_MAX_LOOP_INTERVAL or
+                             self.max_interval)
         self.Producer = Producer or app.amqp.Producer
         self._heap = None
         self.sync_every_tasks = (
@@ -236,8 +236,8 @@ class Scheduler(object):
         """
 
         def _when(entry, next_time_to_run):
-            return (mktime(entry.schedule.now().timetuple())
-                    + (adjust(next_time_to_run) or 0))
+            return (mktime(entry.schedule.now().timetuple()) +
+                    (adjust(next_time_to_run) or 0))
 
         adjust = self.adjust
         max_interval = self.max_interval
@@ -474,8 +474,8 @@ class Service(object):
     def __init__(self, app, max_interval=None, schedule_filename=None,
                  scheduler_cls=None):
         self.app = app
-        self.max_interval = (max_interval
-                             or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL)
+        self.max_interval = (max_interval or
+                             app.conf.CELERYBEAT_MAX_LOOP_INTERVAL)
         self.scheduler_cls = scheduler_cls or self.scheduler_cls
         self.schedule_filename = (
             schedule_filename or app.conf.CELERYBEAT_SCHEDULE_FILENAME)
@@ -504,6 +504,8 @@ class Service(object):
                     debug('beat: Waking up %s.',
                           humanize_seconds(interval, prefix='in '))
                     time.sleep(interval)
+                    if self.scheduler.should_sync():
+                        self.scheduler._do_sync()
         except (KeyboardInterrupt, SystemExit):
             self._is_shutdown.set()
         finally:
@@ -535,13 +537,15 @@ class Service(object):
 class _Threaded(Thread):
     """Embedded task scheduler using threading."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, app, **kwargs):
         super(_Threaded, self).__init__()
-        self.service = Service(*args, **kwargs)
+        self.app = app
+        self.service = Service(app, **kwargs)
         self.daemon = True
         self.name = 'Beat'
 
     def run(self):
+        self.app.set_current()
         self.service.start()
 
     def stop(self):
@@ -555,9 +559,10 @@ except NotImplementedError:     # pragma: no cover
 else:
     class _Process(Process):    # noqa
 
-        def __init__(self, *args, **kwargs):
+        def __init__(self, app, **kwargs):
             super(_Process, self).__init__()
-            self.service = Service(*args, **kwargs)
+            self.app = app
+            self.service = Service(app, **kwargs)
             self.name = 'Beat'
 
         def run(self):
@@ -565,6 +570,8 @@ else:
             platforms.close_open_fds([
                 sys.__stdin__, sys.__stdout__, sys.__stderr__,
             ] + list(iter_open_logger_fds()))
+            self.app.set_default()
+            self.app.set_current()
             self.service.start(embedded_process=True)
 
         def stop(self):
@@ -572,7 +579,7 @@ else:
             self.terminate()
 
 
-def EmbeddedService(*args, **kwargs):
+def EmbeddedService(app, max_interval=None, **kwargs):
     """Return embedded clock service.
 
     :keyword thread: Run threaded instead of as a separate process.
@@ -582,6 +589,5 @@ def EmbeddedService(*args, **kwargs):
     if kwargs.pop('thread', False) or _Process is None:
         # Need short max interval to be able to stop thread
         # in reasonable time.
-        kwargs.setdefault('max_interval', 1)
-        return _Threaded(*args, **kwargs)
-    return _Process(*args, **kwargs)
+        return _Threaded(app, max_interval=1, **kwargs)
+    return _Process(app, max_interval=max_interval, **kwargs)

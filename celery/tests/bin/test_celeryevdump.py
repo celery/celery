@@ -58,7 +58,7 @@ class test_Dumper(AppCase):
 
             Conn = app.connection.return_value = Mock(name='conn')
             conn = Conn.clone.return_value = Mock(name='cloned_conn')
-            conn.connection_errors = (KeyError, )
+            conn.connection_errors = (KeyError,)
             conn.channel_errors = ()
 
             evdump(app)

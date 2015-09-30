@@ -96,7 +96,7 @@ has been removed, and that makes it incompatible with earlier versions.
 You can manually delete the old exchanges if you want,
 using the :program:`celery amqp` command (previously called ``camqadm``):
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery amqp exchange.delete celeryd.pidbox
     $ celery amqp exchange.delete reply.celeryd.pidbox
@@ -128,7 +128,7 @@ All Celery's command-line programs are now available from a single
 
 You can see a list of subcommands and options by running:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery help
 
@@ -168,7 +168,7 @@ The setup.py install script will try to remove the old package,
 but if that doesn't work for some reason you have to remove
 it manually.  This command helps:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ rm -r $(dirname $(python -c '
         import celery;print(celery.__file__)'))/app/task/
@@ -303,19 +303,19 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
             which can than be used to produce an image:
 
-            .. code-block:: bash
+            .. code-block:: console
 
                 $ dot -Tpng graph.dot -o graph.png
 
 - A new special subtask called ``chain`` is also included:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> from celery import chain
 
         # (2 + 2) * 8 / 2
         >>> res = chain(add.subtask((2, 2)),
-                        mul.subtask((8, )),
+                        mul.subtask((8,)),
                         div.subtask((2,))).apply_async()
         >>> res.get() == 16
 
@@ -351,7 +351,9 @@ The priority field is a number in the range of 0 - 9, where
 The priority range is collapsed into four steps by default, since it is
 unlikely that nine steps will yield more benefit than using four steps.
 The number of steps can be configured by setting the ``priority_steps``
-transport option, which must be a list of numbers in **sorted order**::
+transport option, which must be a list of numbers in **sorted order**:
+
+.. code-block:: pycon
 
     >>> BROKER_TRANSPORT_OPTIONS = {
     ...     'priority_steps': [0, 2, 4, 6, 8, 9],
@@ -393,28 +395,34 @@ accidentally changed while switching to using blocking pop.
 
 - A new shortcut has been added to tasks:
 
-    ::
+    .. code-block:: pycon
 
         >>> task.s(arg1, arg2, kw=1)
 
-    as a shortcut to::
+    as a shortcut to:
+
+    .. code-block:: pycon
 
         >>> task.subtask((arg1, arg2), {'kw': 1})
 
-- Tasks can be chained by using the ``|`` operator::
+- Tasks can be chained by using the ``|`` operator:
+
+    .. code-block:: pycon
 
         >>> (add.s(2, 2), pow.s(2)).apply_async()
 
 - Subtasks can be "evaluated" using the ``~`` operator:
 
-    ::
+    .. code-block:: pycon
 
         >>> ~add.s(2, 2)
         4
 
         >>> ~(add.s(2, 2) | pow.s(2))
 
-    is the same as::
+    is the same as:
+
+    .. code-block:: pycon
 
         >>> chain(add.s(2, 2), pow.s(2)).apply_async().get()
 
@@ -434,7 +442,9 @@ accidentally changed while switching to using blocking pop.
     It's now a pure dict subclass with properties for attribute
     access to the relevant keys.
 
-- The repr's now outputs how the sequence would like imperatively::
+- The repr's now outputs how the sequence would like imperatively:
+
+    .. code-block:: pycon
 
         >>> from celery import chord
 
@@ -467,7 +477,7 @@ stable and is now documented as part of the offical API.
     These commands are available programmatically as
     :meth:`@control.add_consumer` / :meth:`@control.cancel_consumer`:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> celery.control.add_consumer(queue_name,
         ...     destination=['w1.example.com'])
@@ -476,7 +486,7 @@ stable and is now documented as part of the offical API.
 
     or using the :program:`celery control` command:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery control -d w1.example.com add_consumer queue
         $ celery control -d w1.example.com cancel_consumer queue
@@ -493,14 +503,14 @@ stable and is now documented as part of the offical API.
 
     This command is available programmatically as :meth:`@control.autoscale`:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> celery.control.autoscale(max=10, min=5,
         ...     destination=['w1.example.com'])
 
     or using the :program:`celery control` command:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery control -d w1.example.com autoscale 10 5
 
@@ -511,14 +521,14 @@ stable and is now documented as part of the offical API.
     These commands are available programmatically as
     :meth:`@control.pool_grow` / :meth:`@control.pool_shrink`:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> celery.control.pool_grow(2, destination=['w1.example.com'])
         >>> celery.contorl.pool_shrink(2, destination=['w1.example.com'])
 
     or using the :program:`celery control` command:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery control -d w1.example.com pool_grow 2
         $ celery control -d w1.example.com pool_shrink 2
@@ -537,12 +547,16 @@ Immutable subtasks
 ------------------
 
 ``subtask``'s can now be immutable, which means that the arguments
-will not be modified when calling callbacks::
+will not be modified when calling callbacks:
+
+.. code-block:: pycon
 
     >>> chain(add.s(2, 2), clear_static_electricity.si())
 
 means it will not receive the argument of the parent task,
-and ``.si()`` is a shortcut to::
+and ``.si()`` is a shortcut to:
+
+.. code-block:: pycon
 
     >>> clear_static_electricity.subtask(immutable=True)
 
@@ -602,7 +616,9 @@ Task registry no longer global
 
 Every Celery instance now has its own task registry.
 
-You can make apps share registries by specifying it::
+You can make apps share registries by specifying it:
+
+.. code-block:: pycon
 
     >>> app1 = Celery()
     >>> app2 = Celery(tasks=app1.tasks)
@@ -610,7 +626,9 @@ You can make apps share registries by specifying it::
 Note that tasks are shared between registries by default, so that
 tasks will be added to every subsequently created task registry.
 As an alternative tasks can be private to specific task registries
-by setting the ``shared`` argument to the ``@task`` decorator::
+by setting the ``shared`` argument to the ``@task`` decorator:
+
+.. code-block:: python
 
     @celery.task(shared=False)
     def add(x, y):
@@ -625,7 +643,9 @@ by default, it will first be bound (and configured) when
 a concrete subclass is created.
 
 This means that you can safely import and make task base classes,
-without also initializing the app environment::
+without also initializing the app environment:
+
+.. code-block:: python
 
     from celery.task import Task
 
@@ -633,8 +653,10 @@ without also initializing the app environment::
         abstract = True
 
         def __call__(self, *args, **kwargs):
-            print('CALLING %r' % (self, ))
+            print('CALLING %r' % (self,))
             return self.run(*args, **kwargs)
+
+.. code-block:: pycon
 
     >>> DebugTask
     <unbound DebugTask>
@@ -676,7 +698,7 @@ E.g. if you have a project named 'proj' where the
 celery app is located in 'from proj.celery import app',
 then the following will be equivalent:
 
-.. code-block:: bash
+.. code-block:: console
 
         $ celery worker --app=proj
         $ celery worker --app=proj.celery:
@@ -697,7 +719,9 @@ In Other News
   descriptors that creates a new subclass on access.
 
     This means that e.g. ``app.Worker`` is an actual class
-    and will work as expected when::
+    and will work as expected when:
+
+    .. code-block:: python
 
         class Worker(app.Worker):
             ...
@@ -715,7 +739,9 @@ In Other News
 
 - Result backends can now be set using an URL
 
-    Currently only supported by redis.  Example use::
+    Currently only supported by redis.  Example use:
+
+    .. code-block:: python
 
         CELERY_RESULT_BACKEND = 'redis://localhost/1'
 
@@ -742,7 +768,7 @@ In Other News
 
             @wraps(fun)
             def _inner(*args, **kwargs):
-                print('ARGS: %r' % (args, ))
+                print('ARGS: %r' % (args,))
             return _inner
 
         CELERY_ANNOTATIONS = {
@@ -754,20 +780,22 @@ In Other News
 
 - Bugreport now available as a command and broadcast command
 
-    - Get it from a Python repl::
+    - Get it from a Python repl:
 
-        >>> import celery
-        >>> print(celery.bugreport())
+        .. code-block:: pycon
+
+            >>> import celery
+            >>> print(celery.bugreport())
 
     - Using the ``celery`` command line program:
 
-        .. code-block:: bash
+        .. code-block:: console
 
             $ celery report
 
     - Get it from remote workers:
 
-        .. code-block:: bash
+        .. code-block:: console
 
             $ celery inspect report
 
@@ -788,7 +816,9 @@ In Other News
     Returns a list of the results applying the task function to every item
     in the sequence.
 
-    Example::
+    Example:
+
+    .. code-block:: pycon
 
         >>> from celery import xstarmap
 
@@ -799,12 +829,16 @@ In Other News
 
 - ``group.skew(start=, stop=, step=)``
 
-  Skew will skew the countdown for the individual tasks in a group,
-  e.g. with a group::
+    Skew will skew the countdown for the individual tasks in a group,
+    e.g. with a group:
+
+    .. code-block:: pycon
 
         >>> g = group(add.s(i, i) for i in xrange(10))
 
-  Skewing the tasks from 0 seconds to 10 seconds::
+  Skewing the tasks from 0 seconds to 10 seconds:
+
+    .. code-block:: pycon
 
         >>> g.skew(stop=10)
 

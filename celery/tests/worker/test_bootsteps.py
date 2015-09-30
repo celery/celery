@@ -238,7 +238,7 @@ class test_Blueprint(AppCase):
         blueprint.send_all(parent, 'close', 'Closing', reverse=False)
 
     def test_join_raises_IGNORE_ERRORS(self):
-        prev, bootsteps.IGNORE_ERRORS = bootsteps.IGNORE_ERRORS, (KeyError, )
+        prev, bootsteps.IGNORE_ERRORS = bootsteps.IGNORE_ERRORS, (KeyError,)
         try:
             blueprint = self.Blueprint(app=self.app)
             blueprint.shutdown_complete = Mock()
@@ -278,7 +278,7 @@ class test_Blueprint(AppCase):
     def test_topsort_raises_KeyError(self):
 
         class Step(bootsteps.Step):
-            requires = ('xyxxx.fsdasewe.Unknown', )
+            requires = ('xyxxx.fsdasewe.Unknown',)
 
         b = self.Blueprint([Step], app=self.app)
         b.steps = b.claim_steps()

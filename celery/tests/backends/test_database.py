@@ -12,7 +12,6 @@ from celery.tests.case import (
     AppCase,
     SkipTest,
     depends_on_current_app,
-    mask_modules,
     skip_if_pypy,
     skip_if_jython,
 )
@@ -55,12 +54,6 @@ class test_DatabaseBackend(AppCase):
         with self.assertRaises(DatabaseError):
             raises(max_retries=5)
         self.assertEqual(calls[0], 5)
-
-    def test_missing_SQLAlchemy_raises_ImproperlyConfigured(self):
-        with mask_modules('sqlalchemy'):
-            from celery.backends.database import _sqlalchemy_installed
-            with self.assertRaises(ImproperlyConfigured):
-                _sqlalchemy_installed()
 
     def test_missing_dburi_raises_ImproperlyConfigured(self):
         self.app.conf.CELERY_RESULT_DBURI = None

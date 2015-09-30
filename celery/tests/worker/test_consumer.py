@@ -37,7 +37,7 @@ class test_Consumer(AppCase):
         consumer.blueprint = Mock()
         consumer._restart_state = Mock()
         consumer.connection = _amqp_connection()
-        consumer.connection_errors = (socket.error, OSError, )
+        consumer.connection_errors = (socket.error, OSError,)
         return consumer
 
     def test_taskbuckets_defaultdict(self):
@@ -88,7 +88,7 @@ class test_Consumer(AppCase):
             self.assertEqual(c._limit_order, limit_order + 1)
             bucket.can_consume.assert_called_with(4)
             c.timer.call_after.assert_called_with(
-                3.33, c._limit_move_to_pool, (request, ),
+                3.33, c._limit_move_to_pool, (request,),
                 priority=c._limit_order,
             )
             bucket.expected_time.assert_called_with(4)
@@ -114,6 +114,13 @@ class test_Consumer(AppCase):
         with patch('celery.worker.consumer.sleep') as sleep:
             c.start()
             sleep.assert_called_with(1)
+
+    def test_no_retry_raises_error(self):
+        self.app.conf.BROKER_CONNECTION_RETRY = False
+        c = self.get_consumer()
+        c.blueprint.start.side_effect = socket.error()
+        with self.assertRaises(socket.error):
+            c.start()
 
     def _closer(self, c):
         def se(*args, **kwargs):

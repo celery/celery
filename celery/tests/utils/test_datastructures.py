@@ -158,7 +158,7 @@ class test_ExceptionInfo(Case):
             self.assertEqual(str(einfo), einfo.traceback)
             self.assertIsInstance(einfo.exception, LookupError)
             self.assertTupleEqual(
-                einfo.exception.args, ('The quick brown fox jumps...', ),
+                einfo.exception.args, ('The quick brown fox jumps...',),
             )
             self.assertTrue(einfo.traceback)
 

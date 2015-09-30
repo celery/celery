@@ -64,7 +64,7 @@ race condition leading to an annoying warning.
     The :program:`camqadm` command can be used to delete the
     previous exchange:
 
-    .. code-block:: bash
+    .. code-block:: console
 
             $ camqadm exchange.delete celeryresults
 
@@ -240,7 +240,7 @@ implementations:
     to install the :mod:`pyinotify` library you have to run the following
     command:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install pyinotify
 
@@ -254,7 +254,7 @@ implementations:
 You can force an implementation by setting the :envvar:`CELERYD_FSNOTIFY`
 environment variable:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ env CELERYD_FSNOTIFY=stat celeryd -l info --autoreload
 
@@ -288,7 +288,7 @@ You can change methods too, for example the ``on_failure`` handler:
 .. code-block:: python
 
     def my_on_failure(self, exc, task_id, args, kwargs, einfo):
-        print('Oh no! Task failed: %r' % (exc, ))
+        print('Oh no! Task failed: %r' % (exc,))
 
     CELERY_ANNOTATIONS = {'*': {'on_failure': my_on_failure}}
 
@@ -378,7 +378,7 @@ In Other News
   Additional configuration must be added at the end of the argument list
   followed by ``--``, for example:
 
-  .. code-block:: bash
+  .. code-block:: console
 
     $ celerybeat -l info -- celerybeat.max_loop_interval=10.0
 
@@ -428,7 +428,7 @@ In Other News
 
     **Examples**:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celeryctl migrate redis://localhost amqp://localhost
         $ celeryctl migrate amqp://localhost//v1 amqp://localhost//v2

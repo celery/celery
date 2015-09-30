@@ -60,7 +60,7 @@ librabbitmq
 If you're using RabbitMQ (AMQP) as the broker then you can install the
 :mod:`librabbitmq` module to use an optimized client written in C:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install librabbitmq
 
@@ -228,7 +228,7 @@ size is 1MB (can only be changed system wide).
 You can disable this prefetching behavior by enabling the :option:`-Ofair`
 worker option:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -l info -Ofair
 

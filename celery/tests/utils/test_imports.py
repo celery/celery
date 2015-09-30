@@ -21,7 +21,7 @@ class test_import_utils(Case):
             find_module('foo.bar.baz', imp=imp)
 
     def test_qualname(self):
-        Class = type('Fox', (object, ), {'__module__': 'quick.brown'})
+        Class = type('Fox', (object,), {'__module__': 'quick.brown'})
         self.assertEqual(qualname(Class), 'quick.brown.Fox')
         self.assertEqual(qualname(Class()), 'quick.brown.Fox')
 

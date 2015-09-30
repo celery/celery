@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import io
 import os
 import sys
 import warnings
@@ -11,7 +10,14 @@ from datetime import datetime
 from importlib import import_module
 
 from celery import signals
+from celery.app import default_app
 from celery.exceptions import FixupWarning
+
+if sys.version_info[0] < 3 and not hasattr(sys, 'pypy_version_info'):
+    from StringIO import StringIO
+else:
+    from io import StringIO
+
 
 __all__ = ['DjangoFixup', 'fixup']
 
@@ -44,13 +50,15 @@ class DjangoFixup(object):
 
     def __init__(self, app):
         self.app = app
-        self.app.set_default()
+        if default_app is None:
+            self.app.set_default()
         self._worker_fixup = None
 
     def install(self):
         # Need to add project directory to path
         sys.path.append(os.getcwd())
 
+        self._settings = symbol_by_name('django.conf:settings')
         self.app.loader.now = self.now
         self.app.loader.mail_admins = self.mail_admins
 
@@ -76,6 +84,14 @@ class DjangoFixup(object):
 
     def mail_admins(self, subject, body, fail_silently=False, **kwargs):
         return self._mail_admins(subject, body, fail_silently=fail_silently)
+
+    def autodiscover_tasks(self):
+        try:
+            from django.apps import apps
+        except ImportError:
+            return self._settings.INSTALLED_APPS
+        else:
+            return [config.name for config in apps.get_app_configs()]
 
     @cached_property
     def _mail_admins(self):
@@ -137,7 +153,7 @@ class DjangoWorkerFixup(object):
         except (ImportError, AttributeError):
             self._close_old_connections = None
         self.database_errors = (
-            (DatabaseError, ) +
+            (DatabaseError,) +
             _my_database_errors +
             _pg_database_errors +
             _lite_database_errors +
@@ -152,13 +168,20 @@ class DjangoWorkerFixup(object):
             pass
         else:
             django_setup()
-        s = io.StringIO()
+        s = StringIO()
         try:
             from django.core.management.validation import get_validation_errors
         except ImportError:
             from django.core.management.base import BaseCommand
             cmd = BaseCommand()
-            cmd.stdout, cmd.stderr = sys.stdout, sys.stderr
+            try:
+                # since django 1.5
+                from django.core.management.base import OutputWrapper
+                cmd.stdout = OutputWrapper(sys.stdout)
+                cmd.stderr = OutputWrapper(sys.stderr)
+            except ImportError:
+                cmd.stdout, cmd.stderr = sys.stdout, sys.stderr
+
             cmd.check()
         else:
             num_errors = get_validation_errors(s, None)

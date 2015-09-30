@@ -13,7 +13,7 @@ For the Redis support you have to install additional dependencies.
 You can install both Celery and these dependencies in one go using
 the ``celery[redis]`` :ref:`bundle <bundles>`:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install -U celery[redis]
 

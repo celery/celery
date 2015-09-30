@@ -40,7 +40,7 @@ class _CompatShared(object):
         return hash(self.name)
 
     def __repr__(self):
-        return '<OldTask: %r>' % (self.name, )
+        return '<OldTask: %r>' % (self.name,)
 
     def __call__(self, app):
         return self.cons(app)

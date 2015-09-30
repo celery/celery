@@ -123,7 +123,7 @@ class test_Command(AppCase):
         c.run = run
 
         with self.assertRaises(c.UsageError):
-            c.verify_args((1, ))
+            c.verify_args((1,))
         c.verify_args((1, 2, 3))
 
     def test_run_interface(self):
@@ -186,7 +186,7 @@ class test_Command(AppCase):
     def test_with_custom_app(self):
         cmd = MockCommand(app=self.app)
         app = '.'.join([__name__, 'APP'])
-        cmd.setup_app_from_commandline(['--app=%s' % (app, ),
+        cmd.setup_app_from_commandline(['--app=%s' % (app,),
                                         '--loglevel=INFO'])
         self.assertIs(cmd.app, APP)
         cmd.setup_app_from_commandline(['-A', app,
@@ -311,7 +311,7 @@ class test_Command(AppCase):
 
     def test_parse_preload_options_shortopt(self):
         cmd = Command()
-        cmd.preload_options = (Option('-s', action='store', dest='silent'), )
+        cmd.preload_options = (Option('-s', action='store', dest='silent'),)
         acc = cmd.parse_preload_options(['-s', 'yes'])
         self.assertEqual(acc.get('silent'), 'yes')
 

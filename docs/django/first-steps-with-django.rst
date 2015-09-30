@@ -55,7 +55,7 @@ first we import absolute imports from the future, so that our
 
     from __future__ import absolute_import
 
-Then we set the default :envvar:`DJANGO_SETTINGS_MODULE` 
+Then we set the default :envvar:`DJANGO_SETTINGS_MODULE` environment variable
 for the :program:`celery` command-line program:
 
 .. code-block:: python
@@ -92,10 +92,10 @@ autodiscover these modules:
 
 .. code-block:: python
 
-    app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+    app.autodiscover_tasks()
 
-With the line above Celery will automatically discover tasks in reusable
-apps if you follow the ``tasks.py`` convention::
+With the line above Celery will automatically discover tasks from all
+of your installed apps, following the ``tasks.py`` convention::
 
     - app1/
         - tasks.py
@@ -103,6 +103,7 @@ apps if you follow the ``tasks.py`` convention::
     - app2/
         - tasks.py
         - models.py
+
 
 This way you do not have to manually add the individual modules
 to the :setting:`CELERY_IMPORTS` setting.  The ``lambda`` so that the
@@ -136,14 +137,14 @@ concrete app instance:
 Using the Django ORM/Cache as a result backend.
 -----------------------------------------------
 
-The ``django-celery`` library defines result backends that
-uses the Django ORM and Django Cache frameworks.
+The [``django-celery``](https://github.com/celery/django-celery) library defines
+result backends that uses the Django ORM and Django Cache frameworks.
 
 To use this with your project you need to follow these four steps:
 
 1. Install the ``django-celery`` library:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install django-celery
 
@@ -158,13 +159,13 @@ To use this with your project you need to follow these four steps:
 
     If you are using south_ for schema migrations, you'll want to:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ python manage.py migrate djcelery
 
     For those who are not using south, a normal ``syncdb`` will work:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ python manage.py syncdb
 
@@ -211,7 +212,7 @@ as a daemon - see :ref:`daemonizing` - but for testing and
 development it is useful to be able to start a worker instance by using the
 ``celery worker`` manage command, much as you would use Django's runserver:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -l info
 
@@ -219,7 +220,7 @@ development it is useful to be able to start a worker instance by using the
 For a complete listing of the command-line options available,
 use the help command:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery help
 

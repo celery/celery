@@ -73,7 +73,9 @@ these can be specified as arguments to the decorator:
     if you don't know what that is then please read :ref:`first-steps`.
 
     If you're using Django or are still using the "old" module based celery API,
-    then you can import the task decorator like this::
+    then you can import the task decorator like this:
+
+    .. code-block:: python
 
         from celery import task
 
@@ -106,7 +108,7 @@ will be generated out of the function name if a custom name is not provided.
 
 For example:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> @app.task(name='sum-of-two-numbers')
     >>> def add(x, y):
@@ -119,13 +121,15 @@ A best practice is to use the module name as a namespace,
 this way names won't collide if there's already a task with that name
 defined in another module.
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> @app.task(name='tasks.add')
     >>> def add(x, y):
     ...     return x + y
 
-You can tell the name of the task by investigating its name attribute::
+You can tell the name of the task by investigating its name attribute:
+
+.. code-block:: pycon
 
     >>> add.name
     'tasks.add'
@@ -168,7 +172,7 @@ If you install the app under the name ``project.myapp`` then the
 tasks module will be imported as ``project.myapp.tasks``,
 so you must make sure you always import the tasks using the same name:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from project.myapp.tasks import mytask   # << GOOD
 
@@ -177,7 +181,7 @@ so you must make sure you always import the tasks using the same name:
 The second example will cause the task to be named differently
 since the worker and the client imports the modules under different names:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from project.myapp.tasks import mytask
     >>> mytask.name
@@ -496,6 +500,45 @@ override this default.
             raise self.retry(exc=exc, countdown=60)  # override the default and
                                                      # retry in 1 minute
 
+Autoretrying
+------------
+
+.. versionadded:: 3.2
+
+Sometimes you may want to retry a task on particular exception. To do so,
+you should wrap a task body with `try-except` statement, for example:
+
+.. code-block:: python
+
+    @app.task
+    def div(a, b):
+        try:
+            return a / b
+        except ZeroDivisionError as exc:
+            raise div.retry(exc=exc)
+
+This may not be acceptable all the time, since you may have a lot of such
+tasks.
+
+Fortunately, you can tell Celery to automatically retry a task using
+`autoretry_for` argument in `~@Celery.task` decorator:
+
+.. code-block:: python
+
+    @app.task(autoretry_for(ZeroDivisionError,))
+    def div(a, b):
+        return a / b
+
+If you want to specify custom arguments for internal `~@Task.retry`
+call, pass `retry_kwargs` argument to `~@Celery.task` decorator:
+
+.. code-block:: python
+
+    @app.task(autoretry_for=(ZeroDivisionError,),
+              retry_kwargs={'max_retries': 5})
+    def div(a, b):
+        return a / b
+
 .. _task-options:
 
 List of Options
@@ -657,8 +700,9 @@ General
 
 .. attribute:: Task.backend
 
-    The result store backend to use for this task.  Defaults to the
-    :setting:`CELERY_RESULT_BACKEND` setting.
+    The result store backend to use for this task. An instance of one of the
+    backend classes in `celery.backends`. Defaults to `app.backend` which is
+    defined by the :setting:`CELERY_RESULT_BACKEND` setting.
 
 .. attribute:: Task.acks_late
 
@@ -732,48 +776,31 @@ Result Backends
 If you want to keep track of tasks or need the return values, then Celery
 must store or send the states somewhere so that they can be retrieved later.
 There are several built-in result backends to choose from: SQLAlchemy/Django ORM,
-Memcached, RabbitMQ (amqp), MongoDB, and Redis -- or you can define your own.
+Memcached, RabbitMQ/QPid (rpc), MongoDB, and Redis -- or you can define your own.
 
 No backend works well for every use case.
 You should read about the strengths and weaknesses of each backend, and choose
 the most appropriate for your needs.
 
-
 .. seealso::
 
     :ref:`conf-result-backend`
 
-RabbitMQ Result Backend
-~~~~~~~~~~~~~~~~~~~~~~~
+RPC Result Backend (RabbitMQ/QPid)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The RabbitMQ result backend (amqp) is special as it does not actually *store*
+The RPC result backend (`rpc://`) is special as it does not actually *store*
 the states, but rather sends them as messages.  This is an important difference as it
-means that a result *can only be retrieved once*; If you have two processes
-waiting for the same result, one of the processes will never receive the
-result!
+means that a result *can only be retrieved once*, and *only by the client
+that initiated the task*. Two different processes can not wait for the same result.
 
 Even with that limitation, it is an excellent choice if you need to receive
 state changes in real-time.  Using messaging means the client does not have to
 poll for new states.
 
-There are several other pitfalls you should be aware of when using the
-RabbitMQ result backend:
-
-* Every new task creates a new queue on the server, with thousands of tasks
-  the broker may be overloaded with queues and this will affect performance in
-  negative ways. If you're using RabbitMQ then each queue will be a separate
-  Erlang process, so if you're planning to keep many results simultaneously you
-  may have to increase the Erlang process limit, and the maximum number of file
-  descriptors your OS allows.
-
-* Old results will be cleaned automatically, based on the
-  :setting:`CELERY_TASK_RESULT_EXPIRES` setting.  By default this is set to
-  expire after 1 day: if you have a very busy cluster you should lower
-  this value.
-
-For a list of options supported by the RabbitMQ result backend, please see
-:ref:`conf-amqp-result-backend`.
-
+The messages are transient (non-persistent) by default, so the results will
+disappear if the broker restarts. You can configure the result backend to send
+persistent messages using the :setting:`CELERY_RESULT_PERSISTENT` setting.
 
 Database Result Backend
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -792,7 +819,6 @@ limitations.
   means the transaction will not see changes by other transactions until the
   transaction is committed.  It is recommended that you change to the
   `READ-COMMITTED` isolation level.
-
 
 .. _task-builtin-states:
 
@@ -872,7 +898,9 @@ The name of the state is usually an uppercase string.  As an example
 you could have a look at :mod:`abortable tasks <~celery.contrib.abortable>`
 which defines its own custom :state:`ABORTED` state.
 
-Use :meth:`~@Task.update_state` to update a task's state::
+Use :meth:`~@Task.update_state` to update a task's state:.
+
+.. code-block:: python
 
     @app.task(bind=True)
     def upload_files(self, filenames):
@@ -1164,7 +1192,7 @@ base class for new task types.
         abstract = True
 
         def after_return(self, *args, **kwargs):
-            print('Task returned: {0!r}'.format(self.request)
+            print('Task returned: {0!r}'.format(self.request))
 
 
     @app.task(base=DebugTask)
@@ -1246,7 +1274,7 @@ All defined tasks are listed in a registry.  The registry contains
 a list of task names and their task classes.  You can investigate this registry
 yourself:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from proj.celery import app
     >>> app.tasks
@@ -1366,7 +1394,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
     def update_page_info(url):
         # fetch_page -> parse_page -> store_page
-        chain = fetch_page.s() | parse_page.s() | store_page_info.s(url)
+        chain = fetch_page.s(url) | parse_page.s() | store_page_info.s(url)
         chain()
 
     @app.task()
@@ -1481,7 +1509,9 @@ that automatically expands some abbreviations in it:
         article.save()
 
 First, an author creates an article and saves it, then the author
-clicks on a button that initiates the abbreviation task::
+clicks on a button that initiates the abbreviation task:
+
+.. code-block:: pycon
 
     >>> article = Article.objects.get(id=102)
     >>> expand_abbreviations.delay(article)
@@ -1501,6 +1531,8 @@ re-fetch the article in the task body:
         article = Article.objects.get(id=article_id)
         article.body.replace('MyCorp', 'My Corporation')
         article.save()
+
+.. code-block:: pycon
 
     >>> expand_abbreviations(article_id)
 
@@ -1550,7 +1582,7 @@ depending on state from the current transaction*:
 
 .. note::
     Django 1.6 (and later) now enables autocommit mode by default,
-    and ``commit_on_success``/``commit_manually`` are depreacated.
+    and ``commit_on_success``/``commit_manually`` are deprecated.
 
     This means each SQL query is wrapped and executed in individual
     transactions, making it less likely to experience the
@@ -1567,7 +1599,7 @@ depending on state from the current transaction*:
 Example
 =======
 
-Let's take a real wold example; A blog where comments posted needs to be
+Let's take a real world example; A blog where comments posted needs to be
 filtered for spam.  When the comment is created, the spam filter runs in the
 background, so the user doesn't have to wait for it to finish.
 

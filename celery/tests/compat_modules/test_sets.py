@@ -95,7 +95,7 @@ class test_subtask(SetsCase):
 
     def test_delay_argmerge(self):
         s = self.MockTask.subtask(
-            (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
+            (2,), {'cache': True}, {'routing_key': 'CPU-bound'},
         )
         args, kwargs, options = s.delay(10, cache=False, other='foo')
         self.assertTupleEqual(args, (10, 2))
@@ -104,9 +104,9 @@ class test_subtask(SetsCase):
 
     def test_apply_async_argmerge(self):
         s = self.MockTask.subtask(
-            (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
+            (2,), {'cache': True}, {'routing_key': 'CPU-bound'},
         )
-        args, kwargs, options = s.apply_async((10, ),
+        args, kwargs, options = s.apply_async((10,),
                                               {'cache': False, 'other': 'foo'},
                                               routing_key='IO-bound',
                                               exchange='fast')
@@ -118,9 +118,9 @@ class test_subtask(SetsCase):
 
     def test_apply_argmerge(self):
         s = self.MockTask.subtask(
-            (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
+            (2,), {'cache': True}, {'routing_key': 'CPU-bound'},
         )
-        args, kwargs, options = s.apply((10, ),
+        args, kwargs, options = s.apply((10,),
                                         {'cache': False, 'other': 'foo'},
                                         routing_key='IO-bound',
                                         exchange='fast')
@@ -133,19 +133,19 @@ class test_subtask(SetsCase):
 
     def test_is_JSON_serializable(self):
         s = self.MockTask.subtask(
-            (2, ), {'cache': True}, {'routing_key': 'CPU-bound'},
+            (2,), {'cache': True}, {'routing_key': 'CPU-bound'},
         )
         # tuples are not preserved, but this doesn't matter.
         s.args = list(s.args)
         self.assertEqual(s, self.subtask(json.loads(json.dumps(s))))
 
     def test_repr(self):
-        s = self.MockTask.subtask((2, ), {'cache': True})
+        s = self.MockTask.subtask((2,), {'cache': True})
         self.assertIn('2', repr(s))
         self.assertIn('cache=True', repr(s))
 
     def test_reduce(self):
-        s = self.MockTask.subtask((2, ), {'cache': True})
+        s = self.MockTask.subtask((2,), {'cache': True})
         cls, args = s.__reduce__()
         self.assertDictEqual(dict(cls(*args)), dict(s))
 

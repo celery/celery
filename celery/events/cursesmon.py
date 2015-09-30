@@ -236,7 +236,7 @@ class CursesMonitor(object):  # pragma: no cover
                 if ch != -1:
                     if ch in (10, curses.KEY_ENTER):            # enter
                         break
-                    if ch in (27, ):
+                    if ch in (27,):
                         buffer = str()
                         break
                     buffer += chr(ch)
@@ -318,8 +318,8 @@ class CursesMonitor(object):  # pragma: no cover
         def alert_callback(my, mx, xs):
             y = count(xs)
             task = self.state.tasks[self.selected_task]
-            result = (getattr(task, 'result', None)
-                      or getattr(task, 'exception', None))
+            result = (getattr(task, 'result', None) or
+                      getattr(task, 'exception', None))
             for line in wrap(result, mx - 2):
                 self.win.addstr(next(y), 3, line)
 

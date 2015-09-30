@@ -195,7 +195,7 @@ class AMQPBackend(BaseBackend):
 
         def callback(meta, message):
             if meta['status'] in states.READY_STATES:
-                results[meta['task_id']] = meta
+                results[meta['task_id']] = self.meta_from_decoded(meta)
 
         consumer.callbacks[:] = [callback]
         time_start = now()
@@ -231,7 +231,7 @@ class AMQPBackend(BaseBackend):
     def _many_bindings(self, ids):
         return [self._create_binding(task_id) for task_id in ids]
 
-    def get_many(self, task_ids, timeout=None, no_ack=True,
+    def get_many(self, task_ids, timeout=None, no_ack=True, on_message=None,
                  now=monotonic, getfields=itemgetter('status', 'task_id'),
                  READY_STATES=states.READY_STATES,
                  PROPAGATE_STATES=states.PROPAGATE_STATES, **kwargs):
@@ -254,15 +254,17 @@ class AMQPBackend(BaseBackend):
             push_cache = self._cache.__setitem__
             decode_result = self.meta_from_decoded
 
-            def on_message(message):
+            def _on_message(message):
                 body = decode_result(message.decode())
+                if on_message is not None:
+                    on_message(body)
                 state, uid = getfields(body)
                 if state in READY_STATES:
                     push_result(body) \
                         if uid in task_ids else push_cache(uid, body)
 
             bindings = self._many_bindings(task_ids)
-            with self.Consumer(channel, bindings, on_message=on_message,
+            with self.Consumer(channel, bindings, on_message=_on_message,
                                accept=self.accept, no_ack=no_ack):
                 wait = conn.drain_events
                 popleft = results.popleft

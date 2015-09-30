@@ -278,13 +278,13 @@ Documentation
     If you've already hit this problem you may have to delete the
     declaration:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ camqadm exchange.delete celerycrq
 
     or:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ python manage.py camqadm exchange.delete celerycrq
 
@@ -387,7 +387,7 @@ Documentation
 
     Use the `-S|--statedb` argument to the worker to enable it:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celeryd --statedb=/var/run/celeryd
 
@@ -599,7 +599,7 @@ Backward incompatible changes
     If you've already used celery with this backend chances are you
     have to delete the previous declaration:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ camqadm exchange.delete celeryresults
 
@@ -638,7 +638,7 @@ News
     If you run `celeryev` with the `-d` switch it will act as an event
     dumper, simply dumping the events it receives to standard out:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celeryev -d
         -> celeryev: starting capture...
@@ -742,7 +742,7 @@ News
    This feature is added for easily setting up routing using the `-Q`
    option to the worker:
 
-   .. code-block:: bash
+   .. code-block:: console
 
        $ celeryd -Q video, image
 
@@ -887,7 +887,7 @@ News
     command would make the worker only consume from the `image` and `video`
     queues:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celeryd -Q image,video
 
@@ -916,25 +916,25 @@ News
 
     Before you run the tests you need to install the test requirements:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install -r requirements/test.txt
 
     Running all tests:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ nosetests
 
     Specifying the tests to run:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ nosetests celery.tests.test_task
 
     Producing HTML coverage:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ nosetests --with-coverage3
 
@@ -947,7 +947,7 @@ News
 
     Some examples:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         # Advanced example with 10 workers:
         #   * Three of the workers processes the images and video queue

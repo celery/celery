@@ -31,13 +31,13 @@ and manage worker nodes (and to some degree tasks).
 
 To list all the commands available do:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery help
 
 or to get help for a specific command do:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery <command> --help
 
@@ -56,13 +56,13 @@ Commands
 
 * **status**: List active nodes in this cluster
 
-    .. code-block:: bash
+    .. code-block:: console
 
             $ celery -A proj status
 
 * **result**: Show the result of a task
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj result -t tasks.add 4e196aa4-0141-4601-8138-7aa33db0f577
 
@@ -75,14 +75,14 @@ Commands
         There is no undo for this operation, and messages will
         be permanently deleted!
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj purge
 
 
 * **inspect active**: List active tasks
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj inspect active
 
@@ -90,7 +90,7 @@ Commands
 
 * **inspect scheduled**: List scheduled ETA tasks
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj inspect scheduled
 
@@ -99,7 +99,7 @@ Commands
 
 * **inspect reserved**: List reserved tasks
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj inspect reserved
 
@@ -109,37 +109,37 @@ Commands
 
 * **inspect revoked**: List history of revoked tasks
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj inspect revoked
 
 * **inspect registered**: List registered tasks
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj inspect registered
 
 * **inspect stats**: Show worker statistics (see :ref:`worker-statistics`)
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj inspect stats
 
 * **control enable_events**: Enable events
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj control enable_events
 
 * **control disable_events**: Disable events
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj control disable_events
 
 * **migrate**: Migrate tasks from one broker to another (**EXPERIMENTAL**).
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj migrate redis://localhost amqp://localhost
 
@@ -163,7 +163,7 @@ By default the inspect and control commands operates on all workers.
 You can specify a single, or a list of workers by using the
 `--destination` argument:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj inspect -d w1,w2 reserved
 
@@ -188,16 +188,16 @@ Features
 
 - Real-time monitoring using Celery Events
 
-    - Task progress and history.
+    - Task progress and history
     - Ability to show task details (arguments, start time, runtime, and more)
     - Graphs and statistics
 
 - Remote Control
 
-    - View worker status and statistics.
-    - Shutdown and restart worker instances.
-    - Control worker pool size and autoscale settings.
-    - View and modify the queues a worker instance consumes from.
+    - View worker status and statistics
+    - Shutdown and restart worker instances
+    - Control worker pool size and autoscale settings
+    - View and modify the queues a worker instance consumes from
     - View currently running tasks
     - View scheduled tasks (ETA/countdown)
     - View reserved and revoked tasks
@@ -244,25 +244,25 @@ Usage
 
 You can use pip to install Flower:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install flower
 
 Running the flower command will start a web-server that you can visit:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj flower
 
 The default port is http://localhost:5555, but you can change this using the `--port` argument:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj flower --port=5555
 
 Broker URL can also be passed through the `--broker` argument :
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery flower --broker=amqp://guest:guest@localhost:5672//
     or
@@ -270,7 +270,7 @@ Broker URL can also be passed through the `--broker` argument :
 
 Then, you can visit flower in your web browser :
 
-.. code-block:: bash
+.. code-block:: console
 
     $ open http://localhost:5555
 
@@ -296,7 +296,7 @@ probably want to use Flower instead.
 
 Starting:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj events
 
@@ -308,19 +308,19 @@ You should see a screen like:
 `celery events` is also used to start snapshot cameras (see
 :ref:`monitoring-snapshots`:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj events --camera=<camera-class> --frequency=1.0
 
 and it includes a tool to dump events to :file:`stdout`:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj events --dump
 
 For a complete list of options use ``--help``:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery events --help
 
@@ -355,7 +355,7 @@ Inspecting queues
 
 Finding the number of tasks in a queue:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ rabbitmqctl list_queues name messages messages_ready \
                               messages_unacknowledged
@@ -370,13 +370,13 @@ not acknowledged yet (meaning it is in progress, or has been reserved).
 
 Finding the number of workers currently consuming from a queue:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ rabbitmqctl list_queues name consumers
 
 Finding the amount of memory allocated to a queue:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ rabbitmqctl list_queues name memory
 
@@ -399,13 +399,13 @@ Inspecting queues
 
 Finding the number of tasks in a queue:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ redis-cli -h HOST -p PORT -n DATABASE_NUMBER llen QUEUE_NAME
 
 The default queue is named `celery`. To get all available queues, invoke:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ redis-cli -h HOST -p PORT -n DATABASE_NUMBER keys \*
 
@@ -480,7 +480,7 @@ for example if you want to capture state every 2 seconds using the
 camera ``myapp.Camera`` you run :program:`celery events` with the following
 arguments:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj events -c myapp.Camera --frequency=2.0
 
@@ -520,7 +520,7 @@ about state objects.
 Now you can use this cam with :program:`celery events` by specifying
 it with the :option:`-c` option:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj events -c myapp.DumpCam --frequency=2.0
 
@@ -584,7 +584,7 @@ Combining these you can easily process events in real-time:
             task = state.tasks.get(event['uuid'])
 
             print('TASK FAILED: %s[%s] %s' % (
-                task.name, task.uuid, task.info(), ))
+                task.name, task.uuid, task.info(),))
 
         with app.connection() as connection:
             recv = app.events.Receiver(connection, handlers={
@@ -620,7 +620,7 @@ You can listen to specific events by specifying the handlers:
             task = state.tasks.get(event['uuid'])
 
             print('TASK FAILED: %s[%s] %s' % (
-                task.name, task.uuid, task.info(), ))
+                task.name, task.uuid, task.info(),))
 
         with app.connection() as connection:
             recv = app.events.Receiver(connection, handlers={

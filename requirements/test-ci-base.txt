@@ -1,0 +1,6 @@
+coverage>=3.0
+coveralls
+-r extras/redis.txt
+-r extras/mongodb.txt
+-r extras/sqlalchemy.txt
+-r dev.txt

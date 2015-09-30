@@ -76,7 +76,7 @@ class Request(object):
 
     if not IS_PYPY:  # pragma: no cover
         __slots__ = (
-            'app', 'name', 'id', 'on_ack', 'body',
+            'app', 'type', 'name', 'id', 'on_ack', 'body',
             'hostname', 'eventer', 'connection_errors', 'task', 'eta',
             'expires', 'request_dict', 'on_reject', 'utc',
             'content_type', 'content_encoding',
@@ -103,10 +103,12 @@ class Request(object):
         else:
             self.content_type, self.content_encoding = (
                 message.content_type, message.content_encoding,
-                )
+            )
 
-        name = self.name = headers['task']
         self.id = headers['id']
+        type = self.type = self.name = headers['task']
+        if 'shadow' in headers:
+            self.name = headers['shadow']
         if 'timelimit' in headers:
             self.time_limits = headers['timelimit']
         self.on_ack = on_ack
@@ -114,7 +116,7 @@ class Request(object):
         self.hostname = hostname or socket.gethostname()
         self.eventer = eventer
         self.connection_errors = connection_errors or ()
-        self.task = task or self.app.tasks[name]
+        self.task = task or self.app.tasks[type]
 
         # timezone means the message is timezone-aware, and the only timezone
         # supported at this point is UTC.
@@ -178,7 +180,7 @@ class Request(object):
         soft_time_limit = soft_time_limit or task.soft_time_limit
         result = pool.apply_async(
             trace_task_ret,
-            args=(self.name, task_id, self.request_dict, self.body,
+            args=(self.type, task_id, self.request_dict, self.body,
                   self.content_type, self.content_encoding),
             accept_callback=self.on_accepted,
             timeout_callback=self.on_timeout,
@@ -285,8 +287,8 @@ class Request(object):
         task_ready(self)
         if soft:
             warn('Soft time limit (%ss) exceeded for %s[%s]',
-                 timeout, self.name, self.id)
-            exc = SoftTimeLimitExceeded(timeout)
+                 soft, self.name, self.id)
+            exc = SoftTimeLimitExceeded(soft)
         else:
             error('Hard time limit (%ss) exceeded for %s[%s]',
                   timeout, self.name, self.id)
@@ -310,10 +312,7 @@ class Request(object):
         if self.task.acks_late:
             self.acknowledge()
 
-        if self.eventer and self.eventer.enabled:
-            self.send_event(
-                'task-succeeded', result=retval, runtime=runtime,
-            )
+        self.send_event('task-succeeded', result=retval, runtime=runtime)
 
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
@@ -329,7 +328,7 @@ class Request(object):
         task_ready(self)
 
         if isinstance(exc_info.exception, MemoryError):
-            raise MemoryError('Process got: %s' % (exc_info.exception, ))
+            raise MemoryError('Process got: %s' % (exc_info.exception,))
         elif isinstance(exc_info.exception, Reject):
             return self.reject(requeue=exc_info.exception.requeue)
         elif isinstance(exc_info.exception, Ignore):
@@ -380,6 +379,7 @@ class Request(object):
     def info(self, safe=False):
         return {'id': self.id,
                 'name': self.name,
+                'type': self.type,
                 'body': self.body,
                 'hostname': self.hostname,
                 'time_start': self.time_start,
@@ -388,15 +388,18 @@ class Request(object):
                 'worker_pid': self.worker_pid}
 
     def __str__(self):
-        return '{0.name}[{0.id}]{1}{2}'.format(
-            self,
+        return ' '.join([
+            self.humaninfo(),
             ' eta:[{0}]'.format(self.eta) if self.eta else '',
             ' expires:[{0}]'.format(self.expires) if self.expires else '',
-        )
+        ])
     shortinfo = __str__
 
+    def humaninfo(self):
+        return '{0.name}[{0.id}]'.format(self)
+
     def __repr__(self):
-        return '<{0} {1}: {2}>'.format(type(self).__name__, self.id, self.name)
+        return '<{0}: {1}>'.format(type(self).__name__, self.humaninfo())
 
     @property
     def tzlocal(self):
@@ -406,8 +409,8 @@ class Request(object):
 
     @property
     def store_errors(self):
-        return (not self.task.ignore_result
-                or self.task.store_errors_even_if_ignored)
+        return (not self.task.ignore_result or
+                self.task.store_errors_even_if_ignored)
 
     @property
     def task_id(self):
@@ -460,7 +463,7 @@ def create_request_cls(base, task, pool, hostname, eventer,
             soft_time_limit = soft_time_limit or default_soft_time_limit
             result = apply_async(
                 trace,
-                args=(self.name, task_id, self.request_dict, self.body,
+                args=(self.type, task_id, self.request_dict, self.body,
                       self.content_type, self.content_encoding),
                 accept_callback=self.on_accepted,
                 timeout_callback=self.on_timeout,

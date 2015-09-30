@@ -205,7 +205,7 @@ Important Notes
     Also, programs now support the :option:`-b|--broker` option to specify
     a broker URL on the command-line:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery worker -b redis://localhost
 

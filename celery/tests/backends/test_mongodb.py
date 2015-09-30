@@ -67,6 +67,62 @@ class test_MongoBackend(AppCase):
         self.app.conf.CELERY_MONGODB_BACKEND_SETTINGS = None
         MongoBackend(app=self.app)
 
+    def test_init_with_settings(self):
+        self.app.conf.CELERY_MONGODB_BACKEND_SETTINGS = None
+        # empty settings
+        mb = MongoBackend(app=self.app)
+
+        # uri
+        uri = 'mongodb://localhost:27017'
+        mb = MongoBackend(app=self.app, url=uri)
+        self.assertEqual(mb.mongo_host, ['localhost:27017'])
+        self.assertEqual(mb.options, mb._prepare_client_options())
+        self.assertEqual(mb.database_name, 'celery')
+
+        # uri with database name
+        uri = 'mongodb://localhost:27017/celerydb'
+        mb = MongoBackend(app=self.app, url=uri)
+        self.assertEqual(mb.database_name, 'celerydb')
+
+        # uri with user, password, database name, replica set
+        uri = ('mongodb://'
+               'celeryuser:celerypassword@'
+               'mongo1.example.com:27017,'
+               'mongo2.example.com:27017,'
+               'mongo3.example.com:27017/'
+               'celerydatabase?replicaSet=rs0')
+        mb = MongoBackend(app=self.app, url=uri)
+        self.assertEqual(mb.mongo_host, ['mongo1.example.com:27017',
+                                         'mongo2.example.com:27017',
+                                         'mongo3.example.com:27017'])
+        self.assertEqual(
+            mb.options, dict(mb._prepare_client_options(), replicaset='rs0'),
+        )
+        self.assertEqual(mb.user, 'celeryuser')
+        self.assertEqual(mb.password, 'celerypassword')
+        self.assertEqual(mb.database_name, 'celerydatabase')
+
+        # same uri, change some parameters in backend settings
+        self.app.conf.CELERY_MONGODB_BACKEND_SETTINGS = {
+            'replicaset': 'rs1',
+            'user': 'backenduser',
+            'database': 'another_db',
+            'options': {
+                'socketKeepAlive': True,
+            },
+        }
+        mb = MongoBackend(app=self.app, url=uri)
+        self.assertEqual(mb.mongo_host, ['mongo1.example.com:27017',
+                                         'mongo2.example.com:27017',
+                                         'mongo3.example.com:27017'])
+        self.assertEqual(
+            mb.options, dict(mb._prepare_client_options(),
+                             replicaset='rs1', socketKeepAlive=True),
+        )
+        self.assertEqual(mb.user, 'backenduser')
+        self.assertEqual(mb.password, 'celerypassword')
+        self.assertEqual(mb.database_name, 'another_db')
+
     @depends_on_current_app
     def test_reduce(self):
         x = MongoBackend(app=self.app)
@@ -92,8 +148,9 @@ class test_MongoBackend(AppCase):
 
             connection = self.backend._get_connection()
             mock_Connection.assert_called_once_with(
-                host='mongodb://localhost:27017', max_pool_size=10,
-                auto_start_request=False)
+                host='mongodb://localhost:27017',
+                **self.backend._prepare_client_options()
+            )
             self.assertEqual(sentinel.connection, connection)
 
     def test_get_connection_no_connection_mongodb_uri(self):
@@ -107,8 +164,8 @@ class test_MongoBackend(AppCase):
 
             connection = self.backend._get_connection()
             mock_Connection.assert_called_once_with(
-                host=mongodb_uri, max_pool_size=10,
-                auto_start_request=False)
+                host=mongodb_uri, **self.backend._prepare_client_options()
+            )
             self.assertEqual(sentinel.connection, connection)
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')

@@ -76,7 +76,7 @@ News
 
         @task_sent.connect
         def on_task_sent(**kwargs):
-            print("sent task: %r" % (kwargs, ))
+            print("sent task: %r" % (kwargs,))
 
 - Invalid task messages are now rejected instead of acked.
 
@@ -94,10 +94,10 @@ News
 
     Example:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
-        >>> s = add.subtask((5, ))
-        >>> new = s.clone(args=(10, ), countdown=5})
+        >>> s = add.subtask((5,))
+        >>> new = s.clone(args=(10,), countdown=5})
         >>> new.args
         (10, 5)
 
@@ -145,7 +145,7 @@ Fixes
     Like with the worker it is now possible to configure celery settings
     on the command-line for celery control|inspect
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery inspect -- broker.pool_limit=30
 

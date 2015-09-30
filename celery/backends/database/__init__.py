@@ -22,23 +22,17 @@ from .models import Task
 from .models import TaskSet
 from .session import SessionManager
 
+try:
+    from sqlalchemy.exc import DatabaseError, InvalidRequestError
+    from sqlalchemy.orm.exc import StaleDataError
+except ImportError:
+    raise ImproperlyConfigured(
+        'The database result backend requires SQLAlchemy to be installed.'
+        'See http://pypi.python.org/pypi/SQLAlchemy')
+
 logger = logging.getLogger(__name__)
 
 __all__ = ['DatabaseBackend']
-
-
-def _sqlalchemy_installed():
-    try:
-        import sqlalchemy
-    except ImportError:
-        raise ImproperlyConfigured(
-            'The database result backend requires SQLAlchemy to be installed.'
-            'See http://pypi.python.org/pypi/SQLAlchemy')
-    return sqlalchemy
-_sqlalchemy_installed()
-
-from sqlalchemy.exc import DatabaseError, InvalidRequestError
-from sqlalchemy.orm.exc import StaleDataError
 
 
 @contextmanager

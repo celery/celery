@@ -12,9 +12,11 @@ Installation & Configuration
 
 RabbitMQ is the default broker so it does not require any additional
 dependencies or initial configuration, other than the URL location of
-the broker instance you want to use::
+the broker instance you want to use:
 
-    >>> BROKER_URL = 'amqp://guest:guest@localhost:5672//'
+.. code-block:: python
+
+    BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 
 For a description of broker URLs and a full list of the
 various broker configuration options available to Celery,
@@ -46,19 +48,19 @@ Setting up RabbitMQ
 To use celery we need to create a RabbitMQ user, a virtual host and
 allow that user access to that virtual host:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ sudo rabbitmqctl add_user myuser mypassword
 
-.. code-block:: bash
+.. code-block:: console
 
     $ sudo rabbitmqctl add_vhost myvhost
 
-.. code-block:: bash
+.. code-block:: console
 
     $ sudo rabbitmqctl set_user_tags myuser mytag
 
-.. code-block:: bash
+.. code-block:: console
 
     $ sudo rabbitmqctl set_permissions -p myvhost myuser ".*" ".*" ".*"
 
@@ -79,13 +81,13 @@ shiny package management system for OS X.
 First, install homebrew using the one-line command provided by the `Homebrew
 documentation`_:
 
-.. code-block:: bash
+.. code-block:: console
 
     ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
 
 Finally, we can install rabbitmq using :program:`brew`:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ brew install rabbitmq
 
@@ -96,7 +98,7 @@ Finally, we can install rabbitmq using :program:`brew`:
 
 After you have installed rabbitmq with brew you need to add the following to your path to be able to start and stop the broker. Add it to your .bash_profile or .profile
 
-.. code-block:: bash
+.. code-block:: console
 
     `PATH=$PATH:/usr/local/sbin`
 
@@ -109,7 +111,7 @@ to communicate with nodes.
 
 Use the :program:`scutil` command to permanently set your host name:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ sudo scutil --set HostName myhost.local
 
@@ -121,7 +123,7 @@ back into an IP address::
 If you start the rabbitmq server, your rabbit node should now be `rabbit@myhost`,
 as verified by :program:`rabbitmqctl`:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ sudo rabbitmqctl status
     Status of node rabbit@myhost ...
@@ -146,21 +148,21 @@ Starting/Stopping the RabbitMQ server
 
 To start the server:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ sudo rabbitmq-server
 
 you can also run it in the background by adding the :option:`-detached` option
 (note: only one dash):
 
-.. code-block:: bash
+.. code-block:: console
 
     $ sudo rabbitmq-server -detached
 
 Never use :program:`kill` to stop the RabbitMQ server, but rather use the
 :program:`rabbitmqctl` command:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ sudo rabbitmqctl stop
 

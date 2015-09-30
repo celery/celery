@@ -26,7 +26,8 @@ except TypeError:  # pragma: no cover
     # Py2.6: Must first convert float to str
     _float_to_decimal = str
 else:
-    _float_to_decimal = lambda f: f  # noqa
+    def _float_to_decimal(f):  # noqa
+        return f
 
 
 class replay(object):
@@ -253,8 +254,8 @@ class test_Task(AppCase):
         self.assertEqual(sorted(list(task._info_fields)),
                          sorted(task.info().keys()))
 
-        self.assertEqual(sorted(list(task._info_fields + ('received', ))),
-                         sorted(task.info(extra=('received', ))))
+        self.assertEqual(sorted(list(task._info_fields + ('received',))),
+                         sorted(task.info(extra=('received',))))
 
         self.assertEqual(sorted(['args', 'kwargs']),
                          sorted(task.info(['args', 'kwargs']).keys()))

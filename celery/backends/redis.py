@@ -85,6 +85,7 @@ class RedisBackend(KeyValueStoreBackend):
             'port': _get('PORT') or 6379,
             'db': _get('DB') or 0,
             'password': _get('PASSWORD'),
+            'socket_timeout': _get('SOCKET_TIMEOUT'),
             'max_connections': self.max_connections,
         }
         if url:
@@ -195,11 +196,8 @@ class RedisBackend(KeyValueStoreBackend):
         options['task_id'] = group_id
         return header(*partial_args, **options or {})
 
-    def _new_chord_return(self, task, state, result, propagate=None,
-                          PROPAGATE_STATES=states.PROPAGATE_STATES):
+    def _new_chord_return(self, task, state, result, propagate=None):
         app = self.app
-        if propagate is None:
-            propagate = self.app.conf.CELERY_CHORD_PROPAGATES
         request = task.request
         tid, gid = request.id, request.group
         if not gid or not tid:
@@ -263,7 +261,7 @@ class RedisBackend(KeyValueStoreBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         return super(RedisBackend, self).__reduce__(
-            (self.url, ), {'expires': self.expires},
+            (self.url,), {'expires': self.expires},
         )
 
     @deprecated_property(3.2, 3.3)
