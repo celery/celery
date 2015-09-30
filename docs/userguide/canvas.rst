@@ -113,7 +113,7 @@ creates partials:
 
     >>> partial = add.s(2)          # incomplete signature
     >>> partial.delay(4)            # 2 + 4
-    >>> partial.apply_async((4, ))  # same
+    >>> partial.apply_async((4,))  # same
 
 - Any keyword arguments added will be merged with the kwargs in the signature,
   with the new keyword arguments taking precedence::
@@ -133,8 +133,8 @@ You can also clone signatures to create derivates:
     >>> s = add.s(2)
     proj.tasks.add(2)
 
-    >>> s.clone(args=(4, ), kwargs={'debug': True})
-    proj.tasks.add(2, 4, debug=True)
+    >>> s.clone(args=(4,), kwargs={'debug': True})
+    proj.tasks.add(4, 2, debug=True)
 
 Immutability
 ------------
