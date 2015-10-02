@@ -25,9 +25,9 @@ class _AbstractClass(object):
     __required_attributes__ = frozenset()
 
     @classmethod
-    def __subclasshook__(cls, C):
+    def _subclasshook_using(cls, parent, C):
         return (
-            cls is AsynCallable and
+            cls is parent and
             all(_hasattr(C, attr) for attr in cls.__required_attributes__)
         ) or NotImplemented
 
@@ -49,8 +49,12 @@ class CallableTask(_AbstractClass, Callable):
     def apply(self, *args, **kwargs):
         pass
 
+    @classmethod
+    def __subclasshook__(cls, C):
+        return cls._subclasshook_using(CallableTask, C)
 
-class CallableSignature(AsynCallable):
+
+class CallableSignature(CallableTask):
     __required_attributes__ = frozenset({
         'clone', 'freeze', 'set', 'link', 'link_error', '__or__',
     })
@@ -126,3 +130,7 @@ class CallableSignature(AsynCallable):
     @abstractmethod
     def __invert__(self):
         pass
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        return cls._subclasshook_using(CallableSignature, C)

@@ -577,7 +577,7 @@ class Celery(object):
                                     args=(), kwargs={}, name=None, **opts):
         sig = (sig.clone(args, kwargs)
                if isinstance(sig, abstract.CallableSignature)
-               else self.signature(sig.name, args, kwargs)
+               else self.signature(sig.name, args, kwargs))
         return name or repr(sig), {
             'schedule': schedule,
             'task': sig.name,

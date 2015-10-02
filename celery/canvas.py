@@ -426,7 +426,7 @@ class chain(Signature):
         while steps:
             task = steps.popleft()
 
-            if not isinstance(task, Signature):
+            if not isinstance(task, abstract.CallableSignature):
                 task = from_dict(task, app=app)
             if isinstance(task, group):
                 task = maybe_unroll_group(task)
@@ -606,7 +606,7 @@ class chunks(Signature):
 def _maybe_group(tasks):
     if isinstance(tasks, group):
         tasks = list(tasks.tasks)
-    elif isinstance(tasks, Signature):
+    elif isinstance(tasks, abstract.CallableSignature):
         tasks = [tasks]
     else:
         tasks = [signature(t) for t in regen(tasks)]
@@ -632,10 +632,11 @@ class group(Signature):
         )
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app, dict=dict,
-                  Signature=Signature, from_dict=Signature.from_dict):
+                  CallableSignature=abstract.CallableSignature,
+                  from_dict=Signature.from_dict):
         for task in tasks:
             if isinstance(task, dict):
-                if isinstance(task, Signature):
+                if isinstance(task, CallableSignature):
                     # local sigs are always of type Signature, and we
                     # clone them to make sure we do not modify the originals.
                     task = task.clone()
@@ -918,7 +919,7 @@ class chord(Signature):
 
 def signature(varies, *args, **kwargs):
     if isinstance(varies, dict):
-        if isinstance(varies, Signature):
+        if isinstance(varies, abstract.CallableSignature):
             return varies.clone()
         return Signature.from_dict(varies)
     return Signature(varies, *args, **kwargs)
@@ -928,7 +929,7 @@ subtask = signature   # XXX compat
 def maybe_signature(d, app=None):
     if d is not None:
         if isinstance(d, dict):
-            if not isinstance(d, Signature):
+            if not isinstance(d, abstract.CallableSignature):
                 d = signature(d)
         elif isinstance(d, list):
             return [maybe_signature(s, app=app) for s in d]
