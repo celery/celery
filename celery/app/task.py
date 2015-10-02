@@ -19,6 +19,7 @@ from celery.canvas import signature
 from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
 from celery.five import class_property, items
 from celery.result import EagerResult
+from celery.utils import abstract
 from celery.utils import uuid, maybe_reraise
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
@@ -923,4 +924,5 @@ class Task(object):
     @property
     def __name__(self):
         return self.__class__.__name__
+abstract.CallableTask.register(Task)
 BaseTask = Task  # compat alias

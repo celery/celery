@@ -22,6 +22,7 @@ from kombu.utils import cached_property, fxrange, reprcall, uuid
 
 from celery._state import current_app, get_current_worker_task
 from celery.result import GroupResult
+from celery.utils import abstract
 from celery.utils.functional import (
     maybe_list, is_list, regen,
     chunks as _chunks,
@@ -356,6 +357,7 @@ class Signature(dict):
     subtask_type = _getitem_property('subtask_type')
     chord_size = _getitem_property('chord_size')
     immutable = _getitem_property('immutable')
+abstract.CallableSignature.register(Signature)
 
 
 @Signature.register_type
