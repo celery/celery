@@ -19,9 +19,11 @@ from celery import bootsteps
 from celery._state import _set_task_join_will_block
 from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t
+from celery.platforms import IS_WINDOWS
 from celery.utils.log import worker_logger as logger
 
-__all__ = ['Timer', 'Hub', 'Queues', 'Pool', 'Beat', 'StateDB', 'Consumer']
+
+__all__ = ['Timer', 'Hub', 'Pool', 'Beat', 'StateDB', 'Consumer']
 
 ERR_B_GREEN = """\
 -B option doesn't work with eventlet/gevent pools: \
@@ -96,19 +98,6 @@ class Hub(bootsteps.StartStopStep):
             pool.Lock = DummyLock
 
 
-class Queues(bootsteps.Step):
-    """This bootstep initializes the internal queues
-    used by the worker."""
-    label = 'Queues (intra)'
-    requires = (Hub,)
-
-    def create(self, w):
-        w.process_task = w._process_task
-        if w.use_eventloop:
-            if w.pool_putlocks and w.pool_cls.uses_semaphore:
-                w.process_task = w._process_task_sem
-
-
 class Pool(bootsteps.StartStopStep):
     """Bootstep managing the worker pool.
 
@@ -123,7 +112,7 @@ class Pool(bootsteps.StartStopStep):
         * min_concurrency
 
     """
-    requires = (Queues,)
+    requires = (Hub,)
 
     def __init__(self, w, autoscale=None, autoreload=None,
                  no_execv=False, optimization=None, **kwargs):
@@ -151,14 +140,17 @@ class Pool(bootsteps.StartStopStep):
     def create(self, w, semaphore=None, max_restarts=None):
         if w.app.conf.CELERYD_POOL in ('eventlet', 'gevent'):
             warnings.warn(UserWarning(W_POOL_SETTING))
-        threaded = not w.use_eventloop
+        threaded = not w.use_eventloop or IS_WINDOWS
         procs = w.min_concurrency
         forking_enable = w.no_execv if w.force_execv else True
+        w.process_task = w._process_task
         if not threaded:
             semaphore = w.semaphore = LaxBoundedSemaphore(procs)
             w._quick_acquire = w.semaphore.acquire
             w._quick_release = w.semaphore.release
             max_restarts = 100
+            if w.pool_putlocks and w.pool_cls.uses_semaphore:
+                w.process_task = w._process_task_sem
         allow_restart = self.autoreload_enabled or w.pool_restarts
         pool = w.pool = self.instantiate(
             w.pool_cls, w.min_concurrency,

@@ -1133,12 +1133,6 @@ class test_WorkController(AppCase):
         for step in worker.steps:
             self.assertTrue(step.terminate.call_count)
 
-    def test_Queues_pool_no_sem(self):
-        w = Mock()
-        w.pool_cls.uses_semaphore = False
-        components.Queues(w).create(w)
-        self.assertIs(w.process_task, w._process_task)
-
     def test_Hub_crate(self):
         w = Mock()
         x = components.Hub(w)
@@ -1152,6 +1146,12 @@ class test_WorkController(AppCase):
         w.use_eventloop = False
         pool = components.Pool(w)
         pool.create(w)
+
+    def test_Pool_pool_no_sem(self):
+        w = Mock()
+        w.pool_cls.uses_semaphore = False
+        components.Pool(w).create(w)
+        self.assertIs(w.process_task, w._process_task)
 
     def test_Pool_create(self):
         from kombu.async.semaphore import LaxBoundedSemaphore

@@ -81,7 +81,6 @@ class WorkController(object):
         name = 'Worker'
         default_steps = {
             'celery.worker.components:Hub',
-            'celery.worker.components:Queues',
             'celery.worker.components:Pool',
             'celery.worker.components:Beat',
             'celery.worker.components:Timer',
