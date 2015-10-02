@@ -619,3 +619,4 @@ class DisabledBackend(BaseBackend):
             'No result backend configured.  '
             'Please see the documentation for more information.')
     wait_for = get_status = get_result = get_traceback = _is_disabled
+    get_many = _is_disabled
