@@ -7,7 +7,7 @@ from __future__ import absolute_import
 from celery.platforms import IS_WINDOWS
 from celery.worker.components import Pool
 
-from celery.tests.case import AppCase, Mock
+from celery.tests.case import AppCase, Mock, SkipTest
 
 
 class test_Pool(AppCase):
@@ -31,6 +31,6 @@ class test_Pool(AppCase):
         w = Mock()
         w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True
         comp = Pool(w)
-        pool = w.pool = Mock()
+        w.pool = Mock()
         comp.create(w)
         self.assertIs(w.process_task, w._process_task_sem)

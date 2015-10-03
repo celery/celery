@@ -8,9 +8,9 @@ os.environ.update(
     USE_FAST_LOCALS='yes',
 )
 
-from celery import Celery
-from celery.five import range
-from kombu.five import monotonic
+from celery import Celery  # noqa
+from celery.five import range  # noqa
+from kombu.five import monotonic  # noqa
 
 DEFAULT_ITS = 40000
 

@@ -6,9 +6,6 @@ import sys
 import shlex
 import subprocess
 
-sys.path.insert(0, os.getcwd())
-sys.path.insert(0, os.path.join(os.getcwd(), os.pardir))
-
 from celery import current_app
 from celery.five import range
 from celery.tests.case import SkipTest, unittest

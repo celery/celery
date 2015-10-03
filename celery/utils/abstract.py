@@ -8,12 +8,12 @@
 """
 from __future__ import absolute_import
 
-__all__ = ['CallableTask', 'CallableSignature']
-
 from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import Callable
 
 from celery.five import with_metaclass
+
+__all__ = ['CallableTask', 'CallableSignature']
 
 
 def _hasattr(C, attr):

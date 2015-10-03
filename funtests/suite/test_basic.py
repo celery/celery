@@ -1,10 +1,8 @@
+from __future__ import absolute_import
+
 import operator
-import os
-import sys
 
 # funtest config
-sys.path.insert(0, os.getcwd())
-sys.path.insert(0, os.path.join(os.getcwd(), os.pardir))
 import suite  # noqa
 
 from celery.five import range
