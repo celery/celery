@@ -589,7 +589,7 @@ class AsynPool(_pool.Pool):
 
         def on_process_down(proc):
             """Called when a worker process exits."""
-            if proc.dead:
+            if getattr(proc, 'dead', None):
                 return
             process_flush_queues(proc)
             _remove_from_index(
