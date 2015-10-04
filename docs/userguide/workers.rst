@@ -730,7 +730,7 @@ pool support: *prefork, eventlet, gevent, threads, solo*
 
 Starting :program:`celery worker` with the :option:`--autoreload` option will
 enable the worker to watch for file system changes to all imported task
-modules imported (and also any non-task modules added to the
+modules (and also any non-task modules added to the
 :setting:`imports` setting or the :option:`-I|--include` option).
 
 This is an experimental feature intended for use in development only,
