@@ -220,6 +220,12 @@ class Task(object):
     #: :setting:`CELERY_ACKS_LATE` setting.
     acks_late = None
 
+    #: When CELERY_ACKS_LATE is set to True, the default behavior to
+    #: handle worker crash is to acknowledge the message. Setting
+    #: this to true allows the message to be rejected and requeued so
+    #: it will be executed again by another worker.
+    reject_on_worker_lost = None
+
     #: Tuple of expected exceptions.
     #:
     #: These are errors that are expected in normal operation
@@ -248,6 +254,7 @@ class Task(object):
         ('rate_limit', 'CELERY_DEFAULT_RATE_LIMIT'),
         ('track_started', 'CELERY_TRACK_STARTED'),
         ('acks_late', 'CELERY_ACKS_LATE'),
+        ('reject_on_worker_lost', 'CELERY_REJECT_ON_WORKER_LOST'),
         ('ignore_result', 'CELERY_IGNORE_RESULT'),
         ('store_errors_even_if_ignored',
             'CELERY_STORE_ERRORS_EVEN_IF_IGNORED'),

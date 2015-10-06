@@ -352,7 +352,10 @@ class Request(object):
                 )
         # (acks_late) acknowledge after result stored.
         if self.task.acks_late:
-            self.acknowledge()
+            if self.task.reject_on_worker_lost and isinstance(exc, WorkerLostError):
+                self.reject(True)
+            else:
+                self.acknowledge()
 
         if send_failed_event:
             self.send_event(
