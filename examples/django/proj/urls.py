@@ -1,13 +1,10 @@
-from django.conf.urls import (  # noqa
-    patterns, include, url, handler404, handler500,
-)
+from django.conf.urls import include, url, handler404, handler500  # noqa
 
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin
 # admin.autodiscover()
 
-urlpatterns = patterns(
-    '',
+urlpatterns = (
     # Examples:
     # url(r'^$', 'proj.views.home', name='home'),
     # url(r'^proj/', include('proj.foo.urls')),
