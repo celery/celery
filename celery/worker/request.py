@@ -326,7 +326,6 @@ class Request(object):
     def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
         """Handler called if the task raised an exception."""
         task_ready(self)
-
         if isinstance(exc_info.exception, MemoryError):
             raise MemoryError('Process got: %s' % (exc_info.exception,))
         elif isinstance(exc_info.exception, Reject):
@@ -352,8 +351,11 @@ class Request(object):
                 )
         # (acks_late) acknowledge after result stored.
         if self.task.acks_late:
-            if isinstance(exc, WorkerLostError):
-                self.reject(True)
+            reject_and_requeue = (self.task.reject_on_worker_lost and
+                isinstance(exc, WorkerLostError) and
+                not self.delivery_info.get('redelivered', False))
+            if reject_and_requeue:
+                self.reject(requeue=True)
             else:
                 self.acknowledge()
 
