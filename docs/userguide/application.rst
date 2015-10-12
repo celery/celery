@@ -12,7 +12,7 @@ The Celery library must be instantiated before use, this instance
 is called an application (or *app* for short).
 
 The application is thread-safe so that multiple Celery applications
-with different configuration, components and tasks can co-exist in the
+with different configurations, components and tasks can co-exist in the
 same process space.
 
 Let's create one now:
@@ -32,12 +32,12 @@ current main module (``__main__``), and the memory address of the object
 Main Name
 =========
 
-Only one of these is important, and that is the main module name,
-let's look at why that is.
+Only one of these is important, and that is the main module name.
+Let's look at why that is.
 
 When you send a task message in Celery, that message will not contain
 any source code, but only the name of the task you want to execute.
-This works similarly to how host names works on the internet: every worker
+This works similarly to how host names work on the internet: every worker
 maintains a mapping of task names to their actual functions, called the *task
 registry*.
 
@@ -154,7 +154,7 @@ from a configuration object.
 
 This can be a configuration module, or any object with configuration attributes.
 
-Note that any configuration that was previous set will be reset when
+Note that any configuration that was previously set will be reset when
 :meth:`~@config_from_object` is called.  If you want to set additional
 configuration you should do so after.
 
@@ -333,7 +333,7 @@ Finalizing the object will:
 
     #. Make sure all tasks are bound to the current app.
 
-        Tasks are bound to apps so that it can read default
+        Tasks are bound to an app so that they can read default
         values from the configuration.
 
 .. _default-app:
@@ -466,7 +466,7 @@ Abstract Tasks
 ==============
 
 All tasks created using the :meth:`~@task` decorator
-will inherit from the applications base :attr:`~@Task` class.
+will inherit from the application's base :attr:`~@Task` class.
 
 You can specify a different base class with the ``base`` argument:
 
