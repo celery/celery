@@ -319,7 +319,7 @@ but if you would like to experiment with it you should know that:
     .. code-block:: python
 
         from django.conf import settings
-        app.autodiscover_tasks(settings.INSTALLED_APPS)
+        app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 - You no longer use ``manage.py``
 
