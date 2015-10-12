@@ -150,7 +150,7 @@ if the module name is "tasks.py":
 Automatic naming and relative imports
 -------------------------------------
 
-Relative imports and automatic name generation does not go well together,
+Relative imports and automatic name generation do not go well together,
 so if you're using relative imports you should set the name explicitly.
 
 For example if the client imports the module "myapp.tasks" as ".tasks", and
@@ -555,7 +555,7 @@ General
 
     Example: `"100/m"` (hundred tasks a minute). This will enforce a minimum
     delay of 600ms between starting two tasks on the same worker instance.
-    
+
     Default is the :setting:`CELERY_DEFAULT_RATE_LIMIT` setting,
     which if not specified means rate limiting for tasks is disabled by default.
 
@@ -600,7 +600,7 @@ General
 
     A string identifying the default serialization
     method to use. Defaults to the :setting:`CELERY_TASK_SERIALIZER`
-    setting.  Can be `pickle` `json`, `yaml`, or any custom
+    setting.  Can be `pickle`, `json`, `yaml`, or any custom
     serialization methods that have been registered with
     :mod:`kombu.serialization.registry`.
 
@@ -1179,7 +1179,7 @@ Handlers
 How it works
 ============
 
-Here comes the technical details, this part isn't something you need to know,
+Here come the technical details. This part isn't something you need to know,
 but you may be interested.
 
 All defined tasks are listed in a registry.  The registry contains
@@ -1338,8 +1338,8 @@ Granularity
 -----------
 
 The task granularity is the amount of computation needed by each subtask.
-In general it is better to split the problem up into many small tasks, than
-have a few long running tasks.
+In general it is better to split the problem up into many small tasks rather
+than have a few long running tasks.
 
 With smaller tasks you can process more tasks in parallel and the tasks
 won't run long enough to block the worker from processing other waiting tasks.
@@ -1507,7 +1507,7 @@ depending on state from the current transaction*:
 Example
 =======
 
-Let's take a real world example; A blog where comments posted needs to be
+Let's take a real world example: a blog where comments posted need to be
 filtered for spam.  When the comment is created, the spam filter runs in the
 background, so the user doesn't have to wait for it to finish.
 
