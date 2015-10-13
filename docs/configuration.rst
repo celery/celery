@@ -213,6 +213,10 @@ Can be one of the following:
     Use `Cassandra`_ to store the results.
     See :ref:`conf-cassandra-result-backend`.
 
+* new_cassandra
+    Use `new_cassandra`_ to store the results, using newer database driver than _cassandra_.
+    See :ref:`conf-new_cassandra-result-backend`.
+
 * ironcache
     Use `IronCache`_ to store the results.
     See :ref:`conf-ironcache-result-backend`.
@@ -531,7 +535,96 @@ Example configuration
         'taskmeta_collection': 'my_taskmeta_collection',
     }
 
-.. _conf-cassandra-result-backend:
+.. _conf-new_cassandra-result-backend:
+
+
+new_cassandra backend settings
+--------------------------
+
+.. note::
+
+    This Cassandra backend driver requires :mod:`cassandra-driver`.
+    https://pypi.python.org/pypi/cassandra-driver
+
+    To install, use `pip` or `easy_install`:
+
+    .. code-block:: bash
+
+        $ pip install cassandra-driver
+
+This backend requires the following configuration directives to be set.
+
+.. setting:: CASSANDRA_SERVERS
+
+CASSANDRA_SERVERS
+~~~~~~~~~~~~~~~~~
+
+List of ``host`` Cassandra servers. e.g.::
+
+    CASSANDRA_SERVERS = ['localhost']
+
+
+.. setting:: CASSANDRA_PORT
+
+CASSANDRA_PORT
+~~~~~~~~~~~~~~
+
+Port to contact the Cassandra servers on. Default is 9042.
+
+.. setting:: CASSANDRA_KEYSPACE
+
+CASSANDRA_KEYSPACE
+~~~~~~~~~~~~~~~~~~
+
+The keyspace in which to store the results. e.g.::
+
+    CASSANDRA_KEYSPACE = 'tasks_keyspace'
+
+.. setting:: CASSANDRA_COLUMN_FAMILY
+
+CASSANDRA_TABLE
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The table (column family) in which to store the results. e.g.::
+
+    CASSANDRA_TABLE = 'tasks'
+
+.. setting:: CASSANDRA_READ_CONSISTENCY
+
+CASSANDRA_READ_CONSISTENCY
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The read consistency used. Values can be ``ONE``, ``TWO``, ``THREE``, ``QUORUM``, ``ALL``,
+``LOCAL_QUORUM``, ``EACH_QUORUM``, ``LOCAL_ONE``.
+
+.. setting:: CASSANDRA_WRITE_CONSISTENCY
+
+CASSANDRA_WRITE_CONSISTENCY
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The write consistency used. Values can be ``ONE``, ``TWO``, ``THREE``, ``QUORUM``, ``ALL``,
+``LOCAL_QUORUM``, ``EACH_QUORUM``, ``LOCAL_ONE``.
+
+.. setting:: CASSANDRA_ENTRY_TTL
+
+CASSANDRA_ENTRY_TTL
+~~~~~~~~~~~~~~~~~~~
+
+Time-to-live for status entries. They will expire and be removed after that many seconds
+after adding. Default (None) means they will never expire.
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    CASSANDRA_SERVERS = ['localhost']
+    CASSANDRA_KEYSPACE = 'celery'
+    CASSANDRA_COLUMN_FAMILY = 'task_results'
+    CASSANDRA_READ_CONSISTENCY = 'ONE'
+    CASSANDRA_WRITE_CONSISTENCY = 'ONE'
+    CASSANDRA_ENTRY_TTL = 86400
+
 
 Cassandra backend settings
 --------------------------
