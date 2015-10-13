@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+
 from pickle import loads, dumps
 from datetime import datetime
 
@@ -8,11 +9,12 @@ from celery.tests.case import (
     AppCase, Mock, mock_module, depends_on_current_app
 )
 
+
 class Object(object):
     pass
 
 
-class test_NewCassandraBackend(AppCase):
+class test_CassandraBackend(AppCase):
 
     def setup(self):
         self.app.conf.update(
@@ -22,16 +24,14 @@ class test_NewCassandraBackend(AppCase):
         )
 
     def test_init_no_cassandra(self):
-        """
-        Tests behaviour when no python-driver is installed.
-        new_cassandra should raise ImproperlyConfigured
-        """
+        """should raise ImproperlyConfigured when no python-driver
+        installed."""
         with mock_module('cassandra'):
             from celery.backends import new_cassandra as mod
             prev, mod.cassandra = mod.cassandra, None
             try:
                 with self.assertRaises(ImproperlyConfigured):
-                    mod.NewCassandraBackend(app=self.app)
+                    mod.CassandraBackend(app=self.app)
             finally:
                 mod.cassandra = prev
 
@@ -45,28 +45,28 @@ class test_NewCassandraBackend(AppCase):
             self.app.conf.CASSANDRA_READ_CONSISTENCY = 'LOCAL_FOO'
             self.app.conf.CASSANDRA_WRITE_CONSISTENCY = 'LOCAL_FOO'
 
-            mod.NewCassandraBackend(app=self.app)
+            mod.CassandraBackend(app=self.app)
             cons.LOCAL_FOO = 'bar'
-            mod.NewCassandraBackend(app=self.app)
+            mod.CassandraBackend(app=self.app)
 
             # no servers raises ImproperlyConfigured
             with self.assertRaises(ImproperlyConfigured):
                 self.app.conf.CASSANDRA_SERVERS = None
-                mod.NewCassandraBackend(
+                mod.CassandraBackend(
                     app=self.app, keyspace='b', column_family='c',
                 )
 
     @depends_on_current_app
     def test_reduce(self):
         with mock_module('cassandra'):
-            from celery.backends.new_cassandra import NewCassandraBackend
-            self.assertTrue(loads(dumps(NewCassandraBackend(app=self.app))))
+            from celery.backends.new_cassandra import CassandraBackend
+            self.assertTrue(loads(dumps(CassandraBackend(app=self.app))))
 
     def test_get_task_meta_for(self):
         with mock_module('cassandra'):
             from celery.backends import new_cassandra as mod
             mod.cassandra = Mock()
-            x = mod.NewCassandraBackend(app=self.app)
+            x = mod.CassandraBackend(app=self.app)
             x._connection = True
             session = x._session = Mock()
             execute = session.execute = Mock()
@@ -86,7 +86,7 @@ class test_NewCassandraBackend(AppCase):
             from celery.backends import new_cassandra as mod
             mod.cassandra = Mock()
 
-            x = mod.NewCassandraBackend(app=self.app)
+            x = mod.CassandraBackend(app=self.app)
             x._connection = True
             session = x._session = Mock()
             session.execute = Mock()
@@ -95,7 +95,7 @@ class test_NewCassandraBackend(AppCase):
     def test_process_cleanup(self):
         with mock_module('cassandra'):
             from celery.backends import new_cassandra as mod
-            x = mod.NewCassandraBackend(app=self.app)
+            x = mod.CassandraBackend(app=self.app)
             x.process_cleanup()
 
             self.assertIsNone(x._connection)

@@ -17,11 +17,11 @@ except ImportError:  # pragma: no cover
 
 import socket
 import time
-import warnings
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.five import monotonic
+from celery.utils import deprecated
 from celery.utils.log import get_logger
 
 from .base import BaseBackend
@@ -50,6 +50,10 @@ class CassandraBackend(BaseBackend):
     _retry_wait = 3
     supports_autoexpire = True
 
+    @deprecated(description='The old cassandra backend',
+                deprecation='3.2',
+                removal='4.0',
+                alternative='Use the `new_cassandra` result backend instead')
     def __init__(self, servers=None, keyspace=None, column_family=None,
                  cassandra_options=None, detailed_mode=False, **kwargs):
         """Initialize Cassandra backend.
@@ -98,9 +102,6 @@ class CassandraBackend(BaseBackend):
                 'Cassandra backend not configured.')
 
         self._column_family = None
-
-        warnings.warn("cassandra backend is deprecated. Use new_cassandra instead.",
-                      DeprecationWarning)
 
     def _retry_on_error(self, fun, *args, **kwargs):
         ts = monotonic() + self._retry_timeout
