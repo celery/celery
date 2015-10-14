@@ -132,6 +132,7 @@ NAMESPACES = {
         'REDIS_DB': Option(type='int', **_REDIS_OLD),
         'REDIS_PASSWORD': Option(type='string', **_REDIS_OLD),
         'REDIS_MAX_CONNECTIONS': Option(type='int'),
+        'REJECT_ON_WORKER_LOST': Option(type='bool'),
         'RESULT_BACKEND': Option(type='string'),
         'RESULT_DB_SHORT_LIVED_SESSIONS': Option(False, type='bool'),
         'RESULT_DB_TABLENAMES': Option(type='dict'),
