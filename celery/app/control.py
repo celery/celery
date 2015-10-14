@@ -263,7 +263,7 @@ class Control(object):
         return self.broadcast('enable_events', {}, destination, **kwargs)
 
     def disable_events(self, destination=None, **kwargs):
-        """Tell all (or specific) workers to enable events."""
+        """Tell all (or specific) workers to disable events."""
         return self.broadcast('disable_events', {}, destination, **kwargs)
 
     def pool_grow(self, n=1, destination=None, **kwargs):
