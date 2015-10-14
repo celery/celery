@@ -1585,6 +1585,24 @@ has been executed, not *just before*, which is the default behavior.
 
     FAQ: :ref:`faq-acks_late-vs-retry`.
 
+.. setting:: CELERY_REJECT_ON_WORKER_LOST
+
+CELERY_REJECT_ON_WORKER_LOST
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Even if :attr:`acks_late` is enabled, the worker will
+acknowledge tasks when the worker process executing them abrubtly
+exits or is signalled (e.g. :sig:`KILL`/:sig:`INT`, etc).
+
+Setting this to true allows the message to be requeued instead,
+so that the task will execute again by the same worker, or another
+worker.
+
+.. warning::
+
+    Enabling this can cause message loops; make sure you know
+    what you're doing.
+
 .. _conf-worker:
 
 Worker

@@ -220,10 +220,16 @@ class Task(object):
     #: :setting:`CELERY_ACKS_LATE` setting.
     acks_late = None
 
-    #: When CELERY_ACKS_LATE is set to True, the default behavior to
-    #: handle worker crash is to acknowledge the message. Setting
-    #: this to true allows the message to be rejected and requeued so
-    #: it will be executed again by another worker.
+    #: Even if :attr:`acks_late` is enabled, the worker will
+    #: acknowledge tasks when the worker process executing them abrubtly
+    #: exits or is signalled (e.g. :sig:`KILL`/:sig:`INT`, etc).
+    #:
+    #: Setting this to true allows the message to be requeued instead,
+    #: so that the task will execute again by the same worker, or another
+    #: worker.
+    #:
+    #: Warning: Enabling this can cause message loops; make sure you know
+    #: what you're doing.
     reject_on_worker_lost = None
 
     #: Tuple of expected exceptions.
