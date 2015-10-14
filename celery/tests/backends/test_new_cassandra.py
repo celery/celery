@@ -9,6 +9,8 @@ from celery.tests.case import (
     AppCase, Mock, mock_module, depends_on_current_app
 )
 
+CASSANDRA_MODULES = ['cassandra', 'cassandra.cluster']
+
 
 class Object(object):
     pass
@@ -26,7 +28,7 @@ class test_CassandraBackend(AppCase):
     def test_init_no_cassandra(self):
         """should raise ImproperlyConfigured when no python-driver
         installed."""
-        with mock_module('cassandra'):
+        with mock_module(*CASSANDRA_MODULES):
             from celery.backends import new_cassandra as mod
             prev, mod.cassandra = mod.cassandra, None
             try:
@@ -36,7 +38,7 @@ class test_CassandraBackend(AppCase):
                 mod.cassandra = prev
 
     def test_init_with_and_without_LOCAL_QUROM(self):
-        with mock_module('cassandra'):
+        with mock_module(*CASSANDRA_MODULES):
             from celery.backends import new_cassandra as mod
             mod.cassandra = Mock()
             cons = mod.cassandra.ConsistencyLevel = Object()
@@ -58,12 +60,12 @@ class test_CassandraBackend(AppCase):
 
     @depends_on_current_app
     def test_reduce(self):
-        with mock_module('cassandra'):
+        with mock_module(*CASSANDRA_MODULES):
             from celery.backends.new_cassandra import CassandraBackend
             self.assertTrue(loads(dumps(CassandraBackend(app=self.app))))
 
     def test_get_task_meta_for(self):
-        with mock_module('cassandra'):
+        with mock_module(*CASSANDRA_MODULES):
             from celery.backends import new_cassandra as mod
             mod.cassandra = Mock()
             x = mod.CassandraBackend(app=self.app)
@@ -82,7 +84,7 @@ class test_CassandraBackend(AppCase):
             self.assertEqual(meta['status'], states.PENDING)
 
     def test_store_result(self):
-        with mock_module('cassandra'):
+        with mock_module(*CASSANDRA_MODULES):
             from celery.backends import new_cassandra as mod
             mod.cassandra = Mock()
 
@@ -93,7 +95,7 @@ class test_CassandraBackend(AppCase):
             x._store_result('task_id', 'result', states.SUCCESS)
 
     def test_process_cleanup(self):
-        with mock_module('cassandra'):
+        with mock_module(*CASSANDRA_MODULES):
             from celery.backends import new_cassandra as mod
             x = mod.CassandraBackend(app=self.app)
             x.process_cleanup()
