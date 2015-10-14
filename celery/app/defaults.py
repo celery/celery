@@ -93,6 +93,8 @@ NAMESPACES = {
         'KEYSPACE': Option(type='string'),
         'READ_CONSISTENCY': Option(type='string'),
         'SERVERS': Option(type='list'),
+        'PORT': Option(type="string"),
+        'ENTRY_TTL': Option(type="float"),
         'WRITE_CONSISTENCY': Option(type='string'),
     },
     'CELERY': {
