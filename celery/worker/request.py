@@ -79,7 +79,7 @@ class Request(object):
             'app', 'type', 'name', 'id', 'on_ack', 'body',
             'hostname', 'eventer', 'connection_errors', 'task', 'eta',
             'expires', 'request_dict', 'on_reject', 'utc',
-            'content_type', 'content_encoding',
+            'content_type', 'content_encoding', 'argsrepr', 'kwargsrepr',
             '__weakref__', '__dict__',
         )
 
@@ -111,6 +111,8 @@ class Request(object):
             self.name = headers['shadow']
         if 'timelimit' in headers:
             self.time_limits = headers['timelimit']
+        self.argsrepr = headers.get('argsrepr', '')
+        self.kwargsrepr = headers.get('kwargsrepr', '')
         self.on_ack = on_ack
         self.on_reject = on_reject
         self.hostname = hostname or socket.gethostname()
@@ -384,6 +386,8 @@ class Request(object):
     def info(self, safe=False):
         return {'id': self.id,
                 'name': self.name,
+                'args': self.argsrepr,
+                'kwargs': self.kwargsrepr,
                 'type': self.type,
                 'body': self.body,
                 'hostname': self.hostname,
@@ -404,7 +408,10 @@ class Request(object):
         return '{0.name}[{0.id}]'.format(self)
 
     def __repr__(self):
-        return '<{0}: {1}>'.format(type(self).__name__, self.humaninfo())
+        return '<{0}: {1} {2} {3}>'.format(
+            type(self).__name__, self.humaninfo(),
+            self.argsrepr, self.kwargsrepr,
+        )
 
     @property
     def tzlocal(self):

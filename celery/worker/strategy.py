@@ -15,6 +15,7 @@ from kombu.five import buffer_t
 
 from celery.exceptions import InvalidTaskError
 from celery.utils.log import get_logger
+from celery.utils.saferepr import saferepr
 from celery.utils.timeutils import timezone
 
 from .request import Request, create_request_cls
@@ -40,7 +41,11 @@ def proto1_to_proto2(message, body):
         raise InvalidTaskError(
             'Task keyword arguments must be a mapping',
         )
-    body['headers'] = message.headers
+    body.update(
+        argsrepr=saferepr(args),
+        kwargsrepr=saferepr(kwargs),
+        headers=message.headers,
+    )
     try:
         body['group'] = body['taskset']
     except KeyError:
@@ -95,7 +100,7 @@ def default(task, app, consumer,
             send_event(
                 'task-received',
                 uuid=req.id, name=req.name,
-                args='', kwargs='',
+                args=req.argsrepr, kwargs=req.kwargsrepr,
                 retries=req.request_dict.get('retries', 0),
                 eta=req.eta and req.eta.isoformat(),
                 expires=req.expires and req.expires.isoformat(),

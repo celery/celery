@@ -18,11 +18,11 @@ from kombu import Connection, Consumer, Exchange, Producer, Queue
 from kombu.common import Broadcast
 from kombu.pools import ProducerPool
 from kombu.utils import cached_property
-from kombu.utils.encoding import safe_repr
 from kombu.utils.functional import maybe_list
 
 from celery import signals
 from celery.five import items, string_t
+from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
 from celery.utils.timeutils import to_utc
 
@@ -293,6 +293,9 @@ class AMQP(object):
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
+        argsrepr = saferepr(args)
+        kwargsrepr = saferepr(kwargs)
+
         return task_message(
             headers={
                 'lang': 'py',
@@ -305,6 +308,8 @@ class AMQP(object):
                 'timelimit': [time_limit, soft_time_limit],
                 'root_id': root_id,
                 'parent_id': parent_id,
+                'argsrepr': argsrepr,
+                'kwargsrepr': kwargsrepr,
             },
             properties={
                 'correlation_id': task_id,
@@ -323,8 +328,8 @@ class AMQP(object):
                 'root': root_id,
                 'parent': parent_id,
                 'name': name,
-                'args': safe_repr(args),
-                'kwargs': safe_repr(kwargs),
+                'args': argsrepr,
+                'kwargs': kwargsrepr,
                 'retries': retries,
                 'eta': eta,
                 'expires': expires,
@@ -385,8 +390,8 @@ class AMQP(object):
             sent_event={
                 'uuid': task_id,
                 'name': name,
-                'args': safe_repr(args),
-                'kwargs': safe_repr(kwargs),
+                'args': saferepr(args),
+                'kwargs': saferepr(kwargs),
                 'retries': retries,
                 'eta': eta,
                 'expires': expires,

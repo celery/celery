@@ -46,6 +46,8 @@ Definition
         'expires'; iso8601 expires,
         'retries': int retries,
         'timelimit': (soft, hard),
+        'argsrepr': str repr(args),
+        'kwargsrepr': str repr(kwargs),
     }
 
     body = (
@@ -69,11 +71,15 @@ This example sends a task message using version 2 of the protocol:
     # chain: add(add(add(2, 2), 4), 8) == 2 + 2 + 4 + 8
 
     task_id = uuid()
+    args = (2, 2)
+    kwargs = {}
     basic_publish(
-        message=json.dumps(([2, 2], {}, None),
+        message=json.dumps((args, kwargs, None),
         application_headers={
             'lang': 'py',
             'task': 'proj.tasks.add',
+            'argsrepr': repr(args),
+            'kwargsrepr': repr(kwargs),
         }
         properties={
             'correlation_id': task_id,

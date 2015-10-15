@@ -1,13 +1,14 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.utils.text import (
-    indent,
-    ensure_2lines,
     abbr,
-    truncate,
     abbrtask,
+    ensure_2lines,
+    indent,
     pretty,
+    truncate,
 )
+
 from celery.tests.case import AppCase, Case
 
 RANDTEXT = """\
