@@ -34,7 +34,7 @@ Never call result.get() within a task!
 See http://docs.celeryq.org/en/latest/userguide/tasks.html\
 #task-synchronous-subtasks
 
-In Celery 3.2 this will result in an exception being
+In Celery 4.0 this will result in an exception being
 raised instead of just being a warning.
 """
 
@@ -542,7 +542,7 @@ class ResultSet(ResultBase):
         """`res[i] -> res.results[i]`"""
         return self.results[index]
 
-    @deprecated('3.2', '3.3')
+    @deprecated('4.0', '5.0')
     def iterate(self, timeout=None, propagate=True, interval=0.5):
         """Deprecated method, use :meth:`get` with a callback argument."""
         elapsed = 0.0

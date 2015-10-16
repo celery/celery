@@ -467,7 +467,7 @@ News
 
     See :ref:`redis-caveats`.
 
-    This will be the default in Celery 3.2.
+    This will be the default in Celery 4.0.
 
 - **Results**: The :class:`@AsyncResult` object now keeps a local cache
   of the final state of the task.
@@ -476,7 +476,7 @@ News
     and you can do so by setting :setting:`CELERY_MAX_CACHED_RESULTS` to
     :const:`-1`.  The lifetime of the cache will then be bound to the
     lifetime of the result object, which will be the default behavior
-    in Celery 3.2.
+    in Celery 4.0.
 
 - **Events**: The "Substantial drift" warning message is now logged once
   per node name only (Issue #1802).
@@ -682,7 +682,7 @@ News
 
 - **Results:** ``ResultSet.iterate`` is now pending deprecation.
 
-    The method will be deprecated in version 3.2 and removed in version 3.3.
+    The method will be removed in version 4.0 and removed in version 5.0.
 
     Use ``result.get(callback=)`` (or ``result.iter_native()`` where available)
     instead.
@@ -832,7 +832,7 @@ Synchronous subtasks
 
 Tasks waiting for the result of a subtask will now emit
 a :exc:`RuntimeWarning` warning when using the prefork pool,
-and in 3.2 this will result in an exception being raised.
+and in 4.0 this will result in an exception being raised.
 
 It's not legal for tasks to block by waiting for subtasks
 as this is likely to lead to resource starvation and eventually

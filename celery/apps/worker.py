@@ -45,7 +45,7 @@ is_jython = sys.platform.startswith('java')
 is_pypy = hasattr(sys, 'pypy_version_info')
 
 W_PICKLE_DEPRECATED = """
-Starting from version 3.2 Celery will refuse to accept pickle by default.
+Starting from version 4.0 Celery will refuse to accept pickle by default.
 
 The pickle serializer is a security concern as it may give attackers
 the ability to execute any command.  It's important to secure
@@ -55,7 +55,7 @@ the default choice.
 
 If you depend on pickle then you should set a setting to disable this
 warning and to be sure that everything will continue working
-when you upgrade to Celery 3.2::
+when you upgrade to Celery 4.0::
 
     CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 

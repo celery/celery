@@ -51,8 +51,8 @@ class CassandraBackend(BaseBackend):
     supports_autoexpire = True
 
     @deprecated(description='The old cassandra backend',
-                deprecation='3.2',
-                removal='4.0',
+                deprecation='4.0',
+                removal='5.0',
                 alternative='Use the `new_cassandra` result backend instead')
     def __init__(self, servers=None, keyspace=None, column_family=None,
                  cassandra_options=None, detailed_mode=False, **kwargs):

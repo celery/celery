@@ -224,7 +224,7 @@ on the automatic naming:
 Changing the automatic naming behavior
 --------------------------------------
 
-.. versionadded:: 3.2
+.. versionadded:: 4.0
 
 There are some cases when the default automatic naming is not suitable.
 Consider you have many tasks within many different modules::
@@ -503,7 +503,7 @@ override this default.
 Autoretrying
 ------------
 
-.. versionadded:: 3.2
+.. versionadded:: 4.0
 
 Sometimes you may want to retry a task on particular exception. To do so,
 you should wrap a task body with `try-except` statement, for example:

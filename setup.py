@@ -11,7 +11,7 @@ import codecs
 CELERY_COMPAT_PROGRAMS = int(os.environ.get('CELERY_COMPAT_PROGRAMS', 1))
 
 if sys.version_info < (2, 7):
-    raise Exception('Celery 3.2 requires Python 2.7 or higher.')
+    raise Exception('Celery 4.0 requires Python 2.7 or higher.')
 
 # -*- Upgrading from older versions -*-
 

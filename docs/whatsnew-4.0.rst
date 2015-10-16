@@ -1,7 +1,7 @@
-.. _whatsnew-3.2:
+.. _whatsnew-4.0:
 
 ===========================================
- What's new in Celery 3.2 (TBA)
+ What's new in Celery 4.0 (TBA)
 ===========================================
 :Author: Ask Solem (ask at celeryproject.org)
 

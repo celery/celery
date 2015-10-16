@@ -73,7 +73,7 @@ these transports or donate resources to improve them, but  as the situation
 is now I don't think the quality is up to date with the rest of the code-base
 so I cannot recommend them for production use.
 
-The next version of Celery 3.2 will focus on performance and removing
+The next version of Celery 4.0 will focus on performance and removing
 rarely used parts of the library.  Work has also started on a new message
 protocol, supporting multiple languages and more.  The initial draft can
 be found :ref:`here <message-protocol-task-v2>`.
@@ -101,13 +101,13 @@ requiring the ``2to3`` porting tool.
 
 .. note::
 
-    This is also the last version to support Python 2.6! From Celery 3.2 and
+    This is also the last version to support Python 2.6! From Celery 4.0 and
     onwards Python 2.7 or later will be required.
 
 Last version to enable Pickle by default
 ----------------------------------------
 
-Starting from Celery 3.2 the default serializer will be json.
+Starting from Celery 4.0 the default serializer will be json.
 
 If you depend on pickle being accepted you should be prepared
 for this change by explicitly allowing your worker
@@ -138,7 +138,7 @@ Everyone should move to the new :program:`celery` umbrella
 command, so we are incrementally deprecating the old command names.
 
 In this version we've removed all commands that are not used
-in init scripts.  The rest will be removed in 3.2.
+in init scripts.  The rest will be removed in 4.0.
 
 +-------------------+--------------+-------------------------------------+
 | Program           | New Status   | Replacement                         |

@@ -195,7 +195,7 @@ class Celery(object):
 
         # Signals
         if self.on_configure is None:
-            # used to be a method pre 3.2
+            # used to be a method pre 4.0
             self.on_configure = Signal()
         self.on_after_configure = Signal()
         self.on_after_finalize = Signal()
@@ -521,7 +521,7 @@ class Celery(object):
         if isinstance(self.on_configure, Signal):
             self.on_configure.send(sender=self)
         else:
-            # used to be a method pre 3.2
+            # used to be a method pre 4.0
             self.on_configure()
         if self._config_source:
             self.loader.config_from_object(self._config_source)

@@ -6,7 +6,7 @@
 
 |build-status| |coverage-status|
 
-:Version: 3.2.0a1 (Cipater)
+:Version: 4.0.0a1 (Cipater)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/

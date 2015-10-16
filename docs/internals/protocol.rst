@@ -310,7 +310,7 @@ Event Messages
 Event messages are always JSON serialized and can contain arbitrary message
 body fields.
 
-Since version 3.2. the body can consist of either a single mapping (one event),
+Since version 4.0. the body can consist of either a single mapping (one event),
 or a list of mappings (multiple events).
 
 There are also standard fields that must always be present in an event

@@ -264,18 +264,18 @@ class RedisBackend(KeyValueStoreBackend):
             (self.url,), {'expires': self.expires},
         )
 
-    @deprecated_property(3.2, 3.3)
+    @deprecated_property(4.0, 5.0)
     def host(self):
         return self.connparams['host']
 
-    @deprecated_property(3.2, 3.3)
+    @deprecated_property(4.0, 5.0)
     def port(self):
         return self.connparams['port']
 
-    @deprecated_property(3.2, 3.3)
+    @deprecated_property(4.0, 5.0)
     def db(self):
         return self.connparams['db']
 
-    @deprecated_property(3.2, 3.3)
+    @deprecated_property(4.0, 5.0)
     def password(self):
         return self.connparams['password']
