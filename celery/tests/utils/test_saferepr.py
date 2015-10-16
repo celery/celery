@@ -11,11 +11,6 @@ from celery.utils.saferepr import saferepr
 
 from celery.tests.case import Case
 
-EXPECTED_1 = """\
-{'rest': {'baz': 'The quick brown fox jumps over the lazy dog.', \
-'foo': 'The quick brown fox jumps...', ...}}\
-"""
-
 D_NUMBERS = {
     b'integer': 1,
     b'float': 1.3,
@@ -134,7 +129,8 @@ class test_saferepr(Case):
         self.assertEqual(saferepr(D_TEXT), repr(D_TEXT).replace("u'", "'"))
 
     def test_text_maxlen(self):
-        self.assertEqual(saferepr(D_D_TEXT, 100), EXPECTED_1)
+        self.assertEqual(saferepr(D_D_TEXT, 100),
+                from_old_repr(repr(D_D_TEXT)[:99] + "...', ...}}"))
 
     def test_same_as_repr(self):
         # Simple objects, small containers and classes that overwrite __repr__
