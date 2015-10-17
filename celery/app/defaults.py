@@ -165,6 +165,7 @@ NAMESPACES = {
         'REDIRECT_STDOUTS_LEVEL': Option('WARNING'),
         'QUEUES': Option(type='dict'),
         'QUEUE_HA_POLICY': Option(None, type='string'),
+        'QUEUE_MAX_PRIORITY': Option(None, type='int'),
         'SECURITY_KEY': Option(type='string'),
         'SECURITY_CERTIFICATE': Option(type='string'),
         'SECURITY_CERT_STORE': Option(type='string'),
