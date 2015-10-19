@@ -139,7 +139,7 @@ class KVBackend(KeyValueStoreBackend):
 
     def mget(self, keys):
         if self.mget_returns_dict:
-            return dict((key, self.get(key)) for key in keys)
+            return {key: self.get(key) for key in keys}
         else:
             return [self.get(k) for k in keys]
 
@@ -273,7 +273,7 @@ class test_KeyValueStoreBackend(AppCase):
     def test_get_many(self):
         for is_dict in True, False:
             self.b.mget_returns_dict = is_dict
-            ids = dict((uuid(), i) for i in range(10))
+            ids = {uuid(): i for i in range(10)}
             for id, i in items(ids):
                 self.b.mark_as_done(id, i)
             it = self.b.get_many(list(ids))

@@ -671,7 +671,7 @@ class ResultSet(ResultBase):
         if not results:
             return iter([])
         return self.backend.get_many(
-            set(r.id for r in results),
+            {r.id for r in results},
             timeout=timeout, interval=interval, no_ack=no_ack,
             on_message=on_message,
         )

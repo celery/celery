@@ -721,7 +721,7 @@ def sys_platform(value):
 
 @contextmanager
 def reset_modules(*modules):
-    prev = dict((k, sys.modules.pop(k)) for k in modules if k in sys.modules)
+    prev = {k: sys.modules.pop(k) for k in modules if k in sys.modules}
     try:
         yield
     finally:

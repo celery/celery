@@ -169,7 +169,7 @@ class test_saferepr(Case):
             (1, 2), [3, 4], {5: 6},
             tuple2((1, 2)), tuple3((1, 2)), tuple3(range(100)),
             [3, 4], list2([3, 4]), list3([3, 4]), list3(range(100)),
-            set({7}), set2({7}), set3({7}),
+            {7}, set2({7}), set3({7}),
             frozenset({8}), frozenset2({8}), frozenset3({8}),
             dict2({5: 6}), dict3({5: 6}),
             range(10, -11, -1)
