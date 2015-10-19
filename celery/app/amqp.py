@@ -49,7 +49,7 @@ class Queues(dict):
                              the occurrence of unknown queues
                              in `wanted` will raise :exc:`KeyError`.
     :keyword ha_policy: Default HA policy for queues with none set.
-    :keyword max_priority: Max priority (x-max-priority).
+    :keyword max_priority: Default x-max-priority for queues with none set.
 
 
     """
@@ -108,14 +108,14 @@ class Queues(dict):
         """
         if not isinstance(queue, Queue):
             return self.add_compat(queue, **kwargs)
-        if self.ha_policy:
-            if queue.queue_arguments is None:
-                queue.queue_arguments = {}
-            self._set_ha_policy(queue.queue_arguments)
         if self.max_priority is not None:
             if queue.queue_arguments is None:
                 queue.queue_arguments = {}
             self._set_max_priority(queue.queue_arguments)
+        if self.ha_policy:
+            if queue.queue_arguments is None:
+                queue.queue_arguments = {}
+            self._set_ha_policy(queue.queue_arguments)
         self[queue.name] = queue
         return queue
 
@@ -139,7 +139,7 @@ class Queues(dict):
         args['x-ha-policy'] = policy
 
     def _set_max_priority(self, args):
-        if self.max_priority is not None:
+        if 'x-max-priority' not in args and self.max_priority is not None:
             return args.update({'x-max-priority': self.max_priority})
 
     def format(self, indent=0, indent_first=True):
