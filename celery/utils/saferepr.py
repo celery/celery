@@ -107,7 +107,7 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
         if isinstance(token, _literal):
             val = token.value
         elif isinstance(token, _key):
-            val = repr(token.value).replace("u'", "'")
+            val = saferepr(token.value, maxlen, maxlevels)
         elif isinstance(token, _quoted):
             val = token.value
             if IS_PY3 and isinstance(val, bytes):

@@ -15,7 +15,7 @@ D_NUMBERS = {
     b'integer': 1,
     b'float': 1.3,
     b'decimal': Decimal("1.3"),
-    b'long': long_t(1.3),
+    b'long': long_t(4),
     b'complex': complex(13.3),
 }
 D_INT_KEYS = {v: k for k, v in items(D_NUMBERS)}
