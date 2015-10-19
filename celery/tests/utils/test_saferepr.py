@@ -5,7 +5,7 @@ import re
 from decimal import Decimal
 from pprint import pprint
 
-from celery.five import items, long_t, values
+from celery.five import items, long_t, text_t, values
 
 from celery.utils.saferepr import saferepr
 
@@ -45,13 +45,28 @@ D_ALL = {
 
 D_D_TEXT = {b'rest': D_TEXT}
 
-RE_OLD_SET_REPR = re.compile(r'(?:frozen)?set\d?\(\[(.+?)\]\)')
+RE_OLD_SET_REPR = re.compile(r'(?<!frozen)set\([\[|\{](.+?)[\}\]]\)')
 RE_OLD_SET_REPR_REPLACE = r'{\1}'
+RE_OLD_SET_CUSTOM_REPR = re.compile(r'((?:frozen)?set\d?\()\[(.+?)\](\))')
+RE_OLD_SET_CUSTOM_REPR_REPLACE = r'\1{\2}\3'
+RE_EMPTY_SET_REPR = re.compile(r'((?:frozen)?set\d?)\(\[\]\)')
+RE_EMPTY_SET_REPR_REPLACE = r'\1()'
+RE_LONG_SUFFIX = re.compile(r'(\d)+L')
 
 
-def from_old_repr(s):
-    return RE_OLD_SET_REPR.sub(
-        RE_OLD_SET_REPR_REPLACE, s).replace("u'", "'")
+def old_repr(s):
+    return text_t(RE_LONG_SUFFIX.sub(
+        r'\1',
+        RE_EMPTY_SET_REPR.sub(
+            RE_EMPTY_SET_REPR_REPLACE,
+            RE_OLD_SET_REPR.sub(
+                RE_OLD_SET_REPR_REPLACE,
+                RE_OLD_SET_CUSTOM_REPR.sub(
+                    RE_OLD_SET_CUSTOM_REPR_REPLACE, repr(s).replace("u'", "'"))
+                ),
+            ),
+        ),
+    ).replace('set([])', 'set()')
 
 
 class list2(list):
@@ -114,23 +129,24 @@ class test_saferepr(Case):
 
     def test_safe_types(self):
         for value in values(D_NUMBERS):
-            self.assertEqual(saferepr(value), repr(value))
+            self.assertEqual(saferepr(value), old_repr(value))
 
     def test_numbers_dict(self):
-        self.assertEqual(saferepr(D_NUMBERS), repr(D_NUMBERS))
+        self.assertEqual(saferepr(D_NUMBERS), old_repr(D_NUMBERS))
 
     def test_numbers_list(self):
-        self.assertEqual(saferepr(L_NUMBERS), repr(L_NUMBERS))
+        self.assertEqual(saferepr(L_NUMBERS), old_repr(L_NUMBERS))
 
     def test_numbers_keys(self):
-        self.assertEqual(saferepr(D_INT_KEYS), repr(D_INT_KEYS))
+        self.assertEqual(saferepr(D_INT_KEYS), old_repr(D_INT_KEYS))
 
     def test_text(self):
-        self.assertEqual(saferepr(D_TEXT), repr(D_TEXT).replace("u'", "'"))
+        self.assertEqual(saferepr(D_TEXT), old_repr(D_TEXT).replace("u'", "'"))
 
     def test_text_maxlen(self):
-        self.assertEqual(saferepr(D_D_TEXT, 100),
-                from_old_repr(repr(D_D_TEXT)[:99] + "...', ...}}"))
+        self.assertTrue(
+            saferepr(D_D_TEXT, 100).endswith("...', ...}}")
+        )
 
     def test_same_as_repr(self):
         # Simple objects, small containers and classes that overwrite __repr__
@@ -159,5 +175,5 @@ class test_saferepr(Case):
             range(10, -11, -1)
         )
         for simple in types:
-            native = from_old_repr(repr(simple))
+            native = old_repr(simple)
             self.assertEqual(saferepr(simple), native)

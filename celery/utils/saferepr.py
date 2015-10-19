@@ -9,21 +9,38 @@
 
     - Sets are represented the Python 3 way: ``{1, 2}`` vs ``set([1, 2])``.
     - Unicode strings does not have the ``u'`` prefix, even on Python 2.
+    - Empty set formatted as ``set()`` (Python3), not ``set([])`` (Python2).
+    - Longs do not have the ``L`` suffix.
 
     Very slow with no limits, super quick with limits.
 
 """
+from __future__ import absolute_import, unicode_literals
+
+import sys
+
 from collections import Iterable, Mapping, deque, namedtuple
 
+from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
 
+from kombu.utils.encoding import bytes_to_str
+
 from celery.five import items, text_t
 
-from .text import truncate
+from .text import truncate, truncate_bytes
 
-__all__ = ['saferepr']
+__all__ = ['saferepr', 'reprstream']
+
+IS_PY3 = sys.version_info[0] == 3
+
+if IS_PY3:
+    range_t = (range, )
+else:
+    class range_t(object):  # noqa
+        pass
 
 _literal = namedtuple('_literal', ('value', 'truncate', 'direction'))
 _key = namedtuple('_key', ('value',))
@@ -75,7 +92,7 @@ def _chainlist(it, LIT_LIST_SEP=LIT_LIST_SEP):
 
 
 def _repr_empty_set(s):
-    return '%s([])' % (type(s).__name__,)
+    return '%s()' % (type(s).__name__,)
 
 
 def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
@@ -88,11 +105,15 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
             stack.append(it)
             break
         if isinstance(token, _literal):
-            val = str(token.value)
+            val = token.value
         elif isinstance(token, _key):
             val = repr(token.value).replace("u'", "'")
         elif isinstance(token, _quoted):
-            val = "'%s'" % (truncate(token.value, maxlen),)
+            val = token.value
+            if IS_PY3 and isinstance(val, bytes):
+                val = "b'%s'" % (bytes_to_str(truncate_bytes(val, maxlen)),)
+            else:
+                val = "'%s'" % (truncate(val, maxlen),)
         else:
             val = truncate(token, maxlen)
         yield val
@@ -103,6 +124,16 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
         for rest2 in rest1:
             if isinstance(rest2, _literal) and not rest2.truncate:
                 yield rest2.value
+
+
+def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
+    if type(val) is builtin_type:  # noqa
+        return lit_start, lit_end, chainer(val)
+    return (
+        _literal('%s(%s' % (type(val).__name__, lit_start.value), False, +1),
+        _literal('%s)' % (lit_end.value,), False, -1),
+        chainer(val)
+    )
 
 
 def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
@@ -126,17 +157,22 @@ def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
                 yield val, it
             elif isinstance(val, _key):
                 yield val, it
-            elif isinstance(val, safe_t):
+            elif isinstance(val, Decimal):
                 yield repr(val), it
+            elif isinstance(val, safe_t):
+                yield text_t(val), it
             elif isinstance(val, chars_t):
                 yield _quoted(val), it
+            elif isinstance(val, range_t):
+                yield repr(val), it
             else:
                 if isinstance(val, set_t):
                     if not val:
                         yield _repr_empty_set(val), it
                         continue
-                    lit_start, lit_end, val = (
-                        LIT_SET_START, LIT_SET_END, _chainlist(val))
+                    lit_start, lit_end, val = _reprseq(
+                        val, LIT_SET_START, LIT_SET_END, set, _chainlist,
+                    )
                 elif isinstance(val, tuple):
                     lit_start, lit_end, val = (
                         LIT_TUPLE_START,
