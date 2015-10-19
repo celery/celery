@@ -585,7 +585,7 @@ copies of tasks to all workers connected to it:
 
     CELERY_ROUTES = {'tasks.reload_cache': {'queue': 'broadcast_tasks'}}
 
-Now the ``tasks.reload_tasks`` task will be sent to every
+Now the ``tasks.reload_cache`` task will be sent to every
 worker consuming from this queue.
 
 .. admonition:: Broadcast & Results
