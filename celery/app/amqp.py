@@ -116,6 +116,10 @@ class Queues(dict):
             if queue.queue_arguments is None:
                 queue.queue_arguments = {}
             self._set_ha_policy(queue.queue_arguments)
+        if self.max_priority is not None:
+            if queue.queue_arguments is None:
+                queue.queue_arguments = {}
+            self._set_max_priority(queue.queue_arguments)
         self[queue.name] = queue
         return queue
 
