@@ -54,6 +54,7 @@
     celery.bin.worker
     celery.bin.beat
     celery.bin.events
+    celery.bin.logtool
     celery.bin.amqp
     celery.bin.multi
     celery.bin.graph
