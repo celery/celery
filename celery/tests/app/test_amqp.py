@@ -134,3 +134,38 @@ class test_Queues(AppCase):
         q = Queues()
         q.add(Queue('foo', alias='barfoo'))
         self.assertIs(q['barfoo'], q['foo'])
+
+    def test_with_max_priority(self):
+        qs1 = Queues(max_priority=10)
+        qs1.add('foo')
+        self.assertEqual(qs1['foo'].queue_arguments, {'x-max-priority': 10})
+
+        q1 = Queue('xyx', queue_arguments={'x-max-priority': 3})
+        qs1.add(q1)
+        self.assertEqual(qs1['xyx'].queue_arguments, {
+            'x-max-priority': 3,
+        })
+
+        qs2 = Queues(ha_policy='all', max_priority=5)
+        qs2.add('bar')
+        self.assertEqual(qs2['bar'].queue_arguments, {
+            'x-ha-policy': 'all',
+            'x-max-priority': 5
+        })
+
+        q2 = Queue('xyx2', queue_arguments={'x-max-priority': 2})
+        qs2.add(q2)
+        self.assertEqual(qs2['xyx2'].queue_arguments, {
+            'x-ha-policy': 'all',
+            'x-max-priority': 2,
+        })
+
+        qs3 = Queues(max_priority=None)
+        qs3.add('foo2')
+        self.assertEqual(qs3['foo2'].queue_arguments, None)
+
+        q3 = Queue('xyx3', queue_arguments={'x-max-priority': 7})
+        qs3.add(q3)
+        self.assertEqual(qs3['xyx3'].queue_arguments, {
+            'x-max-priority': 7,
+        })
