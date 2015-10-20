@@ -15,6 +15,7 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     cassandra = None   # noqa
 
+import threading
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.log import get_logger
@@ -125,13 +126,15 @@ class CassandraBackend(BaseBackend):
         self._session = None
         self._write_stmt = None
         self._read_stmt = None
+        self._lock = threading.Lock()
 
     def process_cleanup(self):
-        if self._connection is not None:
-            self._connection = None
-        if self._session is not None:
-            self._session.shutdown()
-            self._session = None
+        with self._lock:
+            if self._connection is not None:
+                self._connection = None
+            if self._session is not None:
+                self._session.shutdown()
+                self._session = None
 
     def _get_connection(self, write=False):
         """Prepare the connection for action
@@ -144,8 +147,6 @@ class CassandraBackend(BaseBackend):
                                                          port=self.port)
             self._session = self._connection.connect(self.keyspace)
 
-            # We are forced to do concatenation below, as formatting would
-            # blow up on superficial %s that will be processed by Cassandra
             self._write_stmt = cassandra.query.SimpleStatement(
                 Q_INSERT_RESULT.format(
                     table=self.table, expires=self.cqlexpires),
@@ -178,7 +179,8 @@ class CassandraBackend(BaseBackend):
     def _store_result(self, task_id, result, status,
                       traceback=None, request=None, **kwargs):
         """Store return value and status of an executed task."""
-        self._get_connection(write=True)
+        with self._lock:
+            self._get_connection(write=True)
 
         self._session.execute(self._write_stmt, (
             task_id,
@@ -191,7 +193,8 @@ class CassandraBackend(BaseBackend):
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
-        self._get_connection()
+        with self._lock:
+            self._get_connection()
 
         res = self._session.execute(self._read_stmt, (task_id, ))
         if not res:
