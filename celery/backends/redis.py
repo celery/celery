@@ -130,10 +130,6 @@ class RedisBackend(KeyValueStoreBackend):
         db = db.strip('/') if isinstance(db, string_t) else db
         connparams['db'] = int(db)
 
-        for key in ['socket_timeout', 'socket_connect_timeout']:
-            if key in query:
-                query[key] = float(query[key])
-
         # Query parameters override other parameters
         connparams.update(query)
         return connparams
@@ -253,6 +249,16 @@ class RedisBackend(KeyValueStoreBackend):
                 callback.id, exc=ChordError('Join error: {0!r}'.format(exc)),
             )
 
+    def _create_client(self, socket_timeout=None, socket_connect_timeout=None,
+                       **params):
+        return self.redis.Redis(
+            connection_pool=self.ConnectionPool(
+                socket_timeout=socket_timeout and float(socket_timeout),
+                socket_connect_timeout=socket_connect_timeout and float(
+                    socket_connect_timeout),
+                **params),
+        )
+
     @property
     def ConnectionPool(self):
         if self._ConnectionPool is None:
@@ -261,9 +267,7 @@ class RedisBackend(KeyValueStoreBackend):
 
     @cached_property
     def client(self):
-        return self.redis.Redis(
-            connection_pool=self.ConnectionPool(**self.connparams),
-        )
+        return self._create_client(**self.connparams)
 
     def __reduce__(self, args=(), kwargs={}):
         return super(RedisBackend, self).__reduce__(
