@@ -186,7 +186,8 @@ class Request(object):
                 'delivery_info': {
                     'exchange': delivery_info.get('exchange'),
                     'routing_key': delivery_info.get('routing_key'),
-                    'priority': delivery_info.get('priority'),
+                    'priority': properties.get(
+                        'priority', delivery_info.get('priority')),
                     'redelivered': delivery_info.get('redelivered'),
                 }
 
