@@ -149,7 +149,7 @@ class _ContextMock(Mock):
     in the class, not just the instance."""
 
     def __enter__(self):
-        pass
+        return self
 
     def __exit__(self, *exc_info):
         pass
