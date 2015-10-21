@@ -34,3 +34,15 @@ class test_Pool(AppCase):
         w.pool = Mock()
         comp.create(w)
         self.assertIs(w.process_task, w._process_task_sem)
+
+    def test_create_calls_instantiate_with_max_memory(self):
+        w = Mock()
+        w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True
+        comp = Pool(w)
+        comp.instantiate = Mock()
+        w.max_memory_per_child = 32
+
+        comp.create(w)
+
+        self.assertEqual(
+            comp.instantiate.call_args[1]['max_memory_per_child'], 32)
