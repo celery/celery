@@ -24,4 +24,3 @@ notifications:
       - "chat.freenode.net#celery"
     on_success: change
     on_failure: change
-sudo: false
