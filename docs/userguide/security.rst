@@ -200,7 +200,7 @@ Logs are usually the first place to look for evidence
 of security breaches, but they are useless if they can be tampered with.
 
 A good solution is to set up centralized logging with a dedicated logging
-server. Acess to it should be restricted.
+server. Access to it should be restricted.
 In addition to having all of the logs in a single place, if configured
 correctly, it can make it harder for intruders to tamper with your logs.
 
