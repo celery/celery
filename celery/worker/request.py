@@ -27,6 +27,7 @@ from celery.exceptions import (
 )
 from celery.five import string
 from celery.platforms import signals as _signals
+from celery.utils import cached_property
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.timeutils import maybe_iso8601, timezone, maybe_make_aware
@@ -245,8 +246,9 @@ class Request(object):
         task_ready(self)
         self.send_event('task-revoked',
                         terminated=terminated, signum=signum, expired=expired)
-        if self.store_errors:
-            self.task.backend.mark_as_revoked(self.id, reason, request=self)
+        self.task.backend.mark_as_revoked(
+            self.id, reason, request=self, store_result=self.store_errors,
+        )
         self.acknowledge()
         self._already_revoked = True
         send_revoked(self.task, request=self,
@@ -296,8 +298,9 @@ class Request(object):
                   timeout, self.name, self.id)
             exc = TimeLimitExceeded(timeout)
 
-        if self.store_errors:
-            self.task.backend.mark_as_failure(self.id, exc, request=self)
+        self.task.backend.mark_as_failure(
+            self.id, exc, request=self, store_result=self.store_errors,
+        )
 
         if self.task.acks_late:
             self.acknowledge()
@@ -342,13 +345,14 @@ class Request(object):
 
         # These are special cases where the process would not have had
         # time to write the result.
-        if self.store_errors:
-            if isinstance(exc, Terminated):
-                self._announce_revoked(
-                    'terminated', True, string(exc), False)
-                send_failed_event = False  # already sent revoked event
-            elif isinstance(exc, WorkerLostError) or not return_ok:
-                self.task.backend.mark_as_failure(self.id, exc, request=self)
+        if isinstance(exc, Terminated):
+            self._announce_revoked(
+                'terminated', True, string(exc), False)
+            send_failed_event = False  # already sent revoked event
+        elif isinstance(exc, WorkerLostError) or not return_ok:
+            self.task.backend.mark_as_failure(
+                self.id, exc, request=self, store_result=self.store_errors,
+            )
         # (acks_late) acknowledge after result stored.
         if self.task.acks_late:
             reject_and_requeue = (
@@ -460,7 +464,7 @@ class Request(object):
         # used by backend.on_chord_part_return when failures reported
         # by parent process
         _, _, embed = self._payload
-        return embed['chord']
+        return embed.get('chord')
 
     @cached_property
     def group(self):

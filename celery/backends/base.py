@@ -112,19 +112,39 @@ class BaseBackend(object):
         """Mark a task as started"""
         return self.store_result(task_id, meta, status=states.STARTED)
 
-    def mark_as_done(self, task_id, result, request=None, state=states.SUCCESS):
+    def mark_as_done(self, task_id, result,
+                     request=None, store_result=True, state=states.SUCCESS):
         """Mark task as successfully executed."""
-        self.store_result(task_id, result, status=state, request=request)
+        if store_result:
+            self.store_result(task_id, result, status=state, request=request)
         if request and request.chord:
             self.on_chord_part_return(request, state)
 
     def mark_as_failure(self, task_id, exc,
-                        traceback=None, request=None, state=states.FAILURE):
+                        traceback=None, request=None, store_result=True,
+                        state=states.FAILURE):
         """Mark task as executed with failure. Stores the exception."""
-        self.store_result(task_id, exc, status=state,
-                          traceback=traceback, request=request)
+        if store_result:
+            self.store_result(task_id, exc, status=state,
+                              traceback=traceback, request=request)
         if request and request.chord:
             self.on_chord_part_return(request, state, exc)
+
+    def mark_as_revoked(self, task_id, reason='',
+                        request=None, store_result=True, state=states.REVOKED):
+        exc = TaskRevokedError(reason)
+        if store_result:
+            self.store_result(task_id, exc,
+                              status=state, traceback=None, request=request)
+        if request and request.chord:
+            self.on_chord_part_return(request, state, exc)
+
+    def mark_as_retry(self, task_id, exc, traceback=None,
+                      request=None, store_result=True, state=states.RETRY):
+        """Mark task as being retries. Stores the current
+        exception (if any)."""
+        return self.store_result(task_id, exc, status=state,
+                                 traceback=traceback, request=request)
 
     def chord_error_from_stack(self, callback, exc=None):
         from celery import group
@@ -150,17 +170,6 @@ class BaseBackend(object):
             return ei
         finally:
             del(tb)
-
-    def mark_as_retry(self, task_id, exc, traceback=None, request=None):
-        """Mark task as being retries. Stores the current
-        exception (if any)."""
-        return self.store_result(task_id, exc, status=states.RETRY,
-                                 traceback=traceback, request=request)
-
-    def mark_as_revoked(self, task_id, reason='', request=None):
-        return self.store_result(task_id, TaskRevokedError(reason),
-                                 status=states.REVOKED, traceback=None,
-                                 request=request)
 
     def prepare_exception(self, exc, serializer=None):
         """Prepare exception for serialization."""
