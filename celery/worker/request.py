@@ -211,7 +211,7 @@ class Request(object):
             self.acknowledge()
 
         request = self.request_dict
-        args, kwargs, embed = self.message.payload
+        args, kwargs, embed = self._payload
         request.update({'loglevel': loglevel, 'logfile': logfile,
                         'hostname': self.hostname, 'is_eager': False,
                         'args': args, 'kwargs': kwargs}, **embed or {})
@@ -348,9 +348,7 @@ class Request(object):
                     'terminated', True, string(exc), False)
                 send_failed_event = False  # already sent revoked event
             elif isinstance(exc, WorkerLostError) or not return_ok:
-                self.task.backend.mark_as_failure(
-                    self.id, exc, request=self,
-                )
+                self.task.backend.mark_as_failure(self.id, exc, request=self)
         # (acks_late) acknowledge after result stored.
         if self.task.acks_late:
             reject_and_requeue = (
@@ -452,6 +450,23 @@ class Request(object):
     def correlation_id(self):
         # used similarly to reply_to
         return self.request_dict['correlation_id']
+
+    @cached_property
+    def _payload(self):
+        return self.message.payload
+
+    @cached_property
+    def chord(self):
+        # used by backend.on_chord_part_return when failures reported
+        # by parent process
+        _, _, embed = self._payload
+        return embed['chord']
+
+    @cached_property
+    def group(self):
+        # used by backend.on_chord_part_return when failures reported
+        # by parent process
+        return self.request_dict['group']
 
 
 def create_request_cls(base, task, pool, hostname, eventer,

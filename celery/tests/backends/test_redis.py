@@ -259,7 +259,7 @@ class test_RedisBackend(AppCase):
         tasks = [create_task() for i in range(10)]
 
         for i in range(10):
-            b.on_chord_part_return(tasks[i], states.SUCCESS, i)
+            b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
             self.assertTrue(b.client.rpush.call_count)
             b.client.rpush.reset_mock()
         self.assertTrue(b.client.lrange.call_count)

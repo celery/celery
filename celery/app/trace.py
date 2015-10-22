@@ -291,7 +291,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     pop_request = request_stack.pop
     push_task = _task_stack.push
     pop_task = _task_stack.pop
-    on_chord_part_return = backend.on_chord_part_return
     _does_info = logger.isEnabledFor(logging.INFO)
 
     prerun_receivers = signals.task_prerun.receivers
@@ -368,8 +367,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     )
                 except Exception as exc:
                     I, R, state, retval = on_error(task_request, exc, uuid)
-                    if task_request.chord:
-                        on_chord_part_return(task, state, exc)
                 except BaseException as exc:
                     raise
                 else:
@@ -404,8 +401,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     except EncodeError as exc:
                         I, R, state, retval = on_error(task_request, exc, uuid)
                     else:
-                        if task_request.chord:
-                            on_chord_part_return(task, state, retval)
                         if task_on_success:
                             task_on_success(retval, uuid, args, kwargs)
                         if success_receivers:

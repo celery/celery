@@ -298,7 +298,9 @@ class test_KeyValueStoreBackend(AppCase):
         self.b.get_key_for_chord.side_effect = AssertionError(
             'should not get here',
         )
-        self.assertIsNone(self.b.on_chord_part_return(task, state, result))
+        self.assertIsNone(
+            self.b.on_chord_part_return(task.request, state, result),
+        )
 
     @contextmanager
     def _chord_part_context(self, b):
@@ -326,14 +328,18 @@ class test_KeyValueStoreBackend(AppCase):
 
     def test_chord_part_return_propagate_set(self):
         with self._chord_part_context(self.b) as (task, deps, _):
-            self.b.on_chord_part_return(task, 'SUCCESS', 10, propagate=True)
+            self.b.on_chord_part_return(
+                task.request, 'SUCCESS', 10, propagate=True,
+            )
             self.assertFalse(self.b.expire.called)
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(propagate=True, timeout=3.0)
 
     def test_chord_part_return_propagate_default(self):
         with self._chord_part_context(self.b) as (task, deps, _):
-            self.b.on_chord_part_return(task, 'SUCCESS', 10, propagate=None)
+            self.b.on_chord_part_return(
+                task.request, 'SUCCESS', 10, propagate=None,
+            )
             self.assertFalse(self.b.expire.called)
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(
@@ -345,7 +351,7 @@ class test_KeyValueStoreBackend(AppCase):
         with self._chord_part_context(self.b) as (task, deps, callback):
             deps._failed_join_report = lambda: iter([])
             deps.join_native.side_effect = KeyError('foo')
-            self.b.on_chord_part_return(task, 'SUCCESS', 10)
+            self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
             self.assertTrue(self.b.fail_from_current_stack.called)
             args = self.b.fail_from_current_stack.call_args
             exc = args[1]['exc']
@@ -359,7 +365,7 @@ class test_KeyValueStoreBackend(AppCase):
                 self.app.AsyncResult('culprit'),
             ])
             deps.join_native.side_effect = KeyError('foo')
-            b.on_chord_part_return(task, 'SUCCESS', 10)
+            b.on_chord_part_return(task.request, 'SUCCESS', 10)
             self.assertTrue(b.fail_from_current_stack.called)
             args = b.fail_from_current_stack.call_args
             exc = args[1]['exc']
