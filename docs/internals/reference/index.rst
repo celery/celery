@@ -32,6 +32,7 @@
     celery.backends.mongodb
     celery.backends.redis
     celery.backends.riak
+    celery.backends.new_cassandra
     celery.backends.cassandra
     celery.backends.couchbase
     celery.app.trace

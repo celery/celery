@@ -4,9 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-|build-status| |coverage-status|
-
-:Version: 4.0.0a1 (Cipater)
+:Version: 4.0.0a1 (0today8)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
@@ -36,7 +34,7 @@ any language.  So far there's RCelery_ for the Ruby programming language, and a
 `PHP client`, but language interoperability can also be achieved
 by using webhooks.
 
-.. _RCelery: https://github.com/leapfrogonline/rcelery
+.. _RCelery: http://leapfrogdevelopment.github.com/rcelery/
 .. _`PHP client`: https://github.com/gjedeer/celery-php
 .. _`using webhooks`:
     http://docs.celeryproject.org/en/latest/userguide/remote-tasks.html
@@ -46,7 +44,7 @@ What do I need?
 
 Celery version 3.0 runs on,
 
-- Python (2.6, 2.7, 3.3, 3.4)
+- Python (2.7, 3.4, 3.5)
 - PyPy (1.8, 1.9)
 - Jython (2.5, 2.7).
 
@@ -166,26 +164,26 @@ Framework Integration
 Celery is easy to integrate with web frameworks, some of which even have
 integration packages:
 
-    +--------------------+----------------------------------------------------+
-    | `Django`_          | not needed                                         |
-    +--------------------+----------------------------------------------------+
-    | `Pyramid`_         | `pyramid_celery`_                                  |
-    +--------------------+----------------------------------------------------+
-    | `Pylons`_          | `celery-pylons`_                                   |
-    +--------------------+----------------------------------------------------+
-    | `Flask`_           | not needed                                         |
-    +--------------------+----------------------------------------------------+
-    | `web2py`_          | `web2py-celery`_                                   |
-    +--------------------+----------------------------------------------------+
-    | `Tornado`_         | `tornado-celery`_ | `another tornado-celery`_      |
-    +--------------------+----------------------------------------------------+
+    +--------------------+------------------------+
+    | `Django`_          | not needed             |
+    +--------------------+------------------------+
+    | `Pyramid`_         | `pyramid_celery`_      |
+    +--------------------+------------------------+
+    | `Pylons`_          | `celery-pylons`_       |
+    +--------------------+------------------------+
+    | `Flask`_           | not needed             |
+    +--------------------+------------------------+
+    | `web2py`_          | `web2py-celery`_       |
+    +--------------------+------------------------+
+    | `Tornado`_         | `tornado-celery`_      |
+    +--------------------+------------------------+
 
 The integration packages are not strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
 database connections at ``fork``.
 
 .. _`Django`: http://djangoproject.com/
-.. _`Pylons`: http://www.pylonsproject.org/
+.. _`Pylons`: http://pylonsproject.org/
 .. _`Flask`: http://flask.pocoo.org/
 .. _`web2py`: http://web2py.com/
 .. _`Bottle`: http://bottlepy.org/
@@ -196,7 +194,6 @@ database connections at ``fork``.
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: http://github.com/mher/tornado-celery/
-.. _`another tornado-celery`: https://github.com/mayflaver/tornado-celery
 
 .. _celery-documentation:
 
@@ -287,13 +284,19 @@ Transports and Backends
     for using memcached as a result backend.
 
 :celery[cassandra]:
-    for using Apache Cassandra as a result backend.
+    for using Apache Cassandra as a result backend with pycassa driver.
+
+:celery[new_cassandra]:
+    for using Apache Cassandra as a result backend with DataStax driver.
 
 :celery[couchdb]:
     for using CouchDB as a message transport (*experimental*).
 
 :celery[couchbase]:
     for using CouchBase as a result backend.
+
+:celery[riak]:
+    for using Riak as a result backend.
 
 :celery[beanstalk]:
     for using Beanstalk as a message transport (*experimental*).
@@ -396,26 +399,6 @@ Wiki
 
 http://wiki.github.com/celery/celery/
 
-
-.. _maintainers:
-
-Maintainers
-===========
-
-- `@ask`_ (primary maintainer)
-- `@thedrow`_
-- `@chrisgogreen`_
-- `@PMickael`_
-- `@malinoff`_
-- And you? We really need more: https://github.com/celery/celery/issues/2534 
-
-.. _`@ask`: http://github.com/ask
-.. _`@thedrow`: http://github.com/thedrow
-.. _`@chrisgogreen`: http://github.com/chrisgogreen
-.. _`@PMickael`: http://github.com/PMickael
-.. _`@malinoff`: http://github.com/malinoff
-
-
 .. _contributing-short:
 
 Contributing
@@ -448,7 +431,3 @@ file in the top distribution directory for the full license text.
     :alt: Bitdeli badge
     :target: https://bitdeli.com/free
 
-.. |build-status| image:: https://travis-ci.org/celery/celery.svg?branch=master
-   :target: https://travis-ci.org/celery/celery
-.. |coverage-status| image:: https://codecov.io/gh/celery/celery/badge.svg
-   :target: https://codecov.io/gh/celery/celery

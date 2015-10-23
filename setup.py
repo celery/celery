@@ -12,6 +12,8 @@ CELERY_COMPAT_PROGRAMS = int(os.environ.get('CELERY_COMPAT_PROGRAMS', 1))
 
 if sys.version_info < (2, 7):
     raise Exception('Celery 4.0 requires Python 2.7 or higher.')
+elif sys.version_info > (3, ) < (3, 4):
+    raise Exception('Celery 4.0 requires Python 3.4 or higher.')
 
 # -*- Upgrading from older versions -*-
 
@@ -65,8 +67,8 @@ classes = """
     Programming Language :: Python :: 2
     Programming Language :: Python :: 2.7
     Programming Language :: Python :: 3
-    Programming Language :: Python :: 3.3
     Programming Language :: Python :: 3.4
+    Programming Language :: Python :: 3.5
     Programming Language :: Python :: Implementation :: CPython
     Programming Language :: Python :: Implementation :: PyPy
     Programming Language :: Python :: Implementation :: Jython
@@ -172,17 +174,15 @@ def extras(*p):
     return reqs('extras', *p)
 
 # Celery specific
-features = {
+features = set([
     'auth', 'cassandra', 'memcache', 'couchbase', 'threads',
     'eventlet', 'gevent', 'msgpack', 'yaml', 'redis',
     'mongodb', 'sqs', 'couchdb', 'riak', 'beanstalk', 'zookeeper',
     'zeromq', 'sqlalchemy', 'librabbitmq', 'pyro', 'slmq',
     'new_cassandra',
-}
-extras_require = {x: extras(x + '.txt') for x in features}
+])
+extras_require = dict((x, extras(x + '.txt')) for x in features)
 extra['extras_require'] = extras_require
-
-print(tests_require)
 
 # -*- %%% -*-
 

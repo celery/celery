@@ -146,7 +146,7 @@ class test_trace_task(AppCase):
         tid = uuid()
         ret = jail(self.app, tid, self.mytask.name, [2], {})
         self.assertEqual(ret, 4)
-        self.assertTrue(self.mytask.backend.store_result.called)
+        self.assertTrue(self.mytask.backend.mark_as_done.called)
         self.assertIn('Process cleanup failed', _logger.error.call_args[0][0])
 
     def test_process_cleanup_BaseException(self):

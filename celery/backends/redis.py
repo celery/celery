@@ -196,9 +196,8 @@ class RedisBackend(KeyValueStoreBackend):
         options['task_id'] = group_id
         return header(*partial_args, **options or {})
 
-    def _new_chord_return(self, task, state, result, propagate=None):
+    def _new_chord_return(self, request, state, result, propagate=None):
         app = self.app
-        request = task.request
         tid, gid = request.id, request.group
         if not gid or not tid:
             return

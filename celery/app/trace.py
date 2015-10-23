@@ -187,10 +187,9 @@ class TraceInfo(object):
             einfo = ExceptionInfo()
             einfo.exception = get_pickleable_exception(einfo.exception)
             einfo.type = get_pickleable_etype(einfo.type)
-            if store_errors:
-                task.backend.mark_as_failure(
-                    req.id, exc, einfo.traceback, request=req,
-                )
+            task.backend.mark_as_failure(
+                req.id, exc, einfo.traceback, req, store_errors,
+            )
             task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
             signals.task_failure.send(sender=task, task_id=req.id,
                                       exception=exc, args=req.args,
@@ -282,6 +281,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         task_after_return = task.after_return
 
     store_result = backend.store_result
+    mark_as_done = backend.mark_as_done
     backend_cleanup = backend.process_cleanup
 
     pid = os.getpid()
@@ -291,7 +291,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     pop_request = request_stack.pop
     push_task = _task_stack.push
     pop_task = _task_stack.pop
-    on_chord_part_return = backend.on_chord_part_return
     _does_info = logger.isEnabledFor(logging.INFO)
 
     prerun_receivers = signals.task_prerun.receivers
@@ -368,8 +367,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     )
                 except Exception as exc:
                     I, R, state, retval = on_error(task_request, exc, uuid)
-                    if task_request.chord:
-                        on_chord_part_return(task, state, exc)
                 except BaseException as exc:
                     raise
                 else:
@@ -397,15 +394,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                     group(sigs).apply_async((retval,))
                             else:
                                 signature(callbacks[0], app=app).delay(retval)
-                        if publish_result:
-                            store_result(
-                                uuid, retval, SUCCESS, request=task_request,
-                            )
+                        mark_as_done(uuid, retval, task_request, publish_result)
                     except EncodeError as exc:
                         I, R, state, retval = on_error(task_request, exc, uuid)
                     else:
-                        if task_request.chord:
-                            on_chord_part_return(task, state, retval)
                         if task_on_success:
                             task_on_success(retval, uuid, args, kwargs)
                         if success_receivers:

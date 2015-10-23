@@ -537,9 +537,8 @@ Example configuration
 
 .. _conf-new_cassandra-result-backend:
 
-
 new_cassandra backend settings
---------------------------
+------------------------------
 
 .. note::
 
@@ -625,6 +624,7 @@ Example configuration
     CASSANDRA_WRITE_CONSISTENCY = 'ONE'
     CASSANDRA_ENTRY_TTL = 86400
 
+.. _conf-cassandra-result-backend:
 
 Cassandra backend settings
 --------------------------

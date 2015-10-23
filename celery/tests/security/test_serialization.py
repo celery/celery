@@ -4,6 +4,7 @@ import os
 import base64
 
 from kombu.serialization import registry
+from kombu.utils.encoding import bytes_to_str
 
 from celery.exceptions import SecurityError
 from celery.security.serialization import SecureSerializer, register_auth
@@ -59,6 +60,6 @@ class test_SecureSerializer(SecurityCase):
 
     def test_lots_of_sign(self):
         for i in range(1000):
-            rdata = base64.urlsafe_b64encode(os.urandom(265))
+            rdata = bytes_to_str(base64.urlsafe_b64encode(os.urandom(265)))
             s = self._get_s(KEY1, CERT1, [CERT1])
             self.assertEqual(s.deserialize(s.serialize(rdata)), rdata)

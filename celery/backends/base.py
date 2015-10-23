@@ -112,14 +112,38 @@ class BaseBackend(object):
         """Mark a task as started"""
         return self.store_result(task_id, meta, status=states.STARTED)
 
-    def mark_as_done(self, task_id, result, request=None):
+    def mark_as_done(self, task_id, result,
+                     request=None, store_result=True, state=states.SUCCESS):
         """Mark task as successfully executed."""
-        return self.store_result(task_id, result,
-                                 status=states.SUCCESS, request=request)
+        if store_result:
+            self.store_result(task_id, result, status=state, request=request)
+        if request and request.chord:
+            self.on_chord_part_return(request, state)
 
-    def mark_as_failure(self, task_id, exc, traceback=None, request=None):
+    def mark_as_failure(self, task_id, exc,
+                        traceback=None, request=None, store_result=True,
+                        state=states.FAILURE):
         """Mark task as executed with failure. Stores the exception."""
-        return self.store_result(task_id, exc, status=states.FAILURE,
+        if store_result:
+            self.store_result(task_id, exc, status=state,
+                              traceback=traceback, request=request)
+        if request and request.chord:
+            self.on_chord_part_return(request, state, exc)
+
+    def mark_as_revoked(self, task_id, reason='',
+                        request=None, store_result=True, state=states.REVOKED):
+        exc = TaskRevokedError(reason)
+        if store_result:
+            self.store_result(task_id, exc,
+                              status=state, traceback=None, request=request)
+        if request and request.chord:
+            self.on_chord_part_return(request, state, exc)
+
+    def mark_as_retry(self, task_id, exc, traceback=None,
+                      request=None, store_result=True, state=states.RETRY):
+        """Mark task as being retries. Stores the current
+        exception (if any)."""
+        return self.store_result(task_id, exc, status=state,
                                  traceback=traceback, request=request)
 
     def chord_error_from_stack(self, callback, exc=None):
@@ -146,17 +170,6 @@ class BaseBackend(object):
             return ei
         finally:
             del(tb)
-
-    def mark_as_retry(self, task_id, exc, traceback=None, request=None):
-        """Mark task as being retries. Stores the current
-        exception (if any)."""
-        return self.store_result(task_id, exc, status=states.RETRY,
-                                 traceback=traceback, request=request)
-
-    def mark_as_revoked(self, task_id, reason='', request=None):
-        return self.store_result(task_id, TaskRevokedError(reason),
-                                 status=states.REVOKED, traceback=None,
-                                 request=request)
 
     def prepare_exception(self, exc, serializer=None):
         """Prepare exception for serialization."""
@@ -346,7 +359,7 @@ class BaseBackend(object):
     def add_to_chord(self, chord_id, result):
         raise NotImplementedError('Backend does not support add_to_chord')
 
-    def on_chord_part_return(self, task, state, result, propagate=False):
+    def on_chord_part_return(self, request, state, result, propagate=False):
         pass
 
     def fallback_chord_unlock(self, group_id, body, result=None,
@@ -540,20 +553,20 @@ class KeyValueStoreBackend(BaseBackend):
 
         return header(*partial_args, task_id=group_id, **fixed_options or {})
 
-    def on_chord_part_return(self, task, state, result, propagate=None):
+    def on_chord_part_return(self, request, state, result, propagate=None):
         if not self.implements_incr:
             return
         app = self.app
         if propagate is None:
             propagate = app.conf.CELERY_CHORD_PROPAGATES
-        gid = task.request.group
+        gid = request.group
         if not gid:
             return
         key = self.get_key_for_chord(gid)
         try:
-            deps = GroupResult.restore(gid, backend=task.backend)
+            deps = GroupResult.restore(gid, backend=self)
         except Exception as exc:
-            callback = maybe_signature(task.request.chord, app=app)
+            callback = maybe_signature(request.chord, app=app)
             logger.error('Chord %r raised: %r', gid, exc, exc_info=1)
             return self.chord_error_from_stack(
                 callback,
@@ -563,7 +576,7 @@ class KeyValueStoreBackend(BaseBackend):
             try:
                 raise ValueError(gid)
             except ValueError as exc:
-                callback = maybe_signature(task.request.chord, app=app)
+                callback = maybe_signature(request.chord, app=app)
                 logger.error('Chord callback %r raised: %r', gid, exc,
                              exc_info=1)
                 return self.chord_error_from_stack(
@@ -576,7 +589,7 @@ class KeyValueStoreBackend(BaseBackend):
             logger.warning('Chord counter incremented too many times for %r',
                            gid)
         elif val == size:
-            callback = maybe_signature(task.request.chord, app=app)
+            callback = maybe_signature(request.chord, app=app)
             j = deps.join_native if deps.supports_native_join else deps.join
             try:
                 with allow_join_result():

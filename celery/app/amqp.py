@@ -6,9 +6,10 @@
     Sending and receiving messages using Kombu.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import numbers
+import sys
 
 from collections import Mapping, namedtuple
 from datetime import timedelta
@@ -22,6 +23,7 @@ from kombu.utils.functional import maybe_list
 
 from celery import signals
 from celery.five import items, string_t
+from celery.local import try_import
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
 from celery.utils.timeutils import to_utc
@@ -29,6 +31,11 @@ from celery.utils.timeutils import to_utc
 from . import routes as _routes
 
 __all__ = ['AMQP', 'Queues', 'task_message']
+
+PY3 = sys.version_info[0] == 3
+
+# json in Python2.7 borks if dict contains byte keys.
+JSON_NEEDS_UNICODE_KEYS = not PY3 and not try_import('simplejson')
 
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
@@ -38,6 +45,11 @@ key={0.routing_key}
 
 task_message = namedtuple('task_message',
                           ('headers', 'properties', 'body', 'sent_event'))
+
+
+def utf8dict(d, encoding='utf-8'):
+    return {k.decode(encoding) if isinstance(k, bytes) else k: v
+            for k, v in items(d)}
 
 
 class Queues(dict):
@@ -311,6 +323,14 @@ class AMQP(object):
         argsrepr = saferepr(args)
         kwargsrepr = saferepr(kwargs)
 
+        if JSON_NEEDS_UNICODE_KEYS:
+            if callbacks:
+                callbacks = [utf8dict(callback) for callback in callbacks]
+            if errbacks:
+                errbacks = [utf8dict(errback) for errback in errbacks]
+            if chord:
+                chord = utf8dict(chord)
+
         return task_message(
             headers={
                 'lang': 'py',
@@ -379,6 +399,14 @@ class AMQP(object):
                 expires = to_utc(expires).astimezone(timezone)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
+
+        if JSON_NEEDS_UNICODE_KEYS:
+            if callbacks:
+                callbacks = [utf8dict(callback) for callback in callbacks]
+            if errbacks:
+                errbacks = [utf8dict(errback) for errback in errbacks]
+            if chord:
+                chord = utf8dict(chord)
 
         return task_message(
             headers={},

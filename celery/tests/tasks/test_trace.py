@@ -103,8 +103,14 @@ class test_trace(TraceCase):
             return x + y
         add.backend = Mock()
 
-        self.trace(add, (2, 2), {}, request={'chord': uuid()})
-        add.backend.on_chord_part_return.assert_called_with(add, 'SUCCESS', 4)
+        request = {'chord': uuid()}
+        self.trace(add, (2, 2), {}, request=request)
+        self.assertTrue(add.backend.mark_as_done.called)
+        args, kwargs = add.backend.mark_as_done.call_args
+        self.assertEqual(args[0], 'id-1')
+        self.assertEqual(args[1], 4)
+        self.assertEqual(args[2].chord, request['chord'])
+        self.assertFalse(args[3])
 
     def test_when_backend_cleanup_raises(self):
 
