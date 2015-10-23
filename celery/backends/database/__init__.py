@@ -7,6 +7,8 @@ from contextlib import contextmanager
 
 from vine.utils import wraps
 
+from kombu.utils.encoding import ensure_bytes
+
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
