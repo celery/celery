@@ -1313,7 +1313,7 @@ will be performed every 5 seconds (twice the heartbeat sending rate).
 
 BROKER_USE_SSL
 ~~~~~~~~~~~~~~
-:transports supported: ``pyamqp``
+:transports supported: ``pyamqp``, ``redis``
 
 
 Toggles SSL usage on broker connection and SSL settings.
