@@ -245,7 +245,8 @@ class WorkController(object):
 
     def should_use_eventloop(self):
         return (detect_environment() == 'default' and
-                self._conninfo.is_evented and not self.app.IS_WINDOWS)
+                self._conninfo.transport.implements.async and
+                not self.app.IS_WINDOWS)
 
     def stop(self, in_sighandler=False, exitcode=None):
         """Graceful shutdown of the worker server."""
