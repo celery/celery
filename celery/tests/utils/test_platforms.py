@@ -4,6 +4,7 @@ import errno
 import os
 import sys
 import signal
+import tempfile
 
 from celery import _find_option_with_arg
 from celery import platforms
@@ -27,6 +28,7 @@ from celery.platforms import (
     setgroups,
     _setgroups_hack,
     close_open_fds,
+    fd_by_path,
 )
 
 try:
@@ -53,6 +55,14 @@ class test_find_option_with_arg(Case):
             _find_option_with_arg(['-f', 'bar'], short_opts=['-f']),
             'bar'
         )
+
+class test_fd_by_path(Case):
+
+    def test_finds(self):
+        test_file = tempfile.NamedTemporaryFile()
+        keep = fd_by_path([test_file])
+        self.assertEqual(keep, [test_file.file.fileno()])
+        test_file.close()
 
 
 class test_close_open_fds(Case):
