@@ -8,6 +8,15 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.19:
+
+3.1.19
+======
+:release-date: TBA
+:release-by: Ask Solem
+
+-  Fixed MongoDB result backend URL parsing problem.  (Issue celery/kombu#375)
+
 .. _version-3.1.18:
 
 3.1.18
