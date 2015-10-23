@@ -12,6 +12,8 @@ import logging
 from contextlib import contextmanager
 from functools import wraps
 
+from kombu.utils.encoding import ensure_bytes
+
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
@@ -117,7 +119,7 @@ class DatabaseBackend(BaseBackend):
                 task = Task(task_id)
                 session.add(task)
                 session.flush()
-            task.result = result
+            task.result = ensure_bytes(self.encode(result))
             task.status = status
             task.traceback = traceback
             session.commit()
