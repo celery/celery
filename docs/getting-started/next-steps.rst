@@ -78,7 +78,7 @@ The :program:`celery` program can be used to start the worker (you need to run t
 
 When the worker starts you should see a banner and some messages::
 
-     -------------- celery@halcyon.local v3.1 (Cipater)
+     -------------- celery@halcyon.local v4.0 (0today8)
      ---- **** -----
      --- * ***  * -- [Configuration]
      -- * - **** --- . broker:      amqp://guest@localhost:5672//
@@ -152,7 +152,7 @@ start one or more workers in the background:
 .. code-block:: console
 
     $ celery multi start w1 -A proj -l info
-    celery multi v3.1.1 (Cipater)
+    celery multi v4.0.0 (0today8)
     > Starting nodes...
         > w1.halcyon.local: OK
 
@@ -161,13 +161,13 @@ You can restart it too:
 .. code-block:: console
 
     $ celery  multi restart w1 -A proj -l info
-    celery multi v3.1.1 (Cipater)
+    celery multi v4.0.0 (0today8)
     > Stopping nodes...
         > w1.halcyon.local: TERM -> 64024
     > Waiting for 1 node.....
         > w1.halcyon.local: OK
     > Restarting node w1.halcyon.local: OK
-    celery multi v3.1.1 (Cipater)
+    celery multi v4.0.0 (0today8)
     > Stopping nodes...
         > w1.halcyon.local: TERM -> 64052
 
