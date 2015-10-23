@@ -300,7 +300,7 @@ def fd_by_path(paths):
         except OSError:
             return False
 
-    return [fd for fd in xrange(get_fdmax(2048)) if fd_in_stats(fd)]
+    return [fd for fd in range(get_fdmax(2048)) if fd_in_stats(fd)]
 
 
 if hasattr(os, 'closerange'):
