@@ -31,6 +31,10 @@ new in Celery 3.1.
 - **Beat**: PyPy shelve may raise ``KeyError`` when setting keys
   (Issue #2862).
 
+- **Programs**: :program:`celery beat --deatched` now working on PyPy.
+
+    Fix contributed by Krzysztof Bujniewicz.
+
 - **Results**: Redis result backend now ensures all pipelines are cleaned up.
 
     Contributed by Justin Patrin.
@@ -56,6 +60,34 @@ new in Celery 3.1.
   (Issue #2744).
 
     Fix contributed by Sukrit Khera.
+
+- **Results**: RPC/amqp backends did not deserialize exceptions properly
+  (Issue #2691).
+
+    Fix contributed by Sukrit Khera.
+
+- **Programs**: Fixed problem with :program:`celery amqp`'s
+  ``basic_publish`` (Issue #2013).
+
+- **Worker**: Embedded beat now properly sets app for thread/process
+  (Issue #2594).
+
+- **Documentation**: Many improvements and typos fixed.
+
+    Contributions by:
+
+        Carlos Garcia-Dubus
+        D. Yu
+        jerry
+        Jocelyn Delalande
+        Josh Kupershmidt
+        Juan Rossi
+        kanemra
+        Paul Pearce
+        Pavel Savchenko
+        Sean Wang
+        Seungha Kim
+        Zhaorong Ma
 
 .. _version-3.1.18:
 
