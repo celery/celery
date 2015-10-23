@@ -12,7 +12,7 @@ CELERY_COMPAT_PROGRAMS = int(os.environ.get('CELERY_COMPAT_PROGRAMS', 1))
 
 if sys.version_info < (2, 7):
     raise Exception('Celery 4.0 requires Python 2.7 or higher.')
-elif sys.version_info > (3, ) < (3, 4):
+elif sys.version_info > (3, ) and sys.version_info < (3, 4):
     raise Exception('Celery 4.0 requires Python 3.4 or higher.')
 
 # -*- Upgrading from older versions -*-
