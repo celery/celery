@@ -28,7 +28,7 @@ To read more about Celery you should go read the :ref:`introduction <intro>`.
 While this version is backward compatible with previous versions
 it's important that you read the following section.
 
-This version is officially supported on CPython 2.6, 2.7 and 3.3,
+This version is officially supported on CPython 2.7, 3.4 and 3.5.
 and also supported on PyPy.
 
 .. _`website`: http://celeryproject.org/

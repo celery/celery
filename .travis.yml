@@ -8,7 +8,6 @@ env:
     PYTHONUNBUFFERED=yes
   matrix:
     - TOXENV=2.7
-    - TOXENV=3.3
     - TOXENV=3.4
     - TOXENV=pypy
     - TOXENV=3.5
