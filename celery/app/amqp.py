@@ -9,6 +9,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import numbers
+import sys
 
 from collections import Mapping, namedtuple
 from datetime import timedelta
@@ -31,8 +32,10 @@ from . import routes as _routes
 
 __all__ = ['AMQP', 'Queues', 'task_message']
 
+PY3 = sys.version_info[0] == 3
+
 # json in Python2.7 borks if dict contains byte keys.
-JSON_NEEDS_UNICODE_KEYS = not try_import('simplejson')
+JSON_NEEDS_UNICODE_KEYS = not PY3 and not try_import('simplejson')
 
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
@@ -45,7 +48,8 @@ task_message = namedtuple('task_message',
 
 
 def utf8dict(d, encoding='utf-8'):
-    return {k.encode(encoding): v for k, v in items(d)}
+    return {k.decode(encoding) if isinstance(k, bytes) else k: v
+            for k, v in items(d)}
 
 
 class Queues(dict):
