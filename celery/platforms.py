@@ -46,7 +46,8 @@ __all__ = ['EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
            'close_open_fds', 'DaemonContext', 'detached', 'parse_uid',
            'parse_gid', 'setgroups', 'initgroups', 'setgid', 'setuid',
            'maybe_drop_privileges', 'signals', 'set_process_title',
-           'set_mp_process_title', 'get_errno_name', 'ignore_errno']
+           'set_mp_process_title', 'get_errno_name', 'ignore_errno',
+           'fd_by_path']
 
 # exitcodes
 EX_OK = getattr(os, 'EX_OK', 0)
@@ -247,6 +248,43 @@ def _create_pidlock(pidfile):
     pidlock.acquire()
     return pidlock
 
+def fd_by_path(paths):
+    """
+    Return a list of fds.
+
+    This method returns list of fds corresponding to
+    file paths passed in paths variable.
+
+    :keyword paths: List of file paths go get fd for.
+
+    :returns: :list:.
+
+    **Example**:
+
+    .. code-block:: python
+
+        keep = fd_by_path(['/dev/urandom',
+                           '/my/precious/'])
+    """
+    stats = set()
+    for path in paths:
+        try:
+            fd = os.open(path, os.O_RDONLY)
+        except OSError:
+            continue
+        try:
+            stats.add(os.fstat(fd)[1:3])
+        finally:
+            os.close(fd)
+
+    def fd_in_stats(fd):
+        try:
+            return os.fstat(fd)[1:3] in stats
+        except OSError:
+            return False
+
+    return [fd for fd in range(get_fdmax(2048)) if fd_in_stats(fd)]
+
 
 class DaemonContext(object):
     _is_open = False
@@ -282,7 +320,10 @@ class DaemonContext(object):
                 self.after_chdir()
 
             if not self.fake:
-                close_open_fds(self.stdfds)
+                # We need to keep /dev/urandom from closing because
+                # shelve needs it, and Beat needs shelve to start.
+                keep = list(self.stdfds) + fd_by_path(['/dev/urandom'])
+                close_open_fds(keep)
                 for fd in self.stdfds:
                     self.redirect_to_null(maybe_fileno(fd))
                 if self.after_forkers and mputil is not None:
