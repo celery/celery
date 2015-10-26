@@ -502,8 +502,8 @@ class Celery(object):
         serializer will register the auth serializer with the provided settings
         into the Kombu serializer registry.
 
-        :keyword allowed_serializers:  List of serializer names, or content_types
-            that should be exempt from being disabled.
+        :keyword allowed_serializers: List of serializer names, or
+            content_types that should be exempt from being disabled.
         :keyword key: Name of private key file to use.
             Defaults to the :setting:`CELERY_SECURITY_KEY` setting.
         :keyword cert: Name of certificate file to use.

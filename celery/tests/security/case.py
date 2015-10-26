@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 from celery.tests.case import AppCase, SkipTest
 
-import sys
-
 
 class SecurityCase(AppCase):
 
