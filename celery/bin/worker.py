@@ -226,7 +226,7 @@ class worker(Command):
                    default=conf.CELERYD_CONCURRENCY, type='int'),
             Option('-P', '--pool', default=conf.CELERYD_POOL, dest='pool_cls'),
             Option('--purge', '--discard', default=False, action='store_true'),
-            Option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL),
+            Option('-l', '--loglevel', default='WARN'),
             Option('-n', '--hostname'),
             Option('-B', '--beat', action='store_true'),
             Option('-s', '--schedule', dest='schedule_filename',

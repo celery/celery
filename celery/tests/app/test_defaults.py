@@ -37,13 +37,6 @@ class test_defaults(AppCase):
             with pypy_version((1, 5, 0)):
                 self.assertEqual(self.defaults.DEFAULT_POOL, 'prefork')
 
-    def test_deprecated(self):
-        source = Mock()
-        source.CELERYD_LOG_LEVEL = 2
-        with patch('celery.utils.warn_deprecated') as warn:
-            self.defaults.find_deprecated_settings(source)
-            self.assertTrue(warn.called)
-
     def test_default_pool_jython(self):
         with sys_platform('java 1.6.51'):
             self.assertEqual(self.defaults.DEFAULT_POOL, 'threads')

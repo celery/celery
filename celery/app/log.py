@@ -58,7 +58,7 @@ class Logging(object):
 
     def __init__(self, app):
         self.app = app
-        self.loglevel = mlevel(self.app.conf.CELERYD_LOG_LEVEL)
+        self.loglevel = mlevel(logging.WARN)
         self.format = self.app.conf.CELERYD_LOG_FORMAT
         self.task_format = self.app.conf.CELERYD_TASK_LOG_FORMAT
         self.colorize = self.app.conf.CELERYD_LOG_COLOR

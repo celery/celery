@@ -43,13 +43,13 @@ class Beat(object):
 
     def __init__(self, max_interval=None, app=None,
                  socket_timeout=30, pidfile=None, no_color=None,
-                 loglevel=None, logfile=None, schedule=None,
+                 loglevel='WARN', logfile=None, schedule=None,
                  scheduler_cls=None, redirect_stdouts=None,
                  redirect_stdouts_level=None, **kwargs):
         """Starts the beat task scheduler."""
         self.app = app = app or self.app
-        self.loglevel = self._getopt('log_level', loglevel)
-        self.logfile = self._getopt('log_file', logfile)
+        self.loglevel = loglevel
+        self.logfile = logfile
         self.schedule = self._getopt('schedule_filename', schedule)
         self.scheduler_cls = self._getopt('scheduler', scheduler_cls)
         self.redirect_stdouts = self._getopt(

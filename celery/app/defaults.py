@@ -39,11 +39,6 @@ DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s] %(message)s'
 DEFAULT_TASK_LOG_FMT = """[%(asctime)s: %(levelname)s/%(processName)s] \
 %(task_name)s[%(task_id)s]: %(message)s"""
 
-_BROKER_OLD = {'deprecate_by': '2.5', 'remove_by': '4.0',
-               'alt': 'BROKER_URL setting'}
-_REDIS_OLD = {'deprecate_by': '2.5', 'remove_by': '4.0',
-              'alt': 'URL form of CELERY_RESULT_BACKEND'}
-
 searchresult = namedtuple('searchresult', ('namespace', 'key', 'type'))
 
 
@@ -81,11 +76,11 @@ NAMESPACES = {
         'USE_SSL': Option(False, type='bool'),
         'TRANSPORT': Option(type='string'),
         'TRANSPORT_OPTIONS': Option({}, type='dict'),
-        'HOST': Option(type='string', **_BROKER_OLD),
-        'PORT': Option(type='int', **_BROKER_OLD),
-        'USER': Option(type='string', **_BROKER_OLD),
-        'PASSWORD': Option(type='string', **_BROKER_OLD),
-        'VHOST': Option(type='string', **_BROKER_OLD),
+        'HOST': Option(type='string'),
+        'PORT': Option(type='int'),
+        'USER': Option(type='string'),
+        'PASSWORD': Option(type='string'),
+        'VHOST': Option(type='string'),
     },
     'CASSANDRA': {
         'COLUMN_FAMILY': Option(type='string'),
@@ -129,10 +124,10 @@ NAMESPACES = {
         'MAX_CACHED_RESULTS': Option(100, type='int'),
         'MESSAGE_COMPRESSION': Option(type='string'),
         'MONGODB_BACKEND_SETTINGS': Option(type='dict'),
-        'REDIS_HOST': Option(type='string', **_REDIS_OLD),
-        'REDIS_PORT': Option(type='int', **_REDIS_OLD),
-        'REDIS_DB': Option(type='int', **_REDIS_OLD),
-        'REDIS_PASSWORD': Option(type='string', **_REDIS_OLD),
+        'REDIS_HOST': Option(type='string'),
+        'REDIS_PORT': Option(type='int'),
+        'REDIS_DB': Option(type='int'),
+        'REDIS_PASSWORD': Option(type='string'),
         'REDIS_MAX_CONNECTIONS': Option(type='int'),
         'REJECT_ON_WORKER_LOST': Option(type='bool'),
         'RESULT_BACKEND': Option(type='string'),
@@ -183,10 +178,6 @@ NAMESPACES = {
         'CONSUMER': Option('celery.worker.consumer:Consumer', type='string'),
         'LOG_FORMAT': Option(DEFAULT_PROCESS_LOG_FMT),
         'LOG_COLOR': Option(type='bool'),
-        'LOG_LEVEL': Option('WARN', deprecate_by='2.4', remove_by='4.0',
-                            alt='--loglevel argument'),
-        'LOG_FILE': Option(deprecate_by='2.4', remove_by='4.0',
-                           alt='--logfile argument'),
         'MAX_TASKS_PER_CHILD': Option(type='int'),
         'POOL': Option(DEFAULT_POOL),
         'POOL_PUTLOCKS': Option(True, type='bool'),
@@ -204,17 +195,6 @@ NAMESPACES = {
         'SCHEDULE_FILENAME': Option('celerybeat-schedule'),
         'SYNC_EVERY': Option(0, type='int'),
         'MAX_LOOP_INTERVAL': Option(0, type='float'),
-        'LOG_LEVEL': Option('INFO', deprecate_by='2.4', remove_by='4.0',
-                            alt='--loglevel argument'),
-        'LOG_FILE': Option(deprecate_by='2.4', remove_by='4.0',
-                           alt='--logfile argument'),
-    },
-    'CELERYMON': {
-        'LOG_LEVEL': Option('INFO', deprecate_by='2.4', remove_by='4.0',
-                            alt='--loglevel argument'),
-        'LOG_FILE': Option(deprecate_by='2.4', remove_by='4.0',
-                           alt='--logfile argument'),
-        'LOG_FORMAT': Option(DEFAULT_LOG_FMT),
     },
     'EMAIL': {
         'HOST': Option('localhost'),

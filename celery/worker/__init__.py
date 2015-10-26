@@ -352,9 +352,9 @@ class WorkController(object):
                        task_time_limit=None, task_soft_time_limit=None,
                        max_tasks_per_child=None, prefetch_multiplier=None,
                        disable_rate_limits=None, worker_lost_wait=None, **_kw):
+        self.loglevel = loglevel
+        self.logfile = logfile
         self.concurrency = self._getopt('concurrency', concurrency)
-        self.loglevel = self._getopt('log_level', loglevel)
-        self.logfile = self._getopt('log_file', logfile)
         self.send_events = self._getopt('send_events', send_events)
         self.pool_cls = self._getopt('pool', pool_cls)
         self.consumer_cls = self._getopt('consumer', consumer_cls)
