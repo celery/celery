@@ -275,7 +275,7 @@ See :mod:`celery.result` for the complete result object reference.
 Configuration
 =============
 
-Celery, like a consumer appliance doesn't need much to be operated.
+Celery, like a consumer appliance, doesn't need much to be operated.
 It has an input and an output, where you must connect the input to a broker and maybe
 the output to a result backend if so wanted.  But if you look closely at the back
 there's a lid revealing loads of sliders, dials and buttons: this is the configuration.
