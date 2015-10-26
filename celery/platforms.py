@@ -265,6 +265,43 @@ def _create_pidlock(pidfile):
     pidlock.acquire()
     return pidlock
 
+def fd_by_path(paths):
+    """
+    Return a list of fds.
+
+    This method returns list of fds corresponding to
+    file paths passed in paths variable.
+
+    :keyword paths: List of file paths go get fd for.
+
+    :returns: :list:.
+
+    **Example**:
+
+    .. code-block:: python
+
+        keep = fd_by_path(['/dev/urandom',
+                           '/my/precious/'])
+    """
+    stats = set()
+    for path in paths:
+        try:
+            fd = os.open(path, os.O_RDONLY)
+        except OSError:
+            continue
+        try:
+            stats.add(os.fstat(fd)[1:3])
+        finally:
+            os.close(fd)
+
+    def fd_in_stats(fd):
+        try:
+            return os.fstat(fd)[1:3] in stats
+        except OSError:
+            return False
+
+    return [fd for fd in range(get_fdmax(2048)) if fd_in_stats(fd)]
+
 
 def fd_by_path(paths):
     """Return a list of fds.

@@ -56,6 +56,14 @@ class test_find_option_with_arg(Case):
             'bar'
         )
 
+class test_fd_by_path(Case):
+
+    def test_finds(self):
+        test_file = tempfile.NamedTemporaryFile()
+        keep = fd_by_path([test_file.name])
+        self.assertEqual(keep, [test_file.file.fileno()])
+        test_file.close()
+
 
 class test_fd_by_path(Case):
 
