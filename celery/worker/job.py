@@ -563,8 +563,8 @@ class Request(object):
 
     @property
     def store_errors(self):
-        return (not self.task.ignore_result
-                or self.task.store_errors_even_if_ignored)
+        return (not self.task.ignore_result or
+                self.task.store_errors_even_if_ignored)
 
     @property
     def task_id(self):

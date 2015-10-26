@@ -313,7 +313,8 @@ if not is_jython:  # pragma: no cover
         _shutdown_handler, sig='SIGINT', callback=on_SIGINT
     )
 else:  # pragma: no cover
-    install_worker_int_handler = lambda *a, **kw: None
+    def install_worker_int_handler(*a, **kw):
+        pass
 
 
 def _reload_current_worker():

@@ -159,7 +159,8 @@ class TaskPool(BasePool):
         try:
             write_stats = self._pool.human_write_stats
         except AttributeError:
-            write_stats = lambda: 'N/A'  # only supported by asynpool
+            def write_stats():
+                return 'N/A'  # only supported by asynpool
         return {
             'max-concurrency': self.limit,
             'processes': [p.pid for p in self._pool._pool],

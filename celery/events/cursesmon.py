@@ -318,8 +318,8 @@ class CursesMonitor(object):  # pragma: no cover
         def alert_callback(my, mx, xs):
             y = count(xs)
             task = self.state.tasks[self.selected_task]
-            result = (getattr(task, 'result', None)
-                      or getattr(task, 'exception', None))
+            result = (getattr(task, 'result', None) or
+                      getattr(task, 'exception', None))
             for line in wrap(result, mx - 2):
                 self.win.addstr(next(y), 3, line)
 

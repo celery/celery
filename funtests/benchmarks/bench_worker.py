@@ -8,16 +8,16 @@ os.environ.update(
     USE_FAST_LOCALS='yes',
 )
 
-import anyjson
+import anyjson  # noqa
 JSONIMP = os.environ.get('JSONIMP')
 if JSONIMP:
     anyjson.force_implementation(JSONIMP)
 
 print('anyjson implementation: {0!r}'.format(anyjson.implementation.name))
 
-from celery import Celery, group
-from celery.five import range
-from kombu.five import monotonic
+from celery import Celery, group  # noqa
+from celery.five import range  # noqa
+from kombu.five import monotonic  # noqa
 
 DEFAULT_ITS = 40000
 
@@ -54,8 +54,9 @@ def tdiff(then):
 
 @app.task(cur=0, time_start=None, queue='bench.worker', bare=True)
 def it(_, n):
-    i = it.cur  # use internal counter, as ordering can be skewed
-                # by previous runs, or the broker.
+    # use internal counter, as ordering can be skewed
+    # by previous runs, or the broker.
+    i = it.cur
     if i and not i % 5000:
         print('({0} so far: {1}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
         it.subt = monotonic()
@@ -77,7 +78,6 @@ def bench_apply(n=DEFAULT_ITS):
     task = it._get_current_object()
     with app.producer_or_acquire() as producer:
         [task.apply_async((i, n), producer=producer) for i in range(n)]
-    #group(s(i, n) for i in range(n))()
     print('-- apply {0} tasks: {1}s'.format(n, monotonic() - time_start))
 
 

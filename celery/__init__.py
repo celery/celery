@@ -7,6 +7,9 @@
 
 from __future__ import absolute_import
 
+import os
+import sys
+
 from collections import namedtuple
 
 version_info_t = namedtuple(
@@ -30,8 +33,6 @@ VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
 
 # -eof meta-
 
-import os
-import sys
 if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
     from .five import builtins
     real_import = builtins.__import__
@@ -127,7 +128,7 @@ def maybe_patch_concurrency(argv=sys.argv,
         concurrency.get_implementation(pool)
 
 # Lazy loading
-from celery import five
+from celery import five  # noqa
 
 old_module, new_module = five.recreate_module(  # pragma: no cover
     __name__,

@@ -144,7 +144,10 @@ class test_App(AppCase):
     def test_add_defaults(self):
         self.assertFalse(self.app.configured)
         _conf = {'FOO': 300}
-        conf = lambda: _conf
+
+        def conf():
+            return _conf
+
         self.app.add_defaults(conf)
         self.assertIn(conf, self.app._pending_defaults)
         self.assertFalse(self.app.configured)
@@ -208,7 +211,10 @@ class test_App(AppCase):
 
     def test_autodiscover_tasks_lazy(self):
         with patch('celery.signals.import_modules') as import_modules:
-            packages = lambda: [1, 2, 3]
+
+            def packages():
+                return [1, 2, 3]
+
             self.app.autodiscover_tasks(packages)
             self.assertTrue(import_modules.connect.called)
             prom = import_modules.connect.call_args[0][0]

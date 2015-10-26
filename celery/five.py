@@ -10,15 +10,14 @@
 """
 from __future__ import absolute_import
 
-__all__ = ['Counter', 'reload', 'UserList', 'UserDict', 'Queue', 'Empty',
-           'zip_longest', 'map', 'string', 'string_t',
-           'long_t', 'text_t', 'range', 'int_types', 'items', 'keys', 'values',
-           'nextfun', 'reraise', 'WhateverIO', 'with_metaclass',
-           'OrderedDict', 'THREAD_TIMEOUT_MAX', 'format_d',
-           'class_property', 'reclassmethod', 'create_module',
-           'recreate_module', 'monotonic']
-
 import io
+import operator
+import sys
+
+from importlib import import_module
+from types import ModuleType
+
+from kombu.five import monotonic
 
 try:
     from collections import Counter
@@ -28,8 +27,15 @@ except ImportError:  # pragma: no cover
     def Counter():  # noqa
         return defaultdict(int)
 
+__all__ = ['Counter', 'reload', 'UserList', 'UserDict', 'Queue', 'Empty',
+           'zip_longest', 'map', 'string', 'string_t',
+           'long_t', 'text_t', 'range', 'int_types', 'items', 'keys', 'values',
+           'nextfun', 'reraise', 'WhateverIO', 'with_metaclass',
+           'OrderedDict', 'THREAD_TIMEOUT_MAX', 'format_d',
+           'class_property', 'reclassmethod', 'create_module',
+           'recreate_module', 'monotonic']
+
 # ############# py3k #########################################################
-import sys
 PY3 = sys.version_info[0] == 3
 
 try:
@@ -47,8 +53,6 @@ try:
 except ImportError:                         # pragma: no cover
     from collections import UserDict        # noqa
 
-
-from kombu.five import monotonic
 
 if PY3:  # pragma: no cover
     import builtins
@@ -175,17 +179,12 @@ else:  # pragma: no cover
 # recreate modules, either for lazy loading or
 # to create old modules at runtime instead of
 # having them litter the source tree.
-import operator
-import sys
 
 # import fails in python 2.5. fallback to reduce in stdlib
 try:
     from functools import reduce
 except ImportError:
     pass
-
-from importlib import import_module
-from types import ModuleType
 
 MODULE_DEPRECATED = """
 The module %s is deprecated and will be removed in a future version.

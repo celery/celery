@@ -102,8 +102,8 @@ CELERY_TEST_CONFIG = {
         'host': os.environ.get('MONGO_HOST') or 'localhost',
         'port': os.environ.get('MONGO_PORT') or 27017,
         'database': os.environ.get('MONGO_DB') or 'celery_unittests',
-        'taskmeta_collection': (os.environ.get('MONGO_TASKMETA_COLLECTION')
-                                or 'taskmeta_collection'),
+        'taskmeta_collection': (os.environ.get('MONGO_TASKMETA_COLLECTION') or
+                                'taskmeta_collection'),
         'user': os.environ.get('MONGO_USER'),
         'password': os.environ.get('MONGO_PASSWORD'),
     }

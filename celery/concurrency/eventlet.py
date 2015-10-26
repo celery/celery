@@ -29,10 +29,10 @@ for mod in (mod for mod in sys.modules if mod.startswith(RACE_MODS)):
             warnings.warn(RuntimeWarning(W_RACE % side))
 
 
-from celery import signals
-from celery.utils import timer2
+from celery import signals  # noqa
+from celery.utils import timer2  # noqa
 
-from . import base
+from . import base  # noqa
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,

@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.insert(0, os.getcwd())
 
-## Start worker with -P eventlet
+# ### Start worker with -P eventlet
 # Never use the CELERYD_POOL setting as that will patch
 # the worker too late.
 

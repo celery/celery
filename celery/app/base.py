@@ -221,7 +221,8 @@ class Celery(object):
 
             def _create_task_cls(fun):
                 if shared:
-                    cons = lambda app: app._task_from_fun(fun, **opts)
+                    def cons(app):
+                        return app._task_from_fun(fun, **opts)
                     cons.__name__ = fun.__name__
                     connect_on_app_finalize(cons)
                 if self.accept_magic_kwargs:  # compat mode

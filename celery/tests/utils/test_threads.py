@@ -90,7 +90,9 @@ class test_LocalManager(Case):
         self.assertListEqual(x.locals, [])
         self.assertTrue(x.ident_func)
 
-        ident = lambda: 1
+        def ident():
+            return 1
+
         loc = Local()
         x = LocalManager([loc], ident_func=ident)
         self.assertListEqual(x.locals, [loc])

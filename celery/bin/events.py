@@ -125,9 +125,9 @@ class events(Command):
              Option('-F', '--frequency', '--freq',
                     type='float', default=1.0),
              Option('-r', '--maxrate'),
-             Option('-l', '--loglevel', default='INFO'))
-            + daemon_options(default_pidfile='celeryev.pid')
-            + tuple(self.app.user_options['events'])
+             Option('-l', '--loglevel', default='INFO')) +
+            daemon_options(default_pidfile='celeryev.pid') +
+            tuple(self.app.user_options['events'])
         )
 
 

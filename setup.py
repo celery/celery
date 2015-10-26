@@ -14,6 +14,7 @@ except ImportError:
     is_setuptools = False
 
 import os
+import re
 import sys
 import codecs
 
@@ -88,11 +89,13 @@ PYPY = hasattr(sys, 'pypy_version_info')
 
 # -*- Distribution Meta -*-
 
-import re
 re_meta = re.compile(r'__(\w+?)__\s*=\s*(.*)')
 re_vers = re.compile(r'VERSION\s*=.*?\((.*?)\)')
 re_doc = re.compile(r'^"""(.+?)"""')
-rq = lambda s: s.strip("\"'")
+
+
+def rq(s):
+    return s.strip("\"'")
 
 
 def add_default(m):
@@ -167,7 +170,8 @@ if CELERY_COMPAT_PROGRAMS:
     ])
 
 if is_setuptools:
-    extras = lambda *p: reqs('extras', *p)
+    def extras(*p):
+        return reqs('extras', *p)
     # Celery specific
     specific_list = ['auth', 'cassandra', 'memcache', 'couchbase', 'threads',
                      'eventlet', 'gevent', 'msgpack', 'yaml', 'redis',

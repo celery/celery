@@ -5,14 +5,14 @@ from datetime import timedelta
 import sys
 sys.modules.pop('celery.task', None)
 
-from celery.schedules import schedule
-from celery.task import (
+from celery.schedules import schedule  # noqa
+from celery.task import (  # noqa
     periodic_task,
     PeriodicTask
 )
-from celery.utils.timeutils import timedelta_seconds
+from celery.utils.timeutils import timedelta_seconds  # noqa
 
-from celery.tests.case import AppCase, depends_on_current_app
+from celery.tests.case import AppCase, depends_on_current_app  # noqa
 
 
 class test_Task(AppCase):

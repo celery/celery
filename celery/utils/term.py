@@ -17,13 +17,16 @@ from celery.five import string
 
 __all__ = ['colored']
 
+IS_WINDOWS = platform.system() == 'Windows'
+
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 OP_SEQ = '\033[%dm'
 RESET_SEQ = '\033[0m'
 COLOR_SEQ = '\033[1;%dm'
-fg = lambda s: COLOR_SEQ % s
 
-IS_WINDOWS = platform.system() == 'Windows'
+
+def fg(s):
+    return COLOR_SEQ % s
 
 
 class colored(object):

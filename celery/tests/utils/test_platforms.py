@@ -56,6 +56,7 @@ class test_find_option_with_arg(Case):
             'bar'
         )
 
+
 class test_fd_by_path(Case):
 
     def test_finds(self):
@@ -147,7 +148,8 @@ class test_Signals(Case):
 
     @patch('signal.signal')
     def test_setitem(self, set):
-        handle = lambda *a: a
+        def handle(*a):
+            return a
         signals['INT'] = handle
         set.assert_called_with(signal.SIGINT, handle)
 
