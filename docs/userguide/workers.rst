@@ -528,6 +528,22 @@ for example from closed source C extensions.
 The option can be set using the workers `--maxtasksperchild` argument
 or using the :setting:`CELERYD_MAX_TASKS_PER_CHILD` setting.
 
+Max memory per child setting
+============================
+
+.. versionadded:: TODO
+
+pool support: *prefork*
+
+With this option you can configure the maximum amount of resident
+memory a worker can execute before it's replaced by a new process.
+
+This is useful if you have memory leaks you have no control over
+for example from closed source C extensions.
+
+The option can be set using the workers `--maxmemperchild` argument
+or using the :setting:`CELERYD_MAX_MEMORY_PER_CHILD` setting.
+
 .. _worker-autoscaling:
 
 Autoscaling
