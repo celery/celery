@@ -216,7 +216,8 @@ class EventDispatcher(object):
                 raise
             self._outbound_buffer.append((event, routing_key, exc))
 
-    def send(self, type, blind=False, utcoffset=utcoffset, **fields):
+    def send(self, type, retry=False, retry_policy=None, blind=False,
+             Event=Event, utcoffset=utcoffset, **fields):
         """Send event.
 
         :param type: Event type name, with group separated by dash (`-`).
@@ -247,7 +248,9 @@ class EventDispatcher(object):
                 elif self.on_send_buffered:
                     self.on_send_buffered()
             else:
-                return self.publish(type, fields, self.producer, blind)
+                return self.publish(type, fields, self.producer, retry=retry,
+                                    retry_policy=retry_policy, blind=blind,
+                                    Event=Event)
 
     def flush(self, errors=True, groups=True):
         """Flushes the outbound buffer."""
