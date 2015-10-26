@@ -248,9 +248,9 @@ def _create_pidlock(pidfile):
     pidlock.acquire()
     return pidlock
 
+
 def fd_by_path(paths):
-    """
-    Return a list of fds.
+    """Return a list of fds.
 
     This method returns list of fds corresponding to
     file paths passed in paths variable.
@@ -283,7 +283,7 @@ def fd_by_path(paths):
         except OSError:
             return False
 
-    return [fd for fd in range(get_fdmax(2048)) if fd_in_stats(fd)]
+    return [_fd for _fd in range(get_fdmax(2048)) if fd_in_stats(_fd)]
 
 
 class DaemonContext(object):

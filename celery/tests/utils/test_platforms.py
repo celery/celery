@@ -56,6 +56,7 @@ class test_find_option_with_arg(Case):
             'bar'
         )
 
+
 class test_fd_by_path(Case):
 
     def test_finds(self):
