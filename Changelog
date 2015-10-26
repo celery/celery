@@ -15,7 +15,47 @@ new in Celery 3.1.
 :release-date: TBA
 :release-by: Ask Solem
 
--  Fixed MongoDB result backend URL parsing problem.  (Issue celery/kombu#375)
+- **Requirements**
+
+    - Now depends on :ref:`Kombu 3.0.29 <kombu:version-3.0.29>`.
+
+    - Now depends on :mod:`billiard` 3.3.0.21.
+
+-  **Results**: Fixed MongoDB result backend URL parsing problem
+   (Issue celery/kombu#375).
+
+- **Worker**: Task request now properly sets ``priority`` in delivery_info.
+
+    Fix contributed by Gerald Manipon.
+
+- **Beat**: PyPy shelve may raise ``KeyError`` when setting keys
+  (Issue #2862).
+
+- **Results**: Redis result backend now ensures all pipelines are cleaned up.
+
+    Contributed by Justin Patrin.
+
+- **Results**: Redis result backend now allows for timeout to be set in the
+  query portion of the result backend URL.
+
+    E.g. ``CELERY_RESULT_BACKEND = 'redis://?timeout=10'``
+
+    Contributed by Justin Patrin.
+
+- **Results**: ``result.get`` now properly handles failures where the
+  exception value is set to :const:`None` (Issue #2560).
+
+- **Prefork pool**: Fixed attribute error ``proc.dead``.
+
+- **Worker**: Fixed worker hanging when gossip/heartbeat disabled
+  (Issue #1847).
+
+    Fix contributed by Aaron Webber and Bryan Helmig.
+
+- **Results**: MongoDB result backend now supports pymongo 3.x
+  (Issue #2744).
+
+    Fix contributed by Sukrit Khera.
 
 .. _version-3.1.18:
 
