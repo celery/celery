@@ -342,7 +342,7 @@ class WorkController(object):
     def state(self):
         return state
 
-    def setup_defaults(self, concurrency=None, loglevel=None, logfile=None,
+    def setup_defaults(self, concurrency=None, loglevel='WARN', logfile=None,
                        send_events=None, pool_cls=None, consumer_cls=None,
                        timer_cls=None, timer_precision=None,
                        autoscaler_cls=None, autoreloader_cls=None,
