@@ -118,7 +118,7 @@ class BaseBackend(object):
         if store_result:
             self.store_result(task_id, result, status=state, request=request)
         if request and request.chord:
-            self.on_chord_part_return(request, state)
+            self.on_chord_part_return(request, state, result)
 
     def mark_as_failure(self, task_id, exc,
                         traceback=None, request=None, store_result=True,
