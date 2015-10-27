@@ -7,7 +7,7 @@ from importlib import import_module
 from celery.app.defaults import NAMESPACES
 
 from celery.tests.case import (
-    AppCase, Mock, patch, pypy_version, sys_platform,
+    AppCase, pypy_version, sys_platform,
 )
 
 
