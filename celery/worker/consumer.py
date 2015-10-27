@@ -686,7 +686,7 @@ class Control(bootsteps.StartStopStep):
 
     def include_if(self, c):
         return (c.app.conf.CELERY_ENABLE_REMOTE_CONTROL and
-                'fanout' in c.conninfo.transport.implements.exchange_type)
+                c.conninfo.supports_exchange_type('fanout'))
 
 
 class Gossip(bootsteps.ConsumerStep):
