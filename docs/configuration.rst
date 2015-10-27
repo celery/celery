@@ -2215,22 +2215,3 @@ changes to the schedule into account.
 Also when running celery beat embedded (:option:`-B`) on Jython as a thread
 the max interval is overridden and set to 1 so that it's possible
 to shut down in a timely manner.
-
-
-.. _conf-celerymon:
-
-Monitor Server: celerymon
--------------------------
-
-
-.. setting:: CELERYMON_LOG_FORMAT
-
-CELERYMON_LOG_FORMAT
-~~~~~~~~~~~~~~~~~~~~
-
-The format to use for log messages.
-
-Default is `[%(asctime)s: %(levelname)s/%(processName)s] %(message)s`
-
-See the Python :mod:`logging` module for more information about log
-formats.
