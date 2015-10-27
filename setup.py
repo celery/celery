@@ -8,12 +8,46 @@ import re
 import sys
 import codecs
 
+try:
+    import platform
+    _pyimp = platform.python_implementation
+except (AttributeError, ImportError):
+    def _pyimp():
+        return 'Python'
+
+E_UNSUPPORTED_PYTHON = """
+----------------------------------------
+ Celery 4.0 requires %s %s or later!
+----------------------------------------
+
+- For CPython 2.6, PyPy 1.x, Jython 2.6, CPython 3.2->3.3; use Celery 3.1:
+
+    $ pip install 'celery<4'
+
+- For CPython 2.5, Jython 2.5; use Celery 3.0:
+
+    $ pip install 'celery<3.1'
+
+- For CPython 2.4; use Celery 2.2:
+
+    $ pip install 'celery<2.3'
+"""
+
+PYIMP = _pyimp()
+PY26_OR_LESS = sys.version_info < (2, 7)
+PY3 = sys.version_info[0] == 3
+PY33_OR_LESS = PY3 and sys.version_info < (3, 4)
+JYTHON = sys.platform.startswith('java')
+PYPY_VERSION = getattr(sys, 'pypy_version_info', None)
+PYPY = PYPY_VERSION is not None
+PYPY24_ATLEAST = PYPY_VERSION and PYPY_VERSION >= (2, 4)
+
 CELERY_COMPAT_PROGRAMS = int(os.environ.get('CELERY_COMPAT_PROGRAMS', 1))
 
-if sys.version_info < (2, 7):
-    raise Exception('Celery 4.0 requires Python 2.7 or higher.')
-elif sys.version_info > (3, ) and sys.version_info < (3, 4):
-    raise Exception('Celery 4.0 requires Python 3.4 or higher.')
+if PY26_OR_LESS:
+    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '2.7'))
+elif PY33_OR_LESS and not PYPY24_ATLEAST:
+    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '3.4'))
 
 # -*- Upgrading from older versions -*-
 
@@ -47,10 +81,6 @@ except:
     pass
 finally:
     sys.path[:] = orig_path
-
-PY3 = sys.version_info[0] == 3
-JYTHON = sys.platform.startswith('java')
-PYPY = hasattr(sys, 'pypy_version_info')
 
 NAME = 'celery'
 entrypoints = {}
