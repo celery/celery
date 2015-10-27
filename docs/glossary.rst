@@ -74,7 +74,7 @@ Glossary
 
     prefetch multiplier
         The :term:`prefetch count` is configured by using the
-        :setting:`CELERYD_PREFETCH_MULTIPLIER` setting, which is multiplied
+        :setting:`worker_prefetch_multiplier` setting, which is multiplied
         by the number of pool slots (threads/processes/greenthreads).
 
     prefetch count

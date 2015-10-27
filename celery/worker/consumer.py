@@ -185,7 +185,7 @@ class Consumer(object):
         self._limit_order = 0
         self.on_task_request = on_task_request
         self.on_task_message = set()
-        self.amqheartbeat_rate = self.app.conf.BROKER_HEARTBEAT_CHECKRATE
+        self.amqheartbeat_rate = self.app.conf.broker_heartbeat_checkrate
         self.disable_rate_limits = disable_rate_limits
         self.initial_prefetch_count = initial_prefetch_count
         self.prefetch_multiplier = prefetch_multiplier
@@ -199,7 +199,7 @@ class Consumer(object):
         if self.hub:
             self.amqheartbeat = amqheartbeat
             if self.amqheartbeat is None:
-                self.amqheartbeat = self.app.conf.BROKER_HEARTBEAT
+                self.amqheartbeat = self.app.conf.broker_heartbeat
         else:
             self.amqheartbeat = 0
 
@@ -210,7 +210,7 @@ class Consumer(object):
             # there's a gevent bug that causes timeouts to not be reset,
             # so if the connection timeout is exceeded once, it can NEVER
             # connect again.
-            self.app.conf.BROKER_CONNECTION_TIMEOUT = None
+            self.app.conf.broker_connection_timeout = None
 
         self.steps = []
         self.blueprint = self.Blueprint(
@@ -279,7 +279,7 @@ class Consumer(object):
             except self.connection_errors as exc:
                 # If we're not retrying connections, no need to catch
                 # connection errors
-                if not self.app.conf.BROKER_CONNECTION_RETRY:
+                if not self.app.conf.broker_connection_retry:
                     raise
                 if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
                     raise  # Too many open files
@@ -354,7 +354,7 @@ class Consumer(object):
         """Establish the broker connection.
 
         Will retry establishing the connection if the
-        :setting:`BROKER_CONNECTION_RETRY` setting is enabled
+        :setting:`broker_connection_retry` setting is enabled
 
         """
         conn = self.app.connection(heartbeat=self.amqheartbeat)
@@ -369,13 +369,13 @@ class Consumer(object):
 
         # remember that the connection is lazy, it won't establish
         # until needed.
-        if not self.app.conf.BROKER_CONNECTION_RETRY:
+        if not self.app.conf.broker_connection_retry:
             # retry disabled, just call connect directly.
             conn.connect()
             return conn
 
         conn = conn.ensure_connection(
-            _error_handler, self.app.conf.BROKER_CONNECTION_MAX_RETRIES,
+            _error_handler, self.app.conf.broker_connection_max_retries,
             callback=maybe_shutdown,
         )
         if self.hub:
@@ -395,7 +395,7 @@ class Consumer(object):
         cset = self.task_consumer
         queues = self.app.amqp.queues
         # Must use in' here, as __missing__ will automatically
-        # create queues when CELERY_CREATE_MISSING_QUEUES is enabled.
+        # create queues when :setting:`task_create_missing_queues` is enabled.
         # (Issue #1079)
         if queue in queues:
             q = queues[queue]
@@ -667,7 +667,7 @@ class Agent(bootsteps.StartStopStep):
     requires = (Connection,)
 
     def __init__(self, c, **kwargs):
-        self.agent_cls = self.enabled = c.app.conf.CELERYD_AGENT
+        self.agent_cls = self.enabled = c.app.conf.worker_agent
 
     def create(self, c):
         agent = c.agent = self.instantiate(self.agent_cls, c.connection)
@@ -685,7 +685,7 @@ class Control(bootsteps.StartStopStep):
         self.shutdown = self.box.shutdown
 
     def include_if(self, c):
-        return (c.app.conf.CELERY_ENABLE_REMOTE_CONTROL and
+        return (c.app.conf.worker_enable_remote_control and
                 c.conninfo.supports_exchange_type('fanout'))
 
 

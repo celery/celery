@@ -117,18 +117,18 @@ or you can use a dedicated configuration module.
 
 The configuration is available as :attr:`@conf`::
 
-    >>> app.conf.CELERY_TIMEZONE
+    >>> app.conf.timezone
     'Europe/London'
 
 where you can also set configuration values directly::
 
-    >>> app.conf.CELERY_ENABLE_UTC = True
+    >>> app.conf.enable_utc = True
 
 and update several keys at once by using the ``update`` method::
 
     >>> app.conf.update(
-    ...     CELERY_ENABLE_UTC=True,
-    ...     CELERY_TIMEZONE='Europe/London',
+    ...     enable_utc=True,
+    ...     timezone='Europe/London',
     ...)
 
 The configuration object consists of multiple dictionaries
@@ -175,8 +175,8 @@ The ``celeryconfig`` module may then look like this:
 
 .. code-block:: python
 
-    CELERY_ENABLE_UTC = True
-    CELERY_TIMEZONE = 'Europe/London'
+    enable_utc = True
+    timezone = 'Europe/London'
 
 Example 2: Using a configuration module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -207,8 +207,8 @@ Example 3:  Using a configuration class/object
     app = Celery()
 
     class Config:
-        CELERY_ENABLE_UTC = True
-        CELERY_TIMEZONE = 'Europe/London'
+        enable_utc = True
+        timezone = 'Europe/London'
 
     app.config_from_object(Config)
     # or using the fully qualified name of the object:

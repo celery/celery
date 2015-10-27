@@ -517,7 +517,7 @@ class test_ControlPanel(AppCase):
         with self.assertRaises(ValueError):
             panel.handle('pool_restart', {'reloader': _reload})
 
-        self.app.conf.CELERYD_POOL_RESTARTS = True
+        self.app.conf.worker_pool_restarts = True
         panel.handle('pool_restart', {'reloader': _reload})
         self.assertTrue(consumer.controller.pool.restart.called)
         consumer.reset_rate_limits.assert_called_with()
@@ -538,7 +538,7 @@ class test_ControlPanel(AppCase):
         _import = consumer.controller.app.loader.import_from_cwd = Mock()
         _reload = Mock()
 
-        self.app.conf.CELERYD_POOL_RESTARTS = True
+        self.app.conf.worker_pool_restarts = True
         panel.handle('pool_restart', {'modules': ['foo', 'bar'],
                                       'reloader': _reload})
 
@@ -563,7 +563,7 @@ class test_ControlPanel(AppCase):
         _import = panel.app.loader.import_from_cwd = Mock()
         _reload = Mock()
 
-        self.app.conf.CELERYD_POOL_RESTARTS = True
+        self.app.conf.worker_pool_restarts = True
         with patch.dict(sys.modules, {'foo': None}):
             panel.handle('pool_restart', {'modules': ['foo'],
                                           'reload': False,

@@ -125,7 +125,7 @@ class test_EventDispatcher(AppCase):
             self.assertTrue(dispatcher.enabled)
             self.assertTrue(dispatcher.producer.channel)
             self.assertEqual(dispatcher.producer.serializer,
-                             self.app.conf.CELERY_EVENT_SERIALIZER)
+                             self.app.conf.event_serializer)
 
             created_channel = dispatcher.producer.channel
             dispatcher.disable()

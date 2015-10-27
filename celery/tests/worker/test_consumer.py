@@ -34,10 +34,11 @@ class test_Consumer(AppCase):
             hub=None if no_hub else Mock(),
             **kwargs
         )
-        consumer.blueprint = Mock()
-        consumer._restart_state = Mock()
+        consumer.blueprint = Mock(name='blueprint')
+        consumer._restart_state = Mock(name='_restart_state')
         consumer.connection = _amqp_connection()
         consumer.connection_errors = (socket.error, OSError,)
+        consumer.conninfo = consumer.connection
         return consumer
 
     def test_taskbuckets_defaultdict(self):
@@ -56,16 +57,16 @@ class test_Consumer(AppCase):
     def test_sets_heartbeat(self):
         c = self.get_consumer(amqheartbeat=10)
         self.assertEqual(c.amqheartbeat, 10)
-        self.app.conf.BROKER_HEARTBEAT = 20
+        self.app.conf.broker_heartbeat = 20
         c = self.get_consumer(amqheartbeat=None)
         self.assertEqual(c.amqheartbeat, 20)
 
     def test_gevent_bug_disables_connection_timeout(self):
         with patch('celery.worker.consumer._detect_environment') as de:
             de.return_value = 'gevent'
-            self.app.conf.BROKER_CONNECTION_TIMEOUT = 33.33
+            self.app.conf.broker_connection_timeout = 33.33
             self.get_consumer()
-            self.assertIsNone(self.app.conf.BROKER_CONNECTION_TIMEOUT)
+            self.assertIsNone(self.app.conf.broker_connection_timeout)
 
     def test_limit_task(self):
         c = self.get_consumer()
@@ -116,7 +117,7 @@ class test_Consumer(AppCase):
             sleep.assert_called_with(1)
 
     def test_no_retry_raises_error(self):
-        self.app.conf.BROKER_CONNECTION_RETRY = False
+        self.app.conf.broker_connection_retry = False
         c = self.get_consumer()
         c.blueprint.start.side_effect = socket.error()
         with self.assertRaises(socket.error):
@@ -280,8 +281,8 @@ class test_Mingle(AppCase):
 
 
 def _amqp_connection():
-    connection = ContextMock()
-    connection.return_value = ContextMock()
+    connection = ContextMock(name='Connection')
+    connection.return_value = ContextMock(name='connection')
     connection.return_value.transport.driver_type = 'amqp'
     return connection
 

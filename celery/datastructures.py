@@ -387,11 +387,8 @@ class DictAttribute(object):
             return default
 
     def setdefault(self, key, default):
-        try:
-            return self[key]
-        except KeyError:
+        if key not in self:
             self[key] = default
-            return default
 
     def __getitem__(self, key):
         try:
@@ -451,13 +448,27 @@ class ConfigurationView(AttributeDictMixin):
     :param defaults: List of dicts containing the default configuration.
 
     """
+    key_t = None
     changes = None
     defaults = None
     _order = None
 
-    def __init__(self, changes, defaults):
-        self.__dict__.update(changes=changes, defaults=defaults,
-                             _order=[changes] + defaults)
+    def __init__(self, changes, defaults=None, key_t=None, prefix=None):
+        defaults = [] if defaults is None else defaults
+        self.__dict__.update(
+            changes=changes,
+            defaults=defaults,
+            key_t=key_t,
+            _order=[changes] + defaults,
+            prefix=prefix,
+        )
+
+    def _key(self, key):
+        if self.prefix:
+            key = self.prefix + key
+            if self.prefix.isupper():
+                key = key.upper()
+        return self.key_t(key) if self.key_t is not None else key
 
     def add_defaults(self, d):
         d = force_mapping(d)
@@ -465,6 +476,7 @@ class ConfigurationView(AttributeDictMixin):
         self._order.insert(1, d)
 
     def __getitem__(self, key):
+        key = self._key(key)
         for d in self._order:
             try:
                 return d[key]
@@ -473,14 +485,14 @@ class ConfigurationView(AttributeDictMixin):
         raise KeyError(key)
 
     def __setitem__(self, key, value):
-        self.changes[key] = value
+        self.changes[self._key(key)] = value
 
     def first(self, *keys):
-        return first(None, (self.get(key) for key in keys))
+        return first(None, (self.get(self._key(key)) for key in keys))
 
     def get(self, key, default=None):
         try:
-            return self[key]
+            return self[self._key(key)]
         except KeyError:
             return default
 
@@ -489,16 +501,15 @@ class ConfigurationView(AttributeDictMixin):
         self.changes.clear()
 
     def setdefault(self, key, default):
-        try:
-            return self[key]
-        except KeyError:
+        key = self._key(key)
+        if key not in self:
             self[key] = default
-            return default
 
     def update(self, *args, **kwargs):
         return self.changes.update(*args, **kwargs)
 
     def __contains__(self, key):
+        key = self._key(key)
         return any(key in m for m in self._order)
 
     def __bool__(self):
@@ -521,8 +532,19 @@ class ConfigurationView(AttributeDictMixin):
         # changes takes precedence.
         return chain(*[op(d) for d in reversed(self._order)])
 
+    def swap_with(self, other):
+        changes = other.__dict__['changes']
+        defaults = other.__dict__['defaults']
+        self.__dict__.update(
+            changes=changes,
+            defaults=defaults,
+            key_t=other.__dict__['key_t'],
+            prefix=other.__dict__['prefix'],
+            _order=[changes] + defaults
+        )
+
     def _iterate_keys(self):
-        return uniq(self._iter(lambda d: d))
+        return uniq(self._iter(lambda d: d.keys()))
     iterkeys = _iterate_keys
 
     def _iterate_items(self):

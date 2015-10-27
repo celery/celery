@@ -4,7 +4,7 @@
     ~~~~~~~~~~~~~
 
     Events is a stream of messages sent for certain actions occurring
-    in the worker (and clients if :setting:`CELERY_SEND_TASK_SENT_EVENT`
+    in the worker (and clients if :setting:`task_send_sent_event`
     is enabled), used for monitoring purposes.
 
 """
@@ -130,7 +130,7 @@ class EventDispatcher(object):
         self.mutex = threading.Lock()
         self.producer = None
         self._outbound_buffer = deque()
-        self.serializer = serializer or self.app.conf.CELERY_EVENT_SERIALIZER
+        self.serializer = serializer or self.app.conf.event_serializer
         self.on_enabled = set()
         self.on_disabled = set()
         self.groups = set(groups or [])
@@ -321,18 +321,18 @@ class EventReceiver(ConsumerMixin):
         self.adjust_clock = self.clock.adjust
         self.forward_clock = self.clock.forward
         if accept is None:
-            accept = {self.app.conf.CELERY_EVENT_SERIALIZER, 'json'}
+            accept = {self.app.conf.event_serializer, 'json'}
         self.accept = accept
 
     def _get_queue_arguments(self, ttl=None, expires=None):
         conf = self.app.conf
         return dictfilter({
             'x-message-ttl': maybe_s_to_ms(
-                ttl if ttl is not None else conf.CELERY_EVENT_QUEUE_TTL,
+                ttl if ttl is not None else conf.event_queue_ttl,
             ),
             'x-expires': maybe_s_to_ms(
                 expires if expires is not None
-                else conf.CELERY_EVENT_QUEUE_EXPIRES,
+                else conf.event_queue_expires,
             ),
         })
 

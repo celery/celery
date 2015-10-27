@@ -57,7 +57,7 @@ class test_security(SecurityCase):
         disabled = registry._disabled_content_types
         self.assertEqual(0, len(disabled))
 
-        self.app.conf.CELERY_TASK_SERIALIZER = 'json'
+        self.app.conf.task_serializer = 'json'
         self.app.setup_security()
         self.assertIn('application/x-python-serialize', disabled)
         disabled.clear()
@@ -75,7 +75,7 @@ class test_security(SecurityCase):
             finally:
                 calls[0] += 1
 
-        self.app.conf.CELERY_TASK_SERIALIZER = 'auth'
+        self.app.conf.task_serializer = 'auth'
         with mock_open(side_effect=effect):
             with patch('celery.security.registry') as registry:
                 store = Mock()
@@ -85,7 +85,7 @@ class test_security(SecurityCase):
                 registry._set_default_serializer.assert_called_with('auth')
 
     def test_security_conf(self):
-        self.app.conf.CELERY_TASK_SERIALIZER = 'auth'
+        self.app.conf.task_serializer = 'auth'
         with self.assertRaises(ImproperlyConfigured):
             self.app.setup_security()
 

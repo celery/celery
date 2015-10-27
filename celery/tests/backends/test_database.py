@@ -39,7 +39,7 @@ class test_DatabaseBackend(AppCase):
         if DatabaseBackend is None:
             raise SkipTest('sqlalchemy not installed')
         self.uri = 'sqlite:///test.db'
-        self.app.conf.CELERY_RESULT_SERIALIZER = 'pickle'
+        self.app.conf.result_serializer = 'pickle'
 
     def test_retry_helper(self):
         from celery.backends.database import DatabaseError
@@ -56,7 +56,7 @@ class test_DatabaseBackend(AppCase):
         self.assertEqual(calls[0], 5)
 
     def test_missing_dburi_raises_ImproperlyConfigured(self):
-        self.app.conf.CELERY_RESULT_DBURI = None
+        self.app.conf.sqlalchemy_dburi = None
         with self.assertRaises(ImproperlyConfigured):
             DatabaseBackend(app=self.app)
 

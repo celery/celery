@@ -25,7 +25,7 @@ Configuration
 Configuration is easy, just configure the location of
 your Redis database::
 
-    BROKER_URL = 'redis://localhost:6379/0'
+    broker_url = 'redis://localhost:6379/0'
 
 Where the URL is in the format of::
 
@@ -47,9 +47,9 @@ The visibility timeout defines the number of seconds to wait
 for the worker to acknowledge the task before the message is redelivered
 to another worker.  Be sure to see :ref:`redis-caveats` below.
 
-This option is set via the :setting:`BROKER_TRANSPORT_OPTIONS` setting::
+This option is set via the :setting:`broker_transport_options` setting::
 
-    BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}  # 1 hour.
+    broker_transport_options = {'visibility_timeout': 3600}  # 1 hour.
 
 The default visibility timeout for Redis is 1 hour.
 
@@ -61,7 +61,7 @@ Results
 If you also want to store the state and return values of tasks in Redis,
 you should configure these settings::
 
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+    result_backend = 'redis://localhost:6379/0'
 
 For a complete list of options supported by the Redis result backend, see
 :ref:`conf-redis-result-backend`
@@ -81,7 +81,7 @@ Broadcast messages will be seen by all virtual hosts by default.
 You have to set a transport option to prefix the messages so that
 they will only be received by the active virtual host::
 
-    BROKER_TRANSPORT_OPTIONS = {'fanout_prefix': True}
+    broker_transport_options = {'fanout_prefix': True}
 
 Note that you will not be able to communicate with workers running older
 versions or workers that does not have this setting enabled.
@@ -99,7 +99,7 @@ Workers will receive all task related events by default.
 To avoid this you must set the ``fanout_patterns`` fanout option so that
 the workers may only subscribe to worker related events::
 
-    BROKER_TRANSPORT_OPTIONS = {'fanout_patterns': True}
+    broker_transport_options = {'fanout_patterns': True}
 
 Note that this change is backward incompatible so all workers in the
 cluster must have this option enabled, or else they will not be able to
@@ -131,7 +131,7 @@ as this is a concept separate from ETA/countdown.
 You can increase this timeout by configuring a transport option
 with the same name::
 
-    BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 43200}
+    broker_transport_options = {'visibility_timeout': 43200}
 
 The value must be an int describing the number of seconds.
 

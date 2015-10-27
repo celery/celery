@@ -219,7 +219,7 @@ class Command(object):
     enable_config_from_cmdline = False
 
     #: Default configuration namespace.
-    namespace = 'celery'
+    namespace = None
 
     #: Text to print at end of --help
     epilog = None

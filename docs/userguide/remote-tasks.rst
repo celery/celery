@@ -53,7 +53,7 @@ Enabling the HTTP task
 ----------------------
 
 To enable the HTTP dispatch task you have to add :mod:`celery.task.http`
-to :setting:`CELERY_IMPORTS`, or start the worker with ``-I
+to :setting:`imports`, or start the worker with ``-I
 celery.task.http``.
 
 

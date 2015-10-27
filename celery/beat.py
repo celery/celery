@@ -186,19 +186,19 @@ class Scheduler(object):
         self.app = app
         self.data = maybe_evaluate({} if schedule is None else schedule)
         self.max_interval = (max_interval or
-                             app.conf.CELERYBEAT_MAX_LOOP_INTERVAL or
+                             app.conf.beat_max_loop_interval or
                              self.max_interval)
         self.Producer = Producer or app.amqp.Producer
         self._heap = None
         self.sync_every_tasks = (
-            app.conf.CELERYBEAT_SYNC_EVERY if sync_every_tasks is None
+            app.conf.beat_sync_every if sync_every_tasks is None
             else sync_every_tasks)
         if not lazy:
             self.setup_schedule()
 
     def install_default_entries(self, data):
         entries = {}
-        if self.app.conf.CELERY_TASK_RESULT_EXPIRES and \
+        if self.app.conf.result_expires and \
                 not self.app.backend.supports_autoexpire:
             if 'celery.backend_cleanup' not in data:
                 entries['celery.backend_cleanup'] = {
@@ -363,7 +363,7 @@ class Scheduler(object):
                   'Trying again in %s seconds...', exc, interval)
 
         return self.connection.ensure_connection(
-            _error_handler, self.app.conf.BROKER_CONNECTION_MAX_RETRIES
+            _error_handler, self.app.conf.broker_connection_max_retries
         )
 
     def get_schedule(self):
@@ -438,12 +438,12 @@ class PersistentScheduler(Scheduler):
                     self._store.clear()   # remove schedule at 3.0.9 upgrade
             break
 
-        tz = self.app.conf.CELERY_TIMEZONE
+        tz = self.app.conf.timezone
         stored_tz = self._store.get('tz')
         if stored_tz is not None and stored_tz != tz:
             warning('Reset: Timezone changed from %r to %r', stored_tz, tz)
             self._store.clear()   # Timezone changed, reset db!
-        utc = self.app.conf.CELERY_ENABLE_UTC
+        utc = self.app.conf.enable_utc
         stored_utc = self._store.get('utc_enabled')
         if stored_utc is not None and stored_utc != utc:
             choices = {True: 'enabled', False: 'disabled'}
@@ -451,7 +451,7 @@ class PersistentScheduler(Scheduler):
                     choices[stored_utc], choices[utc])
             self._store.clear()   # UTC setting changed, reset db!
         entries = self._store.setdefault('entries', {})
-        self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
+        self.merge_inplace(self.app.conf.beat_schedule)
         self.install_default_entries(self.schedule)
         self._store.update(__version__=__version__, tz=tz, utc_enabled=utc)
         self.sync()
@@ -485,10 +485,10 @@ class Service(object):
                  scheduler_cls=None):
         self.app = app
         self.max_interval = (max_interval or
-                             app.conf.CELERYBEAT_MAX_LOOP_INTERVAL)
+                             app.conf.beat_max_loop_interval)
         self.scheduler_cls = scheduler_cls or self.scheduler_cls
         self.schedule_filename = (
-            schedule_filename or app.conf.CELERYBEAT_SCHEDULE_FILENAME)
+            schedule_filename or app.conf.beat_schedule_filename)
 
         self._is_shutdown = Event()
         self._is_stopped = Event()

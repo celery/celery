@@ -60,32 +60,27 @@ class RedisBackend(KeyValueStoreBackend):
                  max_connections=None, url=None,
                  connection_pool=None, new_join=False, **kwargs):
         super(RedisBackend, self).__init__(expires_type=int, **kwargs)
-        conf = self.app.conf
+        _get = self.app.conf.get
         if self.redis is None:
             raise ImproperlyConfigured(REDIS_MISSING)
 
-        # For compatibility with the old REDIS_* configuration keys.
-        def _get(key):
-            for prefix in 'CELERY_REDIS_{0}', 'REDIS_{0}':
-                try:
-                    return conf[prefix.format(key)]
-                except KeyError:
-                    pass
         if host and '://' in host:
             url = host
             host = None
 
         self.max_connections = (
-            max_connections or _get('MAX_CONNECTIONS') or self.max_connections
+            max_connections or
+            _get('redis_max_connections') or
+            self.max_connections
         )
         self._ConnectionPool = connection_pool
 
         self.connparams = {
-            'host': _get('HOST') or 'localhost',
-            'port': _get('PORT') or 6379,
-            'db': _get('DB') or 0,
-            'password': _get('PASSWORD'),
-            'socket_timeout': _get('SOCKET_TIMEOUT'),
+            'host': _get('redis_host') or 'localhost',
+            'port': _get('redis_port') or 6379,
+            'db': _get('redis_db') or 0,
+            'password': _get('redis_password'),
+            'socket_timeout': _get('redis_socket_timeout'),
             'max_connections': self.max_connections,
         }
         if url:

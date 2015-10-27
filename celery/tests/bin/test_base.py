@@ -281,14 +281,14 @@ class test_Command(AppCase):
     def test_with_cmdline_config(self):
         cmd = MockCommand(app=self.app)
         cmd.enable_config_from_cmdline = True
-        cmd.namespace = 'celeryd'
+        cmd.namespace = 'worker'
         rest = cmd.setup_app_from_commandline(argv=[
             '--loglevel=INFO', '--',
             'broker.url=amqp://broker.example.com',
             '.prefetch_multiplier=100'])
-        self.assertEqual(cmd.app.conf.BROKER_URL,
+        self.assertEqual(cmd.app.conf.broker_url,
                          'amqp://broker.example.com')
-        self.assertEqual(cmd.app.conf.CELERYD_PREFETCH_MULTIPLIER, 100)
+        self.assertEqual(cmd.app.conf.worker_prefetch_multiplier, 100)
         self.assertListEqual(rest, ['--loglevel=INFO'])
 
     def test_find_app(self):

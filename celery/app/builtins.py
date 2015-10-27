@@ -54,7 +54,7 @@ def add_unlock_chord_task(app):
     from celery.exceptions import ChordError
     from celery.result import allow_join_result, result_from_tuple
 
-    default_propagate = app.conf.CELERY_CHORD_PROPAGATES
+    default_propagate = app.conf.chord_propagates
 
     @app.task(name='celery.chord_unlock', max_retries=None, shared=False,
               default_retry_delay=1, ignore_result=True, lazy=False, bind=True)

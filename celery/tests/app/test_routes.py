@@ -21,7 +21,7 @@ def E(app, queues):
 
 
 def set_queues(app, **queues):
-    app.conf.CELERY_QUEUES = queues
+    app.conf.task_queues = queues
     app.amqp.queues = app.amqp.Queues(queues)
 
 
@@ -39,9 +39,9 @@ class RouteCase(AppCase):
             'routing_key': 'b.b.#',
         }
         self.d_queue = {
-            'exchange': self.app.conf.CELERY_DEFAULT_EXCHANGE,
-            'exchange_type': self.app.conf.CELERY_DEFAULT_EXCHANGE_TYPE,
-            'routing_key': self.app.conf.CELERY_DEFAULT_ROUTING_KEY,
+            'exchange': self.app.conf.task_default_exchange,
+            'exchange_type': self.app.conf.task_default_exchange_type,
+            'routing_key': self.app.conf.task_default_routing_key,
         }
 
         @self.app.task(shared=False)
@@ -74,7 +74,7 @@ class test_MapRoute(RouteCase):
 
     def test_expand_route_not_found(self):
         expand = E(self.app, self.app.amqp.Queues(
-                   self.app.conf.CELERY_QUEUES, False))
+                   self.app.conf.task_queues, False))
         route = routes.MapRoute({'a': {'queue': 'x'}})
         with self.assertRaises(QueueNotFound):
             expand(route.route_for_task('a'))
@@ -124,7 +124,7 @@ class test_lookup_route(RouteCase):
     def test_lookup_paths_traversed(self):
         set_queues(
             self.app, foo=self.a_queue, bar=self.b_queue,
-            **{self.app.conf.CELERY_DEFAULT_QUEUE: self.d_queue}
+            **{self.app.conf.task_default_queue: self.d_queue}
         )
         R = routes.prepare((
             {'celery.xaza': {'queue': 'bar'}},
@@ -135,7 +135,7 @@ class test_lookup_route(RouteCase):
                          args=[1, 2], kwargs={})['queue'].name, 'foo')
         self.assertEqual(
             router.route({}, 'celery.poza')['queue'].name,
-            self.app.conf.CELERY_DEFAULT_QUEUE,
+            self.app.conf.task_default_queue,
         )
 
 

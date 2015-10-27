@@ -4,7 +4,7 @@
     ~~~~~~~~~~~~~
 
     Contains utilities for working with task routers,
-    (:setting:`CELERY_ROUTES`).
+    (:setting:`task_routes`).
 
 """
 from __future__ import absolute_import
@@ -52,7 +52,7 @@ class Router(object):
                 return lpmerge(self.expand_destination(route), options)
         if 'queue' not in options:
             options = lpmerge(self.expand_destination(
-                              self.app.conf.CELERY_DEFAULT_QUEUE), options)
+                              self.app.conf.task_default_queue), options)
         return options
 
     def expand_destination(self, route):
@@ -72,7 +72,7 @@ class Router(object):
                     route['queue'] = self.queues[queue]
                 except KeyError:
                     raise QueueNotFound(
-                        'Queue {0!r} missing from CELERY_QUEUES'.format(queue))
+                        'Queue {0!r} missing from task_queues'.format(queue))
         return route
 
     def lookup_route(self, task, args=None, kwargs=None):
@@ -80,7 +80,7 @@ class Router(object):
 
 
 def prepare(routes):
-    """Expands the :setting:`CELERY_ROUTES` setting."""
+    """Expands the :setting:`task_routes` setting."""
 
     def expand_route(route):
         if isinstance(route, dict):

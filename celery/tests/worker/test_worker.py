@@ -587,12 +587,12 @@ class test_Consumer(AppCase):
             pp('+ BLUEPRINT START 1')
             l.blueprint.start(l)
             pp('- BLUEPRINT START 1')
-            p = l.app.conf.BROKER_CONNECTION_RETRY
-            l.app.conf.BROKER_CONNECTION_RETRY = False
+            p = l.app.conf.broker_connection_retry
+            l.app.conf.broker_connection_retry = False
             pp('+ BLUEPRINT START 2')
             l.blueprint.start(l)
             pp('- BLUEPRINT START 2')
-            l.app.conf.BROKER_CONNECTION_RETRY = p
+            l.app.conf.broker_connection_retry = p
             pp('+ BLUEPRINT RESTART')
             l.blueprint.restart(l)
             pp('- BLUEPRINT RESTART')
@@ -825,7 +825,7 @@ class test_WorkController(AppCase):
         self.worker.on_consumer_ready(Mock())
 
     def test_setup_queues_worker_direct(self):
-        self.app.conf.CELERY_WORKER_DIRECT = True
+        self.app.conf.worker_direct = True
         self.app.amqp.__dict__['queues'] = Mock()
         self.worker.setup_queues({})
         self.app.amqp.queues.select_add.assert_called_with(

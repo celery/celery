@@ -198,7 +198,7 @@ class test_chunks(CanvasCase):
         x()
         gr.apply_async.assert_called_with((), {}, route_name=self.add.name)
 
-        self.app.conf.CELERY_ALWAYS_EAGER = True
+        self.app.conf.task_always_eager = True
         chunks.apply_chunks(app=self.app, **x['kwargs'])
 
 
@@ -216,7 +216,7 @@ class test_chain(CanvasCase):
         self.assertIsInstance(signature(dict(x)), chain)
 
     def test_always_eager(self):
-        self.app.conf.CELERY_ALWAYS_EAGER = True
+        self.app.conf.task_always_eager = True
         self.assertEqual(~(self.add.s(4, 4) | self.add.s(8)), 16)
 
     def test_apply(self):

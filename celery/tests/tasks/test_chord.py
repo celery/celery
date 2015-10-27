@@ -194,18 +194,18 @@ class test_chord(ChordCase):
         def sumX(n):
             return sum(n)
 
-        self.app.conf.CELERY_ALWAYS_EAGER = True
+        self.app.conf.task_always_eager = True
         x = chord(addX.s(i, i) for i in range(10))
         body = sumX.s()
         result = x(body)
         self.assertEqual(result.get(), sum(i + i for i in range(10)))
 
     def test_apply(self):
-        self.app.conf.CELERY_ALWAYS_EAGER = False
+        self.app.conf.task_always_eager = False
         from celery import chord
 
         m = Mock()
-        m.app.conf.CELERY_ALWAYS_EAGER = False
+        m.app.conf.task_always_eager = False
         m.AsyncResult = AsyncResult
         prev, chord.run = chord.run, m
         try:

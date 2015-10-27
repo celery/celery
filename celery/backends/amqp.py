@@ -73,12 +73,12 @@ class AMQPBackend(BaseBackend):
         self._connection = connection
         self.persistent = self.prepare_persistent(persistent)
         self.delivery_mode = 2 if self.persistent else 1
-        exchange = exchange or conf.CELERY_RESULT_EXCHANGE
-        exchange_type = exchange_type or conf.CELERY_RESULT_EXCHANGE_TYPE
+        exchange = exchange or conf.result_exchange
+        exchange_type = exchange_type or conf.result_exchange_type
         self.exchange = self._create_exchange(
             exchange, exchange_type, self.delivery_mode,
         )
-        self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
+        self.serializer = serializer or conf.result_serializer
         self.auto_delete = auto_delete
         self.queue_arguments = dictfilter({
             'x-expires': maybe_s_to_ms(self.expires),

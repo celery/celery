@@ -141,7 +141,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
 
     :keyword connection: Custom connection to use.
     :keyword source: Optional list of source queues to use instead of the
-        default (which is the queues in :setting:`CELERY_QUEUES`).
+        default (which is the queues in :setting:`task_queues`).
         This list can also contain new :class:`~kombu.entity.Queue` instances.
     :keyword exchange: Default destination exchange.
     :keyword routing_key: Default destination routing key.

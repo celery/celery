@@ -31,12 +31,12 @@ class SomeClass(object):
 class test_CacheBackend(AppCase):
 
     def setup(self):
-        self.app.conf.CELERY_RESULT_SERIALIZER = 'pickle'
+        self.app.conf.result_serializer = 'pickle'
         self.tb = CacheBackend(backend='memory://', app=self.app)
         self.tid = uuid()
 
     def test_no_backend(self):
-        self.app.conf.CELERY_CACHE_BACKEND = None
+        self.app.conf.cache_backend = None
         with self.assertRaises(ImproperlyConfigured):
             CacheBackend(backend=None, app=self.app)
 

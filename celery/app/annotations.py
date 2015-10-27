@@ -7,7 +7,7 @@
     task classes in the configuration.
 
     This prepares and performs the annotations in the
-    :setting:`CELERY_ANNOTATIONS` setting.
+    :setting:`task_annotations` setting.
 
 """
 from __future__ import absolute_import
@@ -38,7 +38,7 @@ class MapAnnotation(dict):
 
 
 def prepare(annotations):
-    """Expands the :setting:`CELERY_ANNOTATIONS` setting."""
+    """Expands the :setting:`task_annotations` setting."""
 
     def expand_annotation(annotation):
         if isinstance(annotation, dict):

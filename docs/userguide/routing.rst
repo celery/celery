@@ -25,17 +25,17 @@ Automatic routing
 -----------------
 
 The simplest way to do routing is to use the
-:setting:`CELERY_CREATE_MISSING_QUEUES` setting (on by default).
+:setting:`task_create_missing_queues` setting (on by default).
 
 With this setting on, a named queue that is not already defined in
-:setting:`CELERY_QUEUES` will be created automatically.  This makes it easy to
+:setting:`task_queues` will be created automatically.  This makes it easy to
 perform simple routing tasks.
 
 Say you have two servers, `x`, and `y` that handles regular tasks,
 and one server `z`, that only handles feed related tasks.  You can use this
 configuration::
 
-    CELERY_ROUTES = {'feed.tasks.import_feed': {'queue': 'feeds'}}
+    task_routes = {'feed.tasks.import_feed': {'queue': 'feeds'}}
 
 With this route enabled import feed tasks will be routed to the
 `"feeds"` queue, while all other tasks will be routed to the default queue
@@ -66,8 +66,8 @@ configuration:
 
     from kombu import Exchange, Queue
 
-    CELERY_DEFAULT_QUEUE = 'default'
-    CELERY_QUEUES = (
+    task_default_queue = 'default'
+    task_queues = (
         Queue('default', Exchange('default'), routing_key='default'),
     )
 
@@ -105,27 +105,27 @@ configuration:
 
     from kombu import Queue
 
-    CELERY_DEFAULT_QUEUE = 'default'
-    CELERY_QUEUES = (
+    task_default_queue = 'default'
+    task_queues = (
         Queue('default',    routing_key='task.#'),
         Queue('feed_tasks', routing_key='feed.#'),
     )
-    CELERY_DEFAULT_EXCHANGE = 'tasks'
-    CELERY_DEFAULT_EXCHANGE_TYPE = 'topic'
-    CELERY_DEFAULT_ROUTING_KEY = 'task.default'
+    task_default_exchange = 'tasks'
+    task_default_exchange_type = 'topic'
+    task_default_routing_key = 'task.default'
 
-:setting:`CELERY_QUEUES` is a list of :class:`~kombu.entitity.Queue`
+:setting:`task_queues` is a list of :class:`~kombu.entitity.Queue`
 instances.
 If you don't set the exchange or exchange type values for a key, these
-will be taken from the :setting:`CELERY_DEFAULT_EXCHANGE` and
-:setting:`CELERY_DEFAULT_EXCHANGE_TYPE` settings.
+will be taken from the :setting:`task_default_exchange` and
+:setting:`task_default_exchange_type` settings.
 
 To route a task to the `feed_tasks` queue, you can add an entry in the
-:setting:`CELERY_ROUTES` setting:
+:setting:`task_routes` setting:
 
 .. code-block:: python
 
-    CELERY_ROUTES = {
+    task_routes = {
             'feeds.tasks.import_feed': {
                 'queue': 'feed_tasks',
                 'routing_key': 'feed.import',
@@ -170,7 +170,7 @@ just specify a custom exchange and exchange type:
 
     from kombu import Exchange, Queue
 
-    CELERY_QUEUES = (
+    task_queues = (
         Queue('feed_tasks',    routing_key='feed.#'),
         Queue('regular_tasks', routing_key='task.#'),
         Queue('image_tasks',   exchange=Exchange('mediatasks', type='direct'),
@@ -249,7 +249,7 @@ The steps required to send and receive messages are:
 3. Bind the queue to the exchange.
 
 Celery automatically creates the entities necessary for the queues in
-:setting:`CELERY_QUEUES` to work (except if the queue's `auto_declare`
+:setting:`task_queues` to work (except if the queue's `auto_declare`
 setting is set to :const:`False`).
 
 Here's an example queue configuration with three queues;
@@ -259,14 +259,14 @@ One for video, one for images and one default queue for everything else:
 
     from kombu import Exchange, Queue
 
-    CELERY_QUEUES = (
+    task_queues = (
         Queue('default', Exchange('default'), routing_key='default'),
         Queue('videos',  Exchange('media'),   routing_key='media.video'),
         Queue('images',  Exchange('media'),   routing_key='media.image'),
     )
-    CELERY_DEFAULT_QUEUE = 'default'
-    CELERY_DEFAULT_EXCHANGE_TYPE = 'direct'
-    CELERY_DEFAULT_ROUTING_KEY = 'default'
+    task_default_queue = 'default'
+    task_default_exchange_type = 'direct'
+    task_default_routing_key = 'default'
 
 .. _amqp-exchange-types:
 
@@ -459,7 +459,7 @@ Routing Tasks
 Defining queues
 ---------------
 
-In Celery available queues are defined by the :setting:`CELERY_QUEUES` setting.
+In Celery available queues are defined by the :setting:`task_queues` setting.
 
 Here's an example queue configuration with three queues;
 One for video, one for images and one default queue for everything else:
@@ -469,21 +469,21 @@ One for video, one for images and one default queue for everything else:
     default_exchange = Exchange('default', type='direct')
     media_exchange = Exchange('media', type='direct')
 
-    CELERY_QUEUES = (
+    task_queues = (
         Queue('default', default_exchange, routing_key='default'),
         Queue('videos', media_exchange, routing_key='media.video'),
         Queue('images', media_exchange, routing_key='media.image')
     )
-    CELERY_DEFAULT_QUEUE = 'default'
-    CELERY_DEFAULT_EXCHANGE = 'default'
-    CELERY_DEFAULT_ROUTING_KEY = 'default'
+    task_default_queue = 'default'
+    task_default_exchange = 'default'
+    task_default_routing_key = 'default'
 
-Here, the :setting:`CELERY_DEFAULT_QUEUE` will be used to route tasks that
+Here, the :setting:`task_default_queue` will be used to route tasks that
 doesn't have an explicit route.
 
 The default exchange, exchange type and routing key will be used as the
 default routing values for tasks, and as the default values for entries
-in :setting:`CELERY_QUEUES`.
+in :setting:`task_queues`.
 
 .. _routing-task-destination:
 
@@ -492,7 +492,7 @@ Specifying task destination
 
 The destination for a task is decided by the following (in order):
 
-1. The :ref:`routers` defined in :setting:`CELERY_ROUTES`.
+1. The :ref:`routers` defined in :setting:`task_routes`.
 2. The routing arguments to :func:`Task.apply_async`.
 3. Routing related attributes defined on the :class:`~celery.task.base.Task`
    itself.
@@ -524,7 +524,7 @@ All you need to define a new router is to create a class with a
             return None
 
 If you return the ``queue`` key, it will expand with the defined settings of
-that queue in :setting:`CELERY_QUEUES`:
+that queue in :setting:`task_queues`:
 
 .. code-block:: javascript
 
@@ -540,27 +540,27 @@ becomes -->
          'routing_key': 'video.compress'}
 
 
-You install router classes by adding them to the :setting:`CELERY_ROUTES`
+You install router classes by adding them to the :setting:`task_routes`
 setting:
 
 .. code-block:: python
 
-    CELERY_ROUTES = (MyRouter(),)
+    task_routes = (MyRouter(),)
 
 Router classes can also be added by name:
 
 .. code-block:: python
 
-    CELERY_ROUTES = ('myapp.routers.MyRouter',)
+    task_routes = ('myapp.routers.MyRouter',)
 
 
 For simple task name -> route mappings like the router example above,
-you can simply drop a dict into :setting:`CELERY_ROUTES` to get the
+you can simply drop a dict into :setting:`task_routes` to get the
 same behavior:
 
 .. code-block:: python
 
-    CELERY_ROUTES = (
+    task_routes = (
         {'myapp.tasks.compress_video': {
             'queue': 'video',
             'routing_key': 'video.compress',
@@ -581,9 +581,8 @@ copies of tasks to all workers connected to it:
 
     from kombu.common import Broadcast
 
-    CELERY_QUEUES = (Broadcast('broadcast_tasks'),)
-
-    CELERY_ROUTES = {'tasks.reload_cache': {'queue': 'broadcast_tasks'}}
+    task_queues = (Broadcast('broadcast_tasks'),)
+    task_routes = {'tasks.reload_cache': {'queue': 'broadcast_tasks'}}
 
 Now the ``tasks.reload_cache`` task will be sent to every
 worker consuming from this queue.

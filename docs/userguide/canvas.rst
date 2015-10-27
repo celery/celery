@@ -865,8 +865,8 @@ Important Notes
 ~~~~~~~~~~~~~~~
 
 Tasks used within a chord must *not* ignore their results. In practice this
-means that you must enable a :const:`CELERY_RESULT_BACKEND` in order to use
-chords. Additionally, if :const:`CELERY_IGNORE_RESULT` is set to :const:`True`
+means that you must enable a :const:`result_backend` in order to use
+chords. Additionally, if :const:`task_ignore_result` is set to :const:`True`
 in your configuration, be sure that the individual tasks to be used within
 the chord are defined with :const:`ignore_result=False`. This applies to both
 Task subclasses and decorated tasks.

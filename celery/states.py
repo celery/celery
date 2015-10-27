@@ -128,7 +128,7 @@ class state(str):
 PENDING = 'PENDING'
 #: Task was received by a worker.
 RECEIVED = 'RECEIVED'
-#: Task was started by a worker (:setting:`CELERY_TRACK_STARTED`).
+#: Task was started by a worker (:setting:`task_track_started`).
 STARTED = 'STARTED'
 #: Task succeeded
 SUCCESS = 'SUCCESS'

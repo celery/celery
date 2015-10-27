@@ -11,7 +11,7 @@ class test_TaskConsumer(AppCase):
 
     def test_accept_content(self):
         with self.app.pool.acquire(block=True) as conn:
-            self.app.conf.CELERY_ACCEPT_CONTENT = ['application/json']
+            self.app.conf.accept_content = ['application/json']
             self.assertEqual(
                 self.app.amqp.TaskConsumer(conn).accept,
                 {'application/json'},
@@ -25,7 +25,7 @@ class test_TaskConsumer(AppCase):
 class test_ProducerPool(AppCase):
 
     def test_setup_nolimit(self):
-        self.app.conf.BROKER_POOL_LIMIT = None
+        self.app.conf.broker_pool_limit = None
         try:
             delattr(self.app, '_pool')
         except AttributeError:
@@ -43,7 +43,7 @@ class test_ProducerPool(AppCase):
         r2 = pool.acquire()
 
     def test_setup(self):
-        self.app.conf.BROKER_POOL_LIMIT = 2
+        self.app.conf.broker_pool_limit = 2
         try:
             delattr(self.app, '_pool')
         except AttributeError:

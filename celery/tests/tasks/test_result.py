@@ -44,7 +44,7 @@ def make_mock_group(app, size=10):
 class test_AsyncResult(AppCase):
 
     def setup(self):
-        self.app.conf.CELERY_RESULT_SERIALIZER = 'pickle'
+        self.app.conf.result_serializer = 'pickle'
         self.task1 = mock_task('task1', states.SUCCESS, 'the')
         self.task2 = mock_task('task2', states.SUCCESS, 'quick')
         self.task3 = mock_task('task3', states.FAILURE, KeyError('brown'))
@@ -618,7 +618,7 @@ class test_pending_AsyncResult(AppCase):
 class test_failed_AsyncResult(test_GroupResult):
 
     def setup(self):
-        self.app.conf.CELERY_RESULT_SERIALIZER = 'pickle'
+        self.app.conf.result_serializer = 'pickle'
         self.size = 11
         subtasks = make_mock_group(self.app, 10)
         failed = mock_task('ts11', states.FAILURE, KeyError('Baz'))

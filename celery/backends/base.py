@@ -96,16 +96,16 @@ class BaseBackend(object):
                  expires=None, expires_type=None, **kwargs):
         self.app = app
         conf = self.app.conf
-        self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
+        self.serializer = serializer or conf.result_serializer
         (self.content_type,
          self.content_encoding,
          self.encoder) = serializer_registry._encoders[self.serializer]
-        cmax = max_cached_results or conf.CELERY_MAX_CACHED_RESULTS
+        cmax = max_cached_results or conf.result_cache_max
         self._cache = _nulldict() if cmax == -1 else LRUCache(limit=cmax)
 
         self.expires = self.prepare_expires(expires, expires_type)
         self.accept = prepare_accept_content(
-            conf.CELERY_ACCEPT_CONTENT if accept is None else accept,
+            conf.accept_content if accept is None else accept,
         )
 
     def mark_as_started(self, task_id, **meta):
@@ -242,7 +242,7 @@ class BaseBackend(object):
 
     def prepare_expires(self, value, type=None):
         if value is None:
-            value = self.app.conf.CELERY_TASK_RESULT_EXPIRES
+            value = self.app.conf.result_expires
         if isinstance(value, timedelta):
             value = value.total_seconds()
         if value is not None and type:
@@ -252,7 +252,7 @@ class BaseBackend(object):
     def prepare_persistent(self, enabled=None):
         if enabled is not None:
             return enabled
-        p = self.app.conf.CELERY_RESULT_PERSISTENT
+        p = self.app.conf.result_persistent
         return self.persistent if p is None else p
 
     def encode_result(self, result, status):
@@ -558,7 +558,7 @@ class KeyValueStoreBackend(BaseBackend):
             return
         app = self.app
         if propagate is None:
-            propagate = app.conf.CELERY_CHORD_PROPAGATES
+            propagate = app.conf.chord_propagates
         gid = request.group
         if not gid:
             return

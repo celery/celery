@@ -449,8 +449,8 @@ time limit kills it:
         except SoftTimeLimitExceeded:
             clean_up_in_a_hurry()
 
-Time limits can also be set using the :setting:`CELERYD_TASK_TIME_LIMIT` /
-:setting:`CELERYD_TASK_SOFT_TIME_LIMIT` settings.
+Time limits can also be set using the :setting:`task_time_limit` /
+:setting:`task_soft_time_limit` settings.
 
 .. note::
 
@@ -508,7 +508,7 @@ list of workers you can include the ``destination`` argument:
 .. warning::
 
     This won't affect workers with the
-    :setting:`CELERY_DISABLE_RATE_LIMITS` setting enabled.
+    :setting:`worker_disable_rate_limits` setting enabled.
 
 .. _worker-maxtasksperchild:
 
@@ -526,7 +526,7 @@ This is useful if you have memory leaks you have no control over
 for example from closed source C extensions.
 
 The option can be set using the workers `--maxtasksperchild` argument
-or using the :setting:`CELERYD_MAX_TASKS_PER_CHILD` setting.
+or using the :setting:`worker_max_tasks_per_child` setting.
 
 Max memory per child setting
 ============================
@@ -571,7 +571,7 @@ numbers: the maximum and minimum number of pool processes::
 You can also define your own rules for the autoscaler by subclassing
 :class:`~celery.worker.autoscaler.Autoscaler`.
 Some ideas for metrics include load average or the amount of memory available.
-You can specify a custom autoscaler with the :setting:`CELERYD_AUTOSCALER` setting.
+You can specify a custom autoscaler with the :setting:`worker_autoscaler` setting.
 
 .. _worker-queues:
 
@@ -580,7 +580,7 @@ Queues
 
 A worker instance can consume from any number of queues.
 By default it will consume from all queues defined in the
-:setting:`CELERY_QUEUES` setting (which if not specified defaults to the
+:setting:`task_queues` setting (which if not specified defaults to the
 queue named ``celery``).
 
 You can specify what queues to consume from at startup,
@@ -590,10 +590,10 @@ by giving a comma separated list of queues to the :option:`-Q` option:
 
     $ celery -A proj worker -l info -Q foo,bar,baz
 
-If the queue name is defined in :setting:`CELERY_QUEUES` it will use that
+If the queue name is defined in :setting:`task_queues` it will use that
 configuration, but if it's not defined in the list of queues Celery will
 automatically generate a new queue for you (depending on the
-:setting:`CELERY_CREATE_MISSING_QUEUES` option).
+:setting:`task_create_missing_queues` option).
 
 You can also tell the worker to start and stop consuming from a queue at
 runtime using the remote control commands :control:`add_consumer` and
@@ -731,7 +731,7 @@ pool support: *prefork, eventlet, gevent, threads, solo*
 Starting :program:`celery worker` with the :option:`--autoreload` option will
 enable the worker to watch for file system changes to all imported task
 modules imported (and also any non-task modules added to the
-:setting:`CELERY_IMPORTS` setting or the :option:`-I|--include` option).
+:setting:`imports` setting or the :option:`-I|--include` option).
 
 This is an experimental feature intended for use in development only,
 using auto-reload in production is discouraged as the behavior of reloading
@@ -783,7 +783,7 @@ Pool Restart Command
 
 .. versionadded:: 2.5
 
-Requires the :setting:`CELERYD_POOL_RESTARTS` setting to be enabled.
+Requires the :setting:`worker_pool_restarts` setting to be enabled.
 
 The remote control command :control:`pool_restart` sends restart requests to
 the workers child processes.  It is particularly useful for forcing

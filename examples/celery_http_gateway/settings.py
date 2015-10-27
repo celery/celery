@@ -5,7 +5,6 @@ import django
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
-CARROT_BACKEND = 'amqp'
 CELERY_RESULT_BACKEND = 'database'
 BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 

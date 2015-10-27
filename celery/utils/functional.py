@@ -16,6 +16,7 @@ from functools import partial, wraps
 from inspect import getargspec, isfunction
 from itertools import islice
 
+from amqp import promise
 from kombu.utils import cached_property
 from kombu.utils.functional import lazy, maybe_evaluate, is_list, maybe_list
 
@@ -210,6 +211,13 @@ def noop(*args, **kwargs):
     pass
 
 
+def evaluate_promises(it):
+    for value in it:
+        if isinstance(value, promise):
+            value = value()
+        yield value
+
+
 def first(predicate, it):
     """Return the first element in `iterable` that `predicate` Gives a
     :const:`True` value for.
@@ -218,7 +226,8 @@ def first(predicate, it):
 
     """
     return next(
-        (v for v in it if (predicate(v) if predicate else v is not None)),
+        (v for v in evaluate_promises(it) if (
+            predicate(v) if predicate is not None else v is not None)),
         None,
     )
 

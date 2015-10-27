@@ -13,7 +13,7 @@ import sys
 from collections import deque, namedtuple
 from datetime import timedelta
 
-from celery.five import items
+from celery.five import items, keys, values
 from celery.utils import strtobool
 from celery.utils.functional import memoize
 
@@ -39,13 +39,29 @@ DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s] %(message)s'
 DEFAULT_TASK_LOG_FMT = """[%(asctime)s: %(levelname)s/%(processName)s] \
 %(task_name)s[%(task_id)s]: %(message)s"""
 
+OLD_NS = {'celery_{0}'}
+OLD_NS_BEAT = {'celerybeat_{0}'}
+OLD_NS_WORKER = {'celeryd_{0}'}
+
 searchresult = namedtuple('searchresult', ('namespace', 'key', 'type'))
+
+
+def Namespace(__old__=None, **options):
+    if __old__ is not None:
+        for opt in values(options):
+            opt.old = opt.old | __old__
+    return options
+
+
+def old_ns(ns):
+    return {'{0}_{{0}}'.format(ns)}
 
 
 class Option(object):
     alt = None
     deprecate_by = None
     remove_by = None
+    old = set()
     typemap = dict(string=str, int=int, float=float, any=lambda v: v,
                    bool=strtobool, dict=dict, tuple=tuple)
 
@@ -62,166 +78,260 @@ class Option(object):
         return '<Option: type->{0} default->{1!r}>'.format(self.type,
                                                            self.default)
 
-NAMESPACES = {
-    'BROKER': {
-        'URL': Option(None, type='string'),
-        'CONNECTION_TIMEOUT': Option(4, type='float'),
-        'CONNECTION_RETRY': Option(True, type='bool'),
-        'CONNECTION_MAX_RETRIES': Option(100, type='int'),
-        'FAILOVER_STRATEGY': Option(None, type='string'),
-        'HEARTBEAT': Option(None, type='int'),
-        'HEARTBEAT_CHECKRATE': Option(3.0, type='int'),
-        'LOGIN_METHOD': Option(None, type='string'),
-        'POOL_LIMIT': Option(10, type='int'),
-        'USE_SSL': Option(False, type='bool'),
-        'TRANSPORT': Option(type='string'),
-        'TRANSPORT_OPTIONS': Option({}, type='dict'),
-        'HOST': Option(type='string'),
-        'PORT': Option(type='int'),
-        'USER': Option(type='string'),
-        'PASSWORD': Option(type='string'),
-        'VHOST': Option(type='string'),
-    },
-    'CASSANDRA': {
-        'COLUMN_FAMILY': Option(type='string'),
-        'DETAILED_MODE': Option(False, type='bool'),
-        'KEYSPACE': Option(type='string'),
-        'READ_CONSISTENCY': Option(type='string'),
-        'SERVERS': Option(type='list'),
-        'PORT': Option(type="string"),
-        'ENTRY_TTL': Option(type="float"),
-        'WRITE_CONSISTENCY': Option(type='string'),
-    },
-    'CELERY': {
-        'ACCEPT_CONTENT': Option(DEFAULT_ACCEPT_CONTENT, type='list'),
-        'ACKS_LATE': Option(False, type='bool'),
-        'ALWAYS_EAGER': Option(False, type='bool'),
-        'ANNOTATIONS': Option(type='any'),
-        'BROADCAST_QUEUE': Option('celeryctl'),
-        'BROADCAST_EXCHANGE': Option('celeryctl'),
-        'BROADCAST_EXCHANGE_TYPE': Option('fanout'),
-        'CACHE_BACKEND': Option(),
-        'CACHE_BACKEND_OPTIONS': Option({}, type='dict'),
-        'CHORD_PROPAGATES': Option(True, type='bool'),
-        'COUCHBASE_BACKEND_SETTINGS': Option(None, type='dict'),
-        'CREATE_MISSING_QUEUES': Option(True, type='bool'),
-        'DEFAULT_RATE_LIMIT': Option(type='string'),
-        'DISABLE_RATE_LIMITS': Option(False, type='bool'),
-        'DEFAULT_ROUTING_KEY': Option('celery'),
-        'DEFAULT_QUEUE': Option('celery'),
-        'DEFAULT_EXCHANGE': Option('celery'),
-        'DEFAULT_EXCHANGE_TYPE': Option('direct'),
-        'DEFAULT_DELIVERY_MODE': Option(2, type='string'),
-        'EAGER_PROPAGATES_EXCEPTIONS': Option(False, type='bool'),
-        'ENABLE_UTC': Option(True, type='bool'),
-        'ENABLE_REMOTE_CONTROL': Option(True, type='bool'),
-        'EVENT_SERIALIZER': Option('json'),
-        'EVENT_QUEUE_EXPIRES': Option(60.0, type='float'),
-        'EVENT_QUEUE_TTL': Option(5.0, type='float'),
-        'IMPORTS': Option((), type='tuple'),
-        'INCLUDE': Option((), type='tuple'),
-        'IGNORE_RESULT': Option(False, type='bool'),
-        'MAX_CACHED_RESULTS': Option(100, type='int'),
-        'MESSAGE_COMPRESSION': Option(type='string'),
-        'MONGODB_BACKEND_SETTINGS': Option(type='dict'),
-        'REDIS_HOST': Option(type='string'),
-        'REDIS_PORT': Option(type='int'),
-        'REDIS_DB': Option(type='int'),
-        'REDIS_PASSWORD': Option(type='string'),
-        'REDIS_MAX_CONNECTIONS': Option(type='int'),
-        'REJECT_ON_WORKER_LOST': Option(type='bool'),
-        'RESULT_BACKEND': Option(type='string'),
-        'RESULT_DB_SHORT_LIVED_SESSIONS': Option(False, type='bool'),
-        'RESULT_DB_TABLENAMES': Option(type='dict'),
-        'RESULT_DBURI': Option(),
-        'RESULT_ENGINE_OPTIONS': Option(type='dict'),
-        'RESULT_EXCHANGE': Option('celeryresults'),
-        'RESULT_EXCHANGE_TYPE': Option('direct'),
-        'RESULT_SERIALIZER': Option('json'),
-        'RESULT_PERSISTENT': Option(None, type='bool'),
-        'RIAK_BACKEND_SETTINGS': Option(type='dict'),
-        'ROUTES': Option(type='any'),
-        'SEND_EVENTS': Option(False, type='bool'),
-        'SEND_TASK_ERROR_EMAILS': Option(False, type='bool'),
-        'SEND_TASK_SENT_EVENT': Option(False, type='bool'),
-        'STORE_ERRORS_EVEN_IF_IGNORED': Option(False, type='bool'),
-        'TASK_PROTOCOL': Option(1, type='int'),
-        'TASK_PUBLISH_RETRY': Option(True, type='bool'),
-        'TASK_PUBLISH_RETRY_POLICY': Option({
-            'max_retries': 3,
-            'interval_start': 0,
-            'interval_max': 1,
-            'interval_step': 0.2}, type='dict'),
-        'TASK_RESULT_EXPIRES': Option(timedelta(days=1), type='float'),
-        'TASK_SERIALIZER': Option('json'),
-        'TIMEZONE': Option(type='string'),
-        'TRACK_STARTED': Option(False, type='bool'),
-        'REDIRECT_STDOUTS': Option(True, type='bool'),
-        'REDIRECT_STDOUTS_LEVEL': Option('WARNING'),
-        'QUEUES': Option(type='dict'),
-        'QUEUE_HA_POLICY': Option(None, type='string'),
-        'QUEUE_MAX_PRIORITY': Option(None, type='int'),
-        'SECURITY_KEY': Option(type='string'),
-        'SECURITY_CERTIFICATE': Option(type='string'),
-        'SECURITY_CERT_STORE': Option(type='string'),
-        'WORKER_DIRECT': Option(False, type='bool'),
-    },
-    'CELERYD': {
-        'AGENT': Option(None, type='string'),
-        'AUTOSCALER': Option('celery.worker.autoscale:Autoscaler'),
-        'AUTORELOADER': Option('celery.worker.autoreload:Autoreloader'),
-        'CONCURRENCY': Option(0, type='int'),
-        'TIMER': Option(type='string'),
-        'TIMER_PRECISION': Option(1.0, type='float'),
-        'FORCE_EXECV': Option(False, type='bool'),
-        'HIJACK_ROOT_LOGGER': Option(True, type='bool'),
-        'CONSUMER': Option('celery.worker.consumer:Consumer', type='string'),
-        'LOG_FORMAT': Option(DEFAULT_PROCESS_LOG_FMT),
-        'LOG_COLOR': Option(type='bool'),
-        'MAX_TASKS_PER_CHILD': Option(type='int'),
-        'MAX_MEMORY_PER_CHILD': Option(type='int'),
-        'POOL': Option(DEFAULT_POOL),
-        'POOL_PUTLOCKS': Option(True, type='bool'),
-        'POOL_RESTARTS': Option(False, type='bool'),
-        'PREFETCH_MULTIPLIER': Option(4, type='int'),
-        'STATE_DB': Option(),
-        'TASK_LOG_FORMAT': Option(DEFAULT_TASK_LOG_FMT),
-        'TASK_SOFT_TIME_LIMIT': Option(type='float'),
-        'TASK_TIME_LIMIT': Option(type='float'),
-        'WORKER_LOST_WAIT': Option(10.0, type='float')
-    },
-    'CELERYBEAT': {
-        'SCHEDULE': Option({}, type='dict'),
-        'SCHEDULER': Option('celery.beat:PersistentScheduler'),
-        'SCHEDULE_FILENAME': Option('celerybeat-schedule'),
-        'SYNC_EVERY': Option(0, type='int'),
-        'MAX_LOOP_INTERVAL': Option(0, type='float'),
-    },
-    'EMAIL': {
-        'HOST': Option('localhost'),
-        'PORT': Option(25, type='int'),
-        'HOST_USER': Option(),
-        'HOST_PASSWORD': Option(),
-        'TIMEOUT': Option(2, type='float'),
-        'USE_SSL': Option(False, type='bool'),
-        'USE_TLS': Option(False, type='bool'),
-        'CHARSET': Option('us-ascii'),
-    },
-    'SERVER_EMAIL': Option('celery@localhost'),
-    'ADMINS': Option((), type='tuple'),
-}
+NAMESPACES = Namespace(
+    accept_content=Option(DEFAULT_ACCEPT_CONTENT, type='list', old=OLD_NS),
+    admins=Option((), type='tuple'),
+    enable_utc=Option(True, type='bool'),
+    imports=Option((), type='tuple', old=OLD_NS),
+    include=Option((), type='tuple', old=OLD_NS),
+    server_email=Option('celery@localhost'),
+    timezone=Option(type='string', old=OLD_NS),
+    beat=Namespace(
+        __old__=OLD_NS_BEAT,
+
+        max_loop_interval=Option(0, type='float'),
+        schedule=Option({}, type='dict'),
+        scheduler=Option('celery.beat:PersistentScheduler'),
+        schedule_filename=Option('celerybeat-schedule'),
+        sync_every=Option(0, type='int'),
+    ),
+    broker=Namespace(
+        url=Option(None, type='string'),
+        transport=Option(type='string'),
+        transport_options=Option({}, type='dict'),
+        connection_timeout=Option(4, type='float'),
+        connection_retry=Option(True, type='bool'),
+        connection_max_retries=Option(100, type='int'),
+        failover_strategy=Option(None, type='string'),
+        heartbeat=Option(None, type='int'),
+        heartbeat_checkrate=Option(3.0, type='int'),
+        login_method=Option(None, type='string'),
+        pool_limit=Option(10, type='int'),
+        use_ssl=Option(False, type='bool'),
+
+        host=Option(type='string'),
+        port=Option(type='int'),
+        user=Option(type='string'),
+        password=Option(type='string'),
+        vhost=Option(type='string'),
+    ),
+    cache=Namespace(
+        __old__=old_ns('celery_cache'),
+
+        backend=Option(),
+        backend_options=Option({}, type='dict'),
+    ),
+    cassandra=Namespace(
+        column_family=Option(type='string'),
+        entry_ttl=Option(type="float"),
+        keyspace=Option(type='string'),
+        port=Option(type="string"),
+        read_consistency=Option(type='string'),
+        servers=Option(type='list'),
+        write_consistency=Option(type='string'),
+    ),
+    chord=Namespace(
+        __old__=old_ns('celery_chord'),
+
+        propagates=Option(True, type='bool'),
+    ),
+    couchbase=Namespace(
+        __old__=old_ns('celery_couchbase'),
+
+        backend_settings=Option(None, type='dict'),
+    ),
+    email=Namespace(
+        charset=Option('us-ascii'),
+        host=Option('localhost'),
+        host_user=Option(),
+        host_password=Option(),
+        port=Option(25, type='int'),
+        timeout=Option(2, type='float'),
+        use_ssl=Option(False, type='bool'),
+        use_tls=Option(False, type='bool'),
+    ),
+    mongodb=Namespace(
+        __old__=old_ns('celery_mongodb'),
+
+        backend_settings=Option(type='dict'),
+    ),
+    event=Namespace(
+        __old__=old_ns('celery_event'),
+
+        queue_expires=Option(60.0, type='float'),
+        queue_ttl=Option(5.0, type='float'),
+        serializer=Option('json'),
+    ),
+    redis=Namespace(
+        __old__=old_ns('celery_redis'),
+
+        db=Option(type='int'),
+        host=Option(type='string'),
+        max_connections=Option(type='int'),
+        password=Option(type='string'),
+        port=Option(type='int'),
+    ),
+    result=Namespace(
+        __old__=old_ns('celery_result'),
+
+        backend=Option(type='string'),
+        cache_max=Option(
+            100,
+            type='int', old={'celery_max_cached_results'},
+        ),
+        compression=Option(type='str'),
+        exchange=Option('celeryresults'),
+        exchange_type=Option('direct'),
+        expires=Option(
+            timedelta(days=1),
+            type='float', old={'celery_task_result_expires'},
+        ),
+        persistent=Option(None, type='bool'),
+        serializer=Option('json'),
+    ),
+    riak=Namespace(
+        __old__=old_ns('celery_riak'),
+
+        backend_settings=Option(type='dict'),
+    ),
+    security=Namespace(
+        __old__=old_ns('celery_security'),
+
+        certificate=Option(type='string'),
+        cert_store=Option(type='string'),
+        key=Option(type='string'),
+    ),
+    sqlalchemy=Namespace(
+        dburi=Option(old={'celery_result_dburi'}),
+        engine_options=Option(
+            type='dict', old={'celery_result_engine_options'},
+        ),
+        short_lived_sessions=Option(
+            False, type='bool', old={'celery_result_db_short_lived_sessions'},
+        ),
+        table_names=Option(type='dict', old={'celery_result_db_tablenames'}),
+    ),
+    task=Namespace(
+        __old__=OLD_NS,
+        acks_late=Option(False, type='bool'),
+        always_eager=Option(False, type='bool'),
+        annotations=Option(type='any'),
+        compression=Option(type='string', old={'celery_message_compression'}),
+        create_missing_queues=Option(True, type='bool'),
+        default_delivery_mode=Option(2, type='string'),
+        default_exchange=Option('celery'),
+        default_exchange_type=Option('direct'),
+        default_queue=Option('celery'),
+        default_rate_limit=Option(type='string'),
+        default_routing_key=Option('celery'),
+        eager_propagates_exceptions=Option(False, type='bool'),
+        ignore_result=Option(False, type='bool'),
+        protocol=Option(1, type='int', old={'celery_task_protocol'}),
+        publish_retry=Option(
+            True, type='bool', old={'celery_task_publish_retry'},
+        ),
+        publish_retry_policy=Option(
+            {'max_retries': 3,
+             'interval_start': 0,
+             'interval_max': 1,
+             'interval_step': 0.2},
+            type='dict', old={'celery_task_publish_retry_policy'},
+        ),
+        queues=Option(type='dict'),
+        queue_ha_policy=Option(None, type='string'),
+        queue_max_priority=Option(None, type='int'),
+        reject_on_worker_lost=Option(type='bool'),
+        routes=Option(type='any'),
+        send_error_emails=Option(
+            False, type='bool', old={'celery_send_task_error_emails'},
+        ),
+        send_sent_event=Option(
+            False, type='bool', old={'celery_send_task_sent_event'},
+        ),
+        serializer=Option('json', old={'celery_task_serializer'}),
+        soft_time_limit=Option(
+            type='float', old={'celeryd_task_soft_time_limit'},
+        ),
+        time_limit=Option(
+            type='float', old={'celeryd_task_time_limit'},
+        ),
+        store_errors_even_if_ignored=Option(False, type='bool'),
+        track_started=Option(False, type='bool'),
+    ),
+    worker=Namespace(
+        __old__=OLD_NS_WORKER,
+        agent=Option(None, type='string'),
+        autoscaler=Option('celery.worker.autoscale:Autoscaler'),
+        autoreloader=Option('celery.worker.autoreload:Autoreloader'),
+        concurrency=Option(0, type='int'),
+        consumer=Option('celery.worker.consumer:Consumer', type='string'),
+        direct=Option(False, type='bool', old={'celery_worker_direct'}),
+        disable_rate_limits=Option(
+            False, type='bool', old={'celery_disable_rate_limits'},
+        ),
+        enable_remote_control=Option(
+            True, type='bool', old={'celery_enable_remote_control'},
+        ),
+        force_execv=Option(False, type='bool'),
+        hijack_root_logger=Option(True, type='bool'),
+        log_color=Option(type='bool'),
+        log_format=Option(DEFAULT_PROCESS_LOG_FMT),
+        lost_wait=Option(10.0, type='float'),
+        max_memory_per_child=Option(type='int'),
+        max_tasks_per_child=Option(type='int'),
+        pool=Option(DEFAULT_POOL),
+        pool_putlocks=Option(True, type='bool'),
+        pool_restarts=Option(False, type='bool'),
+        prefetch_multiplier=Option(4, type='int'),
+        redirect_stdouts=Option(
+            True, type='bool', old={'celery_redirect_stdouts'},
+        ),
+        redirect_stdouts_level=Option(
+            'WARNING', old={'celery_redirect_stdouts_level'},
+        ),
+        send_events=Option(False, type='bool'),
+        state_db=Option(),
+        task_log_format=Option(DEFAULT_TASK_LOG_FMT),
+        timer=Option(type='string'),
+        timer_precision=Option(1.0, type='float'),
+    ),
+)
 
 
-def flatten(d, ns=''):
-    stack = deque([(ns, d)])
+def _flatten_keys(ns, key, opt):
+    return [(ns + key, opt)]
+
+
+def _to_compat(ns, key, opt):
+    if opt.old:
+        return [
+            (oldkey.format(key).upper(), ns + key, opt)
+            for oldkey in opt.old
+        ]
+    return [((ns + key).upper(), ns + key, opt)]
+
+
+def flatten(d, root='', keyfilter=_flatten_keys):
+    stack = deque([(root, d)])
     while stack:
-        name, space = stack.popleft()
-        for key, value in items(space):
-            if isinstance(value, dict):
-                stack.append((name + key + '_', value))
+        ns, options = stack.popleft()
+        for key, opt in items(options):
+            if isinstance(opt, dict):
+                stack.append((ns + key + '_', opt))
             else:
-                yield name + key, value
-DEFAULTS = {key: value.default for key, value in flatten(NAMESPACES)}
+                for ret in keyfilter(ns, key, opt):
+                    yield ret
+DEFAULTS = {
+    key: opt.default for key, opt in flatten(NAMESPACES)
+}
+__compat = list(flatten(NAMESPACES, keyfilter=_to_compat))
+_OLD_DEFAULTS = {old_key: opt.default for old_key, _, opt in __compat}
+_TO_OLD_KEY = {new_key: old_key for old_key, new_key, _ in __compat}
+_TO_NEW_KEY = {old_key: new_key for old_key, new_key, _ in __compat}
+__compat = None
+
+SETTING_KEYS = set(keys(DEFAULTS))
+_OLD_SETTING_KEYS = set(keys(_TO_NEW_KEY))
 
 
 def find_deprecated_settings(source):
@@ -238,20 +348,20 @@ def find_deprecated_settings(source):
 @memoize(maxsize=None)
 def find(name, namespace='celery'):
     # - Try specified namespace first.
-    namespace = namespace.upper()
+    namespace = namespace.lower()
     try:
         return searchresult(
-            namespace, name.upper(), NAMESPACES[namespace][name.upper()],
+            namespace, name.lower(), NAMESPACES[namespace][name.lower()],
         )
     except KeyError:
         # - Try all the other namespaces.
-        for ns, keys in items(NAMESPACES):
-            if ns.upper() == name.upper():
-                return searchresult(None, ns, keys)
-            elif isinstance(keys, dict):
+        for ns, opts in items(NAMESPACES):
+            if ns.lower() == name.lower():
+                return searchresult(None, ns, opts)
+            elif isinstance(opts, dict):
                 try:
-                    return searchresult(ns, name.upper(), keys[name.upper()])
+                    return searchresult(ns, name.lower(), opts[name.lower()])
                 except KeyError:
                     pass
     # - See if name is a qualname last.
-    return searchresult(None, name.upper(), DEFAULTS[name.upper()])
+    return searchresult(None, name.lower(), DEFAULTS[name.lower()])

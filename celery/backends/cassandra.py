@@ -59,7 +59,7 @@ class CassandraBackend(BaseBackend):
         """Initialize Cassandra backend.
 
         Raises :class:`celery.exceptions.ImproperlyConfigured` if
-        the :setting:`CASSANDRA_SERVERS` setting is not set.
+        the :setting:`cassandra_servers` setting is not set.
 
         """
         super(CassandraBackend, self).__init__(**kwargs)
@@ -71,21 +71,21 @@ class CassandraBackend(BaseBackend):
 
         conf = self.app.conf
         self.servers = (servers or
-                        conf.get('CASSANDRA_SERVERS') or
+                        conf.get('cassandra_servers') or
                         self.servers)
         self.keyspace = (keyspace or
-                         conf.get('CASSANDRA_KEYSPACE') or
+                         conf.get('cassandra_keyspace') or
                          self.keyspace)
         self.column_family = (column_family or
-                              conf.get('CASSANDRA_COLUMN_FAMILY') or
+                              conf.get('cassandra_column_family') or
                               self.column_family)
-        self.cassandra_options = dict(conf.get('CASSANDRA_OPTIONS') or {},
+        self.cassandra_options = dict(conf.get('cassandra_options') or {},
                                       **cassandra_options or {})
         self.detailed_mode = (detailed_mode or
-                              conf.get('CASSANDRA_DETAILED_MODE') or
+                              conf.get('cassandra_detailed_mode') or
                               self.detailed_mode)
-        read_cons = conf.get('CASSANDRA_READ_CONSISTENCY') or 'LOCAL_QUORUM'
-        write_cons = conf.get('CASSANDRA_WRITE_CONSISTENCY') or 'LOCAL_QUORUM'
+        read_cons = conf.get('cassandra_read_consistency') or 'LOCAL_QUORUM'
+        write_cons = conf.get('cassandra_write_consistency') or 'LOCAL_QUORUM'
         try:
             self.read_consistency = getattr(pycassa.ConsistencyLevel,
                                             read_cons)

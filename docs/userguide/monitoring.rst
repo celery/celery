@@ -653,7 +653,7 @@ task-sent
               queue, exchange, routing_key)``
 
 Sent when a task message is published and
-the :setting:`CELERY_SEND_TASK_SENT_EVENT` setting is enabled.
+the :setting:`task_send_sent_event` setting is enabled.
 
 .. event:: task-received
 

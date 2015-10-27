@@ -156,7 +156,7 @@ class graph(Command):
                 threads.append(reply['pool']['max-concurrency'])
 
         wlen = len(workers)
-        backend = args.get('backend', self.app.conf.CELERY_RESULT_BACKEND)
+        backend = args.get('backend', self.app.conf.result_backend)
         threads_for = {}
         workers = maybe_abbr(workers, 'Worker')
         if Wmax and wlen > Wmax:

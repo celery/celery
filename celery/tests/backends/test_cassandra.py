@@ -48,9 +48,9 @@ class test_CassandraBackend(AppCase):
 
     def setup(self):
         self.app.conf.update(
-            CASSANDRA_SERVERS=['example.com'],
-            CASSANDRA_KEYSPACE='keyspace',
-            CASSANDRA_COLUMN_FAMILY='columns',
+            cassandra_servers=['example.com'],
+            cassandra_keyspace='keyspace',
+            cassandra_column_family='columns',
         )
 
     def test_init_no_pycassa(self):
@@ -71,8 +71,8 @@ class test_CassandraBackend(AppCase):
             cons = mod.pycassa.ConsistencyLevel = Object()
             cons.LOCAL_QUORUM = 'foo'
 
-            self.app.conf.CASSANDRA_READ_CONSISTENCY = 'LOCAL_FOO'
-            self.app.conf.CASSANDRA_WRITE_CONSISTENCY = 'LOCAL_FOO'
+            self.app.conf.cassandra_read_consistency = 'LOCAL_FOO'
+            self.app.conf.cassandra_write_consistency = 'LOCAL_FOO'
 
             mod.CassandraBackend(app=self.app)
             cons.LOCAL_FOO = 'bar'
@@ -80,7 +80,7 @@ class test_CassandraBackend(AppCase):
 
             # no servers raises ImproperlyConfigured
             with self.assertRaises(ImproperlyConfigured):
-                self.app.conf.CASSANDRA_SERVERS = None
+                self.app.conf.cassandra_servers = None
                 mod.CassandraBackend(
                     app=self.app, keyspace='b', column_family='c',
                 )

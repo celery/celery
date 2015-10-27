@@ -63,7 +63,7 @@ class CouchBaseBackend(KeyValueStoreBackend):
             _, uhost, uport, uname, upass, ubucket, _ = _parse_url(url)
             ubucket = ubucket.strip('/') if ubucket else None
 
-        config = self.app.conf.get('CELERY_COUCHBASE_BACKEND_SETTINGS', None)
+        config = self.app.conf.get('couchbase_backend_settings', None)
         if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(

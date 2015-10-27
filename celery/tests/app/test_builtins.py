@@ -83,7 +83,7 @@ class test_group(BuiltinsCase):
 
     def test_apply_async_eager(self):
         self.task.apply = Mock()
-        self.app.conf.CELERY_ALWAYS_EAGER = True
+        self.app.conf.task_always_eager = True
         self.task.apply_async((1, 2, 3, 4, 5))
         self.assertTrue(self.task.apply.called)
 
@@ -208,7 +208,7 @@ class test_chord(BuiltinsCase):
         self.assertEqual(resbody.options['chord'], 'some_chord_id')
 
     def test_apply_eager(self):
-        self.app.conf.CELERY_ALWAYS_EAGER = True
+        self.app.conf.task_always_eager = True
         x = chord([self.add.s(i, i) for i in range(10)], body=self.xsum.s())
         r = x.apply_async()
         self.assertEqual(r.get(), 90)

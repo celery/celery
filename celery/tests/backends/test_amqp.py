@@ -375,7 +375,7 @@ class test_AMQPBackend(AppCase):
     def test_no_expires(self):
         b = self.create_backend(expires=None)
         app = self.app
-        app.conf.CELERY_TASK_RESULT_EXPIRES = None
+        app.conf.result_expires = None
         b = self.create_backend(expires=None)
         with self.assertRaises(KeyError):
             b.queue_arguments['x-expires']

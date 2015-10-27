@@ -98,7 +98,7 @@ class MongoBackend(BaseBackend):
             self.options.update(uri_data['options'])
 
         # update conf with specific settings
-        config = self.app.conf.get('CELERY_MONGODB_BACKEND_SETTINGS')
+        config = self.app.conf.get('mongodb_backend_settings')
         if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(

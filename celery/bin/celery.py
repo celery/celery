@@ -660,7 +660,6 @@ class report(Command):
 
 
 class CeleryCommand(Command):
-    namespace = 'celery'
     ext_fmt = '{self.namespace}.commands'
     commands = {
         'amqp': amqp,

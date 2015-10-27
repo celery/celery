@@ -59,16 +59,16 @@ class test_MongoBackend(AppCase):
             module.pymongo = prev
 
     def test_init_no_settings(self):
-        self.app.conf.CELERY_MONGODB_BACKEND_SETTINGS = []
+        self.app.conf.mongodb_backend_settings = []
         with self.assertRaises(ImproperlyConfigured):
             MongoBackend(app=self.app)
 
     def test_init_settings_is_None(self):
-        self.app.conf.CELERY_MONGODB_BACKEND_SETTINGS = None
+        self.app.conf.mongodb_backend_settings = None
         MongoBackend(app=self.app)
 
     def test_init_with_settings(self):
-        self.app.conf.CELERY_MONGODB_BACKEND_SETTINGS = None
+        self.app.conf.mongodb_backend_settings = None
         # empty settings
         mb = MongoBackend(app=self.app)
 
@@ -103,7 +103,7 @@ class test_MongoBackend(AppCase):
         self.assertEqual(mb.database_name, 'celerydatabase')
 
         # same uri, change some parameters in backend settings
-        self.app.conf.CELERY_MONGODB_BACKEND_SETTINGS = {
+        self.app.conf.mongodb_backend_settings = {
             'replicaset': 'rs1',
             'user': 'backenduser',
             'database': 'another_db',

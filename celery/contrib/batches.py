@@ -8,7 +8,7 @@ Experimental task class that buffers messages and processes them as a list.
 .. warning::
 
     For this to work you have to set
-    :setting:`CELERYD_PREFETCH_MULTIPLIER` to zero, or some value where
+    :setting:`worker_prefetch_multiplier` to zero, or some value where
     the final multiplied value is higher than ``flush_every``.
 
     In the future we hope to add the ability to direct batching tasks

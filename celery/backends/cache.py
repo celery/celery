@@ -101,10 +101,10 @@ class CacheBackend(KeyValueStoreBackend):
                  options={}, url=None, **kwargs):
         super(CacheBackend, self).__init__(app, **kwargs)
 
-        self.options = dict(self.app.conf.CELERY_CACHE_BACKEND_OPTIONS,
+        self.options = dict(self.app.conf.cache_backend_options,
                             **options)
 
-        self.backend = url or backend or self.app.conf.CELERY_CACHE_BACKEND
+        self.backend = url or backend or self.app.conf.cache_backend
         if self.backend:
             self.backend, _, servers = self.backend.partition('://')
             self.servers = servers.rstrip('/').split(';')

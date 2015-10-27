@@ -111,7 +111,7 @@ class schedule(object):
         The next time to check is used to save energy/cpu cycles,
         it does not need to be accurate but will influence the precision
         of your schedule.  You must also keep in mind
-        the value of :setting:`CELERYBEAT_MAX_LOOP_INTERVAL`,
+        the value of :setting:`beat_max_loop_interval`,
         which decides the maximum number of seconds the scheduler can
         sleep between re-checking the periodic task intervals.  So if you
         have a task that changes schedule at runtime then your next_run_at
@@ -172,7 +172,7 @@ class schedule(object):
 
     @cached_property
     def utc_enabled(self):
-        return self.app.conf.CELERY_ENABLE_UTC
+        return self.app.conf.enable_utc
 
     def to_local(self, dt):
         if not self.utc_enabled:

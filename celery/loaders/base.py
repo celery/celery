@@ -40,6 +40,8 @@ CONFIG_WITH_SUFFIX = CONFIG_INVALID_NAME + """\
 Did you mean '{suggest}'?
 """
 
+unconfigured = object()
+
 
 class BaseLoader(object):
     """The base class for loaders.
@@ -65,7 +67,7 @@ class BaseLoader(object):
     override_backends = {}
     worker_initialized = False
 
-    _conf = None
+    _conf = unconfigured
 
     def __init__(self, app, **kwargs):
         self.app = app
@@ -117,8 +119,8 @@ class BaseLoader(object):
         return [
             self.import_task_module(m) for m in (
                 tuple(self.builtin_modules) +
-                tuple(maybe_list(self.app.conf.CELERY_IMPORTS)) +
-                tuple(maybe_list(self.app.conf.CELERY_INCLUDE))
+                tuple(maybe_list(self.app.conf.imports)) +
+                tuple(maybe_list(self.app.conf.include))
             )
         ]
 
@@ -183,7 +185,7 @@ class BaseLoader(object):
                             'list': 'json',
                             'dict': 'json'}):
         from celery.app.defaults import Option, NAMESPACES
-        namespace = namespace.upper()
+        namespace = namespace.lower()
         typemap = dict(Option.typemap, **extra_types)
 
         def getarg(arg):
@@ -193,7 +195,7 @@ class BaseLoader(object):
             # ## find key/value
             # ns.key=value|ns_key=value (case insensitive)
             key, value = arg.split('=', 1)
-            key = key.upper().replace('.', '_')
+            key = key.lower().replace('.', '_')
 
             # ## find namespace.
             # .key=value|_key=value expands to default namespace.
@@ -214,7 +216,7 @@ class BaseLoader(object):
                 value = typemap[type_](value)
             else:
                 try:
-                    value = NAMESPACES[ns][key].to_python(value)
+                    value = NAMESPACES[ns.lower()][key].to_python(value)
                 except ValueError as exc:
                     # display key name in error message.
                     raise ValueError('{0!r}: {1}'.format(ns_key, exc))
@@ -244,7 +246,6 @@ class BaseLoader(object):
             if custom_config:
                 usercfg = self._import_config_module(custom_config)
                 return DictAttribute(usercfg)
-        return {}
 
     def autodiscover_tasks(self, packages, related_name='tasks'):
         self.task_modules.update(
@@ -254,7 +255,7 @@ class BaseLoader(object):
     @property
     def conf(self):
         """Loader configuration."""
-        if self._conf is None:
+        if self._conf is unconfigured:
             self._conf = self.read_configuration()
         return self._conf
 

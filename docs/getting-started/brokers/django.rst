@@ -26,7 +26,7 @@ configuration values.
 
 #. Set your broker transport::
 
-    BROKER_URL = 'django://'
+    CELERY_BROKER_URL = 'django://'
 
 #. Add :mod:`kombu.transport.django` to `INSTALLED_APPS`::
 

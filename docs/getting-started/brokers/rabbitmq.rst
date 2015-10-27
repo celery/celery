@@ -16,7 +16,7 @@ the broker instance you want to use:
 
 .. code-block:: python
 
-    BROKER_URL = 'amqp://guest:guest@localhost:5672//'
+    broker_url = 'amqp://guest:guest@localhost:5672//'
 
 For a description of broker URLs and a full list of the
 various broker configuration options available to Celery,

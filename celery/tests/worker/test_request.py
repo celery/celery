@@ -210,7 +210,7 @@ class MockEventDispatcher(object):
 class test_Request(AppCase):
 
     def setup(self):
-        self.app.conf.CELERY_RESULT_SERIALIZER = 'pickle'
+        self.app.conf.result_serializer = 'pickle'
 
         @self.app.task(shared=False)
         def add(x, y, **kw_):

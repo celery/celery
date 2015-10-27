@@ -53,7 +53,7 @@ class TaskSet(list):
         """Apply TaskSet."""
         app = self.app
 
-        if app.conf.CELERY_ALWAYS_EAGER:
+        if app.conf.task_always_eager:
             return self.apply(taskset_id=taskset_id)
 
         with app.connection_or_acquire(connection) as conn:

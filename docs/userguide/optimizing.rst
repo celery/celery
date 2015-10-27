@@ -75,7 +75,7 @@ Broker Connection Pools
 
 The broker connection pool is enabled by default since version 2.5.
 
-You can tweak the :setting:`BROKER_POOL_LIMIT` setting to minimize
+You can tweak the :setting:`broker_pool_limit` setting to minimize
 contention, and the value should be based on the number of
 active threads/greenthreads using broker connections.
 
@@ -96,18 +96,18 @@ to improve performance:
 
     from kombu import Exchange, Queue
 
-    CELERY_QUEUES = (
+    task_queues = (
         Queue('celery', routing_key='celery'),
         Queue('transient', Exchange('transient', delivery_mode=1),
               routing_key='transient', durable=False),
     )
 
 
-or by using :setting:`CELERY_ROUTES`:
+or by using :setting:`task_routes`:
 
 .. code-block:: python
 
-    CELERY_ROUTES = {
+    task_routes = {
         'proj.tasks.add': {'queue': 'celery', 'delivery_mode': 'transient'}
     }
 
@@ -117,7 +117,7 @@ A value of 1 means that the message will not be written to disk, and a value
 of 2 (default) means that the message can be written to disk.
 
 To direct a task to your new transient queue you can specify the queue
-argument (or use the :setting:`CELERY_ROUTES` setting):
+argument (or use the :setting:`task_routes` setting):
 
 .. code-block:: python
 
@@ -145,7 +145,7 @@ available worker nodes that may be able to process them sooner [*]_,
 or that the messages may not even fit in memory.
 
 The workers' default prefetch count is the
-:setting:`CELERYD_PREFETCH_MULTIPLIER` setting multiplied by the number
+:setting:`worker_prefetch_multiplier` setting multiplied by the number
 of concurrency slots[*]_ (processes/threads/greenthreads).
 
 If you have many tasks with a long duration you want
@@ -169,7 +169,7 @@ the tasks according to the run-time. (see :ref:`guide-routing`).
        nodes starting. If there are 3 offline nodes and one active node,
        all messages will be delivered to the active node.
 
-.. [*] This is the concurrency setting; :setting:`CELERYD_CONCURRENCY` or the
+.. [*] This is the concurrency setting; :setting:`worker_concurrency` or the
        :option:`-c` option to the :program:`celery worker` program.
 
 
@@ -195,8 +195,8 @@ You can enable this behavior by using the following configuration options:
 
 .. code-block:: python
 
-    CELERY_ACKS_LATE = True
-    CELERYD_PREFETCH_MULTIPLIER = 1
+    task_acks_late = True
+    worker_prefetch_multiplier = 1
 
 .. _prefork-pool-prefetch:
 

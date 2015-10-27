@@ -180,15 +180,15 @@ class test_RedisBackend(AppCase):
 
     def test_conf_raises_KeyError(self):
         self.app.conf = AttributeDict({
-            'CELERY_RESULT_SERIALIZER': 'json',
-            'CELERY_MAX_CACHED_RESULTS': 1,
-            'CELERY_ACCEPT_CONTENT': ['json'],
-            'CELERY_TASK_RESULT_EXPIRES': None,
+            'result_serializer': 'json',
+            'result_cache_max': 1,
+            'result_expires': None,
+            'accept_content': ['json'],
         })
         self.Backend(app=self.app, new_join=True)
 
     def test_expires_defaults_to_config(self):
-        self.app.conf.CELERY_TASK_RESULT_EXPIRES = 10
+        self.app.conf.result_expires = 10
         b = self.Backend(expires=None, app=self.app, new_join=True)
         self.assertEqual(b.expires, 10)
 
@@ -216,7 +216,7 @@ class test_RedisBackend(AppCase):
         b = self.Backend(expires=None, app=self.app, new_join=True)
         self.assertEqual(
             b.expires,
-            self.app.conf.CELERY_TASK_RESULT_EXPIRES.total_seconds(),
+            self.app.conf.result_expires.total_seconds(),
         )
 
     def test_expires_is_timedelta(self):

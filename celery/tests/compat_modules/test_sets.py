@@ -170,10 +170,10 @@ class test_TaskSet(SetsCase):
             [self.MockTask.subtask((i, i)) for i in (2, 4, 8)],
             app=self.app,
         )
-        app.conf.CELERY_ALWAYS_EAGER = True
+        app.conf.task_always_eager = True
         ts.apply_async()
         self.assertEqual(ts.applied, 1)
-        app.conf.CELERY_ALWAYS_EAGER = False
+        app.conf.task_always_eager = False
 
         with patch('celery.task.sets.get_current_worker_task') as gwt:
             parent = gwt.return_value = Mock()

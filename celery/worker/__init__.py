@@ -46,15 +46,15 @@ SHUTDOWN_SOCKET_TIMEOUT = 5.0
 
 SELECT_UNKNOWN_QUEUE = """\
 Trying to select queue subset of {0!r}, but queue {1} is not
-defined in the CELERY_QUEUES setting.
+defined in the `task_queues` setting.
 
 If you want to automatically declare unknown queues you can
-enable the CELERY_CREATE_MISSING_QUEUES setting.
+enable the `task_create_missing_queues` setting.
 """
 
 DESELECT_UNKNOWN_QUEUE = """\
 Trying to deselect queue subset of {0!r}, but queue {1} is not
-defined in the CELERY_QUEUES setting.
+defined in the `task_queues` setting.
 """
 
 
@@ -180,20 +180,20 @@ class WorkController(object):
         except KeyError as exc:
             raise ImproperlyConfigured(
                 DESELECT_UNKNOWN_QUEUE.format(exclude, exc))
-        if self.app.conf.CELERY_WORKER_DIRECT:
+        if self.app.conf.worker_direct:
             self.app.amqp.queues.select_add(worker_direct(self.hostname))
 
     def setup_includes(self, includes):
         # Update celery_include to have all known task modules, so that we
         # ensure all task modules are imported in case an execv happens.
-        prev = tuple(self.app.conf.CELERY_INCLUDE)
+        prev = tuple(self.app.conf.include)
         if includes:
             prev += tuple(includes)
             [self.app.loader.import_task_module(m) for m in includes]
         self.include = includes
         task_modules = {task.__class__.__module__
                         for task in values(self.app.tasks)}
-        self.app.conf.CELERY_INCLUDE = tuple(set(prev) | task_modules)
+        self.app.conf.include = tuple(set(prev) | task_modules)
 
     def prepare_args(self, **kwargs):
         return kwargs
@@ -353,49 +353,42 @@ class WorkController(object):
                        max_tasks_per_child=None, prefetch_multiplier=None,
                        disable_rate_limits=None, worker_lost_wait=None,
                        max_memory_per_child=None, **_kw):
+        either = self.app.either
         self.loglevel = loglevel
         self.logfile = logfile
-        self.concurrency = self._getopt('concurrency', concurrency)
-        self.send_events = self._getopt('send_events', send_events)
-        self.pool_cls = self._getopt('pool', pool_cls)
-        self.consumer_cls = self._getopt('consumer', consumer_cls)
-        self.timer_cls = self._getopt('timer', timer_cls)
-        self.timer_precision = self._getopt('timer_precision', timer_precision)
-        self.autoscaler_cls = self._getopt('autoscaler', autoscaler_cls)
-        self.autoreloader_cls = self._getopt('autoreloader', autoreloader_cls)
-        self.pool_putlocks = self._getopt('pool_putlocks', pool_putlocks)
-        self.pool_restarts = self._getopt('pool_restarts', pool_restarts)
-        self.force_execv = self._getopt('force_execv', force_execv)
-        self.state_db = self._getopt('state_db', state_db)
-        self.schedule_filename = self._getopt(
-            'schedule_filename', schedule_filename,
+
+        self.concurrency = either('worker_concurrency', concurrency)
+        self.send_events = either('worker_send_events', send_events)
+        self.pool_cls = either('worker_pool', pool_cls)
+        self.consumer_cls = either('worker_consumer', consumer_cls)
+        self.timer_cls = either('worker_timer', timer_cls)
+        self.timer_precision = either(
+            'worker_timer_precision', timer_precision,
         )
-        self.scheduler_cls = self._getopt(
-            'celerybeat_scheduler', scheduler_cls,
+        self.autoscaler_cls = either('worker_autoscaler', autoscaler_cls)
+        self.autoreloader_cls = either('worker_autoreloader', autoreloader_cls)
+        self.pool_putlocks = either('worker_pool_putlocks', pool_putlocks)
+        self.pool_restarts = either('worker_pool_restarts', pool_restarts)
+        self.force_execv = either('worker_force_execv', force_execv)
+        self.state_db = either('worker_state_db', state_db)
+        self.schedule_filename = either(
+            'beat_schedule_filename', schedule_filename,
         )
-        self.task_time_limit = self._getopt(
-            'task_time_limit', task_time_limit,
-        )
-        self.task_soft_time_limit = self._getopt(
+        self.scheduler_cls = either('beat_scheduler', scheduler_cls)
+        self.task_time_limit = either('task_time_limit', task_time_limit)
+        self.task_soft_time_limit = either(
             'task_soft_time_limit', task_soft_time_limit,
         )
-        self.max_tasks_per_child = self._getopt(
-            'max_tasks_per_child', max_tasks_per_child,
+        self.max_tasks_per_child = either(
+            'worker_max_tasks_per_child', max_tasks_per_child,
         )
-        self.max_memory_per_child = self._getopt(
-            'max_memory_per_child', max_memory_per_child,
+        self.max_memory_per_child = either(
+            'worker_max_memory_per_child', max_memory_per_child,
         )
-        self.prefetch_multiplier = int(self._getopt(
-            'prefetch_multiplier', prefetch_multiplier,
+        self.prefetch_multiplier = int(either(
+            'worker_prefetch_multiplier', prefetch_multiplier,
         ))
-        self.disable_rate_limits = self._getopt(
-            'disable_rate_limits', disable_rate_limits,
+        self.disable_rate_limits = either(
+            'worker_disable_rate_limits', disable_rate_limits,
         )
-        self.worker_lost_wait = self._getopt(
-            'worker_lost_wait', worker_lost_wait,
-        )
-
-    def _getopt(self, key, value):
-        if value is not None:
-            return value
-        return self.app.conf.find_value_for_key(key, namespace='celeryd')
+        self.worker_lost_wait = either('worker_lost_wait', worker_lost_wait)

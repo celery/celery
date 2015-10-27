@@ -85,7 +85,7 @@ class RiakBackend(KeyValueStoreBackend):
             if ubucket:
                 ubucket = ubucket.strip('/')
 
-        config = self.app.conf.get('CELERY_RIAK_BACKEND_SETTINGS', None)
+        config = self.app.conf.get('riak_backend_settings', None)
         if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(

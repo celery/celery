@@ -13,7 +13,7 @@ Introduction
 :program:`celery beat` is a scheduler.  It kicks off tasks at regular intervals,
 which are then executed by the worker nodes available in the cluster.
 
-By default the entries are taken from the :setting:`CELERYBEAT_SCHEDULE` setting,
+By default the entries are taken from the :setting:`beat_schedule` setting,
 but custom stores can also be used, like storing the entries
 in an SQL database.
 
@@ -28,18 +28,18 @@ Time Zones
 ==========
 
 The periodic task schedules uses the UTC time zone by default,
-but you can change the time zone used using the :setting:`CELERY_TIMEZONE`
+but you can change the time zone used using the :setting:`timezone`
 setting.
 
 An example time zone could be `Europe/London`:
 
 .. code-block:: python
 
-    CELERY_TIMEZONE = 'Europe/London'
+    timezone = 'Europe/London'
 
 
 This setting must be added to your app, either by configuration it directly
-using (``app.conf.CELERY_TIMEZONE = 'Europe/London'``), or by adding
+using (``app.conf.timezone = 'Europe/London'``), or by adding
 it to your configuration module if you have set one up using
 ``app.config_from_object``.  See :ref:`celerytut-configuration` for
 more information about configuration options.
@@ -58,7 +58,7 @@ schedule manually.
 
     For Django users the time zone specified in the ``TIME_ZONE`` setting
     will be used, or you can specify a custom time zone for Celery alone
-    by using the :setting:`CELERY_TIMEZONE` setting.
+    by using the :setting:`timezone` setting.
 
     The database scheduler will not reset when timezone related settings
     change, so you must do this manually:
@@ -107,14 +107,14 @@ Setting these up from within the ``on_after_configure`` handler means
 that we will not evaluate the app at module level when using ``test.s()``.
 
 The `@add_periodic_task` function will add the entry to the
-:setting:`CELERYBEAT_SCHEDULE` setting behind the scenes, which also
+:setting:`beat_schedule` setting behind the scenes, which also
 can be used to set up periodic tasks manually:
 
 Example: Run the `tasks.add` task every 30 seconds.
 
 .. code-block:: python
 
-    CELERYBEAT_SCHEDULE = {
+    beat_schedule = {
         'add-every-30-seconds': {
             'task': 'tasks.add',
             'schedule': 30.0,
@@ -122,7 +122,7 @@ Example: Run the `tasks.add` task every 30 seconds.
         },
     }
 
-    CELERY_TIMEZONE = 'UTC'
+    timezone = 'UTC'
 
 
 .. note::
@@ -203,7 +203,7 @@ the :class:`~celery.schedules.crontab` schedule type:
 
     from celery.schedules import crontab
 
-    CELERYBEAT_SCHEDULE = {
+    beat_schedule = {
         # Executes every Monday morning at 7:30 A.M
         'add-every-monday-morning': {
             'task': 'tasks.add',
@@ -285,7 +285,7 @@ sunset, dawn or dusk, you can use the
 
     from celery.schedules import solar
 
-    CELERYBEAT_SCHEDULE = {
+    beat_schedule = {
         # Executes at sunset in Melbourne
         'add-at-melbourne-sunset': {
             'task': 'tasks.add',

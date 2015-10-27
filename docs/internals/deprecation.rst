@@ -33,7 +33,7 @@ Removals for version 4.0
 
 .. _deprecations-v4.0:
 
-Removals for version 4.0
+Removals for version 5.0
 ========================
 
 Old Task API
@@ -145,7 +145,7 @@ The task attributes:
 - ``delivery_mode``
 - ``priority``
 
-is deprecated and must be set by :setting:`CELERY_ROUTES` instead.
+is deprecated and must be set by :setting:`task_routes` instead.
 
 :mod:`celery.result`
 --------------------
@@ -228,11 +228,11 @@ Settings
 =====================================  =====================================
 **Setting name**                       **Replace with**
 =====================================  =====================================
-``BROKER_HOST``                        :setting:`BROKER_URL`
-``BROKER_PORT``                        :setting:`BROKER_URL`
-``BROKER_USER``                        :setting:`BROKER_URL`
-``BROKER_PASSWORD``                    :setting:`BROKER_URL`
-``BROKER_VHOST``                       :setting:`BROKER_URL`
+``BROKER_HOST``                        :setting:`broker_url`
+``BROKER_PORT``                        :setting:`broker_url`
+``BROKER_USER``                        :setting:`broker_url`
+``BROKER_PASSWORD``                    :setting:`broker_url`
+``BROKER_VHOST``                       :setting:`broker_url`
 =====================================  =====================================
 
 
@@ -242,14 +242,14 @@ Settings
 =====================================  =====================================
 **Setting name**                       **Replace with**
 =====================================  =====================================
-``CELERY_REDIS_HOST``                  :setting:`CELERY_RESULT_BACKEND`
-``CELERY_REDIS_PORT``                  :setting:`CELERY_RESULT_BACKEND`
-``CELERY_REDIS_DB``                    :setting:`CELERY_RESULT_BACKEND`
-``CELERY_REDIS_PASSWORD``              :setting:`CELERY_RESULT_BACKEND`
-``REDIS_HOST``                         :setting:`CELERY_RESULT_BACKEND`
-``REDIS_PORT``                         :setting:`CELERY_RESULT_BACKEND`
-``REDIS_DB``                           :setting:`CELERY_RESULT_BACKEND`
-``REDIS_PASSWORD``                     :setting:`CELERY_RESULT_BACKEND`
+``CELERY_REDIS_HOST``                  :setting:`result_backend`
+``CELERY_REDIS_PORT``                  :setting:`result_backend`
+``CELERY_REDIS_DB``                    :setting:`result_backend`
+``CELERY_REDIS_PASSWORD``              :setting:`result_backend`
+``REDIS_HOST``                         :setting:`result_backend`
+``REDIS_PORT``                         :setting:`result_backend`
+``REDIS_DB``                           :setting:`result_backend`
+``REDIS_PASSWORD``                     :setting:`result_backend`
 =====================================  =====================================
 
 Logging Settings
@@ -273,7 +273,7 @@ Other Settings
 **Setting name**                       **Replace with**
 =====================================  =====================================
 ``CELERY_TASK_ERROR_WITELIST``         Annotate ``Task.ErrorMail``
-``CELERY_AMQP_TASK_RESULT_EXPIRES``    :setting:`CELERY_TASK_RESULT_EXPIRES`
+``CELERY_AMQP_TASK_RESULT_EXPIRES``    :setting:`result_expires`
 =====================================  =====================================
 
 
@@ -287,12 +287,12 @@ Removals for version 2.0
 =====================================  =====================================
 **Setting name**                       **Replace with**
 =====================================  =====================================
-`CELERY_AMQP_CONSUMER_QUEUES`          `CELERY_QUEUES`
-`CELERY_AMQP_CONSUMER_QUEUES`          `CELERY_QUEUES`
-`CELERY_AMQP_EXCHANGE`                 `CELERY_DEFAULT_EXCHANGE`
-`CELERY_AMQP_EXCHANGE_TYPE`            `CELERY_DEFAULT_AMQP_EXCHANGE_TYPE`
-`CELERY_AMQP_CONSUMER_ROUTING_KEY`     `CELERY_QUEUES`
-`CELERY_AMQP_PUBLISHER_ROUTING_KEY`    `CELERY_DEFAULT_ROUTING_KEY`
+`CELERY_AMQP_CONSUMER_QUEUES`          `task_queues`
+`CELERY_AMQP_CONSUMER_QUEUES`          `task_queues`
+`CELERY_AMQP_EXCHANGE`                 `task_default_exchange`
+`CELERY_AMQP_EXCHANGE_TYPE`            `task_default_exchange_type`
+`CELERY_AMQP_CONSUMER_ROUTING_KEY`     `task_queues`
+`CELERY_AMQP_PUBLISHER_ROUTING_KEY`    `task_default_routing_key`
 =====================================  =====================================
 
 * :envvar:`CELERY_LOADER` definitions without class name.
@@ -303,4 +303,4 @@ Removals for version 2.0
 * :meth:`TaskSet.run`. Use :meth:`celery.task.base.TaskSet.apply_async`
     instead.
 
-* The module :mod:`celery.task.rest`; use :mod:`celery.task.http` instead.
+* The module :mod:`celery.task.rest`; use :mod:`celery.task.httpY` instead.

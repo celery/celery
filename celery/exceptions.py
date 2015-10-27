@@ -120,7 +120,7 @@ class WorkerShutdown(SystemExit):
 
 
 class QueueNotFound(KeyError):
-    """Task routed to a queue not in CELERY_QUEUES."""
+    """Task routed to a queue not in ``conf.queues``."""
 
 
 class ImproperlyConfigured(ImportError):
@@ -155,7 +155,7 @@ class NotConfigured(CeleryWarning):
 
 
 class AlwaysEagerIgnored(CeleryWarning):
-    """send_task ignores CELERY_ALWAYS_EAGER option"""
+    """send_task ignores :setting:`task_always_eager` option"""
 
 
 class InvalidTaskError(CeleryError):

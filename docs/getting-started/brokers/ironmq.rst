@@ -31,7 +31,7 @@ First, you'll need to import the iron_celery library right after you import Cele
 
 You have to specify IronMQ in the broker URL::
 
-    BROKER_URL = 'ironmq://ABCDEFGHIJKLMNOPQRST:ZYXK7NiynGlTogH8Nj+P9nlE73sq3@'
+    broker_url = 'ironmq://ABCDEFGHIJKLMNOPQRST:ZYXK7NiynGlTogH8Nj+P9nlE73sq3@'
 
 where the URL format is::
 

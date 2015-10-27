@@ -31,7 +31,7 @@ use standalone beat instead.\
 """
 
 W_POOL_SETTING = """
-The CELERYD_POOL setting should not be used to select the eventlet/gevent
+The worker_pool setting should not be used to select the eventlet/gevent
 pools, instead you *must use the -P* argument so that patches are applied
 as early as possible.
 """
@@ -138,7 +138,7 @@ class Pool(bootsteps.StartStopStep):
             w.pool.terminate()
 
     def create(self, w, semaphore=None, max_restarts=None):
-        if w.app.conf.CELERYD_POOL in ('eventlet', 'gevent'):
+        if w.app.conf.worker_pool in ('eventlet', 'gevent'):
             warnings.warn(UserWarning(W_POOL_SETTING))
         threaded = not w.use_eventloop or IS_WINDOWS
         procs = w.min_concurrency

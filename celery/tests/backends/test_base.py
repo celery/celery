@@ -343,7 +343,7 @@ class test_KeyValueStoreBackend(AppCase):
             self.assertFalse(self.b.expire.called)
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(
-                propagate=self.b.app.conf.CELERY_CHORD_PROPAGATES,
+                propagate=self.b.app.conf.chord_propagates,
                 timeout=3.0,
             )
 

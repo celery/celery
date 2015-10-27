@@ -83,7 +83,7 @@ class CassandraBackend(BaseBackend):
         """Initialize Cassandra backend.
 
         Raises :class:`celery.exceptions.ImproperlyConfigured` if
-        the :setting:`CASSANDRA_SERVERS` setting is not set.
+        the :setting:`cassandra_servers` setting is not set.
 
         """
         super(CassandraBackend, self).__init__(**kwargs)
@@ -93,24 +93,24 @@ class CassandraBackend(BaseBackend):
 
         conf = self.app.conf
         self.servers = (servers or
-                        conf.get('CASSANDRA_SERVERS', None))
+                        conf.get('cassandra_servers', None))
         self.port = (port or
-                     conf.get('CASSANDRA_PORT', None))
+                     conf.get('cassandra_port', None))
         self.keyspace = (keyspace or
-                         conf.get('CASSANDRA_KEYSPACE', None))
+                         conf.get('cassandra_keyspace', None))
         self.table = (table or
-                      conf.get('CASSANDRA_TABLE', None))
+                      conf.get('cassandra_table', None))
 
         if not self.servers or not self.keyspace or not self.table:
             raise ImproperlyConfigured('Cassandra backend not configured.')
 
-        expires = (entry_ttl or conf.get('CASSANDRA_ENTRY_TTL', None))
+        expires = (entry_ttl or conf.get('cassandra_entry_ttl', None))
 
         self.cqlexpires = (Q_EXPIRES.format(expires)
                            if expires is not None else '')
 
-        read_cons = conf.get('CASSANDRA_READ_CONSISTENCY') or 'LOCAL_QUORUM'
-        write_cons = conf.get('CASSANDRA_WRITE_CONSISTENCY') or 'LOCAL_QUORUM'
+        read_cons = conf.get('cassandra_read_consistency') or 'LOCAL_QUORUM'
+        write_cons = conf.get('cassandra_write_consistency') or 'LOCAL_QUORUM'
 
         self.read_consistency = getattr(
             cassandra.ConsistencyLevel, read_cons,

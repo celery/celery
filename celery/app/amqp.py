@@ -245,7 +245,7 @@ class AMQP(object):
 
     @cached_property
     def create_task_message(self):
-        return self.task_protocols[self.app.conf.CELERY_TASK_PROTOCOL]
+        return self.task_protocols[self.app.conf.task_protocol]
 
     @cached_property
     def send_task_message(self):
@@ -257,15 +257,15 @@ class AMQP(object):
         from the current configuration."""
         conf = self.app.conf
         if create_missing is None:
-            create_missing = conf.CELERY_CREATE_MISSING_QUEUES
+            create_missing = conf.task_create_missing_queues
         if ha_policy is None:
-            ha_policy = conf.CELERY_QUEUE_HA_POLICY
+            ha_policy = conf.task_queue_ha_policy
         if max_priority is None:
-            max_priority = conf.CELERY_QUEUE_MAX_PRIORITY
-        if not queues and conf.CELERY_DEFAULT_QUEUE:
-            queues = (Queue(conf.CELERY_DEFAULT_QUEUE,
+            max_priority = conf.task_queue_max_priority
+        if not queues and conf.task_default_queue:
+            queues = (Queue(conf.task_default_queue,
                             exchange=self.default_exchange,
-                            routing_key=conf.CELERY_DEFAULT_ROUTING_KEY),)
+                            routing_key=conf.task_default_routing_key),)
         autoexchange = (self.autoexchange if autoexchange is None
                         else autoexchange)
         return self.queues_cls(
@@ -276,15 +276,15 @@ class AMQP(object):
     def Router(self, queues=None, create_missing=None):
         """Return the current task router."""
         return _routes.Router(self.routes, queues or self.queues,
-                              self.app.either('CELERY_CREATE_MISSING_QUEUES',
+                              self.app.either('task_create_missing_queues',
                                               create_missing), app=self.app)
 
     def flush_routes(self):
-        self._rtable = _routes.prepare(self.app.conf.CELERY_ROUTES)
+        self._rtable = _routes.prepare(self.app.conf.task_routes)
 
     def TaskConsumer(self, channel, queues=None, accept=None, **kw):
         if accept is None:
-            accept = self.app.conf.CELERY_ACCEPT_CONTENT
+            accept = self.app.conf.accept_content
         return self.Consumer(
             channel, accept=accept,
             queues=queues or list(self.queues.consume_from.values()),
@@ -442,9 +442,9 @@ class AMQP(object):
         )
 
     def _create_task_sender(self):
-        default_retry = self.app.conf.CELERY_TASK_PUBLISH_RETRY
-        default_policy = self.app.conf.CELERY_TASK_PUBLISH_RETRY_POLICY
-        default_delivery_mode = self.app.conf.CELERY_DEFAULT_DELIVERY_MODE
+        default_retry = self.app.conf.task_publish_retry
+        default_policy = self.app.conf.task_publish_retry_policy
+        default_delivery_mode = self.app.conf.task_default_delivery_mode
         default_queue = self.default_queue
         queues = self.queues
         send_before_publish = signals.before_task_publish.send
@@ -458,9 +458,9 @@ class AMQP(object):
         default_evd = self._event_dispatcher
         default_exchange = self.default_exchange
 
-        default_rkey = self.app.conf.CELERY_DEFAULT_ROUTING_KEY
-        default_serializer = self.app.conf.CELERY_TASK_SERIALIZER
-        default_compressor = self.app.conf.CELERY_MESSAGE_COMPRESSION
+        default_rkey = self.app.conf.task_default_routing_key
+        default_serializer = self.app.conf.task_serializer
+        default_compressor = self.app.conf.result_compression
 
         def publish_task(producer, name, message,
                          exchange=None, routing_key=None, queue=None,
@@ -541,12 +541,12 @@ class AMQP(object):
 
     @cached_property
     def default_queue(self):
-        return self.queues[self.app.conf.CELERY_DEFAULT_QUEUE]
+        return self.queues[self.app.conf.task_default_queue]
 
     @cached_property
     def queues(self):
         """Queue name⇒ declaration mapping."""
-        return self.Queues(self.app.conf.CELERY_QUEUES)
+        return self.Queues(self.app.conf.task_queues)
 
     @queues.setter  # noqa
     def queues(self, queues):
@@ -575,12 +575,12 @@ class AMQP(object):
 
     @cached_property
     def default_exchange(self):
-        return Exchange(self.app.conf.CELERY_DEFAULT_EXCHANGE,
-                        self.app.conf.CELERY_DEFAULT_EXCHANGE_TYPE)
+        return Exchange(self.app.conf.task_default_exchange,
+                        self.app.conf.task_default_exchange_type)
 
     @cached_property
     def utc(self):
-        return self.app.conf.CELERY_ENABLE_UTC
+        return self.app.conf.enable_utc
 
     @cached_property
     def _event_dispatcher(self):

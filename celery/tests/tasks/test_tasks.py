@@ -462,8 +462,8 @@ class test_apply_task(TasksCase):
         with self.assertRaises(KeyError):
             self.raising.apply(throw=True)
 
-    def test_apply_with_CELERY_EAGER_PROPAGATES_EXCEPTIONS(self):
-        self.app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
+    def test_apply_with_task_eager_propagates_exceptions(self):
+        self.app.conf.task_eager_propagates_exceptions = True
         with self.assertRaises(KeyError):
             self.raising.apply()
 

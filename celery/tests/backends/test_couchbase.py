@@ -47,13 +47,13 @@ class test_CouchBaseBackend(AppCase):
 
     def test_init_no_settings(self):
         """Test init no settings."""
-        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = []
+        self.app.conf.couchbase_backend_settings = []
         with self.assertRaises(ImproperlyConfigured):
             CouchBaseBackend(app=self.app)
 
     def test_init_settings_is_None(self):
         """Test init settings is None."""
-        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
+        self.app.conf.couchbase_backend_settings = None
         CouchBaseBackend(app=self.app)
 
     def test_get_connection_connection_exists(self):
@@ -75,7 +75,7 @@ class test_CouchBaseBackend(AppCase):
 
         TODO Should test on key not exists
         """
-        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
+        self.app.conf.couchbase_backend_settings = {}
         x = CouchBaseBackend(app=self.app)
         x._connection = Mock()
         mocked_get = x._connection.get = Mock()
@@ -91,7 +91,7 @@ class test_CouchBaseBackend(AppCase):
         CouchBaseBackend.set should return None and take two params
         db conn to couchbase is mocked.
         """
-        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
+        self.app.conf.couchbase_backend_settings = None
         x = CouchBaseBackend(app=self.app)
         x._connection = MagicMock()
         x._connection.set = MagicMock()
@@ -107,7 +107,7 @@ class test_CouchBaseBackend(AppCase):
 
         TODO Should test on key not exists.
         """
-        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
+        self.app.conf.couchbase_backend_settings = {}
         x = CouchBaseBackend(app=self.app)
         x._connection = Mock()
         mocked_delete = x._connection.delete = Mock()
@@ -120,9 +120,9 @@ class test_CouchBaseBackend(AppCase):
         """
         Test config params are correct.
 
-        celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS is properly set.
+        app.conf.couchbase_backend_settings is properly set.
         """
-        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {
+        self.app.conf.couchbase_backend_settings = {
             'bucket': 'mycoolbucket',
             'host': ['here.host.com', 'there.host.com'],
             'username': 'johndoe',

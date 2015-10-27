@@ -464,7 +464,7 @@ def _trace_task_ret(name, uuid, request, body, content_type,
     app = app or current_app._get_current_object()
     embed = None
     if content_type:
-        accept = prepare_accept_content(app.conf.CELERY_ACCEPT_CONTENT)
+        accept = prepare_accept_content(app.conf.accept_content)
         args, kwargs, embed = loads(
             body, content_type, content_encoding, accept=accept,
         )
@@ -539,7 +539,7 @@ def setup_worker_optimizations(app, hostname=None):
     # set fast shortcut to task registry
     _localized[:] = [
         app._tasks,
-        prepare_accept_content(app.conf.CELERY_ACCEPT_CONTENT),
+        prepare_accept_content(app.conf.accept_content),
         hostname,
     ]
 

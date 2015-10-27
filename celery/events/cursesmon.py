@@ -511,7 +511,7 @@ def capture_events(app, state, display):  # pragma: no cover
         with app.connection() as conn:
             try:
                 conn.ensure_connection(on_connection_error,
-                                       app.conf.BROKER_CONNECTION_MAX_RETRIES)
+                                       app.conf.broker_connection_max_retries)
                 recv = app.events.Receiver(conn, handlers={'*': state.event})
                 display.resetscreen()
                 display.init_screen()

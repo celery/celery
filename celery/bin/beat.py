@@ -84,7 +84,7 @@ class beat(Command):
         return (
             (Option('--detach', action='store_true'),
              Option('-s', '--schedule',
-                    default=c.CELERYBEAT_SCHEDULE_FILENAME),
+                    default=c.beat_schedule_filename),
              Option('--max-interval', type='float'),
              Option('-S', '--scheduler', dest='scheduler_cls'),
              Option('-l', '--loglevel', default='WARN')) +

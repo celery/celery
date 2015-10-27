@@ -85,21 +85,21 @@ Test {0} Modified handlers for the root logger\
 
 CELERY_TEST_CONFIG = {
     #: Don't want log output when running suite.
-    'CELERYD_HIJACK_ROOT_LOGGER': False,
-    'CELERY_SEND_TASK_ERROR_EMAILS': False,
-    'CELERY_DEFAULT_QUEUE': 'testcelery',
-    'CELERY_DEFAULT_EXCHANGE': 'testcelery',
-    'CELERY_DEFAULT_ROUTING_KEY': 'testcelery',
-    'CELERY_QUEUES': (
+    'worker_hijack_root_logger': False,
+    'worker_log_color': False,
+    'task_send_error_emails': False,
+    'task_default_queue': 'testcelery',
+    'task_default_exchange': 'testcelery',
+    'task_default_routing_key': 'testcelery',
+    'task_queues': (
         Queue('testcelery', routing_key='testcelery'),
     ),
-    'CELERY_ACCEPT_CONTENT': ('json', 'pickle'),
-    'CELERY_ENABLE_UTC': True,
-    'CELERY_TIMEZONE': 'UTC',
-    'CELERYD_LOG_COLOR': False,
+    'accept_content': ('json', 'pickle'),
+    'enable_utc': True,
+    'timezone': 'UTC',
 
     # Mongo results tests (only executed if installed and running)
-    'CELERY_MONGODB_BACKEND_SETTINGS': {
+    'mongodb_backend_settings': {
         'host': os.environ.get('MONGO_HOST') or 'localhost',
         'port': os.environ.get('MONGO_PORT') or 27017,
         'database': os.environ.get('MONGO_DB') or 'celery_unittests',

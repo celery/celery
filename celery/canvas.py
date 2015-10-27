@@ -393,7 +393,7 @@ class chain(Signature):
     def apply_async(self, args=(), kwargs={}, **options):
         # python is best at unpacking kwargs, so .run is here to do that.
         app = self.app
-        if app.conf.CELERY_ALWAYS_EAGER:
+        if app.conf.task_always_eager:
             return self.apply(args, kwargs, **options)
         return self.run(args, kwargs, app=app, **(
             dict(self.options, **options) if options else self.options))
@@ -688,7 +688,7 @@ class group(Signature):
     def apply_async(self, args=(), kwargs=None, add_to_parent=True,
                     producer=None, **options):
         app = self.app
-        if app.conf.CELERY_ALWAYS_EAGER:
+        if app.conf.task_always_eager:
             return self.apply(args, kwargs, **options)
         if not self.tasks:
             return self.freeze()
@@ -846,7 +846,7 @@ class chord(Signature):
         app = self._get_app(body)
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks))
-        if app.conf.CELERY_ALWAYS_EAGER:
+        if app.conf.task_always_eager:
             return self.apply((), kwargs,
                               body=body, task_id=task_id, **options)
         return self.run(tasks, body, args, task_id=task_id, **options)
@@ -875,7 +875,7 @@ class chord(Signature):
             countdown=1, max_retries=None, propagate=None, eager=False,
             task_id=None, **options):
         app = app or self._get_app(body)
-        propagate = (app.conf.CELERY_CHORD_PROPAGATES
+        propagate = (app.conf.chord_propagates
                      if propagate is None else propagate)
         group_id = uuid()
         root_id = body.options.get('root_id')

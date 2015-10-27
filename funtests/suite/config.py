@@ -1,18 +1,18 @@
 import atexit
 import os
 
-BROKER_URL = os.environ.get('BROKER_URL') or 'amqp://'
-CELERY_RESULT_BACKEND = 'amqp://'
-CELERY_SEND_TASK_ERROR_EMAILS = False
+broker_url = os.environ.get('BROKER_URL') or 'amqp://'
+result_backend = 'amqp://'
+send_task_error_emails = False
 
-CELERY_DEFAULT_QUEUE = 'testcelery'
-CELERY_DEFAULT_EXCHANGE = 'testcelery'
-CELERY_DEFAULT_ROUTING_KEY = 'testcelery'
-CELERY_QUEUES = {'testcelery': {'routing_key': 'testcelery'}}
+default_queue = 'testcelery'
+default_exchange = 'testcelery'
+default_routing_key = 'testcelery'
+queues = {'testcelery': {'routing_key': 'testcelery'}}
 
-CELERYD_LOG_COLOR = False
+log_color = False
 
-CELERY_IMPORTS = ('celery.tests.functional.tasks',)
+imports = ('celery.tests.functional.tasks',)
 
 
 @atexit.register

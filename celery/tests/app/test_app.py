@@ -15,8 +15,8 @@ from celery import _state
 from celery.app import base as _appbase
 from celery.app import defaults
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items
-from celery.loaders.base import BaseLoader
+from celery.five import items, keys
+from celery.loaders.base import BaseLoader, unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.serialization import pickle
 
@@ -225,7 +225,73 @@ class test_App(AppCase):
     @with_environ('CELERY_BROKER_URL', '')
     def test_with_broker(self):
         with self.Celery(broker='foo://baribaz') as app:
-            self.assertEqual(app.conf.BROKER_URL, 'foo://baribaz')
+            self.assertEqual(app.conf.broker_url, 'foo://baribaz')
+
+    def test_pending_configuration__setattr(self):
+        with self.Celery(broker='foo://bar') as app:
+            app.conf.task_default_delivery_mode = 44
+            app.conf.worker_agent = 'foo:Bar'
+            self.assertFalse(app.configured)
+            self.assertEqual(app.conf.worker_agent, 'foo:Bar')
+            self.assertEqual(app.conf.broker_url, 'foo://bar')
+            self.assertEqual(app._preconf['worker_agent'], 'foo:Bar')
+
+            self.assertTrue(app.configured)
+            reapp = pickle.loads(pickle.dumps(app))
+            self.assertEqual(reapp._preconf['worker_agent'], 'foo:Bar')
+            self.assertFalse(reapp.configured)
+            self.assertEqual(reapp.conf.worker_agent, 'foo:Bar')
+            self.assertTrue(reapp.configured)
+            self.assertEqual(reapp.conf.broker_url, 'foo://bar')
+            self.assertEqual(reapp._preconf['worker_agent'], 'foo:Bar')
+
+    def test_pending_configuration__update(self):
+        with self.Celery(broker='foo://bar') as app:
+            app.conf.update(
+                task_default_delivery_mode=44,
+                worker_agent='foo:Bar',
+            )
+            self.assertFalse(app.configured)
+            self.assertEqual(app.conf.worker_agent, 'foo:Bar')
+            self.assertEqual(app.conf.broker_url, 'foo://bar')
+            self.assertEqual(app._preconf['worker_agent'], 'foo:Bar')
+
+    def test_pending_configuration__compat_settings(self):
+        with self.Celery(broker='foo://bar', backend='foo') as app:
+            app.conf.update(
+                CELERY_ALWAYS_EAGER=4,
+                CELERY_DEFAULT_DELIVERY_MODE=63,
+                CELERYD_AGENT='foo:Barz',
+            )
+            self.assertEqual(app.conf.task_always_eager, 4)
+            self.assertEqual(app.conf.task_default_delivery_mode, 63)
+            self.assertEqual(app.conf.worker_agent, 'foo:Barz')
+            self.assertEqual(app.conf.broker_url, 'foo://bar')
+            self.assertEqual(app.conf.result_backend, 'foo')
+
+    def test_pending_configuration__setdefault(self):
+        with self.Celery(broker='foo://bar') as app:
+            app.conf.setdefault('worker_agent', 'foo:Bar')
+            self.assertFalse(app.configured)
+
+    def test_pending_configuration__iter(self):
+        with self.Celery(broker='foo://bar') as app:
+            app.conf.worker_agent = 'foo:Bar'
+            self.assertFalse(app.configured)
+            self.assertTrue(list(keys(app.conf)))
+            self.assertFalse(app.configured)
+            self.assertIn('worker_agent', app.conf)
+            self.assertFalse(app.configured)
+            self.assertTrue(dict(app.conf))
+            self.assertTrue(app.configured)
+
+    def test_pending_configuration__raises_ImproperlyConfigured(self):
+        with self.Celery() as app:
+            app.conf.worker_agent = 'foo://bar'
+            app.conf.task_default_delivery_mode = 44
+            app.conf.CELERY_ALWAYS_EAGER = True
+            with self.assertRaises(ImproperlyConfigured):
+                app.finalize()
 
     def test_repr(self):
         self.assertTrue(repr(self.app))
@@ -236,7 +302,7 @@ class test_App(AppCase):
 
     def test_include_argument(self):
         with self.Celery(include=('foo', 'bar.foo')) as app:
-            self.assertEqual(app.conf.CELERY_IMPORTS, ('foo', 'bar.foo'))
+            self.assertEqual(app.conf.include, ('foo', 'bar.foo'))
 
     def test_set_as_current(self):
         current = _state._tls.current_app
@@ -324,7 +390,7 @@ class test_App(AppCase):
                 return fun(*args, **kwargs)
             return _inner
 
-        self.app.conf.CELERY_ANNOTATIONS = {
+        self.app.conf.task_annotations = {
             adX.name: {'@__call__': deco}
         }
         adX.bind(self.app)
@@ -416,7 +482,7 @@ class test_App(AppCase):
     def test_config_from_object__lazy(self):
         conf = ObjectConfig2()
         self.app.config_from_object(conf)
-        self.assertFalse(self.app.loader._conf)
+        self.assertIs(self.app.loader._conf, unconfigured)
         self.assertIs(self.app._config_source, conf)
 
         self.assert_config2()
@@ -427,45 +493,109 @@ class test_App(AppCase):
 
         self.assert_config2()
 
+    def test_config_from_object__compat(self):
+
+        class Config(object):
+            CELERY_ALWAYS_EAGER = 44
+            CELERY_DEFAULT_DELIVERY_MODE = 30
+            CELERY_TASK_PUBLISH_RETRY = False
+
+        self.app.config_from_object(Config)
+        self.assertEqual(self.app.conf.task_always_eager, 44)
+        self.assertEqual(self.app.conf.CELERY_ALWAYS_EAGER, 44)
+        self.assertFalse(self.app.conf.task_publish_retry)
+        self.assertEqual(self.app.conf.task_default_routing_key, 'celery')
+
+    def test_config_from_object__supports_old_names(self):
+
+        class Config(object):
+            task_always_eager = 44
+            task_default_delivery_mode = 301
+
+        self.app.config_from_object(Config())
+        self.assertEqual(self.app.conf.CELERY_ALWAYS_EAGER, 44)
+        self.assertEqual(self.app.conf.task_always_eager, 44)
+        self.assertEqual(self.app.conf.CELERY_DEFAULT_DELIVERY_MODE, 301)
+        self.assertEqual(self.app.conf.task_default_delivery_mode, 301)
+        self.assertEqual(self.app.conf.task_default_routing_key, 'testcelery')
+
+    def test_config_from_object__namespace_uppercase(self):
+
+        class Config(object):
+            CELERY_TASK_ALWAYS_EAGER = 44
+            CELERY_TASK_DEFAULT_DELIVERY_MODE = 301
+
+        self.app.config_from_object(Config(), namespace='CELERY_')
+        self.assertEqual(self.app.conf.task_always_eager, 44)
+
+    def test_config_from_object__namespace_lowercase(self):
+
+        class Config(object):
+            celery_task_always_eager = 44
+            celery_task_default_delivery_mode = 301
+
+        self.app.config_from_object(Config(), namespace='celery_')
+        self.assertEqual(self.app.conf.task_always_eager, 44)
+
+    def test_config_from_object__mixing_new_and_old(self):
+
+        class Config(object):
+            task_always_eager = 44
+            worker_agent = 'foo:Agent'
+            worker_consumer = 'foo:Consumer'
+            beat_schedule = '/foo/schedule'
+            CELERY_DEFAULT_DELIVERY_MODE = 301
+
+        with self.assertRaises(ImproperlyConfigured) as exc:
+            self.app.config_from_object(Config(), force=True)
+            self.assertTrue(
+                exc.args[0].startswith('CELERY_DEFAULT_DELIVERY_MODE'))
+            self.assertIn('task_default_delivery_mode', exc.args[0])
+
+    def test_config_from_object__mixing_old_and_new(self):
+
+        class Config(object):
+            CELERY_ALWAYS_EAGER = 44
+            CELERYD_AGENT = 'foo:Agent'
+            CELERYD_CONSUMER = 'foo:Consumer'
+            CELERYBEAT_SCHEDULE = '/foo/schedule'
+            task_default_delivery_mode = 301
+
+        with self.assertRaises(ImproperlyConfigured) as exc:
+            self.app.config_from_object(Config(), force=True)
+            self.assertTrue(
+                exc.args[0].startswith('task_default_delivery_mode'))
+            self.assertIn('CELERY_DEFAULT_DELIVERY_MODE', exc.args[0])
+
     def test_config_from_cmdline(self):
-        cmdline = ['.always_eager=no',
-                   '.result_backend=/dev/null',
-                   'celeryd.prefetch_multiplier=368',
+        cmdline = ['task_always_eager=no',
+                   'result_backend=/dev/null',
+                   'worker_prefetch_multiplier=368',
                    '.foobarstring=(string)300',
                    '.foobarint=(int)300',
-                   '.result_engine_options=(dict){"foo": "bar"}']
-        self.app.config_from_cmdline(cmdline, namespace='celery')
-        self.assertFalse(self.app.conf.CELERY_ALWAYS_EAGER)
-        self.assertEqual(self.app.conf.CELERY_RESULT_BACKEND, '/dev/null')
-        self.assertEqual(self.app.conf.CELERYD_PREFETCH_MULTIPLIER, 368)
-        self.assertEqual(self.app.conf.CELERY_FOOBARSTRING, '300')
-        self.assertEqual(self.app.conf.CELERY_FOOBARINT, 300)
-        self.assertDictEqual(self.app.conf.CELERY_RESULT_ENGINE_OPTIONS,
+                   'sqlalchemy_engine_options=(dict){"foo": "bar"}']
+        self.app.config_from_cmdline(cmdline, namespace='worker')
+        self.assertFalse(self.app.conf.task_always_eager)
+        self.assertEqual(self.app.conf.result_backend, '/dev/null')
+        self.assertEqual(self.app.conf.worker_prefetch_multiplier, 368)
+        self.assertEqual(self.app.conf.worker_foobarstring, '300')
+        self.assertEqual(self.app.conf.worker_foobarint, 300)
+        self.assertDictEqual(self.app.conf.sqlalchemy_engine_options,
                              {'foo': 'bar'})
 
-    def test_compat_setting_CELERY_BACKEND(self):
-        self.app._preconf = {}
-        self.app.conf.defaults[0]['CELERY_RESULT_BACKEND'] = None
-        self.app.config_from_object(Object(CELERY_BACKEND='set_by_us'))
-        self.assertEqual(self.app.conf.CELERY_RESULT_BACKEND, 'set_by_us')
-
-    def test_setting_BROKER_TRANSPORT_OPTIONS(self):
+    def test_setting__broker_transport_options(self):
 
         _args = {'foo': 'bar', 'spam': 'baz'}
 
         self.app.config_from_object(Object())
-        self.assertEqual(self.app.conf.BROKER_TRANSPORT_OPTIONS, {})
+        self.assertEqual(self.app.conf.broker_transport_options, {})
 
-        self.app.config_from_object(Object(BROKER_TRANSPORT_OPTIONS=_args))
-        self.assertEqual(self.app.conf.BROKER_TRANSPORT_OPTIONS, _args)
+        self.app.config_from_object(Object(broker_transport_options=_args))
+        self.assertEqual(self.app.conf.broker_transport_options, _args)
 
     def test_Windows_log_color_disabled(self):
         self.app.IS_WINDOWS = True
         self.assertFalse(self.app.log.supports_color(True))
-
-    def test_compat_setting_CARROT_BACKEND(self):
-        self.app.config_from_object(Object(CARROT_BACKEND='set_by_us'))
-        self.assertEqual(self.app.conf.BROKER_TRANSPORT, 'set_by_us')
 
     def test_WorkController(self):
         x = self.app.WorkController
@@ -537,9 +667,9 @@ class test_App(AppCase):
                 return args, kwargs
 
         self.app.loader = Loader(app=self.app)
-        self.app.conf.ADMINS = None
+        self.app.conf.admins = None
         self.assertFalse(self.app.mail_admins('Subject', 'Body'))
-        self.app.conf.ADMINS = [('George Costanza', 'george@vandelay.com')]
+        self.app.conf.admins = [('George Costanza', 'george@vandelay.com')]
         self.assertTrue(self.app.mail_admins('Subject', 'Body'))
 
     def test_amqp_get_broker_info(self):
@@ -550,8 +680,8 @@ class test_App(AppCase):
              'virtual_host': '/'},
             self.app.connection('pyamqp://').info(),
         )
-        self.app.conf.BROKER_PORT = 1978
-        self.app.conf.BROKER_VHOST = 'foo'
+        self.app.conf.broker_port = 1978
+        self.app.conf.broker_vhost = 'foo'
         self.assertDictContainsSubset(
             {'port': 1978, 'virtual_host': 'foo'},
             self.app.connection('pyamqp://:1978/foo').info(),
@@ -563,14 +693,14 @@ class test_App(AppCase):
     def test_amqp_failover_strategy_selection(self):
         # Test passing in a string and make sure the string
         # gets there untouched
-        self.app.conf.BROKER_FAILOVER_STRATEGY = 'foo-bar'
+        self.app.conf.broker_failover_strategy = 'foo-bar'
         self.assertEqual(
             self.app.connection('amqp:////value').failover_strategy,
             'foo-bar',
         )
 
         # Try passing in None
-        self.app.conf.BROKER_FAILOVER_STRATEGY = None
+        self.app.conf.broker_failover_strategy = None
         self.assertEqual(
             self.app.connection('amqp:////value').failover_strategy,
             itertools.cycle,
@@ -580,15 +710,11 @@ class test_App(AppCase):
         def my_failover_strategy(it):
             yield True
 
-        self.app.conf.BROKER_FAILOVER_STRATEGY = my_failover_strategy
+        self.app.conf.broker_failover_strategy = my_failover_strategy
         self.assertEqual(
             self.app.connection('amqp:////value').failover_strategy,
             my_failover_strategy,
         )
-
-    def test_BROKER_BACKEND_alias(self):
-        self.assertEqual(self.app.conf.BROKER_BACKEND,
-                         self.app.conf.BROKER_TRANSPORT)
 
     def test_after_fork(self):
         p = self.app._pool = Mock()

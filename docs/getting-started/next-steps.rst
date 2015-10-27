@@ -369,7 +369,7 @@ states. The stages of a typical task can be::
     PENDING -> STARTED -> SUCCESS
 
 The started state is a special state that is only recorded if the
-:setting:`CELERY_TRACK_STARTED` setting is enabled, or if the
+:setting:`task_track_started` setting is enabled, or if the
 ``@task(track_started=True)`` option is set for the task.
 
 The pending state is actually not a recorded state, but rather
@@ -605,13 +605,13 @@ Routing
 Celery supports all of the routing facilities provided by AMQP,
 but it also supports simple routing where messages are sent to named queues.
 
-The :setting:`CELERY_ROUTES` setting enables you to route tasks by name
+The :setting:`task_routes` setting enables you to route tasks by name
 and keep everything centralized in one location:
 
 .. code-block:: python
 
     app.conf.update(
-        CELERY_ROUTES = {
+        task_routes = {
             'proj.tasks.add': {'queue': 'hipri'},
         },
     )
@@ -732,11 +732,11 @@ All times and dates, internally and in messages uses the UTC timezone.
 When the worker receives a message, for example with a countdown set it
 converts that UTC time to local time.  If you wish to use
 a different timezone than the system timezone then you must
-configure that using the :setting:`CELERY_TIMEZONE` setting:
+configure that using the :setting:`timezone` setting:
 
 .. code-block:: python
 
-    app.conf.CELERY_TIMEZONE = 'Europe/London'
+    app.conf.timezone = 'Europe/London'
 
 Optimization
 ============

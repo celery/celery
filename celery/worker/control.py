@@ -321,7 +321,7 @@ def pool_shrink(state, n=1, **kwargs):
 
 @Panel.register
 def pool_restart(state, modules=None, reload=False, reloader=None, **kwargs):
-    if state.app.conf.CELERYD_POOL_RESTARTS:
+    if state.app.conf.worker_pool_restarts:
         state.consumer.controller.reload(modules, reload, reloader=reloader)
         return {'ok': 'reload started'}
     else:

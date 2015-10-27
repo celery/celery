@@ -182,7 +182,7 @@ class test_Scheduler(AppCase):
         self.assertFalse(s._do_sync.called)
 
     def test_should_sync_increments_sync_every_counter(self):
-        self.app.conf.CELERYBEAT_SYNC_EVERY = 2
+        self.app.conf.beat_sync_every = 2
 
         @self.app.task(shared=False)
         def not_sync():
@@ -198,10 +198,10 @@ class test_Scheduler(AppCase):
         s.apply_async(s.Entry(task=not_sync.name, app=self.app))
         s._do_sync.assert_called_with()
 
-        self.app.conf.CELERYBEAT_SYNC_EVERY = 0
+        self.app.conf.beat_sync_every = 0
 
     def test_sync_task_counter_resets_on_do_sync(self):
-        self.app.conf.CELERYBEAT_SYNC_EVERY = 1
+        self.app.conf.beat_sync_every = 1
 
         @self.app.task(shared=False)
         def not_sync():
@@ -214,7 +214,7 @@ class test_Scheduler(AppCase):
         s.apply_async(s.Entry(task=not_sync.name, app=self.app))
         self.assertEqual(s._tasks_since_sync, 0)
 
-        self.app.conf.CELERYBEAT_SYNC_EVERY = 0
+        self.app.conf.beat_sync_every = 0
 
     @patch('celery.app.base.Celery.send_task')
     def test_send_task(self, send_task):
@@ -249,20 +249,20 @@ class test_Scheduler(AppCase):
         callback(KeyError(), 5)
 
     def test_install_default_entries(self):
-        self.app.conf.CELERY_TASK_RESULT_EXPIRES = None
-        self.app.conf.CELERYBEAT_SCHEDULE = {}
+        self.app.conf.result_expires = None
+        self.app.conf.beat_schedule = {}
         s = mScheduler(app=self.app)
         s.install_default_entries({})
         self.assertNotIn('celery.backend_cleanup', s.data)
         self.app.backend.supports_autoexpire = False
 
-        self.app.conf.CELERY_TASK_RESULT_EXPIRES = 30
+        self.app.conf.result_expires = 30
         s = mScheduler(app=self.app)
         s.install_default_entries({})
         self.assertIn('celery.backend_cleanup', s.data)
 
         self.app.backend.supports_autoexpire = True
-        self.app.conf.CELERY_TASK_RESULT_EXPIRES = 31
+        self.app.conf.result_expires = 31
         s = mScheduler(app=self.app)
         s.install_default_entries({})
         self.assertNotIn('celery.backend_cleanup', s.data)
