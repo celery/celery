@@ -36,45 +36,12 @@ from celery.tests.case import (
 
 class test__main__(AppCase):
 
-    def test_warn_deprecated(self):
-        with override_stdouts() as (stdout, _):
-            __main__._warn_deprecated('YADDA YADDA')
-            self.assertIn('command is deprecated', stdout.getvalue())
-            self.assertIn('YADDA YADDA', stdout.getvalue())
-
     def test_main(self):
         with patch('celery.__main__.maybe_patch_concurrency') as mpc:
             with patch('celery.bin.celery.main') as main:
                 __main__.main()
                 mpc.assert_called_with()
                 main.assert_called_with()
-
-    def test_compat_worker(self):
-        with patch('celery.__main__.maybe_patch_concurrency') as mpc:
-            with patch('celery.__main__._warn_deprecated') as depr:
-                with patch('celery.bin.worker.main') as main:
-                    __main__._compat_worker()
-                    mpc.assert_called_with()
-                    depr.assert_called_with('celery worker')
-                    main.assert_called_with()
-
-    def test_compat_multi(self):
-        with patch('celery.__main__.maybe_patch_concurrency') as mpc:
-            with patch('celery.__main__._warn_deprecated') as depr:
-                with patch('celery.bin.multi.main') as main:
-                    __main__._compat_multi()
-                    self.assertFalse(mpc.called)
-                    depr.assert_called_with('celery multi')
-                    main.assert_called_with()
-
-    def test_compat_beat(self):
-        with patch('celery.__main__.maybe_patch_concurrency') as mpc:
-            with patch('celery.__main__._warn_deprecated') as depr:
-                with patch('celery.bin.beat.main') as main:
-                    __main__._compat_beat()
-                    mpc.assert_called_with()
-                    depr.assert_called_with('celery beat')
-                    main.assert_called_with()
 
 
 class test_Command(AppCase):
