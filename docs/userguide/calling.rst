@@ -497,6 +497,6 @@ AMQP's full routing capabilities. Interested parties may read the
 
 - priority
 
-    A number between `0` and `9`, where `0` is the highest priority.
+    A number between `0` and `255`, where `255` is the highest priority.
 
-    Supported by: redis, beanstalk
+    Supported by: rabbitmq, redis (priority reversed, 0 is highest), beanstalk

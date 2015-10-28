@@ -746,13 +746,15 @@ create a new schedule subclass and override
 Does celery support task priorities?
 ------------------------------------
 
-**Answer**: No. In theory, yes, as AMQP supports priorities. However
-RabbitMQ doesn't implement them yet.
+**Answer**: Yes.
 
-The usual way to prioritize work in Celery, is to route high priority tasks
-to different servers. In the real world this may actually work better than per message
-priorities. You can use this in combination with rate limiting to achieve a
-highly responsive system.
+RabbitMQ supports priorities since version 3.5.0.
+Redis transport emulates support of priorities.
+
+You can also prioritize work by routing high priority tasks
+to different workers.  In the real world this may actually work better
+than per message priorities.  You can use this in combination with rate
+limiting to achieve a responsive system.
 
 .. _faq-acks_late-vs-retry:
 

@@ -122,7 +122,7 @@ the :ref:`Monitoring and Management guide <guide-monitoring>`.
 tasks from.  The worker can be told to consume from several queues
 at once, and this is used to route messages to specific workers
 as a means for Quality of Service, separation of concerns,
-and emulating priorities, all described in the :ref:`Routing Guide
+and prioritization, all described in the :ref:`Routing Guide
 <guide-routing>`.
 
 You can get a complete list of command-line arguments
