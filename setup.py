@@ -42,8 +42,6 @@ PYPY_VERSION = getattr(sys, 'pypy_version_info', None)
 PYPY = PYPY_VERSION is not None
 PYPY24_ATLEAST = PYPY_VERSION and PYPY_VERSION >= (2, 4)
 
-CELERY_COMPAT_PROGRAMS = int(os.environ.get('CELERY_COMPAT_PROGRAMS', 1))
-
 if PY26_OR_LESS:
     raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '2.7'))
 elif PY33_OR_LESS and not PYPY24_ATLEAST:
@@ -189,13 +187,6 @@ else:
 console_scripts = entrypoints['console_scripts'] = [
     'celery = celery.__main__:main',
 ]
-
-if CELERY_COMPAT_PROGRAMS:
-    console_scripts.extend([
-        'celeryd = celery.__main__:_compat_worker',
-        'celerybeat = celery.__main__:_compat_beat',
-        'celeryd-multi = celery.__main__:_compat_multi',
-    ])
 
 # -*- Extras -*-
 
