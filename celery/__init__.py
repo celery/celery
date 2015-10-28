@@ -68,18 +68,18 @@ if STATICA_HACK:  # pragma: no cover
 
 
 def _find_option_with_arg(argv, short_opts=None, long_opts=None):
-    """Search argv for option specifying its short and longopt
-    alternatives.
+    """Search argv for options specifying short and longopt alternatives.
 
-    Return the value of the option if found.
+    :returns: value for option found
+    :raises KeyError: if option not found.
 
     """
     for i, arg in enumerate(argv):
         if arg.startswith('-'):
             if long_opts and arg.startswith('--'):
-                name, _, val = arg.partition('=')
+                name, sep, val = arg.partition('=')
                 if name in long_opts:
-                    return val
+                    return val if sep else argv[i + 1]
             if short_opts and arg in short_opts:
                 return argv[i + 1]
     raise KeyError('|'.join(short_opts or [] + long_opts or []))
