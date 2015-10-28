@@ -43,6 +43,7 @@ from kombu.serialization import pickle as _pickle
 from kombu.utils import fxrange
 from kombu.utils.eventio import SELECT_BAD_FD
 from celery.five import Counter, items, values
+from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
 
@@ -417,8 +418,13 @@ class AsynPool(_pool.Pool):
             # as processes are recycled, or found lost elsewhere.
             self._fileno_to_outq[proc.outqR_fd] = proc
             self._fileno_to_synq[proc.synqW_fd] = proc
-        self.on_soft_timeout = self._timeout_handler.on_soft_timeout
-        self.on_hard_timeout = self._timeout_handler.on_hard_timeout
+
+        self.on_soft_timeout = getattr(
+            self._timeout_handler, 'on_soft_timeout', noop,
+        )
+        self.on_hard_timeout = getattr(
+            self._timeout_handler, 'on_hard_timeout', noop,
+        )
 
     def _event_process_exit(self, hub, fd):
         # This method is called whenever the process sentinel is readable.
