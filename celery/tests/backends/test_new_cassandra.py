@@ -130,3 +130,6 @@ class test_CassandraBackend(AppCase):
             self.assertRaises(OTOExc, lambda: x._store_result('task_id', 'result', states.SUCCESS))
             self.assertIsNone(x._connection)
             self.assertIsNone(x._session)
+
+            x.process_cleanup() # assert it doesn't raise
+
