@@ -10,7 +10,7 @@ from celery.five import Empty
 from celery.platforms import EX_FAILURE
 from celery.worker import state
 from celery.worker.consumer import Consumer
-from celery.worker.loops import asynloop, synloop
+from celery.worker.loops import _quick_drain, asynloop, synloop
 
 from celery.tests.case import AppCase, Mock, task_message_from_sig
 
@@ -126,7 +126,7 @@ class test_asynloop(AppCase):
     def test_drain_after_consume(self):
         x, _ = get_task_callback(self.app, transport_driver_type='amqp')
         self.assertIn(
-            x.connection.drain_events, [p.fun for p in x.hub._ready],
+            _quick_drain, [p.fun for p in x.hub._ready],
         )
 
     def test_setup_heartbeat(self):
