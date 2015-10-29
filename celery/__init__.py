@@ -97,6 +97,7 @@ def _patch_eventlet():
     if blockdetect:
         eventlet.debug.hub_blocking_detection(blockdetect, blockdetect)
 
+
 def _patch_gevent():
     from gevent import monkey, signal as gsignal, version_info
 

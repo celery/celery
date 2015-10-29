@@ -29,9 +29,7 @@ from celery.bin.celery import (
     command,
 )
 
-from celery.tests.case import (
-    AppCase, Mock, WhateverIO, override_stdouts, patch,
-)
+from celery.tests.case import AppCase, Mock, WhateverIO, patch
 
 
 class test__main__(AppCase):
