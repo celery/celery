@@ -11,7 +11,6 @@ from __future__ import absolute_import
 from datetime import datetime
 
 import sqlalchemy as sa
-#from sqlalchemy.types import PickleType
 
 from celery import states
 
