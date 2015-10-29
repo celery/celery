@@ -102,3 +102,31 @@ class test_CassandraBackend(AppCase):
 
             self.assertIsNone(x._connection)
             self.assertIsNone(x._session)
+
+    def test_timeouting_cluster(self):
+        """
+        Tests behaviour when Cluster.connect raises cassandra.OperationTimedOut
+        """
+        with mock_module(*CASSANDRA_MODULES):
+            from celery.backends import new_cassandra as mod
+
+            class OTOExc(Exception):
+                pass
+
+            class VeryFaultyCluster(object):
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def connect(self, *args, **kwargs):
+                    raise OTOExc()
+
+            mod.cassandra = Mock()
+            mod.cassandra.OperationTimedOut = OTOExc
+            mod.cassandra.cluster = Mock()
+            mod.cassandra.cluster.Cluster = VeryFaultyCluster
+
+            x = mod.CassandraBackend(app=self.app)
+
+            self.assertRaises(OTOExc, lambda: x._store_result('task_id', 'result', states.SUCCESS))
+            self.assertIsNone(x._connection)
+            self.assertIsNone(x._session)
