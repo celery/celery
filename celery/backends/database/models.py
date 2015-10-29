@@ -5,7 +5,6 @@ from __future__ import absolute_import, unicode_literals
 from datetime import datetime
 
 import sqlalchemy as sa
-#from sqlalchemy.types import PickleType
 
 from celery import states
 from celery.five import python_2_unicode_compatible
