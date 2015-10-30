@@ -29,7 +29,8 @@ from celery import platforms
 from celery import signals
 from celery._state import (
     _task_stack, get_current_app, _set_current_app, set_default_app,
-    _register_app, get_current_worker_task, connect_on_app_finalize,
+    _register_app, _deregister_app,
+    get_current_worker_task, connect_on_app_finalize,
     _announce_app_finalized,
 )
 from celery.datastructures import AttributeDictMixin
@@ -286,6 +287,7 @@ class Celery(object):
                     pass
         """
         self._maybe_close_pool()
+        _deregister_app(self)
 
     def on_init(self):
         """Optional callback called at init."""

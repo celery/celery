@@ -130,5 +130,9 @@ def _register_app(app):
     _apps.add(app)
 
 
+def _deregister_app(app):
+    _apps.discard(app)
+
+
 def _get_active_apps():
     return _apps

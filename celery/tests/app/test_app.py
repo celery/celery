@@ -123,7 +123,6 @@ class test_App(AppCase):
     def test_task_windows_execv(self):
         prev, _appbase._EXECV = _appbase._EXECV, True
         try:
-
             @self.app.task(shared=False)
             def foo():
                 pass
@@ -286,12 +285,15 @@ class test_App(AppCase):
             self.assertTrue(app.configured)
 
     def test_pending_configuration__raises_ImproperlyConfigured(self):
-        with self.Celery() as app:
+        with self.Celery(set_as_current=False) as app:
             app.conf.worker_agent = 'foo://bar'
             app.conf.task_default_delivery_mode = 44
-            app.conf.CELERY_ALWAYS_EAGER = True
+            app.conf.CELERY_ALWAYS_EAGER = 5
             with self.assertRaises(ImproperlyConfigured):
                 app.finalize()
+
+        with self.Celery() as app:
+            self.assertFalse(self.app.conf.task_always_eager)
 
     def test_repr(self):
         self.assertTrue(repr(self.app))
@@ -509,12 +511,12 @@ class test_App(AppCase):
     def test_config_from_object__supports_old_names(self):
 
         class Config(object):
-            task_always_eager = 44
+            task_always_eager = 45
             task_default_delivery_mode = 301
 
         self.app.config_from_object(Config())
-        self.assertEqual(self.app.conf.CELERY_ALWAYS_EAGER, 44)
-        self.assertEqual(self.app.conf.task_always_eager, 44)
+        self.assertEqual(self.app.conf.CELERY_ALWAYS_EAGER, 45)
+        self.assertEqual(self.app.conf.task_always_eager, 45)
         self.assertEqual(self.app.conf.CELERY_DEFAULT_DELIVERY_MODE, 301)
         self.assertEqual(self.app.conf.task_default_delivery_mode, 301)
         self.assertEqual(self.app.conf.task_default_routing_key, 'testcelery')
@@ -555,7 +557,7 @@ class test_App(AppCase):
     def test_config_from_object__mixing_old_and_new(self):
 
         class Config(object):
-            CELERY_ALWAYS_EAGER = 44
+            CELERY_ALWAYS_EAGER = 46
             CELERYD_AGENT = 'foo:Agent'
             CELERYD_CONSUMER = 'foo:Consumer'
             CELERYBEAT_SCHEDULE = '/foo/schedule'
