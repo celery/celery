@@ -11,8 +11,10 @@ an overview of what's new in Celery 4.0.
 .. _version-4.0.0:
 
 4.0.0
-=======
+=====
 :release-date: TBA
+:status: *FROZEN*
+:branch: master
 :release-by:
 
 See :ref:`whatsnew-4.0`.
