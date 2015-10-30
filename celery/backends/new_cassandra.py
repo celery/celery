@@ -164,9 +164,9 @@ class CassandraBackend(BaseBackend):
                     # where both task-creator and task-executor would issue it
                     # at the same time.
 
-                    # Anyway, if you are doing anything critical, you should
-                    # have probably created this table in advance, in which case
-                    # this query will be a no-op (instant fail with AlreadyExists)
+                    # Anyway; if you're doing anything critical, you should
+                    # have created this table in advance, in which case
+                    # this query will be a no-op (AlreadyExists)
                     self._make_stmt = cassandra.query.SimpleStatement(
                         Q_CREATE_RESULT_TABLE.format(table=self.table),
                     )

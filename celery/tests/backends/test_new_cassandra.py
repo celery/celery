@@ -127,9 +127,9 @@ class test_CassandraBackend(AppCase):
 
             x = mod.CassandraBackend(app=self.app)
 
-            self.assertRaises(OTOExc, lambda: x._store_result('task_id', 'result', states.SUCCESS))
+            with self.assertRaises(OTOExc):
+                x._store_result('task_id', 'result', states.SUCCESS)
             self.assertIsNone(x._connection)
             self.assertIsNone(x._session)
 
-            x.process_cleanup() # assert it doesn't raise
-
+            x.process_cleanup()  # should not raise
