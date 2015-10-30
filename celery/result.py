@@ -403,7 +403,6 @@ class AsyncResult(ResultBase):
     @task_id.setter  # noqa
     def task_id(self, id):
         self.id = id
-BaseAsyncResult = AsyncResult  # for backwards compatibility.
 
 
 class ResultSet(ResultBase):
