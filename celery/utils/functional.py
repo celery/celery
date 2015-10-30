@@ -18,7 +18,7 @@ from kombu.utils import cached_property
 from kombu.utils.functional import lazy, maybe_evaluate, is_list, maybe_list
 from kombu.utils.compat import OrderedDict
 
-from celery.five import UserDict, UserList, items, keys
+from celery.five import UserDict, UserList, items, keys, range
 
 __all__ = ['LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
            'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
@@ -64,9 +64,8 @@ class LRUCache(UserDict):
             data.update(*args, **kwargs)
             if limit and len(data) > limit:
                 # pop additional items in case limit exceeded
-                # negative overflow will lead to an empty list
-                for item in islice(iter(data), len(data) - limit):
-                    data.pop(item)
+                for _ in range(len(data) - limit):
+                    data.popitem(last=False)
 
     def popitem(self, last=True, _needs_lock=IS_PYPY):
         if not _needs_lock:
