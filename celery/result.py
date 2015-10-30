@@ -94,7 +94,6 @@ class AsyncResult(ResultBase):
     def as_tuple(self):
         parent = self.parent
         return (self.id, parent and parent.as_tuple()), None
-    serializable = as_tuple   # XXX compat
 
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
@@ -814,7 +813,6 @@ class GroupResult(ResultSet):
 
     def as_tuple(self):
         return self.id, [r.as_tuple() for r in self.results]
-    serializable = as_tuple   # XXX compat
 
     @property
     def children(self):
@@ -940,4 +938,3 @@ def result_from_tuple(r, app=None):
             parent = result_from_tuple(parent, app)
         return Result(id, parent=parent)
     return r
-from_serializable = result_from_tuple  # XXX compat
