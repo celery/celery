@@ -113,6 +113,7 @@ def retries(self):
 
 @app.task
 def print_unicode():
+    logger.warning('håå®ƒ valmuefrø')
     print('hiöäüß')
 
 
