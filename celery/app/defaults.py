@@ -49,7 +49,8 @@ searchresult = namedtuple('searchresult', ('namespace', 'key', 'type'))
 def Namespace(__old__=None, **options):
     if __old__ is not None:
         for opt in values(options):
-            opt.old = opt.old | __old__
+            if not opt.old:
+                opt.old = __old__
     return options
 
 
