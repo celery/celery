@@ -128,7 +128,7 @@ class test_RedisBackend(AppCase):
     def test_reduce(self):
         try:
             from celery.backends.redis import RedisBackend
-            x = RedisBackend(app=self.app, new_join=True)
+            x = RedisBackend(app=self.app)
             self.assertTrue(loads(dumps(x)))
         except ImportError:
             raise SkipTest('redis not installed')
@@ -136,12 +136,11 @@ class test_RedisBackend(AppCase):
     def test_no_redis(self):
         self.Backend.redis = None
         with self.assertRaises(ImproperlyConfigured):
-            self.Backend(app=self.app, new_join=True)
+            self.Backend(app=self.app)
 
     def test_url(self):
         x = self.Backend(
             'redis://:bosco@vandelay.com:123//1', app=self.app,
-            new_join=True,
         )
         self.assertTrue(x.connparams)
         self.assertEqual(x.connparams['host'], 'vandelay.com')
@@ -152,7 +151,6 @@ class test_RedisBackend(AppCase):
     def test_socket_url(self):
         x = self.Backend(
             'socket:///tmp/redis.sock?virtual_host=/3', app=self.app,
-            new_join=True,
         )
         self.assertTrue(x.connparams)
         self.assertEqual(x.connparams['path'], '/tmp/redis.sock')
@@ -167,7 +165,6 @@ class test_RedisBackend(AppCase):
     def test_compat_propertie(self):
         x = self.Backend(
             'redis://:bosco@vandelay.com:123//1', app=self.app,
-            new_join=True,
         )
         with self.assertPendingDeprecation():
             self.assertEqual(x.host, 'vandelay.com')
@@ -185,65 +182,53 @@ class test_RedisBackend(AppCase):
             'result_expires': None,
             'accept_content': ['json'],
         })
-        self.Backend(app=self.app, new_join=True)
+        self.Backend(app=self.app)
 
     def test_expires_defaults_to_config(self):
         self.app.conf.result_expires = 10
-        b = self.Backend(expires=None, app=self.app, new_join=True)
+        b = self.Backend(expires=None, app=self.app)
         self.assertEqual(b.expires, 10)
 
     def test_expires_is_int(self):
-        b = self.Backend(expires=48, app=self.app, new_join=True)
+        b = self.Backend(expires=48, app=self.app)
         self.assertEqual(b.expires, 48)
 
-    def test_set_new_join_from_url_query(self):
-        b = self.Backend('redis://?new_join=True;foobar=1', app=self.app)
-        self.assertEqual(b.on_chord_part_return, b._new_chord_return)
-        self.assertEqual(b.apply_chord, b._new_chord_apply)
-
     def test_add_to_chord(self):
-        b = self.Backend('redis://?new_join=True', app=self.app)
+        b = self.Backend('redis://', app=self.app)
         gid = uuid()
         b.add_to_chord(gid, 'sig')
         b.client.incr.assert_called_with(b.get_key_for_group(gid, '.t'), 1)
 
-    def test_default_is_old_join(self):
-        b = self.Backend(app=self.app)
-        self.assertNotEqual(b.on_chord_part_return, b._new_chord_return)
-        self.assertNotEqual(b.apply_chord, b._new_chord_apply)
-
     def test_expires_is_None(self):
-        b = self.Backend(expires=None, app=self.app, new_join=True)
+        b = self.Backend(expires=None, app=self.app)
         self.assertEqual(
             b.expires,
             self.app.conf.result_expires.total_seconds(),
         )
 
     def test_expires_is_timedelta(self):
-        b = self.Backend(
-            expires=timedelta(minutes=1), app=self.app, new_join=1,
-        )
+        b = self.Backend(expires=timedelta(minutes=1), app=self.app)
         self.assertEqual(b.expires, 60)
 
     def test_apply_chord(self):
-        self.Backend(app=self.app, new_join=True).apply_chord(
+        self.Backend(app=self.app).apply_chord(
             group(app=self.app), (), 'group_id', {},
             result=[self.app.AsyncResult(x) for x in [1, 2, 3]],
         )
 
     def test_mget(self):
-        b = self.Backend(app=self.app, new_join=True)
+        b = self.Backend(app=self.app)
         self.assertTrue(b.mget(['a', 'b', 'c']))
         b.client.mget.assert_called_with(['a', 'b', 'c'])
 
     def test_set_no_expire(self):
-        b = self.Backend(app=self.app, new_join=True)
+        b = self.Backend(app=self.app)
         b.expires = None
         b.set('foo', 'bar')
 
     @patch('celery.result.GroupResult.restore')
     def test_on_chord_part_return(self, restore):
-        b = self.Backend(app=self.app, new_join=True)
+        b = self.Backend(app=self.app)
 
         def create_task():
             tid = uuid()
@@ -271,10 +256,10 @@ class test_RedisBackend(AppCase):
         ])
 
     def test_process_cleanup(self):
-        self.Backend(app=self.app, new_join=True).process_cleanup()
+        self.Backend(app=self.app).process_cleanup()
 
     def test_get_set_forget(self):
-        b = self.Backend(app=self.app, new_join=True)
+        b = self.Backend(app=self.app)
         tid = uuid()
         b.store_result(tid, 42, states.SUCCESS)
         self.assertEqual(b.get_status(tid), states.SUCCESS)
@@ -283,7 +268,7 @@ class test_RedisBackend(AppCase):
         self.assertEqual(b.get_status(tid), states.PENDING)
 
     def test_set_expires(self):
-        b = self.Backend(expires=512, app=self.app, new_join=True)
+        b = self.Backend(expires=512, app=self.app)
         tid = uuid()
         key = b.get_key_for_task(tid)
         b.store_result(tid, 42, states.SUCCESS)

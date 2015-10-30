@@ -85,14 +85,12 @@ class redis(default):
         'fanout_prefix': True,
         'fanout_patterns': True,
     }
-    result_backend = os.environ.get(
-        'CSTRESS_BACKEND', 'redis://?new_join=1',
-    )
+    result_backend = os.environ.get('CSTRESS_BACKEND', 'redis://')
 
 
 @template()
 class redistore(default):
-    result_backend = 'redis://?new_join=1'
+    result_backend = 'redis://'
 
 
 @template()

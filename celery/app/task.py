@@ -788,8 +788,9 @@ class Task(object):
         :param lazy: If enabled the new task will not actually be called,
                       and ``sig.delay()`` must be called manually.
 
-        Currently only supported by the Redis result backend when
-        ``?new_join=1`` is enabled.
+        .. versionadded:: 4.0
+
+        Currently only supported by the Redis result backend.
 
         """
         if not self.request.chord:

@@ -58,7 +58,7 @@ class RedisBackend(KeyValueStoreBackend):
 
     def __init__(self, host=None, port=None, db=None, password=None,
                  max_connections=None, url=None,
-                 connection_pool=None, new_join=False, **kwargs):
+                 connection_pool=None, **kwargs):
         super(RedisBackend, self).__init__(expires_type=int, **kwargs)
         _get = self.app.conf.get
         if self.redis is None:
@@ -86,14 +86,6 @@ class RedisBackend(KeyValueStoreBackend):
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
         self.url = url
-
-        try:
-            new_join = strtobool(self.connparams.pop('new_join'))
-        except KeyError:
-            pass
-        if new_join:
-            self.apply_chord = self._new_chord_apply
-            self.on_chord_part_return = self._new_chord_return
 
         self.connection_errors, self.channel_errors = (
             get_redis_error_classes() if get_redis_error_classes
@@ -185,13 +177,13 @@ class RedisBackend(KeyValueStoreBackend):
             raise ChordError('Dependency {0} raised {1!r}'.format(tid, retval))
         return retval
 
-    def _new_chord_apply(self, header, partial_args, group_id, body,
-                         result=None, options={}, **kwargs):
+    def apply_chord(self, header, partial_args, group_id, body,
+                    result=None, options={}, **kwargs):
         # avoids saving the group in the redis db.
         options['task_id'] = group_id
         return header(*partial_args, **options or {})
 
-    def _new_chord_return(self, request, state, result, propagate=None):
+    def on_chord_part_return(self, request, state, result, propagate=None):
         app = self.app
         tid, gid = request.id, request.group
         if not gid or not tid:
