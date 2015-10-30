@@ -5,18 +5,14 @@ import sys
 import warnings
 
 from celery import loaders
-from celery.exceptions import (
-    NotConfigured,
-)
+from celery.exceptions import NotConfigured
 from celery.loaders import base
 from celery.loaders import default
 from celery.loaders.app import AppLoader
 from celery.utils.imports import NotAPackage
 from celery.utils.mail import SendmailWarning
 
-from celery.tests.case import (
-    AppCase, Case, Mock, depends_on_current_app, patch, with_environ,
-)
+from celery.tests.case import AppCase, Case, Mock, patch, with_environ
 
 
 class DummyLoader(base.BaseLoader):
@@ -30,16 +26,6 @@ class test_loaders(AppCase):
     def test_get_loader_cls(self):
         self.assertEqual(loaders.get_loader_cls('default'),
                          default.Loader)
-
-    @depends_on_current_app
-    def test_current_loader(self):
-        with self.assertPendingDeprecation():
-            self.assertIs(loaders.current_loader(), self.app.loader)
-
-    @depends_on_current_app
-    def test_load_settings(self):
-        with self.assertPendingDeprecation():
-            self.assertIs(loaders.load_settings(), self.app.conf)
 
 
 class test_LoaderBase(AppCase):
