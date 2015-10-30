@@ -63,6 +63,11 @@ class test_LRUCache(Case):
         x[7] = 7
         self.assertEqual(list(x.keys()), [3, 6, 7])
 
+    def test_update_larger_than_cache_size(self):
+        x = LRUCache(2)
+        x.update({x: x for x in range(100)})
+        self.assertEqual(list(x.keys()), [98, 99])
+
     def assertSafeIter(self, method, interval=0.01, size=10000):
         if sys.version_info >= (3, 5):
             raise SkipTest('Fails on Py3.5')
