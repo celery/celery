@@ -187,9 +187,6 @@ class Celery(object):
     #: Signal sent after app has been finalized.
     on_after_finalize = None
 
-    #: ignored
-    accept_magic_kwargs = False
-
     def __init__(self, main=None, loader=None, backend=None,
                  amqp=None, events=None, log=None, control=None,
                  set_as_current=True, tasks=None, broker=None, include=None,

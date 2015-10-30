@@ -265,9 +265,6 @@ class Task(object):
         ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),
     )
 
-    #: ignored
-    accept_magic_kwargs = False
-
     _backend = None  # set by backend property.
 
     __bound__ = False
