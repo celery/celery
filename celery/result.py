@@ -858,7 +858,7 @@ class EagerResult(AsyncResult):
             if propagate:
                 raise self.result
             return self.result
-    wait = get
+    wait = get  # XXX Compat (remove 5.0)
 
     def forget(self):
         pass

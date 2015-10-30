@@ -82,15 +82,6 @@ should be rewritten into::
 
 - ``TaskSetResult.taskset_id`` -> ``GroupResult.id``
 
-Apply to: :class:`~celery.result.AsyncResult`,
-:class:`~celery.result.EagerResult`::
-
-- ``Result.wait()`` -> ``Result.get()``
-
-- ``Result.task_id()`` -> ``Result.id``
-
-- ``Result.status`` -> ``Result.state``.
-
 :mod:`celery.loader`
 --------------------
 
@@ -99,45 +90,8 @@ Apply to: :class:`~celery.result.AsyncResult`,
 - ``load_settings()`` -> ``current_app.conf``
 
 
-Task_sent signal
-----------------
-
-The :signal:`task_sent` signal will be removed in version 4.0.
-Please use the :signal:`before_task_publish` and :signal:`after_task_publush`
-signals instead.
-
 Settings
 --------
-
-``BROKER`` Settings
-~~~~~~~~~~~~~~~~~~~
-
-=====================================  =====================================
-**Setting name**                       **Replace with**
-=====================================  =====================================
-``BROKER_HOST``                        :setting:`broker_url`
-``BROKER_PORT``                        :setting:`broker_url`
-``BROKER_USER``                        :setting:`broker_url`
-``BROKER_PASSWORD``                    :setting:`broker_url`
-``BROKER_VHOST``                       :setting:`broker_url`
-=====================================  =====================================
-
-
-``REDIS`` Result Backend Settings
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-=====================================  =====================================
-**Setting name**                       **Replace with**
-=====================================  =====================================
-``CELERY_REDIS_HOST``                  :setting:`result_backend`
-``CELERY_REDIS_PORT``                  :setting:`result_backend`
-``CELERY_REDIS_DB``                    :setting:`result_backend`
-``CELERY_REDIS_PASSWORD``              :setting:`result_backend`
-``REDIS_HOST``                         :setting:`result_backend`
-``REDIS_PORT``                         :setting:`result_backend`
-``REDIS_DB``                           :setting:`result_backend`
-``REDIS_PASSWORD``                     :setting:`result_backend`
-=====================================  =====================================
 
 Logging Settings
 ~~~~~~~~~~~~~~~~
@@ -152,18 +106,6 @@ Logging Settings
 ``CELERYMON_LOG_LEVEL``                :option:`--loglevel`
 ``CELERYMON_LOG_FILE``                 :option:`--loglevel``
 =====================================  =====================================
-
-Other Settings
-~~~~~~~~~~~~~~
-
-=====================================  =====================================
-**Setting name**                       **Replace with**
-=====================================  =====================================
-``CELERY_TASK_ERROR_WITELIST``         Annotate ``Task.ErrorMail``
-``CELERY_AMQP_TASK_RESULT_EXPIRES``    :setting:`result_expires`
-=====================================  =====================================
-
-
 
 .. _deprecations-v5.0:
 
@@ -276,6 +218,73 @@ Modules to Remove
 - ``celery.task.chords``
 
     Use :func:`celery.chord` instead.
+
+Settings
+--------
+
+``BROKER`` Settings
+~~~~~~~~~~~~~~~~~~~
+
+=====================================  =====================================
+**Setting name**                       **Replace with**
+=====================================  =====================================
+``BROKER_HOST``                        :setting:`broker_url`
+``BROKER_PORT``                        :setting:`broker_url`
+``BROKER_USER``                        :setting:`broker_url`
+``BROKER_PASSWORD``                    :setting:`broker_url`
+``BROKER_VHOST``                       :setting:`broker_url`
+=====================================  =====================================
+
+``REDIS`` Result Backend Settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+=====================================  =====================================
+**Setting name**                       **Replace with**
+=====================================  =====================================
+``CELERY_REDIS_HOST``                  :setting:`result_backend`
+``CELERY_REDIS_PORT``                  :setting:`result_backend`
+``CELERY_REDIS_DB``                    :setting:`result_backend`
+``CELERY_REDIS_PASSWORD``              :setting:`result_backend`
+``REDIS_HOST``                         :setting:`result_backend`
+``REDIS_PORT``                         :setting:`result_backend`
+``REDIS_DB``                           :setting:`result_backend`
+``REDIS_PASSWORD``                     :setting:`result_backend`
+=====================================  =====================================
+
+
+Task_sent signal
+----------------
+
+The :signal:`task_sent` signal will be removed in version 4.0.
+Please use the :signal:`before_task_publish` and :signal:`after_task_publush`
+signals instead.
+
+Result
+------
+
+Apply to: :class:`~celery.result.AsyncResult`,
+:class:`~celery.result.EagerResult`::
+
+- ``Result.wait()`` -> ``Result.get()``
+
+- ``Result.task_id()`` -> ``Result.id``
+
+- ``Result.status`` -> ``Result.state``.
+
+.. _deprecations-v3.1:
+
+
+Settings
+~~~~~~~~
+
+=====================================  =====================================
+**Setting name**                       **Replace with**
+=====================================  =====================================
+``CELERY_TASK_ERROR_WITELIST``         Annotate ``Task.ErrorMail``
+``CELERY_AMQP_TASK_RESULT_EXPIRES``    :setting:`result_expires`
+=====================================  =====================================
+
+
 
 .. _deprecations-v2.0:
 
