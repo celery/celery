@@ -331,8 +331,7 @@ class EventReceiver(ConsumerMixin):
                 ttl if ttl is not None else conf.event_queue_ttl,
             ),
             'x-expires': maybe_s_to_ms(
-                expires if expires is not None
-                else conf.event_queue_expires,
+                expires if expires is not None else conf.event_queue_expires,
             ),
         })
 
