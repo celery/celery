@@ -996,16 +996,6 @@ class Celery(object):
         """
         return self.subclass_with_self('celery.result:GroupResult')
 
-    @cached_property
-    def TaskSet(self):  # XXX compat
-        """Deprecated! Please use :class:`celery.group` instead."""
-        return self.subclass_with_self('celery.task.sets:TaskSet')
-
-    @cached_property
-    def TaskSetResult(self):  # XXX compat
-        """Deprecated! Please use :attr:`GroupResult` instead."""
-        return self.subclass_with_self('celery.result:TaskSetResult')
-
     @property
     def pool(self):
         """Broker connection pool: :class:`~@pool`.

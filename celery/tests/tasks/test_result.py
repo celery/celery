@@ -8,7 +8,6 @@ from celery.five import range
 from celery.result import (
     AsyncResult,
     EagerResult,
-    TaskSetResult,
     result_from_tuple,
 )
 from celery.utils import uuid
@@ -407,31 +406,6 @@ class SimpleBackend(object):
         def get_many(self, *args, **kwargs):
             return ((id, {'result': i, 'status': states.SUCCESS})
                     for i, id in enumerate(self.ids))
-
-
-class test_TaskSetResult(AppCase):
-
-    def setup(self):
-        self.size = 10
-        self.ts = TaskSetResult(uuid(), make_mock_group(self.app, self.size))
-
-    def test_total(self):
-        self.assertEqual(self.ts.total, self.size)
-
-    def test_compat_properties(self):
-        self.assertEqual(self.ts.taskset_id, self.ts.id)
-        self.ts.taskset_id = 'foo'
-        self.assertEqual(self.ts.taskset_id, 'foo')
-
-    def test_compat_subtasks_kwarg(self):
-        x = TaskSetResult(uuid(), subtasks=[1, 2, 3])
-        self.assertEqual(x.results, [1, 2, 3])
-
-    def test_itersubtasks(self):
-        it = self.ts.itersubtasks()
-
-        for i, t in enumerate(it):
-            self.assertEqual(t.get(), i)
 
 
 class test_GroupResult(AppCase):

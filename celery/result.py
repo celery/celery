@@ -756,8 +756,7 @@ class ResultSet(ResultBase):
 class GroupResult(ResultSet):
     """Like :class:`ResultSet`, but with an associated id.
 
-    This type is returned by :class:`~celery.group`, and the
-    deprecated TaskSet, meth:`~celery.task.TaskSet.apply_async` method.
+    This type is returned by :class:`~celery.group`.
 
     It enables inspection of the tasks state and return values as
     a single entity.
@@ -824,35 +823,6 @@ class GroupResult(ResultSet):
         return (
             backend or (self.app.backend if self.app else current_app.backend)
         ).restore_group(id)
-
-
-class TaskSetResult(GroupResult):
-    """Deprecated version of :class:`GroupResult`"""
-
-    def __init__(self, taskset_id, results=None, **kwargs):
-        # XXX supports the taskset_id kwarg.
-        # XXX previously the "results" arg was named "subtasks".
-        if 'subtasks' in kwargs:
-            results = kwargs['subtasks']
-        GroupResult.__init__(self, taskset_id, results, **kwargs)
-
-    def itersubtasks(self):
-        """Deprecated.   Use ``iter(self.results)`` instead."""
-        return iter(self.results)
-
-    @property
-    def total(self):
-        """Deprecated: Use ``len(r)``."""
-        return len(self)
-
-    @property
-    def taskset_id(self):
-        """compat alias to :attr:`self.id`"""
-        return self.id
-
-    @taskset_id.setter  # noqa
-    def taskset_id(self, id):
-        self.id = id
 
 
 class EagerResult(AsyncResult):
