@@ -31,7 +31,141 @@ Removals for version 4.0
         >>> from celery.result import result_from_tuple
         >>> result = result_from_tuple(tup)
 
-.. _deprecations-v4.0:
+TaskSet
+~~~~~~~
+
+TaskSet has been renamed to group and TaskSet will be removed in version 4.0.
+
+Old::
+
+    >>> from celery.task import TaskSet
+
+    >>> TaskSet(add.subtask((i, i)) for i in xrange(10)).apply_async()
+
+New::
+
+    >>> from celery import group
+    >>> group(add.s(i, i) for i in xrange(10))()
+
+
+Magic keyword arguments
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The magic keyword arguments accepted by tasks will be removed
+in 4.0, so you should start rewriting any tasks
+using the ``celery.decorators`` module and depending
+on keyword arguments being passed to the task,
+for example::
+
+    from celery.decorators import task
+
+    @task()
+    def add(x, y, task_id=None):
+        print("My task id is %r" % (task_id,))
+
+should be rewritten into::
+
+    from celery import task
+
+    @task(bind=True)
+    def add(self, x, y):
+        print("My task id is {0.request.id}".format(self))
+
+:mod:`celery.result`
+--------------------
+
+- ``BaseAsyncResult`` -> ``AsyncResult``.
+
+- ``TaskSetResult`` -> ``GroupResult``.
+
+- ``TaskSetResult.total`` -> ``len(GroupResult)``
+
+- ``TaskSetResult.taskset_id`` -> ``GroupResult.id``
+
+Apply to: :class:`~celery.result.AsyncResult`,
+:class:`~celery.result.EagerResult`::
+
+- ``Result.wait()`` -> ``Result.get()``
+
+- ``Result.task_id()`` -> ``Result.id``
+
+- ``Result.status`` -> ``Result.state``.
+
+:mod:`celery.loader`
+--------------------
+
+- ``current_loader()`` -> ``current_app.loader``
+
+- ``load_settings()`` -> ``current_app.conf``
+
+
+Task_sent signal
+----------------
+
+The :signal:`task_sent` signal will be removed in version 4.0.
+Please use the :signal:`before_task_publish` and :signal:`after_task_publush`
+signals instead.
+
+Settings
+--------
+
+``BROKER`` Settings
+~~~~~~~~~~~~~~~~~~~
+
+=====================================  =====================================
+**Setting name**                       **Replace with**
+=====================================  =====================================
+``BROKER_HOST``                        :setting:`broker_url`
+``BROKER_PORT``                        :setting:`broker_url`
+``BROKER_USER``                        :setting:`broker_url`
+``BROKER_PASSWORD``                    :setting:`broker_url`
+``BROKER_VHOST``                       :setting:`broker_url`
+=====================================  =====================================
+
+
+``REDIS`` Result Backend Settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+=====================================  =====================================
+**Setting name**                       **Replace with**
+=====================================  =====================================
+``CELERY_REDIS_HOST``                  :setting:`result_backend`
+``CELERY_REDIS_PORT``                  :setting:`result_backend`
+``CELERY_REDIS_DB``                    :setting:`result_backend`
+``CELERY_REDIS_PASSWORD``              :setting:`result_backend`
+``REDIS_HOST``                         :setting:`result_backend`
+``REDIS_PORT``                         :setting:`result_backend`
+``REDIS_DB``                           :setting:`result_backend`
+``REDIS_PASSWORD``                     :setting:`result_backend`
+=====================================  =====================================
+
+Logging Settings
+~~~~~~~~~~~~~~~~
+
+=====================================  =====================================
+**Setting name**                       **Replace with**
+=====================================  =====================================
+``CELERYD_LOG_LEVEL``                  :option:`--loglevel`
+``CELERYD_LOG_FILE``                   :option:`--logfile``
+``CELERYBEAT_LOG_LEVEL``               :option:`--loglevel`
+``CELERYBEAT_LOG_FILE``                :option:`--loglevel``
+``CELERYMON_LOG_LEVEL``                :option:`--loglevel`
+``CELERYMON_LOG_FILE``                 :option:`--loglevel``
+=====================================  =====================================
+
+Other Settings
+~~~~~~~~~~~~~~
+
+=====================================  =====================================
+**Setting name**                       **Replace with**
+=====================================  =====================================
+``CELERY_TASK_ERROR_WITELIST``         Annotate ``Task.ErrorMail``
+``CELERY_AMQP_TASK_RESULT_EXPIRES``    :setting:`result_expires`
+=====================================  =====================================
+
+
+
+.. _deprecations-v5.0:
 
 Removals for version 5.0
 ========================
@@ -92,47 +226,6 @@ on the class, but have to instantiate the task first::
     >>> MyTask().delay()        # WORKS!
 
 
-TaskSet
-~~~~~~~
-
-TaskSet has been renamed to group and TaskSet will be removed in version 4.0.
-
-Old::
-
-    >>> from celery.task import TaskSet
-
-    >>> TaskSet(add.subtask((i, i)) for i in xrange(10)).apply_async()
-
-New::
-
-    >>> from celery import group
-    >>> group(add.s(i, i) for i in xrange(10))()
-
-
-Magic keyword arguments
-~~~~~~~~~~~~~~~~~~~~~~~
-
-The magic keyword arguments accepted by tasks will be removed
-in 4.0, so you should start rewriting any tasks
-using the ``celery.decorators`` module and depending
-on keyword arguments being passed to the task,
-for example::
-
-    from celery.decorators import task
-
-    @task()
-    def add(x, y, task_id=None):
-        print("My task id is %r" % (task_id,))
-
-should be rewritten into::
-
-    from celery import task
-
-    @task(bind=True)
-    def add(self, x, y):
-        print("My task id is {0.request.id}".format(self))
-
-
 Task attributes
 ---------------
 
@@ -146,41 +239,6 @@ The task attributes:
 - ``priority``
 
 is deprecated and must be set by :setting:`task_routes` instead.
-
-:mod:`celery.result`
---------------------
-
-- ``BaseAsyncResult`` -> ``AsyncResult``.
-
-- ``TaskSetResult`` -> ``GroupResult``.
-
-- ``TaskSetResult.total`` -> ``len(GroupResult)``
-
-- ``TaskSetResult.taskset_id`` -> ``GroupResult.id``
-
-Apply to: :class:`~celery.result.AsyncResult`,
-:class:`~celery.result.EagerResult`::
-
-- ``Result.wait()`` -> ``Result.get()``
-
-- ``Result.task_id()`` -> ``Result.id``
-
-- ``Result.status`` -> ``Result.state``.
-
-:mod:`celery.loader`
---------------------
-
-- ``current_loader()`` -> ``current_app.loader``
-
-- ``load_settings()`` -> ``current_app.conf``
-
-
-Task_sent signal
-----------------
-
-The :signal:`task_sent` signal will be removed in version 4.0.
-Please use the :signal:`before_task_publish` and :signal:`after_task_publush`
-signals instead.
 
 
 Modules to Remove
@@ -218,64 +276,6 @@ Modules to Remove
 - ``celery.task.chords``
 
     Use :func:`celery.chord` instead.
-
-Settings
---------
-
-``BROKER`` Settings
-~~~~~~~~~~~~~~~~~~~
-
-=====================================  =====================================
-**Setting name**                       **Replace with**
-=====================================  =====================================
-``BROKER_HOST``                        :setting:`broker_url`
-``BROKER_PORT``                        :setting:`broker_url`
-``BROKER_USER``                        :setting:`broker_url`
-``BROKER_PASSWORD``                    :setting:`broker_url`
-``BROKER_VHOST``                       :setting:`broker_url`
-=====================================  =====================================
-
-
-``REDIS`` Result Backend Settings
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-=====================================  =====================================
-**Setting name**                       **Replace with**
-=====================================  =====================================
-``CELERY_REDIS_HOST``                  :setting:`result_backend`
-``CELERY_REDIS_PORT``                  :setting:`result_backend`
-``CELERY_REDIS_DB``                    :setting:`result_backend`
-``CELERY_REDIS_PASSWORD``              :setting:`result_backend`
-``REDIS_HOST``                         :setting:`result_backend`
-``REDIS_PORT``                         :setting:`result_backend`
-``REDIS_DB``                           :setting:`result_backend`
-``REDIS_PASSWORD``                     :setting:`result_backend`
-=====================================  =====================================
-
-Logging Settings
-~~~~~~~~~~~~~~~~
-
-=====================================  =====================================
-**Setting name**                       **Replace with**
-=====================================  =====================================
-``CELERYD_LOG_LEVEL``                  :option:`--loglevel`
-``CELERYD_LOG_FILE``                   :option:`--logfile``
-``CELERYBEAT_LOG_LEVEL``               :option:`--loglevel`
-``CELERYBEAT_LOG_FILE``                :option:`--loglevel``
-``CELERYMON_LOG_LEVEL``                :option:`--loglevel`
-``CELERYMON_LOG_FILE``                 :option:`--loglevel``
-=====================================  =====================================
-
-Other Settings
-~~~~~~~~~~~~~~
-
-=====================================  =====================================
-**Setting name**                       **Replace with**
-=====================================  =====================================
-``CELERY_TASK_ERROR_WITELIST``         Annotate ``Task.ErrorMail``
-``CELERY_AMQP_TASK_RESULT_EXPIRES``    :setting:`result_expires`
-=====================================  =====================================
-
 
 .. _deprecations-v2.0:
 

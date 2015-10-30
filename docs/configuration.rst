@@ -374,12 +374,8 @@ Can be one of the following:
     Use `MongoDB`_ to store the results.
     See :ref:`conf-mongodb-result-backend`.
 
-* cassandra
-    Use `Cassandra`_ to store the results.
-    See :ref:`conf-cassandra-result-backend`.
-
 * new_cassandra
-    Use `new_cassandra`_ to store the results, using newer database driver than _cassandra_.
+    Use `Cassandra`_ to store the results, using newer database driver than _cassandra_.
     See :ref:`conf-new_cassandra-result-backend`.
 
 * ironcache
@@ -563,8 +559,6 @@ you to customize the table names:
 
 RPC backend settings
 --------------------
-
-.. _conf-amqp-result-backend:
 
 .. setting:: result_persistent
 
@@ -1012,6 +1006,8 @@ The URL is formed out of the following parts:
     The default container the CouchDB server is writing to.
     Defaults to ``default``.
 
+.. _conf-amqp-result-backend:
+
 AMQP backend settings
 ---------------------
 
@@ -1044,8 +1040,6 @@ result_exchange_type
 
 The exchange type of the result exchange.  Default is to use a `direct`
 exchange.
-
-.. setting:: result_persistent
 
 result_persistent
 ~~~~~~~~~~~~~~~~~

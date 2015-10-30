@@ -102,11 +102,17 @@ and creating Celery applications.
 
     .. automethod:: finalize
 
-    .. autodata:: on_configure
+    .. data:: on_configure
 
-    .. autodata:: on_after_configure
+        Signal sent when app is loading configuration.
 
-    .. autodata:: on_after_finalize
+    .. data:: on_after_configure
+
+        Signal sent after app has prepared the configuration.
+
+    .. data:: on_after_finalize
+
+        Signal sent after app has been finalized.
 
 Canvas primitives
 -----------------

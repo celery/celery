@@ -1,7 +1,7 @@
 # -* coding: utf-8 -*-
 """
     celery.backends.new_cassandra
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Apache Cassandra result store backend using DataStax driver
 
