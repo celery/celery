@@ -394,6 +394,12 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                     group(sigs).apply_async((retval,))
                             else:
                                 signature(callbacks[0], app=app).delay(retval)
+
+                        # execute first task in chain
+                        chain = task.request.chain
+                        if chain:
+                            signature(chain.pop(), app=app).apply_async(
+                                    (retval,), chain=chain)
                         mark_as_done(
                             uuid, retval, task_request, publish_result,
                         )

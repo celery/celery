@@ -27,8 +27,7 @@ from celery.local import try_import
 from celery.result import GroupResult
 from celery.utils import abstract
 from celery.utils.functional import (
-    maybe_list, is_list, regen,
-    chunks as _chunks,
+    maybe_list, is_list, noop, regen, chunks as _chunks,
 )
 from celery.utils.text import truncate
 
@@ -383,6 +382,7 @@ class chain(Signature):
         Signature.__init__(
             self, 'celery.chain', (), {'tasks': tasks}, **options
         )
+        self._use_link = options.pop('use_link', None)
         self.subtask_type = 'chain'
         self._frozen = None
 
@@ -402,6 +402,7 @@ class chain(Signature):
             task_id=None, link=None, link_error=None,
             publisher=None, producer=None, root_id=None, app=None, **options):
         app = app or self.app
+        use_link = self._use_link
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)
 
@@ -413,12 +414,22 @@ class chain(Signature):
                 task_id, group_id, chord,
             )
 
+
         if results:
             # make sure we can do a link() and link_error() on a chain object.
-            if link:
-                tasks[-1].set(link=link)
-            tasks[0].apply_async(**options)
-            return results[-1]
+            if self._use_link:
+                # old task protocol used link for chains, last is last.
+                if link:
+                    tasks[-1].set(link=link)
+                tasks[0].apply_async(**options)
+                return results[-1]
+            else:
+                # -- using chain message field means last task is first.
+                if link:
+                    tasks[0].set(link=link)
+                first_task = tasks.pop()
+                first_task.apply_async(chain=tasks, **options)
+                return results[0]
 
     def freeze(self, _id=None, group_id=None, chord=None, root_id=None):
         _, results = self._frozen = self.prepare_steps(
@@ -432,12 +443,25 @@ class chain(Signature):
                       last_task_id=None, group_id=None, chord_body=None,
                       clone=True, from_dict=Signature.from_dict):
         app = app or self.app
+        # use chain message field for protocol 2 and later.
+        # this avoids pickle blowing the stack on the recursion
+        # required by linking task together in a tree structure.
+        # (why is pickle using recursion? or better yet why cannot python
+        #  do tail call optimization making recursion actually useful?)
+        use_link = self._use_link
+        if use_link is None and app.conf.task_protocol > 1:
+            use_link = False
         steps = deque(tasks)
+
+        steps_pop = steps.popleft if use_link else steps.pop
+        steps_extend = steps.extendleft if use_link else steps.extend
+        extend_order = reverse if use_link else noop
+
         next_step = prev_task = prev_res = None
         tasks, results = [], []
         i = 0
         while steps:
-            task = steps.popleft()
+            task = steps_pop()
 
             if not isinstance(task, abstract.CallableSignature):
                 task = from_dict(task, app=app)
@@ -452,12 +476,12 @@ class chain(Signature):
 
             if isinstance(task, chain):
                 # splice the chain
-                steps.extendleft(reversed(task.tasks))
+                steps_extend(extend_order(task.tasks))
                 continue
             elif isinstance(task, group) and steps:
                 # automatically upgrade group(...) | s to chord(group, s)
                 try:
-                    next_step = steps.popleft()
+                    next_step = steps_pop()
                     # for chords we freeze by pretending it's a normal
                     # signature instead of a group.
                     res = Signature.freeze(next_step, root_id=root_id)
@@ -484,11 +508,13 @@ class chain(Signature):
             i += 1
 
             if prev_task:
-                # link previous task to this task.
-                prev_task.link(task)
-                # set AsyncResult.parent
-                if not res.parent:
-                    res.parent = prev_res
+                if use_link:
+                    # link previous task to this task.
+                    prev_task.link(task)
+                    if not res.parent:
+                        res.parent = prev_res
+                else:
+                    prev_res.parent = res
 
             if link_error:
                 task.set(link_error=link_error)

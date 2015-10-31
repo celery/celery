@@ -86,6 +86,7 @@ class Context(object):
     taskset = None   # compat alias to group
     group = None
     chord = None
+    chain = None
     utc = None
     called_directly = True
     callbacks = None

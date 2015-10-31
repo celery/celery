@@ -297,7 +297,7 @@ class AMQP(object):
                    callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
-                   shadow=None, now=None, timezone=None):
+                   shadow=None, chain=None, now=None, timezone=None):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -354,7 +354,7 @@ class AMQP(object):
                 args, kwargs, {
                     'callbacks': callbacks,
                     'errbacks': errbacks,
-                    'chain': None,  # TODO
+                    'chain': chain,
                     'chord': chord,
                 },
             ),
