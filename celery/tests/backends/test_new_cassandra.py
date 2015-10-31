@@ -166,7 +166,7 @@ class test_CassandraBackend(AppCase):
             mod.cassandra.cluster = Mock()
             mod.cassandra.cluster.Cluster = RAMHoggingCluster
 
-            for x in xrange(0, 10):
+            for x in range(0, 10):
                 x = mod.CassandraBackend(app=self.app)
                 x._store_result('task_id', 'result', states.SUCCESS)
                 x.process_cleanup()
