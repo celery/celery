@@ -414,7 +414,6 @@ class chain(Signature):
                 task_id, group_id, chord,
             )
 
-
         if results:
             # make sure we can do a link() and link_error() on a chain object.
             if self._use_link:
@@ -455,13 +454,15 @@ class chain(Signature):
 
         steps_pop = steps.popleft if use_link else steps.pop
         steps_extend = steps.extendleft if use_link else steps.extend
-        extend_order = reverse if use_link else noop
+        extend_order = reversed if use_link else noop
 
         next_step = prev_task = prev_res = None
         tasks, results = [], []
         i = 0
         while steps:
             task = steps_pop()
+            last_task = not steps if use_link else not i
+            first_task = not i if use_link else not steps
 
             if not isinstance(task, abstract.CallableSignature):
                 task = from_dict(task, app=app)
@@ -471,30 +472,29 @@ class chain(Signature):
             # first task gets partial args from chain
             if clone:
                 task = task.clone(args) if not i else task.clone()
-            elif not i:
+            elif first_task:
                 task.args = tuple(args) + tuple(task.args)
 
             if isinstance(task, chain):
                 # splice the chain
                 steps_extend(extend_order(task.tasks))
                 continue
-            elif isinstance(task, group) and steps:
-                # automatically upgrade group(...) | s to chord(group, s)
-                try:
-                    next_step = steps_pop()
-                    # for chords we freeze by pretending it's a normal
-                    # signature instead of a group.
-                    res = Signature.freeze(next_step, root_id=root_id)
-                    task = chord(
-                        task, body=next_step,
-                        task_id=res.task_id, root_id=root_id,
-                    )
-                except IndexError:
-                    pass  # no callback, so keep as group.
+            elif isinstance(task, group):
+                if (steps if use_link else prev_task):
+                    # automatically upgrade group(...) | s to chord(group, s)
+                    try:
+                        next_step = steps_pop() if use_link else prev_task
+                        # for chords we freeze by pretending it's a normal
+                        # signature instead of a group.
+                        res = Signature.freeze(next_step, root_id=root_id)
+                        task = chord(
+                            task, body=next_step,
+                            task_id=res.task_id, root_id=root_id,
+                        )
+                    except IndexError:
+                        pass  # no callback, so keep as group.
 
-            if steps:
-                res = task.freeze(root_id=root_id)
-            else:
+            if last_task:
                 # chain(task_id=id) means task id is set for the last task
                 # in the chain.  If the chord is part of a chord/group
                 # then that chord/group must synchronize based on the
@@ -504,6 +504,8 @@ class chain(Signature):
                     last_task_id,
                     root_id=root_id, group_id=group_id, chord=chord_body,
                 )
+            else:
+                res = task.freeze(root_id=root_id)
             root_id = res.id if root_id is None else root_id
             i += 1
 
