@@ -127,11 +127,12 @@ class CassandraBackend(BaseBackend):
         self._read_stmt = None
 
     def process_cleanup(self):
-        if self._connection is not None:
-            self._connection = None
         if self._session is not None:
             self._session.shutdown()
             self._session = None
+        if self._connection is not None:
+            self._connection.shutdown()
+            self._connection = None
 
     def _get_connection(self, write=False):
         """Prepare the connection for action

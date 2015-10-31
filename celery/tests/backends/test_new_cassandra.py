@@ -133,3 +133,35 @@ class test_CassandraBackend(AppCase):
             self.assertIsNone(x._session)
 
             x.process_cleanup()  # should not raise
+
+    def test_please_free_memory(self):
+        """
+        Ensure that Cluster object IS shut down.
+        """
+        with mock_module(*CASSANDRA_MODULES):
+            from celery.backends import new_cassandra as mod
+
+            class RAMHoggingCluster(object):
+
+                objects_alive = 0
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def connect(self, *args, **kwargs):
+                    RAMHoggingCluster.objects_alive += 1
+                    return Mock()
+
+                def shutdown(self):
+                    RAMHoggingCluster.objects_alive -= 1
+
+            mod.cassandra = Mock()
+            mod.cassandra.cluster = Mock()
+            mod.cassandra.cluster.Cluster = RAMHoggingCluster
+
+            for x in xrange(0, 10):
+                x = mod.CassandraBackend(app=self.app)
+                x._store_result('task_id', 'result', states.SUCCESS)
+                x.process_cleanup()
+
+            self.assertEquals(RAMHoggingCluster.objects_alive, 0)
