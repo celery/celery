@@ -125,14 +125,14 @@ class CassandraBackend(BaseBackend):
         self._session = None
         self._write_stmt = None
         self._read_stmt = None
+        self._make_stmt = None
 
     def process_cleanup(self):
-        if self._session is not None:
-            self._session.shutdown()
-            self._session = None
         if self._connection is not None:
-            self._connection.shutdown()
-            self._connection = None
+            self._connection.shutdown() # also shuts down _session
+
+        self._connection = None
+        self._session = None
 
     def _get_connection(self, write=False):
         """Prepare the connection for action
@@ -172,6 +172,7 @@ class CassandraBackend(BaseBackend):
                         Q_CREATE_RESULT_TABLE.format(table=self.table),
                     )
                     self._make_stmt.consistency_level = self.write_consistency
+
                     try:
                         self._session.execute(self._make_stmt)
                     except cassandra.AlreadyExists:
@@ -180,10 +181,11 @@ class CassandraBackend(BaseBackend):
             except cassandra.OperationTimedOut:
                 # a heavily loaded or gone Cassandra cluster failed to respond.
                 # leave this class in a consistent state
-                self._connection = None
-                if self._session is not None:
-                    self._session.shutdown()
+                if self._connection is not None:
+                    self._connection.shutdown()     # also shuts down _session
 
+                self._connection = None
+                self._session = None
                 raise   # we did fail after all - reraise
 
     def _store_result(self, task_id, result, status,

@@ -41,6 +41,7 @@ class test_CassandraBackend(AppCase):
         with mock_module(*CASSANDRA_MODULES):
             from celery.backends import new_cassandra as mod
             mod.cassandra = Mock()
+
             cons = mod.cassandra.ConsistencyLevel = Object()
             cons.LOCAL_QUORUM = 'foo'
 
@@ -68,6 +69,7 @@ class test_CassandraBackend(AppCase):
         with mock_module(*CASSANDRA_MODULES):
             from celery.backends import new_cassandra as mod
             mod.cassandra = Mock()
+
             x = mod.CassandraBackend(app=self.app)
             x._connection = True
             session = x._session = Mock()
@@ -120,6 +122,9 @@ class test_CassandraBackend(AppCase):
                 def connect(self, *args, **kwargs):
                     raise OTOExc()
 
+                def shutdown(self):
+                    pass
+
             mod.cassandra = Mock()
             mod.cassandra.OperationTimedOut = OTOExc
             mod.cassandra.cluster = Mock()
@@ -133,6 +138,7 @@ class test_CassandraBackend(AppCase):
             self.assertIsNone(x._session)
 
             x.process_cleanup()  # should not raise
+
 
     def test_please_free_memory(self):
         """
@@ -156,6 +162,7 @@ class test_CassandraBackend(AppCase):
                     RAMHoggingCluster.objects_alive -= 1
 
             mod.cassandra = Mock()
+
             mod.cassandra.cluster = Mock()
             mod.cassandra.cluster.Cluster = RAMHoggingCluster
 
