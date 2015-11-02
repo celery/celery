@@ -39,7 +39,7 @@ fi
 
 
 # Can be a runlevel symlink (e.g. S02celeryd)
-if [ -L "$0" ]; then
+if [[ `dirname $0` == /etc/rc*.d ]]; then
     SCRIPT_FILE=$(readlink "$0")
 else
     SCRIPT_FILE="$0"
