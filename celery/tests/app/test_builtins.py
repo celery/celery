@@ -100,8 +100,10 @@ class test_group(BuiltinsCase):
         x = group(app=self.app)
         x.apply()
         res = x.apply_async()
-        self.assertFalse(res)
         self.assertFalse(res.results)
+        self.assertTrue(res)
+        res.id = None
+        self.assertFalse(res)
 
     def test_apply_async_with_parent(self):
         _task_stack.push(self.add)
