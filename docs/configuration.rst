@@ -692,6 +692,16 @@ redis_max_connections
 Maximum number of connections available in the Redis connection
 pool used for sending and retrieving results.
 
+.. setting:: redis_socket_timeout
+
+redis_socket_timeout
+~~~~~~~~~~~~~~~~~~~~
+
+Socket timeout for connections to Redis from the result backend
+in seconds (int/float)
+
+Default is 5 seconds.
+
 .. _conf-mongodb-result-backend:
 
 MongoDB backend settings

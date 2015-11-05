@@ -171,6 +171,7 @@ NAMESPACES = Namespace(
         max_connections=Option(type='int'),
         password=Option(type='string'),
         port=Option(type='int'),
+        socket_timeout=Option(5.0, type='float'),
     ),
     result=Namespace(
         __old__=old_ns('celery_result'),
