@@ -32,9 +32,10 @@ from kombu.utils.encoding import safe_repr, bytes_t
 from kombu.utils.limits import TokenBucket
 
 from celery import bootsteps
+from celery import signals
 from celery.app.trace import build_tracer
 from celery.canvas import signature
-from celery.exceptions import InvalidTaskError
+from celery.exceptions import InvalidTaskError, NotRegistered
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
@@ -434,14 +435,19 @@ class Consumer(object):
     def on_unknown_message(self, body, message):
         warn(UNKNOWN_FORMAT, self._message_report(body, message))
         message.reject_log_error(logger, self.connection_errors)
+        signals.task_rejected.send(sender=self, message=message, exc=None)
 
     def on_unknown_task(self, body, message, exc):
         error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
         message.reject_log_error(logger, self.connection_errors)
+        self.app.backend.mark_as_failure(
+            message.headers['id'], NotRegistered(message.headers['task']))
+        signals.task_unknown.send(sender=self, message=message, exc=exc)
 
     def on_invalid_task(self, body, message, exc):
         error(INVALID_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
         message.reject_log_error(logger, self.connection_errors)
+        signals.task_rejected.send(sender=self, message=message, exc=exc)
 
     def update_strategies(self):
         loader = self.app.loader

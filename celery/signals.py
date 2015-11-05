@@ -50,6 +50,12 @@ task_failure = Signal(providing_args=[
 task_revoked = Signal(providing_args=[
     'request', 'terminated', 'signum', 'expired',
 ])
+task_rejected = Signal(providing_args=[
+    'message', 'exc',
+])
+task_unknown = Signal(providing_args=[
+    'message', 'exc',
+])
 celeryd_init = Signal(providing_args=['instance', 'conf', 'options'])
 celeryd_after_setup = Signal(providing_args=['instance', 'conf'])
 import_modules = Signal(providing_args=[])
