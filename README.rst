@@ -284,9 +284,6 @@ Transports and Backends
     for using memcached as a result backend.
 
 :celery[cassandra]:
-    for using Apache Cassandra as a result backend with pycassa driver.
-
-:celery[new_cassandra]:
     for using Apache Cassandra as a result backend with DataStax driver.
 
 :celery[couchdb]:

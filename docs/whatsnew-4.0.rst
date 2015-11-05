@@ -101,8 +101,12 @@ Bla bla
 
 New Cassandra Backend
 =====================
-New Cassandra backend will be called new_cassandra and utilize python-driver.
-Old backend is now deprecated.
+
+The new Cassandra backend utilizes the python-driver library.
+Old backend is deprecated and everyone using cassandra is required to upgrade
+to be using the new driver.
+
+# XXX What changed?
 
 
 Event Batching

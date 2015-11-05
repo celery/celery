@@ -374,9 +374,9 @@ Can be one of the following:
     Use `MongoDB`_ to store the results.
     See :ref:`conf-mongodb-result-backend`.
 
-* new_cassandra
-    Use `Cassandra`_ to store the results, using newer database driver than _cassandra_.
-    See :ref:`conf-new_cassandra-result-backend`.
+* cassandra
+    Use `Cassandra`_ to store the results.
+    See :ref:`conf-cassandra-result-backend`.
 
 * ironcache
     Use `IronCache`_ to store the results.
@@ -742,10 +742,10 @@ Example configuration
         'taskmeta_collection': 'my_taskmeta_collection',
     }
 
-.. _conf-new_cassandra-result-backend:
+.. _conf-cassandra-result-backend:
 
-new_cassandra backend settings
-------------------------------
+cassandra backend settings
+--------------------------
 
 .. note::
 
@@ -786,14 +786,14 @@ The keyspace in which to store the results. e.g.::
 
     cassandra_keyspace = 'tasks_keyspace'
 
-.. setting:: cassandra_column_family
+.. setting:: cassandra_table
 
-cassandra_column_family
-~~~~~~~~~~~~~~~~~~~~~~~
+cassandra_table
+~~~~~~~~~~~~~~~
 
 The table (column family) in which to store the results. e.g.::
 
-    cassandra_column_family = 'tasks'
+    cassandra_table = 'tasks'
 
 .. setting:: cassandra_read_consistency
 
@@ -826,7 +826,7 @@ Example configuration
 
     cassandra_servers = ['localhost']
     cassandra_keyspace = 'celery'
-    cassandra_column_family = 'task_results'
+    cassandra_table = 'tasks'
     cassandra_read_consistency = 'ONE'
     cassandra_write_consistency = 'ONE'
     cassandra_entry_ttl = 86400

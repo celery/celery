@@ -123,12 +123,12 @@ NAMESPACES = Namespace(
         backend_options=Option({}, type='dict'),
     ),
     cassandra=Namespace(
-        column_family=Option(type='string'),
         entry_ttl=Option(type="float"),
         keyspace=Option(type='string'),
         port=Option(type="string"),
         read_consistency=Option(type='string'),
         servers=Option(type='list'),
+        table=Option(type='string'),
         write_consistency=Option(type='string'),
     ),
     chord=Namespace(
