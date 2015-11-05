@@ -303,7 +303,7 @@ class test_group(CanvasCase):
 
     def test_maybe_group_sig(self):
         self.assertListEqual(
-            _maybe_group(self.add.s(2, 2)), [self.add.s(2, 2)],
+            _maybe_group(self.add.s(2, 2), self.app), [self.add.s(2, 2)],
         )
 
     def test_from_dict(self):
