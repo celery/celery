@@ -311,6 +311,14 @@ Sender is the worker :class:`~celery.worker.consumer.Consumer`.
 
 Provides arguments:
 
+* name
+
+  Name of task not found in registry.
+
+* id
+
+  The task id found in the message.
+
 * message
 
     Raw message object.

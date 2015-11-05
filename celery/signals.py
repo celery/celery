@@ -54,7 +54,7 @@ task_rejected = Signal(providing_args=[
     'message', 'exc',
 ])
 task_unknown = Signal(providing_args=[
-    'message', 'exc',
+    'message', 'exc', 'name', 'id',
 ])
 celeryd_init = Signal(providing_args=['instance', 'conf', 'options'])
 celeryd_after_setup = Signal(providing_args=['instance', 'conf'])
