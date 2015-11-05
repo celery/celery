@@ -458,7 +458,6 @@ class Consumer(object):
         callbacks = self.on_task_message
 
         def on_task_received(message):
-
             # payload will only be set for v1 protocol, since v2
             # will defer deserializing the message body to the pool.
             payload = None

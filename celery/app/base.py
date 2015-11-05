@@ -622,6 +622,7 @@ class Celery(object):
         Otherwise supports the same arguments as :meth:`@-Task.apply_async`.
 
         """
+        parent = have_parent = None
         amqp = self.amqp
         task_id = task_id or uuid()
         producer = producer or publisher  # XXX compat
@@ -632,6 +633,16 @@ class Celery(object):
                 'task_always_eager has no effect on send_task',
             ), stacklevel=2)
         options = router.route(options, route_name or name, args, kwargs)
+
+        if root_id is None:
+            parent, have_parent = get_current_worker_task(), True
+            if parent:
+                root_id = parent.request.root_id or parent.request.id
+        if parent_id is None:
+            if not have_parent:
+                parent, have_parent = get_current_worker_task(), True
+            if parent:
+                parent_id = parent.request.id
 
         message = amqp.create_task_message(
             task_id, name, args, kwargs, countdown, eta, group_id,
@@ -649,7 +660,8 @@ class Celery(object):
             amqp.send_task_message(P, name, message, **options)
         result = (result_cls or self.AsyncResult)(task_id)
         if add_to_parent:
-            parent = get_current_worker_task()
+            if not have_parent:
+                parent, have_parent = get_current_worker_task(), True
             if parent:
                 parent.add_trail(result)
         return result

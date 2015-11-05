@@ -650,7 +650,7 @@ task-sent
 ~~~~~~~~~
 
 :signature: ``task-sent(uuid, name, args, kwargs, retries, eta, expires,
-              queue, exchange, routing_key)``
+              queue, exchange, routing_key, root_id, parent_id)``
 
 Sent when a task message is published and
 the :setting:`task_send_sent_event` setting is enabled.
@@ -661,7 +661,7 @@ task-received
 ~~~~~~~~~~~~~
 
 :signature: ``task-received(uuid, name, args, kwargs, retries, eta, hostname,
-              timestamp)``
+              timestamp, root_id, parent_id)``
 
 Sent when the worker receives a task.
 

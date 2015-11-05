@@ -133,18 +133,72 @@ class test_chain(BuiltinsCase):
         self.assertTrue(result.parent.parent)
         self.assertIsNone(result.parent.parent.parent)
 
+    def test_group_to_chord__freeze_parent_id(self):
+        def using_freeze(c):
+            c.freeze(parent_id='foo', root_id='root')
+            return c._frozen[0]
+        self.assert_group_to_chord_parent_ids(using_freeze)
+
+    def assert_group_to_chord_parent_ids(self, freezefun):
+        c = (
+            self.add.s(5, 5) |
+            group([self.add.s(i, i) for i in range(5)], app=self.app) |
+            self.add.si(10, 10) |
+            self.add.si(20, 20) |
+            self.add.si(30, 30)
+        )
+        tasks = freezefun(c)
+        self.assertEqual(tasks[-1].parent_id, 'foo')
+        self.assertEqual(tasks[-1].root_id, 'root')
+        self.assertEqual(tasks[-2].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].root_id, 'root')
+        self.assertEqual(tasks[-2].body.parent_id, tasks[-2].tasks.id)
+        self.assertEqual(tasks[-2].body.parent_id, tasks[-2].id)
+        self.assertEqual(tasks[-2].body.root_id, 'root')
+        self.assertEqual(tasks[-2].tasks.tasks[0].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].tasks.tasks[0].root_id, 'root')
+        self.assertEqual(tasks[-2].tasks.tasks[1].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].tasks.tasks[1].root_id, 'root')
+        self.assertEqual(tasks[-2].tasks.tasks[2].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].tasks.tasks[2].root_id, 'root')
+        self.assertEqual(tasks[-2].tasks.tasks[3].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].tasks.tasks[3].root_id, 'root')
+        self.assertEqual(tasks[-2].tasks.tasks[4].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].tasks.tasks[4].root_id, 'root')
+        self.assertEqual(tasks[-3].parent_id, tasks[-2].body.id)
+        self.assertEqual(tasks[-3].root_id, 'root')
+        self.assertEqual(tasks[-4].parent_id, tasks[-3].id)
+        self.assertEqual(tasks[-4].root_id, 'root')
+
     def test_group_to_chord(self):
         c = (
+            self.add.s(5) |
             group([self.add.s(i, i) for i in range(5)], app=self.app) |
             self.add.s(10) |
             self.add.s(20) |
             self.add.s(30)
         )
         c._use_link = True
-        tasks, _ = c.prepare_steps((), c.tasks)
-        self.assertIsInstance(tasks[-1], chord)
-        self.assertTrue(tasks[-1].body.options['link'])
-        self.assertTrue(tasks[-1].body.options['link'][0].options['link'])
+        tasks, results = c.prepare_steps((), c.tasks)
+
+        self.assertEqual(tasks[-1].args[0], 5)
+        self.assertIsInstance(tasks[-2], chord)
+        self.assertEqual(len(tasks[-2].tasks), 5)
+        self.assertEqual(tasks[-2].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].root_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].body.args[0], 10)
+        self.assertEqual(tasks[-2].body.parent_id, tasks[-2].id)
+
+        self.assertEqual(tasks[-3].args[0], 20)
+        self.assertEqual(tasks[-3].root_id, tasks[-1].id)
+        self.assertEqual(tasks[-3].parent_id, tasks[-2].body.id)
+
+        self.assertEqual(tasks[-4].args[0], 30)
+        self.assertEqual(tasks[-4].parent_id, tasks[-3].id)
+        self.assertEqual(tasks[-4].root_id, tasks[-1].id)
+
+        self.assertTrue(tasks[-2].body.options['link'])
+        self.assertTrue(tasks[-2].body.options['link'][0].options['link'])
 
         c2 = self.add.s(2, 2) | group(self.add.s(i, i) for i in range(10))
         c2._use_link = True

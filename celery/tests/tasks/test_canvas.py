@@ -14,7 +14,7 @@ from celery.canvas import (
 )
 from celery.result import EagerResult
 
-from celery.tests.case import AppCase, Mock
+from celery.tests.case import AppCase, ContextMock, Mock
 
 SIG = Signature({'task': 'TASK',
                  'args': ('A1',),
@@ -232,6 +232,40 @@ class test_chain(CanvasCase):
     def test_empty_chain_returns_none(self):
         self.assertIsNone(chain(app=self.app)())
         self.assertIsNone(chain(app=self.app).apply_async())
+
+    def test_root_id_parent_id(self):
+        self.app.conf.task_protocol = 2
+        c = chain(self.add.si(i, i) for i in range(4))
+        c.freeze()
+        tasks, _ = c._frozen
+        for i, task in enumerate(tasks):
+            self.assertEqual(task.root_id, tasks[-1].id)
+            try:
+                self.assertEqual(task.parent_id, tasks[i + 1].id)
+            except IndexError:
+                assert i == len(tasks) - 1
+            else:
+                valid_parents = i
+        self.assertEqual(valid_parents, len(tasks) - 2)
+
+        self.assert_sent_with_ids(tasks[-1], tasks[-1].id, 'foo',
+                                  parent_id='foo')
+        self.assertTrue(tasks[-2].options['parent_id'])
+        self.assert_sent_with_ids(tasks[-2], tasks[-1].id, tasks[-1].id)
+        self.assert_sent_with_ids(tasks[-3], tasks[-1].id, tasks[-2].id)
+        self.assert_sent_with_ids(tasks[-4], tasks[-1].id, tasks[-3].id)
+
+
+    def assert_sent_with_ids(self, task, rid, pid, **options):
+        self.app.amqp.send_task_message = Mock(name='send_task_message')
+        self.app.backend = Mock()
+        self.app.producer_or_acquire = ContextMock()
+
+        res = task.apply_async(**options)
+        self.assertTrue(self.app.amqp.send_task_message.called)
+        message = self.app.amqp.send_task_message.call_args[0][2]
+        self.assertEqual(message.headers['parent_id'], pid)
+        self.assertEqual(message.headers['root_id'], rid)
 
     def test_call_no_tasks(self):
         x = chain()

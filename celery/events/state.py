@@ -233,11 +233,13 @@ class Task(object):
     state = states.PENDING
     clock = 0
 
-    _fields = ('uuid', 'name', 'state', 'received', 'sent', 'started',
-               'succeeded', 'failed', 'retried', 'revoked', 'args', 'kwargs',
-               'eta', 'expires', 'retries', 'worker', 'result', 'exception',
-               'timestamp', 'runtime', 'traceback', 'exchange', 'routing_key',
-               'clock', 'client')
+    _fields = (
+        'uuid', 'name', 'state', 'received', 'sent', 'started',
+        'succeeded', 'failed', 'retried', 'revoked', 'args', 'kwargs',
+        'eta', 'expires', 'retries', 'worker', 'result', 'exception',
+        'timestamp', 'runtime', 'traceback', 'exchange', 'routing_key',
+        'clock', 'client', 'root_id', 'parent_id',
+    )
     if not PYPY:
         __slots__ = ('__dict__', '__weakref__')
 
@@ -249,12 +251,19 @@ class Task(object):
     #: that state. ``(RECEIVED, ('name', 'args')``, means the name and args
     #: fields are always taken from the RECEIVED state, and any values for
     #: these fields received before or after is simply ignored.
-    merge_rules = {states.RECEIVED: ('name', 'args', 'kwargs',
-                                     'retries', 'eta', 'expires')}
+    merge_rules = {
+        states.RECEIVED: (
+            'name', 'args', 'kwargs', 'parent_id',
+            'root_id' 'retries', 'eta', 'expires',
+        ),
+    }
 
     #: meth:`info` displays these fields by default.
-    _info_fields = ('args', 'kwargs', 'retries', 'result', 'eta', 'runtime',
-                    'expires', 'exception', 'exchange', 'routing_key')
+    _info_fields = (
+        'args', 'kwargs', 'retries', 'result', 'eta', 'runtime',
+        'expires', 'exception', 'exchange', 'routing_key',
+        'root_id', 'parent_id',
+    )
 
     def __init__(self, uuid=None, **kwargs):
         self.uuid = uuid
