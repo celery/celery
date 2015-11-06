@@ -1,7 +1,7 @@
 .. _whatsnew-4.0:
 
 ===========================================
- What's new in Celery 4.0 (TBA)
+ What's new in Celery 4.0 (0Today8)
 ===========================================
 :Author: Ask Solem (ask at celeryproject.org)
 
