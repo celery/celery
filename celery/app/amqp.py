@@ -34,7 +34,7 @@ __all__ = ['AMQP', 'Queues', 'task_message']
 
 PY3 = sys.version_info[0] == 3
 
-# json in Python2.7 borks if dict contains byte keys.
+# json in Python 2.7 borks if dict contains byte keys.
 JSON_NEEDS_UNICODE_KEYS = not PY3 and not try_import('simplejson')
 
 #: Human readable queue declaration.

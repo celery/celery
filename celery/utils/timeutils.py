@@ -90,7 +90,7 @@ class LocalTimezone(tzinfo):
 
         def fromutc(self, dt):
             # The base tzinfo class no longer implements a DST
-            # offset aware .fromutc() in Python3 (Issue #2306).
+            # offset aware .fromutc() in Python 3 (Issue #2306).
 
             # I'd rather rely on pytz to do this, than port
             # the C code from cpython's fromutc [asksol]

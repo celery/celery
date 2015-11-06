@@ -53,12 +53,15 @@ Important Notes
 Dropped support for Python 2.6
 ------------------------------
 
-Celery now requires Python 2.7 or later.
+Celery now requires Python 2.7 or later,
+and also drops support for Python 3.3 so supported versions are:
 
-Dropped support for Python 3.3
-------------------------------
-
-Celery now requires Python3 3.4 or later.
+- CPython 2.7
+- CPython 3.4
+- CPython 3.5
+- PyPy 4.0 (pypy2)
+- PyPy 2.4 (pypy3)
+- Jython 2.7.0
 
 JSON is now the default serializer
 ----------------------------------
