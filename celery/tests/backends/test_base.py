@@ -328,24 +328,17 @@ class test_KeyValueStoreBackend(AppCase):
 
     def test_chord_part_return_propagate_set(self):
         with self._chord_part_context(self.b) as (task, deps, _):
-            self.b.on_chord_part_return(
-                task.request, 'SUCCESS', 10, propagate=True,
-            )
+            self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
             self.assertFalse(self.b.expire.called)
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(propagate=True, timeout=3.0)
 
     def test_chord_part_return_propagate_default(self):
         with self._chord_part_context(self.b) as (task, deps, _):
-            self.b.on_chord_part_return(
-                task.request, 'SUCCESS', 10, propagate=None,
-            )
+            self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
             self.assertFalse(self.b.expire.called)
             deps.delete.assert_called_with()
-            deps.join_native.assert_called_with(
-                propagate=self.b.app.conf.chord_propagates,
-                timeout=3.0,
-            )
+            deps.join_native.assert_called_with(propagate=True, timeout=3.0)
 
     def test_chord_part_return_join_raises_internal(self):
         with self._chord_part_context(self.b) as (task, deps, callback):

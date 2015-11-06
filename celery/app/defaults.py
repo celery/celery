@@ -131,11 +131,6 @@ NAMESPACES = Namespace(
         table=Option(type='string'),
         write_consistency=Option(type='string'),
     ),
-    chord=Namespace(
-        __old__=old_ns('celery_chord'),
-
-        propagates=Option(True, type='bool'),
-    ),
     couchbase=Namespace(
         __old__=old_ns('celery_couchbase'),
 

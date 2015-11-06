@@ -54,20 +54,12 @@ def add_unlock_chord_task(app):
     from celery.exceptions import ChordError
     from celery.result import allow_join_result, result_from_tuple
 
-    default_propagate = app.conf.chord_propagates
-
     @app.task(name='celery.chord_unlock', max_retries=None, shared=False,
               default_retry_delay=1, ignore_result=True, lazy=False, bind=True)
-    def unlock_chord(self, group_id, callback, interval=None, propagate=None,
+    def unlock_chord(self, group_id, callback, interval=None,
                      max_retries=None, result=None,
                      Result=app.AsyncResult, GroupResult=app.GroupResult,
-                     result_from_tuple=result_from_tuple):
-        # if propagate is disabled exceptions raised by chord tasks
-        # will be sent as part of the result list to the chord callback.
-        # Since 3.1 propagate will be enabled by default, and instead
-        # the chord callback changes state to FAILURE with the
-        # exception set to ChordError.
-        propagate = default_propagate if propagate is None else propagate
+                     result_from_tuple=result_from_tuple, **kwargs):
         if interval is None:
             interval = self.default_retry_delay
 
@@ -93,7 +85,7 @@ def add_unlock_chord_task(app):
         callback = maybe_signature(callback, app=app)
         try:
             with allow_join_result():
-                ret = j(timeout=3.0, propagate=propagate)
+                ret = j(timeout=3.0, propagate=True)
         except Exception as exc:
             try:
                 culprit = next(deps._failed_join_report())
@@ -191,8 +183,7 @@ def add_chord_task(app):
     @app.task(name='celery.chord', bind=True, ignore_result=False,
               shared=False, lazy=False)
     def chord(self, header, body, partial_args=(), interval=None,
-              countdown=1, max_retries=None, propagate=None,
-              eager=False, **kwargs):
+              countdown=1, max_retries=None, eager=False, **kwargs):
         app = self.app
         # - convert back to group if serialized
         tasks = header.tasks if isinstance(header, group) else header
@@ -202,5 +193,5 @@ def add_chord_task(app):
         body = maybe_signature(body, app=app)
         ch = _chord(header, body)
         return ch.run(header, body, partial_args, app, interval,
-                      countdown, max_retries, propagate, **kwargs)
+                      countdown, max_retries, **kwargs)
     return chord

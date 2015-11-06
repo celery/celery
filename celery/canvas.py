@@ -939,11 +939,9 @@ class chord(Signature):
         return sum(self._traverse_tasks(self.tasks, 1))
 
     def run(self, header, body, partial_args, app=None, interval=None,
-            countdown=1, max_retries=None, propagate=None, eager=False,
+            countdown=1, max_retries=None, eager=False,
             task_id=None, **options):
         app = app or self._get_app(body)
-        propagate = (app.conf.chord_propagates
-                     if propagate is None else propagate)
         group_id = uuid()
         root_id = body.options.get('root_id')
         body.chord_size = self.__length_hint__()
@@ -960,7 +958,7 @@ class chord(Signature):
             header, partial_args, group_id, body,
             interval=interval, countdown=countdown,
             options=options, max_retries=max_retries,
-            propagate=propagate, result=results)
+            result=results)
         bodyres.parent = parent
         return bodyres
 
