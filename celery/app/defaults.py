@@ -221,7 +221,9 @@ NAMESPACES = Namespace(
         default_queue=Option('celery'),
         default_rate_limit=Option(type='string'),
         default_routing_key=Option('celery'),
-        eager_propagates_exceptions=Option(False, type='bool'),
+        eager_propagates=Option(
+            False, type='bool', old={'celery_eager_propagates_exceptions'},
+        ),
         ignore_result=Option(False, type='bool'),
         protocol=Option(1, type='int', old={'celery_task_protocol'}),
         publish_retry=Option(
@@ -273,7 +275,7 @@ NAMESPACES = Namespace(
         hijack_root_logger=Option(True, type='bool'),
         log_color=Option(type='bool'),
         log_format=Option(DEFAULT_PROCESS_LOG_FMT),
-        lost_wait=Option(10.0, type='float'),
+        lost_wait=Option(10.0, type='float', old={'celeryd_worker_lost_wait'}),
         max_memory_per_child=Option(type='int'),
         max_tasks_per_child=Option(type='int'),
         pool=Option(DEFAULT_POOL),
@@ -286,7 +288,9 @@ NAMESPACES = Namespace(
         redirect_stdouts_level=Option(
             'WARNING', old={'celery_redirect_stdouts_level'},
         ),
-        send_events=Option(False, type='bool'),
+        send_task_events=Option(
+            False, type='bool', old={'celeryd_send_events'},
+        ),
         state_db=Option(),
         task_log_format=Option(DEFAULT_TASK_LOG_FMT),
         timer=Option(type='string'),

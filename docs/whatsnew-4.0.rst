@@ -68,7 +68,6 @@ The Task base class no longer automatically register tasks
 
 The metaclass has been removed blah blah
 
-
 Arguments now verified when calling a task
 ------------------------------------------
 
@@ -93,8 +92,76 @@ running 4.x:
         'fanout_prefix': True,
     }
 
+Lowercase setting names
+-----------------------
+
+In the pursuit of beauty all settings have been renamed to be in all
+lowercase, in a consistent naming scheme.
+
+This change is fully backwards compatible so you can still use the uppercase
+setting names.
+
+The loader will try to detect if your configuration is using the new format,
+and act accordingly, but this also means that you are not allowed to mix and
+match new and old setting names, that is unless you provide a value for both
+alternatives.
+
+The major difference between previous versions, apart from the lower case
+names, are the renaming of some prefixes, like ``celerybeat_`` to ``beat_``,
+``celeryd_`` to ``worker_``.
+
+The ``celery_`` prefix has also been removed, and task related settings
+from this namespace is now prefixed by ``task_``, worker related settings
+with ``worker_``.
+
+Apart from this most of the settings will be the same in lowercase, apart from
+a few special ones:
+
+=====================================  ==========================================================
+**Setting name**                       **Replace with**
+=====================================  ==========================================================
+``CELERY_MAX_CACHED_RESULTS``          :setting:`result_cache_max`
+``CELERY_MESSAGE_COMPRESSION``         :setting:`result_compression`/:setting:`task_compression`.
+``CELERY_TASK_RESULT_EXPIRES``         :setting:`result_expires`
+``CELERY_RESULT_DBURI``                :setting:`sqlalchemy_dburi`
+``CELERY_RESULT_ENGINE_OPTIONS``       :setting:`sqlalchemy_engine_options`
+``-*-_DB_SHORT_LIVED_SESSIONS``        :setting:`sqlalchemy_short_lived_sessions`
+``CELERY_RESULT_DB_TABLE_NAMES``       :setting:`sqlalchemy_db_names`
+``CELERY_ACKS_LATE``                   :setting:`task_acks_late`
+``CELERY_ALWAYS_EAGER``                :setting:`task_always_eager`
+``CELERY_ANNOTATIONS``                 :setting:`task_annotations`
+``CELERY_MESSAGE_COMPRESSION``         :setting:`task_compression`
+``CELERY_CREATE_MISSING_QUEUES``       :setting:`task_create_missing_queues`
+``CELERY_DEFAULT_DELIVERY_MODE``       :setting:`task_default_delivery_mode`
+``CELERY_DEFAULT_EXCHANGE``            :setting:`task_default_exchange`
+``CELERY_DEFAULT_EXCHANGE_TYPE``       :setting:`task_default_exchange_type`
+``CELERY_DEFAULT_QUEUE``               :setting:`task_default_queue`
+``CELERY_DEFAULT_RATE_LIMIT``          :setting:`task_default_rate_limit`
+``CELERY_DEFAULT_ROUTING_KEY``         :setting:`task_default_routing_key`
+``-"-_EAGER_PROPAGATES_EXCEPTIONS``    :setting:`task_eager_propagates`
+``CELERY_IGNORE_RESULT``               :setting:`task_ignore_result`
+``CELERY_TASK_PUBLISH_RETRY``          :setting:`task_publish_retry`
+``CELERY_TASK_PUBLISH_RETRY_POLICY``   :setting:`task_publish_retry_policy`
+``CELERY_QUEUES``                      :setting:`task_queues`
+``CELERY_ROUTES``                      :setting:`task_routes`
+``CELERY_SEND_TASK_ERROR_EMAILS``      :setting:`task_send_error_emails`
+``CELERY_SEND_TASK_SENT_EVENT``        :setting:`task_send_sent_event`
+``CELERY_TASK_SERIALIZER``             :setting:`task_serializer`
+``CELERYD_TASK_SOFT_TIME_LIMIT``       :setting:`task_soft_time_limit`
+``CELERYD_TASK_TIME_LIMIT``            :setting:`task_time_limit`
+``CELERY_TRACK_STARTED``               :setting:`task_track_started`
+``CELERY_DISABLE_RATE_LIMITS``         :setting:`worker_disable_rate_limits`
+``CELERY_ENABLE_REMOTE_CONTROL``       :setting:`worker_enable_remote_control`
+``CELERYD_SEND_EVENTS``                :setting:`worker_send_task_events`
+=====================================  ==========================================================
+
+You can see a full table of the changes in :ref:`conf-old-settings-map`.
+
 Django: Autodiscover no longer takes arguments.
 -----------------------------------------------
+
+Celery's Django support will instead automatically find your installed apps,
+which means app configurations will work.
 
 # e436454d02dcbba4f4410868ad109c54047c2c15
 
