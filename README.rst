@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-:Version: 4.0.0b1 (0today8)
+:Version: 4.0.0rc1 (0today8)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
@@ -284,9 +284,6 @@ Transports and Backends
     for using memcached as a result backend.
 
 :celery[cassandra]:
-    for using Apache Cassandra as a result backend with pycassa driver.
-
-:celery[new_cassandra]:
     for using Apache Cassandra as a result backend with DataStax driver.
 
 :celery[couchdb]:

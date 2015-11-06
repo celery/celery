@@ -34,6 +34,139 @@ It should contain all you need to run a basic Celery set-up.
 
     task_annotations = {'tasks.add': {'rate_limit': '10/s'}}
 
+
+.. _conf-old-settings-map:
+
+New lowercase settings
+======================
+
+Version 4.0 introduced new lower case settings and setting organization.
+
+The major difference between previous versions, apart from the lower case
+names, are the renaming of some prefixes, like ``celerybeat_`` to ``beat_``,
+``celeryd_`` to ``worker_``, and most of the top level ``celery_`` settings
+have been moved into a new  ``task_`` prefix.
+
+Celery will still be able to read old configuration files, so there is no
+rush in moving to the new settings format.
+
+=====================================  ==============================================
+**Setting name**                       **Replace with**
+=====================================  ==============================================
+``CELERY_ACCEPT_CONTENT``              :setting:`accept_content`
+``ADMINS``                             :setting:`admins`
+``CELERY_ENABLE_UTC``                  :setting:`enable_utc`
+``CELERY_IMPORTS``                     :setting:`imports`
+``CELERY_INCLUDE``                     :setting:`include`
+``SERVER_EMAIL``                       :setting:`server_email`
+``CELERY_TIMEZONE``                    :setting:`timezone`
+``CELERYBEAT_MAX_LOOP_INTERVAL``       :setting:`beat_max_loop_interval`
+``CELERYBEAT_SCHEDULE``                :setting:`beat_schedule`
+``CELERYBEAT_SCHEDULER``               :setting:`beat_scheduler`
+``CELERYBEAT_SCHEDULE_FILENAME``       :setting:`beat_schedule_filename`
+``CELERYBEAT_SYNC_EVERY``              :setting:`beat_sync_every`
+``BROKER_URL``                         :setting:`broker_url`
+``BROKER_TRANSPORT``                   :setting:`broker_transport`
+``BROKER_TRANSPORT_OPTIONS``           :setting:`broker_transport_options`
+``BROKER_CONNECTION_TIMEOUT``          :setting:`broker_connection_timeout`
+``BROKER_CONNECTION_RETRY``            :setting:`broker_connection_retry`
+``BROKER_CONNECTION_MAX_RETRIES``      :setting:`broker_connection_max_retries`
+``BROKER_FAILOVER_STRATEGY``           :setting:`broker_failover_strategy`
+``BROKER_HEARTBEAT``                   :setting:`broker_heartbeat`
+``BROKER_LOGIN_METHOD``                :setting:`broker_login_method`
+``BROKER_POOL_LIMIT``                  :setting:`broker_pool_limit`
+``BROKER_USE_SSL``                     :setting:`broker_use_ssl`
+``CELERY_CACHE_BACKEND``               :setting:`cache_backend`
+``CELERY_CACHE_BACKEND_OPTIONS``       :setting:`cache_backend_options`
+``CASSANDRA_COLUMN_FAMILY``            :setting:`cassandra_table`
+``CASSANDRA_ENTRY_TTL``                :setting:`cassandra_entry_ttl`
+``CASSANDRA_KEYSPACE``                 :setting:`cassandra_keyspace`
+``CASSANDRA_PORT``                     :setting:`cassandra_port`
+``CASSANDRA_READ_CONSISTENCY``         :setting:`cassandra_read_consistency`
+``CASSANDRA_SERVERS``                  :setting:`cassandra_servers`
+``CASSANDRA_WRITE_CONSISTENCY``        :setting:`cassandra_write_consistency`
+``CELERY_COUCHBASE_BACKEND_SETTINGS``  :setting:`couchbase_backend_settings`
+``EMAIL_HOST``                         :setting:`email_host`
+``EMAIL_HOST_USER``                    :setting:`email_host_user`
+``EMAIL_HOST_PASSWORD``                :setting:`email_host_password`
+``EMAIL_PORT``                         :setting:`email_port`
+``EMAIL_TIMEOUT``                      :setting:`email_timeout`
+``EMAIL_USE_SSL``                      :setting:`email_use_ssl`
+``EMAIL_USE_TLS``                      :setting:`email_use_tls`
+``CELERY_MONGODB_BACKEND_SETTINGS``    :setting:`mongodb_backend_settings`
+``CELERY_EVENT_QUEUE_EXPIRES``         :setting:`event_queue_expires`
+``CELERY_EVENT_QUEUE_TTL``             :setting:`event_queue_ttl`
+``CELERY_EVENT_SERIALIZER``            :setting:`event_serializer`
+``CELERY_REDIS_DB``                    :setting:`redis_db`
+``CELERY_REDIS_HOST``                  :setting:`redis_host`
+``CELERY_REDIS_MAX_CONNECTIONS``       :setting:`redis_max_connections`
+``CELERY_REDIS_PASSWORD``              :setting:`redis_password`
+``CELERY_REDIS_PORT``                  :setting:`redis_port`
+``CELERY_RESULT_BACKEND``              :setting:`result_backend`
+``CELERY_MAX_CACHED_RESULTS``          :setting:`result_cache_max`
+``CELERY_MESSAGE_COMPRESSION``         :setting:`result_compression`
+``CELERY_RESULT_EXCHANGE``             :setting:`result_exchange`
+``CELERY_RESULT_EXCHANGE_TYPE``        :setting:`result_exchange_type`
+``CELERY_TASK_RESULT_EXPIRES``         :setting:`result_expires`
+``CELERY_RESULT_PERSISTENT``           :setting:`result_persistent`
+``CELERY_RESULT_SERIALIZER``           :setting:`result_serializer`
+``CELERY_RESULT_DBURI``                :setting:`sqlalchemy_dburi`
+``CELERY_RESULT_ENGINE_OPTIONS``       :setting:`sqlalchemy_engine_options`
+``-*-_DB_SHORT_LIVED_SESSIONS``        :setting:`sqlalchemy_short_lived_sessions`
+``CELERY_RESULT_DB_TABLE_NAMES``       :setting:`sqlalchemy_db_names`
+``CELERY_SECURITY_CERTIFICATE``        :setting:`security_certificate`
+``CELERY_SECURITY_CERT_STORE``         :setting:`security_cert_store`
+``CELERY_SECURITY_KEY``                :setting:`security_key`
+``CELERY_ACKS_LATE``                   :setting:`task_acks_late`
+``CELERY_ALWAYS_EAGER``                :setting:`task_always_eager`
+``CELERY_ANNOTATIONS``                 :setting:`task_annotations`
+``CELERY_MESSAGE_COMPRESSION``         :setting:`task_compression`
+``CELERY_CREATE_MISSING_QUEUES``       :setting:`task_create_missing_queues`
+``CELERY_DEFAULT_DELIVERY_MODE``       :setting:`task_default_delivery_mode`
+``CELERY_DEFAULT_EXCHANGE``            :setting:`task_default_exchange`
+``CELERY_DEFAULT_EXCHANGE_TYPE``       :setting:`task_default_exchange_type`
+``CELERY_DEFAULT_QUEUE``               :setting:`task_default_queue`
+``CELERY_DEFAULT_RATE_LIMIT``          :setting:`task_default_rate_limit`
+``CELERY_DEFAULT_ROUTING_KEY``         :setting:`task_default_routing_key`
+``-"-_EAGER_PROPAGATES_EXCEPTIONS``    :setting:`task_eager_propagates`
+``CELERY_IGNORE_RESULT``               :setting:`task_ignore_result`
+``CELERY_TASK_PUBLISH_RETRY``          :setting:`task_publish_retry`
+``CELERY_TASK_PUBLISH_RETRY_POLICY``   :setting:`task_publish_retry_policy`
+``CELERY_QUEUES``                      :setting:`task_queues`
+``CELERY_ROUTES``                      :setting:`task_routes`
+``CELERY_SEND_TASK_ERROR_EMAILS``      :setting:`task_send_error_emails`
+``CELERY_SEND_TASK_SENT_EVENT``        :setting:`task_send_sent_event`
+``CELERY_TASK_SERIALIZER``             :setting:`task_serializer`
+``CELERYD_TASK_SOFT_TIME_LIMIT``       :setting:`task_soft_time_limit`
+``CELERYD_TASK_TIME_LIMIT``            :setting:`task_time_limit`
+``CELERY_TRACK_STARTED``               :setting:`task_track_started`
+``CELERYD_AGENT``                      :setting:`worker_agent`
+``CELERYD_AUTOSCALER``                 :setting:`worker_autoscaler`
+``CELERYD_AUTORELAODER``               :setting:`worker_autoreloader`
+``CELERYD_CONCURRENCY``                :setting:`worker_concurrency`
+``CELERYD_CONSUMER``                   :setting:`worker_consumer`
+``CELERY_WORKER_DIRECT``               :setting:`worker_direct`
+``CELERY_DISABLE_RATE_LIMITS``         :setting:`worker_disable_rate_limits`
+``CELERY_ENABLE_REMOTE_CONTROL``       :setting:`worker_enable_remote_control`
+``CELERYD_FORCE_EXECV``                :setting:`worker_force_execv`
+``CELERYD_HIJACK_ROOT_LOGGER``         :setting:`worker_hijack_root_logger`
+``CELERYD_LOG_COLOR``                  :setting:`worker_log_color`
+``CELERYD_LOG_FORMAT``                 :setting:`worker_log_format`
+``CELERYD_WORKER_LOST_WAIT``           :setting:`worker_lost_wait`
+``CELERYD_MAX_TASKS_PER_CHILD``        :setting:`worker_max_tasks_per_child`
+``CELERYD_POOL``                       :setting:`worker_pool`
+``CELERYD_POOL_PUTLOCKS``              :setting:`worker_pool_putlocks`
+``CELERYD_POOL_RESTARTS``              :setting:`worker_pool_restarts`
+``CELERYD_PREFETCH_MULTIPLIER``        :setting:`worker_prefetch_multiplier`
+``CELERYD_REDIRECT_STDOUTS``           :setting:`worker_redirect_stdouts`
+``CELERYD_REDIRECT_STDOUTS_LEVEL``     :setting:`worker_redirect_stdouts_level`
+``CELERYD_SEND_EVENTS``                :setting:`worker_send_task_events`
+``CELERYD_STATE_DB``                   :setting:`worker_state_db`
+``CELERYD_TASK_LOG_FORMAT``            :setting:`worker_task_log_format`
+``CELERYD_TIMER``                      :setting:`worker_timer`
+``CELERYD_TIMER_PRECISION``            :setting:`worker_timer_precision`
+=====================================  ==============================================
+
 Configuration Directives
 ========================
 
@@ -223,10 +356,10 @@ is already evaluated.
 That is, tasks will be executed locally instead of being sent to
 the queue.
 
-.. setting:: task_eager_propagates_exceptions
+.. setting:: task_eager_propagates
 
-task_eager_propagates_exceptions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+task_eager_propagates
+~~~~~~~~~~~~~~~~~~~~~
 
 If this is :const:`True`, eagerly executed tasks (applied by `task.apply()`,
 or when the :setting:`task_always_eager` setting is enabled), will
@@ -374,9 +507,9 @@ Can be one of the following:
     Use `MongoDB`_ to store the results.
     See :ref:`conf-mongodb-result-backend`.
 
-* new_cassandra
-    Use `Cassandra`_ to store the results, using newer database driver than _cassandra_.
-    See :ref:`conf-new_cassandra-result-backend`.
+* cassandra
+    Use `Cassandra`_ to store the results.
+    See :ref:`conf-cassandra-result-backend`.
 
 * ironcache
     Use `IronCache`_ to store the results.
@@ -692,6 +825,16 @@ redis_max_connections
 Maximum number of connections available in the Redis connection
 pool used for sending and retrieving results.
 
+.. setting:: redis_socket_timeout
+
+redis_socket_timeout
+~~~~~~~~~~~~~~~~~~~~
+
+Socket timeout for connections to Redis from the result backend
+in seconds (int/float)
+
+Default is 5 seconds.
+
 .. _conf-mongodb-result-backend:
 
 MongoDB backend settings
@@ -742,10 +885,10 @@ Example configuration
         'taskmeta_collection': 'my_taskmeta_collection',
     }
 
-.. _conf-new_cassandra-result-backend:
+.. _conf-cassandra-result-backend:
 
-new_cassandra backend settings
-------------------------------
+cassandra backend settings
+--------------------------
 
 .. note::
 
@@ -786,14 +929,14 @@ The keyspace in which to store the results. e.g.::
 
     cassandra_keyspace = 'tasks_keyspace'
 
-.. setting:: cassandra_column_family
+.. setting:: cassandra_table
 
-cassandra_column_family
-~~~~~~~~~~~~~~~~~~~~~~~
+cassandra_table
+~~~~~~~~~~~~~~~
 
 The table (column family) in which to store the results. e.g.::
 
-    cassandra_column_family = 'tasks'
+    cassandra_table = 'tasks'
 
 .. setting:: cassandra_read_consistency
 
@@ -826,7 +969,7 @@ Example configuration
 
     cassandra_servers = ['localhost']
     cassandra_keyspace = 'celery'
-    cassandra_column_family = 'task_results'
+    cassandra_table = 'tasks'
     cassandra_read_consistency = 'ONE'
     cassandra_write_consistency = 'ONE'
     cassandra_entry_ttl = 86400
@@ -1775,10 +1918,10 @@ george@vandelay.com and kramer@vandelay.com:
 Events
 ------
 
-.. setting:: worker_send_events
+.. setting:: worker_send_task_events
 
-worker_send_events
-~~~~~~~~~~~~~~~~~~
+worker_send_task_events
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Send task-related events so that tasks can be monitored using tools like
 `flower`.  Sets the default value for the workers :option:`-E` argument.

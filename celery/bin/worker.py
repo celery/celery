@@ -242,7 +242,7 @@ class worker(Command):
             Option('--scheduler', dest='scheduler_cls'),
             Option('-S', '--statedb',
                    default=conf.worker_state_db, dest='state_db'),
-            Option('-E', '--events', default=conf.worker_send_events,
+            Option('-E', '--events', default=conf.worker_send_task_events,
                    action='store_true', dest='send_events'),
             Option('--time-limit', type='float', dest='task_time_limit',
                    default=conf.task_time_limit),

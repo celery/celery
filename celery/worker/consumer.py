@@ -32,9 +32,10 @@ from kombu.utils.encoding import safe_repr, bytes_t
 from kombu.utils.limits import TokenBucket
 
 from celery import bootsteps
+from celery import signals
 from celery.app.trace import build_tracer
 from celery.canvas import signature
-from celery.exceptions import InvalidTaskError
+from celery.exceptions import InvalidTaskError, NotRegistered
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
@@ -434,14 +435,26 @@ class Consumer(object):
     def on_unknown_message(self, body, message):
         warn(UNKNOWN_FORMAT, self._message_report(body, message))
         message.reject_log_error(logger, self.connection_errors)
+        signals.task_rejected.send(sender=self, message=message, exc=None)
 
     def on_unknown_task(self, body, message, exc):
         error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
+        id_, name = message.headers['id'], message.headers['task']
         message.reject_log_error(logger, self.connection_errors)
+        self.app.backend.mark_as_failure(id_, NotRegistered(name))
+        if self.event_dispatcher:
+            self.event_dispatcher.send(
+                'task-failed', uuid=id_,
+                exception='NotRegistered({0!r})'.format(name),
+            )
+        signals.task_unknown.send(
+            sender=self, message=message, exc=exc, name=name, id=id_,
+        )
 
     def on_invalid_task(self, body, message, exc):
         error(INVALID_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
         message.reject_log_error(logger, self.connection_errors)
+        signals.task_rejected.send(sender=self, message=message, exc=exc)
 
     def update_strategies(self):
         loader = self.app.loader
@@ -458,7 +471,6 @@ class Consumer(object):
         callbacks = self.on_task_message
 
         def on_task_received(message):
-
             # payload will only be set for v1 protocol, since v2
             # will defer deserializing the message body to the pool.
             payload = None

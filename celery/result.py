@@ -122,7 +122,7 @@ class AsyncResult(ResultBase):
                                 reply=wait, timeout=timeout)
 
     def get(self, timeout=None, propagate=True, interval=0.5,
-            no_ack=True, follow_parents=True,
+            no_ack=True, follow_parents=True, callback=None,
             EXCEPTION_STATES=states.EXCEPTION_STATES,
             PROPAGATE_STATES=states.PROPAGATE_STATES):
         """Wait until task is ready, and return its result.
@@ -174,6 +174,8 @@ class AsyncResult(ResultBase):
             status = meta['status']
             if status in PROPAGATE_STATES and propagate:
                 raise meta['result']
+            if callback is not None:
+                callback(self.id, meta['result'])
             return meta['result']
     wait = get  # deprecated alias to :meth:`get`.
 

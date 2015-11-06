@@ -462,8 +462,8 @@ class test_apply_task(TasksCase):
         with self.assertRaises(KeyError):
             self.raising.apply(throw=True)
 
-    def test_apply_with_task_eager_propagates_exceptions(self):
-        self.app.conf.task_eager_propagates_exceptions = True
+    def test_apply_with_task_eager_propagates(self):
+        self.app.conf.task_eager_propagates = True
         with self.assertRaises(KeyError):
             self.raising.apply()
 

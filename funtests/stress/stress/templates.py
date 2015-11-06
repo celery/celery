@@ -57,7 +57,7 @@ class default(object):
     result_serializer = 'json'
     result_persistent = True
     result_expires = 300
-    result_cache_max = -1
+    result_cache_max = 100
     task_default_queue = CSTRESS_QUEUE
     task_queues = [
         Queue(CSTRESS_QUEUE,

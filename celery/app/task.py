@@ -667,7 +667,7 @@ class Task(object):
         :param args: positional arguments passed on to the task.
         :param kwargs: keyword arguments passed on to the task.
         :keyword throw: Re-raise task exceptions.  Defaults to
-                        the :setting:`task_eager_propagates_exceptions`
+                        the :setting:`task_eager_propagates`
                         setting.
 
         :rtype :class:`celery.result.EagerResult`:
@@ -684,8 +684,7 @@ class Task(object):
         kwargs = kwargs or {}
         task_id = options.get('task_id') or uuid()
         retries = options.get('retries', 0)
-        throw = app.either('task_eager_propagates_exceptions',
-                           options.pop('throw', None))
+        throw = app.either('task_eager_propagates', options.pop('throw', None))
 
         # Make sure we get the task instance, not class.
         task = app._tasks[self.name]

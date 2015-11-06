@@ -63,6 +63,16 @@ def add(x, y):
     return x + y
 
 
+@app.task(bind=True)
+def ids(self, i):
+    return (self.request.root_id, self.request.parent_id, i)
+
+
+@app.task(bind=True)
+def collect_ids(self, ids, i):
+    return ids, (self.request.root_id, self.request.parent_id, i)
+
+
 @app.task
 def xsum(x):
     return sum(x)

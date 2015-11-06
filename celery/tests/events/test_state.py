@@ -244,6 +244,8 @@ class test_Task(AppCase):
                     eta=1,
                     runtime=0.0001,
                     expires=1,
+                    parent_id='bdefc',
+                    root_id='dedfef',
                     foo=None,
                     exception=1,
                     received=time() - 10,

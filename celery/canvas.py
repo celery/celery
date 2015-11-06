@@ -216,13 +216,17 @@ class Signature(dict):
         return s
     partial = clone
 
-    def freeze(self, _id=None, group_id=None, chord=None, root_id=None):
+    def freeze(self, _id=None, group_id=None, chord=None,
+               root_id=None, parent_id=None):
         opts = self.options
         try:
             tid = opts['task_id']
         except KeyError:
             tid = opts['task_id'] = _id or uuid()
-        root_id = opts.setdefault('root_id', root_id)
+        if root_id:
+            opts['root_id'] = root_id
+        if parent_id:
+            opts['parent_id'] = parent_id
         if 'reply_to' not in opts:
             opts['reply_to'] = self.app.oid
         if group_id:
@@ -250,6 +254,9 @@ class Signature(dict):
 
     def set_immutable(self, immutable):
         self.immutable = immutable
+
+    def set_parent_id(self, parent_id):
+        self.parent_id = parent_id
 
     def apply_async(self, args=(), kwargs={}, route_name=None, **options):
         try:
@@ -362,6 +369,8 @@ class Signature(dict):
         except KeyError:
             return _partial(self.app.send_task, self['task'])
     id = _getitem_property('options.task_id')
+    parent_id = _getitem_property('options.parent_id')
+    root_id = _getitem_property('options.root_id')
     task = _getitem_property('task')
     args = _getitem_property('args')
     kwargs = _getitem_property('kwargs')
@@ -399,8 +408,8 @@ class chain(Signature):
             dict(self.options, **options) if options else self.options))
 
     def run(self, args=(), kwargs={}, group_id=None, chord=None,
-            task_id=None, link=None, link_error=None,
-            publisher=None, producer=None, root_id=None, app=None, **options):
+            task_id=None, link=None, link_error=None, publisher=None,
+            producer=None, root_id=None, parent_id=None, app=None, **options):
         app = app or self.app
         use_link = self._use_link
         args = (tuple(args) + tuple(self.args)
@@ -410,35 +419,28 @@ class chain(Signature):
             tasks, results = self._frozen
         else:
             tasks, results = self.prepare_steps(
-                args, self.tasks, root_id, link_error, app,
+                args, self.tasks, root_id, parent_id, link_error, app,
                 task_id, group_id, chord,
             )
 
         if results:
-            # make sure we can do a link() and link_error() on a chain object.
-            if self._use_link:
-                # old task protocol used link for chains, last is last.
-                if link:
-                    tasks[-1].set(link=link)
-                tasks[0].apply_async(**options)
-                return results[-1]
-            else:
-                # -- using chain message field means last task is first.
-                if link:
-                    tasks[0].set(link=link)
-                first_task = tasks.pop()
-                first_task.apply_async(chain=tasks, **options)
-                return results[0]
+            if link:
+                tasks[0].set(link=link)
+            first_task = tasks.pop()
+            first_task.apply_async(
+                chain=tasks if not use_link else None, **options)
+            return results[0]
 
-    def freeze(self, _id=None, group_id=None, chord=None, root_id=None):
+    def freeze(self, _id=None, group_id=None, chord=None,
+               root_id=None, parent_id=None):
         _, results = self._frozen = self.prepare_steps(
-            self.args, self.tasks, root_id, None,
+            self.args, self.tasks, root_id, parent_id, None,
             self.app, _id, group_id, chord, clone=False,
         )
         return results[-1]
 
     def prepare_steps(self, args, tasks,
-                      root_id=None, link_error=None, app=None,
+                      root_id=None, parent_id=None, link_error=None, app=None,
                       last_task_id=None, group_id=None, chord_body=None,
                       clone=True, from_dict=Signature.from_dict):
         app = app or self.app
@@ -452,17 +454,16 @@ class chain(Signature):
             use_link = False
         steps = deque(tasks)
 
-        steps_pop = steps.popleft if use_link else steps.pop
-        steps_extend = steps.extendleft if use_link else steps.extend
-        extend_order = reversed if use_link else noop
+        steps_pop = steps.pop
+        steps_extend = steps.extend
 
-        next_step = prev_task = prev_res = None
+        next_step = prev_task = prev_prev_task = None
+        prev_res = prev_prev_res = None
         tasks, results = [], []
         i = 0
         while steps:
             task = steps_pop()
-            last_task = not steps if use_link else not i
-            first_task = not i if use_link else not steps
+            is_first_task, is_last_task = not steps, not i
 
             if not isinstance(task, abstract.CallableSignature):
                 task = from_dict(task, app=app)
@@ -471,30 +472,27 @@ class chain(Signature):
 
             # first task gets partial args from chain
             if clone:
-                task = task.clone(args) if not i else task.clone()
-            elif first_task:
+                task = task.clone(args) if is_first_task else task.clone()
+            elif is_first_task:
                 task.args = tuple(args) + tuple(task.args)
 
             if isinstance(task, chain):
                 # splice the chain
-                steps_extend(extend_order(task.tasks))
+                steps_extend(task.tasks)
                 continue
-            elif isinstance(task, group):
-                if (steps if use_link else prev_task):
-                    # automatically upgrade group(...) | s to chord(group, s)
-                    try:
-                        next_step = steps_pop() if use_link else prev_task
-                        # for chords we freeze by pretending it's a normal
-                        # signature instead of a group.
-                        res = Signature.freeze(next_step, root_id=root_id)
-                        task = chord(
-                            task, body=next_step,
-                            task_id=res.task_id, root_id=root_id,
-                        )
-                    except IndexError:
-                        pass  # no callback, so keep as group.
 
-            if last_task:
+            if isinstance(task, group) and prev_task:
+                # automatically upgrade group(...) | s to chord(group, s)
+                # for chords we freeze by pretending it's a normal
+                # signature instead of a group.
+                tasks.pop()
+                results.pop()
+                prev_res = prev_prev_res
+                task = chord(
+                    task, body=prev_task,
+                    task_id=res.task_id, root_id=root_id, app=app,
+                )
+            if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
                 # in the chain.  If the chord is part of a chord/group
                 # then that chord/group must synchronize based on the
@@ -506,17 +504,21 @@ class chain(Signature):
                 )
             else:
                 res = task.freeze(root_id=root_id)
-            root_id = res.id if root_id is None else root_id
+
             i += 1
 
             if prev_task:
+                prev_task.set_parent_id(task.id)
                 if use_link:
                     # link previous task to this task.
-                    prev_task.link(task)
-                    if not res.parent:
-                        res.parent = prev_res
-                else:
+                    task.link(prev_task)
+                    if not res.parent and prev_res:
+                        prev_res.parent = res.parent
+                elif prev_res:
                     prev_res.parent = res
+
+            if is_first_task and parent_id is not None:
+                task.set_parent_id(parent_id)
 
             if link_error:
                 task.set(link_error=link_error)
@@ -524,8 +526,14 @@ class chain(Signature):
             tasks.append(task)
             results.append(res)
 
-            prev_task, prev_res = task, res
+            prev_prev_task, prev_task, prev_prev_res, prev_res = (
+                prev_task, task, prev_res, res,
+            )
 
+        if root_id is None and tasks:
+            root_id = tasks[-1].id
+            for task in reversed(tasks):
+                task.options['root_id'] = root_id
         return tasks, results
 
     def apply(self, args=(), kwargs={}, **options):
@@ -644,13 +652,16 @@ class chunks(Signature):
         return cls(task, it, n, app=app)()
 
 
-def _maybe_group(tasks):
+def _maybe_group(tasks, app):
+    if isinstance(tasks, dict):
+        tasks = signature(tasks, app=app)
+
     if isinstance(tasks, group):
-        tasks = list(tasks.tasks)
+        tasks = tasks.tasks
     elif isinstance(tasks, abstract.CallableSignature):
         tasks = [tasks]
     else:
-        tasks = [signature(t) for t in regen(tasks)]
+        tasks = [signature(t, app=app) for t in regen(tasks)]
     return tasks
 
 
@@ -659,8 +670,9 @@ class group(Signature):
     tasks = _getitem_property('kwargs.tasks')
 
     def __init__(self, *tasks, **options):
+        app = options.get('app')
         if len(tasks) == 1:
-            tasks = _maybe_group(tasks[0])
+            tasks = _maybe_group(tasks[0], app)
         Signature.__init__(
             self, 'celery.group', (), {'tasks': tasks}, **options
         )
@@ -671,6 +683,9 @@ class group(Signature):
         return _upgrade(
             d, group(d['kwargs']['tasks'], app=app, **d['options']),
         )
+
+    def __len__(self):
+        return len(self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app, dict=dict,
                   CallableSignature=abstract.CallableSignature,
@@ -686,7 +701,7 @@ class group(Signature):
                     task = from_dict(task, app=app)
                 if isinstance(task, group):
                     # needs yield_from :(
-                    unroll = task._prepared(
+                    unroll = task_prepared(
                         task.tasks, partial_args, group_id, root_id, app,
                     )
                     for taskN, resN in unroll:
@@ -712,6 +727,10 @@ class group(Signature):
         options['group_id'] = group_id = (
             options.pop('task_id', uuid()))
         return options, group_id, options.get('root_id')
+
+    def set_parent_id(self, parent_id):
+        for task in self.tasks:
+            task.set_parent_id(parent_id)
 
     def apply_async(self, args=(), kwargs=None, add_to_parent=True,
                     producer=None, **options):
@@ -767,7 +786,7 @@ class group(Signature):
     def __call__(self, *partial_args, **options):
         return self.apply_async(partial_args, **options)
 
-    def _freeze_unroll(self, new_tasks, group_id, chord, root_id):
+    def _freeze_unroll(self, new_tasks, group_id, chord, root_id, parent_id):
         stack = deque(self.tasks)
         while stack:
             task = maybe_signature(stack.popleft(), app=self._app).clone()
@@ -776,9 +795,11 @@ class group(Signature):
             else:
                 new_tasks.append(task)
                 yield task.freeze(group_id=group_id,
-                                  chord=chord, root_id=root_id)
+                                  chord=chord, root_id=root_id,
+                                  parent_id=parent_id)
 
-    def freeze(self, _id=None, group_id=None, chord=None, root_id=None):
+    def freeze(self, _id=None, group_id=None, chord=None,
+               root_id=None, parent_id=None):
         opts = self.options
         try:
             gid = opts['task_id']
@@ -789,11 +810,12 @@ class group(Signature):
         if chord:
             opts['chord'] = chord
         root_id = opts.setdefault('root_id', root_id)
+        parent_id = opts.setdefault('parent_id', parent_id)
         new_tasks = []
         # Need to unroll subgroups early so that chord gets the
         # right result instance for chord_unlock etc.
         results = list(self._freeze_unroll(
-            new_tasks, group_id, chord, root_id,
+            new_tasks, group_id, chord, root_id, parent_id,
         ))
         if isinstance(self.tasks, MutableSequence):
             self.tasks[:] = new_tasks
@@ -829,16 +851,29 @@ class group(Signature):
 class chord(Signature):
 
     def __init__(self, header, body=None, task='celery.chord',
-                 args=(), kwargs={}, **options):
+                 args=(), kwargs={}, app=None, **options):
         Signature.__init__(
             self, task, args,
-            dict(kwargs, header=_maybe_group(header),
+            dict(kwargs, header=_maybe_group(header, app),
                  body=maybe_signature(body, app=self._app)), **options
         )
         self.subtask_type = 'chord'
 
-    def freeze(self, *args, **kwargs):
-        return self.body.freeze(*args, **kwargs)
+    def freeze(self, _id=None, group_id=None, chord=None,
+               root_id=None, parent_id=None):
+        if not isinstance(self.tasks, group):
+            self.tasks = group(self.tasks)
+        self.tasks.freeze(parent_id=parent_id, root_id=root_id)
+        self.id = self.tasks.id
+        return self.body.freeze(_id, parent_id=self.id, root_id=root_id)
+
+    def set_parent_id(self, parent_id):
+        tasks = self.tasks
+        if isinstance(tasks, group):
+            tasks = tasks.tasks
+        for task in tasks:
+            task.set_parent_id(parent_id)
+        self.parent_id = parent_id
 
     @classmethod
     def from_dict(self, d, app=None):
@@ -858,7 +893,11 @@ class chord(Signature):
     def _get_app(self, body=None):
         app = self._app
         if app is None:
-            app = self.tasks[0]._app
+            try:
+                tasks = self.tasks.tasks  # is a group
+            except AttributeError:
+                tasks = self.tasks
+            app = tasks[0]._app
             if app is None and body is not None:
                 app = body._app
         return app if app is not None else current_app
@@ -900,16 +939,15 @@ class chord(Signature):
         return sum(self._traverse_tasks(self.tasks, 1))
 
     def run(self, header, body, partial_args, app=None, interval=None,
-            countdown=1, max_retries=None, propagate=None, eager=False,
+            countdown=1, max_retries=None, eager=False,
             task_id=None, **options):
         app = app or self._get_app(body)
-        propagate = (app.conf.chord_propagates
-                     if propagate is None else propagate)
         group_id = uuid()
         root_id = body.options.get('root_id')
         body.chord_size = self.__length_hint__()
         options = dict(self.options, **options) if options else self.options
         if options:
+            options.pop('task_id', None)
             body.options.update(options)
 
         results = header.freeze(
@@ -920,7 +958,7 @@ class chord(Signature):
             header, partial_args, group_id, body,
             interval=interval, countdown=countdown,
             options=options, max_retries=max_retries,
-            propagate=propagate, result=results)
+            result=results)
         bodyres.parent = parent
         return bodyres
 

@@ -358,7 +358,7 @@ class WorkController(object):
         self.logfile = logfile
 
         self.concurrency = either('worker_concurrency', concurrency)
-        self.send_events = either('worker_send_events', send_events)
+        self.send_events = either('worker_send_task_events', send_events)
         self.pool_cls = either('worker_pool', pool_cls)
         self.consumer_cls = either('worker_consumer', consumer_cls)
         self.timer_cls = either('worker_timer', timer_cls)

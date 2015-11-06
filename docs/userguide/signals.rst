@@ -300,6 +300,53 @@ Provides arguments:
 * expired
   Set to :const:`True` if the task expired.
 
+.. signal:: task_unknown
+
+task_unknown
+~~~~~~~~~~~~
+
+Dispatched when a worker receives a message for a task that is not registered.
+
+Sender is the worker :class:`~celery.worker.consumer.Consumer`.
+
+Provides arguments:
+
+* name
+
+  Name of task not found in registry.
+
+* id
+
+  The task id found in the message.
+
+* message
+
+    Raw message object.
+
+* exc
+
+    The error that occurred.
+
+.. signal:: task_rejected
+
+task_rejected
+~~~~~~~~~~~~~
+
+Dispatched when a worker receives an unknown type of message to one of its
+task queues.
+
+Sender is the worker :class:`~celery.worker.consumer.Consumer`.
+
+Provides arguments:
+
+* message
+
+  Raw message object.
+
+* exc
+
+    The error that occurred (if any).
+
 App Signals
 -----------
 

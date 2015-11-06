@@ -360,8 +360,8 @@ class AMQP(object):
             ),
             sent_event={
                 'uuid': task_id,
-                'root': root_id,
-                'parent': parent_id,
+                'root_id': root_id,
+                'parent_id': parent_id,
                 'name': name,
                 'args': argsrepr,
                 'kwargs': kwargsrepr,

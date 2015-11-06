@@ -359,7 +359,7 @@ class BaseBackend(object):
     def add_to_chord(self, chord_id, result):
         raise NotImplementedError('Backend does not support add_to_chord')
 
-    def on_chord_part_return(self, request, state, result, propagate=False):
+    def on_chord_part_return(self, request, state, result, **kwargs):
         pass
 
     def fallback_chord_unlock(self, group_id, body, result=None,
@@ -553,12 +553,10 @@ class KeyValueStoreBackend(BaseBackend):
 
         return header(*partial_args, task_id=group_id, **fixed_options or {})
 
-    def on_chord_part_return(self, request, state, result, propagate=None):
+    def on_chord_part_return(self, request, state, result, **kwargs):
         if not self.implements_incr:
             return
         app = self.app
-        if propagate is None:
-            propagate = app.conf.chord_propagates
         gid = request.group
         if not gid:
             return
@@ -593,7 +591,7 @@ class KeyValueStoreBackend(BaseBackend):
             j = deps.join_native if deps.supports_native_join else deps.join
             try:
                 with allow_join_result():
-                    ret = j(timeout=3.0, propagate=propagate)
+                    ret = j(timeout=3.0, propagate=True)
             except Exception as exc:
                 try:
                     culprit = next(deps._failed_join_report())

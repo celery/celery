@@ -306,10 +306,11 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         I = Info(state, exc)
         R = I.handle_error_state(task, request, eager=eager)
         if call_errbacks:
+            root_id = request.root_id or uuid
             group(
                 [signature(errback, app=app)
                  for errback in request.errbacks or []], app=app,
-            ).apply_async((uuid,))
+            ).apply_async((uuid,), parent_id=uuid, root_id=root_id)
         return I, R, I.state, I.retval
 
     def trace_task(uuid, args, kwargs, request=None):
@@ -336,6 +337,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             push_task(task)
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
+            root_id = task_request.root_id or uuid
             push_request(task_request)
             try:
                 # -*- PRE -*-
@@ -363,8 +365,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I.handle_ignore(task, task_request)
                 except Retry as exc:
                     I, R, state, retval = on_error(
-                        task_request, exc, uuid, RETRY, call_errbacks=False,
-                    )
+                        task_request, exc, uuid, RETRY, call_errbacks=False)
                 except Exception as exc:
                     I, R, state, retval = on_error(task_request, exc, uuid)
                 except BaseException as exc:
@@ -389,17 +390,27 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                     else:
                                         sigs.append(sig)
                                 for group_ in groups:
-                                    group.apply_async((retval,))
+                                    group.apply_async(
+                                        (retval,),
+                                        parent_id=uuid, root_id=root_id,
+                                    )
                                 if sigs:
-                                    group(sigs).apply_async((retval,))
+                                    group(sigs).apply_async(
+                                        (retval,),
+                                        parent_id=uuid, root_id=root_id,
+                                    )
                             else:
-                                signature(callbacks[0], app=app).delay(retval)
+                                signature(callbacks[0], app=app).apply_async(
+                                    (retval,), parent_id=uuid, root_id=root_id,
+                                )
 
                         # execute first task in chain
-                        chain = task.request.chain
+                        chain = task_request.chain
                         if chain:
                             signature(chain.pop(), app=app).apply_async(
-                                    (retval,), chain=chain)
+                                (retval,), chain=chain,
+                                parent_id=uuid, root_id=root_id,
+                            )
                         mark_as_done(
                             uuid, retval, task_request, publish_result,
                         )
