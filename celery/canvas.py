@@ -27,7 +27,7 @@ from celery.local import try_import
 from celery.result import GroupResult
 from celery.utils import abstract
 from celery.utils.functional import (
-    maybe_list, is_list, noop, regen, chunks as _chunks,
+    maybe_list, is_list, regen, chunks as _chunks,
 )
 from celery.utils.text import truncate
 
@@ -457,7 +457,7 @@ class chain(Signature):
         steps_pop = steps.pop
         steps_extend = steps.extend
 
-        next_step = prev_task = prev_prev_task = None
+        prev_task = None
         prev_res = prev_prev_res = None
         tasks, results = [], []
         i = 0
@@ -490,7 +490,7 @@ class chain(Signature):
                 prev_res = prev_prev_res
                 task = chord(
                     task, body=prev_task,
-                    task_id=res.task_id, root_id=root_id, app=app,
+                    task_id=prev_res.task_id, root_id=root_id, app=app,
                 )
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
@@ -526,8 +526,8 @@ class chain(Signature):
             tasks.append(task)
             results.append(res)
 
-            prev_prev_task, prev_task, prev_prev_res, prev_res = (
-                prev_task, task, prev_res, res,
+            prev_task, prev_prev_res, prev_res = (
+                task, prev_res, res,
             )
 
         if root_id is None and tasks:
@@ -701,7 +701,7 @@ class group(Signature):
                     task = from_dict(task, app=app)
                 if isinstance(task, group):
                     # needs yield_from :(
-                    unroll = task_prepared(
+                    unroll = task._prepared(
                         task.tasks, partial_args, group_id, root_id, app,
                     )
                     for taskN, resN in unroll:

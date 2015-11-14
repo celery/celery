@@ -309,6 +309,12 @@ def alive_threads():
 
 class Case(unittest.TestCase):
 
+    def patch(self, *path, **options):
+        manager = patch(".".join(path), **options)
+        patched = manager.start()
+        self.addCleanup(manager.stop)
+        return patched
+
     def assertWarns(self, expected_warning):
         return _AssertWarnsContext(expected_warning, self, None)
 
@@ -420,6 +426,8 @@ class AppCase(Case):
         self._threads_at_setup = self.threads_at_startup()
         from celery import _state
         from celery import result
+        self._prev_res_join_block = result.task_join_will_block
+        self._prev_state_join_block = _state.task_join_will_block
         result.task_join_will_block = \
             _state.task_join_will_block = lambda: False
         self._current_app = current_app()
@@ -446,12 +454,16 @@ class AppCase(Case):
             raise
 
     def _teardown_app(self):
+        from celery import _state
+        from celery import result
         from celery.utils.log import LoggingProxy
         assert sys.stdout
         assert sys.stderr
         assert sys.__stdout__
         assert sys.__stderr__
         this = self._get_test_name()
+        result.task_join_will_block = self._prev_res_join_block
+        _state.task_join_will_block = self._prev_state_join_block
         if isinstance(sys.stdout, (LoggingProxy, Mock)) or \
                 isinstance(sys.__stdout__, (LoggingProxy, Mock)):
             raise RuntimeError(CASE_LOG_REDIRECT_EFFECT.format(this, 'stdout'))
@@ -839,7 +851,49 @@ def skip_if_jython(fun):
     return _inner
 
 
-def task_message_from_sig(app, sig, utc=True):
+def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
+                errbacks=None, chain=None, shadow=None, utc=None, **options):
+    from celery import uuid
+    from kombu.serialization import dumps
+    id = id or uuid()
+    message = Mock(name='TaskMessage-{0}'.format(id))
+    message.headers = {
+        'id': id,
+        'task': name,
+        'shadow': shadow,
+    }
+    embed = {'callbacks': callbacks, 'errbacks': errbacks, 'chain': chain}
+    message.headers.update(options)
+    message.content_type, message.content_encoding, message.body = dumps(
+        (args, kwargs, embed), serializer='json',
+    )
+    message.payload = (args, kwargs, embed)
+    return message
+
+
+def TaskMessage1(name, id=None, args=(), kwargs={}, callbacks=None,
+                 errbacks=None, chain=None, **options):
+    from celery import uuid
+    from kombu.serialization import dumps
+    id = id or uuid()
+    message = Mock(name='TaskMessage-{0}'.format(id))
+    message.headers = {}
+    message.payload = {
+        'task': name,
+        'id': id,
+        'args': args,
+        'kwargs': kwargs,
+        'callbacks': callbacks,
+        'errbacks': errbacks,
+    }
+    message.payload.update(options)
+    message.content_type, message.content_encoding, message.body = dumps(
+        message.payload,
+    )
+    return message
+
+
+def task_message_from_sig(app, sig, utc=True, TaskMessage=TaskMessage):
     sig.freeze()
     callbacks = sig.options.pop('link', None)
     errbacks = sig.options.pop('link_error', None)
@@ -862,6 +916,8 @@ def task_message_from_sig(app, sig, utc=True):
         errbacks=[dict(s) for s in errbacks] if errbacks else None,
         eta=eta,
         expires=expires,
+        utc=utc,
+        **sig.options
     )
 
 
@@ -878,22 +934,3 @@ def restore_logging():
         sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__ = outs
         root.level = level
         root.handlers[:] = handlers
-
-
-def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
-                errbacks=None, chain=None, **options):
-    from celery import uuid
-    from kombu.serialization import dumps
-    id = id or uuid()
-    message = Mock(name='TaskMessage-{0}'.format(id))
-    message.headers = {
-        'id': id,
-        'task': name,
-    }
-    embed = {'callbacks': callbacks, 'errbacks': errbacks, 'chain': chain}
-    message.headers.update(options)
-    message.content_type, message.content_encoding, message.body = dumps(
-        (args, kwargs, embed), serializer='json',
-    )
-    message.payload = (args, kwargs, embed)
-    return message

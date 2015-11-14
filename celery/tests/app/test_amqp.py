@@ -1,10 +1,15 @@
 from __future__ import absolute_import
 
+from datetime import datetime, timedelta
+
 from kombu import Exchange, Queue
 
-from celery.app.amqp import Queues
+from celery import uuid
+from celery.app.amqp import Queues, utf8dict
 from celery.five import keys
-from celery.tests.case import AppCase
+from celery.utils.timeutils import to_utc
+
+from celery.tests.case import AppCase, Mock
 
 
 class test_TaskConsumer(AppCase):
@@ -146,6 +151,12 @@ class test_Queues(AppCase):
             'x-max-priority': 3,
         })
 
+        q1 = Queue('moo', queue_arguments=None)
+        qs1.add(q1)
+        self.assertEqual(qs1['moo'].queue_arguments, {
+            'x-max-priority': 10,
+        })
+
         qs2 = Queues(ha_policy='all', max_priority=5)
         qs2.add('bar')
         self.assertEqual(qs2['bar'].queue_arguments, {
@@ -169,3 +180,122 @@ class test_Queues(AppCase):
         self.assertEqual(qs3['xyx3'].queue_arguments, {
             'x-max-priority': 7,
         })
+
+
+class test_AMQP(AppCase):
+
+    def setup(self):
+        self.simple_message = self.app.amqp.as_task_v2(
+            uuid(), 'foo', create_sent_event=True,
+        )
+
+    def test_Queues__with_ha_policy(self):
+        x = self.app.amqp.Queues({}, ha_policy='all')
+        self.assertEqual(x.ha_policy, 'all')
+
+    def test_Queues__with_max_priority(self):
+        x = self.app.amqp.Queues({}, max_priority=23)
+        self.assertEqual(x.max_priority, 23)
+
+    def test_send_task_message__no_kwargs(self):
+        self.app.amqp.send_task_message(Mock(), 'foo', self.simple_message)
+
+    def test_send_task_message__properties(self):
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message, foo=1, retry=False,
+        )
+        self.assertEqual(prod.publish.call_args[1]['foo'], 1)
+
+    def test_send_task_message__headers(self):
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message, headers={'x1x': 'y2x'},
+            retry=False,
+        )
+        self.assertEqual(prod.publish.call_args[1]['headers']['x1x'], 'y2x')
+
+    def test_send_task_message__queue_string(self):
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message, queue='foo', retry=False,
+        )
+        kwargs = prod.publish.call_args[1]
+        self.assertEqual(kwargs['routing_key'], 'foo')
+        self.assertEqual(kwargs['exchange'], 'foo')
+
+    def test_send_event_exchange_string(self):
+        evd = Mock(name="evd")
+        self.app.amqp.send_task_message(
+            Mock(), 'foo', self.simple_message, retry=False,
+            exchange='xyz', routing_key='xyb',
+            event_dispatcher=evd,
+        )
+        self.assertTrue(evd.publish.called)
+        event = evd.publish.call_args[0][1]
+        self.assertEqual(event['routing_key'], 'xyb')
+        self.assertEqual(event['exchange'], 'xyz')
+
+    def test_send_task_message__with_delivery_mode(self):
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message, delivery_mode=33, retry=False,
+        )
+        self.assertEqual(prod.publish.call_args[1]['delivery_mode'], 33)
+
+    def test_routes(self):
+        r1 = self.app.amqp.routes
+        r2 = self.app.amqp.routes
+        self.assertIs(r1, r2)
+
+
+class test_as_task_v2(AppCase):
+
+    def test_raises_if_args_is_not_tuple(self):
+        with self.assertRaises(TypeError):
+            self.app.amqp.as_task_v2(uuid(), 'foo', args='123')
+
+    def test_raises_if_kwargs_is_not_mapping(self):
+        with self.assertRaises(TypeError):
+            self.app.amqp.as_task_v2(uuid(), 'foo', kwargs=(1, 2, 3))
+
+    def test_countdown_to_eta(self):
+        now = to_utc(datetime.utcnow()).astimezone(self.app.timezone)
+        m = self.app.amqp.as_task_v2(
+            uuid(), 'foo', countdown=10, now=now,
+        )
+        self.assertEqual(
+            m.headers['eta'],
+            (now + timedelta(seconds=10)).isoformat(),
+        )
+
+    def test_expires_to_datetime(self):
+        now = to_utc(datetime.utcnow()).astimezone(self.app.timezone)
+        m = self.app.amqp.as_task_v2(
+            uuid(), 'foo', expires=30, now=now,
+        )
+        self.assertEqual(
+            m.headers['expires'],
+            (now + timedelta(seconds=30)).isoformat(),
+        )
+
+    def test_callbacks_errbacks_chord(self):
+
+        @self.app.task
+        def t(i):
+            pass
+
+        m = self.app.amqp.as_task_v2(
+            uuid(), 'foo',
+            callbacks=[t.s(1), t.s(2)],
+            errbacks=[t.s(3), t.s(4)],
+            chord=t.s(5),
+        )
+        _, _, embed = m.body
+        self.assertListEqual(
+            embed['callbacks'], [utf8dict(t.s(1)), utf8dict(t.s(2))],
+        )
+        self.assertListEqual(
+            embed['errbacks'], [utf8dict(t.s(3)), utf8dict(t.s(4))],
+        )
+        self.assertEqual(embed['chord'], utf8dict(t.s(5)))

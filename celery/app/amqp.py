@@ -26,7 +26,7 @@ from celery.five import items, string_t
 from celery.local import try_import
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
-from celery.utils.timeutils import to_utc
+from celery.utils.timeutils import maybe_make_aware, to_utc
 
 from . import routes as _routes
 
@@ -300,7 +300,6 @@ class AMQP(object):
                    shadow=None, chain=None, now=None, timezone=None):
         args = args or ()
         kwargs = kwargs or {}
-        utc = self.utc
         if not isinstance(args, (list, tuple)):
             raise TypeError('task args must be a list or tuple')
         if not isinstance(kwargs, Mapping):
@@ -308,22 +307,22 @@ class AMQP(object):
         if countdown:  # convert countdown to ETA
             now = now or self.app.now()
             timezone = timezone or self.app.timezone
-            eta = now + timedelta(seconds=countdown)
-            if utc:
-                eta = to_utc(eta).astimezone(timezone)
+            eta = maybe_make_aware(
+                now + timedelta(seconds=countdown), tz=timezone,
+            )
         if isinstance(expires, numbers.Real):
             now = now or self.app.now()
             timezone = timezone or self.app.timezone
-            expires = now + timedelta(seconds=expires)
-            if utc:
-                expires = to_utc(expires).astimezone(timezone)
+            expires = maybe_make_aware(
+                now + timedelta(seconds=expires), tz=timezone,
+            )
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
         argsrepr = saferepr(args)
         kwargsrepr = saferepr(kwargs)
 
-        if JSON_NEEDS_UNICODE_KEYS:
+        if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
             if callbacks:
                 callbacks = [utf8dict(callback) for callback in callbacks]
             if errbacks:
@@ -400,7 +399,7 @@ class AMQP(object):
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
-        if JSON_NEEDS_UNICODE_KEYS:
+        if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
             if callbacks:
                 callbacks = [utf8dict(callback) for callback in callbacks]
             if errbacks:
@@ -462,12 +461,13 @@ class AMQP(object):
         default_serializer = self.app.conf.task_serializer
         default_compressor = self.app.conf.result_compression
 
-        def publish_task(producer, name, message,
-                         exchange=None, routing_key=None, queue=None,
-                         event_dispatcher=None, retry=None, retry_policy=None,
-                         serializer=None, delivery_mode=None,
-                         compression=None, declare=None,
-                         headers=None, **kwargs):
+        def send_task_message(producer, name, message,
+                              exchange=None, routing_key=None, queue=None,
+                              event_dispatcher=None,
+                              retry=None, retry_policy=None,
+                              serializer=None, delivery_mode=None,
+                              compression=None, declare=None,
+                              headers=None, **kwargs):
             retry = default_retry if retry is None else retry
             headers2, properties, body, sent_event = message
             if headers:
@@ -527,7 +527,7 @@ class AMQP(object):
             if sent_event:
                 evd = event_dispatcher or default_evd
                 exname = exchange or self.exchange
-                if isinstance(name, Exchange):
+                if isinstance(exname, Exchange):
                     exname = exname.name
                 sent_event.update({
                     'queue': qname,
@@ -537,7 +537,7 @@ class AMQP(object):
                 evd.publish('task-sent', sent_event,
                             self, retry=retry, retry_policy=retry_policy)
             return ret
-        return publish_task
+        return send_task_message
 
     @cached_property
     def default_queue(self):

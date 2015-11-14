@@ -110,13 +110,13 @@ class BaseBackend(object):
 
     def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
-        return self.store_result(task_id, meta, status=states.STARTED)
+        return self.store_result(task_id, meta, states.STARTED)
 
     def mark_as_done(self, task_id, result,
                      request=None, store_result=True, state=states.SUCCESS):
         """Mark task as successfully executed."""
         if store_result:
-            self.store_result(task_id, result, status=state, request=request)
+            self.store_result(task_id, result, state, request=request)
         if request and request.chord:
             self.on_chord_part_return(request, state, result)
 
@@ -125,7 +125,7 @@ class BaseBackend(object):
                         state=states.FAILURE):
         """Mark task as executed with failure. Stores the exception."""
         if store_result:
-            self.store_result(task_id, exc, status=state,
+            self.store_result(task_id, exc, state,
                               traceback=traceback, request=request)
         if request and request.chord:
             self.on_chord_part_return(request, state, exc)
@@ -134,8 +134,8 @@ class BaseBackend(object):
                         request=None, store_result=True, state=states.REVOKED):
         exc = TaskRevokedError(reason)
         if store_result:
-            self.store_result(task_id, exc,
-                              status=state, traceback=None, request=request)
+            self.store_result(task_id, exc, state,
+                              traceback=None, request=request)
         if request and request.chord:
             self.on_chord_part_return(request, state, exc)
 
@@ -143,7 +143,7 @@ class BaseBackend(object):
                       request=None, store_result=True, state=states.RETRY):
         """Mark task as being retries. Stores the current
         exception (if any)."""
-        return self.store_result(task_id, exc, status=state,
+        return self.store_result(task_id, exc, state,
                                  traceback=traceback, request=request)
 
     def chord_error_from_stack(self, callback, exc=None):

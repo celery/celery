@@ -81,6 +81,7 @@ class Request(object):
             'on_ack', 'body', 'hostname', 'eventer', 'connection_errors',
             'task', 'eta', 'expires', 'request_dict', 'on_reject', 'utc',
             'content_type', 'content_encoding', 'argsrepr', 'kwargsrepr',
+            '_decoded',
             '__weakref__', '__dict__',
         )
 
@@ -99,6 +100,7 @@ class Request(object):
         self.message = message
         self.body = body
         self.utc = utc
+        self._decoded = decoded
         if decoded:
             self.content_type = self.content_encoding = None
         else:
@@ -111,7 +113,7 @@ class Request(object):
         self.root_id = headers.get('root_id')
         self.parent_id = headers.get('parent_id')
         if 'shadow' in headers:
-            self.name = headers['shadow']
+            self.name = headers['shadow'] or self.name
         if 'timelimit' in headers:
             self.time_limits = headers['timelimit']
         self.argsrepr = headers.get('argsrepr', '')
@@ -460,7 +462,7 @@ class Request(object):
 
     @cached_property
     def _payload(self):
-        return self.message.payload
+        return self.body if self._decoded else self.message.payload
 
     @cached_property
     def chord(self):

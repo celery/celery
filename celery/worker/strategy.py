@@ -50,7 +50,13 @@ def proto1_to_proto2(message, body):
         body['group'] = body['taskset']
     except KeyError:
         pass
-    return (args, kwargs), body, True, body.get('utc', True)
+    embed = {
+        'callbacks': body.get('callbacks'),
+        'errbacks': body.get('errbacks'),
+        'chord': body.get('chord'),
+        'chain': None,
+    }
+    return (args, kwargs, embed), body, True, body.get('utc', True)
 
 
 def default(task, app, consumer,

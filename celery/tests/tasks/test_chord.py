@@ -79,6 +79,15 @@ class test_unlock_chord_task(ChordCase):
             # did not retry
             self.assertFalse(retry.call_count)
 
+    def test_deps_ready_fails(self):
+        GroupResult = Mock(name='GroupResult')
+        GroupResult.return_value.ready.side_effect = KeyError('foo')
+        unlock_chord = self.app.tasks['celery.chord_unlock']
+
+        with self.assertRaises(KeyError):
+            unlock_chord('groupid', Mock(), result=[Mock()],
+                         GroupResult=GroupResult, result_from_tuple=Mock())
+
     def test_callback_fails(self):
 
         class AlwaysReady(TSR):

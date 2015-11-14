@@ -210,6 +210,10 @@ def noop(*args, **kwargs):
     pass
 
 
+def pass1(arg, *args, **kwargs):
+    return arg
+
+
 def evaluate_promises(it):
     for value in it:
         if isinstance(value, promise):

@@ -41,6 +41,17 @@ class test__main__(AppCase):
                 mpc.assert_called_with()
                 main.assert_called_with()
 
+    def test_main__multi(self):
+        with patch('celery.__main__.maybe_patch_concurrency') as mpc:
+            with patch('celery.bin.celery.main') as main:
+                prev, sys.argv = sys.argv, ['foo', 'multi']
+                try:
+                    __main__.main()
+                    self.assertFalse(mpc.called)
+                    main.assert_called_with()
+                finally:
+                    sys.argv = prev
+
 
 class test_Command(AppCase):
 

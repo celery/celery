@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from celery._state import _task_stack
 from celery.canvas import (
     Signature,
     chain,
@@ -210,6 +211,128 @@ class test_chain(CanvasCase):
             repr(x), '%s(2, 2) | %s(2)' % (self.add.name, self.add.name),
         )
 
+    def test_apply_async(self):
+        c = self.add.s(2, 2) | self.add.s(4) | self.add.s(8)
+        result = c.apply_async()
+        self.assertTrue(result.parent)
+        self.assertTrue(result.parent.parent)
+        self.assertIsNone(result.parent.parent.parent)
+
+    def test_group_to_chord__freeze_parent_id(self):
+        def using_freeze(c):
+            c.freeze(parent_id='foo', root_id='root')
+            return c._frozen[0]
+        self.assert_group_to_chord_parent_ids(using_freeze)
+
+    def assert_group_to_chord_parent_ids(self, freezefun):
+        c = (
+            self.add.s(5, 5) |
+            group([self.add.s(i, i) for i in range(5)], app=self.app) |
+            self.add.si(10, 10) |
+            self.add.si(20, 20) |
+            self.add.si(30, 30)
+        )
+        tasks = freezefun(c)
+        self.assertEqual(tasks[-1].parent_id, 'foo')
+        self.assertEqual(tasks[-1].root_id, 'root')
+        self.assertEqual(tasks[-2].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].root_id, 'root')
+        self.assertEqual(tasks[-2].body.parent_id, tasks[-2].tasks.id)
+        self.assertEqual(tasks[-2].body.parent_id, tasks[-2].id)
+        self.assertEqual(tasks[-2].body.root_id, 'root')
+        self.assertEqual(tasks[-2].tasks.tasks[0].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].tasks.tasks[0].root_id, 'root')
+        self.assertEqual(tasks[-2].tasks.tasks[1].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].tasks.tasks[1].root_id, 'root')
+        self.assertEqual(tasks[-2].tasks.tasks[2].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].tasks.tasks[2].root_id, 'root')
+        self.assertEqual(tasks[-2].tasks.tasks[3].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].tasks.tasks[3].root_id, 'root')
+        self.assertEqual(tasks[-2].tasks.tasks[4].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].tasks.tasks[4].root_id, 'root')
+        self.assertEqual(tasks[-3].parent_id, tasks[-2].body.id)
+        self.assertEqual(tasks[-3].root_id, 'root')
+        self.assertEqual(tasks[-4].parent_id, tasks[-3].id)
+        self.assertEqual(tasks[-4].root_id, 'root')
+
+    def test_group_to_chord(self):
+        c = (
+            self.add.s(5) |
+            group([self.add.s(i, i) for i in range(5)], app=self.app) |
+            self.add.s(10) |
+            self.add.s(20) |
+            self.add.s(30)
+        )
+        c._use_link = True
+        tasks, results = c.prepare_steps((), c.tasks)
+
+        self.assertEqual(tasks[-1].args[0], 5)
+        self.assertIsInstance(tasks[-2], chord)
+        self.assertEqual(len(tasks[-2].tasks), 5)
+        self.assertEqual(tasks[-2].parent_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].root_id, tasks[-1].id)
+        self.assertEqual(tasks[-2].body.args[0], 10)
+        self.assertEqual(tasks[-2].body.parent_id, tasks[-2].id)
+
+        self.assertEqual(tasks[-3].args[0], 20)
+        self.assertEqual(tasks[-3].root_id, tasks[-1].id)
+        self.assertEqual(tasks[-3].parent_id, tasks[-2].body.id)
+
+        self.assertEqual(tasks[-4].args[0], 30)
+        self.assertEqual(tasks[-4].parent_id, tasks[-3].id)
+        self.assertEqual(tasks[-4].root_id, tasks[-1].id)
+
+        self.assertTrue(tasks[-2].body.options['link'])
+        self.assertTrue(tasks[-2].body.options['link'][0].options['link'])
+
+        c2 = self.add.s(2, 2) | group(self.add.s(i, i) for i in range(10))
+        c2._use_link = True
+        tasks2, _ = c2.prepare_steps((), c2.tasks)
+        self.assertIsInstance(tasks2[0], group)
+
+    def test_group_to_chord__protocol_2(self):
+        c = (
+            group([self.add.s(i, i) for i in range(5)], app=self.app) |
+            self.add.s(10) |
+            self.add.s(20) |
+            self.add.s(30)
+        )
+        c._use_link = False
+        tasks, _ = c.prepare_steps((), c.tasks)
+        self.assertIsInstance(tasks[-1], chord)
+
+        c2 = self.add.s(2, 2) | group(self.add.s(i, i) for i in range(10))
+        c2._use_link = False
+        tasks2, _ = c2.prepare_steps((), c2.tasks)
+        self.assertIsInstance(tasks2[0], group)
+
+    def test_apply_options(self):
+
+        class static(Signature):
+
+            def clone(self, *args, **kwargs):
+                return self
+
+        def s(*args, **kwargs):
+            return static(self.add, args, kwargs, type=self.add, app=self.app)
+
+        c = s(2, 2) | s(4, 4) | s(8, 8)
+        r1 = c.apply_async(task_id='some_id')
+        self.assertEqual(r1.id, 'some_id')
+
+        c.apply_async(group_id='some_group_id')
+        self.assertEqual(c.tasks[-1].options['group_id'], 'some_group_id')
+
+        c.apply_async(chord='some_chord_id')
+        self.assertEqual(c.tasks[-1].options['chord'], 'some_chord_id')
+
+        c.apply_async(link=[s(32)])
+        self.assertListEqual(c.tasks[-1].options['link'], [s(32)])
+
+        c.apply_async(link_error=[s('error')])
+        for task in c.tasks:
+            self.assertListEqual(task.options['link_error'], [s('error')])
+
     def test_reverse(self):
         x = self.add.s(2, 2) | self.add.s(2)
         self.assertIsInstance(signature(x), chain)
@@ -255,13 +378,12 @@ class test_chain(CanvasCase):
         self.assert_sent_with_ids(tasks[-3], tasks[-1].id, tasks[-2].id)
         self.assert_sent_with_ids(tasks[-4], tasks[-1].id, tasks[-3].id)
 
-
     def assert_sent_with_ids(self, task, rid, pid, **options):
         self.app.amqp.send_task_message = Mock(name='send_task_message')
         self.app.backend = Mock()
         self.app.producer_or_acquire = ContextMock()
 
-        res = task.apply_async(**options)
+        task.apply_async(**options)
         self.assertTrue(self.app.amqp.send_task_message.called)
         message = self.app.amqp.send_task_message.call_args[0][2]
         self.assertEqual(message.headers['parent_id'], pid)
@@ -305,6 +427,38 @@ class test_group(CanvasCase):
         self.assertListEqual(
             _maybe_group(self.add.s(2, 2), self.app), [self.add.s(2, 2)],
         )
+
+    def test_apply(self):
+        x = group([self.add.s(4, 4), self.add.s(8, 8)])
+        res = x.apply()
+        self.assertEqual(res.get(), [8, 16])
+
+    def test_apply_async(self):
+        x = group([self.add.s(4, 4), self.add.s(8, 8)])
+        x.apply_async()
+
+    def test_apply_empty(self):
+        x = group(app=self.app)
+        x.apply()
+        res = x.apply_async()
+        self.assertFalse(res)
+        self.assertFalse(res.results)
+
+    def test_apply_async_with_parent(self):
+        _task_stack.push(self.add)
+        try:
+            self.add.push_request(called_directly=False)
+            try:
+                assert not self.add.request.children
+                x = group([self.add.s(4, 4), self.add.s(8, 8)])
+                res = x()
+                self.assertTrue(self.add.request.children)
+                self.assertIn(res, self.add.request.children)
+                self.assertEqual(len(self.add.request.children), 1)
+            finally:
+                self.add.pop_request()
+        finally:
+            _task_stack.pop()
 
     def test_from_dict(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])

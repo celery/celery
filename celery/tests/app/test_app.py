@@ -24,6 +24,7 @@ from celery.tests.case import (
     CELERY_TEST_CONFIG,
     AppCase,
     Mock,
+    Case,
     depends_on_current_app,
     mask_modules,
     patch,
@@ -73,6 +74,19 @@ class test_module(AppCase):
 
     def test_bugreport(self):
         self.assertTrue(_app.bugreport(app=self.app))
+
+
+class test_task_join_will_block(Case):
+
+    def test_task_join_will_block(self):
+        prev, _state._task_join_will_block = _state._task_join_will_block, 0
+        try:
+            self.assertEqual(_state._task_join_will_block, 0)
+            _state._set_task_join_will_block(True)
+            print(_state.task_join_will_block)
+            self.assertTrue(_state.task_join_will_block())
+        finally:
+            _state._task_join_will_block = prev
 
 
 class test_App(AppCase):
