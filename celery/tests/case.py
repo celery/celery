@@ -34,7 +34,7 @@ except ImportError:
 from nose import SkipTest
 from kombu import Queue
 from kombu.log import NullHandler
-from kombu.utils import nested, symbol_by_name
+from kombu.utils import symbol_by_name
 
 from celery import Celery
 from celery.app import current_app
@@ -54,7 +54,7 @@ __all__ = [
     'skip_if_environ', 'todo', 'skip', 'skip_if',
     'skip_unless', 'mask_modules', 'override_stdouts', 'mock_module',
     'replace_module_value', 'sys_platform', 'reset_modules',
-    'patch_modules', 'mock_context', 'mock_open', 'patch_many',
+    'patch_modules', 'mock_context', 'mock_open',
     'assert_signal_called', 'skip_if_pypy',
     'skip_if_jython', 'task_message_from_sig', 'restore_logging',
 ]
@@ -314,6 +314,11 @@ class Case(unittest.TestCase):
         patched = manager.start()
         self.addCleanup(manager.stop)
         return patched
+
+    def mock_modules(self, *modules):
+        manager = mock_module(*modules)
+        manager.__enter__()
+        self.addCleanup(partial(manager.__exit__, None, None, None))
 
     def assertWarns(self, expected_warning):
         return _AssertWarnsContext(expected_warning, self, None)
@@ -813,10 +818,6 @@ def mock_open(typ=WhateverIO, side_effect=None):
             val = context.__enter__.return_value = typ()
             val.__exit__ = Mock()
             yield val
-
-
-def patch_many(*targets):
-    return nested(*[patch(target) for target in targets])
 
 
 @contextmanager

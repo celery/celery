@@ -184,6 +184,22 @@ class test_DefaultLoader(AppCase):
             if prevconfig:
                 sys.modules[configname] = prevconfig
 
+    def test_read_configuration_ImportError(self):
+        sentinel = object()
+        prev, os.environ['CELERY_CONFIG_MODULE'] = (
+            os.environ.get('CELERY_CONFIG_MODULE', sentinel), 'daweqew.dweqw',
+        )
+        try:
+            l = default.Loader(app=self.app)
+            with self.assertRaises(ImportError):
+                l.read_configuration(fail_silently=False)
+            l.read_configuration(fail_silently=True)
+        finally:
+            if prev is not sentinel:
+                os.environ['CELERY_CONFIG_MODULE'] = prev
+            else:
+                os.environ.pop('CELERY_CONFIG_MODULE', None)
+
     def test_import_from_cwd(self):
         l = default.Loader(app=self.app)
         old_path = list(sys.path)

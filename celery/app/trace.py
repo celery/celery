@@ -390,12 +390,12 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                     else:
                                         sigs.append(sig)
                                 for group_ in groups:
-                                    group.apply_async(
+                                    group_.apply_async(
                                         (retval,),
                                         parent_id=uuid, root_id=root_id,
                                     )
                                 if sigs:
-                                    group(sigs).apply_async(
+                                    group(sigs, app=app).apply_async(
                                         (retval,),
                                         parent_id=uuid, root_id=root_id,
                                     )

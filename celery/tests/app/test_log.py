@@ -199,6 +199,7 @@ class test_default_logger(AppCase):
     def test_configure_logger(self):
         logger = self.app.log.get_default_logger()
         self.app.log._configure_logger(logger, sys.stderr, None, '', False)
+        self.app.log._configure_logger(None, sys.stderr, None, '', False)
         logger.handlers[:] = []
 
     def test_setup_logging_subsystem_colorize(self):

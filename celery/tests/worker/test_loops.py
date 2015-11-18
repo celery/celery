@@ -1,11 +1,14 @@
 from __future__ import absolute_import
 
+import errno
 import socket
 
 from kombu.async import Hub, READ, WRITE, ERR
 
 from celery.bootsteps import CLOSE, RUN
-from celery.exceptions import InvalidTaskError, WorkerShutdown, WorkerTerminate
+from celery.exceptions import (
+    InvalidTaskError, WorkerLostError, WorkerShutdown, WorkerTerminate,
+)
 from celery.five import Empty
 from celery.platforms import EX_FAILURE
 from celery.worker import state
@@ -128,6 +131,13 @@ class test_asynloop(AppCase):
         self.assertIn(
             _quick_drain, [p.fun for p in x.hub._ready],
         )
+
+    def test_pool_did_not_start_at_startup(self):
+        x = X(self.app)
+        x.obj.restart_count = 0
+        x.obj.pool.did_start_ok.return_value = False
+        with self.assertRaises(WorkerLostError):
+            asynloop(*x.args)
 
     def test_setup_heartbeat(self):
         x = X(self.app, heartbeat=10)
@@ -423,3 +433,26 @@ class test_synloop(AppCase):
         x = X(self.app)
         x.close_then_error(x.connection.drain_events)
         self.assertIsNone(synloop(*x.args))
+
+
+class test_quick_drain(AppCase):
+
+    def setup(self):
+        self.connection = Mock(name='connection')
+
+    def test_drain(self):
+        _quick_drain(self.connection, timeout=33.3)
+        self.connection.drain_events.assert_called_with(timeout=33.3)
+
+    def test_drain_error(self):
+        exc = KeyError()
+        exc.errno = 313
+        self.connection.drain_events.side_effect = exc
+        with self.assertRaises(KeyError):
+            _quick_drain(self.connection, timeout=33.3)
+
+    def test_drain_error_EAGAIN(self):
+        exc = KeyError()
+        exc.errno = errno.EAGAIN
+        self.connection.drain_events.side_effect = exc
+        _quick_drain(self.connection, timeout=33.3)

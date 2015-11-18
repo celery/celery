@@ -26,6 +26,11 @@ class test_Certificate(SecurityCase):
         raise SkipTest('cert expired')
         self.assertFalse(Certificate(CERT1).has_expired())
 
+    def test_has_expired_mock(self):
+        x = Certificate(CERT1)
+        x._cert = Mock(name='cert')
+        self.assertIs(x.has_expired(), x._cert.has_expired())
+
 
 class test_CertStore(SecurityCase):
 

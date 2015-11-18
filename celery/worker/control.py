@@ -52,20 +52,13 @@ def _find_requests_by_id(ids, requests):
 @Panel.register
 def query_task(state, ids, **kwargs):
     ids = maybe_list(ids)
-
-    def reqinfo(state, req):
-        return state, req.info()
-
-    reqs = {
+    return dict({
         req.id: ('reserved', req.info())
         for req in _find_requests_by_id(ids, worker_state.reserved_requests)
-    }
-    reqs.update({
+    }, **{
         req.id: ('active', req.info())
         for req in _find_requests_by_id(ids, worker_state.active_requests)
     })
-
-    return reqs
 
 
 @Panel.register
@@ -368,7 +361,6 @@ def active_queues(state):
 
 def _wanted_config_key(key):
     return (isinstance(key, string_t) and
-            key.isupper() and
             not key.startswith('__'))
 
 

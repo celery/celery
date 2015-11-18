@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 try:
     from billiard.util import register_after_fork
-except ImportError:
+except ImportError:  # pragma: no cover
     register_after_fork = None
 
 from sqlalchemy import create_engine
@@ -24,6 +24,7 @@ __all__ = ['SessionManager']
 
 
 class SessionManager(object):
+
     def __init__(self):
         self._engines = {}
         self._sessions = {}

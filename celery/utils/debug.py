@@ -31,7 +31,7 @@ UNITS = (
     (2 ** 30.0, 'GB'),
     (2 ** 20.0, 'MB'),
     (2 ** 10.0, 'kB'),
-    (0.0, '{0!d}b'),
+    (0.0, 'b'),
 )
 
 _process = None
@@ -78,7 +78,7 @@ def sample_mem():
     return current_rss
 
 
-def _memdump(samples=10):
+def _memdump(samples=10):  # pragma: no cover
     S = _mem_sample
     prev = list(S) if len(S) <= samples else sample(S, samples)
     _mem_sample[:] = []
@@ -88,7 +88,7 @@ def _memdump(samples=10):
     return prev, after_collect
 
 
-def memdump(samples=10, file=None):
+def memdump(samples=10, file=None):  # pragma: no cover
     """Dump memory statistics.
 
     Will print a sample of all RSS memory samples added by
@@ -151,7 +151,7 @@ def mem_rss():
         return humanbytes(p.get_memory_info().rss)
 
 
-def ps():
+def ps():  # pragma: no cover
     """Return the global :class:`psutil.Process` instance,
     or :const:`None` if :mod:`psutil` is not installed."""
     global _process

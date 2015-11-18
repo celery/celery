@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from kombu import Exchange
+from kombu import Exchange, Queue
 from kombu.utils.functional import maybe_evaluate
 
 from celery.app import routes
@@ -120,6 +120,12 @@ class test_lookup_route(RouteCase):
         x = Router(self.app, {}, self.app.amqp.queues)
         dest = x.expand_destination('foo')
         self.assertEqual(dest['queue'].name, 'foo')
+
+    def test_expand_destination__Queue(self):
+        queue = Queue('foo')
+        x = Router(self.app, {}, self.app.amqp.queues)
+        dest = x.expand_destination({'queue': queue})
+        self.assertIs(dest['queue'], queue)
 
     def test_lookup_paths_traversed(self):
         set_queues(

@@ -12,10 +12,8 @@ from kombu import Connection
 from kombu.common import QoS, ignore_errors
 from kombu.transport.base import Message
 
-from celery.app.defaults import DEFAULTS
 from celery.bootsteps import RUN, CLOSE, StartStopStep
 from celery.concurrency.base import BasePool
-from celery.datastructures import AttributeDict
 from celery.exceptions import (
     WorkerShutdown, WorkerTerminate, TaskRevokedError, InvalidTaskError,
 )
@@ -30,9 +28,7 @@ from celery.utils import worker_direct
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 
-from celery.tests.case import (
-    AppCase, Mock, SkipTest, TaskMessage, patch, restore_logging,
-)
+from celery.tests.case import AppCase, Mock, SkipTest, TaskMessage, patch
 
 
 def MockStep(step=None):
@@ -874,47 +870,6 @@ class test_WorkController(AppCase):
         self.assertTrue(create_pidlock.called)
         worker.stop()
         self.assertTrue(worker.pidlock.release.called)
-
-    @patch('celery.platforms.signals')
-    @patch('celery.platforms.set_mp_process_title')
-    def test_process_initializer(self, set_mp_process_title, _signals):
-        with restore_logging():
-            from celery import signals
-            from celery._state import _tls
-            from celery.concurrency.prefork import (
-                process_initializer, WORKER_SIGRESET, WORKER_SIGIGNORE,
-            )
-
-            def on_worker_process_init(**kwargs):
-                on_worker_process_init.called = True
-            on_worker_process_init.called = False
-            signals.worker_process_init.connect(on_worker_process_init)
-
-            def Loader(*args, **kwargs):
-                loader = Mock(*args, **kwargs)
-                loader.conf = {}
-                loader.override_backends = {}
-                return loader
-
-            with self.Celery(loader=Loader) as app:
-                app.conf = AttributeDict(DEFAULTS)
-                process_initializer(app, 'awesome.worker.com')
-                _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
-                _signals.reset.assert_any_call(*WORKER_SIGRESET)
-                self.assertTrue(app.loader.init_worker.call_count)
-                self.assertTrue(on_worker_process_init.called)
-                self.assertIs(_tls.current_app, app)
-                set_mp_process_title.assert_called_with(
-                    'celeryd', hostname='awesome.worker.com',
-                )
-
-                with patch('celery.app.trace.setup_worker_optimizations') as S:
-                    os.environ['FORKED_BY_MULTIPROCESSING'] = "1"
-                    try:
-                        process_initializer(app, 'luke.worker.com')
-                        S.assert_called_with(app, 'luke.worker.com')
-                    finally:
-                        os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
 
     def test_attrs(self):
         worker = self.worker

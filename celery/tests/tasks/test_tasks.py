@@ -6,13 +6,17 @@ from kombu import Queue
 
 from celery import Task
 
-from celery.exceptions import Retry
+from celery import group
+from celery.app.task import _reprtask
+from celery.exceptions import Ignore, Retry
 from celery.five import items, range, string_t
 from celery.result import EagerResult
 from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601
 
-from celery.tests.case import AppCase, depends_on_current_app, patch
+from celery.tests.case import (
+    AppCase, ContextMock, Mock, depends_on_current_app, patch,
+)
 
 
 def return_True(*args, **kwargs):
@@ -269,6 +273,20 @@ class test_tasks(TasksCase):
             pass
         self.assertIs(pickle.loads(pickle.dumps(xxx)), xxx.app.tasks[xxx.name])
 
+    @patch('celery.app.task.current_app')
+    @depends_on_current_app
+    def test_bind__no_app(self, current_app):
+        class XTask(Task):
+            _app = None
+        XTask._app = None
+        XTask.__bound__ = False
+        XTask.bind = Mock(name='bind')
+        self.assertIs(XTask.app, current_app)
+        XTask.bind.assert_called_with(current_app)
+
+    def test_reprtask__no_fmt(self):
+        self.assertTrue(_reprtask(self.mytask))
+
     def test_AsyncResult(self):
         task_id = uuid()
         result = self.retry_task.AsyncResult(task_id)
@@ -374,6 +392,47 @@ class test_tasks(TasksCase):
             self.assertFalse(presult.successful())
             self.mytask.backend.mark_as_done(presult.id, result=None)
             self.assertTrue(presult.successful())
+
+    def test_send_event(self):
+        mytask = self.mytask._get_current_object()
+        mytask.app.events = Mock(name='events')
+        mytask.app.events.attach_mock(ContextMock(), 'default_dispatcher')
+        mytask.request.id = 'fb'
+        mytask.send_event('task-foo', id=3122)
+        mytask.app.events.default_dispatcher().send.assert_called_with(
+            'task-foo', uuid='fb', id=3122,
+        )
+
+    def test_replace(self):
+        sig1 = Mock(name='sig1')
+        with self.assertRaises(Ignore):
+            self.mytask.replace(sig1)
+
+    def test_replace__group(self):
+        c = group([self.mytask.s()], app=self.app)
+        c.freeze = Mock(name='freeze')
+        c.delay = Mock(name='delay')
+        self.mytask.request.id = 'id'
+        self.mytask.request.group = 'group'
+        self.mytask.request.root_id = 'root_id',
+        with self.assertRaises(Ignore):
+            self.mytask.replace(c)
+
+    def test_send_error_email_enabled(self):
+        mytask = self.increment_counter._get_current_object()
+        mytask.send_error_emails = True
+        mytask.disable_error_emails = False
+        mytask.ErrorMail = Mock(name='ErrorMail')
+        context = Mock(name='context')
+        exc = Mock(name='context')
+        mytask.send_error_email(context, exc, foo=1)
+        mytask.ErrorMail.assert_called_with(mytask, foo=1)
+        mytask.ErrorMail().send.assert_called_with(context, exc)
+
+    def test_add_trail__no_trail(self):
+        mytask = self.increment_counter._get_current_object()
+        mytask.trail = False
+        mytask.add_trail('foo')
 
     def test_repr_v2_compat(self):
         self.mytask.__v2_compat__ = True

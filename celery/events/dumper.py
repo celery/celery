@@ -48,7 +48,7 @@ class Dumper(object):
         # need to flush so that output can be piped.
         try:
             self.out.flush()
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
             pass
 
     def on_event(self, ev):

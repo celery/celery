@@ -32,7 +32,7 @@ class _AbstractClass(object):
         ) or NotImplemented
 
 
-class CallableTask(_AbstractClass, Callable):
+class CallableTask(_AbstractClass, Callable):  # pragma: no cover
     __required_attributes__ = frozenset({
         'delay', 'apply_async', 'apply',
     })
@@ -54,7 +54,7 @@ class CallableTask(_AbstractClass, Callable):
         return cls._subclasshook_using(CallableTask, C)
 
 
-class CallableSignature(CallableTask):
+class CallableSignature(CallableTask):  # pragma: no cover
     __required_attributes__ = frozenset({
         'clone', 'freeze', 'set', 'link', 'link_error', '__or__',
     })

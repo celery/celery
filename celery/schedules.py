@@ -589,7 +589,10 @@ class crontab(schedule):
         return NotImplemented
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        res = self.__eq__(other)
+        if res is NotImplemented:
+            return True
+        return not res
 
 
 def maybe_schedule(s, relative=False, app=None):
@@ -691,12 +694,8 @@ class solar(schedule):
         self.method = self._methods[event]
         self.use_center = self._use_center_l[event]
 
-    def now(self):
-        return (self.nowfun or self.app.now)()
-
     def __reduce__(self):
-        return (self.__class__, (
-            self.event, self.lat, self.lon), None)
+        return self.__class__, (self.event, self.lat, self.lon)
 
     def __repr__(self):
         return '<solar: {0} at latitude {1}, longitude: {2}>'.format(
@@ -715,7 +714,7 @@ class solar(schedule):
                 self.ephem.Sun(),
                 start=last_run_at_utc, use_center=self.use_center,
             )
-        except self.ephem.CircumpolarError:
+        except self.ephem.CircumpolarError:  # pragma: no cover
             """Sun will not rise/set today. Check again tomorrow
             (specifically, after the next anti-transit)."""
             next_utc = (
@@ -750,4 +749,7 @@ class solar(schedule):
         return NotImplemented
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        res = self.__eq__(other)
+        if res is NotImplemented:
+            return True
+        return not res

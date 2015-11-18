@@ -41,6 +41,9 @@ class test_Consumer(AppCase):
         consumer.conninfo = consumer.connection
         return consumer
 
+    def test_repr(self):
+        self.assertTrue(repr(self.get_consumer()))
+
     def test_taskbuckets_defaultdict(self):
         c = self.get_consumer()
         self.assertIsNone(c.task_buckets['fooxasdwx.wewe'])
@@ -67,6 +70,44 @@ class test_Consumer(AppCase):
             self.app.conf.broker_connection_timeout = 33.33
             self.get_consumer()
             self.assertIsNone(self.app.conf.broker_connection_timeout)
+
+    def test_limit_moved_to_pool(self):
+        with patch('celery.worker.consumer.task_reserved') as reserved:
+            c = self.get_consumer()
+            c.on_task_request = Mock(name='on_task_request')
+            request = Mock(name='request')
+            c._limit_move_to_pool(request)
+            reserved.assert_called_with(request)
+            c.on_task_request.assert_called_with(request)
+
+    def test_update_prefetch_count(self):
+        c = self.get_consumer()
+        c._update_qos_eventually = Mock(name='update_qos')
+        c.initial_prefetch_count = None
+        c.pool.num_processes = None
+        c.prefetch_multiplier = 10
+        self.assertIsNone(c._update_prefetch_count(1))
+        c.initial_prefetch_count = 10
+        c.pool.num_processes = 10
+        c._update_prefetch_count(8)
+        c._update_qos_eventually.assert_called_with(8)
+        self.assertEqual(c.initial_prefetch_count, 10 * 10)
+
+    def test_flush_events(self):
+        c = self.get_consumer()
+        c.event_dispatcher = None
+        c._flush_events()
+        c.event_dispatcher = Mock(name='evd')
+        c._flush_events()
+        c.event_dispatcher.flush.assert_called_with()
+
+    def test_on_send_event_buffered(self):
+        c = self.get_consumer()
+        c.hub = None
+        c.on_send_event_buffered()
+        c.hub = Mock(name='hub')
+        c.on_send_event_buffered()
+        c.hub._ready.add.assert_called_with(c._flush_events)
 
     def test_limit_task(self):
         c = self.get_consumer()
@@ -459,6 +500,14 @@ class test_Gossip(AppCase):
         g.on_node_lost.assert_called_with(worker)
         with self.assertRaises(KeyError):
             state.workers['foo']
+
+    def test_on_message__task(self):
+        c = self.Consumer()
+        g = Gossip(c)
+        self.assertTrue(g.enabled)
+        message = Mock(name='message')
+        message.delivery_info = {'routing_key': 'task.failed'}
+        g.on_message(Mock(name='prepare'), message)
 
     def test_on_message(self):
         c = self.Consumer()

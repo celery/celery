@@ -12,7 +12,7 @@ from celery.fixups.django import (
 )
 
 from celery.tests.case import (
-    AppCase, Mock, patch, patch_many, patch_modules, mask_modules,
+    AppCase, Mock, patch, patch_modules, mask_modules,
 )
 
 
@@ -63,15 +63,16 @@ class test_DjangoFixup(FixupCase):
 
     def test_install(self):
         self.app.loader = Mock()
+        self.cw = self.patch('os.getcwd')
+        self.p = self.patch('sys.path')
+        self.sigs = self.patch('celery.fixups.django.signals')
         with self.fixup_context(self.app) as (f, _, _):
-            with patch_many('os.getcwd', 'sys.path',
-                            'celery.fixups.django.signals') as (cw, p, sigs):
-                cw.return_value = '/opt/vandelay'
-                f.install()
-                sigs.worker_init.connect.assert_called_with(f.on_worker_init)
-                self.assertEqual(self.app.loader.now, f.now)
-                self.assertEqual(self.app.loader.mail_admins, f.mail_admins)
-                p.append.assert_called_with('/opt/vandelay')
+            self.cw.return_value = '/opt/vandelay'
+            f.install()
+            self.sigs.worker_init.connect.assert_called_with(f.on_worker_init)
+            self.assertEqual(self.app.loader.now, f.now)
+            self.assertEqual(self.app.loader.mail_admins, f.mail_admins)
+            self.p.append.assert_called_with('/opt/vandelay')
 
     def test_now(self):
         with self.fixup_context(self.app) as (f, _, _):
@@ -114,7 +115,7 @@ class test_DjangoWorkerFixup(FixupCase):
         self.app.conf = {'CELERY_DB_REUSE_MAX': None}
         self.app.loader = Mock()
         with self.fixup_context(self.app) as (f, _, _):
-            with patch_many('celery.fixups.django.signals') as (sigs,):
+            with patch('celery.fixups.django.signals') as sigs:
                 f.install()
                 sigs.beat_embedded_init.connect.assert_called_with(
                     f.close_database,

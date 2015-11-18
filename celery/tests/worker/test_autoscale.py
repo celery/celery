@@ -134,7 +134,7 @@ class test_Autoscaler(AppCase):
         x.scale_up(3)
         x._last_action = monotonic() - 10000
         x.pool.shrink_raises_exception = True
-        x.scale_down(1)
+        x._shrink(1)
 
     @patch('celery.worker.autoscale.debug')
     def test_shrink_raises_ValueError(self, debug):

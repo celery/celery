@@ -25,7 +25,7 @@ from .session import SessionManager
 try:
     from sqlalchemy.exc import DatabaseError, InvalidRequestError
     from sqlalchemy.orm.exc import StaleDataError
-except ImportError:
+except ImportError:  # pragma: no cover
     raise ImproperlyConfigured(
         'The database result backend requires SQLAlchemy to be installed.'
         'See http://pypi.python.org/pypi/SQLAlchemy')

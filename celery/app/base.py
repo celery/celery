@@ -19,7 +19,7 @@ from functools import wraps
 from amqp import starpromise
 try:
     from billiard.util import register_after_fork
-except ImportError:
+except ImportError:  # pragma: no cover
     register_after_fork = None
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
@@ -771,7 +771,6 @@ class Celery(object):
     def select_queues(self, queues=None):
         """Select a subset of queues, where queues must be a list of queue
         names to keep."""
-
         return self.amqp.queues.select(queues)
 
     def either(self, default_key, *values):

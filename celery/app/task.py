@@ -477,7 +477,7 @@ class Task(object):
         """
         try:
             check_arguments = self.__header__
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
             pass
         else:
             check_arguments(*(args or ()), **(kwargs or {}))

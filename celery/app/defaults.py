@@ -335,7 +335,7 @@ SETTING_KEYS = set(keys(DEFAULTS))
 _OLD_SETTING_KEYS = set(keys(_TO_NEW_KEY))
 
 
-def find_deprecated_settings(source):
+def find_deprecated_settings(source):  # pragma: no cover
     from celery.utils import warn_deprecated
     for name, opt in flatten(NAMESPACES):
         if (opt.deprecate_by or opt.remove_by) and getattr(source, name, None):

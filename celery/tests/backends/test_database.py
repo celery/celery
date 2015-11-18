@@ -10,8 +10,10 @@ from celery.utils import uuid
 
 from celery.tests.case import (
     AppCase,
+    Mock,
     SkipTest,
     depends_on_current_app,
+    patch,
     skip_if_pypy,
     skip_if_jython,
 )
@@ -21,7 +23,11 @@ try:
 except ImportError:
     DatabaseBackend = Task = TaskSet = retry = None  # noqa
 else:
-    from celery.backends.database import DatabaseBackend, retry
+    from celery.backends.database import (
+        DatabaseBackend, retry, session_cleanup,
+    )
+    from celery.backends.database import session
+    from celery.backends.database.session import SessionManager
     from celery.backends.database.models import Task, TaskSet
 
 
@@ -29,6 +35,23 @@ class SomeClass(object):
 
     def __init__(self, data):
         self.data = data
+
+
+class test_session_cleanup(AppCase):
+
+    def test_context(self):
+        session = Mock(name='session')
+        with session_cleanup(session):
+            pass
+        session.close.assert_called_with()
+
+    def test_context_raises(self):
+        session = Mock(name='session')
+        with self.assertRaises(KeyError):
+            with session_cleanup(session):
+                raise KeyError()
+        session.rollback.assert_called_with()
+        session.close.assert_called_with()
 
 
 class test_DatabaseBackend(AppCase):
@@ -188,3 +211,49 @@ class test_DatabaseBackend(AppCase):
 
     def test_TaskSet__repr__(self):
         self.assertIn('foo', repr(TaskSet('foo', None)))
+
+
+class test_SessionManager(AppCase):
+
+    def test_after_fork(self):
+        s = SessionManager()
+        self.assertFalse(s.forked)
+        s._after_fork()
+        self.assertTrue(s.forked)
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_get_engine_forked(self, create_engine):
+        s = SessionManager()
+        s._after_fork()
+        engine = s.get_engine('dburi', foo=1)
+        create_engine.assert_called_with('dburi', foo=1)
+        self.assertIs(engine, create_engine())
+        engine2 = s.get_engine('dburi', foo=1)
+        self.assertIs(engine2, engine)
+
+    @patch('celery.backends.database.session.sessionmaker')
+    def test_create_session_forked(self, sessionmaker):
+        s = SessionManager()
+        s.get_engine = Mock(name='get_engine')
+        s._after_fork()
+        engine, session = s.create_session('dburi', short_lived_sessions=True)
+        sessionmaker.assert_called_with(bind=s.get_engine())
+        self.assertIs(session, sessionmaker())
+        sessionmaker.return_value = Mock(name='new')
+        engine, session2 = s.create_session('dburi', short_lived_sessions=True)
+        sessionmaker.assert_called_with(bind=s.get_engine())
+        self.assertIsNot(session2, session)
+        sessionmaker.return_value = Mock(name='new2')
+        engine, session3 = s.create_session(
+            'dburi', short_lived_sessions=False)
+        sessionmaker.assert_called_with(bind=s.get_engine())
+        self.assertIs(session3, session2)
+
+    def test_coverage_madness(self):
+        prev, session.register_after_fork = (
+            session.register_after_fork, None,
+        )
+        try:
+            SessionManager()
+        finally:
+            session.register_after_fork = prev

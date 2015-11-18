@@ -18,7 +18,6 @@ from celery.worker import control
 from celery.worker import state as worker_state
 from celery.worker.request import Request
 from celery.worker.state import revoked
-from celery.worker.control import Panel
 from celery.worker.pidbox import Pidbox, gPidbox
 
 from celery.tests.case import AppCase, Mock, TaskMessage, call, patch
@@ -132,7 +131,7 @@ class test_ControlPanel(AppCase):
     def create_panel(self, **kwargs):
         return self.app.control.mailbox.Node(hostname=hostname,
                                              state=self.create_state(**kwargs),
-                                             handlers=Panel.data)
+                                             handlers=control.Panel.data)
 
     def test_enable_events(self):
         consumer = Consumer(self.app)
@@ -168,21 +167,36 @@ class test_ControlPanel(AppCase):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
         panel.state.app.clock.value = 313
+        panel.state.hostname = 'elaine@vandelay.com'
         worker_state.revoked.add('revoked1')
         try:
-            x = panel.handle('hello', {'from_node': 'george@vandelay.com'})
-            self.assertIn('revoked1', x['revoked'])
+            self.assertIsNone(panel.handle('hello', {
+                'from_node': 'elaine@vandelay.com',
+            }))
+            x = panel.handle('hello', {
+                'from_node': 'george@vandelay.com',
+            })
             self.assertEqual(x['clock'], 314)  # incremented
+            x = panel.handle('hello', {
+                'from_node': 'george@vandelay.com',
+                'revoked': {'1234', '4567', '891'}
+            })
+            self.assertIn('revoked1', x['revoked'])
+            self.assertIn('1234', x['revoked'])
+            self.assertIn('4567', x['revoked'])
+            self.assertIn('891', x['revoked'])
+            self.assertEqual(x['clock'], 315)  # incremented
         finally:
             worker_state.revoked.discard('revoked1')
 
     def test_conf(self):
-        return
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
-        self.app.conf.SOME_KEY6 = 'hello world'
+        panel.app = self.app
+        panel.app.finalize()
+        self.app.conf.some_key6 = 'hello world'
         x = panel.handle('dump_conf')
-        self.assertIn('SOME_KEY6', x)
+        self.assertIn('some_key6', x)
 
     def test_election(self):
         consumer = Consumer(self.app)
@@ -192,6 +206,14 @@ class test_ControlPanel(AppCase):
             'election', {'id': 'id', 'topic': 'topic', 'action': 'action'},
         )
         consumer.gossip.election.assert_called_with('id', 'topic', 'action')
+
+    def test_election__no_gossip(self):
+        consumer = Mock(name='consumer')
+        consumer.gossip = None
+        panel = self.create_panel(consumer=consumer)
+        panel.handle(
+            'election', {'id': 'id', 'topic': 'topic', 'action': 'action'},
+        )
 
     def test_heartbeat(self):
         consumer = Consumer(self.app)
@@ -236,10 +258,26 @@ class test_ControlPanel(AppCase):
         self.assertListEqual(list(sorted(q['name'] for q in r)),
                              ['bar', 'foo'])
 
+    def test_active_queues__empty(self):
+        consumer = Mock(name='consumer')
+        panel = self.create_panel(consumer=consumer)
+        consumer.task_consumer = None
+        self.assertFalse(panel.handle('active_queues'))
+
     def test_dump_tasks(self):
         info = '\n'.join(self.panel.handle('dump_tasks'))
         self.assertIn('mytask', info)
         self.assertIn('rate_limit=200', info)
+
+    def test_dump_tasks2(self):
+        prev, control.DEFAULT_TASK_INFO_ITEMS = (
+            control.DEFAULT_TASK_INFO_ITEMS, [])
+        try:
+            info = '\n'.join(self.panel.handle('dump_tasks'))
+            self.assertIn('mytask', info)
+            self.assertNotIn('rate_limit=200', info)
+        finally:
+            control.DEFAULT_TASK_INFO_ITEMS = prev
 
     def test_stats(self):
         prev_count, worker_state.total_count = worker_state.total_count, 100
@@ -493,7 +531,7 @@ class test_ControlPanel(AppCase):
 
         panel = _Node(hostname=hostname,
                       state=self.create_state(consumer=Consumer(self.app)),
-                      handlers=Panel.data,
+                      handlers=control.Panel.data,
                       mailbox=self.app.control.mailbox)
         r = panel.dispatch('ping', reply_to={'exchange': 'x',
                                              'routing_key': 'x'})
@@ -584,3 +622,30 @@ class test_ControlPanel(AppCase):
             self.assertTrue(consumer.controller.pool.restart.called)
             self.assertTrue(_reload.called)
             self.assertFalse(_import.called)
+
+    def test_query_task(self):
+        consumer = Consumer(self.app)
+        consumer.controller = _WC(app=self.app)
+        consumer.controller.consumer = consumer
+        panel = self.create_panel(consumer=consumer)
+        panel.app = self.app
+        req1 = Request(
+            TaskMessage(self.mytask.name, args=(2, 2)),
+            app=self.app,
+        )
+        worker_state.reserved_requests.add(req1)
+        try:
+            self.assertFalse(panel.handle('query_task', {'ids': {'1daa'}}))
+            ret = panel.handle('query_task', {'ids': {req1.id}})
+            self.assertIn(req1.id, ret)
+            self.assertEqual(ret[req1.id][0], 'reserved')
+            worker_state.active_requests.add(req1)
+            try:
+                ret = panel.handle('query_task', {'ids': {req1.id}})
+                self.assertEqual(ret[req1.id][0], 'active')
+            finally:
+                worker_state.active_requests.clear()
+            ret = panel.handle('query_task', {'ids': {req1.id}})
+            self.assertEqual(ret[req1.id][0], 'reserved')
+        finally:
+            worker_state.reserved_requests.clear()
