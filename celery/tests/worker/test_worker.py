@@ -47,7 +47,7 @@ def mock_event_dispatcher():
 
 
 class PlaceHolder(object):
-        pass
+    pass
 
 
 def find_step(obj, typ):

@@ -106,9 +106,8 @@ class test_CassandraBackend(AppCase):
             self.assertIsNone(x._session)
 
     def test_timeouting_cluster(self):
-        """
-        Tests behaviour when Cluster.connect raises cassandra.OperationTimedOut
-        """
+        """Tests behaviour when Cluster.connect raises
+        cassandra.OperationTimedOut."""
         with mock_module(*CASSANDRA_MODULES):
             from celery.backends import cassandra as mod
 
@@ -139,11 +138,8 @@ class test_CassandraBackend(AppCase):
 
             x.process_cleanup()  # should not raise
 
-
     def test_please_free_memory(self):
-        """
-        Ensure that Cluster object IS shut down.
-        """
+        """Ensure that Cluster object IS shut down."""
         with mock_module(*CASSANDRA_MODULES):
             from celery.backends import cassandra as mod
 

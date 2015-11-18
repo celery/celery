@@ -129,7 +129,7 @@ class CassandraBackend(BaseBackend):
 
     def process_cleanup(self):
         if self._connection is not None:
-            self._connection.shutdown() # also shuts down _session
+            self._connection.shutdown()  # also shuts down _session
 
         self._connection = None
         self._session = None
