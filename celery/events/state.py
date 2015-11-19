@@ -98,7 +98,8 @@ def with_unique_field(attr):
         cls.__eq__ = __eq__
 
         def __ne__(this, other):
-            return not this.__eq__(other)
+            res = this.__eq__(other)
+            return True if res is NotImplemented else not res
         cls.__ne__ = __ne__
 
         def __hash__(this):
@@ -118,7 +119,7 @@ class Worker(object):
     _fields = ('hostname', 'pid', 'freq', 'heartbeats', 'clock',
                'active', 'processed', 'loadavg', 'sw_ident',
                'sw_ver', 'sw_sys')
-    if not PYPY:
+    if not PYPY:  # pragma: no cover
         __slots__ = _fields + ('event', '__dict__', '__weakref__')
 
     def __init__(self, hostname=None, pid=None, freq=60,
@@ -199,28 +200,6 @@ class Worker(object):
     @property
     def id(self):
         return '{0.hostname}.{0.pid}'.format(self)
-
-    @deprecated(4.0, 5.0)
-    def update_heartbeat(self, received, timestamp):
-        self.event(None, timestamp, received)
-
-    @deprecated(4.0, 5.0)
-    def on_online(self, timestamp=None, local_received=None, **fields):
-        self.event('online', timestamp, local_received, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_offline(self, timestamp=None, local_received=None, **fields):
-        self.event('offline', timestamp, local_received, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_heartbeat(self, timestamp=None, local_received=None, **fields):
-        self.event('heartbeat', timestamp, local_received, fields)
-
-    @class_property
-    def _defaults(cls):
-        """Deprecated, to be removed in 5.0"""
-        source = cls()
-        return {k: getattr(source, k) for k in cls._fields}
 
 
 @with_unique_field('uuid')
@@ -344,51 +323,6 @@ class Task(object):
     @property
     def ready(self):
         return self.state in states.READY_STATES
-
-    @deprecated(4.0, 5.0)
-    def on_sent(self, timestamp=None, **fields):
-        self.event('sent', timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_received(self, timestamp=None, **fields):
-        self.event('received', timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_started(self, timestamp=None, **fields):
-        self.event('started', timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_failed(self, timestamp=None, **fields):
-        self.event('failed', timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_retried(self, timestamp=None, **fields):
-        self.event('retried', timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_succeeded(self, timestamp=None, **fields):
-        self.event('succeeded', timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_revoked(self, timestamp=None, **fields):
-        self.event('revoked', timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_unknown_event(self, shortype, timestamp=None, **fields):
-        self.event(shortype, timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def update(self, state, timestamp, fields,
-               _state=states.state, RETRY=states.RETRY):
-        return self.event(state, timestamp, None, fields)
-
-    @deprecated(4.0, 5.0)
-    def merge(self, state, timestamp, fields):
-        keep = self.merge_rules.get(state)
-        if keep is not None:
-            fields = {k: v for k, v in items(fields) if k in keep}
-        for key, value in items(fields):
-            setattr(self, key, value)
 
     @class_property
     def _defaults(cls):
