@@ -9,6 +9,7 @@ from celery.result import (
     AsyncResult,
     EagerResult,
     result_from_tuple,
+    assert_will_not_block,
 )
 from celery.utils import uuid
 from celery.utils.serialization import pickle
@@ -56,6 +57,14 @@ class test_AsyncResult(AppCase):
         def mytask():
             pass
         self.mytask = mytask
+
+    @patch('celery.result.task_join_will_block')
+    def test_assert_will_not_block(self, task_join_will_block):
+        task_join_will_block.return_value = True
+        with self.assertRaises(RuntimeError):
+            assert_will_not_block()
+        task_join_will_block.return_value = False
+        assert_will_not_block()
 
     def test_compat_properties(self):
         x = self.app.AsyncResult('1')

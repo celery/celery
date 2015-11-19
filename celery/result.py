@@ -33,15 +33,12 @@ E_WOULDBLOCK = """\
 Never call result.get() within a task!
 See http://docs.celeryq.org/en/latest/userguide/tasks.html\
 #task-synchronous-subtasks
-
-In Celery 4.0 this will result in an exception being
-raised instead of just being a warning.
 """
 
 
 def assert_will_not_block():
     if task_join_will_block():
-        warnings.warn(RuntimeWarning(E_WOULDBLOCK))
+        raise RuntimeError(E_WOULDBLOCK)
 
 
 @contextmanager
