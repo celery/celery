@@ -857,7 +857,7 @@ class chord(Signature):
         Signature.__init__(
             self, task, args,
             dict(kwargs, header=_maybe_group(header, app),
-                 body=maybe_signature(body, app=self._app)), **options
+                 body=maybe_signature(body, app=app)), app=app, **options
         )
         self.subtask_type = 'chord'
 
