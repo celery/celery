@@ -27,7 +27,7 @@ from celery.local import try_import
 from celery.result import GroupResult
 from celery.utils import abstract
 from celery.utils.functional import (
-    maybe_list, is_list, regen, chunks as _chunks,
+    maybe_list, is_list, _regen, regen, chunks as _chunks,
 )
 from celery.utils.text import truncate
 
@@ -661,7 +661,7 @@ def _maybe_group(tasks, app):
     elif isinstance(tasks, abstract.CallableSignature):
         tasks = [tasks]
     else:
-        tasks = [signature(t, app=app) for t in regen(tasks)]
+        tasks = [signature(t, app=app) for t in tasks]
     return tasks
 
 
@@ -670,9 +670,12 @@ class group(Signature):
     tasks = _getitem_property('kwargs.tasks')
 
     def __init__(self, *tasks, **options):
-        app = options.get('app')
         if len(tasks) == 1:
-            tasks = _maybe_group(tasks[0], app)
+            tasks = tasks[0]
+            if isinstance(tasks, group):
+                tasks = tasks.tasks
+            if not isinstance(tasks, _regen):
+                tasks = regen(tasks)
         Signature.__init__(
             self, 'celery.group', (), {'tasks': tasks}, **options
         )
@@ -691,25 +694,24 @@ class group(Signature):
                   CallableSignature=abstract.CallableSignature,
                   from_dict=Signature.from_dict):
         for task in tasks:
-            if isinstance(task, dict):
-                if isinstance(task, CallableSignature):
-                    # local sigs are always of type Signature, and we
-                    # clone them to make sure we do not modify the originals.
-                    task = task.clone()
-                else:
-                    # serialized sigs must be converted to Signature.
-                    task = from_dict(task, app=app)
-                if isinstance(task, group):
-                    # needs yield_from :(
-                    unroll = task._prepared(
-                        task.tasks, partial_args, group_id, root_id, app,
-                    )
-                    for taskN, resN in unroll:
-                        yield taskN, resN
-                else:
-                    if partial_args and not task.immutable:
-                        task.args = tuple(partial_args) + tuple(task.args)
-                    yield task, task.freeze(group_id=group_id, root_id=root_id)
+            if isinstance(task, CallableSignature):
+                # local sigs are always of type Signature, and we
+                # clone them to make sure we do not modify the originals.
+                task = task.clone()
+            else:
+                # serialized sigs must be converted to Signature.
+                task = from_dict(task, app=app)
+            if isinstance(task, group):
+                # needs yield_from :(
+                unroll = task._prepared(
+                    task.tasks, partial_args, group_id, root_id, app,
+                )
+                for taskN, resN in unroll:
+                    yield taskN, resN
+            else:
+                if partial_args and not task.immutable:
+                    task.args = tuple(partial_args) + tuple(task.args)
+                yield task, task.freeze(group_id=group_id, root_id=root_id)
 
     def _apply_tasks(self, tasks, producer=None, app=None,
                      add_to_parent=None, **options):

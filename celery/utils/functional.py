@@ -14,10 +14,9 @@ import threading
 from collections import OrderedDict
 from functools import partial, wraps
 from inspect import getargspec, isfunction
-from itertools import islice
+from itertools import chain, islice
 
 from amqp import promise
-from kombu.utils import cached_property
 from kombu.utils.functional import lazy, maybe_evaluate, is_list, maybe_list
 
 from celery.five import UserDict, UserList, items, keys, range
@@ -320,6 +319,8 @@ class _regen(UserList, list):
     # must be subclass of list so that json can encode.
     def __init__(self, it):
         self.__it = it
+        self.__index = 0
+        self.__consumed = []
 
     def __reduce__(self):
         return list, (self.data,)
@@ -327,9 +328,30 @@ class _regen(UserList, list):
     def __length_hint__(self):
         return self.__it.__length_hint__()
 
-    @cached_property
+    def __iter__(self):
+        return chain(self.__consumed, self.__it)
+
+    def __getitem__(self, index):
+        if index < 0:
+            return self.data[index]
+        try:
+            return self.__consumed[index]
+        except IndexError:
+            try:
+                for i in range(self.__index, index + 1):
+                    self.__consumed.append(next(self.__it))
+            except StopIteration:
+                raise IndexError(index)
+            else:
+                return self.__consumed[index]
+
+    @property
     def data(self):
-        return list(self.__it)
+        try:
+            self.__consumed.extend(list(self.__it))
+        except StopIteration:
+            pass
+        return self.__consumed
 
 
 def dictfilter(d=None, **kw):
@@ -365,7 +387,7 @@ def head_from_fun(fun, bound=False, debug=False):
         fun_args=_argsfromspec(getargspec(fun)),
         fun_value=1,
     )
-    if debug:
+    if debug:  # pragma: no cover
         print(definition, file=sys.stderr)
     namespace = {'__name__': 'headof_{0}'.format(name)}
     exec(definition, namespace)
