@@ -999,10 +999,11 @@ class chord(Signature):
 
 
 def signature(varies, *args, **kwargs):
+    app = kwargs.get('app')
     if isinstance(varies, dict):
         if isinstance(varies, abstract.CallableSignature):
             return varies.clone()
-        return Signature.from_dict(varies)
+        return Signature.from_dict(varies, app=app)
     return Signature(varies, *args, **kwargs)
 subtask = signature   # XXX compat
 
