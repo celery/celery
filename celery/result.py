@@ -299,7 +299,8 @@ class AsyncResult(ResultBase):
         return NotImplemented
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        res = self.__eq__(other)
+        return True if res is NotImplemented else not res
 
     def __copy__(self):
         return self.__class__(
@@ -717,7 +718,8 @@ class ResultSet(ResultBase):
         return NotImplemented
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        res = self.__eq__(other)
+        return True if res is NotImplemented else not res
 
     def __repr__(self):
         return '<{0}: [{1}]>'.format(type(self).__name__,
@@ -802,7 +804,8 @@ class GroupResult(ResultSet):
         return NotImplemented
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        res = self.__eq__(other)
+        return True if res is NotImplemented else not res
 
     def __repr__(self):
         return '<{0}: {1} [{2}]>'.format(type(self).__name__, self.id,
