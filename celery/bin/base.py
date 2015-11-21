@@ -95,7 +95,7 @@ from celery.utils.imports import symbol_by_name, import_from_cwd
 
 try:
     input = raw_input
-except NameError:
+except NameError:  # pragma: no cover
     pass
 
 # always enable DeprecationWarnings, so our users can see them.

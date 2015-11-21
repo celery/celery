@@ -86,7 +86,7 @@ class LocalTimezone(tzinfo):
     def tzname(self, dt):
         return _time.tzname[self._isdst(dt)]
 
-    if PY3:
+    if PY3:  # pragma: no cover
 
         def fromutc(self, dt):
             # The base tzinfo class no longer implements a DST
@@ -122,7 +122,7 @@ class _Zone(object):
             dt = make_aware(dt, orig or self.utc)
         return localize(dt, self.tz_or_local(local))
 
-    if PY33:
+    if PY33:  # pragma: no cover
 
         def to_system(self, dt):
             # tz=None is a special case since Python 3.3, and will

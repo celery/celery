@@ -147,18 +147,19 @@ class Worker(WorkController):
         trace.setup_worker_optimizations(self.app, self.hostname)
 
     def on_start(self):
+        app = self.app
         if not self._custom_logging and self.redirect_stdouts:
-            self.app.log.redirect_stdouts(self.redirect_stdouts_level)
+            app.log.redirect_stdouts(self.redirect_stdouts_level)
 
         WorkController.on_start(self)
 
         # this signal can be used to e.g. change queues after
         # the -Q option has been applied.
         signals.celeryd_after_setup.send(
-            sender=self.hostname, instance=self, conf=self.app.conf,
+            sender=self.hostname, instance=self, conf=app.conf,
         )
 
-        if not self.app.conf.value_set_for('accept_content'):
+        if not app.conf.value_set_for('accept_content'):  # pragma: no cover
             warnings.warn(CDeprecationWarning(W_PICKLE_DEPRECATED))
 
         if self.purge:
@@ -187,7 +188,7 @@ class Worker(WorkController):
 
     def purge_messages(self):
         count = self.app.control.purge()
-        if count:
+        if count:  # pragma: no cover
             print('purge: Erased {0} {1} from the queue.\n'.format(
                 count, pluralize(count, 'message')))
 
@@ -209,7 +210,7 @@ class Worker(WorkController):
         appr = '{0}:{1:#x}'.format(app.main or '__main__', id(app))
         if not isinstance(app.loader, AppLoader):
             loader = qualname(app.loader)
-            if loader.startswith('celery.loaders'):
+            if loader.startswith('celery.loaders'):  # pragma: no cover
                 loader = loader[14:]
             appr += ' ({0})'.format(loader)
         if self.autoscale:

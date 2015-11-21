@@ -33,6 +33,20 @@ class test_AMQPBackend(AppCase):
         opts = dict(dict(serializer='pickle', persistent=True), **opts)
         return AMQPBackend(self.app, **opts)
 
+    def test_destination_for(self):
+        b = self.create_backend()
+        request = Mock()
+        self.assertTupleEqual(
+            b.destination_for('id', request),
+            (b.rkey('id'), request.correlation_id),
+        )
+
+    def test_store_result__no_routing_key(self):
+        b = self.create_backend()
+        b.destination_for = Mock()
+        b.destination_for.return_value = None, None
+        b.store_result('id', None, states.SUCCESS)
+
     def test_mark_as_done(self):
         tb1 = self.create_backend(max_cached_results=1)
         tb2 = self.create_backend(max_cached_results=1)
@@ -268,8 +282,11 @@ class test_AMQPBackend(AppCase):
         with self.app.pool.acquire_channel(block=False) as (_, channel):
             binding = b._create_binding(uuid())
             consumer = b.Consumer(channel, binding, no_ack=True)
+            callback = Mock()
             with self.assertRaises(socket.timeout):
-                b.drain_events(Connection(), consumer, timeout=0.1)
+                b.drain_events(Connection(), consumer, timeout=0.1,
+                               on_interval=callback)
+                callback.assert_called_with()
 
     def test_get_many(self):
         b = self.create_backend(max_cached_results=10)

@@ -92,7 +92,7 @@ class Hub(bootsteps.StartStopStep):
         # multiprocessing's ApplyResult uses this lock.
         try:
             from billiard import pool
-        except ImportError:
+        except ImportError:  # pragma: no cover
             pass
         else:
             pool.Lock = DummyLock
@@ -137,8 +137,9 @@ class Pool(bootsteps.StartStopStep):
         if w.pool:
             w.pool.terminate()
 
-    def create(self, w, semaphore=None, max_restarts=None):
-        if w.app.conf.worker_pool in ('eventlet', 'gevent'):
+    def create(self, w, semaphore=None, max_restarts=None,
+               green_pools={'eventlet', 'gevent'}):
+        if w.app.conf.worker_pool in green_pools:  # pragma: no cover
             warnings.warn(UserWarning(W_POOL_SETTING))
         threaded = not w.use_eventloop or IS_WINDOWS
         procs = w.min_concurrency

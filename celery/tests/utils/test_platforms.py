@@ -12,7 +12,9 @@ from celery.five import open_fqdn
 from celery.platforms import (
     get_fdmax,
     ignore_errno,
+    check_privileges,
     set_process_title,
+    set_mp_process_title,
     signals,
     maybe_drop_privileges,
     setuid,
@@ -61,9 +63,14 @@ class test_fd_by_path(Case):
 
     def test_finds(self):
         test_file = tempfile.NamedTemporaryFile()
-        keep = fd_by_path([test_file.name])
-        self.assertEqual(keep, [test_file.file.fileno()])
-        test_file.close()
+        try:
+            keep = fd_by_path([test_file.name])
+            self.assertEqual(keep, [test_file.file.fileno()])
+            with patch('os.open') as _open:
+                _open.side_effect = OSError()
+                self.assertFalse(fd_by_path([test_file.name]))
+        finally:
+            test_file.close()
 
 
 class test_close_open_fds(Case):
@@ -99,12 +106,26 @@ class test_ignore_errno(Case):
 
 class test_set_process_title(Case):
 
-    def when_no_setps(self):
-        prev = platforms._setproctitle = platforms._setproctitle, None
+    def test_no_setps(self):
+        prev, platforms._setproctitle = platforms._setproctitle, None
         try:
             set_process_title('foo')
         finally:
             platforms._setproctitle = prev
+
+    @patch('celery.platforms.set_process_title')
+    @patch('celery.platforms.current_process')
+    def test_mp_no_hostname(self, current_process, set_process_title):
+        current_process().name = 'Foo'
+        set_mp_process_title('foo', info='hello')
+        set_process_title.assert_called_with('foo:Foo', info='hello')
+
+    @patch('celery.platforms.set_process_title')
+    @patch('celery.platforms.current_process')
+    def test_mp_hostname(self, current_process, set_process_title):
+        current_process().name = 'Foo'
+        set_mp_process_title('foo', hostname='a@q.com', info='hello')
+        set_process_title.assert_called_with('foo: a@q.com:Foo', info='hello')
 
 
 class test_Signals(Case):
@@ -147,6 +168,11 @@ class test_Signals(Case):
         set.assert_called_with(signals.signum('TERM'), signals.ignored)
 
     @patch('signal.signal')
+    def test_reset(self, set):
+        signals.reset('SIGINT')
+        set.assert_called_with(signals.signum('INT'), signals.default)
+
+    @patch('signal.signal')
     def test_setitem(self, set):
         def handle(*args):
             return args
@@ -180,13 +206,27 @@ if not platforms.IS_WINDOWS:
 
     class test_maybe_drop_privileges(Case):
 
+        def test_on_windows(self):
+            prev, sys.platform = sys.platform, 'win32'
+            try:
+                maybe_drop_privileges()
+            finally:
+                sys.platform = prev
+
+        @patch('os.getegid')
+        @patch('os.getgid')
+        @patch('os.geteuid')
+        @patch('os.getuid')
         @patch('celery.platforms.parse_uid')
         @patch('pwd.getpwuid')
         @patch('celery.platforms.setgid')
         @patch('celery.platforms.setuid')
         @patch('celery.platforms.initgroups')
         def test_with_uid(self, initgroups, setuid, setgid,
-                          getpwuid, parse_uid):
+                          getpwuid, parse_uid, getuid, geteuid,
+                          getgid, getegid):
+            geteuid.return_value = 10
+            getuid.return_value = 10
 
             class pw_struct(object):
                 pw_gid = 50001
@@ -203,6 +243,40 @@ if not platforms.IS_WINDOWS:
             setgid.assert_called_with(50001)
             initgroups.assert_called_with(5001, 50001)
             setuid.assert_has_calls([call(5001), call(0)])
+
+            setuid.side_effect = raise_on_second_call
+
+            def to_root_on_second_call(mock, first):
+                return_value = [first]
+
+                def on_first_call(*args, **kwargs):
+                    ret, return_value[0] = return_value[0], 0
+                    return ret
+                mock.side_effect = on_first_call
+            to_root_on_second_call(geteuid, 10)
+            to_root_on_second_call(getuid, 10)
+            with self.assertRaises(AssertionError):
+                maybe_drop_privileges(uid='user')
+
+            getuid.return_value = getuid.side_effect = None
+            geteuid.return_value = geteuid.side_effect = None
+            getegid.return_value = 0
+            getgid.return_value = 0
+            setuid.side_effect = raise_on_second_call
+            with self.assertRaises(AssertionError):
+                maybe_drop_privileges(gid='group')
+
+            getuid.reset_mock()
+            geteuid.reset_mock()
+            setuid.reset_mock()
+            getuid.side_effect = geteuid.side_effect = None
+
+            def raise_on_second_call(*args, **kwargs):
+                setuid.side_effect = OSError()
+                setuid.side_effect.errno = errno.ENOENT
+            setuid.side_effect = raise_on_second_call
+            with self.assertRaises(OSError):
+                maybe_drop_privileges(uid='user')
 
         @patch('celery.platforms.parse_uid')
         @patch('celery.platforms.parse_gid')
@@ -420,6 +494,20 @@ if not platforms.IS_WINDOWS:
             with x:
                 pass
             x.after_chdir.assert_called_with()
+
+            x = DaemonContext(workdir='/opt/workdir', umask="0755")
+            self.assertEqual(x.umask, 493)
+            x = DaemonContext(workdir='/opt/workdir', umask="493")
+            self.assertEqual(x.umask, 493)
+
+            x.redirect_to_null(None)
+
+            with patch('celery.platforms.mputil') as mputil:
+                x = DaemonContext(after_forkers=True)
+                x.open()
+                mputil._run_after_forkers.assert_called_with()
+                x = DaemonContext(after_forkers=False)
+                x.open()
 
     class test_Pidfile(Case):
 
@@ -711,3 +799,21 @@ if not platforms.IS_WINDOWS:
             with self.assertRaises(OSError):
                 setgroups(list(range(400)))
             getgroups.assert_called_with()
+
+
+class test_check_privileges(Case):
+
+    def test_suspicious(self):
+        class Obj(object):
+            fchown = 13
+        prev, platforms.os = platforms.os, Obj()
+        try:
+            with self.assertRaises(AssertionError):
+                check_privileges({'pickle'})
+        finally:
+            platforms.os = prev
+        prev, platforms.os = platforms.os, object()
+        try:
+            check_privileges({'pickle'})
+        finally:
+            platforms.os = prev

@@ -303,6 +303,43 @@ class test_App(AppCase):
             self.assertEqual(app.conf.broker_url, 'foo://bar')
             self.assertEqual(app.conf.result_backend, 'foo')
 
+    def test_pending_configuration__compat_settings_mixing(self):
+        with self.Celery(broker='foo://bar', backend='foo') as app:
+            app.conf.update(
+                CELERY_ALWAYS_EAGER=4,
+                CELERY_DEFAULT_DELIVERY_MODE=63,
+                CELERYD_AGENT='foo:Barz',
+                worker_consumer='foo:Fooz',
+            )
+            with self.assertRaises(ImproperlyConfigured):
+                self.assertEqual(app.conf.task_always_eager, 4)
+
+    def test_pending_configuration__compat_settings_mixing_new(self):
+        with self.Celery(broker='foo://bar', backend='foo') as app:
+            app.conf.update(
+                task_always_eager=4,
+                task_default_delivery_mode=63,
+                worker_agent='foo:Barz',
+                CELERYD_CONSUMER='foo:Fooz',
+                CELERYD_AUTOSCALER='foo:Xuzzy',
+            )
+            with self.assertRaises(ImproperlyConfigured):
+                self.assertEqual(app.conf.worker_consumer, 'foo:Fooz')
+
+    def test_pending_configuration__compat_settings_mixing_alt(self):
+        with self.Celery(broker='foo://bar', backend='foo') as app:
+            app.conf.update(
+                task_always_eager=4,
+                task_default_delivery_mode=63,
+                worker_agent='foo:Barz',
+                CELERYD_CONSUMER='foo:Fooz',
+                worker_consumer='foo:Fooz',
+                CELERYD_AUTOSCALER='foo:Xuzzy',
+                worker_autoscaler='foo:Xuzzy'
+            )
+            self.assertEqual(app.conf.task_always_eager, 4)
+            self.assertEqual(app.conf.worker_autoscaler, 'foo:Xuzzy')
+
     def test_pending_configuration__setdefault(self):
         with self.Celery(broker='foo://bar') as app:
             app.conf.setdefault('worker_agent', 'foo:Bar')

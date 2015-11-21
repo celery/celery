@@ -9,6 +9,7 @@ from kombu.utils.json import dumps
 from celery import __main__
 from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
 from celery.bin.base import Error
+from celery.bin import celery as mod
 from celery.bin.celery import (
     Command,
     list_,
@@ -179,6 +180,13 @@ class test_purge(AppCase):
         a.run(force=True)
         self.assertIn('100 messages', out.getvalue())
 
+        a.out = Mock(name='out')
+        a.ask = Mock(name='ask')
+        a.run(force=False)
+        a.ask.assert_called_with(a.warn_prompt, ('yes', 'no'), 'no')
+        a.ask.return_value = 'yes'
+        a.run(force=False)
+
 
 class test_result(AppCase):
 
@@ -303,6 +311,20 @@ class test_CeleryCommand(AppCase):
             x = CeleryCommand(app=self.app)
             x.load_extension_commands()
 
+    def test_load_extensions_commands(self):
+        with patch('celery.bin.celery.Extensions') as Ext:
+            prev, mod.command_classes = list(mod.command_classes), Mock()
+            try:
+                ext = Ext.return_value = Mock(name='Extension')
+                ext.load.return_value = ['foo', 'bar']
+                x = CeleryCommand(app=self.app)
+                x.load_extension_commands()
+                mod.command_classes.append.assert_called_with(
+                    ('Extensions', ['foo', 'bar'], 'magenta'),
+                )
+            finally:
+                mod.command_classes = prev
+
     def test_determine_exit_status(self):
         self.assertEqual(determine_exit_status('true'), EX_OK)
         self.assertEqual(determine_exit_status(''), EX_FAILURE)
@@ -326,6 +348,15 @@ class test_CeleryCommand(AppCase):
             x._relocate_args_from_start(['foo', '--foo=1']),
             ['foo', '--foo=1'],
         )
+
+    def test_register_command(self):
+        prev, CeleryCommand.commands = dict(CeleryCommand.commands), {}
+        try:
+            fun = Mock(name='fun')
+            CeleryCommand.register_command(fun, name='foo')
+            self.assertIs(CeleryCommand.commands['foo'], fun)
+        finally:
+            CeleryCommand.commands = prev
 
     def test_handle_argv(self):
         x = CeleryCommand(app=self.app)
@@ -457,6 +488,10 @@ class test_inspect(AppCase):
         callback({'foo': {'ok': 'pong'}})
         self.assertIn('OK', out.getvalue())
 
+        with patch('celery.bin.celery.json.dumps') as dumps:
+            i.run('ping', json=True)
+            self.assertTrue(dumps.called)
+
         instance = real.return_value = Mock()
         instance.ping.return_value = None
         with self.assertRaises(Error):
@@ -467,6 +502,18 @@ class test_inspect(AppCase):
         i.quiet = True
         i.say_chat('<-', 'hello')
         self.assertFalse(out.getvalue())
+
+    def test_objgraph(self):
+        i = inspect(app=self.app)
+        i.call = Mock(name='call')
+        i.objgraph('Message', foo=1)
+        i.call.assert_called_with('objgraph', 'Message', foo=1)
+
+    def test_conf(self):
+        i = inspect(app=self.app)
+        i.call = Mock(name='call')
+        i.conf(with_defaults=True, foo=1)
+        i.call.assert_called_with('conf', True, foo=1)
 
 
 class test_control(AppCase):

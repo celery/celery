@@ -83,6 +83,18 @@ class test_ScheduleEntry(AppCase):
         entry = self.create_entry()
         self.assertIn('<Entry:', repr(entry))
 
+    def test_reduce(self):
+        entry = self.create_entry(schedule=timedelta(seconds=10))
+        fun, args = entry.__reduce__()
+        res = fun(*args)
+        self.assertEqual(res.schedule, entry.schedule)
+
+    def test_lt(self):
+        e1 = self.create_entry(schedule=timedelta(seconds=10))
+        e2 = self.create_entry(schedule=timedelta(seconds=2))
+        self.assertLess(e2, e1)
+        self.assertTrue(e1 < object())
+
     def test_update(self):
         entry = self.create_entry()
         self.assertEqual(entry.schedule, timedelta(seconds=10))

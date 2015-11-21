@@ -39,6 +39,10 @@ REDIS_MISSING = """\
 You need to install the redis library in order to use \
 the Redis result store backend."""
 
+E_LOST = """\
+Connection to Redis lost: Retry (%s/%s) %s.\
+"""
+
 logger = get_logger(__name__)
 error = logger.error
 
@@ -137,8 +141,7 @@ class RedisBackend(KeyValueStoreBackend):
 
     def on_connection_error(self, max_retries, exc, intervals, retries):
         tts = next(intervals)
-        error('Connection to Redis lost: Retry (%s/%s) %s.',
-              retries, max_retries or 'Inf',
+        error(E_LOST, retries, max_retries or 'Inf',
               humanize_seconds(tts, 'in '))
         return tts
 

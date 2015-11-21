@@ -15,7 +15,7 @@ from celery.exceptions import FixupWarning
 
 if sys.version_info[0] < 3 and not hasattr(sys, 'pypy_version_info'):
     from StringIO import StringIO
-else:
+else:  # pragma: no cover
     from io import StringIO
 
 
@@ -66,11 +66,15 @@ class DjangoFixup(object):
         signals.worker_init.connect(self.on_worker_init)
         return self
 
-    @cached_property
+    @property
     def worker_fixup(self):
         if self._worker_fixup is None:
             self._worker_fixup = DjangoWorkerFixup(self.app)
         return self._worker_fixup
+
+    @worker_fixup.setter
+    def worker_fixup(self, value):
+        self._worker_fixup = value
 
     def on_import_modules(self, **kwargs):
         # call django.setup() before task modules are imported
@@ -160,35 +164,39 @@ class DjangoWorkerFixup(object):
             _oracle_database_errors
         )
 
-    def validate_models(self):
+    def django_setup(self):
         import django
         try:
             django_setup = django.setup
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
             pass
         else:
             django_setup()
-        s = StringIO()
+
+    def validate_models(self):
+        self.django_setup()
         try:
             from django.core.management.validation import get_validation_errors
         except ImportError:
-            from django.core.management.base import BaseCommand
-            cmd = BaseCommand()
-            try:
-                # since django 1.5
-                from django.core.management.base import OutputWrapper
-                cmd.stdout = OutputWrapper(sys.stdout)
-                cmd.stderr = OutputWrapper(sys.stderr)
-            except ImportError:
-                cmd.stdout, cmd.stderr = sys.stdout, sys.stderr
-
-            cmd.check()
+            self._validate_models_django17()
         else:
+            s = StringIO()
             num_errors = get_validation_errors(s, None)
             if num_errors:
                 raise RuntimeError(
                     'One or more Django models did not validate:\n{0}'.format(
                         s.getvalue()))
+
+    def _validate_models_django17(self):
+        from django.core.management import base
+        print(base)
+        cmd = base.BaseCommand()
+        try:
+            cmd.stdout = base.OutputWrapper(sys.stdout)
+            cmd.stderr = base.OutputWrapper(sys.stderr)
+        except ImportError:  # before django 1.5
+            cmd.stdout, cmd.stderr = sys.stdout, sys.stderr
+        cmd.check()
 
     def install(self):
         signals.beat_embedded_init.connect(self.close_database)

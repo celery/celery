@@ -31,6 +31,12 @@ class test_Proxy(Case):
         self.assertEqual(Proxy.__module__, 'celery.local')
         self.assertIsInstance(Proxy.__doc__, str)
 
+    def test_doc(self):
+        def real():
+            pass
+        x = Proxy(real, __doc__='foo')
+        self.assertEqual(x.__doc__, 'foo')
+
     def test_name(self):
 
         def real():

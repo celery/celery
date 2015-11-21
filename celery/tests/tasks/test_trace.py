@@ -16,6 +16,8 @@ from celery.app.trace import (
     log_policy_expected,
     log_policy_unexpected,
     trace_task,
+    _trace_task_ret,
+    _fast_trace_task,
     setup_worker_optimizations,
     reset_worker_optimizations,
 )
@@ -178,6 +180,11 @@ class test_trace(TraceCase):
         retval, info = self.trace(rejecting, (), {})
         self.assertEqual(info.state, states.REJECTED)
 
+    def test_backend_cleanup_raises(self):
+        self.add.backend.process_cleanup = Mock()
+        self.add.backend.process_cleanup.side_effect = RuntimeError()
+        self.trace(self.add, (2, 2), {})
+
     @patch('celery.canvas.maybe_signature')
     def test_callbacks__scalar(self, maybe_signature):
         sig = Mock(name='sig')
@@ -186,6 +193,18 @@ class test_trace(TraceCase):
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
             (4,), parent_id='id-1', root_id='root',
+        )
+
+    @patch('celery.canvas.maybe_signature')
+    def test_chain_proto2(self, maybe_signature):
+        sig = Mock(name='sig')
+        sig2 = Mock(name='sig2')
+        request = {'chain': [sig2, sig], 'root_id': 'root'}
+        maybe_signature.return_value = sig
+        retval, _ = self.trace(self.add, (2, 2), {}, request=request)
+        sig.apply_async.assert_called_with(
+            (4, ), parent_id='id-1', root_id='root',
+            chain=[sig2],
         )
 
     @patch('celery.canvas.maybe_signature')
@@ -252,6 +271,21 @@ class test_trace(TraceCase):
         _, info = self.trace(self.raises, (exc,), {})
         self.assertEqual(info.state, states.FAILURE)
         self.assertIs(info.retval, exc)
+
+    def test_trace_task_ret__no_content_type(self):
+        _trace_task_ret(
+            self.add.name, 'id1', {}, ((2, 2), {}), None, None,
+            app=self.app,
+        )
+
+    def test_fast_trace_task__no_content_type(self):
+        self.app.tasks[self.add.name].__trace__ = build_tracer(
+            self.add.name, self.add, app=self.app,
+        )
+        _fast_trace_task(
+            self.add.name, 'id1', {}, ((2, 2), {}), None, None,
+            app=self.app, _loc=[self.app.tasks, {}, 'hostname']
+        )
 
     def test_trace_exception_propagate(self):
         with self.assertRaises(KeyError):

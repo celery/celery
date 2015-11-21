@@ -148,6 +148,15 @@ class test_saferepr(Case):
             saferepr(D_D_TEXT, 100).endswith("...', ...}}")
         )
 
+    def test_maxlevels(self):
+        saferepr(D_ALL, maxlevels=1)
+
+    def test_recursion(self):
+        d = {1: 2, 3: {4: 5}}
+        d[3][6] = d
+        res = saferepr(d)
+        self.assertIn('Recursion on', res)
+
     def test_same_as_repr(self):
         # Simple objects, small containers and classes that overwrite __repr__
         # For those the result should be the same as repr().

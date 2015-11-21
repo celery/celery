@@ -261,7 +261,8 @@ class Signature(dict):
     def apply_async(self, args=(), kwargs={}, route_name=None, **options):
         try:
             _apply = self._apply_async
-        except IndexError:  # no tasks for chain, etc to find type
+        except IndexError:  # pragma: no cover
+            # no tasks for chain, etc to find type
             return
         # For callbacks: extra args are prepended to the stored args.
         if args or kwargs or options:
@@ -337,7 +338,7 @@ class Signature(dict):
     def __repr__(self):
         return self.reprcall()
 
-    if JSON_NEEDS_UNICODE_KEYS:
+    if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
         def items(self):
             for k, v in dict.items(self):
                 yield k.decode() if isinstance(k, bytes) else k, v

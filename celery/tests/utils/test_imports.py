@@ -19,6 +19,7 @@ class test_import_utils(Case):
         imp.return_value = None
         with self.assertRaises(NotAPackage):
             find_module('foo.bar.baz', imp=imp)
+        self.assertTrue(find_module('celery.worker.request'))
 
     def test_qualname(self):
         Class = type('Fox', (object,), {'__module__': 'quick.brown'})

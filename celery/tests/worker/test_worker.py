@@ -12,10 +12,11 @@ from kombu import Connection
 from kombu.common import QoS, ignore_errors
 from kombu.transport.base import Message
 
-from celery.bootsteps import RUN, CLOSE, StartStopStep
+from celery.bootsteps import RUN, CLOSE, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
 from celery.exceptions import (
-    WorkerShutdown, WorkerTerminate, TaskRevokedError, InvalidTaskError,
+    WorkerShutdown, WorkerTerminate, TaskRevokedError,
+    InvalidTaskError, ImproperlyConfigured,
 )
 from celery.five import Empty, range, Queue as FastQueue
 from celery.platforms import EX_FAILURE
@@ -828,6 +829,17 @@ class test_WorkController(AppCase):
             worker_direct(self.worker.hostname),
         )
 
+    def test_setup_queues__missing_queue(self):
+        self.app.amqp.queues.select = Mock(name='select')
+        self.app.amqp.queues.deselect = Mock(name='deselect')
+        self.app.amqp.queues.select.side_effect = KeyError()
+        self.app.amqp.queues.deselect.side_effect = KeyError()
+        with self.assertRaises(ImproperlyConfigured):
+            self.worker.setup_queues("x,y", exclude="foo,bar")
+        self.app.amqp.queues.select = Mock(name='select')
+        with self.assertRaises(ImproperlyConfigured):
+            self.worker.setup_queues("x,y", exclude="foo,bar")
+
     def test_send_worker_shutdown(self):
         with patch('celery.signals.worker_shutdown') as ws:
             self.worker._send_worker_shutdown()
@@ -1031,6 +1043,23 @@ class test_WorkController(AppCase):
         worker.consumer.close.side_effect = AttributeError()
         worker.signal_consumer_close()
 
+    def test_rusage__no_resource(self):
+        from celery import worker
+        prev, worker.resource = worker.resource, None
+        try:
+            self.worker.pool = Mock(name='pool')
+            with self.assertRaises(NotImplementedError):
+                self.worker.rusage()
+            self.worker.stats()
+        finally:
+            worker.resource = prev
+
+    def test_repr(self):
+        self.assertTrue(repr(self.worker))
+
+    def test_str(self):
+        self.assertEqual(str(self.worker), self.worker.hostname)
+
     def test_start__stop(self):
         worker = self.worker
         worker.blueprint.shutdown_complete.set()
@@ -1046,7 +1075,7 @@ class test_WorkController(AppCase):
         for w in worker.steps:
             self.assertTrue(w.start.call_count)
         worker.consumer = Mock()
-        worker.stop()
+        worker.stop(exitcode=3)
         for stopstep in worker.steps:
             self.assertTrue(stopstep.close.call_count)
             self.assertTrue(stopstep.stop.call_count)
@@ -1060,6 +1089,24 @@ class test_WorkController(AppCase):
         worker.steps[-1] = None
         worker.start()
         worker.stop()
+
+    def test_start__KeyboardInterrupt(self):
+        worker = self.worker
+        worker.blueprint = Mock(name='blueprint')
+        worker.blueprint.start.side_effect = KeyboardInterrupt()
+        worker.stop = Mock(name='stop')
+        worker.start()
+        worker.stop.assert_called_with(exitcode=EX_FAILURE)
+
+    def test_register_with_event_loop(self):
+        worker = self.worker
+        hub = Mock(name='hub')
+        worker.blueprint = Mock(name='blueprint')
+        worker.register_with_event_loop(hub)
+        worker.blueprint.send_all.assert_called_with(
+            worker, 'register_with_event_loop', args=(hub,),
+            description='hub.register',
+        )
 
     def test_step_raises(self):
         worker = self.worker
@@ -1087,6 +1134,8 @@ class test_WorkController(AppCase):
         worker.terminate()
         for step in worker.steps:
             self.assertTrue(step.terminate.call_count)
+        worker.blueprint.state = TERMINATE
+        worker.terminate()
 
     def test_Hub_crate(self):
         w = Mock()

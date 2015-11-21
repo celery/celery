@@ -4,10 +4,46 @@ from __future__ import absolute_import
 # here to complete coverage.  Should move everyting to this module at some
 # point [-ask]
 
+from celery.exceptions import ImproperlyConfigured
 from celery.platforms import IS_WINDOWS
-from celery.worker.components import Pool
+from celery.worker.components import Beat, Hub, Pool, Timer
 
-from celery.tests.case import AppCase, Mock, SkipTest
+from celery.tests.case import AppCase, Mock, SkipTest, patch
+
+
+class test_Timer(AppCase):
+
+    def test_create__eventloop(self):
+        w = Mock(name='w')
+        w.use_eventloop = True
+        Timer(w).create(w)
+        self.assertFalse(w.timer.queue)
+
+
+class test_Hub(AppCase):
+
+    def setup(self):
+        self.w = Mock(name='w')
+        self.hub = Hub(self.w)
+        self.w.hub = Mock(name='w.hub')
+
+    @patch('celery.worker.components.set_event_loop')
+    @patch('celery.worker.components.get_event_loop')
+    def test_create(self, get_event_loop, set_event_loop):
+        self.hub._patch_thread_primitives = Mock(name='ptp')
+        self.assertIs(self.hub.create(self.w), self.hub)
+        self.hub._patch_thread_primitives.assert_called_with(self.w)
+
+    def test_start(self):
+        self.hub.start(self.w)
+
+    def test_stop(self):
+        self.hub.stop(self.w)
+        self.w.hub.close.assert_called_with()
+
+    def test_terminate(self):
+        self.hub.terminate(self.w)
+        self.w.hub.close.assert_called_with()
 
 
 class test_Pool(AppCase):
@@ -46,3 +82,12 @@ class test_Pool(AppCase):
 
         self.assertEqual(
             comp.instantiate.call_args[1]['max_memory_per_child'], 32)
+
+
+class test_Beat(AppCase):
+
+    def test_create__green(self):
+        w = Mock(name='w')
+        w.pool_cls.__module__ = 'foo_gevent'
+        with self.assertRaises(ImproperlyConfigured):
+            Beat(w).create(w)

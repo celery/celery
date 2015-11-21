@@ -36,7 +36,7 @@ __all__ = ['saferepr', 'reprstream']
 
 IS_PY3 = sys.version_info[0] == 3
 
-if IS_PY3:
+if IS_PY3:  # pragma: no cover
     range_t = (range, )
 else:
     class range_t(object):  # noqa
@@ -110,7 +110,7 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
             val = saferepr(token.value, maxlen, maxlevels)
         elif isinstance(token, _quoted):
             val = token.value
-            if IS_PY3 and isinstance(val, bytes):
+            if IS_PY3 and isinstance(val, bytes):  # pragma: no cover
                 val = "b'%s'" % (bytes_to_str(truncate_bytes(val, maxlen)),)
             else:
                 val = "'%s'" % (truncate(val, maxlen),)
@@ -163,7 +163,7 @@ def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
                 yield text_t(val), it
             elif isinstance(val, chars_t):
                 yield _quoted(val), it
-            elif isinstance(val, range_t):
+            elif isinstance(val, range_t):  # pragma: no cover
                 yield repr(val), it
             else:
                 if isinstance(val, set_t):

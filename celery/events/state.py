@@ -166,7 +166,7 @@ class Worker(object):
                 if drift > max_drift:
                     _warn_drift(self.hostname, drift,
                                 local_received, timestamp)
-                if local_received:
+                if local_received:  # pragma: no cover
                     hearts = len(heartbeats)
                     if hearts > hbmax - 1:
                         hb_pop(0)
@@ -218,7 +218,7 @@ class Task(object):
         'timestamp', 'runtime', 'traceback', 'exchange', 'routing_key',
         'clock', 'client', 'root_id', 'parent_id',
     )
-    if not PYPY:
+    if not PYPY:  # pragma: no cover
         __slots__ = ('__dict__', '__weakref__')
 
     #: How to merge out of order events.

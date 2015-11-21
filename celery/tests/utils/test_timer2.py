@@ -5,7 +5,7 @@ import time
 
 import celery.utils.timer2 as timer2
 
-from celery.tests.case import Case, Mock, patch
+from celery.tests.case import Case, Mock, patch, call
 from kombu.tests.case import redirect_stdouts
 
 
@@ -98,6 +98,11 @@ class test_Timer(Case):
         t.start = Mock()
         t.ensure_started()
         self.assertFalse(t.start.called)
+        t.running = False
+        t.on_start = Mock()
+        t.ensure_started()
+        t.on_start.assert_called_with(t)
+        t.start.assert_called_with()
 
     def test_call_repeatedly(self):
         t = timer2.Timer()
@@ -135,6 +140,17 @@ class test_Timer(Case):
 
         t.schedule.apply_entry(fun)
         self.assertTrue(logger.error.called)
+
+    @patch('celery.utils.timer2.sleep')
+    def test_on_tick(self, sleep):
+        on_tick = Mock(name='on_tick')
+        t = timer2.Timer(on_tick=on_tick)
+        ne = t._next_entry = Mock(name='_next_entry')
+        ne.return_value = 3.33
+        self.on_nth_call_do(ne, t._is_shutdown.set, 3)
+        t.run()
+        sleep.assert_called_with(3.33)
+        on_tick.assert_has_class(call(3.33), call(3.33), call(3.33))
 
     @redirect_stdouts
     def test_apply_entry_error_not_handled(self, stdout, stderr):

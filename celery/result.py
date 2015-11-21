@@ -9,7 +9,6 @@
 from __future__ import absolute_import
 
 import time
-import warnings
 
 from collections import OrderedDict, deque
 from contextlib import contextmanager

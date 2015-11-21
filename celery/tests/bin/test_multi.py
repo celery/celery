@@ -165,6 +165,11 @@ class test_MultiTool(AppCase):
         self.t.note('hello world')
         self.assertFalse(self.fh.getvalue())
 
+    def test_carp(self):
+        self.t.say = Mock()
+        self.t.carp('foo')
+        self.t.say.assert_called_with('foo', True, self.t.stderr)
+
     def test_info(self):
         self.t.verbose = True
         self.t.info('hello info')

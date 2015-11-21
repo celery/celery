@@ -58,6 +58,11 @@ class test_Rdb(AppCase):
 
             # _close_session
             rdb._close_session()
+            rdb.active = True
+            rdb._handle = None
+            rdb._client = None
+            rdb._sock = None
+            rdb._close_session()
 
             # do_continue
             rdb.set_continue = Mock()

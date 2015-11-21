@@ -16,3 +16,6 @@ omit =
     *celery/backends/couchdb.py
     *celery/backends/couchbase.py
     *celery/backends/cassandra.py
+    *celery/backends/riak.py
+    *celery/concurrency/asynpool.py
+    *celery/utils/debug.py

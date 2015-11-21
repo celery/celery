@@ -4,10 +4,14 @@ import datetime
 
 from pickle import loads, dumps
 
+from kombu.exceptions import EncodeError
+
 from celery import uuid
 from celery import states
 from celery.backends import mongodb as module
-from celery.backends.mongodb import MongoBackend, Bunch, pymongo
+from celery.backends.mongodb import (
+    InvalidDocument, MongoBackend, Bunch, pymongo,
+)
 from celery.exceptions import ImproperlyConfigured
 from celery.tests.case import (
     AppCase, MagicMock, Mock, SkipTest, ANY,
@@ -123,13 +127,14 @@ class test_MongoBackend(AppCase):
         self.assertEqual(mb.password, 'celerypassword')
         self.assertEqual(mb.database_name, 'another_db')
 
+        mb = MongoBackend(app=self.app, url='mongodb://')
+
     @depends_on_current_app
     def test_reduce(self):
         x = MongoBackend(app=self.app)
         self.assertTrue(loads(dumps(x)))
 
     def test_get_connection_connection_exists(self):
-
         with patch('pymongo.MongoClient') as mock_Connection:
             self.backend._connection = sentinel._connection
 
@@ -139,7 +144,6 @@ class test_MongoBackend(AppCase):
             self.assertFalse(mock_Connection.called)
 
     def test_get_connection_no_connection_host(self):
-
         with patch('pymongo.MongoClient') as mock_Connection:
             self.backend._connection = None
             self.backend.host = MONGODB_HOST
@@ -154,7 +158,6 @@ class test_MongoBackend(AppCase):
             self.assertEqual(sentinel.connection, connection)
 
     def test_get_connection_no_connection_mongodb_uri(self):
-
         with patch('pymongo.MongoClient') as mock_Connection:
             mongodb_uri = 'mongodb://%s:%d' % (MONGODB_HOST, MONGODB_PORT)
             self.backend._connection = None
@@ -229,6 +232,11 @@ class test_MongoBackend(AppCase):
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
         mock_collection.save.assert_called_once_with(ANY)
         self.assertEqual(sentinel.result, ret_val)
+
+        mock_collection.save.side_effect = InvalidDocument()
+        with self.assertRaises(EncodeError):
+            self.backend._store_result(
+                sentinel.task_id, sentinel.result, sentinel.status)
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_get_task_meta_for(self, mock_get_database):
@@ -315,6 +323,9 @@ class test_MongoBackend(AppCase):
             list(ret_val.keys()),
         )
 
+        mock_collection.find_one.return_value = None
+        self.backend._restore_group(sentinel.taskset_id)
+
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_delete_group(self, mock_get_database):
         self.backend.taskmeta_collection = MONGODB_COLLECTION
@@ -387,3 +398,21 @@ class test_MongoBackend(AppCase):
             self.assertDictEqual(options, {
                 'maxPoolSize': self.backend.max_pool_size
             })
+
+
+class test_MongoBackend_no_mock(AppCase):
+
+    def test_encode_decode(self):
+        backend = MongoBackend(app=self.app)
+        data = {'foo': 1}
+        self.assertTrue(backend.decode(backend.encode(data)))
+        backend.serializer = 'bson'
+        self.assertEquals(backend.encode(data), data)
+        self.assertEquals(backend.decode(data), data)
+
+    def test_de(self):
+        backend = MongoBackend(app=self.app)
+        data = {'foo': 1}
+        self.assertTrue(backend.encode(data))
+        backend.serializer = 'bson'
+        self.assertEquals(backend.encode(data), data)

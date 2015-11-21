@@ -12,16 +12,31 @@ from celery.canvas import (
     chunks,
     _maybe_group,
     maybe_signature,
+    maybe_unroll_group,
 )
 from celery.result import EagerResult
 
-from celery.tests.case import AppCase, ContextMock, Mock
+from celery.tests.case import (
+    AppCase, ContextMock, MagicMock, Mock, depends_on_current_app,
+)
 
 SIG = Signature({'task': 'TASK',
                  'args': ('A1',),
                  'kwargs': {'K1': 'V1'},
                  'options': {'task_id': 'TASK_ID'},
                  'subtask_type': ''})
+
+
+class test_maybe_unroll_group(AppCase):
+
+    def test_when_no_len_and_no_length_hint(self):
+        g = MagicMock(name='group')
+        g.tasks.__len__.side_effect = TypeError()
+        g.tasks.__length_hint__ = Mock()
+        g.tasks.__length_hint__.return_value = 0
+        self.assertIs(maybe_unroll_group(g), g)
+        g.tasks.__length_hint__.side_effect = AttributeError()
+        self.assertIs(maybe_unroll_group(g), g)
 
 
 class CanvasCase(AppCase):
@@ -60,6 +75,12 @@ class test_Signature(CanvasCase):
         self.assertEqual(SIG.options, {'task_id': 'TASK_ID'})
         self.assertEqual(SIG.subtask_type, '')
 
+    def test_call(self):
+        x = Signature('foo', (1, 2), {'arg1': 33}, app=self.app)
+        x.type = Mock(name='type')
+        x(3, 4, arg2=66)
+        x.type.assert_called_with(3, 4, 1, 2, arg1=33, arg2=66)
+
     def test_link_on_scalar(self):
         x = Signature('TASK', link=Signature('B'))
         self.assertTrue(x.options['link'])
@@ -67,6 +88,16 @@ class test_Signature(CanvasCase):
         self.assertIsInstance(x.options['link'], list)
         self.assertIn(Signature('B'), x.options['link'])
         self.assertIn(Signature('C'), x.options['link'])
+
+    def test_json(self):
+        x = Signature('TASK', link=Signature('B', app=self.app), app=self.app)
+        self.assertDictEqual(x.__json__(), dict(x))
+
+    @depends_on_current_app
+    def test_reduce(self):
+        x = Signature('TASK', (2, 4), app=self.app)
+        fun, args = x.__reduce__()
+        self.assertEqual(fun(*args), x)
 
     def test_replace(self):
         x = Signature('TASK', ('A'), {})
@@ -255,6 +286,35 @@ class test_chain(CanvasCase):
         self.assertEqual(tasks[-4].parent_id, tasks[-3].id)
         self.assertEqual(tasks[-4].root_id, 'root')
 
+    def test_splices_chains(self):
+        c = chain(
+            self.add.s(5, 5),
+            chain(self.add.s(6), self.add.s(7), self.add.s(8), app=self.app),
+            app=self.app,
+        )
+        c.freeze()
+        tasks, _ = c._frozen
+        self.assertEqual(len(tasks), 4)
+
+    def test_from_dict_no_tasks(self):
+        self.assertTrue(chain.from_dict(
+            dict(chain(app=self.app)), app=self.app))
+
+    @depends_on_current_app
+    def test_app_falls_back_to_default(self):
+        from celery._state import current_app
+        self.assertIs(chain().app, current_app)
+
+    def test_handles_dicts(self):
+        c = chain(
+            self.add.s(5, 5), dict(self.add.s(8)), app=self.app,
+        )
+        c.freeze()
+        tasks, _ = c._frozen
+        for task in tasks:
+            self.assertIsInstance(task, Signature)
+            self.assertIs(task.app, self.app)
+
     def test_group_to_chord(self):
         c = (
             self.add.s(5) |
@@ -316,7 +376,7 @@ class test_chain(CanvasCase):
         def s(*args, **kwargs):
             return static(self.add, args, kwargs, type=self.add, app=self.app)
 
-        c = s(2, 2) | s(4, 4) | s(8, 8)
+        c = s(2, 2) | s(4) | s(8)
         r1 = c.apply_async(task_id='some_id')
         self.assertEqual(r1.id, 'some_id')
 
@@ -423,6 +483,11 @@ class test_group(CanvasCase):
         self.assertIsInstance(signature(x), group)
         self.assertIsInstance(signature(dict(x)), group)
 
+    def test_group_with_group_argument(self):
+        g1 = group(self.add.s(2, 2), self.add.s(4, 4), app=self.app)
+        g2 = group(g1, app=self.app)
+        self.assertIs(g2.tasks, g1.tasks)
+
     def test_maybe_group_sig(self):
         self.assertListEqual(
             _maybe_group(self.add.s(2, 2), self.app), [self.add.s(2, 2)],
@@ -436,6 +501,35 @@ class test_group(CanvasCase):
     def test_apply_async(self):
         x = group([self.add.s(4, 4), self.add.s(8, 8)])
         x.apply_async()
+
+    def test_prepare_with_dict(self):
+        x = group([self.add.s(4, 4), dict(self.add.s(8, 8))], app=self.app)
+        x.apply_async()
+
+    def test_group_in_group(self):
+        g1 = group(self.add.s(2, 2), self.add.s(4, 4), app=self.app)
+        g2 = group(self.add.s(8, 8), g1, self.add.s(16, 16), app=self.app)
+        g2.apply_async()
+
+    def test_set_immutable(self):
+        g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
+        g1.set_immutable(True)
+        for task in g1.tasks:
+            task.set_immutable.assert_called_with(True)
+
+    def test_link(self):
+        g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
+        sig = Mock(name='sig')
+        g1.link(sig)
+        g1.tasks[0].link.assert_called_with(sig.clone().set(immutable=True))
+
+    def test_link_error(self):
+        g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
+        sig = Mock(name='sig')
+        g1.link_error(sig)
+        g1.tasks[0].link_error.assert_called_with(
+            sig.clone().set(immutable=True),
+        )
 
     def test_apply_empty(self):
         x = group(app=self.app)
@@ -500,6 +594,41 @@ class test_chord(CanvasCase):
         z = y.clone()
         self.assertIsNone(z.kwargs.get('body'))
 
+    def test_argument_is_group(self):
+        x = chord(group(self.add.s(2, 2), self.add.s(4, 4), app=self.app))
+        self.assertTrue(x.tasks)
+
+    def test_set_parent_id(self):
+        x = chord(group(self.add.s(2, 2)))
+        x.tasks = [self.add.s(2, 2)]
+        x.set_parent_id('pid')
+
+    def test_app_when_app(self):
+        app = Mock(name='app')
+        x = chord([self.add.s(4, 4)], app=app)
+        self.assertIs(x.app, app)
+
+    def test_app_when_app_in_task(self):
+        t1 = Mock(name='t1')
+        t2 = Mock(name='t2')
+        x = chord([t1, self.add.s(4, 4)])
+        self.assertIs(x.app, x.tasks[0].app)
+        t1.app = None
+        x = chord([t1], body=t2)
+        self.assertIs(x.app, t2._app)
+
+    @depends_on_current_app
+    def test_app_fallback_to_current(self):
+        from celery._state import current_app
+        t1 = Mock(name='t1')
+        t1.app = t1._app = None
+        x = chord([t1], body=t1)
+        self.assertIs(x.app, current_app)
+
+    def test_set_immutable(self):
+        x = chord([Mock(name='t1'), Mock(name='t2')], app=self.app)
+        x.set_immutable(True)
+
     def test_links_to_body(self):
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
         x.link(self.div.s(2))
@@ -519,6 +648,12 @@ class test_chord(CanvasCase):
         x.kwargs['body'] = None
         self.assertIn('without body', repr(x))
 
+    def test_freeze_tasks_is_not_group(self):
+        x = chord([self.add.s(2, 2)], body=self.add.s(), app=self.app)
+        x.freeze()
+        x.tasks = [self.add.s(2, 2)]
+        x.freeze()
+
 
 class test_maybe_signature(CanvasCase):
 
@@ -529,6 +664,13 @@ class test_maybe_signature(CanvasCase):
         self.assertIsInstance(
             maybe_signature(dict(self.add.s()), app=self.app), Signature,
         )
+
+    def test_is_list(self):
+        sigs = [dict(self.add.s(2, 2)), dict(self.add.s(4, 4))]
+        sigs = maybe_signature(sigs, app=self.app)
+        for sig in sigs:
+            self.assertIsInstance(sig, Signature)
+            self.assertIs(sig.app, self.app)
 
     def test_when_sig(self):
         s = self.add.s()

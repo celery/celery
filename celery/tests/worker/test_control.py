@@ -562,6 +562,10 @@ class test_ControlPanel(AppCase):
         consumer.update_strategies.assert_called_with()
         self.assertFalse(_reload.called)
         self.assertFalse(_import.called)
+        consumer.controller.pool.restart.side_effect = NotImplementedError()
+        panel.handle('pool_restart', {'reloader': _reload})
+        consumer.controller.consumer = None
+        panel.handle('pool_restart', {'reloader': _reload})
 
     def test_pool_restart_import_modules(self):
         consumer = Consumer(self.app)

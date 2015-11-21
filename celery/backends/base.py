@@ -394,7 +394,7 @@ class KeyValueStoreBackend(BaseBackend):
     implements_incr = False
 
     def __init__(self, *args, **kwargs):
-        if hasattr(self.key_t, '__func__'):
+        if hasattr(self.key_t, '__func__'):  # pragma: no cover
             self.key_t = self.key_t.__func__  # remove binding
         self._encode_prefixes()
         super(KeyValueStoreBackend, self).__init__(*args, **kwargs)
@@ -583,7 +583,7 @@ class KeyValueStoreBackend(BaseBackend):
                 )
         val = self.incr(key)
         size = len(deps)
-        if val > size:
+        if val > size:  # pragma: no cover
             logger.warning('Chord counter incremented too many times for %r',
                            gid)
         elif val == size:

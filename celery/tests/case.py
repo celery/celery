@@ -315,10 +315,44 @@ class Case(unittest.TestCase):
         self.addCleanup(manager.stop)
         return patched
 
-    def mock_modules(self, *modules):
-        manager = mock_module(*modules)
-        manager.__enter__()
-        self.addCleanup(partial(manager.__exit__, None, None, None))
+    def mock_modules(self, *mods):
+        modules = []
+        for mod in mods:
+            mod = mod.split('.')
+            modules.extend(reversed([
+                '.'.join(mod[:-i] if i else mod) for i in range(len(mod))
+            ]))
+        modules = sorted(set(modules))
+        return self.wrap_context(mock_module(*modules))
+
+    def on_nth_call_do(self, mock, side_effect, n=1):
+
+        def on_call(*args, **kwargs):
+            if mock.call_count >= n:
+                mock.side_effect = side_effect
+            return mock.return_value
+        mock.side_effect = on_call
+        return mock
+
+    def on_nth_call_return(self, mock, retval, n=1):
+
+        def on_call(*args, **kwargs):
+            if mock.call_count >= n:
+                mock.return_value = retval
+            return mock.return_value
+        mock.side_effect = on_call
+        return mock
+
+    def mask_modules(self, *modules):
+        self.wrap_context(mask_modules(*modules))
+
+    def wrap_context(self, context):
+        ret = context.__enter__()
+        self.addCleanup(partial(context.__exit__, None, None, None))
+        return ret
+
+    def mock_environ(self, env_name, env_value):
+        return self.wrap_context(mock_environ(env_name, env_value))
 
     def assertWarns(self, expected_warning):
         return _AssertWarnsContext(expected_warning, self, None)
@@ -543,19 +577,28 @@ def wrap_logger(logger, loglevel=logging.ERROR):
         logger.handlers = old_handlers
 
 
+@contextmanager
+def mock_environ(env_name, env_value):
+    sentinel = object()
+    prev_val = os.environ.get(env_name, sentinel)
+    os.environ[env_name] = env_value
+    try:
+        yield env_value
+    finally:
+        if prev_val is sentinel:
+            os.environ.pop(env_name, None)
+        else:
+            os.environ[env_name] = prev_val
+
+
 def with_environ(env_name, env_value):
 
     def _envpatched(fun):
 
         @wraps(fun)
         def _patch_environ(*args, **kwargs):
-            prev_val = os.environ.get(env_name)
-            os.environ[env_name] = env_value
-            try:
+            with mock_environ(env_name, env_value):
                 return fun(*args, **kwargs)
-            finally:
-                os.environ[env_name] = prev_val or ''
-
         return _patch_environ
     return _envpatched
 

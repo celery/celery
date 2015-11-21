@@ -21,10 +21,6 @@ import warnings
 
 from collections import namedtuple
 
-try:
-    from billiard.process import current_process
-except ImportError:
-    current_process = None
 from billiard.compat import get_fdmax, close_open_fds
 # fileno used to be in this module
 from kombu.utils import maybe_fileno
@@ -33,6 +29,11 @@ from contextlib import contextmanager
 
 from .local import try_import
 from .five import items, reraise, string_t
+
+try:
+    from billiard.process import current_process
+except ImportError:  # pragma: no cover
+    current_process = None
 
 _setproctitle = try_import('setproctitle')
 resource = try_import('resource')
@@ -340,7 +341,8 @@ class DaemonContext(object):
     def _detach(self):
         if os.fork() == 0:      # first child
             os.setsid()         # create new session
-            if os.fork() > 0:   # second child
+            if os.fork() > 0:   # pragma: no cover
+                # second child
                 os._exit(0)
         else:
             os._exit(0)

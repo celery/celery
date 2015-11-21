@@ -185,13 +185,13 @@ class test_Worker(WorkerAppCase):
 
         prev_loader = self.app.loader
         worker = self.Worker(app=self.app, queues='foo,bar,baz,xuzzy,do,re,mi')
-        self.app.loader = Mock()
-        self.app.loader.__module__ = 'acme.baked_beans'
-        self.assertTrue(worker.startup_info())
+        with patch('celery.apps.worker.qualname') as qualname:
+            qualname.return_value = 'acme.backed_beans.Loader'
+            self.assertTrue(worker.startup_info())
 
-        self.app.loader = Mock()
-        self.app.loader.__module__ = 'celery.loaders.foo'
-        self.assertTrue(worker.startup_info())
+        with patch('celery.apps.worker.qualname') as qualname:
+            qualname.return_value = 'celery.loaders.Loader'
+            self.assertTrue(worker.startup_info())
 
         from celery.loaders.app import AppLoader
         self.app.loader = AppLoader(app=self.app)

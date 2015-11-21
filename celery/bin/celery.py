@@ -740,13 +740,13 @@ class CeleryCommand(Command):
                             # is (maybe) a value for this option
                             rest.extend([value, nxt])
                             index += 1
-                    except IndexError:
+                    except IndexError:  # pragma: no cover
                         rest.append(value)
                         break
                 else:
                     break
                 index += 1
-            if argv[index:]:
+            if argv[index:]:  # pragma: no cover
                 # if there are more arguments left then divide and swap
                 # we assume the first argument in argv[i:] is the command
                 # name.
