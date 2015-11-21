@@ -208,7 +208,7 @@ class Task(object):
     name = received = sent = started = succeeded = failed = retried = \
         revoked = args = kwargs = eta = expires = retries = worker = result = \
         exception = timestamp = runtime = traceback = exchange = \
-        routing_key = client = None
+        routing_key = root_id = parent_id = client = None
     state = states.PENDING
     clock = 0
 
