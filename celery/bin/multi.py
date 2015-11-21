@@ -143,6 +143,7 @@ additional options (must appear after command name):
     * --verbose:    Show more output.
     * --no-color:   Don't display colors.
 """
+CELERY_EXE = 'celery'
 
 multi_args_t = namedtuple(
     'multi_args_t', ('name', 'argv', 'expander', 'namespace'),
@@ -151,12 +152,6 @@ multi_args_t = namedtuple(
 
 def main():
     sys.exit(MultiTool().execute_from_commandline(sys.argv))
-
-
-CELERY_EXE = 'celery'
-if sys.version_info < (2, 7):
-    # pkg.__main__ first supported in Py2.7
-    CELERY_EXE = 'celery.__main__'
 
 
 def celery_exe(*args):
