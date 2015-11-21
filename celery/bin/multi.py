@@ -455,34 +455,50 @@ class MultiTool(object):
         return str(self.colored.magenta('DOWN'))
 
 
+def _args_for_node(p, name, prefix, suffix, cmd, append, options):
+    name, nodename, expand = _get_nodename(
+        name, prefix, suffix, options)
+
+    argv = ([expand(cmd)] +
+            [format_opt(opt, expand(value))
+                for opt, value in items(p.optmerge(name, options))] +
+            [p.passthrough])
+    if append:
+        argv.append(expand(append))
+    return multi_args_t(nodename, argv, expand, name)
+
+
 def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
     names = p.values
     options = dict(p.options)
-    passthrough = p.passthrough
     ranges = len(names) == 1
     if ranges:
         try:
-            noderange = int(names[0])
+            names, prefix = _get_ranges(names)
         except ValueError:
             pass
-        else:
-            names = [str(n) for n in range(1, noderange + 1)]
-            prefix = 'celery'
     cmd = options.pop('--cmd', cmd)
     append = options.pop('--append', append)
     hostname = options.pop('--hostname',
                            options.pop('-n', socket.gethostname()))
     prefix = options.pop('--prefix', prefix) or ''
     suffix = options.pop('--suffix', suffix) or hostname
-    if suffix in ('""', "''"):
-        suffix = ''
+    suffix = '' if suffix in ('""', "''") else suffix
 
-    for ns_name, ns_opts in list(items(p.namespaces)):
-        if ',' in ns_name or (ranges and '-' in ns_name):
-            for subns in parse_ns_range(ns_name, ranges):
-                p.namespaces[subns].update(ns_opts)
-            p.namespaces.pop(ns_name)
+    _update_ns_opts(p, names)
+    _update_ns_ranges(p, ranges)
+    return (_args_for_node(p, name, prefix, suffix, cmd, append, options)
+            for name in names)
 
+
+def _get_ranges(names):
+    noderange = int(names[0])
+    names = [str(n) for n in range(1, noderange + 1)]
+    prefix = 'celery'
+    return names, prefix
+
+
+def _update_ns_opts(p, names):
     # Numbers in args always refers to the index in the list of names.
     # (e.g. `start foo bar baz -c:1` where 1 is foo, 2 is bar, and so on).
     for ns_name, ns_opts in list(items(p.namespaces)):
@@ -495,7 +511,16 @@ def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
             except IndexError:
                 raise KeyError('No node at index %r' % (ns_name,))
 
-    for name in names:
+
+def _update_ns_ranges(p, ranges):
+    for ns_name, ns_opts in list(items(p.namespaces)):
+        if ',' in ns_name or (ranges and '-' in ns_name):
+            for subns in parse_ns_range(ns_name, ranges):
+                p.namespaces[subns].update(ns_opts)
+            p.namespaces.pop(ns_name)
+
+
+def _get_nodename(name, prefix, suffix, options):
         hostname = suffix
         if '@' in name:
             nodename = options['-n'] = host_format(name)
@@ -506,18 +531,11 @@ def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
             nodename = options['-n'] = host_format(
                 '{0}@{1}'.format(shortname, hostname),
             )
-
         expand = partial(
             node_format, nodename=nodename, N=shortname, d=hostname,
             h=nodename, i='%i', I='%I',
         )
-        argv = ([expand(cmd)] +
-                [format_opt(opt, expand(value))
-                 for opt, value in items(p.optmerge(name, options))] +
-                [passthrough])
-        if append:
-            argv.append(expand(append))
-        yield multi_args_t(nodename, argv, expand, name)
+        return name, nodename, expand
 
 
 class NamespacedOptionParser(object):
