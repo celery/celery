@@ -54,7 +54,6 @@ class RedisBackend(KeyValueStoreBackend):
 
     supports_autoexpire = True
     supports_native_join = True
-    implements_incr = True
 
     def __init__(self, host=None, port=None, db=None, password=None,
                  max_connections=None, url=None,
