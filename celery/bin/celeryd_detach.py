@@ -121,10 +121,7 @@ class detached_celeryd(object):
                    'for the list of supported worker arguments.')
     command = sys.executable
     execv_path = sys.executable
-    if sys.version_info < (2, 7):  # does not support pkg/__main__.py
-        execv_argv = ['-m', 'celery.__main__', 'worker']
-    else:
-        execv_argv = ['-m', 'celery', 'worker']
+    execv_argv = ['-m', 'celery', 'worker']
 
     def __init__(self, app=None):
         self.app = app
@@ -146,8 +143,7 @@ class detached_celeryd(object):
         return options, values, parser.leftovers
 
     def execute_from_commandline(self, argv=None):
-        if argv is None:
-            argv = sys.argv
+        argv = sys.argv if argv is None else argv
         config = []
         seen_cargs = 0
         for arg in argv:
