@@ -185,7 +185,7 @@ class BaseLoader(object):
                             'list': 'json',
                             'dict': 'json'}):
         from celery.app.defaults import Option, NAMESPACES
-        namespace = namespace.lower()
+        namespace = namespace and namespace.lower()
         typemap = dict(Option.typemap, **extra_types)
 
         def getarg(arg):
