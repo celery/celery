@@ -727,11 +727,6 @@ class ResultSet(ResultBase):
                                      ', '.join(r.id for r in self.results))
 
     @property
-    def subtasks(self):
-        """Deprecated alias to :attr:`results`."""
-        return self.results
-
-    @property
     def supports_native_join(self):
         try:
             return self.results[0].supports_native_join
