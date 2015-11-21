@@ -31,7 +31,9 @@ if pymongo:
     from pymongo.errors import InvalidDocument  # noqa
 else:                                       # pragma: no cover
     Binary = None                           # noqa
-    InvalidDocument = None                  # noqa
+
+    class InvalidDocument(Exception):       # noqa
+        pass
 
 __all__ = ['MongoBackend']
 
@@ -83,6 +85,9 @@ class MongoBackend(BaseBackend):
 
         # update conf with mongo uri data, only if uri was given
         if self.url:
+            if self.url == 'mongodb://':
+                self.url += 'localhost'
+
             uri_data = pymongo.uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
             hostslist = [
@@ -149,10 +154,6 @@ class MongoBackend(BaseBackend):
                 if isinstance(host, string_t) \
                    and not host.startswith('mongodb://'):
                     host = 'mongodb://{0}:{1}'.format(host, self.port)
-
-                if host == 'mongodb://':
-                    host += 'localhost'
-
             # don't change self.options
             conf = dict(self.options)
             conf['host'] = host
