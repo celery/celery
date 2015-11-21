@@ -22,7 +22,7 @@ from . import states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .datastructures import DependencyGraph, GraphFormatter
-from .exceptions import IncompleteStream, TimeoutError
+from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
 from .five import items, range, string_t, monotonic
 from .utils import deprecated
 
@@ -633,7 +633,8 @@ class ResultSet(ResultBase):
         remaining = None
 
         if on_message is not None:
-            raise Exception('Your backend not supported on_message callback')
+            raise ImproperlyConfigured(
+                'Backend does not support on_message callback')
 
         results = []
         for result in self.results:
