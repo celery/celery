@@ -33,8 +33,7 @@ from kombu.clocks import timetuple
 from kombu.utils import cached_property
 
 from celery import states
-from celery.five import class_property, items, values
-from celery.utils import deprecated
+from celery.five import items, values
 from celery.utils.functional import LRUCache, memoize
 from celery.utils.log import get_logger
 
@@ -323,12 +322,6 @@ class Task(object):
     @property
     def ready(self):
         return self.state in states.READY_STATES
-
-    @class_property
-    def _defaults(cls):
-        """Deprecated, to be removed in 5.0."""
-        source = cls()
-        return {k: getattr(source, k) for k in source._fields}
 
 
 class State(object):
