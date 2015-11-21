@@ -181,15 +181,17 @@ def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
     is_in_new = have.intersection(all_keys)
     is_in_old = have.intersection(old_keys)
 
+    info = None
     if is_in_new:
         # have new setting names
         info, left = _settings_info, is_in_old
         if is_in_old and len(is_in_old) > len(is_in_new):
             # Majority of the settings are old.
             info, left = _old_settings_info, is_in_new
-    elif is_in_old:
+    if is_in_old:
         # have old setting names, or a majority of the names are old.
-        info, left = _old_settings_info, is_in_new
+        if not info:
+            info, left = _old_settings_info, is_in_new
         if is_in_new and len(is_in_new) > len(is_in_old):
             # Majority of the settings are new
             info, left = _settings_info, is_in_old
