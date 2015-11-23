@@ -218,12 +218,13 @@ if not platforms.IS_WINDOWS:
         @patch('os.geteuid')
         @patch('os.getuid')
         @patch('celery.platforms.parse_uid')
+        @patch('celery.platforms.parse_gid')
         @patch('pwd.getpwuid')
         @patch('celery.platforms.setgid')
         @patch('celery.platforms.setuid')
         @patch('celery.platforms.initgroups')
         def test_with_uid(self, initgroups, setuid, setgid,
-                          getpwuid, parse_uid, getuid, geteuid,
+                          getpwuid, parse_gid, parse_uid, getuid, geteuid,
                           getgid, getegid):
             geteuid.return_value = 10
             getuid.return_value = 10
@@ -237,6 +238,7 @@ if not platforms.IS_WINDOWS:
             setuid.side_effect = raise_on_second_call
             getpwuid.return_value = pw_struct()
             parse_uid.return_value = 5001
+            parse_gid.return_value = 5001
             maybe_drop_privileges(uid='user')
             parse_uid.assert_called_with('user')
             getpwuid.assert_called_with(5001)
