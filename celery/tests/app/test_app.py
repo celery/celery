@@ -845,18 +845,21 @@ class test_App(AppCase):
         self.assertEqual(tz, timezone.get_timezone('UTC'))
 
     def test_compat_on_configure(self):
-        on_configure = Mock(name='on_configure')
+        _on_configure = Mock(name='on_configure')
 
         class CompatApp(Celery):
 
             def on_configure(self, *args, **kwargs):
-                on_configure(*args, **kwargs)
+                # on pypy3 if named on_configure the class function
+                # will be called, instead of the mock defined above,
+                # so we add the underscore.
+                _on_configure(*args, **kwargs)
 
         with CompatApp(set_as_current=False) as app:
             app.loader = Mock()
             app.loader.conf = {}
             app._load_config()
-            on_configure.assert_called_with()
+            _on_configure.assert_called_with()
 
     def test_add_periodic_task(self):
 
