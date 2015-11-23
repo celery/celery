@@ -92,8 +92,9 @@ class test_ScheduleEntry(AppCase):
     def test_lt(self):
         e1 = self.create_entry(schedule=timedelta(seconds=10))
         e2 = self.create_entry(schedule=timedelta(seconds=2))
-        self.assertLess(e2, e1)
-        self.assertTrue(e1 < object())
+        # order doesn't matter, see comment in __lt__
+        res1 = e1 < e2  # noqa
+        res2 = e1 < object()  # noqa
 
     def test_update(self):
         entry = self.create_entry()

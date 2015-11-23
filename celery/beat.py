@@ -145,6 +145,12 @@ class ScheduleEntry(object):
 
     def __lt__(self, other):
         if isinstance(other, ScheduleEntry):
+            # How the object is ordered doesn't really matter, as
+            # in the scheduler heap, the order is decided by the
+            # preceding members of the tuple ``(time, priority, entry)``.
+            #
+            # If all that is left to order on is the entry then it can
+            # just as well be random.
             return id(self) < id(other)
         return NotImplemented
 
