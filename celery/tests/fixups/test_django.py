@@ -60,8 +60,9 @@ class test_DjangoFixup(FixupCase):
         f._settings = Mock(name='_settings')
         self.assertIs(f.autodiscover_tasks(), f._settings.INSTALLED_APPS)
 
-    @patch('django.apps.apps', create=True)
-    def test_autodiscover_tasks(self, apps):
+    def test_autodiscover_tasks(self):
+        self.mock_modules('django.apps')
+        from django.apps import apps
         f = DjangoFixup(self.app)
         configs = [Mock(name='c1'), Mock(name='c2')]
         apps.get_app_configs.return_value = configs

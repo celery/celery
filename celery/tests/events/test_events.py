@@ -120,9 +120,9 @@ class test_EventDispatcher(AppCase):
         eventer.on_send_buffered.assert_called_with()
         eventer.send('task-received', uuid=1)
         self.assertFalse(eventer._group_buffer['task'])
-        eventer._publish.assert_has_calls(
+        eventer._publish.assert_has_calls([
             call([], eventer.producer, 'task.multi'),
-        )
+        ])
         # clear in place
         self.assertIs(eventer._group_buffer['task'], prev_buffer)
         self.assertEqual(len(buf_received[0]), 2)

@@ -150,7 +150,7 @@ class test_Timer(Case):
         self.on_nth_call_do(ne, t._is_shutdown.set, 3)
         t.run()
         sleep.assert_called_with(3.33)
-        on_tick.assert_has_class(call(3.33), call(3.33), call(3.33))
+        on_tick.assert_has_calls([call(3.33), call(3.33), call(3.33)])
 
     @redirect_stdouts
     def test_apply_entry_error_not_handled(self, stdout, stderr):
