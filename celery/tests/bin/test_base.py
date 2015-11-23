@@ -245,8 +245,11 @@ class test_Command(AppCase):
         with self.assertRaises(AttributeError):
             cmd.find_app(__name__)
 
-    @patch('celery.bin.base.input')
-    def test_ask(self, input):
+    def test_ask(self):
+        try:
+            input = self.patch('celery.bin.base.input')
+        except AttributeError:
+            input = self.patch('builtins.input')
         cmd = MockCommand(app=self.app)
         input.return_value = 'yes'
         self.assertEqual(cmd.ask('q', ('yes', 'no'), 'no'), 'yes')

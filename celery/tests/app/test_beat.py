@@ -94,7 +94,10 @@ class test_ScheduleEntry(AppCase):
         e2 = self.create_entry(schedule=timedelta(seconds=2))
         # order doesn't matter, see comment in __lt__
         res1 = e1 < e2  # noqa
-        res2 = e1 < object()  # noqa
+        try:
+            res2 = e1 < object()  # noqa
+        except TypeError:
+            pass
 
     def test_update(self):
         entry = self.create_entry()
