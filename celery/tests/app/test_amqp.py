@@ -133,7 +133,7 @@ class test_Queues(AppCase):
         ex = Exchange('fff', 'fanout')
         q = Queues(default_exchange=ex)
         q.add(Queue('foo'))
-        self.assertEqual(q['foo'].exchange, ex)
+        self.assertEqual(q['foo'].exchange.name, '')
 
     def test_alias(self):
         q = Queues()

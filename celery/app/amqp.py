@@ -525,7 +525,7 @@ class AMQP(object):
                                eta=body['eta'], taskset=body['taskset'])
             if sent_event:
                 evd = event_dispatcher or default_evd
-                exname = exchange or self.exchange
+                exname = exchange
                 if isinstance(exname, Exchange):
                     exname = exname.name
                 sent_event.update({
