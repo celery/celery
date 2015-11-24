@@ -91,8 +91,7 @@ class Queues(dict):
             return dict.__getitem__(self, name)
 
     def __setitem__(self, name, queue):
-        if self.default_exchange and (not queue.exchange or
-                                      not queue.exchange.name):
+        if self.default_exchange and not queue.exchange:
             queue.exchange = self.default_exchange
         dict.__setitem__(self, name, queue)
         if queue.alias:
