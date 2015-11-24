@@ -17,7 +17,9 @@ from inspect import getargspec, isfunction
 from itertools import chain, islice
 
 from amqp import promise
-from kombu.utils.functional import lazy, maybe_evaluate, is_list, maybe_list
+from kombu.utils.functional import (
+    dictfilter, lazy, maybe_evaluate, is_list, maybe_list,
+)
 
 from celery.five import UserDict, UserList, items, keys, range
 
@@ -352,12 +354,6 @@ class _regen(UserList, list):
         except StopIteration:
             pass
         return self.__consumed
-
-
-def dictfilter(d=None, **kw):
-    """Remove all keys from dict ``d`` whose value is :const:`None`"""
-    d = kw if d is None else (dict(d, **kw) if kw else d)
-    return {k: v for k, v in items(d) if v is not None}
 
 
 def _argsfromspec(spec, replace_defaults=True):
