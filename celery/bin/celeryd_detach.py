@@ -56,6 +56,9 @@ class PartialOptionParser(OptionParser):
         self.leftovers = []
         OptionParser.__init__(self, *args, **kwargs)
 
+    def add_option_group(self, group):
+        self.option_list.extend(group.option_list)
+
     def _process_long_opt(self, rargs, values):
         arg = rargs.pop(0)
 
@@ -118,15 +121,18 @@ class detached_celeryd(object):
     def __init__(self, app=None):
         self.app = app
 
-    def Parser(self, prog_name):
-        return PartialOptionParser(prog=prog_name,
-                                   usage=self.usage,
-                                   description=self.description,
-                                   version=self.version)
+    def create_parser(self, prog_name):
+        p = PartialOptionParser(
+            prog=prog_name,
+            usage=self.usage,
+            description=self.description,
+            version=self.version,
+        )
+        self.prepare_arguments(p)
+        return p
 
     def parse_options(self, prog_name, argv):
-        parser = self.Parser(prog_name)
-        self.prepare_arguments(parser)
+        parser = self.create_parser(prog_name)
         options, values = parser.parse_args(argv)
         if options.logfile:
             parser.leftovers.append('--logfile={0}'.format(options.logfile))

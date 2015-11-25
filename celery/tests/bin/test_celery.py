@@ -575,7 +575,7 @@ class test_control(AppCase):
 class test_multi(AppCase):
 
     def test_get_options(self):
-        self.assertTupleEqual(multi(app=self.app).get_options(), ())
+        self.assertIsNone(multi(app=self.app).get_options())
 
     def test_run_from_argv(self):
         with patch('celery.bin.multi.MultiTool') as MultiTool:

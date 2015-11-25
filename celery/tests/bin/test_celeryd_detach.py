@@ -56,11 +56,13 @@ class test_PartialOptionParser(AppCase):
 
     def test_parser(self):
         x = detached_celeryd(self.app)
-        p = x.Parser('celeryd_detach')
+        p = x.create_parser('celeryd_detach')
         options, values = p.parse_args([
             '--logfile=foo', '--fake', '--enable',
             'a', 'b', '-c1', '-d', '2',
         ])
+        print(p.option_list)
+        print('O: %r V: %r' % (vars(options), values))
         self.assertEqual(options.logfile, 'foo')
         self.assertEqual(values, ['a', 'b'])
         self.assertEqual(p.leftovers, ['--enable', '-c1', '-d', '2'])

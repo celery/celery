@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from celery import states
-from celery.tests.case import AppCase
-from celery.backends.filesystem import FilesystemBackend
-from celery.exceptions import ImproperlyConfigured
-from celery.utils import uuid
-
 import os
 import shutil
 import tempfile
 
+from celery import states
+from celery.backends.filesystem import FilesystemBackend
+from celery.exceptions import ImproperlyConfigured
+from celery.utils import uuid
+
+from celery.tests.case import AppCase
+
 
 class test_FilesystemBackend(AppCase):
+
     def setup(self):
         self.directory = tempfile.mkdtemp()
         self.url = 'file://' + self.directory
@@ -26,7 +28,7 @@ class test_FilesystemBackend(AppCase):
             FilesystemBackend(app=self.app)
 
     def test_a_path_in_app_conf(self):
-        self.app.conf.CELERY_RESULT_FSPATH = self.url[7:]
+        self.app.conf.result_fspath = self.url[7:]
         tb = FilesystemBackend(app=self.app)
         self.assertEqual(tb.path, self.path)
 

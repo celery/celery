@@ -24,18 +24,26 @@ except NameError:
     FileNotFoundError = IOError
     IsADirectoryError = IOError
 
+E_PATH_INVALID = """\
+The configured path for the Filesystem backend does not
+work correctly, please make sure that it exists and has
+the correct permissions.\
+"""
+
 
 class FilesystemBackend(KeyValueStoreBackend):
+
     def __init__(self, url=None, open=open, unlink=os.unlink, sep=os.sep,
                  encoding=default_encoding, *args, **kwargs):
         """Initialize the filesystem backend.
 
         Keyword arguments (in addition to those of KeyValueStoreBackend):
-        url      -- URL to the directory we should use
-        open     -- open function to use when opening files
-        unlink   -- unlink function to use when deleting files
-        sep      -- directory seperator (to join the directory with the key)
-        encoding -- encoding used on the filesystem
+
+        :param url:  URL to the directory we should use
+        :param open: open function to use when opening files
+        :param unlink: unlink function to use when deleting files
+        :param sep: directory seperator (to join the directory with the key)
+        :param encoding: encoding used on the filesystem
 
         """
 
@@ -55,10 +63,11 @@ class FilesystemBackend(KeyValueStoreBackend):
     def _find_path(self, url):
         if url is not None and url.startswith('file:///'):
             return url[7:]
-        if hasattr(self.app.conf, 'CELERY_RESULT_FSPATH'):
-            return self.app.conf.CELERY_RESULT_FSPATH
-        raise ImproperlyConfigured(
-            'You need to configure a path for the Filesystem backend')
+        path = self.app.conf.result_fspath
+        if not path:
+            raise ImproperlyConfigured(
+                'You need to configure a path for the Filesystem backend')
+        return path
 
     def _do_directory_test(self, key):
         try:
@@ -66,10 +75,7 @@ class FilesystemBackend(KeyValueStoreBackend):
             assert self.get(key) == b'test value'
             self.delete(key)
         except IOError:
-            raise ImproperlyConfigured(
-                'The configured path for the Filesystem backend does not '
-                'work correctly, please make sure that it exists and has '
-                'the correct permissions.')
+            raise ImproperlyConfigured(E_PATH_INVALID)
 
     def _filename(self, key):
         return self.sep.join((self.path, key))
@@ -79,7 +85,7 @@ class FilesystemBackend(KeyValueStoreBackend):
             with self.open(self._filename(key), 'rb') as infile:
                 return infile.read()
         except FileNotFoundError:
-            return None
+            pass
 
     def set(self, key, value):
         with self.open(self._filename(key), 'wb') as outfile:
