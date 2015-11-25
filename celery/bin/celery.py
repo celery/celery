@@ -90,7 +90,7 @@ class multi(Command):
     respects_app_option = False
 
     def get_options(self):
-        return ()
+        pass
 
     def run_from_argv(self, prog_name, argv, command=None):
         from celery.bin.multi import MultiTool
