@@ -21,7 +21,7 @@ from kombu.utils.functional import (
     dictfilter, lazy, maybe_evaluate, is_list, maybe_list,
 )
 
-from celery.five import UserDict, UserList, items, keys, range
+from celery.five import UserDict, UserList, keys, range
 
 __all__ = ['LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
            'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
