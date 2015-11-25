@@ -66,7 +66,6 @@ these can be specified as arguments to the decorator:
         User.objects.create(username=username, password=password)
 
 
-
 .. sidebar:: How do I import the task decorator? And what is "app"?
 
     The task decorator is available on your :class:`@Celery` application instance,
@@ -97,6 +96,42 @@ these can be specified as arguments to the decorator:
         @decorator1
         def add(x, y):
             return x + y
+
+Bound tasks
+-----------
+
+A task being bound means the first argument to the task will always
+be the task instance (``self``), just like Python bound methods:
+
+.. code-block:: python
+
+    logger = get_task_logger(__name__)
+
+    @task(bind=True)
+    def add(self, x, y):
+        logger.info(self.request.id)
+
+Bound tasks are needed for retries (using :meth:`@Task.retry`), for
+accessing information about the current task request, and for any additional
+functionality you add to custom task base classes.
+
+Task inheritance
+----------------
+
+The ``base`` argument to the task decorator specifies the base class of the task:
+
+.. code-block:: python
+
+    import celery
+
+    class MyTask(celery.Task):
+
+        def on_failure(self, exc, task_id, args, kwargs, einfo):
+            print('{0!r} failed: {1!r}'.format(task_id, exc)
+
+    @task(base=MyTask)
+    def add(x, y):
+        raise KeyError()
 
 .. _task-names:
 
