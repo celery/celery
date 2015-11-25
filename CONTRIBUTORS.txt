@@ -156,6 +156,7 @@ Antoine Legrand, 2014/01/09
 Pepijn de Vos, 2014/01/15
 Dan McGee, 2014/01/27
 Paul Kilgo, 2014/01/28
+Môshe van der Sterre, 2014/01/31
 Martin Davidsson, 2014/02/08
 Chris Clark, 2014/02/20
 Matthew Duggan, 2014/04/10

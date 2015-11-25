@@ -106,6 +106,7 @@ Miguel Hernandez Martos <enlavin@gmail.com>
 Mikhail Gusarov <dottedmag@dottedmag.net>
 Mikhail Korobov <kmike84@gmail.com>
 Mitar <mitar@tnode.com>
+Môshe van der Sterre <me@moshe.nl>
 Neil Chintomby
 Noah Kantrowitz <noah@coderanger.net>
 Norman Richards <orb@nostacktrace.com>
