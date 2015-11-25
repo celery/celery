@@ -527,6 +527,10 @@ Can be one of the following:
     Older AMQP backend (badly) emulating a database-based backend.
     See :ref:`conf-amqp-result-backend`.
 
+* filesystem
+    Use a shared directory to store the results.
+    See :ref:`conf-filesystem-result-backend`.
+
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
@@ -1198,6 +1202,26 @@ Example configuration
 
     result_backend = 'amqp'
     result_expires = 18000  # 5 hours.
+
+.. _conf-filesystem-result-backend:
+
+Filesystem backend settings
+---------------------------
+
+This backend can be configured using a file URL, for example::
+
+    CELERY_RESULT_BACKEND = 'file:///var/celery/results'
+
+The configured directory needs to be shared and writeable by all servers using
+the backend.
+
+If you are trying Celery on a single system you can simply use the backend
+without any further configuration. For larger clusters you could use NFS,
+`GlusterFS`_, CIFS, `HDFS`_ (using FUSE) or any other filesystem.
+
+.. _`GlusterFS`: http://www.gluster.org/
+.. _`HDFS`: http://hadoop.apache.org/
+
 
 .. _conf-messaging:
 
