@@ -426,12 +426,15 @@ class Command(object):
             formatter=HelpFormatter(),
             description=self.description,
         )
-        parser.option_list.extend(self.preload_options)
-        self.prepare_arguments(parser)
-        option_list = self.get_options()
-        if option_list:
-            parser.option_lisat.extend(option_list)
-        parser.option_list.extend(self.app.user_options['preload'])
+        parser.add_options(self.preload_options)
+        for typ_ in reversed(type(self).mro()):
+            try:
+                prepare_arguments = typ_.prepare_arguments
+            except AttributeError:
+                continue
+            prepare_arguments(self, parser)
+        parser.add_options(self.get_options() or ())
+        parser.add_options(self.app.user_options['preload'])
         return self.prepare_parser(parser)
 
     def prepare_parser(self, parser):

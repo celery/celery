@@ -86,7 +86,7 @@ class beat(Command):
         parser.add_option('-S', '--scheduler', dest='scheduler_cls')
         parser.add_option('-l', '--loglevel', default='WARN')
         daemon_options(parser, default_pidfile='celerybeat.pid')
-        parser.option_list.extend(self.app.user_options['beat'])
+        parser.add_options(self.app.user_options['beat'])
 
 
 def main(app=None):

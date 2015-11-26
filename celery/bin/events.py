@@ -126,7 +126,7 @@ class events(Command):
         parser.add_option('-r', '--maxrate')
         parser.add_option('-l', '--loglevel', default='INFO')
         daemon_options(parser, default_pidfile='celeryev.pid')
-        parser.option_list.extend(self.app.user_options['events'])
+        parser.add_options(self.app.user_options['events'])
 
 
 def main():

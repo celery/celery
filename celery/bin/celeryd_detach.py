@@ -56,9 +56,6 @@ class PartialOptionParser(OptionParser):
         self.leftovers = []
         OptionParser.__init__(self, *args, **kwargs)
 
-    def add_option_group(self, group):
-        self.option_list.extend(group.option_list)
-
     def _process_long_opt(self, rargs, values):
         arg = rargs.pop(0)
 
