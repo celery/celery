@@ -911,6 +911,10 @@ when the counter exceeds the number of tasks in the set. *Note:* chords do not
 properly work with Redis before version 2.2; you will need to upgrade to at
 least 2.2 to use them.
 
+*Note:* In Redis result backend this approach will be used only
+when :const:`new_join` is set to :const:`True` in a :const:`result_backend`
+connection params, otherwise polling will be used.
+
 The Redis and Memcached approach is a much better solution, but not easily
 implemented in other backends (suggestions welcome!).
 
