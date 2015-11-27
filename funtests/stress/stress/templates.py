@@ -61,8 +61,6 @@ class default(object):
     task_default_queue = CSTRESS_QUEUE
     task_queues = [
         Queue(CSTRESS_QUEUE,
-              exchange=Exchange(CSTRESS_QUEUE),
-              routing_key=CSTRESS_QUEUE,
               durable=not CSTRESS_TRANS,
               no_ack=CSTRESS_TRANS),
     ]

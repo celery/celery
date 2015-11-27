@@ -488,8 +488,11 @@ class AMQP(object):
                 except AttributeError:
                     pass
                 delivery_mode = delivery_mode or default_delivery_mode
-            exchange = exchange or queue.exchange.name
-            routing_key = routing_key or queue.routing_key
+            if not exchange and not routing_key:
+                exchange, routing_key = '', qname
+            else:
+                exchange = exchange or queue.exchange.name or default_exchange
+                routing_key = routing_key or queue.routing_key or default_rkey
             if declare is None and queue and not isinstance(queue, Broadcast):
                 declare = [queue]
 
@@ -507,8 +510,8 @@ class AMQP(object):
                 )
             ret = producer.publish(
                 body,
-                exchange=exchange or default_exchange,
-                routing_key=routing_key or default_rkey,
+                exchange=exchange,
+                routing_key=routing_key,
                 serializer=serializer or default_serializer,
                 compression=compression or default_compressor,
                 retry=retry, retry_policy=_rp,
