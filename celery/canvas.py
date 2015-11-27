@@ -488,11 +488,11 @@ class chain(Signature):
                 # signature instead of a group.
                 tasks.pop()
                 results.pop()
-                prev_res = prev_prev_res
                 task = chord(
                     task, body=prev_task,
                     task_id=prev_res.task_id, root_id=root_id, app=app,
                 )
+                prev_res = prev_prev_res
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
                 # in the chain.  If the chord is part of a chord/group
