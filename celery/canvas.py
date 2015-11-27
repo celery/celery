@@ -295,6 +295,8 @@ class Signature(dict):
     def __or__(self, other):
         if isinstance(other, group):
             other = maybe_unroll_group(other)
+        if isinstance(self, group):
+            return chord(self, body=other, app=self._app)
         if not isinstance(self, chain) and isinstance(other, chain):
             return chain((self,) + other.tasks, app=self._app)
         elif isinstance(other, chain):
