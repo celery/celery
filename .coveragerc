@@ -3,6 +3,7 @@ branch = 1
 cover_pylib = 0
 include=*celery/*
 omit = celery.tests.*
+
 [report]
 omit =
     */python?.?/*
