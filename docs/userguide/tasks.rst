@@ -497,7 +497,7 @@ but this will not happen if:
 
 - An ``exc`` argument was not given.
 
-    In this case the :exc:`~@MaxRetriesExceeded`
+    In this case the :exc:`~@MaxRetriesExceededError`
     exception will be raised.
 
 - There is no current exception
@@ -615,7 +615,7 @@ General
 .. attribute:: Task.max_retries
 
     The maximum number of attempted retries before giving up.
-    If the number of retries exceeds this value a :exc:`~@MaxRetriesExceeded`
+    If the number of retries exceeds this value a :exc:`~@MaxRetriesExceededError`
     exception will be raised.  *NOTE:* You have to call :meth:`~@Task.retry`
     manually, as it will not automatically retry on exception..
 
