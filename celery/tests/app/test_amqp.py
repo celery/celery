@@ -222,7 +222,7 @@ class test_AMQP(AppCase):
         )
         kwargs = prod.publish.call_args[1]
         self.assertEqual(kwargs['routing_key'], 'foo')
-        self.assertEqual(kwargs['exchange'], 'foo')
+        self.assertEqual(kwargs['exchange'], '')
 
     def test_send_event_exchange_string(self):
         evd = Mock(name="evd")
