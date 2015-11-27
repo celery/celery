@@ -475,7 +475,7 @@ class KeyValueStoreBackend(BaseBackend):
             }
 
     def get_many(self, task_ids, timeout=None, interval=0.5, no_ack=True,
-                 on_message=None,
+                 on_message=None, on_interval=None,
                  READY_STATES=states.READY_STATES):
         interval = 0.5 if interval is None else interval
         ids = task_ids if isinstance(task_ids, set) else set(task_ids)
@@ -505,6 +505,8 @@ class KeyValueStoreBackend(BaseBackend):
                 yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:
                 raise TimeoutError('Operation timed out ({0})'.format(timeout))
+            if on_interval:
+                on_interval()
             time.sleep(interval)  # don't busy loop.
             iterations += 1
 

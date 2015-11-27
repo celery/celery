@@ -231,7 +231,8 @@ class AMQPBackend(BaseBackend):
     def _many_bindings(self, ids):
         return [self._create_binding(task_id) for task_id in ids]
 
-    def get_many(self, task_ids, timeout=None, no_ack=True, on_message=None,
+    def get_many(self, task_ids, timeout=None, no_ack=True,
+                 on_message=None, on_interval=None,
                  now=monotonic, getfields=itemgetter('status', 'task_id'),
                  READY_STATES=states.READY_STATES,
                  PROPAGATE_STATES=states.PROPAGATE_STATES, **kwargs):
@@ -276,6 +277,8 @@ class AMQPBackend(BaseBackend):
                         ids.discard(task_id)
                         push_cache(task_id, state)
                         yield task_id, state
+                    if on_interval:
+                        on_interval()
 
     def reload_task_result(self, task_id):
         raise NotImplementedError(
