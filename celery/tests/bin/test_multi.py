@@ -260,7 +260,7 @@ class test_MultiTool(AppCase):
         self.t.shutdown_nodes = Mock()
         self.t.stop(['a', 'b', '-INT'], 'celery worker')
         self.t.shutdown_nodes.assert_called_with(
-            [2, 3, 4], sig=signal.SIGINT, retry=None, callback=None,
+            [2, 3, 4], sig=signal.SIGINT, wait=False, callback=None,
 
         )
 
@@ -269,9 +269,9 @@ class test_MultiTool(AppCase):
             raise SkipTest('SIGKILL not supported by this platform')
         self.t.getpids = Mock()
         self.t.getpids.return_value = [
-            ('a', None, 10),
-            ('b', None, 11),
-            ('c', None, 12)
+            ('a', None, 10, None),
+            ('b', None, 11, None),
+            ('c', None, 12, None)
         ]
         sig = self.t.signal_node = Mock()
 
@@ -337,14 +337,14 @@ class test_MultiTool(AppCase):
 
     @patch('celery.bin.multi.Pidfile')
     @patch('socket.gethostname')
-    @patch('celery.bin.multi.sleep')
-    def test_shutdown_nodes(self, slepp, gethostname, Pidfile):
+    def test_shutdown_nodes(self, gethostname, Pidfile):
         gethostname.return_value = 'e.com'
         self.prepare_pidfile_for_getpids(Pidfile)
         self.assertIsNone(self.t.shutdown_nodes([]))
         self.t.signal_node = Mock()
-        node_alive = self.t.node_alive = Mock()
-        self.t.node_alive.return_value = False
+        self.t.init_pidfile_observers = Mock()
+        self.t.init_pidfile_observers.return_value = None, []
+        self.t.wait_pidfiles = Mock()
 
         callback = Mock()
         self.t.stop(['foo', 'bar', 'baz'], 'celery worker', callback=callback)
@@ -362,29 +362,8 @@ class test_MultiTool(AppCase):
         self.assertTrue(callback.called)
         self.t.stop(['foo', 'bar', 'baz'], 'celery worker', callback=None)
 
-        def on_node_alive(pid):
-            if node_alive.call_count > 4:
-                return True
-            return False
         self.t.signal_node.return_value = True
-        self.t.node_alive.side_effect = on_node_alive
-        self.t.stop(['foo', 'bar', 'baz'], 'celery worker', retry=True)
-
-    @patch('os.kill')
-    def test_node_alive(self, kill):
-        kill.return_value = True
-        self.assertTrue(self.t.node_alive(13))
-        esrch = OSError()
-        esrch.errno = errno.ESRCH
-        kill.side_effect = esrch
-        self.assertFalse(self.t.node_alive(13))
-        kill.assert_called_with(13, 0)
-
-        enoent = OSError()
-        enoent.errno = errno.ENOENT
-        kill.side_effect = enoent
-        with self.assertRaises(OSError):
-            self.t.node_alive(13)
+        self.t.stop(['foo', 'bar', 'baz'], 'celery worker', wait=True)
 
     @patch('os.kill')
     def test_signal_node(self, kill):
@@ -460,7 +439,7 @@ class test_MultiTool(AppCase):
     def test_stopwait(self):
         self.t._stop_nodes = Mock()
         self.t.stopwait(['foo', 'bar', 'baz'], 'celery worker')
-        self.assertEqual(self.t._stop_nodes.call_args[1]['retry'], 2)
+        self.assertEqual(self.t._stop_nodes.call_args[1]['wait'], True)
 
     @patch('celery.bin.multi.MultiTool')
     def test_main(self, MultiTool):
