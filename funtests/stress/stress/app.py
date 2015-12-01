@@ -58,8 +58,6 @@ def _marker(s, sep='-'):
 
 @app.task
 def add(x, y):
-    import locale
-    print(locale.getdefaultlocale())
     return x + y
 
 
