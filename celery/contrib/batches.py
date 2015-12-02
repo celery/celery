@@ -57,7 +57,7 @@ messages, and every 10 seconds.
         )
         # use mark_as_done to manually return response data
         for response, request in zip(reponses, requests):
-            app.backend.mark_as_done(request.id, response)
+            app.backend.mark_as_done(request.id, response, request)
 
 
     def wot_api_real(urls):
