@@ -22,6 +22,7 @@ try:
     import sqlalchemy  # noqa
 except ImportError:
     DatabaseBackend = Task = TaskSet = retry = None  # noqa
+    SessionManager = session_cleanup = None  # noqa
 else:
     from celery.backends.database import (
         DatabaseBackend, retry, session_cleanup,
@@ -38,6 +39,10 @@ class SomeClass(object):
 
 
 class test_session_cleanup(AppCase):
+
+    def setup(self):
+        if session_cleanup is None:
+            raise SkipTest('slqlalchemy not installed')
 
     def test_context(self):
         session = Mock(name='session')
@@ -214,6 +219,10 @@ class test_DatabaseBackend(AppCase):
 
 
 class test_SessionManager(AppCase):
+
+    def setup(self):
+        if SessionManager is None:
+            raise SkipTest('sqlalchemy not installed')
 
     def test_after_fork(self):
         s = SessionManager()

@@ -696,7 +696,7 @@ class test_Request(RequestCase):
                 message.content_type, message.content_encoding)
             self.assertFalse(failed)
             self.assertEqual(res, repr(4 ** 4))
-            self.assertTrue(runtime)
+            self.assertIsNotNone(runtime)
             self.assertIsInstance(runtime, numbers.Real)
         finally:
             reset_worker_optimizations()
@@ -708,7 +708,7 @@ class test_Request(RequestCase):
         )
         self.assertFalse(failed)
         self.assertEqual(res, repr(4 ** 4))
-        self.assertTrue(runtime)
+        self.assertIsNotNone(runtime)
         self.assertIsInstance(runtime, numbers.Real)
 
     def test_trace_task_ret(self):

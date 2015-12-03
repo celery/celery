@@ -61,6 +61,10 @@ class test_find_option_with_arg(Case):
 
 class test_fd_by_path(Case):
 
+    def setUp(self):
+        if sys.platform == 'win32':
+            raise SkipTest('win32: skip')
+
     def test_finds(self):
         test_file = tempfile.NamedTemporaryFile()
         try:

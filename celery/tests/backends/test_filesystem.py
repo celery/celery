@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import os
 import shutil
+import sys
 import tempfile
 
 from celery import states
@@ -10,12 +11,14 @@ from celery.backends.filesystem import FilesystemBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.utils import uuid
 
-from celery.tests.case import AppCase
+from celery.tests.case import AppCase, SkipTest
 
 
 class test_FilesystemBackend(AppCase):
 
     def setup(self):
+        if sys.platform == 'win32':
+            raise SkiptTest('win32: skip')
         self.directory = tempfile.mkdtemp()
         self.url = 'file://' + self.directory
         self.path = self.directory.encode('ascii')
