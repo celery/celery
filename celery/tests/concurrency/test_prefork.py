@@ -198,6 +198,10 @@ class PoolCase(AppCase):
 
 class test_AsynPool(PoolCase):
 
+    def setup(self):
+        if sys.platform == 'win32':
+            raise SkipTest('win32: skip')
+
     def test_gen_not_started(self):
 
         def gen():
@@ -302,6 +306,10 @@ class test_AsynPool(PoolCase):
 
 
 class test_ResultHandler(PoolCase):
+
+    def setup(self):
+        if sys.platform == 'win32':
+            raise SkipTest('win32: skip')
 
     def test_process_result(self):
         x = asynpool.ResultHandler(

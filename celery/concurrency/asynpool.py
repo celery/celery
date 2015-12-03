@@ -428,6 +428,7 @@ class AsynPool(_pool.Pool):
 
     def _event_process_exit(self, hub, fd):
         # This method is called whenever the process sentinel is readable.
+        print('>>> HUB REMOVE PROCESS: %r'  %(fd,))
         hub.remove(fd)
         self.maintain_pool()
 
@@ -614,6 +615,7 @@ class AsynPool(_pool.Pool):
             remove_reader(proc.sentinel)
             waiting_to_start.discard(proc)
             self._active_writes.discard(proc.inqW_fd)
+            print('>>> REMOVE WRITER: %r' % (proc.inqW_fd,))
             remove_writer(proc.inqW_fd)
             remove_reader(proc.outqR_fd)
             if proc.synqR_fd:
@@ -694,7 +696,9 @@ class AsynPool(_pool.Pool):
                     [hub_add(fd, None, WRITE | ERR, consolidate=True)
                      for fd in diff(active_writes)]
                 else:
-                    [hub_remove(fd) for fd in diff(active_writes)]
+                    fds = diff(active_writes)
+                    print('>>> REMOVING ALL: %r' % (fds,))
+                    [hub_remove(fd) for fd in fds]
         self.on_poll_start = on_poll_start
 
         def on_inqueue_close(fd, proc):

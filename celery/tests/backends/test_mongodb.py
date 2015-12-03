@@ -402,6 +402,10 @@ class test_MongoBackend(AppCase):
 
 class test_MongoBackend_no_mock(AppCase):
 
+    def setup(self):
+        if pymongo is None:
+            raise SkipTest('pymongo is not installed.')
+
     def test_encode_decode(self):
         backend = MongoBackend(app=self.app)
         data = {'foo': 1}
