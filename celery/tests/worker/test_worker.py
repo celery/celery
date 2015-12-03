@@ -2,6 +2,7 @@ from __future__ import absolute_import, print_function
 
 import os
 import socket
+import sys
 
 from collections import deque
 from datetime import datetime, timedelta
@@ -1185,6 +1186,7 @@ class test_WorkController(AppCase):
         pool = components.Pool(w)
         pool.create(w)
         pool.register_with_event_loop(w, w.hub)
-        self.assertIsInstance(w.semaphore, LaxBoundedSemaphore)
+        if sys.platform != 'win32':
+            self.assertIsInstance(w.semaphore, LaxBoundedSemaphore)
         P = w.pool
         P.start()

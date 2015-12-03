@@ -18,7 +18,7 @@ class test_FilesystemBackend(AppCase):
 
     def setup(self):
         if sys.platform == 'win32':
-            raise SkiptTest('win32: skip')
+            raise SkipTest('win32: skip')
         self.directory = tempfile.mkdtemp()
         self.url = 'file://' + self.directory
         self.path = self.directory.encode('ascii')
