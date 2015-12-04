@@ -1188,5 +1188,5 @@ class test_WorkController(AppCase):
         pool.register_with_event_loop(w, w.hub)
         if sys.platform != 'win32':
             self.assertIsInstance(w.semaphore, LaxBoundedSemaphore)
-        P = w.pool
-        P.start()
+            P = w.pool
+            P.start()
