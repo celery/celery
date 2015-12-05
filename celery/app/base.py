@@ -635,12 +635,12 @@ class Celery(object):
         options = router.route(options, route_name or name, args, kwargs)
 
         if root_id is None:
-            parent, have_parent = get_current_worker_task(), True
+            parent, have_parent = self.current_worker_task, True
             if parent:
                 root_id = parent.request.root_id or parent.request.id
         if parent_id is None:
             if not have_parent:
-                parent, have_parent = get_current_worker_task(), True
+                parent, have_parent = self.current_worker_task, True
             if parent:
                 parent_id = parent.request.id
 
@@ -661,7 +661,7 @@ class Celery(object):
         result = (result_cls or self.AsyncResult)(task_id)
         if add_to_parent:
             if not have_parent:
-                parent, have_parent = get_current_worker_task(), True
+                parent, have_parent = self.current_worker_task, True
             if parent:
                 parent.add_trail(result)
         return result
@@ -1024,6 +1024,10 @@ class Celery(object):
         """The instance of the task that is being executed, or
         :const:`None`."""
         return _task_stack.top
+
+    @property
+    def current_worker_task(self):
+        return get_current_worker_task()
 
     @cached_property
     def oid(self):

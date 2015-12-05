@@ -111,21 +111,21 @@ class test_group(BuiltinsCase):
             task.clone.attach_mock(Mock(), 'apply_async')
         return g, result
 
-    @patch('celery.app.builtins.get_current_worker_task')
-    def test_task(self, get_current_worker_task):
+    @patch('celery.app.base.Celery.current_worker_task')
+    def test_task(self, current_worker_task):
         g, result = self.mock_group(self.add.s(2), self.add.s(4))
         self.task(g.tasks, result, result.id, (2,)).results
         g.tasks[0].clone().apply_async.assert_called_with(
             group_id=result.id, producer=self.app.producer_or_acquire(),
             add_to_parent=False,
         )
-        get_current_worker_task().add_trail.assert_called_with(result)
+        current_worker_task.add_trail.assert_called_with(result)
 
-    @patch('celery.app.builtins.get_current_worker_task')
-    def test_task__disable_add_to_parent(self, get_current_worker_task):
+    @patch('celery.app.base.Celery.current_worker_task')
+    def test_task__disable_add_to_parent(self, current_worker_task):
         g, result = self.mock_group(self.add.s(2, 2), self.add.s(4, 4))
         self.task(g.tasks, result, result.id, None, add_to_parent=False)
-        self.assertFalse(get_current_worker_task().add_trail.called)
+        self.assertFalse(current_worker_task.add_trail.called)
 
 
 class test_chain(BuiltinsCase):

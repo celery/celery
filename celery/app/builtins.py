@@ -9,7 +9,7 @@
 """
 from __future__ import absolute_import
 
-from celery._state import get_current_worker_task, connect_on_app_finalize
+from celery._state import connect_on_app_finalize
 from celery.utils.log import get_logger
 
 __all__ = []
@@ -157,7 +157,7 @@ def add_group_task(app):
         with app.producer_or_acquire() as producer:
             [stask.apply_async(group_id=group_id, producer=producer,
                                add_to_parent=False) for stask in taskit]
-        parent = get_current_worker_task()
+        parent = app.current_worker_task
         if add_to_parent and parent:
             parent.add_trail(result)
         return result

@@ -22,7 +22,7 @@ from itertools import chain as _chain
 
 from kombu.utils import cached_property, fxrange, reprcall, uuid
 
-from celery._state import current_app, get_current_worker_task
+from celery._state import current_app
 from celery.local import try_import
 from celery.result import GroupResult
 from celery.utils import abstract
@@ -761,7 +761,7 @@ class group(Signature):
         if len(result) == 1 and isinstance(result[0], GroupResult):
             result = result[0]
 
-        parent_task = get_current_worker_task()
+        parent_task = app.current_worker_task
         if add_to_parent and parent_task:
             parent_task.add_trail(result)
         return result
