@@ -404,8 +404,10 @@ class AsynPool(_pool.Pool):
             # as processes are recycled, or found lost elsewhere.
             self._fileno_to_outq[proc.outqR_fd] = proc
             self._fileno_to_synq[proc.synqW_fd] = proc
-        self.on_soft_timeout = self._timeout_handler.on_soft_timeout
-        self.on_hard_timeout = self._timeout_handler.on_hard_timeout
+        self.on_soft_timeout = self.on_hard_timeout = None
+        if self._timeout_handler:
+            self.on_soft_timeout = self._timeout_handler.on_soft_timeout
+            self.on_hard_timeout = self._timeout_handler.on_hard_timeout
 
     def _event_process_exit(self, hub, fd):
         # This method is called whenever the process sentinel is readable.
