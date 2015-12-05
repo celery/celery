@@ -17,7 +17,7 @@ from functools import partial
 from itertools import chain
 
 from billiard.einfo import ExceptionInfo  # noqa
-from kombu.utils.encoding import safe_str
+from kombu.utils.encoding import safe_str, bytes_to_str
 from kombu.utils.limits import TokenBucket  # noqa
 
 from celery.five import items
@@ -288,7 +288,9 @@ class DependencyGraph(object):
         """
         seen = set()
         draw = formatter or self.formatter
-        P = partial(print, file=fh)
+
+        def P(s):
+            print(bytes_to_str(s), file=fh)
 
         def if_not_seen(fun, obj):
             if draw.label(obj) not in seen:
