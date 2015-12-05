@@ -241,6 +241,8 @@ class BaseBackend(object):
         return self.persistent if p is None else p
 
     def encode_result(self, result, status):
+        if isinstance(result, ExceptionInfo):
+            result = result.exception
         if status in self.EXCEPTION_STATES and isinstance(result, Exception):
             return self.prepare_exception(result)
         else:
