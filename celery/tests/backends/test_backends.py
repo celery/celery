@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from celery import backends
+from celery.exceptions import ImproperlyConfigured
 from celery.backends.amqp import AMQPBackend
 from celery.backends.cache import CacheBackend
 from celery.tests.case import AppCase, depends_on_current_app, patch
@@ -36,5 +37,5 @@ class test_backends(AppCase):
     def test_sym_raises_ValuError(self):
         with patch('celery.backends.symbol_by_name') as sbn:
             sbn.side_effect = ValueError()
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ImproperlyConfigured):
                 backends.get_backend_cls('xxx.xxx:foo', self.app.loader)
