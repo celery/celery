@@ -274,7 +274,7 @@ class test_trace(TraceCase):
 
     def test_trace_task_ret__no_content_type(self):
         _trace_task_ret(
-            self.add.name, 'id1', {}, ((2, 2), {}), None, None,
+            self.add.name, 'id1', {}, ((2, 2), {}, {}), None, None,
             app=self.app,
         )
 
@@ -283,7 +283,7 @@ class test_trace(TraceCase):
             self.add.name, self.add, app=self.app,
         )
         _fast_trace_task(
-            self.add.name, 'id1', {}, ((2, 2), {}), None, None,
+            self.add.name, 'id1', {}, ((2, 2), {}, {}), None, None,
             app=self.app, _loc=[self.app.tasks, {}, 'hostname']
         )
 

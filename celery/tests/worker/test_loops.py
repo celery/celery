@@ -177,7 +177,7 @@ class test_asynloop(AppCase):
         x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
         msg.headers.pop('task')
         on_task(msg)
-        x.on_unknown_message.assert_called_with(msg.payload, msg)
+        x.on_unknown_message.assert_called_with(msg.decode(), msg)
 
     def test_on_task_not_registered(self):
         x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
