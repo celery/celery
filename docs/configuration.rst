@@ -1138,8 +1138,8 @@ certificate authority:
 
 .. warning::
 
-    Be careful using ``BROKER_USE_SSL=True``, it is possible that your default
-    configuration do not validate the server cert at all, please read Python
+    Be careful using ``BROKER_USE_SSL=True``.  It is possible that your default
+    configuration will not validate the server cert at all.  Please read Python
     `ssl module security
     considerations <https://docs.python.org/3/library/ssl.html#ssl-security>`_.
 
