@@ -599,7 +599,7 @@ class test_App(AppCase):
             CELERY_TASK_ALWAYS_EAGER = 44
             CELERY_TASK_DEFAULT_DELIVERY_MODE = 301
 
-        self.app.config_from_object(Config(), namespace='CELERY_')
+        self.app.config_from_object(Config(), namespace='CELERY')
         self.assertEqual(self.app.conf.task_always_eager, 44)
 
     def test_config_from_object__namespace_lowercase(self):
@@ -608,7 +608,7 @@ class test_App(AppCase):
             celery_task_always_eager = 44
             celery_task_default_delivery_mode = 301
 
-        self.app.config_from_object(Config(), namespace='celery_')
+        self.app.config_from_object(Config(), namespace='celery')
         self.assertEqual(self.app.conf.task_always_eager, 44)
 
     def test_config_from_object__mixing_new_and_old(self):

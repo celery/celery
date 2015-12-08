@@ -22,6 +22,7 @@ from kombu.utils.limits import TokenBucket  # noqa
 
 from celery.five import items
 from celery.utils.functional import LRUCache, first, uniq  # noqa
+from celery.utils.text import match_case
 
 try:
     from django.utils.functional import LazyObject, LazySettings
@@ -462,14 +463,17 @@ class ConfigurationView(AttributeDictMixin):
             defaults=defaults,
             key_t=key_t,
             _order=[changes] + defaults,
-            prefix=prefix,
+            prefix=prefix.rstrip('_') + '_' if prefix else prefix,
         )
 
+    def _to_keys(self, key):
+        prefix = self.prefix
+        if prefix:
+            pkey = prefix + key if not key.startswith(prefix) else key
+            return match_case(pkey, prefix), self._key(key)
+        return self._key(key),
+
     def _key(self, key):
-        if self.prefix:
-            key = self.prefix + key
-            if self.prefix.isupper():
-                key = key.upper()
         return self.key_t(key) if self.key_t is not None else key
 
     def add_defaults(self, d):
@@ -478,23 +482,27 @@ class ConfigurationView(AttributeDictMixin):
         self._order.insert(1, d)
 
     def __getitem__(self, key):
-        key = self._key(key)
-        for d in self._order:
-            try:
-                return d[key]
-            except KeyError:
-                pass
+        keys = self._to_keys(key)
+        for k in keys:
+            for d in self._order:
+                try:
+                    return d[k]
+                except KeyError:
+                    pass
+        if len(keys) > 1:
+            raise KeyError(
+                'Key not found: {0!r} (with prefix: {0!r})'.format(*keys))
         raise KeyError(key)
 
     def __setitem__(self, key, value):
         self.changes[self._key(key)] = value
 
     def first(self, *keys):
-        return first(None, (self.get(self._key(key)) for key in keys))
+        return first(None, (self.get(key) for key in keys))
 
     def get(self, key, default=None):
         try:
-            return self[self._key(key)]
+            return self[key]
         except KeyError:
             return default
 
@@ -511,8 +519,8 @@ class ConfigurationView(AttributeDictMixin):
         return self.changes.update(*args, **kwargs)
 
     def __contains__(self, key):
-        key = self._key(key)
-        return any(key in m for m in self._order)
+        keys = self._to_keys(key)
+        return any(any(k in m for k in keys) for m in self._order)
 
     def __bool__(self):
         return any(self._order)

@@ -90,7 +90,7 @@ or execv:
 
 .. code-block:: python
 
-    app.config_from_object('django.conf:settings', namespace='CELERY_')
+    app.config_from_object('django.conf:settings', namespace='CELERY')
 
 Next, a common practice for reusable apps is to define all tasks
 in a separate ``tasks.py`` module, and Celery does have a way to
