@@ -74,22 +74,22 @@ class test_Rdb(AppCase):
     def test_get_avail_port(self, sock):
         out = WhateverIO()
         sock.return_value.accept.return_value = (Mock(), ['helu'])
-        with Rdb(out=out) as rdb:
+        with Rdb(out=out):
             pass
 
         with patch('celery.contrib.rdb.current_process') as curproc:
             curproc.return_value.name = 'PoolWorker-10'
-            with Rdb(out=out) as rdb:
+            with Rdb(out=out):
                 pass
 
         err = sock.return_value.bind.side_effect = SockErr()
         err.errno = errno.ENOENT
         with self.assertRaises(SockErr):
-            with Rdb(out=out) as rdb:
+            with Rdb(out=out):
                 pass
         err.errno = errno.EADDRINUSE
         with self.assertRaises(Exception):
-            with Rdb(out=out) as rdb:
+            with Rdb(out=out):
                 pass
         called = [0]
 
@@ -101,5 +101,5 @@ class test_Rdb(AppCase):
             finally:
                 called[0] += 1
         sock.return_value.bind.side_effect = effect
-        with Rdb(out=out) as rdb:
+        with Rdb(out=out):
             pass
