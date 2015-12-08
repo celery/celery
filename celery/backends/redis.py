@@ -63,6 +63,7 @@ class RedisBackend(KeyValueStoreBackend):
         conf = self.app.conf
         if self.redis is None:
             raise ImproperlyConfigured(REDIS_MISSING)
+        self._client_capabilities = self._detect_client_capabilities()
 
         # For compatibility with the old REDIS_* configuration keys.
         def _get(key):
@@ -242,15 +243,27 @@ class RedisBackend(KeyValueStoreBackend):
                 callback.id, exc=ChordError('Join error: {0!r}'.format(exc)),
             )
 
+    def _detect_client_capabilities(self, client_connect_timeout=False):
+        if self.redis.VERSION < (2, 4, 4):
+            raise ImproperlyConfigured(
+                'Redis backend requires redis-py versions 2.4.4 or later. '
+                'You have {0.__version__}'.format(redis))
+        if self.redis.VERSION >= (2, 10):
+            client_connect_timeout = True
+        return {'client_connect_timeout': client_connect_timeout}
+
     def _create_client(self, socket_timeout=None, socket_connect_timeout=None,
                        **params):
-        return self.redis.Redis(
-            connection_pool=self.ConnectionPool(
-                socket_timeout=socket_timeout and float(socket_timeout),
-                socket_connect_timeout=socket_connect_timeout and float(
-                    socket_connect_timeout),
-                **params),
+        return self._new_redis_client(
+            socket_timeout=socket_timeout and float(socket_timeout),
+            socket_connect_timeout=socket_connect_timeout and float(
+                socket_connect_timeout),
         )
+
+    def _new_redis_client(self, **params):
+        if not self._client_capabilities['client_connect_timeout']:
+            params.pop('client_connect_timeout', None)
+        return self.redis.Redis(connection_pool=self.ConnectionPool(**params))
 
     @property
     def ConnectionPool(self):

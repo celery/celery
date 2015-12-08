@@ -98,6 +98,7 @@ class Redis(MockCallbacks):
 
 
 class redis(object):
+    VERSION = (2, 4, 10)
     Redis = Redis
 
     class ConnectionPool(object):
