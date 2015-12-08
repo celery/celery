@@ -486,7 +486,7 @@ def _trace_task_ret(name, uuid, request, body, content_type,
             body, content_type, content_encoding, accept=accept,
         )
     else:
-        args, kwargs = body
+        args, kwargs, embed = body
     hostname = socket.gethostname()
     request.update({
         'args': args, 'kwargs': kwargs,
@@ -508,7 +508,7 @@ def _fast_trace_task(task, uuid, request, body, content_type,
             body, content_type, content_encoding, accept=accept,
         )
     else:
-        args, kwargs = body
+        args, kwargs, embed = body
     request.update({
         'args': args, 'kwargs': kwargs,
         'hostname': hostname, 'is_eager': False,
