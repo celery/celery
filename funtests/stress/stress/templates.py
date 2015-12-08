@@ -40,7 +40,7 @@ def mixin_template(template, conf):
     cls = symbol_by_name(templates[template])
     conf.update(dict(
         (k, v) for k, v in items(vars(cls))
-        if k.isupper() and not k.startswith('_')
+        if not k.startswith('_')
     ))
 
 
