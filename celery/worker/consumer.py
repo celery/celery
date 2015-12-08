@@ -479,7 +479,10 @@ class Consumer(object):
             except TypeError:
                 return on_unknown_message(None, message)
             except KeyError:
-                payload = message.payload
+                try:
+                    payload = message.decode()
+                except Exception as exc:
+                    return self.on_decode_error(message, exc)
                 try:
                     type_, payload = payload['task'], payload  # protocol v1
                 except (TypeError, KeyError):
