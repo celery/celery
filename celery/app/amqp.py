@@ -15,9 +15,9 @@ from collections import Mapping, namedtuple
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
+from kombu import pools
 from kombu import Connection, Consumer, Exchange, Producer, Queue
 from kombu.common import Broadcast
-from kombu.pools import ProducerPool
 from kombu.utils import cached_property
 from kombu.utils.functional import maybe_list
 
@@ -567,11 +567,8 @@ class AMQP(object):
     @property
     def producer_pool(self):
         if self._producer_pool is None:
-            self._producer_pool = ProducerPool(
-                self.app.pool,
-                limit=self.app.pool.limit,
-                Producer=self.Producer,
-            )
+            self._producer_pool = pools.producers[self.app.connection()]
+            self._producer_pool.limit = self.app.pool.limit
         return self._producer_pool
     publisher_pool = producer_pool  # compat alias
 

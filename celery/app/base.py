@@ -17,10 +17,7 @@ from operator import attrgetter
 from functools import wraps
 
 from amqp import starpromise
-try:
-    from billiard.util import register_after_fork
-except ImportError:  # pragma: no cover
-    register_after_fork = None
+from kombu import pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
 from kombu.utils import cached_property, uuid
@@ -55,6 +52,11 @@ from .utils import (
 
 # Load all builtin tasks
 from . import builtins  # noqa
+
+try:
+    from billiard.util import register_after_fork
+except ImportError:  # pragma: no cover
+    register_after_fork = None
 
 __all__ = ['Celery']
 
@@ -276,8 +278,7 @@ class Celery(object):
         self.close()
 
     def close(self):
-        """Close any open pool connections and do any other steps necessary
-        to clean up after the application.
+        """Clean up after the application.
 
         Only necessary for dynamically created apps for which you can
         use the with statement instead::
@@ -286,7 +287,7 @@ class Celery(object):
                 with app.connection() as conn:
                     pass
         """
-        self._maybe_close_pool()
+        self._pool = None
         _deregister_app(self)
 
     def on_init(self):
@@ -828,16 +829,8 @@ class Celery(object):
         return self._conf
 
     def _after_fork(self, obj_):
-        self._maybe_close_pool()
-
-    def _maybe_close_pool(self):
-        if self._pool:
-            self._pool.force_close_all()
-            self._pool = None
-            amqp = self.__dict__.get('amqp')
-            if amqp is not None and amqp._producer_pool is not None:
-                amqp._producer_pool.force_close_all()
-                amqp._producer_pool = None
+        self._pool = None
+        pools.reset()
 
     def signature(self, *args, **kwargs):
         """Return a new :class:`~celery.canvas.Signature` bound to this app.
@@ -1016,7 +1009,8 @@ class Celery(object):
         if self._pool is None:
             _ensure_after_fork()
             limit = self.conf.broker_pool_limit
-            self._pool = self.connection().Pool(limit=limit)
+            pools.set_limit(limit)
+            self._pool = pools.connections[self.connection()]
         return self._pool
 
     @property

@@ -196,20 +196,6 @@ class test_App(AppCase):
         with self.app.connection_or_acquire(pool=False):
             self.assertFalse(self.app.pool._dirty)
 
-    def test_maybe_close_pool(self):
-        cpool = self.app._pool = Mock()
-        amqp = self.app.__dict__['amqp'] = Mock()
-        ppool = amqp._producer_pool
-        self.app._maybe_close_pool()
-        cpool.force_close_all.assert_called_with()
-        ppool.force_close_all.assert_called_with()
-        self.assertIsNone(self.app._pool)
-        self.assertIsNone(self.app.__dict__['amqp']._producer_pool)
-
-        self.app._pool = Mock()
-        self.app._maybe_close_pool()
-        self.app._maybe_close_pool()
-
     def test_using_v1_reduce(self):
         self.app._using_v1_reduce = True
         self.assertTrue(loads(dumps(self.app)))
@@ -790,11 +776,12 @@ class test_App(AppCase):
             my_failover_strategy,
         )
 
-    def test_after_fork(self):
-        p = self.app._pool = Mock()
+    @patch('kombu.pools.reset')
+    def test_after_fork(self, reset):
+        self.app._pool = Mock()
         self.app._after_fork(self.app)
-        p.force_close_all.assert_called_with()
         self.assertIsNone(self.app._pool)
+        reset.assert_called_with()
         self.app._after_fork(self.app)
 
     def test_global_after_fork(self):
