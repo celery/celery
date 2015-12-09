@@ -13,7 +13,6 @@ import time
 
 from collections import defaultdict, Mapping, MutableMapping, MutableSet
 from heapq import heapify, heappush, heappop
-from functools import partial
 from itertools import chain
 
 from billiard.einfo import ExceptionInfo  # noqa

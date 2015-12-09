@@ -870,7 +870,8 @@ class chord(Signature):
         if not isinstance(self.tasks, group):
             self.tasks = group(self.tasks)
         bodyres = self.body.freeze(_id, parent_id=self.id, root_id=root_id)
-        self.tasks.freeze(parent_id=parent_id, root_id=root_id, chord=self.body)
+        self.tasks.freeze(
+            parent_id=parent_id, root_id=root_id, chord=self.body)
         self.id = self.tasks.id
         self.body.set_parent_id(self.id)
         return bodyres
