@@ -222,19 +222,18 @@ class RedisBackend(KeyValueStoreBackend):
                 except Exception as exc:
                     error('Chord callback for %r raised: %r',
                           request.group, exc, exc_info=1)
-                    app._tasks[callback.task].backend.fail_from_current_stack(
-                        callback.id,
-                        exc=ChordError('Callback error: {0!r}'.format(exc)),
+                    return self.chord_error_from_stack(
+                        callback,
+                        ChordError('Callback error: {0!r}'.format(exc)),
                     )
         except ChordError as exc:
             error('Chord %r raised: %r', request.group, exc, exc_info=1)
-            app._tasks[callback.task].backend.fail_from_current_stack(
-                callback.id, exc=exc,
-            )
+            return self.chord_error_from_stack(callback, exc)
         except Exception as exc:
             error('Chord %r raised: %r', request.group, exc, exc_info=1)
-            app._tasks[callback.task].backend.fail_from_current_stack(
-                callback.id, exc=ChordError('Join error: {0!r}'.format(exc)),
+            return self.chord_error_from_stack(
+                callback,
+                ChordError('Join error: {0!r}'.format(exc)),
             )
 
     def _create_client(self, socket_timeout=None, socket_connect_timeout=None,
