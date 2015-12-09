@@ -776,46 +776,34 @@ class test_App(AppCase):
             my_failover_strategy,
         )
 
-    @patch('kombu.pools.reset')
-    def test_after_fork(self, reset):
+    def test_after_fork(self):
         self.app._pool = Mock()
-        self.app._after_fork(self.app)
+        self.app.on_after_fork = Mock(name='on_after_fork')
+        self.app._after_fork()
         self.assertIsNone(self.app._pool)
-        reset.assert_called_with()
-        self.app._after_fork(self.app)
+        self.app.on_after_fork.send.assert_called_with(sender=self.app)
+        self.app._after_fork()
 
     def test_global_after_fork(self):
-        app = Mock(name='app')
-        prev, _state._apps = _state._apps, [app]
-        try:
-            obj = Mock(name='obj')
-            _appbase._global_after_fork(obj)
-            app._after_fork.assert_called_with(obj)
-        finally:
-            _state._apps = prev
+        self.app._after_fork = Mock(name='_after_fork')
+        _appbase._after_fork_cleanup_app(self.app)
+        self.app._after_fork.assert_called_with()
 
-    @patch('multiprocessing.util', create=True)
-    def test_global_after_fork__raises(self, util):
-        app = Mock(name='app')
-        prev, _state._apps = _state._apps, [app]
-        try:
-            obj = Mock(name='obj')
-            exc = app._after_fork.side_effect = KeyError()
-            _appbase._global_after_fork(obj)
-            util._logger.info.assert_called_with(
-                'after forker raised exception: %r', exc, exc_info=1)
-            util._logger = None
-            _appbase._global_after_fork(obj)
-        finally:
-            _state._apps = prev
+    @patch('celery.app.base.logger')
+    def test_after_fork_cleanup_app__raises(self, logger):
+        self.app._after_fork = Mock(name='_after_fork')
+        exc = self.app._after_fork.side_effect = KeyError()
+        _appbase._after_fork_cleanup_app(self.app)
+        logger.info.assert_called_with(
+            'after forker raised exception: %r', exc, exc_info=1)
 
     def test_ensure_after_fork__no_multiprocessing(self):
         prev, _appbase.register_after_fork = (
             _appbase.register_after_fork, None)
         try:
-            _appbase._after_fork_registered = False
-            _appbase._ensure_after_fork()
-            self.assertTrue(_appbase._after_fork_registered)
+            self.app._after_fork_registered = False
+            self.app._ensure_after_fork()
+            self.assertTrue(self.app._after_fork_registered)
         finally:
             _appbase.register_after_fork = prev
 
