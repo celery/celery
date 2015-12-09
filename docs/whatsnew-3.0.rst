@@ -709,7 +709,7 @@ In Other News
 
 - New :setting:`CELERYD_WORKER_LOST_WAIT` to control the timeout in
   seconds before :exc:`billiard.WorkerLostError` is raised
-  when a worker can not be signalled (Issue #595).
+  when a worker can not be signaled (Issue #595).
 
     Contributed by Brendon Crawford.
 
