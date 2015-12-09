@@ -251,7 +251,7 @@ check_status () {
     local failed=
     local pid_file=$CELERYBEAT_PID_FILE
     if [ ! -e $pid_file ]; then
-        echo "${SCRIPT_NAME} is up: no pid file found"
+        echo "${SCRIPT_NAME} is down: no pid file found"
         failed=true
     elif [ ! -r $pid_file ]; then
         echo "${SCRIPT_NAME} is in unknown state, user cannot read pid file."
