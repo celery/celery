@@ -244,6 +244,9 @@ class Task(object):
     #: Default task expiry time.
     expires = None
 
+    #: Max length of result representation used in logs and events.
+    resultrepr_maxsize = 1024
+
     #: Task request stack, the current request will be the topmost.
     request_stack = None
 

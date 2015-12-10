@@ -37,6 +37,7 @@ from celery.exceptions import Ignore, Reject, Retry, InvalidTaskError
 from celery.five import monotonic
 from celery.utils.log import get_logger
 from celery.utils.objects import mro_lookup
+from celery.utils.saferepr import saferepr
 from celery.utils.serialization import (
     get_pickleable_exception, get_pickled_exception, get_pickleable_etype,
 )
@@ -292,6 +293,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     push_task = _task_stack.push
     pop_task = _task_stack.pop
     _does_info = logger.isEnabledFor(logging.INFO)
+    resultrepr_maxsize = task.resultrepr_maxsize
 
     prerun_receivers = signals.task_prerun.receivers
     postrun_receivers = signals.task_postrun.receivers
@@ -423,7 +425,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             send_success(sender=task, result=retval)
                         if _does_info:
                             T = monotonic() - time_start
-                            Rstr = truncate(safe_repr(R), 256)
+                            Rstr = saferepr(R, resultrepr_maxsize)
                             info(LOG_SUCCESS, {
                                 'id': uuid, 'name': name,
                                 'return_value': Rstr, 'runtime': T,

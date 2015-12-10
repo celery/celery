@@ -235,6 +235,13 @@ class AMQP(object):
     # and instead send directly to the queue named in the routing key.
     autoexchange = None
 
+    #: Max size of positional argument representation used for
+    #: logging purposes.
+    argsrepr_maxsize = 1024
+
+    #: Max size of keyword argument representation used for logging purposes.
+    kwargsrepr_maxsize = 1024
+
     def __init__(self, app):
         self.app = app
         self.task_protocols = {
@@ -318,8 +325,8 @@ class AMQP(object):
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
-        argsrepr = saferepr(args)
-        kwargsrepr = saferepr(kwargs)
+        argsrepr = saferepr(args, self.argsrepr_maxsize)
+        kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
 
         if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
             if callbacks:
