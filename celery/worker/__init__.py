@@ -332,7 +332,8 @@ class WorkController(object):
 
     def __repr__(self):
         return '<Worker: {self.hostname} ({state})>'.format(
-            self=self, state=self.blueprint.human_state(),
+            self=self,
+            state=self.blueprint.human_state() if self.blueprint else 'INIT',
         )
 
     def __str__(self):
