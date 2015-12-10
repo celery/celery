@@ -51,7 +51,7 @@ def template_names():
 @template()
 class default(object):
     accept_content = ['json']
-    broker_url = os.environ.get('CSTRESS_BROKER', 'amqp://')
+    broker_url = os.environ.get('CSTRESS_BROKER', 'pyamqp://')
     broker_heartbeat = 30
     result_backend = os.environ.get('CSTRESS_BACKEND', 'rpc://')
     result_serializer = 'json'
