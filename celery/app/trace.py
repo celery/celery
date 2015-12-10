@@ -141,15 +141,17 @@ class TraceInfo(object):
         self.state = state
         self.retval = retval
 
-    def handle_error_state(self, task, req, eager=False):
+    def handle_error_state(self, task, req,
+                           eager=False, call_errbacks=True):
         store_errors = not eager
         if task.ignore_result:
             store_errors = task.store_errors_even_if_ignored
-
         return {
             RETRY: self.handle_retry,
             FAILURE: self.handle_failure,
-        }[self.state](task, req, store_errors=store_errors)
+        }[self.state](task, req,
+                      store_errors=store_errors,
+                      call_errbacks=call_errbacks)
 
     def handle_reject(self, task, req, **kwargs):
         self._log_error(task, req, ExceptionInfo())
@@ -157,7 +159,7 @@ class TraceInfo(object):
     def handle_ignore(self, task, req, **kwargs):
         self._log_error(task, req, ExceptionInfo())
 
-    def handle_retry(self, task, req, store_errors=True):
+    def handle_retry(self, task, req, store_errors=True, **kwargs):
         """Handle retry exception."""
         # the exception raised is the Retry semi-predicate,
         # and it's exc' attribute is the original exception raised (if any).
@@ -180,7 +182,7 @@ class TraceInfo(object):
         finally:
             del(tb)
 
-    def handle_failure(self, task, req, store_errors=True):
+    def handle_failure(self, task, req, store_errors=True, call_errbacks=True):
         """Handle exception."""
         type_, _, tb = sys.exc_info()
         try:
@@ -189,7 +191,9 @@ class TraceInfo(object):
             einfo.exception = get_pickleable_exception(einfo.exception)
             einfo.type = get_pickleable_etype(einfo.type)
             task.backend.mark_as_failure(
-                req.id, exc, einfo.traceback, req, store_errors,
+                req.id, exc, einfo.traceback,
+                request=req, store_result=store_errors,
+                call_errbacks=call_errbacks,
             )
             task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
             signals.task_failure.send(sender=task, task_id=req.id,
@@ -306,13 +310,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         if propagate:
             raise
         I = Info(state, exc)
-        R = I.handle_error_state(task, request, eager=eager)
-        if call_errbacks:
-            root_id = request.root_id or uuid
-            group(
-                [signature(errback, app=app)
-                 for errback in request.errbacks or []], app=app,
-            ).apply_async((uuid,), parent_id=uuid, root_id=root_id)
+        R = I.handle_error_state(
+            task, request, eager=eager, call_errbacks=call_errbacks,
+        )
         return I, R, I.state, I.retval
 
     def trace_task(uuid, args, kwargs, request=None):

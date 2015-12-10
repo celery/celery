@@ -319,6 +319,7 @@ class test_TraceInfo(TraceCase):
         x.handle_failure.assert_called_with(
             self.add_cast, self.add_cast.request,
             store_errors=self.add_cast.store_errors_even_if_ignored,
+            call_errbacks=True,
         )
 
     @patch('celery.app.trace.ExceptionInfo')

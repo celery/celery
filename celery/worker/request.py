@@ -466,10 +466,17 @@ class Request(object):
 
     @cached_property
     def chord(self):
-        # used by backend.on_chord_part_return when failures reported
+        # used by backend.mark_as_failure when failure is reported
         # by parent process
         _, _, embed = self._payload
         return embed.get('chord')
+
+    @cached_property
+    def errbacks(self):
+        # used by backend.mark_as_failure when failure is reported
+        # by parent process
+        _, _, embed = self._payload
+        return embed.get('errbacks')
 
     @cached_property
     def group(self):

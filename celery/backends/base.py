@@ -26,7 +26,7 @@ from kombu.serialization import (
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
 
 from celery import states
-from celery import current_app, maybe_signature
+from celery import current_app, group, maybe_signature
 from celery.app import current_task
 from celery.exceptions import ChordError, TimeoutError, TaskRevokedError
 from celery.five import items
@@ -121,14 +121,22 @@ class BaseBackend(object):
             self.on_chord_part_return(request, state, result)
 
     def mark_as_failure(self, task_id, exc,
-                        traceback=None, request=None, store_result=True,
+                        traceback=None, request=None,
+                        store_result=True, call_errbacks=True,
                         state=states.FAILURE):
         """Mark task as executed with failure. Stores the exception."""
         if store_result:
             self.store_result(task_id, exc, state,
                               traceback=traceback, request=request)
-        if request and request.chord:
-            self.on_chord_part_return(request, state, exc)
+        if request:
+            if request.chord:
+                self.on_chord_part_return(request, state, exc)
+            if call_errbacks:
+                root_id = request.root_id or task_id
+                group(
+                    [self.app.signature(errback)
+                     for errback in request.errbacks or []], app=self.app,
+                ).apply_async((task_id,), parent_id=task_id, root_id=root_id)
 
     def mark_as_revoked(self, task_id, reason='',
                         request=None, store_result=True, state=states.REVOKED):

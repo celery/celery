@@ -270,6 +270,7 @@ class test_BaseBackend_dict(AppCase):
         b = BaseBackend(app=self.app)
         b._store_result = Mock()
         request = Mock(name='request')
+        request.errbacks = []
         b.on_chord_part_return = Mock()
         exc = KeyError()
         b.mark_as_failure('id', exc, request=request)
@@ -279,6 +280,7 @@ class test_BaseBackend_dict(AppCase):
         b = BaseBackend(app=self.app)
         b._store_result = Mock()
         request = Mock(name='request')
+        request.errbacks = []
         b.on_chord_part_return = Mock()
         b.mark_as_revoked('id', 'revoked', request=request)
         b.on_chord_part_return.assert_called_with(request, states.REVOKED, ANY)
