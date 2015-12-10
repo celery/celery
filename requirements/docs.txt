@@ -1,3 +1,3 @@
 Sphinx
 -r extras/sqlalchemy.txt
--r dev.txt
+-r -U dev.txt
