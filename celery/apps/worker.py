@@ -16,7 +16,6 @@ import logging
 import os
 import platform as _platform
 import sys
-import warnings
 
 from functools import partial
 
@@ -26,9 +25,7 @@ from kombu.utils.url import maybe_sanitize_url
 
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
-from celery.exceptions import (
-    CDeprecationWarning, WorkerShutdown, WorkerTerminate,
-)
+from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.five import string, string_t
 from celery.loaders.app import AppLoader
 from celery.platforms import EX_FAILURE, EX_OK, check_privileges
@@ -43,6 +40,7 @@ __all__ = ['Worker']
 logger = get_logger(__name__)
 is_jython = sys.platform.startswith('java')
 is_pypy = hasattr(sys, 'pypy_version_info')
+
 
 def active_thread_count():
     from threading import enumerate
