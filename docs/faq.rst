@@ -810,18 +810,8 @@ Can I schedule tasks to execute at a specific time?
 
 **Answer**: Yes. You can use the `eta` argument of :meth:`Task.apply_async`.
 
-Or to schedule a periodic task at a specific time, use the
-:class:`celery.schedules.crontab` schedule behavior:
+See also :ref:`guide-beat`.
 
-
-.. code-block:: python
-
-    from celery.schedules import crontab
-    from celery.task import periodic_task
-
-    @periodic_task(run_every=crontab(hour=7, minute=30, day_of_week="mon"))
-    def every_monday_morning():
-        print("This is run every Monday morning at 7:30")
 
 .. _faq-safe-worker-shutdown:
 
