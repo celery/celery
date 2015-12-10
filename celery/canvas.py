@@ -527,7 +527,7 @@ class chain(Signature):
                 task.set_parent_id(parent_id)
 
             if link_error:
-                task.set(link_error=link_error)
+                task.link_error(link_error)
 
             tasks.append(task)
             results.append(res)
