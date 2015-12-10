@@ -44,26 +44,6 @@ logger = get_logger(__name__)
 is_jython = sys.platform.startswith('java')
 is_pypy = hasattr(sys, 'pypy_version_info')
 
-W_PICKLE_DEPRECATED = """
-Starting from version 4.0 Celery will refuse to accept pickle by default.
-
-The pickle serializer is a security concern as it may give attackers
-the ability to execute any command.  It's important to secure
-your broker from unauthorized access when using pickle, so we think
-that enabling pickle should require a deliberate action and not be
-the default choice.
-
-If you depend on pickle then you should set a setting to disable this
-warning and to be sure that everything will continue working
-when you upgrade to Celery 4.0::
-
-    accept_content = ['pickle', 'json', 'msgpack', 'yaml']
-
-You must only enable the serializers that you will actually use.
-
-"""
-
-
 def active_thread_count():
     from threading import enumerate
     return sum(1 for t in enumerate()
@@ -158,9 +138,6 @@ class Worker(WorkController):
         signals.celeryd_after_setup.send(
             sender=self.hostname, instance=self, conf=app.conf,
         )
-
-        if not app.conf.value_set_for('accept_content'):  # pragma: no cover
-            warnings.warn(CDeprecationWarning(W_PICKLE_DEPRECATED))
 
         if self.purge:
             self.purge_messages()
