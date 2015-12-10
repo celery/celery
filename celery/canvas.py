@@ -193,8 +193,8 @@ class Signature(dict):
         args, kwargs, options = self._merge(args, kwargs, options)
         return self.type.apply(args, kwargs, **options)
 
-    def _merge(self, args=(), kwargs={}, options={}):
-        if self.immutable:
+    def _merge(self, args=(), kwargs={}, options={}, force=False):
+        if self.immutable and not force:
             return (self.args, self.kwargs,
                     dict(self.options, **options) if options else self.options)
         return (tuple(args) + tuple(self.args) if args else self.args,
@@ -323,7 +323,7 @@ class Signature(dict):
         return dict(self)
 
     def reprcall(self, *args, **kwargs):
-        args, kwargs, _ = self._merge(args, kwargs, {})
+        args, kwargs, _ = self._merge(args, kwargs, {}, force=True)
         return reprcall(self['task'], args, kwargs)
 
     def election(self):
@@ -840,7 +840,7 @@ class group(Signature):
         return iter(self.tasks)
 
     def __repr__(self):
-        return repr(self.tasks)
+        return 'group({0.tasks!r})'.format(self)
 
     @property
     def app(self):
