@@ -939,7 +939,7 @@ class chord(Signature):
         )
 
     def _traverse_tasks(self, tasks, value=None):
-        stack = deque(tasks)
+        stack = deque(list(tasks))
         while stack:
             task = stack.popleft()
             if isinstance(task, group):
