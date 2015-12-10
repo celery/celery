@@ -174,10 +174,9 @@ class test_AsyncResult(AppCase):
 
     @depends_on_current_app
     def test_reduce(self):
-        a1 = self.app.AsyncResult('uuid', task_name=self.mytask.name)
+        a1 = self.app.AsyncResult('uuid')
         restored = pickle.loads(pickle.dumps(a1))
         self.assertEqual(restored.id, 'uuid')
-        self.assertEqual(restored.task_name, self.mytask.name)
 
         a2 = self.app.AsyncResult('uuid')
         self.assertEqual(pickle.loads(pickle.dumps(a2)).id, 'uuid')

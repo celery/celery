@@ -76,7 +76,8 @@ class AsyncResult(ResultBase):
     #: The task result backend to use.
     backend = None
 
-    def __init__(self, id, backend=None, task_name=None,
+    def __init__(self, id, backend=None,
+                 task_name=None,            # deprecated
                  app=None, parent=None):
         if id is None:
             raise ValueError(
@@ -84,7 +85,6 @@ class AsyncResult(ResultBase):
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
-        self.task_name = task_name
         self.parent = parent
         self._cache = None
 
@@ -306,14 +306,14 @@ class AsyncResult(ResultBase):
 
     def __copy__(self):
         return self.__class__(
-            self.id, self.backend, self.task_name, self.app, self.parent,
+            self.id, self.backend, None, self.app, self.parent,
         )
 
     def __reduce__(self):
         return self.__class__, self.__reduce_args__()
 
     def __reduce_args__(self):
-        return self.id, self.backend, self.task_name, None, self.parent
+        return self.id, self.backend, None, None, self.parent
 
     def __del__(self):
         self._cache = None
@@ -826,7 +826,6 @@ class GroupResult(ResultSet):
 
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
-    task_name = None
 
     def __init__(self, id, ret_value, state, traceback=None):
         self.id = id
