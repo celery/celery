@@ -21,6 +21,7 @@ from operator import itemgetter
 from itertools import chain as _chain
 
 from kombu.utils import cached_property, fxrange, reprcall, uuid
+from kombu.utils.functional import maybe_list
 
 from celery._state import current_app
 from celery.local import try_import
@@ -527,7 +528,8 @@ class chain(Signature):
                 task.set_parent_id(parent_id)
 
             if link_error:
-                task.link_error(link_error)
+                for errback in maybe_list(link_error):
+                    task.link_error(errback)
 
             tasks.append(task)
             results.append(res)

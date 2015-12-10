@@ -62,6 +62,7 @@ class Consumer(__Consumer):
         kwargs.setdefault('without_mingle', True)  # disable Mingle step
         kwargs.setdefault('without_gossip', True)  # disable Gossip step
         kwargs.setdefault('without_heartbeat', True)  # disable Heart step
+        kwargs.setdefault('controller', Mock())
         super(Consumer, self).__init__(*args, **kwargs)
 
 
@@ -71,6 +72,7 @@ class _MyKombuConsumer(Consumer):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('pool', BasePool(2))
+        kwargs.setdefault('controller', Mock())
         super(_MyKombuConsumer, self).__init__(*args, **kwargs)
 
     def restart_heartbeat(self):

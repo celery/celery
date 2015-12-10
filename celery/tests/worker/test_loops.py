@@ -61,7 +61,7 @@ class X(object):
         self.Hub = self.hub
         self.blueprint.state = RUN
         # need this for create_task_handler
-        _consumer = Consumer(Mock(), timer=Mock(), app=app)
+        _consumer = Consumer(Mock(), timer=Mock(), controller=Mock(), app=app)
         _consumer.on_task_message = on_task_message or []
         self.obj.create_task_handler = _consumer.create_task_handler
         self.on_unknown_message = self.obj.on_unknown_message = Mock(
