@@ -439,7 +439,10 @@ class Consumer(object):
 
     def on_unknown_task(self, body, message, exc):
         error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
-        id_, name = message.headers['id'], message.headers['task']
+        try:
+            id_, name = message.headers['id'], message.headers['task']
+        except KeyError:  # proto1
+            id_, name = body['id'], body['task']
         message.reject_log_error(logger, self.connection_errors)
         self.app.backend.mark_as_failure(id_, NotRegistered(name))
         if self.event_dispatcher:
