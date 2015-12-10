@@ -871,7 +871,7 @@ class chord(Signature):
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None):
         if not isinstance(self.tasks, group):
-            self.tasks = group(self.tasks)
+            self.tasks = group(self.tasks, app=self.app)
         bodyres = self.body.freeze(_id, parent_id=self.id, root_id=root_id)
         self.tasks.freeze(
             parent_id=parent_id, root_id=root_id, chord=self.body)
@@ -924,7 +924,7 @@ class chord(Signature):
         body = body.clone(**options)
         app = self._get_app(body)
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
-                 else group(self.tasks))
+                 else group(self.tasks, app=app))
         if app.conf.task_always_eager:
             return self.apply((), kwargs,
                               body=body, task_id=task_id, **options)
@@ -933,7 +933,7 @@ class chord(Signature):
     def apply(self, args=(), kwargs={}, propagate=True, body=None, **options):
         body = self.body if body is None else body
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
-                 else group(self.tasks))
+                 else group(self.tasks, app=self.app))
         return body.apply(
             args=(tasks.apply().get(propagate=propagate),),
         )
