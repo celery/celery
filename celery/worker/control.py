@@ -54,10 +54,12 @@ def query_task(state, ids, **kwargs):
     ids = maybe_list(ids)
     return dict({
         req.id: ('reserved', req.info())
-        for req in _find_requests_by_id(ids, worker_state.reserved_requests)
+        for req in _find_requests_by_id(
+            ids, state.tset(worker_state.reserved_requests))
     }, **{
         req.id: ('active', req.info())
-        for req in _find_requests_by_id(ids, worker_state.active_requests)
+        for req in _find_requests_by_id(
+            ids, state.tset(worker_state.active_requests))
     })
 
 
@@ -76,7 +78,7 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
         # so need to consume the items first, then terminate after.
         requests = set(_find_requests_by_id(
             task_ids,
-            worker_state.reserved_requests,
+            state.tset(worker_state.reserved_requests),
         ))
         for request in requests:
             if request.id not in terminated:
@@ -197,7 +199,10 @@ def dump_schedule(state, safe=False, **kwargs):
 
 @Panel.register
 def dump_reserved(state, safe=False, **kwargs):
-    reserved = worker_state.reserved_requests - worker_state.active_requests
+    reserved = (
+        state.tset(worker_state.reserved_requests) -
+        state.tset(worker_state.active_requests)
+    )
     if not reserved:
         return []
     return [request.info(safe=safe) for request in reserved]
@@ -206,7 +211,7 @@ def dump_reserved(state, safe=False, **kwargs):
 @Panel.register
 def dump_active(state, safe=False, **kwargs):
     return [request.info(safe=safe)
-            for request in worker_state.active_requests]
+            for request in state.tset(worker_state.active_requests)]
 
 
 @Panel.register
