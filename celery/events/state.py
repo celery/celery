@@ -205,14 +205,14 @@ class Worker(object):
 class Task(object):
     """Task State."""
     name = received = sent = started = succeeded = failed = retried = \
-        revoked = args = kwargs = eta = expires = retries = worker = result = \
-        exception = timestamp = runtime = traceback = exchange = \
-        routing_key = root_id = parent_id = client = None
+        revoked = rejected = args = kwargs = eta = expires = retries = \
+        worker = result = exception = timestamp = runtime = traceback = \
+        exchange = routing_key = root_id = parent_id = client = None
     state = states.PENDING
     clock = 0
 
     _fields = (
-        'uuid', 'name', 'state', 'received', 'sent', 'started',
+        'uuid', 'name', 'state', 'received', 'sent', 'started', 'rejected',
         'succeeded', 'failed', 'retried', 'revoked', 'args', 'kwargs',
         'eta', 'expires', 'retries', 'worker', 'result', 'exception',
         'timestamp', 'runtime', 'traceback', 'exchange', 'routing_key',
@@ -254,7 +254,7 @@ class Task(object):
               PENDING=states.PENDING, RECEIVED=states.RECEIVED,
               STARTED=states.STARTED, FAILURE=states.FAILURE,
               RETRY=states.RETRY, SUCCESS=states.SUCCESS,
-              REVOKED=states.REVOKED):
+              REVOKED=states.REVOKED, REJECTED=states.REJECTED):
         fields = fields or {}
         if type_ == 'sent':
             state, self.sent = PENDING, timestamp
@@ -270,6 +270,8 @@ class Task(object):
             state, self.succeeded = SUCCESS, timestamp
         elif type_ == 'revoked':
             state, self.revoked = REVOKED, timestamp
+        elif type_ == 'rejected':
+            state, self.rejected = REJECTED, timestamp
         else:
             state = type_.upper()
 

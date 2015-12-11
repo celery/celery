@@ -389,6 +389,7 @@ class Request(object):
         if not self.acknowledged:
             self.on_reject(logger, self.connection_errors, requeue)
             self.acknowledged = True
+            self.send_event('task-rejected', requeue=requeue)
 
     def info(self, safe=False):
         return {'id': self.id,

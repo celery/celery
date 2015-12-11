@@ -696,6 +696,16 @@ task-failed
 
 Sent if the execution of the task failed.
 
+.. event:: task-rejected
+
+task-rejected
+~~~~~~~~~~~~~
+
+:signature: ``task-rejected(uuid, requeued)``
+
+The task was rejected by the worker, possibly to be requeued or moved to a
+dead letter queue.
+
 .. event:: task-revoked
 
 task-revoked
