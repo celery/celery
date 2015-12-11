@@ -24,6 +24,7 @@ from kombu.utils.functional import maybe_list
 from celery import signals
 from celery.five import items, string_t
 from celery.local import try_import
+from celery.utils import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
 from celery.utils.timeutils import maybe_make_aware, to_utc
@@ -303,7 +304,8 @@ class AMQP(object):
                    callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
-                   shadow=None, chain=None, now=None, timezone=None):
+                   shadow=None, chain=None, now=None, timezone=None,
+                   origin=None):
         args = args or ()
         kwargs = kwargs or {}
         if not isinstance(args, (list, tuple)):
@@ -350,6 +352,7 @@ class AMQP(object):
                 'parent_id': parent_id,
                 'argsrepr': argsrepr,
                 'kwargsrepr': kwargsrepr,
+                'origin': origin or anon_nodename()
             },
             properties={
                 'correlation_id': task_id,

@@ -48,6 +48,7 @@ Definition
         'timelimit': (soft, hard),
         'argsrepr': str repr(args),
         'kwargsrepr': str repr(kwargs),
+        'origin': str nodename,
     }
 
     body = (
@@ -70,6 +71,10 @@ This example sends a task message using version 2 of the protocol:
 
     # chain: add(add(add(2, 2), 4), 8) == 2 + 2 + 4 + 8
 
+    import json
+    import os
+    import socket
+
     task_id = uuid()
     args = (2, 2)
     kwargs = {}
@@ -80,6 +85,7 @@ This example sends a task message using version 2 of the protocol:
             'task': 'proj.tasks.add',
             'argsrepr': repr(args),
             'kwargsrepr': repr(kwargs),
+            'origin': '@'.join([os.getpid(), socket.gethostname()])
         }
         properties={
             'correlation_id': task_id,

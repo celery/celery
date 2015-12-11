@@ -92,6 +92,7 @@ class Context(object):
     callbacks = None
     errbacks = None
     timelimit = None
+    origin = None
     _children = None   # see property
     _protected = 0
 
