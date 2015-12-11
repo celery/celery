@@ -594,11 +594,15 @@ Default is to expire after 1 day.
 result_cache_max
 ~~~~~~~~~~~~~~~~
 
-Result backends caches ready results used by the client.
+Enables client caching of results, which can be useful for the old "amqp"
+backend where the result is unavailable as soon as one result instance
+consumes it.
 
 This is the total number of results to cache before older results are evicted.
-The default is 5000.  0 or None means no limit, and a value of :const:`-1`
+A value of 0 or None means no limit, and a value of :const:`-1`
 will disable the cache.
+
+Disabled by default.
 
 .. _conf-database-result-backend:
 

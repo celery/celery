@@ -173,7 +173,7 @@ NAMESPACES = Namespace(
 
         backend=Option(type='string'),
         cache_max=Option(
-            100,
+            -1,
             type='int', old={'celery_max_cached_results'},
         ),
         compression=Option(type='str'),
