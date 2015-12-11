@@ -365,6 +365,7 @@ class Request(object):
             )
             if reject:
                 self.reject(requeue=requeue)
+                send_failed_event = False
             else:
                 self.acknowledge()
 
