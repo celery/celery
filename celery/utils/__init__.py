@@ -52,10 +52,10 @@ DEPRECATION_FMT = """
 MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE') or None
 
 #: Exchange for worker direct queues.
-WORKER_DIRECT_EXCHANGE = Exchange('C.dq')
+WORKER_DIRECT_EXCHANGE = Exchange('C.dq2')
 
 #: Format for worker direct queue names.
-WORKER_DIRECT_QUEUE_FORMAT = '{hostname}.dq'
+WORKER_DIRECT_QUEUE_FORMAT = '{hostname}.dq2'
 
 #: Separator for worker node name and hostname.
 NODENAME_SEP = '@'
@@ -75,9 +75,11 @@ def worker_direct(hostname):
     """
     if isinstance(hostname, Queue):
         return hostname
-    return Queue(WORKER_DIRECT_QUEUE_FORMAT.format(hostname=hostname),
-                 WORKER_DIRECT_EXCHANGE,
-                 hostname, auto_delete=True)
+    return Queue(
+        WORKER_DIRECT_QUEUE_FORMAT.format(hostname=hostname),
+        WORKER_DIRECT_EXCHANGE,
+        hostname,
+    )
 
 
 def warn_deprecated(description=None, deprecation=None,
