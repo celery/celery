@@ -29,6 +29,9 @@ class SomeClass(object):
 
 class test_AMQPBackend(AppCase):
 
+    def setup(self):
+        self.app.conf.result_cache_max = 100
+
     def create_backend(self, **opts):
         opts = dict(dict(serializer='pickle', persistent=True), **opts)
         return AMQPBackend(self.app, **opts)

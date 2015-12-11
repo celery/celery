@@ -49,6 +49,7 @@ def make_mock_group(app, size=10):
 class test_AsyncResult(AppCase):
 
     def setup(self):
+        self.app.conf.result_cache_max = 100
         self.app.conf.result_serializer = 'pickle'
         self.task1 = mock_task('task1', states.SUCCESS, 'the')
         self.task2 = mock_task('task2', states.SUCCESS, 'quick')
