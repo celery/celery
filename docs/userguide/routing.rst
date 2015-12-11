@@ -313,6 +313,8 @@ Related API commands
 
     Declares an exchange by name.
 
+    See :meth:`amqp:Channel.exchange_declare <amqp.channel.Channel.exchange_declare>`.
+
     :keyword passive: Passive means the exchange won't be created, but you
         can use this to check if the exchange already exists.
 
@@ -327,21 +329,30 @@ Related API commands
 
     Declares a queue by name.
 
+    See :meth:`amqp:Channel.queue_declare <amqp.channel.Channel.queue_declare>`
+
     Exclusive queues can only be consumed from by the current connection.
     Exclusive also implies `auto_delete`.
 
 .. method:: queue.bind(queue_name, exchange_name, routing_key)
 
     Binds a queue to an exchange with a routing key.
+
     Unbound queues will not receive messages, so this is necessary.
+
+    See :meth:`amqp:Channel.queue_bind <amqp.channel.Channel.queue_bind>`
 
 .. method:: queue.delete(name, if_unused=False, if_empty=False)
 
     Deletes a queue and its binding.
 
+    See :meth:`amqp:Channel.queue_delete <amqp.channel.Channel.queue_delete>`
+
 .. method:: exchange.delete(name, if_unused=False)
 
     Deletes an exchange.
+
+    See :meth:`amqp:Channel.exchange_delete <amqp.channel.Channel.exchange_delete>`
 
 .. note::
 
