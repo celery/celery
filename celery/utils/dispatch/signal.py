@@ -5,7 +5,7 @@ from __future__ import absolute_import
 import weakref
 from . import saferef
 
-from celery.five import range
+from celery.five import range, text_t
 from celery.local import PromiseProxy, Proxy
 
 __all__ = ['Signal']
@@ -16,6 +16,9 @@ WEAKREF_TYPES = (weakref.ReferenceType, saferef.BoundMethodWeakref)
 def _make_id(target):  # pragma: no cover
     if isinstance(target, Proxy):
         target = target._get_current_object()
+    if isinstance(target, (bytes, text_t)):
+        # see Issue #2475
+        return target
     if hasattr(target, '__func__'):
         return (id(target.__self__), id(target.__func__))
     return id(target)
