@@ -170,6 +170,7 @@ class Pool(bootsteps.StartStopStep):
             forking_enable=forking_enable,
             semaphore=semaphore,
             sched_strategy=self.optimization,
+            app=w.app,
         )
         _set_task_join_will_block(pool.task_join_will_block)
         return pool
