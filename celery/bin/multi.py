@@ -100,7 +100,6 @@ import errno
 import os
 import shlex
 import signal
-import socket
 import sys
 
 from collections import OrderedDict, defaultdict, namedtuple
@@ -115,7 +114,7 @@ from celery import VERSION_BANNER
 from celery.five import items
 from celery.platforms import Pidfile, IS_WINDOWS
 from celery.utils import term
-from celery.utils import host_format, node_format, nodesplit
+from celery.utils import gethostname, host_format, node_format, nodesplit
 from celery.utils.text import pluralize
 
 __all__ = ['MultiTool']
@@ -480,7 +479,7 @@ def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
     cmd = options.pop('--cmd', cmd)
     append = options.pop('--append', append)
     hostname = options.pop('--hostname',
-                           options.pop('-n', socket.gethostname()))
+                           options.pop('-n', gethostname()))
     prefix = options.pop('--prefix', prefix) or ''
     suffix = options.pop('--suffix', suffix) or hostname
     suffix = '' if suffix in ('""', "''") else suffix

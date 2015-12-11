@@ -10,7 +10,6 @@
 from __future__ import absolute_import, unicode_literals
 
 import logging
-import socket
 import sys
 
 from datetime import datetime
@@ -27,7 +26,7 @@ from celery.exceptions import (
 )
 from celery.five import string
 from celery.platforms import signals as _signals
-from celery.utils import cached_property
+from celery.utils import cached_property, gethostname
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.timeutils import maybe_iso8601, timezone, maybe_make_aware
@@ -120,7 +119,7 @@ class Request(object):
         self.kwargsrepr = headers.get('kwargsrepr', '')
         self.on_ack = on_ack
         self.on_reject = on_reject
-        self.hostname = hostname or socket.gethostname()
+        self.hostname = hostname or gethostname()
         self.eventer = eventer
         self.connection_errors = connection_errors or ()
         self.task = task or self.app.tasks[type]

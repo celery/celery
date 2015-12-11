@@ -14,7 +14,6 @@ import errno
 import kombu
 import logging
 import os
-import socket
 
 from collections import defaultdict
 from functools import partial
@@ -36,6 +35,7 @@ from celery import signals
 from celery.app.trace import build_tracer
 from celery.canvas import signature
 from celery.exceptions import InvalidTaskError, NotRegistered
+from celery.utils import gethostname
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
@@ -172,7 +172,7 @@ class Consumer(object):
         self.app = app
         self.controller = controller
         self.init_callback = init_callback
-        self.hostname = hostname or socket.gethostname()
+        self.hostname = hostname or gethostname()
         self.pid = os.getpid()
         self.pool = pool
         self.timer = timer

@@ -17,7 +17,6 @@ from __future__ import absolute_import
 
 import logging
 import os
-import socket
 import sys
 
 from collections import namedtuple
@@ -35,6 +34,7 @@ from celery.app import set_default_app
 from celery.app.task import Task as BaseTask, Context
 from celery.exceptions import Ignore, Reject, Retry, InvalidTaskError
 from celery.five import monotonic
+from celery.utils import gethostname
 from celery.utils.log import get_logger
 from celery.utils.objects import mro_lookup
 from celery.utils.saferepr import saferepr
@@ -273,7 +273,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     track_started = task.track_started
     track_started = not eager and (task.track_started and not ignore_result)
     publish_result = not eager and not ignore_result
-    hostname = hostname or socket.gethostname()
+    hostname = hostname or gethostname()
 
     loader_task_init = loader.on_task_init
     loader_cleanup = loader.on_process_cleanup
@@ -489,7 +489,7 @@ def _trace_task_ret(name, uuid, request, body, content_type,
         )
     else:
         args, kwargs, embed = body
-    hostname = socket.gethostname()
+    hostname = gethostname()
     request.update({
         'args': args, 'kwargs': kwargs,
         'hostname': hostname, 'is_eager': False,
@@ -537,7 +537,7 @@ def report_internal_error(task, exc):
 def setup_worker_optimizations(app, hostname=None):
     global trace_task_ret
 
-    hostname = hostname or socket.gethostname()
+    hostname = hostname or gethostname()
 
     # make sure custom Task.__call__ methods that calls super
     # will not mess up the request/task stack.

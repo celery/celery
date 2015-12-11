@@ -258,7 +258,7 @@ class test_Command(AppCase):
 
     def test_host_format(self):
         cmd = MockCommand(app=self.app)
-        with patch('socket.gethostname') as hn:
+        with patch('celery.utils.gethostname') as hn:
             hn.return_value = 'blacktron.example.com'
             self.assertEqual(cmd.host_format(''), '')
             self.assertEqual(
