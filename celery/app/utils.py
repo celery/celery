@@ -300,7 +300,7 @@ def bugreport(app):
         py_v=_platform.python_version(),
         driver_v=driver_v,
         transport=transport,
-        results=app.conf.result_backend or 'disabled',
+        results=maybe_sanitize_url(app.conf.result_backend or 'disabled'),
         human_settings=app.conf.humanize(),
         loader=qualname(app.loader.__class__),
     )
