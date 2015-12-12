@@ -1132,8 +1132,8 @@ The output will include the following fields:
 
 - ``total``
 
-    List of task names and a total number of times that task have been
-    executed since worker start.
+    Map of task names and the total number of tasks with that type
+    the worker has accepted since startup.
 
 
 Additional Commands
