@@ -286,6 +286,8 @@ def find_related_module(package, related_name):
         importlib.import_module(package)
     except ImportError:
         package, _, _ = package.rpartition('.')
+        if not package:
+            raise
 
     try:
         pkg_path = importlib.import_module(package).__path__
