@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import errno
 import socket
 
-from amqp import promise
 from kombu.async import Hub, READ, WRITE, ERR
 
 from celery.bootsteps import CLOSE, RUN
