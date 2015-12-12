@@ -345,14 +345,18 @@ def shutdown(state, msg='Got shutdown from remote', **kwargs):
 @Panel.register
 def add_consumer(state, queue, exchange=None, exchange_type=None,
                  routing_key=None, **options):
-    state.consumer.add_task_queue(queue, exchange, exchange_type,
-                                  routing_key, **options)
+    state.consumer.call_soon(
+        state.consumer.add_task_queue,
+        queue, exchange, exchange_type, routing_key, **options
+    )
     return {'ok': 'add consumer {0}'.format(queue)}
 
 
 @Panel.register
 def cancel_consumer(state, queue=None, **_):
-    state.consumer.cancel_task_queue(queue)
+    state.consumer.call_soon(
+        state.consumer.cancel_task_queue, queue,
+    )
     return {'ok': 'no longer consuming from {0}'.format(queue)}
 
 

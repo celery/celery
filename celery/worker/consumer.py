@@ -21,6 +21,7 @@ from heapq import heappush
 from operator import itemgetter
 from time import sleep
 
+from amqp.promise import ppartial, promise
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.async.semaphore import DummyLock
@@ -213,11 +214,28 @@ class Consumer(object):
             # connect again.
             self.app.conf.broker_connection_timeout = None
 
+        self._pending_operations = []
+
         self.steps = []
         self.blueprint = self.Blueprint(
             app=self.app, on_close=self.on_close,
         )
         self.blueprint.apply(self, **dict(worker_options or {}, **kwargs))
+
+    def call_soon(self, p, *args, **kwargs):
+        p = ppartial(p, *args, **kwargs)
+        if self.hub:
+            return self.hub.call_soon(p)
+        self._pending_operations.append(p)
+        return p
+
+    def perform_pending_operations(self):
+        if not self.hub:
+            while self._pending_operations:
+                try:
+                    self._pending_operations.pop()()
+                except Exception as exc:
+                    error('Pending callback raised: %r', exc, exc_info=1)
 
     def bucket_for_task(self, type):
         limit = rate(getattr(type, 'rate_limit', None))
@@ -466,12 +484,13 @@ class Consumer(object):
             task.__trace__ = build_tracer(name, task, loader, self.hostname,
                                           app=self.app)
 
-    def create_task_handler(self):
+    def create_task_handler(self, promise=promise):
         strategies = self.strategies
         on_unknown_message = self.on_unknown_message
         on_unknown_task = self.on_unknown_task
         on_invalid_task = self.on_invalid_task
         callbacks = self.on_task_message
+        call_soon = self.call_soon
 
         def on_task_received(message):
             # payload will only be set for v1 protocol, since v2
@@ -497,8 +516,10 @@ class Consumer(object):
             else:
                 try:
                     strategy(
-                        message, payload, message.ack_log_error,
-                        message.reject_log_error, callbacks,
+                        message, payload,
+                        promise(call_soon, (message.ack_log_error,)),
+                        promise(call_soon, (message.reject_log_error,)),
+                        callbacks,
                     )
                 except InvalidTaskError as exc:
                     return on_invalid_task(payload, message, exc)

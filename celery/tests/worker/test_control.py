@@ -48,6 +48,10 @@ class Consumer(consumer.Consumer):
         from celery.concurrency.base import BasePool
         self.pool = BasePool(10)
         self.task_buckets = defaultdict(lambda: None)
+        self.hub = None
+
+    def call_soon(self, p, *args, **kwargs):
+        return p(*args, **kwargs)
 
 
 class test_Pidbox(AppCase):
@@ -345,6 +349,7 @@ class test_ControlPanel(AppCase):
             queues = []
             cancelled = []
             consuming = False
+            hub = Mock(name='hub')
 
             def add_queue(self, queue):
                 self.queues.append(queue.name)
