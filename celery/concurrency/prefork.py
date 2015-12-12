@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 import os
 
+from billiard.common import REMAP_SIGTERM, TERM_SIGNAME
 from billiard import forking_enable
 from billiard.pool import RUN, CLOSE, Pool as BlockingPool
 
@@ -32,7 +33,10 @@ WORKER_SIGRESET = {
 }
 
 #: List of signals to ignore when a child process starts.
-WORKER_SIGIGNORE = {'SIGINT'}
+if REMAP_SIGTERM:
+    WORKER_SIGIGNORE = {'SIGINT', TERM_SIGNAME}
+else:
+    WORKER_SIGIGNORE = {'SIGINT'}
 
 logger = get_logger(__name__)
 warning, debug = logger.warning, logger.debug

@@ -11,6 +11,8 @@ from __future__ import absolute_import
 
 import warnings
 
+from billiard.common import TERM_SIGNAME
+
 from kombu.pidbox import Mailbox
 from kombu.utils import cached_property
 
@@ -151,7 +153,7 @@ class Control(object):
         })
 
     def revoke(self, task_id, destination=None, terminate=False,
-               signal='SIGTERM', **kwargs):
+               signal=TERM_SIGNAME, **kwargs):
         """Tell all (or specific) workers to revoke a task by id.
 
         If a task is revoked, the workers will ignore the task and

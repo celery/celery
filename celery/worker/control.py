@@ -11,6 +11,7 @@ from __future__ import absolute_import
 import io
 import tempfile
 
+from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown
@@ -73,7 +74,7 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
 
     revoked.update(task_ids)
     if terminate:
-        signum = _signals.signum(signal or 'TERM')
+        signum = _signals.signum(signal or TERM_SIGNAME)
         # reserved_requests changes size during iteration
         # so need to consume the items first, then terminate after.
         requests = set(_find_requests_by_id(

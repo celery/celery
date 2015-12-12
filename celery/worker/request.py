@@ -15,6 +15,7 @@ import sys
 from datetime import datetime
 from weakref import ref
 
+from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr, safe_str
 
 from celery import signals
@@ -234,7 +235,7 @@ class Request(object):
                 return True
 
     def terminate(self, pool, signal=None):
-        signal = _signals.signum(signal or 'TERM')
+        signal = _signals.signum(signal or TERM_SIGNAME)
         if self.time_start:
             pool.terminate_job(self.worker_pid, signal)
             self._announce_revoked('terminated', True, signal, False)
