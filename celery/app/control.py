@@ -15,6 +15,7 @@ from billiard.common import TERM_SIGNAME
 
 from kombu.pidbox import Mailbox
 from kombu.utils import cached_property
+from kombu.utils.functional import lazy
 
 from celery.exceptions import DuplicateNodenameWarning
 from celery.utils.text import pluralize
@@ -128,7 +129,12 @@ class Control(object):
 
     def __init__(self, app=None):
         self.app = app
-        self.mailbox = self.Mailbox('celery', type='fanout', accept=['json'])
+        self.mailbox = self.Mailbox(
+            'celery',
+            type='fanout',
+            accept=['json'],
+            producer_pool=lazy(lambda: self.app.amqp.producer_pool),
+        )
 
     @cached_property
     def inspect(self):
