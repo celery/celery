@@ -107,6 +107,7 @@ class BaseBackend(object):
         self.accept = prepare_accept_content(
             conf.accept_content if accept is None else accept,
         )
+        self._pending_results = {}
 
     def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
@@ -220,6 +221,19 @@ class BaseBackend(object):
                      content_type=self.content_type,
                      content_encoding=self.content_encoding,
                      accept=self.accept)
+
+    def wait_for_pending(self, result, timeout=None, interval=0.5,
+                         no_ack=True, on_interval=None, callback=None,
+                         propagate=True):
+        meta = self.wait_for(
+            result.id, timeout=timeout,
+            interval=interval,
+            on_interval=on_interval,
+            no_ack=no_ack,
+        )
+        if meta:
+            result._maybe_set_cache(meta)
+            return result.maybe_throw(propagate=propagate, callback=callback)
 
     def wait_for(self, task_id,
                  timeout=None, interval=0.5, no_ack=True, on_interval=None):
