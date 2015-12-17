@@ -14,7 +14,7 @@ from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
 
-from amqp import promise
+from amqp.promise import Thenable, barrier, promise
 from kombu.utils import cached_property
 
 from . import current_app
@@ -86,7 +86,16 @@ class AsyncResult(ResultBase):
         self.id = id
         self.backend = backend or self.app.backend
         self.parent = parent
+        self.on_ready = promise(self._on_fulfilled)
         self._cache = None
+
+    def then(self, callback, on_error=None):
+        self.backend.add_pending_result(self)
+        return self.on_ready.then(callback, on_error)
+
+    def _on_fulfilled(self, result):
+        self.backend.remove_pending_result(self)
+        return result
 
     def as_tuple(self):
         parent = self.parent
@@ -159,28 +168,22 @@ class AsyncResult(ResultBase):
 
         if self._cache:
             if propagate:
-                self.maybe_reraise()
+                self.maybe_throw()
             return self.result
 
-        meta = self.backend.wait_for(
-            self.id, timeout=timeout,
+        self.backend.add_pending_result(self)
+        return self.backend.wait_for_pending(
+            self, timeout=timeout,
             interval=interval,
             on_interval=_on_interval,
             no_ack=no_ack,
+            propagate=propagate,
         )
-        if meta:
-            self._maybe_set_cache(meta)
-            state = meta['status']
-            if state in PROPAGATE_STATES and propagate:
-                raise meta['result']
-            if callback is not None:
-                callback(self.id, meta['result'])
-            return meta['result']
     wait = get  # deprecated alias to :meth:`get`.
 
     def _maybe_reraise_parent_error(self):
         for node in reversed(list(self._parents())):
-            node.maybe_reraise()
+            node.maybe_throw()
 
     def _parents(self):
         node = self.parent
@@ -268,9 +271,17 @@ class AsyncResult(ResultBase):
         """Returns :const:`True` if the task failed."""
         return self.state == states.FAILURE
 
-    def maybe_reraise(self):
-        if self.state in states.PROPAGATE_STATES:
-            raise self.result
+    def throw(self, *args, **kwargs):
+        self.on_ready.throw(*args, **kwargs)
+
+    def maybe_throw(self, propagate=True, callback=None):
+        cache = self._get_task_meta() if self._cache is None else self._cache
+        state, value = cache['status'], cache['result']
+        if state in states.PROPAGATE_STATES and propagate:
+            self.throw(value)
+        if callback is not None:
+            callback(self.id, value)
+        return value
 
     def build_graph(self, intermediate=False, formatter=None):
         graph = DependencyGraph(
@@ -333,8 +344,10 @@ class AsyncResult(ResultBase):
     def _maybe_set_cache(self, meta):
         if meta:
             state = meta['status']
-            if state == states.SUCCESS or state in states.PROPAGATE_STATES:
-                return self._set_cache(meta)
+            if state in states.READY_STATES:
+                d = self._set_cache(self.backend.meta_from_decoded(meta))
+                self.on_ready(self)
+                return d
         return meta
 
     def _get_task_meta(self):
@@ -405,6 +418,7 @@ class AsyncResult(ResultBase):
     @task_id.setter  # noqa
     def task_id(self, id):
         self.id = id
+Thenable.register(AsyncResult)
 
 
 class ResultSet(ResultBase):
@@ -421,6 +435,7 @@ class ResultSet(ResultBase):
     def __init__(self, results, app=None, **kwargs):
         self._app = app
         self.results = results
+        self.on_ready = barrier(self.results, (self,), callback=self._on_ready)
 
     def add(self, result):
         """Add :class:`AsyncResult` as a new member of the set.
@@ -430,6 +445,10 @@ class ResultSet(ResultBase):
         """
         if result not in self.results:
             self.results.append(result)
+            self.ready.add(result)
+
+    def _on_ready(self, result):
+        self.backend.remove_pending_result(result)
 
     def remove(self, result):
         """Remove result from the set; it must be a member.
@@ -482,9 +501,9 @@ class ResultSet(ResultBase):
         """
         return any(result.failed() for result in self.results)
 
-    def maybe_reraise(self):
+    def maybe_throw(self, callback=None, propagate=True):
         for result in self.results:
-            result.maybe_reraise()
+            result.maybe_throw(callback=callback, propagate=propagate)
 
     def waiting(self):
         """Are any of the tasks incomplete?
@@ -655,6 +674,12 @@ class ResultSet(ResultBase):
                 results.append(value)
         return results
 
+    def then(self, callback, on_error=None):
+        for result in self.results:
+            self.backend.add_pending_result(result)
+            result.on_ready.then(self.on_ready)
+        return self.on_ready.then(callback, on_error)
+
     def iter_native(self, timeout=None, interval=0.5, no_ack=True,
                     on_message=None, on_interval=None):
         """Backend optimized version of :meth:`iterate`.
@@ -670,12 +695,21 @@ class ResultSet(ResultBase):
         """
         results = self.results
         if not results:
-            return iter([])
-        return self.backend.get_many(
-            {r.id for r in results},
-            timeout=timeout, interval=interval, no_ack=no_ack,
-            on_message=on_message, on_interval=on_interval,
-        )
+            raise StopIteration()
+        ids = set()
+        for result in self.results:
+            self.backend.add_pending_result(result)
+            ids.add(result.id)
+        bucket = deque()
+        for _ in  self.backend.collect_for_pending(
+                self,
+                bucket=bucket,
+                timeout=timeout, interval=interval, no_ack=no_ack,
+                on_message=on_message, on_interval=on_interval):
+            while bucket:
+                result = bucket.popleft()
+                if result.id in ids:
+                    yield result.id, result._cache
 
     def join_native(self, timeout=None, propagate=True,
                     interval=0.5, callback=None, no_ack=True,
@@ -749,6 +783,7 @@ class ResultSet(ResultBase):
     @property
     def backend(self):
         return self.app.backend if self.app else self.results[0].backend
+Thenable.register(ResultSet)
 
 
 class GroupResult(ResultSet):
@@ -822,6 +857,7 @@ class GroupResult(ResultSet):
         return (
             backend or (self.app.backend if self.app else current_app.backend)
         ).restore_group(id)
+Thenable.register(ResultSet)
 
 
 class EagerResult(AsyncResult):
@@ -832,6 +868,11 @@ class EagerResult(AsyncResult):
         self._result = ret_value
         self._state = state
         self._traceback = traceback
+        self.on_ready = promise()
+        self.on_ready()
+
+    def then(self, callback, on_error=None):
+        return self.on_ready.then(callback, on_error)
 
     def _get_task_meta(self):
         return {'task_id': self.id, 'result': self._result, 'status':
@@ -887,6 +928,7 @@ class EagerResult(AsyncResult):
     @property
     def supports_native_join(self):
         return False
+Thenable.register(EagerResult)
 
 
 def result_from_tuple(r, app=None):
