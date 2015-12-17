@@ -57,7 +57,7 @@ class test_AMQPBackend(AppCase):
         tid = uuid()
 
         tb1.mark_as_done(tid, 42)
-        self.assertEqual(tb2.get_status(tid), states.SUCCESS)
+        self.assertEqual(tb2.get_state(tid), states.SUCCESS)
         self.assertEqual(tb2.get_result(tid), 42)
         self.assertTrue(tb2._cache.get(tid))
         self.assertTrue(tb2.get_result(tid), 42)
@@ -92,7 +92,7 @@ class test_AMQPBackend(AppCase):
         except KeyError as exception:
             einfo = ExceptionInfo()
             tb1.mark_as_failure(tid3, exception, traceback=einfo.traceback)
-            self.assertEqual(tb2.get_status(tid3), states.FAILURE)
+            self.assertEqual(tb2.get_state(tid3), states.FAILURE)
             self.assertIsInstance(tb2.get_result(tid3), KeyError)
             self.assertEqual(tb2.get_traceback(tid3), einfo.traceback)
 

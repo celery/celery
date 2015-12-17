@@ -188,14 +188,14 @@ class CassandraBackend(BaseBackend):
                 self._session = None
                 raise   # we did fail after all - reraise
 
-    def _store_result(self, task_id, result, status,
+    def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
-        """Store return value and status of an executed task."""
+        """Store return value and state of an executed task."""
         self._get_connection(write=True)
 
         self._session.execute(self._write_stmt, (
             task_id,
-            status,
+            state,
             buf_t(self.encode(result)),
             self.app.now(),
             buf_t(self.encode(traceback)),

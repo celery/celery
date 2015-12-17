@@ -170,8 +170,8 @@ class AsyncResult(ResultBase):
         )
         if meta:
             self._maybe_set_cache(meta)
-            status = meta['status']
-            if status in PROPAGATE_STATES and propagate:
+            state = meta['status']
+            if state in PROPAGATE_STATES and propagate:
                 raise meta['result']
             if callback is not None:
                 callback(self.id, meta['result'])
@@ -395,7 +395,7 @@ class AsyncResult(ResultBase):
 
         """
         return self._get_task_meta()['status']
-    status = state
+    status = state  # XXX compat
 
     @property
     def task_id(self):

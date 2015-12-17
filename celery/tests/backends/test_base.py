@@ -337,9 +337,9 @@ class test_KeyValueStoreBackend(AppCase):
         tid = uuid()
         self.b.mark_as_done(tid, 'Hello world')
         self.assertEqual(self.b.get_result(tid), 'Hello world')
-        self.assertEqual(self.b.get_status(tid), states.SUCCESS)
+        self.assertEqual(self.b.get_state(tid), states.SUCCESS)
         self.b.forget(tid)
-        self.assertEqual(self.b.get_status(tid), states.PENDING)
+        self.assertEqual(self.b.get_state(tid), states.PENDING)
 
     def test_strip_prefix(self):
         x = self.b.get_key_for_task('x1b34')
@@ -529,7 +529,7 @@ class test_KeyValueStoreBackend(AppCase):
 
     def test_get_missing_meta(self):
         self.assertIsNone(self.b.get_result('xxx-missing'))
-        self.assertEqual(self.b.get_status('xxx-missing'), states.PENDING)
+        self.assertEqual(self.b.get_state('xxx-missing'), states.PENDING)
 
     def test_save_restore_delete_group(self):
         tid = uuid()
@@ -583,4 +583,4 @@ class test_DisabledBackend(AppCase):
 
     def test_is_disabled(self):
         with self.assertRaises(NotImplementedError):
-            DisabledBackend(self.app).get_status('foo')
+            DisabledBackend(self.app).get_state('foo')

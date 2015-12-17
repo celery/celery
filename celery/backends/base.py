@@ -263,8 +263,8 @@ class BaseBackend(object):
         p = self.app.conf.result_persistent
         return self.persistent if p is None else p
 
-    def encode_result(self, result, status):
-        if status in self.EXCEPTION_STATES and isinstance(result, Exception):
+    def encode_result(self, result, state):
+        if state in self.EXCEPTION_STATES and isinstance(result, Exception):
             return self.prepare_exception(result)
         else:
             return self.prepare_value(result)
@@ -272,11 +272,11 @@ class BaseBackend(object):
     def is_cached(self, task_id):
         return task_id in self._cache
 
-    def store_result(self, task_id, result, status,
+    def store_result(self, task_id, result, state,
                      traceback=None, request=None, **kwargs):
         """Update task state and result."""
-        result = self.encode_result(result, status)
-        self._store_result(task_id, result, status, traceback,
+        result = self.encode_result(result, state)
+        self._store_result(task_id, result, state, traceback,
                            request=request, **kwargs)
         return result
 
@@ -287,9 +287,10 @@ class BaseBackend(object):
     def _forget(self, task_id):
         raise NotImplementedError('backend does not implement forget.')
 
-    def get_status(self, task_id):
-        """Get the status of a task."""
+    def get_state(self, task_id):
+        """Get the state of a task."""
         return self.get_task_meta(task_id)['status']
+    get_status = get_state  # XXX compat
 
     def get_traceback(self, task_id):
         """Get the traceback for a failed task."""
@@ -521,9 +522,9 @@ class KeyValueStoreBackend(BaseBackend):
     def _forget(self, task_id):
         self.delete(self.get_key_for_task(task_id))
 
-    def _store_result(self, task_id, result, status,
+    def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
-        meta = {'status': status, 'result': result, 'traceback': traceback,
+        meta = {'status': state, 'result': result, 'traceback': traceback,
                 'children': self.current_task_children(request)}
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
@@ -639,5 +640,5 @@ class DisabledBackend(BaseBackend):
         raise NotImplementedError(
             'No result backend configured.  '
             'Please see the documentation for more information.')
-    wait_for = get_status = get_result = get_traceback = _is_disabled
-    get_many = _is_disabled
+    get_state = get_status = get_result = get_traceback = _is_disabled
+    wait_for = get_many = _is_disabled

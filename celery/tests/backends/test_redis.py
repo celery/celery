@@ -385,10 +385,10 @@ class test_RedisBackend(AppCase):
     def test_get_set_forget(self):
         tid = uuid()
         self.b.store_result(tid, 42, states.SUCCESS)
-        self.assertEqual(self.b.get_status(tid), states.SUCCESS)
+        self.assertEqual(self.b.get_state(tid), states.SUCCESS)
         self.assertEqual(self.b.get_result(tid), 42)
         self.b.forget(tid)
-        self.assertEqual(self.b.get_status(tid), states.PENDING)
+        self.assertEqual(self.b.get_state(tid), states.PENDING)
 
     def test_set_expires(self):
         self.b = self.Backend(expires=512, app=self.app)

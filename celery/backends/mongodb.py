@@ -181,12 +181,12 @@ class MongoBackend(BaseBackend):
             return data
         return super(MongoBackend, self).decode(data)
 
-    def _store_result(self, task_id, result, status,
+    def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
-        """Store return value and status of an executed task."""
+        """Store return value and state of an executed task."""
 
         meta = {'_id': task_id,
-                'status': status,
+                'status': state,
                 'result': self.encode(result),
                 'date_done': datetime.utcnow(),
                 'traceback': self.encode(traceback),

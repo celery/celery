@@ -111,16 +111,16 @@ class AMQPBackend(BaseBackend):
             return self.rkey(task_id), request.correlation_id or task_id
         return self.rkey(task_id), task_id
 
-    def store_result(self, task_id, result, status,
+    def store_result(self, task_id, result, state,
                      traceback=None, request=None, **kwargs):
-        """Send task return value and status."""
+        """Send task return value and state."""
         routing_key, correlation_id = self.destination_for(task_id, request)
         if not routing_key:
             return
         with self.app.amqp.producer_pool.acquire(block=True) as producer:
             producer.publish(
-                {'task_id': task_id, 'status': status,
-                 'result': self.encode_result(result, status),
+                {'task_id': task_id, 'status': state,
+                 'result': self.encode_result(result, state),
                  'traceback': traceback,
                  'children': self.current_task_children(request)},
                 exchange=self.exchange,

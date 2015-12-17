@@ -90,7 +90,7 @@ class test_DatabaseBackend(AppCase):
 
     def test_missing_task_id_is_PENDING(self):
         tb = DatabaseBackend(self.uri, app=self.app)
-        self.assertEqual(tb.get_status('xxx-does-not-exist'), states.PENDING)
+        self.assertEqual(tb.get_state('xxx-does-not-exist'), states.PENDING)
 
     def test_missing_task_meta_is_dict_with_pending(self):
         tb = DatabaseBackend(self.uri, app=self.app)
@@ -106,11 +106,11 @@ class test_DatabaseBackend(AppCase):
 
         tid = uuid()
 
-        self.assertEqual(tb.get_status(tid), states.PENDING)
+        self.assertEqual(tb.get_state(tid), states.PENDING)
         self.assertIsNone(tb.get_result(tid))
 
         tb.mark_as_done(tid, 42)
-        self.assertEqual(tb.get_status(tid), states.SUCCESS)
+        self.assertEqual(tb.get_state(tid), states.SUCCESS)
         self.assertEqual(tb.get_result(tid), 42)
 
     def test_is_pickled(self):
@@ -128,13 +128,13 @@ class test_DatabaseBackend(AppCase):
         tb = DatabaseBackend(self.uri, app=self.app)
         tid = uuid()
         tb.mark_as_started(tid)
-        self.assertEqual(tb.get_status(tid), states.STARTED)
+        self.assertEqual(tb.get_state(tid), states.STARTED)
 
     def test_mark_as_revoked(self):
         tb = DatabaseBackend(self.uri, app=self.app)
         tid = uuid()
         tb.mark_as_revoked(tid)
-        self.assertEqual(tb.get_status(tid), states.REVOKED)
+        self.assertEqual(tb.get_state(tid), states.REVOKED)
 
     def test_mark_as_retry(self):
         tb = DatabaseBackend(self.uri, app=self.app)
@@ -145,7 +145,7 @@ class test_DatabaseBackend(AppCase):
             import traceback
             trace = '\n'.join(traceback.format_stack())
             tb.mark_as_retry(tid, exception, traceback=trace)
-            self.assertEqual(tb.get_status(tid), states.RETRY)
+            self.assertEqual(tb.get_state(tid), states.RETRY)
             self.assertIsInstance(tb.get_result(tid), KeyError)
             self.assertEqual(tb.get_traceback(tid), trace)
 
@@ -159,7 +159,7 @@ class test_DatabaseBackend(AppCase):
             import traceback
             trace = '\n'.join(traceback.format_stack())
             tb.mark_as_failure(tid3, exception, traceback=trace)
-            self.assertEqual(tb.get_status(tid3), states.FAILURE)
+            self.assertEqual(tb.get_state(tid3), states.FAILURE)
             self.assertIsInstance(tb.get_result(tid3), KeyError)
             self.assertEqual(tb.get_traceback(tid3), trace)
 
