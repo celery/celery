@@ -393,6 +393,8 @@ Working on Features & Patches
     However following these steps may make maintainers life easier,
     and may mean that your changes will be accepted sooner.
 
+.. _forking-and-setting-up:
+
 Forking and setting up the repository
 -------------------------------------
 
