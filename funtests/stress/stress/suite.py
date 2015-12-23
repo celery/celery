@@ -201,7 +201,7 @@ class BaseSuite(object):
                     self.speaker.beep()
                     raise
                 finally:
-                    print('{0} {1} iterations in {2}s'.format(
+                    print('{0} {1} iterations in {2}'.format(
                         'failed after' if failed else 'completed',
                         i + 1, humanize_seconds(monotonic() - elapsed),
                     ))

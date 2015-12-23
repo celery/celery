@@ -20,6 +20,7 @@ from functools import partial as _partial, reduce
 from operator import itemgetter
 from itertools import chain as _chain
 
+from amqp.promise import barrier
 from kombu.utils import cached_property, fxrange, reprcall, uuid
 
 from celery._state import current_app
@@ -730,7 +731,7 @@ class group(Signature):
                     task.args = tuple(partial_args) + tuple(task.args)
                 yield task, task.freeze(group_id=group_id, root_id=root_id)
 
-    def _apply_tasks(self, tasks, producer=None, app=None,
+    def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None, **options):
         app = app or self.app
         with app.producer_or_acquire(producer) as producer:
@@ -738,6 +739,9 @@ class group(Signature):
                 sig.apply_async(producer=producer, add_to_parent=False,
                                 chord=sig.options.get('chord') or chord,
                                 **options)
+                if p:
+                    p.add_noincr(res)
+                    res.backend.add_pending_result(res)
                 yield res  # <-- r.parent, etc set in the frozen result.
 
     def _freeze_gid(self, options):
@@ -762,9 +766,10 @@ class group(Signature):
 
         options, group_id, root_id = self._freeze_gid(options)
         tasks = self._prepared(self.tasks, args, group_id, root_id, app)
-        result = self.app.GroupResult(
-            group_id, list(self._apply_tasks(tasks, producer, app, **options)),
-        )
+        p = barrier()
+        results = list(self._apply_tasks(tasks, producer, app, p, **options))
+        result = self.app.GroupResult(group_id, results, ready_barrier=p)
+        p.finalize()
 
         # - Special case of group(A.s() | group(B.s(), C.s()))
         # That is, group with single item that is a chain but the

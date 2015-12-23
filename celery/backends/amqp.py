@@ -10,21 +10,16 @@
 """
 from __future__ import absolute_import
 
-import socket
-
-from collections import deque
-from operator import itemgetter
-
 from kombu import Exchange, Queue, Producer, Consumer
+from kombu.utils import register_after_fork
 
 from celery import states
-from celery.exceptions import TimeoutError
-from celery.five import range, monotonic
+from celery.five import range
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.timeutils import maybe_s_to_ms
 
-from .base import BaseBackend
+from .base import AsyncBackendMixin, Backend, BaseResultConsumer
 
 __all__ = ['BacklogLimitExceeded', 'AMQPBackend']
 
@@ -42,77 +37,44 @@ def repair_uuid(s):
     return '%s-%s-%s-%s-%s' % (s[:8], s[8:12], s[12:16], s[16:20], s[20:])
 
 
+def _on_after_fork_cleanup_backend(backend):
+    backend._after_fork()
+
+
 class NoCacheQueue(Queue):
     can_cache_declaration = False
 
 
-class ResultConsumer(object):
+class ResultConsumer(BaseResultConsumer):
     Consumer = Consumer
 
-    def __init__(self, backend, app, accept, pending_results):
-        self.backend = backend
-        self.app = app
-        self.accept = accept
-        self._pending_results = pending_results
+    def __init__(self, *args, **kwargs):
+        super(ResultConsumer, self).__init__(*args, **kwargs)
+        self._connection = None
         self._consumer = None
-        self._conn = None
-        self.on_message = None
-        self.bucket = None
-
-    def consume(self, task_id, timeout=None, no_ack=True, on_interval=None):
-        wait = self.drain_events
-        with self.app.pool.acquire_channel(block=True) as (conn, channel):
-            binding = self.backend._create_binding(task_id)
-            with self.Consumer(channel, binding,
-                               no_ack=no_ack, accept=self.accept) as consumer:
-                while 1:
-                    try:
-                        return wait(
-                            conn, consumer, timeout, on_interval)[task_id]
-                    except KeyError:
-                        continue
-
-    def wait_for_pending(self, result,
-                         callback=None, propagate=True, **kwargs):
-        for _ in self._wait_for_pending(result, **kwargs):
-            pass
-        return result.maybe_throw(callback=callback, propagate=propagate)
-
-    def _wait_for_pending(self, result, timeout=None, interval=0.5,
-                 no_ack=True, on_interval=None, callback=None,
-                 on_message=None, propagate=True):
-        prev_on_m, self.on_message = self.on_message, on_message
-        try:
-            for _ in self.drain_events_until(
-                    result.on_ready, timeout=timeout,
-                    on_interval=on_interval):
-                yield
-        except socket.timeout:
-            raise TimeoutError('The operation timed out.')
-        finally:
-            self.on_message = prev_on_m
-
-    def collect_for_pending(self, result, bucket=None, **kwargs):
-        prev_bucket, self.bucket = self.bucket, bucket
-        try:
-            for _ in self._wait_for_pending(result, **kwargs):
-                yield
-        finally:
-            self.bucket = prev_bucket
 
     def start(self, initial_queue, no_ack=True):
-        self._conn = self.app.connection()
+        self._connection = self.app.connection()
         self._consumer = self.Consumer(
-            self._conn.default_channel, [initial_queue],
+            self._connection.default_channel, [initial_queue],
             callbacks=[self.on_state_change], no_ack=no_ack,
             accept=self.accept)
         self._consumer.consume()
+
+    def drain_events(self, timeout=None):
+        return self._connection.drain_events(timeout=timeout)
 
     def stop(self):
         try:
             self._consumer.cancel()
         finally:
             self._connection.close()
+
+    def on_after_fork(self):
+        self._consumer = None
+        if self._connection is not None:
+            self._connection.collect()
+            self._connection = None
 
     def consume_from(self, queue):
         if self._consumer is None:
@@ -122,40 +84,10 @@ class ResultConsumer(object):
             self._consumer.consume()
 
     def cancel_for(self, queue):
-        self._consumer.cancel_by_queue(queue)
-
-    def on_state_change(self, meta, message):
-        if self.on_message:
-            self.on_message(meta)
-        if meta['status'] in states.READY_STATES:
-            try:
-                result = self._pending_results[meta['task_id']]
-            except KeyError:
-                return
-            result._maybe_set_cache(meta)
-            if self.bucket is not None:
-                self.bucket.append(result)
-
-    def drain_events_until(self, p, timeout=None, on_interval=None,
-                           monotonic=monotonic, wait=None):
-        wait = wait or self._conn.drain_events
-        time_start = monotonic()
-
-        while 1:
-            # Total time spent may exceed a single call to wait()
-            if timeout and monotonic() - time_start >= timeout:
-                raise socket.timeout()
-            try:
-                yield wait(timeout=1)
-            except socket.timeout:
-                pass
-            if on_interval:
-                on_interval()
-            if p.ready:  # got event on the wanted channel.
-                break
+        self._consumer.cancel_by_queue(queue.name)
 
 
-class AMQPBackend(BaseBackend):
+class AMQPBackend(Backend, AsyncBackendMixin):
     """Publishes results by sending messages."""
     Exchange = Exchange
     Queue = NoCacheQueue
@@ -195,6 +127,15 @@ class AMQPBackend(BaseBackend):
         })
         self.result_consumer = self.ResultConsumer(
             self, self.app, self.accept, self._pending_results)
+        if register_after_fork is not None:
+            register_after_fork(self, _on_after_fork_cleanup_backend)
+
+    def _after_fork(self):
+        self._pending_results.clear()
+        self.result_consumer._after_fork()
+
+    def on_result_fulfilled(self, result):
+        self.result_consumer.cancel_for(self._create_binding(result.id))
 
     def _create_exchange(self, name, type='direct', delivery_mode=2):
         return self.Exchange(name=name,
@@ -284,85 +225,6 @@ class AMQPBackend(BaseBackend):
                     # result probably pending.
                     return {'status': states.PENDING, 'result': None}
     poll = get_task_meta  # XXX compat
-
-    def wait_for_pending(self, result, timeout=None, interval=0.5,
-                 no_ack=True, on_interval=None, on_message=None,
-                 callback=None, propagate=True):
-        return self.result_consumer.wait_for_pending(
-            result, timeout=timeout, interval=interval,
-            no_ack=no_ack, on_interval=on_interval,
-            callback=callback, on_message=on_message, propagate=propagate,
-        )
-
-    def collect_for_pending(self, result, bucket=None, timeout=None,
-                            interval=0.5, no_ack=True, on_interval=None,
-                            on_message=None, callback=None, propagate=True):
-        return self.result_consumer.collect_for_pending(
-            result, bucket=bucket, timeout=timeout, interval=interval,
-            no_ack=no_ack, on_interval=on_interval,
-            callback=callback, on_message=on_message, propagate=propagate,
-        )
-
-    def add_pending_result(self, result):
-        if result.id not in self._pending_results:
-            self._pending_results[result.id] = result
-            self.result_consumer.consume_from(self._create_binding(result.id))
-
-    def remove_pending_result(self, result):
-        self._pending_results.pop(result.id, None)
-        # XXX cancel queue after result consumed
-
-    def _many_bindings(self, ids):
-        return [self._create_binding(task_id) for task_id in ids]
-
-    def xxx_get_many(self, task_ids, timeout=None, no_ack=True,
-                 on_message=None, on_interval=None,
-                 now=monotonic, getfields=itemgetter('status', 'task_id'),
-                 READY_STATES=states.READY_STATES,
-                 PROPAGATE_STATES=states.PROPAGATE_STATES, **kwargs):
-        with self.app.pool.acquire_channel(block=True) as (conn, channel):
-            ids = set(task_ids)
-            cached_ids = set()
-            mark_cached = cached_ids.add
-            for task_id in ids:
-                try:
-                    cached = self._cache[task_id]
-                except KeyError:
-                    pass
-                else:
-                    if cached['status'] in READY_STATES:
-                        yield task_id, cached
-                        mark_cached(task_id)
-            ids.difference_update(cached_ids)
-            results = deque()
-            push_result = results.append
-            push_cache = self._cache.__setitem__
-            decode_result = self.meta_from_decoded
-
-            def _on_message(message):
-                body = decode_result(message.decode())
-                if on_message is not None:
-                    on_message(body)
-                state, uid = getfields(body)
-                if state in READY_STATES:
-                    push_result(body) \
-                        if uid in task_ids else push_cache(uid, body)
-
-            bindings = self._many_bindings(task_ids)
-            with self.Consumer(channel, bindings, on_message=_on_message,
-                               accept=self.accept, no_ack=no_ack):
-                wait = conn.drain_events
-                popleft = results.popleft
-                while ids:
-                    wait(timeout=timeout)
-                    while results:
-                        state = popleft()
-                        task_id = state['task_id']
-                        ids.discard(task_id)
-                        push_cache(task_id, state)
-                        yield task_id, state
-                    if on_interval:
-                        on_interval()
 
     def reload_task_result(self, task_id):
         raise NotImplementedError(
