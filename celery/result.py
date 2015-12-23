@@ -432,10 +432,13 @@ class ResultSet(ResultBase):
     #: List of results in in the set.
     results = None
 
-    def __init__(self, results, app=None, **kwargs):
+    def __init__(self, results, app=None, ready_barrier=None, **kwargs):
         self._app = app
+        self._cache = None
         self.results = results
-        self.on_ready = barrier(self.results, (self,), callback=self._on_ready)
+        self._on_full = ready_barrier or barrier(self.results)
+        self._on_full.then(promise(self._on_ready))
+        self.on_ready = promise()
 
     def add(self, result):
         """Add :class:`AsyncResult` as a new member of the set.
@@ -447,8 +450,10 @@ class ResultSet(ResultBase):
             self.results.append(result)
             self.ready.add(result)
 
-    def _on_ready(self, result):
-        self.backend.remove_pending_result(result)
+    def _on_ready(self):
+        self.backend.remove_pending_result(self)
+        self._cache = [r.get() for r in self.results]
+        self.on_ready(self)
 
     def remove(self, result):
         """Remove result from the set; it must be a member.
@@ -594,6 +599,8 @@ class ResultSet(ResultBase):
         current result backend.
 
         """
+        if self._cache is not None:
+            return self._cache
         return (self.join_native if self.supports_native_join else self.join)(
             timeout=timeout, propagate=propagate,
             interval=interval, callback=callback, no_ack=no_ack,
@@ -675,9 +682,6 @@ class ResultSet(ResultBase):
         return results
 
     def then(self, callback, on_error=None):
-        for result in self.results:
-            self.backend.add_pending_result(result)
-            result.on_ready.then(self.on_ready)
         return self.on_ready.then(callback, on_error)
 
     def iter_native(self, timeout=None, interval=0.5, no_ack=True,
@@ -693,23 +697,11 @@ class ResultSet(ResultBase):
         result backends.
 
         """
-        results = self.results
-        if not results:
-            raise StopIteration()
-        ids = set()
-        for result in self.results:
-            self.backend.add_pending_result(result)
-            ids.add(result.id)
-        bucket = deque()
-        for _ in  self.backend.collect_for_pending(
-                self,
-                bucket=bucket,
-                timeout=timeout, interval=interval, no_ack=no_ack,
-                on_message=on_message, on_interval=on_interval):
-            while bucket:
-                result = bucket.popleft()
-                if result.id in ids:
-                    yield result.id, result._cache
+        return self.backend.iter_native(
+            self,
+            timeout=timeout, interval=interval, no_ack=no_ack,
+            on_message=on_message, on_interval=on_interval,
+        )
 
     def join_native(self, timeout=None, propagate=True,
                     interval=0.5, callback=None, no_ack=True,
