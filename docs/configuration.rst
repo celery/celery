@@ -2040,7 +2040,9 @@ worker_log_format
 
 The format to use for log messages.
 
-Default is `[%(asctime)s: %(levelname)s/%(processName)s] %(message)s`
+Default is::
+
+    [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
 
 See the Python :mod:`logging` module for more information about log
 formats.
@@ -2050,8 +2052,7 @@ formats.
 worker_task_log_format
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The format to use for log messages logged in tasks.  Can be overridden using
-the :option:`--loglevel` option to :mod:`~celery.bin.worker`.
+The format to use for log messages logged in tasks.
 
 Default is::
 
