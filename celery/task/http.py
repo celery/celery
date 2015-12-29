@@ -17,7 +17,7 @@ except ImportError:  # pragma: no cover
     from urlparse import urlparse, parse_qsl  # noqa
 
 from kombu.utils import json
-from kombu.utils.encoding import bytes_to_str
+from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
 from celery import shared_task, __version__ as celery_version
 from celery.five import items, reraise
@@ -109,7 +109,7 @@ class MutableURL(object):
 
     def __str__(self):
         scheme, netloc, path, params, query, fragment = self.parts
-        query = urlencode(utf8dict(items(self.query)))
+        query = str_to_bytes(urlencode(utf8dict(items(self.query))))
         components = [scheme + '://', netloc, path or '/',
                       ';{0}'.format(params) if params else '',
                       '?{0}'.format(query) if query else '',
