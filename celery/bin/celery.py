@@ -337,7 +337,7 @@ class _RemoteControl(Command):
             raise self.UsageError(
                 'Unknown {0.name} method {1}'.format(self, method))
 
-        if self.app.connection().transport.driver_type == 'sql':
+        if self.app.connection_for_write().transport.driver_type == 'sql':
             raise self.Error('Broadcast not supported by SQL broker transport')
 
         output_json = kwargs.get('json')

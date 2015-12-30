@@ -272,7 +272,7 @@ class Celery(object):
         use the with statement instead::
 
             with Celery(set_as_current=False) as app:
-                with app.connection() as conn:
+                with app.connection_for_write() as conn:
                     pass
         """
         self._pool = None
@@ -655,12 +655,32 @@ class Celery(object):
                 parent.add_trail(result)
         return result
 
+    def connection_for_read(self, url=None, **kwargs):
+        """Establish connection used for consuming.
+
+        See :meth:`connection` for supported arguments.
+
+        """
+        return self._connection(url or self.conf.broker_read_url, **kwargs)
+
+    def connection_for_write(self, url=None, **kwargs):
+        """Establish connection used for producing.
+
+        See :meth:`connection` for supported arguments.
+
+        """
+        return self._connection(url or self.conf.broker_write_url, **kwargs)
+
     def connection(self, hostname=None, userid=None, password=None,
                    virtual_host=None, port=None, ssl=None,
                    connect_timeout=None, transport=None,
                    transport_options=None, heartbeat=None,
                    login_method=None, failover_strategy=None, **kwargs):
         """Establish a connection to the message broker.
+
+        Please use :meth:`connection_for_read` and
+        :meth:`connection_for_write` instead, to convey the intent
+        of use for this connection.
 
         :param url: Either the URL or the hostname of the broker to use.
 
@@ -674,13 +694,33 @@ class Celery(object):
         :keyword ssl: Defaults to the :setting:`broker_use_ssl` setting.
         :keyword transport: defaults to the :setting:`broker_transport`
                  setting.
+        :keyword transport_options: Dictionary of transport specific options.
+        :keyword heartbeat: AMQP Heartbeat in seconds (pyamqp only).
+        :keyword login_method: Custom login method to use (amqp only).
+        :keyword failover_strategy: Custom failover strategy.
+        :keyword \*\*kwargs: Additional arguments to :class:`kombu.Connection`.
 
         :returns :class:`kombu.Connection`:
 
         """
+        return self.connection_for_write(
+            hostname or self.conf.broker_write_url,
+            userid=userid, password=password,
+            virtual_host=virtual_host, port=port, ssl=ssl,
+            connect_timeout=connect_timeout, transport=transport,
+            transport_options=transport_options, heartbeat=heartbeat,
+            login_method=login_method, failover_strategy=failover_strategy,
+            **kwargs
+        )
+
+    def _connection(self, url, userid=None, password=None,
+                   virtual_host=None, port=None, ssl=None,
+                   connect_timeout=None, transport=None,
+                   transport_options=None, heartbeat=None,
+                   login_method=None, failover_strategy=None, **kwargs):
         conf = self.conf
         return self.amqp.Connection(
-            hostname or conf.broker_url,
+            url,
             userid or conf.broker_user,
             password or conf.broker_password,
             virtual_host or conf.broker_vhost,
@@ -705,7 +745,7 @@ class Celery(object):
         """Helper for :meth:`connection_or_acquire`."""
         if pool:
             return self.pool.acquire(block=True)
-        return self.connection()
+        return self.connection_for_write()
 
     def connection_or_acquire(self, connection=None, pool=True, *_, **__):
         """For use within a with-statement to get a connection from the pool
@@ -1002,7 +1042,7 @@ class Celery(object):
             self._ensure_after_fork()
             limit = self.conf.broker_pool_limit
             pools.set_limit(limit)
-            self._pool = pools.connections[self.connection()]
+            self._pool = pools.connections[self.connection_for_write()]
         return self._pool
 
     @property

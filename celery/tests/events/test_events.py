@@ -66,7 +66,7 @@ class test_EventDispatcher(AppCase):
 
     def test_send(self):
         producer = MockProducer()
-        producer.connection = self.app.connection()
+        producer.connection = self.app.connection_for_write()
         connection = Mock()
         connection.transport.driver_type = 'amqp'
         eventer = self.app.events.Dispatcher(connection, enabled=False,
@@ -98,7 +98,7 @@ class test_EventDispatcher(AppCase):
     def test_send_buffer_group(self):
         buf_received = [None]
         producer = MockProducer()
-        producer.connection = self.app.connection()
+        producer.connection = self.app.connection_for_write()
         connection = Mock()
         connection.transport.driver_type = 'amqp'
         eventer = self.app.events.Dispatcher(
@@ -134,7 +134,7 @@ class test_EventDispatcher(AppCase):
         eventer.flush(errors=False, groups=False)
 
     def test_enter_exit(self):
-        with self.app.connection() as conn:
+        with self.app.connection_for_write() as conn:
             d = self.app.events.Dispatcher(conn)
             d.close = Mock()
             with d as _d:
@@ -144,7 +144,7 @@ class test_EventDispatcher(AppCase):
     def test_enable_disable_callbacks(self):
         on_enable = Mock()
         on_disable = Mock()
-        with self.app.connection() as conn:
+        with self.app.connection_for_write() as conn:
             with self.app.events.Dispatcher(conn, enabled=False) as d:
                 d.on_enabled.add(on_enable)
                 d.on_disabled.add(on_disable)
@@ -154,7 +154,7 @@ class test_EventDispatcher(AppCase):
                 on_disable.assert_called_with()
 
     def test_enabled_disable(self):
-        connection = self.app.connection()
+        connection = self.app.connection_for_write()
         channel = connection.channel()
         try:
             dispatcher = self.app.events.Dispatcher(connection,
@@ -235,7 +235,7 @@ class test_EventReceiver(AppCase):
         self.assertTrue(got_event[0])
 
     def test_itercapture(self):
-        connection = self.app.connection()
+        connection = self.app.connection_for_write()
         try:
             r = self.app.events.Receiver(connection, node_id='celery.tests')
             it = r.itercapture(timeout=0.0001, wakeup=False)
@@ -284,7 +284,7 @@ class test_EventReceiver(AppCase):
         r.process.assert_has_calls([call(1), call(2), call(3)])
 
     def test_itercapture_limit(self):
-        connection = self.app.connection()
+        connection = self.app.connection_for_write()
         channel = connection.channel()
         try:
             events_received = [0]

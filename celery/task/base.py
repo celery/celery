@@ -192,10 +192,10 @@ class Task(BaseTask):
                 ...
 
             # establish fresh connection
-            with celery.connection() as conn:
+            with celery.connection_for_write() as conn:
                 ...
         """
-        return self._get_app().connection()
+        return self._get_app().connection_for_write()
 
     def get_publisher(self, connection=None, exchange=None,
                       exchange_type=None, **options):
@@ -205,7 +205,7 @@ class Task(BaseTask):
 
         .. code-block:: python
 
-            with app.connection() as conn:
+            with app.connection_for_write() as conn:
                 with app.amqp.Producer(conn) as prod:
                     my_task.apply_async(producer=prod)
 

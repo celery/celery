@@ -585,7 +585,8 @@ class AMQP(object):
     @property
     def producer_pool(self):
         if self._producer_pool is None:
-            self._producer_pool = pools.producers[self.app.connection()]
+            self._producer_pool = pools.producers[
+                self.app.connection_for_write()]
             self._producer_pool.limit = self.app.pool.limit
         return self._producer_pool
     publisher_pool = producer_pool  # compat alias

@@ -122,7 +122,7 @@ class WorkController(object):
         self.ready_callback = ready_callback or self.on_consumer_ready
 
         # this connection is not established, only used for params
-        self._conninfo = self.app.connection()
+        self._conninfo = self.app.connection_for_read()
         self.use_eventloop = (
             self.should_use_eventloop() if use_eventloop is None
             else use_eventloop

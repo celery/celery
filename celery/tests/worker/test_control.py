@@ -98,7 +98,7 @@ class test_Pidbox_green(AppCase):
 
     def test_loop(self):
         parent = Mock()
-        conn = parent.connect.return_value = self.app.connection()
+        conn = parent.connect.return_value = self.app.connection_for_read()
         drain = conn.drain_events = Mock()
         g = gPidbox(parent)
         parent.connection = Mock()
@@ -252,7 +252,7 @@ class test_ControlPanel(AppCase):
     def test_active_queues(self):
         import kombu
 
-        x = kombu.Consumer(self.app.connection(),
+        x = kombu.Consumer(self.app.connection_for_read(),
                            [kombu.Queue('foo', kombu.Exchange('foo'), 'foo'),
                             kombu.Queue('bar', kombu.Exchange('bar'), 'bar')],
                            auto_declare=False)

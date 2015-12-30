@@ -87,9 +87,27 @@ class Settings(ConfigurationView):
     """
 
     @property
+    def broker_read_url(self):
+        return (
+            os.environ.get('CELERY_BROKER_READ_URL') or
+            self.get('broker_read_url') or
+            self.broker_url
+        )
+
+    @property
+    def broker_write_url(self):
+        return (
+            os.environ.get('CELERY_BROKER_WRITE_URL') or
+            self.get('broker_write_url') or
+            self.broker_url
+        )
+
+    @property
     def broker_url(self):
-        return (os.environ.get('CELERY_BROKER_URL') or
-                self.first('broker_url', 'broker_host'))
+        return (
+            os.environ.get('CELERY_BROKER_URL') or
+            self.first('broker_url', 'broker_host')
+        )
 
     @property
     def timezone(self):

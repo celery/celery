@@ -88,7 +88,7 @@ def evdump(app=None, out=sys.stdout):
     app = app_or_default(app)
     dumper = Dumper(out=out)
     dumper.say('-> evdump: starting capture...')
-    conn = app.connection().clone()
+    conn = app.connection_for_read().clone()
 
     def _error_handler(exc, interval):
         dumper.say(CONNECTION_ERROR % (

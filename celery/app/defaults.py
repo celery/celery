@@ -98,6 +98,8 @@ NAMESPACES = Namespace(
     ),
     broker=Namespace(
         url=Option(None, type='string'),
+        read_url=Option(None, type='string'),
+        write_url=Option(None, type='string'),
         transport=Option(type='string'),
         transport_options=Option({}, type='dict'),
         connection_timeout=Option(4, type='float'),

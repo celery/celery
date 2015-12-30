@@ -1513,6 +1513,25 @@ The brokers will then be used in the :setting:`broker_failover_strategy`.
 See :ref:`kombu:connection-urls` in the Kombu documentation for more
 information.
 
+.. setting:: broker_read_url
+
+.. setting:: broker_write_url
+
+broker_read_url / broker_write_url
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These settings can be configured, instead of :setting:`broker_url` to specify
+different connection parameters for broker connections used for consuming and
+producing.
+
+Example::
+
+    broker_read_url = 'amqp://user:pass@broker.example.com:56721'
+    broker_write_url = 'amqp://user:pass@broker.example.com:56722'
+
+Both options can also be specified as a list for failover alternates, see
+:setting:`broker_url` for more information.
+
 .. setting:: broker_failover_strategy
 
 broker_failover_strategy

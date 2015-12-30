@@ -196,8 +196,8 @@ class test_Consumer(AppCase):
             c.on_close()
 
     def test_connect_error_handler(self):
-        self.app.connection = _amqp_connection()
-        conn = self.app.connection.return_value
+        self.app._connection = _amqp_connection()
+        conn = self.app._connection.return_value
         c = self.get_consumer()
         self.assertTrue(c.connect())
         self.assertTrue(conn.ensure_connection.called)
@@ -275,7 +275,7 @@ class test_Mingle(AppCase):
 
     def test_start_no_replies(self):
         c = Mock()
-        c.app.connection = _amqp_connection()
+        c.app.connection_for_read = _amqp_connection()
         mingle = Mingle(c)
         I = c.app.control.inspect.return_value = Mock()
         I.hello.return_value = {}
@@ -284,7 +284,7 @@ class test_Mingle(AppCase):
     def test_start(self):
         try:
             c = Mock()
-            c.app.connection = _amqp_connection()
+            c.app.connection_for_read = _amqp_connection()
             mingle = Mingle(c)
             self.assertTrue(mingle.enabled)
 
@@ -332,14 +332,14 @@ class test_Gossip(AppCase):
 
     def test_init(self):
         c = self.Consumer()
-        c.app.connection = _amqp_connection()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         self.assertTrue(g.enabled)
         self.assertIs(c.gossip, g)
 
     def test_election(self):
         c = self.Consumer()
-        c.app.connection = _amqp_connection()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.start(c)
         g.election('id', 'topic', 'action')
@@ -350,7 +350,7 @@ class test_Gossip(AppCase):
 
     def test_call_task(self):
         c = self.Consumer()
-        c.app.connection = _amqp_connection()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.start(c)
 
@@ -381,7 +381,7 @@ class test_Gossip(AppCase):
 
     def test_on_elect(self):
         c = self.Consumer()
-        c.app.connection = _amqp_connection()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.start(c)
 
@@ -433,6 +433,7 @@ class test_Gossip(AppCase):
 
     def test_on_elect_ack_win(self):
         c = self.Consumer(hostname='foo@x.com')  # I will win
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         handler = g.election_handlers['topic'] = Mock()
         self.setup_election(g, c)
@@ -440,7 +441,7 @@ class test_Gossip(AppCase):
 
     def test_on_elect_ack_lose(self):
         c = self.Consumer(hostname='bar@x.com')  # I will lose
-        c.app.connection = _amqp_connection()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         handler = g.election_handlers['topic'] = Mock()
         self.setup_election(g, c)
@@ -448,6 +449,7 @@ class test_Gossip(AppCase):
 
     def test_on_elect_ack_win_but_no_action(self):
         c = self.Consumer(hostname='foo@x.com')  # I will win
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.election_handlers = {}
         with patch('celery.worker.consumer.error') as error:
@@ -456,6 +458,7 @@ class test_Gossip(AppCase):
 
     def test_on_node_join(self):
         c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         with patch('celery.worker.consumer.debug') as debug:
             g.on_node_join(c)
@@ -463,6 +466,7 @@ class test_Gossip(AppCase):
 
     def test_on_node_leave(self):
         c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         with patch('celery.worker.consumer.debug') as debug:
             g.on_node_leave(c)
@@ -470,6 +474,7 @@ class test_Gossip(AppCase):
 
     def test_on_node_lost(self):
         c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         with patch('celery.worker.consumer.info') as info:
             g.on_node_lost(c)
@@ -477,6 +482,7 @@ class test_Gossip(AppCase):
 
     def test_register_timer(self):
         c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.register_timer()
         c.timer.call_repeatedly.assert_called_with(g.interval, g.periodic)
@@ -486,6 +492,7 @@ class test_Gossip(AppCase):
 
     def test_periodic(self):
         c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.on_node_lost = Mock()
         state = g.state = Mock()
@@ -503,6 +510,7 @@ class test_Gossip(AppCase):
 
     def test_on_message__task(self):
         c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         self.assertTrue(g.enabled)
         message = Mock(name='message')
@@ -511,6 +519,7 @@ class test_Gossip(AppCase):
 
     def test_on_message(self):
         c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         self.assertTrue(g.enabled)
         prepare = Mock()

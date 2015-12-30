@@ -381,7 +381,7 @@ class Scheduler(object):
 
     @cached_property
     def connection(self):
-        return self.app.connection()
+        return self.app.connection_for_write()
 
     @cached_property
     def producer(self):

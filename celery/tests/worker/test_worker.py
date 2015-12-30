@@ -360,7 +360,7 @@ class test_Consumer(AppCase):
 
     def test_loop_ignores_socket_timeout(self):
 
-        class Connection(self.app.connection().__class__):
+        class Connection(self.app.connection_for_read().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
@@ -376,7 +376,7 @@ class test_Consumer(AppCase):
 
     def test_loop_when_socket_error(self):
 
-        class Connection(self.app.connection().__class__):
+        class Connection(self.app.connection_for_read().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
@@ -398,7 +398,7 @@ class test_Consumer(AppCase):
 
     def test_loop(self):
 
-        class Connection(self.app.connection().__class__):
+        class Connection(self.app.connection_for_read().__class__):
             obj = None
 
             def drain_events(self, **kwargs):

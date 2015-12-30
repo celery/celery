@@ -140,7 +140,7 @@ class EventDispatcher(object):
         if not connection and channel:
             self.connection = channel.connection.client
         self.enabled = enabled
-        conninfo = self.connection or self.app.connection()
+        conninfo = self.connection or self.app.connection_for_write()
         self.exchange = get_exchange(conninfo)
         if conninfo.transport.driver_type in self.DISABLED_TRANSPORTS:
             self.enabled = False
@@ -307,7 +307,8 @@ class EventReceiver(ConsumerMixin):
         self.routing_key = routing_key
         self.node_id = node_id or uuid()
         self.queue_prefix = queue_prefix
-        self.exchange = get_exchange(self.connection or self.app.connection())
+        self.exchange = get_exchange(
+            self.connection or self.app.connection_for_write())
         self.queue = Queue(
             '.'.join([self.queue_prefix, self.node_id]),
             exchange=self.exchange,

@@ -178,7 +178,7 @@ class Consumer(object):
         self.pool = pool
         self.timer = timer
         self.strategies = self.Strategies()
-        self.conninfo = self.app.connection()
+        self.conninfo = self.app.connection_for_read()
         self.connection_errors = self.conninfo.connection_errors
         self.channel_errors = self.conninfo.channel_errors
         self._restart_state = restart_state(maxR=5, maxT=1)
@@ -376,7 +376,7 @@ class Consumer(object):
         :setting:`broker_connection_retry` setting is enabled
 
         """
-        conn = self.app.connection(heartbeat=self.amqheartbeat)
+        conn = self.app.connection_for_read(heartbeat=self.amqheartbeat)
 
         # Callback called for each retry while the connection
         # can't be established.
@@ -635,7 +635,7 @@ class Mingle(bootsteps.StartStopStep):
         self.enabled = not without_mingle and self.compatible_transport(c.app)
 
     def compatible_transport(self, app):
-        with app.connection() as conn:
+        with app.connection_for_read() as conn:
             return conn.transport.driver_type in self.compatible_transports
 
     def start(self, c):
@@ -776,7 +776,7 @@ class Gossip(bootsteps.ConsumerStep):
         }
 
     def compatible_transport(self, app):
-        with app.connection() as conn:
+        with app.connection_for_read() as conn:
             return conn.transport.driver_type in self.compatible_transports
 
     def election(self, id, topic, action=None):

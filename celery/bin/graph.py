@@ -166,7 +166,8 @@ class graph(Command):
                 list(range(int(threads))), 'P', Tmax,
             )
 
-        broker = Broker(args.get('broker', self.app.connection().as_uri()))
+        broker = Broker(args.get(
+            'broker', self.app.connection_for_read().as_uri()))
         backend = Backend(backend) if backend else None
         graph = DependencyGraph(formatter=Formatter())
         graph.add_arc(broker)
