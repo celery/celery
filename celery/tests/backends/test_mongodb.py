@@ -400,6 +400,38 @@ class test_MongoBackend(AppCase):
             })
 
 
+
+class test_MongoBackend_autoretry(AppCase):
+
+    @patch('time.sleep', return_value=None)
+    def test_auto_retry1(self, patched_time_sleep):
+        my_fn = Mock()
+        my_fn.__name__ = 'test'
+        my_fn.side_effect = [pymongo.errors.ConnectionFailure, pymongo.errors.ConnectionFailure, 'bar']
+
+        wrapped = module.auto_retry(my_fn)
+        self.assertEqual(wrapped(retry_interval=1), 'bar')
+        self.assertEqual(my_fn.call_count, 3)
+        patched_time_sleep.assert_called_with(1)
+
+
+    @patch('time.sleep', return_value=None)
+    def test_auto_retry2(self, patched_time_sleep):
+        my_fn = Mock()
+        my_fn.__name__ = 'test'
+        my_fn.side_effect = pymongo.errors.ConnectionFailure
+
+        wrapped = module.auto_retry(my_fn)
+        self.assertRaises(pymongo.errors.ConnectionFailure, wrapped, retry_interval=1, retries=1)
+        self.assertEqual(my_fn.call_count, 2)
+        patched_time_sleep.assert_called_with(1)
+
+        my_fn.reset_mock()
+        self.assertRaises(pymongo.errors.ConnectionFailure, wrapped, retry_interval=1, retries=0)
+        self.assertEqual(my_fn.call_count, 1)
+        patched_time_sleep.assert_called_with(1)
+
+
 class test_MongoBackend_no_mock(AppCase):
 
     def setup(self):

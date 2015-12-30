@@ -46,16 +46,16 @@ class Bunch(object):
         self.__dict__.update(kw)
 
 
-def auto_retry(f):
+def auto_retry(func):
     ''' Forces decorated function to retry if mongo throws error '''
-    @wraps(f)
+    @wraps(func)
     def wrapper(*args, **kwds):
         retries = kwds.pop("retries", None)
         retry_interval = kwds.pop("retry_interval", 5)
         error = None
         while retries is None or retries >= 0:
             try:
-                return f(*args, **kwds)
+                return func(*args, **kwds)
             except pymongo.errors.ConnectionFailure as e:
                 error = e
             if retries is not None:
@@ -66,10 +66,10 @@ def auto_retry(f):
 
 
 def auto_retry_methods(*methods):
-    def decorate(klass):
+    def decorate(class_):
         for method in methods:
-            setattr(klass, method, auto_retry(getattr(klass, method)))
-        return klass
+            setattr(class_, method, auto_retry(getattr(class_, method)))
+        return class_
     return decorate
 
 
