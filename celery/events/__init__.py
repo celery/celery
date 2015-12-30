@@ -4,7 +4,7 @@
     ~~~~~~~~~~~~~
 
     Events is a stream of messages sent for certain actions occurring
-    in the worker (and clients if :setting:`CELERY_SEND_TASK_SENT_EVENT`
+    in the worker (and clients if :setting:`task_send_sent_event`
     is enabled), used for monitoring purposes.
 
 """
@@ -130,7 +130,7 @@ class EventDispatcher(object):
         self.mutex = threading.Lock()
         self.producer = None
         self._outbound_buffer = deque()
-        self.serializer = serializer or self.app.conf.CELERY_EVENT_SERIALIZER
+        self.serializer = serializer or self.app.conf.event_serializer
         self.on_enabled = set()
         self.on_disabled = set()
         self.groups = set(groups or [])
@@ -140,7 +140,7 @@ class EventDispatcher(object):
         if not connection and channel:
             self.connection = channel.connection.client
         self.enabled = enabled
-        conninfo = self.connection or self.app.connection()
+        conninfo = self.connection or self.app.connection_for_write()
         self.exchange = get_exchange(conninfo)
         if conninfo.transport.driver_type in self.DISABLED_TRANSPORTS:
             self.enabled = False
@@ -216,7 +216,8 @@ class EventDispatcher(object):
                 raise
             self._outbound_buffer.append((event, routing_key, exc))
 
-    def send(self, type, blind=False, utcoffset=utcoffset, **fields):
+    def send(self, type, blind=False, utcoffset=utcoffset, retry=False,
+             retry_policy=None, Event=Event, **fields):
         """Send event.
 
         :param type: Event type name, with group separated by dash (`-`).
@@ -247,7 +248,9 @@ class EventDispatcher(object):
                 elif self.on_send_buffered:
                     self.on_send_buffered()
             else:
-                return self.publish(type, fields, self.producer, blind)
+                return self.publish(type, fields, self.producer, blind=blind,
+                                    Event=Event, retry=retry,
+                                    retry_policy=retry_policy)
 
     def flush(self, errors=True, groups=True):
         """Flushes the outbound buffer."""
@@ -304,7 +307,8 @@ class EventReceiver(ConsumerMixin):
         self.routing_key = routing_key
         self.node_id = node_id or uuid()
         self.queue_prefix = queue_prefix
-        self.exchange = get_exchange(self.connection or self.app.connection())
+        self.exchange = get_exchange(
+            self.connection or self.app.connection_for_write())
         self.queue = Queue(
             '.'.join([self.queue_prefix, self.node_id]),
             exchange=self.exchange,
@@ -318,18 +322,17 @@ class EventReceiver(ConsumerMixin):
         self.adjust_clock = self.clock.adjust
         self.forward_clock = self.clock.forward
         if accept is None:
-            accept = {self.app.conf.CELERY_EVENT_SERIALIZER, 'json'}
+            accept = {self.app.conf.event_serializer, 'json'}
         self.accept = accept
 
     def _get_queue_arguments(self, ttl=None, expires=None):
         conf = self.app.conf
         return dictfilter({
             'x-message-ttl': maybe_s_to_ms(
-                ttl if ttl is not None else conf.CELERY_EVENT_QUEUE_TTL,
+                ttl if ttl is not None else conf.event_queue_ttl,
             ),
             'x-expires': maybe_s_to_ms(
-                expires if expires is not None
-                else conf.CELERY_EVENT_QUEUE_EXPIRES,
+                expires if expires is not None else conf.event_queue_expires,
             ),
         })
 
@@ -394,7 +397,7 @@ class EventReceiver(ConsumerMixin):
         return type, body
 
     def _receive(self, body, message, list=list, isinstance=isinstance):
-        if isinstance(body, list):  # 3.2: List of events
+        if isinstance(body, list):  # celery 4.0: List of events
             process, from_message = self.process, self.event_from_message
             [process(*from_message(event)) for event in body]
         else:

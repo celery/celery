@@ -30,7 +30,7 @@ def apply_timeout(target, args=(), kwargs={}, callback=None,
         with Timeout(timeout):
             return apply_target(target, args, kwargs, callback,
                                 accept_callback, pid,
-                                propagate=(Timeout, ), **rest)
+                                propagate=(Timeout,), **rest)
     except Timeout:
         return timeout_callback(False, timeout)
 

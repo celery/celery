@@ -9,12 +9,12 @@
 from __future__ import absolute_import
 
 import time
-import warnings
 
 from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
 
+from amqp import promise
 from kombu.utils import cached_property
 
 from . import current_app
@@ -22,7 +22,7 @@ from . import states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .datastructures import DependencyGraph, GraphFormatter
-from .exceptions import IncompleteStream, TimeoutError
+from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
 from .five import items, range, string_t, monotonic
 from .utils import deprecated
 
@@ -33,15 +33,12 @@ E_WOULDBLOCK = """\
 Never call result.get() within a task!
 See http://docs.celeryq.org/en/latest/userguide/tasks.html\
 #task-synchronous-subtasks
-
-In Celery 3.2 this will result in an exception being
-raised instead of just being a warning.
 """
 
 
 def assert_will_not_block():
     if task_join_will_block():
-        warnings.warn(RuntimeWarning(E_WOULDBLOCK))
+        raise RuntimeError(E_WOULDBLOCK)
 
 
 @contextmanager
@@ -79,7 +76,8 @@ class AsyncResult(ResultBase):
     #: The task result backend to use.
     backend = None
 
-    def __init__(self, id, backend=None, task_name=None,
+    def __init__(self, id, backend=None,
+                 task_name=None,            # deprecated
                  app=None, parent=None):
         if id is None:
             raise ValueError(
@@ -87,14 +85,12 @@ class AsyncResult(ResultBase):
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
-        self.task_name = task_name
         self.parent = parent
         self._cache = None
 
     def as_tuple(self):
         parent = self.parent
         return (self.id, parent and parent.as_tuple()), None
-    serializable = as_tuple   # XXX compat
 
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
@@ -123,7 +119,7 @@ class AsyncResult(ResultBase):
                                 reply=wait, timeout=timeout)
 
     def get(self, timeout=None, propagate=True, interval=0.5,
-            no_ack=True, follow_parents=True,
+            no_ack=True, follow_parents=True, callback=None, on_interval=None,
             EXCEPTION_STATES=states.EXCEPTION_STATES,
             PROPAGATE_STATES=states.PROPAGATE_STATES):
         """Wait until task is ready, and return its result.
@@ -154,10 +150,12 @@ class AsyncResult(ResultBase):
 
         """
         assert_will_not_block()
-        on_interval = None
+        _on_interval = promise()
         if follow_parents and propagate and self.parent:
-            on_interval = self._maybe_reraise_parent_error
-            on_interval()
+            on_interval = promise(self._maybe_reraise_parent_error)
+            self._maybe_reraise_parent_error()
+        if on_interval:
+            _on_interval.then(on_interval)
 
         if self._cache:
             if propagate:
@@ -167,14 +165,16 @@ class AsyncResult(ResultBase):
         meta = self.backend.wait_for(
             self.id, timeout=timeout,
             interval=interval,
-            on_interval=on_interval,
+            on_interval=_on_interval,
             no_ack=no_ack,
         )
         if meta:
             self._maybe_set_cache(meta)
-            status = meta['status']
-            if status in PROPAGATE_STATES and propagate:
+            state = meta['status']
+            if state in PROPAGATE_STATES and propagate:
                 raise meta['result']
+            if callback is not None:
+                callback(self.id, meta['result'])
             return meta['result']
     wait = get  # deprecated alias to :meth:`get`.
 
@@ -219,7 +219,7 @@ class AsyncResult(ResultBase):
 
         Calling :meth:`collect` would return:
 
-        .. code-block:: python
+        .. code-block:: pycon
 
             >>> from celery.result import ResultBase
             >>> from proj.tasks import A
@@ -301,18 +301,19 @@ class AsyncResult(ResultBase):
         return NotImplemented
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        res = self.__eq__(other)
+        return True if res is NotImplemented else not res
 
     def __copy__(self):
         return self.__class__(
-            self.id, self.backend, self.task_name, self.app, self.parent,
+            self.id, self.backend, None, self.app, self.parent,
         )
 
     def __reduce__(self):
         return self.__class__, self.__reduce_args__()
 
     def __reduce_args__(self):
-        return self.id, self.backend, self.task_name, None, self.parent
+        return self.id, self.backend, None, None, self.parent
 
     def __del__(self):
         self._cache = None
@@ -394,7 +395,7 @@ class AsyncResult(ResultBase):
 
         """
         return self._get_task_meta()['status']
-    status = state
+    status = state  # XXX compat
 
     @property
     def task_id(self):
@@ -404,7 +405,6 @@ class AsyncResult(ResultBase):
     @task_id.setter  # noqa
     def task_id(self, id):
         self.id = id
-BaseAsyncResult = AsyncResult  # for backwards compatibility.
 
 
 class ResultSet(ResultBase):
@@ -542,7 +542,7 @@ class ResultSet(ResultBase):
         """`res[i] -> res.results[i]`"""
         return self.results[index]
 
-    @deprecated('3.2', '3.3')
+    @deprecated('4.0', '5.0')
     def iterate(self, timeout=None, propagate=True, interval=0.5):
         """Deprecated method, use :meth:`get` with a callback argument."""
         elapsed = 0.0
@@ -582,7 +582,7 @@ class ResultSet(ResultBase):
         )
 
     def join(self, timeout=None, propagate=True, interval=0.5,
-             callback=None, no_ack=True, on_message=None):
+             callback=None, no_ack=True, on_message=None, on_interval=None):
         """Gathers the results of all tasks as a list in order.
 
         .. note::
@@ -635,7 +635,8 @@ class ResultSet(ResultBase):
         remaining = None
 
         if on_message is not None:
-            raise Exception('Your backend not supported on_message callback')
+            raise ImproperlyConfigured(
+                'Backend does not support on_message callback')
 
         results = []
         for result in self.results:
@@ -646,7 +647,7 @@ class ResultSet(ResultBase):
                     raise TimeoutError('join operation timed out')
             value = result.get(
                 timeout=remaining, propagate=propagate,
-                interval=interval, no_ack=no_ack,
+                interval=interval, no_ack=no_ack, on_interval=on_interval,
             )
             if callback:
                 callback(result.id, value)
@@ -655,7 +656,7 @@ class ResultSet(ResultBase):
         return results
 
     def iter_native(self, timeout=None, interval=0.5, no_ack=True,
-                    on_message=None):
+                    on_message=None, on_interval=None):
         """Backend optimized version of :meth:`iterate`.
 
         .. versionadded:: 2.2
@@ -671,14 +672,14 @@ class ResultSet(ResultBase):
         if not results:
             return iter([])
         return self.backend.get_many(
-            set(r.id for r in results),
+            {r.id for r in results},
             timeout=timeout, interval=interval, no_ack=no_ack,
-            on_message=on_message,
+            on_message=on_message, on_interval=on_interval,
         )
 
     def join_native(self, timeout=None, propagate=True,
                     interval=0.5, callback=None, no_ack=True,
-                    on_message=None):
+                    on_message=None, on_interval=None):
         """Backend optimized version of :meth:`join`.
 
         .. versionadded:: 2.2
@@ -696,7 +697,7 @@ class ResultSet(ResultBase):
         }
         acc = None if callback else [None for _ in range(len(self))]
         for task_id, meta in self.iter_native(timeout, interval, no_ack,
-                                              on_message):
+                                              on_message, on_interval):
             value = meta['result']
             if propagate and meta['status'] in states.PROPAGATE_STATES:
                 raise value
@@ -720,16 +721,12 @@ class ResultSet(ResultBase):
         return NotImplemented
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        res = self.__eq__(other)
+        return True if res is NotImplemented else not res
 
     def __repr__(self):
         return '<{0}: [{1}]>'.format(type(self).__name__,
                                      ', '.join(r.id for r in self.results))
-
-    @property
-    def subtasks(self):
-        """Deprecated alias to :attr:`results`."""
-        return self.results
 
     @property
     def supports_native_join(self):
@@ -757,8 +754,7 @@ class ResultSet(ResultBase):
 class GroupResult(ResultSet):
     """Like :class:`ResultSet`, but with an associated id.
 
-    This type is returned by :class:`~celery.group`, and the
-    deprecated TaskSet, meth:`~celery.task.TaskSet.apply_async` method.
+    This type is returned by :class:`~celery.group`.
 
     It enables inspection of the tasks state and return values as
     a single entity.
@@ -806,7 +802,8 @@ class GroupResult(ResultSet):
         return NotImplemented
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        res = self.__eq__(other)
+        return True if res is NotImplemented else not res
 
     def __repr__(self):
         return '<{0}: {1} [{2}]>'.format(type(self).__name__, self.id,
@@ -814,7 +811,6 @@ class GroupResult(ResultSet):
 
     def as_tuple(self):
         return self.id, [r.as_tuple() for r in self.results]
-    serializable = as_tuple   # XXX compat
 
     @property
     def children(self):
@@ -828,38 +824,8 @@ class GroupResult(ResultSet):
         ).restore_group(id)
 
 
-class TaskSetResult(GroupResult):
-    """Deprecated version of :class:`GroupResult`"""
-
-    def __init__(self, taskset_id, results=None, **kwargs):
-        # XXX supports the taskset_id kwarg.
-        # XXX previously the "results" arg was named "subtasks".
-        if 'subtasks' in kwargs:
-            results = kwargs['subtasks']
-        GroupResult.__init__(self, taskset_id, results, **kwargs)
-
-    def itersubtasks(self):
-        """Deprecated.   Use ``iter(self.results)`` instead."""
-        return iter(self.results)
-
-    @property
-    def total(self):
-        """Deprecated: Use ``len(r)``."""
-        return len(self)
-
-    @property
-    def taskset_id(self):
-        """compat alias to :attr:`self.id`"""
-        return self.id
-
-    @taskset_id.setter  # noqa
-    def taskset_id(self, id):
-        self.id = id
-
-
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
-    task_name = None
 
     def __init__(self, id, ret_value, state, traceback=None):
         self.id = id
@@ -891,7 +857,7 @@ class EagerResult(AsyncResult):
             if propagate:
                 raise self.result
             return self.result
-    wait = get
+    wait = get  # XXX Compat (remove 5.0)
 
     def forget(self):
         pass
@@ -940,4 +906,3 @@ def result_from_tuple(r, app=None):
             parent = result_from_tuple(parent, app)
         return Result(id, parent=parent)
     return r
-from_serializable = result_from_tuple  # XXX compat

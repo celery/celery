@@ -10,7 +10,7 @@ from collections import OrderedDict, defaultdict, namedtuple
 from itertools import count
 from time import sleep
 
-from celery import group, VERSION_BANNER
+from celery import VERSION_BANNER, chain, group, uuid
 from celery.exceptions import TimeoutError
 from celery.five import items, monotonic, range, values
 from celery.utils.debug import blockdetection
@@ -18,11 +18,12 @@ from celery.utils.text import pluralize, truncate
 from celery.utils.timeutils import humanize_seconds
 
 from .app import (
-    marker, _marker, add, any_, exiting, kill, sleeping,
-    sleeping_ignore_limits, any_returning
+    marker, _marker, add, any_, collect_ids, exiting, ids, kill, sleeping,
+    sleeping_ignore_limits, any_returning, print_unicode,
 )
 from .data import BIG, SMALL
 from .fbi import FBI
+
 
 BANNER = """\
 Celery stress-suite v{version}
@@ -48,6 +49,10 @@ Progress = namedtuple('Progress', (
 
 
 Inf = float('Inf')
+
+
+def assert_equal(a, b):
+    assert a == b, '{0!r} != {1!r}'.format(a, b)
 
 
 class StopSuite(Exception):
@@ -163,6 +168,7 @@ class BaseSuite(object):
         )
 
     def runtest(self, fun, n=50, index=0, repeats=1):
+        n = getattr(fun, '__iterations__', None) or n
         print('{0}: [[[{1}({2})]]]'.format(repeats, fun.__name__, n))
         with blockdetection(self.block_timeout):
             with self.fbi.investigation():
@@ -185,6 +191,8 @@ class BaseSuite(object):
                             raise
                         except Exception as exc:
                             print('-> {0!r}'.format(exc))
+                            import traceback
+                            print(traceback.format_exc())
                             print(pstatus(self.progress))
                         else:
                             print(pstatus(self.progress))
@@ -238,13 +246,14 @@ class BaseSuite(object):
 _creation_counter = count(0)
 
 
-def testcase(*groups):
+def testcase(*groups, **kwargs):
     if not groups:
         raise ValueError('@testcase requires at least one group name')
 
     def _mark_as_case(fun):
         fun.__testgroup__ = groups
         fun.__testsort__ = next(_creation_counter)
+        fun.__iterations__ = kwargs.get('iterations')
         return fun
 
     return _mark_as_case
@@ -262,17 +271,115 @@ def _is_descriptor(obj, attr):
 
 class Suite(BaseSuite):
 
+    @testcase('all', 'green', iterations=1)
+    def chain(self):
+        c = add.s(4, 4) | add.s(8) | add.s(16)
+        assert_equal(self.join(c()), 32)
+
+    @testcase('all', 'green', iterations=1)
+    def chaincomplex(self):
+        c = (
+            add.s(2, 2) | (
+                add.s(4) | add.s(8) | add.s(16)
+            ) |
+            group(add.s(i) for i in range(4))
+        )
+        res = c()
+        assert_equal(res.get(), [32, 33, 34, 35])
+
+    @testcase('all', 'green', iterations=1)
+    def parentids_chain(self):
+        c = chain(ids.si(i) for i in range(248))
+        c.freeze()
+        res = c()
+        res.get(timeout=5)
+        self.assert_ids(res, len(c.tasks) - 1)
+
+    @testcase('all', 'green', iterations=1)
+    def parentids_group(self):
+        g = ids.si(1) | ids.si(2) | group(ids.si(i) for i in range(2, 50))
+        res = g()
+        expected_root_id = res.parent.parent.id
+        expected_parent_id = res.parent.id
+        values = res.get(timeout=5)
+
+        for i, r in enumerate(values):
+            root_id, parent_id, value = r
+            assert_equal(root_id, expected_root_id)
+            assert_equal(parent_id, expected_parent_id)
+            assert_equal(value, i + 2)
+
+    def assert_ids(self, res, len):
+        i, root = len, res
+        while root.parent:
+            root = root.parent
+        node = res
+        while node:
+            root_id, parent_id, value = node.get(timeout=5)
+            assert_equal(value, i)
+            assert_equal(root_id, root.id)
+            if node.parent:
+                assert_equal(parent_id, node.parent.id)
+            node = node.parent
+            i -= 1
+
+    @testcase('redis', iterations=1)
+    def parentids_chord(self):
+        self.assert_parentids_chord()
+        self.assert_parentids_chord(uuid(), uuid())
+
+    def assert_parentids_chord(self, base_root=None, base_parent=None):
+        g = (
+            ids.si(1) |
+            ids.si(2) |
+            group(ids.si(i) for i in range(3, 50)) |
+            collect_ids.s(i=50) |
+            ids.si(51)
+        )
+        g.freeze(root_id=base_root, parent_id=base_parent)
+        res = g.apply_async(root_id=base_root, parent_id=base_parent)
+        expected_root_id = base_root or res.parent.parent.parent.id
+
+        root_id, parent_id, value = res.get(timeout=5)
+        assert_equal(value, 51)
+        assert_equal(root_id, expected_root_id)
+        assert_equal(parent_id, res.parent.id)
+
+        prev, (root_id, parent_id, value) = res.parent.get(timeout=5)
+        assert_equal(value, 50)
+        assert_equal(root_id, expected_root_id)
+        assert_equal(parent_id, res.parent.parent.id)
+
+        for i, p in enumerate(prev):
+            root_id, parent_id, value = p
+            assert_equal(root_id, expected_root_id)
+            assert_equal(parent_id, res.parent.parent.id)
+
+        root_id, parent_id, value = res.parent.parent.get(timeout=5)
+        assert_equal(value, 2)
+        assert_equal(parent_id, res.parent.parent.parent.id)
+        assert_equal(root_id, expected_root_id)
+
+        root_id, parent_id, value = res.parent.parent.parent.get(timeout=5)
+        assert_equal(value, 1)
+        assert_equal(root_id, expected_root_id)
+        assert_equal(parent_id, base_parent)
+
     @testcase('all', 'green')
     def manyshort(self):
         self.join(group(add.s(i, i) for i in range(1000))(),
                   timeout=10, propagate=True)
 
+    @testcase('all', 'green', iterations=1)
+    def unicodetask(self):
+        self.join(group(print_unicode.s() for _ in range(5))(),
+                  timeout=1, propagate=True)
+
     @testcase('all')
     def always_timeout(self):
         self.join(
             group(sleeping.s(1).set(time_limit=0.1)
-                  for _ in range(100)
-            )(),
+                  for _ in range(100))(),
             timeout=10, propagate=True,
         )
 

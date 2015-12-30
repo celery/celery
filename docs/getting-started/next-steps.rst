@@ -72,13 +72,13 @@ Starting the worker
 
 The :program:`celery` program can be used to start the worker (you need to run the worker in the directory above proj):
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -l info
 
 When the worker starts you should see a banner and some messages::
 
-     -------------- celery@halcyon.local v3.1 (Cipater)
+     -------------- celery@halcyon.local v4.0 (0today8)
      ---- **** -----
      --- * ***  * -- [Configuration]
      -- * - **** --- . broker:      amqp://guest@localhost:5672//
@@ -122,13 +122,13 @@ the :ref:`Monitoring and Management guide <guide-monitoring>`.
 tasks from.  The worker can be told to consume from several queues
 at once, and this is used to route messages to specific workers
 as a means for Quality of Service, separation of concerns,
-and emulating priorities, all described in the :ref:`Routing Guide
+and prioritization, all described in the :ref:`Routing Guide
 <guide-routing>`.
 
 You can get a complete list of command-line arguments
 by passing in the `--help` flag:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery worker --help
 
@@ -149,31 +149,31 @@ described in detail in the :ref:`daemonization tutorial <daemonizing>`.
 The daemonization scripts uses the :program:`celery multi` command to
 start one or more workers in the background:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery multi start w1 -A proj -l info
-    celery multi v3.1.1 (Cipater)
+    celery multi v4.0.0 (0today8)
     > Starting nodes...
         > w1.halcyon.local: OK
 
 You can restart it too:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery  multi restart w1 -A proj -l info
-    celery multi v3.1.1 (Cipater)
+    celery multi v4.0.0 (0today8)
     > Stopping nodes...
         > w1.halcyon.local: TERM -> 64024
     > Waiting for 1 node.....
         > w1.halcyon.local: OK
     > Restarting node w1.halcyon.local: OK
-    celery multi v3.1.1 (Cipater)
+    celery multi v4.0.0 (0today8)
     > Stopping nodes...
         > w1.halcyon.local: TERM -> 64052
 
 or stop it:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery multi stop w1 -A proj -l info
 
@@ -181,7 +181,7 @@ The ``stop`` command is asynchronous so it will not wait for the
 worker to shutdown.  You will probably want to use the ``stopwait`` command
 instead which will ensure all currently executing tasks is completed:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery multi stopwait w1 -A proj -l info
 
@@ -196,7 +196,7 @@ By default it will create pid and log files in the current directory,
 to protect against multiple workers launching on top of each other
 you are encouraged to put these in a dedicated directory:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ mkdir -p /var/run/celery
     $ mkdir -p /var/log/celery
@@ -207,7 +207,7 @@ With the multi command you can start multiple workers, and there is a powerful
 command-line syntax to specify arguments for different workers too,
 e.g:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery multi start 10 -A proj -l info -Q:1-3 images,video -Q:4,5 data \
         -Q default -L:4,5 debug
@@ -250,17 +250,23 @@ for larger projects.
 Calling Tasks
 =============
 
-You can call a task using the :meth:`delay` method::
+You can call a task using the :meth:`delay` method:
+
+.. code-block:: pycon
 
     >>> add.delay(2, 2)
 
 This method is actually a star-argument shortcut to another method called
-:meth:`apply_async`::
+:meth:`apply_async`:
+
+.. code-block:: pycon
 
     >>> add.apply_async((2, 2))
 
 The latter enables you to specify execution options like the time to run
-(countdown), the queue it should be sent to and so on::
+(countdown), the queue it should be sent to and so on:
+
+.. code-block:: pycon
 
     >>> add.apply_async((2, 2), queue='lopri', countdown=10)
 
@@ -268,7 +274,9 @@ In the above example the task will be sent to a queue named ``lopri`` and the
 task will execute, at the earliest, 10 seconds after the message was sent.
 
 Applying the task directly will execute the task in the current process,
-so that no message is sent::
+so that no message is sent:
+
+.. code-block:: pycon
 
     >>> add(2, 2)
     4
@@ -296,22 +304,31 @@ have.  Also note that result backends are not used for monitoring tasks and work
 for that Celery uses dedicated event messages (see :ref:`guide-monitoring`).
 
 If you have a result backend configured you can retrieve the return
-value of a task::
+value of a task:
+
+.. code-block:: pycon
 
     >>> res = add.delay(2, 2)
     >>> res.get(timeout=1)
     4
 
-You can find the task's id by looking at the :attr:`id` attribute::
+You can find the task's id by looking at the :attr:`id` attribute:
+
+.. code-block:: pycon
 
     >>> res.id
     d6b3aea2-fb9b-4ebc-8da4-848818db9114
 
 You can also inspect the exception and traceback if the task raised an
-exception, in fact ``result.get()`` will propagate any errors by default::
+exception, in fact ``result.get()`` will propagate any errors by default:
+
+.. code-block:: pycon
 
     >>> res = add.delay(2)
     >>> res.get(timeout=1)
+
+.. code-block:: pytb
+
     Traceback (most recent call last):
     File "<stdin>", line 1, in <module>
     File "/opt/devel/celery/celery/result.py", line 113, in get
@@ -321,7 +338,9 @@ exception, in fact ``result.get()`` will propagate any errors by default::
     TypeError: add() takes exactly 2 arguments (1 given)
 
 If you don't wish for the errors to propagate then you can disable that
-by passing the ``propagate`` argument::
+by passing the ``propagate`` argument:
+
+.. code-block:: pycon
 
     >>> res.get(propagate=False)
     TypeError('add() takes exactly 2 arguments (1 given)',)
@@ -337,7 +356,9 @@ use the corresponding methods on the result instance::
     False
 
 So how does it know if the task has failed or not?  It can find out by looking
-at the tasks *state*::
+at the tasks *state*:
+
+.. code-block:: pycon
 
     >>> res.state
     'FAILURE'
@@ -348,12 +369,14 @@ states. The stages of a typical task can be::
     PENDING -> STARTED -> SUCCESS
 
 The started state is a special state that is only recorded if the
-:setting:`CELERY_TRACK_STARTED` setting is enabled, or if the
+:setting:`task_track_started` setting is enabled, or if the
 ``@task(track_started=True)`` option is set for the task.
 
 The pending state is actually not a recorded state, but rather
 the default state for any task id that is unknown, which you can see
-from this example::
+from this example:
+
+.. code-block:: pycon
 
     >>> from proj.celery import app
 
@@ -387,12 +410,16 @@ invocation in a way such that it can be passed to functions or even serialized
 and sent across the wire.
 
 You can create a signature for the ``add`` task using the arguments ``(2, 2)``,
-and a countdown of 10 seconds like this::
+and a countdown of 10 seconds like this:
+
+.. code-block:: pycon
 
     >>> add.signature((2, 2), countdown=10)
     tasks.add(2, 2)
 
-There is also a shortcut using star arguments::
+There is also a shortcut using star arguments:
+
+.. code-block:: pycon
 
     >>> add.s(2, 2)
     tasks.add(2, 2)
@@ -405,7 +432,9 @@ have the ``delay`` and ``apply_async`` methods.
 
 But there is a difference in that the signature may already have
 an argument signature specified.  The ``add`` task takes two arguments,
-so a signature specifying two arguments would make a complete signature::
+so a signature specifying two arguments would make a complete signature:
+
+.. code-block:: pycon
 
     >>> s1 = add.s(2, 2)
     >>> res = s1.delay()
@@ -413,13 +442,17 @@ so a signature specifying two arguments would make a complete signature::
     4
 
 But, you can also make incomplete signatures to create what we call
-*partials*::
+*partials*:
+
+.. code-block:: pycon
 
     # incomplete partial: add(?, 2)
     >>> s2 = add.s(2)
 
 ``s2`` is now a partial signature that needs another argument to be complete,
-and this can be resolved when calling the signature::
+and this can be resolved when calling the signature:
+
+.. code-block:: pycon
 
     # resolves the partial: add(8, 2)
     >>> res = s2.delay(8)
@@ -430,7 +463,9 @@ Here you added the argument 8, which was prepended to the existing argument 2
 forming a complete signature of ``add(8, 2)``.
 
 Keyword arguments can also be added later, these are then merged with any
-existing keyword arguments, but with new arguments taking precedence::
+existing keyword arguments, but with new arguments taking precedence:
+
+.. code-block:: pycon
 
     >>> s3 = add.s(2, 2, debug=True)
     >>> s3.delay(debug=False)   # debug is now False.
@@ -484,7 +519,7 @@ A :class:`~celery.group` calls a list of tasks in parallel,
 and it returns a special result instance that lets you inspect the results
 as a group, and retrieve the return values in order.
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from celery import group
     >>> from proj.tasks import add
@@ -494,7 +529,7 @@ as a group, and retrieve the return values in order.
 
 - Partial group
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> g = group(add.s(i) for i in xrange(10))
     >>> g(10).get()
@@ -506,7 +541,7 @@ Chains
 Tasks can be linked together so that after one task returns the other
 is called:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from celery import chain
     >>> from proj.tasks import add, mul
@@ -518,9 +553,9 @@ is called:
 
 or a partial chain:
 
-.. code-block:: python
+.. code-block:: pycon
 
-    # (? + 4) * 8
+    >>> # (? + 4) * 8
     >>> g = chain(add.s(4) | mul.s(8))
     >>> g(4).get()
     64
@@ -528,7 +563,7 @@ or a partial chain:
 
 Chains can also be written like this:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> (add.s(4, 4) | mul.s(8))().get()
     64
@@ -538,7 +573,7 @@ Chords
 
 A chord is a group with a callback:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from celery import chord
     >>> from proj.tasks import add, xsum
@@ -550,7 +585,7 @@ A chord is a group with a callback:
 A group chained to another task will be automatically converted
 to a chord:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> (group(add.s(i, i) for i in xrange(10)) | xsum.s())().get()
     90
@@ -570,17 +605,21 @@ Routing
 Celery supports all of the routing facilities provided by AMQP,
 but it also supports simple routing where messages are sent to named queues.
 
-The :setting:`CELERY_ROUTES` setting enables you to route tasks by name
-and keep everything centralized in one location::
+The :setting:`task_routes` setting enables you to route tasks by name
+and keep everything centralized in one location:
+
+.. code-block:: python
 
     app.conf.update(
-        CELERY_ROUTES = {
+        task_routes = {
             'proj.tasks.add': {'queue': 'hipri'},
         },
     )
 
 You can also specify the queue at runtime
-with the ``queue`` argument to ``apply_async``::
+with the ``queue`` argument to ``apply_async``:
+
+.. code-block:: pycon
 
     >>> from proj.tasks import add
     >>> add.apply_async((2, 2), queue='hipri')
@@ -588,7 +627,7 @@ with the ``queue`` argument to ``apply_async``::
 You can then make a worker consume from this queue by
 specifying the :option:`-Q` option:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -Q hipri
 
@@ -597,7 +636,7 @@ for example you can make the worker consume from both the default
 queue, and the ``hipri`` queue, where
 the default queue is named ``celery`` for historical reasons:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -Q hipri,celery
 
@@ -615,7 +654,7 @@ you can control and inspect the worker at runtime.
 
 For example you can see what tasks the worker is currently working on:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj inspect active
 
@@ -626,7 +665,7 @@ You can also specify one or more workers to act on the request
 using the :option:`--destination` option, which is a comma separated
 list of worker host names:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj inspect active --destination=celery@example.com
 
@@ -638,47 +677,47 @@ does not change anything in the worker, it only replies information
 and statistics about what is going on inside the worker.
 For a list of inspect commands you can execute:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj inspect --help
 
 Then there is the :program:`celery control` command, which contains
 commands that actually changes things in the worker at runtime:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj control --help
 
 For example you can force workers to enable event messages (used
 for monitoring tasks and workers):
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj control enable_events
 
 When events are enabled you can then start the event dumper
 to see what the workers are doing:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj events --dump
 
 or you can start the curses interface:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj events
 
 when you're finished monitoring you can disable events again:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj control disable_events
 
 The :program:`celery status` command also uses remote control commands
 and shows a list of online workers in the cluster:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj status
 
@@ -693,9 +732,11 @@ All times and dates, internally and in messages uses the UTC timezone.
 When the worker receives a message, for example with a countdown set it
 converts that UTC time to local time.  If you wish to use
 a different timezone than the system timezone then you must
-configure that using the :setting:`CELERY_TIMEZONE` setting::
+configure that using the :setting:`timezone` setting:
 
-    app.conf.CELERY_TIMEZONE = 'Europe/London'
+.. code-block:: python
+
+    app.conf.timezone = 'Europe/London'
 
 Optimization
 ============
@@ -711,7 +752,7 @@ for throughput then you should read the :ref:`Optimizing Guide
 If you're using RabbitMQ then you should install the :mod:`librabbitmq`
 module, which is an AMQP client implemented in C:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install librabbitmq
 

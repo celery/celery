@@ -31,21 +31,21 @@ class SomeClass(object):
 class test_CacheBackend(AppCase):
 
     def setup(self):
-        self.app.conf.CELERY_RESULT_SERIALIZER = 'pickle'
+        self.app.conf.result_serializer = 'pickle'
         self.tb = CacheBackend(backend='memory://', app=self.app)
         self.tid = uuid()
 
     def test_no_backend(self):
-        self.app.conf.CELERY_CACHE_BACKEND = None
+        self.app.conf.cache_backend = None
         with self.assertRaises(ImproperlyConfigured):
             CacheBackend(backend=None, app=self.app)
 
     def test_mark_as_done(self):
-        self.assertEqual(self.tb.get_status(self.tid), states.PENDING)
+        self.assertEqual(self.tb.get_state(self.tid), states.PENDING)
         self.assertIsNone(self.tb.get_result(self.tid))
 
         self.tb.mark_as_done(self.tid, 42)
-        self.assertEqual(self.tb.get_status(self.tid), states.SUCCESS)
+        self.assertEqual(self.tb.get_state(self.tid), states.SUCCESS)
         self.assertEqual(self.tb.get_result(self.tid), 42)
 
     def test_is_pickled(self):
@@ -61,7 +61,7 @@ class test_CacheBackend(AppCase):
             raise KeyError('foo')
         except KeyError as exception:
             self.tb.mark_as_failure(self.tid, exception)
-            self.assertEqual(self.tb.get_status(self.tid), states.FAILURE)
+            self.assertEqual(self.tb.get_state(self.tid), states.FAILURE)
             self.assertIsInstance(self.tb.get_result(self.tid), KeyError)
 
     def test_apply_chord(self):
@@ -87,10 +87,10 @@ class test_CacheBackend(AppCase):
         tb.apply_chord(group(app=self.app), (), gid, {}, result=res)
 
         self.assertFalse(deps.join_native.called)
-        tb.on_chord_part_return(task, 'SUCCESS', 10)
+        tb.on_chord_part_return(task.request, 'SUCCESS', 10)
         self.assertFalse(deps.join_native.called)
 
-        tb.on_chord_part_return(task, 'SUCCESS', 10)
+        tb.on_chord_part_return(task.request, 'SUCCESS', 10)
         deps.join_native.assert_called_with(propagate=True, timeout=3.0)
         deps.delete.assert_called_with()
 
@@ -219,7 +219,7 @@ class test_memcache_key(AppCase, MockCacheMixin):
                     cache._imp = [None]
                     task_id, result = string(uuid()), 42
                     b = cache.CacheBackend(backend='memcache', app=self.app)
-                    b.store_result(task_id, result, status=states.SUCCESS)
+                    b.store_result(task_id, result, state=states.SUCCESS)
                     self.assertEqual(b.get_result(task_id), result)
 
     def test_memcache_bytes_key(self):
@@ -230,7 +230,7 @@ class test_memcache_key(AppCase, MockCacheMixin):
                     cache._imp = [None]
                     task_id, result = str_to_bytes(uuid()), 42
                     b = cache.CacheBackend(backend='memcache', app=self.app)
-                    b.store_result(task_id, result, status=states.SUCCESS)
+                    b.store_result(task_id, result, state=states.SUCCESS)
                     self.assertEqual(b.get_result(task_id), result)
 
     def test_pylibmc_unicode_key(self):
@@ -240,7 +240,7 @@ class test_memcache_key(AppCase, MockCacheMixin):
                 cache._imp = [None]
                 task_id, result = string(uuid()), 42
                 b = cache.CacheBackend(backend='memcache', app=self.app)
-                b.store_result(task_id, result, status=states.SUCCESS)
+                b.store_result(task_id, result, state=states.SUCCESS)
                 self.assertEqual(b.get_result(task_id), result)
 
     def test_pylibmc_bytes_key(self):
@@ -250,5 +250,5 @@ class test_memcache_key(AppCase, MockCacheMixin):
                 cache._imp = [None]
                 task_id, result = str_to_bytes(uuid()), 42
                 b = cache.CacheBackend(backend='memcache', app=self.app)
-                b.store_result(task_id, result, status=states.SUCCESS)
+                b.store_result(task_id, result, state=states.SUCCESS)
                 self.assertEqual(b.get_result(task_id), result)

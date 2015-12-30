@@ -5,24 +5,20 @@ import sys
 import warnings
 
 from celery import loaders
-from celery.exceptions import (
-    NotConfigured,
-)
+from celery.exceptions import NotConfigured
 from celery.loaders import base
 from celery.loaders import default
 from celery.loaders.app import AppLoader
 from celery.utils.imports import NotAPackage
 from celery.utils.mail import SendmailWarning
 
-from celery.tests.case import (
-    AppCase, Case, Mock, depends_on_current_app, patch, with_environ,
-)
+from celery.tests.case import AppCase, Case, Mock, patch, with_environ
 
 
 class DummyLoader(base.BaseLoader):
 
     def read_configuration(self):
-        return {'foo': 'bar', 'CELERY_IMPORTS': ('os', 'sys')}
+        return {'foo': 'bar', 'imports': ('os', 'sys')}
 
 
 class test_loaders(AppCase):
@@ -30,16 +26,6 @@ class test_loaders(AppCase):
     def test_get_loader_cls(self):
         self.assertEqual(loaders.get_loader_cls('default'),
                          default.Loader)
-
-    @depends_on_current_app
-    def test_current_loader(self):
-        with self.assertPendingDeprecation():
-            self.assertIs(loaders.current_loader(), self.app.loader)
-
-    @depends_on_current_app
-    def test_load_settings(self):
-        with self.assertPendingDeprecation():
-            self.assertIs(loaders.load_settings(), self.app.conf)
 
 
 class test_LoaderBase(AppCase):
@@ -65,10 +51,9 @@ class test_LoaderBase(AppCase):
         self.assertTrue(self.loader.now(utc=False))
 
     def test_read_configuration_no_env(self):
-        self.assertDictEqual(
+        self.assertIsNone(
             base.BaseLoader(app=self.app).read_configuration(
                 'FOO_X_S_WE_WQ_Q_WE'),
-            {},
         )
 
     def test_autodiscovery(self):
@@ -99,8 +84,9 @@ class test_LoaderBase(AppCase):
         self.assertEqual(self.loader.conf['foo'], 'bar')
 
     def test_import_default_modules(self):
-        modnames = lambda l: [m.__name__ for m in l]
-        self.app.conf.CELERY_IMPORTS = ('os', 'sys')
+        def modnames(l):
+            return [m.__name__ for m in l]
+        self.app.conf.imports = ('os', 'sys')
         self.assertEqual(
             sorted(modnames(self.loader.import_default_modules())),
             sorted(modnames([os, sys])),
@@ -182,7 +168,7 @@ class test_DefaultLoader(AppCase):
 
         configname = os.environ.get('CELERY_CONFIG_MODULE') or 'celeryconfig'
         celeryconfig = ConfigModule(configname)
-        celeryconfig.CELERY_IMPORTS = ('os', 'sys')
+        celeryconfig.imports = ('os', 'sys')
 
         prevconfig = sys.modules.get(configname)
         sys.modules[configname] = celeryconfig
@@ -190,13 +176,29 @@ class test_DefaultLoader(AppCase):
             l = default.Loader(app=self.app)
             l.find_module = Mock(name='find_module')
             settings = l.read_configuration(fail_silently=False)
-            self.assertTupleEqual(settings.CELERY_IMPORTS, ('os', 'sys'))
+            self.assertTupleEqual(settings.imports, ('os', 'sys'))
             settings = l.read_configuration(fail_silently=False)
-            self.assertTupleEqual(settings.CELERY_IMPORTS, ('os', 'sys'))
+            self.assertTupleEqual(settings.imports, ('os', 'sys'))
             l.on_worker_init()
         finally:
             if prevconfig:
                 sys.modules[configname] = prevconfig
+
+    def test_read_configuration_ImportError(self):
+        sentinel = object()
+        prev, os.environ['CELERY_CONFIG_MODULE'] = (
+            os.environ.get('CELERY_CONFIG_MODULE', sentinel), 'daweqew.dweqw',
+        )
+        try:
+            l = default.Loader(app=self.app)
+            with self.assertRaises(ImportError):
+                l.read_configuration(fail_silently=False)
+            l.read_configuration(fail_silently=True)
+        finally:
+            if prev is not sentinel:
+                os.environ['CELERY_CONFIG_MODULE'] = prev
+            else:
+                os.environ.pop('CELERY_CONFIG_MODULE', None)
 
     def test_import_from_cwd(self):
         l = default.Loader(app=self.app)
@@ -238,7 +240,7 @@ class test_AppLoader(AppCase):
         self.loader = AppLoader(app=self.app)
 
     def test_on_worker_init(self):
-        self.app.conf.CELERY_IMPORTS = ('subprocess', )
+        self.app.conf.imports = ('subprocess',)
         sys.modules.pop('subprocess', None)
         self.loader.init_worker()
         self.assertIn('subprocess', sys.modules)

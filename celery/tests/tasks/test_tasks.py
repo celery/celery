@@ -6,13 +6,17 @@ from kombu import Queue
 
 from celery import Task
 
-from celery.exceptions import Retry
+from celery import group
+from celery.app.task import _reprtask
+from celery.exceptions import Ignore, Retry
 from celery.five import items, range, string_t
 from celery.result import EagerResult
 from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601
 
-from celery.tests.case import AppCase, depends_on_current_app, patch
+from celery.tests.case import (
+    AppCase, ContextMock, Mock, depends_on_current_app, patch,
+)
 
 
 def return_True(*args, **kwargs):
@@ -100,6 +104,20 @@ class TasksCase(AppCase):
                     raise self.retry(countdown=0, exc=exc)
         self.retry_task_customexc = retry_task_customexc
 
+        @self.app.task(bind=True, autoretry_for=(ZeroDivisionError,),
+                       shared=False)
+        def autoretry_task_no_kwargs(self, a, b):
+            self.iterations += 1
+            return a/b
+        self.autoretry_task_no_kwargs = autoretry_task_no_kwargs
+
+        @self.app.task(bind=True, autoretry_for=(ZeroDivisionError,),
+                       retry_kwargs={'max_retries': 5}, shared=False)
+        def autoretry_task(self, a, b):
+            self.iterations += 1
+            return a/b
+        self.autoretry_task = autoretry_task
+
 
 class MyCustomException(Exception):
     """Random custom exception."""
@@ -123,6 +141,22 @@ class test_task_retries(TasksCase):
         self.retry_task_noargs.iterations = 0
         self.retry_task_noargs.apply(propagate=True).get()
         self.assertEqual(self.retry_task_noargs.iterations, 4)
+
+    def test_signature_from_request__passes_headers(self):
+        self.retry_task.push_request()
+        self.retry_task.request.headers = {'custom': 10.1}
+        sig = self.retry_task.signature_from_request()
+        self.assertEqual(sig.options['headers']['custom'], 10.1)
+
+    def test_signature_from_request__delivery_info(self):
+        self.retry_task.push_request()
+        self.retry_task.request.delivery_info = {
+            'exchange': 'testex',
+            'routing_key': 'testrk',
+        }
+        sig = self.retry_task.signature_from_request()
+        self.assertEqual(sig.options['exchange'], 'testex')
+        self.assertEqual(sig.options['routing_key'], 'testrk')
 
     def test_retry_kwargs_can_be_empty(self):
         self.retry_task_mockapply.push_request()
@@ -193,6 +227,18 @@ class test_task_retries(TasksCase):
             result.get()
         self.assertEqual(self.retry_task.iterations, 2)
 
+    def test_autoretry_no_kwargs(self):
+        self.autoretry_task_no_kwargs.max_retries = 3
+        self.autoretry_task_no_kwargs.iterations = 0
+        self.autoretry_task_no_kwargs.apply((1, 0))
+        self.assertEqual(self.autoretry_task_no_kwargs.iterations, 4)
+
+    def test_autoretry(self):
+        self.autoretry_task.max_retries = 3
+        self.autoretry_task.iterations = 0
+        self.autoretry_task.apply((1, 0))
+        self.assertEqual(self.autoretry_task.iterations, 6)
+
 
 class test_canvas_utils(TasksCase):
 
@@ -226,6 +272,20 @@ class test_tasks(TasksCase):
         def xxx():
             pass
         self.assertIs(pickle.loads(pickle.dumps(xxx)), xxx.app.tasks[xxx.name])
+
+    @patch('celery.app.task.current_app')
+    @depends_on_current_app
+    def test_bind__no_app(self, current_app):
+        class XTask(Task):
+            _app = None
+        XTask._app = None
+        XTask.__bound__ = False
+        XTask.bind = Mock(name='bind')
+        self.assertIs(XTask.app, current_app)
+        XTask.bind.assert_called_with(current_app)
+
+    def test_reprtask__no_fmt(self):
+        self.assertTrue(_reprtask(self.mytask))
 
     def test_AsyncResult(self):
         task_id = uuid()
@@ -333,6 +393,47 @@ class test_tasks(TasksCase):
             self.mytask.backend.mark_as_done(presult.id, result=None)
             self.assertTrue(presult.successful())
 
+    def test_send_event(self):
+        mytask = self.mytask._get_current_object()
+        mytask.app.events = Mock(name='events')
+        mytask.app.events.attach_mock(ContextMock(), 'default_dispatcher')
+        mytask.request.id = 'fb'
+        mytask.send_event('task-foo', id=3122)
+        mytask.app.events.default_dispatcher().send.assert_called_with(
+            'task-foo', uuid='fb', id=3122,
+        )
+
+    def test_replace(self):
+        sig1 = Mock(name='sig1')
+        with self.assertRaises(Ignore):
+            self.mytask.replace(sig1)
+
+    def test_replace__group(self):
+        c = group([self.mytask.s()], app=self.app)
+        c.freeze = Mock(name='freeze')
+        c.delay = Mock(name='delay')
+        self.mytask.request.id = 'id'
+        self.mytask.request.group = 'group'
+        self.mytask.request.root_id = 'root_id',
+        with self.assertRaises(Ignore):
+            self.mytask.replace(c)
+
+    def test_send_error_email_enabled(self):
+        mytask = self.increment_counter._get_current_object()
+        mytask.send_error_emails = True
+        mytask.disable_error_emails = False
+        mytask.ErrorMail = Mock(name='ErrorMail')
+        context = Mock(name='context')
+        exc = Mock(name='context')
+        mytask.send_error_email(context, exc, foo=1)
+        mytask.ErrorMail.assert_called_with(mytask, foo=1)
+        mytask.ErrorMail().send.assert_called_with(context, exc)
+
+    def test_add_trail__no_trail(self):
+        mytask = self.increment_counter._get_current_object()
+        mytask.trail = False
+        mytask.add_trail('foo')
+
     def test_repr_v2_compat(self):
         self.mytask.__v2_compat__ = True
         self.assertIn('v2 compatible', repr(self.mytask))
@@ -420,8 +521,8 @@ class test_apply_task(TasksCase):
         with self.assertRaises(KeyError):
             self.raising.apply(throw=True)
 
-    def test_apply_with_CELERY_EAGER_PROPAGATES_EXCEPTIONS(self):
-        self.app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
+    def test_apply_with_task_eager_propagates(self):
+        self.app.conf.task_eager_propagates = True
         with self.assertRaises(KeyError):
             self.raising.apply()
 

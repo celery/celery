@@ -46,6 +46,9 @@ Definition
         'expires'; iso8601 expires,
         'retries': int retries,
         'timelimit': (soft, hard),
+        'argsrepr': str repr(args),
+        'kwargsrepr': str repr(kwargs),
+        'origin': str nodename,
     }
 
     body = (
@@ -68,12 +71,21 @@ This example sends a task message using version 2 of the protocol:
 
     # chain: add(add(add(2, 2), 4), 8) == 2 + 2 + 4 + 8
 
+    import json
+    import os
+    import socket
+
     task_id = uuid()
+    args = (2, 2)
+    kwargs = {}
     basic_publish(
-        message=json.dumps(([2, 2], {}, None),
+        message=json.dumps((args, kwargs, None),
         application_headers={
             'lang': 'py',
             'task': 'proj.tasks.add',
+            'argsrepr': repr(args),
+            'kwargsrepr': repr(kwargs),
+            'origin': '@'.join([os.getpid(), socket.gethostname()])
         }
         properties={
             'correlation_id': task_id,
@@ -125,7 +137,9 @@ Changes from version 1
 
     This is fixed in the new message protocol by specifying
     a list of signatures, each task will then pop a task off the list
-    when sending the next message::
+    when sending the next message:
+
+    .. code-block:: python
 
         execute_task(message)
         chain = embed['chain']
@@ -138,25 +152,27 @@ Changes from version 1
 - ``root_id`` and ``parent_id`` fields helps keep track of workflows.
 
 - ``shadow`` lets you specify a different name for logs, monitors
-  can be used for e.g. meta tasks that calls any function::
+  can be used for e.g. meta tasks that calls any function:
 
-    from celery.utils.imports import qualname
+    .. code-block:: python
 
-    class PickleTask(Task):
-        abstract = True
+        from celery.utils.imports import qualname
 
-        def unpack_args(self, fun, args=()):
-            return fun, args
+        class PickleTask(Task):
+            abstract = True
 
-        def apply_async(self, args, kwargs, **options):
-            fun, real_args = self.unpack_args(*args)
-            return super(PickleTask, self).apply_async(
-                (fun, real_args, kwargs), shadow=qualname(fun), **options
-            )
+            def unpack_args(self, fun, args=()):
+                return fun, args
 
-    @app.task(base=PickleTask)
-    def call(fun, args, kwargs):
-        return fun(*args, **kwargs)
+            def apply_async(self, args, kwargs, **options):
+                fun, real_args = self.unpack_args(*args)
+                return super(PickleTask, self).apply_async(
+                    (fun, real_args, kwargs), shadow=qualname(fun), **options
+                )
+
+        @app.task(base=PickleTask)
+        def call(fun, args, kwargs):
+            return fun(*args, **kwargs)
 
 
 .. _message-protocol-task-v1:
@@ -306,7 +322,7 @@ Event Messages
 Event messages are always JSON serialized and can contain arbitrary message
 body fields.
 
-Since version 3.2. the body can consist of either a single mapping (one event),
+Since version 4.0. the body can consist of either a single mapping (one event),
 or a list of mappings (multiple events).
 
 There are also standard fields that must always be present in an event

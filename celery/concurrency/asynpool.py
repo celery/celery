@@ -33,7 +33,7 @@ from pickle import HIGHEST_PROTOCOL
 from time import sleep
 from weakref import WeakValueDictionary, ref
 
-from amqp.utils import promise
+from amqp import promise
 from billiard.pool import RUN, TERMINATE, ACK, NACK, WorkersJoined
 from billiard import pool as _pool
 from billiard.compat import buf_t, setblocking, isblocking
@@ -43,6 +43,7 @@ from kombu.serialization import pickle as _pickle
 from kombu.utils import fxrange
 from kombu.utils.eventio import SELECT_BAD_FD
 from celery.five import Counter, items, values
+from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
 
@@ -196,7 +197,7 @@ class Worker(_pool.Worker):
         # our version sends a WORKER_UP message when the process is ready
         # to accept work, this will tell the parent that the inqueue fd
         # is writable.
-        self.outq.put((WORKER_UP, (pid, )))
+        self.outq.put((WORKER_UP, (pid,)))
 
 
 class ResultHandler(_pool.ResultHandler):
@@ -417,8 +418,13 @@ class AsynPool(_pool.Pool):
             # as processes are recycled, or found lost elsewhere.
             self._fileno_to_outq[proc.outqR_fd] = proc
             self._fileno_to_synq[proc.synqW_fd] = proc
-        self.on_soft_timeout = self._timeout_handler.on_soft_timeout
-        self.on_hard_timeout = self._timeout_handler.on_hard_timeout
+
+        self.on_soft_timeout = getattr(
+            self._timeout_handler, 'on_soft_timeout', noop,
+        )
+        self.on_hard_timeout = getattr(
+            self._timeout_handler, 'on_hard_timeout', noop,
+        )
 
     def _event_process_exit(self, hub, fd):
         # This method is called whenever the process sentinel is readable.
@@ -589,7 +595,7 @@ class AsynPool(_pool.Pool):
 
         def on_process_down(proc):
             """Called when a worker process exits."""
-            if proc.dead:
+            if getattr(proc, 'dead', None):
                 return
             process_flush_queues(proc)
             _remove_from_index(
@@ -644,8 +650,8 @@ class AsynPool(_pool.Pool):
         revoked_tasks = worker_state.revoked
         getpid = os.getpid
 
-        precalc = {ACK: self._create_payload(ACK, (0, )),
-                   NACK: self._create_payload(NACK, (0, ))}
+        precalc = {ACK: self._create_payload(ACK, (0,)),
+                   NACK: self._create_payload(NACK, (0,))}
 
         def _put_back(job, _time=time.time):
             # puts back at the end of the queue
@@ -854,7 +860,7 @@ class AsynPool(_pool.Pool):
             cor = _write_ack(fd, msg, callback=callback)
             mark_write_gen_as_active(cor)
             mark_write_fd_as_active(fd)
-            callback.args = (cor, )
+            callback.args = (cor,)
             add_writer(fd, cor)
         self.send_ack = send_ack
 
@@ -1225,7 +1231,7 @@ class AsynPool(_pool.Pool):
     def _help_stuff_finish_args(self):
         # Pool._help_stuff_finished is a classmethod so we have to use this
         # trick to modify the arguments passed to it.
-        return (self._pool, )
+        return (self._pool,)
 
     @classmethod
     def _help_stuff_finish(cls, pool):

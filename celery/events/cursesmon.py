@@ -236,7 +236,7 @@ class CursesMonitor(object):  # pragma: no cover
                 if ch != -1:
                     if ch in (10, curses.KEY_ENTER):            # enter
                         break
-                    if ch in (27, ):
+                    if ch in (27,):
                         buffer = str()
                         break
                     buffer += chr(ch)
@@ -318,8 +318,8 @@ class CursesMonitor(object):  # pragma: no cover
         def alert_callback(my, mx, xs):
             y = count(xs)
             task = self.state.tasks[self.selected_task]
-            result = (getattr(task, 'result', None)
-                      or getattr(task, 'exception', None))
+            result = (getattr(task, 'result', None) or
+                      getattr(task, 'exception', None))
             for line in wrap(result, mx - 2):
                 self.win.addstr(next(y), 3, line)
 
@@ -508,10 +508,10 @@ def capture_events(app, state, display):  # pragma: no cover
 
     while 1:
         print('-> evtop: starting capture...', file=sys.stderr)
-        with app.connection() as conn:
+        with app.connection_for_read() as conn:
             try:
                 conn.ensure_connection(on_connection_error,
-                                       app.conf.BROKER_CONNECTION_MAX_RETRIES)
+                                       app.conf.broker_connection_max_retries)
                 recv = app.events.Receiver(conn, handlers={'*': state.event})
                 display.resetscreen()
                 display.init_screen()

@@ -26,7 +26,7 @@ __all__ = ['reraise_errors']
 @contextmanager
 def reraise_errors(msg='{0!r}', errors=None):
     assert crypto is not None
-    errors = (crypto.Error, ) if errors is None else errors
+    errors = (crypto.Error,) if errors is None else errors
     try:
         yield
     except errors as exc:

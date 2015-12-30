@@ -7,6 +7,7 @@ The consumers highly-optimized inner loop.
 """
 from __future__ import absolute_import
 
+import errno
 import socket
 
 from celery.bootsteps import RUN
@@ -19,6 +20,15 @@ __all__ = ['asynloop', 'synloop']
 
 logger = get_logger(__name__)
 error = logger.error
+
+
+def _quick_drain(connection, timeout=0.1):
+    try:
+        connection.drain_events(timeout=timeout)
+    except Exception as exc:
+        exc_errno = getattr(exc, 'errno', None)
+        if exc_errno is not None and exc_errno != errno.EAGAIN:
+            raise
 
 
 def asynloop(obj, connection, consumer, blueprint, hub, qos,
@@ -46,6 +56,12 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     # maxtasksperchild will mess up metrics.
     if not obj.restart_count and not obj.pool.did_start_ok():
         raise WorkerLostError('Could not start worker processes')
+
+    # consumer.consume() may have prefetched up to our
+    # limit - drain an event so we are in a clean state
+    # prior to starting our event loop.
+    if connection.transport.driver_type == 'amqp':
+        hub.call_soon(_quick_drain, connection)
 
     # FIXME: Use loop.run_forever
     # Tried and works, but no time to test properly before release.
@@ -88,6 +104,7 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
     """Fallback blocking event loop for transports that doesn't support AIO."""
 
     on_task_received = obj.create_task_handler()
+    perform_pending_operations = obj.perform_pending_operations
     consumer.on_message = on_task_received
     consumer.consume()
 
@@ -98,6 +115,7 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
         if qos.prev != qos.value:
             qos.update()
         try:
+            perform_pending_operations()
             connection.drain_events(timeout=2.0)
         except socket.timeout:
             pass

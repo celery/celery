@@ -1,24 +1,22 @@
 language: python
-python: 2.7
+sudo: false
+cache: false
+python:
+    - '3.5'
 env:
   global:
     PYTHONUNBUFFERED=yes
   matrix:
     - TOXENV=2.7
-    - TOXENV=3.3
     - TOXENV=3.4
     - TOXENV=pypy
-before_install:
-  - |
-    python --version
-    uname -a
-    lsb_release -a
-install:
-  - pip install tox
-script:
-  - tox -v -- -v
+    - TOXENV=3.5
+    - TOXENV=pypy3
+install: travis_retry pip install -U tox
+script: tox -v -- -v
 after_success:
-  - .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
+  - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
+  - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV
 notifications:
   irc:
     channels:

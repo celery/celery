@@ -43,6 +43,9 @@ class test_RPCBackend(AppCase):
         with self.assertRaises(RuntimeError):
             self.b.destination_for('task_id', None)
 
+    def test_rkey(self):
+        self.assertEqual(self.b.rkey('id1'), 'id1')
+
     def test_binding(self):
         queue = self.b.binding
         self.assertEqual(queue.name, self.b.oid)

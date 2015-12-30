@@ -23,11 +23,11 @@ def find_missing_authors(seen):
     with open("AUTHORS") as authors:
         known = [author(line) for line in authors.readlines()]
 
-    seen_authors = set(filter(proper_name, (t[0] for t in seen)))
-    known_authors = set(t[0] for t in known)
+    seen_authors = {t[0] for t in seen if proper_name(t[0])}
+    known_authors = {t[0] for t in known}
     # maybe later?:
-    #   seen_emails = set(t[1] for t in seen)
-    #   known_emails = set(t[1] for t in known)
+    #   seen_emails = {t[1] for t in seen}
+    #   known_emails = {t[1] for t in known}
 
     pprint(seen_authors - known_authors)
 

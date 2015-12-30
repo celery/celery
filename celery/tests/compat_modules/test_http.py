@@ -142,7 +142,7 @@ class test_HttpDispatch(AppCase):
 class test_URL(AppCase):
 
     def test_URL_get_async(self):
-        self.app.conf.CELERY_ALWAYS_EAGER = True
+        self.app.conf.task_always_eager = True
         with mock_urlopen(success_response(100)):
             d = http.URL(
                 'http://example.com/mul', app=self.app,
@@ -150,7 +150,7 @@ class test_URL(AppCase):
             self.assertEqual(d.get(), 100)
 
     def test_URL_post_async(self):
-        self.app.conf.CELERY_ALWAYS_EAGER = True
+        self.app.conf.task_always_eager = True
         with mock_urlopen(success_response(100)):
             d = http.URL(
                 'http://example.com/mul', app=self.app,

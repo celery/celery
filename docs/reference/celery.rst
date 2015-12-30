@@ -29,358 +29,78 @@ and creating Celery applications.
 
 .. versionadded:: 2.5
 
-.. class:: Celery(main='__main__', broker='amqp://localhost//', …)
+.. autoclass:: Celery
 
-    :param main: Name of the main module if running as `__main__`.
-        This is used as a prefix for task names.
-    :keyword broker: URL of the default broker used.
-    :keyword loader: The loader class, or the name of the loader class to use.
-                     Default is :class:`celery.loaders.app.AppLoader`.
-    :keyword backend: The result store backend class, or the name of the
-                      backend class to use. Default is the value of the
-                      :setting:`CELERY_RESULT_BACKEND` setting.
-    :keyword amqp: AMQP object or class name.
-    :keyword events: Events object or class name.
-    :keyword log: Log object or class name.
-    :keyword control: Control object or class name.
-    :keyword set_as_current:  Make this the global current app.
-    :keyword tasks: A task registry or the name of a registry class.
-    :keyword include: List of modules every worker should import.
-    :keyword fixups: List of fixup plug-ins (see e.g.
-        :mod:`celery.fixups.django`).
-    :keyword autofinalize: If set to False a :exc:`RuntimeError`
-        will be raised if the task registry or tasks are used before
-        the app is finalized.
 
-    .. attribute:: Celery.main
+    .. autoattribute:: user_options
 
-        Name of the `__main__` module.  Required for standalone scripts.
+    .. autoattribute:: steps
 
-        If set this will be used instead of `__main__` when automatically
-        generating task names.
+    .. autoattribute:: current_task
 
-    .. attribute:: Celery.conf
+    .. autoattribute:: amqp
 
-        Current configuration.
+    .. autoattribute:: backend
 
-    .. attribute:: user_options
+    .. autoattribute:: loader
 
-        Custom options for command-line programs.
-        See :ref:`extending-commandoptions`
+    .. autoattribute:: control
+    .. autoattribute:: events
+    .. autoattribute:: log
+    .. autoattribute:: tasks
+    .. autoattribute:: pool
+    .. autoattribute:: Task
+    .. autoattribute:: timezone
 
-    .. attribute:: steps
+    .. automethod:: close
 
-        Custom bootsteps to extend and modify the worker.
-        See :ref:`extending-bootsteps`.
+    .. automethod:: signature
 
-    .. attribute:: Celery.current_task
+    .. automethod:: bugreport
 
-        The instance of the task that is being executed, or :const:`None`.
+    .. automethod:: config_from_object
 
-    .. attribute:: Celery.amqp
+    .. automethod:: config_from_envvar
 
-        AMQP related functionality: :class:`~@amqp`.
+    .. automethod:: autodiscover_tasks
 
-    .. attribute:: Celery.backend
+    .. automethod:: add_defaults
 
-        Current backend instance.
+    .. automethod:: setup_security
 
-    .. attribute:: Celery.loader
+    .. automethod:: start
 
-        Current loader instance.
+    .. automethod:: task
 
-    .. attribute:: Celery.control
+    .. automethod:: send_task
 
-        Remote control: :class:`~@control`.
+    .. autoattribute:: AsyncResult
 
-    .. attribute:: Celery.events
+    .. autoattribute:: GroupResult
 
-        Consuming and sending events: :class:`~@events`.
+    .. automethod:: worker_main
 
-    .. attribute:: Celery.log
+    .. autoattribute:: Worker
 
-        Logging: :class:`~@log`.
+    .. autoattribute:: WorkController
 
-    .. attribute:: Celery.tasks
+    .. autoattribute:: Beat
 
-        Task registry.
+    .. automethod:: connection
 
-        Accessing this attribute will also finalize the app.
+    .. automethod:: connection_or_acquire
 
-    .. attribute:: Celery.pool
+    .. automethod:: producer_or_acquire
 
-        Broker connection pool: :class:`~@pool`.
-        This attribute is not related to the workers concurrency pool.
+    .. automethod:: mail_admins
 
-    .. attribute:: Celery.Task
+    .. automethod:: select_queues
 
-        Base task class for this app.
+    .. automethod:: now
 
-    .. attribute:: Celery.timezone
+    .. automethod:: set_current
 
-        Current timezone for this app.
-        This is a cached property taking the time zone from the
-        :setting:`CELERY_TIMEZONE` setting.
-
-    .. method:: Celery.close
-
-        Close any open pool connections and do any other steps necessary
-        to clean up after the application.
-
-        Only necessary for dynamically created apps for which you can
-        use the with statement instead::
-
-            with Celery(set_as_current=False) as app:
-                with app.connection() as conn:
-                    pass
-
-    .. method:: Celery.signature
-
-        Return a new :class:`~celery.canvas.Signature` bound to this app.
-        See :meth:`~celery.signature`
-
-    .. method:: Celery.bugreport
-
-        Return a string with information useful for the Celery core
-        developers when reporting a bug.
-
-    .. method:: Celery.config_from_object(obj, silent=False, force=False)
-
-        Reads configuration from object, where object is either
-        an object or the name of a module to import.
-
-        :keyword silent: If true then import errors will be ignored.
-
-        :keyword force:  Force reading configuration immediately.
-            By default the configuration will be read only when required.
-
-        .. code-block:: python
-
-            >>> celery.config_from_object("myapp.celeryconfig")
-
-            >>> from myapp import celeryconfig
-            >>> celery.config_from_object(celeryconfig)
-
-    .. method:: Celery.config_from_envvar(variable_name,
-                                          silent=False, force=False)
-
-        Read configuration from environment variable.
-
-        The value of the environment variable must be the name
-        of a module to import.
-
-        .. code-block:: python
-
-            >>> os.environ["CELERY_CONFIG_MODULE"] = "myapp.celeryconfig"
-            >>> celery.config_from_envvar("CELERY_CONFIG_MODULE")
-
-    .. method:: Celery.autodiscover_tasks(packages, related_name="tasks")
-
-        With a list of packages, try to import modules of a specific name (by
-        default 'tasks').
-
-        For example if you have an (imagined) directory tree like this::
-
-            foo/__init__.py
-               tasks.py
-               models.py
-
-            bar/__init__.py
-                tasks.py
-                models.py
-
-            baz/__init__.py
-                models.py
-
-        Then calling ``app.autodiscover_tasks(['foo', bar', 'baz'])`` will
-        result in the modules ``foo.tasks`` and ``bar.tasks`` being imported.
-
-        :param packages: List of packages to search.
-            This argument may also be a callable, in which case the
-            value returned is used (for lazy evaluation).
-
-        :keyword related_name: The name of the module to find.  Defaults
-            to "tasks", which means it look for "module.tasks" for every
-            module in ``packages``.
-        :keyword force: By default this call is lazy so that the actual
-            autodiscovery will not happen until an application imports the
-            default modules.  Forcing will cause the autodiscovery to happen
-            immediately.
-
-
-    .. method:: Celery.add_defaults(d)
-
-        Add default configuration from dict ``d``.
-
-        If the argument is a callable function then it will be regarded
-        as a promise, and it won't be loaded until the configuration is
-        actually needed.
-
-        This method can be compared to::
-
-            >>> celery.conf.update(d)
-
-        with a difference that 1) no copy will be made and 2) the dict will
-        not be transferred when the worker spawns child processes, so
-        it's important that the same configuration happens at import time
-        when pickle restores the object on the other side.
-
-    .. method:: Celery.setup_security(…)
-
-        Setup the message-signing serializer.
-        This will affect all application instances (a global operation).
-
-        Disables untrusted serializers and if configured to use the ``auth``
-        serializer will register the auth serializer with the provided settings
-        into the Kombu serializer registry.
-
-        :keyword allowed_serializers:  List of serializer names, or content_types
-            that should be exempt from being disabled.
-        :keyword key: Name of private key file to use.
-            Defaults to the :setting:`CELERY_SECURITY_KEY` setting.
-        :keyword cert: Name of certificate file to use.
-            Defaults to the :setting:`CELERY_SECURITY_CERTIFICATE` setting.
-        :keyword store: Directory containing certificates.
-            Defaults to the :setting:`CELERY_SECURITY_CERT_STORE` setting.
-        :keyword digest: Digest algorithm used when signing messages.
-            Default is ``sha1``.
-        :keyword serializer: Serializer used to encode messages after
-            they have been signed.  See :setting:`CELERY_TASK_SERIALIZER` for
-            the serializers supported.
-            Default is ``json``.
-
-    .. method:: Celery.start(argv=None)
-
-        Run :program:`celery` using `argv`.
-
-        Uses :data:`sys.argv` if `argv` is not specified.
-
-    .. method:: Celery.task(fun, …)
-
-        Decorator to create a task class out of any callable.
-
-        Examples:
-
-        .. code-block:: python
-
-            @app.task
-            def refresh_feed(url):
-                return …
-
-        with setting extra options:
-
-        .. code-block:: python
-
-            @app.task(exchange="feeds")
-            def refresh_feed(url):
-                return …
-
-        .. admonition:: App Binding
-
-            For custom apps the task decorator will return a proxy
-            object, so that the act of creating the task is not performed
-            until the task is used or the task registry is accessed.
-
-            If you are depending on binding to be deferred, then you must
-            not access any attributes on the returned object until the
-            application is fully set up (finalized).
-
-
-    .. method:: Celery.send_task(name[, args[, kwargs[, …]]])
-
-        Send task by name.
-
-        :param name: Name of task to call (e.g. `"tasks.add"`).
-        :keyword result_cls: Specify custom result class. Default is
-            using :meth:`AsyncResult`.
-
-        Otherwise supports the same arguments as :meth:`@-Task.apply_async`.
-
-    .. attribute:: Celery.AsyncResult
-
-        Create new result instance. See :class:`celery.result.AsyncResult`.
-
-    .. attribute:: Celery.GroupResult
-
-        Create new group result instance.
-        See :class:`celery.result.GroupResult`.
-
-    .. method:: Celery.worker_main(argv=None)
-
-        Run :program:`celery worker` using `argv`.
-
-        Uses :data:`sys.argv` if `argv` is not specified.
-
-    .. attribute:: Celery.Worker
-
-        Worker application. See :class:`~@Worker`.
-
-    .. attribute:: Celery.WorkController
-
-        Embeddable worker. See :class:`~@WorkController`.
-
-    .. attribute:: Celery.Beat
-
-        Celerybeat scheduler application.
-        See :class:`~@Beat`.
-
-    .. method:: Celery.connection(url=default, [ssl, [transport_options={}]])
-
-        Establish a connection to the message broker.
-
-        :param url: Either the URL or the hostname of the broker to use.
-
-        :keyword hostname: URL, Hostname/IP-address of the broker.
-            If an URL is used, then the other argument below will
-            be taken from the URL instead.
-        :keyword userid: Username to authenticate as.
-        :keyword password: Password to authenticate with
-        :keyword virtual_host: Virtual host to use (domain).
-        :keyword port: Port to connect to.
-        :keyword ssl: Defaults to the :setting:`BROKER_USE_SSL` setting.
-        :keyword transport: defaults to the :setting:`BROKER_TRANSPORT`
-                 setting.
-
-        :returns :class:`kombu.Connection`:
-
-    .. method:: Celery.connection_or_acquire(connection=None)
-
-        For use within a with-statement to get a connection from the pool
-        if one is not already provided.
-
-        :keyword connection: If not provided, then a connection will be
-                             acquired from the connection pool.
-
-    .. method:: Celery.producer_or_acquire(producer=None)
-
-        For use within a with-statement to get a producer from the pool
-        if one is not already provided
-
-        :keyword producer: If not provided, then a producer will be
-                           acquired from the producer pool.
-
-    .. method:: Celery.mail_admins(subject, body, fail_silently=False)
-
-        Sends an email to the admins in the :setting:`ADMINS` setting.
-
-    .. method:: Celery.select_queues(queues=[])
-
-        Select a subset of queues, where queues must be a list of queue
-        names to keep.
-
-    .. method:: Celery.now()
-
-        Return the current time and date as a :class:`~datetime.datetime`
-        object.
-
-    .. method:: Celery.set_current()
-
-        Makes this the current app for this thread.
-
-    .. method:: Celery.finalize()
-
-        Finalizes the app by loading built-in tasks,
-        and evaluating pending task decorators
+    .. automethod:: finalize
 
     .. data:: on_configure
 
@@ -393,10 +113,6 @@ and creating Celery applications.
     .. data:: on_after_finalize
 
         Signal sent after app has been finalized.
-
-    .. attribute:: Celery.Pickler
-
-        Helper class used to pickle this application.
 
 Canvas primitives
 -----------------

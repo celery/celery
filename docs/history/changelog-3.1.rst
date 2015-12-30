@@ -371,7 +371,7 @@ News
     and if you use the ``librabbitmq`` module you also have to upgrade
     to librabbitmq 1.5.0:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install -U librabbitmq
 
@@ -422,7 +422,7 @@ News
   exceptions.
 
 - **Worker**: No longer sends task error emails for expected errors (in
-  ``@task(throws=(..., )))``.
+  ``@task(throws=(...,)))``.
 
 - **Canvas**: Fixed problem with exception deserialization when using
   the JSON serializer (Issue #1987).
@@ -467,7 +467,7 @@ News
 
     See :ref:`redis-caveats`.
 
-    This will be the default in Celery 3.2.
+    This will be the default in Celery 4.0.
 
 - **Results**: The :class:`@AsyncResult` object now keeps a local cache
   of the final state of the task.
@@ -476,7 +476,7 @@ News
     and you can do so by setting :setting:`CELERY_MAX_CACHED_RESULTS` to
     :const:`-1`.  The lifetime of the cache will then be bound to the
     lifetime of the result object, which will be the default behavior
-    in Celery 3.2.
+    in Celery 4.0.
 
 - **Events**: The "Substantial drift" warning message is now logged once
   per node name only (Issue #1802).
@@ -507,9 +507,9 @@ News
     This means that referring to a number will work when specifying a list
     of node names and not just for a number range:
 
-    .. code-block:: bash
+    .. code-block:: console
 
-        celery multi start A B C D -c:1 4 -c:2-4 8
+        $ celery multi start A B C D -c:1 4 -c:2-4 8
 
     In this example ``1`` refers to node A (as it's the first node in the
     list).
@@ -682,7 +682,7 @@ News
 
 - **Results:** ``ResultSet.iterate`` is now pending deprecation.
 
-    The method will be deprecated in version 3.2 and removed in version 3.3.
+    The method will be removed in version 4.0 and removed in version 5.0.
 
     Use ``result.get(callback=)`` (or ``result.iter_native()`` where available)
     instead.
@@ -735,7 +735,7 @@ News
     Example using command-line configuration to set a broker heartbeat
     from :program:`celery multi`:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery multi start 1 -c3 -- broker.heartbeat=30
 
@@ -832,7 +832,7 @@ Synchronous subtasks
 
 Tasks waiting for the result of a subtask will now emit
 a :exc:`RuntimeWarning` warning when using the prefork pool,
-and in 3.2 this will result in an exception being raised.
+and in 4.0 this will result in an exception being raised.
 
 It's not legal for tasks to block by waiting for subtasks
 as this is likely to lead to resource starvation and eventually
@@ -915,7 +915,7 @@ Fixes
 
     Example:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery -A proj worker -n foo@%h --logfile=%n.log --statedb=%n.db
 

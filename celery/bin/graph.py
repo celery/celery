@@ -156,7 +156,7 @@ class graph(Command):
                 threads.append(reply['pool']['max-concurrency'])
 
         wlen = len(workers)
-        backend = args.get('backend', self.app.conf.CELERY_RESULT_BACKEND)
+        backend = args.get('backend', self.app.conf.result_backend)
         threads_for = {}
         workers = maybe_abbr(workers, 'Worker')
         if Wmax and wlen > Wmax:
@@ -166,7 +166,8 @@ class graph(Command):
                 list(range(int(threads))), 'P', Tmax,
             )
 
-        broker = Broker(args.get('broker', self.app.connection().as_uri()))
+        broker = Broker(args.get(
+            'broker', self.app.connection_for_read().as_uri()))
         backend = Backend(backend) if backend else None
         graph = DependencyGraph(formatter=Formatter())
         graph.add_arc(broker)

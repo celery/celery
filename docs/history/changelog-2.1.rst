@@ -223,7 +223,7 @@ News
     Example using celeryctl to start consuming from queue "queue", in
     exchange "exchange", of type "direct" using binding key "key":
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celeryctl inspect add_consumer queue exchange direct key
         $ celeryctl inspect cancel_consumer queue
@@ -234,7 +234,7 @@ News
 
     Another example using :class:`~celery.task.control.inspect`:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> from celery.task.control import inspect
         >>> inspect.add_consumer(queue="queue", exchange="exchange",
@@ -296,7 +296,7 @@ Important Notes
     To do this use :program:`python` to find the location
     of this module:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ python
         >>> import celery.platform
@@ -306,7 +306,7 @@ Important Notes
     Here the compiled module is in :file:`/opt/devel/celery/celery/`,
     to remove the offending files do:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ rm -f /opt/devel/celery/celery/platform.py*
 
@@ -345,13 +345,13 @@ News
 
     1. Create the new database tables:
 
-        .. code-block:: bash
+        .. code-block:: console
 
             $ python manage.py syncdb
 
     2. Start the django-celery snapshot camera:
 
-        .. code-block:: bash
+        .. code-block:: console
 
             $ python manage.py celerycam
 
@@ -403,7 +403,7 @@ News
 
     Some examples:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celeryctl apply tasks.add -a '[2, 2]' --countdown=10
 
@@ -482,7 +482,7 @@ News
 
     Example:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celeryd -I app1.tasks,app2.tasks
 
@@ -692,7 +692,7 @@ Experimental
 
     multi can now be used to start, stop and restart worker nodes:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celeryd-multi start jerry elaine george kramer
 
@@ -701,7 +701,7 @@ Experimental
     use the `--pidfile` and `--logfile` arguments with the `%n`
     format:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celeryd-multi start jerry elaine george kramer \
                         --logfile=/var/log/celeryd@%n.log \
@@ -709,20 +709,20 @@ Experimental
 
     Stopping:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celeryd-multi stop jerry elaine george kramer
 
     Restarting. The nodes will be restarted one by one as the old ones
     are shutdown:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celeryd-multi restart jerry elaine george kramer
 
     Killing the nodes (**WARNING**: Will discard currently executing tasks):
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celeryd-multi kill jerry elaine george kramer
 

@@ -33,8 +33,7 @@ from kombu.clocks import timetuple
 from kombu.utils import cached_property
 
 from celery import states
-from celery.five import class_property, items, values
-from celery.utils import deprecated
+from celery.five import items, values
 from celery.utils.functional import LRUCache, memoize
 from celery.utils.log import get_logger
 
@@ -98,7 +97,8 @@ def with_unique_field(attr):
         cls.__eq__ = __eq__
 
         def __ne__(this, other):
-            return not this.__eq__(other)
+            res = this.__eq__(other)
+            return True if res is NotImplemented else not res
         cls.__ne__ = __ne__
 
         def __hash__(this):
@@ -118,7 +118,7 @@ class Worker(object):
     _fields = ('hostname', 'pid', 'freq', 'heartbeats', 'clock',
                'active', 'processed', 'loadavg', 'sw_ident',
                'sw_ver', 'sw_sys')
-    if not PYPY:
+    if not PYPY:  # pragma: no cover
         __slots__ = _fields + ('event', '__dict__', '__weakref__')
 
     def __init__(self, hostname=None, pid=None, freq=60,
@@ -166,7 +166,7 @@ class Worker(object):
                 if drift > max_drift:
                     _warn_drift(self.hostname, drift,
                                 local_received, timestamp)
-                if local_received:
+                if local_received:  # pragma: no cover
                     hearts = len(heartbeats)
                     if hearts > hbmax - 1:
                         hb_pop(0)
@@ -200,45 +200,25 @@ class Worker(object):
     def id(self):
         return '{0.hostname}.{0.pid}'.format(self)
 
-    @deprecated(3.2, 3.3)
-    def update_heartbeat(self, received, timestamp):
-        self.event(None, timestamp, received)
-
-    @deprecated(3.2, 3.3)
-    def on_online(self, timestamp=None, local_received=None, **fields):
-        self.event('online', timestamp, local_received, fields)
-
-    @deprecated(3.2, 3.3)
-    def on_offline(self, timestamp=None, local_received=None, **fields):
-        self.event('offline', timestamp, local_received, fields)
-
-    @deprecated(3.2, 3.3)
-    def on_heartbeat(self, timestamp=None, local_received=None, **fields):
-        self.event('heartbeat', timestamp, local_received, fields)
-
-    @class_property
-    def _defaults(cls):
-        """Deprecated, to be removed in 3.3"""
-        source = cls()
-        return {k: getattr(source, k) for k in cls._fields}
-
 
 @with_unique_field('uuid')
 class Task(object):
     """Task State."""
     name = received = sent = started = succeeded = failed = retried = \
-        revoked = args = kwargs = eta = expires = retries = worker = result = \
-        exception = timestamp = runtime = traceback = exchange = \
-        routing_key = client = None
+        revoked = rejected = args = kwargs = eta = expires = retries = \
+        worker = result = exception = timestamp = runtime = traceback = \
+        exchange = routing_key = root_id = parent_id = client = None
     state = states.PENDING
     clock = 0
 
-    _fields = ('uuid', 'name', 'state', 'received', 'sent', 'started',
-               'succeeded', 'failed', 'retried', 'revoked', 'args', 'kwargs',
-               'eta', 'expires', 'retries', 'worker', 'result', 'exception',
-               'timestamp', 'runtime', 'traceback', 'exchange', 'routing_key',
-               'clock', 'client')
-    if not PYPY:
+    _fields = (
+        'uuid', 'name', 'state', 'received', 'sent', 'started', 'rejected',
+        'succeeded', 'failed', 'retried', 'revoked', 'args', 'kwargs',
+        'eta', 'expires', 'retries', 'worker', 'result', 'exception',
+        'timestamp', 'runtime', 'traceback', 'exchange', 'routing_key',
+        'clock', 'client', 'root_id', 'parent_id',
+    )
+    if not PYPY:  # pragma: no cover
         __slots__ = ('__dict__', '__weakref__')
 
     #: How to merge out of order events.
@@ -249,12 +229,19 @@ class Task(object):
     #: that state. ``(RECEIVED, ('name', 'args')``, means the name and args
     #: fields are always taken from the RECEIVED state, and any values for
     #: these fields received before or after is simply ignored.
-    merge_rules = {states.RECEIVED: ('name', 'args', 'kwargs',
-                                     'retries', 'eta', 'expires')}
+    merge_rules = {
+        states.RECEIVED: (
+            'name', 'args', 'kwargs', 'parent_id',
+            'root_id' 'retries', 'eta', 'expires',
+        ),
+    }
 
     #: meth:`info` displays these fields by default.
-    _info_fields = ('args', 'kwargs', 'retries', 'result', 'eta', 'runtime',
-                    'expires', 'exception', 'exchange', 'routing_key')
+    _info_fields = (
+        'args', 'kwargs', 'retries', 'result', 'eta', 'runtime',
+        'expires', 'exception', 'exchange', 'routing_key',
+        'root_id', 'parent_id',
+    )
 
     def __init__(self, uuid=None, **kwargs):
         self.uuid = uuid
@@ -267,7 +254,7 @@ class Task(object):
               PENDING=states.PENDING, RECEIVED=states.RECEIVED,
               STARTED=states.STARTED, FAILURE=states.FAILURE,
               RETRY=states.RETRY, SUCCESS=states.SUCCESS,
-              REVOKED=states.REVOKED):
+              REVOKED=states.REVOKED, REJECTED=states.REJECTED):
         fields = fields or {}
         if type_ == 'sent':
             state, self.sent = PENDING, timestamp
@@ -283,6 +270,8 @@ class Task(object):
             state, self.succeeded = SUCCESS, timestamp
         elif type_ == 'revoked':
             state, self.revoked = REVOKED, timestamp
+        elif type_ == 'rejected':
+            state, self.rejected = REJECTED, timestamp
         else:
             state = type_.upper()
 
@@ -335,57 +324,6 @@ class Task(object):
     @property
     def ready(self):
         return self.state in states.READY_STATES
-
-    @deprecated(3.2, 3.3)
-    def on_sent(self, timestamp=None, **fields):
-        self.event('sent', timestamp, fields)
-
-    @deprecated(3.2, 3.3)
-    def on_received(self, timestamp=None, **fields):
-        self.event('received', timestamp, fields)
-
-    @deprecated(3.2, 3.3)
-    def on_started(self, timestamp=None, **fields):
-        self.event('started', timestamp, fields)
-
-    @deprecated(3.2, 3.3)
-    def on_failed(self, timestamp=None, **fields):
-        self.event('failed', timestamp, fields)
-
-    @deprecated(3.2, 3.3)
-    def on_retried(self, timestamp=None, **fields):
-        self.event('retried', timestamp, fields)
-
-    @deprecated(3.2, 3.3)
-    def on_succeeded(self, timestamp=None, **fields):
-        self.event('succeeded', timestamp, fields)
-
-    @deprecated(3.2, 3.3)
-    def on_revoked(self, timestamp=None, **fields):
-        self.event('revoked', timestamp, fields)
-
-    @deprecated(3.2, 3.3)
-    def on_unknown_event(self, shortype, timestamp=None, **fields):
-        self.event(shortype, timestamp, fields)
-
-    @deprecated(3.2, 3.3)
-    def update(self, state, timestamp, fields,
-               _state=states.state, RETRY=states.RETRY):
-        return self.event(state, timestamp, None, fields)
-
-    @deprecated(3.2, 3.3)
-    def merge(self, state, timestamp, fields):
-        keep = self.merge_rules.get(state)
-        if keep is not None:
-            fields = {k: v for k, v in items(fields) if k in keep}
-        for key, value in items(fields):
-            setattr(self, key, value)
-
-    @class_property
-    def _defaults(cls):
-        """Deprecated, to be removed in 3.3."""
-        source = cls()
-        return {k: getattr(source, k) for k in source._fields}
 
 
 class State(object):

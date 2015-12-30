@@ -248,6 +248,6 @@ class test_utcoffset(Case):
     def test_utcoffset(self):
         with patch('celery.utils.timeutils._time') as _time:
             _time.daylight = True
-            self.assertIsNotNone(utcoffset())
+            self.assertIsNotNone(utcoffset(time=_time))
             _time.daylight = False
-            self.assertIsNotNone(utcoffset())
+            self.assertIsNotNone(utcoffset(time=_time))

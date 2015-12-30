@@ -80,7 +80,9 @@ import json
 from collections import defaultdict
 from heapq import heappush
 from inspect import getargspec
-from optparse import OptionParser, IndentedHelpFormatter, make_option as Option
+from optparse import (
+    OptionParser, OptionGroup, IndentedHelpFormatter, make_option as Option,
+)
 from pprint import pformat
 
 from celery import VERSION_BANNER, Celery, maybe_patch_concurrency
@@ -95,7 +97,7 @@ from celery.utils.imports import symbol_by_name, import_from_cwd
 
 try:
     input = raw_input
-except NameError:
+except NameError:  # pragma: no cover
     pass
 
 # always enable DeprecationWarnings, so our users can see them.
@@ -219,7 +221,7 @@ class Command(object):
     enable_config_from_cmdline = False
 
     #: Default configuration namespace.
-    namespace = 'celery'
+    namespace = None
 
     #: Text to print at end of --help
     epilog = None
@@ -328,6 +330,9 @@ class Command(object):
         """Get supported command-line options."""
         return self.option_list
 
+    def prepare_arguments(self, parser):
+        pass
+
     def expanduser(self, value):
         if isinstance(value, string_t):
             return os.path.expanduser(value)
@@ -413,20 +418,24 @@ class Command(object):
         return self.parser.parse_args(arguments)
 
     def create_parser(self, prog_name, command=None):
-        option_list = (
-            self.preload_options +
-            self.get_options() +
-            tuple(self.app.user_options['preload'])
-        )
-        return self.prepare_parser(self.Parser(
+        parser = self.Parser(
             prog=prog_name,
             usage=self.usage(command),
             version=self.version,
             epilog=self.epilog,
             formatter=HelpFormatter(),
             description=self.description,
-            option_list=option_list,
-        ))
+        )
+        parser.add_options(self.preload_options)
+        for typ_ in reversed(type(self).mro()):
+            try:
+                prepare_arguments = typ_.prepare_arguments
+            except AttributeError:
+                continue
+            prepare_arguments(self, parser)
+        parser.add_options(self.get_options() or ())
+        parser.add_options(self.app.user_options['preload'])
+        return self.prepare_parser(parser)
 
     def prepare_parser(self, parser):
         docs = [self.parse_doc(doc) for doc in (self.doc, __doc__) if doc]
@@ -662,12 +671,12 @@ class Command(object):
             self._colored.enabled = not self._no_color
 
 
-def daemon_options(default_pidfile=None, default_logfile=None):
-    return (
-        Option('-f', '--logfile', default=default_logfile),
-        Option('--pidfile', default=default_pidfile),
-        Option('--uid', default=None),
-        Option('--gid', default=None),
-        Option('--umask', default=None),
-        Option('--executable', default=None),
-    )
+def daemon_options(parser, default_pidfile=None, default_logfile=None):
+    group = OptionGroup(parser, "Daemonization Options")
+    group.add_option('-f', '--logfile', default=default_logfile),
+    group.add_option('--pidfile', default=default_pidfile),
+    group.add_option('--uid', default=None),
+    group.add_option('--gid', default=None),
+    group.add_option('--umask', default=None),
+    group.add_option('--executable', default=None),
+    parser.add_option_group(group)

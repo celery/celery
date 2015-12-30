@@ -7,33 +7,9 @@
 .. contents::
     :local:
 
-.. _deprecations-v3.2:
+.. _deprecations-v5.0:
 
-Removals for version 3.2
-========================
-
-- Module ``celery.task.trace`` has been renamed to ``celery.app.trace``
-  as the ``celery.task`` package is being phased out.  The compat module
-  will be removed in version 3.2 so please change any import from::
-
-    from celery.task.trace import …
-
-  to::
-
-    from celery.app.trace import …
-
-- ``AsyncResult.serializable()`` and ``celery.result.from_serializable``
-  will be removed.
-
-    Use instead::
-
-        >>> tup = result.as_tuple()
-        >>> from celery.result import result_from_tuple
-        >>> result = result_from_tuple(tup)
-
-.. _deprecations-v4.0:
-
-Removals for version 4.0
+Removals for version 5.0
 ========================
 
 Old Task API
@@ -92,47 +68,6 @@ on the class, but have to instantiate the task first::
     >>> MyTask().delay()        # WORKS!
 
 
-TaskSet
-~~~~~~~
-
-TaskSet has been renamed to group and TaskSet will be removed in version 4.0.
-
-Old::
-
-    >>> from celery.task import TaskSet
-
-    >>> TaskSet(add.subtask((i, i)) for i in xrange(10)).apply_async()
-
-New::
-
-    >>> from celery import group
-    >>> group(add.s(i, i) for i in xrange(10))()
-
-
-Magic keyword arguments
-~~~~~~~~~~~~~~~~~~~~~~~
-
-The magic keyword arguments accepted by tasks will be removed
-in 4.0, so you should start rewriting any tasks
-using the ``celery.decorators`` module and depending
-on keyword arguments being passed to the task,
-for example::
-
-    from celery.decorators import task
-
-    @task()
-    def add(x, y, task_id=None):
-        print("My task id is %r" % (task_id, ))
-
-should be rewritten into::
-
-    from celery import task
-
-    @task(bind=True)
-    def add(self, x, y):
-        print("My task id is {0.request.id}".format(self))
-
-
 Task attributes
 ---------------
 
@@ -145,42 +80,7 @@ The task attributes:
 - ``delivery_mode``
 - ``priority``
 
-is deprecated and must be set by :setting:`CELERY_ROUTES` instead.
-
-:mod:`celery.result`
---------------------
-
-- ``BaseAsyncResult`` -> ``AsyncResult``.
-
-- ``TaskSetResult`` -> ``GroupResult``.
-
-- ``TaskSetResult.total`` -> ``len(GroupResult)``
-
-- ``TaskSetResult.taskset_id`` -> ``GroupResult.id``
-
-Apply to: :class:`~celery.result.AsyncResult`,
-:class:`~celery.result.EagerResult`::
-
-- ``Result.wait()`` -> ``Result.get()``
-
-- ``Result.task_id()`` -> ``Result.id``
-
-- ``Result.status`` -> ``Result.state``.
-
-:mod:`celery.loader`
---------------------
-
-- ``current_loader()`` -> ``current_app.loader``
-
-- ``load_settings()`` -> ``current_app.conf``
-
-
-Task_sent signal
-----------------
-
-The :signal:`task_sent` signal will be removed in version 4.0.
-Please use the :signal:`before_task_publish` and :signal:`after_task_publush`
-signals instead.
+is deprecated and must be set by :setting:`task_routes` instead.
 
 
 Modules to Remove
@@ -228,13 +128,12 @@ Settings
 =====================================  =====================================
 **Setting name**                       **Replace with**
 =====================================  =====================================
-``BROKER_HOST``                        :setting:`BROKER_URL`
-``BROKER_PORT``                        :setting:`BROKER_URL`
-``BROKER_USER``                        :setting:`BROKER_URL`
-``BROKER_PASSWORD``                    :setting:`BROKER_URL`
-``BROKER_VHOST``                       :setting:`BROKER_URL`
+``BROKER_HOST``                        :setting:`broker_url`
+``BROKER_PORT``                        :setting:`broker_url`
+``BROKER_USER``                        :setting:`broker_url`
+``BROKER_PASSWORD``                    :setting:`broker_url`
+``BROKER_VHOST``                       :setting:`broker_url`
 =====================================  =====================================
-
 
 ``REDIS`` Result Backend Settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -242,39 +141,49 @@ Settings
 =====================================  =====================================
 **Setting name**                       **Replace with**
 =====================================  =====================================
-``CELERY_REDIS_HOST``                  :setting:`CELERY_RESULT_BACKEND`
-``CELERY_REDIS_PORT``                  :setting:`CELERY_RESULT_BACKEND`
-``CELERY_REDIS_DB``                    :setting:`CELERY_RESULT_BACKEND`
-``CELERY_REDIS_PASSWORD``              :setting:`CELERY_RESULT_BACKEND`
-``REDIS_HOST``                         :setting:`CELERY_RESULT_BACKEND`
-``REDIS_PORT``                         :setting:`CELERY_RESULT_BACKEND`
-``REDIS_DB``                           :setting:`CELERY_RESULT_BACKEND`
-``REDIS_PASSWORD``                     :setting:`CELERY_RESULT_BACKEND`
+``CELERY_REDIS_HOST``                  :setting:`result_backend`
+``CELERY_REDIS_PORT``                  :setting:`result_backend`
+``CELERY_REDIS_DB``                    :setting:`result_backend`
+``CELERY_REDIS_PASSWORD``              :setting:`result_backend`
+``REDIS_HOST``                         :setting:`result_backend`
+``REDIS_PORT``                         :setting:`result_backend`
+``REDIS_DB``                           :setting:`result_backend`
+``REDIS_PASSWORD``                     :setting:`result_backend`
 =====================================  =====================================
 
-Logging Settings
-~~~~~~~~~~~~~~~~
 
-=====================================  =====================================
-**Setting name**                       **Replace with**
-=====================================  =====================================
-``CELERYD_LOG_LEVEL``                  :option:`--loglevel`
-``CELERYD_LOG_FILE``                   :option:`--logfile``
-``CELERYBEAT_LOG_LEVEL``               :option:`--loglevel`
-``CELERYBEAT_LOG_FILE``                :option:`--loglevel``
-``CELERYMON_LOG_LEVEL``                :option:`--loglevel`
-``CELERYMON_LOG_FILE``                 :option:`--loglevel``
-=====================================  =====================================
+Task_sent signal
+----------------
 
-Other Settings
-~~~~~~~~~~~~~~
+The :signal:`task_sent` signal will be removed in version 4.0.
+Please use the :signal:`before_task_publish` and :signal:`after_task_publush`
+signals instead.
+
+Result
+------
+
+Apply to: :class:`~celery.result.AsyncResult`,
+:class:`~celery.result.EagerResult`::
+
+- ``Result.wait()`` -> ``Result.get()``
+
+- ``Result.task_id()`` -> ``Result.id``
+
+- ``Result.status`` -> ``Result.state``.
+
+.. _deprecations-v3.1:
+
+
+Settings
+~~~~~~~~
 
 =====================================  =====================================
 **Setting name**                       **Replace with**
 =====================================  =====================================
 ``CELERY_TASK_ERROR_WITELIST``         Annotate ``Task.ErrorMail``
-``CELERY_AMQP_TASK_RESULT_EXPIRES``    :setting:`CELERY_TASK_RESULT_EXPIRES`
+``CELERY_AMQP_TASK_RESULT_EXPIRES``    :setting:`result_expires`
 =====================================  =====================================
+
 
 
 .. _deprecations-v2.0:
@@ -287,12 +196,12 @@ Removals for version 2.0
 =====================================  =====================================
 **Setting name**                       **Replace with**
 =====================================  =====================================
-`CELERY_AMQP_CONSUMER_QUEUES`          `CELERY_QUEUES`
-`CELERY_AMQP_CONSUMER_QUEUES`          `CELERY_QUEUES`
-`CELERY_AMQP_EXCHANGE`                 `CELERY_DEFAULT_EXCHANGE`
-`CELERY_AMQP_EXCHANGE_TYPE`            `CELERY_DEFAULT_AMQP_EXCHANGE_TYPE`
-`CELERY_AMQP_CONSUMER_ROUTING_KEY`     `CELERY_QUEUES`
-`CELERY_AMQP_PUBLISHER_ROUTING_KEY`    `CELERY_DEFAULT_ROUTING_KEY`
+`CELERY_AMQP_CONSUMER_QUEUES`          `task_queues`
+`CELERY_AMQP_CONSUMER_QUEUES`          `task_queues`
+`CELERY_AMQP_EXCHANGE`                 `task_default_exchange`
+`CELERY_AMQP_EXCHANGE_TYPE`            `task_default_exchange_type`
+`CELERY_AMQP_CONSUMER_ROUTING_KEY`     `task_queues`
+`CELERY_AMQP_PUBLISHER_ROUTING_KEY`    `task_default_routing_key`
 =====================================  =====================================
 
 * :envvar:`CELERY_LOADER` definitions without class name.
@@ -303,4 +212,4 @@ Removals for version 2.0
 * :meth:`TaskSet.run`. Use :meth:`celery.task.base.TaskSet.apply_async`
     instead.
 
-* The module :mod:`celery.task.rest`; use :mod:`celery.task.http` instead.
+* The module :mod:`celery.task.rest`; use :mod:`celery.task.httpY` instead.

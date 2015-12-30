@@ -30,6 +30,11 @@ if not IS_WINDOWS:
             )
             execv.assert_called_with('/bin/boo', ['/bin/boo', 'a', 'b', 'c'])
 
+            r = detach('/bin/boo', ['a', 'b', 'c'],
+                       logfile='/var/log', pidfile='/var/pid',
+                       executable='/bin/foo', app=self.app)
+            execv.assert_called_with('/bin/foo', ['/bin/foo', 'a', 'b', 'c'])
+
             execv.side_effect = Exception('foo')
             r = detach('/bin/boo', ['a', 'b', 'c'],
                        logfile='/var/log', pidfile='/var/pid', app=self.app)
@@ -38,17 +43,33 @@ if not IS_WINDOWS:
             setup_logs.assert_called_with('ERROR', '/var/log')
             self.assertEqual(r, 1)
 
+            self.patch('celery.current_app')
+            from celery import current_app
+            r = detach('/bin/boo', ['a', 'b', 'c'],
+                       logfile='/var/log', pidfile='/var/pid', app=None)
+            current_app.log.setup_logging_subsystem.assert_called_with(
+                'ERROR', '/var/log',
+            )
+
 
 class test_PartialOptionParser(AppCase):
 
     def test_parser(self):
         x = detached_celeryd(self.app)
-        p = x.Parser('celeryd_detach')
-        options, values = p.parse_args(['--logfile=foo', '--fake', '--enable',
-                                        'a', 'b', '-c1', '-d', '2'])
+        p = x.create_parser('celeryd_detach')
+        options, values = p.parse_args([
+            '--logfile=foo', '--fake', '--enable',
+            'a', 'b', '-c1', '-d', '2',
+        ])
         self.assertEqual(options.logfile, 'foo')
         self.assertEqual(values, ['a', 'b'])
         self.assertEqual(p.leftovers, ['--enable', '-c1', '-d', '2'])
+        options, values = p.parse_args([
+            '--fake', '--enable',
+            '--pidfile=/var/pid/foo.pid',
+            'a', 'b', '-c1', '-d', '2',
+        ])
+        self.assertEqual(options.pidfile, '/var/pid/foo.pid')
 
         with override_stdouts():
             with self.assertRaises(SystemExit):

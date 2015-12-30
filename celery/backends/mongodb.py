@@ -12,6 +12,14 @@ from datetime import datetime, timedelta
 from functools import wraps
 import time
 
+from kombu.utils import cached_property
+from kombu.exceptions import EncodeError
+from celery import states
+from celery.exceptions import ImproperlyConfigured
+from celery.five import string_t, items
+
+from .base import BaseBackend
+
 try:
     import pymongo
 except ImportError:  # pragma: no cover
@@ -25,17 +33,9 @@ if pymongo:
     from pymongo.errors import InvalidDocument  # noqa
 else:                                       # pragma: no cover
     Binary = None                           # noqa
-    InvalidDocument = None                  # noqa
 
-from kombu.syn import detect_environment
-from kombu.utils import cached_property
-from kombu.exceptions import EncodeError
-from celery import states
-from celery.exceptions import ImproperlyConfigured
-from celery.five import string_t, items
-from celery.utils.timeutils import maybe_timedelta
-
-from .base import BaseBackend
+    class InvalidDocument(Exception):       # noqa
+        pass
 
 __all__ = ['MongoBackend']
 
@@ -114,10 +114,14 @@ class MongoBackend(BaseBackend):
 
         # update conf with mongo uri data, only if uri was given
         if self.url:
+            if self.url == 'mongodb://':
+                self.url += 'localhost'
+
             uri_data = pymongo.uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
-            make_host_str = lambda x: "{0}:{1}".format(x[0], x[1])
-            hostslist = map(make_host_str, uri_data['nodelist'])
+            hostslist = [
+                "{0}:{1}".format(x[0], x[1]) for x in uri_data['nodelist']
+            ]
             self.user = uri_data['username']
             self.password = uri_data['password']
             self.mongo_host = hostslist
@@ -128,7 +132,7 @@ class MongoBackend(BaseBackend):
             self.options.update(uri_data['options'])
 
         # update conf with specific settings
-        config = self.app.conf.get('CELERY_MONGODB_BACKEND_SETTINGS')
+        config = self.app.conf.get('mongodb_backend_settings')
         if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(
@@ -156,7 +160,7 @@ class MongoBackend(BaseBackend):
             self.options.update(config)
 
     def _prepare_client_options(self):
-            if pymongo.version_tuple >= (3, ):
+            if pymongo.version_tuple >= (3,):
                 return {'maxPoolSize': self.max_pool_size}
             else:  # pragma: no cover
                 return {'max_pool_size': self.max_pool_size,
@@ -179,16 +183,9 @@ class MongoBackend(BaseBackend):
                 if isinstance(host, string_t) \
                    and not host.startswith('mongodb://'):
                     host = 'mongodb://{0}:{1}'.format(host, self.port)
-
-                if host == 'mongodb://':
-                    host += 'localhost'
-
             # don't change self.options
             conf = dict(self.options)
             conf['host'] = host
-
-            if detect_environment() != 'default':
-                conf['use_greenlets'] = True
 
             self._connection = MongoClient(**conf)
 
@@ -213,12 +210,12 @@ class MongoBackend(BaseBackend):
             return data
         return super(MongoBackend, self).decode(data)
 
-    def _store_result(self, task_id, result, status,
+    def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
-        """Store return value and status of an executed task."""
+        """Store return value and state of an executed task."""
 
         meta = {'_id': task_id,
-                'status': status,
+                'status': state,
                 'result': self.encode(result),
                 'date_done': datetime.utcnow(),
                 'traceback': self.encode(traceback),
@@ -235,7 +232,6 @@ class MongoBackend(BaseBackend):
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
-
         obj = self.collection.find_one({'_id': task_id})
         if obj:
             return self.meta_from_decoded({
@@ -247,7 +243,6 @@ class MongoBackend(BaseBackend):
                 'children': self.decode(obj['children']),
             })
         return {'status': states.PENDING, 'result': None}
-
 
     def _save_group(self, group_id, result):
         """Save the group result."""

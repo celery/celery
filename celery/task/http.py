@@ -17,6 +17,7 @@ except ImportError:  # pragma: no cover
     from urlparse import urlparse, parse_qsl  # noqa
 
 from kombu.utils import json
+from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
 from celery import shared_task, __version__ as celery_version
 from celery.five import items, reraise
@@ -140,7 +141,7 @@ class HttpDispatch(object):
 
     def make_request(self, url, method, params):
         """Perform HTTP request and return the response."""
-        request = Request(url, params)
+        request = Request(url, str_to_bytes(params))
         for key, val in items(self.http_headers):
             request.add_header(key, val)
         response = urlopen(request)  # user catches errors.
@@ -155,7 +156,7 @@ class HttpDispatch(object):
         else:
             params = urlencode(utf8dict(items(self.task_kwargs)))
         raw_response = self.make_request(str(url), self.method, params)
-        return extract_response(raw_response)
+        return extract_response(bytes_to_str(raw_response))
 
     @property
     def http_headers(self):

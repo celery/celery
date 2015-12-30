@@ -22,7 +22,7 @@ For the Beanstalk support you have to install additional dependencies.
 You can install both Celery and these dependencies in one go using
 the ``celery[beanstalk]`` :ref:`bundle <bundles>`:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install -U celery[beanstalk]
 
@@ -34,7 +34,7 @@ Configuration
 Configuration is easy, set the transport, and configure the location of
 your Beanstalk database::
 
-    BROKER_URL = 'beanstalk://localhost:11300'
+    broker_url = 'beanstalk://localhost:11300'
 
 Where the URL is in the format of::
 

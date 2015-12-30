@@ -111,7 +111,7 @@ class schedule(object):
         The next time to check is used to save energy/cpu cycles,
         it does not need to be accurate but will influence the precision
         of your schedule.  You must also keep in mind
-        the value of :setting:`CELERYBEAT_MAX_LOOP_INTERVAL`,
+        the value of :setting:`beat_max_loop_interval`,
         which decides the maximum number of seconds the scheduler can
         sleep between re-checking the periodic task intervals.  So if you
         have a task that changes schedule at runtime then your next_run_at
@@ -134,9 +134,7 @@ class schedule(object):
         return schedstate(is_due=False, next=remaining_s)
 
     def maybe_make_aware(self, dt):
-        if self.utc_enabled:
-            return maybe_make_aware(dt, self.tz)
-        return dt
+        return maybe_make_aware(dt, self.tz)
 
     def __repr__(self):
         return '<freq: {0.human_seconds}>'.format(self)
@@ -174,7 +172,7 @@ class schedule(object):
 
     @cached_property
     def utc_enabled(self):
-        return self.app.conf.CELERY_ENABLE_UTC
+        return self.app.conf.enable_utc
 
     def to_local(self, dt):
         if not self.utc_enabled:
@@ -251,7 +249,7 @@ class crontab_parser(object):
             m = regex.match(part)
             if m:
                 return handler(m.groups())
-        return self._expand_range((part, ))
+        return self._expand_range((part,))
 
     def _expand_range(self, toks):
         fr = self._expand_number(toks[0])
@@ -591,7 +589,10 @@ class crontab(schedule):
         return NotImplemented
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        res = self.__eq__(other)
+        if res is NotImplemented:
+            return True
+        return not res
 
 
 def maybe_schedule(s, relative=False, app=None):
@@ -693,12 +694,8 @@ class solar(schedule):
         self.method = self._methods[event]
         self.use_center = self._use_center_l[event]
 
-    def now(self):
-        return (self.nowfun or self.app.now)()
-
     def __reduce__(self):
-        return (self.__class__, (
-            self.event, self.lat, self.lon), None)
+        return self.__class__, (self.event, self.lat, self.lon)
 
     def __repr__(self):
         return '<solar: {0} at latitude {1}, longitude: {2}>'.format(
@@ -717,7 +714,7 @@ class solar(schedule):
                 self.ephem.Sun(),
                 start=last_run_at_utc, use_center=self.use_center,
             )
-        except self.ephem.CircumpolarError:
+        except self.ephem.CircumpolarError:  # pragma: no cover
             """Sun will not rise/set today. Check again tomorrow
             (specifically, after the next anti-transit)."""
             next_utc = (
@@ -752,4 +749,7 @@ class solar(schedule):
         return NotImplemented
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        res = self.__eq__(other)
+        if res is NotImplemented:
+            return True
+        return not res

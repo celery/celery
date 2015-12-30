@@ -6,7 +6,7 @@ from __future__ import absolute_import
 
 # Celery settings
 
-BROKER_URL = 'amqp://guest:guest@localhost//'
+CELERY_BROKER_URL = 'amqp://guest:guest@localhost//'
 
 #: Only add pickle to this list if your broker is secured
 #: from unwanted access (see userguide/security.html)
@@ -132,7 +132,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'kombu.transport.django.KombuAppConfig',
+    'kombu.transport.django',
     'demoapp',
     # Uncomment the next line to enable the admin:
     # 'django.contrib.admin',

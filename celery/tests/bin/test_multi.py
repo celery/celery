@@ -67,7 +67,7 @@ class test_NamespacedOptionParser(AppCase):
 
 class test_multi_args(AppCase):
 
-    @patch('socket.gethostname')
+    @patch('celery.bin.multi.gethostname')
     def test_parse(self, gethostname):
         gethostname.return_value = 'example.com'
         p = NamespacedOptionParser([
@@ -164,6 +164,11 @@ class test_MultiTool(AppCase):
         self.t.quiet = True
         self.t.note('hello world')
         self.assertFalse(self.fh.getvalue())
+
+    def test_carp(self):
+        self.t.say = Mock()
+        self.t.carp('foo')
+        self.t.say.assert_called_with('foo', True, self.t.stderr)
 
     def test_info(self):
         self.t.verbose = True
@@ -293,7 +298,7 @@ class test_MultiTool(AppCase):
         Pidfile.side_effect = pids
 
     @patch('celery.bin.multi.Pidfile')
-    @patch('socket.gethostname')
+    @patch('celery.bin.multi.gethostname')
     def test_getpids(self, gethostname, Pidfile):
         gethostname.return_value = 'e.com'
         self.prepare_pidfile_for_getpids(Pidfile)
@@ -331,7 +336,7 @@ class test_MultiTool(AppCase):
         nodes = self.t.getpids(p, 'celery worker', callback=None)
 
     @patch('celery.bin.multi.Pidfile')
-    @patch('socket.gethostname')
+    @patch('celery.bin.multi.gethostname')
     @patch('celery.bin.multi.sleep')
     def test_shutdown_nodes(self, slepp, gethostname, Pidfile):
         gethostname.return_value = 'e.com'
@@ -410,7 +415,7 @@ class test_MultiTool(AppCase):
         self.t.show(['foo', 'bar', 'baz'], 'celery worker')
         self.assertTrue(self.fh.getvalue())
 
-    @patch('socket.gethostname')
+    @patch('celery.bin.multi.gethostname')
     def test_get(self, gethostname):
         gethostname.return_value = 'e.com'
         self.t.get(['xuzzy@e.com', 'foo', 'bar', 'baz'], 'celery worker')
@@ -418,7 +423,7 @@ class test_MultiTool(AppCase):
         self.t.get(['foo@e.com', 'foo', 'bar', 'baz'], 'celery worker')
         self.assertTrue(self.fh.getvalue())
 
-    @patch('socket.gethostname')
+    @patch('celery.bin.multi.gethostname')
     def test_names(self, gethostname):
         gethostname.return_value = 'e.com'
         self.t.names(['foo', 'bar', 'baz'], 'celery worker')

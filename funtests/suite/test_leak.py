@@ -6,9 +6,6 @@ import sys
 import shlex
 import subprocess
 
-sys.path.insert(0, os.getcwd())
-sys.path.insert(0, os.path.join(os.getcwd(), os.pardir))
-
 from celery import current_app
 from celery.five import range
 from celery.tests.case import SkipTest, unittest
@@ -126,6 +123,7 @@ class test_leaks(LeakFunCase):
             self.assertFreed(its, task2.delay)
         finally:
             self.app.conf.BROKER_POOL_LIMIT = pool_limit
+
 
 if __name__ == '__main__':
     unittest.main()

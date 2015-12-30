@@ -3,18 +3,23 @@ from __future__ import absolute_import
 from contextlib import contextmanager
 
 from celery import states
-from celery.exceptions import IncompleteStream, TimeoutError
+from celery.exceptions import (
+    ImproperlyConfigured, IncompleteStream, TimeoutError,
+)
 from celery.five import range
 from celery.result import (
     AsyncResult,
     EagerResult,
-    TaskSetResult,
+    ResultSet,
     result_from_tuple,
+    assert_will_not_block,
 )
 from celery.utils import uuid
 from celery.utils.serialization import pickle
 
-from celery.tests.case import AppCase, Mock, depends_on_current_app, patch
+from celery.tests.case import (
+    AppCase, Mock, call, depends_on_current_app, patch,
+)
 
 
 def mock_task(name, state, result):
@@ -44,7 +49,8 @@ def make_mock_group(app, size=10):
 class test_AsyncResult(AppCase):
 
     def setup(self):
-        self.app.conf.CELERY_RESULT_SERIALIZER = 'pickle'
+        self.app.conf.result_cache_max = 100
+        self.app.conf.result_serializer = 'pickle'
         self.task1 = mock_task('task1', states.SUCCESS, 'the')
         self.task2 = mock_task('task2', states.SUCCESS, 'quick')
         self.task3 = mock_task('task3', states.FAILURE, KeyError('brown'))
@@ -58,11 +64,29 @@ class test_AsyncResult(AppCase):
             pass
         self.mytask = mytask
 
+    @patch('celery.result.task_join_will_block')
+    def test_assert_will_not_block(self, task_join_will_block):
+        task_join_will_block.return_value = True
+        with self.assertRaises(RuntimeError):
+            assert_will_not_block()
+        task_join_will_block.return_value = False
+        assert_will_not_block()
+
+    def test_without_id(self):
+        with self.assertRaises(ValueError):
+            AsyncResult(None, app=self.app)
+
     def test_compat_properties(self):
         x = self.app.AsyncResult('1')
         self.assertEqual(x.task_id, x.id)
         x.task_id = '2'
         self.assertEqual(x.id, '2')
+
+    @depends_on_current_app
+    def test_reduce_direct(self):
+        x = AsyncResult('1', app=self.app)
+        fun, args = x.__reduce__()
+        self.assertEqual(fun(*args), x)
 
     def test_children(self):
         x = self.app.AsyncResult('1')
@@ -151,13 +175,21 @@ class test_AsyncResult(AppCase):
 
     @depends_on_current_app
     def test_reduce(self):
-        a1 = self.app.AsyncResult('uuid', task_name=self.mytask.name)
+        a1 = self.app.AsyncResult('uuid')
         restored = pickle.loads(pickle.dumps(a1))
         self.assertEqual(restored.id, 'uuid')
-        self.assertEqual(restored.task_name, self.mytask.name)
 
         a2 = self.app.AsyncResult('uuid')
         self.assertEqual(pickle.loads(pickle.dumps(a2)).id, 'uuid')
+
+    def test_maybe_set_cache_empty(self):
+        self.app.AsyncResult('uuid')._maybe_set_cache(None)
+
+    def test_set_cache__children(self):
+        r1 = self.app.AsyncResult('id1')
+        r2 = self.app.AsyncResult('id2')
+        r1._set_cache({'children': [r2.as_tuple()]})
+        self.assertIn(r2, r1.children)
 
     def test_successful(self):
         ok_res = self.app.AsyncResult(self.task1['id'])
@@ -216,19 +248,43 @@ class test_AsyncResult(AppCase):
         pending_res = self.app.AsyncResult(uuid())
         self.assertFalse(pending_res.traceback)
 
+    def test_get__backend_gives_None(self):
+        res = self.app.AsyncResult(self.task1['id'])
+        res.backend.wait_for = Mock(name='wait_for')
+        res.backend.wait_for.return_value = None
+        self.assertIsNone(res.get())
+
     def test_get(self):
         ok_res = self.app.AsyncResult(self.task1['id'])
         ok2_res = self.app.AsyncResult(self.task2['id'])
         nok_res = self.app.AsyncResult(self.task3['id'])
         nok2_res = self.app.AsyncResult(self.task4['id'])
 
-        self.assertEqual(ok_res.get(), 'the')
+        callback = Mock(name='callback')
+
+        self.assertEqual(ok_res.get(callback=callback), 'the')
+        callback.assert_called_with(ok_res.id, 'the')
         self.assertEqual(ok2_res.get(), 'quick')
         with self.assertRaises(KeyError):
             nok_res.get()
         self.assertTrue(nok_res.get(propagate=False))
         self.assertIsInstance(nok2_res.result, KeyError)
         self.assertEqual(ok_res.info, 'the')
+
+    def test_eq_ne(self):
+        r1 = self.app.AsyncResult(self.task1['id'])
+        r2 = self.app.AsyncResult(self.task1['id'])
+        r3 = self.app.AsyncResult(self.task2['id'])
+        self.assertEqual(r1, r2)
+        self.assertNotEqual(r1, r3)
+        self.assertEqual(r1, r2.id)
+        self.assertNotEqual(r1, r3.id)
+
+    @depends_on_current_app
+    def test_reduce_restore(self):
+        r1 = self.app.AsyncResult(self.task1['id'])
+        fun, args = r1.__reduce__()
+        self.assertEqual(fun(*args), r1)
 
     def test_get_timeout(self):
         res = self.app.AsyncResult(self.task4['id'])  # has RETRY state
@@ -279,6 +335,29 @@ class test_ResultSet(AppCase):
         b.supports_native_join = True
         x.get()
         self.assertTrue(x.join_native.called)
+
+    def test_eq_ne(self):
+        g1 = self.app.ResultSet(
+            self.app.AsyncResult('id1'),
+            self.app.AsyncResult('id2'),
+        )
+        g2 = self.app.ResultSet(
+            self.app.AsyncResult('id1'),
+            self.app.AsyncResult('id2'),
+        )
+        g3 = self.app.ResultSet(
+            self.app.AsyncResult('id3'),
+            self.app.AsyncResult('id1'),
+        )
+        self.assertEqual(g1, g2)
+        self.assertNotEqual(g1, g3)
+        self.assertNotEqual(g1, object())
+
+    def test_takes_app_from_first_task(self):
+        x = ResultSet([self.app.AsyncResult('id1')])
+        self.assertIs(x.app, x.results[0].app)
+        x.app = self.app
+        self.assertIs(x.app, self.app)
 
     def test_get_empty(self):
         x = self.app.ResultSet([])
@@ -409,31 +488,6 @@ class SimpleBackend(object):
                     for i, id in enumerate(self.ids))
 
 
-class test_TaskSetResult(AppCase):
-
-    def setup(self):
-        self.size = 10
-        self.ts = TaskSetResult(uuid(), make_mock_group(self.app, self.size))
-
-    def test_total(self):
-        self.assertEqual(self.ts.total, self.size)
-
-    def test_compat_properties(self):
-        self.assertEqual(self.ts.taskset_id, self.ts.id)
-        self.ts.taskset_id = 'foo'
-        self.assertEqual(self.ts.taskset_id, 'foo')
-
-    def test_compat_subtasks_kwarg(self):
-        x = TaskSetResult(uuid(), subtasks=[1, 2, 3])
-        self.assertEqual(x.results, [1, 2, 3])
-
-    def test_itersubtasks(self):
-        it = self.ts.itersubtasks()
-
-        for i, t in enumerate(it):
-            self.assertEqual(t.get(), i)
-
-
 class test_GroupResult(AppCase):
 
     def setup(self):
@@ -449,6 +503,24 @@ class test_GroupResult(AppCase):
         ts2 = self.app.GroupResult(uuid(), [self.app.AsyncResult(uuid())])
         self.assertEqual(pickle.loads(pickle.dumps(ts2)), ts2)
 
+    @depends_on_current_app
+    def test_reduce(self):
+        ts = self.app.GroupResult(uuid(), [self.app.AsyncResult(uuid())])
+        fun, args = ts.__reduce__()
+        ts2 = fun(*args)
+        self.assertEqual(ts2.id, ts.id)
+        self.assertEqual(ts, ts2)
+
+    def test_eq_ne(self):
+        ts = self.app.GroupResult(uuid(), [self.app.AsyncResult(uuid())])
+        ts2 = self.app.GroupResult(ts.id, ts.results)
+        ts3 = self.app.GroupResult(uuid(), [self.app.AsyncResult(uuid())])
+        ts4 = self.app.GroupResult(ts.id, [self.app.AsyncResult(uuid())])
+        self.assertEqual(ts, ts2)
+        self.assertNotEqual(ts, ts3)
+        self.assertNotEqual(ts, ts4)
+        self.assertNotEqual(ts, object())
+
     def test_len(self):
         self.assertEqual(len(self.ts), self.size)
 
@@ -456,7 +528,7 @@ class test_GroupResult(AppCase):
         self.assertFalse(self.ts == 1)
 
     @depends_on_current_app
-    def test_reduce(self):
+    def test_pickleable(self):
         self.assertTrue(pickle.loads(pickle.dumps(self.ts)))
 
     def test_iterate_raises(self):
@@ -488,8 +560,8 @@ class test_GroupResult(AppCase):
         ts.save()
         with self.assertRaises(AttributeError):
             ts.save(backend=object())
-        self.assertEqual(self.app.GroupResult.restore(ts.id).subtasks,
-                         ts.subtasks)
+        self.assertEqual(self.app.GroupResult.restore(ts.id).results,
+                         ts.results)
         ts.delete()
         self.assertIsNone(self.app.GroupResult.restore(ts.id))
         with self.assertRaises(AttributeError):
@@ -497,13 +569,18 @@ class test_GroupResult(AppCase):
 
     def test_join_native(self):
         backend = SimpleBackend()
-        subtasks = [self.app.AsyncResult(uuid(), backend=backend)
-                    for i in range(10)]
-        ts = self.app.GroupResult(uuid(), subtasks)
+        results = [self.app.AsyncResult(uuid(), backend=backend)
+                   for i in range(10)]
+        ts = self.app.GroupResult(uuid(), results)
         ts.app.backend = backend
-        backend.ids = [subtask.id for subtask in subtasks]
+        backend.ids = [result.id for result in results]
         res = ts.join_native()
         self.assertEqual(res, list(range(10)))
+        callback = Mock(name='callback')
+        self.assertFalse(ts.join_native(callback=callback))
+        callback.assert_has_calls([
+            call(r.id, i) for i, r in enumerate(ts.results)
+        ])
 
     def test_join_native_raises(self):
         ts = self.app.GroupResult(uuid(), [self.app.AsyncResult(uuid())])
@@ -535,11 +612,11 @@ class test_GroupResult(AppCase):
 
     def test_iter_native(self):
         backend = SimpleBackend()
-        subtasks = [self.app.AsyncResult(uuid(), backend=backend)
-                    for i in range(10)]
-        ts = self.app.GroupResult(uuid(), subtasks)
+        results = [self.app.AsyncResult(uuid(), backend=backend)
+                   for i in range(10)]
+        ts = self.app.GroupResult(uuid(), results)
         ts.app.backend = backend
-        backend.ids = [subtask.id for subtask in subtasks]
+        backend.ids = [result.id for result in results]
         self.assertEqual(len(list(ts.iter_native())), 10)
 
     def test_iterate_yields(self):
@@ -572,6 +649,9 @@ class test_GroupResult(AppCase):
         ar4.get = Mock()
         ts2 = self.app.GroupResult(uuid(), [ar4])
         self.assertTrue(ts2.join(timeout=0.1))
+        callback = Mock(name='callback')
+        self.assertFalse(ts2.join(timeout=0.1, callback=callback))
+        callback.assert_called_with(ar4.id, ar4.get())
 
     def test_iter_native_when_empty_group(self):
         ts = self.app.GroupResult(uuid(), [])
@@ -596,6 +676,15 @@ class test_GroupResult(AppCase):
     def test_failed(self):
         self.assertFalse(self.ts.failed())
 
+    def test_maybe_reraise(self):
+        self.ts.results = [Mock(name='r1')]
+        self.ts.maybe_reraise()
+        self.ts.results[0].maybe_reraise.assert_called_with()
+
+    def test_join__on_message(self):
+        with self.assertRaises(ImproperlyConfigured):
+            self.ts.join(on_message=Mock())
+
     def test_waiting(self):
         self.assertFalse(self.ts.waiting())
 
@@ -618,13 +707,13 @@ class test_pending_AsyncResult(AppCase):
 class test_failed_AsyncResult(test_GroupResult):
 
     def setup(self):
-        self.app.conf.CELERY_RESULT_SERIALIZER = 'pickle'
+        self.app.conf.result_serializer = 'pickle'
         self.size = 11
-        subtasks = make_mock_group(self.app, 10)
+        results = make_mock_group(self.app, 10)
         failed = mock_task('ts11', states.FAILURE, KeyError('Baz'))
         save_result(self.app, failed)
         failed_res = self.app.AsyncResult(failed['id'])
-        self.ts = self.app.GroupResult(uuid(), subtasks + [failed_res])
+        self.ts = self.app.GroupResult(uuid(), results + [failed_res])
 
     def test_completed_count(self):
         self.assertEqual(self.ts.completed_count(), len(self.ts) - 1)

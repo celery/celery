@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from celery.utils.mail import Message, Mailer, SSLError
+from celery.utils.mail import Message, Mailer, SSLError, ErrorMail
 
 from celery.tests.case import Case, Mock, patch
 
@@ -46,8 +46,38 @@ class test_Mailer(Case):
         mailer = Mailer(use_ssl=False, use_tls=False)
         mailer._send(msg)
 
-        client.sendmail.assert_called_With(msg.sender, msg.to, str(msg))
+        client.sendmail.assert_called_with(msg.sender, msg.to, str(msg))
 
         client.quit.side_effect = SSLError()
         mailer._send(msg)
         client.close.assert_called_with()
+
+
+class test_ErrorMail(Case):
+
+    def setUp(self):
+        self.task = Mock(name='task')
+        self.mailer = ErrorMail(
+            self.task, subject='foo{foo} ', body='bar{bar} ',
+        )
+
+    def test_should_send(self):
+        self.assertTrue(self.mailer.should_send(Mock(), Mock()))
+
+    def test_format_subject(self):
+        self.assertEqual(
+            self.mailer.format_subject({'foo': 'FOO'}),
+            'fooFOO',
+        )
+
+    def test_format_body(self):
+        self.assertEqual(
+            self.mailer.format_body({'bar': 'BAR'}),
+            'barBAR',
+        )
+
+    def test_send(self):
+        self.mailer.send({'foo': 'FOO', 'bar': 'BAR'}, KeyError())
+        self.task.app.mail_admins.assert_called_with(
+            'fooFOO', 'barBAR', fail_silently=True,
+        )

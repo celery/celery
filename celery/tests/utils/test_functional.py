@@ -1,20 +1,37 @@
 from __future__ import absolute_import
 
 import pickle
+import sys
+
+from itertools import count
 
 from kombu.utils.functional import lazy
 
 from celery.five import THREAD_TIMEOUT_MAX, items, range, nextfun
 from celery.utils.functional import (
+    DummyContext,
     LRUCache,
+    head_from_fun,
     firstmethod,
     first,
+    maybe_list,
+    memoize,
     mlazy,
     padlist,
-    maybe_list,
+    regen,
 )
 
-from celery.tests.case import Case
+from celery.tests.case import Case, SkipTest
+
+
+class test_DummyContext(Case):
+
+    def test_context(self):
+        with DummyContext():
+            pass
+        with self.assertRaises(KeyError):
+            with DummyContext():
+                raise KeyError()
 
 
 class test_LRUCache(Case):
@@ -62,7 +79,14 @@ class test_LRUCache(Case):
         x[7] = 7
         self.assertEqual(list(x.keys()), [3, 6, 7])
 
+    def test_update_larger_than_cache_size(self):
+        x = LRUCache(2)
+        x.update({x: x for x in range(100)})
+        self.assertEqual(list(x.keys()), [98, 99])
+
     def assertSafeIter(self, method, interval=0.01, size=10000):
+        if sys.version_info >= (3, 5):
+            raise SkipTest('Fails on Py3.5')
         from threading import Thread, Event
         from time import sleep
         x = LRUCache(size)
@@ -168,6 +192,24 @@ class test_utils(Case):
         self.assertIsNone(maybe_list(None))
 
 
+class test_memoize(Case):
+
+    def test_memoize(self):
+        counter = count(1)
+
+        @memoize(maxsize=2)
+        def x(i):
+            return next(counter)
+
+        self.assertEqual(x(1), 1)
+        self.assertEqual(x(1), 1)
+        self.assertEqual(x(2), 2)
+        self.assertEqual(x(3), 3)
+        self.assertEqual(x(1), 4)
+        x.clear()
+        self.assertEqual(x(3), 5)
+
+
 class test_mlazy(Case):
 
     def test_is_memoized(self):
@@ -178,3 +220,74 @@ class test_mlazy(Case):
         self.assertTrue(p.evaluated)
         self.assertEqual(p(), 20)
         self.assertEqual(repr(p), '20')
+
+
+class test_regen(Case):
+
+    def test_regen_list(self):
+        l = [1, 2]
+        r = regen(iter(l))
+        self.assertIs(regen(l), l)
+        self.assertEqual(r, l)
+        self.assertEqual(r, l)
+        self.assertEqual(r.__length_hint__(), 0)
+
+        fun, args = r.__reduce__()
+        self.assertEqual(fun(*args), l)
+
+    def test_regen_gen(self):
+        g = regen(iter(list(range(10))))
+        self.assertEqual(g[7], 7)
+        self.assertEqual(g[6], 6)
+        self.assertEqual(g[5], 5)
+        self.assertEqual(g[4], 4)
+        self.assertEqual(g[3], 3)
+        self.assertEqual(g[2], 2)
+        self.assertEqual(g[1], 1)
+        self.assertEqual(g[0], 0)
+        self.assertEqual(g.data, list(range(10)))
+        self.assertEqual(g[8], 8)
+        self.assertEqual(g[0], 0)
+        g = regen(iter(list(range(10))))
+        self.assertEqual(g[0], 0)
+        self.assertEqual(g[1], 1)
+        self.assertEqual(g.data, list(range(10)))
+        g = regen(iter([1]))
+        self.assertEqual(g[0], 1)
+        with self.assertRaises(IndexError):
+            g[1]
+        self.assertEqual(g.data, [1])
+
+        g = regen(iter(list(range(10))))
+        self.assertEqual(g[-1], 9)
+        self.assertEqual(g[-2], 8)
+        self.assertEqual(g[-3], 7)
+        self.assertEqual(g[-4], 6)
+        self.assertEqual(g[-5], 5)
+        self.assertEqual(g[5], 5)
+        self.assertEqual(g.data, list(range(10)))
+
+        self.assertListEqual(list(iter(g)), list(range(10)))
+
+
+class test_head_from_fun(Case):
+
+    def test_from_cls(self):
+        class X(object):
+            def __call__(x, y, kwarg=1):
+                pass
+
+        g = head_from_fun(X())
+        with self.assertRaises(TypeError):
+            g(1)
+        g(1, 2)
+        g(1, 2, kwarg=3)
+
+    def test_from_fun(self):
+        def f(x, y, kwarg=1):
+            pass
+        g = head_from_fun(f)
+        with self.assertRaises(TypeError):
+            g(1)
+        g(1, 2)
+        g(1, 2, kwarg=3)

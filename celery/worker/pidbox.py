@@ -7,6 +7,7 @@ from kombu.common import ignore_errors
 from kombu.utils.encoding import safe_str
 
 from celery.datastructures import AttributeDict
+from celery.utils.functional import pass1
 from celery.utils.log import get_logger
 
 from . import control
@@ -26,7 +27,11 @@ class Pidbox(object):
         self.node = c.app.control.mailbox.Node(
             safe_str(c.hostname),
             handlers=control.Panel.data,
-            state=AttributeDict(app=c.app, hostname=c.hostname, consumer=c),
+            state=AttributeDict(
+                app=c.app,
+                hostname=c.hostname,
+                consumer=c,
+                tset=pass1 if c.controller.use_eventloop else set),
         )
         self._forward_clock = self.c.app.clock.forward
 

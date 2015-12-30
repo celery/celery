@@ -145,6 +145,12 @@ class ScheduleEntry(object):
 
     def __lt__(self, other):
         if isinstance(other, ScheduleEntry):
+            # How the object is ordered doesn't really matter, as
+            # in the scheduler heap, the order is decided by the
+            # preceding members of the tuple ``(time, priority, entry)``.
+            #
+            # If all that is left to order on is the entry then it can
+            # just as well be random.
             return id(self) < id(other)
         return NotImplemented
 
@@ -185,20 +191,20 @@ class Scheduler(object):
                  Producer=None, lazy=False, sync_every_tasks=None, **kwargs):
         self.app = app
         self.data = maybe_evaluate({} if schedule is None else schedule)
-        self.max_interval = (max_interval
-                             or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
-                             or self.max_interval)
+        self.max_interval = (max_interval or
+                             app.conf.beat_max_loop_interval or
+                             self.max_interval)
         self.Producer = Producer or app.amqp.Producer
         self._heap = None
         self.sync_every_tasks = (
-            app.conf.CELERYBEAT_SYNC_EVERY if sync_every_tasks is None
+            app.conf.beat_sync_every if sync_every_tasks is None
             else sync_every_tasks)
         if not lazy:
             self.setup_schedule()
 
     def install_default_entries(self, data):
         entries = {}
-        if self.app.conf.CELERY_TASK_RESULT_EXPIRES and \
+        if self.app.conf.result_expires and \
                 not self.app.backend.supports_autoexpire:
             if 'celery.backend_cleanup' not in data:
                 entries['celery.backend_cleanup'] = {
@@ -236,8 +242,8 @@ class Scheduler(object):
         """
 
         def _when(entry, next_time_to_run):
-            return (mktime(entry.schedule.now().timetuple())
-                    + (adjust(next_time_to_run) or 0))
+            return (mktime(entry.schedule.now().timetuple()) +
+                    (adjust(next_time_to_run) or 0))
 
         adjust = self.adjust
         max_interval = self.max_interval
@@ -363,7 +369,7 @@ class Scheduler(object):
                   'Trying again in %s seconds...', exc, interval)
 
         return self.connection.ensure_connection(
-            _error_handler, self.app.conf.BROKER_CONNECTION_MAX_RETRIES
+            _error_handler, self.app.conf.broker_connection_max_retries
         )
 
     def get_schedule(self):
@@ -375,7 +381,7 @@ class Scheduler(object):
 
     @cached_property
     def connection(self):
-        return self.app.connection()
+        return self.app.connection_for_write()
 
     @cached_property
     def producer(self):
@@ -401,22 +407,31 @@ class PersistentScheduler(Scheduler):
             with platforms.ignore_errno(errno.ENOENT):
                 os.remove(self.schedule_filename + suffix)
 
+    def _open_schedule(self):
+        return self.persistence.open(self.schedule_filename, writeback=True)
+
+    def _destroy_open_corrupted_schedule(self, exc):
+        error('Removing corrupted schedule file %r: %r',
+              self.schedule_filename, exc, exc_info=True)
+        self._remove_db()
+        return self._open_schedule()
+
     def setup_schedule(self):
         try:
-            self._store = self.persistence.open(self.schedule_filename,
-                                                writeback=True)
+            self._store = self._open_schedule()
         except Exception as exc:
-            error('Removing corrupted schedule file %r: %r',
-                  self.schedule_filename, exc, exc_info=True)
-            self._remove_db()
-            self._store = self.persistence.open(self.schedule_filename,
-                                                writeback=True)
-        else:
+            self._store = self._destroy_open_corrupted_schedule(exc)
+
+        for _ in (1, 2):
             try:
                 self._store['entries']
             except KeyError:
                 # new schedule db
-                self._store['entries'] = {}
+                try:
+                    self._store['entries'] = {}
+                except KeyError as exc:
+                    self._store = self._destroy_open_corrupted_schedule(exc)
+                    continue
             else:
                 if '__version__' not in self._store:
                     warning('DB Reset: Account for new __version__ field')
@@ -427,13 +442,14 @@ class PersistentScheduler(Scheduler):
                 elif 'utc_enabled' not in self._store:
                     warning('DB Reset: Account for new utc_enabled field')
                     self._store.clear()   # remove schedule at 3.0.9 upgrade
+            break
 
-        tz = self.app.conf.CELERY_TIMEZONE
+        tz = self.app.conf.timezone
         stored_tz = self._store.get('tz')
         if stored_tz is not None and stored_tz != tz:
             warning('Reset: Timezone changed from %r to %r', stored_tz, tz)
             self._store.clear()   # Timezone changed, reset db!
-        utc = self.app.conf.CELERY_ENABLE_UTC
+        utc = self.app.conf.enable_utc
         stored_utc = self._store.get('utc_enabled')
         if stored_utc is not None and stored_utc != utc:
             choices = {True: 'enabled', False: 'disabled'}
@@ -441,7 +457,7 @@ class PersistentScheduler(Scheduler):
                     choices[stored_utc], choices[utc])
             self._store.clear()   # UTC setting changed, reset db!
         entries = self._store.setdefault('entries', {})
-        self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
+        self.merge_inplace(self.app.conf.beat_schedule)
         self.install_default_entries(self.schedule)
         self._store.update(__version__=__version__, tz=tz, utc_enabled=utc)
         self.sync()
@@ -474,11 +490,11 @@ class Service(object):
     def __init__(self, app, max_interval=None, schedule_filename=None,
                  scheduler_cls=None):
         self.app = app
-        self.max_interval = (max_interval
-                             or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL)
+        self.max_interval = (max_interval or
+                             app.conf.beat_max_loop_interval)
         self.scheduler_cls = scheduler_cls or self.scheduler_cls
         self.schedule_filename = (
-            schedule_filename or app.conf.CELERYBEAT_SCHEDULE_FILENAME)
+            schedule_filename or app.conf.beat_schedule_filename)
 
         self._is_shutdown = Event()
         self._is_stopped = Event()
@@ -504,6 +520,8 @@ class Service(object):
                     debug('beat: Waking up %s.',
                           humanize_seconds(interval, prefix='in '))
                     time.sleep(interval)
+                    if self.scheduler.should_sync():
+                        self.scheduler._do_sync()
         except (KeyboardInterrupt, SystemExit):
             self._is_shutdown.set()
         finally:

@@ -19,9 +19,11 @@ from celery import bootsteps
 from celery._state import _set_task_join_will_block
 from celery.exceptions import ImproperlyConfigured
 from celery.five import string_t
+from celery.platforms import IS_WINDOWS
 from celery.utils.log import worker_logger as logger
 
-__all__ = ['Timer', 'Hub', 'Queues', 'Pool', 'Beat', 'StateDB', 'Consumer']
+
+__all__ = ['Timer', 'Hub', 'Pool', 'Beat', 'StateDB', 'Consumer']
 
 ERR_B_GREEN = """\
 -B option doesn't work with eventlet/gevent pools: \
@@ -29,7 +31,7 @@ use standalone beat instead.\
 """
 
 W_POOL_SETTING = """
-The CELERYD_POOL setting should not be used to select the eventlet/gevent
+The worker_pool setting should not be used to select the eventlet/gevent
 pools, instead you *must use the -P* argument so that patches are applied
 as early as possible.
 """
@@ -60,7 +62,7 @@ class Timer(bootsteps.Step):
 
 
 class Hub(bootsteps.StartStopStep):
-    requires = (Timer, )
+    requires = (Timer,)
 
     def __init__(self, w, **kwargs):
         w.hub = None
@@ -71,7 +73,9 @@ class Hub(bootsteps.StartStopStep):
     def create(self, w):
         w.hub = get_event_loop()
         if w.hub is None:
-            w.hub = set_event_loop(_Hub(w.timer))
+            required_hub = getattr(w._conninfo, 'requires_hub', None)
+            w.hub = set_event_loop((
+                required_hub if required_hub else _Hub)(w.timer))
         self._patch_thread_primitives(w)
         return self
 
@@ -90,23 +94,10 @@ class Hub(bootsteps.StartStopStep):
         # multiprocessing's ApplyResult uses this lock.
         try:
             from billiard import pool
-        except ImportError:
+        except ImportError:  # pragma: no cover
             pass
         else:
             pool.Lock = DummyLock
-
-
-class Queues(bootsteps.Step):
-    """This bootstep initializes the internal queues
-    used by the worker."""
-    label = 'Queues (intra)'
-    requires = (Hub, )
-
-    def create(self, w):
-        w.process_task = w._process_task
-        if w.use_eventloop:
-            if w.pool_putlocks and w.pool_cls.uses_semaphore:
-                w.process_task = w._process_task_sem
 
 
 class Pool(bootsteps.StartStopStep):
@@ -123,7 +114,7 @@ class Pool(bootsteps.StartStopStep):
         * min_concurrency
 
     """
-    requires = (Queues, )
+    requires = (Hub,)
 
     def __init__(self, w, autoscale=None, autoreload=None,
                  no_execv=False, optimization=None, **kwargs):
@@ -148,22 +139,27 @@ class Pool(bootsteps.StartStopStep):
         if w.pool:
             w.pool.terminate()
 
-    def create(self, w, semaphore=None, max_restarts=None):
-        if w.app.conf.CELERYD_POOL in ('eventlet', 'gevent'):
+    def create(self, w, semaphore=None, max_restarts=None,
+               green_pools={'eventlet', 'gevent'}):
+        if w.app.conf.worker_pool in green_pools:  # pragma: no cover
             warnings.warn(UserWarning(W_POOL_SETTING))
-        threaded = not w.use_eventloop
+        threaded = not w.use_eventloop or IS_WINDOWS
         procs = w.min_concurrency
         forking_enable = w.no_execv if w.force_execv else True
+        w.process_task = w._process_task
         if not threaded:
             semaphore = w.semaphore = LaxBoundedSemaphore(procs)
             w._quick_acquire = w.semaphore.acquire
             w._quick_release = w.semaphore.release
             max_restarts = 100
+            if w.pool_putlocks and w.pool_cls.uses_semaphore:
+                w.process_task = w._process_task_sem
         allow_restart = self.autoreload_enabled or w.pool_restarts
         pool = w.pool = self.instantiate(
             w.pool_cls, w.min_concurrency,
             initargs=(w.app, w.hostname),
             maxtasksperchild=w.max_tasks_per_child,
+            max_memory_per_child=w.max_memory_per_child,
             timeout=w.task_time_limit,
             soft_timeout=w.task_soft_time_limit,
             putlocks=w.pool_putlocks and threaded,
@@ -174,6 +170,7 @@ class Pool(bootsteps.StartStopStep):
             forking_enable=forking_enable,
             semaphore=semaphore,
             sched_strategy=self.optimization,
+            app=w.app,
         )
         _set_task_join_will_block(pool.task_join_will_block)
         return pool

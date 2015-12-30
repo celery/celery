@@ -46,6 +46,9 @@ If your broker supports fine-grained access control, like RabbitMQ,
 this is something you should look at enabling. See for example
 http://www.rabbitmq.com/access-control.html.
 
+If supported by your broker backend, you can enable end-to-end SSL encryption
+and authentication using :setting:`broker_use_ssl`.
+
 Client
 ------
 
@@ -101,7 +104,7 @@ unauthenticated.
 .. [*] http://nadiana.com/python-pickle-insecure
 
 You can disable untrusted content by specifying
-a white-list of accepted content-types in the :setting:`CELERY_ACCEPT_CONTENT`
+a white-list of accepted content-types in the :setting:`accept_content`
 setting:
 
 .. versionadded:: 3.0.18
@@ -114,7 +117,7 @@ setting:
 
 .. code-block:: python
 
-    CELERY_ACCEPT_CONTENT = ['json']
+    accept_content = ['json']
 
 
 This accepts a list of serializer names and content-types, so you could
@@ -122,7 +125,7 @@ also specify the content type for json:
 
 .. code-block:: python
 
-    CELERY_ACCEPT_CONTENT = ['application/json']
+    accept_content = ['application/json']
 
 Celery also comes with a special `auth` serializer that validates
 communication between Celery clients and workers, making sure
@@ -148,12 +151,12 @@ and then later verified by the worker using a public certificate.
 Optimally certificates should be signed by an official
 `Certificate Authority`_, but they can also be self-signed.
 
-To enable this you should configure the :setting:`CELERY_TASK_SERIALIZER`
+To enable this you should configure the :setting:`task_serializer`
 setting to use the `auth` serializer.
 Also required is configuring the
 paths used to locate private keys and certificates on the file-system:
-the :setting:`CELERY_SECURITY_KEY`,
-:setting:`CELERY_SECURITY_CERTIFICATE` and :setting:`CELERY_SECURITY_CERT_STORE`
+the :setting:`security_key`,
+:setting:`security_certificate` and :setting:`security_cert_store`
 settings respectively.
 With these configured it is also necessary to call the
 :func:`celery.setup_security` function.  Note that this will also
@@ -165,11 +168,13 @@ with the private key and certificate files located in `/etc/ssl`.
 
 .. code-block:: python
 
-    CELERY_SECURITY_KEY = '/etc/ssl/private/worker.key'
-    CELERY_SECURITY_CERTIFICATE = '/etc/ssl/certs/worker.pem'
-    CELERY_SECURITY_CERT_STORE = '/etc/ssl/certs/*.pem'
-    from celery.security import setup_security
-    setup_security()
+    app = Celery()
+    app.conf.update(
+        security_key='/etc/ssl/private/worker.key'
+        security_certificate='/etc/ssl/certs/worker.pem'
+        security_cert_store='/etc/ssl/certs/*.pem',
+    )
+    app.setup_security()
 
 .. note::
 
@@ -197,7 +202,7 @@ Logs are usually the first place to look for evidence
 of security breaches, but they are useless if they can be tampered with.
 
 A good solution is to set up centralized logging with a dedicated logging
-server. Acess to it should be restricted.
+server. Access to it should be restricted.
 In addition to having all of the logs in a single place, if configured
 correctly, it can make it harder for intruders to tamper with your logs.
 

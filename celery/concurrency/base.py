@@ -74,13 +74,14 @@ class BasePool(object):
     task_join_will_block = True
     body_can_be_buffer = False
 
-    def __init__(self, limit=None, putlocks=True,
-                 forking_enable=True, callbacks_propagate=(), **options):
+    def __init__(self, limit=None, putlocks=True, forking_enable=True,
+                 callbacks_propagate=(), app=None, **options):
         self.limit = limit
         self.putlocks = putlocks
         self.options = options
         self.forking_enable = forking_enable
         self.callbacks_propagate = callbacks_propagate
+        self.app = app
 
     def on_start(self):
         pass

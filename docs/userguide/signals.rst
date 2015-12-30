@@ -10,7 +10,7 @@ Signals
 Signals allows decoupled applications to receive notifications when
 certain actions occur elsewhere in the application.
 
-Celery ships with many signals that you application can hook into
+Celery ships with many signals that your application can hook into
 to augment behavior of certain actions.
 
 .. _signal-basics:
@@ -300,6 +300,53 @@ Provides arguments:
 * expired
   Set to :const:`True` if the task expired.
 
+.. signal:: task_unknown
+
+task_unknown
+~~~~~~~~~~~~
+
+Dispatched when a worker receives a message for a task that is not registered.
+
+Sender is the worker :class:`~celery.worker.consumer.Consumer`.
+
+Provides arguments:
+
+* name
+
+  Name of task not found in registry.
+
+* id
+
+  The task id found in the message.
+
+* message
+
+    Raw message object.
+
+* exc
+
+    The error that occurred.
+
+.. signal:: task_rejected
+
+task_rejected
+~~~~~~~~~~~~~
+
+Dispatched when a worker receives an unknown type of message to one of its
+task queues.
+
+Sender is the worker :class:`~celery.worker.consumer.Consumer`.
+
+Provides arguments:
+
+* message
+
+  Raw message object.
+
+* exc
+
+    The error that occurred (if any).
+
 App Signals
 -----------
 
@@ -309,7 +356,7 @@ import_modules
 ~~~~~~~~~~~~~~
 
 This signal is sent when a program (worker, beat, shell) etc, asks
-for modules in the :setting:`CELERY_INCLUDE` and :setting:`CELERY_IMPORTS`
+for modules in the :setting:`include` and :setting:`imports`
 settings to be imported.
 
 Sender is the app instance.
@@ -369,7 +416,7 @@ to setup worker specific configuration:
 
     @celeryd_init.connect(sender='worker12@example.com')
     def configure_worker12(conf=None, **kwargs):
-        conf.CELERY_DEFAULT_RATE_LIMIT = '10/m'
+        conf.task_default_rate_limit = '10/m'
 
 or to set up configuration for multiple workers you can omit specifying a
 sender when you connect:
@@ -381,9 +428,9 @@ sender when you connect:
     @celeryd_init.connect
     def configure_workers(sender=None, conf=None, **kwargs):
         if sender in ('worker1@example.com', 'worker2@example.com'):
-            conf.CELERY_DEFAULT_RATE_LIMIT = '10/m'
+            conf.task_default_rate_limit = '10/m'
         if sender == 'worker3@example.com':
-            conf.CELERYD_PREFETCH_MULTIPLIER = 0
+            conf.worker_prefetch_multiplier = 0
 
 Provides arguments:
 

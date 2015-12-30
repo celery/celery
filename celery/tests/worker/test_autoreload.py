@@ -18,7 +18,7 @@ from celery.worker.autoreload import (
     Autoreloader,
 )
 
-from celery.tests.case import AppCase, Case, Mock, SkipTest, patch, mock_open
+from celery.tests.case import AppCase, Case, Mock, patch, mock_open
 
 
 class test_WorkerComponent(AppCase):
@@ -75,6 +75,7 @@ class test_BaseMonitor(Case):
         x._on_change = Mock()
         x.on_change('foo')
         x._on_change.assert_called_with('foo')
+        x.on_event_loop_close(Mock())
 
 
 class test_StatMonitor(Case):
@@ -99,6 +100,12 @@ class test_StatMonitor(Case):
         stat.side_effect = OSError()
         x.start()
 
+    def test_register_with_event_loop(self):
+        hub = Mock(name='hub')
+        x = StatMonitor(['a'])
+        x.register_with_event_loop(hub)
+        hub.call_repeatedly.assert_called_with(2.0, x.find_changes)
+
     @patch('os.stat')
     def test_mtime_stat_raises(self, stat):
         stat.side_effect = ValueError()
@@ -122,10 +129,8 @@ class test_KQueueMonitor(Case):
         close.side_effect.errno = errno.EBADF
         x.stop()
 
-    def test_register_with_event_loop(self):
-        from kombu.utils import eventio
-        if eventio.kqueue is None:
-            raise SkipTest('version of kombu does not work with pypy')
+    @patch('kombu.utils.eventio.kqueue', create=True)
+    def test_register_with_event_loop(self, kqueue):
         x = KQueueMonitor(['a', 'b'])
         hub = Mock(name='hub')
         x.add_events = Mock(name='add_events()')
@@ -135,6 +140,15 @@ class test_KQueueMonitor(Case):
             x._kq.on_file_change,
             x.handle_event,
         )
+
+    def test_register_with_event_loop_no_kqueue(self):
+        from kombu.utils import eventio
+        prev, eventio.kqueue = eventio.kqueue, None
+        try:
+            x = KQueueMonitor(['a'])
+            x.register_with_event_loop(Mock())
+        finally:
+            eventio.kqueue = prev
 
     def test_on_event_loop_close(self):
         x = KQueueMonitor(['a', 'b'])
@@ -201,21 +215,34 @@ class test_InotifyMonitor(Case):
 
     @patch('celery.worker.autoreload.pyinotify')
     def test_start(self, inotify):
-            x = InotifyMonitor(['a'])
-            inotify.IN_MODIFY = 1
-            inotify.IN_ATTRIB = 2
+        x = InotifyMonitor(['a'])
+        inotify.IN_MODIFY = 1
+        inotify.IN_ATTRIB = 2
+        x.start()
+
+        inotify.WatchManager.side_effect = ValueError()
+        with self.assertRaises(ValueError):
             x.start()
+        x.stop()
 
-            inotify.WatchManager.side_effect = ValueError()
-            with self.assertRaises(ValueError):
-                x.start()
-            x.stop()
+        x._on_change = None
+        x.process_(Mock())
+        x._on_change = Mock()
+        x.process_(Mock())
+        self.assertTrue(x._on_change.called)
 
-            x._on_change = None
-            x.process_(Mock())
-            x._on_change = Mock()
-            x.process_(Mock())
-            self.assertTrue(x._on_change.called)
+        x.create_notifier = Mock()
+        x._wm = Mock()
+        hub = Mock()
+        x.register_with_event_loop(hub)
+        x.create_notifier.assert_called_with()
+        hub.add_reader.assert_called_with(x._wm.get_fd(), x.on_readable)
+
+        x.on_event_loop_close(hub)
+        x._notifier = Mock()
+        x.on_readable()
+        x._notifier.read_events.assert_called_with()
+        x._notifier.process_events.assert_called_with()
 
 
 class test_default_implementation(Case):

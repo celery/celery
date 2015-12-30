@@ -14,7 +14,6 @@ import errno
 import kombu
 import logging
 import os
-import socket
 
 from collections import defaultdict
 from functools import partial
@@ -22,6 +21,7 @@ from heapq import heappush
 from operator import itemgetter
 from time import sleep
 
+from amqp.promise import ppartial, promise
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.async.semaphore import DummyLock
@@ -32,9 +32,11 @@ from kombu.utils.encoding import safe_repr, bytes_t
 from kombu.utils.limits import TokenBucket
 
 from celery import bootsteps
+from celery import signals
 from celery.app.trace import build_tracer
 from celery.canvas import signature
-from celery.exceptions import InvalidTaskError
+from celery.exceptions import InvalidTaskError, NotRegistered
+from celery.utils import gethostname
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
@@ -171,21 +173,21 @@ class Consumer(object):
         self.app = app
         self.controller = controller
         self.init_callback = init_callback
-        self.hostname = hostname or socket.gethostname()
+        self.hostname = hostname or gethostname()
         self.pid = os.getpid()
         self.pool = pool
         self.timer = timer
         self.strategies = self.Strategies()
-        conninfo = self.app.connection()
-        self.connection_errors = conninfo.connection_errors
-        self.channel_errors = conninfo.channel_errors
+        self.conninfo = self.app.connection_for_read()
+        self.connection_errors = self.conninfo.connection_errors
+        self.channel_errors = self.conninfo.channel_errors
         self._restart_state = restart_state(maxR=5, maxT=1)
 
         self._does_info = logger.isEnabledFor(logging.INFO)
         self._limit_order = 0
         self.on_task_request = on_task_request
         self.on_task_message = set()
-        self.amqheartbeat_rate = self.app.conf.BROKER_HEARTBEAT_CHECKRATE
+        self.amqheartbeat_rate = self.app.conf.broker_heartbeat_checkrate
         self.disable_rate_limits = disable_rate_limits
         self.initial_prefetch_count = initial_prefetch_count
         self.prefetch_multiplier = prefetch_multiplier
@@ -199,7 +201,7 @@ class Consumer(object):
         if self.hub:
             self.amqheartbeat = amqheartbeat
             if self.amqheartbeat is None:
-                self.amqheartbeat = self.app.conf.BROKER_HEARTBEAT
+                self.amqheartbeat = self.app.conf.broker_heartbeat
         else:
             self.amqheartbeat = 0
 
@@ -210,13 +212,30 @@ class Consumer(object):
             # there's a gevent bug that causes timeouts to not be reset,
             # so if the connection timeout is exceeded once, it can NEVER
             # connect again.
-            self.app.conf.BROKER_CONNECTION_TIMEOUT = None
+            self.app.conf.broker_connection_timeout = None
+
+        self._pending_operations = []
 
         self.steps = []
         self.blueprint = self.Blueprint(
             app=self.app, on_close=self.on_close,
         )
         self.blueprint.apply(self, **dict(worker_options or {}, **kwargs))
+
+    def call_soon(self, p, *args, **kwargs):
+        p = ppartial(p, *args, **kwargs)
+        if self.hub:
+            return self.hub.call_soon(p)
+        self._pending_operations.append(p)
+        return p
+
+    def perform_pending_operations(self):
+        if not self.hub:
+            while self._pending_operations:
+                try:
+                    self._pending_operations.pop()()
+                except Exception as exc:
+                    error('Pending callback raised: %r', exc, exc_info=1)
 
     def bucket_for_task(self, type):
         limit = rate(getattr(type, 'rate_limit', None))
@@ -262,7 +281,7 @@ class Consumer(object):
             hold = bucket.expected_time(tokens)
             pri = self._limit_order = (self._limit_order + 1) % 10
             self.timer.call_after(
-                hold, self._limit_move_to_pool, (request, ),
+                hold, self._limit_move_to_pool, (request,),
                 priority=pri,
             )
         else:
@@ -277,6 +296,10 @@ class Consumer(object):
             try:
                 blueprint.start(self)
             except self.connection_errors as exc:
+                # If we're not retrying connections, no need to catch
+                # connection errors
+                if not self.app.conf.broker_connection_retry:
+                    raise
                 if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
                     raise  # Too many open files
                 maybe_shutdown()
@@ -296,7 +319,7 @@ class Consumer(object):
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
-            self, 'register_with_event_loop', args=(hub, ),
+            self, 'register_with_event_loop', args=(hub,),
             description='Hub.register',
         )
 
@@ -350,10 +373,10 @@ class Consumer(object):
         """Establish the broker connection.
 
         Will retry establishing the connection if the
-        :setting:`BROKER_CONNECTION_RETRY` setting is enabled
+        :setting:`broker_connection_retry` setting is enabled
 
         """
-        conn = self.app.connection(heartbeat=self.amqheartbeat)
+        conn = self.app.connection_for_read(heartbeat=self.amqheartbeat)
 
         # Callback called for each retry while the connection
         # can't be established.
@@ -365,13 +388,13 @@ class Consumer(object):
 
         # remember that the connection is lazy, it won't establish
         # until needed.
-        if not self.app.conf.BROKER_CONNECTION_RETRY:
+        if not self.app.conf.broker_connection_retry:
             # retry disabled, just call connect directly.
             conn.connect()
             return conn
 
         conn = conn.ensure_connection(
-            _error_handler, self.app.conf.BROKER_CONNECTION_MAX_RETRIES,
+            _error_handler, self.app.conf.broker_connection_max_retries,
             callback=maybe_shutdown,
         )
         if self.hub:
@@ -391,7 +414,7 @@ class Consumer(object):
         cset = self.task_consumer
         queues = self.app.amqp.queues
         # Must use in' here, as __missing__ will automatically
-        # create queues when CELERY_CREATE_MISSING_QUEUES is enabled.
+        # create queues when :setting:`task_create_missing_queues` is enabled.
         # (Issue #1079)
         if queue in queues:
             q = queues[queue]
@@ -430,14 +453,29 @@ class Consumer(object):
     def on_unknown_message(self, body, message):
         warn(UNKNOWN_FORMAT, self._message_report(body, message))
         message.reject_log_error(logger, self.connection_errors)
+        signals.task_rejected.send(sender=self, message=message, exc=None)
 
     def on_unknown_task(self, body, message, exc):
         error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
+        try:
+            id_, name = message.headers['id'], message.headers['task']
+        except KeyError:  # proto1
+            id_, name = body['id'], body['task']
         message.reject_log_error(logger, self.connection_errors)
+        self.app.backend.mark_as_failure(id_, NotRegistered(name))
+        if self.event_dispatcher:
+            self.event_dispatcher.send(
+                'task-failed', uuid=id_,
+                exception='NotRegistered({0!r})'.format(name),
+            )
+        signals.task_unknown.send(
+            sender=self, message=message, exc=exc, name=name, id=id_,
+        )
 
     def on_invalid_task(self, body, message, exc):
         error(INVALID_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
         message.reject_log_error(logger, self.connection_errors)
+        signals.task_rejected.send(sender=self, message=message, exc=exc)
 
     def update_strategies(self):
         loader = self.app.loader
@@ -446,15 +484,15 @@ class Consumer(object):
             task.__trace__ = build_tracer(name, task, loader, self.hostname,
                                           app=self.app)
 
-    def create_task_handler(self):
+    def create_task_handler(self, promise=promise):
         strategies = self.strategies
         on_unknown_message = self.on_unknown_message
         on_unknown_task = self.on_unknown_task
         on_invalid_task = self.on_invalid_task
         callbacks = self.on_task_message
+        call_soon = self.call_soon
 
         def on_task_received(message):
-
             # payload will only be set for v1 protocol, since v2
             # will defer deserializing the message body to the pool.
             payload = None
@@ -463,7 +501,10 @@ class Consumer(object):
             except TypeError:
                 return on_unknown_message(None, message)
             except KeyError:
-                payload = message.payload
+                try:
+                    payload = message.decode()
+                except Exception as exc:
+                    return self.on_decode_error(message, exc)
                 try:
                     type_, payload = payload['task'], payload  # protocol v1
                 except (TypeError, KeyError):
@@ -475,8 +516,10 @@ class Consumer(object):
             else:
                 try:
                     strategy(
-                        message, payload, message.ack_log_error,
-                        message.reject_log_error, callbacks,
+                        message, payload,
+                        promise(call_soon, (message.ack_log_error,)),
+                        promise(call_soon, (message.reject_log_error,)),
+                        callbacks,
                     )
                 except InvalidTaskError as exc:
                     return on_invalid_task(payload, message, exc)
@@ -518,11 +561,16 @@ class Connection(bootsteps.StartStopStep):
 
 
 class Events(bootsteps.StartStopStep):
-    requires = (Connection, )
+    requires = (Connection,)
 
-    def __init__(self, c, send_events=None, **kwargs):
-        self.send_events = True
+    def __init__(self, c, send_events=True,
+                 without_heartbeat=False, without_gossip=False, **kwargs):
         self.groups = None if send_events else ['worker']
+        self.send_events = (
+            send_events or
+            not without_gossip or
+            not without_heartbeat
+        )
         c.event_dispatcher = None
 
     def start(self, c):
@@ -559,7 +607,7 @@ class Events(bootsteps.StartStopStep):
 
 
 class Heart(bootsteps.StartStopStep):
-    requires = (Events, )
+    requires = (Events,)
 
     def __init__(self, c, without_heartbeat=False, heartbeat_interval=None,
                  **kwargs):
@@ -580,14 +628,14 @@ class Heart(bootsteps.StartStopStep):
 
 class Mingle(bootsteps.StartStopStep):
     label = 'Mingle'
-    requires = (Events, )
+    requires = (Events,)
     compatible_transports = {'amqp', 'redis'}
 
     def __init__(self, c, without_mingle=False, **kwargs):
         self.enabled = not without_mingle and self.compatible_transport(c.app)
 
     def compatible_transport(self, app):
-        with app.connection() as conn:
+        with app.connection_for_read() as conn:
             return conn.transport.driver_type in self.compatible_transports
 
     def start(self, c):
@@ -613,7 +661,7 @@ class Mingle(bootsteps.StartStopStep):
 
 
 class Tasks(bootsteps.StartStopStep):
-    requires = (Mingle, )
+    requires = (Mingle,)
 
     def __init__(self, c, **kwargs):
         c.task_consumer = c.qos = None
@@ -660,10 +708,10 @@ class Tasks(bootsteps.StartStopStep):
 
 class Agent(bootsteps.StartStopStep):
     conditional = True
-    requires = (Connection, )
+    requires = (Connection,)
 
     def __init__(self, c, **kwargs):
-        self.agent_cls = self.enabled = c.app.conf.CELERYD_AGENT
+        self.agent_cls = self.enabled = c.app.conf.worker_agent
 
     def create(self, c):
         agent = c.agent = self.instantiate(self.agent_cls, c.connection)
@@ -671,7 +719,7 @@ class Agent(bootsteps.StartStopStep):
 
 
 class Control(bootsteps.StartStopStep):
-    requires = (Tasks, )
+    requires = (Tasks,)
 
     def __init__(self, c, **kwargs):
         self.is_green = c.pool is not None and c.pool.is_green
@@ -681,12 +729,13 @@ class Control(bootsteps.StartStopStep):
         self.shutdown = self.box.shutdown
 
     def include_if(self, c):
-        return c.app.conf.CELERY_ENABLE_REMOTE_CONTROL
+        return (c.app.conf.worker_enable_remote_control and
+                c.conninfo.supports_exchange_type('fanout'))
 
 
 class Gossip(bootsteps.ConsumerStep):
     label = 'Gossip'
-    requires = (Mingle, )
+    requires = (Mingle,)
     _cons_stamp_fields = itemgetter(
         'id', 'clock', 'hostname', 'pid', 'topic', 'action', 'cver',
     )
@@ -727,7 +776,7 @@ class Gossip(bootsteps.ConsumerStep):
         }
 
     def compatible_transport(self, app):
-        with app.connection() as conn:
+        with app.connection_for_read() as conn:
             return conn.transport.driver_type in self.compatible_transports
 
     def election(self, id, topic, action=None):

@@ -4,22 +4,46 @@ from __future__ import absolute_import
 # here to complete coverage.  Should move everyting to this module at some
 # point [-ask]
 
-from celery.worker.components import (
-    Queues,
-    Pool,
-)
+from celery.exceptions import ImproperlyConfigured
+from celery.platforms import IS_WINDOWS
+from celery.worker.components import Beat, Hub, Pool, Timer
 
-from celery.tests.case import AppCase, Mock
+from celery.tests.case import AppCase, Mock, SkipTest, patch
 
 
-class test_Queues(AppCase):
+class test_Timer(AppCase):
 
-    def test_create_when_eventloop(self):
-        w = Mock()
-        w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True
-        q = Queues(w)
-        q.create(w)
-        self.assertIs(w.process_task, w._process_task_sem)
+    def test_create__eventloop(self):
+        w = Mock(name='w')
+        w.use_eventloop = True
+        Timer(w).create(w)
+        self.assertFalse(w.timer.queue)
+
+
+class test_Hub(AppCase):
+
+    def setup(self):
+        self.w = Mock(name='w')
+        self.hub = Hub(self.w)
+        self.w.hub = Mock(name='w.hub')
+
+    @patch('celery.worker.components.set_event_loop')
+    @patch('celery.worker.components.get_event_loop')
+    def test_create(self, get_event_loop, set_event_loop):
+        self.hub._patch_thread_primitives = Mock(name='ptp')
+        self.assertIs(self.hub.create(self.w), self.hub)
+        self.hub._patch_thread_primitives.assert_called_with(self.w)
+
+    def test_start(self):
+        self.hub.start(self.w)
+
+    def test_stop(self):
+        self.hub.stop(self.w)
+        self.w.hub.close.assert_called_with()
+
+    def test_terminate(self):
+        self.hub.terminate(self.w)
+        self.w.hub.close.assert_called_with()
 
 
 class test_Pool(AppCase):
@@ -36,3 +60,34 @@ class test_Pool(AppCase):
         w.pool = None
         comp.close(w)
         comp.terminate(w)
+
+    def test_create_when_eventloop(self):
+        if IS_WINDOWS:
+            raise SkipTest('Win32')
+        w = Mock()
+        w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True
+        comp = Pool(w)
+        w.pool = Mock()
+        comp.create(w)
+        self.assertIs(w.process_task, w._process_task_sem)
+
+    def test_create_calls_instantiate_with_max_memory(self):
+        w = Mock()
+        w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True
+        comp = Pool(w)
+        comp.instantiate = Mock()
+        w.max_memory_per_child = 32
+
+        comp.create(w)
+
+        self.assertEqual(
+            comp.instantiate.call_args[1]['max_memory_per_child'], 32)
+
+
+class test_Beat(AppCase):
+
+    def test_create__green(self):
+        w = Mock(name='w')
+        w.pool_cls.__module__ = 'foo_gevent'
+        with self.assertRaises(ImproperlyConfigured):
+            Beat(w).create(w)

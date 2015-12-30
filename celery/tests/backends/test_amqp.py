@@ -13,6 +13,7 @@ from celery import states
 from celery.backends.amqp import AMQPBackend
 from celery.exceptions import TimeoutError
 from celery.five import Empty, Queue, range
+from celery.result import AsyncResult
 from celery.utils import uuid
 
 from celery.tests.case import (
@@ -28,9 +29,26 @@ class SomeClass(object):
 
 class test_AMQPBackend(AppCase):
 
+    def setup(self):
+        self.app.conf.result_cache_max = 100
+
     def create_backend(self, **opts):
         opts = dict(dict(serializer='pickle', persistent=True), **opts)
         return AMQPBackend(self.app, **opts)
+
+    def test_destination_for(self):
+        b = self.create_backend()
+        request = Mock()
+        self.assertTupleEqual(
+            b.destination_for('id', request),
+            (b.rkey('id'), request.correlation_id),
+        )
+
+    def test_store_result__no_routing_key(self):
+        b = self.create_backend()
+        b.destination_for = Mock()
+        b.destination_for.return_value = None, None
+        b.store_result('id', None, states.SUCCESS)
 
     def test_mark_as_done(self):
         tb1 = self.create_backend(max_cached_results=1)
@@ -39,7 +57,7 @@ class test_AMQPBackend(AppCase):
         tid = uuid()
 
         tb1.mark_as_done(tid, 42)
-        self.assertEqual(tb2.get_status(tid), states.SUCCESS)
+        self.assertEqual(tb2.get_state(tid), states.SUCCESS)
         self.assertEqual(tb2.get_result(tid), 42)
         self.assertTrue(tb2._cache.get(tid))
         self.assertTrue(tb2.get_result(tid), 42)
@@ -74,7 +92,7 @@ class test_AMQPBackend(AppCase):
         except KeyError as exception:
             einfo = ExceptionInfo()
             tb1.mark_as_failure(tid3, exception, traceback=einfo.traceback)
-            self.assertEqual(tb2.get_status(tid3), states.FAILURE)
+            self.assertEqual(tb2.get_state(tid3), states.FAILURE)
             self.assertIsInstance(tb2.get_result(tid3), KeyError)
             self.assertEqual(tb2.get_traceback(tid3), einfo.traceback)
 
@@ -246,10 +264,20 @@ class test_AMQPBackend(AppCase):
         with self.assertRaises(TimeoutError):
             b.wait_for(tid, timeout=0.01, cache=False)
 
+    def test_drain_events_decodes_exceptions_in_meta(self):
+        tid = uuid()
+        b = self.create_backend(serializer="json")
+        b.store_result(tid, RuntimeError("aap"), states.FAILURE)
+        result = AsyncResult(tid, backend=b)
+
+        with self.assertRaises(Exception) as cm:
+            result.get()
+
+        self.assertEqual(cm.exception.__class__.__name__, "RuntimeError")
+        self.assertEqual(str(cm.exception), "aap")
+
     def test_drain_events_remaining_timeouts(self):
-
         class Connection(object):
-
             def drain_events(self, timeout=None):
                 pass
 
@@ -257,8 +285,11 @@ class test_AMQPBackend(AppCase):
         with self.app.pool.acquire_channel(block=False) as (_, channel):
             binding = b._create_binding(uuid())
             consumer = b.Consumer(channel, binding, no_ack=True)
+            callback = Mock()
             with self.assertRaises(socket.timeout):
-                b.drain_events(Connection(), consumer, timeout=0.1)
+                b.drain_events(Connection(), consumer, timeout=0.1,
+                               on_interval=callback)
+                callback.assert_called_with()
 
     def test_get_many(self):
         b = self.create_backend(max_cached_results=10)
@@ -364,7 +395,7 @@ class test_AMQPBackend(AppCase):
     def test_no_expires(self):
         b = self.create_backend(expires=None)
         app = self.app
-        app.conf.CELERY_TASK_RESULT_EXPIRES = None
+        app.conf.result_expires = None
         b = self.create_backend(expires=None)
         with self.assertRaises(KeyError):
             b.queue_arguments['x-expires']

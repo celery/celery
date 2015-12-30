@@ -17,7 +17,7 @@ from celery import states
 from celery.canvas import maybe_signature
 from celery.exceptions import ChordError, ImproperlyConfigured
 from celery.five import string_t
-from celery.utils import deprecated_property, strtobool
+from celery.utils import deprecated_property
 from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.timeutils import humanize_seconds
@@ -39,6 +39,10 @@ REDIS_MISSING = """\
 You need to install the redis library in order to use \
 the Redis result store backend."""
 
+E_LOST = """\
+Connection to Redis lost: Retry (%s/%s) %s.\
+"""
+
 logger = get_logger(__name__)
 error = logger.error
 
@@ -54,50 +58,37 @@ class RedisBackend(KeyValueStoreBackend):
 
     supports_autoexpire = True
     supports_native_join = True
-    implements_incr = True
 
     def __init__(self, host=None, port=None, db=None, password=None,
                  max_connections=None, url=None,
-                 connection_pool=None, new_join=False, **kwargs):
+                 connection_pool=None, **kwargs):
         super(RedisBackend, self).__init__(expires_type=int, **kwargs)
-        conf = self.app.conf
+        _get = self.app.conf.get
         if self.redis is None:
             raise ImproperlyConfigured(REDIS_MISSING)
 
-        # For compatibility with the old REDIS_* configuration keys.
-        def _get(key):
-            for prefix in 'CELERY_REDIS_{0}', 'REDIS_{0}':
-                try:
-                    return conf[prefix.format(key)]
-                except KeyError:
-                    pass
         if host and '://' in host:
             url = host
             host = None
 
         self.max_connections = (
-            max_connections or _get('MAX_CONNECTIONS') or self.max_connections
+            max_connections or
+            _get('redis_max_connections') or
+            self.max_connections
         )
         self._ConnectionPool = connection_pool
 
         self.connparams = {
-            'host': _get('HOST') or 'localhost',
-            'port': _get('PORT') or 6379,
-            'db': _get('DB') or 0,
-            'password': _get('PASSWORD'),
+            'host': _get('redis_host') or 'localhost',
+            'port': _get('redis_port') or 6379,
+            'db': _get('redis_db') or 0,
+            'password': _get('redis_password'),
+            'socket_timeout': _get('redis_socket_timeout'),
             'max_connections': self.max_connections,
         }
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
         self.url = url
-
-        try:
-            new_join = strtobool(self.connparams.pop('new_join'))
-        except KeyError:
-            pass
-        if new_join:
-            self.apply_chord = self._new_chord_apply
-            self.on_chord_part_return = self._new_chord_return
 
         self.connection_errors, self.channel_errors = (
             get_redis_error_classes() if get_redis_error_classes
@@ -150,8 +141,7 @@ class RedisBackend(KeyValueStoreBackend):
 
     def on_connection_error(self, max_retries, exc, intervals, retries):
         tts = next(intervals)
-        error('Connection to Redis lost: Retry (%s/%s) %s.',
-              retries, max_retries or 'Inf',
+        error(E_LOST, retries, max_retries or 'Inf',
               humanize_seconds(tts, 'in '))
         return tts
 
@@ -159,13 +149,13 @@ class RedisBackend(KeyValueStoreBackend):
         return self.ensure(self._set, (key, value), **retry_policy)
 
     def _set(self, key, value):
-        pipe = self.client.pipeline()
-        if self.expires:
-            pipe.setex(key, value, self.expires)
-        else:
-            pipe.set(key, value)
-        pipe.publish(key, value)
-        pipe.execute()
+        with self.client.pipeline() as pipe:
+            if self.expires:
+                pipe.setex(key, self.expires, value)
+            else:
+                pipe.set(key, value)
+            pipe.publish(key, value)
+            pipe.execute()
 
     def delete(self, key):
         self.client.delete(key)
@@ -189,18 +179,14 @@ class RedisBackend(KeyValueStoreBackend):
             raise ChordError('Dependency {0} raised {1!r}'.format(tid, retval))
         return retval
 
-    def _new_chord_apply(self, header, partial_args, group_id, body,
-                         result=None, options={}, **kwargs):
+    def apply_chord(self, header, partial_args, group_id, body,
+                    result=None, options={}, **kwargs):
         # avoids saving the group in the redis db.
         options['task_id'] = group_id
         return header(*partial_args, **options or {})
 
-    def _new_chord_return(self, task, state, result, propagate=None,
-                          PROPAGATE_STATES=states.PROPAGATE_STATES):
+    def on_chord_part_return(self, request, state, result, propagate=None):
         app = self.app
-        if propagate is None:
-            propagate = self.app.conf.CELERY_CHORD_PROPAGATES
-        request = task.request
         tid, gid = request.id, request.group
         if not gid or not tid:
             return
@@ -209,13 +195,14 @@ class RedisBackend(KeyValueStoreBackend):
         jkey = self.get_key_for_group(gid, '.j')
         tkey = self.get_key_for_group(gid, '.t')
         result = self.encode_result(result, state)
-        _, readycount, totaldiff, _, _ = client.pipeline()              \
-            .rpush(jkey, self.encode([1, tid, state, result]))          \
-            .llen(jkey)                                                 \
-            .get(tkey)                                                  \
-            .expire(jkey, 86400)                                        \
-            .expire(tkey, 86400)                                        \
-            .execute()
+        with client.pipeline() as pipe:
+            _, readycount, totaldiff, _, _ = pipe                           \
+                .rpush(jkey, self.encode([1, tid, state, result]))          \
+                .llen(jkey)                                                 \
+                .get(tkey)                                                  \
+                .expire(jkey, 86400)                                        \
+                .expire(tkey, 86400)                                        \
+                .execute()
 
         totaldiff = int(totaldiff or 0)
 
@@ -224,30 +211,40 @@ class RedisBackend(KeyValueStoreBackend):
             total = callback['chord_size'] + totaldiff
             if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
-                resl, _, _ = client.pipeline()  \
-                    .lrange(jkey, 0, total)     \
-                    .delete(jkey)               \
-                    .delete(tkey)               \
-                    .execute()
+                with client.pipeline() as pipe:
+                    resl, _, _ = pipe               \
+                        .lrange(jkey, 0, total)     \
+                        .delete(jkey)               \
+                        .delete(tkey)               \
+                        .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])
                 except Exception as exc:
                     error('Chord callback for %r raised: %r',
                           request.group, exc, exc_info=1)
-                    app._tasks[callback.task].backend.fail_from_current_stack(
-                        callback.id,
-                        exc=ChordError('Callback error: {0!r}'.format(exc)),
+                    return self.chord_error_from_stack(
+                        callback,
+                        ChordError('Callback error: {0!r}'.format(exc)),
                     )
         except ChordError as exc:
             error('Chord %r raised: %r', request.group, exc, exc_info=1)
-            app._tasks[callback.task].backend.fail_from_current_stack(
-                callback.id, exc=exc,
-            )
+            return self.chord_error_from_stack(callback, exc)
         except Exception as exc:
             error('Chord %r raised: %r', request.group, exc, exc_info=1)
-            app._tasks[callback.task].backend.fail_from_current_stack(
-                callback.id, exc=ChordError('Join error: {0!r}'.format(exc)),
+            return self.chord_error_from_stack(
+                callback,
+                ChordError('Join error: {0!r}'.format(exc)),
             )
+
+    def _create_client(self, socket_timeout=None, socket_connect_timeout=None,
+                       **params):
+        return self.redis.StrictRedis(
+            connection_pool=self.ConnectionPool(
+                socket_timeout=socket_timeout and float(socket_timeout),
+                socket_connect_timeout=socket_connect_timeout and float(
+                    socket_connect_timeout),
+                **params),
+        )
 
     @property
     def ConnectionPool(self):
@@ -257,27 +254,25 @@ class RedisBackend(KeyValueStoreBackend):
 
     @cached_property
     def client(self):
-        return self.redis.Redis(
-            connection_pool=self.ConnectionPool(**self.connparams),
-        )
+        return self._create_client(**self.connparams)
 
     def __reduce__(self, args=(), kwargs={}):
         return super(RedisBackend, self).__reduce__(
-            (self.url, ), {'expires': self.expires},
+            (self.url,), {'expires': self.expires},
         )
 
-    @deprecated_property(3.2, 3.3)
+    @deprecated_property(4.0, 5.0)
     def host(self):
         return self.connparams['host']
 
-    @deprecated_property(3.2, 3.3)
+    @deprecated_property(4.0, 5.0)
     def port(self):
         return self.connparams['port']
 
-    @deprecated_property(3.2, 3.3)
+    @deprecated_property(4.0, 5.0)
     def db(self):
         return self.connparams['db']
 
-    @deprecated_property(3.2, 3.3)
+    @deprecated_property(4.0, 5.0)
     def password(self):
         return self.connparams['password']

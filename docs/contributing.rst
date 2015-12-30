@@ -214,7 +214,7 @@ spelling or other errors on the website/docs/code.
 
     D) Include the output from the `celery report` command:
 
-        .. code-block:: bash
+        .. code-block:: console
 
             $ celery -A proj report
 
@@ -402,14 +402,14 @@ is in the Github Guide: `Fork a Repo`_.
 After you have cloned the repository you should checkout your copy
 to a directory on your machine:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ git clone git@github.com:username/celery.git
 
 When the repository is cloned enter the directory to set up easy access
 to upstream changes:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cd celery
     $ git remote add upstream git://github.com/celery/celery.git
@@ -418,7 +418,7 @@ to upstream changes:
 If you need to pull in new changes from upstream you should
 always use the :option:`--rebase` option to ``git pull``:
 
-.. code-block:: bash
+.. code-block:: console
 
     git pull --rebase upstream master
 
@@ -448,14 +448,14 @@ A complete list of the dependencies needed are located in
 
 Installing the test requirements:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install -U -r requirements/test.txt
 
 When installation of dependencies is complete you can execute
 the test suite by calling ``nosetests``:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ nosetests
 
@@ -480,7 +480,7 @@ Some useful options to :program:`nosetests` are:
 If you want to run the tests for a single test file only
 you can do so like this:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ nosetests celery.tests.test_worker.test_worker_job
 
@@ -510,13 +510,13 @@ To calculate test coverage you must first install the :mod:`coverage` module.
 
 Installing the :mod:`coverage` module:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install -U coverage
 
 Code coverage in HTML:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ nosetests --with-coverage --cover-html
 
@@ -525,7 +525,7 @@ The coverage output will then be located at
 
 Code coverage in XML (Cobertura-style):
 
-.. code-block:: bash
+.. code-block:: console
 
     $ nosetests --with-coverage --cover-xml --cover-xml-file=coverage.xml
 
@@ -541,16 +541,16 @@ distribution.
 
 To run the tests for all supported Python versions simply execute:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ tox
 
 If you only want to test specific Python versions use the :option:`-e`
 option:
 
-.. code-block:: bash
+.. code-block:: console
 
-    $ tox -e py26
+    $ tox -e 2.7
 
 Building the documentation
 --------------------------
@@ -558,14 +558,14 @@ Building the documentation
 To build the documentation you need to install the dependencies
 listed in :file:`requirements/docs.txt`:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install -U -r requirements/docs.txt
 
 After these dependencies are installed you should be able to
 build the docs by running:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cd docs
     $ rm -rf .build
@@ -584,7 +584,7 @@ can be found in :file:`requirements/pkgutils.txt`.
 
 Installing the dependencies:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install -U -r requirements/pkgutils.txt
 
@@ -594,14 +594,14 @@ pyflakes & PEP8
 To ensure that your changes conform to PEP8 and to run pyflakes
 execute:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ make flakecheck
 
 To not return a negative exit code when this command fails use
 the ``flakes`` target instead:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ make flakes§
 
@@ -611,7 +611,7 @@ API reference
 To make sure that all modules have a corresponding section in the API
 reference please execute:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ make apicheck
     $ make indexcheck
@@ -628,14 +628,14 @@ and this module is considered part of the public API, use the following steps:
 
 Use an existing file as a template:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cd docs/reference/
     $ cp celery.schedules.rst celery.worker.awesome.rst
 
 Edit the file using your favorite editor:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ vim celery.worker.awesome.rst
 
@@ -645,7 +645,7 @@ Edit the file using your favorite editor:
 
 Edit the index using your favorite editor:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ vim index.rst
 
@@ -654,7 +654,7 @@ Edit the index using your favorite editor:
 
 Commit your changes:
 
-.. code-block:: bash
+.. code-block:: console
 
     # Add the file to git
     $ git add celery.worker.awesome.rst
@@ -838,7 +838,7 @@ that require 3rd party libraries must be added.
     After you've made changes to this file you need to render
     the distro :file:`README` file:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install -U requirements/pkgutils.txt
         $ make readme
@@ -1045,19 +1045,19 @@ the :file:`README` files.  There is a script to convert sphinx syntax
 to generic reStructured Text syntax, and the make target `readme`
 does this for you:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ make readme
 
 Now commit the changes:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ git commit -a -m "Bumps version to X.Y.Z"
 
 and make a new version tag:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ git tag vX.Y.Z
     $ git push --tags

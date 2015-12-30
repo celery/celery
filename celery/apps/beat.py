@@ -43,20 +43,21 @@ class Beat(object):
 
     def __init__(self, max_interval=None, app=None,
                  socket_timeout=30, pidfile=None, no_color=None,
-                 loglevel=None, logfile=None, schedule=None,
+                 loglevel='WARN', logfile=None, schedule=None,
                  scheduler_cls=None, redirect_stdouts=None,
                  redirect_stdouts_level=None, **kwargs):
         """Starts the beat task scheduler."""
         self.app = app = app or self.app
-        self.loglevel = self._getopt('log_level', loglevel)
-        self.logfile = self._getopt('log_file', logfile)
-        self.schedule = self._getopt('schedule_filename', schedule)
-        self.scheduler_cls = self._getopt('scheduler', scheduler_cls)
-        self.redirect_stdouts = self._getopt(
-            'redirect_stdouts', redirect_stdouts,
+        either = self.app.either
+        self.loglevel = loglevel
+        self.logfile = logfile
+        self.schedule = either('beat_schedule_filename', schedule)
+        self.scheduler_cls = either('beat_scheduler', scheduler_cls)
+        self.redirect_stdouts = either(
+            'worker_redirect_stdouts', redirect_stdouts,
         )
-        self.redirect_stdouts_level = self._getopt(
-            'redirect_stdouts_level', redirect_stdouts_level,
+        self.redirect_stdouts_level = either(
+            'worker_redirect_stdouts_level', redirect_stdouts_level,
         )
 
         self.max_interval = max_interval
@@ -70,11 +71,6 @@ class Beat(object):
 
         if not isinstance(self.loglevel, numbers.Integral):
             self.loglevel = LOG_LEVELS[self.loglevel.upper()]
-
-    def _getopt(self, key, value):
-        if value is not None:
-            return value
-        return self.app.conf.find_value_for_key(key, namespace='celerybeat')
 
     def run(self):
         print(str(self.colored.cyan(

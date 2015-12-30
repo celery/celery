@@ -25,9 +25,9 @@ Please install by:
 
 SETTING_MISSING = """\
 Sorry, but you have to configure the
-    * CELERY_SECURITY_KEY
-    * CELERY_SECURITY_CERTIFICATE, and the
-    * CELERY_SECURITY_CERT_STORE
+    * security_key
+    * security_certificate, and the
+    * security_cert_storE
 configuration settings to use the auth serializer.
 
 Please see the configuration reference for more information.
@@ -46,7 +46,7 @@ def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
     _disable_insecure_serializers(allowed_serializers)
 
     conf = app.conf
-    if conf.CELERY_TASK_SERIALIZER != 'auth':
+    if conf.task_serializer != 'auth':
         return
 
     try:
@@ -54,9 +54,9 @@ def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
     except ImportError:
         raise ImproperlyConfigured(SSL_NOT_INSTALLED)
 
-    key = key or conf.CELERY_SECURITY_KEY
-    cert = cert or conf.CELERY_SECURITY_CERTIFICATE
-    store = store or conf.CELERY_SECURITY_CERT_STORE
+    key = key or conf.security_key
+    cert = cert or conf.security_certificate
+    store = store or conf.security_cert_store
 
     if not (key and cert and store):
         raise ImproperlyConfigured(SETTING_MISSING)

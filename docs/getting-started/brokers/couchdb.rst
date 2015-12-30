@@ -20,7 +20,7 @@ For the CouchDB support you have to install additional dependencies.
 You can install both Celery and these dependencies in one go using
 the ``celery[couchdb]`` :ref:`bundle <bundles>`:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install -U celery[couchdb]
 
@@ -32,7 +32,7 @@ Configuration
 Configuration is easy, set the transport, and configure the location of
 your CouchDB database::
 
-    BROKER_URL = 'couchdb://localhost:5984/database_name'
+    broker_url = 'couchdb://localhost:5984/database_name'
 
 Where the URL is in the format of::
 

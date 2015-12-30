@@ -34,7 +34,7 @@ except ImportError:
 from nose import SkipTest
 from kombu import Queue
 from kombu.log import NullHandler
-from kombu.utils import nested, symbol_by_name
+from kombu.utils import symbol_by_name
 
 from celery import Celery
 from celery.app import current_app
@@ -54,7 +54,7 @@ __all__ = [
     'skip_if_environ', 'todo', 'skip', 'skip_if',
     'skip_unless', 'mask_modules', 'override_stdouts', 'mock_module',
     'replace_module_value', 'sys_platform', 'reset_modules',
-    'patch_modules', 'mock_context', 'mock_open', 'patch_many',
+    'patch_modules', 'mock_context', 'mock_open',
     'assert_signal_called', 'skip_if_pypy',
     'skip_if_jython', 'task_message_from_sig', 'restore_logging',
 ]
@@ -85,26 +85,26 @@ Test {0} Modified handlers for the root logger\
 
 CELERY_TEST_CONFIG = {
     #: Don't want log output when running suite.
-    'CELERYD_HIJACK_ROOT_LOGGER': False,
-    'CELERY_SEND_TASK_ERROR_EMAILS': False,
-    'CELERY_DEFAULT_QUEUE': 'testcelery',
-    'CELERY_DEFAULT_EXCHANGE': 'testcelery',
-    'CELERY_DEFAULT_ROUTING_KEY': 'testcelery',
-    'CELERY_QUEUES': (
+    'worker_hijack_root_logger': False,
+    'worker_log_color': False,
+    'task_send_error_emails': False,
+    'task_default_queue': 'testcelery',
+    'task_default_exchange': 'testcelery',
+    'task_default_routing_key': 'testcelery',
+    'task_queues': (
         Queue('testcelery', routing_key='testcelery'),
     ),
-    'CELERY_ACCEPT_CONTENT': ('json', 'pickle'),
-    'CELERY_ENABLE_UTC': True,
-    'CELERY_TIMEZONE': 'UTC',
-    'CELERYD_LOG_COLOR': False,
+    'accept_content': ('json', 'pickle'),
+    'enable_utc': True,
+    'timezone': 'UTC',
 
     # Mongo results tests (only executed if installed and running)
-    'CELERY_MONGODB_BACKEND_SETTINGS': {
+    'mongodb_backend_settings': {
         'host': os.environ.get('MONGO_HOST') or 'localhost',
         'port': os.environ.get('MONGO_PORT') or 27017,
         'database': os.environ.get('MONGO_DB') or 'celery_unittests',
-        'taskmeta_collection': (os.environ.get('MONGO_TASKMETA_COLLECTION')
-                                or 'taskmeta_collection'),
+        'taskmeta_collection': (os.environ.get('MONGO_TASKMETA_COLLECTION') or
+                                'taskmeta_collection'),
         'user': os.environ.get('MONGO_USER'),
         'password': os.environ.get('MONGO_PASSWORD'),
     }
@@ -149,7 +149,7 @@ class _ContextMock(Mock):
     in the class, not just the instance."""
 
     def __enter__(self):
-        pass
+        return self
 
     def __exit__(self, *exc_info):
         pass
@@ -204,7 +204,7 @@ def skip_unless_module(module):
             try:
                 importlib.import_module(module)
             except ImportError:
-                raise SkipTest('Does not have %s' % (module, ))
+                raise SkipTest('Does not have %s' % (module,))
 
             return fun(*args, **kwargs)
 
@@ -232,10 +232,15 @@ def _is_magic_module(m):
     # will load _tkinter and other shit when touched.
 
     # pyflakes refuses to accept 'noqa' for this isinstance.
-    cls, modtype = m.__class__, types.ModuleType
-    return (cls is not modtype and (
-        '__getattr__' in vars(m.__class__) or
-        '__getattribute__' in vars(m.__class__)))
+    cls, modtype = type(m), types.ModuleType
+    try:
+        variables = vars(cls)
+    except TypeError:
+        return True
+    else:
+        return (cls is not modtype and (
+            '__getattr__' in variables or
+            '__getattribute__' in variables))
 
 
 class _AssertWarnsContext(_AssertRaisesBaseContext):
@@ -298,7 +303,56 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
             raise self.failureException('%s not triggered' % exc_name)
 
 
+def alive_threads():
+    return [thread for thread in threading.enumerate() if thread.is_alive()]
+
+
 class Case(unittest.TestCase):
+
+    def patch(self, *path, **options):
+        manager = patch(".".join(path), **options)
+        patched = manager.start()
+        self.addCleanup(manager.stop)
+        return patched
+
+    def mock_modules(self, *mods):
+        modules = []
+        for mod in mods:
+            mod = mod.split('.')
+            modules.extend(reversed([
+                '.'.join(mod[:-i] if i else mod) for i in range(len(mod))
+            ]))
+        modules = sorted(set(modules))
+        return self.wrap_context(mock_module(*modules))
+
+    def on_nth_call_do(self, mock, side_effect, n=1):
+
+        def on_call(*args, **kwargs):
+            if mock.call_count >= n:
+                mock.side_effect = side_effect
+            return mock.return_value
+        mock.side_effect = on_call
+        return mock
+
+    def on_nth_call_return(self, mock, retval, n=1):
+
+        def on_call(*args, **kwargs):
+            if mock.call_count >= n:
+                mock.return_value = retval
+            return mock.return_value
+        mock.side_effect = on_call
+        return mock
+
+    def mask_modules(self, *modules):
+        self.wrap_context(mask_modules(*modules))
+
+    def wrap_context(self, context):
+        ret = context.__enter__()
+        self.addCleanup(partial(context.__exit__, None, None, None))
+        return ret
+
+    def mock_environ(self, env_name, env_value):
+        return self.wrap_context(mock_environ(env_name, env_value))
 
     def assertWarns(self, expected_warning):
         return _AssertWarnsContext(expected_warning, self, None)
@@ -362,11 +416,11 @@ class Case(unittest.TestCase):
         errors = []
         if missing:
             errors.append(
-                'Expected, but missing:\n    %s' % (safe_repr(missing), )
+                'Expected, but missing:\n    %s' % (safe_repr(missing),)
             )
         if unexpected:
             errors.append(
-                'Unexpected, but present:\n    %s' % (safe_repr(unexpected), )
+                'Unexpected, but present:\n    %s' % (safe_repr(unexpected),)
             )
         if errors:
             standardMsg = '\n'.join(errors)
@@ -386,6 +440,7 @@ def depends_on_current_app(fun):
 
 class AppCase(Case):
     contained = True
+    _threads_at_startup = [None]
 
     def __init__(self, *args, **kwargs):
         super(AppCase, self).__init__(*args, **kwargs)
@@ -401,10 +456,17 @@ class AppCase(Case):
     def Celery(self, *args, **kwargs):
         return UnitApp(*args, **kwargs)
 
+    def threads_at_startup(self):
+        if self._threads_at_startup[0] is None:
+            self._threads_at_startup[0] = alive_threads()
+        return self._threads_at_startup[0]
+
     def setUp(self):
-        self._threads_at_setup = list(threading.enumerate())
+        self._threads_at_setup = self.threads_at_startup()
         from celery import _state
         from celery import result
+        self._prev_res_join_block = result.task_join_will_block
+        self._prev_state_join_block = _state.task_join_will_block
         result.task_join_will_block = \
             _state.task_join_will_block = lambda: False
         self._current_app = current_app()
@@ -431,17 +493,21 @@ class AppCase(Case):
             raise
 
     def _teardown_app(self):
+        from celery import _state
+        from celery import result
         from celery.utils.log import LoggingProxy
         assert sys.stdout
         assert sys.stderr
         assert sys.__stdout__
         assert sys.__stderr__
         this = self._get_test_name()
-        if isinstance(sys.stdout, LoggingProxy) or \
-                isinstance(sys.__stdout__, LoggingProxy):
+        result.task_join_will_block = self._prev_res_join_block
+        _state.task_join_will_block = self._prev_state_join_block
+        if isinstance(sys.stdout, (LoggingProxy, Mock)) or \
+                isinstance(sys.__stdout__, (LoggingProxy, Mock)):
             raise RuntimeError(CASE_LOG_REDIRECT_EFFECT.format(this, 'stdout'))
-        if isinstance(sys.stderr, LoggingProxy) or \
-                isinstance(sys.__stderr__, LoggingProxy):
+        if isinstance(sys.stderr, (LoggingProxy, Mock)) or \
+                isinstance(sys.__stderr__, (LoggingProxy, Mock)):
             raise RuntimeError(CASE_LOG_REDIRECT_EFFECT.format(this, 'stderr'))
         backend = self.app.__dict__.get('backend')
         if backend is not None:
@@ -458,9 +524,7 @@ class AppCase(Case):
         if self.app is not self._current_app:
             self.app.close()
         self.app = None
-        self.assertEqual(
-            self._threads_at_setup, list(threading.enumerate()),
-        )
+        self.assertEqual(self._threads_at_setup, alive_threads())
 
         # Make sure no test left the shutdown flags enabled.
         from celery.worker import state as worker_state
@@ -513,19 +577,28 @@ def wrap_logger(logger, loglevel=logging.ERROR):
         logger.handlers = old_handlers
 
 
+@contextmanager
+def mock_environ(env_name, env_value):
+    sentinel = object()
+    prev_val = os.environ.get(env_name, sentinel)
+    os.environ[env_name] = env_value
+    try:
+        yield env_value
+    finally:
+        if prev_val is sentinel:
+            os.environ.pop(env_name, None)
+        else:
+            os.environ[env_name] = prev_val
+
+
 def with_environ(env_name, env_value):
 
     def _envpatched(fun):
 
         @wraps(fun)
         def _patch_environ(*args, **kwargs):
-            prev_val = os.environ.get(env_name)
-            os.environ[env_name] = env_value
-            try:
+            with mock_environ(env_name, env_value):
                 return fun(*args, **kwargs)
-            finally:
-                os.environ[env_name] = prev_val or ''
-
         return _patch_environ
     return _envpatched
 
@@ -683,7 +756,7 @@ def replace_module_value(module, name, value=None):
         yield
     finally:
         if prev is not None:
-            setattr(sys, name, prev)
+            setattr(module, name, prev)
         if not has_prev:
             try:
                 delattr(module, name)
@@ -708,7 +781,7 @@ def sys_platform(value):
 
 @contextmanager
 def reset_modules(*modules):
-    prev = dict((k, sys.modules.pop(k)) for k in modules if k in sys.modules)
+    prev = {k: sys.modules.pop(k) for k in modules if k in sys.modules}
     try:
         yield
     finally:
@@ -790,10 +863,6 @@ def mock_open(typ=WhateverIO, side_effect=None):
             yield val
 
 
-def patch_many(*targets):
-    return nested(*[patch(target) for target in targets])
-
-
 @contextmanager
 def assert_signal_called(signal, **expected):
     handler = Mock()
@@ -826,7 +895,49 @@ def skip_if_jython(fun):
     return _inner
 
 
-def task_message_from_sig(app, sig, utc=True):
+def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
+                errbacks=None, chain=None, shadow=None, utc=None, **options):
+    from celery import uuid
+    from kombu.serialization import dumps
+    id = id or uuid()
+    message = Mock(name='TaskMessage-{0}'.format(id))
+    message.headers = {
+        'id': id,
+        'task': name,
+        'shadow': shadow,
+    }
+    embed = {'callbacks': callbacks, 'errbacks': errbacks, 'chain': chain}
+    message.headers.update(options)
+    message.content_type, message.content_encoding, message.body = dumps(
+        (args, kwargs, embed), serializer='json',
+    )
+    message.payload = (args, kwargs, embed)
+    return message
+
+
+def TaskMessage1(name, id=None, args=(), kwargs={}, callbacks=None,
+                 errbacks=None, chain=None, **options):
+    from celery import uuid
+    from kombu.serialization import dumps
+    id = id or uuid()
+    message = Mock(name='TaskMessage-{0}'.format(id))
+    message.headers = {}
+    message.payload = {
+        'task': name,
+        'id': id,
+        'args': args,
+        'kwargs': kwargs,
+        'callbacks': callbacks,
+        'errbacks': errbacks,
+    }
+    message.payload.update(options)
+    message.content_type, message.content_encoding, message.body = dumps(
+        message.payload,
+    )
+    return message
+
+
+def task_message_from_sig(app, sig, utc=True, TaskMessage=TaskMessage):
     sig.freeze()
     callbacks = sig.options.pop('link', None)
     errbacks = sig.options.pop('link_error', None)
@@ -849,6 +960,8 @@ def task_message_from_sig(app, sig, utc=True):
         errbacks=[dict(s) for s in errbacks] if errbacks else None,
         eta=eta,
         expires=expires,
+        utc=utc,
+        **sig.options
     )
 
 
@@ -865,22 +978,3 @@ def restore_logging():
         sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__ = outs
         root.level = level
         root.handlers[:] = handlers
-
-
-def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
-                errbacks=None, chain=None, **options):
-    from celery import uuid
-    from kombu.serialization import dumps
-    id = id or uuid()
-    message = Mock(name='TaskMessage-{0}'.format(id))
-    message.headers = {
-        'id': id,
-        'task': name,
-    }
-    embed = {'callbacks': callbacks, 'errbacks': errbacks, 'chain': chain}
-    message.headers.update(options)
-    message.content_type, message.content_encoding, message.body = dumps(
-        (args, kwargs, embed), serializer='json',
-    )
-    message.payload = (args, kwargs, embed)
-    return message

@@ -13,15 +13,15 @@ import time
 
 from collections import defaultdict, Mapping, MutableMapping, MutableSet
 from heapq import heapify, heappush, heappop
-from functools import partial
 from itertools import chain
 
 from billiard.einfo import ExceptionInfo  # noqa
-from kombu.utils.encoding import safe_str
+from kombu.utils.encoding import safe_str, bytes_to_str
 from kombu.utils.limits import TokenBucket  # noqa
 
 from celery.five import items
 from celery.utils.functional import LRUCache, first, uniq  # noqa
+from celery.utils.text import match_case
 
 try:
     from django.utils.functional import LazyObject, LazySettings
@@ -288,7 +288,9 @@ class DependencyGraph(object):
         """
         seen = set()
         draw = formatter or self.formatter
-        P = partial(print, file=fh)
+
+        def P(s):
+            print(bytes_to_str(s), file=fh)
 
         def if_not_seen(fun, obj):
             if draw.label(obj) not in seen:
@@ -387,11 +389,8 @@ class DictAttribute(object):
             return default
 
     def setdefault(self, key, default):
-        try:
-            return self[key]
-        except KeyError:
+        if key not in self:
             self[key] = default
-            return default
 
     def __getitem__(self, key):
         try:
@@ -451,13 +450,30 @@ class ConfigurationView(AttributeDictMixin):
     :param defaults: List of dicts containing the default configuration.
 
     """
+    key_t = None
     changes = None
     defaults = None
     _order = None
 
-    def __init__(self, changes, defaults):
-        self.__dict__.update(changes=changes, defaults=defaults,
-                             _order=[changes] + defaults)
+    def __init__(self, changes, defaults=None, key_t=None, prefix=None):
+        defaults = [] if defaults is None else defaults
+        self.__dict__.update(
+            changes=changes,
+            defaults=defaults,
+            key_t=key_t,
+            _order=[changes] + defaults,
+            prefix=prefix.rstrip('_') + '_' if prefix else prefix,
+        )
+
+    def _to_keys(self, key):
+        prefix = self.prefix
+        if prefix:
+            pkey = prefix + key if not key.startswith(prefix) else key
+            return match_case(pkey, prefix), self._key(key)
+        return self._key(key),
+
+    def _key(self, key):
+        return self.key_t(key) if self.key_t is not None else key
 
     def add_defaults(self, d):
         d = force_mapping(d)
@@ -465,15 +481,20 @@ class ConfigurationView(AttributeDictMixin):
         self._order.insert(1, d)
 
     def __getitem__(self, key):
-        for d in self._order:
-            try:
-                return d[key]
-            except KeyError:
-                pass
+        keys = self._to_keys(key)
+        for k in keys:
+            for d in self._order:
+                try:
+                    return d[k]
+                except KeyError:
+                    pass
+        if len(keys) > 1:
+            raise KeyError(
+                'Key not found: {0!r} (with prefix: {0!r})'.format(*keys))
         raise KeyError(key)
 
     def __setitem__(self, key, value):
-        self.changes[key] = value
+        self.changes[self._key(key)] = value
 
     def first(self, *keys):
         return first(None, (self.get(key) for key in keys))
@@ -489,17 +510,16 @@ class ConfigurationView(AttributeDictMixin):
         self.changes.clear()
 
     def setdefault(self, key, default):
-        try:
-            return self[key]
-        except KeyError:
+        key = self._key(key)
+        if key not in self:
             self[key] = default
-            return default
 
     def update(self, *args, **kwargs):
         return self.changes.update(*args, **kwargs)
 
     def __contains__(self, key):
-        return any(key in m for m in self._order)
+        keys = self._to_keys(key)
+        return any(any(k in m for k in keys) for m in self._order)
 
     def __bool__(self):
         return any(self._order)
@@ -521,8 +541,19 @@ class ConfigurationView(AttributeDictMixin):
         # changes takes precedence.
         return chain(*[op(d) for d in reversed(self._order)])
 
+    def swap_with(self, other):
+        changes = other.__dict__['changes']
+        defaults = other.__dict__['defaults']
+        self.__dict__.update(
+            changes=changes,
+            defaults=defaults,
+            key_t=other.__dict__['key_t'],
+            prefix=other.__dict__['prefix'],
+            _order=[changes] + defaults
+        )
+
     def _iterate_keys(self):
-        return uniq(self._iter(lambda d: d))
+        return uniq(self._iter(lambda d: d.keys()))
     iterkeys = _iterate_keys
 
     def _iterate_items(self):

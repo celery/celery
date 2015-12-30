@@ -16,7 +16,6 @@ import logging
 import os
 import platform as _platform
 import sys
-import warnings
 
 from functools import partial
 
@@ -26,9 +25,7 @@ from kombu.utils.url import maybe_sanitize_url
 
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
-from celery.exceptions import (
-    CDeprecationWarning, WorkerShutdown, WorkerTerminate,
-)
+from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.five import string, string_t
 from celery.loaders.app import AppLoader
 from celery.platforms import EX_FAILURE, EX_OK, check_privileges
@@ -43,25 +40,6 @@ __all__ = ['Worker']
 logger = get_logger(__name__)
 is_jython = sys.platform.startswith('java')
 is_pypy = hasattr(sys, 'pypy_version_info')
-
-W_PICKLE_DEPRECATED = """
-Starting from version 3.2 Celery will refuse to accept pickle by default.
-
-The pickle serializer is a security concern as it may give attackers
-the ability to execute any command.  It's important to secure
-your broker from unauthorized access when using pickle, so we think
-that enabling pickle should require a deliberate action and not be
-the default choice.
-
-If you depend on pickle then you should set a setting to disable this
-warning and to be sure that everything will continue working
-when you upgrade to Celery 3.2::
-
-    CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
-
-You must only enable the serializers that you will actually use.
-
-"""
 
 
 def active_thread_count():
@@ -120,16 +98,16 @@ class Worker(WorkController):
             sender=self.hostname, instance=self,
             conf=self.app.conf, options=kwargs,
         )
-        check_privileges(self.app.conf.CELERY_ACCEPT_CONTENT)
+        check_privileges(self.app.conf.accept_content)
 
     def on_after_init(self, purge=False, no_color=None,
                       redirect_stdouts=None, redirect_stdouts_level=None,
                       **kwargs):
-        self.redirect_stdouts = self._getopt(
-            'redirect_stdouts', redirect_stdouts,
+        self.redirect_stdouts = self.app.either(
+            'worker_redirect_stdouts', redirect_stdouts,
         )
-        self.redirect_stdouts_level = self._getopt(
-            'redirect_stdouts_level', redirect_stdouts_level,
+        self.redirect_stdouts_level = self.app.either(
+            'worker_redirect_stdouts_level', redirect_stdouts_level,
         )
         super(Worker, self).setup_defaults(**kwargs)
         self.purge = purge
@@ -147,19 +125,17 @@ class Worker(WorkController):
         trace.setup_worker_optimizations(self.app, self.hostname)
 
     def on_start(self):
+        app = self.app
         if not self._custom_logging and self.redirect_stdouts:
-            self.app.log.redirect_stdouts(self.redirect_stdouts_level)
+            app.log.redirect_stdouts(self.redirect_stdouts_level)
 
         WorkController.on_start(self)
 
         # this signal can be used to e.g. change queues after
         # the -Q option has been applied.
         signals.celeryd_after_setup.send(
-            sender=self.hostname, instance=self, conf=self.app.conf,
+            sender=self.hostname, instance=self, conf=app.conf,
         )
-
-        if not self.app.conf.value_set_for('CELERY_ACCEPT_CONTENT'):
-            warnings.warn(CDeprecationWarning(W_PICKLE_DEPRECATED))
 
         if self.purge:
             self.purge_messages()
@@ -175,7 +151,7 @@ class Worker(WorkController):
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
-        print('{0} ready.'.format(safe_str(self.hostname), ))
+        print('{0} ready.'.format(safe_str(self.hostname),))
 
     def setup_logging(self, colorize=None):
         if colorize is None and self.no_color is not None:
@@ -187,7 +163,7 @@ class Worker(WorkController):
 
     def purge_messages(self):
         count = self.app.control.purge()
-        if count:
+        if count:  # pragma: no cover
             print('purge: Erased {0} {1} from the queue.\n'.format(
                 count, pluralize(count, 'message')))
 
@@ -209,7 +185,7 @@ class Worker(WorkController):
         appr = '{0}:{1:#x}'.format(app.main or '__main__', id(app))
         if not isinstance(app.loader, AppLoader):
             loader = qualname(app.loader)
-            if loader.startswith('celery.loaders'):
+            if loader.startswith('celery.loaders'):  # pragma: no cover
                 loader = loader[14:]
             appr += ' ({0})'.format(loader)
         if self.autoscale:
@@ -229,7 +205,7 @@ class Worker(WorkController):
             version=VERSION_BANNER,
             conninfo=self.app.connection().as_uri(),
             results=maybe_sanitize_url(
-                self.app.conf.CELERY_RESULT_BACKEND or 'disabled',
+                self.app.conf.result_backend or 'disabled',
             ),
             concurrency=concurrency,
             platform=safe_str(_platform.platform()),
@@ -281,7 +257,6 @@ class Worker(WorkController):
 
 def _shutdown_handler(worker, sig='TERM', how='Warm',
                       exc=WorkerShutdown, callback=None, exitcode=EX_OK):
-
     def _handle_request(*args):
         with in_sighandler():
             from celery.worker import state
@@ -318,7 +293,8 @@ if not is_jython:  # pragma: no cover
         exitcode=EX_FAILURE,
     )
 else:  # pragma: no cover
-    install_worker_int_handler = lambda *a, **kw: None
+    def install_worker_int_handler(*args, **kwargs):
+        pass
 
 
 def _reload_current_worker():

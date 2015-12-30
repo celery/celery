@@ -37,9 +37,9 @@ What do I need?
 ===============
 
 .. sidebar:: Version Requirements
-    :subtitle: Celery version 3.0 runs on
+    :subtitle: Celery version 4.0 runs on
 
-    - Python ❨2.5, 2.6, 2.7, 3.2, 3.3❩
+    - Python ❨2.7, 3.4, 3.5❩
     - PyPy ❨1.8, 1.9❩
     - Jython ❨2.5, 2.7❩.
 

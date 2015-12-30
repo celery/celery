@@ -4,15 +4,17 @@
  Change history
 ================
 
-This document contains change notes for bugfix releases in the 3.2.x series
-(Cipater), please see :ref:`whatsnew-3.2` for an overview of what's
-new in Celery 3.2.
+This document contains change notes for bugfix releases in
+the 4.0.x series (0today8), please see :ref:`whatsnew-4.0` for
+an overview of what's new in Celery 4.0.
 
-.. _version-3.2.0:
+.. _version-4.0.0:
 
-3.2.0
-=======
+4.0.0
+=====
 :release-date: TBA
+:status: *FROZEN*
+:branch: master
 :release-by:
 
-See :ref:`whatsnew-3.2`.
+See :ref:`whatsnew-4.0`.

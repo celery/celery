@@ -29,7 +29,7 @@ class test_Pickle(Case):
         exception = unpickled.get('exception')
         self.assertTrue(exception)
         self.assertIsInstance(exception, RegularException)
-        self.assertTupleEqual(exception.args, ('RegularException raised', ))
+        self.assertTupleEqual(exception.args, ('RegularException raised',))
 
     def test_pickle_arg_override_exception(self):
 

@@ -6,79 +6,79 @@
 Examples
 ========
 
-.. code-block:: bash
+.. code-block:: console
 
-    # Single worker with explicit name and events enabled.
+    $ # Single worker with explicit name and events enabled.
     $ celery multi start Leslie -E
 
-    # Pidfiles and logfiles are stored in the current directory
-    # by default.  Use --pidfile and --logfile argument to change
-    # this.  The abbreviation %n will be expanded to the current
-    # node name.
+    $ # Pidfiles and logfiles are stored in the current directory
+    $ # by default.  Use --pidfile and --logfile argument to change
+    $ # this.  The abbreviation %n will be expanded to the current
+    $ # node name.
     $ celery multi start Leslie -E --pidfile=/var/run/celery/%n.pid
                                    --logfile=/var/log/celery/%n%I.log
 
 
-    # You need to add the same arguments when you restart,
-    # as these are not persisted anywhere.
+    $ # You need to add the same arguments when you restart,
+    $ # as these are not persisted anywhere.
     $ celery multi restart Leslie -E --pidfile=/var/run/celery/%n.pid
                                      --logfile=/var/run/celery/%n%I.log
 
-    # To stop the node, you need to specify the same pidfile.
+    $ # To stop the node, you need to specify the same pidfile.
     $ celery multi stop Leslie --pidfile=/var/run/celery/%n.pid
 
-    # 3 workers, with 3 processes each
+    $ # 3 workers, with 3 processes each
     $ celery multi start 3 -c 3
     celery worker -n celery1@myhost -c 3
     celery worker -n celery2@myhost -c 3
     celery worker -n celery3@myhost -c 3
 
-    # start 3 named workers
+    $ # start 3 named workers
     $ celery multi start image video data -c 3
     celery worker -n image@myhost -c 3
     celery worker -n video@myhost -c 3
     celery worker -n data@myhost -c 3
 
-    # specify custom hostname
+    $ # specify custom hostname
     $ celery multi start 2 --hostname=worker.example.com -c 3
     celery worker -n celery1@worker.example.com -c 3
     celery worker -n celery2@worker.example.com -c 3
 
-    # specify fully qualified nodenames
+    $ # specify fully qualified nodenames
     $ celery multi start foo@worker.example.com bar@worker.example.com -c 3
 
-    # fully qualified nodenames but using the current hostname
+    $ # fully qualified nodenames but using the current hostname
     $ celery multi start foo@%h bar@%h
 
-    # Advanced example starting 10 workers in the background:
-    #   * Three of the workers processes the images and video queue
-    #   * Two of the workers processes the data queue with loglevel DEBUG
-    #   * the rest processes the default' queue.
+    $ # Advanced example starting 10 workers in the background:
+    $ #   * Three of the workers processes the images and video queue
+    $ #   * Two of the workers processes the data queue with loglevel DEBUG
+    $ #   * the rest processes the default' queue.
     $ celery multi start 10 -l INFO -Q:1-3 images,video -Q:4,5 data
         -Q default -L:4,5 DEBUG
 
-    # You can show the commands necessary to start the workers with
-    # the 'show' command:
+    $ # You can show the commands necessary to start the workers with
+    $ # the 'show' command:
     $ celery multi show 10 -l INFO -Q:1-3 images,video -Q:4,5 data
         -Q default -L:4,5 DEBUG
 
-    # Additional options are added to each celery worker' comamnd,
-    # but you can also modify the options for ranges of, or specific workers
+    $ # Additional options are added to each celery worker' comamnd,
+    $ # but you can also modify the options for ranges of, or specific workers
 
-    # 3 workers: Two with 3 processes, and one with 10 processes.
+    $ # 3 workers: Two with 3 processes, and one with 10 processes.
     $ celery multi start 3 -c 3 -c:1 10
     celery worker -n celery1@myhost -c 10
     celery worker -n celery2@myhost -c 3
     celery worker -n celery3@myhost -c 3
 
-    # can also specify options for named workers
+    $ # can also specify options for named workers
     $ celery multi start image video data -c 3 -c:image 10
     celery worker -n image@myhost -c 10
     celery worker -n video@myhost -c 3
     celery worker -n data@myhost -c 3
 
-    # ranges and lists of workers in options is also allowed:
-    # (-c:1-3 can also be written as -c:1,2,3)
+    $ # ranges and lists of workers in options is also allowed:
+    $ # (-c:1-3 can also be written as -c:1,2,3)
     $ celery multi start 5 -c 3  -c:1-3 10
     celery worker -n celery1@myhost -c 10
     celery worker -n celery2@myhost -c 10
@@ -86,7 +86,7 @@ Examples
     celery worker -n celery4@myhost -c 3
     celery worker -n celery5@myhost -c 3
 
-    # lists also works with named workers
+    $ # lists also works with named workers
     $ celery multi start foo bar baz xuzzy -c 3 -c:foo,bar,baz 10
     celery worker -n foo@myhost -c 10
     celery worker -n bar@myhost -c 10
@@ -100,7 +100,6 @@ import errno
 import os
 import shlex
 import signal
-import socket
 import sys
 
 from collections import OrderedDict, defaultdict, namedtuple
@@ -115,7 +114,7 @@ from celery import VERSION_BANNER
 from celery.five import items
 from celery.platforms import Pidfile, IS_WINDOWS
 from celery.utils import term
-from celery.utils import host_format, node_format, nodesplit
+from celery.utils import gethostname, host_format, node_format, nodesplit
 from celery.utils.text import pluralize
 
 __all__ = ['MultiTool']
@@ -143,6 +142,7 @@ additional options (must appear after command name):
     * --verbose:    Show more output.
     * --no-color:   Don't display colors.
 """
+CELERY_EXE = 'celery'
 
 multi_args_t = namedtuple(
     'multi_args_t', ('name', 'argv', 'expander', 'namespace'),
@@ -153,14 +153,8 @@ def main():
     sys.exit(MultiTool().execute_from_commandline(sys.argv))
 
 
-CELERY_EXE = 'celery'
-if sys.version_info < (2, 7):
-    # pkg.__main__ first supported in Py2.7
-    CELERY_EXE = 'celery.__main__'
-
-
 def celery_exe(*args):
-    return ' '.join((CELERY_EXE, ) + args)
+    return ' '.join((CELERY_EXE,) + args)
 
 
 class MultiTool(object):
@@ -460,47 +454,72 @@ class MultiTool(object):
         return str(self.colored.magenta('DOWN'))
 
 
+def _args_for_node(p, name, prefix, suffix, cmd, append, options):
+    name, nodename, expand = _get_nodename(
+        name, prefix, suffix, options)
+
+    argv = ([expand(cmd)] +
+            [format_opt(opt, expand(value))
+                for opt, value in items(p.optmerge(name, options))] +
+            [p.passthrough])
+    if append:
+        argv.append(expand(append))
+    return multi_args_t(nodename, argv, expand, name)
+
+
 def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
     names = p.values
     options = dict(p.options)
-    passthrough = p.passthrough
     ranges = len(names) == 1
     if ranges:
         try:
-            noderange = int(names[0])
+            names, prefix = _get_ranges(names)
         except ValueError:
             pass
-        else:
-            names = [str(n) for n in range(1, noderange + 1)]
-            prefix = 'celery'
     cmd = options.pop('--cmd', cmd)
     append = options.pop('--append', append)
     hostname = options.pop('--hostname',
-                           options.pop('-n', socket.gethostname()))
+                           options.pop('-n', gethostname()))
     prefix = options.pop('--prefix', prefix) or ''
     suffix = options.pop('--suffix', suffix) or hostname
-    if suffix in ('""', "''"):
-        suffix = ''
+    suffix = '' if suffix in ('""', "''") else suffix
 
-    for ns_name, ns_opts in list(items(p.namespaces)):
-        if ',' in ns_name or (ranges and '-' in ns_name):
-            for subns in parse_ns_range(ns_name, ranges):
-                p.namespaces[subns].update(ns_opts)
-            p.namespaces.pop(ns_name)
+    _update_ns_opts(p, names)
+    _update_ns_ranges(p, ranges)
+    return (_args_for_node(p, name, prefix, suffix, cmd, append, options)
+            for name in names)
 
+
+def _get_ranges(names):
+    noderange = int(names[0])
+    names = [str(n) for n in range(1, noderange + 1)]
+    prefix = 'celery'
+    return names, prefix
+
+
+def _update_ns_opts(p, names):
     # Numbers in args always refers to the index in the list of names.
     # (e.g. `start foo bar baz -c:1` where 1 is foo, 2 is bar, and so on).
     for ns_name, ns_opts in list(items(p.namespaces)):
         if ns_name.isdigit():
             ns_index = int(ns_name) - 1
             if ns_index < 0:
-                raise KeyError('Indexes start at 1 got: %r' % (ns_name, ))
+                raise KeyError('Indexes start at 1 got: %r' % (ns_name,))
             try:
                 p.namespaces[names[ns_index]].update(ns_opts)
             except IndexError:
-                raise KeyError('No node at index %r' % (ns_name, ))
+                raise KeyError('No node at index %r' % (ns_name,))
 
-    for name in names:
+
+def _update_ns_ranges(p, ranges):
+    for ns_name, ns_opts in list(items(p.namespaces)):
+        if ',' in ns_name or (ranges and '-' in ns_name):
+            for subns in parse_ns_range(ns_name, ranges):
+                p.namespaces[subns].update(ns_opts)
+            p.namespaces.pop(ns_name)
+
+
+def _get_nodename(name, prefix, suffix, options):
         hostname = suffix
         if '@' in name:
             nodename = options['-n'] = host_format(name)
@@ -511,18 +530,11 @@ def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
             nodename = options['-n'] = host_format(
                 '{0}@{1}'.format(shortname, hostname),
             )
-
         expand = partial(
             node_format, nodename=nodename, N=shortname, d=hostname,
             h=nodename, i='%i', I='%I',
         )
-        argv = ([expand(cmd)] +
-                [format_opt(opt, expand(value))
-                 for opt, value in items(p.optmerge(name, options))] +
-                [passthrough])
-        if append:
-            argv.append(expand(append))
-        yield multi_args_t(nodename, argv, expand, name)
+        return name, nodename, expand
 
 
 class NamespacedOptionParser(object):

@@ -148,6 +148,12 @@ class test_ConsumerStep(AppCase):
         step = Step(self)
         step.start(self)
 
+    def test_close_no_consumer_channel(self):
+        step = bootsteps.ConsumerStep(Mock())
+        step.consumers = [Mock()]
+        step.consumers[0].channel = None
+        step._close(Mock())
+
 
 class test_StartStopStep(AppCase):
 
@@ -176,6 +182,11 @@ class test_StartStopStep(AppCase):
 
         x.obj = None
         self.assertIsNone(x.start(self))
+
+    def test_terminate__no_obj(self):
+        x = self.Def(self)
+        x.obj = None
+        x.terminate(Mock())
 
     def test_include_when_disabled(self):
         x = self.Def(self)
@@ -237,8 +248,22 @@ class test_Blueprint(AppCase):
         parent.steps = [None, None, None]
         blueprint.send_all(parent, 'close', 'Closing', reverse=False)
 
+    def test_send_all_raises(self):
+        parent = Mock()
+        blueprint = self.Blueprint(app=self.app)
+        parent.steps = [Mock()]
+        parent.steps[0].foo.side_effect = KeyError()
+        blueprint.send_all(parent, 'foo', propagate=False)
+        with self.assertRaises(KeyError):
+            blueprint.send_all(parent, 'foo', propagate=True)
+
+    def test_stop_state_in_TERMINATE(self):
+        blueprint = self.Blueprint(app=self.app)
+        blueprint.state = bootsteps.TERMINATE
+        blueprint.stop(Mock())
+
     def test_join_raises_IGNORE_ERRORS(self):
-        prev, bootsteps.IGNORE_ERRORS = bootsteps.IGNORE_ERRORS, (KeyError, )
+        prev, bootsteps.IGNORE_ERRORS = bootsteps.IGNORE_ERRORS, (KeyError,)
         try:
             blueprint = self.Blueprint(app=self.app)
             blueprint.shutdown_complete = Mock()
@@ -278,7 +303,7 @@ class test_Blueprint(AppCase):
     def test_topsort_raises_KeyError(self):
 
         class Step(bootsteps.Step):
-            requires = ('xyxxx.fsdasewe.Unknown', )
+            requires = ('xyxxx.fsdasewe.Unknown',)
 
         b = self.Blueprint([Step], app=self.app)
         b.steps = b.claim_steps()

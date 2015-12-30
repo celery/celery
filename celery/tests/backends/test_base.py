@@ -5,7 +5,7 @@ import types
 
 from contextlib import contextmanager
 
-from celery.exceptions import ChordError
+from celery.exceptions import ChordError, TimeoutError
 from celery.five import items, range
 from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
@@ -19,11 +19,13 @@ from celery.backends.base import (
     BaseBackend,
     KeyValueStoreBackend,
     DisabledBackend,
+    _nulldict,
 )
 from celery.result import result_from_tuple
 from celery.utils import uuid
+from celery.utils.functional import pass1
 
-from celery.tests.case import AppCase, Mock, SkipTest, patch
+from celery.tests.case import ANY, AppCase, Case, Mock, SkipTest, call, patch
 
 
 class wrapobject(object):
@@ -38,6 +40,15 @@ else:
 Unpickleable = subclass_exception('Unpickleable', KeyError, 'foo.module')
 Impossible = subclass_exception('Impossible', object, 'foo.module')
 Lookalike = subclass_exception('Lookalike', wrapobject, 'foo.module')
+
+
+class test_nulldict(Case):
+
+    def test_nulldict(self):
+        x = _nulldict()
+        x['foo'] = 1
+        x.update(foo=1, bar=2)
+        x.setdefault('foo', 3)
 
 
 class test_serialization(AppCase):
@@ -139,7 +150,7 @@ class KVBackend(KeyValueStoreBackend):
 
     def mget(self, keys):
         if self.mget_returns_dict:
-            return dict((key, self.get(key)) for key in keys)
+            return {key: self.get(key) for key in keys}
         else:
             return [self.get(k) for k in keys]
 
@@ -247,6 +258,71 @@ class test_BaseBackend_dict(AppCase):
         self.assertTrue(b.is_cached('foo'))
         self.assertFalse(b.is_cached('false'))
 
+    def test_mark_as_done__chord(self):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+        request = Mock(name='request')
+        b.on_chord_part_return = Mock()
+        b.mark_as_done('id', 10, request=request)
+        b.on_chord_part_return.assert_called_with(request, states.SUCCESS, 10)
+
+    def test_mark_as_failure__chord(self):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+        request = Mock(name='request')
+        request.errbacks = []
+        b.on_chord_part_return = Mock()
+        exc = KeyError()
+        b.mark_as_failure('id', exc, request=request)
+        b.on_chord_part_return.assert_called_with(request, states.FAILURE, exc)
+
+    def test_mark_as_revoked__chord(self):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+        request = Mock(name='request')
+        request.errbacks = []
+        b.on_chord_part_return = Mock()
+        b.mark_as_revoked('id', 'revoked', request=request)
+        b.on_chord_part_return.assert_called_with(request, states.REVOKED, ANY)
+
+    def test_chord_error_from_stack_raises(self):
+        b = BaseBackend(app=self.app)
+        exc = KeyError()
+        callback = Mock(name='callback')
+        callback.options = {'link_error': []}
+        task = self.app.tasks[callback.task] = Mock()
+        b.fail_from_current_stack = Mock()
+        group = self.patch('celery.group')
+        group.side_effect = exc
+        b.chord_error_from_stack(callback, exc=ValueError())
+        task.backend.fail_from_current_stack.assert_called_with(
+            callback.id, exc=exc)
+
+    def test_exception_to_python_when_None(self):
+        b = BaseBackend(app=self.app)
+        self.assertIsNone(b.exception_to_python(None))
+
+    def test_wait_for__on_interval(self):
+        self.patch('time.sleep')
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock()
+        b._get_task_meta_for.return_value = {'status': states.PENDING}
+        callback = Mock(name='callback')
+        with self.assertRaises(TimeoutError):
+            b.wait_for(task_id='1', on_interval=callback, timeout=1)
+        callback.assert_called_with()
+
+        b._get_task_meta_for.return_value = {'status': states.SUCCESS}
+        b.wait_for(task_id='1', timeout=None)
+
+    def test_get_children(self):
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock()
+        b._get_task_meta_for.return_value = {}
+        self.assertIsNone(b.get_children('id'))
+        b._get_task_meta_for.return_value = {'children': 3}
+        self.assertEqual(b.get_children('id'), 3)
+
 
 class test_KeyValueStoreBackend(AppCase):
 
@@ -261,9 +337,9 @@ class test_KeyValueStoreBackend(AppCase):
         tid = uuid()
         self.b.mark_as_done(tid, 'Hello world')
         self.assertEqual(self.b.get_result(tid), 'Hello world')
-        self.assertEqual(self.b.get_status(tid), states.SUCCESS)
+        self.assertEqual(self.b.get_state(tid), states.SUCCESS)
         self.b.forget(tid)
-        self.assertEqual(self.b.get_status(tid), states.PENDING)
+        self.assertEqual(self.b.get_state(tid), states.PENDING)
 
     def test_strip_prefix(self):
         x = self.b.get_key_for_task('x1b34')
@@ -273,7 +349,7 @@ class test_KeyValueStoreBackend(AppCase):
     def test_get_many(self):
         for is_dict in True, False:
             self.b.mget_returns_dict = is_dict
-            ids = dict((uuid(), i) for i in range(10))
+            ids = {uuid(): i for i in range(10)}
             for id, i in items(ids):
                 self.b.mark_as_done(id, i)
             it = self.b.get_many(list(ids))
@@ -281,6 +357,17 @@ class test_KeyValueStoreBackend(AppCase):
                 self.assertEqual(got_state['result'], ids[got_id])
             self.assertEqual(i, 9)
             self.assertTrue(list(self.b.get_many(list(ids))))
+
+            self.b._cache.clear()
+            callback = Mock(name='callback')
+            it = self.b.get_many(list(ids), on_message=callback)
+            for i, (got_id, got_state) in enumerate(it):
+                self.assertEqual(got_state['result'], ids[got_id])
+            self.assertEqual(i, 9)
+            self.assertTrue(list(self.b.get_many(list(ids))))
+            callback.assert_has_calls([
+                call(ANY) for id in ids
+            ])
 
     def test_get_many_times_out(self):
         tasks = [uuid() for _ in range(4)]
@@ -298,7 +385,53 @@ class test_KeyValueStoreBackend(AppCase):
         self.b.get_key_for_chord.side_effect = AssertionError(
             'should not get here',
         )
-        self.assertIsNone(self.b.on_chord_part_return(task, state, result))
+        self.assertIsNone(
+            self.b.on_chord_part_return(task.request, state, result),
+        )
+
+    @patch('celery.backends.base.GroupResult')
+    @patch('celery.backends.base.maybe_signature')
+    def test_chord_part_return_restore_raises(self, maybe_signature,
+                                              GroupResult):
+        self.b.implements_incr = True
+        GroupResult.restore.side_effect = KeyError()
+        self.b.chord_error_from_stack = Mock()
+        callback = Mock(name='callback')
+        request = Mock(name='request')
+        request.group = 'gid'
+        maybe_signature.return_value = callback
+        self.b.on_chord_part_return(request, states.SUCCESS, 10)
+        self.b.chord_error_from_stack.assert_called_with(
+            callback, ANY,
+        )
+
+    @patch('celery.backends.base.GroupResult')
+    @patch('celery.backends.base.maybe_signature')
+    def test_chord_part_return_restore_empty(self, maybe_signature,
+                                             GroupResult):
+        self.b.implements_incr = True
+        GroupResult.restore.return_value = None
+        self.b.chord_error_from_stack = Mock()
+        callback = Mock(name='callback')
+        request = Mock(name='request')
+        request.group = 'gid'
+        maybe_signature.return_value = callback
+        self.b.on_chord_part_return(request, states.SUCCESS, 10)
+        self.b.chord_error_from_stack.assert_called_with(
+            callback, ANY,
+        )
+
+    def test_filter_ready(self):
+        self.b.decode_result = Mock()
+        self.b.decode_result.side_effect = pass1
+        self.assertEqual(
+            len(list(self.b._filter_ready([
+                (1, {'status': states.RETRY}),
+                (2, {'status': states.FAILURE}),
+                (3, {'status': states.SUCCESS}),
+            ]))),
+            2,
+        )
 
     @contextmanager
     def _chord_part_context(self, b):
@@ -326,26 +459,23 @@ class test_KeyValueStoreBackend(AppCase):
 
     def test_chord_part_return_propagate_set(self):
         with self._chord_part_context(self.b) as (task, deps, _):
-            self.b.on_chord_part_return(task, 'SUCCESS', 10, propagate=True)
+            self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
             self.assertFalse(self.b.expire.called)
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(propagate=True, timeout=3.0)
 
     def test_chord_part_return_propagate_default(self):
         with self._chord_part_context(self.b) as (task, deps, _):
-            self.b.on_chord_part_return(task, 'SUCCESS', 10, propagate=None)
+            self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
             self.assertFalse(self.b.expire.called)
             deps.delete.assert_called_with()
-            deps.join_native.assert_called_with(
-                propagate=self.b.app.conf.CELERY_CHORD_PROPAGATES,
-                timeout=3.0,
-            )
+            deps.join_native.assert_called_with(propagate=True, timeout=3.0)
 
     def test_chord_part_return_join_raises_internal(self):
         with self._chord_part_context(self.b) as (task, deps, callback):
             deps._failed_join_report = lambda: iter([])
             deps.join_native.side_effect = KeyError('foo')
-            self.b.on_chord_part_return(task, 'SUCCESS', 10)
+            self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
             self.assertTrue(self.b.fail_from_current_stack.called)
             args = self.b.fail_from_current_stack.call_args
             exc = args[1]['exc']
@@ -359,7 +489,7 @@ class test_KeyValueStoreBackend(AppCase):
                 self.app.AsyncResult('culprit'),
             ])
             deps.join_native.side_effect = KeyError('foo')
-            b.on_chord_part_return(task, 'SUCCESS', 10)
+            b.on_chord_part_return(task.request, 'SUCCESS', 10)
             self.assertTrue(b.fail_from_current_stack.called)
             args = b.fail_from_current_stack.call_args
             exc = args[1]['exc']
@@ -399,7 +529,7 @@ class test_KeyValueStoreBackend(AppCase):
 
     def test_get_missing_meta(self):
         self.assertIsNone(self.b.get_result('xxx-missing'))
-        self.assertEqual(self.b.get_status('xxx-missing'), states.PENDING)
+        self.assertEqual(self.b.get_state('xxx-missing'), states.PENDING)
 
     def test_save_restore_delete_group(self):
         tid = uuid()
@@ -453,4 +583,4 @@ class test_DisabledBackend(AppCase):
 
     def test_is_disabled(self):
         with self.assertRaises(NotImplementedError):
-            DisabledBackend(self.app).get_status('foo')
+            DisabledBackend(self.app).get_state('foo')

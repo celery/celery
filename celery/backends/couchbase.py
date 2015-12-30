@@ -17,6 +17,7 @@ try:
 except ImportError:
     Couchbase = Connection = NotFoundError = None   # noqa
 
+from kombu.utils.encoding import str_t
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
@@ -39,6 +40,9 @@ class CouchBaseBackend(KeyValueStoreBackend):
     transcoder = None
     # supports_autoexpire = False
 
+    # Use str as couchbase key not bytes
+    key_t = str_t
+
     def __init__(self, url=None, *args, **kwargs):
         """Initialize CouchBase backend instance.
 
@@ -59,7 +63,7 @@ class CouchBaseBackend(KeyValueStoreBackend):
             _, uhost, uport, uname, upass, ubucket, _ = _parse_url(url)
             ubucket = ubucket.strip('/') if ubucket else None
 
-        config = self.app.conf.get('CELERY_COUCHBASE_BACKEND_SETTINGS', None)
+        config = self.app.conf.get('couchbase_backend_settings', None)
         if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(

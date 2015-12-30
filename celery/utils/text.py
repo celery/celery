@@ -62,11 +62,17 @@ def indent(t, indent=0, sep='\n'):
     return sep.join(' ' * indent + p for p in t.split(sep))
 
 
-def truncate(text, maxlen=128, suffix='...'):
+def truncate(s, maxlen=128, suffix='...'):
     """Truncates text to a maximum number of characters."""
-    if len(text) >= maxlen:
-        return text[:maxlen].rsplit(' ', 1)[0] + suffix
-    return text
+    if maxlen and len(s) >= maxlen:
+        return s[:maxlen].rsplit(' ', 1)[0] + suffix
+    return s
+
+
+def truncate_bytes(s, maxlen=128, suffix=b'...'):
+    if maxlen and len(s) >= maxlen:
+        return s[:maxlen].rsplit(b' ', 1)[0] + suffix
+    return s
 
 
 def pluralize(n, text, suffix='s'):
@@ -84,3 +90,7 @@ def pretty(value, width=80, nl_width=80, sep='\n', **kw):
         )
     else:
         return pformat(value, width=width, **kw)
+
+
+def match_case(s, other):
+    return s.upper() if other.isupper() else s.lower()

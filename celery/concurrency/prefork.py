@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 import os
 
+from billiard.common import REMAP_SIGTERM, TERM_SIGNAME
 from billiard import forking_enable
 from billiard.pool import RUN, CLOSE, Pool as BlockingPool
 
@@ -32,7 +33,10 @@ WORKER_SIGRESET = {
 }
 
 #: List of signals to ignore when a child process starts.
-WORKER_SIGIGNORE = {'SIGINT'}
+if REMAP_SIGTERM:
+    WORKER_SIGIGNORE = {'SIGINT', TERM_SIGNAME}
+else:
+    WORKER_SIGIGNORE = {'SIGINT'}
 
 logger = get_logger(__name__)
 warning, debug = logger.warning, logger.debug
@@ -154,10 +158,7 @@ class TaskPool(BasePool):
             self._pool.close()
 
     def _get_info(self):
-        try:
-            write_stats = self._pool.human_write_stats
-        except AttributeError:
-            write_stats = lambda: 'N/A'  # only supported by asynpool
+        write_stats = getattr(self._pool, 'human_write_stats', None)
         return {
             'max-concurrency': self.limit,
             'processes': [p.pid for p in self._pool._pool],
@@ -165,7 +166,7 @@ class TaskPool(BasePool):
             'put-guarded-by-semaphore': self.putlocks,
             'timeouts': (self._pool.soft_timeout or 0,
                          self._pool.timeout or 0),
-            'writes': write_stats()
+            'writes': write_stats() if write_stats is not None else 'N/A',
         }
 
     @property

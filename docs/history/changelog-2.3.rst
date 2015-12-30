@@ -287,7 +287,7 @@ News
 
     Example use:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celery multi start 4  -c 2  -- broker.host=amqp.example.com \
                                          broker.vhost=/               \

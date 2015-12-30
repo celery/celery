@@ -1,14 +1,17 @@
 from __future__ import absolute_import
 
 import errno
+import os
 import socket
-import time
+import sys
 
 from itertools import cycle
 
+from celery.app.defaults import DEFAULTS
+from celery.datastructures import AttributeDict
 from celery.five import items, range
 from celery.utils.functional import noop
-from celery.tests.case import AppCase, Mock, SkipTest, patch
+from celery.tests.case import AppCase, Mock, SkipTest, patch, restore_logging
 try:
     from celery.concurrency import prefork as mp
     from celery.concurrency import asynpool
@@ -52,6 +55,67 @@ class MockResult(object):
 
     def get(self):
         return self.value
+
+
+class test_process_initializer(AppCase):
+
+    @patch('celery.platforms.signals')
+    @patch('celery.platforms.set_mp_process_title')
+    def test_process_initializer(self, set_mp_process_title, _signals):
+        with restore_logging():
+            from celery import signals
+            from celery._state import _tls
+            from celery.concurrency.prefork import (
+                process_initializer, WORKER_SIGRESET, WORKER_SIGIGNORE,
+            )
+
+            def on_worker_process_init(**kwargs):
+                on_worker_process_init.called = True
+            on_worker_process_init.called = False
+            signals.worker_process_init.connect(on_worker_process_init)
+
+            def Loader(*args, **kwargs):
+                loader = Mock(*args, **kwargs)
+                loader.conf = {}
+                loader.override_backends = {}
+                return loader
+
+            with self.Celery(loader=Loader) as app:
+                app.conf = AttributeDict(DEFAULTS)
+                process_initializer(app, 'awesome.worker.com')
+                _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
+                _signals.reset.assert_any_call(*WORKER_SIGRESET)
+                self.assertTrue(app.loader.init_worker.call_count)
+                self.assertTrue(on_worker_process_init.called)
+                self.assertIs(_tls.current_app, app)
+                set_mp_process_title.assert_called_with(
+                    'celeryd', hostname='awesome.worker.com',
+                )
+
+                with patch('celery.app.trace.setup_worker_optimizations') as S:
+                    os.environ['FORKED_BY_MULTIPROCESSING'] = "1"
+                    try:
+                        process_initializer(app, 'luke.worker.com')
+                        S.assert_called_with(app, 'luke.worker.com')
+                    finally:
+                        os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+
+                os.environ['CELERY_LOG_FILE'] = 'worker%I.log'
+                app.log.setup = Mock(name='log_setup')
+                try:
+                    process_initializer(app, 'luke.worker.com')
+                finally:
+                    os.environ.pop('CELERY_LOG_FILE', None)
+
+
+class test_process_destructor(AppCase):
+
+    @patch('celery.concurrency.prefork.signals')
+    def test_process_destructor(self, signals):
+        mp.process_destructor(13, -3)
+        signals.worker_process_shutdown.send.assert_called_with(
+            sender=None, pid=13, exitcode=-3,
+        )
 
 
 class MockPool(object):
@@ -112,7 +176,7 @@ class ExeMockPool(MockPool):
     def apply_async(self, target, args=(), kwargs={}, callback=noop):
         from threading import Timer
         res = target(*args, **kwargs)
-        Timer(0.1, callback, (res, )).start()
+        Timer(0.1, callback, (res,)).start()
         return MockResult(res, next(self._current_proc))
 
 
@@ -134,6 +198,10 @@ class PoolCase(AppCase):
 
 
 class test_AsynPool(PoolCase):
+
+    def setup(self):
+        if sys.platform == 'win32':
+            raise SkipTest('win32: skip')
 
     def test_gen_not_started(self):
 
@@ -227,7 +295,7 @@ class test_AsynPool(PoolCase):
 
     def test_promise(self):
         fun = Mock()
-        x = asynpool.promise(fun, (1, ), {'foo': 1})
+        x = asynpool.promise(fun, (1,), {'foo': 1})
         x()
         self.assertTrue(x.ready)
         fun.assert_called_with(1, foo=1)
@@ -235,10 +303,14 @@ class test_AsynPool(PoolCase):
     def test_Worker(self):
         w = asynpool.Worker(Mock(), Mock())
         w.on_loop_start(1234)
-        w.outq.put.assert_called_with((asynpool.WORKER_UP, (1234, )))
+        w.outq.put.assert_called_with((asynpool.WORKER_UP, (1234,)))
 
 
 class test_ResultHandler(PoolCase):
+
+    def setup(self):
+        if sys.platform == 'win32':
+            raise SkipTest('win32: skip')
 
     def test_process_result(self):
         x = asynpool.ResultHandler(
@@ -284,10 +356,43 @@ class test_TaskPool(PoolCase):
         pool.terminate()
         self.assertTrue(_pool.terminated)
 
+    def test_restart(self):
+        pool = TaskPool(10)
+        pool._pool = Mock(name='pool')
+        pool.restart()
+        pool._pool.restart.assert_called_with()
+        pool._pool.apply_async.assert_called_with(mp.noop)
+
+    def test_did_start_ok(self):
+        pool = TaskPool(10)
+        pool._pool = Mock(name='pool')
+        self.assertIs(pool.did_start_ok(), pool._pool.did_start_ok())
+
+    def test_register_with_event_loop(self):
+        pool = TaskPool(10)
+        pool._pool = Mock(name='pool')
+        loop = Mock(name='loop')
+        pool.register_with_event_loop(loop)
+        pool._pool.register_with_event_loop.assert_called_with(loop)
+
+    def test_on_close(self):
+        pool = TaskPool(10)
+        pool._pool = Mock(name='pool')
+        pool._pool._state = mp.RUN
+        pool.on_close()
+        pool._pool.close.assert_called_with()
+
+    def test_on_close__pool_not_running(self):
+        pool = TaskPool(10)
+        pool._pool = Mock(name='pool')
+        pool._pool._state = mp.CLOSE
+        pool.on_close()
+        self.assertFalse(pool._pool.close.called)
+
     def test_apply_async(self):
         pool = TaskPool(10)
         pool.start()
-        pool.apply_async(lambda x: x, (2, ), {})
+        pool.apply_async(lambda x: x, (2,), {})
 
     def test_grow_shrink(self):
         pool = TaskPool(10)
@@ -320,17 +425,3 @@ class test_TaskPool(PoolCase):
         pool = TaskPool(7)
         pool.start()
         self.assertEqual(pool.num_processes, 7)
-
-    def test_restart(self):
-        raise SkipTest('functional test')
-
-        def get_pids(pool):
-            return {p.pid for p in pool._pool._pool}
-
-        tp = self.TaskPool(5)
-        time.sleep(0.5)
-        tp.start()
-        pids = get_pids(tp)
-        tp.restart()
-        time.sleep(0.5)
-        self.assertEqual(pids, get_pids(tp))

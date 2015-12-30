@@ -6,19 +6,20 @@ from sys import exit, stderr
 from celery.app.defaults import NAMESPACES, flatten
 
 ignore = {
-    'CELERYD_AGENT',
-    'CELERYD_POOL_PUTLOCKS',
-    'BROKER_HOST',
-    'BROKER_USER',
-    'BROKER_PASSWORD',
-    'BROKER_VHOST',
-    'BROKER_PORT',
-    'CELERY_CHORD_PROPAGATES',
-    'CELERY_REDIS_HOST',
-    'CELERY_REDIS_PORT',
-    'CELERY_REDIS_DB',
-    'CELERY_REDIS_PASSWORD',
-    'CELERYD_FORCE_EXECV',
+    'worker_agent',
+    'worker_pool_putlocks',
+    'broker_host',
+    'broker_user',
+    'broker_password',
+    'broker_vhost',
+    'broker_port',
+    'broker_transport',
+    'chord_propagates',
+    'redis_host',
+    'redis_port',
+    'redis_db',
+    'redis_password',
+    'worker_force_execv',
 }
 
 

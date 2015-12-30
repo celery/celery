@@ -1,3 +1,6 @@
 pytz>dev
-billiard>=3.3.0.17,<3.4
-kombu>=3.0.15,<4.0
+billiard>dev
+kombu>dev
+
+# remove before release
+amqp>dev

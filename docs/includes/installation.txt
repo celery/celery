@@ -26,7 +26,7 @@ You can specify these in your requirements or on the ``pip`` comand-line
 by using brackets.  Multiple bundles can be specified by separating them by
 commas.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install "celery[librabbitmq]"
 
@@ -78,7 +78,7 @@ Transports and Backends
     for using memcached as a result backend.
 
 :celery[cassandra]:
-    for using Apache Cassandra as a result backend.
+    for using Apache Cassandra as a result backend with DataStax driver.
 
 :celery[couchdb]:
     for using CouchDB as a message transport (*experimental*).

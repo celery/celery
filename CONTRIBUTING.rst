@@ -538,7 +538,7 @@ If you only want to test specific Python versions use the ``-e``
 option:
 ::
 
-    $ tox -e py26
+    $ tox -e 2.7
 
 Building the documentation
 --------------------------
@@ -619,7 +619,7 @@ Edit the file using your favorite editor:
 
     $ vim celery.worker.awesome.rst
 
-        # change every occurance of ``celery.schedules`` to
+        # change every occurrence of ``celery.schedules`` to
         # ``celery.worker.awesome``
 
 

@@ -21,14 +21,14 @@ Starting the worker
 
 You can start the worker in the foreground by executing the command:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -l info
 
 For a full list of available command-line options see
 :mod:`~celery.bin.worker`, or simply do:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery worker --help
 
@@ -36,7 +36,7 @@ You can also start multiple workers on the same machine. If you do so
 be sure to give a unique name to each individual worker by specifying a
 host name with the :option:`--hostname|-n` argument:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker1.%h
     $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker2.%h
@@ -81,7 +81,7 @@ Also as processes can't override the :sig:`KILL` signal, the worker will
 not be able to reap its children, so make sure to do so manually.  This
 command usually does the trick:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill -9
 
@@ -94,10 +94,10 @@ To restart the worker you should send the `TERM` signal and start a new
 instance.  The easiest way to manage workers for development
 is by using `celery multi`:
 
-    .. code-block:: bash
+.. code-block:: console
 
-        $ celery multi start 1 -A proj -l info -c4 --pidfile=/var/run/celery/%n.pid
-        $ celery multi restart 1 --pidfile=/var/run/celery/%n.pid
+    $ celery multi start 1 -A proj -l info -c4 --pidfile=/var/run/celery/%n.pid
+    $ celery multi restart 1 --pidfile=/var/run/celery/%n.pid
 
 For production deployments you should be using init scripts or other process
 supervision systems (see :ref:`daemonizing`).
@@ -107,7 +107,7 @@ restart the worker using the :sig:`HUP` signal, but note that the worker
 will be responsible for restarting itself so this is prone to problems and
 is not recommended in production:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ kill -HUP $pid
 
@@ -265,14 +265,18 @@ Some remote control commands also have higher-level interfaces using
 :meth:`~@control.broadcast` in the background, like
 :meth:`~@control.rate_limit` and :meth:`~@control.ping`.
 
-Sending the :control:`rate_limit` command and keyword arguments::
+Sending the :control:`rate_limit` command and keyword arguments:
+
+.. code-block:: pycon
 
     >>> app.control.broadcast('rate_limit',
     ...                          arguments={'task_name': 'myapp.mytask',
     ...                                     'rate_limit': '200/m'})
 
 This will send the command asynchronously, without waiting for a reply.
-To request a reply you have to use the `reply` argument::
+To request a reply you have to use the `reply` argument:
+
+.. code-block:: pycon
 
     >>> app.control.broadcast('rate_limit', {
     ...     'task_name': 'myapp.mytask', 'rate_limit': '200/m'}, reply=True)
@@ -281,7 +285,9 @@ To request a reply you have to use the `reply` argument::
      {'worker3.example.com': 'New rate limit set successfully'}]
 
 Using the `destination` argument you can specify a list of workers
-to receive the command::
+to receive the command:
+
+.. code-block:: pycon
 
     >>> app.control.broadcast('rate_limit', {
     ...     'task_name': 'myapp.mytask',
@@ -318,7 +324,7 @@ the `terminate` option is set.
     a task is stuck.  It's not for terminating the task,
     it's for terminating the process that is executing the task, and that
     process may have already started processing another task at the point
-    when the signal is sent, so for this rason you must never call this
+    when the signal is sent, so for this reason you must never call this
     programatically.
 
 If `terminate` is set the worker child process processing the task
@@ -331,7 +337,7 @@ Terminating a task also revokes it.
 
 **Example**
 
-::
+.. code-block:: pycon
 
     >>> result.revoke()
 
@@ -359,7 +365,7 @@ several tasks at once.
 
 **Example**
 
-::
+.. code-block:: pycon
 
     >>> app.control.revoke([
     ...    '7993b0aa-1f0b-4780-9af0-c47c0858b3f2',
@@ -385,15 +391,15 @@ of revoked ids will also vanish.  If you want to preserve this list between
 restarts you need to specify a file for these to be stored in by using the `--statedb`
 argument to :program:`celery worker`:
 
-.. code-block:: bash
+.. code-block:: console
 
-    celery -A proj worker -l info --statedb=/var/run/celery/worker.state
+    $ celery -A proj worker -l info --statedb=/var/run/celery/worker.state
 
 or if you use :program:`celery multi` you will want to create one file per
 worker instance so then you can use the `%n` format to expand the current node
 name:
 
-.. code-block:: bash
+.. code-block:: console
 
     celery multi start 2 -l info --statedb=/var/run/celery/%n.state
 
@@ -443,8 +449,8 @@ time limit kills it:
         except SoftTimeLimitExceeded:
             clean_up_in_a_hurry()
 
-Time limits can also be set using the :setting:`CELERYD_TASK_TIME_LIMIT` /
-:setting:`CELERYD_TASK_SOFT_TIME_LIMIT` settings.
+Time limits can also be set using the :setting:`task_time_limit` /
+:setting:`task_soft_time_limit` settings.
 
 .. note::
 
@@ -463,7 +469,9 @@ and hard time limits for a task — named ``time_limit``.
 
 Example changing the time limit for the ``tasks.crawl_the_web`` task
 to have a soft time limit of one minute, and a hard time limit of
-two minutes::
+two minutes:
+
+.. code-block:: pycon
 
     >>> app.control.time_limit('tasks.crawl_the_web',
                                soft=60, hard=120, reply=True)
@@ -484,7 +492,7 @@ Changing rate-limits at runtime
 Example changing the rate limit for the `myapp.mytask` task to execute
 at most 200 tasks of that type every minute:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app.control.rate_limit('myapp.mytask', '200/m')
 
@@ -492,7 +500,7 @@ The above does not specify a destination, so the change request will affect
 all worker instances in the cluster.  If you only want to affect a specific
 list of workers you can include the ``destination`` argument:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app.control.rate_limit('myapp.mytask', '200/m',
     ...            destination=['celery@worker1.example.com'])
@@ -500,7 +508,7 @@ list of workers you can include the ``destination`` argument:
 .. warning::
 
     This won't affect workers with the
-    :setting:`CELERY_DISABLE_RATE_LIMITS` setting enabled.
+    :setting:`worker_disable_rate_limits` setting enabled.
 
 .. _worker-maxtasksperchild:
 
@@ -518,7 +526,23 @@ This is useful if you have memory leaks you have no control over
 for example from closed source C extensions.
 
 The option can be set using the workers `--maxtasksperchild` argument
-or using the :setting:`CELERYD_MAX_TASKS_PER_CHILD` setting.
+or using the :setting:`worker_max_tasks_per_child` setting.
+
+Max memory per child setting
+============================
+
+.. versionadded:: TODO
+
+pool support: *prefork*
+
+With this option you can configure the maximum amount of resident
+memory a worker can execute before it's replaced by a new process.
+
+This is useful if you have memory leaks you have no control over
+for example from closed source C extensions.
+
+The option can be set using the workers `--maxmemperchild` argument
+or using the :setting:`CELERYD_MAX_MEMORY_PER_CHILD` setting.
 
 .. _worker-autoscaling:
 
@@ -547,7 +571,7 @@ numbers: the maximum and minimum number of pool processes::
 You can also define your own rules for the autoscaler by subclassing
 :class:`~celery.worker.autoscaler.Autoscaler`.
 Some ideas for metrics include load average or the amount of memory available.
-You can specify a custom autoscaler with the :setting:`CELERYD_AUTOSCALER` setting.
+You can specify a custom autoscaler with the :setting:`worker_autoscaler` setting.
 
 .. _worker-queues:
 
@@ -556,20 +580,20 @@ Queues
 
 A worker instance can consume from any number of queues.
 By default it will consume from all queues defined in the
-:setting:`CELERY_QUEUES` setting (which if not specified defaults to the
+:setting:`task_queues` setting (which if not specified defaults to the
 queue named ``celery``).
 
 You can specify what queues to consume from at startup,
 by giving a comma separated list of queues to the :option:`-Q` option:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -l info -Q foo,bar,baz
 
-If the queue name is defined in :setting:`CELERY_QUEUES` it will use that
+If the queue name is defined in :setting:`task_queues` it will use that
 configuration, but if it's not defined in the list of queues Celery will
 automatically generate a new queue for you (depending on the
-:setting:`CELERY_CREATE_MISSING_QUEUES` option).
+:setting:`task_create_missing_queues` option).
 
 You can also tell the worker to start and stop consuming from a queue at
 runtime using the remote control commands :control:`add_consumer` and
@@ -586,7 +610,7 @@ to start consuming from a queue. This operation is idempotent.
 To tell all workers in the cluster to start consuming from a queue
 named "``foo``" you can use the :program:`celery control` program:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj control add_consumer foo
     -> worker1.local: OK
@@ -595,11 +619,13 @@ named "``foo``" you can use the :program:`celery control` program:
 If you want to specify a specific worker you can use the
 :option:`--destination`` argument:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj control add_consumer foo -d worker1.local
 
-The same can be accomplished dynamically using the :meth:`@control.add_consumer` method::
+The same can be accomplished dynamically using the :meth:`@control.add_consumer` method:
+
+.. code-block:: pycon
 
     >>> app.control.add_consumer('foo', reply=True)
     [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
@@ -611,7 +637,9 @@ The same can be accomplished dynamically using the :meth:`@control.add_consumer`
 
 By now I have only shown examples using automatic queues,
 If you need more control you can also specify the exchange, routing_key and
-even other options::
+even other options:
+
+.. code-block:: pycon
 
     >>> app.control.add_consumer(
     ...     queue='baz',
@@ -637,14 +665,14 @@ control command.
 To force all workers in the cluster to cancel consuming from a queue
 you can use the :program:`celery control` program:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj control cancel_consumer foo
 
 The :option:`--destination` argument can be used to specify a worker, or a
 list of workers, to act on the command:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj control cancel_consumer foo -d worker1.local
 
@@ -652,7 +680,7 @@ list of workers, to act on the command:
 You can also cancel consumers programmatically using the
 :meth:`@control.cancel_consumer` method:
 
-.. code-block:: bash
+.. code-block:: console
 
     >>> app.control.cancel_consumer('foo', reply=True)
     [{u'worker1.local': {u'ok': u"no longer consuming from u'foo'"}}]
@@ -665,7 +693,7 @@ Queues: List of active queues
 You can get a list of queues that a worker consumes from by using
 the :control:`active_queues` control command:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj inspect active_queues
     [...]
@@ -674,14 +702,16 @@ Like all other remote control commands this also supports the
 :option:`--destination` argument used to specify which workers should
 reply to the request:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj inspect active_queues -d worker1.local
     [...]
 
 
 This can also be done programmatically by using the
-:meth:`@control.inspect.active_queues` method::
+:meth:`@control.inspect.active_queues` method:
+
+.. code-block:: pycon
 
     >>> app.control.inspect().active_queues()
     [...]
@@ -700,8 +730,8 @@ pool support: *prefork, eventlet, gevent, threads, solo*
 
 Starting :program:`celery worker` with the :option:`--autoreload` option will
 enable the worker to watch for file system changes to all imported task
-modules imported (and also any non-task modules added to the
-:setting:`CELERY_IMPORTS` setting or the :option:`-I|--include` option).
+modules (and also any non-task modules added to the
+:setting:`imports` setting or the :option:`-I|--include` option).
 
 This is an experimental feature intended for use in development only,
 using auto-reload in production is discouraged as the behavior of reloading
@@ -726,7 +756,7 @@ implementations:
     to install the :mod:`pyinotify` library you have to run the following
     command:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install pyinotify
 
@@ -740,7 +770,7 @@ implementations:
 You can force an implementation by setting the :envvar:`CELERYD_FSNOTIFY`
 environment variable:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ env CELERYD_FSNOTIFY=stat celery worker -l info --autoreload
 
@@ -753,7 +783,7 @@ Pool Restart Command
 
 .. versionadded:: 2.5
 
-Requires the :setting:`CELERYD_POOL_RESTARTS` setting to be enabled.
+Requires the :setting:`worker_pool_restarts` setting to be enabled.
 
 The remote control command :control:`pool_restart` sends restart requests to
 the workers child processes.  It is particularly useful for forcing
@@ -766,14 +796,14 @@ Example
 Running the following command will result in the `foo` and `bar` modules
 being imported by the worker processes:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app.control.broadcast('pool_restart',
     ...                       arguments={'modules': ['foo', 'bar']})
 
 Use the ``reload`` argument to reload modules it has already imported:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app.control.broadcast('pool_restart',
     ...                       arguments={'modules': ['foo'],
@@ -782,7 +812,7 @@ Use the ``reload`` argument to reload modules it has already imported:
 If you don't specify any modules then all known tasks modules will
 be imported/reloaded:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app.control.broadcast('pool_restart', arguments={'reload': True})
 
@@ -816,16 +846,16 @@ uses remote control commands under the hood.
 You can also use the ``celery`` command to inspect workers,
 and it supports the same commands as the :class:`@control` interface.
 
-.. code-block:: python
+.. code-block:: pycon
 
-    # Inspect all nodes.
+    >>> # Inspect all nodes.
     >>> i = app.control.inspect()
 
-    # Specify multiple nodes to inspect.
+    >>> # Specify multiple nodes to inspect.
     >>> i = app.control.inspect(['worker1.example.com',
                                 'worker2.example.com'])
 
-    # Specify a single node to inspect.
+    >>> # Specify a single node to inspect.
     >>> i = app.control.inspect('worker1.example.com')
 
 .. _worker-inspect-registered-tasks:
@@ -834,7 +864,9 @@ Dump of registered tasks
 ------------------------
 
 You can get a list of tasks registered in the worker using the
-:meth:`~@control.inspect.registered`::
+:meth:`~@control.inspect.registered`:
+
+.. code-block:: pycon
 
     >>> i.registered()
     [{'worker1.example.com': ['tasks.add',
@@ -846,7 +878,9 @@ Dump of currently executing tasks
 ---------------------------------
 
 You can get a list of active tasks using
-:meth:`~@control.inspect.active`::
+:meth:`~@control.inspect.active`:
+
+.. code-block:: pycon
 
     >>> i.active()
     [{'worker1.example.com':
@@ -861,7 +895,9 @@ Dump of scheduled (ETA) tasks
 -----------------------------
 
 You can get a list of tasks waiting to be scheduled by using
-:meth:`~@control.inspect.scheduled`::
+:meth:`~@control.inspect.scheduled`:
+
+.. code-block:: pycon
 
     >>> i.scheduled()
     [{'worker1.example.com':
@@ -887,11 +923,13 @@ You can get a list of tasks waiting to be scheduled by using
 Dump of reserved tasks
 ----------------------
 
-Reserved tasks are tasks that has been received, but is still waiting to be
+Reserved tasks are tasks that have been received, but are still waiting to be
 executed.
 
 You can get a list of these using
-:meth:`~@control.inspect.reserved`::
+:meth:`~@control.inspect.reserved`:
+
+.. code-block:: pycon
 
     >>> i.reserved()
     [{'worker1.example.com':
@@ -910,7 +948,7 @@ The remote control command ``inspect stats`` (or
 :meth:`~@control.inspect.stats`) will give you a long list of useful (or not
 so useful) statistics about the worker:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj inspect stats
 
@@ -1094,8 +1132,8 @@ The output will include the following fields:
 
 - ``total``
 
-    List of task names and a total number of times that task have been
-    executed since worker start.
+    Map of task names and the total number of tasks with that type
+    the worker has accepted since startup.
 
 
 Additional Commands
@@ -1108,7 +1146,7 @@ Remote shutdown
 
 This command will gracefully shut down the worker remotely:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app.control.broadcast('shutdown') # shutdown all workers
     >>> app.control.broadcast('shutdown, destination="worker1@example.com")
@@ -1123,7 +1161,7 @@ The workers reply with the string 'pong', and that's just about it.
 It will use the default one second timeout for replies unless you specify
 a custom timeout:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app.control.ping(timeout=0.5)
     [{'worker1.example.com': 'pong'},
@@ -1131,7 +1169,9 @@ a custom timeout:
      {'worker3.example.com': 'pong'}]
 
 :meth:`~@control.ping` also supports the `destination` argument,
-so you can specify which workers to ping::
+so you can specify which workers to ping:
+
+.. code-block:: pycon
 
     >>> ping(['worker2.example.com', 'worker3.example.com'])
     [{'worker2.example.com': 'pong'},
@@ -1149,7 +1189,7 @@ You can enable/disable events by using the `enable_events`,
 `disable_events` commands.  This is useful to temporarily monitor
 a worker using :program:`celery events`/:program:`celerymon`.
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app.control.enable_events()
     >>> app.control.disable_events()

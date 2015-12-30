@@ -123,7 +123,7 @@ class test_Command(AppCase):
         c.run = run
 
         with self.assertRaises(c.UsageError):
-            c.verify_args((1, ))
+            c.verify_args((1,))
         c.verify_args((1, 2, 3))
 
     def test_run_interface(self):
@@ -186,7 +186,7 @@ class test_Command(AppCase):
     def test_with_custom_app(self):
         cmd = MockCommand(app=self.app)
         app = '.'.join([__name__, 'APP'])
-        cmd.setup_app_from_commandline(['--app=%s' % (app, ),
+        cmd.setup_app_from_commandline(['--app=%s' % (app,),
                                         '--loglevel=INFO'])
         self.assertIs(cmd.app, APP)
         cmd.setup_app_from_commandline(['-A', app,
@@ -236,14 +236,29 @@ class test_Command(AppCase):
         self.assertTrue(cmd.find_app('celery.tests.bin.proj.app'))
         self.assertTrue(cmd.find_app('celery.tests.bin.proj'))
         self.assertTrue(cmd.find_app('celery.tests.bin.proj:hello'))
+        self.assertTrue(cmd.find_app('celery.tests.bin.proj.hello'))
         self.assertTrue(cmd.find_app('celery.tests.bin.proj.app:app'))
+        self.assertTrue(cmd.find_app('celery.tests.bin.proj.app.app'))
+        with self.assertRaises(AttributeError):
+            cmd.find_app('celery.tests.bin')
 
         with self.assertRaises(AttributeError):
             cmd.find_app(__name__)
 
+    def test_ask(self):
+        try:
+            input = self.patch('celery.bin.base.input')
+        except AttributeError:
+            input = self.patch('builtins.input')
+        cmd = MockCommand(app=self.app)
+        input.return_value = 'yes'
+        self.assertEqual(cmd.ask('q', ('yes', 'no'), 'no'), 'yes')
+        input.return_value = 'nop'
+        self.assertEqual(cmd.ask('q', ('yes', 'no'), 'no'), 'no')
+
     def test_host_format(self):
         cmd = MockCommand(app=self.app)
-        with patch('socket.gethostname') as hn:
+        with patch('celery.utils.gethostname') as hn:
             hn.return_value = 'blacktron.example.com'
             self.assertEqual(cmd.host_format(''), '')
             self.assertEqual(
@@ -281,15 +296,61 @@ class test_Command(AppCase):
     def test_with_cmdline_config(self):
         cmd = MockCommand(app=self.app)
         cmd.enable_config_from_cmdline = True
-        cmd.namespace = 'celeryd'
+        cmd.namespace = 'worker'
         rest = cmd.setup_app_from_commandline(argv=[
             '--loglevel=INFO', '--',
             'broker.url=amqp://broker.example.com',
             '.prefetch_multiplier=100'])
-        self.assertEqual(cmd.app.conf.BROKER_URL,
+        self.assertEqual(cmd.app.conf.broker_url,
                          'amqp://broker.example.com')
-        self.assertEqual(cmd.app.conf.CELERYD_PREFETCH_MULTIPLIER, 100)
+        self.assertEqual(cmd.app.conf.worker_prefetch_multiplier, 100)
         self.assertListEqual(rest, ['--loglevel=INFO'])
+
+        cmd.app = None
+        cmd.get_app = Mock(name='get_app')
+        cmd.get_app.return_value = self.app
+        self.app.user_options['preload'] = [
+            Option('--foo', action='store_true'),
+        ]
+        cmd.setup_app_from_commandline(argv=[
+            '--foo', '--loglevel=INFO', '--',
+            'broker.url=amqp://broker.example.com',
+            '.prefetch_multiplier=100'])
+        self.assertIs(cmd.app, cmd.get_app())
+
+    def test_preparse_options__required_short(self):
+        cmd = MockCommand(app=self.app)
+        with self.assertRaises(ValueError):
+            cmd.preparse_options(
+                ['a', '-f'], [Option('-f', action='store')])
+
+    def test_preparse_options__longopt_whitespace(self):
+        cmd = MockCommand(app=self.app)
+        cmd.preparse_options(
+            ['a', '--foo', 'val'], [Option('--foo', action='store')])
+
+    def test_preparse_options__shortopt_store_true(self):
+        cmd = MockCommand(app=self.app)
+        cmd.preparse_options(
+            ['a', '--foo'], [Option('--foo', action='store_true')])
+
+    def test_get_default_app(self):
+        self.patch('celery._state.get_current_app')
+        cmd = MockCommand(app=self.app)
+        from celery._state import get_current_app
+        self.assertIs(cmd._get_default_app(), get_current_app())
+
+    def test_set_colored(self):
+        cmd = MockCommand(app=self.app)
+        cmd.colored = 'foo'
+        self.assertEqual(cmd.colored, 'foo')
+
+    def test_set_no_color(self):
+        cmd = MockCommand(app=self.app)
+        cmd.no_color = False
+        _ = cmd.colored  # noqa
+        cmd.no_color = True
+        self.assertFalse(cmd.colored.enabled)
 
     def test_find_app(self):
         cmd = MockCommand(app=self.app)
@@ -311,7 +372,7 @@ class test_Command(AppCase):
 
     def test_parse_preload_options_shortopt(self):
         cmd = Command()
-        cmd.preload_options = (Option('-s', action='store', dest='silent'), )
+        cmd.preload_options = (Option('-s', action='store', dest='silent'),)
         acc = cmd.parse_preload_options(['-s', 'yes'])
         self.assertEqual(acc.get('silent'), 'yes')
 

@@ -12,12 +12,12 @@ The Celery library must be instantiated before use, this instance
 is called an application (or *app* for short).
 
 The application is thread-safe so that multiple Celery applications
-with different configuration, components and tasks can co-exist in the
+with different configurations, components and tasks can co-exist in the
 same process space.
 
 Let's create one now:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from celery import Celery
     >>> app = Celery()
@@ -32,18 +32,18 @@ current main module (``__main__``), and the memory address of the object
 Main Name
 =========
 
-Only one of these is important, and that is the main module name,
-let's look at why that is.
+Only one of these is important, and that is the main module name.
+Let's look at why that is.
 
 When you send a task message in Celery, that message will not contain
 any source code, but only the name of the task you want to execute.
-This works similarly to how host names works on the internet: every worker
+This works similarly to how host names work on the internet: every worker
 maintains a mapping of task names to their actual functions, called the *task
 registry*.
 
 Whenever you define a task, that task will also be added to the local registry:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> @app.task
     ... def add(x, y):
@@ -93,7 +93,7 @@ the tasks will be named starting with "``tasks``" (the real name of the module):
 
 You can specify another name for the main module:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app = Celery('tasks')
     >>> app.main
@@ -117,18 +117,18 @@ or you can use a dedicated configuration module.
 
 The configuration is available as :attr:`@conf`::
 
-    >>> app.conf.CELERY_TIMEZONE
+    >>> app.conf.timezone
     'Europe/London'
 
 where you can also set configuration values directly::
 
-    >>> app.conf.CELERY_ENABLE_UTC = True
+    >>> app.conf.enable_utc = True
 
 and update several keys at once by using the ``update`` method::
 
     >>> app.conf.update(
-    ...     CELERY_ENABLE_UTC=True,
-    ...     CELERY_TIMEZONE='Europe/London',
+    ...     enable_utc=True,
+    ...     timezone='Europe/London',
     ...)
 
 The configuration object consists of multiple dictionaries
@@ -154,7 +154,7 @@ from a configuration object.
 
 This can be a configuration module, or any object with configuration attributes.
 
-Note that any configuration that was previous set will be reset when
+Note that any configuration that was previously set will be reset when
 :meth:`~@config_from_object` is called.  If you want to set additional
 configuration you should do so after.
 
@@ -175,8 +175,8 @@ The ``celeryconfig`` module may then look like this:
 
 .. code-block:: python
 
-    CELERY_ENABLE_UTC = True
-    CELERY_TIMEZONE = 'Europe/London'
+    enable_utc = True
+    timezone = 'Europe/London'
 
 Example 2: Using a configuration module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -207,8 +207,8 @@ Example 3:  Using a configuration class/object
     app = Celery()
 
     class Config:
-        CELERY_ENABLE_UTC = True
-        CELERY_TIMEZONE = 'Europe/London'
+        enable_utc = True
+        timezone = 'Europe/London'
 
     app.config_from_object(Config)
     # or using the fully qualified name of the object:
@@ -236,7 +236,7 @@ environment variable named :envvar:`CELERY_CONFIG_MODULE`:
 
 You can then specify the configuration module to use via the environment:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ CELERY_CONFIG_MODULE="celeryconfig.prod" celery worker -l info
 
@@ -252,7 +252,7 @@ passwords and API keys.
 Celery comes with several utilities used for presenting the configuration,
 one is :meth:`~celery.app.utils.Settings.humanize`:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app.conf.humanize(with_defaults=False, censored=True)
 
@@ -263,7 +263,7 @@ default keys and values by changing the ``with_defaults`` argument.
 If you instead want to work with the configuration as a dictionary, then you
 can use the :meth:`~celery.app.utils.Settings.table` method:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> app.conf.table(with_defaults=False, censored=True)
 
@@ -299,7 +299,7 @@ application has been *finalized*,
 This example shows how the task is not created until
 you use the task, or access an attribute (in this case :meth:`repr`):
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> @app.task
     >>> def add(x, y):
@@ -333,7 +333,7 @@ Finalizing the object will:
 
     #. Make sure all tasks are bound to the current app.
 
-        Tasks are bound to apps so that it can read default
+        Tasks are bound to an app so that they can read default
         values from the configuration.
 
 .. _default-app:
@@ -410,7 +410,7 @@ In development you can set the :envvar:`CELERY_TRACE_APP`
 environment variable to raise an exception if the app
 chain breaks:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ CELERY_TRACE_APP=1 celery worker -l info
 
@@ -423,14 +423,14 @@ chain breaks:
     For example, in the beginning it was possible to use any callable as
     a task:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         def hello(to):
             return 'hello {0}'.format(to)
 
         >>> from celery.execute import apply_async
 
-        >>> apply_async(hello, ('world!', ))
+        >>> apply_async(hello, ('world!',))
 
     or you could also create a ``Task`` class to set
     certain options, or override other behavior
@@ -466,7 +466,7 @@ Abstract Tasks
 ==============
 
 All tasks created using the :meth:`~@task` decorator
-will inherit from the applications base :attr:`~@Task` class.
+will inherit from the application's base :attr:`~@Task` class.
 
 You can specify a different base class with the ``base`` argument:
 
@@ -507,7 +507,7 @@ and so on.
 It's also possible to change the default base class for an application
 by changing its :meth:`@Task` attribute:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from celery import Celery, Task
 

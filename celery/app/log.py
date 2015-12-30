@@ -58,10 +58,10 @@ class Logging(object):
 
     def __init__(self, app):
         self.app = app
-        self.loglevel = mlevel(self.app.conf.CELERYD_LOG_LEVEL)
-        self.format = self.app.conf.CELERYD_LOG_FORMAT
-        self.task_format = self.app.conf.CELERYD_TASK_LOG_FORMAT
-        self.colorize = self.app.conf.CELERYD_LOG_COLOR
+        self.loglevel = mlevel(logging.WARN)
+        self.format = self.app.conf.worker_log_format
+        self.task_format = self.app.conf.worker_task_log_format
+        self.colorize = self.app.conf.worker_log_color
 
     def setup(self, loglevel=None, logfile=None, redirect_stdouts=False,
               redirect_level='WARNING', colorize=None, hostname=None):
@@ -105,7 +105,7 @@ class Logging(object):
         if not receivers:
             root = logging.getLogger()
 
-            if self.app.conf.CELERYD_HIJACK_ROOT_LOGGER:
+            if self.app.conf.worker_hijack_root_logger:
                 root.handlers = []
                 get_logger('celery').handlers = []
                 get_logger('celery.task').handlers = []

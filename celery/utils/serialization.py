@@ -34,7 +34,7 @@ except NameError:  # pragma: no cover
 
 
 def subclass_exception(name, parent, module):  # noqa
-    return type(name, (parent, ), {'__module__': module})
+    return type(name, (parent,), {'__module__': module})
 
 
 def find_pickleable_exception(exc, loads=pickle.loads,
@@ -86,7 +86,7 @@ class UnpickleableExceptionWrapper(Exception):
 
     **Example**
 
-    .. code-block:: python
+    .. code-block:: pycon
 
         >>> def pickle_it(raising_function):
         ...     try:

@@ -18,7 +18,6 @@ from celery.worker import control
 from celery.worker import state as worker_state
 from celery.worker.request import Request
 from celery.worker.state import revoked
-from celery.worker.control import Panel
 from celery.worker.pidbox import Pidbox, gPidbox
 
 from celery.tests.case import AppCase, Mock, TaskMessage, call, patch
@@ -49,6 +48,10 @@ class Consumer(consumer.Consumer):
         from celery.concurrency.base import BasePool
         self.pool = BasePool(10)
         self.task_buckets = defaultdict(lambda: None)
+        self.hub = None
+
+    def call_soon(self, p, *args, **kwargs):
+        return p(*args, **kwargs)
 
 
 class test_Pidbox(AppCase):
@@ -95,7 +98,7 @@ class test_Pidbox_green(AppCase):
 
     def test_loop(self):
         parent = Mock()
-        conn = parent.connect.return_value = self.app.connection()
+        conn = parent.connect.return_value = self.app.connection_for_read()
         drain = conn.drain_events = Mock()
         g = gPidbox(parent)
         parent.connection = Mock()
@@ -127,12 +130,13 @@ class test_ControlPanel(AppCase):
     def create_state(self, **kwargs):
         kwargs.setdefault('app', self.app)
         kwargs.setdefault('hostname', hostname)
+        kwargs.setdefault('tset', set)
         return AttributeDict(kwargs)
 
     def create_panel(self, **kwargs):
         return self.app.control.mailbox.Node(hostname=hostname,
                                              state=self.create_state(**kwargs),
-                                             handlers=Panel.data)
+                                             handlers=control.Panel.data)
 
     def test_enable_events(self):
         consumer = Consumer(self.app)
@@ -168,21 +172,36 @@ class test_ControlPanel(AppCase):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
         panel.state.app.clock.value = 313
+        panel.state.hostname = 'elaine@vandelay.com'
         worker_state.revoked.add('revoked1')
         try:
-            x = panel.handle('hello', {'from_node': 'george@vandelay.com'})
-            self.assertIn('revoked1', x['revoked'])
+            self.assertIsNone(panel.handle('hello', {
+                'from_node': 'elaine@vandelay.com',
+            }))
+            x = panel.handle('hello', {
+                'from_node': 'george@vandelay.com',
+            })
             self.assertEqual(x['clock'], 314)  # incremented
+            x = panel.handle('hello', {
+                'from_node': 'george@vandelay.com',
+                'revoked': {'1234', '4567', '891'}
+            })
+            self.assertIn('revoked1', x['revoked'])
+            self.assertIn('1234', x['revoked'])
+            self.assertIn('4567', x['revoked'])
+            self.assertIn('891', x['revoked'])
+            self.assertEqual(x['clock'], 315)  # incremented
         finally:
             worker_state.revoked.discard('revoked1')
 
     def test_conf(self):
-        return
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
-        self.app.conf.SOME_KEY6 = 'hello world'
+        panel.app = self.app
+        panel.app.finalize()
+        self.app.conf.some_key6 = 'hello world'
         x = panel.handle('dump_conf')
-        self.assertIn('SOME_KEY6', x)
+        self.assertIn('some_key6', x)
 
     def test_election(self):
         consumer = Consumer(self.app)
@@ -193,12 +212,20 @@ class test_ControlPanel(AppCase):
         )
         consumer.gossip.election.assert_called_with('id', 'topic', 'action')
 
+    def test_election__no_gossip(self):
+        consumer = Mock(name='consumer')
+        consumer.gossip = None
+        panel = self.create_panel(consumer=consumer)
+        panel.handle(
+            'election', {'id': 'id', 'topic': 'topic', 'action': 'action'},
+        )
+
     def test_heartbeat(self):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
         consumer.event_dispatcher.enabled = True
         panel.handle('heartbeat')
-        self.assertIn(('worker-heartbeat', ),
+        self.assertIn(('worker-heartbeat',),
                       consumer.event_dispatcher.send.call_args)
 
     def test_time_limit(self):
@@ -225,7 +252,7 @@ class test_ControlPanel(AppCase):
     def test_active_queues(self):
         import kombu
 
-        x = kombu.Consumer(self.app.connection(),
+        x = kombu.Consumer(self.app.connection_for_read(),
                            [kombu.Queue('foo', kombu.Exchange('foo'), 'foo'),
                             kombu.Queue('bar', kombu.Exchange('bar'), 'bar')],
                            auto_declare=False)
@@ -236,10 +263,26 @@ class test_ControlPanel(AppCase):
         self.assertListEqual(list(sorted(q['name'] for q in r)),
                              ['bar', 'foo'])
 
+    def test_active_queues__empty(self):
+        consumer = Mock(name='consumer')
+        panel = self.create_panel(consumer=consumer)
+        consumer.task_consumer = None
+        self.assertFalse(panel.handle('active_queues'))
+
     def test_dump_tasks(self):
         info = '\n'.join(self.panel.handle('dump_tasks'))
         self.assertIn('mytask', info)
         self.assertIn('rate_limit=200', info)
+
+    def test_dump_tasks2(self):
+        prev, control.DEFAULT_TASK_INFO_ITEMS = (
+            control.DEFAULT_TASK_INFO_ITEMS, [])
+        try:
+            info = '\n'.join(self.panel.handle('dump_tasks'))
+            self.assertIn('mytask', info)
+            self.assertNotIn('rate_limit=200', info)
+        finally:
+            control.DEFAULT_TASK_INFO_ITEMS = prev
 
     def test_stats(self):
         prev_count, worker_state.total_count = worker_state.total_count, 100
@@ -306,6 +349,7 @@ class test_ControlPanel(AppCase):
             queues = []
             cancelled = []
             consuming = False
+            hub = Mock(name='hub')
 
             def add_queue(self, queue):
                 self.queues.append(queue.name)
@@ -347,10 +391,10 @@ class test_ControlPanel(AppCase):
         self.assertFalse(panel.handle('dump_schedule'))
         r = Request(TaskMessage(self.mytask.name, 'CAFEBABE'), app=self.app)
         consumer.timer.schedule.enter_at(
-            consumer.timer.Entry(lambda x: x, (r, )),
+            consumer.timer.Entry(lambda x: x, (r,)),
             datetime.now() + timedelta(seconds=10))
         consumer.timer.schedule.enter_at(
-            consumer.timer.Entry(lambda x: x, (object(), )),
+            consumer.timer.Entry(lambda x: x, (object(),)),
             datetime.now() + timedelta(seconds=10))
         self.assertTrue(panel.handle('dump_schedule'))
 
@@ -443,14 +487,16 @@ class test_ControlPanel(AppCase):
     def test_revoke_terminate(self):
         request = Mock()
         request.id = tid = uuid()
+        state = self.create_state()
+        state.consumer = Mock()
         worker_state.reserved_requests.add(request)
         try:
-            r = control.revoke(Mock(), tid, terminate=True)
+            r = control.revoke(state, tid, terminate=True)
             self.assertIn(tid, revoked)
             self.assertTrue(request.terminate.call_count)
             self.assertIn('terminate:', r['ok'])
             # unknown task id only revokes
-            r = control.revoke(Mock(), uuid(), terminate=True)
+            r = control.revoke(state, uuid(), terminate=True)
             self.assertIn('tasks unknown', r['ok'])
         finally:
             worker_state.reserved_requests.discard(request)
@@ -493,7 +539,7 @@ class test_ControlPanel(AppCase):
 
         panel = _Node(hostname=hostname,
                       state=self.create_state(consumer=Consumer(self.app)),
-                      handlers=Panel.data,
+                      handlers=control.Panel.data,
                       mailbox=self.app.control.mailbox)
         r = panel.dispatch('ping', reply_to={'exchange': 'x',
                                              'routing_key': 'x'})
@@ -517,13 +563,17 @@ class test_ControlPanel(AppCase):
         with self.assertRaises(ValueError):
             panel.handle('pool_restart', {'reloader': _reload})
 
-        self.app.conf.CELERYD_POOL_RESTARTS = True
+        self.app.conf.worker_pool_restarts = True
         panel.handle('pool_restart', {'reloader': _reload})
         self.assertTrue(consumer.controller.pool.restart.called)
         consumer.reset_rate_limits.assert_called_with()
         consumer.update_strategies.assert_called_with()
         self.assertFalse(_reload.called)
         self.assertFalse(_import.called)
+        consumer.controller.pool.restart.side_effect = NotImplementedError()
+        panel.handle('pool_restart', {'reloader': _reload})
+        consumer.controller.consumer = None
+        panel.handle('pool_restart', {'reloader': _reload})
 
     def test_pool_restart_import_modules(self):
         consumer = Consumer(self.app)
@@ -538,7 +588,7 @@ class test_ControlPanel(AppCase):
         _import = consumer.controller.app.loader.import_from_cwd = Mock()
         _reload = Mock()
 
-        self.app.conf.CELERYD_POOL_RESTARTS = True
+        self.app.conf.worker_pool_restarts = True
         panel.handle('pool_restart', {'modules': ['foo', 'bar'],
                                       'reloader': _reload})
 
@@ -563,7 +613,7 @@ class test_ControlPanel(AppCase):
         _import = panel.app.loader.import_from_cwd = Mock()
         _reload = Mock()
 
-        self.app.conf.CELERYD_POOL_RESTARTS = True
+        self.app.conf.worker_pool_restarts = True
         with patch.dict(sys.modules, {'foo': None}):
             panel.handle('pool_restart', {'modules': ['foo'],
                                           'reload': False,
@@ -584,3 +634,30 @@ class test_ControlPanel(AppCase):
             self.assertTrue(consumer.controller.pool.restart.called)
             self.assertTrue(_reload.called)
             self.assertFalse(_import.called)
+
+    def test_query_task(self):
+        consumer = Consumer(self.app)
+        consumer.controller = _WC(app=self.app)
+        consumer.controller.consumer = consumer
+        panel = self.create_panel(consumer=consumer)
+        panel.app = self.app
+        req1 = Request(
+            TaskMessage(self.mytask.name, args=(2, 2)),
+            app=self.app,
+        )
+        worker_state.reserved_requests.add(req1)
+        try:
+            self.assertFalse(panel.handle('query_task', {'ids': {'1daa'}}))
+            ret = panel.handle('query_task', {'ids': {req1.id}})
+            self.assertIn(req1.id, ret)
+            self.assertEqual(ret[req1.id][0], 'reserved')
+            worker_state.active_requests.add(req1)
+            try:
+                ret = panel.handle('query_task', {'ids': {req1.id}})
+                self.assertEqual(ret[req1.id][0], 'active')
+            finally:
+                worker_state.active_requests.clear()
+            ret = panel.handle('query_task', {'ids': {req1.id}})
+            self.assertEqual(ret[req1.id][0], 'reserved')
+        finally:
+            worker_state.reserved_requests.clear()

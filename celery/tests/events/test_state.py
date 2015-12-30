@@ -10,11 +10,12 @@ from itertools import count
 from celery import states
 from celery.events import Event
 from celery.events.state import (
+    HEARTBEAT_EXPIRE_WINDOW,
+    HEARTBEAT_DRIFT_MAX,
     State,
     Worker,
     Task,
-    HEARTBEAT_EXPIRE_WINDOW,
-    HEARTBEAT_DRIFT_MAX,
+    heartbeat_expires,
 )
 from celery.five import range
 from celery.utils import uuid
@@ -26,7 +27,8 @@ except TypeError:  # pragma: no cover
     # Py2.6: Must first convert float to str
     _float_to_decimal = str
 else:
-    _float_to_decimal = lambda f: f  # noqa
+    def _float_to_decimal(f):  # noqa
+        return f
 
 
 class replay(object):
@@ -103,6 +105,7 @@ class ev_task_states(replay):
                   traceback='line 1 at main', hostname='utest1'),
             Event('task-succeeded', uuid=tid, result='4',
                   runtime=0.1234, hostname='utest1'),
+            Event('foo-bar'),
         ]
 
 
@@ -180,6 +183,12 @@ class test_Worker(AppCase):
             hash(Worker(hostname='foo')), hash(Worker(hostname='bar')),
         )
 
+    def test_heartbeat_expires__Decimal(self):
+        self.assertEqual(
+            heartbeat_expires(Decimal(344313.37), freq=60, expire_window=200),
+            344433.37,
+        )
+
     def test_compatible_with_Decimal(self):
         w = Worker('george@vandelay.com')
         timestamp, local_received = Decimal(_float_to_decimal(time())), time()
@@ -190,6 +199,39 @@ class test_Worker(AppCase):
             'freq': Decimal(_float_to_decimal(5.6335431)),
         })
         self.assertTrue(w.alive)
+
+    def test_eq_ne_other(self):
+        self.assertEqual(Worker('a@b.com'), Worker('a@b.com'))
+        self.assertNotEqual(Worker('a@b.com'), Worker('b@b.com'))
+        self.assertNotEqual(Worker('a@b.com'), object())
+
+    def test_reduce_direct(self):
+        w = Worker('george@vandelay.com')
+        w.event('worker-online', 10.0, 13.0, fields={
+            'hostname': 'george@vandelay.com',
+            'timestamp': 10.0,
+            'local_received': 13.0,
+            'freq': 60,
+        })
+        fun, args = w.__reduce__()
+        w2 = fun(*args)
+        self.assertEqual(w2.hostname, w.hostname)
+        self.assertEqual(w2.pid, w.pid)
+        self.assertEqual(w2.freq, w.freq)
+        self.assertEqual(w2.heartbeats, w.heartbeats)
+        self.assertEqual(w2.clock, w.clock)
+        self.assertEqual(w2.active, w.active)
+        self.assertEqual(w2.processed, w.processed)
+        self.assertEqual(w2.loadavg, w.loadavg)
+        self.assertEqual(w2.sw_ident, w.sw_ident)
+
+    def test_update(self):
+        w = Worker('george@vandelay.com')
+        w.update({'idx': '301'}, foo=1, clock=30, bah='foo')
+        self.assertEqual(w.idx, '301')
+        self.assertEqual(w.foo, 1)
+        self.assertEqual(w.clock, 30)
+        self.assertEqual(w.bah, 'foo')
 
     def test_survives_missing_timestamp(self):
         worker = Worker(hostname='foo')
@@ -243,6 +285,8 @@ class test_Task(AppCase):
                     eta=1,
                     runtime=0.0001,
                     expires=1,
+                    parent_id='bdefc',
+                    root_id='dedfef',
                     foo=None,
                     exception=1,
                     received=time() - 10,
@@ -253,12 +297,18 @@ class test_Task(AppCase):
         self.assertEqual(sorted(list(task._info_fields)),
                          sorted(task.info().keys()))
 
-        self.assertEqual(sorted(list(task._info_fields + ('received', ))),
-                         sorted(task.info(extra=('received', ))))
+        self.assertEqual(sorted(list(task._info_fields + ('received',))),
+                         sorted(task.info(extra=('received',))))
 
         self.assertEqual(sorted(['args', 'kwargs']),
                          sorted(task.info(['args', 'kwargs']).keys()))
         self.assertFalse(list(task.info('foo')))
+
+    def test_reduce_direct(self):
+        task = Task(uuid='uuid', name='tasks.add', args='(2, 2)')
+        fun, args = task.__reduce__()
+        task2 = fun(*args)
+        self.assertEqual(task, task2)
 
     def test_ready(self):
         task = Task(uuid='abcdefg',
@@ -337,6 +387,39 @@ class test_State(AppCase):
         self.assertEqual(now[0][0], tB)
         self.assertEqual(now[1][0], tC)
         self.assertEqual(now[2][0], tA)
+
+    def test_get_or_create_task(self):
+        state = State()
+        task, created = state.get_or_create_task('id1')
+        self.assertEqual(task.uuid, 'id1')
+        self.assertTrue(created)
+        task2, created2 = state.get_or_create_task('id1')
+        self.assertIs(task2, task)
+        self.assertFalse(created2)
+
+    def test_get_or_create_worker(self):
+        state = State()
+        worker, created = state.get_or_create_worker('george@vandelay.com')
+        self.assertEqual(worker.hostname, 'george@vandelay.com')
+        self.assertTrue(created)
+        worker2, created2 = state.get_or_create_worker('george@vandelay.com')
+        self.assertIs(worker2, worker)
+        self.assertFalse(created2)
+
+    def test_get_or_create_worker__with_defaults(self):
+        state = State()
+        worker, created = state.get_or_create_worker(
+            'george@vandelay.com', pid=30,
+        )
+        self.assertEqual(worker.hostname, 'george@vandelay.com')
+        self.assertEqual(worker.pid, 30)
+        self.assertTrue(created)
+        worker2, created2 = state.get_or_create_worker(
+            'george@vandelay.com', pid=40,
+        )
+        self.assertIs(worker2, worker)
+        self.assertEqual(worker2.pid, 40)
+        self.assertFalse(created2)
 
     def test_worker_online_offline(self):
         r = ev_worker_online_offline(State())
@@ -475,10 +558,11 @@ class test_State(AppCase):
         r.play()
         self.assertEqual(sorted(r.state.task_types()), ['task1', 'task2'])
 
-    def test_tasks_by_timestamp(self):
+    def test_tasks_by_time(self):
         r = ev_snapshot(State())
         r.play()
-        self.assertEqual(len(list(r.state.tasks_by_timestamp())), 20)
+        self.assertEqual(len(list(r.state.tasks_by_time())), 20)
+        self.assertEqual(len(list(r.state.tasks_by_time(reverse=False))), 20)
 
     def test_tasks_by_type(self):
         r = ev_snapshot(State())

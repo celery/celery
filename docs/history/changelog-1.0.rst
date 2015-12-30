@@ -20,13 +20,13 @@
   If you've already used the AMQP backend this means you have to
   delete the previous definitions:
 
-  .. code-block:: bash
+  .. code-block:: console
 
       $ camqadm exchange.delete celeryresults
 
   or:
 
-  .. code-block:: bash
+  .. code-block:: console
 
       $ python manage.py camqadm exchange.delete celeryresults
 
@@ -506,7 +506,7 @@ Fixes
         If you're using Celery with Django, you can't use `project.settings`
         as the settings module name, but the following should work:
 
-        .. code-block:: bash
+        .. code-block:: console
 
             $ python manage.py celeryd --settings=settings
 
@@ -534,7 +534,7 @@ Fixes
     Excellent for deleting queues/bindings/exchanges, experimentation and
     testing:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ camqadm
         1> help
@@ -543,7 +543,7 @@ Fixes
 
     When using Django, use the management command instead:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ python manage.py camqadm
         1> help
@@ -711,7 +711,7 @@ Backward incompatible changes
 
     To launch the periodic task scheduler you have to run celerybeat:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celerybeat
 
@@ -720,7 +720,7 @@ Backward incompatible changes
 
     If you only have one worker server you can embed it into the worker like this:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ celeryd --beat # Embed celerybeat in celeryd.
 
@@ -1552,7 +1552,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * You can now run the celery daemon by using `manage.py`:
 
-  .. code-block:: bash
+  .. code-block:: console
 
         $ python manage.py celeryd
 
@@ -1693,7 +1693,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 * Now using the Sphinx documentation system, you can build
   the html documentation by doing:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ cd docs
         $ make html

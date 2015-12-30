@@ -109,6 +109,14 @@ The :program:`celery worker` command (previously known as ``celeryd``)
     Maximum number of tasks a pool worker can execute before it's
     terminated and replaced by a new worker.
 
+.. cmdoption:: --maxmemperchild
+
+    Maximum amount of resident memory, in KiB, that may be consumed by a
+    child process before it will be replaced by a new one. If a single
+    task causes a child process to exceed this limit, the task will be
+    completed and the child process will be replaced afterwards.
+    Default: no limit.
+
 .. cmdoption:: --pidfile
 
     Optional file used to store the workers pid.
@@ -138,8 +146,10 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 
+from optparse import OptionGroup
+
 from celery import concurrency
-from celery.bin.base import Command, Option, daemon_options
+from celery.bin.base import Command, daemon_options
 from celery.bin.celeryd_detach import detached_celeryd
 from celery.five import string_t
 from celery.platforms import maybe_drop_privileges
@@ -165,7 +175,7 @@ class worker(Command):
         celery worker --autoscale=10,0
     """
     doc = __MODULE_DOC__  # parse help from this too
-    namespace = 'celeryd'
+    namespace = 'worker'
     enable_config_from_cmdline = True
     supports_args = False
 
@@ -192,7 +202,7 @@ class worker(Command):
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
         pool_cls = (concurrency.get_implementation(pool_cls) or
-                    self.app.conf.CELERYD_POOL)
+                    self.app.conf.worker_pool)
         if self.app.IS_WINDOWS and kwargs.get('beat'):
             self.die('-B option does not work on Windows.  '
                      'Please run celery beat as a separate service.')
@@ -219,44 +229,102 @@ class worker(Command):
         # that may have to be loaded as early as possible.
         return (['-P'], ['--pool'])
 
-    def get_options(self):
+    def prepare_arguments(self, parser):
         conf = self.app.conf
-        return (
-            Option('-c', '--concurrency',
-                   default=conf.CELERYD_CONCURRENCY, type='int'),
-            Option('-P', '--pool', default=conf.CELERYD_POOL, dest='pool_cls'),
-            Option('--purge', '--discard', default=False, action='store_true'),
-            Option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL),
-            Option('-n', '--hostname'),
-            Option('-B', '--beat', action='store_true'),
-            Option('-s', '--schedule', dest='schedule_filename',
-                   default=conf.CELERYBEAT_SCHEDULE_FILENAME),
-            Option('--scheduler', dest='scheduler_cls'),
-            Option('-S', '--statedb',
-                   default=conf.CELERYD_STATE_DB, dest='state_db'),
-            Option('-E', '--events', default=conf.CELERY_SEND_EVENTS,
-                   action='store_true', dest='send_events'),
-            Option('--time-limit', type='float', dest='task_time_limit',
-                   default=conf.CELERYD_TASK_TIME_LIMIT),
-            Option('--soft-time-limit', dest='task_soft_time_limit',
-                   default=conf.CELERYD_TASK_SOFT_TIME_LIMIT, type='float'),
-            Option('--maxtasksperchild', dest='max_tasks_per_child',
-                   default=conf.CELERYD_MAX_TASKS_PER_CHILD, type='int'),
-            Option('--prefetch-multiplier', dest='prefetch_multiplier',
-                   default=conf.CELERYD_PREFETCH_MULTIPLIER, type='int'),
-            Option('--queues', '-Q', default=[]),
-            Option('--exclude-queues', '-X', default=[]),
-            Option('--include', '-I', default=[]),
-            Option('--autoscale'),
-            Option('--autoreload', action='store_true'),
-            Option('--no-execv', action='store_true', default=False),
-            Option('--without-gossip', action='store_true', default=False),
-            Option('--without-mingle', action='store_true', default=False),
-            Option('--without-heartbeat', action='store_true', default=False),
-            Option('--heartbeat-interval', type='int'),
-            Option('-O', dest='optimization'),
-            Option('-D', '--detach', action='store_true'),
-        ) + daemon_options() + tuple(self.app.user_options['worker'])
+
+        wopts = OptionGroup(parser, 'Worker Options')
+        wopts.add_option('-n', '--hostname')
+        wopts.add_option('-D', '--detach', action='store_true')
+        wopts.add_option(
+            '-S', '--statedb',
+            default=conf.worker_state_db, dest='state_db',
+        )
+        wopts.add_option('-l', '--loglevel', default='WARN')
+        wopts.add_option('-O', dest='optimization')
+        wopts.add_option(
+            '--prefetch-multiplier',
+            dest='prefetch_multiplier', type='int',
+            default=conf.worker_prefetch_multiplier,
+        )
+        parser.add_option_group(wopts)
+
+        topts = OptionGroup(parser, 'Pool Options')
+        topts.add_option(
+            '-c', '--concurrency',
+            default=conf.worker_concurrency, type='int',
+        )
+        topts.add_option(
+            '-P', '--pool',
+            default=conf.worker_pool, dest='pool_cls',
+        )
+        topts.add_option(
+            '-E', '--events',
+            default=conf.worker_send_task_events,
+            action='store_true', dest='send_events',
+        )
+        topts.add_option(
+            '--time-limit',
+            type='float', dest='task_time_limit',
+            default=conf.task_time_limit,
+        )
+        topts.add_option(
+            '--soft-time-limit',
+            dest='task_soft_time_limit', type='float',
+            default=conf.task_soft_time_limit,
+        )
+        topts.add_option(
+            '--maxtasksperchild',
+            dest='max_tasks_per_child', type='int',
+            default=conf.worker_max_tasks_per_child,
+        )
+        topts.add_option(
+            '--maxmemperchild',
+            dest='max_memory_per_child', type='int',
+            default=conf.worker_max_memory_per_child,
+        )
+        parser.add_option_group(topts)
+
+        qopts = OptionGroup(parser, 'Queue Options')
+        qopts.add_option(
+            '--purge', '--discard',
+            default=False, action='store_true',
+        )
+        qopts.add_option('--queues', '-Q', default=[])
+        qopts.add_option('--exclude-queues', '-X', default=[])
+        qopts.add_option('--include', '-I', default=[])
+        parser.add_option_group(qopts)
+
+        fopts = OptionGroup(parser, 'Features')
+        fopts.add_option('--autoscale')
+        fopts.add_option('--autoreload', action='store_true')
+        fopts.add_option(
+            '--without-gossip', action='store_true', default=False,
+        )
+        fopts.add_option(
+            '--without-mingle', action='store_true', default=False,
+        )
+        fopts.add_option(
+            '--without-heartbeat', action='store_true', default=False,
+        )
+        fopts.add_option('--heartbeat-interval', type='int')
+        parser.add_option_group(fopts)
+
+        daemon_options(parser)
+
+        bopts = OptionGroup(parser, 'Embedded Beat Options')
+        bopts.add_option('-B', '--beat', action='store_true')
+        bopts.add_option(
+            '-s', '--schedule', dest='schedule_filename',
+            default=conf.beat_schedule_filename,
+        )
+        bopts.add_option('--scheduler', dest='scheduler_cls')
+        parser.add_option_group(bopts)
+
+        user_options = self.app.user_options['worker']
+        if user_options:
+            uopts = OptionGroup(parser, 'User Options')
+            uopts.options_list.extend(user_options)
+            parser.add_option_group(uopts)
 
 
 def main(app=None):

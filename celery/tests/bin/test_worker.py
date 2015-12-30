@@ -185,13 +185,13 @@ class test_Worker(WorkerAppCase):
 
         prev_loader = self.app.loader
         worker = self.Worker(app=self.app, queues='foo,bar,baz,xuzzy,do,re,mi')
-        self.app.loader = Mock()
-        self.app.loader.__module__ = 'acme.baked_beans'
-        self.assertTrue(worker.startup_info())
+        with patch('celery.apps.worker.qualname') as qualname:
+            qualname.return_value = 'acme.backed_beans.Loader'
+            self.assertTrue(worker.startup_info())
 
-        self.app.loader = Mock()
-        self.app.loader.__module__ = 'celery.loaders.foo'
-        self.assertTrue(worker.startup_info())
+        with patch('celery.apps.worker.qualname') as qualname:
+            qualname.return_value = 'celery.loaders.Loader'
+            self.assertTrue(worker.startup_info())
 
         from celery.loaders.app import AppLoader
         self.app.loader = AppLoader(app=self.app)
@@ -237,12 +237,12 @@ class test_Worker(WorkerAppCase):
         self.assertIn('celery', app.amqp.queues)
         self.assertNotIn('celery', app.amqp.queues.consume_from)
 
-        c.CELERY_CREATE_MISSING_QUEUES = False
+        c.task_create_missing_queues = False
         del(app.amqp.queues)
         with self.assertRaises(ImproperlyConfigured):
             self.Worker(app=self.app).setup_queues(['image'])
         del(app.amqp.queues)
-        c.CELERY_CREATE_MISSING_QUEUES = True
+        c.task_create_missing_queues = True
         worker = self.Worker(app=self.app)
         worker.setup_queues(['image'])
         self.assertIn('image', app.amqp.queues.consume_from)
@@ -283,7 +283,7 @@ class test_Worker(WorkerAppCase):
 
         with patch('os.getuid') as getuid:
             getuid.return_value = 0
-            self.app.conf.CELERY_ACCEPT_CONTENT = ['pickle']
+            self.app.conf.accept_content = ['pickle']
             worker = self.Worker(app=self.app)
             worker.on_start()
             _exit.assert_called_with(1)
@@ -297,7 +297,7 @@ class test_Worker(WorkerAppCase):
                     worker.on_start()
             finally:
                 platforms.C_FORCE_ROOT = False
-            self.app.conf.CELERY_ACCEPT_CONTENT = ['json']
+            self.app.conf.accept_content = ['json']
             with self.assertWarnsRegex(
                     RuntimeWarning,
                     r'absolutely not recommended'):

@@ -11,6 +11,7 @@ from __future__ import absolute_import
 import io
 import tempfile
 
+from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown
@@ -52,20 +53,15 @@ def _find_requests_by_id(ids, requests):
 @Panel.register
 def query_task(state, ids, **kwargs):
     ids = maybe_list(ids)
-
-    def reqinfo(state, req):
-        return state, req.info()
-
-    reqs = {
+    return dict({
         req.id: ('reserved', req.info())
-        for req in _find_requests_by_id(ids, worker_state.reserved_requests)
-    }
-    reqs.update({
+        for req in _find_requests_by_id(
+            ids, state.tset(worker_state.reserved_requests))
+    }, **{
         req.id: ('active', req.info())
-        for req in _find_requests_by_id(ids, worker_state.active_requests)
+        for req in _find_requests_by_id(
+            ids, state.tset(worker_state.active_requests))
     })
-
-    return reqs
 
 
 @Panel.register
@@ -78,12 +74,12 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
 
     revoked.update(task_ids)
     if terminate:
-        signum = _signals.signum(signal or 'TERM')
+        signum = _signals.signum(signal or TERM_SIGNAME)
         # reserved_requests changes size during iteration
         # so need to consume the items first, then terminate after.
         requests = set(_find_requests_by_id(
             task_ids,
-            worker_state.reserved_requests,
+            state.tset(worker_state.reserved_requests),
         ))
         for request in requests:
             if request.id not in terminated:
@@ -204,7 +200,10 @@ def dump_schedule(state, safe=False, **kwargs):
 
 @Panel.register
 def dump_reserved(state, safe=False, **kwargs):
-    reserved = worker_state.reserved_requests - worker_state.active_requests
+    reserved = (
+        state.tset(worker_state.reserved_requests) -
+        state.tset(worker_state.active_requests)
+    )
     if not reserved:
         return []
     return [request.info(safe=safe) for request in reserved]
@@ -213,7 +212,7 @@ def dump_reserved(state, safe=False, **kwargs):
 @Panel.register
 def dump_active(state, safe=False, **kwargs):
     return [request.info(safe=safe)
-            for request in worker_state.active_requests]
+            for request in state.tset(worker_state.active_requests)]
 
 
 @Panel.register
@@ -321,7 +320,7 @@ def pool_shrink(state, n=1, **kwargs):
 
 @Panel.register
 def pool_restart(state, modules=None, reload=False, reloader=None, **kwargs):
-    if state.app.conf.CELERYD_POOL_RESTARTS:
+    if state.app.conf.worker_pool_restarts:
         state.consumer.controller.reload(modules, reload, reloader=reloader)
         return {'ok': 'reload started'}
     else:
@@ -346,14 +345,18 @@ def shutdown(state, msg='Got shutdown from remote', **kwargs):
 @Panel.register
 def add_consumer(state, queue, exchange=None, exchange_type=None,
                  routing_key=None, **options):
-    state.consumer.add_task_queue(queue, exchange, exchange_type,
-                                  routing_key, **options)
+    state.consumer.call_soon(
+        state.consumer.add_task_queue,
+        queue, exchange, exchange_type, routing_key, **options
+    )
     return {'ok': 'add consumer {0}'.format(queue)}
 
 
 @Panel.register
 def cancel_consumer(state, queue=None, **_):
-    state.consumer.cancel_task_queue(queue)
+    state.consumer.call_soon(
+        state.consumer.cancel_task_queue, queue,
+    )
     return {'ok': 'no longer consuming from {0}'.format(queue)}
 
 
@@ -368,7 +371,6 @@ def active_queues(state):
 
 def _wanted_config_key(key):
     return (isinstance(key, string_t) and
-            key.isupper() and
             not key.startswith('__'))
 
 

@@ -13,6 +13,7 @@ from threading import Event
 
 from kombu.common import ignore_errors
 from kombu.utils import symbol_by_name
+from kombu.utils.encoding import bytes_to_str
 
 from .datastructures import DependencyGraph, GraphFormatter
 from .five import values, with_metaclass
@@ -21,7 +22,7 @@ from .utils.log import get_logger
 
 try:
     from greenlet import GreenletExit
-    IGNORE_ERRORS = (GreenletExit, )
+    IGNORE_ERRORS = (GreenletExit,)
 except ImportError:  # pragma: no cover
     IGNORE_ERRORS = ()
 
@@ -58,7 +59,8 @@ class StepFormatter(GraphFormatter):
     def label(self, step):
         return step and '{0}{1}'.format(
             self._get_prefix(step),
-            (step.label or _label(step)).encode('utf-8', 'ignore'),
+            bytes_to_str(
+                (step.label or _label(step)).encode('utf-8', 'ignore')),
         )
 
     def _get_prefix(self, step):
@@ -393,7 +395,7 @@ class StartStopStep(Step):
 
 
 class ConsumerStep(StartStopStep):
-    requires = ('celery.worker.consumer:Connection', )
+    requires = ('celery.worker.consumer:Connection',)
     consumers = None
 
     def get_consumers(self, channel):

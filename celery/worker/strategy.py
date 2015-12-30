@@ -15,6 +15,7 @@ from kombu.five import buffer_t
 
 from celery.exceptions import InvalidTaskError
 from celery.utils.log import get_logger
+from celery.utils.saferepr import saferepr
 from celery.utils.timeutils import timezone
 
 from .request import Request, create_request_cls
@@ -40,12 +41,22 @@ def proto1_to_proto2(message, body):
         raise InvalidTaskError(
             'Task keyword arguments must be a mapping',
         )
-    body['headers'] = message.headers
+    body.update(
+        argsrepr=saferepr(args),
+        kwargsrepr=saferepr(kwargs),
+        headers=message.headers,
+    )
     try:
         body['group'] = body['taskset']
     except KeyError:
         pass
-    return (args, kwargs), body, True, body.get('utc', True)
+    embed = {
+        'callbacks': body.get('callbacks'),
+        'errbacks': body.get('errbacks'),
+        'chord': body.get('chord'),
+        'chain': None,
+    }
+    return (args, kwargs, embed), body, True, body.get('utc', True)
 
 
 def default(task, app, consumer,
@@ -95,7 +106,8 @@ def default(task, app, consumer,
             send_event(
                 'task-received',
                 uuid=req.id, name=req.name,
-                args='', kwargs='',
+                args=req.argsrepr, kwargs=req.kwargsrepr,
+                root_id=req.root_id, parent_id=req.parent_id,
                 retries=req.request_dict.get('retries', 0),
                 eta=req.eta and req.eta.isoformat(),
                 expires=req.expires and req.expires.isoformat(),
@@ -113,7 +125,7 @@ def default(task, app, consumer,
                 req.acknowledge()
             else:
                 consumer.qos.increment_eventually()
-                call_at(eta, apply_eta_task, (req, ), priority=6)
+                call_at(eta, apply_eta_task, (req,), priority=6)
         else:
             if rate_limits_enabled:
                 bucket = get_bucket(task.name)

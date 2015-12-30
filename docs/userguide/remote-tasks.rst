@@ -18,13 +18,17 @@ If you need to call into another language, framework or similar, you can
 do so by using HTTP callback tasks.
 
 The HTTP callback tasks uses GET/POST data to pass arguments and returns
-result as a JSON response. The scheme to call a task is::
+result as a JSON response. The scheme to call a task is:
 
-    GET http://example.com/mytask/?arg1=a&arg2=b&arg3=c
+.. code-block:: http
 
-or using POST::
+    GET HTTP/1.1 http://example.com/mytask/?arg1=a&arg2=b&arg3=c
 
-    POST http://example.com/mytask
+or using POST:
+
+.. code-block:: http
+
+    POST HTTP/1.1 http://example.com/mytask
 
 .. note::
 
@@ -33,11 +37,15 @@ or using POST::
 Whether to use GET or POST is up to you and your requirements.
 
 The web page should then return a response in the following format
-if the execution was successful::
+if the execution was successful:
+
+.. code-block:: javascript
 
     {'status': 'success', 'retval': …}
 
-or if there was an error::
+or if there was an error:
+
+.. code-block:: javascript
 
     {'status': 'failure', 'reason': 'Invalid moon alignment.'}
 
@@ -45,7 +53,7 @@ Enabling the HTTP task
 ----------------------
 
 To enable the HTTP dispatch task you have to add :mod:`celery.task.http`
-to :setting:`CELERY_IMPORTS`, or start the worker with ``-I
+to :setting:`imports`, or start the worker with ``-I
 celery.task.http``.
 
 
@@ -97,13 +105,17 @@ Calling webhook tasks
 
 To call a task you can use the :class:`~celery.task.http.URL` class:
 
+.. code-block:: pycon
+
     >>> from celery.task.http import URL
     >>> res = URL('http://example.com/multiply').get_async(x=10, y=10)
 
 
 :class:`~celery.task.http.URL` is a shortcut to the :class:`HttpDispatchTask`.
 You can subclass this to extend the
-functionality.
+functionality:
+
+.. code-block:: pycon
 
     >>> from celery.task.http import HttpDispatchTask
     >>> res = HttpDispatchTask.delay(

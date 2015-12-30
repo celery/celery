@@ -8,9 +8,9 @@ os.environ.update(
     USE_FAST_LOCALS='yes',
 )
 
-from celery import Celery
-from celery.five import range
-from kombu.five import monotonic
+from celery import Celery  # noqa
+from celery.five import range  # noqa
+from kombu.five import monotonic  # noqa
 
 DEFAULT_ITS = 40000
 
@@ -20,12 +20,12 @@ if hasattr(sys, 'pypy_version_info'):
 
 app = Celery('bench_worker')
 app.conf.update(
-    BROKER_TRANSPORT=BROKER_TRANSPORT,
-    BROKER_POOL_LIMIT=10,
-    CELERYD_POOL='solo',
-    CELERYD_PREFETCH_MULTIPLIER=0,
-    CELERY_DEFAULT_DELIVERY_MODE=1,
-    CELERY_QUEUES={
+    broker_transport=BROKER_TRANSPORT,
+    broker_pool_limit=10,
+    celeryd_pool='solo',
+    celeryd_prefetch_multiplier=0,
+    default_delivery_mode=1,
+    queues={
         'bench.worker': {
             'exchange': 'bench.worker',
             'routing_key': 'bench.worker',
@@ -35,9 +35,9 @@ app.conf.update(
             'auto_delete': True,
         }
     },
-    CELERY_TASK_SERIALIZER='json',
-    CELERY_DEFAULT_QUEUE='bench.worker',
-    CELERY_BACKEND=None,
+    task_serializer='json',
+    default_queue='bench.worker',
+    result_backend=None,
 ),
 
 

@@ -73,12 +73,12 @@ class AMQPBackend(BaseBackend):
         self._connection = connection
         self.persistent = self.prepare_persistent(persistent)
         self.delivery_mode = 2 if self.persistent else 1
-        exchange = exchange or conf.CELERY_RESULT_EXCHANGE
-        exchange_type = exchange_type or conf.CELERY_RESULT_EXCHANGE_TYPE
+        exchange = exchange or conf.result_exchange
+        exchange_type = exchange_type or conf.result_exchange_type
         self.exchange = self._create_exchange(
             exchange, exchange_type, self.delivery_mode,
         )
-        self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
+        self.serializer = serializer or conf.result_serializer
         self.auto_delete = auto_delete
         self.queue_arguments = dictfilter({
             'x-expires': maybe_s_to_ms(self.expires),
@@ -111,16 +111,16 @@ class AMQPBackend(BaseBackend):
             return self.rkey(task_id), request.correlation_id or task_id
         return self.rkey(task_id), task_id
 
-    def store_result(self, task_id, result, status,
+    def store_result(self, task_id, result, state,
                      traceback=None, request=None, **kwargs):
-        """Send task return value and status."""
+        """Send task return value and state."""
         routing_key, correlation_id = self.destination_for(task_id, request)
         if not routing_key:
             return
         with self.app.amqp.producer_pool.acquire(block=True) as producer:
             producer.publish(
-                {'task_id': task_id, 'status': status,
-                 'result': self.encode_result(result, status),
+                {'task_id': task_id, 'status': state,
+                 'result': self.encode_result(result, state),
                  'traceback': traceback,
                  'children': self.current_task_children(request)},
                 exchange=self.exchange,
@@ -176,7 +176,8 @@ class AMQPBackend(BaseBackend):
                 raise self.BacklogLimitExceeded(task_id)
 
             if latest:
-                payload = self._cache[task_id] = latest.payload
+                payload = self._cache[task_id] = self.meta_from_decoded(
+                    latest.payload)
                 latest.requeue()
                 return payload
             else:
@@ -195,7 +196,7 @@ class AMQPBackend(BaseBackend):
 
         def callback(meta, message):
             if meta['status'] in states.READY_STATES:
-                results[meta['task_id']] = meta
+                results[meta['task_id']] = self.meta_from_decoded(meta)
 
         consumer.callbacks[:] = [callback]
         time_start = now()
@@ -231,7 +232,8 @@ class AMQPBackend(BaseBackend):
     def _many_bindings(self, ids):
         return [self._create_binding(task_id) for task_id in ids]
 
-    def get_many(self, task_ids, timeout=None, no_ack=True, on_message=None,
+    def get_many(self, task_ids, timeout=None, no_ack=True,
+                 on_message=None, on_interval=None,
                  now=monotonic, getfields=itemgetter('status', 'task_id'),
                  READY_STATES=states.READY_STATES,
                  PROPAGATE_STATES=states.PROPAGATE_STATES, **kwargs):
@@ -276,6 +278,8 @@ class AMQPBackend(BaseBackend):
                         ids.discard(task_id)
                         push_cache(task_id, state)
                         yield task_id, state
+                    if on_interval:
+                        on_interval()
 
     def reload_task_result(self, task_id):
         raise NotImplementedError(

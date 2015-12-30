@@ -90,7 +90,7 @@ class multi(Command):
     respects_app_option = False
 
     def get_options(self):
-        return ()
+        pass
 
     def run_from_argv(self, prog_name, argv, command=None):
         from celery.bin.multi import MultiTool
@@ -117,7 +117,8 @@ class list_(Command):
         except NotImplementedError:
             raise self.Error('Your transport cannot list bindings.')
 
-        fmt = lambda q, e, r: self.out('{0:<28} {1:<28} {2}'.format(q, e, r))
+        def fmt(q, e, r):
+            return self.out('{0:<28} {1:<28} {2}'.format(q, e, r))
         fmt('Queue', 'Exchange', 'Routing Key')
         fmt('-' * 16, '-' * 16, '-' * 16)
         for b in bindings:
@@ -336,7 +337,7 @@ class _RemoteControl(Command):
             raise self.UsageError(
                 'Unknown {0.name} method {1}'.format(self, method))
 
-        if self.app.connection().transport.driver_type == 'sql':
+        if self.app.connection_for_write().transport.driver_type == 'sql':
             raise self.Error('Broadcast not supported by SQL broker transport')
 
         output_json = kwargs.get('json')
@@ -659,7 +660,6 @@ class report(Command):
 
 
 class CeleryCommand(Command):
-    namespace = 'celery'
     ext_fmt = '{self.namespace}.commands'
     commands = {
         'amqp': amqp,
@@ -740,13 +740,13 @@ class CeleryCommand(Command):
                             # is (maybe) a value for this option
                             rest.extend([value, nxt])
                             index += 1
-                    except IndexError:
+                    except IndexError:  # pragma: no cover
                         rest.append(value)
                         break
                 else:
                     break
                 index += 1
-            if argv[index:]:
+            if argv[index:]:  # pragma: no cover
                 # if there are more arguments left then divide and swap
                 # we assume the first argument in argv[i:] is the command
                 # name.

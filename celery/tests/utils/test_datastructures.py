@@ -44,8 +44,10 @@ class test_DictAttribute(Case):
 
     def test_setdefault(self):
         x = DictAttribute(Object())
-        self.assertEqual(x.setdefault('foo', 'NEW'), 'NEW')
-        self.assertEqual(x.setdefault('foo', 'XYZ'), 'NEW')
+        x.setdefault('foo', 'NEW')
+        self.assertEqual(x['foo'], 'NEW')
+        x.setdefault('foo', 'XYZ')
+        self.assertEqual(x['foo'], 'NEW')
 
     def test_contains(self):
         x = DictAttribute(Object())
@@ -71,8 +73,10 @@ class test_ConfigurationView(Case):
                                        'both': 1}])
 
     def test_setdefault(self):
-        self.assertEqual(self.view.setdefault('both', 36), 2)
-        self.assertEqual(self.view.setdefault('new', 36), 36)
+        self.view.setdefault('both', 36)
+        self.assertEqual(self.view['both'], 2)
+        self.view.setdefault('new', 36)
+        self.assertEqual(self.view['new'], 36)
 
     def test_get(self):
         self.assertEqual(self.view.get('both'), 2)
@@ -158,7 +162,7 @@ class test_ExceptionInfo(Case):
             self.assertEqual(str(einfo), einfo.traceback)
             self.assertIsInstance(einfo.exception, LookupError)
             self.assertTupleEqual(
-                einfo.exception.args, ('The quick brown fox jumps...', ),
+                einfo.exception.args, ('The quick brown fox jumps...',),
             )
             self.assertTrue(einfo.traceback)
 

@@ -10,7 +10,7 @@ this = os.path.dirname(os.path.abspath(__file__))
 # absolute, like shown here.
 sys.path.insert(0, os.path.join(this, os.pardir))
 sys.path.append(os.path.join(this, '_ext'))
-import celery
+import celery  # noqa
 
 # General configuration
 # ---------------------

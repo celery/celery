@@ -156,6 +156,7 @@ Antoine Legrand, 2014/01/09
 Pepijn de Vos, 2014/01/15
 Dan McGee, 2014/01/27
 Paul Kilgo, 2014/01/28
+Môshe van der Sterre, 2014/01/31
 Martin Davidsson, 2014/02/08
 Chris Clark, 2014/02/20
 Matthew Duggan, 2014/04/10
@@ -188,3 +189,14 @@ Fatih Sucu, 2015/04/17
 James Pulec, 2015/04/19
 Alexander Lebedev, 2015/04/25
 Frantisek Holop, 2015/05/21
+Feanil Patel, 2015/05/21
+Jocelyn Delalande, 2015/06/03
+Justin Patrin, 2015/08/06
+Juan Rossi, 2015/08/10
+Piotr Maślanka, 2015/08/24
+Gerald Manipon, 2015/10/19
+Krzysztof Bujniewicz, 2015/10/21
+Sukrit Khera, 2015/10/26
+Dave Smith, 2015/10/27
+Dennis Brakhane, 2015/10/30
+Chris Harris, 2015/11/27

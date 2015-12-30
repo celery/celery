@@ -42,7 +42,7 @@ Enabling Eventlet
 You can enable the Eventlet pool by using the ``-P`` option to
 :program:`celery worker`:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -P eventlet -c 1000
 

@@ -39,7 +39,7 @@ AUTOSCALE_KEEPALIVE = float(os.environ.get('AUTOSCALE_KEEPALIVE', 30))
 class WorkerComponent(bootsteps.StartStopStep):
     label = 'Autoscaler'
     conditional = True
-    requires = (Pool, )
+    requires = (Pool,)
 
     def __init__(self, w, **kwargs):
         self.enabled = w.autoscale
@@ -71,7 +71,7 @@ class Autoscaler(bgThread):
         self.max_concurrency = max_concurrency
         self.min_concurrency = min_concurrency
         self.keepalive = keepalive
-        self._last_action = None
+        self._last_scale_up = None
         self.worker = worker
 
         assert self.keepalive, 'cannot scale down too fast.'
@@ -87,8 +87,9 @@ class Autoscaler(bgThread):
         if cur > procs:
             self.scale_up(cur - procs)
             return True
-        elif cur < procs:
-            self.scale_down((procs - cur) - self.min_concurrency)
+        cur = max(self.qty, self.min_concurrency)
+        if cur < procs:
+            self.scale_down(procs - cur)
             return True
 
     def maybe_scale(self, req=None):
@@ -98,12 +99,12 @@ class Autoscaler(bgThread):
     def update(self, max=None, min=None):
         with self.mutex:
             if max is not None:
-                if max < self.max_concurrency:
+                if max < self.processes:
                     self._shrink(self.processes - max)
                 self.max_concurrency = max
             if min is not None:
-                if min > self.min_concurrency:
-                    self._grow(min - self.min_concurrency)
+                if min > self.processes:
+                    self._grow(min - self.processes)
                 self.min_concurrency = min
             return self.max_concurrency, self.min_concurrency
 
@@ -112,7 +113,6 @@ class Autoscaler(bgThread):
             new = self.processes + n
             if new > self.max_concurrency:
                 self.max_concurrency = new
-            self.min_concurrency += 1
             self._grow(n)
 
     def force_scale_down(self, n):
@@ -123,13 +123,12 @@ class Autoscaler(bgThread):
             self._shrink(min(n, self.processes))
 
     def scale_up(self, n):
-        self._last_action = monotonic()
+        self._last_scale_up = monotonic()
         return self._grow(n)
 
     def scale_down(self, n):
-        if n and self._last_action and (
-                monotonic() - self._last_action > self.keepalive):
-            self._last_action = monotonic()
+        if self._last_scale_up and (
+                monotonic() - self._last_scale_up > self.keepalive):
             return self._shrink(n)
 
     def _grow(self, n):
