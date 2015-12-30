@@ -109,11 +109,12 @@ class MutableURL(object):
 
     def __str__(self):
         scheme, netloc, path, params, query, fragment = self.parts
-        query = str_to_bytes(urlencode(utf8dict(items(self.query))))
+        query = urlencode(utf8dict(items(self.query)))
         components = [scheme + '://', netloc, path or '/',
                       ';{0}'.format(params) if params else '',
                       '?{0}'.format(query) if query else '',
                       '#{0}'.format(fragment) if fragment else '']
+        print('COMP: %r' % (components,))
         return ''.join(c for c in components if c)
 
     def __repr__(self):
@@ -141,7 +142,7 @@ class HttpDispatch(object):
 
     def make_request(self, url, method, params):
         """Perform HTTP request and return the response."""
-        request = Request(url, params)
+        request = Request(url, str_to_bytes(params))
         for key, val in items(self.http_headers):
             request.add_header(key, val)
         response = urlopen(request)  # user catches errors.
