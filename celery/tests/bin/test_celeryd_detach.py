@@ -61,8 +61,6 @@ class test_PartialOptionParser(AppCase):
             '--logfile=foo', '--fake', '--enable',
             'a', 'b', '-c1', '-d', '2',
         ])
-        print(p.option_list)
-        print('O: %r V: %r' % (vars(options), values))
         self.assertEqual(options.logfile, 'foo')
         self.assertEqual(values, ['a', 'b'])
         self.assertEqual(p.leftovers, ['--enable', '-c1', '-d', '2'])
