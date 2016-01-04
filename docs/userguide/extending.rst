@@ -46,7 +46,7 @@ whenever the connection is established:
 
     def send_me_a_message(self, who='world!', producer=None):
         with app.producer_or_acquire(producer) as producer:
-            producer.send(
+            producer.publish(
                 {'hello': who},
                 serializer='json',
                 exchange=my_queue.exchange,
