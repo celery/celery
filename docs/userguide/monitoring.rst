@@ -504,6 +504,7 @@ Here is an example camera, dumping the snapshot to screen:
     from celery.events.snapshot import Polaroid
 
     class DumpCam(Polaroid):
+        clear_after = True  # clear after flush (incl, state.event_count).
 
         def on_shutter(self, state):
             if not state.event_count:
