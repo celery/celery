@@ -18,7 +18,6 @@ import sys
 
 from logging.handlers import WatchedFileHandler
 
-from kombu.log import NullHandler
 from kombu.utils.encoding import set_default_encoding_file
 
 from celery import signals
@@ -231,8 +230,10 @@ class Logging(object):
         return WatchedFileHandler(logfile)
 
     def _has_handler(self, logger):
-        if logger.handlers:
-            return any(not isinstance(h, NullHandler) for h in logger.handlers)
+        return any(
+            not isinstance(h, logging.NullHandler)
+            for h in logger.handlers or []
+        )
 
     def _is_configured(self, logger):
         return self._has_handler(logger) and not getattr(

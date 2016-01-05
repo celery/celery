@@ -33,7 +33,6 @@ except ImportError:
     import mock  # noqa
 from nose import SkipTest
 from kombu import Queue
-from kombu.log import NullHandler
 from kombu.utils import symbol_by_name
 
 from celery import Celery
@@ -561,7 +560,10 @@ class AppCase(Case):
 
 
 def get_handlers(logger):
-    return [h for h in logger.handlers if not isinstance(h, NullHandler)]
+    return [
+        h for h in logger.handlers
+        if not isinstance(h, logging.NullHandler)
+    ]
 
 
 @contextmanager
