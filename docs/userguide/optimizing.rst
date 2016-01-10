@@ -54,8 +54,8 @@ General Settings
 
 .. _optimizing-librabbitmq:
 
-librabbitmq
------------
+librabbitmq (Python 2 only)
+---------------------------
 
 If you're using RabbitMQ (AMQP) as the broker then you can install the
 :mod:`librabbitmq` module to use an optimized client written in C:
