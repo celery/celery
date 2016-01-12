@@ -119,6 +119,13 @@ class DjangoWorkerFixup(object):
         self._cache = import_module('django.core.cache')
         self._settings = symbol_by_name('django.conf:settings')
 
+        try:
+            self.interface_errors = (
+                symbol_by_name('django.db.utils.InterfaceError'),
+            )
+        except (ImportError, AttributeError):
+            self._interface_errors = ()
+
         # Database-related exceptions.
         DatabaseError = symbol_by_name('django.db:DatabaseError')
         try:
@@ -269,6 +276,8 @@ class DjangoWorkerFixup(object):
         for close in funs:
             try:
                 close()
+            except self.interface_errors:
+                pass
             except self.database_errors as exc:
                 str_exc = str(exc)
                 if 'closed' not in str_exc and 'not connected' not in str_exc:
