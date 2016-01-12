@@ -176,20 +176,29 @@ the tasks according to the run-time. (see :ref:`guide-routing`).
 Reserve one task at a time
 --------------------------
 
-When using early acknowledgement (default), a prefetch multiplier of 1
-means the worker will reserve at most one extra task for every active
-worker process.
+The task message is only deleted from the queue after the task is
+:term:`acknowledged`, so if the worker crashes before acknowleding the task,
+it can be redelivered to another worker (or the same after recovery).
 
-When users ask if it's possible to disable "prefetching of tasks", often
-what they really want is to have a worker only reserve as many tasks as there
-are child processes.
+When using the default of early acknowledgement, having a prefetch multiplier setting
+of 1, means the worker will reserve at most one extra task for every
+worker process: or in other words, if the worker is started with `-c 10`,
+the worker may reserve at most 20 tasks (10 unacknowledged tasks executing, and 10
+unacknowledged reserved tasks) at any time.
 
-But this is not possible without enabling late acknowledgements
-acknowledgements; A task that has been started, will be
-retried if the worker crashes mid execution so the task must be `idempotent`_
-(see also notes at :ref:`faq-acks_late-vs-retry`).
+Often users ask if disabling "prefetching of tasks" is possible, but what
+they really mean by that is to have a worker only reserve as many tasks as
+there are worker processes (10 unacknowledged tasks for `-c 10`)
 
-.. _`idempotent`: http://en.wikipedia.org/wiki/Idempotent
+That is possible, but not without also enabling
+:term:`late acknowledgments`.  Using this option over the
+default beahvior means a task that has already started executing will be
+retried in the event of a power failure or the worker instance being killed
+abruptly, so this also means the task must be :term:`idempotent`
+
+.. seealso::
+
+    Notes at :ref:`faq-acks_late-vs-retry`.
 
 You can enable this behavior by using the following configuration options:
 

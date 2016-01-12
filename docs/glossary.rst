@@ -18,6 +18,32 @@ Glossary
     ack
         Short for :term:`acknowledged`.
 
+    early acknowledgement
+
+        Task is :term:`acknowledged` just-in-time before being executed,
+        meaning the task will not be redelivered to another worker if the
+        machine loses power, or the worker instance is abruptly killed,
+        mid-execution.
+
+        Configured using :setting:`task_acks_late`.
+
+    late acknowledgment
+
+        Task is :term:`acknowledged` after execution (both if successful, or
+        if the task is raising an error), which means the task will be
+        redelivered to another worker in the event of the machine losing
+        power, or the worker instance being killed mid-execution.
+
+        Configured using :setting:`task_acks_late`.
+
+    early ack
+
+        Short for :term:`early acknowledgement`
+
+    late ack
+
+        Short for :term:`late acknowledgement`
+
     request
         Task messages are converted to *requests* within the worker.
         The request information is also available as the task's
@@ -53,6 +79,8 @@ Glossary
         Practically it means that a function can be repeated many times without
         unintended effects, but not necessarily side-effect free in the pure
         sense (compare to :term:`nullipotent`).
+
+        Further reading: http://en.wikipedia.org/wiki/Idempotent
 
     nullipotent
         describes a function that will have the same effect, and give the same
