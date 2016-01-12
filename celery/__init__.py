@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Distributed Task Queue"""
-# :copyright: (c) 2015 Ask Solem.  All rights reserved.
+# :copyright: (c) 2015-2016 Ask Solem.  All rights reserved.
 # :copyright: (c) 2012-2014 GoPivotal, Inc., All rights reserved.
 # :copyright: (c) 2009 - 2012 Ask Solem and individual contributors,
 #                 All rights reserved.
