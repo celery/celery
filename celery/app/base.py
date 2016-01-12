@@ -714,10 +714,10 @@ class Celery(object):
         )
 
     def _connection(self, url, userid=None, password=None,
-                   virtual_host=None, port=None, ssl=None,
-                   connect_timeout=None, transport=None,
-                   transport_options=None, heartbeat=None,
-                   login_method=None, failover_strategy=None, **kwargs):
+                    virtual_host=None, port=None, ssl=None,
+                    connect_timeout=None, transport=None,
+                    transport_options=None, heartbeat=None,
+                    login_method=None, failover_strategy=None, **kwargs):
         conf = self.conf
         return self.amqp.Connection(
             url,
