@@ -184,7 +184,7 @@ When users ask if it's possible to disable "prefetching of tasks", often
 what they really want is to have a worker only reserve as many tasks as there
 are child processes.
 
-But this is not possible without enabling late acknowledgements
+But this is not possible without enabling late
 acknowledgements; A task that has been started, will be
 retried if the worker crashes mid execution so the task must be `idempotent`_
 (see also notes at :ref:`faq-acks_late-vs-retry`).
