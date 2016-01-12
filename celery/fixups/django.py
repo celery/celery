@@ -232,14 +232,20 @@ class DjangoWorkerFixup(object):
         try:
             for c in self._db.connections.all():
                 if c and c.connection:
-                    _maybe_close_fd(c.connection)
+                    self._maybe_close_db_fd(c.connection)
         except AttributeError:
             if self._db.connection and self._db.connection.connection:
-                _maybe_close_fd(self._db.connection.connection)
+                self._maybe_close_db_fd(self._db.connection.connection)
 
         # use the _ version to avoid DB_REUSE preventing the conn.close() call
         self._close_database()
         self.close_cache()
+
+    def _maybe_close_db_fd(self, fd):
+        try:
+            _maybe_close_fd(fd)
+        except self.interface_errors:
+            pass
 
     def on_task_prerun(self, sender, **kwargs):
         """Called before every task."""
