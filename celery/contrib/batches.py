@@ -17,7 +17,7 @@ Experimental task class that buffers messages and processes them as a list.
 **Simple Example**
 
 A click counter that flushes the buffer every 100 messages, and every
-seconds.  Does not do anything with the data, but can easily be modified
+10 seconds.  Does not do anything with the data, but can easily be modified
 to store it in a database.
 
 .. code-block:: python
