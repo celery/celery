@@ -31,6 +31,8 @@ class MapRoute(object):
             return dict(self.map[task])
         except KeyError:
             pass
+        except ValueError:
+            return {'queue': self.map[task]}
 
 
 class Router(object):
