@@ -598,6 +598,24 @@ copies of tasks to all workers connected to it:
 Now the ``tasks.reload_cache`` task will be sent to every
 worker consuming from this queue.
 
+Here is another example of broadcast routing, this time with
+a celerybeat schedule:
+
+.. code-block:: python
+
+    from kombu.common import Broadcast
+    from celery.schedules import crontab
+
+    task_queues = (Broadcast('broadcast_tasks'),)
+
+    task_routes = {'test-task': {
+            'task': 'tasks.reload_cache',
+            'schedule': crontab(minute=0, hour='*/3'),
+            'options': {'exchange': 'broadcast_tasks'}
+        },
+    }
+
+
 .. admonition:: Broadcast & Results
 
     Note that Celery result does not define what happens if two
