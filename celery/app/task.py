@@ -272,8 +272,6 @@ class Task(object):
 
     _backend = None  # set by backend property.
 
-    __bound__ = False
-
     # - Tasks are lazily bound, so that configuration is not set
     # - until the task is actually used
 
