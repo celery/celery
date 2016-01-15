@@ -206,15 +206,6 @@ class test_MongoBackend(AppCase):
         self.assertFalse(mock_database.authenticate.called)
         self.assertTrue(self.backend.__dict__['database'] is mock_database)
 
-    def test_process_cleanup(self):
-        self.backend._connection = None
-        self.backend.process_cleanup()
-        self.assertEqual(self.backend._connection, None)
-
-        self.backend._connection = 'not none'
-        self.backend.process_cleanup()
-        self.assertEqual(self.backend._connection, None)
-
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_store_result(self, mock_get_database):
         self.backend.taskmeta_collection = MONGODB_COLLECTION
