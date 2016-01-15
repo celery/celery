@@ -162,14 +162,6 @@ class MongoBackend(BaseBackend):
 
         return self._connection
 
-    def process_cleanup(self):
-        if self._connection is not None:
-            # MongoDB connection will be closed automatically when object
-            # goes out of scope
-            del(self.collection)
-            del(self.database)
-            self._connection = None
-
     def encode(self, data):
         if self.serializer == 'bson':
             # mongodb handles serialization
