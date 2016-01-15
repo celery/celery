@@ -608,7 +608,7 @@ a celerybeat schedule:
 
     task_queues = (Broadcast('broadcast_tasks'),)
 
-    task_routes = {'test-task': {
+    beat_schedule = {'test-task': {
             'task': 'tasks.reload_cache',
             'schedule': crontab(minute=0, hour='*/3'),
             'options': {'exchange': 'broadcast_tasks'}
