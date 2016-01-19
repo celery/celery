@@ -16,6 +16,8 @@ import numbers
 import socket
 import sys
 
+from datetime import datetime
+
 from celery import VERSION_BANNER, platforms, beat
 from celery.five import text_t
 from celery.utils.imports import qualname
@@ -25,6 +27,7 @@ from celery.utils.timeutils import humanize_seconds
 __all__ = ['Beat']
 
 STARTUP_INFO_FMT = """
+LocalTime -> {timestamp}
 Configuration ->
     . broker -> {conninfo}
     . loader -> {loader}
@@ -124,6 +127,7 @@ class Beat(object):
         scheduler = beat.get_scheduler(lazy=True)
         return STARTUP_INFO_FMT.format(
             conninfo=self.app.connection().as_uri(),
+            timestamp=datetime.now().replace(microsecond=0),
             logfile=self.logfile or '[stderr]',
             loglevel=LOG_LEVELS[self.loglevel],
             loader=qualname(self.app.loader),

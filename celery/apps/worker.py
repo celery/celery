@@ -17,6 +17,7 @@ import os
 import platform as _platform
 import sys
 
+from datetime import datetime
 from functools import partial
 
 from billiard.process import current_process
@@ -69,7 +70,7 @@ ARTLINES = [
 BANNER = """\
 {hostname} v{version}
 
-{platform}
+{platform} {timestamp}
 
 [config]
 .> app:         {app}
@@ -202,6 +203,7 @@ class Worker(WorkController):
         banner = BANNER.format(
             app=appr,
             hostname=safe_str(self.hostname),
+            timestamp=datetime.now().replace(microsecond=0),
             version=VERSION_BANNER,
             conninfo=self.app.connection().as_uri(),
             results=maybe_sanitize_url(
