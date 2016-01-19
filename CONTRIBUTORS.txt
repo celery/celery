@@ -11,7 +11,7 @@ that everyone must add themselves here, and not be added
 by others, so it's currently incomplete waiting for everyone
 to add their names.
 
-The full list of authors can be found in docs/AUTHORS.txt.
+The list of authors added before the policy change can be found in docs/AUTHORS.txt.
 
 --
 
