@@ -525,12 +525,12 @@ class chain(Signature):
 
             if prev_task:
                 prev_task.set_parent_id(task.id)
+
                 if use_link:
                     # link previous task to this task.
                     task.link(prev_task)
-                    if not res.parent and prev_res:
-                        prev_res.parent = res.parent
-                elif prev_res:
+
+                if prev_res:
                     prev_res.parent = res
 
             if is_first_task and parent_id is not None:
