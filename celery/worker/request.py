@@ -394,17 +394,19 @@ class Request(object):
             self.send_event('task-rejected', requeue=requeue)
 
     def info(self, safe=False):
-        return {'id': self.id,
-                'name': self.name,
-                'args': self.argsrepr,
-                'kwargs': self.kwargsrepr,
-                'type': self.type,
-                'body': self.body,
-                'hostname': self.hostname,
-                'time_start': self.time_start,
-                'acknowledged': self.acknowledged,
-                'delivery_info': self.delivery_info,
-                'worker_pid': self.worker_pid}
+        return {
+            'id': self.id,
+            'name': self.name,
+            'args': self.argsrepr,
+            'kwargs': self.kwargsrepr,
+            'type': self.type,
+            'body': self.body,
+            'hostname': self.hostname,
+            'time_start': self.time_start,
+            'acknowledged': self.acknowledged,
+            'delivery_info': self.delivery_info,
+            'worker_pid': self.worker_pid,
+        }
 
     def __str__(self):
         return ' '.join([
