@@ -255,7 +255,7 @@ class RedisBackend(KeyValueStoreBackend):
         return self._new_redis_client(
             socket_timeout=socket_timeout and float(socket_timeout),
             socket_connect_timeout=socket_connect_timeout and float(
-                socket_connect_timeout),
+                socket_connect_timeout), **params
         )
 
     def _new_redis_client(self, **params):
