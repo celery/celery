@@ -356,8 +356,8 @@ class ffwd(object):
         }, **extra)
 
 
-def utcoffset(time=_time):
-    if time.daylight:
+def utcoffset(time=_time, localtime=_time.localtime):
+    if localtime().tm_isdst:
         return time.altzone // 3600
     return time.timezone // 3600
 
