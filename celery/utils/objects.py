@@ -11,6 +11,13 @@ from __future__ import absolute_import
 __all__ = ['mro_lookup']
 
 
+class Bunch(object):
+    """Object that enables you to modify attributes."""
+
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+
 def mro_lookup(cls, attr, stop=(), monkey_patched=[]):
     """Return the first node by MRO order that defines an attribute.
 

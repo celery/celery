@@ -38,12 +38,6 @@ else:                                       # pragma: no cover
 __all__ = ['MongoBackend']
 
 
-class Bunch(object):
-
-    def __init__(self, **kw):
-        self.__dict__.update(kw)
-
-
 class MongoBackend(BaseBackend):
 
     mongo_host = None
