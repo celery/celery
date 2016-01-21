@@ -356,8 +356,55 @@ Attributes
 
     .. code-block:: python
 
-        class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Events',)
+        class RatelimitStep(bootsteps.StartStopStep):
+            """Rate limit tasks based on the number of workers in the
+            cluster."""
+            requires = ('celery.worker.consumer:Gossip',)
+
+            def start(self, c):
+                self.c = c
+                self.c.gossip.on.node_join.add(self.on_cluster_size_change)
+                self.c.gossip.on.node_leave.add(self.on_cluster_size_change)
+                self.c.gossip.on.node_lost.add(self.on_node_lost)
+                self.tasks = [
+                    self.app.tasks['proj.tasks.add']
+                    self.app.tasks['proj.tasks.mul']
+                ]
+                self.last_size = None
+
+            def on_cluster_size_change(self, worker):
+                cluster_size = len(self.c.gossip.state.alive_workers())
+                if cluster_size != self.last_size:
+                    for task in self.tasks:
+                        task.rate_limit = 1.0 / cluster_size
+                    self.c.reset_rate_limits()
+                    self.last_size = cluster_size
+
+            def on_node_lost(self, worker):
+                # may have processed heartbeat too late, so wake up in a while
+                # to see if the worker recovered
+                self.c.timer.call_after(10.0, self.on_cluster_size_change)
+
+    **Callbacks**
+
+    - ``gossip.on.node_join(worker)``
+
+        Called whenever a new node joins the cluster, providing a
+        :class:`~celery.events.state.Worker` instance.
+
+    - ``gossip.on.node_leave(worker)``
+
+        Called whenever a new node leaves the cluster (shuts down),
+        providing a :class:`~celery.events.state.Worker` instance.
+
+    - ``gossip.on.node_lost(worker)``
+
+        Called whenever heartbeat was missed for a worker instance in the
+        cluster (heartbeat not received or processed in time),
+        providing a :class:`~celery.events.state.Worker` instance.
+
+        This does not necessarily mean the worker is actually offline, so use a time
+        out mechanism if the default heartbeat timeout is not sufficient.
 
 .. attribute:: pool
 

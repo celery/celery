@@ -39,6 +39,7 @@ from celery.exceptions import InvalidTaskError, NotRegistered
 from celery.utils import gethostname
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
+from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.timeutils import humanize_seconds, rate
 
@@ -749,6 +750,11 @@ class Gossip(bootsteps.ConsumerStep):
         self.Receiver = c.app.events.Receiver
         self.hostname = c.hostname
         self.full_hostname = '.'.join([self.hostname, str(c.pid)])
+        self.on = Bunch(
+            node_join=set(),
+            node_leave=set(),
+            node_lost=set(),
+        )
 
         self.timer = c.timer
         if self.enabled:
@@ -836,12 +842,23 @@ class Gossip(bootsteps.ConsumerStep):
 
     def on_node_join(self, worker):
         debug('%s joined the party', worker.hostname)
+        self._call_handlers(self.on.node_join, worker)
 
     def on_node_leave(self, worker):
         debug('%s left', worker.hostname)
+        self._call_handlers(self.on.node_leave, worker)
 
     def on_node_lost(self, worker):
         info('missed heartbeat from %s', worker.hostname)
+        self._call_handlers(self.on.node_lost, worker)
+
+    def _call_handlers(self, handlers, *args, **kwargs):
+        for handler in handlers:
+            try:
+                handler(*args, **kwargs)
+            except Exception as exc:
+                error('Ignored error from handler %r: %r',
+                      handler, exc, exc_info=1)
 
     def register_timer(self):
         if self._tref is not None:
