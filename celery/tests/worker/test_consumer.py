@@ -285,6 +285,28 @@ class test_Gossip(AppCase):
         self.assertTrue(g.enabled)
         self.assertIs(c.gossip, g)
 
+    def test_callbacks(self):
+        c = self.Consumer()
+        c.app.connection = _amqp_connection()
+        g = Gossip(c)
+        on_node_join = Mock(name='on_node_join')
+        on_node_join2 = Mock(name='on_node_join2')
+        on_node_leave = Mock(name='on_node_leave')
+        on_node_lost = Mock(name='on.node_lost')
+        g.on.node_join.add(on_node_join)
+        g.on.node_join.add(on_node_join2)
+        g.on.node_leave.add(on_node_leave)
+        g.on.node_lost.add(on_node_lost)
+
+        worker = Mock(name='worker')
+        g.on_node_join(worker)
+        on_node_join.assert_called_with(worker)
+        on_node_join2.assert_called_with(worker)
+        g.on_node_leave(worker)
+        on_node_leave.assert_called_with(worker)
+        g.on_node_lost(worker)
+        on_node_lost.assert_called_with(worker)
+
     def test_election(self):
         c = self.Consumer()
         c.app.connection = _amqp_connection()
