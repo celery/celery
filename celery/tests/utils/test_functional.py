@@ -291,3 +291,20 @@ class test_head_from_fun(Case):
             g(1)
         g(1, 2)
         g(1, 2, kwarg=3)
+
+    def test_from_fun_with_hints(self):
+        local = {}
+        fun = ('def f_hints(x: int, y: int, kwarg: int=1):'
+               '    pass')
+        try:
+            exec(fun, {}, local)
+        except SyntaxError:
+            # py2
+            return
+        f_hints = local['f_hints']
+
+        g = head_from_fun(f_hints)
+        with self.assertRaises(TypeError):
+            g(1)
+        g(1, 2)
+        g(1, 2, kwarg=3)

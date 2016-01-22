@@ -13,7 +13,10 @@ import threading
 
 from collections import OrderedDict
 from functools import partial, wraps
-from inspect import getargspec, isfunction
+try:
+    from inspect import isfunction, getfullargspec as getargspec
+except ImportError:  # Py2
+    from inspect import isfunction, getargspec  # noqa
 from itertools import chain, islice
 
 from amqp import promise
@@ -28,6 +31,7 @@ __all__ = ['LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
            'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun']
 
 IS_PY3 = sys.version_info[0] == 3
+IS_PY2 = sys.version_info[0] == 2
 
 KEYWORD_MARK = object()
 
@@ -365,11 +369,15 @@ def _argsfromspec(spec, replace_defaults=True):
         optional = list(zip(spec.args[-split:], defaults))
     else:
         positional, optional = spec.args, []
+    if IS_PY3:  # pragma: no cover
+        keywords = spec.varkw
+    elif IS_PY2:
+        keywords = spec.keywords  # noqa
     return ', '.join(filter(None, [
         ', '.join(positional),
         ', '.join('{0}={1}'.format(k, v) for k, v in optional),
         '*{0}'.format(spec.varargs) if spec.varargs else None,
-        '**{0}'.format(spec.keywords) if spec.keywords else None,
+        '**{0}'.format(keywords) if keywords else None,
     ]))
 
 
