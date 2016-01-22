@@ -339,7 +339,7 @@ class test_Gossip(AppCase):
 
     def test_callbacks(self):
         c = self.Consumer()
-        c.app.connection = _amqp_connection()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         on_node_join = Mock(name='on_node_join')
         on_node_join2 = Mock(name='on_node_join2')
