@@ -1,3 +1,3 @@
 pytz>dev
 billiard>=3.3.0.21,<3.4
-kombu>=3.0.29,<3.1
+kombu>=3.0.33,<3.1

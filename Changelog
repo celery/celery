@@ -10,6 +10,10 @@ new in Celery 3.1.
 
 .. _version-3.1.20:
 
+- **Requirements**
+
+    - Now depends on :ref:`Kombu 3.0.33 <kombu:version-3.0.33>`.
+
 Documentation fixes:
 
     Contributed by
