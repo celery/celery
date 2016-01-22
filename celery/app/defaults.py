@@ -139,7 +139,7 @@ NAMESPACES = Namespace(
         backend_settings=Option(None, type='dict'),
     ),
     email=Namespace(
-        charset=Option('us-ascii'),
+        charset=Option('utf-8'),
         host=Option('localhost'),
         host_user=Option(),
         host_password=Option(),

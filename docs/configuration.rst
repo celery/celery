@@ -1930,7 +1930,7 @@ email_charset
 ~~~~~~~~~~~~~
 .. versionadded:: 4.0
 
-Charset for outgoing emails. Default is "us-ascii".
+Charset for outgoing emails. Default is "utf-8".
 
 .. _conf-example-error-mail-config:
 

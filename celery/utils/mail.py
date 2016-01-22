@@ -42,7 +42,7 @@ class SendmailWarning(UserWarning):
 class Message(object):
 
     def __init__(self, to=None, sender=None, subject=None,
-                 body=None, charset='us-ascii'):
+                 body=None, charset='utf-8'):
         self.to = maybe_list(to)
         self.sender = sender
         self.subject = subject
