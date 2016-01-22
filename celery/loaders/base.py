@@ -224,10 +224,11 @@ class BaseLoader(object):
     def mail_admins(self, subject, body, fail_silently=False,
                     sender=None, to=None, host=None, port=None,
                     user=None, password=None, timeout=None,
-                    use_ssl=False, use_tls=False):
+                    use_ssl=False, use_tls=False, charset='utf-8'):
         message = self.mail.Message(sender=sender, to=to,
                                     subject=safe_str(subject),
-                                    body=safe_str(body))
+                                    body=safe_str(body),
+                                    charset=charset)
         mailer = self.mail.Mailer(host=host, port=port,
                                   user=user, password=password,
                                   timeout=timeout, use_ssl=use_ssl,
