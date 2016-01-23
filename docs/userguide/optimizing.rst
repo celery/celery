@@ -226,8 +226,8 @@ waiting for long running tasks to complete::
     <- T2 complete
 
     -> send T3 to Process A
-    # A still executing T1, T3 stuck in local buffer and
-    # will not start until T1 returns
+    # A still executing T1, T3 stuck in local buffer and will not start until
+    # T1 returns, and other queued tasks will not be sent to idle processes
 
 The worker will send tasks to the process as long as the pipe buffer is
 writable.  The pipe buffer size varies based on the operating system: some may
