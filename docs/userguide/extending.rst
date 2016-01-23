@@ -392,7 +392,7 @@ Attributes
 .. attribute:: gossip
 
     Worker to worker broadcast communication
-    (class:`~celery.worker.consumer.Gossip`).
+    (:class:`~celery.worker.consumer.Gossip`).
 
     A consumer bootstep must require the `Gossip` bootstep to use this.
 
@@ -423,8 +423,8 @@ Attributes
                     self.last_size = cluster_size
 
             def on_node_lost(self, worker):
-                # may have processed heartbeat too late, so wake up in a while
-                # to see if the worker recovered
+                # may have processed heartbeat too late, so wake up soon
+                # in order to see if the worker recovered.
                 self.c.timer.call_after(10.0, self.on_cluster_size_change)
 
     **Callbacks**
