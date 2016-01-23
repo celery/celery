@@ -14,6 +14,10 @@ new in Celery 3.1.
 
     - Now depends on :ref:`Kombu 3.0.33 <kombu:version-3.0.33>`.
 
+    - Now depends on :mod:`billiard` 3.3.0.22.
+
+        Includes binary wheels for Microsoft Windows x86 and x86_64!
+
 - **Task**: Error emails now uses ``utf-8`` charset by default (Issue #2737).
 
 - **Task**: Retry now forwards original message headers (Issue #3017).
