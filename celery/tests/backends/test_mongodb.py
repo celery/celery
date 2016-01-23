@@ -7,7 +7,7 @@ from pickle import loads, dumps
 
 from celery import states
 from celery.backends import mongodb as module
-from celery.backends.mongodb import MongoBackend, Bunch, pymongo
+from celery.backends.mongodb import MongoBackend, pymongo
 from celery.exceptions import ImproperlyConfigured
 from celery.tests.case import (
     AppCase, MagicMock, Mock, SkipTest, ANY,
@@ -43,11 +43,6 @@ class test_MongoBackend(AppCase):
         MongoBackend.decode = self._reset['decode']
         module.Binary = self._reset['Binary']
         datetime.datetime = self._reset['datetime']
-
-    def test_Bunch(self):
-        x = Bunch(foo='foo', bar=2)
-        self.assertEqual(x.foo, 'foo')
-        self.assertEqual(x.bar, 2)
 
     def test_init_no_mongodb(self):
         prev, module.pymongo = module.pymongo, None

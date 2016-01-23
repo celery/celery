@@ -16,7 +16,6 @@ from kombu.utils import cached_property
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.five import items, string_t
-from celery.utils.objects import Bunch
 from celery.utils.timeutils import maybe_timedelta
 
 from .base import BaseBackend
