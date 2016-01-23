@@ -10,6 +10,11 @@ new in Celery 3.1.
 
 .. _version-3.1.20:
 
+3.1.20
+======
+:release-date: 2016-01-22 06:50 P.M UTC
+:release-by: Ask Solem
+
 - **Requirements**
 
     - Now depends on :ref:`Kombu 3.0.33 <kombu:version-3.0.33>`.
