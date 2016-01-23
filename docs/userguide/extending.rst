@@ -429,17 +429,17 @@ Attributes
 
     **Callbacks**
 
-    - ``gossip.on.node_join(worker)``
+    - ``<set> gossip.on.node_join``
 
         Called whenever a new node joins the cluster, providing a
         :class:`~celery.events.state.Worker` instance.
 
-    - ``gossip.on.node_leave(worker)``
+    - ``<set> gossip.on.node_leave``
 
         Called whenever a new node leaves the cluster (shuts down),
         providing a :class:`~celery.events.state.Worker` instance.
 
-    - ``gossip.on.node_lost(worker)``
+    - ``<set> gossip.on.node_lost(worker)``
 
         Called whenever heartbeat was missed for a worker instance in the
         cluster (heartbeat not received or processed in time),
