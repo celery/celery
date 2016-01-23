@@ -439,7 +439,7 @@ Attributes
         Called whenever a new node leaves the cluster (shuts down),
         providing a :class:`~celery.events.state.Worker` instance.
 
-    - ``<set> gossip.on.node_lost(worker)``
+    - ``<set> gossip.on.node_lost``
 
         Called whenever heartbeat was missed for a worker instance in the
         cluster (heartbeat not received or processed in time),
