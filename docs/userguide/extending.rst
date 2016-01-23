@@ -486,7 +486,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Heart',)
+            requires = ('celery.worker.consumer:Tasks',)
 
 .. _extending-consumer-strategies:
 
@@ -510,7 +510,7 @@ Attributes
     .. code-block:: python
 
         class Step(bootsteps.StartStopStep):
-            requires = ('celery.worker.consumer:Heart',)
+            requires = ('celery.worker.consumer:Tasks',)
 
 .. _extending-consumer-task_buckets:
 
