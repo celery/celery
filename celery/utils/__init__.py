@@ -46,6 +46,12 @@ DEPRECATION_FMT = """
     version {removal}. {alternative}
 """
 
+UNKNOWN_SIMPLE_FORMAT_KEY = """
+Unknown format %{0} in string {1!r}.
+Possible causes: Did you forget to escape the expand sign (use '%%{0!r}'),
+or did you escape and the value was expanded twice? (%%N -> %N -> %hostname)?
+""".strip()
+
 #: Billiard sets this when execv is enabled.
 #: We use it to find out the name of the original ``__main__``
 #: module, so that we can properly rewrite the name of the
@@ -376,7 +382,11 @@ def simple_format(s, keys, pattern=RE_FORMAT, expand=r'\1'):
         keys.setdefault('%', '%')
 
         def resolve(match):
-            resolver = keys[match.expand(expand)]
+            key = match.expand(expand)
+            try:
+                resolver = keys[key]
+            except KeyError:
+                raise ValueError(UNKNOWN_SIMPLE_FORMAT_KEY.format(key, s))
             if isinstance(resolver, Callable):
                 return resolver()
             return resolver
