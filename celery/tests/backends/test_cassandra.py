@@ -9,7 +9,7 @@ from celery.tests.case import (
     AppCase, Mock, mock_module, depends_on_current_app
 )
 
-CASSANDRA_MODULES = ['cassandra', 'cassandra.cluster']
+CASSANDRA_MODULES = ['cassandra', 'cassandra.auth', 'cassandra.cluster']
 
 
 class Object(object):
