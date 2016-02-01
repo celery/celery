@@ -970,6 +970,26 @@ cassandra_entry_ttl
 Time-to-live for status entries. They will expire and be removed after that many seconds
 after adding. Default (None) means they will never expire.
 
+.. setting:: cassandra_auth_provider
+
+cassandra_auth_provider
+~~~~~~~~~~~~~~~~~~~~~~~
+
+AuthProvider class within ``cassandra.auth`` module to use.  Values can be
+``PlainTextAuthProvider`` or ``SaslAuthProvider``.
+
+.. setting:: cassandra_auth_kwargs
+
+cassandra_auth_kwargs
+~~~~~~~~~~~~~~~~~~~~~
+
+Named arguments to pass into the auth provider. e.g.::
+
+    cassandra_auth_kwargs = {
+        username: 'cassandra',
+        password: 'cassandra'
+    }
+
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
