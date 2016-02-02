@@ -656,8 +656,8 @@ even other options:
 
 .. control:: cancel_consumer
 
-Queues: Cancelling consumers
-----------------------------
+Queues: Canceling consumers
+---------------------------
 
 You can cancel a consumer by queue name using the :control:`cancel_consumer`
 control command.

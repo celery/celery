@@ -241,7 +241,7 @@ class Batches(Task):
                 logger.debug('Batches: Buffer complete: %s', len(requests))
                 self.flush(requests)
         if not requests:
-            logger.debug('Batches: Cancelling timer: Nothing in buffer.')
+            logger.debug('Batches: Canceling timer: Nothing in buffer.')
             if self._tref:
                 self._tref.cancel()  # cancel timer.
             self._tref = None

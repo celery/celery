@@ -62,7 +62,7 @@ class Timer(_timer.Timer):
         g.entry = entry
         g.eta = eta
         g.priority = priority
-        g.cancelled = False
+        g.canceled = False
         return g
 
     def _entry_exit(self, g, entry):
@@ -71,7 +71,7 @@ class Timer(_timer.Timer):
                 g.wait()
             except self.GreenletExit:
                 entry.cancel()
-                g.cancelled = True
+                g.canceled = True
         finally:
             self._queue.discard(g)
 

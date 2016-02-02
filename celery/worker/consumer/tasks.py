@@ -45,7 +45,7 @@ class Tasks(bootsteps.StartStopStep):
 
     def stop(self, c):
         if c.task_consumer:
-            debug('Cancelling task consumer...')
+            debug('Canceling task consumer...')
             ignore_errors(c, c.task_consumer.cancel)
 
     def shutdown(self, c):

@@ -424,7 +424,7 @@ class Consumer(object):
             info('Started consuming from %s', queue)
 
     def cancel_task_queue(self, queue):
-        info('Cancelling queue %s', queue)
+        info('Canceling queue %s', queue)
         self.app.amqp.queues.deselect(queue)
         self.task_consumer.cancel_by_queue(queue)
 
