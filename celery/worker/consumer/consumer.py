@@ -11,22 +11,17 @@ up and running.
 from __future__ import absolute_import
 
 import errno
-import kombu
 import logging
 import os
 
 from collections import defaultdict
-from functools import partial
-from heapq import heappush
-from operator import itemgetter
 from time import sleep
 
 from amqp.promise import ppartial, promise
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.async.semaphore import DummyLock
-from kombu.common import QoS, ignore_errors
-from kombu.five import buffer_t, items, values
+from kombu.five import buffer_t, items
 from kombu.syn import _detect_environment
 from kombu.utils.encoding import safe_repr, bytes_t
 from kombu.utils.limits import TokenBucket
@@ -34,22 +29,19 @@ from kombu.utils.limits import TokenBucket
 from celery import bootsteps
 from celery import signals
 from celery.app.trace import build_tracer
-from celery.canvas import signature
 from celery.exceptions import InvalidTaskError, NotRegistered
 from celery.utils import gethostname
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
-from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.timeutils import humanize_seconds, rate
 
-from . import heartbeat, loops, pidbox
-from .state import task_reserved, maybe_shutdown, revoked, reserved_requests
+from celery.worker import loops
+from celery.worker.state import (
+    task_reserved, maybe_shutdown, reserved_requests,
+)
 
-__all__ = [
-    'Consumer', 'Connection', 'Events', 'Heart', 'Control',
-    'Tasks', 'Evloop', 'Agent', 'Mingle', 'Gossip', 'dump_body',
-]
+__all__ = ['Consumer', 'Evloop', 'dump_body']
 
 CLOSE = bootsteps.CLOSE
 logger = get_logger(__name__)
@@ -117,8 +109,6 @@ body: {0}
   delivery_info:{3} headers={4}}}
 """
 
-MINGLE_GET_FIELDS = itemgetter('clock', 'revoked')
-
 
 def dump_body(m, body):
     # v2 protocol does not deserialize body
@@ -130,6 +120,7 @@ def dump_body(m, body):
 
 
 class Consumer(object):
+
     Strategies = dict
 
     #: set when consumer is shutting down.
@@ -151,15 +142,15 @@ class Consumer(object):
     class Blueprint(bootsteps.Blueprint):
         name = 'Consumer'
         default_steps = [
-            'celery.worker.consumer:Connection',
-            'celery.worker.consumer:Mingle',
-            'celery.worker.consumer:Events',
-            'celery.worker.consumer:Gossip',
-            'celery.worker.consumer:Heart',
-            'celery.worker.consumer:Control',
-            'celery.worker.consumer:Tasks',
-            'celery.worker.consumer:Evloop',
-            'celery.worker.consumer:Agent',
+            'celery.worker.consumer.connection:Connection',
+            'celery.worker.consumer.mingle:Mingle',
+            'celery.worker.consumer.events:Events',
+            'celery.worker.consumer.gossip:Gossip',
+            'celery.worker.consumer.heart:Heart',
+            'celery.worker.consumer.control:Control',
+            'celery.worker.consumer.tasks:Tasks',
+            'celery.worker.consumer.consumer:Evloop',
+            'celery.worker.consumer.agent:Agent',
         ]
 
         def shutdown(self, parent):
@@ -538,377 +529,8 @@ class Consumer(object):
         )
 
 
-class Connection(bootsteps.StartStopStep):
-
-    def __init__(self, c, **kwargs):
-        c.connection = None
-
-    def start(self, c):
-        c.connection = c.connect()
-        info('Connected to %s', c.connection.as_uri())
-
-    def shutdown(self, c):
-        # We must set self.connection to None here, so
-        # that the green pidbox thread exits.
-        connection, c.connection = c.connection, None
-        if connection:
-            ignore_errors(connection, connection.close)
-
-    def info(self, c, params='N/A'):
-        if c.connection:
-            params = c.connection.info()
-            params.pop('password', None)  # don't send password.
-        return {'broker': params}
-
-
-class Events(bootsteps.StartStopStep):
-    requires = (Connection,)
-
-    def __init__(self, c, send_events=True,
-                 without_heartbeat=False, without_gossip=False, **kwargs):
-        self.groups = None if send_events else ['worker']
-        self.send_events = (
-            send_events or
-            not without_gossip or
-            not without_heartbeat
-        )
-        c.event_dispatcher = None
-
-    def start(self, c):
-        # flush events sent while connection was down.
-        prev = self._close(c)
-        dis = c.event_dispatcher = c.app.events.Dispatcher(
-            c.connect(), hostname=c.hostname,
-            enabled=self.send_events, groups=self.groups,
-            buffer_group=['task'] if c.hub else None,
-            on_send_buffered=c.on_send_event_buffered if c.hub else None,
-        )
-        if prev:
-            dis.extend_buffer(prev)
-            dis.flush()
-
-    def stop(self, c):
-        pass
-
-    def _close(self, c):
-        if c.event_dispatcher:
-            dispatcher = c.event_dispatcher
-            # remember changes from remote control commands:
-            self.groups = dispatcher.groups
-
-            # close custom connection
-            if dispatcher.connection:
-                ignore_errors(c, dispatcher.connection.close)
-            ignore_errors(c, dispatcher.close)
-            c.event_dispatcher = None
-            return dispatcher
-
-    def shutdown(self, c):
-        self._close(c)
-
-
-class Heart(bootsteps.StartStopStep):
-    requires = (Events,)
-
-    def __init__(self, c, without_heartbeat=False, heartbeat_interval=None,
-                 **kwargs):
-        self.enabled = not without_heartbeat
-        self.heartbeat_interval = heartbeat_interval
-        c.heart = None
-
-    def start(self, c):
-        c.heart = heartbeat.Heart(
-            c.timer, c.event_dispatcher, self.heartbeat_interval,
-        )
-        c.heart.start()
-
-    def stop(self, c):
-        c.heart = c.heart and c.heart.stop()
-    shutdown = stop
-
-
-class Mingle(bootsteps.StartStopStep):
-    label = 'Mingle'
-    requires = (Events,)
-    compatible_transports = {'amqp', 'redis'}
-
-    def __init__(self, c, without_mingle=False, **kwargs):
-        self.enabled = not without_mingle and self.compatible_transport(c.app)
-
-    def compatible_transport(self, app):
-        with app.connection_for_read() as conn:
-            return conn.transport.driver_type in self.compatible_transports
-
-    def start(self, c):
-        info('mingle: searching for neighbors')
-        I = c.app.control.inspect(timeout=1.0, connection=c.connection)
-        replies = I.hello(c.hostname, revoked._data) or {}
-        replies.pop(c.hostname, None)
-        if replies:
-            info('mingle: sync with %s nodes',
-                 len([reply for reply, value in items(replies) if value]))
-            for reply in values(replies):
-                if reply:
-                    try:
-                        other_clock, other_revoked = MINGLE_GET_FIELDS(reply)
-                    except KeyError:  # reply from pre-3.1 worker
-                        pass
-                    else:
-                        c.app.clock.adjust(other_clock)
-                        revoked.update(other_revoked)
-            info('mingle: sync complete')
-        else:
-            info('mingle: all alone')
-
-
-class Tasks(bootsteps.StartStopStep):
-    requires = (Mingle,)
-
-    def __init__(self, c, **kwargs):
-        c.task_consumer = c.qos = None
-
-    def start(self, c):
-        c.update_strategies()
-
-        # - RabbitMQ 3.3 completely redefines how basic_qos works..
-        # This will detect if the new qos smenatics is in effect,
-        # and if so make sure the 'apply_global' flag is set on qos updates.
-        qos_global = not c.connection.qos_semantics_matches_spec
-
-        # set initial prefetch count
-        c.connection.default_channel.basic_qos(
-            0, c.initial_prefetch_count, qos_global,
-        )
-
-        c.task_consumer = c.app.amqp.TaskConsumer(
-            c.connection, on_decode_error=c.on_decode_error,
-        )
-
-        def set_prefetch_count(prefetch_count):
-            return c.task_consumer.qos(
-                prefetch_count=prefetch_count,
-                apply_global=qos_global,
-            )
-        c.qos = QoS(set_prefetch_count, c.initial_prefetch_count)
-
-    def stop(self, c):
-        if c.task_consumer:
-            debug('Cancelling task consumer...')
-            ignore_errors(c, c.task_consumer.cancel)
-
-    def shutdown(self, c):
-        if c.task_consumer:
-            self.stop(c)
-            debug('Closing consumer channel...')
-            ignore_errors(c, c.task_consumer.close)
-            c.task_consumer = None
-
-    def info(self, c):
-        return {'prefetch_count': c.qos.value if c.qos else 'N/A'}
-
-
-class Agent(bootsteps.StartStopStep):
-    conditional = True
-    requires = (Connection,)
-
-    def __init__(self, c, **kwargs):
-        self.agent_cls = self.enabled = c.app.conf.worker_agent
-
-    def create(self, c):
-        agent = c.agent = self.instantiate(self.agent_cls, c.connection)
-        return agent
-
-
-class Control(bootsteps.StartStopStep):
-    requires = (Tasks,)
-
-    def __init__(self, c, **kwargs):
-        self.is_green = c.pool is not None and c.pool.is_green
-        self.box = (pidbox.gPidbox if self.is_green else pidbox.Pidbox)(c)
-        self.start = self.box.start
-        self.stop = self.box.stop
-        self.shutdown = self.box.shutdown
-
-    def include_if(self, c):
-        return (c.app.conf.worker_enable_remote_control and
-                c.conninfo.supports_exchange_type('fanout'))
-
-
-class Gossip(bootsteps.ConsumerStep):
-    label = 'Gossip'
-    requires = (Mingle,)
-    _cons_stamp_fields = itemgetter(
-        'id', 'clock', 'hostname', 'pid', 'topic', 'action', 'cver',
-    )
-    compatible_transports = {'amqp', 'redis'}
-
-    def __init__(self, c, without_gossip=False,
-                 interval=5.0, heartbeat_interval=2.0, **kwargs):
-        self.enabled = not without_gossip and self.compatible_transport(c.app)
-        self.app = c.app
-        c.gossip = self
-        self.Receiver = c.app.events.Receiver
-        self.hostname = c.hostname
-        self.full_hostname = '.'.join([self.hostname, str(c.pid)])
-        self.on = Bunch(
-            node_join=set(),
-            node_leave=set(),
-            node_lost=set(),
-        )
-
-        self.timer = c.timer
-        if self.enabled:
-            self.state = c.app.events.State(
-                on_node_join=self.on_node_join,
-                on_node_leave=self.on_node_leave,
-                max_tasks_in_memory=1,
-            )
-            if c.hub:
-                c._mutex = DummyLock()
-            self.update_state = self.state.event
-        self.interval = interval
-        self.heartbeat_interval = heartbeat_interval
-        self._tref = None
-        self.consensus_requests = defaultdict(list)
-        self.consensus_replies = {}
-        self.event_handlers = {
-            'worker.elect': self.on_elect,
-            'worker.elect.ack': self.on_elect_ack,
-        }
-        self.clock = c.app.clock
-
-        self.election_handlers = {
-            'task': self.call_task
-        }
-
-    def compatible_transport(self, app):
-        with app.connection_for_read() as conn:
-            return conn.transport.driver_type in self.compatible_transports
-
-    def election(self, id, topic, action=None):
-        self.consensus_replies[id] = []
-        self.dispatcher.send(
-            'worker-elect',
-            id=id, topic=topic, action=action, cver=1,
-        )
-
-    def call_task(self, task):
-        try:
-            signature(task, app=self.app).apply_async()
-        except Exception as exc:
-            error('Could not call task: %r', exc, exc_info=1)
-
-    def on_elect(self, event):
-        try:
-            (id_, clock, hostname, pid,
-             topic, action, _) = self._cons_stamp_fields(event)
-        except KeyError as exc:
-            return error('election request missing field %s', exc, exc_info=1)
-        heappush(
-            self.consensus_requests[id_],
-            (clock, '%s.%s' % (hostname, pid), topic, action),
-        )
-        self.dispatcher.send('worker-elect-ack', id=id_)
-
-    def start(self, c):
-        super(Gossip, self).start(c)
-        self.dispatcher = c.event_dispatcher
-
-    def on_elect_ack(self, event):
-        id = event['id']
-        try:
-            replies = self.consensus_replies[id]
-        except KeyError:
-            return  # not for us
-        alive_workers = self.state.alive_workers()
-        replies.append(event['hostname'])
-
-        if len(replies) >= len(alive_workers):
-            _, leader, topic, action = self.clock.sort_heap(
-                self.consensus_requests[id],
-            )
-            if leader == self.full_hostname:
-                info('I won the election %r', id)
-                try:
-                    handler = self.election_handlers[topic]
-                except KeyError:
-                    error('Unknown election topic %r', topic, exc_info=1)
-                else:
-                    handler(action)
-            else:
-                info('node %s elected for %r', leader, id)
-            self.consensus_requests.pop(id, None)
-            self.consensus_replies.pop(id, None)
-
-    def on_node_join(self, worker):
-        debug('%s joined the party', worker.hostname)
-        self._call_handlers(self.on.node_join, worker)
-
-    def on_node_leave(self, worker):
-        debug('%s left', worker.hostname)
-        self._call_handlers(self.on.node_leave, worker)
-
-    def on_node_lost(self, worker):
-        info('missed heartbeat from %s', worker.hostname)
-        self._call_handlers(self.on.node_lost, worker)
-
-    def _call_handlers(self, handlers, *args, **kwargs):
-        for handler in handlers:
-            try:
-                handler(*args, **kwargs)
-            except Exception as exc:
-                error('Ignored error from handler %r: %r',
-                      handler, exc, exc_info=1)
-
-    def register_timer(self):
-        if self._tref is not None:
-            self._tref.cancel()
-        self._tref = self.timer.call_repeatedly(self.interval, self.periodic)
-
-    def periodic(self):
-        workers = self.state.workers
-        dirty = set()
-        for worker in values(workers):
-            if not worker.alive:
-                dirty.add(worker)
-                self.on_node_lost(worker)
-        for worker in dirty:
-            workers.pop(worker.hostname, None)
-
-    def get_consumers(self, channel):
-        self.register_timer()
-        ev = self.Receiver(channel, routing_key='worker.#',
-                           queue_ttl=self.heartbeat_interval)
-        return [kombu.Consumer(
-            channel,
-            queues=[ev.queue],
-            on_message=partial(self.on_message, ev.event_from_message),
-            no_ack=True
-        )]
-
-    def on_message(self, prepare, message):
-        _type = message.delivery_info['routing_key']
-
-        # For redis when `fanout_patterns=False` (See Issue #1882)
-        if _type.split('.', 1)[0] == 'task':
-            return
-        try:
-            handler = self.event_handlers[_type]
-        except KeyError:
-            pass
-        else:
-            return handler(message.payload)
-
-        hostname = (message.headers.get('hostname') or
-                    message.payload['hostname'])
-        if hostname != self.hostname:
-            type, event = prepare(message.payload)
-            self.update_state(event)
-        else:
-            self.clock.forward()
-
-
 class Evloop(bootsteps.StartStopStep):
+
     label = 'event loop'
     last = True
 

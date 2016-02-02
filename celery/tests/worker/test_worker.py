@@ -214,7 +214,7 @@ class test_Consumer(AppCase):
         self.assertTrue(eventer.close.call_count)
         self.assertTrue(heart.closed)
 
-    @patch('celery.worker.consumer.warn')
+    @patch('celery.worker.consumer.consumer.warn')
     def test_receive_message_unknown(self, warn):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.blueprint.state = RUN
@@ -250,7 +250,7 @@ class test_Consumer(AppCase):
         callback(m)
         self.assertTrue(m.acknowledged)
 
-    @patch('celery.worker.consumer.error')
+    @patch('celery.worker.consumer.consumer.error')
     def test_receive_message_InvalidTaskError(self, error):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.blueprint.state = RUN
@@ -271,7 +271,7 @@ class test_Consumer(AppCase):
         self.assertTrue(error.called)
         self.assertIn('Received invalid task message', error.call_args[0][0])
 
-    @patch('celery.worker.consumer.crit')
+    @patch('celery.worker.consumer.consumer.crit')
     def test_on_decode_error(self, crit):
         l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
 
@@ -531,8 +531,8 @@ class test_Consumer(AppCase):
             self.buffer.get_nowait()
         self.assertTrue(self.timer.empty())
 
-    @patch('celery.worker.consumer.warn')
-    @patch('celery.worker.consumer.logger')
+    @patch('celery.worker.consumer.consumer.warn')
+    @patch('celery.worker.consumer.consumer.logger')
     def test_receieve_message_ack_raises(self, logger, warn):
         l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
         l.controller = l.app.WorkController()

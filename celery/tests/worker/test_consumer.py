@@ -7,16 +7,12 @@ from billiard.exceptions import RestartFreqExceeded
 
 from celery.datastructures import LimitedSet
 from celery.worker import state as worker_state
-from celery.worker.consumer import (
-    Consumer,
-    Heart,
-    Tasks,
-    Agent,
-    Mingle,
-    Gossip,
-    dump_body,
-    CLOSE,
-)
+from celery.worker.consumer.agent import Agent
+from celery.worker.consumer.consumer import CLOSE, Consumer, dump_body
+from celery.worker.consumer.gossip import Gossip
+from celery.worker.consumer.heart import Heart
+from celery.worker.consumer.mingle import Mingle
+from celery.worker.consumer.tasks import Tasks
 
 from celery.tests.case import AppCase, ContextMock, Mock, SkipTest, call, patch
 
@@ -65,19 +61,19 @@ class test_Consumer(AppCase):
         self.assertEqual(c.amqheartbeat, 20)
 
     def test_gevent_bug_disables_connection_timeout(self):
-        with patch('celery.worker.consumer._detect_environment') as de:
-            de.return_value = 'gevent'
+        with patch('celery.worker.consumer.consumer._detect_environment') as d:
+            d.return_value = 'gevent'
             self.app.conf.broker_connection_timeout = 33.33
             self.get_consumer()
             self.assertIsNone(self.app.conf.broker_connection_timeout)
 
     def test_limit_moved_to_pool(self):
-        with patch('celery.worker.consumer.task_reserved') as reserved:
+        with patch('celery.worker.consumer.consumer.task_reserved') as reserv:
             c = self.get_consumer()
             c.on_task_request = Mock(name='on_task_request')
             request = Mock(name='request')
             c._limit_move_to_pool(request)
-            reserved.assert_called_with(request)
+            reserv.assert_called_with(request)
             c.on_task_request.assert_called_with(request)
 
     def test_update_prefetch_count(self):
@@ -112,17 +108,17 @@ class test_Consumer(AppCase):
     def test_limit_task(self):
         c = self.get_consumer()
 
-        with patch('celery.worker.consumer.task_reserved') as reserved:
+        with patch('celery.worker.consumer.consumer.task_reserved') as reserv:
             bucket = Mock()
             request = Mock()
             bucket.can_consume.return_value = True
 
             c._limit_task(request, bucket, 3)
             bucket.can_consume.assert_called_with(3)
-            reserved.assert_called_with(request)
+            reserv.assert_called_with(request)
             c.on_task_request.assert_called_with(request)
 
-        with patch('celery.worker.consumer.task_reserved') as reserved:
+        with patch('celery.worker.consumer.consumer.task_reserved') as reserv:
             bucket.can_consume.return_value = False
             bucket.expected_time.return_value = 3.33
             limit_order = c._limit_order
@@ -134,7 +130,7 @@ class test_Consumer(AppCase):
                 priority=c._limit_order,
             )
             bucket.expected_time.assert_called_with(4)
-            self.assertFalse(reserved.called)
+            self.assertFalse(reserv.called)
 
     def test_start_blueprint_raises_EMFILE(self):
         c = self.get_consumer()
@@ -153,7 +149,7 @@ class test_Consumer(AppCase):
         c._restart_state.step.side_effect = se
         c.blueprint.start.side_effect = socket.error()
 
-        with patch('celery.worker.consumer.sleep') as sleep:
+        with patch('celery.worker.consumer.consumer.sleep') as sleep:
             c.start()
             sleep.assert_called_with(1)
 
@@ -182,12 +178,12 @@ class test_Consumer(AppCase):
         c.register_with_event_loop(Mock(name='loop'))
 
     def test_on_close_clears_semaphore_timer_and_reqs(self):
-        with patch('celery.worker.consumer.reserved_requests') as reserved:
+        with patch('celery.worker.consumer.consumer.reserved_requests') as reserv:
             c = self.get_consumer()
             c.on_close()
             c.controller.semaphore.clear.assert_called_with()
             c.timer.clear.assert_called_with()
-            reserved.clear.assert_called_with()
+            reserv.clear.assert_called_with()
             c.pool.flush.assert_called_with()
 
             c.controller = None
@@ -375,18 +371,16 @@ class test_Gossip(AppCase):
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.start(c)
+        signature = g.app.signature = Mock(name='app.signature')
+        task = Mock()
+        g.call_task(task)
+        signature.assert_called_with(task)
+        signature.return_value.apply_async.assert_called_with()
 
-        with patch('celery.worker.consumer.signature') as signature:
-            sig = signature.return_value = Mock()
-            task = Mock()
+        signature.return_value.apply_async.side_effect = MemoryError()
+        with patch('celery.worker.consumer.gossip.error') as error:
             g.call_task(task)
-            signature.assert_called_with(task, app=c.app)
-            sig.apply_async.assert_called_with()
-
-            sig.apply_async.side_effect = MemoryError()
-            with patch('celery.worker.consumer.error') as error:
-                g.call_task(task)
-                self.assertTrue(error.called)
+            self.assertTrue(error.called)
 
     def Event(self, id='id', clock=312,
               hostname='foo@example.com', pid=4312,
@@ -414,7 +408,7 @@ class test_Gossip(AppCase):
         g.dispatcher.send.assert_called_with('worker-elect-ack', id='id1')
 
         event.pop('clock')
-        with patch('celery.worker.consumer.error') as error:
+        with patch('celery.worker.consumer.gossip.error') as error:
             g.on_elect(event)
             self.assertTrue(error.called)
 
@@ -444,7 +438,7 @@ class test_Gossip(AppCase):
         g.on_elect(e3)
         self.assertEqual(len(g.consensus_requests['id1']), 3)
 
-        with patch('celery.worker.consumer.info'):
+        with patch('celery.worker.consumer.gossip.info'):
             g.on_elect_ack(e1)
             self.assertEqual(len(g.consensus_replies['id1']), 1)
             g.on_elect_ack(e2)
@@ -474,7 +468,7 @@ class test_Gossip(AppCase):
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.election_handlers = {}
-        with patch('celery.worker.consumer.error') as error:
+        with patch('celery.worker.consumer.gossip.error') as error:
             self.setup_election(g, c)
             self.assertTrue(error.called)
 
@@ -482,7 +476,7 @@ class test_Gossip(AppCase):
         c = self.Consumer()
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
-        with patch('celery.worker.consumer.debug') as debug:
+        with patch('celery.worker.consumer.gossip.debug') as debug:
             g.on_node_join(c)
             debug.assert_called_with('%s joined the party', 'foo@x.com')
 
@@ -490,7 +484,7 @@ class test_Gossip(AppCase):
         c = self.Consumer()
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
-        with patch('celery.worker.consumer.debug') as debug:
+        with patch('celery.worker.consumer.gossip.debug') as debug:
             g.on_node_leave(c)
             debug.assert_called_with('%s left', 'foo@x.com')
 
@@ -498,7 +492,7 @@ class test_Gossip(AppCase):
         c = self.Consumer()
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
-        with patch('celery.worker.consumer.info') as info:
+        with patch('celery.worker.consumer.gossip.info') as info:
             g.on_node_lost(c)
             info.assert_called_with('missed heartbeat from %s', 'foo@x.com')
 
