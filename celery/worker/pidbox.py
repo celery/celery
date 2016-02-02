@@ -66,7 +66,7 @@ class Pidbox(object):
     def shutdown(self, c):
         self.on_stop()
         if self.consumer:
-            debug('Cancelling broadcast consumer...')
+            debug('Canceling broadcast consumer...')
             ignore_errors(c, self.consumer.cancel)
         self.stop(self.c)
 

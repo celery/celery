@@ -804,7 +804,7 @@ class AsynPool(_pool.Pool):
             # writes job to the worker process.
             # Operation must complete if more than one byte of data
             # was written.  If the broker connection is lost
-            # and no data was written the operation shall be cancelled.
+            # and no data was written the operation shall be canceled.
             header, body, body_size = job._payload
             errors = 0
             try:

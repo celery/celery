@@ -309,7 +309,7 @@ class test_ControlPanel(AppCase):
 
         class MockConsumer(object):
             queues = []
-            cancelled = []
+            canceled = []
             consuming = False
 
             def add_queue(self, queue):
@@ -319,7 +319,7 @@ class test_ControlPanel(AppCase):
                 self.consuming = True
 
             def cancel_by_queue(self, queue):
-                self.cancelled.append(queue)
+                self.canceled.append(queue)
 
             def consuming_from(self, queue):
                 return queue in self.queues
@@ -333,7 +333,7 @@ class test_ControlPanel(AppCase):
         self.assertTrue(consumer.task_consumer.consuming)
         panel.handle('add_consumer', {'queue': 'MyQueue'})
         panel.handle('cancel_consumer', {'queue': 'MyQueue'})
-        self.assertIn('MyQueue', consumer.task_consumer.cancelled)
+        self.assertIn('MyQueue', consumer.task_consumer.canceled)
 
     def test_revoked(self):
         worker_state.revoked.clear()

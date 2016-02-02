@@ -56,7 +56,7 @@ class Schedule(timer2.Schedule):
         g.entry = entry
         g.eta = eta
         g.priority = priority
-        g.cancelled = False
+        g.canceled = False
         return g
 
     def _entry_exit(self, g):

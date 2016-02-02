@@ -34,10 +34,10 @@ class MockTimer(object):
     def call_repeatedly(self, secs, fun, args=(), kwargs={}):
 
         class entry(tuple):
-            cancelled = False
+            canceled = False
 
             def cancel(self):
-                self.cancelled = True
+                self.canceled = True
 
         return entry((secs, fun, args, kwargs))
 
