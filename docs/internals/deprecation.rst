@@ -156,7 +156,7 @@ Task_sent signal
 ----------------
 
 The :signal:`task_sent` signal will be removed in version 4.0.
-Please use the :signal:`before_task_publish` and :signal:`after_task_publush`
+Please use the :signal:`before_task_publish` and :signal:`after_task_publish`
 signals instead.
 
 Result
