@@ -10,7 +10,7 @@ class Receipt(object):
     result = None
 
     def __init__(self, callback=None):
-        self.callback = None
+        self.callback = callback
         self.ready = Event()
 
     def finished(self, result):
