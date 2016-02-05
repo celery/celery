@@ -30,6 +30,11 @@ You need to install the cassandra-driver library to
 use the Cassandra backend. See https://github.com/datastax/python-driver
 """
 
+E_NO_SUCH_CASSANDRA_AUTH_PROVIDER = """
+CASSANDRA_AUTH_PROVIDER you provided is not a valid auth_provider class.
+See https://datastax.github.io/python-driver/api/cassandra/auth.html.
+"""
+
 Q_INSERT_RESULT = """
 INSERT INTO {table} (
     task_id, status, result, date_done, traceback, children) VALUES (
@@ -126,7 +131,9 @@ class CassandraBackend(BaseBackend):
         auth_provider = conf.get('cassandra_auth_provider', None)
         auth_kwargs = conf.get('cassandra_auth_kwargs', None)
         if auth_provider and auth_kwargs:
-            auth_provider_class = getattr(cassandra.auth, auth_provider)
+            auth_provider_class = getattr(cassandra.auth, auth_provider, None)
+            if not auth_provider_class:
+                raise ImproperlyConfigured(E_NO_SUCH_CASSANDRA_AUTH_PROVIDER)
             self.auth_provider = auth_provider_class(**auth_kwargs)
 
         self._connection = None
