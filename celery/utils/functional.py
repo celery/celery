@@ -327,6 +327,7 @@ class _regen(UserList, list):
         self.__it = it
         self.__index = 0
         self.__consumed = []
+        self.__done = False
 
     def __reduce__(self):
         return list, (self.data,)
@@ -334,8 +335,21 @@ class _regen(UserList, list):
     def __length_hint__(self):
         return self.__it.__length_hint__()
 
+    def __repr__(self):
+        if self.__done:
+            return repr(self.__consumed)
+        else:
+            return '[{}]'.format(', '.join(
+                [repr(x) for x in self.__consumed] + ['...']))
+
     def __iter__(self):
-        return chain(self.__consumed, self.__it)
+        for x in self.__consumed:
+            yield x
+        if not self.__done:
+            for y in self.__it:
+                self.__consumed.append(y)
+                yield y
+            self.__done = True
 
     def __getitem__(self, index):
         if index < 0:
@@ -343,20 +357,29 @@ class _regen(UserList, list):
         try:
             return self.__consumed[index]
         except IndexError:
+            it = iter(self)
             try:
                 for i in range(self.__index, index + 1):
-                    self.__consumed.append(next(self.__it))
+                    next(it)
             except StopIteration:
                 raise IndexError(index)
             else:
                 return self.__consumed[index]
 
+    def __nonzero__(self):
+        if len(self.__consumed):
+            return True
+        try:
+            next(iter(self))
+        except StopIteration:
+            return False
+        else:
+            return True
+
     @property
     def data(self):
-        try:
-            self.__consumed.extend(list(self.__it))
-        except StopIteration:
-            pass
+        # consume the generator
+        list(iter(self))
         return self.__consumed
 
 
