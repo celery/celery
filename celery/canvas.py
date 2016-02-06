@@ -732,12 +732,35 @@ class group(Signature):
 
     def _apply_tasks(self, tasks, producer=None, app=None,
                      add_to_parent=None, chord=None, **options):
+        # FIXME: this can be simplified if we can guarantee that 
+        # sig.options['chord'] is either set on no tasks or all tasks, which
+        # seems reasonable (a group is either a chord nor not a chord, and the
+        # callback is the same for all members of the group, right?)
+        # FIXME: consider wrapping tasks in a regen class to pretty this up
+        def consume():
+            try:
+                return next(tasks)
+            except StopIteration:
+                pass
+
         app = app or self.app
         with app.producer_or_acquire(producer) as producer:
-            for sig, res in tasks:
+            value = consume()
+            count = 1
+            while value is not None:
+                sig, res = value
+                ichord = sig.options.get('chord') or chord
+                # lookahead to the next value so we know if it's the last task
+                value = consume()
+                if ichord is not None:
+                    if value is None:
+                        # last task in the chord: set the length
+                        app.backend.set_chord_size(sig.options['group_id'],
+                                                   count)
+                    else:
+                        count += 1
                 sig.apply_async(producer=producer, add_to_parent=False,
-                                chord=sig.options.get('chord') or chord,
-                                **options)
+                                chord=ichord, **options)
                 yield res  # <-- r.parent, etc set in the frozen result.
 
     def _freeze_gid(self, options):
@@ -806,17 +829,20 @@ class group(Signature):
     def __call__(self, *partial_args, **options):
         return self.apply_async(partial_args, **options)
 
-    def _freeze_unroll(self, new_tasks, group_id, chord, root_id, parent_id):
-        stack = deque(self.tasks)
-        while stack:
-            task = maybe_signature(stack.popleft(), app=self._app).clone()
+    def _freeze_tasks(self, group_id, chord, root_id, parent_id):
+        for task in self.tasks:
+            yield task.freeze(group_id=group_id,
+                              chord=chord, root_id=root_id,
+                              parent_id=parent_id)
+
+    def _unroll_tasks(self, tasks):
+        for task in tasks:
+            task = maybe_signature(task, app=self._app).clone()
             if isinstance(task, group):
-                stack.extendleft(task.tasks)
+                for subtask in task._unroll_tasks(task.tasks):
+                    yield subtask
             else:
-                new_tasks.append(task)
-                yield task.freeze(group_id=group_id,
-                                  chord=chord, root_id=root_id,
-                                  parent_id=parent_id)
+                yield task
 
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None):
@@ -831,16 +857,12 @@ class group(Signature):
             opts['chord'] = chord
         root_id = opts.setdefault('root_id', root_id)
         parent_id = opts.setdefault('parent_id', parent_id)
-        new_tasks = []
         # Need to unroll subgroups early so that chord gets the
         # right result instance for chord_unlock etc.
-        results = list(self._freeze_unroll(
-            new_tasks, group_id, chord, root_id, parent_id,
-        ))
-        if isinstance(self.tasks, MutableSequence):
-            self.tasks[:] = new_tasks
-        else:
-            self.tasks = new_tasks
+        self.tasks = regen(self._unroll_tasks(self.tasks))
+        results = self._freeze_tasks(
+            group_id, chord, root_id, parent_id,
+        )
         return self.app.GroupResult(gid, results)
     _freeze = freeze
 
@@ -967,7 +989,6 @@ class chord(Signature):
         app = app or self._get_app(body)
         group_id = uuid()
         root_id = body.options.get('root_id')
-        body.chord_size = self.__length_hint__()
         options = dict(self.options, **options) if options else self.options
         if options:
             options.pop('task_id', None)
