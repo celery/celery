@@ -12,7 +12,7 @@ import sys
 
 from functools import partial
 from inspect import isfunction
-from itertools import chain, islice
+from itertools import islice, tee
 
 from kombu.utils.functional import (
     LRUCache, dictfilter, lazy, maybe_evaluate, memoize,
@@ -20,12 +20,13 @@ from kombu.utils.functional import (
 )
 from vine import promise
 
-from celery.five import UserList, getfullargspec, range
+from celery.five import UserList, getfullargspec, range, zip_longest
 
 __all__ = [
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
     'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
-    'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun',
+    'lookahead', 'regen', 'dictfilter', 'lazy', 'maybe_evaluate',
+    'head_from_fun',
 ]
 
 IS_PY3 = sys.version_info[0] == 3
@@ -178,6 +179,22 @@ def uniq(it):
     return (seen.add(obj) or obj for obj in it if obj not in seen)
 
 
+def lookahead(it):
+    """Yield pairs of ``(current, next)`` items in ``it``.
+
+    `next` is None if `current` is the last item.
+
+    Example::
+
+        >>> list(lookahead(x for x in range(6)))
+        [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, None)]
+
+    """
+    a, b = tee(it)
+    next(b, None)
+    return zip_longest(a, b, fillvalue=None)
+
+
 def regen(it):
     """``Regen`` takes any iterable, and if the object is an
     generator it will cache the evaluated list on first access,
@@ -194,6 +211,11 @@ class _regen(UserList, list):
         self.__it = it
         self.__index = 0
         self.__consumed = []
+        self.__done = False
+
+    def fully_consumed(self):
+        """Return whether the iterator has been fully consumed."""
+        return self.__done
 
     def __reduce__(self):
         return list, (self.data,)
@@ -201,29 +223,61 @@ class _regen(UserList, list):
     def __length_hint__(self):
         return self.__it.__length_hint__()
 
+    def __len__(self):
+        # CPython iter() calls len() first on lists, so we cannot
+        # have __len__ calling __iter__.
+        if self.__done:
+            return len(self.__consumed)
+        try:
+            return self.__length_hint__()
+        except Exception:
+            return NotImplemented
+
+    def __repr__(self, ellipsis='...', sep=', '):
+        # override list.__repr__ to avoid consuming the generator
+        if self.__done:
+            return repr(self.__consumed)
+        return '[{0}]'.format(sep.join(map(repr, self.__consumed)) + ellipsis)
+
     def __iter__(self):
-        return chain(self.__consumed, self.__it)
+        return iter(self.__consumed) if self.__done else self._iter_cont()
+
+    def _iter_cont(self):
+        append = self.__consumed.append
+        for y in self.__it:
+            append(y)
+            yield y
+        self.__done = True
 
     def __getitem__(self, index):
-        if index < 0:
+        if index < 0 or self.__done:
             return self.data[index]
         try:
             return self.__consumed[index]
         except IndexError:
+            it = iter(self)
             try:
                 for i in range(self.__index, index + 1):
-                    self.__consumed.append(next(self.__it))
+                    next(it)
             except StopIteration:
                 raise IndexError(index)
             else:
                 return self.__consumed[index]
 
+    def __bool__(self, sentinel=object()):
+        # bool for list calls len() which would consume the generator:
+        # override to consume maximum of one item.
+        return (
+            len(self.__consumed) or
+            next(iter(self), sentinel) is not sentinel
+        )
+    __nonzero__ = __bool__  # XXX Py2
+
     @property
     def data(self):
-        try:
-            self.__consumed.extend(list(self.__it))
-        except StopIteration:
-            pass
+        # consume the generator
+        if not self.__done:
+            list(iter(self))
         return self.__consumed
 
 

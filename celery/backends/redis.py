@@ -239,6 +239,9 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             raise ChordError('Dependency {0} raised {1!r}'.format(tid, retval))
         return retval
 
+    def set_chord_size(self, group_id, chord_size):
+        self.set(self.get_key_for_group(group_id, '.s'), chord_size)
+
     def apply_chord(self, header, partial_args, group_id, body,
                     result=None, options={}, **kwargs):
         # avoids saving the group in the redis db.
@@ -254,17 +257,24 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
         client = self.client
         jkey = self.get_key_for_group(gid, '.j')
         tkey = self.get_key_for_group(gid, '.t')
+        skey = self.get_key_for_group(gid, '.s')
         result = self.encode_result(result, state)
         with client.pipeline() as pipe:
-            _, readycount, totaldiff, _, _ = pipe                           \
+            _, readycount, totaldiff, total, _, _, _ = pipe                 \
                 .rpush(jkey, self.encode([1, tid, state, result]))          \
                 .llen(jkey)                                                 \
                 .get(tkey)                                                  \
+                .get(skey)                                                  \
                 .expire(jkey, 86400)                                        \
                 .expire(tkey, 86400)                                        \
+                .expire(skey, 86400)                                        \
                 .execute()
 
-        totaldiff = int(totaldiff or 0)
+        if total is None:
+            # chord is not completely submitted yet
+            return
+
+        total = int(total) + int(totaldiff or 0)
 
         try:
             callback = maybe_signature(request.chord, app=app)
@@ -272,10 +282,11 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
                 with client.pipeline() as pipe:
-                    resl, _, _ = pipe               \
+                    resl, _, _, _ = pipe            \
                         .lrange(jkey, 0, total)     \
                         .delete(jkey)               \
                         .delete(tkey)               \
+                        .delete(skey)               \
                         .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])

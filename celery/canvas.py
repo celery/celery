@@ -18,18 +18,18 @@ from collections import MutableSequence, deque
 from copy import deepcopy
 from functools import partial as _partial, reduce
 from operator import itemgetter
-from itertools import chain as _chain
+from itertools import chain as _chain, tee
 
 from kombu.utils import cached_property, fxrange, reprcall, uuid
 from vine import barrier
 
 from celery._state import current_app
-from celery.five import python_2_unicode_compatible
+from celery.five import python_2_unicode_compatible, zip
 from celery.local import try_import
 from celery.result import GroupResult
 from celery.utils import abstract
 from celery.utils.functional import (
-    maybe_list, is_list, _regen, regen, chunks as _chunks,
+    maybe_list, is_list, _regen, regen, lookahead, chunks as _chunks,
 )
 from celery.utils.text import truncate
 
@@ -114,12 +114,6 @@ def task_name_from(task):
     return getattr(task, 'name', task)
 
 
-def _upgrade(fields, sig):
-    """Used by custom signatures in .from_dict, to keep common fields."""
-    sig.update(chord_size=fields.get('chord_size'))
-    return sig
-
-
 @abstract.CallableSignature.register
 @python_2_unicode_compatible
 class Signature(dict):
@@ -178,13 +172,14 @@ class Signature(dict):
         else:
             self._type = task
 
-        init(self,
-             task=task_name, args=tuple(args or ()),
-             kwargs=kwargs or {},
-             options=dict(options or {}, **ex),
-             subtask_type=subtask_type,
-             immutable=immutable,
-             chord_size=None)
+        init(
+            self,
+            task=task_name, args=tuple(args or ()),
+            kwargs=kwargs or {},
+            options=dict(options or {}, **ex),
+            subtask_type=subtask_type,
+            immutable=immutable,
+        )
 
     def __call__(self, *partial_args, **partial_kwargs):
         args, kwargs, _ = self._merge(partial_args, partial_kwargs, None)
@@ -216,7 +211,6 @@ class Signature(dict):
         s = Signature.from_dict({'task': self.task, 'args': tuple(args),
                                  'kwargs': kwargs, 'options': deepcopy(opts),
                                  'subtask_type': self.subtask_type,
-                                 'chord_size': self.chord_size,
                                  'immutable': self.immutable}, app=self._app)
         s._type = self._type
         return s
@@ -410,7 +404,6 @@ class Signature(dict):
     kwargs = _getitem_property('kwargs')
     options = _getitem_property('options')
     subtask_type = _getitem_property('subtask_type')
-    chord_size = _getitem_property('chord_size')
     immutable = _getitem_property('immutable')
 
 
@@ -594,7 +587,7 @@ class chain(Signature):
                 tasks = d['kwargs']['tasks'] = list(tasks)
             # First task must be signature object to get app
             tasks[0] = maybe_signature(tasks[0], app=app)
-        return _upgrade(d, chain(*tasks, app=app, **d['options']))
+        return chain(*tasks, app=app, **d['options'])
 
     @property
     def app(self):
@@ -630,9 +623,7 @@ class _basemap(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
-        return _upgrade(
-            d, cls(*cls._unpack_args(d['kwargs']), app=app, **d['options']),
-        )
+        return cls(*cls._unpack_args(d['kwargs']), app=app, **d['options'])
 
 
 @Signature.register_type
@@ -670,10 +661,7 @@ class chunks(Signature):
 
     @classmethod
     def from_dict(self, d, app=None):
-        return _upgrade(
-            d, chunks(*self._unpack_args(
-                d['kwargs']), app=app, **d['options']),
-        )
+        return chunks(*self._unpack_args(d['kwargs']), app=app, **d['options'])
 
     def apply_async(self, args=(), kwargs={}, **opts):
         return self.group().apply_async(
@@ -705,7 +693,7 @@ def _maybe_group(tasks, app):
     elif isinstance(tasks, abstract.CallableSignature):
         tasks = [tasks]
     else:
-        tasks = [signature(t, app=app) for t in tasks]
+        tasks = regen(signature(t, app=app) for t in tasks)
     return tasks
 
 
@@ -728,45 +716,29 @@ class group(Signature):
 
     @classmethod
     def from_dict(self, d, app=None):
-        return _upgrade(
-            d, group(d['kwargs']['tasks'], app=app, **d['options']),
-        )
+        return group(d['kwargs']['tasks'], app=app, **d['options'])
 
     def __len__(self):
         return len(self.tasks)
 
-    def _prepared(self, tasks, partial_args, group_id, root_id, app,
-                  CallableSignature=abstract.CallableSignature,
-                  from_dict=Signature.from_dict,
-                  isinstance=isinstance, tuple=tuple):
-        for task in tasks:
-            if isinstance(task, CallableSignature):
-                # local sigs are always of type Signature, and we
-                # clone them to make sure we do not modify the originals.
-                task = task.clone()
-            else:
-                # serialized sigs must be converted to Signature.
-                task = from_dict(task, app=app)
-            if isinstance(task, group):
-                # needs yield_from :(
-                unroll = task._prepared(
-                    task.tasks, partial_args, group_id, root_id, app,
-                )
-                for taskN, resN in unroll:
-                    yield taskN, resN
-            else:
-                if partial_args and not task.immutable:
-                    task.args = tuple(partial_args) + tuple(task.args)
-                yield task, task.freeze(group_id=group_id, root_id=root_id)
+    def _prepared(self, tasks, partial_args, group_id, root_id, app):
+        for task in self._unroll_tasks(tasks, app=app, clone=True):
+            if partial_args and not task.immutable:
+                task.args = tuple(partial_args) + tuple(task.args)
+            yield task, task.freeze(group_id=group_id, root_id=root_id)
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None, **options):
         app = app or self.app
         with app.producer_or_acquire(producer) as producer:
-            for sig, res in tasks:
+            for count, (curr_task, next_task) in enumerate(lookahead(tasks)):
+                sig, res = curr_task
+                ichord = sig.options.get('chord') or chord
+                if ichord is not None and next_task is None:
+                    # last task in chord: set the length *before* applying
+                    app.backend.set_chord_size(sig.options['group_id'], count)
                 sig.apply_async(producer=producer, add_to_parent=False,
-                                chord=sig.options.get('chord') or chord,
-                                **options)
+                                chord=ichord, **options)
 
                 # adding callback to result, such that it will gradually
                 # fulfill the barrier.
@@ -846,17 +818,21 @@ class group(Signature):
     def __call__(self, *partial_args, **options):
         return self.apply_async(partial_args, **options)
 
-    def _freeze_unroll(self, new_tasks, group_id, chord, root_id, parent_id):
-        stack = deque(self.tasks)
-        while stack:
-            task = maybe_signature(stack.popleft(), app=self._app).clone()
+    def _unroll_tasks(self, tasks, app=None, clone=True):
+        for task in tasks:
+            task = maybe_signature(task, app=app or self._app, clone=clone)
             if isinstance(task, group):
-                stack.extendleft(task.tasks)
+                it = task._unroll_tasks(task.tasks, app=app, clone=clone)
+                for subtask in it:
+                    yield subtask
             else:
-                new_tasks.append(task)
-                yield task.freeze(group_id=group_id,
-                                  chord=chord, root_id=root_id,
-                                  parent_id=parent_id)
+                yield task
+
+    def _freeze_tasks(self, tasks, group_id, chord, root_id, parent_id):
+        for task in tasks:
+            yield task.freeze(group_id=group_id,
+                              chord=chord, root_id=root_id,
+                              parent_id=parent_id)
 
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None):
@@ -871,16 +847,11 @@ class group(Signature):
             opts['chord'] = chord
         root_id = opts.setdefault('root_id', root_id)
         parent_id = opts.setdefault('parent_id', parent_id)
-        new_tasks = []
-        # Need to unroll subgroups early so that chord gets the
-        # right result instance for chord_unlock etc.
-        results = list(self._freeze_unroll(
-            new_tasks, group_id, chord, root_id, parent_id,
-        ))
-        if isinstance(self.tasks, MutableSequence):
-            self.tasks[:] = new_tasks
-        else:
-            self.tasks = new_tasks
+        tasks1, tasks2 = tee(self._unroll_tasks(self.tasks, clone=True))
+        results = regen(
+            self._freeze_tasks(tasks1, group_id, chord, root_id, parent_id))
+        # if self.tasks is consumed, it will also populate the group results
+        self.tasks = regen(x[0] for x in zip(tasks2, results))
         return self.app.GroupResult(gid, results)
     _freeze = freeze
 
@@ -942,7 +913,7 @@ class chord(Signature):
     @classmethod
     def from_dict(self, d, app=None):
         args, d['kwargs'] = self._unpack_args(**d['kwargs'])
-        return _upgrade(d, self(*args, app=app, **d))
+        return self(*args, app=app, **d)
 
     @staticmethod
     def _unpack_args(header=None, body=None, **kwargs):
@@ -990,17 +961,8 @@ class chord(Signature):
             args=(tasks.apply(args, kwargs).get(propagate=propagate),),
         )
 
-    def _traverse_tasks(self, tasks, value=None):
-        stack = deque(list(tasks))
-        while stack:
-            task = stack.popleft()
-            if isinstance(task, group):
-                stack.extend(task.tasks)
-            else:
-                yield task if value is None else value
-
     def __length_hint__(self):
-        return sum(self._traverse_tasks(self.tasks, 1))
+        return len(list(self._unroll_tasks(self.tasks, clone=False)))
 
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
@@ -1008,7 +970,6 @@ class chord(Signature):
         app = app or self._get_app(body)
         group_id = uuid()
         root_id = body.options.get('root_id')
-        body.chord_size = self.__length_hint__()
         options = dict(self.options, **options) if options else self.options
         if options:
             options.pop('task_id', None)
@@ -1070,13 +1031,16 @@ def signature(varies, *args, **kwargs):
 subtask = signature   # XXX compat
 
 
-def maybe_signature(d, app=None):
+def maybe_signature(d, app=None, clone=False):
     if d is not None:
-        if (isinstance(d, dict) and
-                not isinstance(d, abstract.CallableSignature)):
-            d = signature(d)
+        if isinstance(d, dict):
+            if not isinstance(d, abstract.CallableSignature):
+                d = signature(d)
+            elif clone:
+                d = d.clone()
+
         if app is not None:
             d._app = app
-        return d
+    return d
 
 maybe_subtask = maybe_signature  # XXX compat

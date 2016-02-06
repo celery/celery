@@ -115,6 +115,7 @@ class test_group(BuiltinsCase):
     def test_task(self, current_worker_task):
         g, result = self.mock_group(self.add.s(2), self.add.s(4))
         self.task(g.tasks, result, result.id, (2,)).results
+        print('TASKS: %r' % (g.tasks,))
         g.tasks[0].clone().apply_async.assert_called_with(
             group_id=result.id, producer=self.app.producer_or_acquire(),
             add_to_parent=False,
@@ -178,5 +179,6 @@ class test_chord(BuiltinsCase):
     def test_apply_eager_with_arguments(self):
         self.app.conf.task_always_eager = True
         x = chord([self.add.s(i) for i in range(10)], body=self.xsum.s())
+        print(list(x.tasks))
         r = x.apply_async([1])
         self.assertEqual(r.get(), 55)

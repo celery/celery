@@ -8,10 +8,13 @@ from contextlib import contextmanager
 from celery.exceptions import ChordError, TimeoutError
 from celery.five import items, bytes_if_py2, range
 from celery.utils import serialization
-from celery.utils.serialization import subclass_exception
-from celery.utils.serialization import find_pickleable_exception as fnpe
-from celery.utils.serialization import UnpickleableExceptionWrapper
-from celery.utils.serialization import get_pickleable_exception as gpe
+from celery.utils.serialization import (
+    subclass_exception,
+    find_pickleable_exception as fnpe,
+    UnpickleableExceptionWrapper,
+    get_pickleable_exception as gpe,
+)
+from celery.utils.functional import pass1, regen
 
 from celery import states
 from celery import group, uuid
@@ -22,7 +25,6 @@ from celery.backends.base import (
     _nulldict,
 )
 from celery.result import result_from_tuple
-from celery.utils.functional import pass1
 
 from celery.tests.case import ANY, AppCase, Case, Mock, call, patch, skip
 
@@ -84,7 +86,7 @@ class test_BaseBackend_interface(AppCase):
         self.app.tasks[unlock] = Mock()
         self.b.apply_chord(
             group(app=self.app), (), 'dakj221', None,
-            result=[self.app.AsyncResult(x) for x in [1, 2, 3]],
+            result=regen(self.app.AsyncResult(x) for x in [1, 2, 3]),
         )
         self.assertTrue(self.app.tasks[unlock].apply_async.call_count)
 
@@ -524,12 +526,14 @@ class test_KeyValueStoreBackend(AppCase):
     def test_chord_apply_fallback(self):
         self.b.implements_incr = False
         self.b.fallback_chord_unlock = Mock()
+        res = regen(x for x in range(10))
         self.b.apply_chord(
             group(app=self.app), (), 'group_id', 'body',
-            result='result', foo=1,
+            result=res, foo=1,
         )
+        self.assertTrue(res.fully_consumed())
         self.b.fallback_chord_unlock.assert_called_with(
-            'group_id', 'body', result='result', foo=1,
+            'group_id', 'body', result=res, foo=1,
         )
 
     def test_get_missing_meta(self):

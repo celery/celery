@@ -102,10 +102,6 @@ class CallableSignature(CallableTask):  # pragma: no cover
         pass
 
     @abstractproperty
-    def chord_size(self):
-        pass
-
-    @abstractproperty
     def immutable(self):
         pass
 
