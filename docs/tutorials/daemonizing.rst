@@ -424,9 +424,3 @@ Windows
 See this excellent external tutorial:
 
 http://www.calazan.com/windows-tip-run-applications-in-the-background-using-task-scheduler/
-
-CentOS
-======
-In CentOS we can take advantage of built-in service helpers, such as the
-pid-based status checker function in ``/etc/init.d/functions``.
-See the sample script in http://github.com/celery/celery/tree/3.1/extra/centos/.
