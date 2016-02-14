@@ -235,7 +235,7 @@ _get_pids() {
 
 
 _chuid () {
-    su "$CELERYD_USER" -c "$CELERYD_MULTI $*"
+    su -l "$CELERYD_USER" -c "$CELERYD_MULTI $*"
 }
 
 
