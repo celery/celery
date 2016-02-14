@@ -428,18 +428,21 @@ class Request(object):
 
             # These are special cases where the process would not have had
             # time to write the result.
+            worker_lost = False
             if self.store_errors:
                 if isinstance(exc, WorkerLostError):
                     self.task.backend.mark_as_failure(
                         self.id, exc, request=self,
                     )
+                    worker_lost = True
                 elif isinstance(exc, Terminated):
                     self._announce_revoked(
                         'terminated', True, string(exc), False)
                     send_failed_event = False  # already sent revoked event
             # (acks_late) acknowledge after result stored.
             if self.task.acks_late:
-                self.acknowledge()
+                if not worker_lost:
+                    self.acknowledge()
         self._log_error(exc_info, send_failed_event=send_failed_event)
 
     def _log_error(self, einfo, send_failed_event=True):
