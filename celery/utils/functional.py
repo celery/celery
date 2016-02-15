@@ -382,6 +382,9 @@ class _regen(UserList, list):
         list(iter(self))
         return self.__consumed
 
+    def fully_consumed(self):
+        return self.__done
+
 
 def _argsfromspec(spec, replace_defaults=True):
     if spec.defaults:
