@@ -280,6 +280,12 @@ class test_RedisBackend(AppCase):
         b.add_to_chord(gid, 'sig')
         b.client.incr.assert_called_with(b.get_key_for_group(gid, '.t'), 1)
 
+    def test_set_chord_size(self):
+        b = self.Backend('redis://', app=self.app)
+        gid = uuid()
+        b.set_chord_size(gid, 10)
+        b.client.set.assert_called_with(b.get_key_for_group(gid, '.s'), 10)
+
     def test_expires_is_None(self):
         b = self.Backend(expires=None, app=self.app)
         self.assertEqual(
@@ -306,14 +312,13 @@ class test_RedisBackend(AppCase):
         self.app.tasks['foobarbaz'] = task
         task.request.chord = signature(task)
         task.request.id = tid
-        task.request.chord['chord_size'] = 10
         task.request.group = 'group_id'
         return task
 
     @patch('celery.result.GroupResult.restore')
     def test_on_chord_part_return(self, restore):
         tasks = [self.create_task() for i in range(10)]
-
+        self.b.set_chord_size('group_id', 10)
         for i in range(10):
             self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
             self.assertTrue(self.b.client.rpush.call_count)
@@ -321,20 +326,26 @@ class test_RedisBackend(AppCase):
         self.assertTrue(self.b.client.lrange.call_count)
         jkey = self.b.get_key_for_group('group_id', '.j')
         tkey = self.b.get_key_for_group('group_id', '.t')
-        self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
+        skey = self.b.get_key_for_group('group_id', '.s')
+        self.b.client.delete.assert_has_calls([call(jkey), call(tkey),
+                                               call(skey)])
         self.b.client.expire.assert_has_calls([
-            call(jkey, 86400), call(tkey, 86400),
+            call(jkey, 86400), call(tkey, 86400), call(skey, 86400),
         ])
 
     def test_on_chord_part_return__success(self):
-        with self.chord_context(2) as (_, request, callback):
+        with self.chord_context(3) as (_, request, callback):
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             self.assertFalse(callback.delay.called)
+            self.b.set_chord_size('gid1', 3)
             self.b.on_chord_part_return(request, states.SUCCESS, 20)
-            callback.delay.assert_called_with([10, 20])
+            self.assertFalse(callback.delay.called)
+            self.b.on_chord_part_return(request, states.SUCCESS, 30)
+            callback.delay.assert_called_with([10, 20, 30])
 
     def test_on_chord_part_return__callback_raises(self):
         with self.chord_context(1) as (_, request, callback):
+            self.b.set_chord_size('gid1', 1)
             callback.delay.side_effect = KeyError(10)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
@@ -344,10 +355,12 @@ class test_RedisBackend(AppCase):
 
     def test_on_chord_part_return__ChordError(self):
         with self.chord_context(1) as (_, request, callback):
+            self.b.set_chord_size('gid1', 1)
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.rpush().llen().get().expire(
-            ).expire().execute.return_value = (1, 1, 0, 4, 5)
+            self.b.client.pipeline.return_value.rpush().llen().get().get()\
+            .expire().expire().expire()\
+            .execute.return_value = (1, 1, 0, 1, 4, 5, 6)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -356,10 +369,12 @@ class test_RedisBackend(AppCase):
 
     def test_on_chord_part_return__other_error(self):
         with self.chord_context(1) as (_, request, callback):
+            self.b.set_chord_size('gid1', 1)
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, RuntimeError())
-            self.b.client.pipeline.return_value.rpush().llen().get().expire(
-            ).expire().execute.return_value = (1, 1, 0, 4, 5)
+            self.b.client.pipeline.return_value.rpush().llen().get().get()\
+            .expire().expire().expire()\
+            .execute.return_value = (1, 1, 0, 1, 4, 5, 6)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -375,7 +390,6 @@ class test_RedisBackend(AppCase):
             request.group = 'gid1'
             callback = ms.return_value = Signature('add')
             callback.id = 'id1'
-            callback['chord_size'] = size
             callback.delay = Mock(name='callback.delay')
             yield tasks, request, callback
 

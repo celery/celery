@@ -200,13 +200,14 @@ class RedisBackend(KeyValueStoreBackend):
         skey = self.get_key_for_group(gid, '.s')
         result = self.encode_result(result, state)
         with client.pipeline() as pipe:
-            _, readycount, totaldiff, total, _, _ = pipe                           \
+            _, readycount, totaldiff, total, _, _, _ = pipe                 \
                 .rpush(jkey, self.encode([1, tid, state, result]))          \
                 .llen(jkey)                                                 \
                 .get(tkey)                                                  \
                 .get(skey)                                                  \
                 .expire(jkey, 86400)                                        \
                 .expire(tkey, 86400)                                        \
+                .expire(skey, 86400)                                        \
                 .execute()
 
         if total is None:
@@ -220,10 +221,11 @@ class RedisBackend(KeyValueStoreBackend):
             if readycount == total:
                 decode, unpack = self.decode, self._unpack_chord_result
                 with client.pipeline() as pipe:
-                    resl, _, _ = pipe               \
+                    resl, _, _, _ = pipe            \
                         .lrange(jkey, 0, total)     \
                         .delete(jkey)               \
                         .delete(tkey)               \
+                        .delete(skey)               \
                         .execute()
                 try:
                     callback.delay([unpack(tup, decode) for tup in resl])

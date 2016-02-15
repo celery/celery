@@ -15,6 +15,7 @@ from celery.canvas import (
     maybe_unroll_group,
 )
 from celery.result import EagerResult
+from celery.utils.functional import _regen
 
 from celery.tests.case import (
     AppCase, ContextMock, MagicMock, Mock, depends_on_current_app,
@@ -578,6 +579,14 @@ class test_group(CanvasCase):
         g = group([self.add.s(i, i) for i in range(10)])
         self.assertListEqual(list(iter(g)), g.tasks)
 
+    def test_maintains_generator(self):
+        g = group(self.add.s(x, x) for x in xrange(3))
+        self.assertIsInstance(g.tasks, _regen)
+        self.assertFalse(g.tasks.fully_consumed())
+        g.freeze()
+        self.assertIsInstance(g.tasks, _regen)
+        self.assertFalse(g.tasks.fully_consumed())
+
 
 class test_chord(CanvasCase):
 
@@ -653,6 +662,14 @@ class test_chord(CanvasCase):
         x.freeze()
         x.tasks = [self.add.s(2, 2)]
         x.freeze()
+
+    def test_maintains_generator(self):
+        x = chord((self.add.s(i, i) for i in xrange(3)), body=self.mul.s(4))
+        self.assertIsInstance(x.tasks, _regen)
+        self.assertFalse(x.tasks.fully_consumed())
+        x.freeze()
+        self.assertIsInstance(x.tasks, group)
+        self.assertFalse(x.tasks.tasks.fully_consumed())
 
 
 class test_maybe_signature(CanvasCase):

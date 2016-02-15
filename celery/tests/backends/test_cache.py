@@ -14,6 +14,7 @@ from celery.backends.cache import CacheBackend, DummyClient
 from celery.exceptions import ImproperlyConfigured
 from celery.five import items, string, text_t
 from celery.utils import uuid
+from celery.utils.functional import regen
 
 from celery.tests.case import (
     AppCase, Mock, mask_modules, patch, reset_modules,
@@ -66,7 +67,8 @@ class test_CacheBackend(AppCase):
 
     def test_apply_chord(self):
         tb = CacheBackend(backend='memory://', app=self.app)
-        gid, res = uuid(), [self.app.AsyncResult(uuid()) for _ in range(3)]
+        gid = uuid()
+        res = regen(self.app.AsyncResult(uuid()) for _ in range(3))
         tb.apply_chord(group(app=self.app), (), gid, {}, result=res)
 
     @patch('celery.result.GroupResult.restore')

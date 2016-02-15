@@ -371,6 +371,9 @@ class BaseBackend(object):
     def on_chord_part_return(self, request, state, result, **kwargs):
         pass
 
+    def set_chord_size(self, group_id, chord_size):
+        pass
+
     def fallback_chord_unlock(self, group_id, body, result=None,
                               countdown=1, **kwargs):
         kwargs['result'] = [r.as_tuple() for r in result]
@@ -379,11 +382,13 @@ class BaseBackend(object):
         )
 
     def apply_chord(self, header, partial_args, group_id, body,
-                    options={}, **kwargs):
+                    options={}, result=None, **kwargs):
+        # result is a generator, expand it
+        result = list(result)
         fixed_options = {k: v for k, v in items(options) if k != 'task_id'}
-        result = header(*partial_args, task_id=group_id, **fixed_options or {})
-        self.fallback_chord_unlock(group_id, body, **kwargs)
-        return result
+        res = header(*partial_args, task_id=group_id, **fixed_options or {})
+        self.fallback_chord_unlock(group_id, body, result=result, **kwargs)
+        return res
 
     def current_task_children(self, request=None):
         request = request or getattr(current_task(), 'request', None)

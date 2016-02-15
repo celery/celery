@@ -18,7 +18,7 @@ from collections import MutableSequence, deque
 from copy import deepcopy
 from functools import partial as _partial, reduce
 from operator import itemgetter
-from itertools import chain as _chain
+from itertools import chain as _chain, izip, tee
 
 from kombu.utils import cached_property, fxrange, reprcall, uuid
 
@@ -678,7 +678,7 @@ def _maybe_group(tasks, app):
     elif isinstance(tasks, abstract.CallableSignature):
         tasks = [tasks]
     else:
-        tasks = [signature(t, app=app) for t in tasks]
+        tasks = regen(signature(t, app=app) for t in tasks)
     return tasks
 
 
@@ -829,20 +829,21 @@ class group(Signature):
     def __call__(self, *partial_args, **options):
         return self.apply_async(partial_args, **options)
 
-    def _freeze_tasks(self, group_id, chord, root_id, parent_id):
-        for task in self.tasks:
-            yield task.freeze(group_id=group_id,
-                              chord=chord, root_id=root_id,
-                              parent_id=parent_id)
-
-    def _unroll_tasks(self, tasks):
+    def _unroll_tasks(self, tasks, app=None, clone=True):
         for task in tasks:
-            task = maybe_signature(task, app=self._app).clone()
+            task = maybe_signature(task, app=app or self._app, clone=clone)
             if isinstance(task, group):
-                for subtask in task._unroll_tasks(task.tasks):
+                it = task._unroll_tasks(task.tasks, app=app, clone=clone)
+                for subtask in it:
                     yield subtask
             else:
                 yield task
+
+    def _freeze_tasks(self, tasks, group_id, chord, root_id, parent_id):
+        for task in tasks:
+            yield task.freeze(group_id=group_id,
+                              chord=chord, root_id=root_id,
+                              parent_id=parent_id)
 
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None):
@@ -857,12 +858,11 @@ class group(Signature):
             opts['chord'] = chord
         root_id = opts.setdefault('root_id', root_id)
         parent_id = opts.setdefault('parent_id', parent_id)
-        # Need to unroll subgroups early so that chord gets the
-        # right result instance for chord_unlock etc.
-        self.tasks = regen(self._unroll_tasks(self.tasks))
-        results = self._freeze_tasks(
-            group_id, chord, root_id, parent_id,
-        )
+        tasks1, tasks2 = tee(self._unroll_tasks(self.tasks, clone=True))
+        results = regen(
+            self._freeze_tasks(tasks1, group_id, chord, root_id, parent_id))
+        # if self.tasks is consumed, it will also populate the group results
+        self.tasks = regen(x[0] for x in izip(tasks2, results))
         return self.app.GroupResult(gid, results)
     _freeze = freeze
 
@@ -1050,13 +1050,15 @@ def signature(varies, *args, **kwargs):
 subtask = signature   # XXX compat
 
 
-def maybe_signature(d, app=None):
+def maybe_signature(d, app=None, clone=False):
     if d is not None:
         if isinstance(d, dict):
             if not isinstance(d, abstract.CallableSignature):
                 d = signature(d)
+            elif clone:
+                d = d.clone()
         elif isinstance(d, list):
-            return [maybe_signature(s, app=app) for s in d]
+            return [maybe_signature(s, app=app, clone=clone) for s in d]
 
         if app is not None:
             d._app = app

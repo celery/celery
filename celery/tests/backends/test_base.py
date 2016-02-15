@@ -23,7 +23,7 @@ from celery.backends.base import (
 )
 from celery.result import result_from_tuple
 from celery.utils import uuid
-from celery.utils.functional import pass1
+from celery.utils.functional import pass1, regen
 
 from celery.tests.case import ANY, AppCase, Case, Mock, SkipTest, call, patch
 
@@ -79,7 +79,7 @@ class test_BaseBackend_interface(AppCase):
         self.app.tasks[unlock] = Mock()
         self.b.apply_chord(
             group(app=self.app), (), 'dakj221', None,
-            result=[self.app.AsyncResult(x) for x in [1, 2, 3]],
+            result=regen(self.app.AsyncResult(x) for x in [1, 2, 3]),
         )
         self.assertTrue(self.app.tasks[unlock].apply_async.call_count)
 
@@ -519,12 +519,14 @@ class test_KeyValueStoreBackend(AppCase):
     def test_chord_apply_fallback(self):
         self.b.implements_incr = False
         self.b.fallback_chord_unlock = Mock()
+        res = regen(x for x in range(10))
         self.b.apply_chord(
             group(app=self.app), (), 'group_id', 'body',
-            result='result', foo=1,
+            result=res, foo=1,
         )
+        self.assertTrue(res.fully_consumed())
         self.b.fallback_chord_unlock.assert_called_with(
-            'group_id', 'body', result='result', foo=1,
+            'group_id', 'body', result=res, foo=1,
         )
 
     def test_get_missing_meta(self):
