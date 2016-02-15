@@ -168,3 +168,30 @@ class test_CassandraBackend(AppCase):
                 x.process_cleanup()
 
             self.assertEquals(RAMHoggingCluster.objects_alive, 0)
+
+    def test_auth_provider(self):
+        """Ensure valid auth_provider works properly, and invalid one raises
+        ImproperlyConfigured exception."""
+        class DummyAuth(object):
+            ValidAuthProvider = Mock()
+
+        with mock_module(*CASSANDRA_MODULES):
+            from celery.backends import cassandra as mod
+
+            mod.cassandra = Mock()
+            mod.cassandra.auth = DummyAuth
+
+            # Valid auth_provider
+            self.app.conf.cassandra_auth_provider = 'ValidAuthProvider'
+            self.app.conf.cassandra_auth_kwargs = {
+                'username': 'stuff'
+            }
+            mod.CassandraBackend(app=self.app)
+
+            # Invalid auth_provider
+            self.app.conf.cassandra_auth_provider = 'SpiderManAuth'
+            self.app.conf.cassandra_auth_kwargs = {
+                'username': 'Jack'
+            }
+            with self.assertRaises(ImproperlyConfigured):
+                mod.CassandraBackend(app=self.app)
