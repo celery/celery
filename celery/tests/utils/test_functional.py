@@ -224,6 +224,9 @@ class test_mlazy(Case):
 
 class test_regen(Case):
 
+    def setUp(self):
+        self.g = regen(iter(list(range(10))))
+
     def test_regen_list(self):
         l = [1, 2]
         r = regen(iter(l))
@@ -235,39 +238,57 @@ class test_regen(Case):
         fun, args = r.__reduce__()
         self.assertEqual(fun(*args), l)
 
-    def test_regen_gen(self):
-        g = regen(iter(list(range(10))))
-        self.assertEqual(g[7], 7)
-        self.assertEqual(g[6], 6)
-        self.assertEqual(g[5], 5)
-        self.assertEqual(g[4], 4)
-        self.assertEqual(g[3], 3)
-        self.assertEqual(g[2], 2)
-        self.assertEqual(g[1], 1)
-        self.assertEqual(g[0], 0)
-        self.assertEqual(g.data, list(range(10)))
-        self.assertEqual(g[8], 8)
-        self.assertEqual(g[0], 0)
-        g = regen(iter(list(range(10))))
-        self.assertEqual(g[0], 0)
-        self.assertEqual(g[1], 1)
-        self.assertEqual(g.data, list(range(10)))
-        g = regen(iter([1]))
-        self.assertEqual(g[0], 1)
+    def test_regen_gen_index(self):
+        self.assertEqual(self.g[7], 7)
+        self.assertEqual(self.g[6], 6)
+        self.assertEqual(self.g[5], 5)
+        self.assertEqual(self.g[4], 4)
+        self.assertEqual(self.g[3], 3)
+        self.assertEqual(self.g[2], 2)
+        self.assertEqual(self.g[1], 1)
+        self.assertEqual(self.g[0], 0)
+        self.assertFalse(self.g.fully_consumed())
+        self.assertEqual(self.g.data, list(range(10)))
+        self.assertTrue(self.g.fully_consumed())
+        self.assertEqual(self.g[8], 8)
+        self.assertEqual(self.g[0], 0)
+        self.assertListEqual(list(iter(self.g)), list(range(10)))
+
+    def test_regen_gen_index_2(self):
+        self.assertEqual(self.g[0], 0)
+        self.assertEqual(self.g[1], 1)
+        self.assertEqual(self.g.data, list(range(10)))
+
+    def test_regen_gen_index_error(self):
+        self.assertEqual(self.g[0], 0)
         with self.assertRaises(IndexError):
-            g[1]
-        self.assertEqual(g.data, [1])
+            self.g[11]
+        self.assertTrue(self.g.fully_consumed())
+        self.assertListEqual(list(iter(self.g)), list(range(10)))
 
-        g = regen(iter(list(range(10))))
-        self.assertEqual(g[-1], 9)
-        self.assertEqual(g[-2], 8)
-        self.assertEqual(g[-3], 7)
-        self.assertEqual(g[-4], 6)
-        self.assertEqual(g[-5], 5)
-        self.assertEqual(g[5], 5)
-        self.assertEqual(g.data, list(range(10)))
+    def test_regen_gen_negative_index(self):
+        self.assertEqual(self.g[-1], 9)
+        self.assertEqual(self.g[-2], 8)
+        self.assertEqual(self.g[-3], 7)
+        self.assertEqual(self.g[-4], 6)
+        self.assertEqual(self.g[-5], 5)
+        self.assertEqual(self.g[5], 5)
+        self.assertEqual(self.g.data, list(range(10)))
 
-        self.assertListEqual(list(iter(g)), list(range(10)))
+        self.assertListEqual(list(iter(self.g)), list(range(10)))
+
+    def test_regen_gen_iter(self):
+        list(iter(self.g))
+        self.assertTrue(self.g.fully_consumed())
+        self.assertListEqual(list(iter(self.g)), list(range(10)))
+
+    def test_regen_gen_repr(self):
+        repr(self.g)
+        self.assertFalse(self.g.fully_consumed())
+
+    def test_regen_gen_nonzero(self):
+        bool(self.g)
+        self.assertFalse(self.g.fully_consumed())
 
 
 class test_head_from_fun(Case):
