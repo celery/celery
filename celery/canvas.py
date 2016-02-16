@@ -113,12 +113,6 @@ def task_name_from(task):
     return getattr(task, 'name', task)
 
 
-def _upgrade(fields, sig):
-    """Used by custom signatures in .from_dict, to keep common fields."""
-    sig.update(chord_size=fields.get('chord_size'))
-    return sig
-
-
 class Signature(dict):
     """Class that wraps the arguments and execution options
     for a single task invocation.
@@ -178,8 +172,7 @@ class Signature(dict):
              kwargs=kwargs or {},
              options=dict(options or {}, **ex),
              subtask_type=subtask_type,
-             immutable=immutable,
-             chord_size=None)
+             immutable=immutable)
 
     def __call__(self, *partial_args, **partial_kwargs):
         args, kwargs, _ = self._merge(partial_args, partial_kwargs, None)
@@ -211,7 +204,6 @@ class Signature(dict):
         s = Signature.from_dict({'task': self.task, 'args': tuple(args),
                                  'kwargs': kwargs, 'options': deepcopy(opts),
                                  'subtask_type': self.subtask_type,
-                                 'chord_size': self.chord_size,
                                  'immutable': self.immutable}, app=self._app)
         s._type = self._type
         return s
@@ -391,7 +383,6 @@ class Signature(dict):
     kwargs = _getitem_property('kwargs')
     options = _getitem_property('options')
     subtask_type = _getitem_property('subtask_type')
-    chord_size = _getitem_property('chord_size')
     immutable = _getitem_property('immutable')
 abstract.CallableSignature.register(Signature)
 
@@ -570,7 +561,7 @@ class chain(Signature):
                 tasks = d['kwargs']['tasks'] = list(tasks)
             # First task must be signature object to get app
             tasks[0] = maybe_signature(tasks[0], app=app)
-        return _upgrade(d, chain(*tasks, app=app, **d['options']))
+        return chain(*tasks, app=app, **d['options'])
 
     @property
     def app(self):
@@ -606,9 +597,7 @@ class _basemap(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
-        return _upgrade(
-            d, cls(*cls._unpack_args(d['kwargs']), app=app, **d['options']),
-        )
+        return cls(*cls._unpack_args(d['kwargs']), app=app, **d['options'])
 
 
 @Signature.register_type
@@ -644,10 +633,8 @@ class chunks(Signature):
 
     @classmethod
     def from_dict(self, d, app=None):
-        return _upgrade(
-            d, chunks(*self._unpack_args(
-                d['kwargs']), app=app, **d['options']),
-        )
+        return chunks(*self._unpack_args(
+                d['kwargs']), app=app, **d['options'])
 
     def apply_async(self, args=(), kwargs={}, **opts):
         return self.group().apply_async(
@@ -701,9 +688,7 @@ class group(Signature):
 
     @classmethod
     def from_dict(self, d, app=None):
-        return _upgrade(
-            d, group(d['kwargs']['tasks'], app=app, **d['options']),
-        )
+        return group(d['kwargs']['tasks'], app=app, **d['options'])
 
     def __len__(self):
         return len(self.tasks)
@@ -889,7 +874,7 @@ class chord(Signature):
     @classmethod
     def from_dict(self, d, app=None):
         args, d['kwargs'] = self._unpack_args(**d['kwargs'])
-        return _upgrade(d, self(*args, app=app, **d))
+        return self(*args, app=app, **d)
 
     @staticmethod
     def _unpack_args(header=None, body=None, **kwargs):
