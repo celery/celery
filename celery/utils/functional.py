@@ -17,7 +17,7 @@ try:
     from inspect import isfunction, getfullargspec as getargspec
 except ImportError:  # Py2
     from inspect import isfunction, getargspec  # noqa
-from itertools import chain, islice
+from itertools import chain, islice, tee, izip_longest
 
 from amqp import promise
 from kombu.utils.functional import (
@@ -28,7 +28,8 @@ from celery.five import UserDict, UserList, keys, range
 
 __all__ = ['LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
            'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
-           'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun']
+           'lookahead', 'regen', 'dictfilter', 'lazy', 'maybe_evaluate',
+           'head_from_fun']
 
 IS_PY3 = sys.version_info[0] == 3
 IS_PY2 = sys.version_info[0] == 2
@@ -310,6 +311,22 @@ def uniq(it):
     """Return all unique elements in ``it``, preserving order."""
     seen = set()
     return (seen.add(obj) or obj for obj in it if obj not in seen)
+
+
+def lookahead(it):
+    """Yield pairs of (current, next) items in `it`. 
+
+    `next` is None if `current` is the last item.
+
+    Example:
+
+        >>> list(lookahead(x for x in range(6)))
+        [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, None)]
+
+    """
+    a, b = tee(it)
+    next(b, None)
+    return izip_longest(a, b, fillvalue=None)
 
 
 def regen(it):

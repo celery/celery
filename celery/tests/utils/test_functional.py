@@ -18,6 +18,7 @@ from celery.utils.functional import (
     memoize,
     mlazy,
     padlist,
+    lookahead,
     regen,
 )
 
@@ -185,6 +186,10 @@ class test_utils(Case):
         iterations[0] = 0
         self.assertIsNone(first(predicate, range(10, 20)))
         self.assertEqual(iterations[0], 10)
+
+    def test_lookahead(self):
+        self.assertEqual(list(lookahead(x for x in range(6))),
+                         [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, None)])
 
     def test_maybe_list(self):
         self.assertEqual(maybe_list(1), [1])

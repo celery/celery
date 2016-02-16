@@ -27,7 +27,7 @@ from celery.local import try_import
 from celery.result import GroupResult
 from celery.utils import abstract
 from celery.utils.functional import (
-    maybe_list, is_list, _regen, regen, chunks as _chunks,
+    maybe_list, is_list, _regen, regen, lookahead, chunks as _chunks,
 )
 from celery.utils.text import truncate
 
@@ -732,33 +732,15 @@ class group(Signature):
 
     def _apply_tasks(self, tasks, producer=None, app=None,
                      add_to_parent=None, chord=None, **options):
-        # FIXME: this can be simplified if we can guarantee that 
-        # sig.options['chord'] is either set on no tasks or all tasks, which
-        # seems reasonable (a group is either a chord nor not a chord, and the
-        # callback is the same for all members of the group, right?)
-        # FIXME: consider wrapping tasks in a regen class to pretty this up
-        def consume():
-            try:
-                return next(tasks)
-            except StopIteration:
-                pass
-
         app = app or self.app
         with app.producer_or_acquire(producer) as producer:
-            value = consume()
-            count = 1
-            while value is not None:
-                sig, res = value
+            for count, (curr_task, next_task) in enumerate(lookahead(tasks)):
+                sig, res = curr_task
                 ichord = sig.options.get('chord') or chord
-                # lookahead to the next value so we know if it's the last task
-                value = consume()
-                if ichord is not None:
-                    if value is None:
-                        # last task in the chord: set the length
-                        app.backend.set_chord_size(sig.options['group_id'],
-                                                   count)
-                    else:
-                        count += 1
+                if ichord is not None and next_task is None:
+                    # last task in chord: set the length *before* applying
+                    app.backend.set_chord_size(sig.options['group_id'],
+                                               count)
                 sig.apply_async(producer=producer, add_to_parent=False,
                                 chord=ichord, **options)
                 yield res  # <-- r.parent, etc set in the frozen result.
