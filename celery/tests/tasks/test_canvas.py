@@ -580,7 +580,7 @@ class test_group(CanvasCase):
         self.assertListEqual(list(iter(g)), g.tasks)
 
     def test_maintains_generator(self):
-        g = group(self.add.s(x, x) for x in xrange(3))
+        g = group(self.add.s(x, x) for x in range(3))
         self.assertIsInstance(g.tasks, _regen)
         self.assertFalse(g.tasks.fully_consumed())
         g.freeze()
@@ -664,7 +664,7 @@ class test_chord(CanvasCase):
         x.freeze()
 
     def test_maintains_generator(self):
-        x = chord((self.add.s(i, i) for i in xrange(3)), body=self.mul.s(4))
+        x = chord((self.add.s(i, i) for i in range(3)), body=self.mul.s(4))
         self.assertIsInstance(x.tasks, _regen)
         self.assertFalse(x.tasks.fully_consumed())
         x.freeze()

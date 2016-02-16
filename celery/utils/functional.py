@@ -17,14 +17,14 @@ try:
     from inspect import isfunction, getfullargspec as getargspec
 except ImportError:  # Py2
     from inspect import isfunction, getargspec  # noqa
-from itertools import chain, islice, tee, izip_longest
+from itertools import chain, islice, tee
 
 from amqp import promise
 from kombu.utils.functional import (
     dictfilter, lazy, maybe_evaluate, is_list, maybe_list,
 )
 
-from celery.five import UserDict, UserList, keys, range
+from celery.five import UserDict, UserList, keys, range, zip_longest
 
 __all__ = ['LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
            'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
@@ -326,7 +326,7 @@ def lookahead(it):
     """
     a, b = tee(it)
     next(b, None)
-    return izip_longest(a, b, fillvalue=None)
+    return zip_longest(a, b, fillvalue=None)
 
 
 def regen(it):
@@ -392,6 +392,8 @@ class _regen(UserList, list):
             return False
         else:
             return True
+    # Py3
+    __bool__ = __nonzero__
 
     @property
     def data(self):

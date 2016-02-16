@@ -18,7 +18,7 @@ from collections import MutableSequence, deque
 from copy import deepcopy
 from functools import partial as _partial, reduce
 from operator import itemgetter
-from itertools import chain as _chain, izip, tee
+from itertools import chain as _chain, tee
 
 from kombu.utils import cached_property, fxrange, reprcall, uuid
 
@@ -29,6 +29,7 @@ from celery.utils import abstract
 from celery.utils.functional import (
     maybe_list, is_list, _regen, regen, lookahead, chunks as _chunks,
 )
+from celery.five import zip
 from celery.utils.text import truncate
 
 __all__ = ['Signature', 'chain', 'xmap', 'xstarmap', 'chunks',
@@ -827,7 +828,7 @@ class group(Signature):
         results = regen(
             self._freeze_tasks(tasks1, group_id, chord, root_id, parent_id))
         # if self.tasks is consumed, it will also populate the group results
-        self.tasks = regen(x[0] for x in izip(tasks2, results))
+        self.tasks = regen(x[0] for x in zip(tasks2, results))
         return self.app.GroupResult(gid, results)
     _freeze = freeze
 
