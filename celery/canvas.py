@@ -707,28 +707,11 @@ class group(Signature):
     def __len__(self):
         return len(self.tasks)
 
-    def _prepared(self, tasks, partial_args, group_id, root_id, app, dict=dict,
-                  CallableSignature=abstract.CallableSignature,
-                  from_dict=Signature.from_dict):
-        for task in tasks:
-            if isinstance(task, CallableSignature):
-                # local sigs are always of type Signature, and we
-                # clone them to make sure we do not modify the originals.
-                task = task.clone()
-            else:
-                # serialized sigs must be converted to Signature.
-                task = from_dict(task, app=app)
-            if isinstance(task, group):
-                # needs yield_from :(
-                unroll = task._prepared(
-                    task.tasks, partial_args, group_id, root_id, app,
-                )
-                for taskN, resN in unroll:
-                    yield taskN, resN
-            else:
-                if partial_args and not task.immutable:
-                    task.args = tuple(partial_args) + tuple(task.args)
-                yield task, task.freeze(group_id=group_id, root_id=root_id)
+    def _prepared(self, tasks, partial_args, group_id, root_id, app):
+        for task in self._unroll_tasks(tasks, app=app, clone=True):
+            if partial_args and not task.immutable:
+                task.args = tuple(partial_args) + tuple(task.args)
+            yield task, task.freeze(group_id=group_id, root_id=root_id)
 
     def _apply_tasks(self, tasks, producer=None, app=None,
                      add_to_parent=None, chord=None, **options):
@@ -953,17 +936,8 @@ class chord(Signature):
             args=(tasks.apply().get(propagate=propagate),),
         )
 
-    def _traverse_tasks(self, tasks, value=None):
-        stack = deque(list(tasks))
-        while stack:
-            task = stack.popleft()
-            if isinstance(task, group):
-                stack.extend(task.tasks)
-            else:
-                yield task if value is None else value
-
     def __length_hint__(self):
-        return sum(self._traverse_tasks(self.tasks, 1))
+        return len(list(self._unroll_tasks(self.tasks, clone=False)))
 
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
