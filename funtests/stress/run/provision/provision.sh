@@ -150,6 +150,7 @@ install_pip () {
     apt_install python-setuptools
     easy_install pip
     pip_install virtualenv
+    apt_install python-dev
     pip_install setproctitle
 }
 
