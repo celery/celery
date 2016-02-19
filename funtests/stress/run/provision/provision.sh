@@ -1,7 +1,5 @@
 #!/bin/bash
 
-echo "------------ HELLO ---------------"
-
 APT_SOURCES_LST="/etc/apt/sources.list.d/"
 
 DEVEL_DIR="/opt/devel"
@@ -56,10 +54,19 @@ for_user_makedir () {
     chmod 0755 "$2"
 }
 
-# --- directories
+# --- system
 
 make_directories () {
     mkdir -p "${DEVEL_DIR}"
+}
+
+enable_bash_vi_mode () {
+    echo "set -o vi" >> /etc/bash.bashrc
+}
+
+configure_system () {
+    make_directories
+    enable_bash_vi_mode
 }
 
 
@@ -143,6 +150,7 @@ install_pip () {
     apt_install python-setuptools
     easy_install pip
     pip_install virtualenv
+    pip_install setproctitle
 }
 
 # --- celery
@@ -156,7 +164,8 @@ install_celery_service () {
     cp "${CELERY_DIR}/extra/generic-init.d/celeryd" /etc/init.d/
     chmod +x "/etc/init.d/celeryd"
     update-rc.d celeryd defaults
-    cp "${CELERY_CONFIG_SRC}" "${CELERY_CONFIG_DEST}"
+    echo "cp \'${CELERY_CONFIG_SRC}\' \'${CELERY_CONFIG_DST}'"
+    cp "${CELERY_CONFIG_SRC}" "${CELERY_CONFIG_DST}"
     update-rc.d celeryd enable
     restart_celery
 }
@@ -175,8 +184,9 @@ install_celery () {
 # --- MAIN
 
 provision () {
-    make_directories
     apt_update
+    configure_system
+    apt_install powertop
     install_git
     install_rabbitmq
     install_redis

@@ -131,3 +131,8 @@ class sqs(default):
 @template()
 class proto1(default):
     task_protocol = 1
+
+
+@template()
+class vagrant1(default):
+    broker_url = 'pyamqp://testing:t3s71ng@192.168.33.123//testing'
