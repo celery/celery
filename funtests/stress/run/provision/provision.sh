@@ -29,6 +29,7 @@ CELERY_DIR="${GIT_ROOT}/celery"
 CELERY_FUNTESTS="${CELERY_DIR}/funtests/stress"
 CELERY_CONFIG_SRC="${CELERY_FUNTESTS}/run/provision/celeryd-init.config"
 CELERY_CONFIG_DST="/etc/default/celeryd"
+STRESS_DIR="${GIT_ROOT}/stress"
 
 
 die () {
@@ -46,12 +47,6 @@ add_real_user () {
             --ingroup="$2"                           \
             --disabled-password  1>/dev/null 2>&1
     id "$1" || die "Not able to create user"
-}
-
-for_user_makedir () {
-    mkdir "$2"
-    chown "$1" "$2"
-    chmod 0755 "$2"
 }
 
 # --- system
@@ -134,11 +129,10 @@ install_git () {
 
 
 github_clone () {
-    (cd "${GIT_ROOT}"; git clone "${GITHUB_ROOT}/${1}/${2}")
+    mkdir "${CELERY_DIR}"
     chown "${CELERY_USER}" "${CELERY_DIR}"
-    ls -l /opt/devel/celery
+    (cd "${GIT_ROOT}"; sudo -u celery git clone "${GITHUB_ROOT}/${1}/${2}")
 }
-
 
 # --- pip
 
@@ -181,6 +175,11 @@ install_celery () {
     install_celery_service
 }
 
+install_stress () {
+    mkdir "${STRESS_DIR}"
+    chown "${CELERY_USER}" "${STRESS_DIR}"
+    cp -r "${CELERY_DIR}/funtests/stress/*" "${STRESS_DIR}"
+}
 
 # --- MAIN
 
@@ -193,6 +192,7 @@ provision () {
     install_redis
     install_pip
     install_celery
+    install_stress
 }
 
 provision
