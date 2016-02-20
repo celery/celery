@@ -200,15 +200,20 @@ class Worker(WorkController):
         if not self.send_events:
             events = 'OFF (enable -E to monitor this worker)'
 
+        result_backend = self.app.conf.result_backend or 'disabled'
+        if result_backend.startswith('cache+memcache://'):
+            fmt_results = ";".join([maybe_sanitize_url(part) for part in result_backend.split(';')])
+            fmt_results.replace('/;', ';')
+        else:
+            fmt_results = maybe_sanitize_url(result_backend)
+
         banner = BANNER.format(
             app=appr,
             hostname=safe_str(self.hostname),
             timestamp=datetime.now().replace(microsecond=0),
             version=VERSION_BANNER,
             conninfo=self.app.connection().as_uri(),
-            results=maybe_sanitize_url(
-                self.app.conf.result_backend or 'disabled',
-            ),
+            results=fmt_results,
             concurrency=concurrency,
             platform=safe_str(_platform.platform()),
             events=events,
