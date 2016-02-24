@@ -218,7 +218,7 @@ implementation.
 
 - Rare race conditions fixed
 
-    Most of these bugs were never reported to us, but was discovered while
+    Most of these bugs were never reported to us, but were discovered while
     running the new stress test suite.
 
 Caveats
@@ -314,7 +314,7 @@ but if you would like to experiment with it you should know that:
         app.config_from_object('django.conf:settings')
 
     Neither will it automatically traverse your installed apps to find task
-    modules, but this still available as an option you must enable:
+    modules. If you want this behavior, you must explictly pass a list of Django instances to the Celery app:
 
     .. code-block:: python
 
@@ -334,7 +334,7 @@ but if you would like to experiment with it you should know that:
     guide <django-first-steps>`.
 
 To get started with the new API you should first read the :ref:`first-steps`
-tutorial, and then you should read the Django specific instructions in
+tutorial, and then you should read the Django-specific instructions in
 :ref:`django-first-steps`.
 
 The fixes and improvements applied by the django-celery library are now
@@ -375,7 +375,7 @@ but starting with this version that field is also used to order them.
 Also, events now record timezone information
 by including a new ``utcoffset`` field in the event message.
 This is a signed integer telling the difference from UTC time in hours,
-so e.g. an even sent from the Europe/London timezone in daylight savings
+so e.g. an event sent from the Europe/London timezone in daylight savings
 time will have an offset of 1.
 
 :class:`@events.Receiver` will automatically convert the timestamps
@@ -389,8 +389,8 @@ to the local timezone.
     starts.
 
     If all of the workers are shutdown the clock value will be lost
-    and reset to 0, to protect against this you should specify
-    a :option:`--statedb` so that the worker can persist the clock
+    and reset to 0. To protect against this, you should specify
+    :option:`--statedb` so that the worker can persist the clock
     value at shutdown.
 
     You may notice that the logical clock is an integer value and
@@ -499,8 +499,8 @@ and you can write extensions that take advantage of this already.
 Some ideas include consensus protocols, reroute task to best worker (based on
 resource usage or data locality) or restarting workers when they crash.
 
-We believe that this is a small addition but one that really opens
-up for amazing possibilities.
+We believe that although this is a small addition, it opens
+amazing possibilities.
 
 You can disable this bootstep using the ``--without-gossip`` argument.
 
