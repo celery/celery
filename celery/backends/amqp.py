@@ -19,7 +19,8 @@ from celery.utils.functional import dictfilter
 from celery.utils.log import get_logger
 from celery.utils.timeutils import maybe_s_to_ms
 
-from .base import AsyncBackendMixin, Backend, BaseResultConsumer
+from . import base
+from .async import AsyncBackendMixin, BaseResultConsumer
 
 __all__ = ['BacklogLimitExceeded', 'AMQPBackend']
 
@@ -87,8 +88,9 @@ class ResultConsumer(BaseResultConsumer):
         self._consumer.cancel_by_queue(queue.name)
 
 
-class AMQPBackend(Backend, AsyncBackendMixin):
+class AMQPBackend(base.Backend, AsyncBackendMixin):
     """Publishes results by sending messages."""
+
     Exchange = Exchange
     Queue = NoCacheQueue
     Consumer = Consumer
