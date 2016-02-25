@@ -172,13 +172,12 @@ install_celery () {
     github_clone "${CELERY_GITHUB_USER}" celery
     (cd ${CELERY_DIR}; pip install -r requirements/dev.txt);
     (cd ${CELERY_DIR}; python setup.py develop);
-    install_celery_service
 }
 
 install_stress () {
     mkdir "${STRESS_DIR}"
     chown "${CELERY_USER}" "${STRESS_DIR}"
-    cp -r "${CELERY_DIR}/funtests/stress/*" "${STRESS_DIR}"
+    cp -r ${CELERY_DIR}/funtests/stress/* "${STRESS_DIR}/"
 }
 
 # --- MAIN
@@ -193,6 +192,7 @@ provision () {
     install_pip
     install_celery
     install_stress
+    install_celery_service
 }
 
 provision
