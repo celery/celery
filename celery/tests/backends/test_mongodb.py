@@ -31,8 +31,8 @@ MONGODB_GROUP_COLLECTION = 'group_collection1'
 
 class test_MongoBackend(AppCase):
 
-    default_url = "mondodb://uuuu:pwpw@hostname.dom/database?ssl=true"
-    replica_set_url = "mondodb://uuuu:pwpw@hostname.dom,hostname.dom/database?replicaSet=rs&ssl=true"
+    default_url = "mongodb://uuuu:pwpw@hostname.dom/database?ssl=true"
+    replica_set_url = "mongodb://uuuu:pwpw@hostname.dom,hostname.dom/database?replicaSet=rs&ssl=true"
     sanitized_default_url = default_url.replace("pwpw", "**")
     sanitized_replica_set_url = replica_set_url.replace("pwpw", "**")
 
