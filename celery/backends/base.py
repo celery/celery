@@ -24,6 +24,7 @@ from kombu.serialization import (
     registry as serializer_registry,
 )
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
+from kombu.utils.url import maybe_sanitize_url
 
 from celery import states
 from celery import current_app, group, maybe_signature
@@ -93,7 +94,7 @@ class BaseBackend(object):
 
     def __init__(self, app,
                  serializer=None, max_cached_results=None, accept=None,
-                 expires=None, expires_type=None, **kwargs):
+                 expires=None, expires_type=None, url=None, **kwargs):
         self.app = app
         conf = self.app.conf
         self.serializer = serializer or conf.result_serializer
@@ -107,6 +108,7 @@ class BaseBackend(object):
         self.accept = prepare_accept_content(
             conf.accept_content if accept is None else accept,
         )
+        self.url = url
 
     def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
@@ -392,6 +394,13 @@ class BaseBackend(object):
 
     def __reduce__(self, args=(), kwargs={}):
         return (unpickle_backend, (self.__class__, args, kwargs))
+
+    def as_uri(self, include_password=False):
+        """Return the backend as an URI, sanitizing the password or not"""
+        # when using maybe_sanitize_url(), "/" is added
+        # we're stripping it for consistency
+        return self.url if include_password else maybe_sanitize_url(self.url).rstrip("/")
+
 BaseDictBackend = BaseBackend  # XXX compat
 
 

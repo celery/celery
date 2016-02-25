@@ -584,3 +584,18 @@ class test_DisabledBackend(AppCase):
     def test_is_disabled(self):
         with self.assertRaises(NotImplementedError):
             DisabledBackend(self.app).get_state('foo')
+
+
+class test_as_uri(AppCase):
+
+    def setup(self):
+        self.b = BaseBackend(
+            app=self.app,
+            url="sch://uuuu:pwpw@hostname.dom"
+        )
+
+    def test_as_uri_include_password(self):
+        self.assertEqual(self.b.as_uri(True), "sch://uuuu:pwpw@hostname.dom")
+
+    def test_as_uri_exclude_password(self):
+        self.assertEqual(self.b.as_uri(), "sch://uuuu:**@hostname.dom")
