@@ -11,6 +11,7 @@ from __future__ import absolute_import
 from datetime import datetime, timedelta
 
 from kombu.utils import cached_property
+from kombu.utils.url import maybe_sanitize_url
 from kombu.exceptions import EncodeError
 from celery import states
 from celery.exceptions import ImproperlyConfigured
@@ -55,7 +56,7 @@ class MongoBackend(BaseBackend):
 
     _connection = None
 
-    def __init__(self, app=None, url=None, **kwargs):
+    def __init__(self, app=None, **kwargs):
         """Initialize MongoDB backend instance.
 
         :raises celery.exceptions.ImproperlyConfigured: if
@@ -70,8 +71,6 @@ class MongoBackend(BaseBackend):
             raise ImproperlyConfigured(
                 'You need to install the pymongo library to use the '
                 'MongoDB backend.')
-
-        self.url = url
 
         # Set option defaults
         for key, value in items(self._prepare_client_options()):
@@ -295,3 +294,17 @@ class MongoBackend(BaseBackend):
     @cached_property
     def expires_delta(self):
         return timedelta(seconds=self.expires)
+
+    def as_uri(self, include_password=False):
+        """
+        Return the backend as an URI, sanitizing the password or not.
+        It properly handles the case of a replica set.
+        """
+        if include_password:
+            return self.url
+
+        if "," not in self.url:
+            return maybe_sanitize_url(self.url).rstrip("/")
+
+        uri1, remainder = self.url.split(",", 1)
+        return ",".join([maybe_sanitize_url(uri1).rstrip("/"), remainder])

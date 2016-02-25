@@ -149,3 +149,12 @@ class CacheBackend(KeyValueStoreBackend):
                  expires=self.expires,
                  options=self.options))
         return super(CacheBackend, self).__reduce__(args, kwargs)
+
+    def as_uri(self, *args, **kwargs):
+        """
+        Return the backend as an URI. It properly handles the
+        case of multiple servers. It doesn't try to sanitize
+        password because memcached URIs doesn't support them.
+        """
+        servers = ';'.join(self.servers)
+        return '{0}://{1}/'.format(self.backend, servers)

@@ -24,6 +24,7 @@ from kombu.serialization import (
     registry as serializer_registry,
 )
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
+from kombu.utils.url import maybe_sanitize_url
 
 from celery import states
 from celery import current_app, group, maybe_signature
@@ -93,7 +94,7 @@ class Backend(object):
 
     def __init__(self, app,
                  serializer=None, max_cached_results=None, accept=None,
-                 expires=None, expires_type=None, **kwargs):
+                 expires=None, expires_type=None, url=None, **kwargs):
         self.app = app
         conf = self.app.conf
         self.serializer = serializer or conf.result_serializer
@@ -108,6 +109,14 @@ class Backend(object):
             conf.accept_content if accept is None else accept,
         )
         self._pending_results = {}
+        self.url = url
+
+    def as_uri(self, include_password=False):
+        """Return the backend as an URI, sanitizing the password or not"""
+        # when using maybe_sanitize_url(), "/" is added
+        # we're stripping it for consistency
+        return (self.url if include_password
+                else maybe_sanitize_url(self.url).rstrip("/"))
 
     def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
@@ -682,5 +691,9 @@ class DisabledBackend(BaseBackend):
         raise NotImplementedError(
             'No result backend configured.  '
             'Please see the documentation for more information.')
+
+    def as_uri(self, *args, **kwargs):
+        return 'disabled://'
+
     get_state = get_status = get_result = get_traceback = _is_disabled
     wait_for = get_many = _is_disabled
