@@ -31,6 +31,11 @@ MONGODB_GROUP_COLLECTION = 'group_collection1'
 
 class test_MongoBackend(AppCase):
 
+    default_url = "mondodb://uuuu:pwpw@hostname.dom/database?ssl=true"
+    replica_set_url = "mondodb://uuuu:pwpw@hostname.dom,hostname.dom/database?replicaSet=rs&ssl=true"
+    sanitized_default_url = default_url.replace("pwpw", "**")
+    sanitized_replica_set_url = replica_set_url.replace("pwpw", "**")
+
     def setup(self):
         if pymongo is None:
             raise SkipTest('pymongo is not installed.')
@@ -41,7 +46,7 @@ class test_MongoBackend(AppCase):
         R['Binary'], module.Binary = module.Binary, Mock()
         R['datetime'], datetime.datetime = datetime.datetime, Mock()
 
-        self.backend = MongoBackend(app=self.app)
+        self.backend = MongoBackend(app=self.app, url=self.default_url)
 
     def teardown(self):
         MongoBackend.encode = self._reset['encode']
@@ -384,6 +389,20 @@ class test_MongoBackend(AppCase):
             self.assertDictEqual(options, {
                 'maxPoolSize': self.backend.max_pool_size
             })
+
+    def test_as_uri_include_password(self):
+        self.assertEqual(self.backend.as_uri(True), self.default_url)
+
+    def test_as_uri_exclude_password(self):
+        self.assertEqual(self.backend.as_uri(), self.sanitized_default_url)
+
+    def test_as_uri_include_password_replica_set(self):
+        backend = MongoBackend(app=self.app, url=self.replica_set_url)
+        self.assertEqual(self.b.as_uri(True), self.replica_set_url)
+
+    def test_as_uri_exclude_password_replica_set(self):
+        backend = MongoBackend(app=self.app, url=self.replica_set_url)
+        self.assertEqual(self.b.as_uri(), self.sanitized_replica_set_url)
 
 
 class test_MongoBackend_no_mock(AppCase):
