@@ -398,11 +398,11 @@ class test_MongoBackend(AppCase):
 
     def test_as_uri_include_password_replica_set(self):
         backend = MongoBackend(app=self.app, url=self.replica_set_url)
-        self.assertEqual(self.b.as_uri(True), self.replica_set_url)
+        self.assertEqual(backend.as_uri(True), self.replica_set_url)
 
     def test_as_uri_exclude_password_replica_set(self):
         backend = MongoBackend(app=self.app, url=self.replica_set_url)
-        self.assertEqual(self.b.as_uri(), self.sanitized_replica_set_url)
+        self.assertEqual(backend.as_uri(), self.sanitized_replica_set_url)
 
 
 class test_MongoBackend_no_mock(AppCase):
