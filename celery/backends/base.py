@@ -24,6 +24,7 @@ from kombu.serialization import (
     registry as serializer_registry,
 )
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
+from kombu.utils.url import maybe_sanitize_url
 
 from celery import states
 from celery import current_app, maybe_signature
@@ -92,8 +93,9 @@ class BaseBackend(object):
         'interval_max': 1,
     }
 
-    def __init__(self, app, serializer=None,
-                 max_cached_results=None, accept=None, **kwargs):
+    def __init__(self, app,
+                 serializer=None, max_cached_results=None, accept=None,
+                 url=None, **kwargs):
         self.app = app
         conf = self.app.conf
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
@@ -105,6 +107,14 @@ class BaseBackend(object):
         self.accept = prepare_accept_content(
             conf.CELERY_ACCEPT_CONTENT if accept is None else accept,
         )
+        self.url = url
+
+    def as_uri(self, include_password=False):
+        """Return the backend as an URI, sanitizing the password or not"""
+        # when using maybe_sanitize_url(), "/" is added
+        # we're stripping it for consistency
+        return (self.url if include_password
+                else maybe_sanitize_url(self.url).rstrip("/"))
 
     def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
@@ -603,4 +613,9 @@ class DisabledBackend(BaseBackend):
         raise NotImplementedError(
             'No result backend configured.  '
             'Please see the documentation for more information.')
-    wait_for = get_status = get_result = get_traceback = _is_disabled
+
+    def as_uri(self, *args, **kwargs):
+        return 'disabled://'
+
+    get_state = get_status = get_result = get_traceback = _is_disabled
+    wait_for = get_many = _is_disabled

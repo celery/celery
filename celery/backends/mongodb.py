@@ -12,6 +12,7 @@ from datetime import datetime
 
 from kombu.syn import detect_environment
 from kombu.utils import cached_property
+from kombu.utils.url import maybe_sanitize_url
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
@@ -243,3 +244,17 @@ class MongoBackend(BaseBackend):
         # in the background. Once completed cleanup will be much faster
         collection.ensure_index('date_done', background='true')
         return collection
+
+    def as_uri(self, include_password=False):
+        """
+        Return the backend as an URI, sanitizing the password or not.
+        It properly handles the case of a replica set.
+        """
+        if include_password:
+            return self.url
+
+        if "," not in self.url:
+            return maybe_sanitize_url(self.url).rstrip("/")
+
+        uri1, remainder = self.url.split(",", 1)
+        return ",".join([maybe_sanitize_url(uri1).rstrip("/"), remainder])

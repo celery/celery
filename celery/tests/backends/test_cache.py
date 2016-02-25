@@ -5,12 +5,12 @@ import types
 
 from contextlib import contextmanager
 
-from kombu.utils.encoding import str_to_bytes
+from kombu.utils.encoding import str_to_bytes, ensure_bytes
 
 from celery import signature
 from celery import states
 from celery import group
-from celery.backends.cache import CacheBackend, DummyClient
+from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
 from celery.five import items, string, text_t
 from celery.utils import uuid
@@ -33,6 +33,11 @@ class test_CacheBackend(AppCase):
     def setup(self):
         self.tb = CacheBackend(backend='memory://', app=self.app)
         self.tid = uuid()
+        self.old_get_best_memcached = backends['memcache']
+        backends['memcache'] = lambda: (DummyClient, ensure_bytes)
+
+    def teardown(self):
+        backends['memcache'] = self.old_get_best_memcached
 
     def test_no_backend(self):
         self.app.conf.CELERY_CACHE_BACKEND = None
@@ -116,6 +121,19 @@ class test_CacheBackend(AppCase):
     def test_unknown_backend_raises_ImproperlyConfigured(self):
         with self.assertRaises(ImproperlyConfigured):
             CacheBackend(backend='unknown://', app=self.app)
+
+    def test_as_uri_no_servers(self):
+        self.assertEqual(self.tb.as_uri(), 'memory:///')
+
+    def test_as_uri_one_server(self):
+        backend = 'memcache://127.0.0.1:11211/'
+        b = CacheBackend(backend=backend, app=self.app)
+        self.assertEqual(b.as_uri(), backend)
+
+    def test_as_uri_multiple_servers(self):
+        backend = 'memcache://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'
+        b = CacheBackend(backend=backend, app=self.app)
+        self.assertEqual(b.as_uri(), backend)
 
 
 class MyMemcachedStringEncodingError(Exception):
