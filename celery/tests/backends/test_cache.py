@@ -118,6 +118,19 @@ class test_CacheBackend(AppCase):
         with self.assertRaises(ImproperlyConfigured):
             CacheBackend(backend='unknown://', app=self.app)
 
+    def test_as_uri_no_servers(self):
+        self.assertEqual(self.tb.as_uri(), 'memory:///')
+
+    def test_as_uri_one_server(self):
+        backend = 'memcache://127.0.0.1:11211/'
+        b = CacheBackend(backend=backend, app=self.app)
+        self.assertEqual(b.as_uri(), backend)
+
+    def test_as_uri_multiple_servers(self):
+        backend = 'memcache://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'
+        b = CacheBackend(backend=backend, app=self.app)
+        self.assertEqual(b.as_uri(), backend)
+
 
 class MyMemcachedStringEncodingError(Exception):
     pass
