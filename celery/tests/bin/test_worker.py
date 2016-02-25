@@ -217,6 +217,13 @@ class test_Worker(WorkerAppCase):
         self.assertTrue(worker.startup_info())
 
     @disable_stdouts
+    def test_startup_info_memcached_result_backend(self):
+        self.app.conf.result_backend = "cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/"
+        worker = self.Worker(app=self.app)
+        worker.on_start()
+        self.assertTrue(worker.startup_info())
+
+    @disable_stdouts
     def test_run(self):
         self.Worker(app=self.app).on_start()
         self.Worker(app=self.app, purge=True).on_start()
