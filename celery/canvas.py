@@ -713,7 +713,7 @@ class group(Signature):
     def __len__(self):
         return len(self.tasks)
 
-    def _prepared(self, tasks, partial_args, group_id, root_id, app, dict=dict,
+    def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,
                   from_dict=Signature.from_dict):
         for task in tasks:
