@@ -665,13 +665,6 @@ class test_maybe_signature(CanvasCase):
             maybe_signature(dict(self.add.s()), app=self.app), Signature,
         )
 
-    def test_is_list(self):
-        sigs = [dict(self.add.s(2, 2)), dict(self.add.s(4, 4))]
-        sigs = maybe_signature(sigs, app=self.app)
-        for sig in sigs:
-            self.assertIsInstance(sig, Signature)
-            self.assertIs(sig.app, self.app)
-
     def test_when_sig(self):
         s = self.add.s()
         self.assertIs(maybe_signature(s, app=self.app), s)
