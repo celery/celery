@@ -688,7 +688,7 @@ class DisabledBackend(BaseBackend):
             'Please see the documentation for more information.')
 
     def as_uri(self, *args, **kwargs):
-        return 'disabled'
+        return 'disabled://'
 
     get_state = get_status = get_result = get_traceback = _is_disabled
     wait_for = get_many = _is_disabled

@@ -586,7 +586,7 @@ class test_DisabledBackend(AppCase):
             DisabledBackend(self.app).get_state('foo')
 
     def test_as_uri(self):
-        self.assertEqual(DisabledBackend(self.app).as_uri(), 'disabled')
+        self.assertEqual(DisabledBackend(self.app).as_uri(), 'disabled://')
 
 
 class test_as_uri(AppCase):
