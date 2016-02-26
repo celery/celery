@@ -437,7 +437,7 @@ class ResultSet(ResultBase):
         self._app = app
         self._cache = None
         self.results = results
-        self.on_ready = promise()
+        self.on_ready = promise(args=(self,))
         self._on_full = ready_barrier
         if self._on_full:
             self._on_full.then(promise(self.on_ready))
@@ -457,7 +457,7 @@ class ResultSet(ResultBase):
         self.backend.remove_pending_result(self)
         if self.backend.is_async:
             self._cache = [r.get() for r in self.results]
-            self.on_ready(self)
+            self.on_ready()
 
     def remove(self, result):
         """Remove result from the set; it must be a member.
@@ -864,7 +864,7 @@ class EagerResult(AsyncResult):
         self._result = ret_value
         self._state = state
         self._traceback = traceback
-        self.on_ready = promise()
+        self.on_ready = promise(args=(self,))
         self.on_ready()
 
     def then(self, callback, on_error=None):
