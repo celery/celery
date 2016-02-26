@@ -54,6 +54,9 @@ class RPCBackend(amqp.AMQPBackend):
     def on_reply_declare(self, task_id):
         pass
 
+    def on_result_fulfilled(self, result):
+        pass
+
     @property
     def binding(self):
         return self.Queue(self.oid, self.exchange, self.oid,

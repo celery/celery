@@ -13,8 +13,8 @@
 """
 from __future__ import absolute_import
 
-import time
 import sys
+import time
 
 from datetime import timedelta
 
@@ -62,7 +62,7 @@ class _nulldict(dict):
     __setitem__ = update = setdefault = ignore
 
 
-class BaseBackend(object):
+class Backend(object):
     READY_STATES = states.READY_STATES
     UNREADY_STATES = states.UNREADY_STATES
     EXCEPTION_STATES = states.EXCEPTION_STATES
@@ -109,6 +109,7 @@ class BaseBackend(object):
             conf.accept_content if accept is None else accept,
         )
         self.url = url
+        self._pending_results = {}
 
     def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
@@ -222,33 +223,6 @@ class BaseBackend(object):
                      content_type=self.content_type,
                      content_encoding=self.content_encoding,
                      accept=self.accept)
-
-    def wait_for(self, task_id,
-                 timeout=None, interval=0.5, no_ack=True, on_interval=None):
-        """Wait for task and return its result.
-
-        If the task raises an exception, this exception
-        will be re-raised by :func:`wait_for`.
-
-        If `timeout` is not :const:`None`, this raises the
-        :class:`celery.exceptions.TimeoutError` exception if the operation
-        takes longer than `timeout` seconds.
-
-        """
-
-        time_elapsed = 0.0
-
-        while 1:
-            meta = self.get_task_meta(task_id)
-            if meta['status'] in states.READY_STATES:
-                return meta
-            if on_interval:
-                on_interval()
-            # avoid hammering the CPU checking status.
-            time.sleep(interval)
-            time_elapsed += interval
-            if timeout and time_elapsed >= timeout:
-                raise TimeoutError('The operation timed out.')
 
     def prepare_expires(self, value, type=None):
         if value is None:
@@ -401,6 +375,69 @@ class BaseBackend(object):
         # we're stripping it for consistency
         return self.url if include_password else maybe_sanitize_url(self.url).rstrip("/")
 
+
+class SyncBackendMixin(object):
+
+    def iter_native(self, result, timeout=None, interval=0.5, no_ack=True,
+                    on_message=None, on_interval=None):
+        results = result.results
+        if not results:
+            return iter([])
+        return self.get_many(
+            {r.id for r in results},
+            timeout=timeout, interval=interval, no_ack=no_ack,
+            on_message=on_message, on_interval=on_interval,
+        )
+
+    def wait_for_pending(self, result, timeout=None, interval=0.5,
+                         no_ack=True, on_interval=None, callback=None,
+                         propagate=True):
+        meta = self.wait_for(
+            result.id, timeout=timeout,
+            interval=interval,
+            on_interval=on_interval,
+            no_ack=no_ack,
+        )
+        if meta:
+            result._maybe_set_cache(meta)
+            return result.maybe_throw(propagate=propagate, callback=callback)
+
+    def wait_for(self, task_id,
+                 timeout=None, interval=0.5, no_ack=True, on_interval=None):
+        """Wait for task and return its result.
+
+        If the task raises an exception, this exception
+        will be re-raised by :func:`wait_for`.
+
+        If `timeout` is not :const:`None`, this raises the
+        :class:`celery.exceptions.TimeoutError` exception if the operation
+        takes longer than `timeout` seconds.
+
+        """
+
+        time_elapsed = 0.0
+
+        while 1:
+            meta = self.get_task_meta(task_id)
+            if meta['status'] in states.READY_STATES:
+                return meta
+            if on_interval:
+                on_interval()
+            # avoid hammering the CPU checking status.
+            time.sleep(interval)
+            time_elapsed += interval
+            if timeout and time_elapsed >= timeout:
+                raise TimeoutError('The operation timed out.')
+
+    def add_pending_result(self, result):
+        return result
+
+    def remove_pending_result(self, result):
+        return result
+
+
+class BaseBackend(Backend, SyncBackendMixin):
+    pass
 BaseDictBackend = BaseBackend  # XXX compat
 
 
