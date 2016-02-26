@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from contextlib import contextmanager
 
 from celery import states
+from celery.backends.base import SyncBackendMixin
 from celery.exceptions import (
     ImproperlyConfigured, IncompleteStream, TimeoutError,
 )
@@ -100,17 +101,15 @@ class test_AsyncResult(AppCase):
         x = self.app.AsyncResult(uuid())
         x.backend = Mock(name='backend')
         x.backend.get_task_meta.return_value = {}
-        x.backend.wait_for.return_value = {
-            'status': states.SUCCESS, 'result': 84,
-        }
+        x.backend.wait_for_pending.return_value = 84
         x.parent = EagerResult(uuid(), KeyError('foo'), states.FAILURE)
         with self.assertRaises(KeyError):
             x.get(propagate=True)
-        self.assertFalse(x.backend.wait_for.called)
+        self.assertFalse(x.backend.wait_for_pending.called)
 
         x.parent = EagerResult(uuid(), 42, states.SUCCESS)
         self.assertEqual(x.get(propagate=True), 84)
-        self.assertTrue(x.backend.wait_for.called)
+        self.assertTrue(x.backend.wait_for_pending.called)
 
     def test_get_children(self):
         tid = uuid()
@@ -477,7 +476,7 @@ class MockAsyncResultSuccess(AsyncResult):
         return self.result
 
 
-class SimpleBackend(object):
+class SimpleBackend(SyncBackendMixin):
         ids = []
 
         def __init__(self, ids=[]):
@@ -676,10 +675,12 @@ class test_GroupResult(AppCase):
     def test_failed(self):
         self.assertFalse(self.ts.failed())
 
-    def test_maybe_reraise(self):
+    def test_maybe_throw(self):
         self.ts.results = [Mock(name='r1')]
-        self.ts.maybe_reraise()
-        self.ts.results[0].maybe_reraise.assert_called_with()
+        self.ts.maybe_throw()
+        self.ts.results[0].maybe_throw.assert_called_with(
+            callback=None, propagate=True,
+        )
 
     def test_join__on_message(self):
         with self.assertRaises(ImproperlyConfigured):

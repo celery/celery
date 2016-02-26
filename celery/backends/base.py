@@ -427,6 +427,10 @@ class SyncBackendMixin(object):
     def remove_pending_result(self, result):
         return result
 
+    @property
+    def is_async(self):
+        return False
+
 
 class BaseBackend(Backend, SyncBackendMixin):
     pass

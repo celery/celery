@@ -140,6 +140,10 @@ class AsyncBackendMixin(object):
             callback=callback, on_message=on_message, propagate=propagate,
         )
 
+    @property
+    def is_async(self):
+        return True
+
 
 class BaseResultConsumer(object):
 

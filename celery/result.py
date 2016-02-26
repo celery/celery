@@ -168,7 +168,7 @@ class AsyncResult(ResultBase):
 
         if self._cache:
             if propagate:
-                self.maybe_throw()
+                self.maybe_throw(callback=callback)
             return self.result
 
         self.backend.add_pending_result(self)
@@ -178,6 +178,7 @@ class AsyncResult(ResultBase):
             on_interval=_on_interval,
             no_ack=no_ack,
             propagate=propagate,
+            callback=callback,
         )
     wait = get  # deprecated alias to :meth:`get`.
 
@@ -436,9 +437,10 @@ class ResultSet(ResultBase):
         self._app = app
         self._cache = None
         self.results = results
-        self._on_full = ready_barrier or barrier(self.results)
-        self._on_full.then(promise(self._on_ready))
         self.on_ready = promise()
+        self._on_full = ready_barrier
+        if self._on_full:
+            self._on_full.then(promise(self.on_ready))
 
     def add(self, result):
         """Add :class:`AsyncResult` as a new member of the set.
@@ -448,12 +450,14 @@ class ResultSet(ResultBase):
         """
         if result not in self.results:
             self.results.append(result)
-            self.ready.add(result)
+            if self._on_full:
+                self._on_full.add(result)
 
     def _on_ready(self):
         self.backend.remove_pending_result(self)
-        self._cache = [r.get() for r in self.results]
-        self.on_ready(self)
+        if self.backend.is_async:
+            self._cache = [r.get() for r in self.results]
+            self.on_ready(self)
 
     def remove(self, result):
         """Remove result from the set; it must be a member.
@@ -867,8 +871,15 @@ class EagerResult(AsyncResult):
         return self.on_ready.then(callback, on_error)
 
     def _get_task_meta(self):
+        return self._cache
+
+    @property
+    def _cache(self):
         return {'task_id': self.id, 'result': self._result, 'status':
                 self._state, 'traceback': self._traceback}
+
+    def __del__(self):
+        pass
 
     def __reduce__(self):
         return self.__class__, self.__reduce_args__()
