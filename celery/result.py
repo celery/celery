@@ -14,7 +14,7 @@ from collections import OrderedDict, deque
 from contextlib import contextmanager
 from copy import copy
 
-from amqp.promise import Thenable, barrier, promise
+from amqp.promise import Thenable, promise
 from kombu.utils import cached_property
 
 from . import current_app

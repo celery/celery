@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import pickle
-import socket
 
 from contextlib import contextmanager
 from datetime import timedelta
@@ -11,13 +10,12 @@ from billiard.einfo import ExceptionInfo
 
 from celery import states
 from celery.backends.amqp import AMQPBackend
-from celery.exceptions import TimeoutError
 from celery.five import Empty, Queue, range
 from celery.result import AsyncResult
 from celery.utils import uuid
 
 from celery.tests.case import (
-    AppCase, Mock, depends_on_current_app, patch, sleepdeprived,
+    AppCase, Mock, depends_on_current_app, sleepdeprived,
 )
 
 

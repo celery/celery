@@ -11,4 +11,3 @@ class test_Bunch(Case):
         x = Bunch(foo='foo', bar=2)
         self.assertEqual(x.foo, 'foo')
         self.assertEqual(x.bar, 2)
-
