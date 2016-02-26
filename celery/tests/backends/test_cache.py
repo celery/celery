@@ -5,12 +5,12 @@ import types
 
 from contextlib import contextmanager
 
-from kombu.utils.encoding import str_to_bytes
+from kombu.utils.encoding import str_to_bytes, ensure_bytes
 
 from celery import signature
 from celery import states
 from celery import group
-from celery.backends.cache import CacheBackend, DummyClient
+from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
 from celery.five import items, string, text_t
 from celery.utils import uuid
@@ -34,6 +34,11 @@ class test_CacheBackend(AppCase):
         self.app.conf.result_serializer = 'pickle'
         self.tb = CacheBackend(backend='memory://', app=self.app)
         self.tid = uuid()
+        self.old_get_best_memcached = backends['memcache']
+        backends['memcache'] = lambda: (DummyClient, ensure_bytes)
+
+    def teardown(self):
+        backends['memcache'] = self.old_get_best_memcached
 
     def test_no_backend(self):
         self.app.conf.cache_backend = None
