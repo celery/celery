@@ -1867,8 +1867,9 @@ Name of the pool class used by the worker.
 .. admonition:: Eventlet/Gevent
 
     Never use this option to select the eventlet or gevent pool.
-    You must use the `-P` option instead, otherwise the monkey patching
-    will happen too late and things will break in strange and silent ways.
+    You must use the `-P` option to :program:`celery worker` instead, to
+    ensure the monkey patches are not applied too late, causing things
+    to break in strange ways.
 
 Default is ``celery.concurrency.prefork:TaskPool``.
 
