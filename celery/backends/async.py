@@ -98,7 +98,10 @@ class AsyncBackendMixin(object):
 
         bucket = deque()
         for result in results:
-            self._collect_into(result, bucket)
+            if result._cache:
+                bucket.append(result)
+            else:
+                self._collect_into(result, bucket)
 
         for _ in self._wait_for_pending(
                 result,

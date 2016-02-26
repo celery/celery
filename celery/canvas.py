@@ -414,6 +414,11 @@ class chain(Signature):
         if self.tasks:
             return self.apply_async(args, kwargs)
 
+    def clone(self, *args, **kwargs):
+        s = Signature.clone(self, *args, **kwargs)
+        s.kwargs['tasks'] = [sig.clone() for sig in s.kwargs['tasks']]
+        return s
+
     def apply_async(self, args=(), kwargs={}, **options):
         # python is best at unpacking kwargs, so .run is here to do that.
         app = self.app
@@ -454,7 +459,7 @@ class chain(Signature):
             self.args, self.tasks, root_id, parent_id, None,
             self.app, _id, group_id, chord, clone=False,
         )
-        return results[-1]
+        return results[0]
 
     def prepare_steps(self, args, tasks,
                       root_id=None, parent_id=None, link_error=None, app=None,
