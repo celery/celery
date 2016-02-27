@@ -8,6 +8,31 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.21:
+
+3.1.21
+======
+:release-date: TBA
+:release-by:
+
+- **Prefork pool**: Fixes 100% CPU loop on Linux epoll (Issue #1845).
+
+    Also potential fix for: Issue #2142, Issue #2606
+
+- **Worker**: Fixes crash at startup when trying to censor passwords
+  in MongoDB and Cache result backend URLs (Issue #3079, Issue #3045,
+  Issue #3049, Issue #3068, Issue #3073).
+
+    Fix contributed by Maxime Verger.
+
+- **Programs**: :program:`celery shell --ipython` now compatible with newer
+  IPython versions.
+
+- **Results**: amqp/rpc backends: Fixed deserialization of JSON exceptions
+  (Issue #2518).
+
+    Fix contributed by Allard Hoeve.
+
 .. _version-3.1.20:
 
 3.1.20

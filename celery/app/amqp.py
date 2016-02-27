@@ -30,6 +30,9 @@ from . import routes as _routes
 
 __all__ = ['AMQP', 'Queues', 'TaskProducer', 'TaskConsumer']
 
+#: earliest date supported by time.mktime.
+INT_MIN = -2147483648
+
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
 .> {0.name:<16} exchange={0.exchange.name}({0.exchange.type}) \
@@ -253,11 +256,13 @@ class TaskProducer(Producer):
         if not isinstance(task_kwargs, dict):
             raise ValueError('task kwargs must be a dictionary')
         if countdown:  # Convert countdown to ETA.
+            self._verify_seconds(countdown, 'countdown')
             now = now or self.app.now()
             eta = now + timedelta(seconds=countdown)
             if self.utc:
                 eta = to_utc(eta).astimezone(self.app.timezone)
         if isinstance(expires, numbers.Real):
+            self._verify_seconds(expires, 'expires')
             now = now or self.app.now()
             expires = now + timedelta(seconds=expires)
             if self.utc:
@@ -337,6 +342,11 @@ class TaskProducer(Producer):
             )
         return task_id
     delay_task = publish_task   # XXX Compat
+
+    def _verify_seconds(self, s, what):
+        if s < INT_MIN:
+            raise ValueError('%s is out of range: %r' % (what, s))
+        return s
 
     @cached_property
     def event_dispatcher(self):
