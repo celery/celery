@@ -332,8 +332,9 @@ class EventReceiver(ConsumerMixin):
     def capture(self, limit=None, timeout=None, wakeup=True):
         """Open up a consumer capturing events.
 
-        This has to run in the main process, and it will never
-        stop unless forced via :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
+        This has to run in the main process, and it will never stop
+        unless :attr:`EventDispatcher.should_stop` is set to True, or
+        forced via :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
 
         """
         return list(self.consume(limit=limit, timeout=timeout, wakeup=wakeup))
