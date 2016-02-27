@@ -715,7 +715,8 @@ class group(Signature):
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,
-                  from_dict=Signature.from_dict):
+                  from_dict=Signature.from_dict,
+                  isinstance=isinstance, tuple=tuple):
         for task in tasks:
             if isinstance(task, CallableSignature):
                 # local sigs are always of type Signature, and we
