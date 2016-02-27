@@ -22,7 +22,6 @@ from functools import partial
 
 from billiard.process import current_process
 from kombu.utils.encoding import safe_str
-from kombu.utils.url import maybe_sanitize_url
 
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
@@ -206,9 +205,7 @@ class Worker(WorkController):
             timestamp=datetime.now().replace(microsecond=0),
             version=VERSION_BANNER,
             conninfo=self.app.connection().as_uri(),
-            results=maybe_sanitize_url(
-                self.app.conf.result_backend or 'disabled',
-            ),
+            results=self.app.backend.as_uri(),
             concurrency=concurrency,
             platform=safe_str(_platform.platform()),
             events=events,
