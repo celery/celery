@@ -30,6 +30,7 @@
     celery.backends.cache
     celery.backends.couchdb
     celery.backends.mongodb
+    celery.backends.elasticsearch
     celery.backends.redis
     celery.backends.riak
     celery.backends.cassandra

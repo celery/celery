@@ -133,7 +133,7 @@ It supports…
         - AMQP, Redis
         - memcached, MongoDB
         - SQLAlchemy, Django ORM
-        - Apache Cassandra, IronCache
+        - Apache Cassandra, IronCache, Elasticsearch
 
     - **Serialization**
 

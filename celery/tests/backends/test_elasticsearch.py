@@ -1,12 +1,11 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
+from celery import backends
 from celery.backends import elasticsearch as module
 from celery.backends.elasticsearch import ElasticsearchBackend
 from celery.exceptions import ImproperlyConfigured
-from celery import backends
-from celery.tests.case import (
-    AppCase, Mock, SkipTest, sentinel,
-)
+
+from celery.tests.case import AppCase, Mock, SkipTest, sentinel
 
 try:
     import elasticsearch
@@ -16,12 +15,10 @@ except ImportError:
 
 class test_ElasticsearchBackend(AppCase):
 
-
     def setup(self):
         if elasticsearch is None:
             raise SkipTest('elasticsearch is not installed.')
         self.backend = ElasticsearchBackend(app=self.app)
-
 
     def test_init_no_elasticsearch(self):
         prev, module.elasticsearch = module.elasticsearch, None
@@ -30,7 +27,6 @@ class test_ElasticsearchBackend(AppCase):
                 ElasticsearchBackend(app=self.app)
         finally:
             module.elasticsearch = prev
-
 
     def test_get(self):
         x = ElasticsearchBackend(app=self.app)
@@ -42,19 +38,25 @@ class test_ElasticsearchBackend(AppCase):
         dict_result = x.get(sentinel.task_id)
 
         self.assertEqual(dict_result, sentinel.result)
-        x._server.get.assert_called_once_with(doc_type=x.doc_type, id=sentinel.task_id, index=x.index)
-
+        x._server.get.assert_called_once_with(
+            doc_type=x.doc_type,
+            id=sentinel.task_id,
+            index=x.index,
+        )
 
     def test_get_none(self):
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
         x._server.get = Mock()
         x._server.get.return_value = sentinel.result
-        none_reusult = x.get(sentinel.task_id)
+        none_result = x.get(sentinel.task_id)
 
-        self.assertEqual(none_reusult, None)
-        x._server.get.assert_called_once_with(doc_type=x.doc_type, id=sentinel.task_id, index=x.index)
-
+        self.assertEqual(none_result, None)
+        x._server.get.assert_called_once_with(
+            doc_type=x.doc_type,
+            id=sentinel.task_id,
+            index=x.index,
+        )
 
     def test_delete(self):
         x = ElasticsearchBackend(app=self.app)
@@ -63,15 +65,17 @@ class test_ElasticsearchBackend(AppCase):
         x._server.delete.return_value = sentinel.result
 
         self.assertIsNone(x.delete(sentinel.task_id), sentinel.result)
-        x._server.delete.assert_called_once_with(doc_type=x.doc_type, id=sentinel.task_id, index=x.index)
-
+        x._server.delete.assert_called_once_with(
+            doc_type=x.doc_type,
+            id=sentinel.task_id,
+            index=x.index,
+        )
 
     def test_backend_by_url(self, url='elasticsearch://localhost:9200/index'):
         backend, url_ = backends.get_backend_by_url(url, self.app.loader)
 
         self.assertIs(backend, ElasticsearchBackend)
         self.assertEqual(url_, url)
-
 
     def test_backend_params_by_url(self):
         url = 'elasticsearch://localhost:9200/index/doc_type'
@@ -83,4 +87,3 @@ class test_ElasticsearchBackend(AppCase):
             self.assertEqual(x.scheme, 'elasticsearch')
             self.assertEqual(x.host, 'localhost')
             self.assertEqual(x.port, 9200)
-

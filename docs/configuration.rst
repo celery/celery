@@ -511,6 +511,10 @@ Can be one of the following:
     Use `Cassandra`_ to store the results.
     See :ref:`conf-cassandra-result-backend`.
 
+* elasticsearch
+    Use `Elasticsearch`_ to store the results.
+    See :ref:`conf-elasticsearch-result-backend`.
+
 * ironcache
     Use `IronCache`_ to store the results.
     See :ref:`conf-ironcache-result-backend`.
@@ -541,6 +545,7 @@ Can be one of the following:
 .. _`MongoDB`: http://mongodb.org
 .. _`Redis`: http://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
+.. _`Elasticsearch`: https://aws.amazon.com/elasticsearch-service/
 .. _`IronCache`: http://www.iron.io/cache
 .. _`CouchDB`: http://www.couchdb.com/
 .. _`Couchbase`: http://www.couchbase.com/
@@ -1001,6 +1006,21 @@ Example configuration
     cassandra_read_consistency = 'ONE'
     cassandra_write_consistency = 'ONE'
     cassandra_entry_ttl = 86400
+
+.. _conf-elasticsearch-result-backend:
+
+Elasticsearch backend settings
+------------------------------
+
+To use `Elasticsearch`_ as the result backend you simply need to
+configure the :setting:`result_backend` setting with the correct URL.
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    result_backend = 'elasticsearch://example.com:9200/index_name/doc_type'
 
 .. _conf-riak-result-backend:
 

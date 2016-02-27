@@ -86,6 +86,9 @@ Transports and Backends
 :celery[couchbase]:
     for using CouchBase as a result backend.
 
+:celery[elasticsearch]
+    for using Elasticsearch as a result backend.
+
 :celery[riak]:
     for using Riak as a result backend.
 

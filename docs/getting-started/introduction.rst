@@ -134,7 +134,7 @@ Celery is…
             - AMQP, Redis
             - memcached, MongoDB
             - SQLAlchemy, Django ORM
-            - Apache Cassandra
+            - Apache Cassandra, IronCache, Elasticsearch
 
         - **Serialization**
 
