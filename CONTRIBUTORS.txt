@@ -205,3 +205,4 @@ Wayne Chang, 2016/01/15
 Mike Attwood, 2016/01/22
 David Harrigan, 2016/02/01
 Ahmet Demir, 2016/02/27
+Maxime Verger, 2016/02/29
