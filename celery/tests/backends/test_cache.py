@@ -138,7 +138,7 @@ class test_CacheBackend(AppCase):
     @disable_stdouts
     def test_regression_worker_startup_info(self):
         self.app.conf.result_backend = (
-            "cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/"
+            'cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'
         )
         worker = self.app.Worker()
         worker.on_start()

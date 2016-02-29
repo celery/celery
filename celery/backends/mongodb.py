@@ -197,11 +197,11 @@ class MongoBackend(BaseBackend):
         self.collection.remove({'_id': group_id})
 
     def _forget(self, task_id):
-        """
-        Remove result from MongoDB.
+        """Remove result from MongoDB.
 
-        :raises celery.exceptions.OperationsError: if the task_id could not be
-                                                   removed.
+        :raises celery.exceptions.OperationsError:
+            if the task_id could not be removed.
+
         """
         # By using safe=True, this will wait until it receives a response from
         # the server.  Likewise, it will raise an OperationsError if the
@@ -246,15 +246,16 @@ class MongoBackend(BaseBackend):
         return collection
 
     def as_uri(self, include_password=False):
-        """
-        Return the backend as an URI, sanitizing the password or not.
-        It properly handles the case of a replica set.
+        """Return the backend as an URI.
+
+        :keyword include_password: Censor passwords.
+
         """
         if include_password:
             return self.url
 
-        if "," not in self.url:
-            return maybe_sanitize_url(self.url).rstrip("/")
+        if ',' not in self.url:
+            return maybe_sanitize_url(self.url).rstrip('/')
 
-        uri1, remainder = self.url.split(",", 1)
-        return ",".join([maybe_sanitize_url(uri1).rstrip("/"), remainder])
+        uri1, remainder = self.url.split(',', 1)
+        return ','.join([maybe_sanitize_url(uri1).rstrip('/'), remainder])

@@ -456,11 +456,11 @@ class test_as_uri(AppCase):
     def setup(self):
         self.b = BaseBackend(
             app=self.app,
-            url="sch://uuuu:pwpw@hostname.dom"
+            url='sch://uuuu:pwpw@hostname.dom'
         )
 
     def test_as_uri_include_password(self):
-        self.assertEqual(self.b.as_uri(True), "sch://uuuu:pwpw@hostname.dom")
+        self.assertEqual(self.b.as_uri(True), 'sch://uuuu:pwpw@hostname.dom')
 
     def test_as_uri_exclude_password(self):
-        self.assertEqual(self.b.as_uri(), "sch://uuuu:**@hostname.dom")
+        self.assertEqual(self.b.as_uri(), 'sch://uuuu:**@hostname.dom')
