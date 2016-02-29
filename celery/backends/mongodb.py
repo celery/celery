@@ -84,7 +84,7 @@ class MongoBackend(BaseBackend):
             uri_data = pymongo.uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
             hostslist = [
-                "{0}:{1}".format(x[0], x[1]) for x in uri_data['nodelist']
+                '{0}:{1}'.format(x[0], x[1]) for x in uri_data['nodelist']
             ]
             self.user = uri_data['username']
             self.password = uri_data['password']
@@ -230,11 +230,11 @@ class MongoBackend(BaseBackend):
         self.group_collection.remove({'_id': group_id})
 
     def _forget(self, task_id):
-        """
-        Remove result from MongoDB.
+        """Remove result from MongoDB.
 
-        :raises celery.exceptions.OperationsError: if the task_id could not be
-                                                   removed.
+        :raises celery.exceptions.OperationsError:
+            if the task_id could not be removed.
+
         """
         # By using safe=True, this will wait until it receives a response from
         # the server.  Likewise, it will raise an OperationsError if the
@@ -296,15 +296,16 @@ class MongoBackend(BaseBackend):
         return timedelta(seconds=self.expires)
 
     def as_uri(self, include_password=False):
-        """
-        Return the backend as an URI, sanitizing the password or not.
-        It properly handles the case of a replica set.
+        """Return the backend as an URI.
+
+        :keyword include_password: Censor passwords.
+
         """
         if include_password:
             return self.url
 
-        if "," not in self.url:
-            return maybe_sanitize_url(self.url).rstrip("/")
+        if ',' not in self.url:
+            return maybe_sanitize_url(self.url).rstrip('/')
 
-        uri1, remainder = self.url.split(",", 1)
-        return ",".join([maybe_sanitize_url(uri1).rstrip("/"), remainder])
+        uri1, remainder = self.url.split(',', 1)
+        return ','.join([maybe_sanitize_url(uri1).rstrip('/'), remainder])

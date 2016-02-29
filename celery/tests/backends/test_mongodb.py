@@ -31,13 +31,13 @@ MONGODB_GROUP_COLLECTION = 'group_collection1'
 
 class test_MongoBackend(AppCase):
 
-    default_url = "mongodb://uuuu:pwpw@hostname.dom/database"
+    default_url = 'mongodb://uuuu:pwpw@hostname.dom/database'
     replica_set_url = (
-        "mongodb://uuuu:pwpw@hostname.dom,"
-        "hostname.dom/database?replicaSet=rs"
+        'mongodb://uuuu:pwpw@hostname.dom,'
+        'hostname.dom/database?replicaSet=rs'
     )
-    sanitized_default_url = default_url.replace("pwpw", "**")
-    sanitized_replica_set_url = replica_set_url.replace("pwpw", "**")
+    sanitized_default_url = default_url.replace('pwpw', '**')
+    sanitized_replica_set_url = replica_set_url.replace('pwpw', '**')
 
     def setup(self):
         if pymongo is None:
@@ -410,8 +410,8 @@ class test_MongoBackend(AppCase):
     @disable_stdouts
     def test_regression_worker_startup_info(self):
         self.app.conf.result_backend = (
-            "mongodb://user:password@host0.com:43437,host1.com:43437"
-            "/work4us?replicaSet=rs&ssl=true"
+            'mongodb://user:password@host0.com:43437,host1.com:43437'
+            '/work4us?replicaSet=rs&ssl=true'
         )
         worker = self.app.Worker()
         worker.on_start()
