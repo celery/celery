@@ -638,6 +638,7 @@ def mask_modules(*modnames):
 def override_stdouts():
     """Override `sys.stdout` and `sys.stderr` with `WhateverIO`."""
     prev_out, prev_err = sys.stdout, sys.stderr
+    prev_rout, prev_rerr = sys.__stdout__, sys.__stderr__
     mystdout, mystderr = WhateverIO(), WhateverIO()
     sys.stdout = sys.__stdout__ = mystdout
     sys.stderr = sys.__stderr__ = mystderr
@@ -645,8 +646,19 @@ def override_stdouts():
     try:
         yield mystdout, mystderr
     finally:
-        sys.stdout = sys.__stdout__ = prev_out
-        sys.stderr = sys.__stderr__ = prev_err
+        sys.stdout = prev_out
+        sys.stderr = prev_err
+        sys.__stdout__ = prev_rout
+        sys.__stderr__ = prev_rerr
+
+
+def disable_stdouts(fun):
+
+    @wraps(fun)
+    def disable(*args, **kwargs):
+        with override_stdouts():
+            return fun(*args, **kwargs)
+    return disable
 
 
 def _old_patch(module, name, mocked):
