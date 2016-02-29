@@ -15,7 +15,7 @@ from celery.backends.mongodb import (
 from celery.exceptions import ImproperlyConfigured
 from celery.tests.case import (
     AppCase, MagicMock, Mock, SkipTest, ANY,
-    depends_on_current_app, patch, sentinel,
+    depends_on_current_app, disable_stdouts, patch, sentinel,
 )
 
 COLLECTION = 'taskmeta_celery'
@@ -32,7 +32,10 @@ MONGODB_GROUP_COLLECTION = 'group_collection1'
 class test_MongoBackend(AppCase):
 
     default_url = "mongodb://uuuu:pwpw@hostname.dom/database"
-    replica_set_url = "mongodb://uuuu:pwpw@hostname.dom,hostname.dom/database?replicaSet=rs"
+    replica_set_url = (
+        "mongodb://uuuu:pwpw@hostname.dom,"
+        "hostname.dom/database?replicaSet=rs"
+    )
     sanitized_default_url = default_url.replace("pwpw", "**")
     sanitized_replica_set_url = replica_set_url.replace("pwpw", "**")
 
@@ -403,6 +406,16 @@ class test_MongoBackend(AppCase):
     def test_as_uri_exclude_password_replica_set(self):
         backend = MongoBackend(app=self.app, url=self.replica_set_url)
         self.assertEqual(backend.as_uri(), self.sanitized_replica_set_url)
+
+    @disable_stdouts
+    def test_regression_worker_startup_info(self):
+        self.app.conf.result_backend = (
+            "mongodb://user:password@host0.com:43437,host1.com:43437"
+            "/work4us?replicaSet=rs&ssl=true"
+        )
+        worker = self.app.Worker()
+        worker.on_start()
+        self.assertTrue(worker.startup_info())
 
 
 class test_MongoBackend_no_mock(AppCase):

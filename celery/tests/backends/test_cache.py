@@ -16,7 +16,7 @@ from celery.five import items, string, text_t
 from celery.utils import uuid
 
 from celery.tests.case import (
-    AppCase, Mock, mask_modules, patch, reset_modules,
+    AppCase, Mock, disable_stdouts, mask_modules, patch, reset_modules,
 )
 
 PY3 = sys.version_info[0] == 3
@@ -135,6 +135,15 @@ class test_CacheBackend(AppCase):
         backend = 'memcache://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'
         b = CacheBackend(backend=backend, app=self.app)
         self.assertEqual(b.as_uri(), backend)
+
+    @disable_stdouts
+    def test_regression_worker_startup_info(self):
+        self.app.conf.result_backend = (
+            "cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/"
+        )
+        worker = self.app.Worker()
+        worker.on_start()
+        self.assertTrue(worker.startup_info())
 
 
 class MyMemcachedStringEncodingError(Exception):
