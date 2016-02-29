@@ -117,7 +117,7 @@ trace_ok_t = namedtuple('trace_ok_t', ('retval', 'info', 'runtime', 'retstr'))
 def task_has_custom(task, attr):
     """Return true if the task or one of its bases
     defines ``attr`` (excluding the one in BaseTask)."""
-    return mro_lookup(task.__class__, attr, stop=(BaseTask, object),
+    return mro_lookup(task.__class__, attr, stop={BaseTask, object},
                       monkey_patched=['celery.app.task'])
 
 

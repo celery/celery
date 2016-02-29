@@ -71,7 +71,7 @@ a configuration module."""
 
 
 def app_has_custom(app, attr):
-    return mro_lookup(app.__class__, attr, stop=(Celery, object),
+    return mro_lookup(app.__class__, attr, stop={Celery, object},
                       monkey_patched=[__name__])
 
 

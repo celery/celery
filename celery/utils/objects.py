@@ -18,7 +18,7 @@ class Bunch(object):
         self.__dict__.update(kwargs)
 
 
-def mro_lookup(cls, attr, stop=(), monkey_patched=[]):
+def mro_lookup(cls, attr, stop=set(), monkey_patched=[]):
     """Return the first node by MRO order that defines an attribute.
 
     :keyword stop: A list of types that if reached will stop the search.
@@ -32,8 +32,8 @@ def mro_lookup(cls, attr, stop=(), monkey_patched=[]):
     for node in cls.mro():
         if node in stop:
             try:
-                attr = node.__dict__[attr]
-                module_origin = attr.__module__
+                value = node.__dict__[attr]
+                module_origin = value.__module__
             except (AttributeError, KeyError):
                 pass
             else:

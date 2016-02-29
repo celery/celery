@@ -107,7 +107,7 @@ class test_mro_lookup(Case):
 
         A.x = 10
         self.assertEqual(mro_lookup(C, 'x'), A)
-        self.assertIsNone(mro_lookup(C, 'x', stop=(A,)))
+        self.assertIsNone(mro_lookup(C, 'x', stop={A}))
         B.x = 10
         self.assertEqual(mro_lookup(C, 'x'), B)
         C.x = 10
