@@ -75,7 +75,10 @@ Transports and Backends
     for using Amazon SQS as a message transport (*experimental*).
 
 :celery[memcache]:
-    for using memcached as a result backend.
+    for using memcached as a result backend (using pylibmc)
+
+:celery[pymemcache]:
+    for using memcached as a result backend (pure-python implementation).
 
 :celery[cassandra]:
     for using Apache Cassandra as a result backend with DataStax driver.
