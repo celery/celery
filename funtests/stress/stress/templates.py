@@ -63,89 +63,94 @@ def template_names():
 
 @template()
 class default(object):
-    accept_content = ['json']
-    broker_url = os.environ.get('CSTRESS_BROKER', 'pyamqp://')
-    broker_heartbeat = 30
-    result_backend = os.environ.get('CSTRESS_BACKEND', 'rpc://')
-    result_serializer = 'json'
-    result_persistent = True
-    result_expires = 300
-    result_cache_max = 100
-    task_default_queue = CSTRESS_QUEUE
-    task_queues = [
+    CELERY_ACCEPT_CONTENT = ['json']
+    BROKER_URL = os.environ.get('CSTRESS_BROKER', 'pyamqp://')
+    BROKER_HEARTBEAT = 30
+    CELERY_RESULT_BACKEND = os.environ.get('CSTRESS_BACKEND', 'rpc://')
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_RESULT_PERSISTENT = True
+    CELERY_RESULT_EXPIRES = 300
+    CELERY_MAX_CACHED_RESULTS = 100
+    CELERY_DEFAULT_QUEUE = CSTRESS_QUEUE
+    CELERY_TASK_QUEUES = [
         Queue(CSTRESS_QUEUE,
               durable=not CSTRESS_TRANS,
               no_ack=CSTRESS_TRANS),
     ]
-    task_serializer = 'json'
-    task_publish_retry_policy = {
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_TASK_PUBLISH_RETRY_POLICY = {
         'max_retries': 100,
         'interval_max': 2,
         'interval_step': 0.1,
     }
-    task_protocol = 2
+    CELERY_TASK_PROTOCOL = 2
     if CSTRESS_TRANS:
-        task_default_delivery_mode = 1
-    worker_prefetch_multiplier = int(os.environ.get('CSTRESS_PREFETCH', 10))
+        CELERY_DEFAULT_DELIVERY_MODE = 1
+    CELERYD_PREFETCH_MULTIPLIER = int(os.environ.get('CSTRESS_PREFETCH', 10))
 
 
 @template()
 class redis(default):
-    broker_url = os.environ.get('CSTRESS_BROKER', 'redis://')
-    broker_transport_options = {
+    BROKER_URL = os.environ.get('CSTRESS_BROKER', 'redis://')
+    BROKER_TRANSPORT_OPTIONS = {
         'fanout_prefix': True,
         'fanout_patterns': True,
     }
-    result_backend = os.environ.get('CSTRESS_BACKEND', 'redis://')
+    CELERY_RESULT_BACKEND = os.environ.get('CSTRESS_BACKEND', 'redis://')
 
 
 @template()
 class redistore(default):
-    result_backend = 'redis://'
+    CELERY_RESULT_BACKEND = 'redis://'
 
 
 @template()
 class acks_late(default):
-    task_acks_late = True
+    CELERY_ACKS_LATE = True
 
 
 @template()
 class pickle(default):
-    accept_content = ['pickle', 'json']
-    task_serializer = 'pickle'
-    result_serializer = 'pickle'
+    CELERY_ACCEPT_CONTENT = ['pickle', 'json']
+    CELERY_TASK_SERIALIZER = 'pickle'
+    CELERY_RESULT_SERIALIZER = 'pickle'
 
 
 @template()
 class confirms(default):
-    broker_url = 'pyamqp://'
-    broker_transport_options = {'confirm_publish': True}
+    BROKER_URL = 'pyamqp://'
+    BROKER_TRANSPORT_OPTIONS = {'confirm_publish': True}
 
 
 @template()
 class events(default):
-    task_send_events = True
-    task_send_sent_event = True
+    CELERY_SEND_EVENTS = True
+    CELERY_SEND_TASK_SENT_EVENT = True
 
 
 @template()
 class execv(default):
-    worker_force_execv = True
+    CELERYD_FORCE_EXECV = True
 
 
 @template()
 class sqs(default):
-    broker_url = 'sqs://'
-    broker_transport_options = {
+    BROKER_URL = 'sqs://'
+    BROKER_TRANSPORT_OPTIONS = {
         'region': os.environ.get('AWS_REGION', 'us-east-1'),
     }
 
 
 @template()
 class proto1(default):
-    task_protocol = 1
+    CELERY_TASK_PROTOCOL = 1
 
 
 @template()
 class vagrant1(default):
-    broker_url = 'pyamqp://testing:t3s71ng@192.168.33.123//testing'
+    BROKER_URL = 'pyamqp://testing:t3s71ng@192.168.33.123//testing'
+
+
+@template()
+class vagrant1_redis(default):
+    BROKER_URL = 'redis://192.168.33.123'
