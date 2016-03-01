@@ -186,6 +186,7 @@ provision () {
     apt_update
     configure_system
     apt_install powertop
+    apt_install htop
     install_git
     install_rabbitmq
     install_redis
