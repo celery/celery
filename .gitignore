@@ -24,4 +24,4 @@ Documentation/
 celery/tests/cover/
 .ve*
 cover/
-
+.vagrant/
