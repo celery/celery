@@ -794,8 +794,9 @@ class AsynPool(_pool.Pool):
             put_message(job)
         self._quick_put = send_job
 
-        def on_not_recovering(proc, fd, job):
-            error('Process inqueue damaged: %r %r' % (proc, proc.exitcode))
+        def on_not_recovering(proc, fd, job, exc):
+            error('Process inqueue damaged: %r %r: %r',
+                  proc, proc.exitcode, exc, exc_info=1))
             if proc._is_alive():
                 proc.terminate()
             hub.remove(fd)
@@ -824,7 +825,7 @@ class AsynPool(_pool.Pool):
                         # suspend until more data
                         errors += 1
                         if errors > 100:
-                            on_not_recovering(proc, fd, job)
+                            on_not_recovering(proc, fd, job, exc)
                             raise StopIteration()
                         yield
                     else:
@@ -840,7 +841,7 @@ class AsynPool(_pool.Pool):
                         # suspend until more data
                         errors += 1
                         if errors > 100:
-                            on_not_recovering(proc, fd, job)
+                            on_not_recovering(proc, fd, job, exc)
                             raise StopIteration()
                         yield
                     else:
