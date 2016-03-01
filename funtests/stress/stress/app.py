@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, unicode_literals
 
+import celery
 import os
 import sys
 import signal
 
 from time import sleep
 
-from celery import Celery
 from celery import signals
 from celery.bin.base import Option
 from celery.exceptions import SoftTimeLimitExceeded
@@ -17,8 +17,10 @@ from .templates import use_template, template_names
 
 logger = get_task_logger(__name__)
 
+IS_CELERY_4 = celery.VERSION[0] >= 4
 
-class App(Celery):
+
+class App(celery.Celery):
     template_selected = False
 
     def __init__(self, *args, **kwargs):
@@ -33,7 +35,8 @@ class App(Celery):
             )
         )
         signals.user_preload_options.connect(self.on_preload_parsed)
-        self.on_configure.connect(self._maybe_use_default_template)
+        if IS_CELERY_4:
+            self.on_configure.connect(self._maybe_use_default_template)
 
     def on_preload_parsed(self, options=None, **kwargs):
         self.use_template(options['template'])
@@ -47,6 +50,18 @@ class App(Celery):
     def _maybe_use_default_template(self, **kwargs):
         if not self.template_selected:
             self.use_template('default')
+
+    if not IS_CELERY_4:
+        after_configure = None
+
+        def _get_config(self):
+            ret = super(App, self)._get_config()
+            if self.after_configure:
+                self.after_configure(ret)
+            return ret
+
+        def on_configure(self):
+            self._maybe_use_default_template()
 
 app = App('stress', set_as_current=False)
 

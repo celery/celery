@@ -1,9 +1,12 @@
 from __future__ import absolute_import
 
+import celery
 import os
 
+from functools import partial
+
 from celery.five import items
-from kombu import Exchange, Queue
+from kombu import Queue
 from kombu.utils import symbol_by_name
 
 CSTRESS_TRANS = os.environ.get('CSTRESS_TRANS', False)
@@ -11,6 +14,8 @@ default_queue = 'c.stress.trans' if CSTRESS_TRANS else 'c.stress'
 CSTRESS_QUEUE = os.environ.get('CSTRESS_QUEUE_NAME', default_queue)
 
 templates = {}
+
+IS_CELERY_4 = celery.VERSION[0] >= 4
 
 
 def template(name=None):
@@ -21,15 +26,23 @@ def template(name=None):
     return _register
 
 
-def use_template(app, template='default'):
-    template = template.split(',')
+if IS_CELERY_4:
 
-    # mixin the rest of the templates when the config is needed
-    @app.on_after_configure.connect(weak=False)
-    def load_template(sender, source, **kwargs):
-        mixin_templates(template[1:], source)
+    def use_template(app, template='default'):
+        template = template.split(',')
 
-    app.config_from_object(templates[template[0]])
+        # mixin the rest of the templates when the config is needed
+        @app.on_after_configure.connect(weak=False)
+        def load_template(sender, source, **kwargs):
+            mixin_templates(template[1:], source)
+
+        app.config_from_object(templates[template[0]])
+else:
+
+    def use_template(app, template='default'):  # noqa
+        template = template.split(',')
+        app.after_configure = partial(mixin_templates, template[1:])
+        app.config_from_object(templates[template[0]])
 
 
 def mixin_templates(templates, conf):
