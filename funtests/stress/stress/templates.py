@@ -152,5 +152,6 @@ class vagrant1(default):
 
 
 @template()
-class vagrant1_redis(default):
+class vagrant1_redis(redis):
     BROKER_URL = 'redis://192.168.33.123'
+    CELERY_RESULT_BACKEND = 'redis://192.168.33.123'
