@@ -3,10 +3,8 @@ from __future__ import absolute_import, unicode_literals
 from operator import itemgetter
 
 from celery import bootsteps
-from celery.five import items, values
+from celery.five import items
 from celery.utils.log import get_logger
-
-from celery.worker.state import revoked
 
 from .events import Events
 
@@ -15,7 +13,7 @@ __all__ = ['Mingle']
 MINGLE_GET_FIELDS = itemgetter('clock', 'revoked')
 
 logger = get_logger(__name__)
-info = logger.info
+debug, info, exception = logger.debug, logger.info, logger.exception
 
 
 class Mingle(bootsteps.StartStopStep):
@@ -34,20 +32,34 @@ class Mingle(bootsteps.StartStopStep):
     def start(self, c):
         info('mingle: searching for neighbors')
         I = c.app.control.inspect(timeout=1.0, connection=c.connection)
-        replies = I.hello(c.hostname, revoked._data) or {}
-        replies.pop(c.hostname, None)
+        our_revoked = c.controller.state.revoked
+        replies = I.hello(c.hostname, our_revoked._data) or {}
+        replies.pop(c.hostname, None)  # delete my own response
         if replies:
             info('mingle: sync with %s nodes',
                  len([reply for reply, value in items(replies) if value]))
-            for reply in values(replies):
-                if reply:
-                    try:
-                        other_clock, other_revoked = MINGLE_GET_FIELDS(reply)
-                    except KeyError:  # reply from pre-3.1 worker
-                        pass
-                    else:
-                        c.app.clock.adjust(other_clock)
-                        revoked.update(other_revoked)
+            [self.on_node_reply(c, nodename, reply)
+             for nodename, reply in items(replies) if reply]
             info('mingle: sync complete')
         else:
             info('mingle: all alone')
+
+    def on_node_reply(self, c, nodename, reply):
+        debug('mingle: processing reply from %s', nodename)
+        try:
+            self.sync_with_node(c, **reply)
+        except MemoryError:
+            raise
+        except Exception as exc:
+            exception('mingle: sync with %s failed: %r', nodename, exc)
+
+    def sync_with_node(self, c, clock=None, revoked=None, **kwargs):
+        self.on_clock_event(c, clock)
+        self.on_revoked_received(c, revoked)
+
+    def on_clock_event(self, c, clock):
+        c.app.clock.adjust(clock) if clock else c.app.clock.forward()
+
+    def on_revoked_received(self, c, revoked):
+        if revoked:
+            c.controller.state.revoked.update(revoked)

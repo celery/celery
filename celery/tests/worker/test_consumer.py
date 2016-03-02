@@ -6,7 +6,6 @@ import socket
 from billiard.exceptions import RestartFreqExceeded
 
 from celery.datastructures import LimitedSet
-from celery.worker import state as worker_state
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import CLOSE, Consumer, dump_body
 from celery.worker.consumer.gossip import Gossip
@@ -278,43 +277,42 @@ class test_Mingle(AppCase):
         mingle.start(c)
 
     def test_start(self):
-        try:
-            c = Mock()
-            c.app.connection_for_read = _amqp_connection()
-            mingle = Mingle(c)
-            self.assertTrue(mingle.enabled)
+        c = Mock()
+        c.app.connection_for_read = _amqp_connection()
+        mingle = Mingle(c)
+        self.assertTrue(mingle.enabled)
 
-            Aig = LimitedSet()
-            Big = LimitedSet()
-            Aig.add('Aig-1')
-            Aig.add('Aig-2')
-            Big.add('Big-1')
+        Aig = LimitedSet()
+        Big = LimitedSet()
+        Aig.add('Aig-1')
+        Aig.add('Aig-2')
+        Big.add('Big-1')
 
-            I = c.app.control.inspect.return_value = Mock()
-            I.hello.return_value = {
-                'A@example.com': {
-                    'clock': 312,
-                    'revoked': Aig._data,
-                },
-                'B@example.com': {
-                    'clock': 29,
-                    'revoked': Big._data,
-                },
-                'C@example.com': {
-                    'error': 'unknown method',
-                },
-            }
+        I = c.app.control.inspect.return_value = Mock()
+        I.hello.return_value = {
+            'A@example.com': {
+                'clock': 312,
+                'revoked': Aig._data,
+            },
+            'B@example.com': {
+                'clock': 29,
+                'revoked': Big._data,
+            },
+            'C@example.com': {
+                'error': 'unknown method',
+            },
+        }
 
-            mingle.start(c)
-            I.hello.assert_called_with(c.hostname, worker_state.revoked._data)
-            c.app.clock.adjust.assert_has_calls([
-                call(312), call(29),
-            ], any_order=True)
-            self.assertIn('Aig-1', worker_state.revoked)
-            self.assertIn('Aig-2', worker_state.revoked)
-            self.assertIn('Big-1', worker_state.revoked)
-        finally:
-            worker_state.revoked.clear()
+        our_revoked = c.controller.state.revoked = LimitedSet()
+
+        mingle.start(c)
+        I.hello.assert_called_with(c.hostname, our_revoked._data)
+        c.app.clock.adjust.assert_has_calls([
+            call(312), call(29),
+        ], any_order=True)
+        self.assertIn('Aig-1', our_revoked)
+        self.assertIn('Aig-2', our_revoked)
+        self.assertIn('Big-1', our_revoked)
 
 
 def _amqp_connection():
