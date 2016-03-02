@@ -25,7 +25,7 @@ class test_Entry(Case):
     def test_cancel(self):
         tref = timer2.Entry(lambda x: x, (1, ), {})
         tref.cancel()
-        self.assertTrue(tref.canceled)
+        self.assertTrue(tref.cancelled)
 
     def test_repr(self):
         tref = timer2.Entry(lambda x: x(1, ), {})
@@ -118,7 +118,7 @@ class test_Timer(Case):
             args2, _ = t.schedule.enter_after.call_args_list[1]
             sec2, tref2, _ = args2
             self.assertEqual(sec2, 0.03)
-            tref2.canceled = True
+            tref2.cancelled = True
             tref2()
 
             self.assertEqual(t.schedule.enter_after.call_count, 2)
