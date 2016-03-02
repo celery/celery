@@ -7,7 +7,7 @@ import itertools
 from copy import deepcopy
 from pickle import loads, dumps
 
-from amqp import promise
+from vine import promise
 
 from celery import Celery
 from celery import shared_task, current_app

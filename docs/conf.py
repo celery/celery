@@ -76,6 +76,7 @@ intersphinx_mapping = {
     'djcelery': ('http://django-celery.readthedocs.org/en/master', None),
     'cyme': ('http://cyme.readthedocs.org/en/latest', None),
     'amqp': ('http://amqp.readthedocs.org/en/latest', None),
+    'vine': ('http://vine.readthedocs.org/en/latest', None),
     'flower': ('http://flower.readthedocs.org/en/latest', None),
 }
 

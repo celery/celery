@@ -19,10 +19,10 @@ except ImportError:  # Py2
     from inspect import isfunction, getargspec  # noqa
 from itertools import chain, islice
 
-from amqp import promise
 from kombu.utils.functional import (
     dictfilter, lazy, maybe_evaluate, is_list, maybe_list,
 )
+from vine import promise
 
 from celery.five import UserDict, UserList, keys, range
 

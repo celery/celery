@@ -17,7 +17,6 @@ import os
 from collections import defaultdict
 from time import sleep
 
-from amqp.promise import ppartial, promise
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.async.semaphore import DummyLock
@@ -25,6 +24,7 @@ from kombu.five import buffer_t, items
 from kombu.syn import _detect_environment
 from kombu.utils.encoding import safe_repr, bytes_t
 from kombu.utils.limits import TokenBucket
+from vine import ppartial, promise
 
 from celery import bootsteps
 from celery import signals

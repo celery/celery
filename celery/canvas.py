@@ -20,8 +20,8 @@ from functools import partial as _partial, reduce
 from operator import itemgetter
 from itertools import chain as _chain
 
-from amqp.promise import barrier
 from kombu.utils import cached_property, fxrange, reprcall, uuid
+from vine import barrier
 
 from celery._state import current_app
 from celery.local import try_import

@@ -33,7 +33,6 @@ from pickle import HIGHEST_PROTOCOL
 from time import sleep
 from weakref import WeakValueDictionary, ref
 
-from amqp import promise
 from billiard.pool import RUN, TERMINATE, ACK, NACK, WorkersJoined
 from billiard import pool as _pool
 from billiard.compat import buf_t, setblocking, isblocking
@@ -42,6 +41,8 @@ from kombu.async import READ, WRITE, ERR
 from kombu.serialization import pickle as _pickle
 from kombu.utils import fxrange
 from kombu.utils.eventio import SELECT_BAD_FD
+from vine import promise
+
 from celery.five import Counter, items, values
 from celery.utils.functional import noop
 from celery.utils.log import get_logger

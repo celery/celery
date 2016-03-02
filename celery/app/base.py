@@ -16,11 +16,11 @@ from collections import defaultdict, deque
 from operator import attrgetter
 from functools import wraps
 
-from amqp import starpromise
 from kombu import pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
 from kombu.utils import cached_property, register_after_fork, uuid
+from vine import starpromise
 
 from celery import platforms
 from celery import signals
