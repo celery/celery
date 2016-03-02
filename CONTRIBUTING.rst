@@ -187,7 +187,7 @@ the developers fix the bug.
 
 A bug could be fixed by some other improvements and fixes - it might not have an
 existing report in the bug tracker. Make sure you're using the latest releases of
-celery, billiard and kombu.
+celery, billiard, kombu, amqp and vine.
 
 5) **Collect information about the bug.**
 
@@ -246,6 +246,7 @@ issue tracker.
 * Celery: http://github.com/celery/celery/issues/
 * Kombu: http://github.com/celery/kombu/issues
 * pyamqp: http://github.com/celery/pyamqp/issues
+* vine: http://github.com/celery/vine/issues
 * librabbitmq: http://github.com/celery/librabbitmq/issues
 * Django-Celery: http://github.com/celery/django-celery/issues
 
@@ -887,6 +888,7 @@ celery
 
 :git: https://github.com/celery/celery
 :CI: http://travis-ci.org/#!/celery/celery
+:Windows-CI: https://ci.appveyor.com/project/ask/celery
 :PyPI: http://pypi.python.org/pypi/celery
 :docs: http://docs.celeryproject.org
 
@@ -897,6 +899,7 @@ Messaging library.
 
 :git: https://github.com/celery/kombu
 :CI: http://travis-ci.org/#!/celery/kombu
+:Windows-CI: https://ci.appveyor.com/project/ask/kombu
 :PyPI: http://pypi.python.org/pypi/kombu
 :docs: http://kombu.readthedocs.org
 
@@ -907,8 +910,20 @@ Python AMQP 0.9.1 client.
 
 :git: https://github.com/celery/py-amqp
 :CI: http://travis-ci.org/#!/celery/py-amqp
+:Windows-CI: https://ci.appveyor.com/project/ask/py-amqp
 :PyPI: http://pypi.python.org/pypi/amqp
 :docs: http://amqp.readthedocs.org
+
+vine
+----
+
+Promise/deferred implementation.
+
+:git: https://github.com/celery/vine/
+:CI: http://travis-ci.org/#!/celery/vine/
+:Windows-CI: https://ci.appveyor.com/project/ask/vine
+:PyPI: http://pypi.python.org/pypi/vine
+:docs: http://vine.readthedocs.org
 
 billiard
 --------
@@ -917,6 +932,8 @@ Fork of multiprocessing containing improvements
 that will eventually be merged into the Python stdlib.
 
 :git: https://github.com/celery/billiard
+:CI: http://travis-ci.org/#!/celery/billiard/
+:Windows-CI: https://ci.appveyor.com/project/ask/billiard
 :PyPI: http://pypi.python.org/pypi/billiard
 
 librabbitmq
