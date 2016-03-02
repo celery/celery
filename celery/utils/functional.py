@@ -353,10 +353,11 @@ class _regen(UserList, list):
         return self.__it.__length_hint__()
 
     def __repr__(self):
+        # override list.__repr__ to avoid consuming the generator
         if self.__done:
             return repr(self.__consumed)
         else:
-            return '[{}]'.format(', '.join(
+            return '[{0}]'.format(', '.join(
                 [repr(x) for x in self.__consumed] + ['...']))
 
     def __iter__(self):
@@ -384,6 +385,8 @@ class _regen(UserList, list):
                 return self.__consumed[index]
 
     def __nonzero__(self):
+        # nonzero for list calls len() which would consume the generator: 
+        # override to consume maximum of one item.
         if len(self.__consumed):
             return True
         try:
@@ -402,6 +405,7 @@ class _regen(UserList, list):
         return self.__consumed
 
     def fully_consumed(self):
+        """Return whether the iterator has been fully consumed"""
         return self.__done
 
 
