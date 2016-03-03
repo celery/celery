@@ -255,6 +255,8 @@ class test_LimitedSet(Case):
         s.add('foo')
         s.discard('foo')
         self.assertNotIn('foo', s)
+        self.assertEqual(len(s._data), 0)
+        self.assertEqual(len(s._heap), 0)
         s.discard('foo')
 
     def test_clear(self):
