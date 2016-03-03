@@ -633,7 +633,7 @@ class LimitedSet(object):
         except KeyError:
             return
         try:
-            self._heap.remove((value, itime))
+            self._heap.remove((itime, value))
         except ValueError:
             pass
         self._data.pop(value, None)
