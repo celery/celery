@@ -333,7 +333,7 @@ def autoscale(state, max=None, min=None):
     autoscaler = state.consumer.controller.autoscaler
     if autoscaler:
         max_, min_ = autoscaler.update(max, min)
-        return {'ok': 'autoscale now min={0} max={1}'.format(max_, min_)}
+        return {'ok': 'autoscale now max={0} min={1}'.format(max_, min_)}
     raise ValueError('Autoscale not enabled')
 
 
