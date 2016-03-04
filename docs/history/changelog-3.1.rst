@@ -59,7 +59,7 @@ new in Celery 3.1.
 
     Fix contributed by Allard Hoeve.
 
-- **Prefork pool: The `process inqueue damaged` error message now includes
+- **Prefork pool**: The `process inqueue damaged` error message now includes
   the original exception raised.
 
 - **Documentation**: Includes improvements by:
