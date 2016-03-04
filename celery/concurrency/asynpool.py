@@ -532,7 +532,9 @@ class AsynPool(_pool.Pool):
         waiting_to_start = self._waiting_to_start
 
         def verify_process_alive(proc):
-            if proc._is_alive() and proc in waiting_to_start:
+            proc = proc()  # is a weakref
+            if (proc is not None and proc._is_alive() and
+                    proc in waiting_to_start):
                 assert proc.outqR_fd in fileno_to_outq
                 assert fileno_to_outq[proc.outqR_fd] is proc
                 assert proc.outqR_fd in hub.readers
@@ -564,7 +566,7 @@ class AsynPool(_pool.Pool):
 
             waiting_to_start.add(proc)
             hub.call_later(
-                self._proc_alive_timeout, verify_process_alive, proc,
+                self._proc_alive_timeout, verify_process_alive, ref(proc),
             )
 
         self.on_process_up = on_process_up
