@@ -219,15 +219,17 @@ tasks.
 This benefits performance but it also means that tasks may be stuck
 waiting for long running tasks to complete::
 
-    -> send T1 to Process A
+    -> send task T1 to process A
     # A executes T1
-    -> send T2 to Process B
+    -> send task T2 to process B
     # B executes T2
-    <- T2 complete
+    <- T2 complete sent by process B
 
-    -> send T3 to Process A
+    -> send task T3 to process A
     # A still executing T1, T3 stuck in local buffer and will not start until
     # T1 returns, and other queued tasks will not be sent to idle processes
+    <- T1 complete sent by process A
+    # A executes T3
 
 The worker will send tasks to the process as long as the pipe buffer is
 writable.  The pipe buffer size varies based on the operating system: some may
@@ -242,4 +244,17 @@ worker option:
     $ celery -A proj worker -l info -Ofair
 
 With this option enabled the worker will only write to processes that are
-available for work, disabling the prefetch behavior.
+available for work, disabling the prefetch behavior::
+
+-> send task T1 to process A
+# A executes T1
+-> send task T2 to process B
+# B executes T2
+<- T2 complete sent by process B
+
+-> send T3 to process B
+# B executes T3
+
+<- T3 complete sent by process B
+<- T1 complete sent by process A
+
