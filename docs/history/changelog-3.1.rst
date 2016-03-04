@@ -8,6 +8,64 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.21:
+
+3.1.21
+======
+:release-date: 2016-03-04 11:16 A.M PST
+:release-by: Ask Solem
+
+- **Requirements**
+
+    - Now depends on :ref:`Kombu 3.0.34 <kombu:version-3.0.34>`.
+
+    - Now depends on :mod:`billiard` 3.3.0.23.
+
+- **Prefork pool**: Fixes 100% CPU loop on Linux epoll (Issue #1845).
+
+    Also potential fix for: Issue #2142, Issue #2606
+
+- **Prefork pool**: Fixes memory leak related to processes exiting
+  (Issue #2927).
+
+- **Worker**: Fixes crash at startup when trying to censor passwords
+  in MongoDB and Cache result backend URLs (Issue #3079, Issue #3045,
+  Issue #3049, Issue #3068, Issue #3073).
+
+    Fix contributed by Maxime Verger.
+
+- **Task**: An exception is now raised if countdown/expires is less
+  than -2147483648 (Issue #3078).
+
+- **Programs**: :program:`celery shell --ipython` now compatible with newer
+  IPython versions.
+
+- **Programs**: The DuplicateNodeName warning emitted by inspect/control
+  now includes a list of the node names returned.
+
+    Contributed by Sebastian Kalinowski.
+
+- **Utils**: The ``.discard(item)`` method of
+  :class:`~celery.datastructures.LimitedSet` did not actually remove the item
+  (Issue #3087).
+
+    Fix contributed by Dave Smith.
+
+- **Worker**: Node name formatting now emits less confusing error message
+  for unmatched format keys (Issue #3016).
+
+- **Results**: amqp/rpc backends: Fixed deserialization of JSON exceptions
+  (Issue #2518).
+
+    Fix contributed by Allard Hoeve.
+
+- **Prefork pool: The `process inqueue damaged` error message now includes
+  the original exception raised.
+
+- **Documentation**: Includes improvements by:
+
+    - Jeff Widman.
+
 .. _version-3.1.20:
 
 3.1.20
