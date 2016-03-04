@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 import errno
+import gc
 import os
 import select
 import socket
@@ -408,6 +409,10 @@ class AsynPool(_pool.Pool):
         if self._timeout_handler:
             self.on_soft_timeout = self._timeout_handler.on_soft_timeout
             self.on_hard_timeout = self._timeout_handler.on_hard_timeout
+
+    def _create_worker_process(self, i):
+        gc.collect()  # Issue #2927
+        return super(AsynPool, self)._create_worker_process(i)
 
     def _event_process_exit(self, hub, proc):
         # This method is called whenever the process sentinel is readable.
