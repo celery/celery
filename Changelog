@@ -19,6 +19,9 @@ new in Celery 3.1.
 
     Also potential fix for: Issue #2142, Issue #2606
 
+- **Prefork pool**: Fixes memory leak related to processes exiting
+  (Issue #2927).
+
 - **Worker**: Fixes crash at startup when trying to censor passwords
   in MongoDB and Cache result backend URLs (Issue #3079, Issue #3045,
   Issue #3049, Issue #3068, Issue #3073).
