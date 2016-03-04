@@ -19,6 +19,8 @@ new in Celery 3.1.
 
     - Now depends on :ref:`Kombu 3.0.34 <kombu:version-3.0.34>`.
 
+    - Now depends on :mod:`billiard` 3.3.0.23.
+
 - **Prefork pool**: Fixes 100% CPU loop on Linux epoll (Issue #1845).
 
     Also potential fix for: Issue #2142, Issue #2606
