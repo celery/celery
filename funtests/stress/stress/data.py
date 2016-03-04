@@ -1,12 +1,43 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-import json
-
-from celery.utils.debug import humanbytes
-from celery.utils.imports import qualname
+try:
+    import simplejson as json
+except ImportError:
+    import json  # noqa
 
 type_registry = {}
+
+
+class JSONEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        try:
+            return super(JSONEncoder, self).default(obj)
+        except TypeError:
+            reducer = getattr(obj, '__to_json__', None)
+            if reducer:
+                return reducer()
+            raise
+
+
+def decode_hook(d):
+    try:
+        d = d['py/obj']
+    except KeyError:
+        return d
+    type_registry[d['type']](**d['attrs'])
+
+
+def install_json():
+    json._default_encoder = JSONEncoder()
+    json._default_decoder.object_hook = decode_hook
+install_json()  # ugh, ugly but it's a test suite after all
+
+
+# this imports kombu.utils.json, so can only import after install_json()
+from celery.utils.debug import humanbytes  # noqa
+from celery.utils.imports import qualname  # noqa
 
 
 def json_reduce(obj, attrs):
@@ -43,29 +74,3 @@ class Data(object):
 
 BIG = Data('BIG', 'x' * 2 ** 20 * 8)
 SMALL = Data('SMALL', 'e' * 1024)
-
-
-class JSONEncoder(json.JSONEncoder):
-
-    def default(self, obj):
-        try:
-            return super(JSONEncoder, self).default(obj)
-        except TypeError:
-            reducer = getattr(obj, '__to_json__', None)
-            if reducer:
-                return reducer()
-            raise
-
-
-def decode_hook(d):
-    try:
-        d = d['py/obj']
-    except KeyError:
-        return d
-    type_registry[d['type']](**d['attrs'])
-
-
-def install_json():
-    json._default_encoder = JSONEncoder()
-    json._default_decoder.object_hook = decode_hook
-install_json()  # ugh, ugly but it's a test suite after all

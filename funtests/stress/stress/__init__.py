@@ -4,6 +4,8 @@ from __future__ import absolute_import
 import os
 import time
 
+from .data import install_json  # noqa
+
 if os.environ.get('C_SLEEP'):
 
     _orig_sleep = time.sleep
@@ -14,6 +16,5 @@ if os.environ.get('C_SLEEP'):
         traceback.print_stack()
         _orig_sleep(n)
     time.sleep = _sleep
-
 
 from .app import app  # noqa
