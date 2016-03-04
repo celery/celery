@@ -81,6 +81,8 @@ def process_initializer(app, hostname):
     for name, task in items(app.tasks):
         task.__trace__ = build_tracer(name, task, app.loader, hostname,
                                       app=app)
+    from celery.worker import state as worker_state
+    worker_state.reset_state()
     signals.worker_process_init.send(sender=None)
 
 

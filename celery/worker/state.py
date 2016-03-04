@@ -63,6 +63,14 @@ should_stop = None
 should_terminate = None
 
 
+def reset_state():
+    reserved_requests.clear()
+    active_requests.clear()
+    total_count.clear()
+    all_total_count[:] = [0]
+    revoked.clear()
+
+
 def maybe_shutdown():
     if should_stop is not None and should_stop is not False:
         raise WorkerShutdown(should_stop)
