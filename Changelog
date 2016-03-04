@@ -45,6 +45,12 @@ new in Celery 3.1.
 
     Contributed by Sebastian Kalinowski.
 
+- **Utils**: The ``.discard(item)`` method of
+  :class:`~celery.datastructures.LimitedSet` did not actually remove the item
+  (Issue #3087).
+
+    Fix contributed by Dave Smith.
+
 - **Worker**: Node name formatting now emits less confusing error message
   for unmatched format keys (Issue #3016).
 
