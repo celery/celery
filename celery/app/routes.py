@@ -9,10 +9,15 @@
 """
 from __future__ import absolute_import
 
+import re
+import string
+
+from collections import Mapping, OrderedDict
+
 from kombu import Queue
 
 from celery.exceptions import QueueNotFound
-from celery.five import string_t
+from celery.five import items, string_t
 from celery.utils import lpmerge
 from celery.utils.functional import firstmethod, mlazy
 from celery.utils.imports import instantiate
@@ -22,11 +27,25 @@ __all__ = ['MapRoute', 'Router', 'prepare']
 _first_route = firstmethod('route_for_task')
 
 
+def glob_to_re(glob, quote=string.punctuation.replace('*', '')):
+    glob = ''.join('\\' + c if c in quote else c for c in glob)
+    return glob.replace('*', '.+?')
+
+
 class MapRoute(object):
     """Creates a router out of a :class:`dict`."""
 
     def __init__(self, map):
-        self.map = map
+        map = items(map) if isinstance(map, Mapping) else map
+        self.map = {}
+        self.patterns = OrderedDict()
+        for k, v in map:
+            if isinstance(k, re._pattern_type):
+                self.patterns[k] = v
+            elif '*' in k:
+                self.patterns[re.compile(glob_to_re(k))] = v
+            else:
+                self.map[k] = v
 
     def route_for_task(self, task, *args, **kwargs):
         try:
@@ -35,6 +54,12 @@ class MapRoute(object):
             pass
         except ValueError:
             return {'queue': self.map[task]}
+        for regex, route in items(self.patterns):
+            if regex.match(task):
+                try:
+                    return dict(route)
+                except ValueError:
+                    return {'queue': route}
 
 
 class Router(object):
@@ -85,7 +110,7 @@ def prepare(routes):
     """Expands the :setting:`task_routes` setting."""
 
     def expand_route(route):
-        if isinstance(route, dict):
+        if isinstance(route, (Mapping, list, tuple)):
             return MapRoute(route)
         if isinstance(route, string_t):
             return mlazy(instantiate, route)

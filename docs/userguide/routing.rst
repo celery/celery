@@ -41,7 +41,28 @@ With this route enabled import feed tasks will be routed to the
 `"feeds"` queue, while all other tasks will be routed to the default queue
 (named `"celery"` for historical reasons).
 
-Now you can start server `z` to only process the feeds queue like this:
+Alternatively, you can use glob pattern matching, or even regular expressions,
+to match all tasks in the ``feed.tasks`` namespace::
+
+    task_routes = {'feed.tasks.*': {'queue': 'feeds'}}
+
+If the order in which the patterns are matched is important you should should
+specify a tuple as the task router instead::
+
+    task_routes = ([
+        ('feed.tasks.*': {'queue': 'feeds'}),
+        ('web.tasks.*': {'queue': 'web'}),
+        (re.compile(r'(video|image)\.tasks\..*'), {'queue': 'media'}),
+    ],)
+
+.. note::
+
+    The :setting:`task_routes` setting can either be a dictionary, or a
+    list of router objects, so in this case we need to specify the setting
+    as a tuple containing a list.
+
+After installing the router, you can start server `z` to only process the feeds
+queue like this:
 
 .. code-block:: console
 

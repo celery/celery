@@ -72,6 +72,23 @@ class test_MapRoute(RouteCase):
         )
         self.assertIsNone(route.route_for_task('celery.awesome'))
 
+    def test_route_for_task__glob(self):
+        route = routes.MapRoute([
+            ('proj.tasks.*', 'routeA'),
+            ('demoapp.tasks.bar.*', {'exchange': 'routeB'}),
+        ])
+        self.assertDictEqual(
+            route.route_for_task('proj.tasks.foo'),
+            {'queue': 'routeA'},
+        )
+        self.assertDictEqual(
+            route.route_for_task('demoapp.tasks.bar.moo'),
+            {'exchange': 'routeB'},
+        )
+        self.assertIsNone(
+            route.route_for_task('demoapp.foo.bar.moo'),
+        )
+
     def test_expand_route_not_found(self):
         expand = E(self.app, self.app.amqp.Queues(
                    self.app.conf.task_queues, False))

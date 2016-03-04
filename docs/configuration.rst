@@ -128,7 +128,7 @@ rush in moving to the new settings format.
 ``CELERY_DEFAULT_QUEUE``               :setting:`task_default_queue`
 ``CELERY_DEFAULT_RATE_LIMIT``          :setting:`task_default_rate_limit`
 ``CELERY_DEFAULT_ROUTING_KEY``         :setting:`task_default_routing_key`
-``-"-_EAGER_PROPAGATES_EXCEPTIONS``    :setting:`task_eager_propagates`
+``-'-_EAGER_PROPAGATES_EXCEPTIONS``    :setting:`task_eager_propagates`
 ``CELERY_IGNORE_RESULT``               :setting:`task_ignore_result`
 ``CELERY_TASK_PUBLISH_RETRY``          :setting:`task_publish_retry`
 ``CELERY_TASK_PUBLISH_RETRY_POLICY``   :setting:`task_publish_retry_policy`
@@ -389,10 +389,10 @@ If set, the worker stores all task errors in the result store even if
 task_track_started
 ~~~~~~~~~~~~~~~~~~
 
-If :const:`True` the task will report its status as "started" when the
+If :const:`True` the task will report its status as 'started' when the
 task is executed by a worker.  The default value is :const:`False` as
 the normal behaviour is to not report that level of granularity.  Tasks
-are either pending, finished, or waiting to be retried.  Having a "started"
+are either pending, finished, or waiting to be retried.  Having a 'started'
 state can be useful for when there are long running tasks and there is a
 need to report which task is currently running.
 
@@ -599,7 +599,7 @@ Default is to expire after 1 day.
 result_cache_max
 ~~~~~~~~~~~~~~~~
 
-Enables client caching of results, which can be useful for the old "amqp"
+Enables client caching of results, which can be useful for the old 'amqp'
 backend where the result is unavailable as soon as one result instance
 consumes it.
 
@@ -1041,21 +1041,21 @@ Riak backend settings
 This backend requires the :setting:`result_backend`
 setting to be set to a Riak URL::
 
-    result_backend = "riak://host:port/bucket"
+    result_backend = 'riak://host:port/bucket'
 
 For example::
 
-    result_backend = "riak://localhost/celery
+    result_backend = 'riak://localhost/celery
 
 which is the same as::
 
-    result_backend = "riak://"
+    result_backend = 'riak://'
 
 The fields of the URL are defined as follows:
 
 - *host*
 
-Host name or IP address of the Riak server. e.g. `"localhost"`.
+Host name or IP address of the Riak server. e.g. `'localhost'`.
 
 - *port*
 
@@ -1307,25 +1307,30 @@ in order.
 
 A router can be specified as either:
 
-*  A router class instances
+*  A router class instance.
 *  A string which provides the path to a router class
-*  A dict containing router specification. It will be converted to a :class:`celery.routes.MapRoute` instance.
+*  A dict containing router specification:
+     Will be converted to a :class:`celery.routes.MapRoute` instance.
+* A list of ``(pattern, route)`` tuples:
+     Will be converted to a :class:`celery.routes.MapRoute` instance.
 
 Examples:
 
 .. code-block:: python
 
     task_routes = {
-        "celery.ping": "default",
-        "mytasks.add": "cpu-bound",
-        "video.encode": {
-            "queue": "video",
-            "exchange": "media"
-            "routing_key": "media.video.encode",
+        'celery.ping': 'default',
+        'mytasks.add': 'cpu-bound',
+        'feed.tasks.*': 'feeds',                           # <-- glob pattern
+        re.compile(r'(image|video)\.tasks\..*'): 'media',  # <-- regex
+        'video.encode': {
+            'queue': 'video',
+            'exchange': 'media'
+            'routing_key': 'media.video.encode',
         },
     }
 
-    task_routes = ("myapp.tasks.Router", {"celery.ping": "default})
+    task_routes = ('myapp.tasks.Router', {'celery.ping': 'default})
 
 Where ``myapp.tasks.Router`` could be:
 
@@ -1334,8 +1339,8 @@ Where ``myapp.tasks.Router`` could be:
     class Router(object):
 
         def route_for_task(self, task, args=None, kwargs=None):
-            if task == "celery.ping":
-                return "default"
+            if task == 'celery.ping':
+                return {'queue': 'default'}
 
 ``route_for_task`` may return a string or a dict. A string then means
 it's a queue name in :setting:`task_queues`, a dict means it's a custom route.
@@ -1349,20 +1354,20 @@ Example if :func:`~celery.execute.apply_async` has these arguments:
 
 .. code-block:: python
 
-   Task.apply_async(immediate=False, exchange="video",
-                    routing_key="video.compress")
+   Task.apply_async(immediate=False, exchange='video',
+                    routing_key='video.compress')
 
 and a router returns:
 
 .. code-block:: python
 
-    {"immediate": True, "exchange": "urgent"}
+    {'immediate': True, 'exchange': 'urgent'}
 
 the final message options will be:
 
 .. code-block:: python
 
-    immediate=True, exchange="urgent", routing_key="video.compress"
+    immediate=True, exchange='urgent', routing_key='video.compress'
 
 (and any default message options defined in the
 :class:`~celery.task.base.Task` class)
@@ -1375,17 +1380,17 @@ With the follow settings:
 .. code-block:: python
 
     task_queues = {
-        "cpubound": {
-            "exchange": "cpubound",
-            "routing_key": "cpubound",
+        'cpubound': {
+            'exchange': 'cpubound',
+            'routing_key': 'cpubound',
         },
     }
 
     task_routes = {
-        "tasks.add": {
-            "queue": "cpubound",
-            "routing_key": "tasks.add",
-            "serializer": "json",
+        'tasks.add': {
+            'queue': 'cpubound',
+            'routing_key': 'tasks.add',
+            'serializer': 'json',
         },
     }
 
@@ -1393,9 +1398,9 @@ The final routing options for ``tasks.add`` will become:
 
 .. code-block:: javascript
 
-    {"exchange": "cpubound",
-     "routing_key": "tasks.add",
-     "serializer": "json"}
+    {'exchange': 'cpubound',
+     'routing_key': 'tasks.add',
+     'serializer': 'json'}
 
 See :ref:`routers` for more examples.
 
@@ -1970,7 +1975,7 @@ email_charset
 ~~~~~~~~~~~~~
 .. versionadded:: 4.0
 
-Charset for outgoing emails. Default is "utf-8".
+Charset for outgoing emails. Default is 'utf-8'.
 
 .. _conf-example-error-mail-config:
 

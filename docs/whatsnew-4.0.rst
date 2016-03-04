@@ -382,6 +382,12 @@ Task Autoretry Decorator
 
 Contributed by Dmitry Malinovsky.
 
+
+:setting:`task_routes` can now contain glob patterns and regexes.
+=================================================================
+
+See examples in :setting:`task_routes` and :ref:`routing-automatic`.
+
 In Other News
 -------------
 
