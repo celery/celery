@@ -113,8 +113,9 @@ class BaseBackend(object):
         """Return the backend as an URI, sanitizing the password or not"""
         # when using maybe_sanitize_url(), "/" is added
         # we're stripping it for consistency
-        return (self.url if include_password
-                else maybe_sanitize_url(self.url).rstrip("/"))
+        if self.url:
+            return (self.url if include_password
+                    else maybe_sanitize_url(self.url).rstrip("/"))
 
     def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
