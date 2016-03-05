@@ -80,7 +80,7 @@ class DatabaseBackend(BaseBackend):
             expires_type=maybe_timedelta, **kwargs
         )
         conf = self.app.conf
-        self.dburi = url or dburi or conf.sqlalchemy_dburi
+        self.url = url or dburi or conf.sqlalchemy_dburi
         self.engine_options = dict(
             engine_options or {},
             **conf.sqlalchemy_engine_options or {})
@@ -93,14 +93,14 @@ class DatabaseBackend(BaseBackend):
         Task.__table__.name = tablenames.get('task', 'celery_taskmeta')
         TaskSet.__table__.name = tablenames.get('group', 'celery_tasksetmeta')
 
-        if not self.dburi:
+        if not self.url:
             raise ImproperlyConfigured(
                 'Missing connection string! Do you have the'
                 ' sqlalchemy_dburi setting set to a real value?')
 
     def ResultSession(self, session_manager=SessionManager()):
         return session_manager.session_factory(
-            dburi=self.dburi,
+            dburi=self.url,
             short_lived_sessions=self.short_lived_sessions,
             **self.engine_options
         )
@@ -189,7 +189,7 @@ class DatabaseBackend(BaseBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
-            dict(dburi=self.dburi,
+            dict(dburi=self.url,
                  expires=self.expires,
                  engine_options=self.engine_options))
         return super(DatabaseBackend, self).__reduce__(args, kwargs)
