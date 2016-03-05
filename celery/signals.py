@@ -16,7 +16,7 @@ from __future__ import absolute_import
 from .utils.dispatch import Signal
 
 __all__ = ['before_task_publish', 'after_task_publish',
-           'task_prerun', 'task_postrun', 'task_success',
+           'task_prerun', 'task_postrun', 'task_state', 'task_success',
            'task_retry', 'task_failure', 'task_revoked', 'celeryd_init',
            'celeryd_after_setup', 'worker_init', 'worker_process_init',
            'worker_ready', 'worker_shutdown', 'setup_logging',
@@ -40,6 +40,7 @@ task_prerun = Signal(providing_args=['task_id', 'task', 'args', 'kwargs'])
 task_postrun = Signal(providing_args=[
     'task_id', 'task', 'args', 'kwargs', 'retval',
 ])
+task_state = Signal(providing_args=['state', 'meta'])
 task_success = Signal(providing_args=['result'])
 task_retry = Signal(providing_args=[
     'request', 'reason', 'einfo',

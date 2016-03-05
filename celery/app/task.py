@@ -14,6 +14,7 @@ from billiard.einfo import ExceptionInfo
 
 from celery import current_app, group
 from celery import states
+from celery import signals
 from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
@@ -30,6 +31,8 @@ from .registry import _unpickle_task_v2
 from .utils import appstr
 
 __all__ = ['Context', 'Task']
+
+send_state = signals.task_state.send
 
 #: extracts attributes related to publishing a message from an object.
 extract_exec_options = mattrgetter(
@@ -817,6 +820,7 @@ class Task(object):
         if task_id is None:
             task_id = self.request.id
         self.backend.store_result(task_id, meta, state)
+        send_state(sender=self, state=state, meta=meta)
 
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.
