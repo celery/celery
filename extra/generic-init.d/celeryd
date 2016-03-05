@@ -63,6 +63,11 @@ CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/${SCRIPT_NAME}"}
 # Make sure executable configuration script is owned by root
 _config_sanity() {
     local path="$1"
+
+    if [ -L "$path" ]; then
+        path="$(readlink $path)"
+    fi
+    
     local owner=$(ls -ld "$path" | awk '{print $3}')
     local iwgrp=$(ls -ld "$path" | cut -b 6)
     local iwoth=$(ls -ld "$path" | cut -b 9)
@@ -235,7 +240,7 @@ _get_pids() {
 
 
 _chuid () {
-    su "$CELERYD_USER" -c "$CELERYD_MULTI $*"
+    su -s /bin/sh "$CELERYD_USER" -c "$CELERYD_MULTI $*"
 }
 
 
