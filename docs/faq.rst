@@ -722,6 +722,21 @@ and a worker can bind to as many queues as it wants.
 
 See :doc:`userguide/routing` for more information.
 
+.. _faq-disable-prefetch:
+
+Can I disable prefetching of tasks?
+-----------------------------------
+
+**Answer**: The term prefetch must have confused you, as as in Celery it's only used
+to describe the task prefetching *limits*.
+
+Disabling the prefetch limits is possible, but that means the worker will
+consume as many tasks as it can, as fast as possible.
+
+A discussion on prefetch limits, and configuration settings for a worker
+that only reserves one task at a time is found here:
+:ref:`optimizing-prefetch-limit`.
+
 .. _faq-change-periodic-task-interval-at-runtime:
 
 Can I change the interval of a periodic task at runtime?
