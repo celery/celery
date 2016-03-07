@@ -319,9 +319,19 @@ class test_fun_takes_argument(Case):
     def test_named(self):
         self.assertTrue(fun_takes_argument('foo', lambda a, foo, bar: 1))
 
+        def fun(a, b, c, d):
+            return 1
+
+        self.assertTrue(fun_takes_argument('foo', fun, position=4))
+
     def test_starargs(self):
         self.assertTrue(fun_takes_argument('foo', lambda a, *args: 1))
 
     def test_does_not(self):
         self.assertFalse(fun_takes_argument('foo', lambda a, bar, baz: 1))
         self.assertFalse(fun_takes_argument('foo', lambda: 1))
+
+        def fun(a, b, foo):
+            return 1
+
+        self.assertFalse(fun_takes_argument('foo', fun, position=4))

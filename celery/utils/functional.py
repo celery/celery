@@ -237,7 +237,7 @@ def first(predicate, it):
     )
 
 
-def firstmethod(method):
+def firstmethod(method, on_call=None):
     """Return a function that with a list of instances,
     finds the first instance that gives a value for the given method.
 
@@ -249,13 +249,14 @@ def firstmethod(method):
     def _matcher(it, *args, **kwargs):
         for obj in it:
             try:
-                answer = getattr(maybe_evaluate(obj), method)(*args, **kwargs)
+                meth = getattr(maybe_evaluate(obj), method)
+                reply = (on_call(meth, *args, **kwargs) if on_call
+                         else meth(*args, **kwargs))
             except AttributeError:
                 pass
             else:
-                if answer is not None:
-                    return answer
-
+                if reply is not None:
+                    return reply
     return _matcher
 
 
@@ -399,6 +400,9 @@ def head_from_fun(fun, bound=False, debug=False):
     return result
 
 
-def fun_takes_argument(name, fun):
+def fun_takes_argument(name, fun, position=None):
     spec = getfullargspec(fun)
-    return spec.keywords or spec.varargs or name in spec.args
+    return (
+        spec.keywords or spec.varargs or
+        (len(spec.args) >= position if position else name in spec.args)
+    )

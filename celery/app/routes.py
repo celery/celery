@@ -19,10 +19,16 @@ from kombu import Queue
 from celery.exceptions import QueueNotFound
 from celery.five import items, string_t
 from celery.utils import lpmerge
-from celery.utils.functional import firstmethod, mlazy
+from celery.utils.functional import firstmethod, fun_takes_argument, mlazy
 from celery.utils.imports import instantiate
 
 __all__ = ['MapRoute', 'Router', 'prepare']
+
+
+def _try_route(meth, task, args, kwargs, options=None):
+    if fun_takes_argument('options', meth, position=4):
+        return meth(task, args, kwargs, options)
+    return meth(task, args, kwargs)
 
 _first_route = firstmethod('route_for_task')
 
