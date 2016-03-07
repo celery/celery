@@ -11,6 +11,7 @@ from celery.five import THREAD_TIMEOUT_MAX, items, range, nextfun
 from celery.utils.functional import (
     DummyContext,
     LRUCache,
+    fun_takes_argument,
     head_from_fun,
     firstmethod,
     first,
@@ -308,3 +309,19 @@ class test_head_from_fun(Case):
             g(1)
         g(1, 2)
         g(1, 2, kwarg=3)
+
+
+class test_fun_takes_argument(Case):
+
+    def test_starkwargs(self):
+        self.assertTrue(fun_takes_argument('foo', lambda **kw: 1))
+
+    def test_named(self):
+        self.assertTrue(fun_takes_argument('foo', lambda a, foo, bar: 1))
+
+    def test_starargs(self):
+        self.assertTrue(fun_takes_argument('foo', lambda a, *args: 1))
+
+    def test_does_not(self):
+        self.assertFalse(fun_takes_argument('foo', lambda a, bar, baz: 1))
+        self.assertFalse(fun_takes_argument('foo', lambda: 1))

@@ -397,3 +397,8 @@ def head_from_fun(fun, bound=False, debug=False):
     if bound:
         return partial(result, object())
     return result
+
+
+def fun_takes_argument(name, fun):
+    spec = getfullargspec(fun)
+    return spec.keywords or spec.varargs or name in spec.args
