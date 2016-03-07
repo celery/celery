@@ -36,8 +36,11 @@ class test_MongoBackend(AppCase):
         'mongodb://uuuu:pwpw@hostname.dom,'
         'hostname.dom/database?replicaSet=rs'
     )
-    sanitized_default_url = default_url.replace('pwpw', '**')
-    sanitized_replica_set_url = replica_set_url.replace('pwpw', '**')
+    sanitized_default_url = 'mongodb://uuuu:**@hostname.dom/database'
+    sanitized_replica_set_url = (
+        'mongodb://uuuu:**@hostname.dom/,'
+        'hostname.dom/database?replicaSet=rs'
+    )
 
     def setup(self):
         if pymongo is None:

@@ -100,6 +100,7 @@ class CacheBackend(KeyValueStoreBackend):
     def __init__(self, app, expires=None, backend=None,
                  options={}, url=None, **kwargs):
         super(CacheBackend, self).__init__(app, **kwargs)
+        self.url = url
 
         self.options = dict(self.app.conf.cache_backend_options,
                             **options)

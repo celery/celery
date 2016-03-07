@@ -32,22 +32,22 @@ the correct permissions.\
 
 
 class FilesystemBackend(KeyValueStoreBackend):
+    """Filesystem result backend.
+
+    Keyword arguments (in addition to those of KeyValueStoreBackend):
+
+    :param url:  URL to the directory we should use
+    :param open: open function to use when opening files
+    :param unlink: unlink function to use when deleting files
+    :param sep: directory seperator (to join the directory with the key)
+    :param encoding: encoding used on the filesystem
+
+    """
 
     def __init__(self, url=None, open=open, unlink=os.unlink, sep=os.sep,
                  encoding=default_encoding, *args, **kwargs):
-        """Initialize the filesystem backend.
-
-        Keyword arguments (in addition to those of KeyValueStoreBackend):
-
-        :param url:  URL to the directory we should use
-        :param open: open function to use when opening files
-        :param unlink: unlink function to use when deleting files
-        :param sep: directory seperator (to join the directory with the key)
-        :param encoding: encoding used on the filesystem
-
-        """
-
         super(FilesystemBackend, self).__init__(*args, **kwargs)
+        self.url = url
         path = self._find_path(url)
 
         # We need the path and seperator as bytes objects

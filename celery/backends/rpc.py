@@ -57,6 +57,9 @@ class RPCBackend(amqp.AMQPBackend):
     def on_result_fulfilled(self, result):
         pass
 
+    def as_uri(self, include_password=True):
+        return 'rpc://'
+
     @property
     def binding(self):
         return self.Queue(self.oid, self.exchange, self.oid,

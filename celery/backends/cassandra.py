@@ -218,6 +218,9 @@ class CassandraBackend(BaseBackend):
             buf_t(self.encode(self.current_task_children(request)))
         ))
 
+    def as_uri(self, include_password=True):
+        return 'cassandra://'
+
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
         self._get_connection()

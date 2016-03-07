@@ -50,6 +50,12 @@ def is_ascii(s):
 
 
 class RiakBackend(KeyValueStoreBackend):
+    """Riak result backend.
+
+    :raises celery.exceptions.ImproperlyConfigured: if
+        module :mod:`riak` is not available.
+
+    """
     # TODO: allow using other protocols than protobuf ?
     #: default protocol used to connect to Riak, might be `http` or `pbc`
     protocol = 'pbc'
@@ -67,12 +73,8 @@ class RiakBackend(KeyValueStoreBackend):
 
     def __init__(self, host=None, port=None, bucket_name=None, protocol=None,
                  url=None, *args, **kwargs):
-        """Initialize Riak backend instance.
-
-        :raises celery.exceptions.ImproperlyConfigured: if
-            module :mod:`riak` is not available.
-        """
         super(RiakBackend, self).__init__(*args, **kwargs)
+        self.url = url
 
         if not riak:
             raise ImproperlyConfigured(

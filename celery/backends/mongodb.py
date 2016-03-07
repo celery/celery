@@ -40,6 +40,12 @@ __all__ = ['MongoBackend']
 
 
 class MongoBackend(BaseBackend):
+    """MongoDB result backend.
+
+    :raises celery.exceptions.ImproperlyConfigured: if
+        module :mod:`pymongo` is not available.
+
+    """
 
     mongo_host = None
     host = 'localhost'
@@ -57,12 +63,6 @@ class MongoBackend(BaseBackend):
     _connection = None
 
     def __init__(self, app=None, **kwargs):
-        """Initialize MongoDB backend instance.
-
-        :raises celery.exceptions.ImproperlyConfigured: if
-            module :mod:`pymongo` is not available.
-
-        """
         self.options = {}
 
         super(MongoBackend, self).__init__(app, **kwargs)
@@ -305,7 +305,7 @@ class MongoBackend(BaseBackend):
             return self.url
 
         if ',' not in self.url:
-            return maybe_sanitize_url(self.url).rstrip('/')
+            return maybe_sanitize_url(self.url)
 
         uri1, remainder = self.url.split(',', 1)
-        return ','.join([maybe_sanitize_url(uri1).rstrip('/'), remainder])
+        return ','.join([maybe_sanitize_url(uri1), remainder])

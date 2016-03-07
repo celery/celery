@@ -28,6 +28,12 @@ __all__ = ['CouchBaseBackend']
 
 
 class CouchBaseBackend(KeyValueStoreBackend):
+    """CouchBase backend.
+
+    :raises celery.exceptions.ImproperlyConfigured: if
+        module :mod:`couchbase` is not available.
+
+    """
     bucket = 'default'
     host = 'localhost'
     port = 8091
@@ -38,19 +44,13 @@ class CouchBaseBackend(KeyValueStoreBackend):
     unlock_gil = True
     timeout = 2.5
     transcoder = None
-    # supports_autoexpire = False
 
     # Use str as couchbase key not bytes
     key_t = str_t
 
     def __init__(self, url=None, *args, **kwargs):
-        """Initialize CouchBase backend instance.
-
-        :raises celery.exceptions.ImproperlyConfigured: if
-            module :mod:`couchbase` is not available.
-
-        """
         super(CouchBaseBackend, self).__init__(*args, **kwargs)
+        self.url = url
 
         if Couchbase is None:
             raise ImproperlyConfigured(

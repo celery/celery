@@ -27,6 +27,12 @@ You need to install the pycouchdb library to use the CouchDB result backend\
 
 
 class CouchBackend(KeyValueStoreBackend):
+    """CouchDB backend.
+
+    :raises celery.exceptions.ImproperlyConfigured: if
+        module :mod:`pycouchdb` is not available.
+
+    """
     container = 'default'
     scheme = 'http'
     host = 'localhost'
@@ -35,13 +41,8 @@ class CouchBackend(KeyValueStoreBackend):
     password = None
 
     def __init__(self, url=None, *args, **kwargs):
-        """Initialize CouchDB backend instance.
-
-        :raises celery.exceptions.ImproperlyConfigured: if
-            module :mod:`pycouchdb` is not available.
-
-        """
         super(CouchBackend, self).__init__(*args, **kwargs)
+        self.url = url
 
         if pycouchdb is None:
             raise ImproperlyConfigured(ERR_LIB_MISSING)

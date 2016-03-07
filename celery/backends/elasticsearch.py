@@ -45,6 +45,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def __init__(self, url=None, *args, **kwargs):
         super(ElasticsearchBackend, self).__init__(*args, **kwargs)
+        self.url = url
 
         if elasticsearch is None:
             raise ImproperlyConfigured(E_LIB_MISSING)

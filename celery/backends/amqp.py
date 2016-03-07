@@ -249,6 +249,9 @@ class AMQPBackend(base.Backend, AsyncBackendMixin):
         raise NotImplementedError(
             'delete_group is not supported by this backend.')
 
+    def as_uri(self, include_password=True):
+        return 'amqp://'
+
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
             connection=self._connection,
