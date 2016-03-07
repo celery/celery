@@ -16,7 +16,7 @@ new in Celery 3.1.
 :release-by: Ask Solem
 
 - **Programs**: The worker would crash immediately on startup on
-  ``backend.as_uri()`` when using the database result backend (Issue #3094).
+  ``backend.as_uri()`` when using some result backends (Issue #3094).
 
 - **Programs**: :program:`celery multi`/:program:`celery worker --detach`
   would create an extraneous logfile including literal formats (e.g. ``%I``)
