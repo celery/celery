@@ -14,6 +14,7 @@ import time
 from collections import defaultdict
 from functools import partial
 from itertools import chain
+from operator import itemgetter
 
 from billiard.einfo import ExceptionInfo  # noqa
 from kombu.utils.limits import TokenBucket  # noqa
@@ -65,8 +66,8 @@ class DependencyGraph(object):
         components = self._tarjan72()
 
         NC = dict((node, component)
-                    for component in components
-                        for node in component)
+                  for component in components
+                  for node in component)
         for component in components:
             graph.add_arc(component)
         for node in self:
@@ -384,14 +385,18 @@ class LimitedSet(object):
     but the list might become to big, so you want to limit it so it doesn't
     consume too much resources.
 
-    :keyword maxlen: Maximum number of members before we start
-                     evicting expired members.
-    :keyword expires: Time in seconds, before a membership expires.
+    :keyword maxlen: Maximum number of members. If we have more,
+                     we will remove some older ones. If set to 0 or None,
+                     number of items will not be limited.
 
+    :keyword expires: Time in seconds, before a membership expires. If set to
+                      0 or None, old items will not be deleted by time.
     """
+
     __slots__ = ('maxlen', 'expires', '_data', '__len__')
 
     def __init__(self, maxlen=None, expires=None):
+        """Initialize LimitedSet."""
         self.maxlen = maxlen
         self.expires = expires
         self._data = {}
@@ -399,36 +404,47 @@ class LimitedSet(object):
 
     def add(self, value):
         """Add a new member."""
-        self._expire_item()
         self._data[value] = time.time()
+        self._expire_items()
 
     def clear(self):
-        """Remove all members"""
+        """Remove all members."""
         self._data.clear()
 
     def pop_value(self, value):
         """Remove membership by finding value."""
         self._data.pop(value, None)
 
-    def _expire_item(self):
-        """Hunt down and remove an expired item."""
-        while 1:
-            if self.maxlen and len(self) >= self.maxlen:
-                value, when = self.first
-                if not self.expires or time.time() > when + self.expires:
-                    try:
-                        self.pop_value(value)
-                    except TypeError:  # pragma: no cover
-                        continue
-            break
+    def _expire_items(self):
+        """Remove unwanted items."""
+        for value in self._items_over_size_limit:
+            self.pop_value(value)
+
+        for value in self._items_over_time_limit:
+            self.pop_value(value)
 
     def __contains__(self, value):
         return value in self._data
 
     def update(self, other):
+        """Update LimitedSet from other LimitedSet, dictionary or iterable."""
         if isinstance(other, self.__class__):
             self._data.update(other._data)
-        else:
+            self._expire_items()
+        elif isinstance(other, dict):
+            # revokes are sent like dict!
+            for i, j in other.items():
+                if not isinstance(j, float):
+                    raise ValueError('Expecting float timestamp, got type '
+                                     '"{0}" with value {1}'.format(
+                                         type(j), j))
+                if i not in self._data:
+                    self._data[i] = j
+                else:
+                    if self._data[i] < other[i]:  # only increase if possible
+                        self._data[i] = j
+            self._expire_items()
+        else:  # other, generic iterable
             for obj in other:
                 self.add(obj)
 
@@ -443,9 +459,28 @@ class LimitedSet(object):
 
     @property
     def chronologically(self):
-        return sorted(self._data.items(), key=lambda (value, when): when)
+        """All items ordered by time they were inserted (old first)."""
+        return sorted(self._data.items(), key=itemgetter(1))
 
     @property
     def first(self):
         """Get the oldest member."""
         return self.chronologically[0]
+
+    @property
+    def _items_over_size_limit(self):
+        """Get iterable of oldest items we should expire."""
+        if self.maxlen and self._data:
+            how_many_to_expire = len(self._data) - self.maxlen
+            if how_many_to_expire < 0:
+                return
+            for i, j in self.chronologically[:how_many_to_expire]:
+                yield i
+
+    @property
+    def _items_over_time_limit(self):
+        if self.expires:
+            for value, when in self.chronologically:
+                if time.time() < when + self.expires:
+                    break
+                yield value

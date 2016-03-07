@@ -105,7 +105,7 @@ class test_ExceptionInfo(Case):
             self.assertEqual(str(einfo), einfo.traceback)
             self.assertIsInstance(einfo.exception, LookupError)
             self.assertTupleEqual(einfo.exception.args,
-                    ('The quick brown fox jumps...', ))
+                                  ('The quick brown fox jumps...', ))
             self.assertTrue(einfo.traceback)
 
             r = repr(einfo)
@@ -164,10 +164,56 @@ class test_LimitedSet(Case):
         s2.update(['do', 're'])
         self.assertItemsEqual(list(s2), ['do', 're'])
 
+        s3 = LimitedSet(maxlen=2)
+        s4 = LimitedSet(maxlen=2)
+        s3.update(s1)
+        s4.update(s1._data)
+        self.assertItemsEqual(list(s3), list(s4))
+        s3.update(s2)
+        s4.update(s2._data)
+        self.assertItemsEqual(list(s3), list(s4))
+
+        s1 = LimitedSet(maxlen=3, expires=60)
+        s2 = LimitedSet(maxlen=3, expires=60)
+        for i in range(10):
+            s1.add(i)
+            s2.add(i**i)
+        s2.update(s1)
+        s1.update(s2._data)
+        self.assertEqual(len(s1), 3)
+        self.assertEqual(len(s2), 3)
+        self.assertIn(9, s1)
+        self.assertIn(9, s2)
+        self.assertIn(81, s1)
+        self.assertIn(81, s2)
+        self.assertIn(64, s1)
+        self.assertIn(64, s2)
+
     def test_as_dict(self):
         s = LimitedSet(maxlen=2)
         s.add('foo')
         self.assertIsInstance(s.as_dict(), dict)
+
+    def test_expires(self):
+        from time import sleep
+        s = LimitedSet(maxlen=3, expires=0.02)
+        for i in range(30):
+            s.add(i)
+        self.assertEqual(len(s), 3)
+        sleep(0.021)
+        s.add('last')
+        self.assertLessEqual(len(s), 3)
+
+    def test_update_with_expires(self):
+        s1 = LimitedSet(maxlen=3, expires=0.02)
+        s2 = LimitedSet(maxlen=3, expires=0.02)
+        for i in range(10):
+            s1.add(i)
+            s2.add(i+1000)
+        self.assertEqual(len(s1), 3)
+        self.assertEqual(len(s2), 3)
+        s1.update(s2._data)
+        self.assertEqual(len(s1), 3)
 
 
 class test_LRUCache(Case):
@@ -286,8 +332,8 @@ class test_DependencyGraph(Case):
 
     def test_items(self):
         self.assertDictEqual(dict(self.graph1().items()),
-                {'A': [], 'B': [],
-                 'C': ['A'], 'D': ['C', 'B']})
+                             {'A': [], 'B': [],
+                             'C': ['A'], 'D': ['C', 'B']})
 
     def test_to_dot(self):
         s = WhateverIO()
