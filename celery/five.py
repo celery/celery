@@ -25,6 +25,11 @@ try:
 except ImportError:
     pass
 
+try:  # pragma: no cover
+    from inspect import formatargspec, getfullargspec
+except ImportError:  # Py2
+    from inspect import formatargspec, getargspec as getfullargspec  # noqa
+
 __all__ = [
     'class_property', 'reclassmethod', 'create_module', 'recreate_module',
 ]

@@ -79,7 +79,6 @@ import json
 
 from collections import defaultdict
 from heapq import heappush
-from inspect import getargspec
 from optparse import (
     OptionParser, OptionGroup, IndentedHelpFormatter, make_option as Option,
 )
@@ -88,7 +87,7 @@ from pprint import pformat
 from celery import VERSION_BANNER, Celery, maybe_patch_concurrency
 from celery import signals
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
-from celery.five import items, string, string_t
+from celery.five import getfullargspec, items, string, string_t
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
 from celery.utils import term
 from celery.utils import text
@@ -283,7 +282,7 @@ class Command(object):
             return exc.status
 
     def verify_args(self, given, _index=0):
-        S = getargspec(self.run)
+        S = getfullargspec(self.run)
         _index = 1 if S.args and S.args[0] == 'self' else _index
         required = S.args[_index:-len(S.defaults) if S.defaults else None]
         missing = required[len(given):]

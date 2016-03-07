@@ -13,10 +13,7 @@ import threading
 
 from collections import OrderedDict
 from functools import partial, wraps
-try:
-    from inspect import isfunction, getfullargspec as getargspec
-except ImportError:  # Py2
-    from inspect import isfunction, getargspec  # noqa
+from inspect import isfunction
 from itertools import chain, islice
 
 from kombu.utils.functional import (
@@ -24,7 +21,7 @@ from kombu.utils.functional import (
 )
 from vine import promise
 
-from celery.five import UserDict, UserList, keys, range
+from celery.five import UserDict, UserList, getfullargspec, keys, range
 
 __all__ = ['LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
            'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
@@ -388,7 +385,7 @@ def head_from_fun(fun, bound=False, debug=False):
         name = fun.__name__
     definition = FUNHEAD_TEMPLATE.format(
         fun_name=name,
-        fun_args=_argsfromspec(getargspec(fun)),
+        fun_args=_argsfromspec(getfullargspec(fun)),
         fun_value=1,
     )
     if debug:  # pragma: no cover
