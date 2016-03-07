@@ -23,7 +23,7 @@ if not IS_WINDOWS:
             context.__exit__ = Mock()
 
             detach('/bin/boo', ['a', 'b', 'c'], logfile='/var/log',
-                   pidfile='/var/pid')
+                   pidfile='/var/pid', hostname='foo@example.com')
             detached.assert_called_with(
                 '/var/log', '/var/pid', None, None, None, None, False,
                 after_forkers=False,
@@ -36,11 +36,14 @@ if not IS_WINDOWS:
             execv.assert_called_with('/bin/foo', ['/bin/foo', 'a', 'b', 'c'])
 
             execv.side_effect = Exception('foo')
-            r = detach('/bin/boo', ['a', 'b', 'c'],
-                       logfile='/var/log', pidfile='/var/pid', app=self.app)
+            r = detach(
+                '/bin/boo', ['a', 'b', 'c'],
+                logfile='/var/log', pidfile='/var/pid',
+                hostname='foo@example.com', app=self.app)
             context.__enter__.assert_called_with()
             self.assertTrue(logger.critical.called)
-            setup_logs.assert_called_with('ERROR', '/var/log')
+            setup_logs.assert_called_with(
+                'ERROR', '/var/log', hostname='foo@example.com')
             self.assertEqual(r, 1)
 
             self.patch('celery.current_app')
@@ -108,7 +111,7 @@ class test_Command(AppCase):
         detach.assert_called_with(
             path=x.execv_path, uid=None, gid=None,
             umask=None, fake=False, logfile='/var/log', pidfile='celeryd.pid',
-            working_directory=None, executable=None,
+            working_directory=None, executable=None, hostname=None,
             argv=x.execv_argv + [
                 '-c', '1', '-lDEBUG',
                 '--logfile=/var/log', '--pidfile=celeryd.pid',
