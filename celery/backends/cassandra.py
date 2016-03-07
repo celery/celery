@@ -158,6 +158,9 @@ class CassandraBackend(BaseBackend):
 
         return self._retry_on_error(_do_store)
 
+    def as_uri(self, include_password=True):
+        return 'cassandra://'
+
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
 
