@@ -48,10 +48,12 @@ if not IS_WINDOWS:
 
             self.patch('celery.current_app')
             from celery import current_app
-            r = detach('/bin/boo', ['a', 'b', 'c'],
-                       logfile='/var/log', pidfile='/var/pid', app=None)
+            r = detach(
+                '/bin/boo', ['a', 'b', 'c'],
+                logfile='/var/log', pidfile='/var/pid',
+                hostname='foo@example.com', app=None)
             current_app.log.setup_logging_subsystem.assert_called_with(
-                'ERROR', '/var/log',
+                'ERROR', '/var/log', hostname='foo@example.com',
             )
 
 
