@@ -1303,7 +1303,7 @@ CELERY_MAX_CACHED_RESULTS
 Result backends caches ready results used by the client.
 
 This is the total number of results to cache before older results are evicted.
-The default is 5000.  0 or None means no limit, and a value of :const:`-1`
+The default is 100.  0 or None means no limit, and a value of :const:`-1`
 will disable the cache.
 
 .. setting:: CELERY_CHORD_PROPAGATES
