@@ -190,6 +190,9 @@ class BaseResultConsumer(object):
         finally:
             self.on_message = prev_on_m
 
+    def on_out_of_band_result(self, message):
+        self.on_state_change(message.payload, message)
+
     def on_state_change(self, meta, message):
         if self.on_message:
             self.on_message(meta)

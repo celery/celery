@@ -155,6 +155,7 @@ class test_AMQPBackend(AppCase):
             def __init__(self, **merge):
                 self.payload = dict({'status': states.STARTED,
                                      'result': None}, **merge)
+                self.properties = {'correlation_id': merge.get('task_id')}
                 self.body = pickle.dumps(self.payload)
                 self.content_type = 'application/x-python-serialize'
                 self.content_encoding = 'binary'
