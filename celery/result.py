@@ -176,9 +176,10 @@ class AsyncResult(ResultBase):
             self._maybe_set_cache(meta)
             status = meta['status']
             result = meta['result']
+            traceback = meta.get('traceback')
             if status in PROPAGATE_STATES and propagate:
-                if tblib and self.app.conf.CELERY_RAISE_WITH_FAKE_TRACEBACK:
-                    tb = tblib.Traceback.from_string(meta['traceback'])
+                if tblib and traceback and self.app.conf.CELERY_RAISE_WITH_FAKE_TRACEBACK:
+                    tb = tblib.Traceback.from_string(traceback)
                     reraise(type(result), result, tb.as_traceback())
                 else:
                     raise result
