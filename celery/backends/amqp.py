@@ -49,13 +49,16 @@ class NoCacheQueue(Queue):
 class ResultConsumer(BaseResultConsumer):
     Consumer = Consumer
 
+    _connection = None
+    _consumer = None
+
     def __init__(self, *args, **kwargs):
         super(ResultConsumer, self).__init__(*args, **kwargs)
-        self._connection = None
-        self._consumer = None
+        self._create_binding = self.backend._create_binding
 
-    def start(self, initial_queue, no_ack=True):
+    def start(self, initial_task_id, no_ack=True):
         self._connection = self.app.connection()
+        initial_queue = self._create_binding(initial_task_id)
         self._consumer = self.Consumer(
             self._connection.default_channel, [initial_queue],
             callbacks=[self.on_state_change], no_ack=no_ack,
@@ -77,16 +80,17 @@ class ResultConsumer(BaseResultConsumer):
             self._connection.collect()
             self._connection = None
 
-    def consume_from(self, queue):
+    def consume_from(self, task_id):
         if self._consumer is None:
-            return self.start(queue)
+            return self.start(task_id)
+        queue = self._create_binding(task_id)
         if not self._consumer.consuming_from(queue):
             self._consumer.add_queue(queue)
             self._consumer.consume()
 
-    def cancel_for(self, queue):
+    def cancel_for(self, task_id):
         if self._consumer:
-            self._consumer.cancel_by_queue(queue.name)
+            self._consumer.cancel_by_queue(self._create_binding(task_id).name)
 
 
 class AMQPBackend(base.Backend, AsyncBackendMixin):
@@ -137,9 +141,6 @@ class AMQPBackend(base.Backend, AsyncBackendMixin):
     def _after_fork(self):
         self._pending_results.clear()
         self.result_consumer._after_fork()
-
-    def on_result_fulfilled(self, result):
-        self.result_consumer.cancel_for(self._create_binding(result.id))
 
     def _create_exchange(self, name, type='direct', delivery_mode=2):
         return self.Exchange(name=name,
