@@ -188,45 +188,58 @@ class test_LimitedSet(Case):
         for n in 'bar', 'baz':
             self.assertIn(n, s)
         self.assertNotIn('foo', s)
+        s = LimitedSet(maxlen=10)
+        for i in range(150):
+            s.add(i)
+        self.assertLessEqual(len(s), 10)
+        # make sure heap is not leaking:
+        self.assertLessEqual(len(s._heap),
+                             len(s) * (100. +
+                             s._MAX_HEAP_PERCENTS_OVERLOAD) / 100)
 
     def test_purge(self):
-        s = LimitedSet(maxlen=None)
+        # purge now enforces rules
+        # cant purge(1) now. but .purge(now=...) still works
+        s = LimitedSet(maxlen=10)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(1)
-        self.assertEqual(len(s), 9)
-        s.purge(None)
+        s.purge()
         self.assertEqual(len(s), 2)
 
         # expired
-        s = LimitedSet(maxlen=None, expires=1)
+        s = LimitedSet(maxlen=10, expires=1)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(1, now=lambda: time() + 100)
-        self.assertEqual(len(s), 9)
-        s.purge(None, now=lambda: time() + 100)
-        self.assertEqual(len(s), 2)
+        s.purge(now=time() + 100)
+        self.assertEqual(len(s), 0)
 
         # not expired
         s = LimitedSet(maxlen=None, expires=1)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(1, now=lambda: time() - 100)
-        self.assertEqual(len(s), 10)
-        s.purge(None, now=lambda: time() - 100)
-        self.assertEqual(len(s), 10)
+        s.purge(now=lambda: time() - 100)
+        self.assertEqual(len(s), 2)
 
-        s = LimitedSet(maxlen=None)
-        [s.add(i) for i in range(10)]
-        s.maxlen = 2
-        with patch('celery.datastructures.heappop') as hp:
-            hp.side_effect = IndexError()
-            s.purge()
-            hp.assert_called_with(s._heap)
-        with patch('celery.datastructures.heappop') as hp:
-            s._data = {i * 2: i * 2 for i in range(10)}
-            s.purge()
-            self.assertEqual(hp.call_count, 10)
+        # expired -> minsize
+        s = LimitedSet(maxlen=10, minlen=10, expires=1)
+        [s.add(i) for i in range(20)]
+        s.minlen = 3
+        s.purge(now=time() + 3)
+        self.assertEqual(s.minlen, len(s))
+        self.assertLessEqual(len(s._heap),
+                             s.maxlen *
+                             (100. + s._MAX_HEAP_PERCENTS_OVERLOAD)/100)
+        # s = LimitedSet(maxlen=None)
+        # [s.add(i) for i in range(10)]
+        # s.maxlen = 2
+        # with patch('celery.datastructures.heappop') as hp:
+        #    hp.side_effect = IndexError()
+        #    s.purge()
+        #    hp.assert_called_with(s._heap)
+        # with patch('celery.datastructures.heappop') as hp:
+        #    s._data = {i * 2: i * 2 for i in range(10)}
+        #    s.purge()
+        #    self.assertEqual(hp.call_count, 10)
 
     def test_pickleable(self):
         s = LimitedSet(maxlen=2)
@@ -260,7 +273,7 @@ class test_LimitedSet(Case):
         s.discard('foo')
         self.assertNotIn('foo', s)
         self.assertEqual(len(s._data), 0)
-        self.assertEqual(len(s._heap), 0)
+        # self.assertLessEqual(len(s._heap), 0 + s.heap_overload)
         s.discard('foo')
 
     def test_clear(self):
@@ -285,6 +298,46 @@ class test_LimitedSet(Case):
 
         s2.update(['do', 're'])
         self.assertItemsEqual(list(s2), ['do', 're'])
+        s1 = LimitedSet(maxlen=10, expires=None)
+        s2 = LimitedSet(maxlen=10, expires=None)
+        s3 = LimitedSet(maxlen=10, expires=None)
+        s4 = LimitedSet(maxlen=10, expires=None)
+        s5 = LimitedSet(maxlen=10, expires=None)
+        for i in range(12):
+            s1.add(i)
+            s2.add(i*i)
+        s3.update(s1)
+        s3.update(s2)
+        s4.update(s1.as_dict())
+        s4.update(s2.as_dict())
+        s5.update(s1._data)  # revoke is using this
+        s5.update(s2._data)  #
+        self.assertEqual(s3, s4)
+        self.assertEqual(s3, s5)
+        s2.update(s4)
+        s4.update(s2)
+        self.assertEqual(s2, s4)
+
+    def test_iterable_and_ordering(self):
+        s = LimitedSet(maxlen=35, expires=None)
+        for i in reversed(range(15)):
+            s.add(i)
+        j = 40
+        for i in s:
+            self.assertLess(i, j)  # each item is smaller and smaller
+            j = i
+        self.assertEqual(i, 0)  # last item = 0
+
+    def test_pop_and_ordering_again(self):
+        s = LimitedSet(maxlen=5)
+        for i in range(10):
+            s.add(i)
+        j = -1
+        for _ in range(5):
+            i = s.pop()
+            self.assertLess(j, i)
+        i = s.pop()
+        self.assertEqual(i, None)
 
     def test_as_dict(self):
         s = LimitedSet(maxlen=2)
