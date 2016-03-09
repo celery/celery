@@ -910,7 +910,7 @@ cassandra backend settings
 
     To install, use `pip` or `easy_install`:
 
-    .. code-block:: bash
+    .. code-block:: console
 
         $ pip install cassandra-driver
 
