@@ -13,6 +13,7 @@ from kombu.common import maybe_declare
 from kombu.utils import cached_property
 
 from celery import current_task
+from celery._state import task_join_will_block
 from celery.backends import amqp
 
 __all__ = ['RPCBackend']
@@ -29,7 +30,8 @@ class RPCBackend(amqp.AMQPBackend):
         return Exchange(None)
 
     def on_task_call(self, producer, task_id):
-        maybe_declare(self.binding(producer.channel), retry=True)
+        if not task_join_will_block():
+            maybe_declare(self.binding(producer.channel), retry=True)
 
     def _create_binding(self, task_id):
         return self.binding

@@ -448,7 +448,7 @@ class BaseBackend(Backend, SyncBackendMixin):
 BaseDictBackend = BaseBackend  # XXX compat
 
 
-class KeyValueStoreBackend(BaseBackend):
+class BaseKeyValueStoreBackend(Backend):
     key_t = ensure_bytes
     task_keyprefix = 'celery-task-meta-'
     group_keyprefix = 'celery-taskset-meta-'
@@ -459,7 +459,7 @@ class KeyValueStoreBackend(BaseBackend):
         if hasattr(self.key_t, '__func__'):  # pragma: no cover
             self.key_t = self.key_t.__func__  # remove binding
         self._encode_prefixes()
-        super(KeyValueStoreBackend, self).__init__(*args, **kwargs)
+        super(BaseKeyValueStoreBackend, self).__init__(*args, **kwargs)
         if self.implements_incr:
             self.apply_chord = self._apply_chord_incr
 
@@ -578,7 +578,8 @@ class KeyValueStoreBackend(BaseBackend):
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
         meta = {'status': state, 'result': result, 'traceback': traceback,
-                'children': self.current_task_children(request)}
+                'children': self.current_task_children(request),
+                'task_id': task_id}
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
 
@@ -681,6 +682,10 @@ class KeyValueStoreBackend(BaseBackend):
                 self.client.delete(key)
         else:
             self.expire(key, 86400)
+
+
+class KeyValueStoreBackend(BaseKeyValueStoreBackend, SyncBackendMixin):
+    pass
 
 
 class DisabledBackend(BaseBackend):

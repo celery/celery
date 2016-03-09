@@ -135,7 +135,7 @@ class AsyncBackendMixin(object):
     def add_pending_result(self, result):
         if result.id not in self._pending_results:
             self._pending_results[result.id] = result
-            self.result_consumer.consume_from(self._create_binding(result.id))
+            self.result_consumer.consume_from(result.id)
         return result
 
     def remove_pending_result(self, result):
@@ -144,7 +144,7 @@ class AsyncBackendMixin(object):
         return result
 
     def on_result_fulfilled(self, result):
-        pass
+        self.result_consumer.cancel_for(result.id)
 
     def wait_for_pending(self, result,
                          callback=None, propagate=True, **kwargs):
@@ -177,8 +177,20 @@ class BaseResultConsumer(object):
         self.buckets = WeakKeyDictionary()
         self.drainer = drainers[detect_environment()](self)
 
+    def start(self):
+        raise NotImplementedError()
+
+    def stop(self):
+        pass
+
     def drain_events(self, timeout=None):
-        raise NotImplementedError('subclass responsibility')
+        raise NotImplementedError()
+
+    def consume_from(self, task_id):
+        raise NotImplementedError()
+
+    def cancel_for(self, task_id):
+        raise NotImplementedError()
 
     def _after_fork(self):
         self.bucket.clear()
