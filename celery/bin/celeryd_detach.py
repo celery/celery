@@ -140,6 +140,8 @@ class detached_celeryd(object):
             parser.leftovers.append('--logfile={0}'.format(options.logfile))
         if options.pidfile:
             parser.leftovers.append('--pidfile={0}'.format(options.pidfile))
+        if options.hostname:
+            parser.leftovers.append('--hostname={0}'.format(options.hostname))
         return options, values, parser.leftovers
 
     def execute_from_commandline(self, argv=None):
