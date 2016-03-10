@@ -121,3 +121,8 @@ class TaskPool(BasePool):
     @property
     def num_processes(self):
         return len(self._pool)
+        
+    def _get_info(self):
+        info = super(TaskPool, self)._get_info()
+        info['max-concurrency'] = self.limit
+        return info
