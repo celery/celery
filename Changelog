@@ -8,6 +8,20 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.23:
+
+3.1.23
+======
+:release-date: 2016-03-09 06:00 P.M PST
+:release-by: Ask Solem
+
+- **Programs**: Last release broke support for the ``--hostnmame`` argument
+  to :program:`celery multi` and :program:`celery worker --detach`
+  (Issue #3103).
+
+- **Results**: MongoDB result backend could crash the worker at startup
+  if not configured using an URL.
+
 .. _version-3.1.22:
 
 3.1.22
