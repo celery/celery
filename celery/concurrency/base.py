@@ -159,7 +159,9 @@ class BasePool(object):
                              **options)
 
     def _get_info(self):
-        return {}
+        return {
+            'max-concurrency': self.limit,
+        }
 
     @property
     def info(self):
