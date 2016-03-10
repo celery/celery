@@ -288,12 +288,12 @@ class Suite(BaseSuite):
         assert_equal(res.get(), [32, 33, 34, 35])
 
     @testcase('all', 'green', iterations=1)
-    def parentids_chain(self):
-        c = chain(ids.si(i) for i in range(248))
+    def parentids_chain(self, num=248):
+        c = chain(ids.si(i) for i in range(num))
         c.freeze()
         res = c()
         res.get(timeout=5)
-        self.assert_ids(res, len(c.tasks) - 1)
+        self.assert_ids(res, num - 1)
 
     @testcase('all', 'green', iterations=1)
     def parentids_group(self):
@@ -309,8 +309,8 @@ class Suite(BaseSuite):
             assert_equal(parent_id, expected_parent_id)
             assert_equal(value, i + 2)
 
-    def assert_ids(self, res, len):
-        i, root = len, res
+    def assert_ids(self, res, size):
+        i, root = size, res
         while root.parent:
             root = root.parent
         node = res
