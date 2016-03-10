@@ -149,7 +149,7 @@ can contain variables that the worker will expand:
 Node name replacements
 ----------------------
 
-- ``%N``:  Full node name.
+- ``%p``:  Full node name.
 - ``%h``:  Hostname including domain name.
 - ``%n``:  Hostname only.
 - ``%d``:  Domain name only.
@@ -159,7 +159,7 @@ Node name replacements
 E.g. if the current hostname is ``george@foo.example.com`` then
 these will expand to:
 
-- ``--logfile-%N.log`` -> :file:`george@foo.example.com.log`
+- ``--logfile-%p.log`` -> :file:`george@foo.example.com.log`
 - ``--logfile=%h.log`` -> :file:`foo.example.com.log`
 - ``--logfile=%n.log`` -> :file:`george.log`
 - ``--logfile=%d`` -> :file:`example.com.log`

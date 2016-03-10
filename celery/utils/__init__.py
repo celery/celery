@@ -355,7 +355,7 @@ def default_nodename(hostname):
 def node_format(s, nodename, **extra):
     name, host = nodesplit(nodename)
     return host_format(
-        s, host, name or NODENAME_DEFAULT, N=nodename, **extra)
+        s, host, name or NODENAME_DEFAULT, p=nodename, **extra)
 
 
 def _fmt_process_index(prefix='', default='0'):
