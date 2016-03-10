@@ -127,7 +127,7 @@ shell:
 
 .. code-block:: bash
 
-    CELERYD_SU_OPTIONS="-l"
+    CELERYD_SU_ARGS="-l"
 
 Note that this is not recommended, and that you should only use this option
 when absolutely necessary.
