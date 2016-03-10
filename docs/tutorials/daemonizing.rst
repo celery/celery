@@ -119,6 +119,19 @@ This is an example configuration for a Python project.
     # and owned by the userid/group configured.
     CELERY_CREATE_DIRS=1
 
+Using a login shell
+~~~~~~~~~~~~~~~~~~~
+
+You can inherit the environment of the ``CELERYD_USER`` by using a login
+shell:
+
+.. code-block:: bash
+
+    CELERYD_SU_OPTIONS="-l"
+
+Note that this is not recommended, and that you should only use this option
+when absolutely necessary.
+
 .. _generic-initd-celeryd-django-example:
 
 Example Django configuration
