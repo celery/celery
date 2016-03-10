@@ -38,8 +38,8 @@ If a unix socket connection should be used, the URL needs to be in the format::
 
     redis+socket:///path/to/redis.sock
 
-Specifying a different database while using a unix socket is possible by adding the 
-`virtual_host` parameter to the URL::
+Specifying a different database number when using a unix socket is possible
+by adding the ``virtual_host`` parameter to the URL::
 
     redis+socket:///path/to/redis.sock?virtual_host=db_number
 
