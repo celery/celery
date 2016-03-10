@@ -390,7 +390,7 @@ used to route a task to any specific worker:
 Provides arguments:
 
 * sender
-  Hostname of the worker.
+  Nodename of the worker.
 
 * instance
     This is the :class:`celery.apps.worker.Worker` instance to be initialized.

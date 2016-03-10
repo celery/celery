@@ -342,7 +342,7 @@ The request defines the following attributes:
 
 :loglevel: The current log level used.
 
-:hostname: Hostname of the worker instance executing the task.
+:hostname: Node name of the worker instance executing the task.
 
 :delivery_info: Additional message delivery information. This is a mapping
                 containing the exchange and routing key used to deliver this
