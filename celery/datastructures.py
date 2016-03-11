@@ -616,7 +616,7 @@ class LimitedSet(object):
     REMOVED = object()  # just a placeholder for removed items
     _MAX_HEAP_PERCENTS_OVERLOAD = 15  #
 
-    def __init__(self, maxlen=0, expires=0, minlen=0, data=None):
+    def __init__(self, maxlen=0, expires=0, data=None, minlen=0):
         """Initialize LimitedSet.
 
         All  arguments are optional, with exception of minlen, which must
@@ -633,15 +633,10 @@ class LimitedSet(object):
                        dict {key:inserted_time} or another LimitedSet.
 
         """
-        if maxlen is None:
-            maxlen = 0
-        if minlen is None:
-            minlen = 0
-        if expires is None:
-            expires = 0
-        self.maxlen = maxlen
-        self.minlen = minlen
-        self.expires = expires
+        self.maxlen = maxlen if maxlen else 0
+        self.minlen = minlen if minlen else 0
+        self.expires = expires if expires else 0
+
         self._data = {}
         self._heap = []
         # make shortcuts
@@ -767,7 +762,7 @@ class LimitedSet(object):
 
     def __repr__(self):
         return 'LimitedSet(maxlen={0}, expires={1}, minlen={2})' \
-            ' Current size:{3}'.format(
+            ' Current size: {3} items.'.format(
                 self.maxlen, self.expires, self.minlen, len(self._data))
 
     def __iter__(self):
@@ -787,7 +782,7 @@ class LimitedSet(object):
 
         This object can be pickled and upickled."""
         return self.__class__, (
-            self.maxlen, self.expires, self.minlen, self.as_dict())
+            self.maxlen, self.expires, self.as_dict(), self.minlen)
 
     @property
     def _heap_overload(self):
