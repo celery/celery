@@ -618,6 +618,7 @@ class LimitedSet(object):
         # and it will end up in the correct order.
         self.purge(1, offset=1)
         inserted = now()
+        self.discard(key) # remove this key if it exists to prevent dups
         self._data[key] = inserted
         heappush(self._heap, (inserted, key))
 

@@ -291,6 +291,13 @@ class test_LimitedSet(Case):
         s.add('foo')
         self.assertIsInstance(s.as_dict(), dict)
 
+    def test_no_duplicates(self):
+        s = LimitedSet(maxlen=2)
+        s.add('foo')
+        s.add('foo')
+        self.assertEqual(len(s), 1)
+        self.assertEqual(len(s._data), 1)
+        self.assertEqual(len(s._heap), 1)
 
 class test_AttributeDict(Case):
 
