@@ -367,15 +367,11 @@ def _argsfromspec(spec, replace_defaults=True):
         optional = list(zip(spec.args[-split:], defaults))
     else:
         positional, optional = spec.args, []
-    if IS_PY3:  # pragma: no cover
-        keywords = spec.varkw
-    elif IS_PY2:
-        keywords = spec.keywords  # noqa
     return ', '.join(filter(None, [
         ', '.join(positional),
         ', '.join('{0}={1}'.format(k, v) for k, v in optional),
         '*{0}'.format(spec.varargs) if spec.varargs else None,
-        '**{0}'.format(keywords) if keywords else None,
+        '**{0}'.format(spec.varkw) if spec.varkw else None,
     ]))
 
 
@@ -403,6 +399,6 @@ def head_from_fun(fun, bound=False, debug=False):
 def fun_takes_argument(name, fun, position=None):
     spec = getfullargspec(fun)
     return (
-        spec.keywords or spec.varargs or
+        spec.varkw or spec.varargs or
         (len(spec.args) >= position if position else name in spec.args)
     )

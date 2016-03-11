@@ -107,7 +107,9 @@ class test_BasePool(AppCase):
         BasePool(10).on_apply()
 
     def test_interface_info(self):
-        self.assertDictEqual(BasePool(10).info, {})
+        self.assertDictEqual(BasePool(10).info, {
+            'max-concurrency': 10,
+        })
 
     def test_interface_flush(self):
         self.assertIsNone(BasePool(10).flush())

@@ -301,6 +301,8 @@ class MongoBackend(BaseBackend):
         :keyword include_password: Censor passwords.
 
         """
+        if not self.url:
+            return 'mongodb://'
         if include_password:
             return self.url
 

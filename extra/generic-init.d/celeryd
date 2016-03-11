@@ -115,6 +115,12 @@ if [ ! -z "$CELERY_APP" ]; then
     CELERY_APP_ARG="--app=$CELERY_APP"
 fi
 
+# Options to su
+# can be used to enable login shell (CELERYD_SU_ARGS="-l"),
+# or even to use start-stop-daemon instead of su.
+CELERYD_SU=${CELERY_SU:-"su"}
+CELERYD_SU_ARGS=${CELERYD_SU_ARGS:-""}
+
 CELERYD_USER=${CELERYD_USER:-$DEFAULT_USER}
 
 # Set CELERY_CREATE_DIRS to always create log/pid dirs.
@@ -235,7 +241,7 @@ _get_pids() {
 
 
 _chuid () {
-    su "$CELERYD_USER" -c "$CELERYD_MULTI $*"
+    ${CELERYD_SU} ${CELERYD_SU_ARGS} "$CELERYD_USER" -c "$CELERYD_MULTI $*"
 }
 
 

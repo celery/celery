@@ -37,22 +37,22 @@ http://docs.celeryproject.org/en/latest/getting-started/brokers/rabbitmq.html
 
 In addition, some Python requirements must also be satisfied:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pip install -r requirements.txt
 
 Starting the worker
 ===================
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -l info
 
 Running a task
 ===================
 
-.. code-block:: bash
-    
+.. code-block:: console
+
     $ python ./manage.sh shell
     >>> from demoapp.tasks import add, mul, xsum
     >>> res = add.delay(2,3)

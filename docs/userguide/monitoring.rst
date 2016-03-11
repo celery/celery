@@ -745,7 +745,7 @@ worker-online
 
 The worker has connected to the broker and is online.
 
-- `hostname`: Hostname of the worker.
+- `hostname`: Nodename of the worker.
 - `timestamp`: Event timestamp.
 - `freq`: Heartbeat frequency in seconds (float).
 - `sw_ident`: Name of worker software (e.g. ``py-celery``).
@@ -763,7 +763,7 @@ worker-heartbeat
 Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
 it is considered to be offline.
 
-- `hostname`: Hostname of the worker.
+- `hostname`: Nodename of the worker.
 - `timestamp`: Event timestamp.
 - `freq`: Heartbeat frequency in seconds (float).
 - `sw_ident`: Name of worker software (e.g. ``py-celery``).

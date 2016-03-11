@@ -34,7 +34,7 @@ For a full list of available command-line options see
 
 You can also start multiple workers on the same machine. If you do so
 be sure to give a unique name to each individual worker by specifying a
-host name with the :option:`--hostname|-n` argument:
+node name with the :option:`--hostname|-n` argument:
 
 .. code-block:: console
 
@@ -42,7 +42,7 @@ host name with the :option:`--hostname|-n` argument:
     $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker2.%h
     $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker3.%h
 
-The hostname argument can expand the following variables:
+The ``hostname`` argument can expand the following variables:
 
     - ``%h``:  Hostname including domain name.
     - ``%n``:  Hostname only.
@@ -149,16 +149,18 @@ can contain variables that the worker will expand:
 Node name replacements
 ----------------------
 
+- ``%p``:  Full node name.
 - ``%h``:  Hostname including domain name.
 - ``%n``:  Hostname only.
 - ``%d``:  Domain name only.
 - ``%i``:  Prefork pool process index or 0 if MainProcess.
 - ``%I``:  Prefork pool process index with separator.
 
-E.g. if the current hostname is ``george.example.com`` then
+E.g. if the current hostname is ``george@foo.example.com`` then
 these will expand to:
 
-- ``--logfile=%h.log`` -> :file:`george.example.com.log`
+- ``--logfile-%p.log`` -> :file:`george@foo.example.com.log`
+- ``--logfile=%h.log`` -> :file:`foo.example.com.log`
 - ``--logfile=%n.log`` -> :file:`george.log`
 - ``--logfile=%d`` -> :file:`example.com.log`
 
@@ -968,7 +970,7 @@ The output will include the following fields:
 
     * ``hostname``
 
-        Hostname of the remote broker.
+        Node name of the remote broker.
 
     * ``insist``
 
