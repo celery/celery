@@ -276,7 +276,7 @@ def hello(state, from_node, revoked=None, **kwargs):
         logger.info('sync with %s', from_node)
         if revoked:
             worker_state.revoked.update(revoked)
-        return {'revoked': worker_state.revoked._data,
+        return {'revoked': worker_state.revoked.as_dict(),
                 'clock': state.app.clock.forward()}
 
 
