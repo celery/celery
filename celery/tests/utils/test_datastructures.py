@@ -306,6 +306,7 @@ class test_LimitedSet(Case):
         for i in range(12):
             s1.add(i)
             s2.add(i*i)
+        self.assertNotEqual(s1, s2)
         s3.update(s1)
         s3.update(s2)
         s4.update(s1.as_dict())
@@ -317,6 +318,17 @@ class test_LimitedSet(Case):
         s2.update(s4)
         s4.update(s2)
         self.assertEqual(s2, s4)
+
+    def test_limiset_wrong_args(self):
+        with self.assertRaises(ValueError):
+            s = LimitedSet(maxlen=10, minlen=200)
+        with self.assertRaises(ValueError):
+            s = LimitedSet(minlen=-1)
+        with self.assertRaises(ValueError):
+            s = LimitedSet(expires=-1)
+        with self.assertRaises(ValueError):
+            s = LimitedSet(maxlen=400)
+            s.update({'ada': 'zzz'})
 
     def test_iterable_and_ordering(self):
         s = LimitedSet(maxlen=35, expires=None)
