@@ -4,6 +4,7 @@ import pickle
 import sys
 
 from collections import Mapping
+from itertools import count
 
 from billiard.einfo import ExceptionInfo
 from time import time
@@ -314,12 +315,16 @@ class test_LimitedSet(Case):
 
     def test_iterable_and_ordering(self):
         s = LimitedSet(maxlen=35, expires=None)
-        for i in range(15):
-            s.add(i)
-        # NOTE: This test used to reverse the input numbers, but
-        # timestamps do not have enough precision to keep the data
-        # ordered when inserted quickly.
-        self.assertEqual(list(s), list(range(15)))
+        # we use a custom clock here, as time.time() does not have enough
+        # precision when called quickly (can return the same value twice).
+        clock = count(1)
+        for i in reversed(range(15)):
+            s.add(i, now=next(clock))
+        j = 40
+        for i in s:
+            self.assertLess(i, j)  # each item is smaller and smaller
+            j = i
+        self.assertEqual(i, 0)  # last item is zero
 
     def test_pop_and_ordering_again(self):
         s = LimitedSet(maxlen=5)
