@@ -16,7 +16,7 @@ from celery import _state
 from celery.app import base as _appbase
 from celery.app import defaults
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items, keys
+from celery.five import keys
 from celery.loaders.base import BaseLoader, unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.serialization import pickle
@@ -38,6 +38,7 @@ from celery.tests.case import (
 )
 from celery.utils import uuid
 from celery.utils.mail import ErrorMail
+from celery.utils.objects import Bunch
 
 THIS_IS_A_KEY = 'this is a value'
 
@@ -56,13 +57,6 @@ class ObjectConfig2(object):
     CALL_ME_BACK = 123456789
     WANT_ME_TO = False
     UNDERSTAND_ME = True
-
-
-class Object(object):
-
-    def __init__(self, **kwargs):
-        for key, value in items(kwargs):
-            setattr(self, key, value)
 
 
 def _get_test_config():
@@ -647,10 +641,10 @@ class test_App(AppCase):
 
         _args = {'foo': 'bar', 'spam': 'baz'}
 
-        self.app.config_from_object(Object())
+        self.app.config_from_object(Bunch())
         self.assertEqual(self.app.conf.broker_transport_options, {})
 
-        self.app.config_from_object(Object(broker_transport_options=_args))
+        self.app.config_from_object(Bunch(broker_transport_options=_args))
         self.assertEqual(self.app.conf.broker_transport_options, _args)
 
     def test_Windows_log_color_disabled(self):

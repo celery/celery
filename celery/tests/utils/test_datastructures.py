@@ -17,18 +17,15 @@ from celery.datastructures import (
     DependencyGraph,
 )
 from celery.five import items
+from celery.utils.objects import Bunch
 
-from celery.tests.case import Case, Mock, WhateverIO, SkipTest, patch
-
-
-class Object(object):
-    pass
+from celery.tests.case import Case, Mock, WhateverIO, SkipTest
 
 
 class test_DictAttribute(Case):
 
     def test_get_set_keys_values_items(self):
-        x = DictAttribute(Object())
+        x = DictAttribute(Bunch())
         x['foo'] = 'The quick brown fox'
         self.assertEqual(x['foo'], 'The quick brown fox')
         self.assertEqual(x['foo'], x.obj.foo)
@@ -46,21 +43,20 @@ class test_DictAttribute(Case):
         self.assertIn('The quick yellow fox', list(x.values()))
 
     def test_setdefault(self):
-        x = DictAttribute(Object())
+        x = DictAttribute(Bunch())
         x.setdefault('foo', 'NEW')
         self.assertEqual(x['foo'], 'NEW')
         x.setdefault('foo', 'XYZ')
         self.assertEqual(x['foo'], 'NEW')
 
     def test_contains(self):
-        x = DictAttribute(Object())
+        x = DictAttribute(Bunch())
         x['foo'] = 1
         self.assertIn('foo', x)
         self.assertNotIn('bar', x)
 
     def test_items(self):
-        obj = Object()
-        obj.attr1 = 1
+        obj = Bunch(attr1=1)
         x = DictAttribute(obj)
         x['attr2'] = 2
         self.assertEqual(x['attr1'], 1)
@@ -123,8 +119,7 @@ class test_ConfigurationView(Case):
         self.assertEqual(self.view.foo, 10)
 
     def test_add_defaults_object(self):
-        defaults = Object()
-        defaults.foo = 10
+        defaults = Bunch(foo=10)
         self.view.add_defaults(defaults)
         self.assertEqual(self.view.foo, 10)
 

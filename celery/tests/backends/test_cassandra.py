@@ -5,15 +5,12 @@ from datetime import datetime
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
+from celery.utils.objects import Bunch
 from celery.tests.case import (
     AppCase, Mock, mock_module, depends_on_current_app
 )
 
 CASSANDRA_MODULES = ['cassandra', 'cassandra.auth', 'cassandra.cluster']
-
-
-class Object(object):
-    pass
 
 
 class test_CassandraBackend(AppCase):
@@ -42,8 +39,9 @@ class test_CassandraBackend(AppCase):
             from celery.backends import cassandra as mod
             mod.cassandra = Mock()
 
-            cons = mod.cassandra.ConsistencyLevel = Object()
-            cons.LOCAL_QUORUM = 'foo'
+            cons = mod.cassandra.ConsistencyLevel = Bunch(
+                LOCAL_QUORUM='foo',
+            )
 
             self.app.conf.cassandra_read_consistency = 'LOCAL_FOO'
             self.app.conf.cassandra_write_consistency = 'LOCAL_FOO'

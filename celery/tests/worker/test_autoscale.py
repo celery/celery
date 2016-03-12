@@ -7,10 +7,7 @@ from celery.five import monotonic
 from celery.worker import state
 from celery.worker import autoscale
 from celery.tests.case import AppCase, Mock, patch, sleepdeprived
-
-
-class Object(object):
-    pass
+from celery.utils.objects import Bunch
 
 
 class MockPool(BasePool):
@@ -19,8 +16,7 @@ class MockPool(BasePool):
 
     def __init__(self, *args, **kwargs):
         super(MockPool, self).__init__(*args, **kwargs)
-        self._pool = Object()
-        self._pool._processes = self.limit
+        self._pool = Bunch(_processes=self.limit)
 
     def grow(self, n=1):
         self._pool._processes += n

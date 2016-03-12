@@ -9,11 +9,9 @@ from celery import beat
 from celery.five import keys, string_t
 from celery.schedules import schedule
 from celery.utils import uuid
+from celery.utils.objects import Bunch
+
 from celery.tests.case import AppCase, Mock, SkipTest, call, patch
-
-
-class Object(object):
-    pass
 
 
 class MockShelve(dict):
@@ -353,8 +351,9 @@ def create_persistent_scheduler(shelv=None):
 
     class MockPersistentScheduler(beat.PersistentScheduler):
         sh = shelv
-        persistence = Object()
-        persistence.open = lambda *a, **kw: shelv
+        persistence = Bunch(
+            open=lambda *a, **kw: shelv,
+        )
         tick_raises_exit = False
         shutdown_service = None
 

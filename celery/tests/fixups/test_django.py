@@ -10,6 +10,7 @@ from celery.fixups.django import (
     DjangoFixup,
     DjangoWorkerFixup,
 )
+from celery.utils.objects import Bunch
 
 from celery.tests.case import (
     AppCase, Mock, patch, patch_modules, mask_modules,
@@ -275,10 +276,7 @@ class test_DjangoWorkerFixup(FixupCase):
             with self.assertRaises(KeyError):
                 f._close_database()
 
-            class Object(object):
-                pass
-            o = Object()
-            o.close_connection = Mock()
+            o = Bunch(close_connection=Mock())
             f._db = o
             f._close_database()
             o.close_connection.assert_called_with()

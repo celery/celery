@@ -9,9 +9,12 @@ from itertools import cycle
 
 from celery.app.defaults import DEFAULTS
 from celery.datastructures import AttributeDict
-from celery.five import items, range
+from celery.five import range
 from celery.utils.functional import noop
+from celery.utils.objects import Bunch
+
 from celery.tests.case import AppCase, Mock, SkipTest, patch, restore_logging
+
 try:
     from celery.concurrency import prefork as mp
     from celery.concurrency import asynpool
@@ -36,12 +39,6 @@ except ImportError:
                 pass
     mp = _mp()  # noqa
     asynpool = None  # noqa
-
-
-class Object(object):   # for writeable attributes.
-
-    def __init__(self, **kwargs):
-        [setattr(self, k, v) for k, v in items(kwargs)]
 
 
 class MockResult(object):
@@ -132,7 +129,7 @@ class MockPool(object):
         self.maintain_pool = Mock()
         self._state = mp.RUN
         self._processes = kwargs.get('processes')
-        self._pool = [Object(pid=i, inqW_fd=1, outqR_fd=2)
+        self._pool = [Bunch(pid=i, inqW_fd=1, outqR_fd=2)
                       for i in range(self._processes)]
         self._current_proc = cycle(range(self._processes))
 
@@ -405,7 +402,7 @@ class test_TaskPool(PoolCase):
 
     def test_info(self):
         pool = TaskPool(10)
-        procs = [Object(pid=i) for i in range(pool.limit)]
+        procs = [Bunch(pid=i) for i in range(pool.limit)]
 
         class _Pool(object):
             _pool = procs

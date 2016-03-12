@@ -8,13 +8,11 @@ from celery.bin.base import (
     Extensions,
     HelpFormatter,
 )
+from celery.utils.objects import Bunch
+
 from celery.tests.case import (
     AppCase, Mock, depends_on_current_app, override_stdouts, patch,
 )
-
-
-class Object(object):
-    pass
 
 
 class MyApp(object):
@@ -27,9 +25,7 @@ class MockCommand(Command):
     mock_args = ('arg1', 'arg2', 'arg3')
 
     def parse_options(self, prog_name, arguments, command=None):
-        options = Object()
-        options.foo = 'bar'
-        options.prog_name = prog_name
+        options = Bunch(foo='bar', prog_name=prog_name)
         return options, self.mock_args
 
     def run(self, *args, **kwargs):
