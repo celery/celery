@@ -601,8 +601,7 @@ class LimitedSet(object):
     You can also configure minlen, which is the minimal residual size
     of the set.
 
-    All  arguments are optional, with exception of minlen, which must
-    be smaller than maxlen.  Unconfigured limits will not be enforced.
+    All arguments are optional, and no limits are enabled by default.
 
     :keyword maxlen: Optional max number of items.
 
@@ -611,10 +610,12 @@ class LimitedSet(object):
 
     :keyword expires: TTL for all items.
 
-        Items aging over expiration are purged as keys are inserted.
+        Expired items are purged as keys are inserted.
 
     :keyword minlen: Minimal residual size of this set.
         .. versionadded:: 4.0
+
+        Value must be less than ``maxlen`` if both are configured.
 
         Older expired items will be deleted, only after the set
         exceeds minlen number of items.
@@ -693,7 +694,9 @@ class LimitedSet(object):
             self.purge()
 
     def update(self, other):
-        """Update this LimitedSet from other LimitedSet, dict or iterable."""
+        """Update this set from other LimitedSet, dict or iterable."""
+        if not other:
+            return
         if isinstance(other, LimitedSet):
             self._data.update(other._data)
             self._refresh_heap()
@@ -701,7 +704,7 @@ class LimitedSet(object):
         elif isinstance(other, dict):
             # revokes are sent as a dict
             for key, inserted in items(other):
-                if isinstance(inserted, list):
+                if isinstance(inserted, (tuple, list)):
                     # in case someone uses ._data directly for sending update
                     inserted = inserted[0]
                 if not isinstance(inserted, float):
@@ -720,7 +723,6 @@ class LimitedSet(object):
         # mark an existing item as removed. If KeyError is not found, pass.
         entry = self._data.pop(item, sentinel)
         if entry is not sentinel:
-            entry[-1] = sentinel
             if self._heap_overload > self.max_heap_percent_overload:
                 self._refresh_heap()
     pop_value = discard
@@ -793,6 +795,10 @@ class LimitedSet(object):
     def __reduce__(self):
         return self.__class__, (
             self.maxlen, self.expires, self.as_dict(), self.minlen)
+
+    def __bool__(self):
+        return bool(self._data)
+    __nonzero__ = __bool__  # Py2
 
     @property
     def _heap_overload(self):

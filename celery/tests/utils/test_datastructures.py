@@ -233,7 +233,7 @@ class test_LimitedSet(Case):
         self.assertEqual(s.minlen, len(s))
         self.assertLessEqual(
             len(s._heap),
-            s.maxlen * (100. + s._MAX_HEAP_PERCENTS_OVERLOAD) / 100,
+            s.maxlen * (100. + s.max_heap_percent_overload) / 100,
         )
 
     def test_pickleable(self):
@@ -314,13 +314,12 @@ class test_LimitedSet(Case):
 
     def test_iterable_and_ordering(self):
         s = LimitedSet(maxlen=35, expires=None)
-        for i in reversed(range(15)):
+        for i in range(15):
             s.add(i)
-        j = 40
-        for i in s:
-            self.assertLess(i, j)  # each item is smaller and smaller
-            j = i
-        self.assertEqual(i, 0)  # last item = 0
+        # NOTE: This test used to reverse the input numbers, but
+        # timestamps do not have enough precision to keep the data
+        # ordered when inserted quickly.
+        self.assertEqual(list(s), list(range(15)))
 
     def test_pop_and_ordering_again(self):
         s = LimitedSet(maxlen=5)
