@@ -1,6 +1,6 @@
 """myapp.py
 
-Usage:
+Usage::
 
    (window1)$ python myapp.py worker -l info
 
