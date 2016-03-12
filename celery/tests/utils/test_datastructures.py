@@ -3,6 +3,8 @@ from __future__ import absolute_import
 import pickle
 import sys
 
+from collections import Mapping
+
 from billiard.einfo import ExceptionInfo
 from time import time
 
@@ -188,14 +190,17 @@ class test_LimitedSet(Case):
         for n in 'bar', 'baz':
             self.assertIn(n, s)
         self.assertNotIn('foo', s)
+
         s = LimitedSet(maxlen=10)
         for i in range(150):
             s.add(i)
         self.assertLessEqual(len(s), 10)
+
         # make sure heap is not leaking:
-        self.assertLessEqual(len(s._heap),
-                             len(s) * (100. +
-                             s._MAX_HEAP_PERCENTS_OVERLOAD) / 100)
+        self.assertLessEqual(
+            len(s._heap),
+            len(s) * (100. + s.max_heap_percent_overload) / 100,
+        )
 
     def test_purge(self):
         # purge now enforces rules
@@ -226,20 +231,10 @@ class test_LimitedSet(Case):
         s.minlen = 3
         s.purge(now=time() + 3)
         self.assertEqual(s.minlen, len(s))
-        self.assertLessEqual(len(s._heap),
-                             s.maxlen *
-                             (100. + s._MAX_HEAP_PERCENTS_OVERLOAD)/100)
-        # s = LimitedSet(maxlen=None)
-        # [s.add(i) for i in range(10)]
-        # s.maxlen = 2
-        # with patch('celery.datastructures.heappop') as hp:
-        #    hp.side_effect = IndexError()
-        #    s.purge()
-        #    hp.assert_called_with(s._heap)
-        # with patch('celery.datastructures.heappop') as hp:
-        #    s._data = {i * 2: i * 2 for i in range(10)}
-        #    s.purge()
-        #    self.assertEqual(hp.call_count, 10)
+        self.assertLessEqual(
+            len(s._heap),
+            s.maxlen * (100. + s._MAX_HEAP_PERCENTS_OVERLOAD) / 100,
+        )
 
     def test_pickleable(self):
         s = LimitedSet(maxlen=2)
@@ -273,7 +268,6 @@ class test_LimitedSet(Case):
         s.discard('foo')
         self.assertNotIn('foo', s)
         self.assertEqual(len(s._data), 0)
-        # self.assertLessEqual(len(s._heap), 0 + s.heap_overload)
         s.discard('foo')
 
     def test_clear(self):
@@ -311,7 +305,7 @@ class test_LimitedSet(Case):
         s4.update(s1.as_dict())
         s4.update(s2.as_dict())
         s5.update(s1._data)  # revoke is using this
-        s5.update(s2._data)  #
+        s5.update(s2._data)
         self.assertEqual(s3, s4)
         self.assertEqual(s3, s5)
         s2.update(s4)
@@ -342,7 +336,7 @@ class test_LimitedSet(Case):
     def test_as_dict(self):
         s = LimitedSet(maxlen=2)
         s.add('foo')
-        self.assertIsInstance(s.as_dict(), dict)
+        self.assertIsInstance(s.as_dict(), Mapping)
 
 
 class test_AttributeDict(Case):
