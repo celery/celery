@@ -39,7 +39,8 @@ The API defines a standard set of execution options, as well as three methods:
 .. topic:: Quick Cheat Sheet
 
     - ``T.delay(arg, kwarg=value)``
-        always a shortcut to ``.apply_async``.
+        Star arguments shortcut to ``.apply_async``.
+        (``.delay(*args, **kwargs)`` calls ``.apply_async(args, kwargs)``).
 
     - ``T.apply_async((arg,), {'kwarg': value})``
 
