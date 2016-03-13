@@ -337,6 +337,14 @@ class test_LimitedSet(Case):
         s.add('foo')
         self.assertIsInstance(s.as_dict(), Mapping)
 
+    def test_pop_ordering(self):
+        s = LimitedSet()
+        s.add('a', 1)
+        s.add('b', 2)
+        s.add('a', 3)
+        item = s.pop()
+        self.assertEqual(item, 'b')
+
 
 class test_AttributeDict(Case):
 

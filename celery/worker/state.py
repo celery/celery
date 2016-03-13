@@ -38,8 +38,11 @@ SOFTWARE_INFO = {'sw_ident': 'py-celery',
 REVOKES_MAX = 50000
 
 #: how many seconds a revoke will be active before
-#: being expired when the max limit has been exceeded.
+#: being expired and removed from the set
 REVOKE_EXPIRES = 10800
+
+# minimal number of newest revokes to keep, even if they expired
+REVOKE_MIN = 10000
 
 #: set of all reserved :class:`~celery.worker.request.Request`'s.
 reserved_requests = set()
@@ -54,7 +57,8 @@ total_count = Counter()
 all_total_count = [0]
 
 #: the list of currently revoked tasks.  Persistent if statedb set.
-revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
+revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES,
+                     minlen=REVOKE_MIN)
 
 #: Update global state when a task has been reserved.
 task_reserved = reserved_requests.add
