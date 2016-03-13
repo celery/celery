@@ -751,7 +751,7 @@ class LimitedSet(object):
         while self._heap:
             _, item = heappop(self._heap)
             if item is not sentinel:
-                del self.data[item]
+                del self._data[item]
                 return item
         return default
 
