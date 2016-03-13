@@ -56,7 +56,6 @@
     celery.utils.term
     celery.utils.timeutils
     celery.utils.iso8601
-    celery.utils.compat
     celery.utils.saferepr
     celery.utils.serialization
     celery.utils.sysinfo
