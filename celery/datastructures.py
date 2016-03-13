@@ -673,7 +673,6 @@ class LimitedSet(object):
         """Time consuming recreating of heap. Do not run this too often."""
         self._heap[:] = [
             entry for entry in values(self._data)
-            if entry is not sentinel
         ]
         heapify(self._heap)
 
@@ -751,7 +750,8 @@ class LimitedSet(object):
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
             _, item = heappop(self._heap)
-            if self._data.pop(item, None) is not sentinel:
+            if item is not sentinel:
+                del self.data[item]
                 return item
         return default
 
