@@ -6,7 +6,7 @@
     Utilities for functions.
 
 """
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
 import threading
@@ -321,6 +321,7 @@ def regen(it):
 
 class _regen(UserList, list):
     # must be subclass of list so that json can encode.
+
     def __init__(self, it):
         self.__it = it
         self.__index = 0

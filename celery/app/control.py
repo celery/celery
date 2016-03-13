@@ -55,13 +55,12 @@ class Inspect(object):
         self.limit = limit
 
     def _prepare(self, reply):
-        if not reply:
-            return
-        by_node = flatten_reply(reply)
-        if self.destination and \
-                not isinstance(self.destination, (list, tuple)):
-            return by_node.get(self.destination)
-        return by_node
+        if reply:
+            by_node = flatten_reply(reply)
+            if (self.destination and
+                    not isinstance(self.destination, (list, tuple))):
+                return by_node.get(self.destination)
+            return by_node
 
     def _request(self, command, **kwargs):
         return self._prepare(self.app.control.broadcast(

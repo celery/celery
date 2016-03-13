@@ -6,7 +6,7 @@
     Utilities for safely pickling exceptions.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from base64 import b64encode as base64encode, b64decode as base64decode
 from inspect import getmro

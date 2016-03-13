@@ -1,5 +1,4 @@
-"""
-Originally taken from pyiso8601 (http://code.google.com/p/pyiso8601/)
+"""Originally taken from pyiso8601 (http://code.google.com/p/pyiso8601/)
 
 Modified to match the behavior of dateutil.parser:
 
@@ -31,7 +30,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import re
 

@@ -138,7 +138,7 @@ class test_App(AppCase):
 
     @depends_on_current_app
     def test_task_windows_execv(self):
-        prev, _appbase._EXECV = _appbase._EXECV, True
+        prev, _appbase.USING_EXECV = _appbase.USING_EXECV, True
         try:
             @self.app.task(shared=False)
             def foo():
@@ -147,8 +147,8 @@ class test_App(AppCase):
             self.assertTrue(foo._get_current_object())  # is proxy
 
         finally:
-            _appbase._EXECV = prev
-        assert not _appbase._EXECV
+            _appbase.USING_EXECV = prev
+        assert not _appbase.USING_EXECV
 
     def test_task_takes_no_args(self):
         with self.assertRaises(TypeError):
@@ -405,7 +405,7 @@ class test_App(AppCase):
                 check(task)
                 return task
 
-            assert not _appbase._EXECV
+            assert not _appbase.USING_EXECV
 
             @app.task(filter=filter, shared=False)
             def foo():
