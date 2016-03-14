@@ -22,9 +22,10 @@ from .utils.log import get_logger
 
 try:
     from greenlet import GreenletExit
-    IGNORE_ERRORS = (GreenletExit,)
 except ImportError:  # pragma: no cover
     IGNORE_ERRORS = ()
+else:
+    IGNORE_ERRORS = (GreenletExit,)
 
 __all__ = ['Blueprint', 'Step', 'StartStopStep', 'ConsumerStep']
 
@@ -34,7 +35,6 @@ CLOSE = 0x2
 TERMINATE = 0x3
 
 logger = get_logger(__name__)
-debug = logger.debug
 
 
 def _pre(ns, fmt):
@@ -123,7 +123,7 @@ class Blueprint(object):
             self._debug('Starting %s', step.alias)
             self.started = i + 1
             step.start(parent)
-            debug('^-- substep ok')
+            logger.debug('^-- substep ok')
 
     def human_state(self):
         return self.state_to_name[self.state or 0]
@@ -271,7 +271,7 @@ class Blueprint(object):
         return step.name, step
 
     def _debug(self, msg, *args):
-        return debug(_pre(self, msg), *args)
+        return logger.debug(_pre(self, msg), *args)
 
     @property
     def alias(self):

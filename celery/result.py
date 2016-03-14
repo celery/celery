@@ -6,7 +6,7 @@
     Task results/state and groups of results.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import time
 
@@ -873,11 +873,6 @@ class EagerResult(AsyncResult):
     def _get_task_meta(self):
         return self._cache
 
-    @property
-    def _cache(self):
-        return {'task_id': self.id, 'result': self._result, 'status':
-                self._state, 'traceback': self._traceback}
-
     def __del__(self):
         pass
 
@@ -911,6 +906,11 @@ class EagerResult(AsyncResult):
 
     def __repr__(self):
         return '<EagerResult: {0.id}>'.format(self)
+
+    @property
+    def _cache(self):
+        return {'task_id': self.id, 'result': self._result, 'status':
+                self._state, 'traceback': self._traceback}
 
     @property
     def result(self):

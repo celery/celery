@@ -57,7 +57,7 @@ Misc.
 -----
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 __all__ = ['PENDING', 'RECEIVED', 'STARTED', 'SUCCESS', 'FAILURE',
            'REVOKED', 'RETRY', 'IGNORED', 'READY_STATES', 'UNREADY_STATES',

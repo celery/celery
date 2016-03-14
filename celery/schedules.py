@@ -7,11 +7,12 @@
     should run.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import numbers
 import re
 
+from bisect import bisect, bisect_left
 from collections import namedtuple
 from datetime import datetime, timedelta
 
@@ -72,11 +73,11 @@ class schedule(object):
     """Schedule for periodic task.
 
     :param run_every: Interval in seconds (or a :class:`~datetime.timedelta`).
-    :param relative:  If set to True the run time will be rounded to the
+    :keyword relative:  If set to True the run time will be rounded to the
         resolution of the interval.
-    :param nowfun: Function returning the current date and time
+    :keyword nowfun: Function returning the current date and time
         (class:`~datetime.datetime`).
-    :param app: Celery app instance.
+    :keyword app: Celery app instance.
 
     """
     relative = False
@@ -431,14 +432,13 @@ class crontab(schedule):
         return result
 
     def _delta_to_next(self, last_run_at, next_hour, next_minute):
-        """
-        Takes a datetime of last run, next minute and hour, and
+        """Takes a datetime of last run, next minute and hour, and
         returns a relativedelta for the next scheduled day and time.
+
         Only called when day_of_month and/or month_of_year cronspec
         is specified to further limit scheduled task execution.
-        """
-        from bisect import bisect, bisect_left
 
+        """
         datedata = AttributeDict(year=last_run_at.year)
         days_of_month = sorted(self.day_of_month)
         months_of_year = sorted(self.month_of_year)
@@ -515,16 +515,20 @@ class crontab(schedule):
         now = self.maybe_make_aware(self.now())
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
-        execute_this_date = (last_run_at.month in self.month_of_year and
-                             last_run_at.day in self.day_of_month and
-                             dow_num in self.day_of_week)
+        execute_this_date = (
+            last_run_at.month in self.month_of_year and
+            last_run_at.day in self.day_of_month and
+            dow_num in self.day_of_week
+        )
 
-        execute_this_hour = (execute_this_date and
-                             last_run_at.day == now.day and
-                             last_run_at.month == now.month and
-                             last_run_at.year == now.year and
-                             last_run_at.hour in self.hour and
-                             last_run_at.minute < max(self.minute))
+        execute_this_hour = (
+            execute_this_date and
+            last_run_at.day == now.day and
+            last_run_at.month == now.month and
+            last_run_at.year == now.year and
+            last_run_at.hour in self.hour and
+            last_run_at.minute < max(self.minute)
+        )
 
         if execute_this_hour:
             next_minute = min(minute for minute in self.minute
@@ -549,12 +553,14 @@ class crontab(schedule):
                                     if day > dow_num] or self.day_of_week)
                     add_week = next_day == dow_num
 
-                    delta = ffwd(weeks=add_week and 1 or 0,
-                                 weekday=(next_day - 1) % 7,
-                                 hour=next_hour,
-                                 minute=next_minute,
-                                 second=0,
-                                 microsecond=0)
+                    delta = ffwd(
+                        weeks=add_week and 1 or 0,
+                        weekday=(next_day - 1) % 7,
+                        hour=next_hour,
+                        minute=next_minute,
+                        second=0,
+                        microsecond=0,
+                    )
                 else:
                     delta = self._delta_to_next(last_run_at,
                                                 next_hour, next_minute)
@@ -581,11 +587,13 @@ class crontab(schedule):
 
     def __eq__(self, other):
         if isinstance(other, crontab):
-            return (other.month_of_year == self.month_of_year and
-                    other.day_of_month == self.day_of_month and
-                    other.day_of_week == self.day_of_week and
-                    other.hour == self.hour and
-                    other.minute == self.minute)
+            return (
+                other.month_of_year == self.month_of_year and
+                other.day_of_month == self.day_of_month and
+                other.day_of_week == self.day_of_week and
+                other.hour == self.hour and
+                other.minute == self.minute
+            )
         return NotImplemented
 
     def __ne__(self, other):
@@ -715,8 +723,8 @@ class solar(schedule):
                 start=last_run_at_utc, use_center=self.use_center,
             )
         except self.ephem.CircumpolarError:  # pragma: no cover
-            """Sun will not rise/set today. Check again tomorrow
-            (specifically, after the next anti-transit)."""
+            # Sun will not rise/set today. Check again tomorrow
+            # (specifically, after the next anti-transit).
             next_utc = (
                 self.cal.next_antitransit(self.ephem.Sun()) +
                 timedelta(minutes=1)
@@ -743,9 +751,11 @@ class solar(schedule):
 
     def __eq__(self, other):
         if isinstance(other, solar):
-            return (other.event == self.event and
-                    other.lat == self.lat and
-                    other.lon == self.lon)
+            return (
+                other.event == self.event and
+                other.lat == self.lat and
+                other.lon == self.lon
+            )
         return NotImplemented
 
     def __ne__(self, other):

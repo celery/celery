@@ -6,7 +6,7 @@
     Utility functions.
 
 """
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import numbers
 import os
@@ -56,7 +56,7 @@ or did you escape and the value was expanded twice? (%%N -> %N -> %hostname)?
 #: We use it to find out the name of the original ``__main__``
 #: module, so that we can properly rewrite the name of the
 #: task to be that of ``App.main``.
-MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE') or None
+MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE')
 
 #: Exchange for worker direct queues.
 WORKER_DIRECT_EXCHANGE = Exchange('C.dq2')
