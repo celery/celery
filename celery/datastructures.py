@@ -719,7 +719,10 @@ class LimitedSet(object):
                 self.add(obj)
 
     def discard(self, item):
-        """Remove item from LimitedSet. Return None if item was not found."""
+        """Remove item from :class:`LimitedSet`.
+
+        :keyword item: item to delete. If item is not found, nothing happens.
+        """
 
         entry = self._data.pop(item, sentinel)
         if entry is not sentinel:  # item was found in _data
