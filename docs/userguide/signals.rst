@@ -103,7 +103,7 @@ Provides arguments:
 * declare
 
     List of entities (:class:`~kombu.Exchange`,
-    :class:`~kombu.Queue` or :class:~`kombu.binding` to declare before
+    :class:`~kombu.Queue` or :class:`~kombu.binding` to declare before
     publishing the message.  Can be modified.
 
 * retry_policy

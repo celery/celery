@@ -64,6 +64,7 @@ def _marker(s, sep='-'):
 
 @app.task
 def add(x, y):
+    add.delay(x + x, y + y)
     return x + y
 
 
