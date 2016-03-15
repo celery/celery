@@ -719,12 +719,14 @@ class LimitedSet(object):
                 self.add(obj)
 
     def discard(self, item):
-        # mark an existing item as removed. If KeyError is not found, pass.
+        """Remove item from LimitedSet. Return None if item was not found."""
+
         entry = self._data.pop(item, sentinel)
-        if entry is not sentinel:
+        if entry is not sentinel:  # item was found in _data
+            entry[-1] = sentinel   # entry marked removed in _heap.
             if self._heap_overload > self.max_heap_percent_overload:
                 self._refresh_heap()
-    pop_value = discard
+    pop_value = discard  # compatibility alias for old code
 
     def purge(self, now=None):
         """Check oldest items and remove them if needed.
