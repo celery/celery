@@ -60,10 +60,12 @@ class StopSuite(Exception):
 
 
 def pstatus(p):
+    runtime = monotonic() - p.runtime
+    elapsed = monotonic() - p.elapsed
     return F_PROGRESS.format(
         p,
-        runtime=humanize_seconds(monotonic() - p.runtime, now='0 seconds'),
-        elapsed=humanize_seconds(monotonic() - p.elapsed, now='0 seconds'),
+        runtime=humanize_seconds(runtime, now=runtime),
+        elapsed=humanize_seconds(elapsed, now=elapsed),
     )
 
 
