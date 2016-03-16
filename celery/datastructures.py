@@ -686,7 +686,7 @@ class LimitedSet(object):
         now = now or time.time()
         if item in self._data:
             self.discard(item)
-        entry = (now, item)
+        entry = [now, item]  # this must be a list, we are using pointers.
         self._data[item] = entry
         heappush(self._heap, entry)
         if self.maxlen and len(self._data) >= self.maxlen:
