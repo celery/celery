@@ -51,8 +51,6 @@ REPR_LIMITED_SET = """\
 <{name}({size}): maxlen={0.maxlen}, expires={0.expires}, minlen={0.minlen}>\
 """
 
-sentinel = object()
-
 
 def force_mapping(m):
     if isinstance(m, (LazyObject, LazySettings)):
@@ -671,10 +669,7 @@ class LimitedSet(object):
 
     def _refresh_heap(self):
         """Time consuming recreating of heap. Do not run this too often."""
-        self._heap[:] = [
-            entry for entry in values(self._data)
-            if entry is not sentinel
-        ]
+        self._heap[:] = [entry for entry in values(self._data)]
         heapify(self._heap)
 
     def clear(self):
@@ -721,8 +716,11 @@ class LimitedSet(object):
 
     def discard(self, item):
         # mark an existing item as removed. If KeyError is not found, pass.
-        entry = self._data.pop(item, sentinel)
-        if entry is not sentinel:
+        try:
+            entry = self._data.pop(item)
+        except KeyError:
+            pass
+        else:
             if self._heap_overload > self.max_heap_percent_overload:
                 self._refresh_heap()
     pop_value = discard
@@ -751,7 +749,11 @@ class LimitedSet(object):
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
             _, item = heappop(self._heap)
-            if self._data.pop(item, None) is not sentinel:
+            try:
+                self._data.pop(item)
+            except KeyError:
+                pass
+            else:
                 return item
         return default
 
