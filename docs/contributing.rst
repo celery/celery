@@ -447,13 +447,22 @@ To run the Celery test suite you need to install a few dependencies.
 A complete list of the dependencies needed are located in
 :file:`requirements/test.txt`.
 
-Installing the test requirements:
+If you're working on the development version, then you need to
+install the development requirements first:
+
+.. code-block:: console
+
+    $ pip install -U -r requirements/dev.txt
+
+Both the stable and the development version have testing related
+dependencies, so install these next:
 
 .. code-block:: console
 
     $ pip install -U -r requirements/test.txt
+    $ pip install -U -r requirements/default.txt
 
-When installation of dependencies is complete you can execute
+After installing the dependencies required, you can now execute
 the test suite by calling ``nosetests``:
 
 .. code-block:: console
