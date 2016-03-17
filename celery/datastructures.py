@@ -673,7 +673,6 @@ class LimitedSet(object):
         """Time consuming recreating of heap. Do not run this too often."""
         self._heap[:] = [
             entry for entry in values(self._data)
-            if entry is not sentinel
         ]
         heapify(self._heap)
 
@@ -687,7 +686,7 @@ class LimitedSet(object):
         now = now or time.time()
         if item in self._data:
             self.discard(item)
-        entry = (now, item)
+        entry = [now, item]  # this must be a list, we are using pointers.
         self._data[item] = entry
         heappush(self._heap, entry)
         if self.maxlen and len(self._data) >= self.maxlen:
@@ -720,12 +719,17 @@ class LimitedSet(object):
                 self.add(obj)
 
     def discard(self, item):
-        # mark an existing item as removed. If KeyError is not found, pass.
+        """Remove item from :class:`LimitedSet`.
+
+        :keyword item: item to delete. If item is not found, nothing happens.
+        """
+
         entry = self._data.pop(item, sentinel)
-        if entry is not sentinel:
+        if entry is not sentinel:  # item was found in _data
+            entry[-1] = sentinel   # entry marked removed in _heap.
             if self._heap_overload > self.max_heap_percent_overload:
                 self._refresh_heap()
-    pop_value = discard
+    pop_value = discard  # compatibility alias for old code
 
     def purge(self, now=None):
         """Check oldest items and remove them if needed.
@@ -751,7 +755,8 @@ class LimitedSet(object):
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
             _, item = heappop(self._heap)
-            if self._data.pop(item, None) is not sentinel:
+            if item is not sentinel:
+                del self._data[item]
                 return item
         return default
 
