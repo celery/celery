@@ -452,7 +452,7 @@ class Consumer(object):
         error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body), exc_info=True)
         try:
             id_, name = message.headers['id'], message.headers['task']
-            root_id = message.headers['root_id']
+            root_id = message.headers.get('root_id')
         except KeyError:  # proto1
             id_, name = body['id'], body['task']
             root_id = None
@@ -515,7 +515,7 @@ class Consumer(object):
             try:
                 strategy = strategies[type_]
             except KeyError as exc:
-                return on_unknown_task(payload, message, exc)
+                return on_unknown_task(None, message, exc)
             else:
                 try:
                     strategy(
