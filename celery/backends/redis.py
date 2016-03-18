@@ -65,6 +65,11 @@ class ResultConsumer(async.BaseResultConsumer):
         )
         self._consume_from(initial_task_id)
 
+    def on_wait_for_pending(self, result, **kwargs):
+        for meta in result._iter_meta():
+            if meta is not None:
+                self.on_state_change(meta, None)
+
     def stop(self):
         if self._pubsub is not None:
             self._pubsub.close()

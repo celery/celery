@@ -15,7 +15,7 @@ from contextlib import contextmanager
 from copy import copy
 
 from kombu.utils import cached_property
-from vine import Thenable, promise
+from vine import Thenable, barrier, promise
 
 from . import current_app
 from . import states
@@ -356,6 +356,9 @@ class AsyncResult(ResultBase):
             return self._maybe_set_cache(self.backend.get_task_meta(self.id))
         return self._cache
 
+    def _iter_meta(self):
+        return iter([self._get_task_meta()])
+
     def _set_cache(self, d):
         children = d.get('children')
         if children:
@@ -438,7 +441,7 @@ class ResultSet(ResultBase):
         self._cache = None
         self.results = results
         self.on_ready = promise(args=(self,))
-        self._on_full = ready_barrier
+        self._on_full = ready_barrier or barrier(results)
         if self._on_full:
             self._on_full.then(promise(self.on_ready))
 
@@ -736,6 +739,11 @@ class ResultSet(ResultBase):
             else:
                 acc[order_index[task_id]] = value
         return acc
+
+    def _iter_meta(self):
+        return (meta for _, meta in self.backend.get_many(
+            {r.id for r in self.results}, max_iterations=1,
+        ))
 
     def _failed_join_report(self):
         return (res for res in self.results

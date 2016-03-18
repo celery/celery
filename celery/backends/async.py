@@ -8,9 +8,9 @@
 from __future__ import absolute_import, unicode_literals
 
 import socket
-import time
 
 from collections import deque
+from time import sleep
 from weakref import WeakKeyDictionary
 
 from kombu.syn import detect_environment
@@ -82,7 +82,7 @@ class greenletDrainer(Drainer):
         if self._g is None:
             self.start()
         if not p.ready:
-            time.sleep(0)
+            sleep(0)
 
 
 @register_drainer('eventlet')
@@ -115,22 +115,22 @@ class AsyncBackendMixin(object):
             raise StopIteration()
 
         bucket = deque()
-        for result in results:
-            if result._cache:
-                bucket.append(result)
+        for node in results:
+            if node._cache:
+                bucket.append(node)
             else:
-                self._collect_into(result, bucket)
+                self._collect_into(node, bucket)
 
         for _ in self._wait_for_pending(
                 result,
                 timeout=timeout, interval=interval, no_ack=no_ack,
                 on_message=on_message, on_interval=on_interval):
             while bucket:
-                result = bucket.popleft()
-                yield result.id, result._cache
+                node = bucket.popleft()
+                yield result.id, node._cache
         while bucket:
-            result = bucket.popleft()
-            yield result.id, result._cache
+            node = bucket.popleft()
+            yield result.id, node._cache
 
     def add_pending_result(self, result):
         if result.id not in self._pending_results:
@@ -152,13 +152,12 @@ class AsyncBackendMixin(object):
             pass
         return result.maybe_throw(callback=callback, propagate=propagate)
 
-    def _wait_for_pending(self, result, timeout=None, interval=0.5,
-                          no_ack=True, on_interval=None, on_message=None,
-                          callback=None, propagate=True):
+    def _wait_for_pending(self, result,
+                          timeout=None, on_interval=None, on_message=None,
+                          **kwargs):
         return self.result_consumer._wait_for_pending(
-            result, timeout=timeout, interval=interval,
-            no_ack=no_ack, on_interval=on_interval,
-            callback=callback, on_message=on_message, propagate=propagate,
+            result, timeout=timeout,
+            on_interval=on_interval, on_message=on_message,
         )
 
     @property
@@ -205,20 +204,24 @@ class BaseResultConsumer(object):
         return self.drainer.drain_events_until(
             p, timeout=timeout, on_interval=on_interval)
 
-    def _wait_for_pending(self, result, timeout=None, interval=0.5,
-                          no_ack=True, on_interval=None, callback=None,
-                          on_message=None, propagate=True):
+    def _wait_for_pending(self, result,
+                          timeout=None, on_interval=None, on_message=None,
+                          **kwargs):
+        self.on_wait_for_pending(result, timeout=timeout, **kwargs)
         prev_on_m, self.on_message = self.on_message, on_message
         try:
             for _ in self.drain_events_until(
                     result.on_ready, timeout=timeout,
                     on_interval=on_interval):
                 yield
-                time.sleep(0)
+                sleep(0)
         except socket.timeout:
             raise TimeoutError('The operation timed out.')
         finally:
             self.on_message = prev_on_m
+
+    def on_wait_for_pending(self, result, timeout=None, **kwargs):
+        pass
 
     def on_out_of_band_result(self, message):
         self.on_state_change(message.payload, message)
@@ -238,4 +241,4 @@ class BaseResultConsumer(object):
                 buckets.pop(result)
             except KeyError:
                 pass
-        time.sleep(0)
+        sleep(0)
