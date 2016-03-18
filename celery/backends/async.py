@@ -127,10 +127,10 @@ class AsyncBackendMixin(object):
                 on_message=on_message, on_interval=on_interval):
             while bucket:
                 node = bucket.popleft()
-                yield result.id, node._cache
+                yield node.id, node._cache
         while bucket:
             node = bucket.popleft()
-            yield result.id, node._cache
+            yield node.id, node._cache
 
     def add_pending_result(self, result):
         if result.id not in self._pending_results:
