@@ -537,7 +537,7 @@ class BaseKeyValueStoreBackend(Backend):
             }
 
     def get_many(self, task_ids, timeout=None, interval=0.5, no_ack=True,
-                 on_message=None, on_interval=None,
+                 on_message=None, on_interval=None, max_iterations=None,
                  READY_STATES=states.READY_STATES):
         interval = 0.5 if interval is None else interval
         ids = task_ids if isinstance(task_ids, set) else set(task_ids)
@@ -571,6 +571,8 @@ class BaseKeyValueStoreBackend(Backend):
                 on_interval()
             time.sleep(interval)  # don't busy loop.
             iterations += 1
+            if max_iterations and iterations >= max_iterations:
+                break
 
     def _forget(self, task_id):
         self.delete(self.get_key_for_task(task_id))

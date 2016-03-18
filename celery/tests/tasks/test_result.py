@@ -320,8 +320,11 @@ class test_ResultSet(AppCase):
             [self.app.AsyncResult(t) for t in ['1', '2', '3']])))
 
     def test_eq_other(self):
-        self.assertFalse(self.app.ResultSet([1, 3, 3]) == 1)
-        self.assertTrue(self.app.ResultSet([1]) == self.app.ResultSet([1]))
+        self.assertFalse(self.app.ResultSet(
+            [self.app.AsyncResult(t) for t in [1, 3, 3]]) == 1)
+        rs1 = self.app.ResultSet([self.app.AsyncResult(1)])
+        rs2 = self.app.ResultSet([self.app.AsyncResult(1)])
+        self.assertTrue(rs1 == rs2)
 
     def test_get(self):
         x = self.app.ResultSet([self.app.AsyncResult(t) for t in [1, 2, 3]])
@@ -336,18 +339,18 @@ class test_ResultSet(AppCase):
         self.assertTrue(x.join_native.called)
 
     def test_eq_ne(self):
-        g1 = self.app.ResultSet(
+        g1 = self.app.ResultSet([
             self.app.AsyncResult('id1'),
             self.app.AsyncResult('id2'),
-        )
-        g2 = self.app.ResultSet(
+        ])
+        g2 = self.app.ResultSet([
             self.app.AsyncResult('id1'),
             self.app.AsyncResult('id2'),
-        )
-        g3 = self.app.ResultSet(
+        ])
+        g3 = self.app.ResultSet([
             self.app.AsyncResult('id3'),
             self.app.AsyncResult('id1'),
-        )
+        ])
         self.assertEqual(g1, g2)
         self.assertNotEqual(g1, g3)
         self.assertNotEqual(g1, object())
@@ -366,10 +369,10 @@ class test_ResultSet(AppCase):
         self.assertTrue(x.join.called)
 
     def test_add(self):
-        x = self.app.ResultSet([1])
-        x.add(2)
+        x = self.app.ResultSet([self.app.AsyncResult(1)])
+        x.add(self.app.AsyncResult(2))
         self.assertEqual(len(x), 2)
-        x.add(2)
+        x.add(self.app.AsyncResult(2))
         self.assertEqual(len(x), 2)
 
     @contextmanager
