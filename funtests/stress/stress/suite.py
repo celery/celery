@@ -273,12 +273,12 @@ def _is_descriptor(obj, attr):
 
 class Suite(BaseSuite):
 
-    @testcase('all', 'green', iterations=1)
+    @testcase('all', 'green', 'redis', iterations=1)
     def chain(self):
         c = add.s(4, 4) | add.s(8) | add.s(16)
         assert_equal(self.join(c()), 32)
 
-    @testcase('all', 'green', iterations=1)
+    @testcase('all', 'green', 'redis', iterations=1)
     def chaincomplex(self):
         c = (
             add.s(2, 2) | (
@@ -289,7 +289,7 @@ class Suite(BaseSuite):
         res = c()
         assert_equal(res.get(), [32, 33, 34, 35])
 
-    @testcase('all', 'green', iterations=1)
+    @testcase('all', 'green', 'redis', iterations=1)
     def parentids_chain(self, num=248):
         c = chain(ids.si(i) for i in range(num))
         c.freeze()
@@ -297,7 +297,7 @@ class Suite(BaseSuite):
         res.get(timeout=5)
         self.assert_ids(res, num - 1)
 
-    @testcase('all', 'green', iterations=1)
+    @testcase('all', 'green', 'redis', iterations=1)
     def parentids_group(self):
         g = ids.si(1) | ids.si(2) | group(ids.si(i) for i in range(2, 50))
         res = g()
