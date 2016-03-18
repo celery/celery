@@ -717,7 +717,7 @@ class LimitedSet(object):
     def discard(self, item):
         # mark an existing item as removed. If KeyError is not found, pass.
         try:
-            entry = self._data.pop(item)
+            self._data.pop(item)
         except KeyError:
             pass
         else:
