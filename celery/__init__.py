@@ -18,7 +18,7 @@ version_info_t = namedtuple(
 )
 
 SERIES = '0today8'
-VERSION = version_info_t(4, 0, 0, 'rc1', '')
+VERSION = version_info_t(4, 0, 0, 'rc2', '')
 
 __version__ = '{0.major}.{0.minor}.{0.micro}{0.releaselevel}'.format(VERSION)
 __author__ = 'Ask Solem'
