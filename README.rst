@@ -2,7 +2,7 @@
  celery - Distributed Task Queue
 =================================
 
-.. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
+.. image:: https://cloud.github.com/downloads/celery/celery/celery_128.png
 
 :Version: 4.0.0rc1 (0today8)
 :Web: http://celeryproject.org/
@@ -150,13 +150,13 @@ It supports...
 .. _`Eventlet`: http://eventlet.net/
 .. _`gevent`: http://gevent.org/
 
-.. _RabbitMQ: http://rabbitmq.com
+.. _RabbitMQ: http://www.rabbitmq.com/
 .. _Redis: http://redis.io
-.. _MongoDB: http://mongodb.org
-.. _Beanstalk: http://kr.github.com/beanstalkd
+.. _MongoDB: https://www.mongodb.org/
+.. _Beanstalk: http://kr.github.io/beanstalkd/
 .. _CouchDB: http://couchdb.apache.org
-.. _SQLAlchemy: http://sqlalchemy.org
-.. _`IronMQ`: http://iron.io
+.. _SQLAlchemy: http://www.sqlalchemy.org/
+.. _`IronMQ`: https://www.iron.io/
 
 Framework Integration
 =====================
@@ -182,15 +182,15 @@ The integration packages are not strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
 database connections at ``fork``.
 
-.. _`Django`: http://djangoproject.com/
-.. _`Pylons`: http://pylonsproject.org/
+.. _`Django`: https://www.djangoproject.com/
+.. _`Pylons`: http://www.pylonsproject.org/
 .. _`Flask`: http://flask.pocoo.org/
 .. _`web2py`: http://web2py.com/
 .. _`Bottle`: http://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
-.. _`pyramid_celery`: http://pypi.python.org/pypi/pyramid_celery/
-.. _`django-celery`: http://pypi.python.org/pypi/django-celery
-.. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
+.. _`pyramid_celery`: https://pypi.python.org/pypi/pyramid_celery/
+.. _`django-celery`: https://pypi.python.org/pypi/django-celery
+.. _`celery-pylons`: https://pypi.python.org/pypi/celery-pylons
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
@@ -320,7 +320,7 @@ Downloading and installing from source
 --------------------------------------
 
 Download the latest version of Celery from
-http://pypi.python.org/pypi/celery/
+https://pypi.python.org/pypi/celery/
 
 You can install it by doing the following,::
 
@@ -369,7 +369,7 @@ Mailing list
 For discussions about the usage, development, and future of celery,
 please join the `celery-users`_ mailing list.
 
-.. _`celery-users`: http://groups.google.com/group/celery-users/
+.. _`celery-users`: https://groups.google.com/forum/#!forum/celery-users
 
 .. _irc-channel:
 
@@ -394,7 +394,7 @@ to our issue tracker at https://github.com/celery/celery/issues/
 Wiki
 ====
 
-http://wiki.github.com/celery/celery/
+https://github.com/celery/celery/wiki
 
 .. _contributing-short:
 
