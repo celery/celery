@@ -246,7 +246,7 @@ issue tracker.
 
 * Celery: http://github.com/celery/celery/issues/
 * Kombu: http://github.com/celery/kombu/issues
-* pyamqp: http://github.com/celery/pyamqp/issues
+* pyamqp: http://github.com/celery/py-amqp/issues
 * vine: http://github.com/celery/vine/issues
 * librabbitmq: http://github.com/celery/librabbitmq/issues
 * Django-Celery: http://github.com/celery/django-celery/issues
