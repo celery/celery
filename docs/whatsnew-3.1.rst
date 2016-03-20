@@ -344,7 +344,7 @@ the :envvar:`DJANGO_SETTINGS_MODULE` environment variable is set.
 The distribution ships with a new example project using Django
 in :file:`examples/django`:
 
-http://github.com/celery/celery/tree/3.1/examples/django
+https://github.com/celery/celery/tree/3.1/examples/django
 
 Some features still require the :mod:`django-celery` library:
 

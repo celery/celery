@@ -523,7 +523,7 @@ Security Fixes
     the umask of the parent process will be used.
 
 .. _`CELERYSA-0002`:
-    http://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0002.txt
+    https://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0002.txt
 
 News
 ----

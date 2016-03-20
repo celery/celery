@@ -251,7 +251,7 @@ News
 
 * README/introduction/homepage: Added link to `Flask-Celery`_.
 
-.. _`Flask-Celery`: http://github.com/ask/flask-celery
+.. _`Flask-Celery`: https://github.com/ask/flask-celery
 
 .. _version-2.1.0:
 
@@ -740,7 +740,7 @@ Experimental
 
 * Added generic init.d script using `celeryd-multi`
 
-    http://github.com/celery/celery/tree/master/extra/generic-init.d/celeryd
+    https://github.com/celery/celery/tree/master/extra/generic-init.d/celeryd
 
 .. _v210-documentation:
 

@@ -819,7 +819,7 @@ News
 * worker: now sends events if enabled with the `-E` argument.
 
     Excellent for monitoring tools, one is already in the making
-    (http://github.com/celery/celerymon).
+    (https://github.com/celery/celerymon).
 
     Current events include: :event:`worker-heartbeat`,
     task-[received/succeeded/failed/retried],

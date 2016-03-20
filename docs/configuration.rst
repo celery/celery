@@ -856,7 +856,7 @@ MongoDB backend settings
 .. note::
 
     The MongoDB backend requires the :mod:`pymongo` library:
-    http://github.com/mongodb/mongo-python-driver/tree/master
+    https://github.com/mongodb/mongo-python-driver/tree/master
 
 .. setting:: mongodb_backend_settings
 

@@ -7,7 +7,7 @@
 :Version: 4.0.0rc1 (0today8)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
-:Source: http://github.com/celery/celery/
+:Source: https://github.com/celery/celery/
 :Keywords: task queue, job queue, asynchronous, async, rabbitmq, amqp, redis,
   python, webhooks, queue, distributed
 
@@ -193,7 +193,7 @@ database connections at ``fork``.
 .. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
-.. _`tornado-celery`: http://github.com/mher/tornado-celery/
+.. _`tornado-celery`: https://github.com/mher/tornado-celery/
 
 .. _celery-documentation:
 
@@ -387,7 +387,7 @@ Bug tracker
 ===========
 
 If you have any suggestions, bug reports or annoyances please report them
-to our issue tracker at http://github.com/celery/celery/issues/
+to our issue tracker at https://github.com/celery/celery/issues/
 
 .. _wiki:
 
@@ -401,7 +401,7 @@ http://wiki.github.com/celery/celery/
 Contributing
 ============
 
-Development of `celery` happens at Github: http://github.com/celery/celery
+Development of `celery` happens at Github: https://github.com/celery/celery
 
 You are highly encouraged to participate in the development
 of `celery`. If you don't like Github (for some reason) you're welcome
