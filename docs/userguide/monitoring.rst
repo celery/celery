@@ -324,7 +324,7 @@ For a complete list of options use ``--help``:
 
     $ celery events --help
 
-.. _`celerymon`: http://github.com/celery/celerymon/
+.. _`celerymon`: https://github.com/celery/celerymon/
 
 .. _monitoring-rabbitmq:
 
@@ -435,7 +435,7 @@ maintaining a Celery cluster.
 
 * rabbitmq-munin: Munin plug-ins for RabbitMQ.
 
-    http://github.com/ask/rabbitmq-munin
+    https://github.com/ask/rabbitmq-munin
 
 * celery_tasks: Monitors the number of times each task type has
   been executed (requires `celerymon`).

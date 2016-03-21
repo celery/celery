@@ -231,10 +231,10 @@ been made on your bug. In the event you've turned this feature off, you
 should check back on occasion to ensure you don't miss any questions a
 developer trying to fix the bug might ask.
 
-.. _`GitHub`: http://github.com
-.. _`strace`: http://en.wikipedia.org/wiki/Strace
-.. _`ltrace`: http://en.wikipedia.org/wiki/Ltrace
-.. _`lsof`: http://en.wikipedia.org/wiki/Lsof
+.. _`GitHub`: https://github.com
+.. _`strace`: https://en.wikipedia.org/wiki/Strace
+.. _`ltrace`: https://en.wikipedia.org/wiki/Ltrace
+.. _`lsof`: https://en.wikipedia.org/wiki/Lsof
 
 .. _issue-trackers:
 
@@ -244,12 +244,12 @@ Issue Trackers
 Bugs for a package in the Celery ecosystem should be reported to the relevant
 issue tracker.
 
-* Celery: http://github.com/celery/celery/issues/
-* Kombu: http://github.com/celery/kombu/issues
-* pyamqp: http://github.com/celery/pyamqp/issues
-* vine: http://github.com/celery/vine/issues
-* librabbitmq: http://github.com/celery/librabbitmq/issues
-* Django-Celery: http://github.com/celery/django-celery/issues
+* Celery: https://github.com/celery/celery/issues/
+* Kombu: https://github.com/celery/kombu/issues
+* pyamqp: https://github.com/celery/py-amqp/issues
+* vine: https://github.com/celery/vine/issues
+* librabbitmq: https://github.com/celery/librabbitmq/issues
+* Django-Celery: https://github.com/celery/django-celery/issues
 
 If you are unsure of the origin of the bug you can ask the
 :ref:`mailing-list`, or just use the Celery issue tracker.
@@ -282,9 +282,9 @@ Branches
 
 Current active version branches:
 
-* master (http://github.com/celery/celery/tree/master)
-* 3.1 (http://github.com/celery/celery/tree/3.1)
-* 3.0 (http://github.com/celery/celery/tree/3.0)
+* master (https://github.com/celery/celery/tree/master)
+* 3.1 (https://github.com/celery/celery/tree/3.1)
+* 3.0 (https://github.com/celery/celery/tree/3.0)
 
 You can see the state of any branch by looking at the Changelog:
 

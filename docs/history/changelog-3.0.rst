@@ -901,7 +901,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
         the files from source control and update them manually.
         You can find the init scripts for version 3.0.x at:
 
-            http://github.com/celery/celery/tree/3.0/extra/generic-init.d
+            https://github.com/celery/celery/tree/3.0/extra/generic-init.d
 
 - Now depends on billiard 2.7.3.17
 

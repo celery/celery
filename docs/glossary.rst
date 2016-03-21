@@ -80,7 +80,7 @@ Glossary
         unintended effects, but not necessarily side-effect free in the pure
         sense (compare to :term:`nullipotent`).
 
-        Further reading: http://en.wikipedia.org/wiki/Idempotent
+        Further reading: https://en.wikipedia.org/wiki/Idempotent
 
     nullipotent
         describes a function that will have the same effect, and give the same

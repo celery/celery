@@ -42,7 +42,7 @@ setup(
     description='Functional test suite for Celery',
     author='Ask Solem',
     author_email='ask@celeryproject.org',
-    url='http://github.com/celery/celery',
+    url='https://github.com/celery/celery',
     platforms=['any'],
     packages=[],
     data_files=[],

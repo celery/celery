@@ -232,7 +232,7 @@ class DependencyGraph(object):
     def _khan62(self):
         """Khans simple topological sort algorithm from '62
 
-        See http://en.wikipedia.org/wiki/Topological_sorting
+        See https://en.wikipedia.org/wiki/Topological_sorting
 
         """
         count = defaultdict(lambda: 0)

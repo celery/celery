@@ -74,7 +74,7 @@ Highlights
 
 .. _`website`: http://celeryproject.org/
 .. _`django-celery changelog`:
-    http://github.com/celery/django-celery/tree/master/Changelog
+    https://github.com/celery/django-celery/tree/master/Changelog
 .. _`django-celery 3.0`: http://pypi.python.org/pypi/django-celery/
 
 .. contents::
@@ -156,8 +156,8 @@ for the no-execv patch to work.
 - Issue #625
 - Issue #627
 - Issue #640
-- `django-celery #122 <http://github.com/celery/django-celery/issues/122`
-- `django-celery #124 <http://github.com/celery/django-celery/issues/122`
+- `django-celery #122 <https://github.com/celery/django-celery/issues/122`
+- `django-celery #124 <https://github.com/celery/django-celery/issues/122`
 
 :mod:`celery.app.task` no longer a package
 ------------------------------------------

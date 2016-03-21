@@ -46,7 +46,7 @@ Security Fixes
 
 
 .. _`CELERYSA-0001`:
-    http://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0001.txt
+    https://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0001.txt
 
 .. _v244-fixes:
 

@@ -301,7 +301,7 @@ as plug-ins to RabbitMQ, like the `last-value-cache plug-in`_ by Michael
 Bridgen.
 
 .. _`last-value-cache plug-in`:
-    http://github.com/squaremo/rabbitmq-lvc-plugin
+    https://github.com/squaremo/rabbitmq-lvc-plugin
 
 .. _amqp-exchange-type-direct:
 
