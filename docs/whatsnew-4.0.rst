@@ -207,13 +207,19 @@ New Task Message Protocol
 
 - Worker stores results and sends monitoring events for unknown task names
 
-- shadow
+- Worker calls callbacks/errbacks even when the result is sent by the
+  parent process (e.g. :exc:`WorkerLostError` when a child process
+  terminates).
 
-- argsrepr
+- origin header
+
+- shadow header
+
+- argsrepr header
 
 - Support for very long chains
 
-- parent_id / root_id
+- parent_id / root_id headers
 
 
 Prefork: Tasks now log from the child process
@@ -233,6 +239,38 @@ process has a separate log file to avoid race conditions.
 
 You are encouraged to upgrade your init scripts and multi arguments
 to do so also.
+
+Ability to configure separate broker urls for read/write
+========================================================
+
+New :setting:`broker_read_url` and :setting:`broker_write_url` settings
+have been added so that separate broker urls can be provided
+for connections used for consuming/publishing.
+
+In addition to the configuration options, two new methods have been
+added the app API:
+
+    - ``app.connection_for_read()``
+    - ``app.connection_for_write()``
+
+These should now be used in place of ``app.connection()`` to specify
+the intent of the required connection.
+
+.. note::
+
+Two connection pools are available: ``app.pool`` (read), and
+``app.producer_pool`` (write).  The latter does not actually give connections
+but full :class:`kombu.Producer` instances.
+
+.. code-block:: python
+
+    def publish_some_message(app, producer=None):
+        with app.producer_or_acquire(producer) as producer:
+            ...
+
+    def consume_messages(app, connection=None):
+        with app.connection_or_acquire(connection) as connection:
+            ...
 
 Canvas Refactor
 ===============
@@ -270,6 +308,11 @@ e442df61b2ff1fe855881c1e2ff9acc970090f54
 
 - Chain: Fixed bug with incorrect id set when a subtask is also a chain.
 
+- ``group | group`` is now flattened into a single group (Issue #2573).
+
+- Fixed issue where ``group | task`` was not upgrading correctly
+  to chord (Issue #2922).
+
 Schedule tasks based on sunrise, sunset, dawn and dusk.
 =======================================================
 
@@ -290,6 +333,11 @@ RabbitMQ Priority queue support
 
 Contributed by Gerald Manipon.
 
+Incompatible: Worker direct queues are no longer using auto-delete.
+===================================================================
+
+Issue #2492.
+
 Prefork: Limits for child process resident memory size.
 =======================================================
 
@@ -300,8 +348,16 @@ which BLA BLA BLA
 
 Contributed by Dave Smith.
 
-Redis: New optimized chord join implementation.
+Redis: Result backend optimizations
 ===============================================
+
+Pub/sub results
+---------------
+
+Contributed by Yaroslav Zhavoronkov and Ask Solem.
+
+Chord join
+----------
 
 This was an experimental feature introduced in Celery 3.1,
 but is now enabled by default.
@@ -331,6 +387,16 @@ to be using the new driver.
 
 # XXX What changed?
 
+
+Elasticsearch Result Backend
+============================
+
+Contributed by Ahmet Demir.
+
+Filesystem Result Backend
+=========================
+
+Contributed by Môshe van der Sterre.
 
 Event Batching
 ==============
@@ -383,6 +449,14 @@ Task Autoretry Decorator
 Contributed by Dmitry Malinovsky.
 
 
+Async Result API
+================
+
+eventlet/gevent drainers, promises, BLA BLA
+
+Closed issue #2529.
+
+
 :setting:`task_routes` can now contain glob patterns and regexes.
 =================================================================
 
@@ -398,6 +472,15 @@ In Other News
     - Now depends on :mod:`billiard` version 3.4.
 
     - No longer depends on ``anyjson`` :sadface:
+
+
+- **Tasks**: The "anon-exchange" is now used for simple name-name direct routing.
+
+  This increases performance as it completely bypasses the routing table,
+  in addition it also improves reliability for the Redis broker transport.
+
+- **Eventlet/Gevent**: Fixed race condition leading to "simultaneous read"
+ errors (Issue #2812).
 
 - **Programs**: ``%n`` format for :program:`celery multi` is now synonym with
   ``%N`` to be consistent with :program:`celery worker`.
@@ -440,6 +523,35 @@ In Other News
 
     Contributed by Michael Permana.
 
+- **Worker**: Improvements and fixes for LimitedSet
+
+    Getting rid of leaking memory + adding minlen size of the set
+    minlen is minimal residual size of set after operating for long.
+    Minlen items are kept, even if they should be expired by time, until
+    we get newer items.
+
+    Problems with older and even more old code:
+
+    1)
+       Heap would tend to grow in some scenarios
+       (like adding an item multiple times).
+
+    2) Adding many items fast would not clean them soon enough (if ever).
+
+    3) When talking to other workers, revoked._data was sent, but
+       it was processed on the other side as iterable.
+       That means giving those keys new (current)
+       timestamp. By doing this workers could recycle
+       items forever. Combined with 1) and 2), this means that in
+       large set of workers, you are getting out of memory soon.
+
+    All those problems should be fixed now,
+    also some new unittests are added.
+
+    This should fix issues #3095, #3086.
+
+    Contributed by David Pravec.
+
 - **App**: New signals for app configuration/finalization:
 
     - :data:`app.on_configure <@on_configure>`
@@ -472,6 +584,10 @@ In Other News
     the :meth:`~@gen_task_name` method.
 
     Contributed by Dmitry Malinovsky.
+
+- **App**: App has new ``app.current_worker_task`` property that
+  returns the task that is currently being worked on (or :const:`None`).
+  (Issue #2100).
 
 - **Tasks**: ``Task.subtask`` renamed to ``Task.signature`` with alias.
 
@@ -509,6 +625,9 @@ In Other News
 - **Programs**: :program:`celery multi` now passes through `%i` and `%I` log
   file formats.
 
+- **Programs**: ``%p`` can now be used to expand to the full worker nodename
+ in logfile/pidfile arguments.
+
 - **Programs**: A new command line option :option:``--executable`` is now
   available for daemonizing programs.
 
@@ -519,8 +638,17 @@ In Other News
 
     Contributed by Mickaël Penhard.
 
+- **Deployment**: Generic init scripts now support
+  :envvar:`CELERY_SU`` and :envvar:`CELERYD_SU_ARGS` environment variables
+  to set the path and arguments for :man:`su(1)`.
+
 - **Prefork**: Prefork pool now uses ``poll`` instead of ``select`` where
   available (Issue #2373).
+
+- **Eventlet**: Now returns pool size in :program:`celery inspect stats`
+  command.
+
+    Contributed by Alexander Oblovatniy.
 
 - **Tasks**: New :setting:`email_charset` setting allows for changing
   the charset used for outgoing error emails.
@@ -570,6 +698,9 @@ In Other News
 
     Fix contributed by Allard Hoeve.
 
+- **Result Backends**: Database backend now sets max char size to 155 to deal
+  with brain damaged MySQL unicode implementation (Issue #1748).
+
 - **General**: All Celery exceptions/warnings now inherit from common
   :class:`~celery.exceptions.CeleryException`/:class:`~celery.exceptions.CeleryWarning`.
   (Issue #2643).
@@ -577,6 +708,9 @@ In Other News
 - **Tasks**: Task retry now also throws in eager mode.
 
     Fix contributed by Feanil Patel.
+
+- **Tasks**: Task error email charset now set to ``utf-8`` by default
+  (Issue #2737).
 
 - Apps can now define how tasks are named (:meth:`@gen_task_name`).
 
@@ -586,6 +720,26 @@ In Other News
 
 - Beat: ``Scheduler.Publisher``/``.publisher`` renamed to
   ``.Producer``/``.producer``.
+
+Incompatible changes
+====================
+
+- Prefork: Calling ``result.get()`` or joining any result from within a task
+  now raises :exc:`RuntimeError`.
+
+    In previous versions this would emit a warning.
+
+- :mod:`celery.worker.consumer` is now a package, not a module.
+
+- Result: The task_name argument/attribute of :class:`@AsyncResult` was
+  removed.
+
+    This was historically a field used for :mod:`pickle` compatibility,
+    but is no longer needed.
+
+- Backends: Arguments named ``status`` renamed to ``state``.
+
+- Backends: ``backend.get_status()`` renamed to ``backend.get_state()``.
 
 Unscheduled Removals
 ====================
@@ -653,6 +807,8 @@ Result
 
     - ``TaskSetResult.taskset_id`` -> ``GroupResult.id``
 
+- Removed ``ResultSet.subtasks``, use ``ResultSet.results`` instead.
+
 
 TaskSet
 -------
@@ -670,6 +826,78 @@ New::
     >>> from celery import group
     >>> group(add.s(i, i) for i in xrange(10))()
 
+Events
+------
+
+- Removals for class :class:`celery.events.state.Worker`:
+
+    - ``Worker._defaults`` attribute.
+
+        Use ``{k: getattr(worker, k) for k in worker._fields}``.
+
+    - ``Worker.update_heartbeat``
+
+        Use ``Worker.event(None, timestamp, received)``
+
+    - ``Worker.on_online``
+
+        Use ``Worker.event('online', timestamp, received, fields)``
+
+    - ``Worker.on_offline``
+
+        Use ``Worker.event('offline', timestamp, received, fields)``
+
+    - ``Worker.on_heartbeat``
+
+        Use ``Worker.event('heartbeat', timestamp, received, fields)``
+
+
+
+- Removals for class :class:`celery.events.state.Task`:
+
+    - ``Task._defaults`` attribute.
+
+        Use ``{k: getattr(task, k) for k in task._fields}``.
+
+    - ``Task.on_sent``
+
+        Use ``Worker.event('sent', timestamp, received, fields)``
+
+    - ``Task.on_received``
+
+        Use ``Task.event('received', timestamp, received, fields)``
+
+    - ``Task.on_started``
+
+        Use ``Task.event('started', timestamp, received, fields)``
+
+    - ``Task.on_failed``
+
+        Use ``Task.event('failed', timestamp, received, fields)``
+
+    - ``Task.on_retried``
+
+        Use ``Task.event('retried', timestamp, received, fields)``
+
+    - ``Task.on_succeeded``
+
+        Use ``Task.event('succeeded', timestamp, received, fields)``
+
+    - ``Task.on_revoked``
+
+        Use ``Task.event('revoked', timestamp, received, fields)``
+
+    - ``Task.on_unknown_event``
+
+        Use ``Task.event(short_type, timestamp, received, fields)``
+
+    - ``Task.update``
+
+        Use ``Task.event(short_type, timestamp, received, fields)``
+
+    - ``Task.merge``
+
+        Contact us if you need this.
 
 Magic keyword arguments
 -----------------------
