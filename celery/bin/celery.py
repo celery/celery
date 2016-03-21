@@ -6,8 +6,9 @@ The :program:`celery` umbrella command.
 .. program:: celery
 
 """
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, unicode_literals, print_function
 
+import codecs
 import numbers
 import os
 import sys
@@ -17,10 +18,12 @@ from importlib import import_module
 
 from kombu.utils import json
 
+from celery.app import defaults
 from celery.five import string_t, values
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from celery.utils import term
 from celery.utils import text
+from celery.utils.functional import pass1
 from celery.utils.timeutils import maybe_iso8601
 
 # Cannot use relative imports here due to a Windows issue (#1111).
@@ -55,7 +58,9 @@ DEBUG = os.environ.get('C_DEBUG', False)
 command_classes = [
     ('Main', ['worker', 'events', 'beat', 'shell', 'multi', 'amqp'], 'green'),
     ('Remote Control', ['status', 'inspect', 'control'], 'blue'),
-    ('Utils', ['purge', 'list', 'migrate', 'call', 'result', 'report'], None),
+    ('Utils',
+     ['purge', 'list', 'migrate', 'call', 'result', 'report', 'upgrade'],
+     None),
 ]
 if DEBUG:  # pragma: no cover
     command_classes.append(
@@ -658,6 +663,71 @@ class shell(Command):  # pragma: no cover
         bpython.embed(self.locals)
 
 
+class upgrade(Command):
+    """Perform upgrade between versions."""
+    option_list = Command.option_list + (
+        Option('--django', action='store_true',
+               help='Upgrade Django project'),
+        Option('--compat', action='store_true',
+               help='Maintain backwards compatibility'),
+        Option('--no-backup', action='store_true',
+               help='Dont backup original files'),
+    )
+    choices = {'settings'}
+
+    def usage(self, command):
+        return "%prog <command> settings [filename] [options]"
+
+    def run(self, *args, **kwargs):
+        try:
+            command = args[0]
+        except IndexError:
+            raise self.UsageError('missing upgrade type')
+        if command not in self.choices:
+            raise self.UsageError('unknown upgrade type: {0}'.format(command))
+        return getattr(self, command)(*args, **kwargs)
+
+    def settings(self, command, filename,
+                 no_backup=False, django=False, compat=False, **kwargs):
+        lines = self._slurp(filename) if no_backup else self._backup(filename)
+        keyfilter = self._compat_key if django or compat else pass1
+        print('processing {0}...'.format(filename), file=self.stderr)
+        with codecs.open(filename, 'w', 'utf-8') as write_fh:
+            for line in lines:
+                write_fh.write(self._to_new_key(line, keyfilter))
+
+    def _slurp(self, filename):
+        with codecs.open(filename, 'r', 'utf-8') as read_fh:
+            return [line for line in read_fh]
+
+    def _backup(self, filename, suffix='.orig'):
+        lines = []
+        backup_filename = ''.join([filename, suffix])
+        print('writing backup to {0}...'.format(backup_filename),
+              file=self.stderr)
+        with codecs.open(filename, 'r', 'utf-8') as read_fh:
+            with codecs.open(backup_filename, 'w', 'utf-8') as backup_fh:
+                for line in read_fh:
+                    backup_fh.write(line)
+                    lines.append(line)
+        return lines
+
+    def _to_new_key(self, line, keyfilter=pass1, source=defaults._TO_NEW_KEY):
+        # sort by length to avoid e.g. broker_transport overriding
+        # broker_transport_options.
+        for old_key in reversed(sorted(source, key=lambda x: len(x))):
+            new_line = line.replace(old_key, keyfilter(source[old_key]))
+            if line != new_line:
+                return new_line  # only one match per line.
+        return line
+
+    def _compat_key(self, key, namespace='CELERY'):
+        key = key.upper()
+        if not key.startswith(namespace):
+            key = '_'.join([namespace, key])
+        return key
+
+
 class help(Command):
     """Show help screen and exit."""
 
@@ -702,6 +772,7 @@ class CeleryCommand(Command):
         'result': result,
         'shell': shell,
         'status': status,
+        'upgrade': upgrade,
         'worker': worker,
 
     }
