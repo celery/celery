@@ -501,9 +501,9 @@ if not platforms.IS_WINDOWS:
                 pass
             x.after_chdir.assert_called_with()
 
-            x = DaemonContext(workdir='/opt/workdir', umask="0755")
+            x = DaemonContext(workdir='/opt/workdir', umask='0755')
             self.assertEqual(x.umask, 493)
-            x = DaemonContext(workdir='/opt/workdir', umask="493")
+            x = DaemonContext(workdir='/opt/workdir', umask='493')
             self.assertEqual(x.umask, 493)
 
             x.redirect_to_null(None)

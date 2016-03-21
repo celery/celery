@@ -187,15 +187,15 @@ News
 
         @periodic_task(run_every=crontab(hour=7, minute=30))
         def every_morning():
-            print("Runs every morning at 7:30a.m")
+            print('Runs every morning at 7:30a.m')
 
-        @periodic_task(run_every=crontab(hour=7, minute=30, day_of_week="mon"))
+        @periodic_task(run_every=crontab(hour=7, minute=30, day_of_week='mon'))
         def every_monday_morning():
-            print("Run every monday morning at 7:30a.m")
+            print('Run every monday morning at 7:30a.m')
 
         @periodic_task(run_every=crontab(minutes=30))
         def every_hour():
-            print("Runs every hour on the clock. e.g. 1:30, 2:30, 3:30 etc.")
+            print('Runs every hour on the clock. e.g. 1:30, 2:30, 3:30 etc.')
 
     .. note::
         This a late addition. While we have unittests, due to the
@@ -250,11 +250,11 @@ Remote control commands
 
     * rate_limit(task_name, destination=all, reply=False, timeout=1, limit=0)
 
-        Worker returns `{"ok": message}` on success,
-        or `{"failure": message}` on failure.
+        Worker returns `{'ok': message}` on success,
+        or `{'failure': message}` on failure.
 
             >>> from celery.task.control import rate_limit
-            >>> rate_limit("tasks.add", "10/s", reply=True)
+            >>> rate_limit('tasks.add', '10/s', reply=True)
             [{'worker1': {'ok': 'new rate limit set successfully'}},
              {'worker2': {'ok': 'new rate limit set successfully'}}]
 
@@ -272,7 +272,7 @@ Remote control commands
         Worker simply returns `True`.
 
             >>> from celery.task.control import revoke
-            >>> revoke("419e46eb-cf6a-4271-86a8-442b7124132c", reply=True)
+            >>> revoke('419e46eb-cf6a-4271-86a8-442b7124132c', reply=True)
             [{'worker1': True},
              {'worker2'; True}]
 
@@ -289,20 +289,20 @@ Remote control commands
         @Panel.register
         def reset_broker_connection(state, **kwargs):
             state.consumer.reset_connection()
-            return {"ok": "connection re-established"}
+            return {'ok': 'connection re-established'}
 
     With this module imported in the worker, you can launch the command
     using `celery.task.control.broadcast`::
 
         >>> from celery.task.control import broadcast
-        >>> broadcast("reset_broker_connection", reply=True)
+        >>> broadcast('reset_broker_connection', reply=True)
         [{'worker1': {'ok': 'connection re-established'},
          {'worker2': {'ok': 'connection re-established'}}]
 
     **TIP** You can choose the worker(s) to receive the command
     by using the `destination` argument::
 
-        >>> broadcast("reset_broker_connection", destination=["worker1"])
+        >>> broadcast('reset_broker_connection', destination=['worker1'])
         [{'worker1': {'ok': 'connection re-established'}]
 
 * New remote control command: `dump_reserved`
@@ -310,7 +310,7 @@ Remote control commands
     Dumps tasks reserved by the worker, waiting to be executed::
 
         >>> from celery.task.control import broadcast
-        >>> broadcast("dump_reserved", reply=True)
+        >>> broadcast('dump_reserved', reply=True)
         [{'myworker1': [<TaskRequest ....>]}]
 
 * New remote control command: `dump_schedule`
@@ -320,27 +320,27 @@ Remote control commands
     waiting to be executed by the worker.
 
         >>> from celery.task.control import broadcast
-        >>> broadcast("dump_schedule", reply=True)
+        >>> broadcast('dump_schedule', reply=True)
         [{'w1': []},
          {'w3': []},
          {'w2': ['0. 2010-05-12 11:06:00 pri0 <TaskRequest
-                    {name:"opalfeeds.tasks.refresh_feed_slice",
-                     id:"95b45760-4e73-4ce8-8eac-f100aa80273a",
-                     args:"(<Feeds freq_max:3600 freq_min:60
-                                   start:2184.0 stop:3276.0>,)",
-                     kwargs:"{'page': 2}"}>']},
+                    {name:'opalfeeds.tasks.refresh_feed_slice',
+                     id:'95b45760-4e73-4ce8-8eac-f100aa80273a',
+                     args:'(<Feeds freq_max:3600 freq_min:60
+                                   start:2184.0 stop:3276.0>,)',
+                     kwargs:'{'page': 2}'}>']},
          {'w4': ['0. 2010-05-12 11:00:00 pri0 <TaskRequest
-                    {name:"opalfeeds.tasks.refresh_feed_slice",
-                     id:"c053480b-58fb-422f-ae68-8d30a464edfe",
-                     args:"(<Feeds freq_max:3600 freq_min:60
-                                   start:1092.0 stop:2184.0>,)",
-                     kwargs:"{\'page\': 1}"}>',
+                    {name:'opalfeeds.tasks.refresh_feed_slice',
+                     id:'c053480b-58fb-422f-ae68-8d30a464edfe',
+                     args:'(<Feeds freq_max:3600 freq_min:60
+                                   start:1092.0 stop:2184.0>,)',
+                     kwargs:'{\'page\': 1}'}>',
                 '1. 2010-05-12 11:12:00 pri0 <TaskRequest
-                    {name:"opalfeeds.tasks.refresh_feed_slice",
-                     id:"ab8bc59e-6cf8-44b8-88d0-f1af57789758",
-                     args:"(<Feeds freq_max:3600 freq_min:60
-                                   start:3276.0 stop:4365>,)",
-                     kwargs:"{\'page\': 3}"}>']}]
+                    {name:'opalfeeds.tasks.refresh_feed_slice',
+                     id:'ab8bc59e-6cf8-44b8-88d0-f1af57789758',
+                     args:'(<Feeds freq_max:3600 freq_min:60
+                                   start:3276.0 stop:4365>,)',
+                     kwargs:'{\'page\': 3}'}>']}]
 
 .. _v103-fixes:
 
@@ -410,10 +410,10 @@ Fixes
 
     .. code-block:: python
 
-        CELERYD_POOL = "celery.concurrency.processes.TaskPool"
-        CELERYD_MEDIATOR = "celery.worker.controllers.Mediator"
-        CELERYD_ETA_SCHEDULER = "celery.worker.controllers.ScheduleController"
-        CELERYD_CONSUMER = "celery.worker.consumer.Consumer"
+        CELERYD_POOL = 'celery.concurrency.processes.TaskPool'
+        CELERYD_MEDIATOR = 'celery.worker.controllers.Mediator'
+        CELERYD_ETA_SCHEDULER = 'celery.worker.controllers.ScheduleController'
+        CELERYD_CONSUMER = 'celery.worker.consumer.Consumer'
 
     The :setting:`CELERYD_POOL` setting makes it easy to swap out the
     multiprocessing pool with a threaded pool, or how about a
@@ -525,7 +525,7 @@ Fixes
     Example:
 
         >>> from celery.execute import send_task
-        >>> result = send_task("celery.ping", args=[], kwargs={})
+        >>> result = send_task('celery.ping', args=[], kwargs={})
         >>> result.get()
         'pong'
 
@@ -845,9 +845,9 @@ News
 
 * Now supports passing execute options to a TaskSets list of args, e.g.:
 
-    >>> ts = TaskSet(add, [([2, 2], {}, {"countdown": 1}),
-    ...                   ([4, 4], {}, {"countdown": 2}),
-    ...                   ([8, 8], {}, {"countdown": 3})])
+    >>> ts = TaskSet(add, [([2, 2], {}, {'countdown': 1}),
+    ...                   ([4, 4], {}, {'countdown': 2}),
+    ...                   ([8, 8], {}, {'countdown': 3})])
     >>> ts.run()
 
 * Got a 3x performance gain by setting the prefetch count to four times the
@@ -1021,28 +1021,28 @@ Important changes
 * All AMQP_* settings has been renamed to BROKER_*, and in addition
   AMQP_SERVER has been renamed to BROKER_HOST, so before where you had::
 
-        AMQP_SERVER = "localhost"
+        AMQP_SERVER = 'localhost'
         AMQP_PORT = 5678
-        AMQP_USER = "myuser"
-        AMQP_PASSWORD = "mypassword"
-        AMQP_VHOST = "celery"
+        AMQP_USER = 'myuser'
+        AMQP_PASSWORD = 'mypassword'
+        AMQP_VHOST = 'celery'
 
   You need to change that to::
 
-        BROKER_HOST = "localhost"
+        BROKER_HOST = 'localhost'
         BROKER_PORT = 5678
-        BROKER_USER = "myuser"
-        BROKER_PASSWORD = "mypassword"
-        BROKER_VHOST = "celery"
+        BROKER_USER = 'myuser'
+        BROKER_PASSWORD = 'mypassword'
+        BROKER_VHOST = 'celery'
 
 * Custom carrot backends now need to include the backend class name, so before
   where you had::
 
-        CARROT_BACKEND = "mycustom.backend.module"
+        CARROT_BACKEND = 'mycustom.backend.module'
 
   you need to change it to::
 
-        CARROT_BACKEND = "mycustom.backend.module.Backend"
+        CARROT_BACKEND = 'mycustom.backend.module.Backend'
 
   where `Backend` is the class name. This is probably `"Backend"`, as
   that was the previously implied name.
@@ -1441,11 +1441,11 @@ News
 * **IMPORTANT** `tasks.register`: Renamed `task_name` argument to
   `name`, so
 
-        >>> tasks.register(func, task_name="mytask")
+        >>> tasks.register(func, task_name='mytask')
 
   has to be replaced with:
 
-        >>> tasks.register(func, name="mytask")
+        >>> tasks.register(func, name='mytask')
 
 * The daemon now correctly runs if the pidlock is stale.
 
@@ -1736,10 +1736,10 @@ arguments, so be sure to flush your task queue before you upgrade.
   a new backend for Tokyo Tyrant. You can set the backend in your django
   settings file. E.g.::
 
-        CELERY_RESULT_BACKEND = "database"; # Uses the database
-        CELERY_RESULT_BACKEND = "cache"; # Uses the django cache framework
-        CELERY_RESULT_BACKEND = "tyrant"; # Uses Tokyo Tyrant
-        TT_HOST = "localhost"; # Hostname for the Tokyo Tyrant server.
+        CELERY_RESULT_BACKEND = 'database'; # Uses the database
+        CELERY_RESULT_BACKEND = 'cache'; # Uses the django cache framework
+        CELERY_RESULT_BACKEND = 'tyrant'; # Uses Tokyo Tyrant
+        TT_HOST = 'localhost'; # Hostname for the Tokyo Tyrant server.
         TT_PORT = 6657; # Port of the Tokyo Tyrant server.
 
 .. _version-0.1.11:
@@ -1826,7 +1826,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * You can do this by including the celery `urls.py` into your project,
 
-        >>> url(r'^celery/$', include("celery.urls"))
+        >>> url(r'^celery/$', include('celery.urls'))
 
   then visiting the following url,::
 
@@ -1834,7 +1834,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
   this will return a JSON dictionary like e.g:
 
-        >>> {"task": {"id": $task_id, "executed": true}}
+        >>> {'task': {'id': $task_id, 'executed': true}}
 
 * `delay_task` now returns string id, not `uuid.UUID` instance.
 

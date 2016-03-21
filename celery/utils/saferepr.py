@@ -190,7 +190,7 @@ def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
                     continue
 
                 if maxlevels and level >= maxlevels:
-                    yield "%s...%s" % (lit_start.value, lit_end.value), it
+                    yield '%s...%s' % (lit_start.value, lit_end.value), it
                     continue
 
                 objid = id(orig)

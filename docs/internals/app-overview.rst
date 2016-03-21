@@ -17,8 +17,8 @@ Creating a Celery instance::
 
     >>> from celery import Celery
     >>> app = Celery()
-    >>> app.config_from_object("celeryconfig")
-    >>> #app.config_from_envvar("CELERY_CONFIG_MODULE")
+    >>> app.config_from_object('celeryconfig')
+    >>> #app.config_from_envvar('CELERY_CONFIG_MODULE')
 
 
 Creating tasks:
@@ -51,21 +51,21 @@ Starting a worker:
 
 .. code-block:: python
 
-    worker = celery.Worker(loglevel="INFO")
+    worker = celery.Worker(loglevel='INFO')
 
 Getting access to the configuration:
 
 .. code-block:: python
 
     celery.conf.task_always_eager = True
-    celery.conf["task_always_eager"] = True
+    celery.conf['task_always_eager'] = True
 
 
 Controlling workers::
 
     >>> celery.control.inspect().active()
-    >>> celery.control.rate_limit(add.name, "100/m")
-    >>> celery.control.broadcast("shutdown")
+    >>> celery.control.rate_limit(add.name, '100/m')
+    >>> celery.control.broadcast('shutdown')
     >>> celery.control.discard_all()
 
 Other interesting attributes::

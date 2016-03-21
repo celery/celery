@@ -38,7 +38,7 @@ if sys.version_info[0] == 3:
 else:
 
     def str_decode(s, encoding):
-        return s.decode("ascii")
+        return s.decode('ascii')
 
 
 def is_ascii(s):

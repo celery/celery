@@ -202,9 +202,9 @@ See :ref:`guide-canvas` for more about creating task workflows.
     arguments will be ignored and the values in the dict will be used
     instead.
 
-        >>> s = signature("tasks.add", args=(2, 2))
+        >>> s = signature('tasks.add', args=(2, 2))
         >>> signature(s)
-        {"task": "tasks.add", args=(2, 2), kwargs={}, options={}}
+        {'task': 'tasks.add', args=(2, 2), kwargs={}, options={}}
 
     .. method:: signature.__call__(*args \*\*kwargs)
 

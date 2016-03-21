@@ -174,4 +174,4 @@ def marker(s, sep='-'):
         try:
             return _marker.delay(s, sep)
         except Exception as exc:
-            print("Retrying marker.delay(). It failed to start: %s" % exc)
+            print('Retrying marker.delay(). It failed to start: %s' % exc)

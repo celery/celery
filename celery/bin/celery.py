@@ -656,7 +656,7 @@ class shell(Command):  # pragma: no cover
         IPShell(argv=[], user_ns=self.locals).mainloop()
 
     def _no_ipython(self):  # pragma: no cover
-        raise ImportError("no suitable ipython found")
+        raise ImportError('no suitable ipython found')
 
     def invoke_bpython_shell(self):
         import bpython
@@ -676,7 +676,7 @@ class upgrade(Command):
     choices = {'settings'}
 
     def usage(self, command):
-        return "%prog <command> settings [filename] [options]"
+        return '%prog <command> settings [filename] [options]'
 
     def run(self, *args, **kwargs):
         try:

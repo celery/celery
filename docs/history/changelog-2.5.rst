@@ -76,7 +76,7 @@ News
 
         @task_sent.connect
         def on_task_sent(**kwargs):
-            print("sent task: %r" % (kwargs,))
+            print('sent task: %r' % (kwargs,))
 
 - Invalid task messages are now rejected instead of acked.
 
@@ -102,7 +102,7 @@ News
         (10, 5)
 
         >>> new.options
-        {"countdown": 5}
+        {'countdown': 5}
 
 - Chord callbacks are now triggered in eager mode.
 

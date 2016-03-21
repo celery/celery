@@ -197,7 +197,7 @@ News
 
     .. code-block:: python
 
-        CELERYBEAT_SCHEDULER = "djcelery.schedulers.DatabaseScheduler"
+        CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 
 * Added Task.expires: Used to set default expiry time for tasks.
 
@@ -237,13 +237,13 @@ News
     .. code-block:: pycon
 
         >>> from celery.task.control import inspect
-        >>> inspect.add_consumer(queue="queue", exchange="exchange",
-        ...                      exchange_type="direct",
-        ...                      routing_key="key",
+        >>> inspect.add_consumer(queue='queue', exchange='exchange',
+        ...                      exchange_type='direct',
+        ...                      routing_key='key',
         ...                      durable=False,
         ...                      auto_delete=True)
 
-        >>> inspect.cancel_consumer("queue")
+        >>> inspect.cancel_consumer('queue')
 
 * celerybeat: Now logs the traceback if a message can't be sent.
 
@@ -455,7 +455,7 @@ News
 
         @signals.setup_logging.connect
         def setup_logging(**kwargs):
-            fileConfig("logging.conf")
+            fileConfig('logging.conf')
 
     If there are no receivers for this signal, the logging subsystem
     will be configured using the :option:`--loglevel`/:option:`--logfile`
@@ -472,8 +472,8 @@ News
 
        def setup_logging(**kwargs):
             import logging
-            fileConfig("logging.conf")
-            stdouts = logging.getLogger("mystdoutslogger")
+            fileConfig('logging.conf')
+            stdouts = logging.getLogger('mystdoutslogger')
             log.redirect_stdouts_to_logger(stdouts, loglevel=logging.WARNING)
 
 * worker Added command line option :option:`-I`/:option:`--include`:
@@ -504,11 +504,11 @@ News
 
     e.g.:
 
-        >>> s = subtask((1, 2), {"foo": "bar"}, baz=1)
+        >>> s = subtask((1, 2), {'foo': 'bar'}, baz=1)
         >>> s.args
         (1, 2)
         >>> s.kwargs
-        {"foo": "bar", "baz": 1}
+        {'foo': 'bar', 'baz': 1}
 
     See issue #182.
 

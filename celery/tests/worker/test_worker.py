@@ -838,10 +838,10 @@ class test_WorkController(AppCase):
         self.app.amqp.queues.select.side_effect = KeyError()
         self.app.amqp.queues.deselect.side_effect = KeyError()
         with self.assertRaises(ImproperlyConfigured):
-            self.worker.setup_queues("x,y", exclude="foo,bar")
+            self.worker.setup_queues('x,y', exclude='foo,bar')
         self.app.amqp.queues.select = Mock(name='select')
         with self.assertRaises(ImproperlyConfigured):
-            self.worker.setup_queues("x,y", exclude="foo,bar")
+            self.worker.setup_queues('x,y', exclude='foo,bar')
 
     def test_send_worker_shutdown(self):
         with patch('celery.signals.worker_shutdown') as ws:

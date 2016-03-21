@@ -56,18 +56,18 @@ class test_sample(Case):
 class test_hfloat(Case):
 
     def test_hfloat(self):
-        self.assertEqual(str(debug.hfloat(10, 5)), "10")
-        self.assertEqual(str(debug.hfloat(10.45645234234, 5)), "10.456")
+        self.assertEqual(str(debug.hfloat(10, 5)), '10')
+        self.assertEqual(str(debug.hfloat(10.45645234234, 5)), '10.456')
 
 
 class test_humanbytes(Case):
 
     def test_humanbytes(self):
-        self.assertEqual(debug.humanbytes(2 ** 20), "1MB")
-        self.assertEqual(debug.humanbytes(4 * 2 ** 20), "4MB")
-        self.assertEqual(debug.humanbytes(2 ** 16), "64kB")
-        self.assertEqual(debug.humanbytes(2 ** 16), "64kB")
-        self.assertEqual(debug.humanbytes(2 ** 8), "256b")
+        self.assertEqual(debug.humanbytes(2 ** 20), '1MB')
+        self.assertEqual(debug.humanbytes(4 * 2 ** 20), '4MB')
+        self.assertEqual(debug.humanbytes(2 ** 16), '64kB')
+        self.assertEqual(debug.humanbytes(2 ** 16), '64kB')
+        self.assertEqual(debug.humanbytes(2 ** 8), '256b')
 
 
 class test_mem_rss(Case):

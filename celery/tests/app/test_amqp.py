@@ -225,7 +225,7 @@ class test_AMQP(AppCase):
         self.assertEqual(kwargs['exchange'], '')
 
     def test_send_event_exchange_string(self):
-        evd = Mock(name="evd")
+        evd = Mock(name='evd')
         self.app.amqp.send_task_message(
             Mock(), 'foo', self.simple_message, retry=False,
             exchange='xyz', routing_key='xyb',

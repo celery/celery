@@ -507,7 +507,7 @@ Important Notes
 
                 @task()
                 def add(x, y, **kwargs):
-                    print("In task %s" % kwargs["task_id"])
+                    print('In task %s' % kwargs['task_id'])
                     return x + y
 
         And this will not use magic keyword arguments (new style):
@@ -518,7 +518,7 @@ Important Notes
 
                 @task()
                 def add(x, y):
-                    print("In task %s" % add.request.id)
+                    print('In task %s' % add.request.id)
                     return x + y
 
     In addition, tasks can choose not to accept magic keyword arguments by
@@ -548,12 +548,12 @@ Important Notes
     =====================================  ===================================
     **Magic Keyword Argument**             **Replace with**
     =====================================  ===================================
-    `kwargs["task_id"]`                    `self.request.id`
-    `kwargs["delivery_info"]`              `self.request.delivery_info`
-    `kwargs["task_retries"]`               `self.request.retries`
-    `kwargs["logfile"]`                    `self.request.logfile`
-    `kwargs["loglevel"]`                   `self.request.loglevel`
-    `kwargs["task_is_eager`                `self.request.is_eager`
+    `kwargs['task_id']`                    `self.request.id`
+    `kwargs['delivery_info']`              `self.request.delivery_info`
+    `kwargs['task_retries']`               `self.request.retries`
+    `kwargs['logfile']`                    `self.request.logfile`
+    `kwargs['loglevel']`                   `self.request.loglevel`
+    `kwargs['task_is_eager']`              `self.request.is_eager`
     **NEW**                                `self.request.args`
     **NEW**                                `self.request.kwargs`
     =====================================  ===================================
@@ -862,8 +862,8 @@ News
         >>> from celery.task.control import revoke
 
         >>> revoke(task_id, terminate=True)
-        >>> revoke(task_id, terminate=True, signal="KILL")
-        >>> revoke(task_id, terminate=True, signal="SIGKILL")
+        >>> revoke(task_id, terminate=True, signal='KILL')
+        >>> revoke(task_id, terminate=True, signal='SIGKILL')
 
 * `TaskSetResult.join_native`: Backend-optimized version of `join()`.
 

@@ -671,7 +671,7 @@ class Command(object):
 
 
 def daemon_options(parser, default_pidfile=None, default_logfile=None):
-    group = OptionGroup(parser, "Daemonization Options")
+    group = OptionGroup(parser, 'Daemonization Options')
     group.add_option('-f', '--logfile', default=default_logfile),
     group.add_option('--pidfile', default=default_pidfile),
     group.add_option('--uid', default=None),

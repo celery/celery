@@ -258,10 +258,10 @@ An example Worker bootstep could be:
             print('Called when the worker is started.')
 
         def stop(self, worker):
-            print("Called when the worker shuts down.")
+            print('Called when the worker shuts down.')
 
         def terminate(self, worker):
-            print("Called when the worker terminates")
+            print('Called when the worker terminates')
 
 
 Every method is passed the current ``WorkController`` instance as the first

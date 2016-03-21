@@ -38,7 +38,7 @@ class test_aaa_eventlet_patch(EventletCase):
     @patch('eventlet.debug.hub_blocking_detection', create=True)
     @patch('eventlet.monkey_patch', create=True)
     def test_aaa_blockdetecet(self, monkey_patch, hub_blocking_detection):
-        os.environ['EVENTLET_NOBLOCK'] = "10.3"
+        os.environ['EVENTLET_NOBLOCK'] = '10.3'
         try:
             from celery import maybe_patch_concurrency
             maybe_patch_concurrency(['x', '-P', 'eventlet'])

@@ -295,7 +295,7 @@ e442df61b2ff1fe855881c1e2ff9acc970090f54
     Fix contributed by Ross Deane.
 
 - Creating a chord no longer results in multiple values for keyword
-  argument 'task_id'" (Issue #2225).
+  argument 'task_id' (Issue #2225).
 
     Fix contributed by Aneil Mallavarapu
 
@@ -914,7 +914,7 @@ for example::
 
     @task()
     def add(x, y, task_id=None):
-        print("My task id is %r" % (task_id,))
+        print('My task id is %r' % (task_id,))
 
 should be rewritten into::
 
@@ -922,7 +922,7 @@ should be rewritten into::
 
     @task(bind=True)
     def add(self, x, y):
-        print("My task id is {0.request.id}".format(self))
+        print('My task id is {0.request.id}'.format(self))
 
 Settings
 --------

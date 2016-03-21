@@ -34,7 +34,7 @@ of the response body::
     $ cd examples/eventlet
     $ python
     >>> from tasks import urlopen
-    >>> urlopen.delay("http://www.google.com/").get()
+    >>> urlopen.delay('http://www.google.com/').get()
     9980
 
 To open several URLs at once you can do::

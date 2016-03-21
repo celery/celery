@@ -172,7 +172,7 @@ Important Notes
     If you depend on the previous default which was the AMQP backend, then
     you have to set this explicitly before upgrading::
 
-        CELERY_RESULT_BACKEND = "amqp"
+        CELERY_RESULT_BACKEND = 'amqp'
 
     .. note::
 
@@ -250,7 +250,7 @@ News
     at runtime using the :func:`time_limit` remote control command::
 
         >>> from celery.task import control
-        >>> control.time_limit("tasks.sleeptask",
+        >>> control.time_limit('tasks.sleeptask',
         ...                    soft=60, hard=120, reply=True)
         [{'worker1.example.com': {'ok': 'time limits set successfully'}}]
 

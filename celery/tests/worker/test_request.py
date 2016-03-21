@@ -985,7 +985,7 @@ class test_create_request_class(RequestCase):
             **kwargs)
 
     def test_on_success(self):
-        self.zRequest(id=uuid()).on_success((False, "hey", 3.1222))
+        self.zRequest(id=uuid()).on_success((False, 'hey', 3.1222))
 
     def test_on_success__SystemExit(self,
                                     errors=(SystemExit, KeyboardInterrupt)):

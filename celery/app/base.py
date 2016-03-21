@@ -322,7 +322,7 @@ class Celery(object):
 
         .. code-block:: python
 
-            @app.task(exchange="feeds")
+            @app.task(exchange='feeds')
             def refresh_feed(url):
                 return …
 
@@ -472,7 +472,7 @@ class Celery(object):
 
         .. code-block:: pycon
 
-            >>> celery.config_from_object("myapp.celeryconfig")
+            >>> celery.config_from_object('myapp.celeryconfig')
 
             >>> from myapp import celeryconfig
             >>> celery.config_from_object(celeryconfig)
@@ -493,8 +493,8 @@ class Celery(object):
 
         .. code-block:: pycon
 
-            >>> os.environ["CELERY_CONFIG_MODULE"] = "myapp.celeryconfig"
-            >>> celery.config_from_envvar("CELERY_CONFIG_MODULE")
+            >>> os.environ['CELERY_CONFIG_MODULE'] = 'myapp.celeryconfig'
+            >>> celery.config_from_envvar('CELERY_CONFIG_MODULE')
 
         """
         module_name = os.environ.get(variable_name)

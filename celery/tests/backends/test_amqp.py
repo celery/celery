@@ -240,15 +240,15 @@ class test_AMQPBackend(AppCase):
 
     def test_drain_events_decodes_exceptions_in_meta(self):
         tid = uuid()
-        b = self.create_backend(serializer="json")
-        b.store_result(tid, RuntimeError("aap"), states.FAILURE)
+        b = self.create_backend(serializer='json')
+        b.store_result(tid, RuntimeError('aap'), states.FAILURE)
         result = AsyncResult(tid, backend=b)
 
         with self.assertRaises(Exception) as cm:
             result.get()
 
-        self.assertEqual(cm.exception.__class__.__name__, "RuntimeError")
-        self.assertEqual(str(cm.exception), "aap")
+        self.assertEqual(cm.exception.__class__.__name__, 'RuntimeError')
+        self.assertEqual(str(cm.exception), 'aap')
 
     def test_no_expires(self):
         b = self.create_backend(expires=None)

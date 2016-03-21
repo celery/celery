@@ -57,7 +57,7 @@ def retry(fun):
                 return fun(*args, **kwargs)
             except (DatabaseError, InvalidRequestError, StaleDataError):
                 logger.warning(
-                    "Failed operation %s. Retrying %s more times.",
+                    'Failed operation %s. Retrying %s more times.',
                     fun.__name__, max_retries - retries - 1,
                     exc_info=True,
                 )

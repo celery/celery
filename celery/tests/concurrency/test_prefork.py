@@ -90,7 +90,7 @@ class test_process_initializer(AppCase):
                 )
 
                 with patch('celery.app.trace.setup_worker_optimizations') as S:
-                    os.environ['FORKED_BY_MULTIPROCESSING'] = "1"
+                    os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
                     try:
                         process_initializer(app, 'luke.worker.com')
                         S.assert_called_with(app, 'luke.worker.com')

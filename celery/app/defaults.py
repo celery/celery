@@ -125,9 +125,9 @@ NAMESPACES = Namespace(
         backend_options=Option({}, type='dict'),
     ),
     cassandra=Namespace(
-        entry_ttl=Option(type="float"),
+        entry_ttl=Option(type='float'),
         keyspace=Option(type='string'),
-        port=Option(type="string"),
+        port=Option(type='string'),
         read_consistency=Option(type='string'),
         servers=Option(type='list'),
         table=Option(type='string'),

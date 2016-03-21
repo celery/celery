@@ -309,7 +309,7 @@ def alive_threads():
 class Case(unittest.TestCase):
 
     def patch(self, *path, **options):
-        manager = patch(".".join(path), **options)
+        manager = patch('.'.join(path), **options)
         patched = manager.start()
         self.addCleanup(manager.stop)
         return patched

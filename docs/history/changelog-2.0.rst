@@ -44,18 +44,18 @@ Fixes
 
     With the follow settings::
 
-        CELERY_QUEUES = {"cpubound": {"exchange": "cpubound",
-                                      "routing_key": "cpubound"}}
+        CELERY_QUEUES = {'cpubound': {'exchange': 'cpubound',
+                                      'routing_key': 'cpubound'}}
 
-        CELERY_ROUTES = {"tasks.add": {"queue": "cpubound",
-                                       "routing_key": "tasks.add",
-                                       "serializer": "json"}}
+        CELERY_ROUTES = {'tasks.add': {'queue': 'cpubound',
+                                       'routing_key': 'tasks.add',
+                                       'serializer': 'json'}}
 
     The final routing options for `tasks.add` will become::
 
-        {"exchange": "cpubound",
-         "routing_key": "tasks.add",
-         "serializer": "json"}
+        {'exchange': 'cpubound',
+         'routing_key': 'tasks.add',
+         'serializer': 'json'}
 
     This was not the case before: the values
     in :setting:`CELERY_QUEUES` would take precedence.
@@ -63,7 +63,7 @@ Fixes
 * Worker crashed if the value of :setting:`CELERY_TASK_ERROR_WHITELIST` was
   not an iterable
 
-* :func:`~celery.execute.apply`: Make sure `kwargs["task_id"]` is
+* :func:`~celery.execute.apply`: Make sure `kwargs['task_id']` is
   always set.
 
 * `AsyncResult.traceback`: Now returns :const:`None`, instead of raising
@@ -218,10 +218,10 @@ Documentation
     Examples::
 
         # Inspect a single worker
-        >>> i = inspect("myworker.example.com")
+        >>> i = inspect('myworker.example.com')
 
         # Inspect several workers
-        >>> i = inspect(["myworker.example.com", "myworker2.example.com"])
+        >>> i = inspect(['myworker.example.com', 'myworker2.example.com'])
 
         # Inspect all workers consuming on this vhost.
         >>> i = inspect()
@@ -339,7 +339,7 @@ Documentation
 
     This example in the docs should now work again::
 
-        CELERY_ROUTES = {"feed.tasks.import_feed": "feeds"}
+        CELERY_ROUTES = {'feed.tasks.import_feed': 'feeds'}
 
 * `CREATE_MISSING_QUEUES` was not honored by apply_async.
 
@@ -367,7 +367,7 @@ Documentation
 
     Example reply::
 
-        >>> broadcast("dump_active", arguments={"safe": False}, reply=True)
+        >>> broadcast('dump_active', arguments={'safe': False}, reply=True)
         [{'worker.local': [
             {'args': '(1,)',
              'time_start': 1278580542.6300001,
@@ -428,17 +428,17 @@ Django integration has been moved to a separate package: `django-celery`_.
 
 * To upgrade you need to install the `django-celery`_ module and change::
 
-    INSTALLED_APPS = "celery"
+    INSTALLED_APPS = 'celery'
 
   to::
 
-    INSTALLED_APPS = "djcelery"
+    INSTALLED_APPS = 'djcelery'
 
 * If you use `mod_wsgi` you need to add the following line to your `.wsgi`
   file::
 
     import os
-    os.environ["CELERY_LOADER"] = "django"
+    os.environ['CELERY_LOADER'] = 'django'
 
 * The following modules has been moved to `django-celery`_:
 
@@ -485,16 +485,16 @@ The `DATABASE_*` settings has been replaced by a single setting:
 .. code-block:: python
 
     # sqlite (filename)
-    CELERY_RESULT_DBURI = "sqlite:///celerydb.sqlite"
+    CELERY_RESULT_DBURI = 'sqlite:///celerydb.sqlite'
 
     # mysql
-    CELERY_RESULT_DBURI = "mysql://scott:tiger@localhost/foo"
+    CELERY_RESULT_DBURI = 'mysql://scott:tiger@localhost/foo'
 
     # postgresql
-    CELERY_RESULT_DBURI = "postgresql://scott:tiger@localhost/mydatabase"
+    CELERY_RESULT_DBURI = 'postgresql://scott:tiger@localhost/mydatabase'
 
     # oracle
-    CELERY_RESULT_DBURI = "oracle://scott:tiger@127.0.0.1:1521/sidname"
+    CELERY_RESULT_DBURI = 'oracle://scott:tiger@127.0.0.1:1521/sidname'
 
 See `SQLAlchemy Connection Strings`_ for more information about connection
 strings.
@@ -503,7 +503,7 @@ To specify additional SQLAlchemy database engine options you can use
 the :setting:`CELERY_RESULT_ENGINE_OPTIONS` setting::
 
     # echo enables verbose logging from SQLAlchemy.
-    CELERY_RESULT_ENGINE_OPTIONS = {"echo": True}
+    CELERY_RESULT_ENGINE_OPTIONS = {'echo': True}
 
 .. _`SQLAlchemy`:
     http://www.sqlalchemy.org
@@ -522,7 +522,7 @@ Cache result backend
 The cache result backend is no longer using the Django cache framework,
 but it supports mostly the same configuration syntax::
 
-    CELERY_CACHE_BACKEND = "memcached://A.example.com:11211;B.example.com"
+    CELERY_CACHE_BACKEND = 'memcached://A.example.com:11211;B.example.com'
 
 To use the cache backend you must either have the `pylibmc`_ or
 `python-memcached`_ library installed, of which the former is regarded
@@ -551,9 +551,9 @@ Backward incompatible changes
     configured::
 
         >>> from carrot.connection import BrokerConnection
-        >>> conn = BrokerConnection("localhost", "guest", "guest", "/")
+        >>> conn = BrokerConnection('localhost', 'guest', 'guest', '/')
         >>> from celery.execute import send_task
-        >>> r = send_task("celery.ping", args=(), kwargs={}, connection=conn)
+        >>> r = send_task('celery.ping', args=(), kwargs={}, connection=conn)
         >>> from celery.backends.amqp import AMQPBackend
         >>> r.backend = AMQPBackend(connection=conn)
         >>> r.get()
@@ -581,11 +581,11 @@ Backward incompatible changes
     Assuming the implicit `Loader` class name is no longer supported,
     if you use e.g.::
 
-        CELERY_LOADER = "myapp.loaders"
+        CELERY_LOADER = 'myapp.loaders'
 
     You need to include the loader class name, like this::
 
-        CELERY_LOADER = "myapp.loaders.Loader"
+        CELERY_LOADER = 'myapp.loaders.Loader'
 
 * :setting:`CELERY_TASK_RESULT_EXPIRES` now defaults to 1 day.
 
@@ -690,11 +690,11 @@ News
 * Added support for using complex crontab-expressions in periodic tasks. For
   example, you can now use::
 
-    >>> crontab(minute="*/15")
+    >>> crontab(minute='*/15')
 
   or even::
 
-    >>> crontab(minute="*/30", hour="8-17,1-2", day_of_week="thu-fri")
+    >>> crontab(minute='*/30', hour='8-17,1-2', day_of_week='thu-fri')
 
   See :ref:`guide-beat`.
 
@@ -735,9 +735,9 @@ News
 
     The missing queues are created with the following options::
 
-        CELERY_QUEUES[name] = {"exchange": name,
-                               "exchange_type": "direct",
-                               "routing_key": "name}
+        CELERY_QUEUES[name] = {'exchange': name,
+                               'exchange_type': 'direct',
+                               'routing_key': 'name}
 
    This feature is added for easily setting up routing using the `-Q`
    option to the worker:
@@ -810,15 +810,15 @@ News
 
     Examples:
 
-        >>> CELERY_ROUTES = {"celery.ping": "default",
-                             "mytasks.add": "cpu-bound",
-                             "video.encode": {
-                                 "queue": "video",
-                                 "exchange": "media"
-                                 "routing_key": "media.video.encode"}}
+        >>> CELERY_ROUTES = {'celery.ping': 'default',
+                             'mytasks.add': 'cpu-bound',
+                             'video.encode': {
+                                 'queue': 'video',
+                                 'exchange': 'media'
+                                 'routing_key': 'media.video.encode'}}
 
-        >>> CELERY_ROUTES = ("myapp.tasks.Router",
-                             {"celery.ping": "default})
+        >>> CELERY_ROUTES = ('myapp.tasks.Router',
+                             {'celery.ping': 'default})
 
     Where `myapp.tasks.Router` could be:
 
@@ -827,8 +827,8 @@ News
         class Router(object):
 
             def route_for_task(self, task, args=None, kwargs=None):
-                if task == "celery.ping":
-                    return "default"
+                if task == 'celery.ping':
+                    return 'default'
 
     route_for_task may return a string or a dict. A string then means
     it's a queue name in :setting:`CELERY_QUEUES`, a dict means it's a custom route.
@@ -840,17 +840,17 @@ News
 
     Example if :func:`~celery.execute.apply_async` has these arguments::
 
-       >>> Task.apply_async(immediate=False, exchange="video",
-       ...                  routing_key="video.compress")
+       >>> Task.apply_async(immediate=False, exchange='video',
+       ...                  routing_key='video.compress')
 
     and a router returns::
 
-        {"immediate": True,
-         "exchange": "urgent"}
+        {'immediate': True,
+         'exchange': 'urgent'}
 
     the final message options will be::
 
-        immediate=True, exchange="urgent", routing_key="video.compress"
+        immediate=True, exchange='urgent', routing_key='video.compress'
 
     (and any default message options defined in the
     :class:`~celery.task.base.Task` class)
@@ -895,7 +895,7 @@ News
 
     Now returns::
 
-        {"ok": "task $id revoked"}
+        {'ok': 'task $id revoked'}
 
     instead of `True`.
 
@@ -904,8 +904,8 @@ News
     Example usage:
 
         >>> from celery.task.control import broadcast
-        >>> broadcast("enable_events")
-        >>> broadcast("disable_events")
+        >>> broadcast('enable_events')
+        >>> broadcast('disable_events')
 
 * Removed top-level tests directory. Test config now in celery.tests.config
 
