@@ -11,7 +11,7 @@ import socket
 
 from collections import deque
 from time import sleep
-from weakref import WeakKeyDictionary, ref
+from weakref import WeakKeyDictionary
 
 from kombu.syn import detect_environment
 from kombu.utils import cached_property
