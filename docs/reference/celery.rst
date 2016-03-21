@@ -49,6 +49,7 @@ and creating Celery applications.
     .. autoattribute:: log
     .. autoattribute:: tasks
     .. autoattribute:: pool
+    .. autoattribute:: producer_pool
     .. autoattribute:: Task
     .. autoattribute:: timezone
 

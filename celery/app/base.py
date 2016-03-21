@@ -771,7 +771,7 @@ class Celery(object):
 
         """
         return FallbackContext(
-            producer, self.amqp.producer_pool.acquire, block=True,
+            producer, self.producer_pool.acquire, block=True,
         )
     default_producer = producer_or_acquire  # XXX compat
 
@@ -1123,6 +1123,10 @@ class Celery(object):
         """
         self.finalize(auto=True)
         return self._tasks
+
+    @property
+    def producer_pool(self):
+        return self.amqp.producer_pool
 
     @cached_property
     def timezone(self):
