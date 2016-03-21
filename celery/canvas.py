@@ -746,7 +746,7 @@ class group(Signature):
                                 chord=sig.options.get('chord') or chord,
                                 **options)
                 if p:
-                    p.add_noincr(res)
+                    p.add(res)
                     res.backend.add_pending_result(res)
                 yield res  # <-- r.parent, etc set in the frozen result.
 
