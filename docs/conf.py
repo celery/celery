@@ -26,7 +26,7 @@ extensions = ['sphinx.ext.autodoc',
               'celerydocs']
 
 
-LINKCODE_URL = 'http://github.com/{proj}/tree/{branch}/{filename}.py'
+LINKCODE_URL = 'https://github.com/{proj}/tree/{branch}/{filename}.py'
 GITHUB_PROJECT = 'celery/celery'
 GITHUB_BRANCH = 'master'
 

@@ -91,7 +91,7 @@ Finally, we can install rabbitmq using :program:`brew`:
 
     $ brew install rabbitmq
 
-.. _`Homebrew`: http://github.com/mxcl/homebrew/
+.. _`Homebrew`: https://github.com/mxcl/homebrew/
 .. _`Homebrew documentation`: https://github.com/Homebrew/homebrew/wiki/Installation
 
 .. _rabbitmq-osx-system-hostname:

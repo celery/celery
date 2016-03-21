@@ -58,8 +58,8 @@ some examples taking use of Eventlet support.
 .. _`epoll(4)`: http://linux.die.net/man/4/epoll
 .. _`libevent`: http://monkey.org/~provos/libevent/
 .. _`highly scalable non-blocking I/O`:
-    http://en.wikipedia.org/wiki/Asynchronous_I/O#Select.28.2Fpoll.29_loops
-.. _`Coroutines`: http://en.wikipedia.org/wiki/Coroutine
+    https://en.wikipedia.org/wiki/Asynchronous_I/O#Select.28.2Fpoll.29_loops
+.. _`Coroutines`: https://en.wikipedia.org/wiki/Coroutine
 .. _`Eventlet examples`:
     https://github.com/celery/celery/tree/master/examples/eventlet
 

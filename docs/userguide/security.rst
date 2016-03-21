@@ -17,7 +17,7 @@ Depending on your `Security Policy`_, there are
 various steps you can take to make your Celery installation more secure.
 
 
-.. _`Security Policy`: http://en.wikipedia.org/wiki/Security_policy
+.. _`Security Policy`: https://en.wikipedia.org/wiki/Security_policy
 
 
 Areas of Concern
@@ -85,10 +85,10 @@ same network access as the machine on which it's running. If the worker
 is located on an internal network it's recommended to add firewall rules for
 outbound traffic.
 
-.. _`chroot`: http://en.wikipedia.org/wiki/Chroot
-.. _`jail`: http://en.wikipedia.org/wiki/FreeBSD_jail
+.. _`chroot`: https://en.wikipedia.org/wiki/Chroot
+.. _`jail`: https://en.wikipedia.org/wiki/FreeBSD_jail
 .. _`sandboxing`:
-    http://en.wikipedia.org/wiki/Sandbox_(computer_security)
+    https://en.wikipedia.org/wiki/Sandbox_(computer_security)
 
 Serializers
 ===========
@@ -136,7 +136,7 @@ for more information.
 
 .. _`pickle`: http://docs.python.org/library/pickle.html
 .. _`Public-key cryptography`:
-    http://en.wikipedia.org/wiki/Public-key_cryptography
+    https://en.wikipedia.org/wiki/Public-key_cryptography
 
 .. _message-signing:
 
@@ -185,9 +185,9 @@ with the private key and certificate files located in `/etc/ssl`.
     a message, so if needed this will have to be enabled separately.
 
 .. _`pyOpenSSL`: http://pypi.python.org/pypi/pyOpenSSL
-.. _`X.509`: http://en.wikipedia.org/wiki/X.509
+.. _`X.509`: https://en.wikipedia.org/wiki/X.509
 .. _`Certificate Authority`:
-    http://en.wikipedia.org/wiki/Certificate_authority
+    https://en.wikipedia.org/wiki/Certificate_authority
 
 Intrusion Detection
 ===================
@@ -213,7 +213,7 @@ support for using syslog.
 A tip for the paranoid is to send logs using UDP and cut the
 transmit part of the logging server's network cable :-)
 
-.. _`syslog-ng`: http://en.wikipedia.org/wiki/Syslog-ng
+.. _`syslog-ng`: https://en.wikipedia.org/wiki/Syslog-ng
 .. _`rsyslog`: http://www.rsyslog.com/
 
 Tripwire
@@ -242,4 +242,4 @@ that can be used.
 .. _`Samhain`: http://la-samhna.de/samhain/index.html
 .. _`AIDE`: http://aide.sourceforge.net/
 .. _`Open Source Tripwire`: http://sourceforge.net/projects/tripwire/
-.. _`ZFS`: http://en.wikipedia.org/wiki/ZFS
+.. _`ZFS`: https://en.wikipedia.org/wiki/ZFS

@@ -163,13 +163,14 @@ To use this with your project you need to follow these four steps:
     by the database periodic task scheduler.  You can skip
     this step if you don't use these.
 
-    If you are using south_ for schema migrations, you'll want to:
+    If you are using Django 1.7+ or south_, you'll want to:
 
     .. code-block:: console
 
         $ python manage.py migrate djcelery
 
-    For those who are not using south, a normal ``syncdb`` will work:
+    For those who are on Django 1.6 or lower and not using south, a normal
+    ``syncdb`` will work:
 
     .. code-block:: console
 

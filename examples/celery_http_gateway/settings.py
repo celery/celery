@@ -34,7 +34,7 @@ if django.VERSION[:3] < (1, 3):
     DATABASE_PORT = DATABASES['default']['PORT']
 
 # Local time zone for this installation. Choices can be found here:
-# http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
+# https://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.

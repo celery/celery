@@ -9,7 +9,7 @@
 Installation
 ============
 
-For IronMQ support, you'll need the [iron_celery](http://github.com/iron-io/iron_celery) library:
+For IronMQ support, you'll need the [iron_celery](https://github.com/iron-io/iron_celery) library:
 
 .. code-block:: console
 
@@ -67,4 +67,4 @@ This will default to a cache named "Celery", if you want to change that::
 More Information
 ================
 
-You can find more information in the [iron_celery README](http://github.com/iron-io/iron_celery).
+You can find more information in the [iron_celery README](https://github.com/iron-io/iron_celery).

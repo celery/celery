@@ -526,7 +526,7 @@ Attributes
     may be used as long as it conforms to the same interface and defines the
     two methods above.
 
-    .. _`token bucket algorithm`: http://en.wikipedia.org/wiki/Token_bucket
+    .. _`token bucket algorithm`: https://en.wikipedia.org/wiki/Token_bucket
 
 .. _extending_consumer-qos:
 
