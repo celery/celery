@@ -2,9 +2,9 @@
  celery - Distributed Task Queue
 =================================
 
-.. image:: https://cloud.github.com/downloads/celery/celery/celery_128.png
+.. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-:Version: 4.0.0rc1 (0today8)
+:Version: 4.0.0rc2 (0today8)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: https://github.com/celery/celery/
@@ -29,12 +29,14 @@ message on the queue, the broker then delivers the message to a worker.
 A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
-Celery is a library written in Python, but the protocol can be implemented in
-any language.  So far there's RCelery_ for the Ruby programming language, and a
-`PHP client`, but language interoperability can also be achieved
-by using webhooks.
+Celery is written in Python, but the protocol can be implemented in any
+language.  In addition to Python there's node-celery_ for Node.js,
+and a `PHP client`_.
 
-.. _RCelery: http://leapfrogdevelopment.github.com/rcelery/
+Language interoperability can also be achieved
+by `using webhooks`_.
+
+.. _node-celery: https://github.com/mher/node-celery
 .. _`PHP client`: https://github.com/gjedeer/celery-php
 .. _`using webhooks`:
     http://docs.celeryproject.org/en/latest/userguide/remote-tasks.html
@@ -150,13 +152,13 @@ It supports...
 .. _`Eventlet`: http://eventlet.net/
 .. _`gevent`: http://gevent.org/
 
-.. _RabbitMQ: http://www.rabbitmq.com/
+.. _RabbitMQ: http://rabbitmq.com
 .. _Redis: http://redis.io
-.. _MongoDB: https://www.mongodb.org/
-.. _Beanstalk: http://kr.github.io/beanstalkd/
+.. _MongoDB: http://mongodb.org
+.. _Beanstalk: http://kr.github.com/beanstalkd
 .. _CouchDB: http://couchdb.apache.org
-.. _SQLAlchemy: http://www.sqlalchemy.org/
-.. _`IronMQ`: https://www.iron.io/
+.. _SQLAlchemy: http://sqlalchemy.org
+.. _`IronMQ`: http://iron.io
 
 Framework Integration
 =====================
@@ -182,15 +184,15 @@ The integration packages are not strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
 database connections at ``fork``.
 
-.. _`Django`: https://www.djangoproject.com/
-.. _`Pylons`: http://www.pylonsproject.org/
+.. _`Django`: http://djangoproject.com/
+.. _`Pylons`: http://pylonsproject.org/
 .. _`Flask`: http://flask.pocoo.org/
 .. _`web2py`: http://web2py.com/
 .. _`Bottle`: http://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
-.. _`pyramid_celery`: https://pypi.python.org/pypi/pyramid_celery/
-.. _`django-celery`: https://pypi.python.org/pypi/django-celery
-.. _`celery-pylons`: https://pypi.python.org/pypi/celery-pylons
+.. _`pyramid_celery`: http://pypi.python.org/pypi/pyramid_celery/
+.. _`django-celery`: http://pypi.python.org/pypi/django-celery
+.. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
@@ -281,7 +283,10 @@ Transports and Backends
     for using Amazon SQS as a message transport (*experimental*).
 
 :celery[memcache]:
-    for using memcached as a result backend.
+    for using memcached as a result backend (using pylibmc)
+
+:celery[pymemcache]:
+    for using memcached as a result backend (pure-python implementation).
 
 :celery[cassandra]:
     for using Apache Cassandra as a result backend with DataStax driver.
@@ -291,6 +296,9 @@ Transports and Backends
 
 :celery[couchbase]:
     for using CouchBase as a result backend.
+
+:celery[elasticsearch]
+    for using Elasticsearch as a result backend.
 
 :celery[riak]:
     for using Riak as a result backend.
@@ -320,7 +328,7 @@ Downloading and installing from source
 --------------------------------------
 
 Download the latest version of Celery from
-https://pypi.python.org/pypi/celery/
+http://pypi.python.org/pypi/celery/
 
 You can install it by doing the following,::
 
@@ -369,7 +377,7 @@ Mailing list
 For discussions about the usage, development, and future of celery,
 please join the `celery-users`_ mailing list.
 
-.. _`celery-users`: https://groups.google.com/forum/#!forum/celery-users
+.. _`celery-users`: http://groups.google.com/group/celery-users/
 
 .. _irc-channel:
 
@@ -394,7 +402,7 @@ to our issue tracker at https://github.com/celery/celery/issues/
 Wiki
 ====
 
-https://github.com/celery/celery/wiki
+http://wiki.github.com/celery/celery/
 
 .. _contributing-short:
 
