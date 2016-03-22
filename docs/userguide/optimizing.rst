@@ -58,7 +58,7 @@ librabbitmq
 -----------
 
 If you're using RabbitMQ (AMQP) as the broker then you can install the
-:mod:`librabbitmq` module to use an optimized client written in C:
+:pypi:`librabbitmq` module to use an optimized client written in C:
 
 .. code-block:: console
 
@@ -246,15 +246,15 @@ worker option:
 With this option enabled the worker will only write to processes that are
 available for work, disabling the prefetch behavior::
 
--> send task T1 to process A
-# A executes T1
--> send task T2 to process B
-# B executes T2
-<- T2 complete sent by process B
+    -> send task T1 to process A
+    # A executes T1
+    -> send task T2 to process B
+    # B executes T2
+    <- T2 complete sent by process B
 
--> send T3 to process B
-# B executes T3
+    -> send T3 to process B
+    # B executes T3
 
-<- T3 complete sent by process B
-<- T1 complete sent by process A
+    <- T3 complete sent by process B
+    <- T1 complete sent by process A
 

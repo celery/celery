@@ -43,7 +43,7 @@ class MongoBackend(BaseBackend):
     """MongoDB result backend.
 
     :raises celery.exceptions.ImproperlyConfigured: if
-        module :mod:`pymongo` is not available.
+        module :pypi:`pymongo` is not available.
 
     """
 

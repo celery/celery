@@ -57,9 +57,9 @@ Highlights
 
         Starting with Celery 3.1, Python 2.6 or later is required.
 
-    - Support for the new librabbitmq C client.
+    - Support for the new :pypi:`librabbitmq` C client.
 
-        Celery will automatically use the :mod:`librabbitmq` module
+        Celery will automatically use the :pypi:`librabbitmq` module
         if installed, which is a very fast and memory-optimized
         replacement for the py-amqp module.
 
@@ -143,8 +143,8 @@ Commands include:
 The old programs are still available (``celeryd``, ``celerybeat``, etc),
 but you are discouraged from using them.
 
-Now depends on :mod:`billiard`.
--------------------------------
+Now depends on :pypi:`billiard`.
+--------------------------------
 
 Billiard is a fork of the multiprocessing containing
 the no-execv patch by sbt (http://bugs.python.org/issue8713),
@@ -869,7 +869,7 @@ In Other News
 
 - Deprecated module ``celery.conf`` has been removed.
 
-- The :setting:`CELERY_TIMEZONE` now always require the :mod:`pytz`
+- The :setting:`CELERY_TIMEZONE` now always require the :pypi:`pytz`
   library to be installed (exept if the timezone is set to `UTC`).
 
 - The Tokyo Tyrant backend has been removed and is no longer supported.

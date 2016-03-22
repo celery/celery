@@ -30,7 +30,7 @@ class CouchBackend(KeyValueStoreBackend):
     """CouchDB backend.
 
     :raises celery.exceptions.ImproperlyConfigured: if
-        module :mod:`pycouchdb` is not available.
+        module :pypi:`pycouchdb` is not available.
 
     """
     container = 'default'

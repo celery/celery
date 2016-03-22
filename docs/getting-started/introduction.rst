@@ -102,7 +102,7 @@ Celery is…
 
         A single Celery process can process millions of tasks a minute,
         with sub-millisecond round-trip latency (using RabbitMQ,
-        py-librabbitmq, and optimized settings).
+        librabbitmq, and optimized settings).
 
     - **Flexible**
 

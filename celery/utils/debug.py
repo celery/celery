@@ -153,7 +153,7 @@ def mem_rss():
 
 def ps():  # pragma: no cover
     """Return the global :class:`psutil.Process` instance,
-    or :const:`None` if :mod:`psutil` is not installed."""
+    or :const:`None` if :pypi:`psutil` is not installed."""
     global _process
     if _process is None and Process is not None:
         _process = Process(os.getpid())

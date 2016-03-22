@@ -52,7 +52,7 @@ Critical
 
     See issue #122.
 
-* Now depends on :mod:`billiard` >= 0.3.1
+* Now depends on :pypi:`billiard` >= 0.3.1
 
 * worker: Previously exceptions raised by worker components could stall startup,
   now it correctly logs the exceptions and shuts down.
@@ -922,7 +922,7 @@ Changes
   a task type. See :mod:`celery.task.control`.
 
 * The services now sets informative process names (as shown in `ps`
-  listings) if the :mod:`setproctitle` module is installed.
+  listings) if the :pypi:`setproctitle` module is installed.
 
 * :exc:`~@NotRegistered` now inherits from :exc:`KeyError`,
   and `TaskRegistry.__getitem__`+`pop` raises `NotRegistered` instead

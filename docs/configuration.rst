@@ -789,7 +789,7 @@ Configuring the backend URL
 
 .. note::
 
-    The Redis backend requires the :mod:`redis` library:
+    The Redis backend requires the :pypi:`redis` library:
     http://pypi.python.org/pypi/redis/
 
     To install the redis package use `pip` or `easy_install`:
@@ -855,7 +855,7 @@ MongoDB backend settings
 
 .. note::
 
-    The MongoDB backend requires the :mod:`pymongo` library:
+    The MongoDB backend requires the :pypi:`pymongo` library:
     https://github.com/mongodb/mongo-python-driver/tree/master
 
 .. setting:: mongodb_backend_settings
@@ -882,7 +882,7 @@ This is a dict supporting the following keys:
 * options
 
     Additional keyword arguments to pass to the mongodb connection
-    constructor.  See the :mod:`pymongo` docs to see a list of arguments
+    constructor.  See the :pypi:`pymongo` docs to see a list of arguments
     supported.
 
 .. _example-mongodb-result-config:
@@ -905,7 +905,7 @@ cassandra backend settings
 
 .. note::
 
-    This Cassandra backend driver requires :mod:`cassandra-driver`.
+    This Cassandra backend driver requires :pypi:`cassandra-driver`.
     https://pypi.python.org/pypi/cassandra-driver
 
     To install, use `pip` or `easy_install`:
@@ -1029,7 +1029,7 @@ Riak backend settings
 
 .. note::
 
-    The Riak backend requires the :mod:`riak` library:
+    The Riak backend requires the :pypi:`riak` library:
     http://pypi.python.org/pypi/riak/
 
     To install the riak package use `pip` or `easy_install`:
@@ -1095,7 +1095,7 @@ IronCache backend settings
 
 .. note::
 
-    The IronCache backend requires the :mod:`iron_celery` library:
+    The IronCache backend requires the :pypi:`iron_celery` library:
     http://pypi.python.org/pypi/iron_celery
 
     To install the iron_celery package use `pip` or `easy_install`:
@@ -1121,7 +1121,7 @@ Couchbase backend settings
 
 .. note::
 
-    The Couchbase backend requires the :mod:`couchbase` library:
+    The Couchbase backend requires the :pypi:`couchbase` library:
     https://pypi.python.org/pypi/couchbase
 
     To install the couchbase package use `pip` or `easy_install`:
@@ -1165,7 +1165,7 @@ CouchDB backend settings
 
 .. note::
 
-    The CouchDB backend requires the :mod:`pycouchdb` library:
+    The CouchDB backend requires the :pypi:`pycouchdb` library:
     https://pypi.python.org/pypi/pycouchdb
 
     To install the couchbase package use `pip` or `easy_install`:

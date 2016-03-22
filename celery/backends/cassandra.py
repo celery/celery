@@ -75,7 +75,7 @@ class CassandraBackend(BaseBackend):
     """Cassandra backend utilizing DataStax driver
 
     :raises celery.exceptions.ImproperlyConfigured: if
-        module :mod:`cassandra` is not available.
+        module :pypi:`cassandra-driver` is not available.
 
     """
 

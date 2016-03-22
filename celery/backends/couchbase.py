@@ -31,7 +31,7 @@ class CouchBaseBackend(KeyValueStoreBackend):
     """CouchBase backend.
 
     :raises celery.exceptions.ImproperlyConfigured: if
-        module :mod:`couchbase` is not available.
+        module :pypi:`couchbase` is not available.
 
     """
     bucket = 'default'

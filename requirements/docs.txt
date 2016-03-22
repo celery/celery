@@ -1,3 +1,4 @@
 Sphinx
+sphinxcontrib-cheeseshop
 -r extras/sqlalchemy.txt
 -r dev.txt

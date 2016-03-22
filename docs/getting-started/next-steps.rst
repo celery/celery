@@ -749,7 +749,7 @@ If you have strict fair scheduling requirements, or want to optimize
 for throughput then you should read the :ref:`Optimizing Guide
 <guide-optimizing>`.
 
-If you're using RabbitMQ then you should install the :mod:`librabbitmq`
+If you're using RabbitMQ then you should install the :pypi:`librabbitmq`
 module, which is an AMQP client implemented in C:
 
 .. code-block:: console

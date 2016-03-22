@@ -516,9 +516,9 @@ the steps outlined here: http://bit.ly/koJoso
 Calculating test coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To calculate test coverage you must first install the :mod:`coverage` module.
+To calculate test coverage you must first install the :pypi:`coverage` module.
 
-Installing the :mod:`coverage` module:
+Installing the :pypi:`coverage` module:
 
 .. code-block:: console
 
@@ -1047,7 +1047,7 @@ Deprecated
 
 - pylibrabbitmq
 
-Old name for :mod:`librabbitmq`.
+Old name for :pypi:`librabbitmq`.
 
 :git: :const:`None`
 :PyPI: http://pypi.python.org/pypi/pylibrabbitmq

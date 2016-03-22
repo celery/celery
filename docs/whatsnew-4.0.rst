@@ -469,9 +469,9 @@ In Other News
 
     - Now depends on :ref:`Kombu 4.0 <kombu:version-4.0>`.
 
-    - Now depends on :mod:`billiard` version 3.5.
+    - Now depends on :pypi:`billiard` version 3.5.
 
-    - No longer depends on ``anyjson`` :sadface:
+    - No longer depends on :pypi:`anyjson` :sadface:
 
 
 - **Tasks**: The "anon-exchange" is now used for simple name-name direct routing.

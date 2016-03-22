@@ -33,7 +33,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     """Elasticsearch Backend.
 
     :raises celery.exceptions.ImproperlyConfigured: if
-        module :mod:`elasticsearch` is not available.
+        module :pypi:`elasticsearch` is not available.
 
     """
 

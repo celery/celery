@@ -180,7 +180,7 @@ converted to UTC, and then converted back to the local timezone
 when received by a worker.
 
 You can change the local timezone using the :setting:`CELERY_TIMEZONE`
-setting.  Installing the :mod:`pytz` library is recommended when
+setting.  Installing the :pypi:`pytz` library is recommended when
 using a custom timezone, to keep timezone definition up-to-date,
 but it will fallback to a system definition of the timezone if available.
 
@@ -235,9 +235,9 @@ implementations:
 
 * inotify (Linux)
 
-    Used if the :mod:`pyinotify` library is installed.
+    Used if the :pypi:`pyinotify` library is installed.
     If you are running on Linux this is the recommended implementation,
-    to install the :mod:`pyinotify` library you have to run the following
+    to install the :pypi:`pyinotify` library you have to run the following
     command:
 
     .. code-block:: console
@@ -529,7 +529,7 @@ Fixes
 
 
 - Cassandra backend: No longer uses :func:`pycassa.connect` which is
-  deprecated since :mod:`pycassa` 1.4.
+  deprecated since :pypi:`pycassa` 1.4.
 
     Fix contributed by Jeff Terrace.
 

@@ -346,7 +346,7 @@ in :file:`examples/django`:
 
 https://github.com/celery/celery/tree/3.1/examples/django
 
-Some features still require the :mod:`django-celery` library:
+Some features still require the :pypi:`django-celery` library:
 
     - Celery does not implement the Django database or cache result backends.
     - Celery does not ship with the database-based periodic task
@@ -357,7 +357,7 @@ Some features still require the :mod:`django-celery` library:
     If you're still using the old API when you upgrade to Celery 3.1
     then you must make sure that your settings module contains
     the ``djcelery.setup_loader()`` line, since this will
-    no longer happen as a side-effect of importing the :mod:`djcelery`
+    no longer happen as a side-effect of importing the :pypi:`django-celery`
     module.
 
     New users (or if you have ported to the new API) don't need the ``setup_loader``
@@ -584,13 +584,13 @@ This setting will be the default in a future version.
 
 Related to Issue #1490.
 
-:mod:`pytz` replaces ``python-dateutil`` dependency
----------------------------------------------------
+:pypi:`pytz` replaces :pypi:`python-dateutil` dependency
+--------------------------------------------------------
 
-Celery no longer depends on the ``python-dateutil`` library,
-but instead a new dependency on the :mod:`pytz` library was added.
+Celery no longer depends on the :pypi:`python-dateutil` library,
+but instead a new dependency on the :pypi:`pytz` library was added.
 
-The :mod:`pytz` library was already recommended for accurate timezone support.
+The :pypi:`pytz` library was already recommended for accurate timezone support.
 
 This also means that dependencies are the same for both Python 2 and
 Python 3, and that the :file:`requirements/default-py3k.txt` file has
@@ -599,7 +599,7 @@ been removed.
 Support for Setuptools extra requirements
 -----------------------------------------
 
-Pip now supports the :mod:`setuptools` extra requirements format,
+Pip now supports the :pypi:`setuptools` extra requirements format,
 so we have removed the old bundles concept, and instead specify
 setuptools extras.
 
@@ -668,7 +668,7 @@ In Other News
 
 - Now depends on :ref:`Kombu 3.0 <kombu:version-3.0.0>`.
 
-- Now depends on :mod:`billiard` version 3.3.
+- Now depends on :pypi:`billiard` version 3.3.
 
 - Worker will now crash if running as the root user with pickle enabled.
 

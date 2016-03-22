@@ -53,7 +53,7 @@ class RiakBackend(KeyValueStoreBackend):
     """Riak result backend.
 
     :raises celery.exceptions.ImproperlyConfigured: if
-        module :mod:`riak` is not available.
+        module :pypi:`riak` is not available.
 
     """
     # TODO: allow using other protocols than protobuf ?

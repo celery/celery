@@ -263,7 +263,7 @@ Important Notes
 News
 ----
 
-* No longer depends on :mod:`pyparsing`.
+* No longer depends on :pypi:`pyparsing`.
 
 * Now depends on Kombu 1.4.3.
 

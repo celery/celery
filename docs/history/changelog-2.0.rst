@@ -25,7 +25,7 @@ Fixes
 * Worker: Events are now buffered if the connection is down,
   then sent when the connection is re-established.
 
-* No longer depends on the :mod:`mailer` package.
+* No longer depends on the :pypi:`mailer` package.
 
     This package had a name space collision with `django-mailer`,
     so its functionality was replaced.
@@ -666,7 +666,7 @@ News
 
 * Worker: Standard out/error is now being redirected to the log file.
 
-* :mod:`billiard` has been moved back to the celery repository.
+* :pypi:`billiard` has been moved back to the celery repository.
 
     =====================================  =====================================
     **Module name**                        **celery equivalent**
@@ -676,11 +676,11 @@ News
     `billiard.utils.functional`            `celery.utils.functional`
     =====================================  =====================================
 
-    The :mod:`billiard` distribution may be maintained, depending on interest.
+    The :pypi:`billiard` distribution may be maintained, depending on interest.
 
-* now depends on :mod:`carrot` >= 0.10.5
+* now depends on :pypi:`carrot` >= 0.10.5
 
-* now depends on :mod:`pyparsing`
+* now depends on :pypi:`pyparsing`
 
 * Worker: Added `--purge` as an alias to `--discard`.
 

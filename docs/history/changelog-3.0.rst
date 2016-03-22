@@ -18,7 +18,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on :ref:`Kombu 2.5.15 <kombu:version-2.5.15>`.
 
-- Now depends on :mod:`billiard` version 2.7.3.34.
+- Now depends on :pypi:`billiard` version 2.7.3.34.
 
 - AMQP Result backend:  No longer caches queue declarations.
 
@@ -109,7 +109,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on :ref:`Kombu 2.5.13 <kombu:version-2.5.13>`.
 
-- Now depends on :mod:`billiard` 2.7.3.32
+- Now depends on :pypi:`billiard` 2.7.3.32
 
 - Fixed bug with monthly and yearly crontabs (Issue #1465).
 
@@ -132,7 +132,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 :release-date: 2013-07-05 04:30 P.M BST
 :release-by: Ask Solem
 
-- Now depends on :mod:`billiard` 2.7.3.31.
+- Now depends on :pypi:`billiard` 2.7.3.31.
 
     This version fixed a bug when running without the billiard C extension.
 
@@ -156,7 +156,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on :ref:`Kombu 2.5.12 <kombu:version-2.5.12>`.
 
-- Now depends on :mod:`billiard` 2.7.3.30.
+- Now depends on :pypi:`billiard` 2.7.3.30.
 
 - ``--loader`` argument no longer supported importing loaders from the
   current directory.
@@ -219,7 +219,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 :release-date: 2013-04-17 04:30:00 P.M BST
 :release-by: Ask Solem
 
-- Now depends on :mod:`billiard` 2.7.3.28
+- Now depends on :pypi:`billiard` 2.7.3.28
 
 - A Python 3 related fix managed to disable the deadlock fix
   announced in 3.0.18.
@@ -260,11 +260,11 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 :release-date: 2013-04-12 05:00:00 P.M BST
 :release-by: Ask Solem
 
-- Now depends on :mod:`kombu` 2.5.10.
+- Now depends on :pypi:`kombu` 2.5.10.
 
     See the :ref:`kombu changelog <kombu:version-2.5.10>`.
 
-- Now depends on :mod:`billiard` 2.7.3.27.
+- Now depends on :pypi:`billiard` 2.7.3.27.
 
 - Can now specify a whitelist of accepted serializers using
   the new :setting:`CELERY_ACCEPT_CONTENT` setting.
@@ -457,9 +457,9 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
      - Girls Who Code — http://www.girlswhocode.com
      - Women Who Code — http://www.meetup.com/Women-Who-Code-SF/
 
-- Now depends on :mod:`kombu` version 2.5.7
+- Now depends on :pypi:`kombu` version 2.5.7
 
-- Now depends on :mod:`billiard` version 2.7.3.22
+- Now depends on :pypi:`billiard` version 2.7.3.22
 
 - AMQP heartbeats are now disabled by default.
 
@@ -780,7 +780,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Contributed by Craig Younkins.
 
-- Fixed problem when using earlier versions of :mod:`pytz`.
+- Fixed problem when using earlier versions of :pypi:`pytz`.
 
     Fix contributed by Vlad.
 
@@ -1145,7 +1145,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     or occasionally a ``Framing error`` exception appearing.
 
     Users of the new ``pyamqp://`` transport must upgrade to
-    :mod:`amqp` 0.9.3.
+    :pypi:`amqp` 0.9.3.
 
 - Beat: Fixed another timezone bug with interval and crontab schedules
   (Issue #943).
@@ -1348,7 +1348,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now supports AMQP heartbeats if using the new ``pyamqp://`` transport.
 
-    - The py-amqp transport requires the :mod:`amqp` library to be installed::
+    - The py-amqp transport requires the :pypi:`amqp` library to be installed::
 
         $ pip install amqp
 

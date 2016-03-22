@@ -753,9 +753,9 @@ implementations:
 
 * inotify (Linux)
 
-    Used if the :mod:`pyinotify` library is installed.
+    Used if the :pypi:`pyinotify` library is installed.
     If you are running on Linux this is the recommended implementation,
-    to install the :mod:`pyinotify` library you have to run the following
+    to install the :pypi:`pyinotify` library you have to run the following
     command:
 
     .. code-block:: console

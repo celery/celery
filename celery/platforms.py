@@ -684,7 +684,7 @@ def strargv(argv):
 def set_process_title(progname, info=None):
     """Set the ps name for the currently running process.
 
-    Only works if :mod:`setproctitle` is installed.
+    Only works if :pypi:`setproctitle` is installed.
 
     """
     proctitle = '[{0}]'.format(progname)
@@ -703,7 +703,7 @@ else:
     def set_mp_process_title(progname, info=None, hostname=None):  # noqa
         """Set the ps name using the multiprocessing process name.
 
-        Only works if :mod:`setproctitle` is installed.
+        Only works if :pypi:`setproctitle` is installed.
 
         """
         if hostname:

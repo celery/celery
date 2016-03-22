@@ -332,7 +332,7 @@ Each option has its advantages and disadvantages.
 
 json -- JSON is supported in many programming languages, is now
     a standard part of Python (since 2.6), and is fairly fast to decode
-    using the modern Python libraries such as :mod:`cjson` or :mod:`simplejson`.
+    using the modern Python libraries such as :pypi:`simplejson`.
 
     The primary disadvantage to JSON is that it limits you to the following
     data types: strings, Unicode, floats, boolean, dictionaries, and lists.
