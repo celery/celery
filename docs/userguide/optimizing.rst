@@ -180,7 +180,7 @@ The task message is only deleted from the queue after the task is
 :term:`acknowledged`, so if the worker crashes before acknowleding the task,
 it can be redelivered to another worker (or the same after recovery).
 
-When using the default of early acknowledgement, having a prefetch multiplier setting
+When using the default of early acknowledgment, having a prefetch multiplier setting
 of 1, means the worker will reserve at most one extra task for every
 worker process: or in other words, if the worker is started with `-c 10`,
 the worker may reserve at most 20 tasks (10 unacknowledged tasks executing, and 10

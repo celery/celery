@@ -654,7 +654,7 @@ class ResultSet(ResultBase):
                            ``result = app.AsyncResult(task_id)`` (both will
                            take advantage of the backend cache anyway).
 
-        :keyword no_ack: Automatic message acknowledgement (Note that if this
+        :keyword no_ack: Automatic message acknowledgment (Note that if this
             is set to :const:`False` then the messages *will not be
             acknowledged*).
 

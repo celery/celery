@@ -34,8 +34,8 @@ Patches are now available for all maintained versions (see below),
 and users are urged to upgrade, even if not directly
 affected.
 
-Acknowledgements
-================
+Acknowledgments
+===============
 
 Special thanks to Red Hat for originally discovering and reporting the issue.
 
