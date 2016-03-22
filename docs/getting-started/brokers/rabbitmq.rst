@@ -35,7 +35,7 @@ see `Installing RabbitMQ on OS X`_.
 .. note::
 
     If you're getting `nodedown` errors after installing and using
-    :program:`rabbitmqctl` then this blog post can help you identify
+    :command:`rabbitmqctl` then this blog post can help you identify
     the source of the problem:
 
         http://somic.org/2009/02/19/on-rabbitmqctl-and-badrpcnodedown/
@@ -85,7 +85,7 @@ documentation`_:
 
     ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
 
-Finally, we can install rabbitmq using :program:`brew`:
+Finally, we can install rabbitmq using :command:`brew`:
 
 .. code-block:: console
 
@@ -109,7 +109,7 @@ If you're using a DHCP server that is giving you a random host name, you need
 to permanently configure the host name. This is because RabbitMQ uses the host name
 to communicate with nodes.
 
-Use the :program:`scutil` command to permanently set your host name:
+Use the :command:`scutil` command to permanently set your host name:
 
 .. code-block:: console
 
@@ -121,7 +121,7 @@ back into an IP address::
     127.0.0.1       localhost myhost myhost.local
 
 If you start the rabbitmq server, your rabbit node should now be `rabbit@myhost`,
-as verified by :program:`rabbitmqctl`:
+as verified by :command:`rabbitmqctl`:
 
 .. code-block:: console
 
@@ -159,8 +159,8 @@ you can also run it in the background by adding the :option:`-detached` option
 
     $ sudo rabbitmq-server -detached
 
-Never use :program:`kill` to stop the RabbitMQ server, but rather use the
-:program:`rabbitmqctl` command:
+Never use :command:`kill` (:manpage:`kill(1)`) to stop the RabbitMQ server,
+but rather use the :command:`rabbitmqctl` command:
 
 .. code-block:: console
 

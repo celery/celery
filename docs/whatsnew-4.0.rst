@@ -640,7 +640,7 @@ In Other News
 
 - **Deployment**: Generic init scripts now support
   :envvar:`CELERY_SU`` and :envvar:`CELERYD_SU_ARGS` environment variables
-  to set the path and arguments for :manpage:`su(1)`.
+  to set the path and arguments for :command:`su` (:manpage:`su(1)`).
 
 - **Prefork**: Prefork pool now uses ``poll`` instead of ``select`` where
   available (Issue #2373).

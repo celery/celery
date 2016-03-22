@@ -469,7 +469,7 @@ the test suite by calling ``nosetests``:
 
     $ nosetests
 
-Some useful options to :program:`nosetests` are:
+Some useful options to :command:`nosetests` are:
 
 * :option:`-x`
 
@@ -724,7 +724,7 @@ is following the conventions.
 
 * Lines should not exceed 78 columns.
 
-  You can enforce this in :program:`vim` by setting the ``textwidth`` option:
+  You can enforce this in :command:`vim` by setting the ``textwidth`` option:
 
   .. code-block:: vim
 
