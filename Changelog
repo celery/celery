@@ -8,6 +8,17 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.24:
+
+3.1.24
+======
+:release-date: TBA
+:release-by:
+
+- **Requirements**
+
+    - Now depends on :ref:`Kombu 3.0.35 <kombu:version-3.0.35>`.
+
 .. _version-3.1.23:
 
 3.1.23
