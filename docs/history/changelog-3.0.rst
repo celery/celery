@@ -1106,7 +1106,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Unit test suite now passes for PyPy 1.9.
 
-- App instances now supports the with statement.
+- App instances now supports the :keyword:`with` statement.
 
     This calls the new :meth:`@close` method at exit, which
     cleans up after the app like closing pool connections.

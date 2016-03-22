@@ -144,7 +144,7 @@ class Mock(mock.Mock):
 
 class _ContextMock(Mock):
     """Dummy class implementing __enter__ and __exit__
-    as the with statement requires these to be implemented
+    as the :keyword:`with` statement requires these to be implemented
     in the class, not just the instance."""
 
     def __enter__(self):

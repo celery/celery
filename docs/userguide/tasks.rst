@@ -541,7 +541,8 @@ Autoretrying
 .. versionadded:: 4.0
 
 Sometimes you may want to retry a task on particular exception. To do so,
-you should wrap a task body with `try-except` statement, for example:
+you should wrap a task body with :keyword:`try` ... :keyword:`except`
+statement, for example:
 
 .. code-block:: python
 

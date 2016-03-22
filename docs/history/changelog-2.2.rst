@@ -599,14 +599,14 @@ Important Notes
     Python 2.4.  Complain to your package maintainers, sysadmins and bosses:
     tell them it's time to move on!
 
-    Apart from wanting to take advantage of with-statements, coroutines,
-    conditional expressions and enhanced try blocks, the code base
-    now contains so many 2.4 related hacks and workarounds it's no longer
-    just a compromise, but a sacrifice.
+    Apart from wanting to take advantage of :keyword:`with` statements,
+    coroutines, conditional expressions and enhanced :keyword:`try` blocks,
+    the code base now contains so many 2.4 related hacks and workarounds
+    it's no longer just a compromise, but a sacrifice.
 
     If it really isn't your choice, and you don't have the option to upgrade
     to a newer version of Python, you can just continue to use Celery 2.2.
-    Important fixes can be backported for as long as there is interest.
+    Important fixes can be back ported for as long as there is interest.
 
 * worker: Now supports Autoscaling of child worker processes.
 

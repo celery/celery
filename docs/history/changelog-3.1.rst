@@ -461,7 +461,7 @@ new in Celery 3.1.
   before importing any task modules (Django 1.7 compatibility, Issue #2227)
 
 - **Results**: ``result.get()`` was misbehaving by calling
-  ``backend.get_task_meta`` in a finally call leading to
+  ``backend.get_task_meta`` in a :keyword:`finally` call leading to
   AMQP result backend queues not being properly cleaned up (Issue #2245).
 
 .. _version-3.1.14:
@@ -1452,8 +1452,8 @@ Fixes
 - Worker now properly responds to ``inspect stats`` commands
   even if received before startup is complete (Issue #1659).
 
-- :signal:`task_postrun` is now sent within a finally block, to make
-  sure the signal is always sent.
+- :signal:`task_postrun` is now sent within a :keyword:`finally` block,
+  to make sure the signal is always sent.
 
 - Beat: Fixed syntax error in string formatting.
 

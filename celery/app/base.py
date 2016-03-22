@@ -278,7 +278,7 @@ class Celery(object):
         """Clean up after the application.
 
         Only necessary for dynamically created apps for which you can
-        use the with statement instead::
+        use the :keyword:`with` statement instead::
 
             with Celery(set_as_current=False) as app:
                 with app.connection_for_write() as conn:
@@ -753,8 +753,8 @@ class Celery(object):
         return self.connection_for_write()
 
     def connection_or_acquire(self, connection=None, pool=True, *_, **__):
-        """For use within a with-statement to get a connection from the pool
-        if one is not already provided.
+        """For use within a :keyword:`with` statement to get a connection
+        from the pool if one is not already provided.
 
         :keyword connection: If not provided, then a connection will be
                              acquired from the connection pool.
@@ -763,8 +763,8 @@ class Celery(object):
     default_connection = connection_or_acquire  # XXX compat
 
     def producer_or_acquire(self, producer=None):
-        """For use within a with-statement to get a producer from the pool
-        if one is not already provided
+        """For use within a :keyword:`with` statement to get a producer
+        from the pool if one is not already provided
 
         :keyword producer: If not provided, then a producer will be
                            acquired from the producer pool.

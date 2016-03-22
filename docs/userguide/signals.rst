@@ -483,8 +483,9 @@ worker_process_shutdown
 Dispatched in all pool child processes just before they exit.
 
 Note: There is no guarantee that this signal will be dispatched,
-similarly to finally blocks it's impossible to guarantee that handlers
-will be called at shutdown, and if called it may be interrupted during.
+similarly to :keyword:`finally` blocks it's impossible to guarantee that
+handlers will be called at shutdown, and if called it may be
+interrupted during.
 
 Provides arguments:
 

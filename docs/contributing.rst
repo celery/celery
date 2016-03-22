@@ -774,7 +774,7 @@ is following the conventions.
 
         from __future__ import absolute_import
 
-    * If the module uses the with statement and must be compatible
+    * If the module uses the :keyword:`with` statement and must be compatible
       with Python 2.5 (celery is not) then it must also enable that::
 
         from __future__ import with_statement
