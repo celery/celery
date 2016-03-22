@@ -191,7 +191,7 @@ they really mean by that is to have a worker only reserve as many tasks as
 there are worker processes (10 unacknowledged tasks for `-c 10`)
 
 That is possible, but not without also enabling
-:term:`late acknowledgments`.  Using this option over the
+:term:`late acknowledgment`.  Using this option over the
 default beahvior means a task that has already started executing will be
 retried in the event of a power failure or the worker instance being killed
 abruptly, so this also means the task must be :term:`idempotent`

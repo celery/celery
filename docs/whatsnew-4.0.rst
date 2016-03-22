@@ -258,19 +258,19 @@ the intent of the required connection.
 
 .. note::
 
-Two connection pools are available: ``app.pool`` (read), and
-``app.producer_pool`` (write).  The latter does not actually give connections
-but full :class:`kombu.Producer` instances.
+    Two connection pools are available: ``app.pool`` (read), and
+    ``app.producer_pool`` (write).  The latter does not actually give connections
+    but full :class:`kombu.Producer` instances.
 
-.. code-block:: python
+    .. code-block:: python
 
-    def publish_some_message(app, producer=None):
-        with app.producer_or_acquire(producer) as producer:
-            ...
+        def publish_some_message(app, producer=None):
+            with app.producer_or_acquire(producer) as producer:
+                ...
 
-    def consume_messages(app, connection=None):
-        with app.connection_or_acquire(connection) as connection:
-            ...
+        def consume_messages(app, connection=None):
+            with app.connection_or_acquire(connection) as connection:
+                ...
 
 Canvas Refactor
 ===============
@@ -467,9 +467,9 @@ In Other News
 
 - **Requirements**:
 
-    - Now depends on :ref:`Kombu 3.1 <kombu:version-3.1.0>`.
+    - Now depends on :ref:`Kombu 4.0 <kombu:version-4.0>`.
 
-    - Now depends on :mod:`billiard` version 3.4.
+    - Now depends on :mod:`billiard` version 3.5.
 
     - No longer depends on ``anyjson`` :sadface:
 
@@ -480,7 +480,7 @@ In Other News
   in addition it also improves reliability for the Redis broker transport.
 
 - **Eventlet/Gevent**: Fixed race condition leading to "simultaneous read"
- errors (Issue #2812).
+  errors (Issue #2812).
 
 - **Programs**: ``%n`` format for :program:`celery multi` is now synonym with
   ``%N`` to be consistent with :program:`celery worker`.
@@ -626,7 +626,7 @@ In Other News
   file formats.
 
 - **Programs**: ``%p`` can now be used to expand to the full worker nodename
- in logfile/pidfile arguments.
+  in logfile/pidfile arguments.
 
 - **Programs**: A new command line option :option:``--executable`` is now
   available for daemonizing programs.
@@ -640,7 +640,7 @@ In Other News
 
 - **Deployment**: Generic init scripts now support
   :envvar:`CELERY_SU`` and :envvar:`CELERYD_SU_ARGS` environment variables
-  to set the path and arguments for :man:`su(1)`.
+  to set the path and arguments for :manpage:`su(1)`.
 
 - **Prefork**: Prefork pool now uses ``poll`` instead of ``select`` where
   available (Issue #2373).

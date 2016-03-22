@@ -87,7 +87,7 @@ new in Celery 3.1.
 
 - **Worker**: Bootsteps can now hook into ``on_node_join``/``leave``/``lost``.
 
-    See :ref:`extending-consumer-gossip` for an example.
+    See :ref:`extending-consumer-attributes` for an example.
 
 - **Events**: Fixed handling of DST timezones (Issue #2983).
 
