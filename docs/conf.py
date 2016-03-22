@@ -71,13 +71,26 @@ exclude_trees = ['.build']
 add_function_parentheses = True
 
 intersphinx_mapping = {
-    'python': ('http://docs.python.org/dev', None),
+    'python': ('http://docs.python.org/dev/', None),
+    'sphinx': ('http://www.sphinx-doc.org/en/stable/', None),
     'kombu': ('http://kombu.readthedocs.org/en/master/', None),
-    'djcelery': ('http://django-celery.readthedocs.org/en/master', None),
-    'cyme': ('http://cyme.readthedocs.org/en/latest', None),
-    'amqp': ('http://amqp.readthedocs.org/en/latest', None),
-    'vine': ('http://vine.readthedocs.org/en/latest', None),
-    'flower': ('http://flower.readthedocs.org/en/latest', None),
+    'djcelery': ('http://django-celery.readthedocs.org/en/latest/', None),
+    'cyme': ('http://cyme.readthedocs.org/en/latest/', None),
+    'amqp': ('http://amqp.readthedocs.org/en/latest/', None),
+    'vine': ('http://vine.readthedocs.org/en/latest/', None),
+    'flower': ('http://flower.readthedocs.org/en/latest/', None),
+    'redis': ('http://redis-py.readthedocs.org/en/latest/', None),
+    'django': ('http://django.readthedocs.org/en/latest/', None),
+    'boto': ('http://boto.readthedocs.org/en/latest/', None),
+    'sqlalchemy': ('http://sqlalchemy.readthedocs.org/en/latest', None),
+    'kazoo': ('http://kazoo.readthedocs.org/en/latest/', None),
+    'pyzmq': ('http://pyzmq.readthedocs.org/en/latest/', None),
+    'msgpack': ('http://pythonhosted.org/msgpack-python/', None),
+    'riak': ('http://basho.github.io/riak-python-client/', None),
+    'pylibmc': ('http://sendapatch.se/projects/pylibmc/', None),
+    'eventlet': ('http://eventlet.net/doc/', None),
+    'gevent': ('http://gevent.org/', None),
+    'pyOpenSSL': ('http://pyopenssl.readthedocs.org/en/stable/', None),
 }
 
 # The name of the Pygments (syntax highlighting) style to use.
