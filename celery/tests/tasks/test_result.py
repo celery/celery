@@ -485,6 +485,9 @@ class SimpleBackend(SyncBackendMixin):
         def __init__(self, ids=[]):
             self.ids = ids
 
+        def _ensure_not_eager(self):
+            pass
+
         def get_many(self, *args, **kwargs):
             return ((id, {'result': i, 'status': states.SUCCESS})
                     for i, id in enumerate(self.ids))

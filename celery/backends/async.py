@@ -109,6 +109,8 @@ class AsyncBackendMixin(object):
         self.result_consumer.buckets[result] = bucket
 
     def iter_native(self, result, no_ack=True, **kwargs):
+        self._ensure_not_eager()
+
         results = result.results
         if not results:
             raise StopIteration()
@@ -144,6 +146,7 @@ class AsyncBackendMixin(object):
 
     def wait_for_pending(self, result,
                          callback=None, propagate=True, **kwargs):
+        self._ensure_not_eager()
         for _ in self._wait_for_pending(result, **kwargs):
             pass
         return result.maybe_throw(callback=callback, propagate=propagate)

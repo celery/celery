@@ -292,7 +292,13 @@ class Backend(object):
         except KeyError:
             pass
 
+    def _ensure_not_eager(self):
+        if self.app.conf.task_always_eager:
+            raise RuntimeError(
+                "Cannot retrieve result with task_always_eager enabled")
+
     def get_task_meta(self, task_id, cache=True):
+        self._ensure_not_eager()
         if cache:
             try:
                 return self._cache[task_id]
@@ -313,6 +319,7 @@ class Backend(object):
         self._cache[group_id] = self.get_group_meta(group_id, cache=False)
 
     def get_group_meta(self, group_id, cache=True):
+        self._ensure_not_eager()
         if cache:
             try:
                 return self._cache[group_id]
@@ -383,6 +390,7 @@ class SyncBackendMixin(object):
 
     def iter_native(self, result, timeout=None, interval=0.5, no_ack=True,
                     on_message=None, on_interval=None):
+        self._ensure_not_eager()
         results = result.results
         if not results:
             return iter([])
@@ -395,6 +403,7 @@ class SyncBackendMixin(object):
     def wait_for_pending(self, result, timeout=None, interval=0.5,
                          no_ack=True, on_interval=None, callback=None,
                          propagate=True):
+        self._ensure_not_eager()
         meta = self.wait_for(
             result.id, timeout=timeout,
             interval=interval,
@@ -417,6 +426,7 @@ class SyncBackendMixin(object):
         takes longer than `timeout` seconds.
 
         """
+        self._ensure_not_eager()
 
         time_elapsed = 0.0
 
