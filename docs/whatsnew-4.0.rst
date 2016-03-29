@@ -45,7 +45,7 @@ Preface
 =======
 
 
-.. _v320-important:
+.. _v400-important:
 
 Important Notes
 ===============
@@ -63,46 +63,57 @@ and also drops support for Python 3.3 so supported versions are:
 - PyPy 2.4 (pypy3)
 - Jython 2.7.0
 
-JSON is now the default serializer
-----------------------------------
-
-The Task base class no longer automatically register tasks
-----------------------------------------------------------
-
-The metaclass has been removed blah blah
-
-Arguments now verified when calling a task
-------------------------------------------
-
-Redis Events not backward compatible
-------------------------------------
-
-The Redis ``fanout_patterns`` and ``fanout_prefix`` transport
-options are now enabled by default, which means that workers
-running 4.0 cannot see workers running 3.1 and vice versa.
-
-They should still execute tasks as normally, so this is only
-related to monitoring events.
-
-To avoid this situation you can reconfigure the 3.1 workers (and clients)
-to enable these settings before you mix them with workers and clients
-running 4.x:
-
-.. code-block:: python
-
-    BROKER_TRANSPORT_OPTIONS = {
-        'fanout_patterns': True,
-        'fanout_prefix': True,
-    }
-
 Lowercase setting names
 -----------------------
 
 In the pursuit of beauty all settings have been renamed to be in all
-lowercase, in a consistent naming scheme.
+lowercase, and some setting names have been renamed for naming consistency.
 
 This change is fully backwards compatible so you can still use the uppercase
-setting names.
+setting names, but we would like you to upgrade as soon as possible and
+you can even do so automatically using the :program:`celery upgrade settings`
+command:
+
+.. code-block:: console
+
+    $ celery upgrade settings proj/settings.py
+
+This command will modify your module in-place to use the new lower-case
+names (if you want uppercase with a celery prefix see block below),
+and save a backup in :file:`proj/settings.py.orig`.
+
+.. admonition:: For Django users and others who want to keep uppercase names
+
+    If you're loading Celery configuration from the Django settings module
+    then you will want to keep using the uppercase names.
+
+    You will also want to use a ``CELERY_`` prefix so that no Celery settings
+    collide with Django settings used by other apps.
+
+    To do this, you will first need to convert your settings file
+    to use the new consistent naming scheme, and add the prefix to all
+    Celery related settings:
+
+    .. code-block:: console
+
+        $ celery upgrade settings --django proj/settings.py
+
+    After upgrading the settings file, you need to set the prefix explicitly
+    in your ``proj/celery.py`` module:
+
+    .. code-block:: python
+
+        app.config_from_object('django.conf:settings', namespace='CELERY')
+
+    You can find the most up to date Django celery integration example
+    here: :ref:`django-first-steps`.
+
+    Note that this will also add a prefix to settings that didn't previously
+    have one, like ``BROKER_URL``.
+
+    Luckily you don't have to manually change the files, as
+    the :program:`celery upgrade settings --django` program should do the
+    right thing.
 
 The loader will try to detect if your configuration is using the new format,
 and act accordingly, but this also means that you are not allowed to mix and
@@ -160,13 +171,113 @@ a few special ones:
 
 You can see a full table of the changes in :ref:`conf-old-settings-map`.
 
-Django: Autodiscover no longer takes arguments.
------------------------------------------------
+JSON is now the default serializer
+----------------------------------
 
-Celery's Django support will instead automatically find your installed apps,
-which means app configurations will work.
+The time has finally come to end the reign of :mod:`pickle` as the default
+serialization mechanism, and json is the default serializer starting from this
+version.
 
-# e436454d02dcbba4f4410868ad109c54047c2c15
+This change was :ref:`announced with the release of Celery 3.1
+<last-version-to-enable-pickle>`.
+
+If you're still depending on :mod:`pickle` being the default serializer,
+then you have to configure your app before upgrading to 4.0:
+
+.. code-block:: python
+
+    task_serializer = 'pickle'
+    result_serializer = 'pickle'
+    accept_content = {'pickle'}
+
+The Task base class no longer automatically register tasks
+----------------------------------------------------------
+
+The :class:`~@Task` class is no longer using a special metaclass
+that automatically registers the task in the task registry.
+
+Instead this is now handled by the :class:`@task` decorators.
+
+If you're still using class based tasks, then you need to register
+these manually:
+
+.. code-block:: python
+
+    class CustomTask(Task):
+        def run(self):
+            print('running')
+    app.tasks.register(CustomTask())
+
+The best practice is to use custom task classes only for overriding
+general behavior, and then using the task decorator to realize the task:
+
+.. code-block:: python
+
+    @app.task(bind=True, base=CustomTask)
+    def custom(self):
+        print('running')
+
+This change also means the ``abstract`` attribute of the task
+no longer has any effect.
+
+Task argument checking
+----------------------
+
+The arguments of the task is now verified when calling the task,
+even asynchronously:
+
+.. code-block:: pycon
+
+    >>> @app.task
+    ... def add(x, y):
+    ...     return x + y
+
+    >>> add.delay(8, 8)
+    <AsyncResult: f59d71ca-1549-43e0-be41-4e8821a83c0c>
+
+    >>> add.delay(8)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "celery/app/task.py", line 376, in delay
+        return self.apply_async(args, kwargs)
+      File "celery/app/task.py", line 485, in apply_async
+        check_arguments(*(args or ()), **(kwargs or {}))
+    TypeError: add() takes exactly 2 arguments (1 given)
+
+Redis Events not backward compatible
+------------------------------------
+
+The Redis ``fanout_patterns`` and ``fanout_prefix`` transport
+options are now enabled by default, which means that workers
+running 4.0 cannot see workers running 3.1 on the default configuration,
+and vice versa.
+
+This is only related to monitor event messages, the workers should still
+execute tasks as normally.
+
+You can avoid this situation by configuring the 3.1 workers (and clients)
+to enable these settings, before upgrading to 4.0:
+
+.. code-block:: python
+
+    BROKER_TRANSPORT_OPTIONS = {
+        'fanout_patterns': True,
+        'fanout_prefix': True,
+    }
+
+Django: Autodiscover now supports Django app configs
+----------------------------------------------------
+
+The :meth:`@autodiscover` function can now be called without arguments,
+and the Django handler will automatically find your installed apps:
+
+.. code-block:: python
+
+    app.autodiscover()
+
+The Django integration :ref:`example in the documentation
+<django-first-steps>` has been updated to use the argument-less call.
+
 
 Old command-line programs removed
 ---------------------------------
@@ -175,8 +286,8 @@ Installing Celery will no longer install the ``celeryd``,
 ``celerybeat`` and ``celeryd-multi`` programs.
 
 This was announced with the release of Celery 3.1, but you may still
-have scripts pointing to the old names, so make sure you update them
-to use the new umbrella command.
+have scripts pointing to the old names so make sure you update these
+to use the new umbrella command:
 
 +-------------------+--------------+-------------------------------------+
 | Program           | New Status   | Replacement                         |
@@ -188,38 +299,124 @@ to use the new umbrella command.
 | ``celeryd-multi`` | **REMOVED**  | :program:`celery multi`             |
 +-------------------+--------------+-------------------------------------+
 
-.. _v320-news:
+.. _v400-news:
 
 News
 ====
 
 New Task Message Protocol
 =========================
-
 # e71652d384b1b5df2a4e6145df9f0efb456bc71c
 
+This version introduces a brand new task message protocol,
+the first major change to the protocol since the beginning of the project.
 
-``TaskProducer`` replaced by ``app.amqp.create_task_message`` and
-``app.amqp.send_task_message``.
+The new protocol is backwards incompatible, so you need to set
+the :setting:`task_protocol` configuration option to ``2`` to take advantage:
 
-- Worker stores results for internal errors like ``ContentDisallowed``, and
-  exceptions occurring outside of the task function.
+.. code-block:: python
 
-- Worker stores results and sends monitoring events for unknown task names
+    app = Celery()
+    app.conf.task_protocol = 2
+
+Using the new protocol is recommended for everybody who don't
+need backwards compatibility.
+
+Once enabled task messages sent is unreadable to older versions of Celery.
+
+New protocol highlights
+-----------------------
+
+The new protocol fixes many problems with the old one, and enables
+some long-requested features:
+
+- Most of the data are now sent as message headers, instead of being
+  serialized with the message body.
+
+    In version 1 of the protocol the worker always had to deserialize
+    the message to be able to read task metadata like the task id,
+    name, etc.  This also meant that the worker was forced to double-decode
+    the data, first deserializing the message on receipt, serializing
+    the message again to send to child process, then finally the child process
+    deserializes the message again.
+
+    Keeping the metadata fields in the message headers means the worker
+    does not actually have to decode the payload before delivering
+    the task to the child process, and also that it's now possible
+    for the worker to reroute a task written in a language different
+    from Python to a different worker.
+
+- A new ``lang`` message header can be used to specify the programming
+  language the task is written in.
+
+- Worker stores results for internal errors like ``ContentDisallowed``,
+  and other deserialization errors.
+
+- Worker stores results and sends monitoring events for unregistered
+  task errors.
 
 - Worker calls callbacks/errbacks even when the result is sent by the
   parent process (e.g. :exc:`WorkerLostError` when a child process
-  terminates).
+  terminates, deserialization errors, unregistered tasks).
 
-- origin header
+- A new ``origin`` header contains information about the process sending
+  the task (worker nodename, or pid and hostname information).
 
-- shadow header
+- A new ``shadow`` header allows you to modify the task name used in logs.
 
-- argsrepr header
+    This is useful for dispatch like patterns, like a task that calls
+    any function using pickle (don't do this at home):
 
-- Support for very long chains
+    .. code-block:: python
 
-- parent_id / root_id headers
+        from celery import Task
+        from celery.utils.imports import qualname
+
+        class call_as_task(Task):
+
+            def shadow_name(self, args, kwargs, options):
+                return 'call_as_task:{0}'.format(qualname(args[0]))
+
+            def run(self, fun, *args, **kwargs):
+                return fun(*args, **kwargs)
+        call_as_task = app.tasks.register(call_as_task())
+
+- New ``argsrepr`` and ``kwargsrepr`` fields contain textual representations
+  of the task arguments (possibly truncated) for use in logs, monitors, etc.
+
+    This means the worker does not have to deserialize the message payload
+    to display the task arguments for informational purposes.
+
+- Chains now use a dedicated ``chain`` field enabling support for chains
+  of thousands and more tasks.
+
+- New ``parent_id`` and ``root_id`` headers adds information about
+  a tasks relationship with other tasks.
+
+    - ``parent_id`` is the task id of the task that called this task
+    - ``root_id`` is the first task in the workflow.
+
+    These fields can be used to improve monitors like flower to group
+    related messages together (like chains, groups, chords, complete
+    workflows, etc).
+
+- ``app.TaskProducer`` replaced by :meth:`@amqp.create_task_message`` and
+  :meth:`@amqp.send_task_message``.
+
+    Dividing the responsibilities into creating and sending means that
+    people who want to send messages using a Python amqp client directly,
+    does not have to implement the protocol.
+
+    The :meth:`@amqp.create_task_message` method calls either
+    :meth:`@amqp.as_task_v2`, or :meth:`@amqp.as_task_v1` depending
+    on the configured task protocol, and returns a special
+    :class:`~celery.app.amqp.task_message` tuple containing the
+    headers, properties and body of the task message.
+
+.. seealso::
+
+    The new task protocol is documented in full here:
+    :ref:`message-protocol-task-v2`.
 
 
 Prefork: Tasks now log from the child process
@@ -233,12 +430,16 @@ variables in the traceback.
 Prefork: One logfile per child process
 ======================================
 
-Init scrips and :program:`celery multi` now uses the `%I` logfile format
-option (e.g. :file:`/var/log/celery/%n%I.log`) to ensure each child
-process has a separate log file to avoid race conditions.
+Init scrips and :program:`celery multi` now uses the `%I` log file format
+option (e.g. :file:`/var/log/celery/%n%I.log`).
+
+This change was necessary to ensure each child
+process has a separate log file after moving task logging
+to the child process, as multiple processes writing to the same
+log file can cause corruption.
 
 You are encouraged to upgrade your init scripts and multi arguments
-to do so also.
+to use this new option.
 
 Ability to configure separate broker urls for read/write
 ========================================================
@@ -754,7 +955,7 @@ Unscheduled Removals
     ``supervisord``.
 
 
-.. _v320-removals:
+.. _v400-removals:
 
 Scheduled Removals
 ==================
@@ -953,14 +1154,14 @@ Task Settings
 ``CELERY_CHORD_PROPAGATES``            N/a
 =====================================  =====================================
 
-.. _v320-deprecations:
+.. _v400-deprecations:
 
 Deprecations
 ============
 
 See the :ref:`deprecation-timeline`.
 
-.. _v320-fixes:
+.. _v400-fixes:
 
 Fixes
 =====

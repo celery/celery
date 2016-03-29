@@ -104,6 +104,8 @@ requiring the ``2to3`` porting tool.
     This is also the last version to support Python 2.6! From Celery 4.0 and
     onwards Python 2.7 or later will be required.
 
+.. _last-version-to-enable-pickle:
+
 Last version to enable Pickle by default
 ----------------------------------------
 
