@@ -87,6 +87,7 @@ NAMESPACES = Namespace(
     include=Option((), type='tuple', old=OLD_NS),
     server_email=Option('celery@localhost'),
     timezone=Option(type='string', old=OLD_NS),
+    remote_tracebacks=Option(False, type='bool'),
     beat=Namespace(
         __old__=OLD_NS_BEAT,
 
@@ -187,8 +188,6 @@ NAMESPACES = Namespace(
         ),
         persistent=Option(None, type='bool'),
         serializer=Option('json'),
-
-        raise_with_fake_traceback=Option(False, type='bool'),
 
         fspath=Option(None),
     ),

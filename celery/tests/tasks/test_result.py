@@ -224,7 +224,7 @@ Doesn't matter: really!''')
         else:
             raise AssertionError('Did not raise KeyError.')
 
-        self.app.conf.result_raise_with_fake_traceback = True
+        self.app.conf.remote_tracebacks = True
         try:
             withtb.get()
         except KeyError:
