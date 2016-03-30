@@ -16,6 +16,10 @@ from copy import copy
 
 from kombu.utils import cached_property
 from vine import Thenable, barrier, promise
+try:
+    import tblib
+except ImportError:
+    tblib = False
 
 from . import current_app
 from . import states
@@ -277,9 +281,14 @@ class AsyncResult(ResultBase):
 
     def maybe_throw(self, propagate=True, callback=None):
         cache = self._get_task_meta() if self._cache is None else self._cache
-        state, value = cache['status'], cache['result']
+        state, value, tbstring = cache['status'], cache['result'], cache.get('traceback')
         if state in states.PROPAGATE_STATES and propagate:
-            self.throw(value)
+            if tbstring and tblib and self.app.conf.raise_with_fake_traceback:
+                tb = tblib.Traceback.from_string(tbstring)
+            else:
+                tb = None
+            self.throw(value, tb)
+
         if callback is not None:
             callback(self.id, value)
         return value

@@ -188,6 +188,8 @@ NAMESPACES = Namespace(
         persistent=Option(None, type='bool'),
         serializer=Option('json'),
 
+        raise_with_fake_traceback=Option(False, type='bool'),
+
         fspath=Option(None),
     ),
     riak=Namespace(
