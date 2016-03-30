@@ -283,8 +283,8 @@ class AsyncResult(ResultBase):
         cache = self._get_task_meta() if self._cache is None else self._cache
         state, value, tbstring = cache['status'], cache['result'], cache.get('traceback')
         if state in states.PROPAGATE_STATES and propagate:
-            if tbstring and tblib and self.app.conf.raise_with_fake_traceback:
-                tb = tblib.Traceback.from_string(tbstring)
+            if tbstring and tblib and self.app.conf.result_raise_with_fake_traceback:
+                tb = tblib.Traceback.from_string(tbstring).as_traceback()
             else:
                 tb = None
             self.throw(value, tb)
