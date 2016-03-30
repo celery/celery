@@ -223,17 +223,20 @@ Doesn't matter: really!''')
             self.assertIn("KeyError: 'blue'", tb)
         else:
             raise AssertionError('Did not raise KeyError.')
-
-        self.app.conf.remote_tracebacks = True
         try:
-            withtb.get()
-        except KeyError:
-            tb  = traceback.format_exc()
-            self.assertIn('  File "foo.py", line 2, in foofunc', tb)
-            self.assertIn('  File "bar.py", line 3, in barfunc', tb)
-            self.assertIn("KeyError: 'blue'", tb)
-        else:
-            raise AssertionError('Did not raise KeyError.')
+            old = self.app.conf.remote_tracebacks
+            self.app.conf.remote_tracebacks = True
+            try:
+                withtb.get()
+            except KeyError:
+                tb  = traceback.format_exc()
+                self.assertIn('  File "foo.py", line 2, in foofunc', tb)
+                self.assertIn('  File "bar.py", line 3, in barfunc', tb)
+                self.assertIn("KeyError: 'blue'", tb)
+            else:
+                raise AssertionError('Did not raise KeyError.')
+        finally:
+            self.app.conf.remote_tracebacks = old
 
     def test_str(self):
         ok_res = self.app.AsyncResult(self.task1['id'])
