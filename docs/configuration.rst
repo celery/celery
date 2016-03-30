@@ -231,6 +231,17 @@ to false the system local timezone is used instead.
 
 .. _`pytz`: http://pypi.python.org/pypi/pytz/
 
+.. setting:: remote_tracebacks
+
+remote_tracebacks
+~~~~~~~~~~~~~~~~~
+
+Makes celery raise exceptions from tasks with the original traceback. Requires the ``tblib`` extra, to install it::
+
+.. code-block:: console
+
+    $ pip install 'tblib>=1.3.0'
+
 .. _conf-tasks:
 
 Task settings
@@ -558,6 +569,7 @@ result_serializer
 Result serialization format.  Default is ``pickle``. See
 :ref:`calling-serializers` for information about supported
 serialization formats.
+
 
 .. setting:: result_compression
 
