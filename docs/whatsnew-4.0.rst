@@ -749,7 +749,6 @@ A new builtin task (`celery.accumulate` was added for this purpose)
 
 Closes #817
 
-
 Optimized Beat implementation
 =============================
 
@@ -773,6 +772,16 @@ See :ref:`task-autoretry` for more information.
 Contributed by Dmitry Malinovsky.
 
 # 75246714dd11e6c463b9dc67f4311690643bff24
+
+Remote Task Tracebacks
+======================
+
+The new :setting:`task_remote_tracebacks` will make task tracebacks more
+useful by injecting the stack of the remote worker.
+
+This feature requires the additional :pypi:`tblib` library.
+
+Contributed by Ionel Cristian Mărieș.
 
 Async Result API
 ================

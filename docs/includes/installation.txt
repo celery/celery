@@ -78,6 +78,9 @@ Transports and Backends
 :celery[sqs]:
     for using Amazon SQS as a message transport (*experimental*).
 
+:celery[tblib]
+    for using the :setting:`task_remote_tracebacks` feature.
+
 :celery[memcache]:
     for using memcached as a result backend (using pylibmc)
 

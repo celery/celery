@@ -367,6 +367,20 @@ propagate exceptions.
 
 It's the same as always running ``apply()`` with ``throw=True``.
 
+.. setting:: task_remote_tracebacks
+
+task_remote_tracebacks
+~~~~~~~~~~~~~~~~~~~~~~
+
+If enabled task results will include the workers stack when reraising task errors.
+
+This requires the :pypi:`tblib` library, which can be installed using
+:command:`pip`:
+
+.. code-block:: console
+
+    $ pip install 'tblib>=1.3.0'
+
 .. setting:: task_ignore_result
 
 task_ignore_result
@@ -558,6 +572,7 @@ result_serializer
 Result serialization format.  Default is ``pickle``. See
 :ref:`calling-serializers` for information about supported
 serialization formats.
+
 
 .. setting:: result_compression
 

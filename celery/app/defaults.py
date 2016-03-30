@@ -190,6 +190,7 @@ NAMESPACES = Namespace(
         ),
         persistent=Option(None, type='bool'),
         serializer=Option('json'),
+        fspath=Option(None),
     ),
     riak=Namespace(
         __old__=old_ns('celery_riak'),
@@ -245,6 +246,7 @@ NAMESPACES = Namespace(
         queue_ha_policy=Option(None, type='string'),
         queue_max_priority=Option(None, type='int'),
         reject_on_worker_lost=Option(type='bool'),
+        remote_tracebacks=Option(False, type='bool'),
         routes=Option(type='any'),
         send_error_emails=Option(
             False, type='bool', old={'celery_send_task_error_emails'},

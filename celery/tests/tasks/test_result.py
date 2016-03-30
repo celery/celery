@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+import traceback
 from contextlib import contextmanager
 
 from celery import states
@@ -22,13 +23,22 @@ from celery.tests.case import (
     AppCase, Mock, call, depends_on_current_app, patch,
 )
 
+PYTRACEBACK = """\
+Traceback (most recent call last):
+  File "foo.py", line 2, in foofunc
+    don't matter
+  File "bar.py", line 3, in barfunc
+    don't matter
+Doesn't matter: really!\
+"""
 
-def mock_task(name, state, result):
-    return dict(id=uuid(), name=name, state=state, result=result)
+
+def mock_task(name, state, result, traceback=None):
+    return dict(id=uuid(), name=name, state=state, result=result, traceback=traceback)
 
 
 def save_result(app, task):
-    traceback = 'Some traceback'
+    traceback = task.get('traceback') or 'Some traceback'
     if task['state'] == states.SUCCESS:
         app.backend.mark_as_done(task['id'], task['result'])
     elif task['state'] == states.RETRY:
@@ -56,8 +66,11 @@ class test_AsyncResult(AppCase):
         self.task2 = mock_task('task2', states.SUCCESS, 'quick')
         self.task3 = mock_task('task3', states.FAILURE, KeyError('brown'))
         self.task4 = mock_task('task3', states.RETRY, KeyError('red'))
+        self.task5 = mock_task(
+            'task3', states.FAILURE, KeyError('blue'), PYTRACEBACK,
+        )
 
-        for task in (self.task1, self.task2, self.task3, self.task4):
+        for task in (self.task1, self.task2, self.task3, self.task4, self.task5):
             save_result(self.app, task)
 
         @self.app.task(shared=False)
@@ -201,6 +214,35 @@ class test_AsyncResult(AppCase):
 
         pending_res = self.app.AsyncResult(uuid())
         self.assertFalse(pending_res.successful())
+
+    def test_raising(self):
+        notb = self.app.AsyncResult(self.task3['id'])
+        withtb = self.app.AsyncResult(self.task5['id'])
+
+        self.assertRaises(KeyError, notb.get)
+        try:
+            withtb.get()
+        except KeyError:
+            tb  = traceback.format_exc()
+            self.assertNotIn('  File "foo.py", line 2, in foofunc', tb)
+            self.assertNotIn('  File "bar.py", line 3, in barfunc', tb)
+            self.assertIn("KeyError: 'blue'", tb)
+        else:
+            raise AssertionError('Did not raise KeyError.')
+        try:
+            old = self.app.conf.remote_tracebacks
+            self.app.conf.remote_tracebacks = True
+            try:
+                withtb.get()
+            except KeyError:
+                tb  = traceback.format_exc()
+                self.assertIn('  File "foo.py", line 2, in foofunc', tb)
+                self.assertIn('  File "bar.py", line 3, in barfunc', tb)
+                self.assertIn("KeyError: 'blue'", tb)
+            else:
+                raise AssertionError('Did not raise KeyError.')
+        finally:
+            self.app.conf.remote_tracebacks = old
 
     def test_str(self):
         ok_res = self.app.AsyncResult(self.task1['id'])
