@@ -90,6 +90,12 @@ def _after_fork_cleanup_app(app):
 
 
 class PendingConfiguration(UserDict, AttributeDictMixin):
+    # `app.conf` will be of this type before being explicitly configured,
+    # which means the app can keep any configuration set directly
+    # on `app.conf` before the `app.config_from_object` call.
+    #
+    # accessing any key will finalize the configuration,
+    # replacing `app.conf` with a concrete settings object.
 
     callback = None
     data = None
@@ -1058,10 +1064,17 @@ class Celery(object):
 
     @property
     def current_worker_task(self):
+        """The task currently being executed by a worker or :const:`None`.
+
+        Differs from :data:`current_task` in that it's not affected
+        by tasks calling other tasks directly, or eagerly.
+
+        """
         return get_current_worker_task()
 
     @cached_property
     def oid(self):
+        """Universally unique identifier for this app."""
         return oid_from(self)
 
     @cached_property

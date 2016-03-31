@@ -229,8 +229,8 @@ Remote control
     commands from the command-line.  It supports all of the commands
     listed below.  See :ref:`monitoring-control` for more information.
 
-pool support: *prefork, eventlet, gevent*, blocking:*threads/solo* (see note)
-broker support: *amqp, redis*
+:pool support: *prefork, eventlet, gevent*, blocking:*threads/solo* (see note)
+:broker support: *amqp, redis*
 
 Workers have the ability to be remote controlled using a high-priority
 broadcast message queue.  The commands can be directed to all, or a specific
@@ -419,7 +419,7 @@ Time Limits
 
 .. versionadded:: 2.0
 
-pool support: *prefork/gevent*
+:pool support: *prefork/gevent*
 
 .. sidebar:: Soft, or hard?
 
@@ -464,7 +464,7 @@ Changing time limits at runtime
 -------------------------------
 .. versionadded:: 2.3
 
-broker support: *amqp, redis*
+:broker support: *amqp, redis*
 
 There is a remote control command that enables you to change both soft
 and hard time limits for a task — named ``time_limit``.
@@ -519,7 +519,7 @@ Max tasks per child setting
 
 .. versionadded:: 2.0
 
-pool support: *prefork*
+:pool support: *prefork*
 
 With this option you can configure the maximum number of tasks
 a worker can execute before it's replaced by a new process.
@@ -527,15 +527,17 @@ a worker can execute before it's replaced by a new process.
 This is useful if you have memory leaks you have no control over
 for example from closed source C extensions.
 
-The option can be set using the workers `--maxtasksperchild` argument
+The option can be set using the workers :option:`--maxtasksperchild` argument
 or using the :setting:`worker_max_tasks_per_child` setting.
+
+.. _worker-maxmemperchild:
 
 Max memory per child setting
 ============================
 
-.. versionadded:: TODO
+.. versionadded:: 4.0
 
-pool support: *prefork*
+:pool support: *prefork*
 
 With this option you can configure the maximum amount of resident
 memory a worker can execute before it's replaced by a new process.
@@ -543,8 +545,8 @@ memory a worker can execute before it's replaced by a new process.
 This is useful if you have memory leaks you have no control over
 for example from closed source C extensions.
 
-The option can be set using the workers `--maxmemperchild` argument
-or using the :setting:`CELERYD_MAX_MEMORY_PER_CHILD` setting.
+The option can be set using the workers :option:`--maxmemperchild` argument
+or using the :setting:`worker_max_memory_per_child` setting.
 
 .. _worker-autoscaling:
 
@@ -553,7 +555,7 @@ Autoscaling
 
 .. versionadded:: 2.2
 
-pool support: *prefork*, *gevent*
+:pool support: *prefork*, *gevent*
 
 The *autoscaler* component is used to dynamically resize the pool
 based on load:
@@ -728,7 +730,7 @@ Autoreloading
 
 .. versionadded:: 2.5
 
-pool support: *prefork, eventlet, gevent, threads, solo*
+:pool support: *prefork, eventlet, gevent, threads, solo*
 
 Starting :program:`celery worker` with the :option:`--autoreload` option will
 enable the worker to watch for file system changes to all imported task

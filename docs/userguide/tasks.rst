@@ -532,27 +532,21 @@ override this default.
         try:
             …
         except Exception as exc:
-            raise self.retry(exc=exc, countdown=60)  # override the default and
-                                                     # retry in 1 minute
+            # overrides the default delay to retry after 1 minute
+            raise self.retry(exc=exc, countdown=60)
 
-Autoretrying
-------------
+.. _task-autoretry:
+
+Automatic retry for known exceptions
+------------------------------------
 
 .. versionadded:: 4.0
 
-Sometimes you may want to retry a task on particular exception. To do so,
-you should wrap a task body with :keyword:`try` ... :keyword:`except`
-statement, for example:
+Sometimes you just want to retry a task whenever a particular exception
+is raised.
 
-.. code-block:: python
-
-    @app.task
-    def div(a, b):
-        try:
-            return a / b
-        except ZeroDivisionError as exc:
-            raise div.retry(exc=exc)
-
+As this is such a common pattern we have built-in support for it
+with the
 This may not be acceptable all the time, since you may have a lot of such
 tasks.
 
@@ -561,19 +555,34 @@ Fortunately, you can tell Celery to automatically retry a task using
 
 .. code-block:: python
 
-    @app.task(autoretry_for(ZeroDivisionError,))
-    def div(a, b):
-        return a / b
+    from twitter.exceptions import FailWhaleError
+
+    @app.task(autoretry_for=(FailWhaleError,))
+    def refresh_timeline(user):
+        return twitter.refresh_timeline(user)
 
 If you want to specify custom arguments for internal `~@Task.retry`
 call, pass `retry_kwargs` argument to `~@Celery.task` decorator:
 
 .. code-block:: python
 
-    @app.task(autoretry_for=(ZeroDivisionError,),
+    @app.task(autoretry_for=(FailWhaleError,),
               retry_kwargs={'max_retries': 5})
-    def div(a, b):
-        return a / b
+    def refresh_timeline(user):
+        return twitter.refresh_timeline(user)
+
+This is provided as an alternative to manually handling the exceptions,
+and the example above will do the same as wrapping the task body
+in a :keyword:`try` ... :keyword:`except` statement, i.e.:
+
+.. code-block:: python
+
+    @app.task
+    def refresh_timeline(user):
+        try:
+            twitter.refresh_timeline(user)
+        except FailWhaleError as exc:
+            raise div.retry(exc=exc, max_retries=5)
 
 .. _task-options:
 

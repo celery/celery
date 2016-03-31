@@ -38,6 +38,8 @@ and creating Celery applications.
 
     .. autoattribute:: current_task
 
+    .. autoattribute:: current_worker_task
+
     .. autoattribute:: amqp
 
     .. autoattribute:: backend
@@ -52,6 +54,8 @@ and creating Celery applications.
     .. autoattribute:: producer_pool
     .. autoattribute:: Task
     .. autoattribute:: timezone
+    .. autoattribute:: builtin_fixups
+    .. autoattribute:: oid
 
     .. automethod:: close
 
@@ -67,6 +71,8 @@ and creating Celery applications.
 
     .. automethod:: add_defaults
 
+    .. automethod:: add_periodic_task
+
     .. automethod:: setup_security
 
     .. automethod:: start
@@ -74,6 +80,8 @@ and creating Celery applications.
     .. automethod:: task
 
     .. automethod:: send_task
+
+    .. automethod:: gen_task_name
 
     .. autoattribute:: AsyncResult
 
@@ -86,6 +94,10 @@ and creating Celery applications.
     .. autoattribute:: WorkController
 
     .. autoattribute:: Beat
+
+    .. automethod:: connection_for_read
+
+    .. automethod:: connection_for_write
 
     .. automethod:: connection
 
@@ -101,7 +113,13 @@ and creating Celery applications.
 
     .. automethod:: set_current
 
+    .. automethod:: set_default
+
     .. automethod:: finalize
+
+    .. automethod:: on_init
+
+    .. automethod:: prepare_config
 
     .. data:: on_configure
 
@@ -114,6 +132,10 @@ and creating Celery applications.
     .. data:: on_after_finalize
 
         Signal sent after app has been finalized.
+
+    .. data:: on_after_fork
+
+        Signal sent in child process after fork.
 
 Canvas primitives
 -----------------
@@ -202,8 +224,8 @@ See :ref:`guide-canvas` for more about creating task workflows.
     arguments will be ignored and the values in the dict will be used
     instead.
 
-        >>> s = signature('tasks.add', args=(2, 2))
-        >>> signature(s)
+        >>> s = app.signature('tasks.add', args=(2, 2))
+        >>> app.signature(s)
         {'task': 'tasks.add', args=(2, 2), kwargs={}, options={}}
 
     .. method:: signature.__call__(*args \*\*kwargs)

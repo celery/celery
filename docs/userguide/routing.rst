@@ -87,8 +87,8 @@ configuration:
 
     from kombu import Exchange, Queue
 
-    task_default_queue = 'default'
-    task_queues = (
+    app.conf.task_default_queue = 'default'
+    app.conf.task_queues = (
         Queue('default', Exchange('default'), routing_key='default'),
     )
 
@@ -126,8 +126,8 @@ configuration:
 
     from kombu import Queue
 
-    task_default_queue = 'default'
-    task_queues = (
+    app.conf.task_default_queue = 'default'
+    app.conf.task_queues = (
         Queue('default',    routing_key='task.#'),
         Queue('feed_tasks', routing_key='feed.#'),
     )
@@ -191,7 +191,7 @@ just specify a custom exchange and exchange type:
 
     from kombu import Exchange, Queue
 
-    task_queues = (
+    app.conf.task_queues = (
         Queue('feed_tasks',    routing_key='feed.#'),
         Queue('regular_tasks', routing_key='task.#'),
         Queue('image_tasks',   exchange=Exchange('mediatasks', type='direct'),
@@ -212,6 +212,34 @@ If you're confused about these terms, you should read up on AMQP.
 .. _`Flexible Routing Model`: http://bit.ly/95XFO1
 .. _`Standard Exchange Types`: http://bit.ly/EEWca
 .. _`RabbitMQ FAQ`: http://www.rabbitmq.com/faq.html
+
+.. _routing-special_options:
+
+Special Routing Options
+=======================
+
+.. _routing-option-rabbitmq-priorities:
+
+RabbitMQ Message Priorities
+---------------------------
+:supported transports: rabbitmq
+
+.. versionadded:: 4.0
+
+Queues can be configured to support priorities by setting the
+``x-max-priority`` argument:
+
+.. code-block:: python
+
+    from kombu import Exchange, Queue
+
+    app.conf.task_queues = [
+        Queue('tasks', Exchange('tasks'), routing_key='tasks',
+              queue_arguments={'x-max-priority': 10},
+    ]
+
+A default value for all queues can be set using the
+:setting:`task_queue_max_priority` setting.
 
 .. _amqp-primer:
 
@@ -280,14 +308,14 @@ One for video, one for images and one default queue for everything else:
 
     from kombu import Exchange, Queue
 
-    task_queues = (
+    app.conf.task_queues = (
         Queue('default', Exchange('default'), routing_key='default'),
         Queue('videos',  Exchange('media'),   routing_key='media.video'),
         Queue('images',  Exchange('media'),   routing_key='media.image'),
     )
-    task_default_queue = 'default'
-    task_default_exchange_type = 'direct'
-    task_default_routing_key = 'default'
+    app.conf.task_default_queue = 'default'
+    app.conf.task_default_exchange_type = 'direct'
+    app.conf.task_default_routing_key = 'default'
 
 .. _amqp-exchange-types:
 
@@ -501,14 +529,14 @@ One for video, one for images and one default queue for everything else:
     default_exchange = Exchange('default', type='direct')
     media_exchange = Exchange('media', type='direct')
 
-    task_queues = (
+    app.conf.task_queues = (
         Queue('default', default_exchange, routing_key='default'),
         Queue('videos', media_exchange, routing_key='media.video'),
         Queue('images', media_exchange, routing_key='media.image')
     )
-    task_default_queue = 'default'
-    task_default_exchange = 'default'
-    task_default_routing_key = 'default'
+    app.conf.task_default_queue = 'default'
+    app.conf.task_default_exchange = 'default'
+    app.conf.task_default_routing_key = 'default'
 
 Here, the :setting:`task_default_queue` will be used to route tasks that
 doesn't have an explicit route.
@@ -613,8 +641,8 @@ copies of tasks to all workers connected to it:
 
     from kombu.common import Broadcast
 
-    task_queues = (Broadcast('broadcast_tasks'),)
-    task_routes = {'tasks.reload_cache': {'queue': 'broadcast_tasks'}}
+    app.conf.task_queues = (Broadcast('broadcast_tasks'),)
+    app.conf.task_routes = {'tasks.reload_cache': {'queue': 'broadcast_tasks'}}
 
 Now the ``tasks.reload_cache`` task will be sent to every
 worker consuming from this queue.
@@ -627,9 +655,10 @@ a celerybeat schedule:
     from kombu.common import Broadcast
     from celery.schedules import crontab
 
-    task_queues = (Broadcast('broadcast_tasks'),)
+    app.conf.task_queues = (Broadcast('broadcast_tasks'),)
 
-    beat_schedule = {'test-task': {
+    app.conf.beat_schedule = {
+        'test-task': {
             'task': 'tasks.reload_cache',
             'schedule': crontab(minute=0, hour='*/3'),
             'options': {'exchange': 'broadcast_tasks'}

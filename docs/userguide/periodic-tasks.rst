@@ -37,13 +37,11 @@ An example time zone could be `Europe/London`:
 
     timezone = 'Europe/London'
 
-
 This setting must be added to your app, either by configuration it directly
 using (``app.conf.timezone = 'Europe/London'``), or by adding
 it to your configuration module if you have set one up using
 ``app.config_from_object``.  See :ref:`celerytut-configuration` for
 more information about configuration options.
-
 
 The default scheduler (storing the schedule in the :file:`celerybeat-schedule`
 file) will automatically detect that the time zone has changed, and so will
@@ -103,10 +101,10 @@ beat schedule list.
         print(arg)
 
 
-Setting these up from within the ``on_after_configure`` handler means
+Setting these up from within the :data:`~@on_after_configure` handler means
 that we will not evaluate the app at module level when using ``test.s()``.
 
-The `@add_periodic_task` function will add the entry to the
+The :meth:`~@add_periodic_task` function will add the entry to the
 :setting:`beat_schedule` setting behind the scenes, which also
 can be used to set up periodic tasks manually:
 
@@ -114,15 +112,14 @@ Example: Run the `tasks.add` task every 30 seconds.
 
 .. code-block:: python
 
-    beat_schedule = {
+    app.conf.beat_schedule = {
         'add-every-30-seconds': {
             'task': 'tasks.add',
             'schedule': 30.0,
             'args': (16, 16)
         },
     }
-
-    timezone = 'UTC'
+    app.conf.timezone = 'UTC'
 
 
 .. note::
@@ -131,7 +128,7 @@ Example: Run the `tasks.add` task every 30 seconds.
     please see :ref:`celerytut-configuration`.  You can either
     set these options on your app directly or you can keep
     a separate module for configuration.
-    
+
     If you want to use a single item tuple for `args`, don't forget
     that the constructor is a comma and not a pair of parentheses.
 
@@ -203,7 +200,7 @@ the :class:`~celery.schedules.crontab` schedule type:
 
     from celery.schedules import crontab
 
-    beat_schedule = {
+    app.conf.beat_schedule = {
         # Executes every Monday morning at 7:30 A.M
         'add-every-monday-morning': {
             'task': 'tasks.add',
@@ -285,7 +282,7 @@ sunset, dawn or dusk, you can use the
 
     from celery.schedules import solar
 
-    beat_schedule = {
+    app.conf.beat_schedule = {
         # Executes at sunset in Melbourne
         'add-at-melbourne-sunset': {
             'task': 'tasks.add',

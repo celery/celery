@@ -45,6 +45,44 @@ Preface
 =======
 
 
+Wall of Contributors
+--------------------
+
+Aaron McMillin, Adam Renberg, Adrien Guinet, Ahmet Demir, Aitor Gómez-Goiri,
+Albert Wang, Alex Koshelev, Alex Rattray, Alex Williams, Alexander Koshelev,
+Alexander Lebedev, Alexander Oblovatniy, Alexey Kotlyarov, Ali Bozorgkhan,
+Alice Zoë Bevan–McGregor, Allard Hoeve, Alman One, Andrea Rabbaglietti,
+Andrea Rosa, Andrei Fokau, Andrew Rodionoff, Andriy Yurchuk,
+Aneil Mallavarapu, Areski Belaid, Artyom Koval, Ask Solem, Balthazar Rouberol,
+Berker Peksag, Bert Vanderbauwhede, Brian Bouterse, Chris Duryee, Chris Erway,
+Chris Harris, Chris Martin, Corey Farwell, Craig Jellick, Cullen Rhodes,
+Dallas Marlow, Daniel Wallace, Danilo Bargen, Davanum Srinivas, Dave Smith,
+David Baumgold, David Harrigan, David Pravec, Dennis Brakhane, Derek Anderson,
+Dmitry Malinovsky, Dudás Ádám, Dustin J. Mitchell, Ed Morley, Fatih Sucu,
+Feanil Patel, Felix Schwarz, Fernando Rocha, Flavio Grossi, Frantisek Holop,
+Gao Jiangmiao, Gerald Manipon, Gilles Dartiguelongue, Gino Ledesma,
+Hank John, Hogni Gylfason, Ilya Georgievsky, Ionel Cristian Mărieș,
+James Pulec, Jared Lewis, Jason Veatch, Jasper Bryant-Greene, Jeremy Tillman,
+Jocelyn Delalande, Joe Jevnik, John Anderson, John Kirkham, John Whitlock,
+Joshua Harlow, Juan Rossi, Justin Patrin, Kai Groner, Kevin Harvey,
+Konstantinos Koukopoulos, Kouhei Maeda, Kracekumar Ramaraju,
+Krzysztof Bujniewicz, Latitia M. Haskins, Len Buckens, Lorenzo Mancini,
+Lucas Wiman, Luke Pomfrey, Marcio Ribeiro, Marin Atanasov Nikolov,
+Mark Parncutt, Maxime Vdb, Mher Movsisyan, Michael (michael-k),
+Michael Duane Mooring, Michael Permana, Mickaël Penhard, Mike Attwood,
+Morton Fox, Môshe van der Sterre, Nat Williams, Nathan Van Gheem, Nik Nyby,
+Omer Katz, Omer Korner, Ori Hoch, Paul Pearce, Paulo Bu, Philip Garnero,
+Piotr Maślanka, Radek Czajka, Raghuram Srinivasan, Randy Barlow,
+Rodolfo Carvalho, Roger Hu, Rongze Zhu, Ross Deane, Ryan Luckie,
+Rémy Greinhofer, Samuel Jaillet, Sergey Azovskov, Sergey Tikhonov,
+Seungha Kim, Steve Peak, Sukrit Khera, Tadej Janež, Tewfik Sadaoui,
+Thomas French, Thomas Grainger, Tobias Schottdorf, Tocho Tochev,
+Valentyn Klindukh, Vic Kumar, Vladimir Bolshakov, Vladimir Gorbunov,
+Wayne Chang, Wil Langford, Will Thompson, William King, Yury Selivanov,
+Zoran Pavlovic, 許邱翔, @allenling, @bee-keeper, @ffeast, @flyingfoxlee,
+@gdw2, @gitaarik, @hankjin, @m-vdb, @mdk, @nokrik, @ocean1, @orlo666,
+@raducc, @wanglei, @worldexception.
+
 .. _v400-important:
 
 Important Notes
@@ -278,6 +316,31 @@ and the Django handler will automatically find your installed apps:
 The Django integration :ref:`example in the documentation
 <django-first-steps>` has been updated to use the argument-less call.
 
+Worker direct queues no longer use auto-delete.
+===============================================
+
+Workers/clients running 4.0 will no longer be able to send
+worker direct messages to worker running older versions, and vice versa.
+
+If you're relying on worker direct messages you should upgrade
+your 3.x workers and clients to use the new routing settings first,
+by replacing :func:`celery.utils.worker_direct` with this implementation:
+
+.. code-block:: python
+
+    from kombu import Exchange, Queue
+
+    worker_direct_exchange = Exchange('C.dq2')
+
+    def worker_direct(hostname):
+        return Queue(
+            '{hostname}.dq2'.format(hostname),
+            exchange=worker_direct_exchange,
+            routing_key=hostname,
+        )
+
+(This feature closed Issue #2492.)
+
 
 Old command-line programs removed
 ---------------------------------
@@ -441,8 +504,8 @@ log file can cause corruption.
 You are encouraged to upgrade your init scripts and multi arguments
 to use this new option.
 
-Ability to configure separate broker urls for read/write
-========================================================
+Configure broker URL for read/write separately.
+===============================================
 
 New :setting:`broker_read_url` and :setting:`broker_write_url` settings
 have been added so that separate broker urls can be provided
@@ -476,6 +539,9 @@ the intent of the required connection.
 Canvas Refactor
 ===============
 
+The canvas/workflow implementation have been heavily refactored
+to fix some long outstanding issues.
+
 # BLALBLABLA
 d79dcd8e82c5e41f39abd07ffed81ca58052bcd2
 1e9dd26592eb2b93f1cb16deb771cfc65ab79612
@@ -485,7 +551,7 @@ e442df61b2ff1fe855881c1e2ff9acc970090f54
 - Now unrolls groups within groups into a single group (Issue #1509).
 - chunks/map/starmap tasks now routes based on the target task
 - chords and chains can now be immutable.
-- Fixed bug where serialized signature were not converted back into
+- Fixed bug where serialized signatures were not converted back into
   signatures (Issue #2078)
 
     Fix contributed by Ross Deane.
@@ -521,8 +587,13 @@ See :ref:`beat-solar` for more information.
 
 Contributed by Mark Parncutt.
 
-App can now configure periodic tasks
-====================================
+New API for configuring periodic tasks
+======================================
+
+This new API enables you to use signatures when defining periodic tasks,
+removing the chance of mistyping task names.
+
+An example of the new API is :ref:`here <beat-entries>`.
 
 # bc18d0859c1570f5eb59f5a969d1d32c63af764b
 # 132d8d94d38f4050db876f56a841d5a5e487b25b
@@ -530,84 +601,119 @@ App can now configure periodic tasks
 RabbitMQ Priority queue support
 ===============================
 
-# 1d4cbbcc921aa34975bde4b503b8df9c2f1816e0
+See :ref:`routing-options-rabbitmq-priorities` for more information.
 
 Contributed by Gerald Manipon.
 
-Incompatible: Worker direct queues are no longer using auto-delete.
-===================================================================
-
-Issue #2492.
-
-Prefork: Limits for child process resident memory size.
-=======================================================
-
-This version introduces the new :setting:`worker_max_memory_per_child` setting,
-which BLA BLA BLA
-
+Prefork: Limit child process resident memory size.
+==================================================
 # 5cae0e754128750a893524dcba4ae030c414de33
+
+You can now limit the maximum amount of memory allocated per prefork
+pool child process by setting the worker :option:`--maxmemperchild` option,
+or the :setting:`worker_max_memory_per_child` setting.
+
+The limit is for RSS/resident memory size and is specified in kilobytes.
+
+A child process having exceeded the limit will be terminated and replaced
+with a new process after the currently executing task returns.
+
+See :ref:`worker-maxmemperchild` for more information.
 
 Contributed by Dave Smith.
 
 Redis: Result backend optimizations
 ===============================================
 
-Pub/sub results
----------------
+RPC is now using pub/sub for streaming task results.
+----------------------------------------------------
+
+Calling ``result.get()`` when using the Redis result backend
+used to be extremely expensive as it was using polling to wait
+for the result to become available. A default polling
+interval of 0.5 seconds did not help performance, but was
+necessary to avoid a spin loop.
+
+The new implementation is using Redis Pub/Sub mechanisms to
+publish and retrieve results immediately, greatly improving
+task round-trip times.
 
 Contributed by Yaroslav Zhavoronkov and Ask Solem.
 
-Chord join
-----------
+New optimized chord join implementation.
+----------------------------------------
 
 This was an experimental feature introduced in Celery 3.1,
-but is now enabled by default.
+that could only be enabled by adding ``?new_join=1`` to the
+result backend URL configuration.
 
-?new_join BLABLABLA
+We feel that the implementation has been tested thoroughly enough
+to be considered stable and enabled by default.
 
-Riak Result Backend
-===================
+The new implementation greatly reduces the overhead of chords,
+and especially with larger chords the performance benefit can be massive.
+
+New Riak result backend Introduced.
+===================================
+
+See :ref:`conf-riak-result-backend` for more information.
 
 Contributed by Gilles Dartiguelongue, Alman One and NoKriK.
 
-Bla bla
+New CouchDB result backend introduced.
+======================================
 
-- blah blah
-
-CouchDB Result Backend
-======================
+See :ref:`conf-couchdb-result-backend` for more information.
 
 Contributed by Nathan Van Gheem
 
-New Cassandra Backend
-=====================
+Brand new Cassandra result backend.
+===================================
 
-The new Cassandra backend utilizes the python-driver library.
-Old backend is deprecated and everyone using cassandra is required to upgrade
-to be using the new driver.
+A brand new Cassandra backend utilizing the new :pypi:`cassandra-driver`
+library is replacing the old result backend which was using the older
+:pypi:`pycassa` library.
+
+See :ref:`conf-cassandra-result-backend` for more information.
 
 # XXX What changed?
 
+New Elasticsearch result backend introduced.
+============================================
 
-Elasticsearch Result Backend
-============================
+See :ref:`conf-elasticsearch-result-backend` for more information.
 
 Contributed by Ahmet Demir.
 
-Filesystem Result Backend
-=========================
+New Filesystem result backend introduced.
+=========================================
+
+See :ref:`conf-filesystem-result-backend` for more information.
 
 Contributed by Môshe van der Sterre.
 
 Event Batching
 ==============
 
-Events are now buffered in the worker and sent as a list, and
-events are sent as transient messages by default so that they are not written
-to disk by RabbitMQ.
+Events are now buffered in the worker and sent as a list which reduces
+the overhead required to send monitoring events.
+
+For authors of custom event monitors there will be no action
+required as long as you're using the Python celery
+helpers (:class:`~@events.Receiver`) to implement your monitor.
+However, if you're manually receiving event messages you must now account
+for batched event messages which differ from normal event messages
+in the following way:
+
+    - The routing key for a batch of event messages will be set to
+      ``<event-group>.multi`` where the only batched event group
+      is currently ``task`` (giving a routing key of ``task.multi``).
+
+    - The message body will be a serialized list-of-dictionaries instead
+      of a dictionary.  Each item in the list can be regarded
+      as a normal event message body.
 
 03399b4d7c26fb593e61acf34f111b66b340ba4e
-
 
 Task.replace
 ============
@@ -636,19 +742,26 @@ Closes #817
 Optimized Beat implementation
 =============================
 
-heapq
-20340d79b55137643d5ac0df063614075385daaa
+The :program:`celery beat` implementation has been optimized
+for millions of periodic tasks by using a heap to schedule entries.
 
 Contributed by Ask Solem and Alexander Koshelev.
-
 
 Task Autoretry Decorator
 ========================
 
-75246714dd11e6c463b9dc67f4311690643bff24
+Writing custom retry handling for exception events is so common
+that we now have built-in support for it.
+
+For this a new ``autoretry_for`` argument is now supported by
+the task decorators, where you can specify a tuple of exceptions
+to automatically retry for.
+
+See :ref:`task-autoretry` for more information.
 
 Contributed by Dmitry Malinovsky.
 
+# 75246714dd11e6c463b9dc67f4311690643bff24
 
 Async Result API
 ================
@@ -656,12 +769,6 @@ Async Result API
 eventlet/gevent drainers, promises, BLA BLA
 
 Closed issue #2529.
-
-
-:setting:`task_routes` can now contain glob patterns and regexes.
-=================================================================
-
-See examples in :setting:`task_routes` and :ref:`routing-automatic`.
 
 In Other News
 -------------
@@ -679,6 +786,11 @@ In Other News
 
   This increases performance as it completely bypasses the routing table,
   in addition it also improves reliability for the Redis broker transport.
+
+- **Tasks**: :setting:`task_routes` can now contain glob patterns and
+  regexes.
+
+    See new examples in :setting:`task_routes` and :ref:`routing-automatic`.
 
 - **Eventlet/Gevent**: Fixed race condition leading to "simultaneous read"
   errors (Issue #2812).
