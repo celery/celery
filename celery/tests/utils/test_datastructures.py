@@ -337,13 +337,30 @@ class test_LimitedSet(Case):
         s.add('foo')
         self.assertIsInstance(s.as_dict(), Mapping)
 
-    def test_no_duplicates(self):
+    def test_add_removes_duplicate_from_small_heap(self):
         s = LimitedSet(maxlen=2)
+        s.add('foo')
         s.add('foo')
         s.add('foo')
         self.assertEqual(len(s), 1)
         self.assertEqual(len(s._data), 1)
         self.assertEqual(len(s._heap), 1)
+
+    def test_add_removes_duplicate_from_big_heap(self):
+        s = LimitedSet(maxlen=1000)
+        [s.add(i) for i in range(2000)]
+        self.assertEqual(len(s), 1000)
+        [s.add('foo') for i in range(1000)]
+        # heap is refreshed when 15% larger than _data
+        self.assertLess(len(s._heap), 1150)
+        [s.add('foo') for i in range(1000)]
+        self.assertLess(len(s._heap), 1150)
+
+    def assert_lengths(self, s, expected, expected_data, expected_heap):
+        self.assertEqual(len(s), expected)
+        self.assertEqual(len(s._data), expected_data)
+        self.assertEqual(len(s._heap), expected_heap)
+
 
 class test_AttributeDict(Case):
 
