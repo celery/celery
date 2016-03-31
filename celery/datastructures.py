@@ -672,6 +672,10 @@ class LimitedSet(object):
         self._heap[:] = [entry for entry in values(self._data)]
         heapify(self._heap)
 
+    def _maybe_refresh_heap(self):
+        if self._heap_overload >= self.max_heap_percent_overload:
+            self._refresh_heap()
+
     def clear(self):
         """Clear all data, start from scratch again."""
         self._data.clear()
@@ -716,13 +720,8 @@ class LimitedSet(object):
 
     def discard(self, item):
         # mark an existing item as removed. If KeyError is not found, pass.
-        try:
-            self._data.pop(item)
-        except KeyError:
-            pass
-        else:
-            if self._heap_overload > self.max_heap_percent_overload:
-                self._refresh_heap()
+        self._data.pop(item, None)
+        self._maybe_refresh_heap()
     pop_value = discard
 
     def purge(self, now=None):
@@ -805,7 +804,5 @@ class LimitedSet(object):
     @property
     def _heap_overload(self):
         """Compute how much is heap bigger than data [percents]."""
-        if not self._data:
-            return len(self._heap)
-        return len(self._heap) * 100 / len(self._data) - 100
+        return len(self._heap) * 100 / max(len(self._data), 1) - 100
 MutableSet.register(LimitedSet)
