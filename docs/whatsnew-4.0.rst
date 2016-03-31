@@ -481,7 +481,6 @@ some long-requested features:
     The new task protocol is documented in full here:
     :ref:`message-protocol-task-v2`.
 
-
 Prefork: Tasks now log from the child process
 =============================================
 
@@ -579,6 +578,17 @@ e442df61b2ff1fe855881c1e2ff9acc970090f54
 
 - Fixed issue where ``group | task`` was not upgrading correctly
   to chord (Issue #2922).
+
+Amazon SQS transport now officially supported.
+==============================================
+
+The SQS broker transport has been rewritten to use async I/O and as such
+joins RabbitMQ and Redis as officially supported transports.
+
+The new implementation also takes advantage of long polling,
+and closes several issues related to using SQS as a broker.
+
+This work was sponsored by Nextdoor.
 
 Schedule tasks based on sunrise, sunset, dawn and dusk.
 =======================================================
