@@ -3,4 +3,3 @@ wheel
 flake8
 flakeplus
 tox>=2.1.1
-Sphinx-PyPI-upload
