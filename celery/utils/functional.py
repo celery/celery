@@ -17,7 +17,8 @@ from inspect import isfunction
 from itertools import chain, islice
 
 from kombu.utils.functional import (
-    dictfilter, lazy, maybe_evaluate, is_list, maybe_list,
+    LRUCache, dictfilter, lazy, maybe_evaluate, memoize,
+    is_list, maybe_list,
 )
 from vine import promise
 
@@ -29,8 +30,6 @@ __all__ = ['LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
 
 IS_PY3 = sys.version_info[0] == 3
 IS_PY2 = sys.version_info[0] == 2
-
-KEYWORD_MARK = object()
 
 FUNHEAD_TEMPLATE = """
 def {fun_name}({fun_args}):
@@ -45,141 +44,6 @@ class DummyContext(object):
 
     def __exit__(self, *exc_info):
         pass
-
-
-class LRUCache(UserDict):
-    """LRU Cache implementation using a doubly linked list to track access.
-
-    :keyword limit: The maximum number of keys to keep in the cache.
-        When a new key is inserted and the limit has been exceeded,
-        the *Least Recently Used* key will be discarded from the
-        cache.
-
-    """
-
-    def __init__(self, limit=None):
-        self.limit = limit
-        self.mutex = threading.RLock()
-        self.data = OrderedDict()
-
-    def __getitem__(self, key):
-        with self.mutex:
-            value = self[key] = self.data.pop(key)
-            return value
-
-    def update(self, *args, **kwargs):
-        with self.mutex:
-            data, limit = self.data, self.limit
-            data.update(*args, **kwargs)
-            if limit and len(data) > limit:
-                # pop additional items in case limit exceeded
-                for _ in range(len(data) - limit):
-                    data.popitem(last=False)
-
-    def popitem(self, last=True):
-        with self.mutex:
-            return self.data.popitem(last)
-
-    def __setitem__(self, key, value):
-        # remove least recently used key.
-        with self.mutex:
-            if self.limit and len(self.data) >= self.limit:
-                self.data.pop(next(iter(self.data)))
-            self.data[key] = value
-
-    def __iter__(self):
-        return iter(self.data)
-
-    def _iterate_items(self):
-        with self.mutex:
-            for k in self:
-                try:
-                    yield (k, self.data[k])
-                except KeyError:  # pragma: no cover
-                    pass
-    iteritems = _iterate_items
-
-    def _iterate_values(self):
-        with self.mutex:
-            for k in self:
-                try:
-                    yield self.data[k]
-                except KeyError:  # pragma: no cover
-                    pass
-
-    itervalues = _iterate_values
-
-    def _iterate_keys(self):
-        # userdict.keys in py3k calls __getitem__
-        with self.mutex:
-            return keys(self.data)
-    iterkeys = _iterate_keys
-
-    def incr(self, key, delta=1):
-        with self.mutex:
-            # this acts as memcached does- store as a string, but return a
-            # integer as long as it exists and we can cast it
-            newval = int(self.data.pop(key)) + delta
-            self[key] = str(newval)
-            return newval
-
-    def __getstate__(self):
-        d = dict(vars(self))
-        d.pop('mutex')
-        return d
-
-    def __setstate__(self, state):
-        self.__dict__ = state
-        self.mutex = threading.RLock()
-
-    if sys.version_info[0] == 3:  # pragma: no cover
-        keys = _iterate_keys
-        values = _iterate_values
-        items = _iterate_items
-    else:  # noqa
-
-        def keys(self):
-            return list(self._iterate_keys())
-
-        def values(self):
-            return list(self._iterate_values())
-
-        def items(self):
-            return list(self._iterate_items())
-
-
-def memoize(maxsize=None, keyfun=None, Cache=LRUCache):
-
-    def _memoize(fun):
-        cache = Cache(limit=maxsize)
-
-        @wraps(fun)
-        def _M(*args, **kwargs):
-            if keyfun:
-                key = keyfun(args, kwargs)
-            else:
-                key = args + (KEYWORD_MARK,) + tuple(sorted(kwargs.items()))
-            try:
-                value = cache[key]
-            except KeyError:
-                value = fun(*args, **kwargs)
-                _M.misses += 1
-                cache[key] = value
-            else:
-                _M.hits += 1
-            return value
-
-        def clear():
-            """Clear the cache and reset cache statistics."""
-            cache.clear()
-            _M.hits = _M.misses = 0
-
-        _M.hits = _M.misses = 0
-        _M.clear = clear
-        _M.original_func = fun
-        return _M
-
-    return _memoize
 
 
 class mlazy(lazy):
