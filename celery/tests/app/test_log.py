@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 import logging
@@ -105,9 +105,9 @@ class test_ColorFormatter(AppCase):
 
     @patch('logging.Formatter.formatException')
     @patch('celery.utils.log.safe_str')
-    def test_formatException_string(self, safe_str, fe):
+    def test_formatException_bytes(self, safe_str, fe):
         x = ColorFormatter()
-        fe.return_value = 'HELLO'
+        fe.return_value = b'HELLO'
         try:
             raise Exception()
         except Exception:

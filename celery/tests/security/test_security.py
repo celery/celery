@@ -14,7 +14,7 @@ Generated with:
     $ rm key1.key.org cert1.csr
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from kombu.serialization import disable_insecure_serializers
 

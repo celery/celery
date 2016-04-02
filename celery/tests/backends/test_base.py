@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 import types
@@ -6,7 +6,7 @@ import types
 from contextlib import contextmanager
 
 from celery.exceptions import ChordError, TimeoutError
-from celery.five import items, range
+from celery.five import items, module_name_t, range
 from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
 from celery.utils.serialization import find_pickleable_exception as fnpe
@@ -36,10 +36,16 @@ class wrapobject(object):
 if sys.version_info[0] == 3 or getattr(sys, 'pypy_version_info', None):
     Oldstyle = None
 else:
-    Oldstyle = types.ClassType('Oldstyle', (), {})
-Unpickleable = subclass_exception('Unpickleable', KeyError, 'foo.module')
-Impossible = subclass_exception('Impossible', object, 'foo.module')
-Lookalike = subclass_exception('Lookalike', wrapobject, 'foo.module')
+    Oldstyle = types.ClassType(module_name_t('Oldstyle'), (), {})
+Unpickleable = subclass_exception(
+    module_name_t('Unpickleable'), KeyError, 'foo.module',
+)
+Impossible = subclass_exception(
+    module_name_t('Impossible'), object, 'foo.module',
+)
+Lookalike = subclass_exception(
+    module_name_t('Lookalike'), wrapobject, 'foo.module',
+)
 
 
 class test_nulldict(Case):
@@ -191,7 +197,7 @@ class test_BaseBackend_dict(AppCase):
         self.assertIn('exc_type', e)
         e = x.exception_to_python(e)
         self.assertEqual(e.__class__.__name__, 'KeyError')
-        self.assertEqual(str(e), "'foo'")
+        self.assertEqual(str(e).strip('u'), "'foo'")
 
     def test_save_group(self):
         b = BaseBackend(self.app)

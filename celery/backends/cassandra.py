@@ -6,7 +6,7 @@
     Apache Cassandra result store backend using DataStax driver
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 try:  # pragma: no cover

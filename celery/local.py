@@ -10,12 +10,12 @@
     Parts of this module is Copyright by Werkzeug Team.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import importlib
 import sys
 
-from .five import string
+from .five import module_name_t, string
 
 __all__ = ['Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate']
 
@@ -39,7 +39,7 @@ def _default_cls_attr(name, type_, cls_value):
     def __get__(self, obj, cls=None):
         return self.__getter(obj) if obj is not None else self
 
-    return type(name, (type_,), {
+    return type(module_name_t(name), (type_,), {
         '__new__': __new__, '__get__': __get__,
     })
 

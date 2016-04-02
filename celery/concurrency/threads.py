@@ -6,7 +6,7 @@
     Pool implementation using threads.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.five import UserDict
 

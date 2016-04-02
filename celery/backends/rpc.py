@@ -6,7 +6,7 @@
     RPC-style result backend, using reply-to and one queue per client.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from kombu import Consumer, Exchange
 from kombu.common import maybe_declare

@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 import types
@@ -12,7 +12,7 @@ from celery import states
 from celery import group
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items, string, text_t
+from celery.five import items, module_name_t, string, text_t
 from celery.utils import uuid
 
 from celery.tests.case import (
@@ -169,7 +169,7 @@ class MockCacheMixin(object):
 
     @contextmanager
     def mock_memcache(self):
-        memcache = types.ModuleType('memcache')
+        memcache = types.ModuleType(module_name_t('memcache'))
         memcache.Client = MemcachedClient
         memcache.Client.__module__ = memcache.__name__
         prev, sys.modules['memcache'] = sys.modules.get('memcache'), memcache
@@ -181,7 +181,7 @@ class MockCacheMixin(object):
 
     @contextmanager
     def mock_pylibmc(self):
-        pylibmc = types.ModuleType('pylibmc')
+        pylibmc = types.ModuleType(module_name_t('pylibmc'))
         pylibmc.Client = MemcachedClient
         pylibmc.Client.__module__ = pylibmc.__name__
         prev = sys.modules.get('pylibmc')

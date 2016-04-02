@@ -4,7 +4,7 @@ Had to modify this as the original will make one Github API request
 per issue, which is not at all needed if we just want to link to issues.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import re
 import sys

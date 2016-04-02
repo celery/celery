@@ -81,7 +81,7 @@ Using the API is done as follows::
         app.backend.mark_as_done(request.id, response)
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from itertools import count
 

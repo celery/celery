@@ -8,7 +8,7 @@
     This backend publishes results as messages.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from kombu import Exchange, Queue, Producer, Consumer
 from kombu.utils import register_after_fork

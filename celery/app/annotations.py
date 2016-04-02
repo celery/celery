@@ -10,7 +10,7 @@
     :setting:`task_annotations` setting.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.five import string_t
 from celery.utils.functional import firstmethod, mlazy

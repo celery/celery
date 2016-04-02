@@ -16,7 +16,7 @@
     to e.g. store that in a database.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import bisect
 import sys

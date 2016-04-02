@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 try:
     import unittest  # noqa
@@ -41,7 +41,7 @@ from celery.backends.cache import CacheBackend, DummyClient
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.five import (
     WhateverIO, builtins, items, reraise,
-    string_t, values, open_fqdn,
+    string_t, values, open_fqdn, module_name_t,
 )
 from celery.utils.functional import noop
 from celery.utils.imports import qualname
@@ -807,7 +807,7 @@ def patch_modules(*modules):
     prev = {}
     for mod in modules:
         prev[mod] = sys.modules.get(mod)
-        sys.modules[mod] = ModuleType(mod)
+        sys.modules[mod] = ModuleType(module_name_t(mod))
     try:
         yield
     finally:
@@ -834,7 +834,7 @@ def mock_module(*names):
             prev[name] = sys.modules[name]
         except KeyError:
             pass
-        mod = sys.modules[name] = MockModule(name)
+        mod = sys.modules[name] = MockModule(module_name_t(name))
         mods.append(mod)
     try:
         yield mods

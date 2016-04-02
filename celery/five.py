@@ -8,7 +8,7 @@
 
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import operator
 import sys
@@ -190,7 +190,8 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
         attr_name: (prepare_attr(attr) if prepare_attr else attr)
         for attr_name, attr in items(attrs)
     }
-    module = sys.modules[fqdn] = type(modname, (base,), cls_attrs)(name)
+    module = sys.modules[fqdn] = type(
+        module_name_t(modname), (base,), cls_attrs)(module_name_t(name))
     module.__dict__.update(attrs)
     return module
 

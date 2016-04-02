@@ -5,7 +5,7 @@
 Provides a way to safely weakref any function, including bound methods (which
 aren't handled by the core weakref module).
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 import traceback

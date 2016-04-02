@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.five import range
 from celery.utils.dispatch.saferef import safe_ref

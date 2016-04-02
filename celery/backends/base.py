@@ -11,7 +11,7 @@
       using K/V semantics like _get and _put.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 import time

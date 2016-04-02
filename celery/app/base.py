@@ -6,7 +6,7 @@
     Actual App instance implementation.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import os
 import threading
@@ -32,7 +32,7 @@ from celery._state import (
 )
 from celery.datastructures import AttributeDictMixin
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
-from celery.five import UserDict, values
+from celery.five import UserDict, module_name_t, values
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
@@ -944,7 +944,7 @@ class Celery(object):
         if not keep_reduce:
             attrs['__reduce__'] = __reduce__
 
-        return type(name or Class.__name__, (Class,), attrs)
+        return type(module_name_t(name or Class.__name__), (Class,), attrs)
 
     def _rgetattr(self, path):
         return attrgetter(path)(self)

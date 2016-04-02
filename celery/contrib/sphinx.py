@@ -30,7 +30,7 @@ using `:task:proj.tasks.add` syntax.
 Use ``.. autotask::`` to manually document a task.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from sphinx.domains.python import PyModulelevel
 from sphinx.ext.autodoc import FunctionDocumenter

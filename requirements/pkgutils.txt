@@ -1,5 +1,5 @@
 setuptools>=1.3.2
 wheel
 flake8
-flakeplus
+flakeplus>=1.1
 tox>=2.1.1

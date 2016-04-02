@@ -8,6 +8,8 @@
 """
 from __future__ import absolute_import, unicode_literals
 
+from celery.five import module_name_t
+
 from base64 import b64encode as base64encode, b64decode as base64decode
 from inspect import getmro
 from itertools import takewhile
@@ -34,7 +36,7 @@ except NameError:  # pragma: no cover
 
 
 def subclass_exception(name, parent, module):  # noqa
-    return type(name, (parent,), {'__module__': module})
+    return type(module_name_t(name), (parent,), {'__module__': module})
 
 
 def find_pickleable_exception(exc, loads=pickle.loads,

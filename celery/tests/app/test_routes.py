@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from kombu import Exchange, Queue
 from kombu.utils.functional import maybe_evaluate

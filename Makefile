@@ -1,3 +1,4 @@
+PROJ=celery
 PYTHON=python
 SPHINX_DIR="docs/"
 SPHINX_BUILDDIR="${SPHINX_DIR}/.build"
@@ -22,7 +23,7 @@ htmlclean:
 	-rm -rf "$(SPHINX)"
 
 apicheck:
-	extra/release/doc4allmods celery
+	extra/release/doc4allmods "$(PROJ)"
 
 indexcheck:
 	extra/release/verify-reference-index.sh
@@ -31,13 +32,13 @@ configcheck:
 	PYTHONPATH=. $(PYTHON) extra/release/verify_config_reference.py $(CONFIGREF_SRC)
 
 flakecheck:
-	flake8 celery
+	flake8 "$(PROJ)"
 
 flakediag:
 	-$(MAKE) flakecheck
 
 flakepluscheck:
-	flakeplus celery --2.6
+	flakeplus --2.7 "$(PROJ)"
 
 flakeplusdiag:
 	-$(MAKE) flakepluscheck
@@ -64,10 +65,10 @@ $(CONTRIBUTING):
 contributing: contributingclean $(CONTRIBUTING)
 
 test:
-	nosetests -xv celery.tests
+	nosetests -xv "$(PROJ).tests"
 
 cov:
-	nosetests -xv celery.tests --with-coverage --cover-html --cover-branch
+	nosetests -xv "$(PROJ)" --with-coverage --cover-html --cover-branch
 
 removepyc:
 	-find . -type f -a \( -name "*.pyc" -o -name "*$$py.class" \) | xargs rm

@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import os
 
@@ -8,6 +8,7 @@ from celery.bin.base import (
     Extensions,
     HelpFormatter,
 )
+from celery.five import module_name_t
 from celery.utils.objects import Bunch
 
 from celery.tests.case import (
@@ -352,7 +353,7 @@ class test_Command(AppCase):
         cmd = MockCommand(app=self.app)
         with patch('celery.bin.base.symbol_by_name') as sbn:
             from types import ModuleType
-            x = ModuleType('proj')
+            x = ModuleType(module_name_t('proj'))
 
             def on_sbn(*args, **kwargs):
 

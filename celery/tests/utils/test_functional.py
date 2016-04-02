@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import pickle
 import sys
@@ -10,13 +10,11 @@ from kombu.utils.functional import lazy
 from celery.five import THREAD_TIMEOUT_MAX, items, range, nextfun
 from celery.utils.functional import (
     DummyContext,
-    LRUCache,
     fun_takes_argument,
     head_from_fun,
     firstmethod,
     first,
     maybe_list,
-    memoize,
     mlazy,
     padlist,
     regen,
@@ -33,108 +31,6 @@ class test_DummyContext(Case):
         with self.assertRaises(KeyError):
             with DummyContext():
                 raise KeyError()
-
-
-class test_LRUCache(Case):
-
-    def test_expires(self):
-        limit = 100
-        x = LRUCache(limit=limit)
-        slots = list(range(limit * 2))
-        for i in slots:
-            x[i] = i
-        self.assertListEqual(list(x.keys()), list(slots[limit:]))
-        self.assertTrue(x.items())
-        self.assertTrue(x.values())
-
-    def test_is_pickleable(self):
-        x = LRUCache(limit=10)
-        x.update(luke=1, leia=2)
-        y = pickle.loads(pickle.dumps(x))
-        self.assertEqual(y.limit, y.limit)
-        self.assertEqual(y, x)
-
-    def test_update_expires(self):
-        limit = 100
-        x = LRUCache(limit=limit)
-        slots = list(range(limit * 2))
-        for i in slots:
-            x.update({i: i})
-
-        self.assertListEqual(list(x.keys()), list(slots[limit:]))
-
-    def test_least_recently_used(self):
-        x = LRUCache(3)
-
-        x[1], x[2], x[3] = 1, 2, 3
-        self.assertEqual(list(x.keys()), [1, 2, 3])
-
-        x[4], x[5] = 4, 5
-        self.assertEqual(list(x.keys()), [3, 4, 5])
-
-        # access 3, which makes it the last used key.
-        x[3]
-        x[6] = 6
-        self.assertEqual(list(x.keys()), [5, 3, 6])
-
-        x[7] = 7
-        self.assertEqual(list(x.keys()), [3, 6, 7])
-
-    def test_update_larger_than_cache_size(self):
-        x = LRUCache(2)
-        x.update({x: x for x in range(100)})
-        self.assertEqual(list(x.keys()), [98, 99])
-
-    def assertSafeIter(self, method, interval=0.01, size=10000):
-        if sys.version_info >= (3, 5):
-            raise SkipTest('Fails on Py3.5')
-        from threading import Thread, Event
-        from time import sleep
-        x = LRUCache(size)
-        x.update(zip(range(size), range(size)))
-
-        class Burglar(Thread):
-
-            def __init__(self, cache):
-                self.cache = cache
-                self.__is_shutdown = Event()
-                self.__is_stopped = Event()
-                Thread.__init__(self)
-
-            def run(self):
-                while not self.__is_shutdown.isSet():
-                    try:
-                        self.cache.popitem(last=False)
-                    except KeyError:
-                        break
-                self.__is_stopped.set()
-
-            def stop(self):
-                self.__is_shutdown.set()
-                self.__is_stopped.wait()
-                self.join(THREAD_TIMEOUT_MAX)
-
-        burglar = Burglar(x)
-        burglar.start()
-        try:
-            for _ in getattr(x, method)():
-                sleep(0.0001)
-        finally:
-            burglar.stop()
-
-    def test_safe_to_remove_while_iteritems(self):
-        self.assertSafeIter('iteritems')
-
-    def test_safe_to_remove_while_keys(self):
-        self.assertSafeIter('keys')
-
-    def test_safe_to_remove_while_itervalues(self):
-        self.assertSafeIter('itervalues')
-
-    def test_items(self):
-        c = LRUCache()
-        c.update(a=1, b=2, c=3)
-        self.assertTrue(list(items(c)))
 
 
 class test_utils(Case):
@@ -191,24 +87,6 @@ class test_utils(Case):
         self.assertEqual(maybe_list(1), [1])
         self.assertEqual(maybe_list([1]), [1])
         self.assertIsNone(maybe_list(None))
-
-
-class test_memoize(Case):
-
-    def test_memoize(self):
-        counter = count(1)
-
-        @memoize(maxsize=2)
-        def x(i):
-            return next(counter)
-
-        self.assertEqual(x(1), 1)
-        self.assertEqual(x(1), 1)
-        self.assertEqual(x(2), 2)
-        self.assertEqual(x(3), 3)
-        self.assertEqual(x(1), 4)
-        x.clear()
-        self.assertEqual(x(3), 5)
 
 
 class test_mlazy(Case):

@@ -11,7 +11,7 @@
     has been enabled on the command-line.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import os
 import threading

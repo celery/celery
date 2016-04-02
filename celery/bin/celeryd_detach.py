@@ -10,7 +10,7 @@
     could have something to do with the threading mutex bug)
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import celery
 import os

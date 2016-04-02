@@ -7,7 +7,7 @@
     app instances. E.g. chord, group and xmap.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery._state import connect_on_app_finalize
 from celery.utils.log import get_logger

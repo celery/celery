@@ -6,7 +6,7 @@
     App utilities: Compat settings, bugreport tool, pickling apps.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import os
 import platform as _platform
