@@ -209,7 +209,6 @@ class test_Autoscaler(AppCase):
             x.body()
             total_num_processes.append(self.pool.num_processes)
 
-        self. assertTrue(all(i <= x.min_concurrency for i in total_num_processes)
-                        )
-        self. assertTrue(all(i <= x.max_concurrency for i in total_num_processes)
-                        )
+        self. assertTrue(
+            all(x.min_concurrency <= i <= x.max_concurrency for i in total_num_processes)
+        )
