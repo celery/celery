@@ -1,4 +1,4 @@
-from __future__ import print_function, unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 from fileinput import input as _input
 from sys import exit, stderr
@@ -49,5 +49,5 @@ if __name__ == '__main__':
             file=stderr,
         )
         exit(1)
-    print('OK: Configuration reference complete :-)')
+    print('-Ok- configuration reference complete :-)')
     exit(0)

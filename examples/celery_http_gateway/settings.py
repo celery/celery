@@ -1,3 +1,5 @@
+from __future__ import absolute_import, unicode_literals
+
 # Django settings for celery_http_gateway project.
 
 import django

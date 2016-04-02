@@ -6,7 +6,6 @@ import time
 import celery.utils.timer2 as timer2
 
 from celery.tests.case import Case, Mock, patch, call
-from kombu.tests.case import redirect_stdouts
 
 
 class test_Timer(Case):

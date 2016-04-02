@@ -1,3 +1,5 @@
+from __future__ import absolute_import, unicode_literals
+
 # Django settings for httpexample project.
 
 DEBUG = True

@@ -9,10 +9,8 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
-import threading
 
-from collections import OrderedDict
-from functools import partial, wraps
+from functools import partial
 from inspect import isfunction
 from itertools import chain, islice
 
@@ -22,11 +20,13 @@ from kombu.utils.functional import (
 )
 from vine import promise
 
-from celery.five import UserDict, UserList, getfullargspec, keys, range
+from celery.five import UserList, getfullargspec, range
 
-__all__ = ['LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
-           'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
-           'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun']
+__all__ = [
+    'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
+    'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
+    'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun',
+]
 
 IS_PY3 = sys.version_info[0] == 3
 IS_PY2 = sys.version_info[0] == 2

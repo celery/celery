@@ -2,6 +2,7 @@
 Runs through a reST file looking for old-style literals, and helps replace them
 with new-style references.
 """
+from __future__ import absolute_import, unicode_literals
 
 import re
 import sys

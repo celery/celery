@@ -11,7 +11,7 @@ if os.environ.get('C_SLEEP'):
     _orig_sleep = time.sleep
 
     def _sleep(n):
-        print('WARNING: Time sleep for {0}s'.format(n))
+        print('warning: time sleep for {0}s'.format(n))
         import traceback
         traceback.print_stack()
         _orig_sleep(n)

@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import absolute_import, unicode_literals
+
 from django.core.management import execute_manager
 try:
     import settings             # Assumed to be in the same directory.

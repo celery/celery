@@ -1,4 +1,4 @@
-from __future__ import print_function, unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import sys
@@ -82,7 +82,7 @@ def bench_work(n=DEFAULT_ITS, loglevel='CRITICAL'):
                                 queues=['bench.worker'])
 
     try:
-        print('STARTING WORKER')
+        print('-- starting worker')
         worker.start()
     except SystemExit:
         raise

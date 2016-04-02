@@ -1,4 +1,5 @@
 """Adds xref targets to the top of files."""
+from __future__ import absolute_import, unicode_literals
 
 import sys
 import os
