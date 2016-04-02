@@ -1,13 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
-import pickle
-import sys
-
-from itertools import count
-
 from kombu.utils.functional import lazy
 
-from celery.five import THREAD_TIMEOUT_MAX, items, range, nextfun
+from celery.five import range, nextfun
 from celery.utils.functional import (
     DummyContext,
     fun_takes_argument,
@@ -20,7 +15,7 @@ from celery.utils.functional import (
     regen,
 )
 
-from celery.tests.case import Case, SkipTest
+from celery.tests.case import Case
 
 
 class test_DummyContext(Case):
