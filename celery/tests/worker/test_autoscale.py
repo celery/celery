@@ -197,7 +197,7 @@ class test_Autoscaler(AppCase):
         total_num_processes = []
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
-        x.body() #the body func scales up or down
+        x.body()  # the body func scales up or down
 
         for i in range(35):
             state.reserved_requests.add(i)
@@ -210,5 +210,6 @@ class test_Autoscaler(AppCase):
             total_num_processes.append(self.pool.num_processes)
 
         self. assertTrue(
-            all(x.min_concurrency <= i <= x.max_concurrency for i in total_num_processes)
+            all(x.min_concurrency <= i <= x.max_concurrency
+                for i in total_num_processes)
         )
