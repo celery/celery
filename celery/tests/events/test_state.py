@@ -93,6 +93,7 @@ class ev_task_states(replay):
 
     def setup(self):
         tid = self.tid = uuid()
+        tid2 = self.tid2 = uuid()
         self.events = [
             Event('task-received', uuid=tid, name='task1',
                   args='(2, 2)', kwargs="{'foo': 'bar'}",
@@ -106,6 +107,11 @@ class ev_task_states(replay):
             Event('task-succeeded', uuid=tid, result='4',
                   runtime=0.1234, hostname='utest1'),
             Event('foo-bar'),
+
+            Event('task-received', uuid=tid2, name='task2',
+                  args='(4, 4)', kwargs="{'foo': 'bar'}",
+                  retries=0, eta=None, parent_id=tid, root_id=tid,
+                  hostname='utest1'),
         ]
 
 
@@ -498,6 +504,23 @@ class test_State(AppCase):
         self.assertEqual(task.worker.hostname, 'utest1')
         self.assertEqual(task.result, '4')
         self.assertEqual(task.runtime, 0.1234)
+
+        # children, parent, root
+        r.play()
+        self.assertIn(r.tid2, r.state.tasks)
+        task2 = r.state.tasks[r.tid2]
+
+        self.assertIs(task2.parent, task)
+        self.assertIs(task2.root, task)
+        self.assertIn(task2, task.children)
+
+    def test_task_children_set_if_received_in_wrong_order(self):
+        r = ev_task_states(State())
+        r.events.insert(0, r.events.pop())
+        r.play()
+        self.assertIn(r.state.tasks[r.tid2], r.state.tasks[r.tid].children)
+        self.assertIs(r.state.tasks[r.tid2].root, r.state.tasks[r.tid])
+        self.assertIs(r.state.tasks[r.tid2].parent, r.state.tasks[r.tid])
 
     def assertStateEmpty(self, state):
         self.assertFalse(state.tasks)
