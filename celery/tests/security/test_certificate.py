@@ -16,11 +16,16 @@ class test_Certificate(SecurityCase):
         Certificate(CERT2)
 
     def test_invalid_certificate(self):
-        self.assertRaises((SecurityError, TypeError), Certificate, None)
-        self.assertRaises(SecurityError, Certificate, '')
-        self.assertRaises(SecurityError, Certificate, 'foo')
-        self.assertRaises(SecurityError, Certificate, CERT1[:20] + CERT1[21:])
-        self.assertRaises(SecurityError, Certificate, KEY1)
+        with self.assertRaises((SecurityError, TypeError)):
+            Certificate(None)
+        with self.assertRaises(SecurityError):
+            Certificate('')
+        with self.assertRaises(SecurityError):
+            Certificate('foo')
+        with self.assertRaises(SecurityError):
+            Certificate(CERT1[:20] + CERT1[21:])
+        with self.assertRaises(SecurityError):
+            Certificate(KEY1)
 
     def test_has_expired(self):
         raise SkipTest('cert expired')
@@ -49,7 +54,8 @@ class test_CertStore(SecurityCase):
         cert1 = Certificate(CERT1)
         certstore = CertStore()
         certstore.add_cert(cert1)
-        self.assertRaises(SecurityError, certstore.add_cert, cert1)
+        with self.assertRaises(SecurityError):
+            certstore.add_cert(cert1)
 
 
 class test_FSCertStore(SecurityCase):

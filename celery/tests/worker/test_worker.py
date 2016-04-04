@@ -355,7 +355,8 @@ class test_Consumer(AppCase):
         l.pool = l.controller.pool = Mock()
 
         l.connection_errors = (KeyError,)
-        self.assertRaises(SyntaxError, l.start)
+        with self.assertRaises(SyntaxError):
+            l.start()
         l.timer.stop()
 
     def test_loop_ignores_socket_timeout(self):
