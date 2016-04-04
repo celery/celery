@@ -192,3 +192,23 @@ class test_Autoscaler(AppCase):
             sys.stderr = p
         _exit.assert_called_with(1)
         self.assertTrue(stderr.write.call_count)
+
+    def test_no_negative_scale(self):
+        total_num_processes = []
+        worker = Mock(name='worker')
+        x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
+        x.body() #the body func scales up or down
+
+        for i in range(35):
+            state.reserved_requests.add(i)
+            x.body()
+            total_num_processes.append(self.pool.num_processes)
+
+        for i in range(35):
+            state.reserved_requests.remove(i)
+            x.body()
+            total_num_processes.append(self.pool.num_processes)
+
+        self. assertTrue(
+            all(x.min_concurrency <= i <= x.max_concurrency for i in total_num_processes)
+        )
