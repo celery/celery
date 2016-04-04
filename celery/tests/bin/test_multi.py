@@ -83,7 +83,7 @@ class test_multi_args(AppCase):
         names = list(it)
 
         def assert_line_in(name, args):
-            self.assertIn(name, [tup[0] for tup in names])
+            self.assertIn(name, {tup[0] for tup in names})
             argv = None
             for item in names:
                 if item[0] == name:
@@ -352,11 +352,11 @@ class test_MultiTool(AppCase):
         self.assertEqual(len(sigs), 2)
         self.assertIn(
             ('foo@e.com', 10, signal.SIGTERM),
-            [tup[0] for tup in sigs],
+            {tup[0] for tup in sigs},
         )
         self.assertIn(
             ('bar@e.com', 11, signal.SIGTERM),
-            [tup[0] for tup in sigs],
+            {tup[0] for tup in sigs},
         )
         self.t.signal_node.return_value = False
         self.assertTrue(callback.called)

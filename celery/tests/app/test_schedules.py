@@ -249,8 +249,8 @@ class test_crontab_parser(AppCase):
             self.crontab(month_of_year='1'),
             self.crontab(month_of_year='2'),
         )
-        self.assertFalse(object() == self.crontab(minute='1'))
-        self.assertFalse(self.crontab(minute='1') == object())
+        self.assertNotEqual(object(), self.crontab(minute='1'))
+        self.assertNotEqual(self.crontab(minute='1'), object())
         self.assertNotEqual(crontab(month_of_year='1'), schedule(10))
 
 

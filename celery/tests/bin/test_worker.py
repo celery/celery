@@ -50,7 +50,7 @@ class test_Worker(WorkerAppCase):
     def test_queues_string(self):
         w = self.app.Worker()
         w.setup_queues('foo,bar,baz')
-        self.assertTrue('foo' in self.app.amqp.queues)
+        self.assertIn('foo', self.app.amqp.queues)
 
     @disable_stdouts
     def test_cpu_count(self):

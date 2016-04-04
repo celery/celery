@@ -455,7 +455,7 @@ class test_State(AppCase):
 
         # RECEIVED
         next(r)
-        self.assertTrue(r.tid in r.state.tasks)
+        self.assertIn(r.tid, r.state.tasks)
         task = r.state.tasks[r.tid]
         self.assertEqual(task.state, states.RECEIVED)
         self.assertTrue(task.received)

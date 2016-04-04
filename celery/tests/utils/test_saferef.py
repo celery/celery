@@ -53,7 +53,7 @@ class SaferefTests(Case):
 
         """
         for t in self.ts[:50]:
-            self.assertTrue(safe_ref(t.x) in self.ss)
+            self.assertIn(safe_ref(t.x), self.ss)
 
     def test_valid(self):
         """test_value

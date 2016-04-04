@@ -170,7 +170,7 @@ class test_AsyncResult(AppCase):
         list(x.iterdeps(intermediate=True))
 
     def test_eq_not_implemented(self):
-        self.assertFalse(self.app.AsyncResult('1') == object())
+        self.assertNotEqual(self.app.AsyncResult('1'), object())
 
     @depends_on_current_app
     def test_reduce(self):
@@ -320,11 +320,14 @@ class test_ResultSet(AppCase):
             [self.app.AsyncResult(t) for t in ['1', '2', '3']])))
 
     def test_eq_other(self):
-        self.assertFalse(self.app.ResultSet(
-            [self.app.AsyncResult(t) for t in [1, 3, 3]]) == 1)
+        self.assertNotEqual(
+            self.app.ResultSet([self.app.AsyncResult(t)
+                               for t in [1, 3, 3]]),
+            1,
+        )
         rs1 = self.app.ResultSet([self.app.AsyncResult(1)])
         rs2 = self.app.ResultSet([self.app.AsyncResult(1)])
-        self.assertTrue(rs1 == rs2)
+        self.assertEqual(rs1, rs2)
 
     def test_get(self):
         x = self.app.ResultSet([self.app.AsyncResult(t) for t in [1, 2, 3]])
@@ -530,7 +533,7 @@ class test_GroupResult(AppCase):
         self.assertEqual(len(self.ts), self.size)
 
     def test_eq_other(self):
-        self.assertFalse(self.ts == 1)
+        self.assertNotEqual(self.ts, 1)
 
     @depends_on_current_app
     def test_pickleable(self):

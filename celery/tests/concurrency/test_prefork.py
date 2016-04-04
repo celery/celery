@@ -339,7 +339,7 @@ class test_TaskPool(PoolCase):
         pool = TaskPool(10)
         pool.start()
         self.assertTrue(pool._pool.started)
-        self.assertTrue(pool._pool._state == asynpool.RUN)
+        self.assertEqual(pool._pool._state, asynpool.RUN)
 
         _pool = pool._pool
         pool.stop()
