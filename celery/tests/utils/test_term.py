@@ -7,10 +7,10 @@ from celery.utils import term
 from celery.utils.term import colored, fg
 from celery.five import text_t
 
-from celery.tests.case import Case, skip_if_win32
+from celery.tests.case import Case, skip
 
 
-@skip_if_win32()
+@skip.if_win32()
 class test_colored(Case):
 
     def setUp(self):

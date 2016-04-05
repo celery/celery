@@ -8,7 +8,6 @@ import os
 import sys
 import threading
 
-from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime, timedelta
 from functools import partial, wraps
@@ -22,10 +21,16 @@ from celery.backends.cache import CacheBackend, DummyClient
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.utils.imports import qualname
 
-from ._case import *  # noqa
-from ._case import __all__ as _case_all, Case as _Case, decorator
+from case import (
+    ANY, ContextMock, MagicMock, Mock, call, mock, skip, patch, sentinel,
+)
+from case import Case as _Case
+from case.utils import decorator
 
-__all__ = _case_all + [
+__all__ = [
+    'ANY', 'ContextMock', 'MagicMock', 'Mock',
+    'call', 'mock', 'skip', 'patch', 'sentinel',
+
     'AppCase', 'TaskMessage', 'TaskMessage1',
     'depends_on_current_app', 'assert_signal_called', 'task_message_from_sig',
 ]
@@ -246,7 +251,6 @@ class AppCase(Case):
 
 
 @decorator
-@contextmanager
 def assert_signal_called(signal, **expected):
     handler = Mock()
     call_handler = partial(handler)

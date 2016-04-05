@@ -5,7 +5,7 @@ import itertools
 
 from billiard.einfo import ExceptionInfo
 
-from celery.tests.case import AppCase, skip_unless_module
+from celery.tests.case import AppCase, skip
 
 
 def do_something(i):
@@ -23,7 +23,7 @@ def raise_something(i):
         return ExceptionInfo()
 
 
-@skip_unless_module('multiprocessing')
+@skip.unless_module('multiprocessing')
 class test_TaskPool(AppCase):
 
     def setup(self):

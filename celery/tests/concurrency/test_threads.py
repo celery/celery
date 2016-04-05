@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 from celery.concurrency.threads import NullDict, TaskPool, apply_target
 
-from celery.tests.case import AppCase, Case, Mock, mask_modules, mock_module
+from celery.tests.case import AppCase, Case, Mock, mock
 
 
 class test_NullDict(Case):
@@ -18,32 +18,32 @@ class test_TaskPool(AppCase):
 
     def test_without_threadpool(self):
 
-        with mask_modules('threadpool'):
+        with mock.mask_modules('threadpool'):
             with self.assertRaises(ImportError):
                 TaskPool(app=self.app)
 
     def test_with_threadpool(self):
-        with mock_module('threadpool'):
+        with mock.module('threadpool'):
             x = TaskPool(app=self.app)
             self.assertTrue(x.ThreadPool)
             self.assertTrue(x.WorkRequest)
 
     def test_on_start(self):
-        with mock_module('threadpool'):
+        with mock.module('threadpool'):
             x = TaskPool(app=self.app)
             x.on_start()
             self.assertTrue(x._pool)
             self.assertIsInstance(x._pool.workRequests, NullDict)
 
     def test_on_stop(self):
-        with mock_module('threadpool'):
+        with mock.module('threadpool'):
             x = TaskPool(app=self.app)
             x.on_start()
             x.on_stop()
             x._pool.dismissWorkers.assert_called_with(x.limit, do_join=True)
 
     def test_on_apply(self):
-        with mock_module('threadpool'):
+        with mock.module('threadpool'):
             x = TaskPool(app=self.app)
             x.on_start()
             callback = Mock()

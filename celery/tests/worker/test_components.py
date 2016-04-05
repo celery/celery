@@ -7,7 +7,7 @@ from __future__ import absolute_import, unicode_literals
 from celery.exceptions import ImproperlyConfigured
 from celery.worker.components import Beat, Hub, Pool, Timer
 
-from celery.tests.case import AppCase, Mock, patch, skip_if_win32
+from celery.tests.case import AppCase, Mock, patch, skip
 
 
 class test_Timer(AppCase):
@@ -60,7 +60,7 @@ class test_Pool(AppCase):
         comp.close(w)
         comp.terminate(w)
 
-    @skip_if_win32()
+    @skip.if_win32()
     def test_create_when_eventloop(self):
         w = Mock()
         w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True

@@ -13,8 +13,8 @@ from celery.datastructures import AttributeDict
 from celery.exceptions import ChordError, ImproperlyConfigured
 
 from celery.tests.case import (
-    ANY, AppCase, ContextMock, Mock, MockCallbacks,
-    call, depends_on_current_app, patch, skip_unless_module,
+    ANY, AppCase, ContextMock, Mock, mock,
+    call, depends_on_current_app, patch, skip,
 )
 
 
@@ -58,7 +58,7 @@ class Pipeline(object):
         return [step(*a, **kw) for step, a, kw in self.steps]
 
 
-class Redis(MockCallbacks):
+class Redis(mock.MockCallbacks):
     Connection = Connection
     Pipeline = Pipeline
 
@@ -142,7 +142,7 @@ class test_RedisBackend(AppCase):
         self.b = self.Backend(app=self.app)
 
     @depends_on_current_app
-    @skip_unless_module('redis')
+    @skip.unless_module('redis')
     def test_reduce(self):
         from celery.backends.redis import RedisBackend
         x = RedisBackend(app=self.app)

@@ -17,7 +17,7 @@ from celery.bin.multi import (
 )
 from celery.five import WhateverIO
 
-from celery.tests.case import AppCase, Mock, patch, skip_unless_symbol
+from celery.tests.case import AppCase, Mock, patch, skip
 
 
 class test_functions(AppCase):
@@ -265,7 +265,7 @@ class test_MultiTool(AppCase):
 
         )
 
-    @skip_unless_symbol('signal.SIGKILL')
+    @skip.unless_symbol('signal.SIGKILL')
     def test_kill(self):
         self.t.getpids = Mock()
         self.t.getpids.return_value = [

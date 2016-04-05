@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-from celery.tests.case import AppCase, skip_unless_module
+from celery.tests.case import AppCase, skip
 
 
 class MockWindow(object):
@@ -9,7 +9,7 @@ class MockWindow(object):
         return self.y, self.x
 
 
-@skip_unless_module('curses')
+@skip.unless_module('curses', import_errors=(ImportError, OSError))
 class test_CursesDisplay(AppCase):
 
     def setup(self):

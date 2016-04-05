@@ -7,7 +7,7 @@ from celery.bin.celeryd_detach import (
     main,
 )
 
-from celery.tests.case import AppCase, Mock, override_stdouts, patch
+from celery.tests.case import AppCase, Mock, mock, patch
 
 
 if not IS_WINDOWS:
@@ -76,7 +76,7 @@ class test_PartialOptionParser(AppCase):
         ])
         self.assertEqual(options.pidfile, '/var/pid/foo.pid')
 
-        with override_stdouts():
+        with mock.stdouts():
             with self.assertRaises(SystemExit):
                 p.parse_args(['--logfile'])
             p.get_option('--logfile').nargs = 2

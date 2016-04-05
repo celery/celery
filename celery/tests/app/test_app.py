@@ -29,12 +29,8 @@ from celery.tests.case import (
     Case,
     ContextMock,
     depends_on_current_app,
-    mask_modules,
+    mock,
     patch,
-    platform_pyimp,
-    sys_platform,
-    pypy_version,
-    mock_environ,
 )
 from celery.utils import uuid
 from celery.utils.mail import ErrorMail
@@ -236,7 +232,7 @@ class test_App(AppCase):
             ['A', 'B', 'C', 'D', 'E', 'F'], related_name='tasks',
         )
 
-    @mock_environ('CELERY_BROKER_URL', '')
+    @mock.environ('CELERY_BROKER_URL', '')
     def test_with_broker(self):
         with self.Celery(broker='foo://baribaz') as app:
             self.assertEqual(app.conf.broker_url, 'foo://baribaz')
@@ -850,7 +846,7 @@ class test_App(AppCase):
         self.assertIn('add2', self.app.conf.beat_schedule)
 
     def test_pool_no_multiprocessing(self):
-        with mask_modules('multiprocessing.util'):
+        with mock.mask_modules('multiprocessing.util'):
             pool = self.app.pool
             self.assertIs(pool, self.app._pool)
 
@@ -953,26 +949,26 @@ class test_debugging_utils(AppCase):
 class test_pyimplementation(AppCase):
 
     def test_platform_python_implementation(self):
-        with platform_pyimp(lambda: 'Xython'):
+        with mock.platform_pyimp(lambda: 'Xython'):
             self.assertEqual(pyimplementation(), 'Xython')
 
     def test_platform_jython(self):
-        with platform_pyimp():
-            with sys_platform('java 1.6.51'):
+        with mock.platform_pyimp():
+            with mock.sys_platform('java 1.6.51'):
                 self.assertIn('Jython', pyimplementation())
 
     def test_platform_pypy(self):
-        with platform_pyimp():
-            with sys_platform('darwin'):
-                with pypy_version((1, 4, 3)):
+        with mock.platform_pyimp():
+            with mock.sys_platform('darwin'):
+                with mock.pypy_version((1, 4, 3)):
                     self.assertIn('PyPy', pyimplementation())
-                with pypy_version((1, 4, 3, 'a4')):
+                with mock.pypy_version((1, 4, 3, 'a4')):
                     self.assertIn('PyPy', pyimplementation())
 
     def test_platform_fallback(self):
-        with platform_pyimp():
-            with sys_platform('darwin'):
-                with pypy_version():
+        with mock.platform_pyimp():
+            with mock.sys_platform('darwin'):
+                with mock.pypy_version():
                     self.assertEqual('CPython', pyimplementation())
 
 

@@ -38,11 +38,7 @@ try:
 except ImportError:  # pragma: no cover
     resource = None  # noqa
 
-from celery.tests._case import open_fqdn
-from celery.tests.case import (
-    Case, Mock,
-    call, override_stdouts, mock_open, patch, skip_if_win32,
-)
+from celery.tests.case import Case, Mock, call, mock, patch, skip
 
 
 class test_find_option_with_arg(Case):
@@ -60,7 +56,7 @@ class test_find_option_with_arg(Case):
         )
 
 
-@skip_if_win32()
+@skip.if_win32()
 class test_fd_by_path(Case):
 
     def test_finds(self):
@@ -141,7 +137,7 @@ class test_Signals(Case):
         self.assertTrue(signals.supported('INT'))
         self.assertFalse(signals.supported('SIGIMAGINARY'))
 
-    @skip_if_win32()
+    @skip.if_win32()
     def test_reset_alarm(self):
         with patch('signal.alarm') as _alarm:
             signals.reset_alarm()
@@ -186,7 +182,7 @@ class test_Signals(Case):
         signals['INT'] = lambda *a: a
 
 
-@skip_if_win32()
+@skip.if_win32()
 class test_get_fdmax(Case):
 
     @patch('resource.getrlimit')
@@ -205,7 +201,7 @@ class test_get_fdmax(Case):
             self.assertEqual(get_fdmax(None), 13)
 
 
-@skip_if_win32()
+@skip.if_win32()
 class test_maybe_drop_privileges(Case):
 
     def test_on_windows(self):
@@ -322,7 +318,7 @@ class test_maybe_drop_privileges(Case):
         self.assertFalse(setuid.called)
 
 
-@skip_if_win32()
+@skip.if_win32()
 class test_setget_uid_gid(Case):
 
     @patch('celery.platforms.parse_uid')
@@ -380,7 +376,7 @@ class test_setget_uid_gid(Case):
             parse_gid('group')
 
 
-@skip_if_win32()
+@skip.if_win32()
 class test_initgroups(Case):
 
     @patch('pwd.getpwuid')
@@ -416,7 +412,7 @@ class test_initgroups(Case):
                 os.initgroups = prev
 
 
-@skip_if_win32()
+@skip.if_win32()
 class test_detached(Case):
 
     def test_without_resource(self):
@@ -431,7 +427,7 @@ class test_detached(Case):
     @patch('celery.platforms.signals')
     @patch('celery.platforms.maybe_drop_privileges')
     @patch('os.geteuid')
-    @patch(open_fqdn)
+    @patch(mock.open_fqdn)
     def test_default(self, open, geteuid, maybe_drop,
                      signals, pidlock):
         geteuid.return_value = 0
@@ -456,7 +452,7 @@ class test_detached(Case):
         pidlock.assert_called_with('/foo/bar/pid')
 
 
-@skip_if_win32()
+@skip.if_win32()
 class test_DaemonContext(Case):
 
     @patch('os.fork')
@@ -522,7 +518,7 @@ class test_DaemonContext(Case):
             x.open()
 
 
-@skip_if_win32()
+@skip.if_win32()
 class test_Pidfile(Case):
 
     @patch('celery.platforms.Pidfile')
@@ -530,7 +526,7 @@ class test_Pidfile(Case):
         p = Pidfile.return_value = Mock()
         p.is_locked.return_value = True
         p.remove_if_stale.return_value = False
-        with override_stdouts() as (_, err):
+        with mock.stdouts() as (_, err):
             with self.assertRaises(SystemExit):
                 create_pidlock('/var/pid')
             self.assertIn('already exists', err.getvalue())
@@ -567,14 +563,14 @@ class test_Pidfile(Case):
         self.assertFalse(p.is_locked())
 
     def test_read_pid(self):
-        with mock_open() as s:
+        with mock.open() as s:
             s.write('1816\n')
             s.seek(0)
             p = Pidfile('/var/pid')
             self.assertEqual(p.read_pid(), 1816)
 
     def test_read_pid_partially_written(self):
-        with mock_open() as s:
+        with mock.open() as s:
             s.write('1816')
             s.seek(0)
             p = Pidfile('/var/pid')
@@ -584,20 +580,20 @@ class test_Pidfile(Case):
     def test_read_pid_raises_ENOENT(self):
         exc = IOError()
         exc.errno = errno.ENOENT
-        with mock_open(side_effect=exc):
+        with mock.open(side_effect=exc):
             p = Pidfile('/var/pid')
             self.assertIsNone(p.read_pid())
 
     def test_read_pid_raises_IOError(self):
         exc = IOError()
         exc.errno = errno.EAGAIN
-        with mock_open(side_effect=exc):
+        with mock.open(side_effect=exc):
             p = Pidfile('/var/pid')
             with self.assertRaises(IOError):
                 p.read_pid()
 
     def test_read_pid_bogus_pidfile(self):
-        with mock_open() as s:
+        with mock.open() as s:
             s.write('eighteensixteen\n')
             s.seek(0)
             p = Pidfile('/var/pid')
@@ -655,7 +651,7 @@ class test_Pidfile(Case):
 
     @patch('os.kill')
     def test_remove_if_stale_process_dead(self, kill):
-        with override_stdouts():
+        with mock.stdouts():
             p = Pidfile('/var/pid')
             p.read_pid = Mock()
             p.read_pid.return_value = 1816
@@ -668,7 +664,7 @@ class test_Pidfile(Case):
             p.remove.assert_called_with()
 
     def test_remove_if_stale_broken_pid(self):
-        with override_stdouts():
+        with mock.stdouts():
             p = Pidfile('/var/pid')
             p.read_pid = Mock()
             p.read_pid.side_effect = ValueError()
@@ -690,7 +686,7 @@ class test_Pidfile(Case):
     @patch('os.getpid')
     @patch('os.open')
     @patch('os.fdopen')
-    @patch(open_fqdn)
+    @patch(mock.open_fqdn)
     def test_write_pid(self, open_, fdopen, osopen, getpid, fsync):
         getpid.return_value = 1816
         osopen.return_value = 13
@@ -717,7 +713,7 @@ class test_Pidfile(Case):
     @patch('os.getpid')
     @patch('os.open')
     @patch('os.fdopen')
-    @patch(open_fqdn)
+    @patch(mock.open_fqdn)
     def test_write_reread_fails(self, open_, fdopen,
                                 osopen, getpid, fsync):
         getpid.return_value = 1816

@@ -21,10 +21,12 @@ from celery.app import app_or_default
 from celery.five import string, string_t
 from celery.utils import worker_direct
 
-__all__ = ['StopFiltering', 'State', 'republish', 'migrate_task',
-           'migrate_tasks', 'move', 'task_id_eq', 'task_id_in',
-           'start_filter', 'move_task_by_id', 'move_by_idmap',
-           'move_by_taskmap', 'move_direct', 'move_direct_by_id']
+__all__ = [
+    'StopFiltering', 'State', 'republish', 'migrate_task',
+    'migrate_tasks', 'move', 'task_id_eq', 'task_id_in',
+    'start_filter', 'move_task_by_id', 'move_by_idmap',
+    'move_by_taskmap', 'move_direct', 'move_direct_by_id',
+]
 
 MOVING_PROGRESS_FMT = """\
 Moving task {state.filtered}/{state.strtotal}: \

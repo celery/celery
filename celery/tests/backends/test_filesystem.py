@@ -10,10 +10,10 @@ from celery.backends.filesystem import FilesystemBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.utils import uuid
 
-from celery.tests.case import AppCase, skip_if_win32
+from celery.tests.case import AppCase, skip
 
 
-@skip_if_win32()
+@skip.if_win32()
 class test_FilesystemBackend(AppCase):
 
     def setup(self):

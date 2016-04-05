@@ -12,9 +12,7 @@ from celery.five import range
 from celery.utils.functional import noop
 from celery.utils.objects import Bunch
 
-from celery.tests.case import (
-    AppCase, Mock, patch, restore_logging, skip_if_win32, skip_unless_module,
-)
+from celery.tests.case import AppCase, Mock, mock, patch, skip
 
 try:
     from celery.concurrency import prefork as mp
@@ -60,7 +58,7 @@ class test_process_initializer(AppCase):
     @patch('celery.platforms.signals')
     @patch('celery.platforms.set_mp_process_title')
     def test_process_initializer(self, set_mp_process_title, _signals):
-        with restore_logging():
+        with mock.restore_logging():
             from celery import signals
             from celery._state import _tls
             from celery.concurrency.prefork import (
@@ -186,12 +184,12 @@ class ExeMockTaskPool(mp.TaskPool):
     Pool = BlockingPool = ExeMockPool
 
 
-@skip_unless_module('multiprocessing')
+@skip.unless_module('multiprocessing')
 class PoolCase(AppCase):
     pass
 
 
-@skip_if_win32
+@skip.if_win32()
 class test_AsynPool(PoolCase):
 
     def test_gen_not_started(self):
@@ -297,7 +295,7 @@ class test_AsynPool(PoolCase):
         w.outq.put.assert_called_with((asynpool.WORKER_UP, (1234,)))
 
 
-@skip_if_win32
+@skip.if_win32()
 class test_ResultHandler(PoolCase):
 
     def test_process_result(self):

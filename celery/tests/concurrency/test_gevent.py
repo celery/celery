@@ -6,7 +6,7 @@ from celery.concurrency.gevent import (
     apply_timeout,
 )
 
-from celery.tests.case import AppCase, Mock, patch, skip_if_pypy
+from celery.tests.case import AppCase, Mock, patch, skip
 
 gevent_modules = (
     'gevent',
@@ -17,7 +17,7 @@ gevent_modules = (
 )
 
 
-@skip_if_pypy()
+@skip.if_pypy()
 class GeventCase(AppCase):
 
     def setup(self):

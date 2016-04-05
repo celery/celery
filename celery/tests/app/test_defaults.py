@@ -10,7 +10,7 @@ from celery.app.defaults import (
 )
 from celery.five import values
 
-from celery.tests.case import AppCase, pypy_version, sys_platform
+from celery.tests.case import AppCase, mock
 
 
 class test_defaults(AppCase):
@@ -29,15 +29,15 @@ class test_defaults(AppCase):
         val = object()
         self.assertIs(self.defaults.Option.typemap['any'](val), val)
 
+    @mock.sys_platform('darwin')
+    @mock.pypy_version((1, 4, 0))
     def test_default_pool_pypy_14(self):
-        with sys_platform('darwin'):
-            with pypy_version((1, 4, 0)):
-                self.assertEqual(self.defaults.DEFAULT_POOL, 'solo')
+        self.assertEqual(self.defaults.DEFAULT_POOL, 'solo')
 
+    @mock.sys_platform('darwin')
+    @mock.pypy_version((1, 5, 0))
     def test_default_pool_pypy_15(self):
-        with sys_platform('darwin'):
-            with pypy_version((1, 5, 0)):
-                self.assertEqual(self.defaults.DEFAULT_POOL, 'prefork')
+        self.assertEqual(self.defaults.DEFAULT_POOL, 'prefork')
 
     def test_compat_indices(self):
         self.assertFalse(any(key.isupper() for key in DEFAULTS))
@@ -54,9 +54,9 @@ class test_defaults(AppCase):
         for key in _TO_OLD_KEY:
             self.assertIn(key, SETTING_KEYS)
 
+    @mock.sys_platform('java 1.6.51')
     def test_default_pool_jython(self):
-        with sys_platform('java 1.6.51'):
-            self.assertEqual(self.defaults.DEFAULT_POOL, 'threads')
+        self.assertEqual(self.defaults.DEFAULT_POOL, 'threads')
 
     def test_find(self):
         find = self.defaults.find

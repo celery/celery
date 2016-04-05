@@ -12,9 +12,8 @@ from celery.backends import mongodb as module
 from celery.backends.mongodb import InvalidDocument, MongoBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.tests.case import (
-    AppCase, MagicMock, Mock, ANY,
-    depends_on_current_app, override_stdouts, patch, sentinel,
-    skip_unless_module,
+    ANY, AppCase, MagicMock, Mock,
+    mock, depends_on_current_app, patch, sentinel, skip,
 )
 
 COLLECTION = 'taskmeta_celery'
@@ -28,7 +27,7 @@ MONGODB_COLLECTION = 'collection1'
 MONGODB_GROUP_COLLECTION = 'group_collection1'
 
 
-@skip_unless_module('pymongo')
+@skip.unless_module('pymongo')
 class test_MongoBackend(AppCase):
 
     default_url = 'mongodb://uuuu:pwpw@hostname.dom/database'
@@ -407,8 +406,8 @@ class test_MongoBackend(AppCase):
         backend = MongoBackend(app=self.app, url=self.replica_set_url)
         self.assertEqual(backend.as_uri(), self.sanitized_replica_set_url)
 
-    @override_stdouts
-    def test_regression_worker_startup_info(self):
+    @mock.stdouts
+    def test_regression_worker_startup_info(self, stdout, stderr):
         self.app.conf.result_backend = (
             'mongodb://user:password@host0.com:43437,host1.com:43437'
             '/work4us?replicaSet=rs&ssl=true'
@@ -418,7 +417,7 @@ class test_MongoBackend(AppCase):
         self.assertTrue(worker.startup_info())
 
 
-@skip_unless_module('pymongo')
+@skip.unless_module('pymongo')
 class test_MongoBackend_no_mock(AppCase):
 
     def test_encode_decode(self):

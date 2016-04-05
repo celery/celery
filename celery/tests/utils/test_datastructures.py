@@ -18,7 +18,7 @@ from celery.datastructures import (
 from celery.five import WhateverIO, items
 from celery.utils.objects import Bunch
 
-from celery.tests.case import Case, Mock, skip_if_win32
+from celery.tests.case import Case, Mock, skip
 
 
 class test_DictAttribute(Case):
@@ -167,7 +167,7 @@ class test_ExceptionInfo(Case):
             self.assertTrue(r)
 
 
-@skip_if_win32()
+@skip.if_win32()
 class test_LimitedSet(Case):
 
     def test_add(self):

@@ -48,7 +48,7 @@ from celery.tests.case import (
     TaskMessage,
     task_message_from_sig,
     patch,
-    skip_if_python3,
+    skip,
 )
 
 
@@ -123,7 +123,7 @@ def jail(app, task_id, name, args, kwargs):
     ).retval
 
 
-@skip_if_python3
+@skip.if_python3()
 class test_default_encode(AppCase):
 
     def test_jython(self):

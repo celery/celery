@@ -171,10 +171,6 @@ install_requires = reqs('default.txt')
 if JYTHON:
     install_requires.extend(reqs('jython.txt'))
 
-# -*- Tests Requires -*-
-
-tests_require = reqs('test3.txt' if PY3 else 'test.txt')
-
 # -*- Long Description -*-
 
 if os.path.exists('README.rst'):
@@ -219,7 +215,7 @@ setup(
     include_package_data=False,
     zip_safe=False,
     install_requires=install_requires,
-    tests_require=tests_require,
+    tests_require=reqs('test.txt'),
     test_suite='nose.collector',
     classifiers=classifiers,
     entry_points=entrypoints,

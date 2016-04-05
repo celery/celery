@@ -5,15 +5,12 @@ from __future__ import absolute_import, unicode_literals
 from celery.backends import riak as module
 from celery.backends.riak import RiakBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.tests.case import (
-    AppCase, MagicMock, Mock, patch, sentinel, skip_unless_module,
-)
-
+from celery.tests.case import AppCase, MagicMock, Mock, patch, sentinel, skip
 
 RIAK_BUCKET = 'riak_bucket'
 
 
-@skip_unless_module('riak')
+@skip.unless_module('riak')
 class test_RiakBackend(AppCase):
 
     def setup(self):

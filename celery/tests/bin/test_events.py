@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 from celery.bin import events
 
-from celery.tests.case import AppCase, patch, _old_patch, skip_unless_module
+from celery.tests.case import AppCase, patch, _old_patch, skip
 
 
 class MockCommand(object):
@@ -29,7 +29,7 @@ class test_events(AppCase):
         self.assertEqual(self.ev.run(dump=True), 'me dumper, you?')
         self.assertIn('celery events:dump', proctitle.last[0])
 
-    @skip_unless_module('curses')
+    @skip.unless_module('curses', import_errors=(ImportError, OSError))
     def test_run_top(self):
         @_old_patch('celery.events.cursesmon', 'evtop',
                     lambda **kw: 'me top, you?')

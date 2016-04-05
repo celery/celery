@@ -158,4 +158,7 @@ old_module, new_module = five.recreate_module(  # pragma: no cover
     version_info_t=version_info_t,
     maybe_patch_concurrency=maybe_patch_concurrency,
     _find_option_with_arg=_find_option_with_arg,
+    absolute_import=absolute_import,
+    unicode_literals=unicode_literals,
+    print_function=print_function,
 )

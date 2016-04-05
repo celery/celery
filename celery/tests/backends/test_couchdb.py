@@ -4,9 +4,7 @@ from celery.backends import couchdb as module
 from celery.backends.couchdb import CouchBackend
 from celery.exceptions import ImproperlyConfigured
 from celery import backends
-from celery.tests.case import (
-    AppCase, Mock, patch, sentinel, skip_unless_module,
-)
+from celery.tests.case import AppCase, Mock, patch, sentinel, skip
 
 try:
     import pycouchdb
@@ -16,7 +14,7 @@ except ImportError:
 COUCHDB_CONTAINER = 'celery_container'
 
 
-@skip_unless_module('pycouchdb')
+@skip.unless_module('pycouchdb')
 class test_CouchBackend(AppCase):
 
     def setup(self):

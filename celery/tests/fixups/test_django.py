@@ -12,9 +12,7 @@ from celery.fixups.django import (
 )
 from celery.utils.objects import Bunch
 
-from celery.tests.case import (
-    AppCase, Mock, patch, patch_modules, mask_modules,
-)
+from celery.tests.case import AppCase, Mock, mock, patch
 
 
 class FixupCase(AppCase):
@@ -78,11 +76,11 @@ class test_DjangoFixup(FixupCase):
                 fixup(self.app)
                 self.assertFalse(Fixup.called)
             with patch.dict(os.environ, DJANGO_SETTINGS_MODULE='settings'):
-                with mask_modules('django'):
+                with mock.mask_modules('django'):
                     with self.assertWarnsRegex(UserWarning, 'but Django is'):
                         fixup(self.app)
                         self.assertFalse(Fixup.called)
-                with patch_modules('django'):
+                with mock.patch_modules('django'):
                     fixup(self.app)
                     self.assertTrue(Fixup.called)
 
@@ -334,7 +332,7 @@ class test_DjangoWorkerFixup(FixupCase):
         django.setup.assert_called_with()
 
     def test_mysql_errors(self):
-        with patch_modules('MySQLdb'):
+        with mock.patch_modules('MySQLdb'):
             import MySQLdb as mod
             mod.DatabaseError = Mock()
             mod.InterfaceError = Mock()
@@ -343,12 +341,12 @@ class test_DjangoWorkerFixup(FixupCase):
                 self.assertIn(mod.DatabaseError, f.database_errors)
                 self.assertIn(mod.InterfaceError, f.database_errors)
                 self.assertIn(mod.OperationalError, f.database_errors)
-        with mask_modules('MySQLdb'):
+        with mock.mask_modules('MySQLdb'):
             with self.fixup_context(self.app):
                 pass
 
     def test_pg_errors(self):
-        with patch_modules('psycopg2'):
+        with mock.patch_modules('psycopg2'):
             import psycopg2 as mod
             mod.DatabaseError = Mock()
             mod.InterfaceError = Mock()
@@ -357,12 +355,12 @@ class test_DjangoWorkerFixup(FixupCase):
                 self.assertIn(mod.DatabaseError, f.database_errors)
                 self.assertIn(mod.InterfaceError, f.database_errors)
                 self.assertIn(mod.OperationalError, f.database_errors)
-        with mask_modules('psycopg2'):
+        with mock.mask_modules('psycopg2'):
             with self.fixup_context(self.app):
                 pass
 
     def test_sqlite_errors(self):
-        with patch_modules('sqlite3'):
+        with mock.patch_modules('sqlite3'):
             import sqlite3 as mod
             mod.DatabaseError = Mock()
             mod.InterfaceError = Mock()
@@ -371,12 +369,12 @@ class test_DjangoWorkerFixup(FixupCase):
                 self.assertIn(mod.DatabaseError, f.database_errors)
                 self.assertIn(mod.InterfaceError, f.database_errors)
                 self.assertIn(mod.OperationalError, f.database_errors)
-        with mask_modules('sqlite3'):
+        with mock.mask_modules('sqlite3'):
             with self.fixup_context(self.app):
                 pass
 
     def test_oracle_errors(self):
-        with patch_modules('cx_Oracle'):
+        with mock.patch_modules('cx_Oracle'):
             import cx_Oracle as mod
             mod.DatabaseError = Mock()
             mod.InterfaceError = Mock()
@@ -385,6 +383,6 @@ class test_DjangoWorkerFixup(FixupCase):
                 self.assertIn(mod.DatabaseError, f.database_errors)
                 self.assertIn(mod.InterfaceError, f.database_errors)
                 self.assertIn(mod.OperationalError, f.database_errors)
-        with mask_modules('cx_Oracle'):
+        with mock.mask_modules('cx_Oracle'):
             with self.fixup_context(self.app):
                 pass

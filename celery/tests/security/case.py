@@ -1,8 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
-from celery.tests.case import AppCase, skip_unless_module
+from celery.tests.case import AppCase, skip
 
 
-@skip_unless_module('OpenSSL.crypto', name='pyOpenSSL')
+@skip.unless_module('OpenSSL.crypto', name='pyOpenSSL')
 class SecurityCase(AppCase):
     pass

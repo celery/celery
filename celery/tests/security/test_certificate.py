@@ -6,7 +6,7 @@ from celery.security.certificate import Certificate, CertStore, FSCertStore
 from . import CERT1, CERT2, KEY1
 from .case import SecurityCase
 
-from celery.tests.case import Mock, mock_open, patch, todo
+from celery.tests.case import Mock, mock, patch, skip
 
 
 class test_Certificate(SecurityCase):
@@ -27,7 +27,7 @@ class test_Certificate(SecurityCase):
         with self.assertRaises(SecurityError):
             Certificate(KEY1)
 
-    @todo(reason='cert expired')
+    @skip.todo(reason='cert expired')
     def test_has_expired(self):
         self.assertFalse(Certificate(CERT1).has_expired())
 
@@ -68,7 +68,7 @@ class test_FSCertStore(SecurityCase):
         cert.has_expired.return_value = False
         isdir.return_value = True
         glob.return_value = ['foo.cert']
-        with mock_open():
+        with mock.open():
             cert.get_id.return_value = 1
             x = FSCertStore('/var/certs')
             self.assertIn(1, x._certs)

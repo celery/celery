@@ -8,9 +8,7 @@ from celery.backends import couchbase as module
 from celery.backends.couchbase import CouchBaseBackend
 from celery.exceptions import ImproperlyConfigured
 from celery import backends
-from celery.tests.case import (
-    AppCase, MagicMock, Mock, patch, sentinel, skip_unless_module,
-)
+from celery.tests.case import AppCase, MagicMock, Mock, patch, sentinel, skip
 
 try:
     import couchbase
@@ -20,7 +18,7 @@ except ImportError:
 COUCHBASE_BUCKET = 'celery_bucket'
 
 
-@skip_unless_module('couchbase')
+@skip.unless_module('couchbase')
 class test_CouchBaseBackend(AppCase):
 
     def setup(self):

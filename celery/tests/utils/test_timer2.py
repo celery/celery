@@ -52,7 +52,7 @@ class test_Timer(Case):
         t = timer2.Timer(on_tick=on_tick)
         ne = t._next_entry = Mock(name='_next_entry')
         ne.return_value = 3.33
-        self.on_nth_call_do(ne, t._is_shutdown.set, 3)
+        ne.on_nth_call_do(t._is_shutdown.set, 3)
         t.run()
         sleep.assert_called_with(3.33)
         on_tick.assert_has_calls([call(3.33), call(3.33), call(3.33)])

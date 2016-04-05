@@ -6,8 +6,9 @@ from celery.concurrency.base import BasePool
 from celery.five import monotonic
 from celery.worker import state
 from celery.worker import autoscale
-from celery.tests.case import AppCase, Mock, patch, sleepdeprived
 from celery.utils.objects import Bunch
+
+from celery.tests.case import AppCase, Mock, mock, patch
 
 
 class MockPool(BasePool):
@@ -88,7 +89,7 @@ class test_Autoscaler(AppCase):
         x.stop()
         self.assertFalse(x.joined)
 
-    @sleepdeprived(autoscale)
+    @mock.sleepdeprived(module=autoscale)
     def test_body(self):
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
@@ -193,6 +194,7 @@ class test_Autoscaler(AppCase):
         _exit.assert_called_with(1)
         self.assertTrue(stderr.write.call_count)
 
+    @mock.sleepdeprived(module=autoscale)
     def test_no_negative_scale(self):
         total_num_processes = []
         worker = Mock(name='worker')

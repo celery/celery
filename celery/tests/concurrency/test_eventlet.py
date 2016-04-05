@@ -9,10 +9,10 @@ from celery.concurrency.eventlet import (
     TaskPool,
 )
 
-from celery.tests.case import AppCase, Mock, patch, skip_if_pypy
+from celery.tests.case import AppCase, Mock, patch, skip
 
 
-@skip_if_pypy()
+@skip.if_pypy()
 class EventletCase(AppCase):
 
     def setup(self):

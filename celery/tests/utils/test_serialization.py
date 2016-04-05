@@ -7,7 +7,7 @@ from celery.utils.serialization import (
     get_pickleable_etype,
 )
 
-from celery.tests.case import Case, mask_modules
+from celery.tests.case import Case, mock
 
 
 class test_AAPickle(Case):
@@ -15,7 +15,7 @@ class test_AAPickle(Case):
     def test_no_cpickle(self):
         prev = sys.modules.pop('celery.utils.serialization', None)
         try:
-            with mask_modules('cPickle'):
+            with mock.mask_modules('cPickle'):
                 from celery.utils.serialization import pickle
                 import pickle as orig_pickle
                 self.assertIs(pickle.dumps, orig_pickle.dumps)

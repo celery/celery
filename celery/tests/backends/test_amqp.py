@@ -14,9 +14,7 @@ from celery.five import Empty, Queue, range
 from celery.result import AsyncResult
 from celery.utils import uuid
 
-from celery.tests.case import (
-    AppCase, Mock, depends_on_current_app, sleepdeprived,
-)
+from celery.tests.case import AppCase, Mock, depends_on_current_app, mock
 
 
 class SomeClass(object):
@@ -112,7 +110,7 @@ class test_AMQPBackend(AppCase):
         b = self.create_backend(expires=timedelta(minutes=1))
         self.assertEqual(b.queue_arguments.get('x-expires'), 60 * 1000.0)
 
-    @sleepdeprived()
+    @mock.sleepdeprived()
     def test_store_result_retries(self):
         iterations = [0]
         stop_raising_at = [5]

@@ -26,7 +26,7 @@ from kombu.serialization import registry
 
 from .case import SecurityCase
 
-from celery.tests.case import Mock, mock_open, patch
+from celery.tests.case import Mock, mock, patch
 
 
 class test_security(SecurityCase):
@@ -86,7 +86,7 @@ class test_security(SecurityCase):
                 calls[0] += 1
 
         self.app.conf.task_serializer = 'auth'
-        with mock_open(side_effect=effect):
+        with mock.open(side_effect=effect):
             with patch('celery.security.registry') as registry:
                 store = Mock()
                 self.app.setup_security(['json'], key, cert, store)

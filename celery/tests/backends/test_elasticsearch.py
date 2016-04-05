@@ -5,10 +5,10 @@ from celery.backends import elasticsearch as module
 from celery.backends.elasticsearch import ElasticsearchBackend
 from celery.exceptions import ImproperlyConfigured
 
-from celery.tests.case import AppCase, Mock, sentinel, skip_unless_module
+from celery.tests.case import AppCase, Mock, sentinel, skip
 
 
-@skip_unless_module('elasticsearch')
+@skip.unless_module('elasticsearch')
 class test_ElasticsearchBackend(AppCase):
 
     def setup(self):

@@ -2,10 +2,10 @@ from __future__ import absolute_import, unicode_literals
 
 from celery.utils.sysinfo import load_average, df
 
-from celery.tests.case import Case, patch, skip_unless_symbol
+from celery.tests.case import Case, patch, skip
 
 
-@skip_unless_symbol('os.getloadavg')
+@skip.unless_symbol('os.getloadavg')
 class test_load_average(Case):
 
     def test_avg(self):
@@ -16,7 +16,7 @@ class test_load_average(Case):
             self.assertEqual(l, (0.55, 0.64, 0.7))
 
 
-@skip_unless_symbol('posix.statvfs_result')
+@skip.unless_symbol('posix.statvfs_result')
 class test_df(Case):
 
     def test_df(self):

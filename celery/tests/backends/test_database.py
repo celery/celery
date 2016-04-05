@@ -9,13 +9,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.utils import uuid
 
 from celery.tests.case import (
-    AppCase,
-    Mock,
-    depends_on_current_app,
-    patch,
-    skip_if_pypy,
-    skip_if_jython,
-    skip_unless_module,
+    AppCase, Mock, depends_on_current_app, patch, skip,
 )
 
 try:
@@ -38,7 +32,7 @@ class SomeClass(object):
         self.data = data
 
 
-@skip_unless_module('sqlalchemy')
+@skip.unless_module('sqlalchemy')
 class test_session_cleanup(AppCase):
 
     def test_context(self):
@@ -56,9 +50,9 @@ class test_session_cleanup(AppCase):
         session.close.assert_called_with()
 
 
-@skip_unless_module('sqlalchemy')
-@skip_if_pypy()
-@skip_if_jython()
+@skip.unless_module('sqlalchemy')
+@skip.if_pypy()
+@skip.if_jython()
 class test_DatabaseBackend(AppCase):
 
     def setup(self):
@@ -214,7 +208,7 @@ class test_DatabaseBackend(AppCase):
         self.assertIn('foo', repr(TaskSet('foo', None)))
 
 
-@skip_unless_module('sqlalchemy')
+@skip.unless_module('sqlalchemy')
 class test_SessionManager(AppCase):
 
     def test_after_fork(self):

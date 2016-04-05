@@ -18,7 +18,7 @@ from celery.worker.autoreload import (
     Autoreloader,
 )
 
-from celery.tests.case import AppCase, Case, Mock, patch, mock_open
+from celery.tests.case import AppCase, Case, Mock, mock, patch
 
 
 class test_WorkerComponent(AppCase):
@@ -52,11 +52,11 @@ class test_WorkerComponent(AppCase):
 class test_file_hash(Case):
 
     def test_hash(self):
-        with mock_open() as a:
+        with mock.open() as a:
             a.write('the quick brown fox\n')
             a.seek(0)
             A = file_hash('foo')
-        with mock_open() as b:
+        with mock.open() as b:
             b.write('the quick brown bar\n')
             b.seek(0)
             B = file_hash('bar')

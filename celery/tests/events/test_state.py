@@ -19,7 +19,7 @@ from celery.events.state import (
 )
 from celery.five import range
 from celery.utils import uuid
-from celery.tests.case import AppCase, Mock, patch, todo
+from celery.tests.case import AppCase, Mock, patch, skip
 
 try:
     Decimal(2.6)
@@ -374,7 +374,7 @@ class test_State(AppCase):
         self.assertEqual(now[1][0], tC)
         self.assertEqual(now[2][0], tB)
 
-    @todo(reason='not working')
+    @skip.todo(reason='not working')
     def test_task_descending_clock_ordering(self):
         state = State()
         r = ev_logical_clock_ordering(state)

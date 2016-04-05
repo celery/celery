@@ -26,7 +26,7 @@ from celery.contrib.migrate import (
     move,
 )
 from celery.utils.encoding import bytes_t, ensure_bytes
-from celery.tests.case import AppCase, Mock, override_stdouts, patch
+from celery.tests.case import AppCase, Mock, mock, patch
 
 # hack to ignore error at shutdown
 QoS.restore_at_shutdown = False
@@ -213,10 +213,10 @@ class test_utils(AppCase):
         self.assertEqual(_maybe_queue(app, 'foo'), 313)
         self.assertEqual(_maybe_queue(app, Queue('foo')), Queue('foo'))
 
-    def test_filter_status(self):
-        with override_stdouts() as (stdout, stderr):
-            filter_status(State(), {'id': '1', 'task': 'add'}, Mock())
-            self.assertTrue(stdout.getvalue())
+    @mock.stdouts
+    def test_filter_status(self, stdout, stderr):
+        filter_status(State(), {'id': '1', 'task': 'add'}, Mock())
+        self.assertTrue(stdout.getvalue())
 
     def test_move_by_taskmap(self):
         with patch('celery.contrib.migrate.move') as move:

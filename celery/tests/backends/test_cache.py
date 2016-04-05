@@ -15,9 +15,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.five import items, module_name_t, string, text_t
 from celery.utils import uuid
 
-from celery.tests.case import (
-    AppCase, Mock, override_stdouts, mask_modules, patch, reset_modules,
-)
+from celery.tests.case import AppCase, Mock, mock, patch
 
 PY3 = sys.version_info[0] == 3
 
@@ -136,8 +134,8 @@ class test_CacheBackend(AppCase):
         b = CacheBackend(backend=backend, app=self.app)
         self.assertEqual(b.as_uri(), backend)
 
-    @override_stdouts
-    def test_regression_worker_startup_info(self):
+    @mock.stdouts
+    def test_regression_worker_startup_info(self, stdout, stderr):
         self.app.conf.result_backend = (
             'cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'
         )
@@ -197,7 +195,7 @@ class test_get_best_memcache(AppCase, MockCacheMixin):
 
     def test_pylibmc(self):
         with self.mock_pylibmc():
-            with reset_modules('celery.backends.cache'):
+            with mock.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
                 cache._imp = [None]
                 self.assertEqual(cache.get_best_memcache()[0].__module__,
@@ -205,16 +203,16 @@ class test_get_best_memcache(AppCase, MockCacheMixin):
 
     def test_memcache(self):
         with self.mock_memcache():
-            with reset_modules('celery.backends.cache'):
-                with mask_modules('pylibmc'):
+            with mock.reset_modules('celery.backends.cache'):
+                with mock.mask_modules('pylibmc'):
                     from celery.backends import cache
                     cache._imp = [None]
                     self.assertEqual(cache.get_best_memcache()[0]().__module__,
                                      'memcache')
 
     def test_no_implementations(self):
-        with mask_modules('pylibmc', 'memcache'):
-            with reset_modules('celery.backends.cache'):
+        with mock.mask_modules('pylibmc', 'memcache'):
+            with mock.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
                 cache._imp = [None]
                 with self.assertRaises(ImproperlyConfigured):
@@ -222,7 +220,7 @@ class test_get_best_memcache(AppCase, MockCacheMixin):
 
     def test_cached(self):
         with self.mock_pylibmc():
-            with reset_modules('celery.backends.cache'):
+            with mock.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
                 cache._imp = [None]
                 cache.get_best_memcache()[0](behaviors={'foo': 'bar'})
@@ -240,8 +238,8 @@ class test_memcache_key(AppCase, MockCacheMixin):
 
     def test_memcache_unicode_key(self):
         with self.mock_memcache():
-            with reset_modules('celery.backends.cache'):
-                with mask_modules('pylibmc'):
+            with mock.reset_modules('celery.backends.cache'):
+                with mock.mask_modules('pylibmc'):
                     from celery.backends import cache
                     cache._imp = [None]
                     task_id, result = string(uuid()), 42
@@ -251,8 +249,8 @@ class test_memcache_key(AppCase, MockCacheMixin):
 
     def test_memcache_bytes_key(self):
         with self.mock_memcache():
-            with reset_modules('celery.backends.cache'):
-                with mask_modules('pylibmc'):
+            with mock.reset_modules('celery.backends.cache'):
+                with mock.mask_modules('pylibmc'):
                     from celery.backends import cache
                     cache._imp = [None]
                     task_id, result = str_to_bytes(uuid()), 42
@@ -261,7 +259,7 @@ class test_memcache_key(AppCase, MockCacheMixin):
                     self.assertEqual(b.get_result(task_id), result)
 
     def test_pylibmc_unicode_key(self):
-        with reset_modules('celery.backends.cache'):
+        with mock.reset_modules('celery.backends.cache'):
             with self.mock_pylibmc():
                 from celery.backends import cache
                 cache._imp = [None]
@@ -271,7 +269,7 @@ class test_memcache_key(AppCase, MockCacheMixin):
                 self.assertEqual(b.get_result(task_id), result)
 
     def test_pylibmc_bytes_key(self):
-        with reset_modules('celery.backends.cache'):
+        with mock.reset_modules('celery.backends.cache'):
             with self.mock_pylibmc():
                 from celery.backends import cache
                 cache._imp = [None]

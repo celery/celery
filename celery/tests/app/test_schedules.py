@@ -10,7 +10,7 @@ from celery.five import items
 from celery.schedules import (
     ParseException, crontab, crontab_parser, schedule, solar,
 )
-from celery.tests.case import AppCase, Mock, skip_unless_module, todo
+from celery.tests.case import AppCase, Mock, skip
 
 
 @contextmanager
@@ -23,7 +23,7 @@ def patch_crontab_nowfun(cls, retval):
         cls.nowfun = prev_nowfun
 
 
-@skip_unless_module('ephem')
+@skip.unless_module('ephem')
 class test_solar(AppCase):
 
     def setup(self):
@@ -735,7 +735,7 @@ class test_crontab_is_due(AppCase):
             self.assertTrue(due)
             self.assertEqual(remaining, 60.)
 
-    @todo('unstable test')
+    @skip.todo('unstable test')
     def test_monthly_moy_execution_is_not_due(self):
         with patch_crontab_nowfun(
                 self.monthly_moy, datetime(2013, 6, 28, 14, 30)):

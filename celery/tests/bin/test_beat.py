@@ -10,8 +10,7 @@ from celery import platforms
 from celery.bin import beat as beat_bin
 from celery.apps import beat as beatapp
 
-from celery.tests.case import AppCase, Mock, patch, restore_logging
-from kombu.tests.case import redirect_stdouts
+from celery.tests.case import AppCase, Mock, mock, patch
 
 
 class MockedShelveModule(object):
@@ -113,32 +112,35 @@ class test_Beat(AppCase):
         self.assertTrue(MockService.in_sync)
         MockService.in_sync = False
 
+    @mock.restore_logging()
     def test_setup_logging(self):
-        with restore_logging():
-            try:
-                # py3k
-                delattr(sys.stdout, 'logger')
-            except AttributeError:
-                pass
-            b = beatapp.Beat(app=self.app, redirect_stdouts=False)
-            b.redirect_stdouts = False
-            b.app.log.already_setup = False
-            b.setup_logging()
-            with self.assertRaises(AttributeError):
-                sys.stdout.logger
+        try:
+            # py3k
+            delattr(sys.stdout, 'logger')
+        except AttributeError:
+            pass
+        b = beatapp.Beat(app=self.app, redirect_stdouts=False)
+        b.redirect_stdouts = False
+        b.app.log.already_setup = False
+        b.setup_logging()
+        with self.assertRaises(AttributeError):
+            sys.stdout.logger
 
-    @redirect_stdouts
+    import sys
+    orig_stdout = sys.__stdout__
+
     @patch('celery.apps.beat.logger')
+    @mock.restore_logging()
+    @mock.stdouts
     def test_logs_errors(self, logger, stdout, stderr):
-        with restore_logging():
-            b = MockBeat3(
-                app=self.app, redirect_stdouts=False, socket_timeout=None,
-            )
-            b.start_scheduler()
-            self.assertTrue(logger.critical.called)
+        b = MockBeat3(
+            app=self.app, redirect_stdouts=False, socket_timeout=None,
+        )
+        b.start_scheduler()
+        self.assertTrue(logger.critical.called)
 
-    @redirect_stdouts
     @patch('celery.platforms.create_pidlock')
+    @mock.stdouts
     def test_use_pidfile(self, create_pidlock, stdout, stderr):
         b = MockBeat2(app=self.app, pidfile='pidfilelockfilepid',
                       socket_timeout=None, redirect_stdouts=False)

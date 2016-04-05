@@ -12,7 +12,7 @@ from celery.five import module_name_t
 from celery.utils.objects import Bunch
 
 from celery.tests.case import (
-    AppCase, Mock, depends_on_current_app, override_stdouts, patch,
+    AppCase, Mock, depends_on_current_app, mock, patch,
 )
 
 
@@ -144,14 +144,14 @@ class test_Command(AppCase):
         self.assertDictContainsSubset({'foo': 'bar', 'prog_name': 'foo'},
                                       kwargs2)
 
-    def test_with_bogus_args(self):
-        with override_stdouts() as (_, stderr):
-            cmd = MockCommand(app=self.app)
-            cmd.supports_args = False
-            with self.assertRaises(SystemExit):
-                cmd.execute_from_commandline(argv=['--bogus'])
-            self.assertTrue(stderr.getvalue())
-            self.assertIn('Unrecognized', stderr.getvalue())
+    @mock.stdouts
+    def test_with_bogus_args(self, _, stderr):
+        cmd = MockCommand(app=self.app)
+        cmd.supports_args = False
+        with self.assertRaises(SystemExit):
+            cmd.execute_from_commandline(argv=['--bogus'])
+        self.assertTrue(stderr.getvalue())
+        self.assertIn('Unrecognized', stderr.getvalue())
 
     def test_with_custom_config_module(self):
         prev = os.environ.pop('CELERY_CONFIG_MODULE', None)

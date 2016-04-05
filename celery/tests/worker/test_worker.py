@@ -30,7 +30,7 @@ from celery.utils import worker_direct
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 
-from celery.tests.case import AppCase, Mock, TaskMessage, patch, todo
+from celery.tests.case import AppCase, Mock, TaskMessage, patch, skip
 
 
 def MockStep(step=None):
@@ -849,7 +849,7 @@ class test_WorkController(AppCase):
             self.worker._send_worker_shutdown()
             ws.send.assert_called_with(sender=self.worker)
 
-    @todo('unstable test')
+    @skip.todo('unstable test')
     def test_process_shutdown_on_worker_shutdown(self):
         from celery.concurrency.prefork import process_destructor
         from celery.concurrency.asynpool import Worker
