@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 from celery.bin import events
 
-from celery.tests.case import AppCase, SkipTest, patch, _old_patch
+from celery.tests.case import AppCase, patch, _old_patch, skip_unless_module
 
 
 class MockCommand(object):
@@ -29,12 +29,8 @@ class test_events(AppCase):
         self.assertEqual(self.ev.run(dump=True), 'me dumper, you?')
         self.assertIn('celery events:dump', proctitle.last[0])
 
+    @skip_unless_module('curses')
     def test_run_top(self):
-        try:
-            import curses  # noqa
-        except (ImportError, OSError):
-            raise SkipTest('curses monitor requires curses')
-
         @_old_patch('celery.events.cursesmon', 'evtop',
                     lambda **kw: 'me top, you?')
         @_old_patch('celery.bin.events', 'set_process_title', proctitle)

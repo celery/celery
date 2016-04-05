@@ -21,9 +21,10 @@ from celery.utils.log import (
     logger_isa,
 )
 from celery.tests.case import (
-    AppCase, Mock, SkipTest, mask_modules,
-    get_handlers, override_stdouts, patch, wrap_logger, restore_logging,
+    AppCase, Mock, mask_modules, skip_if_python3,
+    override_stdouts, patch, wrap_logger, restore_logging,
 )
+from celery.tests._case import get_logger_handlers
 
 
 class test_TaskFormatter(AppCase):
@@ -155,10 +156,9 @@ class test_ColorFormatter(AppCase):
         self.assertIn('<Unrepresentable', msg)
         self.assertEqual(safe_str.call_count, 1)
 
+    @skip_if_python3()
     @patch('celery.utils.log.safe_str')
     def test_format_raises_no_color(self, safe_str):
-        if sys.version_info[0] == 3:
-            raise SkipTest('py3k')
         x = ColorFormatter(use_color=False)
         record = Mock()
         record.levelname = 'ERROR'
@@ -235,7 +235,7 @@ class test_default_logger(AppCase):
             logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                        root=False, colorize=None)
             self.assertIs(
-                get_handlers(logger)[0].stream, sys.__stderr__,
+                get_logger_handlers(logger)[0].stream, sys.__stderr__,
                 'setup_logger logs to stderr without logfile argument.',
             )
 
@@ -273,7 +273,7 @@ class test_default_logger(AppCase):
                     logfile=tempfile, loglevel=logging.INFO, root=False,
                 )
                 self.assertIsInstance(
-                    get_handlers(l)[0], logging.FileHandler,
+                    get_logger_handlers(l)[0], logging.FileHandler,
                 )
                 self.assertIn(tempfile, files)
 

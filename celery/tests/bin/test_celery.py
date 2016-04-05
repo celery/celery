@@ -7,7 +7,6 @@ from datetime import datetime
 from kombu.utils.json import dumps
 
 from celery import __main__
-from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
 from celery.bin.base import Error
 from celery.bin import celery as mod
 from celery.bin.celery import (
@@ -29,8 +28,10 @@ from celery.bin.celery import (
     _RemoteControl,
     command,
 )
+from celery.five import WhateverIO
+from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
 
-from celery.tests.case import AppCase, Mock, WhateverIO, patch
+from celery.tests.case import AppCase, Mock, patch
 
 
 class test__main__(AppCase):

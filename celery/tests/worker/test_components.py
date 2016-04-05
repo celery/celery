@@ -5,10 +5,9 @@ from __future__ import absolute_import, unicode_literals
 # point [-ask]
 
 from celery.exceptions import ImproperlyConfigured
-from celery.platforms import IS_WINDOWS
 from celery.worker.components import Beat, Hub, Pool, Timer
 
-from celery.tests.case import AppCase, Mock, SkipTest, patch
+from celery.tests.case import AppCase, Mock, patch, skip_if_win32
 
 
 class test_Timer(AppCase):
@@ -61,9 +60,8 @@ class test_Pool(AppCase):
         comp.close(w)
         comp.terminate(w)
 
+    @skip_if_win32()
     def test_create_when_eventloop(self):
-        if IS_WINDOWS:
-            raise SkipTest('Win32')
         w = Mock()
         w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True
         comp = Pool(w)

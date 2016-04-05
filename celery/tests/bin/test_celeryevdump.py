@@ -7,8 +7,9 @@ from celery.events.dumper import (
     Dumper,
     evdump,
 )
+from celery.five import WhateverIO
 
-from celery.tests.case import AppCase, Mock, WhateverIO, patch
+from celery.tests.case import AppCase, Mock, patch
 
 
 class test_Dumper(AppCase):

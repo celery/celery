@@ -11,7 +11,7 @@ from celery.schedules import schedule
 from celery.utils import uuid
 from celery.utils.objects import Bunch
 
-from celery.tests.case import AppCase, Mock, SkipTest, call, patch
+from celery.tests.case import AppCase, Mock, call, patch, skip_unless_module
 
 
 class MockShelve(dict):
@@ -485,12 +485,8 @@ class test_Service(AppCase):
 
 class test_EmbeddedService(AppCase):
 
+    @skip_unless_module('_multiprocessing', name='multiprocessing')
     def test_start_stop_process(self):
-        try:
-            import _multiprocessing  # noqa
-        except ImportError:
-            raise SkipTest('multiprocessing not available')
-
         from billiard.process import Process
 
         s = beat.EmbeddedService(self.app)

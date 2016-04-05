@@ -7,8 +7,9 @@ from celery.bin.amqp import (
     amqp,
     main,
 )
+from celery.five import WhateverIO
 
-from celery.tests.case import AppCase, Mock, WhateverIO, patch
+from celery.tests.case import AppCase, Mock, patch
 
 
 class test_AMQShell(AppCase):

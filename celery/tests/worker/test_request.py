@@ -45,11 +45,10 @@ from celery.tests.case import (
     AppCase,
     Case,
     Mock,
-    SkipTest,
     TaskMessage,
-    assert_signal_called,
     task_message_from_sig,
     patch,
+    skip_if_python3,
 )
 
 
@@ -124,11 +123,8 @@ def jail(app, task_id, name, args, kwargs):
     ).retval
 
 
+@skip_if_python3
 class test_default_encode(AppCase):
-
-    def setup(self):
-        if sys.version_info >= (3, 0):
-            raise SkipTest('py3k: not relevant')
 
     def test_jython(self):
         prev, sys.platform = sys.platform, 'java 1.6.1'
@@ -430,7 +426,7 @@ class test_Request(RequestCase):
         signum = signal.SIGTERM
         job = self.get_request(self.mytask.s(1, f='x'))
         job._apply_result = Mock(name='_apply_result')
-        with assert_signal_called(
+        with self.assert_signal_called(
                 task_revoked, sender=job.task, request=job,
                 terminated=True, expired=False, signum=signum):
             job.time_start = monotonic()
@@ -446,7 +442,7 @@ class test_Request(RequestCase):
         pool = Mock()
         signum = signal.SIGTERM
         job = self.get_request(self.mytask.s(1, f='x'))
-        with assert_signal_called(
+        with self.assert_signal_called(
                 task_revoked, sender=job.task, request=job,
                 terminated=True, expired=False, signum=signum):
             job.time_start = monotonic()
@@ -467,7 +463,7 @@ class test_Request(RequestCase):
         job = self.get_request(self.mytask.s(1, f='x').set(
             expires=datetime.utcnow() - timedelta(days=1)
         ))
-        with assert_signal_called(
+        with self.assert_signal_called(
                 task_revoked, sender=job.task, request=job,
                 terminated=False, expired=True, signum=None):
             job.revoked()
@@ -506,7 +502,7 @@ class test_Request(RequestCase):
 
     def test_revoked(self):
         job = self.xRequest()
-        with assert_signal_called(
+        with self.assert_signal_called(
                 task_revoked, sender=job.task, request=job,
                 terminated=False, expired=False, signum=None):
             revoked.add(job.id)
@@ -555,7 +551,7 @@ class test_Request(RequestCase):
         signum = signal.SIGTERM
         pool = Mock()
         job = self.xRequest()
-        with assert_signal_called(
+        with self.assert_signal_called(
                 task_revoked, sender=job.task, request=job,
                 terminated=True, expired=False, signum=signum):
             job.terminate(pool, signal='TERM')

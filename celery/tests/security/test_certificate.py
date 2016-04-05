@@ -6,7 +6,7 @@ from celery.security.certificate import Certificate, CertStore, FSCertStore
 from . import CERT1, CERT2, KEY1
 from .case import SecurityCase
 
-from celery.tests.case import Mock, SkipTest, mock_open, patch
+from celery.tests.case import Mock, mock_open, patch, todo
 
 
 class test_Certificate(SecurityCase):
@@ -27,8 +27,8 @@ class test_Certificate(SecurityCase):
         with self.assertRaises(SecurityError):
             Certificate(KEY1)
 
+    @todo(reason='cert expired')
     def test_has_expired(self):
-        raise SkipTest('cert expired')
         self.assertFalse(Certificate(CERT1).has_expired())
 
     def test_has_expired_mock(self):

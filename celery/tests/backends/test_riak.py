@@ -3,21 +3,20 @@
 from __future__ import absolute_import, unicode_literals
 
 from celery.backends import riak as module
-from celery.backends.riak import RiakBackend, riak
+from celery.backends.riak import RiakBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.tests.case import (
-    AppCase, MagicMock, Mock, SkipTest, patch, sentinel,
+    AppCase, MagicMock, Mock, patch, sentinel, skip_unless_module,
 )
 
 
 RIAK_BUCKET = 'riak_bucket'
 
 
+@skip_unless_module('riak')
 class test_RiakBackend(AppCase):
 
     def setup(self):
-        if riak is None:
-            raise SkipTest('riak is not installed.')
         self.app.conf.result_backend = 'riak://'
 
     @property

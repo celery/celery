@@ -13,8 +13,8 @@ from celery.datastructures import AttributeDict
 from celery.exceptions import ChordError, ImproperlyConfigured
 
 from celery.tests.case import (
-    ANY, AppCase, ContextMock, Mock, MockCallbacks, SkipTest,
-    call, depends_on_current_app, patch,
+    ANY, AppCase, ContextMock, Mock, MockCallbacks,
+    call, depends_on_current_app, patch, skip_unless_module,
 )
 
 
@@ -142,13 +142,11 @@ class test_RedisBackend(AppCase):
         self.b = self.Backend(app=self.app)
 
     @depends_on_current_app
+    @skip_unless_module('redis')
     def test_reduce(self):
-        try:
-            from celery.backends.redis import RedisBackend
-            x = RedisBackend(app=self.app)
-            self.assertTrue(loads(dumps(x)))
-        except ImportError:
-            raise SkipTest('redis not installed')
+        from celery.backends.redis import RedisBackend
+        x = RedisBackend(app=self.app)
+        self.assertTrue(loads(dumps(x)))
 
     def test_no_redis(self):
         self.Backend.redis = None

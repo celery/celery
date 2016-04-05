@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 import errno
 import os
 import socket
-import sys
 
 from itertools import cycle
 
@@ -13,7 +12,9 @@ from celery.five import range
 from celery.utils.functional import noop
 from celery.utils.objects import Bunch
 
-from celery.tests.case import AppCase, Mock, SkipTest, patch, restore_logging
+from celery.tests.case import (
+    AppCase, Mock, patch, restore_logging, skip_if_win32, skip_unless_module,
+)
 
 try:
     from celery.concurrency import prefork as mp
@@ -185,20 +186,13 @@ class ExeMockTaskPool(mp.TaskPool):
     Pool = BlockingPool = ExeMockPool
 
 
+@skip_unless_module('multiprocessing')
 class PoolCase(AppCase):
-
-    def setup(self):
-        try:
-            import multiprocessing  # noqa
-        except ImportError:
-            raise SkipTest('multiprocessing not supported')
+    pass
 
 
+@skip_if_win32
 class test_AsynPool(PoolCase):
-
-    def setup(self):
-        if sys.platform == 'win32':
-            raise SkipTest('win32: skip')
 
     def test_gen_not_started(self):
 
@@ -303,11 +297,8 @@ class test_AsynPool(PoolCase):
         w.outq.put.assert_called_with((asynpool.WORKER_UP, (1234,)))
 
 
+@skip_if_win32
 class test_ResultHandler(PoolCase):
-
-    def setup(self):
-        if sys.platform == 'win32':
-            raise SkipTest('win32: skip')
 
     def test_process_result(self):
         x = asynpool.ResultHandler(

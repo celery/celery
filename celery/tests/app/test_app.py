@@ -34,7 +34,7 @@ from celery.tests.case import (
     platform_pyimp,
     sys_platform,
     pypy_version,
-    with_environ,
+    mock_environ,
 )
 from celery.utils import uuid
 from celery.utils.mail import ErrorMail
@@ -236,7 +236,7 @@ class test_App(AppCase):
             ['A', 'B', 'C', 'D', 'E', 'F'], related_name='tasks',
         )
 
-    @with_environ('CELERY_BROKER_URL', '')
+    @mock_environ('CELERY_BROKER_URL', '')
     def test_with_broker(self):
         with self.Celery(broker='foo://baribaz') as app:
             self.assertEqual(app.conf.broker_url, 'foo://baribaz')

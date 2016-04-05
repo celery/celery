@@ -11,11 +11,11 @@ from celery.utils import uuid
 from celery.tests.case import (
     AppCase,
     Mock,
-    SkipTest,
     depends_on_current_app,
     patch,
     skip_if_pypy,
     skip_if_jython,
+    skip_unless_module,
 )
 
 try:
@@ -38,11 +38,8 @@ class SomeClass(object):
         self.data = data
 
 
+@skip_unless_module('sqlalchemy')
 class test_session_cleanup(AppCase):
-
-    def setup(self):
-        if session_cleanup is None:
-            raise SkipTest('slqlalchemy not installed')
 
     def test_context(self):
         session = Mock(name='session')
@@ -59,13 +56,12 @@ class test_session_cleanup(AppCase):
         session.close.assert_called_with()
 
 
+@skip_unless_module('sqlalchemy')
+@skip_if_pypy()
+@skip_if_jython()
 class test_DatabaseBackend(AppCase):
 
-    @skip_if_pypy
-    @skip_if_jython
     def setup(self):
-        if DatabaseBackend is None:
-            raise SkipTest('sqlalchemy not installed')
         self.uri = 'sqlite:///test.db'
         self.app.conf.result_serializer = 'pickle'
 
@@ -218,11 +214,8 @@ class test_DatabaseBackend(AppCase):
         self.assertIn('foo', repr(TaskSet('foo', None)))
 
 
+@skip_unless_module('sqlalchemy')
 class test_SessionManager(AppCase):
-
-    def setup(self):
-        if SessionManager is None:
-            raise SkipTest('sqlalchemy not installed')
 
     def test_after_fork(self):
         s = SessionManager()

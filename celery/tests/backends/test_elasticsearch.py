@@ -5,19 +5,13 @@ from celery.backends import elasticsearch as module
 from celery.backends.elasticsearch import ElasticsearchBackend
 from celery.exceptions import ImproperlyConfigured
 
-from celery.tests.case import AppCase, Mock, SkipTest, sentinel
-
-try:
-    import elasticsearch
-except ImportError:
-    elasticsearch = None
+from celery.tests.case import AppCase, Mock, sentinel, skip_unless_module
 
 
+@skip_unless_module('elasticsearch')
 class test_ElasticsearchBackend(AppCase):
 
     def setup(self):
-        if elasticsearch is None:
-            raise SkipTest('elasticsearch is not installed.')
         self.backend = ElasticsearchBackend(app=self.app)
 
     def test_init_no_elasticsearch(self):

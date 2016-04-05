@@ -25,7 +25,9 @@ from celery.result import result_from_tuple
 from celery.utils import uuid
 from celery.utils.functional import pass1
 
-from celery.tests.case import ANY, AppCase, Case, Mock, SkipTest, call, patch
+from celery.tests.case import (
+    ANY, AppCase, Case, Mock, call, patch, skip_if_python3,
+)
 
 
 class wrapobject(object):
@@ -92,9 +94,8 @@ class test_BaseBackend_interface(AppCase):
 
 class test_exception_pickle(AppCase):
 
+    @skip_if_python3('does not support old style classes')
     def test_oldstyle(self):
-        if Oldstyle is None:
-            raise SkipTest('py3k does not support old style classes')
         self.assertTrue(fnpe(Oldstyle()))
 
     def test_BaseException(self):

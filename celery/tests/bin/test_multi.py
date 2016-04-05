@@ -15,8 +15,9 @@ from celery.bin.multi import (
     multi_args,
     __doc__ as doc,
 )
+from celery.five import WhateverIO
 
-from celery.tests.case import AppCase, Mock, WhateverIO, SkipTest, patch
+from celery.tests.case import AppCase, Mock, patch, skip_unless_symbol
 
 
 class test_functions(AppCase):
@@ -264,9 +265,8 @@ class test_MultiTool(AppCase):
 
         )
 
+    @skip_unless_symbol('signal.SIGKILL')
     def test_kill(self):
-        if not hasattr(signal, 'SIGKILL'):
-            raise SkipTest('SIGKILL not supported by this platform')
         self.t.getpids = Mock()
         self.t.getpids.return_value = [
             ('a', None, 10),

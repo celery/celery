@@ -21,18 +21,19 @@ from celery.worker import state
 from celery.tests.case import (
     AppCase,
     Mock,
-    SkipTest,
-    disable_stdouts,
+    override_stdouts,
     patch,
-    skip_if_pypy,
     skip_if_jython,
+    skip_if_pypy,
+    skip_if_win32,
+    skip_unless_module,
+    skip_unless_symbol,
 )
 
 
 class WorkerAppCase(AppCase):
 
-    def tearDown(self):
-        super(WorkerAppCase, self).tearDown()
+    def teardown(self):
         trace.reset_worker_optimizations()
 
 
@@ -46,13 +47,13 @@ class Worker(cd.Worker):
 class test_Worker(WorkerAppCase):
     Worker = Worker
 
-    @disable_stdouts
+    @override_stdouts
     def test_queues_string(self):
         w = self.app.Worker()
         w.setup_queues('foo,bar,baz')
         self.assertIn('foo', self.app.amqp.queues)
 
-    @disable_stdouts
+    @override_stdouts
     def test_cpu_count(self):
         with patch('celery.worker.cpu_count') as cpu_count:
             cpu_count.side_effect = NotImplementedError()
@@ -61,7 +62,7 @@ class test_Worker(WorkerAppCase):
         w = self.app.Worker(concurrency=5)
         self.assertEqual(w.concurrency, 5)
 
-    @disable_stdouts
+    @override_stdouts
     def test_windows_B_option(self):
         self.app.IS_WINDOWS = True
         with self.assertRaises(SystemExit):
@@ -93,7 +94,7 @@ class test_Worker(WorkerAppCase):
                 x.maybe_detach(['--detach'])
             self.assertTrue(detached.called)
 
-    @disable_stdouts
+    @override_stdouts
     def test_invalid_loglevel_gives_error(self):
         x = worker(app=self.app)
         with self.assertRaises(SystemExit):
@@ -117,12 +118,12 @@ class test_Worker(WorkerAppCase):
         worker.loglevel = logging.INFO
         self.assertTrue(worker.extra_info())
 
-    @disable_stdouts
+    @override_stdouts
     def test_loglevel_string(self):
         worker = self.Worker(app=self.app, loglevel='INFO')
         self.assertEqual(worker.loglevel, logging.INFO)
 
-    @disable_stdouts
+    @override_stdouts
     def test_run_worker(self):
         handlers = {}
 
@@ -150,7 +151,7 @@ class test_Worker(WorkerAppCase):
         finally:
             platforms.signals = p
 
-    @disable_stdouts
+    @override_stdouts
     def test_startup_info(self):
         worker = self.Worker(app=self.app)
         worker.on_start()
@@ -188,18 +189,18 @@ class test_Worker(WorkerAppCase):
         finally:
             cd.ARTLINES = prev
 
-    @disable_stdouts
+    @override_stdouts
     def test_run(self):
         self.Worker(app=self.app).on_start()
         self.Worker(app=self.app, purge=True).on_start()
         worker = self.Worker(app=self.app)
         worker.on_start()
 
-    @disable_stdouts
+    @override_stdouts
     def test_purge_messages(self):
         self.Worker(app=self.app).purge_messages()
 
-    @disable_stdouts
+    @override_stdouts
     def test_init_queues(self):
         app = self.app
         c = app.conf
@@ -230,7 +231,7 @@ class test_Worker(WorkerAppCase):
             app.amqp.queues['image'],
         )
 
-    @disable_stdouts
+    @override_stdouts
     def test_autoscale_argument(self):
         worker1 = self.Worker(app=self.app, autoscale='10,3')
         self.assertListEqual(worker1.autoscale, [10, 3])
@@ -246,20 +247,17 @@ class test_Worker(WorkerAppCase):
         self.assertListEqual(worker2.include, ['os', 'sys'])
         self.Worker(app=self.app, include=['os', 'sys'])
 
-    @disable_stdouts
+    @override_stdouts
     def test_unknown_loglevel(self):
         with self.assertRaises(SystemExit):
             worker(app=self.app).run(loglevel='ALIEN')
         worker1 = self.Worker(app=self.app, loglevel=0xFFFF)
         self.assertEqual(worker1.loglevel, 0xFFFF)
 
-    @disable_stdouts
+    @skip_if_win32
+    @override_stdouts
     @patch('os._exit')
     def test_warns_if_running_as_privileged_user(self, _exit):
-        app = self.app
-        if app.IS_WINDOWS:
-            raise SkipTest('Not applicable on Windows')
-
         with patch('os.getuid') as getuid:
             getuid.return_value = 0
             self.app.conf.accept_content = ['pickle']
@@ -283,13 +281,13 @@ class test_Worker(WorkerAppCase):
                 worker = self.Worker(app=self.app)
                 worker.on_start()
 
-    @disable_stdouts
+    @override_stdouts
     def test_redirect_stdouts(self):
         self.Worker(app=self.app, redirect_stdouts=False)
         with self.assertRaises(AttributeError):
             sys.stdout.logger
 
-    @disable_stdouts
+    @override_stdouts
     def test_on_start_custom_logging(self):
         self.app.log.redirect_stdouts = Mock()
         worker = self.Worker(app=self.app, redirect_stoutds=True)
@@ -308,7 +306,7 @@ class test_Worker(WorkerAppCase):
         finally:
             self.app.log.setup = prev
 
-    @disable_stdouts
+    @override_stdouts
     def test_startup_info_pool_is_str(self):
         worker = self.Worker(app=self.app, redirect_stdouts=False)
         worker.pool_cls = 'foo'
@@ -331,7 +329,7 @@ class test_Worker(WorkerAppCase):
         finally:
             signals.setup_logging.disconnect(on_logging_setup)
 
-    @disable_stdouts
+    @override_stdouts
     def test_platform_tweaks_osx(self):
 
         class OSXWorker(Worker):
@@ -359,7 +357,7 @@ class test_Worker(WorkerAppCase):
         finally:
             cd.install_HUP_not_supported_handler = prev
 
-    @disable_stdouts
+    @override_stdouts
     def test_general_platform_tweaks(self):
 
         restart_worker_handler_installed = [False]
@@ -380,7 +378,7 @@ class test_Worker(WorkerAppCase):
         finally:
             cd.install_worker_restart_handler = prev
 
-    @disable_stdouts
+    @override_stdouts
     def test_on_consumer_ready(self):
         worker_ready_sent = [False]
 
@@ -392,17 +390,14 @@ class test_Worker(WorkerAppCase):
         self.assertTrue(worker_ready_sent[0])
 
 
+@override_stdouts
 class test_funs(WorkerAppCase):
 
     def test_active_thread_count(self):
         self.assertTrue(cd.active_thread_count())
 
-    @disable_stdouts
+    @skip_unless_module('setproctitle')
     def test_set_process_status(self):
-        try:
-            __import__('setproctitle')
-        except ImportError:
-            raise SkipTest('setproctitle not installed')
         worker = Worker(app=self.app, hostname='xyzza')
         prev1, sys.argv = sys.argv, ['Arg0']
         try:
@@ -422,7 +417,6 @@ class test_funs(WorkerAppCase):
         finally:
             sys.argv = prev1
 
-    @disable_stdouts
     def test_parse_options(self):
         cmd = worker()
         cmd.app = self.app
@@ -431,7 +425,6 @@ class test_funs(WorkerAppCase):
         self.assertEqual(opts.concurrency, 512)
         self.assertEqual(opts.heartbeat_interval, 10)
 
-    @disable_stdouts
     def test_main(self):
         p, cd.Worker = cd.Worker, Worker
         s, sys.argv = sys.argv, ['worker', '--discard']
@@ -442,6 +435,7 @@ class test_funs(WorkerAppCase):
             sys.argv = s
 
 
+@override_stdouts
 class test_signal_handlers(WorkerAppCase):
 
     class _Worker(object):
@@ -468,7 +462,6 @@ class test_signal_handlers(WorkerAppCase):
         finally:
             platforms.signals = p
 
-    @disable_stdouts
     def test_worker_int_handler(self):
         worker = self._Worker()
         handlers = self.psig(cd.install_worker_int_handler, worker)
@@ -511,12 +504,8 @@ class test_signal_handlers(WorkerAppCase):
             with self.assertRaises(WorkerTerminate):
                 next_handlers['SIGINT']('SIGINT', object())
 
-    @disable_stdouts
+    @skip_unless_module('multiprocessing')
     def test_worker_int_handler_only_stop_MainProcess(self):
-        try:
-            import _multiprocessing  # noqa
-        except ImportError:
-            raise SkipTest('only relevant for multiprocessing')
         process = current_process()
         name, process.name = process.name, 'OtherProcess'
         with patch('celery.apps.worker.active_thread_count') as c:
@@ -541,18 +530,13 @@ class test_signal_handlers(WorkerAppCase):
                 process.name = name
                 state.should_stop = None
 
-    @disable_stdouts
     def test_install_HUP_not_supported_handler(self):
         worker = self._Worker()
         handlers = self.psig(cd.install_HUP_not_supported_handler, worker)
         handlers['SIGHUP']('SIGHUP', object())
 
-    @disable_stdouts
+    @skip_unless_module('multiprocessing')
     def test_worker_term_hard_handler_only_stop_MainProcess(self):
-        try:
-            import _multiprocessing  # noqa
-        except ImportError:
-            raise SkipTest('only relevant for multiprocessing')
         process = current_process()
         name, process.name = process.name, 'OtherProcess'
         try:
@@ -579,7 +563,6 @@ class test_signal_handlers(WorkerAppCase):
         finally:
             process.name = name
 
-    @disable_stdouts
     def test_worker_term_handler_when_threads(self):
         with patch('celery.apps.worker.active_thread_count') as c:
             c.return_value = 3
@@ -591,7 +574,6 @@ class test_signal_handlers(WorkerAppCase):
             finally:
                 state.should_stop = None
 
-    @disable_stdouts
     def test_worker_term_handler_when_single_thread(self):
         with patch('celery.apps.worker.active_thread_count') as c:
             c.return_value = 1
@@ -604,19 +586,15 @@ class test_signal_handlers(WorkerAppCase):
                 state.should_stop = None
 
     @patch('sys.__stderr__')
-    @skip_if_pypy
-    @skip_if_jython
+    @skip_if_pypy()
+    @skip_if_jython()
     def test_worker_cry_handler(self, stderr):
         handlers = self.psig(cd.install_cry_handler)
         self.assertIsNone(handlers['SIGUSR1']('SIGUSR1', object()))
         self.assertTrue(stderr.write.called)
 
-    @disable_stdouts
+    @skip_unless_module('multiprocessing')
     def test_worker_term_handler_only_stop_MainProcess(self):
-        try:
-            import _multiprocessing  # noqa
-        except ImportError:
-            raise SkipTest('only relevant for multiprocessing')
         process = current_process()
         name, process.name = process.name, 'OtherProcess'
         try:
@@ -636,13 +614,11 @@ class test_signal_handlers(WorkerAppCase):
             process.name = name
             state.should_stop = None
 
-    @disable_stdouts
+    @skip_unless_symbol('os.execv')
     @patch('celery.platforms.close_open_fds')
     @patch('atexit.register')
     @patch('os.close')
     def test_worker_restart_handler(self, _close, register, close_open):
-        if getattr(os, 'execv', None) is None:
-            raise SkipTest('platform does not have excv')
         argv = []
 
         def _execv(*args):
@@ -662,7 +638,6 @@ class test_signal_handlers(WorkerAppCase):
             os.execv = execv
             state.should_stop = None
 
-    @disable_stdouts
     def test_worker_term_hard_handler_when_threaded(self):
         with patch('celery.apps.worker.active_thread_count') as c:
             c.return_value = 3
@@ -674,7 +649,6 @@ class test_signal_handlers(WorkerAppCase):
             finally:
                 state.should_terminate = None
 
-    @disable_stdouts
     def test_worker_term_hard_handler_when_single_threaded(self):
         with patch('celery.apps.worker.active_thread_count') as c:
             c.return_value = 1

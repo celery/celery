@@ -17,9 +17,9 @@ gevent_modules = (
 )
 
 
+@skip_if_pypy()
 class GeventCase(AppCase):
 
-    @skip_if_pypy
     def setup(self):
         self.mock_modules(*gevent_modules)
 

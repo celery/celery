@@ -5,7 +5,7 @@ from celery.backends.couchdb import CouchBackend
 from celery.exceptions import ImproperlyConfigured
 from celery import backends
 from celery.tests.case import (
-    AppCase, Mock, SkipTest, patch, sentinel,
+    AppCase, Mock, patch, sentinel, skip_unless_module,
 )
 
 try:
@@ -16,11 +16,10 @@ except ImportError:
 COUCHDB_CONTAINER = 'celery_container'
 
 
+@skip_unless_module('pycouchdb')
 class test_CouchBackend(AppCase):
 
     def setup(self):
-        if pycouchdb is None:
-            raise SkipTest('pycouchdb is not installed.')
         self.backend = CouchBackend(app=self.app)
 
     def test_init_no_pycouchdb(self):

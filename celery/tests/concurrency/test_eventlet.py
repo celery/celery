@@ -12,13 +12,12 @@ from celery.concurrency.eventlet import (
 from celery.tests.case import AppCase, Mock, patch, skip_if_pypy
 
 
+@skip_if_pypy()
 class EventletCase(AppCase):
 
-    @skip_if_pypy
     def setup(self):
         self.mock_modules(*eventlet_modules)
 
-    @skip_if_pypy
     def teardown(self):
         for mod in [mod for mod in sys.modules if mod.startswith('eventlet')]:
             try:

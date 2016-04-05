@@ -13,7 +13,9 @@ from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
 from celery.worker.consumer.tasks import Tasks
 
-from celery.tests.case import AppCase, ContextMock, Mock, SkipTest, call, patch
+from celery.tests.case import (
+    AppCase, ContextMock, Mock, call, patch, skip_if_python3,
+)
 
 
 class test_Consumer(AppCase):
@@ -43,14 +45,11 @@ class test_Consumer(AppCase):
         c = self.get_consumer()
         self.assertIsNone(c.task_buckets['fooxasdwx.wewe'])
 
+    @skip_if_python3(reason='buffer type not available')
     def test_dump_body_buffer(self):
         msg = Mock()
         msg.body = 'str'
-        try:
-            buf = buffer(msg.body)
-        except NameError:
-            raise SkipTest('buffer type not available')
-        self.assertTrue(dump_body(msg, buf))
+        self.assertTrue(dump_body(msg, buffer(msg.body)))
 
     def test_sets_heartbeat(self):
         c = self.get_consumer(amqheartbeat=10)

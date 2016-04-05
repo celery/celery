@@ -1,7 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
 import pickle
-import sys
 
 from collections import Mapping
 from itertools import count
@@ -16,10 +15,10 @@ from celery.datastructures import (
     ConfigurationView,
     DependencyGraph,
 )
-from celery.five import items
+from celery.five import WhateverIO, items
 from celery.utils.objects import Bunch
 
-from celery.tests.case import Case, Mock, WhateverIO, SkipTest
+from celery.tests.case import Case, Mock, skip_if_win32
 
 
 class test_DictAttribute(Case):
@@ -168,15 +167,10 @@ class test_ExceptionInfo(Case):
             self.assertTrue(r)
 
 
+@skip_if_win32()
 class test_LimitedSet(Case):
 
-    def setUp(self):
-        if sys.platform == 'win32':
-            raise SkipTest('Not working on Windows')
-
     def test_add(self):
-        if sys.platform == 'win32':
-            raise SkipTest('Not working properly on Windows')
         s = LimitedSet(maxlen=2)
         s.add('foo')
         s.add('bar')
@@ -239,8 +233,6 @@ class test_LimitedSet(Case):
         self.assertEqual(pickle.loads(pickle.dumps(s)), s)
 
     def test_iter(self):
-        if sys.platform == 'win32':
-            raise SkipTest('Not working on Windows')
         s = LimitedSet(maxlen=3)
         items = ['foo', 'bar', 'baz', 'xaz']
         for item in items:

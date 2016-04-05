@@ -13,7 +13,7 @@ from celery.loaders.app import AppLoader
 from celery.utils.imports import NotAPackage
 from celery.utils.mail import SendmailWarning
 
-from celery.tests.case import AppCase, Case, Mock, patch, with_environ
+from celery.tests.case import AppCase, Case, Mock, mock_environ, patch
 
 
 class DummyLoader(base.BaseLoader):
@@ -144,7 +144,7 @@ class test_DefaultLoader(AppCase):
             l.read_configuration(fail_silently=False)
 
     @patch('celery.loaders.base.find_module')
-    @with_environ('CELERY_CONFIG_MODULE', 'celeryconfig.py')
+    @mock_environ('CELERY_CONFIG_MODULE', 'celeryconfig.py')
     def test_read_configuration_py_in_name(self, find_module):
         find_module.side_effect = NotAPackage()
         l = default.Loader(app=self.app)

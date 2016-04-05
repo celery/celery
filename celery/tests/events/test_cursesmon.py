@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-from celery.tests.case import AppCase, SkipTest
+from celery.tests.case import AppCase, skip_unless_module
 
 
 class MockWindow(object):
@@ -9,14 +9,10 @@ class MockWindow(object):
         return self.y, self.x
 
 
+@skip_unless_module('curses')
 class test_CursesDisplay(AppCase):
 
     def setup(self):
-        try:
-            import curses  # noqa
-        except (ImportError, OSError):
-            raise SkipTest('curses monitor requires curses')
-
         from celery.events import cursesmon
         self.monitor = cursesmon.CursesMonitor(object(), app=self.app)
         self.win = MockWindow()
