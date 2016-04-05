@@ -23,9 +23,13 @@ Index
 
     Requirements needed to run the full unittest suite.
 
-* :file:`requirements/test-ci.txt`
+* :file:`requirements/test-ci-base.txt`
 
     Extra test requirements required by the CI suite (Tox).
+
+* :file:`requirements/test-ci-default.txt`
+
+    Extra test requirements required for Python 2.7 by the CI suite (Tox).
 
 * :file:`requirements/doc.txt`
 
