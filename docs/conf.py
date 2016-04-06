@@ -16,17 +16,17 @@ import celery  # noqa
 # General configuration
 # ---------------------
 
-extensions = ['sphinx.ext.autodoc',
-              'sphinx.ext.coverage',
-              'sphinx.ext.pngmath',
-              'sphinx.ext.viewcode',
-              'sphinx.ext.coverage',
-              'sphinx.ext.intersphinx',
-              'sphinxcontrib.cheeseshop',
-              'celery.contrib.sphinx',
-              'githubsphinx',
-              'celerydocs']
-
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.coverage',
+    'sphinx.ext.pngmath',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.intersphinx',
+    'sphinxcontrib.cheeseshop',
+    'celery.contrib.sphinx',
+    'githubsphinx',
+    'celerydocs',
+]
 
 LINKCODE_URL = 'https://github.com/{proj}/tree/{branch}/{filename}.py'
 GITHUB_PROJECT = 'celery/celery'
