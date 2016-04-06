@@ -121,6 +121,9 @@ Transports and Backends
 :``celery[slmq]``:
     for using the SoftLayer Message Queue transport (*experimental*).
 
+:``celery[consul]``:
+    for using the Consul.io Key/Value store as a message transport or result backend (*experimental*).
+
 .. _celery-installing-from-source:
 
 Downloading and installing from source
