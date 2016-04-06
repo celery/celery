@@ -552,6 +552,10 @@ Can be one of the following:
     Older AMQP backend (badly) emulating a database-based backend.
     See :ref:`conf-amqp-result-backend`.
 
+* ``consul``
+    Use the `Consul`_ K/V store to store the results
+    See :ref:`conf-consul-result-backend`.
+
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
@@ -566,6 +570,7 @@ Can be one of the following:
 .. _`IronCache`: http://www.iron.io/cache
 .. _`CouchDB`: http://www.couchdb.com/
 .. _`Couchbase`: http://www.couchbase.com/
+.. _`Consul`: http://consul.io/
 
 .. setting:: result_serializer
 
@@ -1297,6 +1302,19 @@ without any further configuration. For larger clusters you could use NFS,
 .. _`GlusterFS`: http://www.gluster.org/
 .. _`HDFS`: http://hadoop.apache.org/
 
+.. _conf-consul-result-backend:
+
+Consul K/V store backend settings
+---------------------------------
+
+The Consul backend can be configured using a URL, for example:
+
+    CELERY_RESULT_BACKEND = 'consul://localhost:8500/'
+
+The backend will storage results in the K/V store of Consul
+as individual keys.
+
+The backend supports auto expire of results using TTLs in Consul.
 
 .. _conf-messaging:
 
