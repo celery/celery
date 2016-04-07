@@ -79,8 +79,8 @@ class test_DjangoFixup(FixupCase):
                 with mock.mask_modules('django'):
                     with self.assertWarnsRegex(UserWarning, 'but Django is'):
                         fixup(self.app)
-                        self.assertFalse(Fixup.called)
-                with mock.patch_modules('django'):
+                    self.assertFalse(Fixup.called)
+                with mock.module_exists('django'):
                     fixup(self.app)
                     self.assertTrue(Fixup.called)
 
@@ -332,7 +332,7 @@ class test_DjangoWorkerFixup(FixupCase):
         django.setup.assert_called_with()
 
     def test_mysql_errors(self):
-        with mock.patch_modules('MySQLdb'):
+        with mock.module_exists('MySQLdb'):
             import MySQLdb as mod
             mod.DatabaseError = Mock()
             mod.InterfaceError = Mock()
@@ -346,7 +346,7 @@ class test_DjangoWorkerFixup(FixupCase):
                 pass
 
     def test_pg_errors(self):
-        with mock.patch_modules('psycopg2'):
+        with mock.module_exists('psycopg2'):
             import psycopg2 as mod
             mod.DatabaseError = Mock()
             mod.InterfaceError = Mock()
@@ -360,7 +360,7 @@ class test_DjangoWorkerFixup(FixupCase):
                 pass
 
     def test_sqlite_errors(self):
-        with mock.patch_modules('sqlite3'):
+        with mock.module_exists('sqlite3'):
             import sqlite3 as mod
             mod.DatabaseError = Mock()
             mod.InterfaceError = Mock()
@@ -374,7 +374,7 @@ class test_DjangoWorkerFixup(FixupCase):
                 pass
 
     def test_oracle_errors(self):
-        with mock.patch_modules('cx_Oracle'):
+        with mock.module_exists('cx_Oracle'):
             import cx_Oracle as mod
             mod.DatabaseError = Mock()
             mod.InterfaceError = Mock()
