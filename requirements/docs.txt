@@ -1,4 +1,3 @@
-Sphinx>=1.4
-sphinxcontrib-cheeseshop
+sphinx_celery
 -r extras/sqlalchemy.txt
 -r dev.txt

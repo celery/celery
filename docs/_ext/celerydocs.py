@@ -143,11 +143,6 @@ def setup(app):
     app.connect(b'missing-reference', maybe_resolve_abbreviations)
 
     app.add_crossref_type(
-        directivename=b'setting',
-        rolename=b'setting',
-        indextemplate=b'pair: %s; setting',
-    )
-    app.add_crossref_type(
         directivename=b'sig',
         rolename=b'sig',
         indextemplate=b'pair: %s; sig',
@@ -161,11 +156,6 @@ def setup(app):
         directivename=b'control',
         rolename=b'control',
         indextemplate=b'pair: %s; control',
-    )
-    app.add_crossref_type(
-        directivename=b'signal',
-        rolename=b'signal',
-        indextemplate=b'pair: %s; signal',
     )
     app.add_crossref_type(
         directivename=b'event',

@@ -577,11 +577,11 @@ build the docs by running:
 .. code-block:: console
 
     $ cd docs
-    $ rm -rf .build
+    $ rm -rf _build
     $ make html
 
 Make sure there are no errors or warnings in the build output.
-After building succeeds the documentation is available at :file:`.build/html`.
+After building succeeds the documentation is available at :file:`_build/html`.
 
 .. _contributing-verify:
 

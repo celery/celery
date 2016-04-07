@@ -457,7 +457,7 @@ dependencies, so install these next:
     $ pip install -U -r requirements/default.txt
 
 After installing the dependencies required, you can now execute
-the test suite by calling ``nosetests``:
+the test suite by calling ``nosetests <nose>``:
 ::
 
     $ nosetests
@@ -472,7 +472,7 @@ Some useful options to ``nosetests`` are:
 
     Don't capture output
 
-* ``--nologcapture``
+* ``-nologcapture``
 
     Don't capture log output.
 
@@ -543,8 +543,7 @@ To run the tests for all supported Python versions simply execute:
 
     $ tox
 
-If you only want to test specific Python versions use the ``-e``
-option:
+Use the ``tox -e`` option if you only want to test specific Python versions:
 ::
 
     $ tox -e 2.7
@@ -563,11 +562,11 @@ build the docs by running:
 ::
 
     $ cd docs
-    $ rm -rf .build
+    $ rm -rf _build
     $ make html
 
 Make sure there are no errors or warnings in the build output.
-After building succeeds the documentation is available at ``.build/html``.
+After building succeeds the documentation is available at ``_build/html``.
 
 .. _contributing-verify:
 
@@ -1058,7 +1057,8 @@ and make a new version tag:
 Releasing
 ---------
 
-Commands to make a new public stable release::
+Commands to make a new public stable release:
+::
 
     $ make distcheck  # checks pep8, autodoc index, runs tests and more
     $ make dist  # NOTE: Runs git clean -xdf and removes files not in the repo.

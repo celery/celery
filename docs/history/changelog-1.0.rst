@@ -1700,7 +1700,7 @@ arguments, so be sure to flush your task queue before you upgrade.
         $ cd docs
         $ make html
 
-  and the result will be in `docs/.build/html`.
+  and the result will be in `docs/_build/html`.
 
 .. _version-0.1.12:
 

@@ -215,11 +215,13 @@ Installation
 You can install Celery either via the Python Package Index (PyPI)
 or from source.
 
-To install using `pip`,::
+To install using `pip`,:
+::
 
     $ pip install -U Celery
 
-To install using `easy_install`,::
+To install using `easy_install`,:
+::
 
     $ easy_install -U Celery
 
@@ -330,7 +332,8 @@ Downloading and installing from source
 Download the latest version of Celery from
 http://pypi.python.org/pypi/celery/
 
-You can install it by doing the following,::
+You can install it by doing the following,:
+::
 
     $ tar xvfz celery-0.0.0.tar.gz
     $ cd celery-0.0.0
@@ -349,15 +352,17 @@ With pip
 ~~~~~~~~
 
 The Celery development version also requires the development
-versions of ``kombu``, ``amqp`` and ``billiard``.
+versions of ``kombu``, ``amqp``, ``billiard`` and ``vine``.
 
 You can install the latest snapshot of these using the following
-pip commands::
+pip commands:
+::
 
     $ pip install https://github.com/celery/celery/zipball/master#egg=celery
     $ pip install https://github.com/celery/billiard/zipball/master#egg=billiard
     $ pip install https://github.com/celery/py-amqp/zipball/master#egg=amqp
     $ pip install https://github.com/celery/kombu/zipball/master#egg=kombu
+    $ pip install https://github.com/celery/vine/zipball/master#egg=vine
 
 With git
 ~~~~~~~~

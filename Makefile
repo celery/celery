@@ -1,7 +1,7 @@
 PROJ=celery
 PYTHON=python
 SPHINX_DIR="docs/"
-SPHINX_BUILDDIR="${SPHINX_DIR}/.build"
+SPHINX_BUILDDIR="${SPHINX_DIR}/_build"
 README="README.rst"
 CONTRIBUTING="CONTRIBUTING.rst"
 CONFIGREF_SRC="docs/configuration.rst"
