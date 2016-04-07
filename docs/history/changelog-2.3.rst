@@ -20,9 +20,10 @@ Security Fixes
 --------------
 
 * [Security: `CELERYSA-0001`_] Daemons would set effective id's rather than
-  real id's when the :option:`--uid`/:option:`--gid` arguments to
-  :program:`celery multi`, :program:`celeryd_detach`,
-  :program:`celery beat` and :program:`celery events` were used.
+  real id's when the :option:`--uid <celery --uid>`/
+  :option:`--gid <celery --gid>` arguments to :program:`celery multi`,
+  :program:`celeryd_detach`, :program:`celery beat` and
+  :program:`celery events` were used.
 
   This means privileges weren't properly dropped, and that it would
   be possible to regain supervisor privileges later.

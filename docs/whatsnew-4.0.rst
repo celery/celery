@@ -620,7 +620,8 @@ Prefork: Limit child process resident memory size.
 # 5cae0e754128750a893524dcba4ae030c414de33
 
 You can now limit the maximum amount of memory allocated per prefork
-pool child process by setting the worker :option:`--maxmemperchild` option,
+pool child process by setting the worker
+:option:`--maxmemperchild <celery worker --maxmemperchild>` option,
 or the :setting:`worker_max_memory_per_child` setting.
 
 The limit is for RSS/resident memory size and is specified in kilobytes.
@@ -808,8 +809,8 @@ In Other News
 - **Programs**: ``%n`` format for :program:`celery multi` is now synonym with
   ``%N`` to be consistent with :program:`celery worker`.
 
-- **Programs**: celery inspect/control now supports ``--json`` argument to
-  give output in json format.
+- **Programs**: celery inspect/control now supports a new
+  :option:`--json <celery inspect --json>` option to give output in json format.
 
 - **Programs**: :program:`celery inspect registered` now ignores built-in
   tasks.
@@ -951,13 +952,15 @@ In Other News
 - **Programs**: ``%p`` can now be used to expand to the full worker nodename
   in logfile/pidfile arguments.
 
-- **Programs**: A new command line option :option:``--executable`` is now
-  available for daemonizing programs.
+- **Programs**: A new command line option
+   :option:`--executable <celery worker --executable>` is now
+   available for daemonizing programs (:program:`celery worker` and
+   :program:`celery beat`).
 
     Contributed by Bert Vanderbauwhede.
 
 - **Programs**: :program:`celery worker` supports new
-  :option:`--prefetch-multiplier` option.
+  :option:`--prefetch-multiplier <celery worker --prefetch-multiplier>` option.
 
     Contributed by Mickaël Penhard.
 
@@ -1094,11 +1097,11 @@ Modules
   as the ``celery.task`` package is being phased out.  The compat module
   will be removed in version 4.0 so please change any import from::
 
-    from celery.task.trace import …
+    from celery.task.trace import X
 
   to::
 
-    from celery.app.trace import …
+    from celery.app.trace import X
 
 - Old compatibility aliases in the :mod:`celery.loaders` module
   has been removed.
@@ -1258,10 +1261,10 @@ Logging Settings
 =====================================  =====================================
 **Setting name**                       **Replace with**
 =====================================  =====================================
-``CELERYD_LOG_LEVEL``                  :option:`--loglevel`
-``CELERYD_LOG_FILE``                   :option:`--logfile``
-``CELERYBEAT_LOG_LEVEL``               :option:`--loglevel`
-``CELERYBEAT_LOG_FILE``                :option:`--loglevel``
+``CELERYD_LOG_LEVEL``                  :option:`celery worker --loglevel`
+``CELERYD_LOG_FILE``                   :option:`celery worker --logfile`
+``CELERYBEAT_LOG_LEVEL``               :option:`celery beat --loglevel`
+``CELERYBEAT_LOG_FILE``                :option:`celery beat --loglevel`
 ``CELERYMON_LOG_LEVEL``                celerymon is deprecated, use flower.
 ``CELERYMON_LOG_FILE``                 celerymon is deprecated, use flower.
 ``CELERYMON_LOG_FORMAT``               celerymon is deprecated, use flower.

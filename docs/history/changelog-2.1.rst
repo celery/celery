@@ -366,15 +366,15 @@ News
 
     New command-line arguments to celeryev:
 
-        * :option:`-c|--camera`: Snapshot camera class to use.
-        * :option:`--logfile|-f`: Log file
-        * :option:`--loglevel|-l`: Log level
-        * :option:`--maxrate|-r`: Shutter rate limit.
-        * :option:`--freq|-F`: Shutter frequency
+        * :option:`celery events --camera`: Snapshot camera class to use.
+        * :option:`celery events --logfile`: Log file
+        * :option:`celery events --loglevel`: Log level
+        * :option:`celery events --maxrate`: Shutter rate limit.
+        * :option:`celery events --freq`: Shutter frequency
 
-    The :option:`--camera` argument is the name of a class used to take
-    snapshots with. It must support the interface defined by
-    :class:`celery.events.snapshot.Polaroid`.
+    The :option:`--camera <celery events --camera>` argument is the name
+    of a class used to take snapshots with. It must support the interface
+    defined by :class:`celery.events.snapshot.Polaroid`.
 
     Shutter frequency controls how often the camera thread wakes up,
     while the rate limit controls how often it will actually take
@@ -389,7 +389,7 @@ News
     anything new.
 
     The rate limit is off by default, which means it will take a snapshot
-    for every :option:`--frequency` seconds.
+    for every :option:`--frequency <celery events --frequency>` seconds.
 
 * :func:`~celery.task.control.broadcast`: Added callback argument, this can be
   used to process replies immediately as they arrive.
@@ -458,8 +458,10 @@ News
             fileConfig('logging.conf')
 
     If there are no receivers for this signal, the logging subsystem
-    will be configured using the :option:`--loglevel`/:option:`--logfile`
-    argument, this will be used for *all defined loggers*.
+    will be configured using the
+    :option:`--loglevel <celery worker --loglevel>`/
+    :option:`--logfile <celery worker --logfile>`
+    arguments, this will be used for *all defined loggers*.
 
     Remember that the worker also redirects stdout and stderr
     to the celery logger, if manually configure logging
@@ -476,7 +478,8 @@ News
             stdouts = logging.getLogger('mystdoutslogger')
             log.redirect_stdouts_to_logger(stdouts, loglevel=logging.WARNING)
 
-* worker Added command line option :option:`-I`/:option:`--include`:
+* worker Added command line option
+  :option:`--include <celery worker --include>`:
 
     A comma separated list of (task) modules to be imported.
 

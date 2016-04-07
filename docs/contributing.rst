@@ -417,7 +417,7 @@ to upstream changes:
     $ git fetch upstream
 
 If you need to pull in new changes from upstream you should
-always use the :option:`--rebase` option to ``git pull``:
+always use the ``--rebase`` option to ``git pull``:
 
 .. code-block:: console
 
@@ -463,7 +463,7 @@ dependencies, so install these next:
     $ pip install -U -r requirements/default.txt
 
 After installing the dependencies required, you can now execute
-the test suite by calling ``nosetests``:
+the test suite by calling :pypi:`nosetests <nose>`:
 
 .. code-block:: console
 
@@ -471,19 +471,19 @@ the test suite by calling ``nosetests``:
 
 Some useful options to :command:`nosetests` are:
 
-* :option:`-x`
+* ``-x``
 
     Stop running the tests at the first test that fails.
 
-* :option:`-s`
+* ``-s``
 
     Don't capture output
 
-* :option:`--nologcapture`
+* ``-nologcapture``
 
     Don't capture log output.
 
-* :option:`-v`
+* ``-v``
 
     Run with verbose output.
 
@@ -546,7 +546,7 @@ The coverage XML output will then be located at :file:`coverage.xml`
 Running the tests on all supported Python versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There is a ``tox`` configuration file in the top directory of the
+There is a :pypi:`tox` configuration file in the top directory of the
 distribution.
 
 To run the tests for all supported Python versions simply execute:
@@ -555,8 +555,7 @@ To run the tests for all supported Python versions simply execute:
 
     $ tox
 
-If you only want to test specific Python versions use the :option:`-e`
-option:
+Use the ``tox -e`` option if you only want to test specific Python versions:
 
 .. code-block:: console
 
@@ -1091,7 +1090,9 @@ and make a new version tag:
 Releasing
 ---------
 
-Commands to make a new public stable release::
+Commands to make a new public stable release:
+
+.. code-block:: console
 
     $ make distcheck  # checks pep8, autodoc index, runs tests and more
     $ make dist  # NOTE: Runs git clean -xdf and removes files not in the repo.

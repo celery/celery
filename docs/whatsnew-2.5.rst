@@ -212,10 +212,12 @@ Contributed by Mher Movsisyan.
 Experimental support for automatic module reloading
 ---------------------------------------------------
 
-Starting :program:`celeryd` with the :option:`--autoreload` option will
+Starting :program:`celeryd` with the
+:option:`--autoreload <celery worker --autoreload>` option will
 enable the worker to watch for file system changes to all imported task
 modules imported (and also any non-task modules added to the
-:setting:`CELERY_IMPORTS` setting or the :option:`-I|--include` option).
+:setting:`CELERY_IMPORTS` setting or the
+:option:`celery worker --include` option).
 
 This is an experimental feature intended for use in development only,
 using auto-reload in production is discouraged as the behavior of reloading
@@ -303,7 +305,7 @@ that filter for tasks to annotate:
             if task.name.startswith('tasks.'):
                 return {'rate_limit': '10/s'}
 
-    CELERY_ANNOTATIONS = (MyAnnotate(), {…})
+    CELERY_ANNOTATIONS = (MyAnnotate(), {other_annotations,})
 
 ``current`` provides the currently executing task
 -------------------------------------------------
@@ -562,7 +564,8 @@ Fixes
 - Now shows helpful error message when given a config module ending in
   ``.py`` that can't be imported.
 
-- celeryctl: The ``--expires`` and ``-eta`` arguments to the apply command
+- celeryctl: The :option:`--expires <celery call --expires>` and
+  :option:`--eta <celery call --eta>` arguments to the apply command
   can now be an ISO-8601 formatted string.
 
 - celeryctl now exits with exit status ``EX_UNAVAILABLE`` (69) if no replies

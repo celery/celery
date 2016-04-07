@@ -164,7 +164,7 @@ You can also override this using the `routing_key` argument to
 
 
 To make server `z` consume from the feed queue exclusively you can
-start it with the ``-Q`` option:
+start it with the :option:`celery worker -Q` option:
 
 .. code-block:: console
 
@@ -218,7 +218,7 @@ If you're confused about these terms, you should read up on AMQP.
 Special Routing Options
 =======================
 
-.. _routing-option-rabbitmq-priorities:
+.. _routing-options-rabbitmq-priorities:
 
 RabbitMQ Message Priorities
 ---------------------------

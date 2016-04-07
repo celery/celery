@@ -249,8 +249,8 @@ Caveats
     have a buffer as small as 64kb but on recent Linux versions the buffer
     size is 1MB (can only be changed system wide).
 
-    You can disable this prefetching behavior by enabling the :option:`-Ofair`
-    worker option:
+    You can disable this prefetching behavior by enabling the
+    :option:`-Ofair <celery worker -O>` worker option:
 
     .. code-block:: console
 
@@ -265,9 +265,11 @@ Caveats
     already written many tasks to the process inqueue, and these tasks
     must then be moved back and rewritten to a new process.
 
-    This is very expensive if you have ``--maxtasksperchild`` set to a low
-    value (e.g. less than 10), so if you need to enable this option
-    you should also enable ``-Ofair`` to turn off the prefetching behavior.
+    This is very expensive if you have the
+    :option:`--maxtasksperchild <celery worker --maxtasksperchild>` option
+    set to a low value (e.g. less than 10), so if you need to enable this option
+    you should also enable :option:`-Ofair <celery worker -O>` to turn off the
+    prefetching behavior.
 
 Django supported out of the box
 -------------------------------
@@ -391,9 +393,9 @@ to the local timezone.
     starts.
 
     If all of the workers are shutdown the clock value will be lost
-    and reset to 0. To protect against this, you should specify
-    :option:`--statedb` so that the worker can persist the clock
-    value at shutdown.
+    and reset to 0. To protect against this, you should specify the
+    :option:`celery worker --statedb` option such that the worker can
+    persist the clock value at shutdown.
 
     You may notice that the logical clock is an integer value and
     increases very rapidly.  Do not worry about the value overflowing
@@ -429,9 +431,9 @@ node name in events and broadcast messages, so where before
 a worker would identify itself as 'worker1.example.com', it will now
 use 'celery@worker1.example.com'.
 
-Remember that the ``-n`` argument also supports simple variable
-substitutions, so if the current hostname is *george.example.com*
-then the ``%h`` macro will expand into that:
+Remember that the :option:`-n <celery worker -n>` argument also supports
+simple variable substitutions, so if the current hostname
+is *george.example.com* then the ``%h`` macro will expand into that:
 
 .. code-block:: console
 
@@ -485,7 +487,8 @@ Synchronized data currently includes revoked tasks and logical clock.
 This only happens at startup and causes a one second startup delay
 to collect broadcast responses from other workers.
 
-You can disable this bootstep using the ``--without-mingle`` argument.
+You can disable this bootstep using the
+:option:`celery worker --without-mingle` option.
 
 Gossip: Worker <-> Worker communication
 ---------------------------------------
@@ -504,7 +507,8 @@ resource usage or data locality) or restarting workers when they crash.
 We believe that although this is a small addition, it opens
 amazing possibilities.
 
-You can disable this bootstep using the ``--without-gossip`` argument.
+You can disable this bootstep using the
+:option:`celery worker --without-gossip` option.
 
 Bootsteps: Extending the worker
 -------------------------------
@@ -754,7 +758,8 @@ In Other News
     The monotonic clock function is built-in starting from Python 3.4,
     but we also have fallback implementations for Linux and OS X.
 
-- :program:`celery worker` now supports a ``--detach`` argument to start
+- :program:`celery worker` now supports a new
+  :option:`--detach <celery worker --detach>` argument to start
   the worker as a daemon in the background.
 
 - :class:`@events.Receiver` now sets a ``local_received`` field for incoming
@@ -909,7 +914,7 @@ In Other News
 
         from multiprocessing.util import register_after_fork
 
-        engine = create_engine(…)
+        engine = create_engine(*engine_args)
         register_after_fork(engine, engine.dispose)
 
 - A stress test suite for the Celery worker has been written.
@@ -1085,11 +1090,12 @@ In Other News
     :class:`~celery.worker.request.Request` object to get information
     about the task.
 
-- Worker: New :option:`-X` command line argument to exclude queues
-  (Issue #1399).
+- Worker: New :option:`-X <celery worker -X>` command line argument to
+  exclude queues (Issue #1399).
 
-    The :option:`-X` argument is the inverse of the :option:`-Q` argument
-    and accepts a list of queues to exclude (not consume from):
+    The :option:`-X <celery worker -X>` argument is the inverse of the
+    :option:`-Q <celery worker -Q>` argument and accepts a list of queues
+    to exclude (not consume from):
 
     .. code-block:: console
 
@@ -1228,8 +1234,8 @@ Fixes
 - Worker: Now makes sure that the shutdown process is not initiated multiple
   times.
 
-- Multi: Now properly handles both ``-f`` and ``--logfile`` options
-  (Issue #1541).
+- Multi: Now properly handles both ``-f`` and
+  :option:`--logfile <celery worker --logfile>` options (Issue #1541).
 
 .. _v310-internal:
 

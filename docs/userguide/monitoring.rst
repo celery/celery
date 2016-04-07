@@ -48,11 +48,13 @@ Commands
 
   The locals will include the ``celery`` variable, which is the current app.
   Also all known tasks will be automatically added to locals (unless the
-  ``--without-tasks`` flag is set).
+  :option:`--without-tasks <celery shell --without-tasks>` flag is set).
 
   Uses Ipython, bpython, or regular python in that order if installed.
-  You can force an implementation using ``--force-ipython|-I``,
-  ``--force-bpython|-B``, or ``--force-python|-P``.
+  You can force an implementation using
+  :option:`--ipython <celery shell --ipython>`,
+  :option:`--bpython <celery shell --bpython>`, or
+  :option:`--python <celery shell --python>`.
 
 * **status**: List active nodes in this cluster
 
@@ -149,7 +151,8 @@ Commands
 
 .. note::
 
-    All ``inspect`` and ``control`` commands supports a ``--timeout`` argument,
+    All ``inspect`` and ``control`` commands supports a
+    :option:`--timeout <celery inspect --timeout>` argument,
     This is the number of seconds to wait for responses.
     You may have to increase this timeout if you're not getting a response
     due to latency.
@@ -161,7 +164,7 @@ Specifying destination nodes
 
 By default the inspect and control commands operates on all workers.
 You can specify a single, or a list of workers by using the
-`--destination` argument:
+:option:`--destination <celery inspect --destination>` argument:
 
 .. code-block:: console
 
@@ -254,13 +257,15 @@ Running the flower command will start a web-server that you can visit:
 
     $ celery -A proj flower
 
-The default port is http://localhost:5555, but you can change this using the `--port` argument:
+The default port is http://localhost:5555, but you can change this using the
+:option:`--port <flower --port>` argument:
 
 .. code-block:: console
 
     $ celery -A proj flower --port=5555
 
-Broker URL can also be passed through the `--broker` argument :
+Broker URL can also be passed through the
+:option:`--broker <celery --broker>` argument :
 
 .. code-block:: console
 
@@ -318,7 +323,7 @@ and it includes a tool to dump events to :file:`stdout`:
 
     $ celery -A proj events --dump
 
-For a complete list of options use ``--help``:
+For a complete list of options use :option:`--help <celery --help>`:
 
 .. code-block:: console
 
@@ -519,7 +524,7 @@ See the API reference for :mod:`celery.events.state` to read more
 about state objects.
 
 Now you can use this cam with :program:`celery events` by specifying
-it with the :option:`-c` option:
+it with the :option:`-c <celery events -c>` option:
 
 .. code-block:: console
 

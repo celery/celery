@@ -279,7 +279,7 @@ instead of a dict to choose which tasks to annotate:
             if task.name.startswith('tasks.'):
                 return {'rate_limit': '10/s'}
 
-    task_annotations = (MyAnnotate(), {…})
+    task_annotations = (MyAnnotate(), {other,})
 
 .. setting:: task_compression
 
@@ -1285,9 +1285,10 @@ the :ref:`automatic routing facilities <routing-automatic>`.
 If you really want to configure advanced routing, this setting should
 be a list of :class:`kombu.Queue` objects the worker will consume from.
 
-Note that workers can be overriden this setting via the `-Q` option,
-or individual queues from this list (by name) can be excluded using
-the `-X` option.
+Note that workers can be overriden this setting via the
+:option:`-Q <celery worker -Q>` option, or individual queues from this
+list (by name) can be excluded using the :option:`-X <celery worker -X>`
+option.
 
 Also see :ref:`routing-basics` for more information.
 
@@ -1860,8 +1861,7 @@ Name of the file used to stores persistent worker state (like revoked tasks).
 Can be a relative or absolute path, but be aware that the suffix `.db`
 may be appended to the file name (depending on Python version).
 
-Can also be set via the :option:`--statedb` argument to
-:mod:`~celery.bin.worker`.
+Can also be set via the :option:`celery worker --statedb` argument.
 
 Not enabled by default.
 
@@ -2016,7 +2016,8 @@ worker_send_task_events
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Send task-related events so that tasks can be monitored using tools like
-`flower`.  Sets the default value for the workers :option:`-E` argument.
+`flower`.  Sets the default value for the workers
+:option:`-E <celery worker -E>` argument.
 
 .. setting:: task_send_sent_event
 
@@ -2199,9 +2200,9 @@ Name of the pool class used by the worker.
 .. admonition:: Eventlet/Gevent
 
     Never use this option to select the eventlet or gevent pool.
-    You must use the `-P` option to :program:`celery worker` instead, to
-    ensure the monkey patches are not applied too late, causing things
-    to break in strange ways.
+    You must use the :option:`-P <celery worker -P>` option to
+    :program:`celery worker` instead, to ensure the monkey patches
+    are not applied too late, causing things to break in strange ways.
 
 Default is ``celery.concurrency.prefork:TaskPool``.
 
@@ -2273,8 +2274,7 @@ beat_scheduler
 
 The default scheduler class.  Default is ``celery.beat:PersistentScheduler``.
 
-Can also be set via the :option:`-S` argument to
-:mod:`~celery.bin.beat`.
+Can also be set via the :option:`celery beat -S` argument.
 
 .. setting:: beat_schedule_filename
 
@@ -2285,8 +2285,7 @@ Name of the file used by `PersistentScheduler` to store the last run times
 of periodic tasks.  Can be a relative or absolute path, but be aware that the
 suffix `.db` may be appended to the file name (depending on Python version).
 
-Can also be set via the :option:`--schedule` argument to
-:mod:`~celery.bin.beat`.
+Can also be set via the :option:`celery beat --schedule` argument.
 
 .. setting:: beat_sync_every
 
@@ -2313,6 +2312,6 @@ but for e.g. the django-celery database scheduler it is 5 seconds
 because the schedule may be changed externally, and so it must take
 changes to the schedule into account.
 
-Also when running celery beat embedded (:option:`-B`) on Jython as a thread
-the max interval is overridden and set to 1 so that it's possible
-to shut down in a timely manner.
+Also when running celery beat embedded (:option:`-B <celery worker -B>`)
+on Jython as a thread the max interval is overridden and set to 1 so
+that it's possible to shut down in a timely manner.

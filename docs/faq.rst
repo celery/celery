@@ -387,8 +387,9 @@ you have to use the AMQP API or the :program:`celery amqp` utility:
 
 The number 1753 is the number of messages deleted.
 
-You can also start :mod:`~celery.bin.worker` with the
-:option:`--purge` argument, to purge messages when the worker starts.
+You can also start the worker with the
+:option:`--purge <celery worker --purge>` option enabled to purge messages
+when the worker starts.
 
 .. _faq-messages-left-after-purge:
 
@@ -504,7 +505,7 @@ important that you are aware of the common pitfalls.
 
 * Events.
 
-Running :mod:`~celery.bin.worker` with the :option:`-E`/:option:`--events`
+Running :mod:`~celery.bin.worker` with the :option:`-E <celery worker -E>`
 option will send messages for events happening inside of the worker.
 
 Events should only be enabled if you have an active monitor consuming them,
@@ -527,7 +528,7 @@ If you don't use the results for a task, make sure you set the
 
     @app.task(ignore_result=True)
     def mytask():
-        …
+        pass
 
     class MyTask(Task):
         ignore_result = True
@@ -703,7 +704,8 @@ so if you have more than one worker with the same host name, the
 control commands will be received in round-robin between them.
 
 To work around this you can explicitly set the nodename for every worker
-using the :option:`-n` argument to :mod:`~celery.bin.worker`:
+using the :option:`-n <celery worker -n>` argument to
+:mod:`~celery.bin.worker`:
 
 .. code-block:: console
 
@@ -754,7 +756,7 @@ create a new schedule subclass and override
     class my_schedule(schedule):
 
         def is_due(self, last_run_at):
-            return …
+            return run_now, next_time_to_check
 
 .. _faq-task-priorities:
 
@@ -837,7 +839,7 @@ How can I safely shut down the worker?
 executing jobs and shut down as soon as possible. No tasks should be lost.
 
 You should never stop :mod:`~celery.bin.worker` with the :sig:`KILL` signal
-(:option:`-9`), unless you've tried :sig:`TERM` a few times and waited a few
+(``kill -9``), unless you've tried :sig:`TERM` a few times and waited a few
 minutes to let it get a chance to shut down.
 
 Also make sure you kill the main worker process, not its child processes.

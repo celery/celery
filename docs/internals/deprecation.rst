@@ -22,29 +22,41 @@ Compat Task Modules
 
 - Module ``celery.decorators`` will be removed:
 
-  Which means you need to change::
+    Which means you need to change:
 
-    from celery.decorators import task
+    .. code-block:: python
 
-Into::
+        from celery.decorators import task
 
-    from celery import task
+    Into:
 
-- Module ``celery.task`` *may* be removed (not decided)
-
-    This means you should change::
-
-        from celery.task import task
-
-    into::
+    .. code-block:: python
 
         from celery import task
 
-    -- and::
+- Module ``celery.task`` *may* be removed (not decided)
+
+    This means you should change:
+
+    .. code-block:: python
+
+        from celery.task import task
+
+    into:
+
+    .. code-block:: python
+
+        from celery import task
+
+    -- and:
+
+    .. code-block:: python
 
         from celery.task import Task
 
-    into::
+    into:
+
+    .. code-block:: python
 
         from celery import Task
 
@@ -60,7 +72,9 @@ uses classmethods for these methods:
     - subtask
 
 This also means that you can't call these methods directly
-on the class, but have to instantiate the task first::
+on the class, but have to instantiate the task first:
+
+.. code-block:: pycon
 
     >>> MyTask.delay()          # NO LONGER WORKS
 
@@ -163,7 +177,7 @@ Result
 ------
 
 Apply to: :class:`~celery.result.AsyncResult`,
-:class:`~celery.result.EagerResult`::
+:class:`~celery.result.EagerResult`:
 
 - ``Result.wait()`` -> ``Result.get()``
 

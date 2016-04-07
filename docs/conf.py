@@ -19,7 +19,7 @@ import celery  # noqa
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.coverage',
-    'sphinx.ext.pngmath',
+    'sphinx.ext.imgmath',
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
     'sphinxcontrib.cheeseshop',
@@ -93,6 +93,8 @@ intersphinx_mapping = {
     'eventlet': ('http://eventlet.net/doc/', None),
     'gevent': ('http://gevent.org/', None),
     'pyOpenSSL': ('http://pyopenssl.readthedocs.org/en/stable/', None),
+    'nose': ('http://nose.readthedocs.org/en/latest', None),
+    'tox': ('http://tox.readthedocs.org/en/latest', None),
 }
 
 # The name of the Pygments (syntax highlighting) style to use.

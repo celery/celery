@@ -150,7 +150,7 @@ if C_BENCH:  # pragma: no cover
 
 class Persistent(object):
     """This is the persistent data stored by the worker when
-    :option:`--statedb` is enabled.
+    :option:`celery worker --statedb` is enabled.
 
     It currently only stores revoked task id's.
 

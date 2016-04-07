@@ -148,7 +148,7 @@ Available options
 ~~~~~~~~~~~~~~~~~~
 
 * CELERY_APP
-    App instance to use (value for ``--app`` argument).
+    App instance to use (value for :option:`--app <celery --app>` argument).
     If you're still using the old API, or django-celery, then you
     can omit this setting.
 
@@ -257,7 +257,7 @@ Available options
 ~~~~~~~~~~~~~~~~~
 
 * CELERY_APP
-    App instance to use (value for ``--app`` argument).
+    App instance to use (value for :option:`--app <celery --app>` argument).
 
 * CELERYBEAT_OPTS
     Additional arguments to celerybeat, see `celerybeat --help` for a

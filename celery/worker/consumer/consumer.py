@@ -249,7 +249,7 @@ class Consumer(object):
 
             Currently pool grow operations will end up with an offset
             of +1 if the initial size of the pool was 0 (e.g.
-            ``--autoscale=1,0``).
+            :option:`--autoscale=1,0 <celery worker --autoscale>`).
 
         """
         num_processes = self.pool.num_processes

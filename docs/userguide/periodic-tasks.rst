@@ -383,8 +383,8 @@ To start the :program:`celery beat` service:
     $ celery -A proj beat
 
 You can also start embed `beat` inside the worker by enabling
-workers `-B` option, this is convenient if you will never run
-more than one worker node, but it's not commonly used and for that
+workers :option:`-B <celery worker -B>` option, this is convenient if you'll
+never run more than one worker node, but it's not commonly used and for that
 reason is not recommended for production use:
 
 .. code-block:: console
@@ -410,8 +410,10 @@ location for this file:
 Using custom scheduler classes
 ------------------------------
 
-Custom scheduler classes can be specified on the command-line (the `-S`
-argument).  The default scheduler is :class:`celery.beat.PersistentScheduler`,
+Custom scheduler classes can be specified on the command-line (the
+:option:`-S <celery beat -S>` argument).
+
+The default scheduler is :class:`celery.beat.PersistentScheduler`,
 which is simply keeping track of the last run times in a local database file
 (a :mod:`shelve`).
 

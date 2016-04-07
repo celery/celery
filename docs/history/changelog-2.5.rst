@@ -194,8 +194,10 @@ Fixes
 * Internal timer (timer2) now logs exceptions instead of swallowing them
   (Issue #626).
 
-* celery shell: can now be started with :option:`--eventlet` or
-  :option:`--gevent` options to apply their monkey patches.
+* celery shell: can now be started with
+  :option:`--eventlet <celery shell --eventlet>` or
+  :option:`--gevent <celery shell --gevent>` options to apply their
+  monkey patches.
 
 .. _version-2.5.0:
 

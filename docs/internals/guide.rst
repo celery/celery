@@ -314,8 +314,9 @@ Worker overview
    This is the command-line interface to the worker.
 
    Responsibilities:
-       * Daemonization when `--detach` set,
-       * dropping privileges when using `--uid`/`--gid` arguments
+       * Daemonization when :option:`--detach <celery worker --detach>` set,
+       * dropping privileges when using :option:`--uid <celery worker --uid>`/
+         :option:`--gid <celery worker --gid>` arguments
        * Installs "concurrency patches" (eventlet/gevent monkey patches).
 
   ``app.worker_main(argv)`` calls
@@ -327,7 +328,7 @@ Worker overview
    * sets up logging and redirects stdouts
    * installs signal handlers (`TERM`/`HUP`/`STOP`/`USR1` (cry)/`USR2` (rdb))
    * prints banner and warnings (e.g. pickle warning)
-   * handles the ``--purge`` argument
+   * handles the :option:`celery worker --purge` argument
 
 * `app.WorkController` -> `celery.worker.WorkController`
 

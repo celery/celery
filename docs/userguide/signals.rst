@@ -369,12 +369,12 @@ Worker Signals
 celeryd_after_setup
 ~~~~~~~~~~~~~~~~~~~
 
-This signal is sent after the worker instance is set up,
-but before it calls run.  This means that any queues from the :option:`-Q`
+This signal is sent after the worker instance is set up, but before it
+calls run.  This means that any queues from the :option:`celery worker -Q`
 option is enabled, logging has been set up and so on.
 
 It can be used to e.g. add custom queues that should always be consumed
-from, disregarding the :option:`-Q` option.  Here's an example
+from, disregarding the :option:`celery worker -Q` option.  Here's an example
 that sets up a direct queue for each worker, these queues can then be
 used to route a task to any specific worker:
 

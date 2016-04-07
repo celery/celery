@@ -24,7 +24,8 @@ __all__ = ['Inspect', 'Control', 'flatten_reply']
 
 W_DUPNODE = """\
 Received multiple replies from node {0}: {1}.
-Please make sure you give each node a unique nodename using the `-n` option.\
+Please make sure you give each node a unique nodename using
+the celery worker `-n` option.\
 """
 
 

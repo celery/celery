@@ -37,7 +37,8 @@ Security Fixes
 --------------
 
 * [Security: `CELERYSA-0001`_] Daemons would set effective id's rather than
-  real id's when the :option:`--uid`/:option:`--gid` arguments to
+  real id's when the :option:`--uid <celery --uid>`/
+  :option:`--gid <celery --gid>` arguments to
   :program:`celery multi`, :program:`celeryd_detach`,
   :program:`celery beat` and :program:`celery events` were used.
 
@@ -202,8 +203,8 @@ Important Notes
     the configuration will be ignored, if a setting is not provided in the URL
     then the value from the configuration will be used as default.
 
-    Also, programs now support the :option:`-b|--broker` option to specify
-    a broker URL on the command-line:
+    Also, programs now support the :option:`--broker <celery --broker>`
+    option to specify a broker URL on the command-line:
 
     .. code-block:: console
 

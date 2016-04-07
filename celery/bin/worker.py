@@ -20,15 +20,6 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
     prefork (default), eventlet, gevent, solo or threads.
 
-.. cmdoption:: -f, --logfile
-
-    Path to log file. If no logfile is specified, `stderr` is used.
-
-.. cmdoption:: -l, --loglevel
-
-    Logging level, choose between `DEBUG`, `INFO`, `WARNING`,
-    `ERROR`, `CRITICAL`, or `FATAL`.
-
 .. cmdoption:: -n, --hostname
 
     Set custom hostname, e.g. 'w1.%h'. Expands: %h (hostname),
@@ -45,6 +36,12 @@ The :program:`celery worker` command (previously known as ``celeryd``)
     By default all configured queues are enabled.
     Example: `-Q video,image`
 
+.. cmdoption:: -X, --exclude-queues
+
+    List of queues to disable for this worker, separated by comma.
+    By default all configured queues are enabled.
+    Example: `-X video,image`.
+
 .. cmdoption:: -I, --include
 
     Comma separated list of additional modules to import.
@@ -59,6 +56,10 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 .. cmdoption:: -O
 
     Apply optimization profile.  Supported: default, fair
+
+.. cmdoption:: --prefetch-multiplier
+
+    Set custom prefetch multiplier value for this worker instance.
 
 .. cmdoption:: --scheduler
 
@@ -117,13 +118,6 @@ The :program:`celery worker` command (previously known as ``celeryd``)
     completed and the child process will be replaced afterwards.
     Default: no limit.
 
-.. cmdoption:: --pidfile
-
-    Optional file used to store the workers pid.
-
-    The worker will not start if this file already exists
-    and the pid is still alive.
-
 .. cmdoption:: --autoscale
 
     Enable autoscaling by providing
@@ -140,6 +134,48 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 .. cmdoption:: --no-execv
 
     Don't do execv after multiprocessing child fork.
+
+.. cmdoption:: --detach
+
+    Start worker as a background process.
+
+.. cmdoption:: -f, --logfile
+
+    Path to log file. If no logfile is specified, `stderr` is used.
+
+.. cmdoption:: -l, --loglevel
+
+    Logging level, choose between `DEBUG`, `INFO`, `WARNING`,
+    `ERROR`, `CRITICAL`, or `FATAL`.
+
+.. cmdoption:: --pidfile
+
+    Optional file used to store the process pid.
+
+    The program will not start if this file already exists
+    and the pid is still alive.
+
+.. cmdoption:: --uid
+
+    User id, or user name of the user to run as after detaching.
+
+.. cmdoption:: --gid
+
+    Group id, or group name of the main group to change to after
+    detaching.
+
+.. cmdoption:: --umask
+
+    Effective umask (in octal) of the process after detaching.  Inherits
+    the umask of the parent process by default.
+
+.. cmdoption:: --workdir
+
+    Optional directory to change to after detaching.
+
+.. cmdoption:: --executable
+
+    Executable to use for the detached process.
 
 """
 from __future__ import absolute_import, unicode_literals

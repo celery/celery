@@ -146,7 +146,9 @@ See :ref:`guide-canvas` for more about creating task workflows.
 
     Creates a group of tasks to be executed in parallel.
 
-    Example::
+    Example:
+
+    .. code-block:: pycon
 
         >>> res = group([add.s(2, 2), add.s(4, 4)])()
         >>> res.get()
@@ -167,17 +169,23 @@ See :ref:`guide-canvas` for more about creating task workflows.
     If called with only one argument, then that argument must
     be an iterable of tasks to chain.
 
-    Example::
+    Example:
+
+    .. code-block:: pycon
 
         >>> res = chain(add.s(2, 2), add.s(4))()
 
-    is effectively :math:`(2 + 2) + 4)`::
+    is effectively :math:`(2 + 2) + 4)`:
+
+    .. code-block:: pycon
 
         >>> res.get()
         8
 
     Calling a chain will return the result of the last task in the chain.
-    You can get to the other tasks by following the ``result.parent``'s::
+    You can get to the other tasks by following the ``result.parent``'s:
+
+    .. code-block:: pycon
 
         >>> res.parent.get()
         4
@@ -188,11 +196,15 @@ See :ref:`guide-canvas` for more about creating task workflows.
     The header is a group of tasks that must complete before the callback is
     called.  A chord is essentially a callback for a group of tasks.
 
-    Example::
+    Example:
+
+    .. code-block:: pycon
 
         >>> res = chord([add.s(2, 2), add.s(4, 4)])(sum_task.s())
 
-    is effectively :math:`\Sigma ((2 + 2) + (4 + 4))`::
+    is effectively :math:`\Sigma ((2 + 2) + (4 + 4))`:
+
+    .. code-block:: pycon
 
         >>> res.get()
         12
@@ -207,11 +219,15 @@ See :ref:`guide-canvas` for more about creating task workflows.
     Used as the parts in a :class:`group` or to safely pass
     tasks around as callbacks.
 
-    Signatures can also be created from tasks::
+    Signatures can also be created from tasks:
+
+    .. code-block:: pycon
 
         >>> add.signature(args=(), kwargs={}, options={})
 
-    or the ``.s()`` shortcut::
+    or the ``.s()`` shortcut:
+
+    .. code-block:: pycon
 
         >>> add.s(*args, **kwargs)
 

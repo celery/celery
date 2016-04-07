@@ -467,7 +467,7 @@ Simple routing (name <-> name) is accomplished using the ``queue`` option::
     add.apply_async(queue='priority.high')
 
 You can then assign workers to the ``priority.high`` queue by using
-the workers :option:`-Q` argument:
+the workers :option:`-Q <celery worker -Q>` argument:
 
 .. code-block:: console
 

@@ -94,7 +94,7 @@ When the worker starts you should see a banner and some messages::
 
 -- The *broker* is the URL you specified in the broker argument in our ``celery``
 module, you can also specify a different broker on the command-line by using
-the :option:`-b` option.
+the :option:`-b <celery -b>` option.
 
 -- *Concurrency* is the number of prefork worker process used
 to process your tasks concurrently, when all of these are busy doing work
@@ -102,7 +102,8 @@ new tasks will have to wait for one of the tasks to finish before
 it can be processed.
 
 The default concurrency number is the number of CPU's on that machine
-(including cores), you can specify a custom number using :option:`-c` option.
+(including cores), you can specify a custom number using
+the :option:`celery worker -c` option.
 There is no recommended value, as the optimal number depends on a number of
 factors, but if your tasks are mostly I/O-bound then you can try to increase
 it, experimentation has shown that adding more than twice the number
@@ -126,7 +127,7 @@ and prioritization, all described in the :ref:`Routing Guide
 <guide-routing>`.
 
 You can get a complete list of command-line arguments
-by passing in the `--help` flag:
+by passing in the :option:`--help <celery --help>` flag:
 
 .. code-block:: console
 
@@ -217,16 +218,16 @@ reference.
 
 .. _app-argument:
 
-About the :option:`--app` argument
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+About the :option:`--app <celery --app>` argument
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The :option:`--app` argument specifies the Celery app instance to use,
-it must be in the form of ``module.path:attribute``
+The :option:`--app <celery --app>` argument specifies the Celery app instance
+to use, it must be in the form of ``module.path:attribute``
 
 But it also supports a shortcut form If only a package name is specified,
 where it'll try to search for the app instance, in the following order:
 
-With ``--app=proj``:
+With :option:`--app=proj <celery --app>`:
 
 1) an attribute named ``proj.app``, or
 2) an attribute named ``proj.celery``, or
@@ -625,7 +626,7 @@ with the ``queue`` argument to ``apply_async``:
     >>> add.apply_async((2, 2), queue='hipri')
 
 You can then make a worker consume from this queue by
-specifying the :option:`-Q` option:
+specifying the :option:`celery worker -Q` option:
 
 .. code-block:: console
 
@@ -662,8 +663,8 @@ This is implemented by using broadcast messaging, so all remote
 control commands are received by every worker in the cluster.
 
 You can also specify one or more workers to act on the request
-using the :option:`--destination` option, which is a comma separated
-list of worker host names:
+using the :option:`--destination <celery inspect --destination>` option,
+which is a comma separated list of worker host names:
 
 .. code-block:: console
 

@@ -633,7 +633,9 @@ It can be added both as a worker and consumer bootstep:
         app.steps['consumer'].add(InfoStep)
 
 Starting the worker with this step installed will give us the following
-logs::
+logs:
+
+.. code-block:: text
 
     <Worker: w@example.com (initializing)> is in init
     <Consumer: w@example.com (initializing)> is in init
@@ -655,8 +657,10 @@ which means that you cannot interrupt the function and
 call it again later.  It's important that the ``stop`` and ``shutdown`` methods
 you write is also :term:`reentrant`.
 
-Starting the worker with ``--loglevel=debug`` will show us more
-information about the boot process::
+Starting the worker with :option:`--loglevel=debug <celery worker --loglevel>`
+will show us more information about the boot process:
+
+.. code-block:: text
 
     [2013-05-29 16:18:20,509: DEBUG/MainProcess] | Worker: Preparing bootsteps.
     [2013-05-29 16:18:20,511: DEBUG/MainProcess] | Worker: Building graph...

@@ -303,15 +303,16 @@ new in Celery 3.1.
 
     Fix contributed by Alexander.
 
-- **Commands**: Worker now supports new ``--executable`` argument that can
-  be used with ``--detach``.
+- **Commands**: Worker now supports new
+  :option:`--executable <celery worker --executable>` argument that can
+  be used with :option:`celery worker --detach`.
 
     Contributed by Bert Vanderbauwhede.
 
 - **Canvas**: Fixed crash in chord unlock fallback task (Issue #2404).
 
-- **Worker**: Fixed rare crash occurring with ``--autoscale`` enabled
-  (Issue #2411).
+- **Worker**: Fixed rare crash occurring with
+  :option:`--autoscale <celery worker --autoscale>` enabled (Issue #2411).
 
 - **Django**: Properly recycle worker Django database connections when the
   Django ``CONN_MAX_AGE`` setting is enabled (Issue #2453).
@@ -423,7 +424,8 @@ new in Celery 3.1.
 :release-date: 2014-10-03 06:00 P.M UTC
 :release-by: Ask Solem
 
-- **Worker**: 3.1.15 broke ``-Ofair`` behavior (Issue #2286).
+- **Worker**: 3.1.15 broke :option:`-Ofair <celery worker -O>`
+  behavior (Issue #2286).
 
     This regression could result in all tasks executing
     in a single child process if ``-Ofair`` was enabled.
@@ -496,8 +498,8 @@ new in Celery 3.1.
 
 - **Django**: Compatibility with Django 1.7 on Windows (Issue #2126).
 
-- **Programs**: `--umask` argument can be now specified in both octal (if starting
-  with 0) or decimal.
+- **Programs**: :option:`--umask <celery --umask>` argument can now be
+  specified in both octal (if starting with 0) or decimal.
 
 
 .. _version-3.1.13:
@@ -715,8 +717,8 @@ News
 - **Tasks**: The :setting:`CELERY_DEFAULT_DELIVERY_MODE` setting was being
   ignored (Issue #1953).
 
-- **Worker**: New :option:`--heartbeat-interval` can be used to change the
-  time (in seconds) between sending event heartbeats.
+- **Worker**: New :option:`celery worker --heartbeat-interval` can be used
+  to change the time (in seconds) between sending event heartbeats.
 
     Contributed by Matthew Duggan and Craig Northway.
 
@@ -827,7 +829,7 @@ News
     with workers and clients not using it, so be sure to enable
     the option in all clients and workers if you decide to use it.
 
-- **Multi**: With ``-opt:index`` (e.g. :option:`-c:1`) the index now always refers
+- **Multi**: With ``-opt:index`` (e.g. ``-c:1``) the index now always refers
   to the position of a node in the argument list.
 
     This means that referring to a number will work when specifying a list
@@ -1045,7 +1047,7 @@ News
 - **Commands**: The :program:`celery purge` command now warns that the operation
   will delete all tasks and prompts the user for confirmation.
 
-    A new :option:`-f` was added that can be used to disable
+    A new :option:`-f <celery purge -f>` was added that can be used to disable
     interactive mode.
 
 - **Task**: ``.retry()`` did not raise the value provided in the ``exc`` argument
@@ -1095,8 +1097,8 @@ News
 
 - **Commands:** The :program:`celery inspect conf` utility now works.
 
-- **Commands:** The :option:`-no-color` argument was not respected by
-  all commands (*Issue #1799*).
+- **Commands:** The :option:`--no-color <celery --no-color>` argument was
+  not respected by all commands (*Issue #1799*).
 
 - **App:** Fixed rare bug with ``autodiscover_tasks()`` (*Issue #1797*).
 
@@ -1105,7 +1107,7 @@ News
   API documentation (*Issue #1782*).
 
 - **Documentation:** Supervisord examples contained an extraneous '-' in a
-  `--logfile` argument example.
+  :option:`--logfile <celery worker --logfile>` argument example.
 
     Fix contributed by Mohammad Almeer.
 
@@ -1234,10 +1236,13 @@ Fixes
 
     Fix contributed by Ionel Cristian Mărieș.
 
-- Worker with ``-B`` argument did not properly shut down the beat instance.
+- Worker with :option:`-B <celery worker -B>` argument did not properly
+  shut down the beat instance.
 
 - Worker: The ``%n`` and ``%h`` formats are now also supported by the
-  :option:`--logfile`, :option:`--pidfile` and :option:`--statedb` arguments.
+  :option:`--logfile <celery worker --logfile>`,
+  :option:`--pidfile <celery worker --pidfile>` and
+  :option:`--statedb <celery worker --statedb>` arguments.
 
     Example:
 
@@ -1377,17 +1382,19 @@ Fixes
     this ensures that the settings object is not prepared
     prematurely.
 
-- Fixed regression for ``--app`` argument experienced by
-  some users (Issue #1653).
+- Fixed regression for :option:`--app <celery --app>` argument
+  experienced by some users (Issue #1653).
 
-- Worker: Now respects the ``--uid`` and ``--gid`` arguments
-  even if ``--detach`` is not enabled.
+- Worker: Now respects the :option:`--uid <celery worker --uid>` and
+  :option:`--gid <celery worker --gid>` arguments even if
+  :option:`--detach <celery worker --detach>` is not enabled.
 
-- Beat: Now respects the ``--uid`` and ``--gid`` arguments
-  even if ``--detach`` is not enabled.
+- Beat: Now respects the :option:`--uid <celery beat --uid>` and
+  :option:`--gid <celery beat --gid>` arguments even if
+  :option:`--detach <celery beat --detach>` is not enabled.
 
-- Python 3: Fixed unorderable error occuring with the worker ``-B``
-  argument enabled.
+- Python 3: Fixed unorderable error occuring with the worker
+  :option:`-B <celery worker -B>` argument enabled.
 
 - ``celery.VERSION`` is now a named tuple.
 
@@ -1489,8 +1496,8 @@ Fixes
 - The ``celery multi show`` command now generates the same arguments
   as the start command does.
 
-- The ``--app`` argument could end up using a module object instead
-  of an app instance (with a resulting crash).
+- The :option:`--app <celery --app>` argument could end up using a module
+  object instead of an app instance (with a resulting crash).
 
 - Fixed a syntax error problem in the celerybeat init script.
 
@@ -1510,8 +1517,8 @@ Fixes
     ``unpack_from`` started supporting ``memoryview`` arguments
     in Python 2.7.6.
 
-- Worker: :option:`-B` argument accidentally closed files used
-  for logging.
+- Worker: :option:`-B <celery worker -B>` argument accidentally closed
+  files used for logging.
 
 - Task decorated tasks now keep their docstring (Issue #1636)
 

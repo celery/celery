@@ -57,7 +57,9 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   debug the init scripts.
 
     Setting this will skip the daemonization step so that errors
-    printed to stderr after standard outs are closed can be seen::
+    printed to stderr after standard outs are closed can be seen:
+
+    .. code-block:: console
 
         $ C_FAKEFORK /etc/init.d/celeryd start
 
@@ -158,8 +160,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on :pypi:`billiard` 2.7.3.30.
 
-- ``--loader`` argument no longer supported importing loaders from the
-  current directory.
+- :option:`--loader <celery --loader>` argument no longer supported
+  importing loaders from the current directory.
 
 - [Worker] Fixed memory leak when restarting after connection lost
   (Issue #1325).
@@ -306,9 +308,10 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Worker: Optimized storing/loading the revoked tasks list (Issue #1289).
 
-    After this change the ``--statedb`` file will take up more disk space,
-    but loading from and storing the revoked tasks will be considerably
-    faster (what before took 5 minutes will now take less than a second).
+    After this change the :option:`celery worker --statedb` file will
+    take up more disk space, but loading from and storing the revoked
+    tasks will be considerably faster (what before took 5 minutes will
+    now take less than a second).
 
 - Celery will now suggest alternatives if there's a typo in the
   broker transport name (e.g. ``ampq`` -> ``amqp``).
@@ -680,10 +683,10 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Fixed a deadlock issue that could occur when the producer pool
   inherited the connection pool instance of the parent process.
 
-- The :option:`--loader` option now works again (Issue #1066).
+- The :option:`--loader <celery --loader>` option now works again (Issue #1066).
 
 - :program:`celery` umbrella command: All subcommands now supports
-  the :option:`--workdir` option (Issue #1063).
+  the :option:`--workdir <celery --workdir>` option (Issue #1063).
 
 - Groups included in chains now give GroupResults (Issue #1057)
 
@@ -840,7 +843,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Worker: ETA scheduler now uses millisecond precision (Issue #1040).
 
-- The ``--config`` argument to programs is now supported by all loaders.
+- The :option:`--config <celery --config>` argument to programs is
+  now supported by all loaders.
 
 - The :setting:`CASSANDRA_OPTIONS` setting has now been documented.
 
@@ -929,7 +933,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   the working directory has been changed into.
 
 - :program:`celery worker` and :program:`celery beat` commands now respects
-  the :option:`--no-color` option (Issue #999).
+  the :option:`--no-color <celery --no-color>` option (Issue #999).
 
 - Fixed typos in eventlet examples (Issue #1000)
 
@@ -1348,9 +1352,11 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now supports AMQP heartbeats if using the new ``pyamqp://`` transport.
 
-    - The py-amqp transport requires the :pypi:`amqp` library to be installed::
+    - The py-amqp transport requires the :pypi:`amqp` library to be installed:
 
-        $ pip install amqp
+        .. code-block:: console
+
+            $ pip install amqp
 
     - Then you need to set the transport URL prefix to ``pyamqp://``.
 

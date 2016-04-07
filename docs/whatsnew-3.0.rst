@@ -170,8 +170,7 @@ it manually.  This command helps:
 
 .. code-block:: console
 
-    $ rm -r $(dirname $(python -c '
-        import celery;print(celery.__file__)'))/app/task/
+    $ rm -r $(dirname $(python -c 'import celery;print(celery.__file__)'))/app/task/
 
 If you experience an error like ``ImportError: cannot import name _unpickle_task``,
 you just have to remove the old package and everything is fine.
@@ -685,7 +684,7 @@ when the task registry is first used.
 Smart `--app` option
 --------------------
 
-The :option:`--app` option now 'auto-detects'
+The :option:`--app <celery --app>` option now 'auto-detects'
 
     - If the provided path is a module it tries to get an
       attribute named 'celery'.
@@ -865,7 +864,7 @@ In Other News
 - :setting:`CELERY_FORCE_EXECV` is now enabled by default.
 
     If the old behavior is wanted the setting can be set to False,
-    or the new :option:`--no-execv` to :program:`celery worker`.
+    or the new :option:`celery worker --no-execv` option.
 
 - Deprecated module ``celery.conf`` has been removed.
 

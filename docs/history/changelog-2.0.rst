@@ -42,7 +42,9 @@ Fixes
   precedence over values defined in :setting:`CELERY_QUEUES` when merging
   the two.
 
-    With the follow settings::
+    With the follow settings:
+
+    .. code-block:: python
 
         CELERY_QUEUES = {'cpubound': {'exchange': 'cpubound',
                                       'routing_key': 'cpubound'}}
@@ -51,7 +53,9 @@ Fixes
                                        'routing_key': 'tasks.add',
                                        'serializer': 'json'}}
 
-    The final routing options for `tasks.add` will become::
+    The final routing options for `tasks.add` will become:
+
+    .. code-block:: python
 
         {'exchange': 'cpubound',
          'routing_key': 'tasks.add',
@@ -201,9 +205,11 @@ Documentation
 
 * Can now define a white list of errors to send error emails for.
 
-    Example::
+    Example:
 
-        CELERY_TASK_ERROR_WHITELIST = ('myapp.MalformedInputError')
+    .. code-block:: python
+
+        CELERY_TASK_ERROR_WHITELIST = ('myapp.MalformedInputError',)
 
     See issue #153.
 
@@ -215,7 +221,9 @@ Documentation
 
 * Added :class:`celery.task.control.inspect`: Inspects a running worker.
 
-    Examples::
+    Examples:
+
+    .. code-block:: pycon
 
         # Inspect a single worker
         >>> i = inspect('myworker.example.com')
@@ -337,7 +345,9 @@ Documentation
 
 * :setting:`CELERY_ROUTES` was broken if set to a single dict.
 
-    This example in the docs should now work again::
+    This example in the docs should now work again:
+
+    .. code-block:: python
 
         CELERY_ROUTES = {'feed.tasks.import_feed': 'feeds'}
 
@@ -348,7 +358,9 @@ Documentation
     Dumps information about the worker, like pool process ids, and
     total number of tasks executed by type.
 
-    Example reply::
+    Example reply:
+
+    .. code-block:: python
 
         [{'worker.local':
              'total': {'tasks.sleeptask': 6},
@@ -365,7 +377,9 @@ Documentation
     are arguments that is not JSON encodable. If you know
     the arguments are JSON safe, you can pass the argument `safe=True`.
 
-    Example reply::
+    Example reply:
+
+    .. code-block:: pycon
 
         >>> broadcast('dump_active', arguments={'safe': False}, reply=True)
         [{'worker.local': [
@@ -426,19 +440,25 @@ Upgrading for Django-users
 
 Django integration has been moved to a separate package: `django-celery`_.
 
-* To upgrade you need to install the `django-celery`_ module and change::
+* To upgrade you need to install the `django-celery`_ module and change:
+
+  .. code-block:: python
 
     INSTALLED_APPS = 'celery'
 
-  to::
+  to:
+
+  .. code-block:: python
 
     INSTALLED_APPS = 'djcelery'
 
 * If you use `mod_wsgi` you need to add the following line to your `.wsgi`
-  file::
+  file:
 
-    import os
-    os.environ['CELERY_LOADER'] = 'django'
+    .. code-block:: python
+
+        import os
+        os.environ['CELERY_LOADER'] = 'django'
 
 * The following modules has been moved to `django-celery`_:
 
@@ -500,10 +520,12 @@ See `SQLAlchemy Connection Strings`_ for more information about connection
 strings.
 
 To specify additional SQLAlchemy database engine options you can use
-the :setting:`CELERY_RESULT_ENGINE_OPTIONS` setting::
+the :setting:`CELERY_RESULT_ENGINE_OPTIONS` setting:
 
-    # echo enables verbose logging from SQLAlchemy.
-    CELERY_RESULT_ENGINE_OPTIONS = {'echo': True}
+    .. code-block:: python
+
+        # echo enables verbose logging from SQLAlchemy.
+        CELERY_RESULT_ENGINE_OPTIONS = {'echo': True}
 
 .. _`SQLAlchemy`:
     http://www.sqlalchemy.org
@@ -520,9 +542,11 @@ Cache result backend
 ~~~~~~~~~~~~~~~~~~~~
 
 The cache result backend is no longer using the Django cache framework,
-but it supports mostly the same configuration syntax::
+but it supports mostly the same configuration syntax:
 
-    CELERY_CACHE_BACKEND = 'memcached://A.example.com:11211;B.example.com'
+    .. code-block:: python
+
+        CELERY_CACHE_BACKEND = 'memcached://A.example.com:11211;B.example.com'
 
 To use the cache backend you must either have the `pylibmc`_ or
 `python-memcached`_ library installed, of which the former is regarded
@@ -548,7 +572,9 @@ Backward incompatible changes
     working configuration.
 
     Also this makes it possible to use the client side of celery without being
-    configured::
+    configured:
+
+    .. code-block:: pycon
 
         >>> from carrot.connection import BrokerConnection
         >>> conn = BrokerConnection('localhost', 'guest', 'guest', '/')
@@ -579,11 +605,15 @@ Backward incompatible changes
   (as scheduled by the :ref:`deprecation-timeline`):
 
     Assuming the implicit `Loader` class name is no longer supported,
-    if you use e.g.::
+    if you use e.g.:
+
+    .. code-block:: python
 
         CELERY_LOADER = 'myapp.loaders'
 
-    You need to include the loader class name, like this::
+    You need to include the loader class name, like this:
+
+    .. code-block:: python
 
         CELERY_LOADER = 'myapp.loaders.Loader'
 
@@ -608,11 +638,15 @@ Backward incompatible changes
     cPickle is broken in Python <= 2.5.
 
     It unsafely and incorrectly uses relative instead of absolute imports,
-    so e.g.::
+    so e.g.:
+
+    .. code-block:: python
 
           exceptions.KeyError
 
-    becomes::
+    becomes:
+
+    .. code-block:: python
 
           celery.exceptions.KeyError
 
@@ -688,13 +722,17 @@ News
   forces termination.
 
 * Added support for using complex crontab-expressions in periodic tasks. For
-  example, you can now use::
+  example, you can now use:
 
-    >>> crontab(minute='*/15')
+    .. code-block:: pycon
 
-  or even::
+        >>> crontab(minute='*/15')
 
-    >>> crontab(minute='*/30', hour='8-17,1-2', day_of_week='thu-fri')
+    or even:
+
+    .. code-block:: pycon
+
+        >>> crontab(minute='*/30', hour='8-17,1-2', day_of_week='thu-fri')
 
   See :ref:`guide-beat`.
 
@@ -733,7 +771,9 @@ News
     You can disable this using the :setting:`CELERY_CREATE_MISSING_QUEUES`
     setting.
 
-    The missing queues are created with the following options::
+    The missing queues are created with the following options:
+
+    .. code-block:: python
 
         CELERY_QUEUES[name] = {'exchange': name,
                                'exchange_type': 'direct',
@@ -838,19 +878,29 @@ News
     is then merged with the found route settings, where the routers settings
     have priority.
 
-    Example if :func:`~celery.execute.apply_async` has these arguments::
+    Example if :func:`~celery.execute.apply_async` has these arguments:
+
+    .. code-block:: pycon
 
        >>> Task.apply_async(immediate=False, exchange='video',
        ...                  routing_key='video.compress')
 
-    and a router returns::
+    and a router returns:
+
+    .. code-block:: python
 
         {'immediate': True,
          'exchange': 'urgent'}
 
-    the final message options will be::
+    the final message options will be:
 
-        immediate=True, exchange='urgent', routing_key='video.compress'
+    .. code-block:: pycon
+
+        >>> task.apply_async(
+        ...    immediate=True,
+        ...    exchange='urgent',
+        ...    routing_key='video.compress',
+        ... )
 
     (and any default message options defined in the
     :class:`~celery.task.base.Task` class)
@@ -863,7 +913,7 @@ News
    :meth:`~celery.task.base.Task.on_failure` as einfo keyword argument.
 
 * Worker: Added :setting:`CELERYD_MAX_TASKS_PER_CHILD` /
-  :option:`--maxtasksperchild`
+  :option:`celery worker --maxtasksperchild`
 
     Defines the maximum number of tasks a pool worker can process before
     the process is terminated and replaced by a new one.
@@ -879,8 +929,8 @@ News
 * New signal: :signal:`~celery.signals.worker_process_init`: Sent inside the
   pool worker process at init.
 
-* Worker: :option:`-Q` option: Ability to specify list of queues to use,
-  disabling other configured queues.
+* Worker: :option:`celery worker -Q` option: Ability to specify list of queues
+  to use, disabling other configured queues.
 
     For example, if :setting:`CELERY_QUEUES` defines four
     queues: `image`, `video`, `data` and `default`, the following
@@ -893,11 +943,13 @@ News
 
 * Worker: New return value for the `revoke` control command:
 
-    Now returns::
+    Now returns:
+
+    .. code-block:: python
 
         {'ok': 'task $id revoked'}
 
-    instead of `True`.
+    instead of :const:`True`.
 
 * Worker: Can now enable/disable events using remote control
 
@@ -947,62 +999,84 @@ News
 
     Some examples:
 
-    .. code-block:: console
+    - Advanced example with 10 workers:
 
-        # Advanced example with 10 workers:
-        #   * Three of the workers processes the images and video queue
-        #   * Two of the workers processes the data queue with loglevel DEBUG
-        #   * the rest processes the default' queue.
-        $ celeryd-multi start 10 -l INFO -Q:1-3 images,video -Q:4,5:data
-            -Q default -L:4,5 DEBUG
+        * Three of the workers processes the images and video queue
+        * Two of the workers processes the data queue with loglevel DEBUG
+        * the rest processes the default' queue.
 
-        # get commands to start 10 workers, with 3 processes each
-        $ celeryd-multi start 3 -c 3
-        celeryd -n celeryd1.myhost -c 3
-        celeryd -n celeryd2.myhost -c 3
-        celeryd -n celeryd3.myhost -c 3
+        .. code-block:: console
 
-        # start 3 named workers
-        $ celeryd-multi start image video data -c 3
-        celeryd -n image.myhost -c 3
-        celeryd -n video.myhost -c 3
-        celeryd -n data.myhost -c 3
+            $ celeryd-multi start 10 -l INFO -Q:1-3 images,video -Q:4,5:data -Q default -L:4,5 DEBUG
 
-        # specify custom hostname
-        $ celeryd-multi start 2 -n worker.example.com -c 3
-        celeryd -n celeryd1.worker.example.com -c 3
-        celeryd -n celeryd2.worker.example.com -c 3
+    - Get commands to start 10 workers, with 3 processes each
 
-        # Additionl options are added to each celeryd',
-        # but you can also modify the options for ranges of or single workers
+        .. code-block:: console
 
-        # 3 workers: Two with 3 processes, and one with 10 processes.
-        $ celeryd-multi start 3 -c 3 -c:1 10
-        celeryd -n celeryd1.myhost -c 10
-        celeryd -n celeryd2.myhost -c 3
-        celeryd -n celeryd3.myhost -c 3
+            $ celeryd-multi start 3 -c 3
+            celeryd -n celeryd1.myhost -c 3
+            celeryd -n celeryd2.myhost -c 3
+            celeryd -n celeryd3.myhost -c 3
 
-        # can also specify options for named workers
-        $ celeryd-multi start image video data -c 3 -c:image 10
-        celeryd -n image.myhost -c 10
-        celeryd -n video.myhost -c 3
-        celeryd -n data.myhost -c 3
+    - Start 3 named workers
 
-        # ranges and lists of workers in options is also allowed:
-        # (-c:1-3 can also be written as -c:1,2,3)
-        $ celeryd-multi start 5 -c 3  -c:1-3 10
-        celeryd-multi -n celeryd1.myhost -c 10
-        celeryd-multi -n celeryd2.myhost -c 10
-        celeryd-multi -n celeryd3.myhost -c 10
-        celeryd-multi -n celeryd4.myhost -c 3
-        celeryd-multi -n celeryd5.myhost -c 3
+        .. code-block:: console
 
-        # lists also works with named workers
-        $ celeryd-multi start foo bar baz xuzzy -c 3 -c:foo,bar,baz 10
-        celeryd-multi -n foo.myhost -c 10
-        celeryd-multi -n bar.myhost -c 10
-        celeryd-multi -n baz.myhost -c 10
-        celeryd-multi -n xuzzy.myhost -c 3
+            $ celeryd-multi start image video data -c 3
+            celeryd -n image.myhost -c 3
+            celeryd -n video.myhost -c 3
+            celeryd -n data.myhost -c 3
+
+    - Specify custom hostname
+
+        .. code-block:: console
+
+            $ celeryd-multi start 2 -n worker.example.com -c 3
+            celeryd -n celeryd1.worker.example.com -c 3
+            celeryd -n celeryd2.worker.example.com -c 3
+
+        Additional options are added to each celeryd',
+        but you can also modify the options for ranges of or single workers
+
+    - 3 workers: Two with 3 processes, and one with 10 processes.
+
+        .. code-block:: console
+
+            $ celeryd-multi start 3 -c 3 -c:1 10
+            celeryd -n celeryd1.myhost -c 10
+            celeryd -n celeryd2.myhost -c 3
+            celeryd -n celeryd3.myhost -c 3
+
+    - Can also specify options for named workers
+
+        .. code-block:: console
+
+            $ celeryd-multi start image video data -c 3 -c:image 10
+            celeryd -n image.myhost -c 10
+            celeryd -n video.myhost -c 3
+            celeryd -n data.myhost -c 3
+
+    - Ranges and lists of workers in options is also allowed:
+      (``-c:1-3`` can also be written as ``-c:1,2,3``)
+
+        .. code-block:: console
+
+            $ celeryd-multi start 5 -c 3  -c:1-3 10
+            celeryd-multi -n celeryd1.myhost -c 10
+            celeryd-multi -n celeryd2.myhost -c 10
+            celeryd-multi -n celeryd3.myhost -c 10
+            celeryd-multi -n celeryd4.myhost -c 3
+            celeryd-multi -n celeryd5.myhost -c 3
+
+    - Lists also work with named workers:
+
+        .. code-block:: console
+
+            $ celeryd-multi start foo bar baz xuzzy -c 3 -c:foo,bar,baz 10
+            celeryd-multi -n foo.myhost -c 10
+            celeryd-multi -n bar.myhost -c 10
+            celeryd-multi -n baz.myhost -c 10
+            celeryd-multi -n xuzzy.myhost -c 3
 
 * The worker now calls the result backends `process_cleanup` method
   *after* task execution instead of before.

@@ -1395,9 +1395,11 @@ News
   restarted if it crashes). To use this start the worker with the
   --supervised` option (or alternatively `-S`).
 
-* views.apply: View calling a task. Example
+* views.apply: View calling a task.
 
-    ::
+    Example:
+
+    .. code-block:: text
 
         http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&kwarg2=b
 
@@ -1567,13 +1569,13 @@ arguments, so be sure to flush your task queue before you upgrade.
   `celery.task.apply_async` and `celery.Task.apply_async`.
 
   This also means the AMQP configuration has changed. Some settings has
-  been renamed, while others are new::
+  been renamed, while others are new:
 
-        CELERY_AMQP_EXCHANGE
-        CELERY_AMQP_PUBLISHER_ROUTING_KEY
-        CELERY_AMQP_CONSUMER_ROUTING_KEY
-        CELERY_AMQP_CONSUMER_QUEUE
-        CELERY_AMQP_EXCHANGE_TYPE
+    - ``CELERY_AMQP_EXCHANGE``
+    - ``CELERY_AMQP_PUBLISHER_ROUTING_KEY``
+    - ``CELERY_AMQP_CONSUMER_ROUTING_KEY``
+    - ``CELERY_AMQP_CONSUMER_QUEUE``
+    - ``CELERY_AMQP_EXCHANGE_TYPE``
 
   See the entry :ref:`faq-task-routing` in the
   :ref:`FAQ <faq>` for more information.
@@ -1734,7 +1736,11 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * Refactored the task metadata cache and database backends, and added
   a new backend for Tokyo Tyrant. You can set the backend in your django
-  settings file. E.g.::
+  settings file.
+
+    Example:
+
+    .. code-block:: python
 
         CELERY_RESULT_BACKEND = 'database'; # Uses the database
         CELERY_RESULT_BACKEND = 'cache'; # Uses the django cache framework
@@ -1828,13 +1834,17 @@ arguments, so be sure to flush your task queue before you upgrade.
 
         >>> url(r'^celery/$', include('celery.urls'))
 
-  then visiting the following url,::
+  then visiting the following url:
+
+  .. code-block:: text
 
         http://mysite/celery/$task_id/done/
 
   this will return a JSON dictionary like e.g:
 
-        >>> {'task': {'id': $task_id, 'executed': true}}
+  .. code-block:: json
+
+        {"task": {"id": "TASK_ID", "executed": true}}
 
 * `delay_task` now returns string id, not `uuid.UUID` instance.
 

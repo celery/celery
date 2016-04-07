@@ -40,7 +40,9 @@ to enable access from the outside you have to set the environment
 variable :envvar:`CELERY_RDB_HOST`.
 
 When the worker encounters your breakpoint it will log the following
-information::
+information:
+
+.. code-block:: text
 
     [INFO/MainProcess] Received task:
         tasks.add[d7261c71-4962-47e5-b342-2448bedd20e8]
@@ -66,7 +68,9 @@ It may be a good idea to read the `Python Debugger Manual`_ if
 you have never used `pdb` before.
 
 To demonstrate, we will read the value of the ``result`` variable,
-change it and continue execution of the task::
+change it and continue execution of the task:
+
+.. code-block:: text
 
     (Pdb) result
     4
@@ -74,7 +78,9 @@ change it and continue execution of the task::
     (Pdb) continue
     Connection closed by foreign host.
 
-The result of our vandalism can be seen in the worker logs::
+The result of our vandalism can be seen in the worker logs:
+
+.. code-block:: text
 
     [2011-01-18 14:35:36,599: INFO/MainProcess] Task
         tasks.add[d7261c71-4962-47e5-b342-2448bedd20e8] succeeded
@@ -95,10 +101,14 @@ If the environment variable :envvar:`CELERY_RDBSIG` is set, the worker
 will open up an rdb instance whenever the `SIGUSR2` signal is sent.
 This is the case for both main and worker processes.
 
-For example starting the worker with::
+For example starting the worker with:
 
-    CELERY_RDBSIG=1 celery worker -l info
+.. code-block:: console
 
-You can start an rdb session for any of the worker processes by executing::
+    $ CELERY_RDBSIG=1 celery worker -l info
 
-    kill -USR2 <pid>
+You can start an rdb session for any of the worker processes by executing:
+
+.. code-block:: console
+
+    $ kill -USR2 <pid>

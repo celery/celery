@@ -5,6 +5,257 @@ The :program:`celery` umbrella command.
 
 .. program:: celery
 
+.. _preload-options:
+
+Preload Options
+---------------
+
+These options are supported by all commands,
+and usually parsed before command-specific arguments.
+
+.. cmdoption:: -A, --app
+
+    app instance to use (e.g. module.attr_name)
+
+.. cmdoption:: -b, --broker
+
+    url to broker.  default is 'amqp://guest@localhost//'
+
+.. cmdoption:: --loader
+
+    name of custom loader class to use.
+
+.. cmdoption:: --config
+
+    Name of the configuration module
+
+.. cmdoption:: -C, --no-color
+
+    Disable colors in output.
+
+.. cmdoption:: -q, --quiet
+
+    Give less verbose output (behavior depends on the sub command).
+
+.. cmdoption:: --help
+
+    Show help and exit.
+
+.. _daemon-options:
+
+Daemon Options
+--------------
+
+These options are supported by commands that can detach
+into the background (daemon).  They will be present
+in any command that also has a `--detach` option.
+
+.. cmdoption:: -f, --logfile
+
+    Path to log file. If no logfile is specified, `stderr` is used.
+
+.. cmdoption:: --pidfile
+
+    Optional file used to store the process pid.
+
+    The program will not start if this file already exists
+    and the pid is still alive.
+
+.. cmdoption:: --uid
+
+    User id, or user name of the user to run as after detaching.
+
+.. cmdoption:: --gid
+
+    Group id, or group name of the main group to change to after
+    detaching.
+
+.. cmdoption:: --umask
+
+    Effective umask (in octal) of the process after detaching.  Inherits
+    the umask of the parent process by default.
+
+.. cmdoption:: --workdir
+
+    Optional directory to change to after detaching.
+
+.. cmdoption:: --executable
+
+    Executable to use for the detached process.
+
+``celery inspect``
+------------------
+
+.. program:: celery inspect
+
+.. cmdoption:: -t, --timeout
+
+    Timeout in seconds (float) waiting for reply
+
+.. cmdoption:: -d, --destination
+
+    Comma separated list of destination node names.
+
+.. cmdoption:: -j, --json
+
+    Use json as output format.
+
+``celery control``
+------------------
+
+.. program:: celery control
+
+.. cmdoption:: -t, --timeout
+
+    Timeout in seconds (float) waiting for reply
+
+.. cmdoption:: -d, --destination
+
+    Comma separated list of destination node names.
+
+.. cmdoption:: -j, --json
+
+    Use json as output format.
+
+``celery migrate``
+------------------
+
+.. program:: celery migrate
+
+.. cmdoption:: -n, --limit
+
+    Number of tasks to consume (int).
+
+.. cmdoption:: -t, -timeout
+
+    Timeout in seconds (float) waiting for tasks.
+
+.. cmdoption:: -a, --ack-messages
+
+    Ack messages from source broker.
+
+.. cmdoption:: -T, --tasks
+
+    List of task names to filter on.
+
+.. cmdoption:: -Q, --queues
+
+    List of queues to migrate.
+
+.. cmdoption:: -F, --forever
+
+    Continually migrate tasks until killed.
+
+``celery upgrade``
+------------------
+
+.. program:: celery upgrade
+
+.. cmdoption:: --django
+
+    Upgrade a Django project.
+
+.. cmdoption:: --compat
+
+    Maintain backwards compatibility.
+
+.. cmdoption:: --no-backup
+
+    Don't backup original files.
+
+``celery shell``
+----------------
+
+.. program:: celery shell
+
+.. cmdoption:: -I, --ipython
+
+    Force :pypi:`iPython` implementation.
+
+.. cmdoption:: -B, --bpython
+
+    Force :pypi:`bpython` implementation.
+
+.. cmdoption:: -P, --python
+
+    Force default Python shell.
+
+.. cmdoption:: -T, --without-tasks
+
+    Don't add tasks to locals.
+
+.. cmdoption:: --eventlet
+
+    Use :pypi:`eventlet` monkey patches.
+
+.. cmdoption:: --gevent
+
+    Use :pypi:`gevent` monkey patches.
+
+
+``celery result``
+-----------------
+
+.. program:: celery result
+
+.. cmdoption:: -t, --task
+
+    Name of task (if custom backend).
+
+.. cmdoption:: --traceback
+
+    Show traceback if any.
+
+``celery purge``
+----------------
+
+.. program:: celery purge
+
+.. cmdoption:: -f, --force
+
+    Don't prompt for verification before deleting messages (DANGEROUS)
+
+``celery call``
+---------------
+
+.. program:: celery call
+
+.. cmdoption:: -a, --args
+
+    Positional arguments (json format).
+
+.. cmdoption:: -k, --kwargs
+
+    Keyword arguments (json format).
+
+.. cmdoption:: --eta
+
+    Scheduled time in ISO-8601 format.
+
+.. cmdoption:: --countdown
+
+    ETA in seconds from now (float/int).
+
+.. cmdoption:: --expires
+
+    Expiry time in float/int seconds, or a ISO-8601 date.
+
+.. cmdoption:: --serializer
+
+    Specify serializer to use (default is json).
+
+.. cmdoption:: --queue
+
+    Destination queue.
+
+.. cmdoption:: --exchange
+
+    Destination exchange (defaults to the queue exchange).
+
+.. cmdoption:: --routing-key
+
+    Destination routing key (defaults to the queue routing key).
+
 """
 from __future__ import absolute_import, unicode_literals, print_function
 

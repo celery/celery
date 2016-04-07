@@ -284,7 +284,9 @@ class Celery(object):
         """Clean up after the application.
 
         Only necessary for dynamically created apps for which you can
-        use the :keyword:`with` statement instead::
+        use the :keyword:`with` statement instead:
+
+        .. code-block:: python
 
             with Celery(set_as_current=False) as app:
                 with app.connection_for_write() as conn:
@@ -322,7 +324,7 @@ class Celery(object):
 
             @app.task
             def refresh_feed(url):
-                return …
+                store_feed(feedparser.parse(url))
 
         with setting extra options:
 
@@ -330,7 +332,7 @@ class Celery(object):
 
             @app.task(exchange='feeds')
             def refresh_feed(url):
-                return …
+                return store_feed(feedparser.parse(url))
 
         .. admonition:: App Binding
 
@@ -450,7 +452,9 @@ class Celery(object):
         as a promise, and it won't be loaded until the configuration is
         actually needed.
 
-        This method can be compared to::
+        This method can be compared to:
+
+        .. code-block:: pycon
 
             >>> celery.conf.update(d)
 
@@ -553,7 +557,9 @@ class Celery(object):
 
         If the name is empty, this will be delegated to fixups (e.g. Django).
 
-        For example if you have an (imagined) directory tree like this::
+        For example if you have an (imagined) directory tree like this:
+
+        .. code-block:: text
 
             foo/__init__.py
                tasks.py

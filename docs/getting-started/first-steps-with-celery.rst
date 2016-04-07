@@ -226,12 +226,16 @@ built-in result backends to choose from: `SQLAlchemy`_/`Django`_ ORM,
 For this example you will use the `rpc` result backend, which sends states
 back as transient messages.  The backend is specified via the ``backend`` argument to
 :class:`@Celery`, (or via the :setting:`task_result_backend` setting if
-you choose to use a configuration module)::
+you choose to use a configuration module):
+
+.. code-block:: python
 
     app = Celery('tasks', backend='rpc://', broker='amqp://')
 
 Or if you want to use Redis as the result backend, but still use RabbitMQ as
-the message broker (a popular combination)::
+the message broker (a popular combination):
+
+.. code-block:: python
 
     app = Celery('tasks', backend='redis://localhost', broker='amqp://')
 
@@ -239,31 +243,41 @@ To read more about result backends please see :ref:`task-result-backends`.
 
 Now with the result backend configured, let's call the task again.
 This time you'll hold on to the :class:`~@AsyncResult` instance returned
-when you call a task::
+when you call a task:
+
+.. code-block:: pycon
 
     >>> result = add.delay(4, 4)
 
 The :meth:`~@AsyncResult.ready` method returns whether the task
-has finished processing or not::
+has finished processing or not:
+
+.. code-block:: pycon
 
     >>> result.ready()
     False
 
 You can wait for the result to complete, but this is rarely used
-since it turns the asynchronous call into a synchronous one::
+since it turns the asynchronous call into a synchronous one:
+
+.. code-block:: pycon
 
     >>> result.get(timeout=1)
     8
 
 In case the task raised an exception, :meth:`~@AsyncResult.get` will
 re-raise the exception, but you can override this by specifying
-the ``propagate`` argument::
+the ``propagate`` argument:
+
+.. code-block:: pycon
 
     >>> result.get(propagate=False)
 
 
 If the task raised an exception you can also gain access to the
-original traceback::
+original traceback:
+
+.. code-block:: pycon
 
     >>> result.traceback
     …
@@ -407,7 +421,8 @@ Worker does not start: Permission Error
 
 - If you're using Debian, Ubuntu or other Debian-based distributions:
 
-    Debian recently renamed the ``/dev/shm`` special file to ``/run/shm``.
+    Debian recently renamed the :file:`/dev/shm` special file
+    to :file:`/run/shm`.
 
     A simple workaround is to create a symbolic link:
 
@@ -417,15 +432,16 @@ Worker does not start: Permission Error
 
 - Others:
 
-    If you provide any of the :option:`--pidfile`, :option:`--logfile` or
-    ``--statedb`` arguments, then you must make sure that they
-    point to a file/directory that is writable and readable by the
-    user starting the worker.
+    If you provide any of the :option:`--pidfile <celery worker --pidfile>`,
+    :option:`--logfile <celery worker --logfile>` or
+    :option:`--statedb <celery worker --statedb>` arguments, then you must
+    make sure that they point to a file/directory that is writable and
+    readable by the user starting the worker.
 
 Result backend does not work or tasks are always in ``PENDING`` state.
 ----------------------------------------------------------------------
 
-All tasks are ``PENDING`` by default, so the state would have been
+All tasks are :state:`PENDING` by default, so the state would have been
 better named "unknown".  Celery does not update any state when a task
 is sent, and any task with no history is assumed to be pending (you know
 the task id after all).
@@ -445,8 +461,8 @@ the task id after all).
     An old worker that is not configured with the expected result backend
     may be running and is hijacking the tasks.
 
-    The `--pidfile` argument can be set to an absolute path to make sure
-    this doesn't happen.
+    The :option:`--pidfile <celery worker --pidfile>` argument can be set to
+    an absolute path to make sure this doesn't happen.
 
 4) Make sure the client is configured with the right backend.
 
@@ -454,7 +470,7 @@ the task id after all).
     than the worker, you will not be able to receive the result,
     so make sure the backend is correct by inspecting it:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
-        >>> result = task.delay(…)
+        >>> result = task.delay()
         >>> print(result.backend)

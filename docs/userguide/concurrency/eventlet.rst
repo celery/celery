@@ -39,8 +39,8 @@ what works best.
 Enabling Eventlet
 =================
 
-You can enable the Eventlet pool by using the ``-P`` option to
-:program:`celery worker`:
+You can enable the Eventlet pool by using the :option:`celery worker -P`
+worker option.
 
 .. code-block:: console
 

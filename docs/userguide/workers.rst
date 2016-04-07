@@ -34,7 +34,7 @@ For a full list of available command-line options see
 
 You can also start multiple workers on the same machine. If you do so
 be sure to give a unique name to each individual worker by specifying a
-node name with the :option:`--hostname|-n` argument:
+node name with the :option:`--hostname <celery worker --hostname>` argument:
 
 .. code-block:: console
 
@@ -143,8 +143,10 @@ The worker's main process overrides the following signals:
 Variables in file paths
 =======================
 
-The file path arguments for :option:`--logfile`, :option:`--pidfile` and :option:`--statedb`
-can contain variables that the worker will expand:
+The file path arguments for :option:`--logfile <celery worker --logfile>`,
+:option:`--pidfile <celery worker --pidfile>` and
+:option:`--statedb <celery worker --statedb>` can contain variables that the
+worker will expand:
 
 Node name replacements
 ----------------------
@@ -203,8 +205,9 @@ Concurrency
 
 By default multiprocessing is used to perform concurrent execution of tasks,
 but you can also use :ref:`Eventlet <concurrency-eventlet>`.  The number
-of worker processes/threads can be changed using the :option:`--concurrency`
-argument and defaults to the number of CPUs available on the machine.
+of worker processes/threads can be changed using the
+:option:`--concurrency <celery worker --concurrency>` argument and defaults
+to the number of CPUs available on the machine.
 
 .. admonition:: Number of processes (multiprocessing/prefork pool)
 
@@ -527,7 +530,8 @@ a worker can execute before it's replaced by a new process.
 This is useful if you have memory leaks you have no control over
 for example from closed source C extensions.
 
-The option can be set using the workers :option:`--maxtasksperchild` argument
+The option can be set using the workers
+:option:`--maxtasksperchild <celery worker --maxtasksperchild>` argument
 or using the :setting:`worker_max_tasks_per_child` setting.
 
 .. _worker-maxmemperchild:
@@ -545,7 +549,8 @@ memory a worker can execute before it's replaced by a new process.
 This is useful if you have memory leaks you have no control over
 for example from closed source C extensions.
 
-The option can be set using the workers :option:`--maxmemperchild` argument
+The option can be set using the workers
+:option:`--maxmemperchild <celery worker --maxmemperchild>` argument
 or using the :setting:`worker_max_memory_per_child` setting.
 
 .. _worker-autoscaling:
@@ -563,8 +568,10 @@ based on load:
 - The autoscaler adds more pool processes when there is work to do,
     - and starts removing processes when the workload is low.
 
-It's enabled by the :option:`--autoscale` option, which needs two
-numbers: the maximum and minimum number of pool processes::
+It's enabled by the :option:`--autoscale <celery worker --autoscale>` option,
+which needs two numbers: the maximum and minimum number of pool processes:
+
+.. code-block:: text
 
         --autoscale=AUTOSCALE
              Enable autoscaling by providing
@@ -587,8 +594,8 @@ By default it will consume from all queues defined in the
 :setting:`task_queues` setting (which if not specified defaults to the
 queue named ``celery``).
 
-You can specify what queues to consume from at startup,
-by giving a comma separated list of queues to the :option:`-Q` option:
+You can specify what queues to consume from at startup, by giving a comma
+separated list of queues to the :option:`-Q <celery worker -Q>` option:
 
 .. code-block:: console
 
@@ -621,7 +628,7 @@ named "``foo``" you can use the :program:`celery control` program:
         started consuming from u'foo'
 
 If you want to specify a specific worker you can use the
-:option:`--destination`` argument:
+:option:`--destination <celery control --destination>` argument:
 
 .. code-block:: console
 
@@ -673,8 +680,8 @@ you can use the :program:`celery control` program:
 
     $ celery -A proj control cancel_consumer foo
 
-The :option:`--destination` argument can be used to specify a worker, or a
-list of workers, to act on the command:
+The :option:`--destination <celery control --destination>` argument can be
+used to specify a worker, or a list of workers, to act on the command:
 
 .. code-block:: console
 
@@ -703,8 +710,8 @@ the :control:`active_queues` control command:
     [...]
 
 Like all other remote control commands this also supports the
-:option:`--destination` argument used to specify which workers should
-reply to the request:
+:option:`--destination <celery inspect --destination>` argument used
+to specify which workers should reply to the request:
 
 .. code-block:: console
 
@@ -732,10 +739,11 @@ Autoreloading
 
 :pool support: *prefork, eventlet, gevent, threads, solo*
 
-Starting :program:`celery worker` with the :option:`--autoreload` option will
+Starting :program:`celery worker` with the
+:option:`--autoreload <celery worker --autoreload>` option will
 enable the worker to watch for file system changes to all imported task
-modules (and also any non-task modules added to the
-:setting:`imports` setting or the :option:`-I|--include` option).
+modules (and also any non-task modules added to the :setting:`imports`
+setting or the :option:`--include <celery worker --include>` option).
 
 This is an experimental feature intended for use in development only,
 using auto-reload in production is discouraged as the behavior of reloading

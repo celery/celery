@@ -18,7 +18,7 @@ version_info_t = namedtuple(
 )
 
 SERIES = '0today8'
-VERSION = version_info_t(4, 0, 0, 'rc2', '')
+VERSION = version_info = version_info_t(4, 0, 0, 'rc2', '')
 
 __version__ = '{0.major}.{0.minor}.{0.micro}{0.releaselevel}'.format(VERSION)
 __author__ = 'Ask Solem'
@@ -156,6 +156,7 @@ old_module, new_module = five.recreate_module(  # pragma: no cover
     __homepage__=__homepage__, __docformat__=__docformat__, five=five,
     VERSION=VERSION, SERIES=SERIES, VERSION_BANNER=VERSION_BANNER,
     version_info_t=version_info_t,
+    version_info=version_info,
     maybe_patch_concurrency=maybe_patch_concurrency,
     _find_option_with_arg=_find_option_with_arg,
     absolute_import=absolute_import,

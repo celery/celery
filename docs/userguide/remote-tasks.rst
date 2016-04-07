@@ -22,13 +22,15 @@ result as a JSON response. The scheme to call a task is:
 
 .. code-block:: http
 
-    GET HTTP/1.1 http://example.com/mytask/?arg1=a&arg2=b&arg3=c
+    GET /mytask/?arg1=a&arg2=b&arg3=c HTTP/1.1
+    Host: example.com
 
 or using POST:
 
 .. code-block:: http
 
-    POST HTTP/1.1 http://example.com/mytask
+    POST /mytask HTTP/1.1
+    Host: example.com
 
 .. note::
 
@@ -39,22 +41,22 @@ Whether to use GET or POST is up to you and your requirements.
 The web page should then return a response in the following format
 if the execution was successful:
 
-.. code-block:: javascript
+.. code-block:: json
 
-    {'status': 'success', 'retval': …}
+    {"status": "success", "retval": "RETVAL"}
 
 or if there was an error:
 
-.. code-block:: javascript
+.. code-block:: json
 
-    {'status': 'failure', 'reason': 'Invalid moon alignment.'}
+    {"status": "failure", "reason": "Invalid moon alignment."}
 
 Enabling the HTTP task
 ----------------------
 
 To enable the HTTP dispatch task you have to add :mod:`celery.task.http`
-to :setting:`imports`, or start the worker with ``-I
-celery.task.http``.
+to :setting:`imports`, or start the worker with
+:option:`-I celery.task.http <celery worker -I>`.
 
 
 .. _webhook-django-example:
@@ -125,7 +127,9 @@ functionality:
     100
 
 The output of :program:`celery worker` (or the log file if enabled) should show the
-task being executed::
+task being executed:
+
+.. code-block:: text
 
     [INFO/MainProcess] Task celery.task.http.HttpDispatchTask
             [f2cc8efc-2a14-40cd-85ad-f1c77c94beeb] processed: 100

@@ -170,7 +170,8 @@ class Queues(dict):
 
     def select_add(self, queue, **kwargs):
         """Add new task queue that will be consumed from even when
-        a subset has been selected using the :option:`-Q` option."""
+        a subset has been selected using the
+        :option:`celery worker -Q` option."""
         q = self.add(queue, **kwargs)
         if self._consume_from is not None:
             self._consume_from[q.name] = q

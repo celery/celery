@@ -185,7 +185,9 @@ class crontab_parser(object):
     """Parser for crontab expressions. Any expression of the form 'groups'
     (see BNF grammar below) is accepted and expanded to a set of numbers.
     These numbers represent the units of time that the crontab needs to
-    run on::
+    run on:
+
+    .. code-block:: bnf
 
         digit   :: '0'..'9'
         dow     :: 'a'..'z'
@@ -197,7 +199,9 @@ class crontab_parser(object):
         groups  :: expr ( ',' expr ) *
 
     The parser is a general purpose one, useful for parsing hours, minutes and
-    day_of_week expressions.  Example usage::
+    day_of_week expressions.  Example usage:
+
+    .. code-block:: pycon
 
         >>> minutes = crontab_parser(60).parse('*/15')
         [0, 15, 30, 45]
@@ -207,7 +211,9 @@ class crontab_parser(object):
         [0, 1, 2, 3, 4, 5, 6]
 
     It can also parse day_of_month and month_of_year expressions if initialized
-    with an minimum of 1.  Example usage::
+    with an minimum of 1.  Example usage:
+
+    .. code-block:: pycon
 
         >>> days_of_month = crontab_parser(31, 1).parse('*/3')
         [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31]
@@ -216,9 +222,9 @@ class crontab_parser(object):
         >>> months_of_year = crontab_parser(12, 1).parse('2-12/2')
         [2, 4, 6, 8, 10, 12]
 
-    The maximum possible expanded value returned is found by the formula::
+    The maximum possible expanded value returned is found by the formula:
 
-        max_ + min_ - 1
+        :math:`max_ + min_ - 1`
 
     """
     ParseException = ParseException
@@ -390,7 +396,9 @@ class crontab(schedule):
 
     @staticmethod
     def _expand_cronspec(cronspec, max_, min_=0):
-        """Takes the given cronspec argument in one of the forms::
+        """Takes the given cronspec argument in one of the forms:
+
+        .. code-block:: text
 
             int         (like 7)
             str         (like '3-5,*/15', '*', or 'monday')

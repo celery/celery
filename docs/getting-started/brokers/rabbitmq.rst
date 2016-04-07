@@ -152,7 +152,7 @@ To start the server:
 
     $ sudo rabbitmq-server
 
-you can also run it in the background by adding the :option:`-detached` option
+you can also run it in the background by adding the ``-detached`` option
 (note: only one dash):
 
 .. code-block:: console

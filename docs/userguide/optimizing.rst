@@ -170,7 +170,7 @@ the tasks according to the run-time. (see :ref:`guide-routing`).
        all messages will be delivered to the active node.
 
 .. [*] This is the concurrency setting; :setting:`worker_concurrency` or the
-       :option:`-c` option to the :program:`celery worker` program.
+       :option:`celery worker -c` option.
 
 
 Reserve one task at a time
@@ -182,13 +182,15 @@ it can be redelivered to another worker (or the same after recovery).
 
 When using the default of early acknowledgment, having a prefetch multiplier setting
 of 1, means the worker will reserve at most one extra task for every
-worker process: or in other words, if the worker is started with `-c 10`,
-the worker may reserve at most 20 tasks (10 unacknowledged tasks executing, and 10
-unacknowledged reserved tasks) at any time.
+worker process: or in other words, if the worker is started with
+:option:`-c 10 <celery worker -c>`, the worker may reserve at most 20
+tasks (10 unacknowledged tasks executing, and 10 unacknowledged reserved
+tasks) at any time.
 
 Often users ask if disabling "prefetching of tasks" is possible, but what
 they really mean by that is to have a worker only reserve as many tasks as
-there are worker processes (10 unacknowledged tasks for `-c 10`)
+there are worker processes (10 unacknowledged tasks for
+:option:`-c 10 <celery worker -c>`)
 
 That is possible, but not without also enabling
 :term:`late acknowledgment`.  Using this option over the
@@ -236,8 +238,8 @@ writable.  The pipe buffer size varies based on the operating system: some may
 have a buffer as small as 64kb but on recent Linux versions the buffer
 size is 1MB (can only be changed system wide).
 
-You can disable this prefetching behavior by enabling the :option:`-Ofair`
-worker option:
+You can disable this prefetching behavior by enabling the
+:option:`-Ofair <celery worker -O>` worker option:
 
 .. code-block:: console
 
