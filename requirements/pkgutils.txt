@@ -3,3 +3,4 @@ wheel>=0.29.0
 flake8>=2.5.4
 flakeplus>=1.1
 tox>=2.3.1
+sphinx2rst>=1.0

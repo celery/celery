@@ -7,7 +7,7 @@ CONTRIBUTING="CONTRIBUTING.rst"
 CONFIGREF_SRC="docs/configuration.rst"
 README_SRC="docs/templates/readme.txt"
 CONTRIBUTING_SRC="docs/contributing.rst"
-SPHINX2RST="extra/release/sphinx-to-rst.py"
+SPHINX2RST="sphinx2rst"
 WORKER_GRAPH_FULL="docs/images/worker_graph_full.png"
 
 SPHINX_HTMLDIR = "${SPHINX_BUILDDIR}/html"
@@ -52,7 +52,7 @@ readmecheck:
 	iconv -f ascii -t ascii $(README) >/dev/null
 
 $(README):
-	$(PYTHON) $(SPHINX2RST) $(README_SRC) --ascii > $@
+	$(SPHINX2RST) $(README_SRC) --ascii > $@
 
 readme: readmeclean $(README) readmecheck
 
@@ -60,7 +60,7 @@ contributingclean:
 	-rm -f CONTRIBUTING.rst
 
 $(CONTRIBUTING):
-	$(PYTHON) $(SPHINX2RST) $(CONTRIBUTING_SRC) > $@
+	$(SPHINX2RST) $(CONTRIBUTING_SRC) > $@
 
 contributing: contributingclean $(CONTRIBUTING)
 
