@@ -187,8 +187,6 @@ NAMESPACES = Namespace(
         ),
         persistent=Option(None, type='bool'),
         serializer=Option('json'),
-
-        fspath=Option(None),
     ),
     riak=Namespace(
         __old__=old_ns('celery_riak'),

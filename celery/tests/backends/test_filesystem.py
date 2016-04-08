@@ -28,11 +28,6 @@ class test_FilesystemBackend(AppCase):
         with self.assertRaises(ImproperlyConfigured):
             FilesystemBackend(app=self.app)
 
-    def test_a_path_in_app_conf(self):
-        self.app.conf.result_fspath = self.url[7:]
-        tb = FilesystemBackend(app=self.app)
-        self.assertEqual(tb.path, self.path)
-
     def test_a_path_in_url(self):
         tb = FilesystemBackend(app=self.app, url=self.url)
         self.assertEqual(tb.path, self.path)

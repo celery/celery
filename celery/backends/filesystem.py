@@ -61,13 +61,11 @@ class FilesystemBackend(KeyValueStoreBackend):
         self._do_directory_test(b'.fs-backend-' + uuid().encode(encoding))
 
     def _find_path(self, url):
-        if url is not None and url.startswith('file:///'):
-            return url[7:]
-        path = self.app.conf.result_fspath
-        if not path:
+        if not url:
             raise ImproperlyConfigured(
                 'You need to configure a path for the Filesystem backend')
-        return path
+        if url is not None and url.startswith('file:///'):
+            return url[7:]
 
     def _do_directory_test(self, key):
         try:
