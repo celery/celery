@@ -26,7 +26,7 @@ apicheck:
 	(cd "$(SPHINX_DIR)"; $(MAKE) apicheck)
 
 configcheck:
-	PYTHONPATH=. $(PYTHON) extra/release/verify_config_reference.py $(CONFIGREF_SRC)
+	(cd "$(SPHINX_DIR)"; $(MAKE) configcheck)
 
 flakecheck:
 	flake8 "$(PROJ)"

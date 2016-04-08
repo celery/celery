@@ -48,6 +48,7 @@ help:
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 	@echo "  coverage   to run coverage check of the documentation (if enabled)"
 	@echo "  apicheck   to verify that all modules are present in autodoc"
+	@echo "  configcheck to verify that all modules are present in autodoc"
 
 .PHONY: clean
 clean:
@@ -214,6 +215,10 @@ coverage:
 .PHONY: apicheck
 apicheck:
 	$(SPHINXBUILD) -b apicheck $(ALLSPHINXOPTS) $(BUILDDIR)/apicheck
+
+.PHONY: configcheck
+configcheck:
+	$(SPHINXBUILD) -b configcheck $(ALLSPHINXOPTS) $(BUILDDIR)/configcheck
 
 .PHONY: xml
 xml:

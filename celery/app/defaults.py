@@ -132,6 +132,8 @@ NAMESPACES = Namespace(
         servers=Option(type='list'),
         table=Option(type='string'),
         write_consistency=Option(type='string'),
+        auth_provider=Option(type='string'),
+        auth_kwargs=Option(type='string'),
     ),
     couchbase=Namespace(
         __old__=old_ns('celery_couchbase'),

@@ -239,7 +239,11 @@ Queues can be configured to support priorities by setting the
     ]
 
 A default value for all queues can be set using the
-:setting:`task_queue_max_priority` setting.
+:setting:`task_queue_max_priority` setting:
+
+.. code-block:: python
+
+    app.conf.task_queue_max_priority = 10
 
 .. _amqp-primer:
 

@@ -1430,6 +1430,14 @@ Using a list will implicitly set ``x-ha-policy`` to 'nodes' and
 
 See http://www.rabbitmq.com/ha.html for more information.
 
+.. setting:: task_queue_max_priority
+
+task_queue_max_priority
+~~~~~~~~~~~~~~~~~~~~~~~
+:brokers: RabbitMQ
+
+See :ref:`routing-options-rabbitmq-priorities`.
+
 .. setting:: worker_direct
 
 worker_direct

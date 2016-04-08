@@ -39,3 +39,37 @@ globals().update(conf.build_config(
         'celery.utils.encoding',
     ],
 ))
+
+settings = {}
+ignored_settings = {
+    'worker_agent',
+    'worker_pool_putlocks',
+    'broker_host',
+    'broker_user',
+    'broker_password',
+    'broker_vhost',
+    'broker_port',
+    'broker_transport',
+    'chord_propagates',
+    'redis_host',
+    'redis_port',
+    'redis_db',
+    'redis_password',
+    'worker_force_execv',
+}
+
+def configcheck_project_settings():
+    from celery.app.defaults import NAMESPACES, flatten
+    settings.update(dict(flatten(NAMESPACES)))
+    return set(settings)
+
+
+def is_deprecated_setting(setting):
+    try:
+        return settings[setting].deprecate_by
+    except KeyError:
+        pass
+
+
+def configcheck_should_ignore(setting):
+    return setting in ignored_settings or is_deprecated_setting(setting)
