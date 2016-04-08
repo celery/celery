@@ -11,7 +11,8 @@ from __future__ import absolute_import, unicode_literals
 import logging
 
 from contextlib import contextmanager
-from functools import wraps
+
+from vine.utils import wraps
 
 from celery import states
 from celery.backends.base import BaseBackend

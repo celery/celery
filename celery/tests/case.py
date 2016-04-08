@@ -10,10 +10,11 @@ import threading
 
 from copy import deepcopy
 from datetime import datetime, timedelta
-from functools import partial, wraps
+from functools import partial
 
 from kombu import Queue
 from kombu.utils import symbol_by_name
+from vine.utils import wraps
 
 from celery import Celery
 from celery.app import current_app

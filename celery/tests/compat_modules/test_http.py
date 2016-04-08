@@ -2,7 +2,6 @@
 from __future__ import absolute_import, unicode_literals
 
 from contextlib import contextmanager
-from functools import wraps
 try:
     from urllib import addinfourl
 except ImportError:  # py3k
@@ -10,6 +9,7 @@ except ImportError:  # py3k
 
 from kombu.utils.encoding import from_utf8
 from kombu.utils.json import dumps
+from vine.utils import wraps
 
 from celery.five import WhateverIO, items
 from celery.task import http

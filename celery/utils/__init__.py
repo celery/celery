@@ -18,10 +18,11 @@ import warnings
 import datetime
 
 from collections import Callable
-from functools import partial, wraps
+from functools import partial
 from pprint import pprint
 
 from kombu.entity import Exchange, Queue
+from vine.utils import wraps
 
 from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 from celery.five import WhateverIO, items, reraise, string_t
