@@ -47,6 +47,7 @@ help:
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 	@echo "  coverage   to run coverage check of the documentation (if enabled)"
+	@echo "  apicheck   to verify that all modules are present in autodoc"
 
 .PHONY: clean
 clean:
@@ -209,6 +210,10 @@ coverage:
 	$(SPHINXBUILD) -b coverage $(ALLSPHINXOPTS) $(BUILDDIR)/coverage
 	@echo "Testing of coverage in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/coverage/python.txt."
+
+.PHONY: apicheck
+apicheck:
+	$(SPHINXBUILD) -b apicheck $(ALLSPHINXOPTS) $(BUILDDIR)/apicheck
 
 .PHONY: xml
 xml:

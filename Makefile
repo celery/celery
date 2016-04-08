@@ -13,7 +13,7 @@ WORKER_GRAPH_FULL="docs/images/worker_graph_full.png"
 SPHINX_HTMLDIR = "${SPHINX_BUILDDIR}/html"
 
 html:
-	(cd "$(SPHINX_DIR)"; make html)
+	(cd "$(SPHINX_DIR)"; $(MAKE) html)
 	mv "$(SPHINX_HTMLDIR)" Documentation
 
 docsclean:
@@ -23,10 +23,7 @@ htmlclean:
 	-rm -rf "$(SPHINX)"
 
 apicheck:
-	extra/release/doc4allmods "$(PROJ)"
-
-indexcheck:
-	extra/release/verify-reference-index.sh
+	(cd "$(SPHINX_DIR)"; $(MAKE) apicheck)
 
 configcheck:
 	PYTHONPATH=. $(PYTHON) extra/release/verify_config_reference.py $(CONFIGREF_SRC)
@@ -88,7 +85,10 @@ gitclean:
 gitcleanforce:
 	git clean -xdf
 
-distcheck: flakecheck apicheck indexcheck configcheck readmecheck test gitclean
+tox: removepyc
+	tox
+
+distcheck: flakecheck apicheck configcheck readmecheck test gitclean
 
 authorcheck:
 	git shortlog -se | cut -f2 | extra/release/attribution.py
