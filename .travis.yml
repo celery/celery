@@ -12,6 +12,10 @@ env:
     - TOXENV=pypy
     - TOXENV=3.5
     - TOXENV=pypy3
+    - TOXENV=flake8
+    - TOXENV=flakeplus
+    - TOXENV=apicheck
+    - TOXENV=configcheck
 install: travis_retry pip install -U tox
 script: tox -v -- -v
 after_success:
