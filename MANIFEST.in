@@ -6,7 +6,7 @@ include MANIFEST.in
 include TODO
 include setup.cfg
 include setup.py
-recursive-include celery *.py
+
 recursive-include docs *
 recursive-include extra/bash-completion *
 recursive-include extra/centos *
@@ -16,6 +16,8 @@ recursive-include extra/supervisord *
 recursive-include extra/systemd *
 recursive-include extra/zsh-completion *
 recursive-include examples *
-recursive-include requirements *.txt
-prune *.pyc
-prune *.sw*
+recursive-include requirements *.txt *.rst
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * .*.sw[a-z]
