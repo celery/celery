@@ -238,7 +238,7 @@ class test_BaseBackend_dict(AppCase):
             raise KeyError('foo')
         except KeyError as exc:
             self.b.fail_from_current_stack('task_id')
-            self.assertTrue(self.b.mark_as_failure.called)
+            self.b.mark_as_failure.assert_called()
             args = self.b.mark_as_failure.call_args[0]
             self.assertEqual(args[0], 'task_id')
             self.assertIs(args[1], exc)
@@ -466,14 +466,14 @@ class test_KeyValueStoreBackend(AppCase):
     def test_chord_part_return_propagate_set(self):
         with self._chord_part_context(self.b) as (task, deps, _):
             self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
-            self.assertFalse(self.b.expire.called)
+            self.b.expire.assert_not_called()
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(propagate=True, timeout=3.0)
 
     def test_chord_part_return_propagate_default(self):
         with self._chord_part_context(self.b) as (task, deps, _):
             self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
-            self.assertFalse(self.b.expire.called)
+            self.b.expire.assert_not_called()
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(propagate=True, timeout=3.0)
 
@@ -482,7 +482,7 @@ class test_KeyValueStoreBackend(AppCase):
             deps._failed_join_report = lambda: iter([])
             deps.join_native.side_effect = KeyError('foo')
             self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
-            self.assertTrue(self.b.fail_from_current_stack.called)
+            self.b.fail_from_current_stack.assert_called()
             args = self.b.fail_from_current_stack.call_args
             exc = args[1]['exc']
             self.assertIsInstance(exc, ChordError)
@@ -496,7 +496,7 @@ class test_KeyValueStoreBackend(AppCase):
             ])
             deps.join_native.side_effect = KeyError('foo')
             b.on_chord_part_return(task.request, 'SUCCESS', 10)
-            self.assertTrue(b.fail_from_current_stack.called)
+            b.fail_from_current_stack.assert_called()
             args = b.fail_from_current_stack.call_args
             exc = args[1]['exc']
             self.assertIsInstance(exc, ChordError)

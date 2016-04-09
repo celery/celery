@@ -214,7 +214,7 @@ class test_App(AppCase):
             def lazy_list():
                 return [1, 2, 3]
             self.app.autodiscover_tasks(lazy_list)
-            self.assertTrue(import_modules.connect.called)
+            import_modules.connect.assert_called()
             prom = import_modules.connect.call_args[0][0]
             self.assertIsInstance(prom, promise)
             self.assertEqual(prom.fun, self.app._autodiscover_tasks)
@@ -378,7 +378,7 @@ class test_App(AppCase):
             @self.app.task(shared=False)
             def foo():
                 pass
-            self.assertFalse(sh.called)
+            sh.assert_not_called()
 
     def test_task_compat_with_filter(self):
         with self.Celery() as app:
@@ -469,7 +469,7 @@ class test_App(AppCase):
                 aawsX.apply_async((4, 5))
                 args = create.call_args[0][2]
                 self.assertEqual(args, ('hello', 4, 5))
-                self.assertTrue(send.called)
+                send.assert_called()
 
     def test_apply_async_adds_children(self):
         from celery._state import _task_stack
@@ -707,7 +707,7 @@ class test_App(AppCase):
     @patch('celery.bin.celery.CeleryCommand.execute_from_commandline')
     def test_start(self, execute):
         self.app.start()
-        self.assertTrue(execute.called)
+        execute.assert_called()
 
     def test_mail_admins(self):
 
@@ -915,7 +915,7 @@ class test_App(AppCase):
         x.should_send = Mock()
         x.should_send.return_value = False
         x.send(Mock(), Mock())
-        self.assertFalse(task.app.mail_admins.called)
+        task.app.mail_admins.assert_not_called()
 
     def test_select_queues(self):
         self.app.amqp = Mock(name='amqp')

@@ -199,7 +199,7 @@ class test_Consumer(AppCase):
         step = find_step(l, consumer.Connection)
         conn = l.connection = Mock()
         step.shutdown(l)
-        self.assertTrue(conn.close.called)
+        conn.close.assert_called()
         self.assertIsNone(l.connection)
 
         l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
@@ -268,7 +268,7 @@ class test_Consumer(AppCase):
 
         callback = self._get_on_message(l)
         callback(m)
-        self.assertTrue(error.called)
+        error.assert_called()
         self.assertIn('Received invalid task message', error.call_args[0][0])
 
     @patch('celery.worker.consumer.consumer.crit')
@@ -497,7 +497,7 @@ class test_Consumer(AppCase):
         con.node.handle_message.side_effect = ValueError('foo')
         con.on_message('foo', 'bar')
         con.node.handle_message.assert_called_with('foo', 'bar')
-        self.assertTrue(con.reset.called)
+        con.reset.assert_called()
 
     def test_revoke(self):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
@@ -705,7 +705,7 @@ class test_Consumer(AppCase):
         controller = find_step(l, consumer.Control)
         controller.box.loop(l)
 
-        self.assertTrue(controller.box.node.listen.called)
+        controller.box.node.listen.assert_called()
         self.assertTrue(controller.box.consumer)
         controller.box.consumer.consume.assert_called_with()
 
@@ -883,9 +883,9 @@ class test_WorkController(AppCase):
         worker = self.create_worker(pidfile='pidfilelockfilepid')
         worker.steps = []
         worker.start()
-        self.assertTrue(create_pidlock.called)
+        create_pidlock.assert_called()
         worker.stop()
-        self.assertTrue(worker.pidlock.release.called)
+        worker.pidlock.release.assert_called()
 
     def test_attrs(self):
         worker = self.worker

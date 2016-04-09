@@ -54,7 +54,7 @@ class test_Extensions(AppCase):
                 symbyname.side_effect = SyntaxError()
                 with patch('warnings.warn') as warn:
                     e.load()
-                    self.assertTrue(warn.called)
+                    warn.assert_called()
 
             with patch('celery.bin.base.symbol_by_name') as symbyname:
                 symbyname.side_effect = KeyError('foo')
@@ -219,7 +219,7 @@ class test_Command(AppCase):
         cmd.respects_app_option = False
         with patch('celery.bin.base.Celery') as cp:
             cmd.setup_app_from_commandline(['--app=x.y:z'])
-            self.assertTrue(cp.called)
+            cp.assert_called()
 
     def test_setup_app_custom_app(self):
         cmd = MockCommand(app=self.app)

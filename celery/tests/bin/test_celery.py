@@ -49,7 +49,7 @@ class test__main__(AppCase):
                 prev, sys.argv = sys.argv, ['foo', 'multi']
                 try:
                     __main__.main()
-                    self.assertFalse(mpc.called)
+                    mpc.assert_not_called()
                     main.assert_called_with()
                 finally:
                     sys.argv = prev
@@ -71,7 +71,7 @@ class test_Command(AppCase):
     def test_error(self):
         self.cmd.out = Mock()
         self.cmd.error('FOO')
-        self.assertTrue(self.cmd.out.called)
+        self.cmd.out.assert_called()
 
     def test_out(self):
         f = Mock()
@@ -147,7 +147,7 @@ class test_call(AppCase):
     def test_run(self, send_task):
         a = call(app=self.app, stderr=WhateverIO(), stdout=WhateverIO())
         a.run(self.add.name)
-        self.assertTrue(send_task.called)
+        send_task.assert_called()
 
         a.run(self.add.name,
               args=dumps([4, 4]),
@@ -240,10 +240,10 @@ class test_migrate(AppCase):
         m = migrate(app=self.app, stdout=out, stderr=WhateverIO())
         with self.assertRaises(TypeError):
             m.run()
-        self.assertFalse(migrate_tasks.called)
+        migrate_tasks.assert_not_called()
 
         m.run('memory://foo', 'memory://bar')
-        self.assertTrue(migrate_tasks.called)
+        migrate_tasks.assert_called()
 
         state = Mock()
         state.count = 10
@@ -403,7 +403,7 @@ class test_CeleryCommand(AppCase):
         x = CeleryCommand(app=self.app)
         x.error = Mock()
         x.on_usage_error(x.UsageError('foo'), command=None)
-        self.assertTrue(x.error.called)
+        x.error.assert_called()
         x.on_usage_error(x.UsageError('foo'), command='dummy')
 
     def test_prepare_prog_name(self):
@@ -458,15 +458,15 @@ class test_inspect(AppCase):
         i.out = Mock()
         i.quiet = True
         i.say_chat('<-', 'hello out')
-        self.assertFalse(i.out.called)
+        i.out.assert_not_called()
 
         i.say_chat('->', 'hello in')
-        self.assertTrue(i.out.called)
+        i.out.assert_called()
 
         i.quiet = False
         i.out.reset_mock()
         i.say_chat('<-', 'hello out', 'body')
-        self.assertTrue(i.out.called)
+        i.out.assert_called()
 
     @patch('celery.app.control.Control.inspect')
     def test_run(self, real):
@@ -480,7 +480,7 @@ class test_inspect(AppCase):
             i.run('xyzzybaz')
 
         i.run('ping')
-        self.assertTrue(real.called)
+        real.assert_called()
         i.run('ping', destination='foo,bar')
         self.assertEqual(real.call_args[1]['destination'], ['foo', 'bar'])
         self.assertEqual(real.call_args[1]['timeout'], 0.2)
@@ -491,7 +491,7 @@ class test_inspect(AppCase):
 
         with patch('celery.bin.celery.json.dumps') as dumps:
             i.run('ping', json=True)
-            self.assertTrue(dumps.called)
+            dumps.assert_called()
 
         instance = real.return_value = Mock()
         instance.ping.return_value = None

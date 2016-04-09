@@ -231,7 +231,7 @@ class test_AMQP(AppCase):
             exchange='xyz', routing_key='xyb',
             event_dispatcher=evd,
         )
-        self.assertTrue(evd.publish.called)
+        evd.publish.assert_called()
         event = evd.publish.call_args[0][1]
         self.assertEqual(event['routing_key'], 'xyb')
         self.assertEqual(event['exchange'], 'xyz')

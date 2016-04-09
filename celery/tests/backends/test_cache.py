@@ -15,7 +15,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.five import items, module_name_t, string, text_t
 from celery.utils import uuid
 
-from celery.tests.case import AppCase, Mock, mock, patch
+from celery.tests.case import AppCase, Mock, mock, patch, skip
 
 PY3 = sys.version_info[0] == 3
 
@@ -89,9 +89,9 @@ class test_CacheBackend(AppCase):
         task.request.group = gid
         tb.apply_chord(group(app=self.app), (), gid, {}, result=res)
 
-        self.assertFalse(deps.join_native.called)
+        deps.join_native.assert_not_called()
         tb.on_chord_part_return(task.request, 'SUCCESS', 10)
-        self.assertFalse(deps.join_native.called)
+        deps.join_native.assert_not_called()
 
         tb.on_chord_part_return(task.request, 'SUCCESS', 10)
         deps.join_native.assert_called_with(propagate=True, timeout=3.0)
@@ -135,6 +135,7 @@ class test_CacheBackend(AppCase):
         self.assertEqual(b.as_uri(), backend)
 
     @mock.stdouts
+    @skip.unless_module('memcached', name='python-memcached')
     def test_regression_worker_startup_info(self, stdout, stderr):
         self.app.conf.result_backend = (
             'cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'

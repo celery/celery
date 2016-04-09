@@ -111,7 +111,7 @@ class test_TaskPool(EventletCase):
     @patch('celery.concurrency.eventlet.base')
     def test_apply_target(self, base):
         apply_target(Mock(), getpid=Mock())
-        self.assertTrue(base.apply_target.called)
+        base.apply_target.assert_called()
 
     def test_grow(self):
         x = TaskPool(10)

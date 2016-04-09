@@ -258,7 +258,7 @@ class test_EventReceiver(AppCase):
             localize=False,
             adjust_timestamp=ts_adjust,
         )
-        self.assertFalse(ts_adjust.called)
+        ts_adjust.assert_not_called()
         r.adjust_clock.assert_called_with(313)
 
     def test_event_from_message_clock_from_client(self):

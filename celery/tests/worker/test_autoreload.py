@@ -229,7 +229,7 @@ class test_InotifyMonitor(Case):
         x.process_(Mock())
         x._on_change = Mock()
         x.process_(Mock())
-        self.assertTrue(x._on_change.called)
+        x._on_change.assert_called()
 
         x.create_notifier = Mock()
         x._wm = Mock()
@@ -337,7 +337,7 @@ class test_Autoreloader(AppCase):
         x._reload = Mock()
         x.file_to_module[__name__] = __name__
         x.on_change([__name__])
-        self.assertTrue(x._reload.called)
+        x._reload.assert_called()
         mm.return_value = False
         x.on_change([__name__])
 

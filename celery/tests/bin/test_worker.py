@@ -73,16 +73,16 @@ class test_Worker(WorkerAppCase):
             pass
         x.run = run
         x.run_from_argv('celery', [])
-        self.assertTrue(x.maybe_detach.called)
+        x.maybe_detach.assert_called()
 
     def test_maybe_detach(self):
         x = worker(app=self.app)
         with patch('celery.bin.worker.detached_celeryd') as detached:
             x.maybe_detach([])
-            self.assertFalse(detached.called)
+            detached.assert_not_called()
             with self.assertRaises(SystemExit):
                 x.maybe_detach(['--detach'])
-            self.assertTrue(detached.called)
+            detached.assert_called()
 
     @mock.stdouts
     def test_invalid_loglevel_gives_error(self, stdout, stderr):
@@ -283,7 +283,7 @@ class test_Worker(WorkerAppCase):
         worker = self.Worker(app=self.app, redirect_stoutds=True)
         worker._custom_logging = True
         worker.on_start()
-        self.assertFalse(self.app.log.redirect_stdouts.called)
+        self.app.log.redirect_stdouts.assert_not_called()
 
     def test_setup_logging_no_color(self):
         worker = self.Worker(
@@ -581,7 +581,7 @@ class test_signal_handlers(WorkerAppCase):
     def test_worker_cry_handler(self, stderr):
         handlers = self.psig(cd.install_cry_handler)
         self.assertIsNone(handlers['SIGUSR1']('SIGUSR1', object()))
-        self.assertTrue(stderr.write.called)
+        stderr.write.assert_called()
 
     @skip.unless_module('multiprocessing')
     def test_worker_term_handler_only_stop_MainProcess(self):
@@ -620,7 +620,7 @@ class test_signal_handlers(WorkerAppCase):
             handlers = self.psig(cd.install_worker_restart_handler, worker)
             handlers['SIGHUP']('SIGHUP', object())
             self.assertEqual(state.should_stop, EX_OK)
-            self.assertTrue(register.called)
+            register.assert_called()
             callback = register.call_args[0][0]
             callback()
             self.assertTrue(argv)

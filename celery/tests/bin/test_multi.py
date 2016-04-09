@@ -190,7 +190,7 @@ class test_MultiTool(AppCase):
 
         self.t.carp = Mock()
         self.assertEqual(self.t.error(), 1)
-        self.assertFalse(self.t.carp.called)
+        self.t.carp.assert_not_called()
 
         self.assertEqual(self.t.retcode, 1)
 
@@ -240,7 +240,7 @@ class test_MultiTool(AppCase):
         stop = self.t._stop_nodes = Mock()
         self.t.restart(['jerry', 'george'], 'celery worker')
         waitexec = self.t.waitexec = Mock()
-        self.assertTrue(stop.called)
+        stop.assert_called()
         callback = stop.call_args[1]['callback']
         self.assertTrue(callback)
 
@@ -322,7 +322,7 @@ class test_MultiTool(AppCase):
                     '-n bar@e.com', '')),
         )
         self.assertEqual(node_1[2], 11)
-        self.assertTrue(callback.called)
+        callback.assert_called()
         cargs, _ = callback.call_args
         self.assertEqual(cargs[0], 'baz@e.com')
         self.assertItemsEqual(
@@ -359,7 +359,7 @@ class test_MultiTool(AppCase):
             {tup[0] for tup in sigs},
         )
         self.t.signal_node.return_value = False
-        self.assertTrue(callback.called)
+        callback.assert_called()
         self.t.stop(['foo', 'bar', 'baz'], 'celery worker', callback=None)
 
         def on_node_alive(pid):
@@ -433,7 +433,7 @@ class test_MultiTool(AppCase):
         start = self.t.commands['start'] = Mock()
         self.t.error = Mock()
         self.t.execute_from_commandline(['multi', 'start', 'foo', 'bar'])
-        self.assertFalse(self.t.error.called)
+        self.t.error.assert_not_called()
         start.assert_called_with(['foo', 'bar'], 'celery worker')
 
         self.t.error = Mock()

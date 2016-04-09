@@ -29,7 +29,7 @@ class test_Rdb(AppCase):
     def test_set_trace(self, _frame, debugger):
         self.assertTrue(set_trace(Mock()))
         self.assertTrue(set_trace())
-        self.assertTrue(debugger.return_value.set_trace.called)
+        debugger.return_value.set_trace.assert_called()
 
     @patch('celery.contrib.rdb.Rdb.get_avail_port')
     @skip.if_pypy()
@@ -39,7 +39,7 @@ class test_Rdb(AppCase):
         sock.accept.return_value = (Mock(), ['helu'])
         out = WhateverIO()
         with Rdb(out=out) as rdb:
-            self.assertTrue(get_avail_port.called)
+            get_avail_port.assert_called()
             self.assertIn('helu', out.getvalue())
 
             # set_quit

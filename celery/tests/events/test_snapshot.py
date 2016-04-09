@@ -3,18 +3,7 @@ from __future__ import absolute_import, unicode_literals
 from celery.events import Events
 from celery.events.snapshot import Polaroid, evcam
 
-from celery.tests.case import AppCase, mock, patch
-
-
-class TRef(object):
-    active = True
-    called = False
-
-    def __call__(self):
-        self.called = True
-
-    def cancel(self):
-        self.active = False
+from celery.tests.case import AppCase, Mock, mock, patch
 
 
 class MockTimer(object):
@@ -22,7 +11,7 @@ class MockTimer(object):
 
     def call_repeatedly(self, secs, fun, *args, **kwargs):
         self.installed.append(fun)
-        return TRef()
+        return Mock(name='TRef')
 timer = MockTimer()
 
 
@@ -47,13 +36,13 @@ class test_Polaroid(AppCase):
         x.__enter__()
         self.assertIn(x.capture, MockTimer.installed)
         self.assertIn(x.cleanup, MockTimer.installed)
-        self.assertTrue(x._tref.active)
-        self.assertTrue(x._ctref.active)
+        x._tref.cancel.assert_not_called()
+        x._ctref.cancel.assert_not_called()
         x.__exit__()
-        self.assertFalse(x._tref.active)
-        self.assertFalse(x._ctref.active)
-        self.assertTrue(x._tref.called)
-        self.assertFalse(x._ctref.called)
+        x._tref.cancel.assert_called()
+        x._ctref.cancel.assert_called()
+        x._tref.assert_called()
+        x._ctref.assert_not_called()
 
     def test_cleanup(self):
         x = Polaroid(self.state, app=self.app)

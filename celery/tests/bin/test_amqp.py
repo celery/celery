@@ -60,7 +60,7 @@ class test_AMQShell(AppCase):
         self.shell.say = Mock()
         self.assertFalse(self.shell.needs_reconnect)
         self.shell.onecmd('hello')
-        self.assertTrue(self.shell.say.called)
+        self.shell.say.assert_called()
         self.assertTrue(self.shell.needs_reconnect)
 
     def test_exit(self):

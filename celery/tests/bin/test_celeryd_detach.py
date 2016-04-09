@@ -41,7 +41,7 @@ if not IS_WINDOWS:
                 logfile='/var/log', pidfile='/var/pid',
                 hostname='foo@example.com', app=self.app)
             context.__enter__.assert_called_with()
-            self.assertTrue(logger.critical.called)
+            logger.critical.assert_called()
             setup_logs.assert_called_with(
                 'ERROR', '/var/log', hostname='foo@example.com')
             self.assertEqual(r, 1)
@@ -109,7 +109,7 @@ class test_Command(AppCase):
     def test_execute_from_commandline(self, detach, exit):
         x = detached_celeryd(app=self.app)
         x.execute_from_commandline(self.argv)
-        self.assertTrue(exit.called)
+        exit.assert_called()
         detach.assert_called_with(
             path=x.execv_path, uid=None, gid=None,
             umask=None, fake=False, logfile='/var/log', pidfile='celeryd.pid',

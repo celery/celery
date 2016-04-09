@@ -105,11 +105,11 @@ class test_AsyncResult(AppCase):
         x.parent = EagerResult(uuid(), KeyError('foo'), states.FAILURE)
         with self.assertRaises(KeyError):
             x.get(propagate=True)
-        self.assertFalse(x.backend.wait_for_pending.called)
+        x.backend.wait_for_pending.assert_not_called()
 
         x.parent = EagerResult(uuid(), 42, states.SUCCESS)
         self.assertEqual(x.get(propagate=True), 84)
-        self.assertTrue(x.backend.wait_for_pending.called)
+        x.backend.wait_for_pending.assert_called()
 
     def test_get_children(self):
         tid = uuid()
@@ -336,10 +336,10 @@ class test_ResultSet(AppCase):
         x.join_native = Mock()
         x.join = Mock()
         x.get()
-        self.assertTrue(x.join.called)
+        x.join.assert_called()
         b.supports_native_join = True
         x.get()
-        self.assertTrue(x.join_native.called)
+        x.join_native.assert_called()
 
     def test_eq_ne(self):
         g1 = self.app.ResultSet([
@@ -369,7 +369,7 @@ class test_ResultSet(AppCase):
         self.assertIsNone(x.supports_native_join)
         x.join = Mock(name='join')
         x.get()
-        self.assertTrue(x.join.called)
+        x.join.assert_called()
 
     def test_add(self):
         x = self.app.ResultSet([self.app.AsyncResult(1)])
@@ -417,7 +417,7 @@ class test_ResultSet(AppCase):
                         ready.return_value = False
                         ready.side_effect = se
                         list(x.iterate())
-                    self.assertFalse(_time.sleep.called)
+                    _time.sleep.assert_not_called()
 
     def test_times_out(self):
         r1 = self.app.AsyncResult(uuid)

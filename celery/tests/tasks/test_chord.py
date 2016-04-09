@@ -98,7 +98,7 @@ class test_unlock_chord_task(ChordCase):
             callback.apply_async.side_effect = IOError()
 
         with self._chord_context(AlwaysReady, setup) as (cb, retry, fail):
-            self.assertTrue(fail.called)
+            fail.assert_called()
             self.assertEqual(
                 fail.call_args[0][0], cb.id,
             )
@@ -113,10 +113,10 @@ class test_unlock_chord_task(ChordCase):
             value = [2, KeyError('foo'), 8, 6]
 
         with self._chord_context(Failed) as (cb, retry, fail_current):
-            self.assertFalse(cb.type.apply_async.called)
+            cb.type.apply_async.assert_not_called()
             # did not retry
             self.assertFalse(retry.call_count)
-            self.assertTrue(fail_current.called)
+            fail_current.assert_called()
             self.assertEqual(
                 fail_current.call_args[0][0], cb.id,
             )
@@ -131,7 +131,7 @@ class test_unlock_chord_task(ChordCase):
             value = [2, KeyError('foo'), 8, 6]
 
         with self._chord_context(Failed) as (cb, retry, fail_current):
-            self.assertTrue(fail_current.called)
+            fail_current.assert_called()
             self.assertEqual(
                 fail_current.call_args[0][0], cb.id,
             )
@@ -182,7 +182,7 @@ class test_unlock_chord_task(ChordCase):
 
         with self._chord_context(NeverReady, interval=10, max_retries=30) \
                 as (cb, retry, _):
-            self.assertFalse(cb.type.apply_async.called)
+            cb.type.apply_async.assert_not_called()
             # did retry
             retry.assert_called_with(countdown=10, max_retries=30)
 
@@ -225,7 +225,7 @@ class test_chord(ChordCase):
             # does not modify original signature
             with self.assertRaises(KeyError):
                 body.options['task_id']
-            self.assertTrue(chord.run.called)
+            chord.run.assert_called()
         finally:
             chord.run = prev
 
@@ -262,7 +262,7 @@ class test_add_to_chord(AppCase):
         self.assertTrue(sig.options['task_id'])
         self.assertEqual(sig.options['group_id'], self.adds.request.group)
         self.assertEqual(sig.options['chord'], self.adds.request.chord)
-        self.assertFalse(sig.delay.called)
+        sig.delay.assert_not_called()
         self.app.backend.add_to_chord.assert_called_with(
             self.adds.request.group, sig.freeze(),
         )

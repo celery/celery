@@ -32,7 +32,7 @@ class test_gevent_patch(GeventCase):
             gevent.version_info = (1, 0, 0)
             from celery import maybe_patch_concurrency
             maybe_patch_concurrency(['x', '-P', 'gevent'])
-            self.assertTrue(patch_all.called)
+            patch_all.assert_called()
 
 
 class test_Timer(GeventCase):
@@ -118,7 +118,7 @@ class test_apply_timeout(AppCase):
                 apply_target=apply_target, Timeout=Timeout,
             )
             self.assertEqual(Timeout.value, 10)
-            self.assertTrue(apply_target.called)
+            apply_target.assert_called()
 
             apply_target.side_effect = Timeout(10)
             apply_timeout(

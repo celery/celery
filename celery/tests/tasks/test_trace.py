@@ -68,7 +68,7 @@ class test_trace(TraceCase):
             return x + y
 
         self.trace(add_with_success, (2, 2), {})
-        self.assertTrue(add_with_success.on_success.called)
+        add_with_success.on_success.assert_called()
 
     def test_get_log_policy(self):
         einfo = Mock(name='einfo')
@@ -104,14 +104,14 @@ class test_trace(TraceCase):
             return x + y
 
         self.trace(add_with_after_return, (2, 2), {})
-        self.assertTrue(add_with_after_return.after_return.called)
+        add_with_after_return.after_return.assert_called()
 
     def test_with_prerun_receivers(self):
         on_prerun = Mock()
         signals.task_prerun.connect(on_prerun)
         try:
             self.trace(self.add, (2, 2), {})
-            self.assertTrue(on_prerun.called)
+            on_prerun.assert_called()
         finally:
             signals.task_prerun.receivers[:] = []
 
@@ -120,7 +120,7 @@ class test_trace(TraceCase):
         signals.task_postrun.connect(on_postrun)
         try:
             self.trace(self.add, (2, 2), {})
-            self.assertTrue(on_postrun.called)
+            on_postrun.assert_called()
         finally:
             signals.task_postrun.receivers[:] = []
 
@@ -129,7 +129,7 @@ class test_trace(TraceCase):
         signals.task_success.connect(on_success)
         try:
             self.trace(self.add, (2, 2), {})
-            self.assertTrue(on_success.called)
+            on_success.assert_called()
         finally:
             signals.task_success.receivers[:] = []
 
@@ -142,7 +142,7 @@ class test_trace(TraceCase):
 
         request = {'chord': uuid()}
         self.trace(add, (2, 2), {}, request=request)
-        self.assertTrue(add.backend.mark_as_done.called)
+        add.backend.mark_as_done.assert_called()
         args, kwargs = add.backend.mark_as_done.call_args
         self.assertEqual(args[0], 'id-1')
         self.assertEqual(args[1], 4)

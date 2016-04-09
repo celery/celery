@@ -70,7 +70,7 @@ class test_Beat(AppCase):
         b = beatapp.Beat(app=self.app, no_color=True,
                          redirect_stdouts=False)
         b.setup_logging()
-        self.assertTrue(self.app.log.setup.called)
+        self.app.log.setup.assert_called()
         self.assertEqual(self.app.log.setup.call_args[1]['colorize'], False)
 
     def test_init_loader(self):
@@ -137,7 +137,7 @@ class test_Beat(AppCase):
             app=self.app, redirect_stdouts=False, socket_timeout=None,
         )
         b.start_scheduler()
-        self.assertTrue(logger.critical.called)
+        logger.critical.assert_called()
 
     @patch('celery.platforms.create_pidlock')
     @mock.stdouts
@@ -145,7 +145,7 @@ class test_Beat(AppCase):
         b = MockBeat2(app=self.app, pidfile='pidfilelockfilepid',
                       socket_timeout=None, redirect_stdouts=False)
         b.start_scheduler()
-        self.assertTrue(create_pidlock.called)
+        create_pidlock.assert_called()
 
 
 class MockDaemonContext(object):

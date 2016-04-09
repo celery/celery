@@ -179,4 +179,4 @@ class test_utils(Case):
     @patch('warnings.warn')
     def test_warn_deprecated(self, warn):
         warn_deprecated('Foo')
-        self.assertTrue(warn.called)
+        warn.assert_called()

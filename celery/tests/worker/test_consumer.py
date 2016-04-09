@@ -126,7 +126,7 @@ class test_Consumer(AppCase):
                 priority=c._limit_order,
             )
             bucket.expected_time.assert_called_with(4)
-            self.assertFalse(reserv.called)
+            reserv.assert_not_called()
 
     def test_start_blueprint_raises_EMFILE(self):
         c = self.get_consumer()
@@ -192,7 +192,7 @@ class test_Consumer(AppCase):
         conn = self.app._connection.return_value
         c = self.get_consumer()
         self.assertTrue(c.connect())
-        self.assertTrue(conn.ensure_connection.called)
+        conn.ensure_connection.assert_called()
         errback = conn.ensure_connection.call_args[0][0]
         conn.alt = [(1, 2, 3)]
         errback(Mock(), 0)
@@ -375,7 +375,7 @@ class test_Gossip(AppCase):
         signature.return_value.apply_async.side_effect = MemoryError()
         with patch('celery.worker.consumer.gossip.error') as error:
             g.call_task(task)
-            self.assertTrue(error.called)
+            error.assert_called()
 
     def Event(self, id='id', clock=312,
               hostname='foo@example.com', pid=4312,
@@ -405,7 +405,7 @@ class test_Gossip(AppCase):
         event.pop('clock')
         with patch('celery.worker.consumer.gossip.error') as error:
             g.on_elect(event)
-            self.assertTrue(error.called)
+            error.assert_called()
 
     def Consumer(self, hostname='foo@x.com', pid=4312):
         c = Mock()
@@ -456,7 +456,7 @@ class test_Gossip(AppCase):
         g = Gossip(c)
         handler = g.election_handlers['topic'] = Mock()
         self.setup_election(g, c)
-        self.assertFalse(handler.called)
+        handler.assert_not_called()
 
     def test_on_elect_ack_win_but_no_action(self):
         c = self.Consumer(hostname='foo@x.com')  # I will win
@@ -465,7 +465,7 @@ class test_Gossip(AppCase):
         g.election_handlers = {}
         with patch('celery.worker.consumer.gossip.error') as error:
             self.setup_election(g, c)
-            self.assertTrue(error.called)
+            error.assert_called()
 
     def test_on_node_join(self):
         c = self.Consumer()

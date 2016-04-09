@@ -339,9 +339,9 @@ class test_ControlPanel(AppCase):
         panel.state.consumer.controller = Mock()
         sc = panel.state.consumer.controller.autoscaler = Mock()
         panel.handle('pool_grow')
-        self.assertTrue(sc.force_scale_up.called)
+        sc.force_scale_up.assert_called()
         panel.handle('pool_shrink')
-        self.assertTrue(sc.force_scale_down.called)
+        sc.force_scale_down.assert_called()
 
     def test_add__cancel_consumer(self):
 
@@ -565,11 +565,11 @@ class test_ControlPanel(AppCase):
 
         self.app.conf.worker_pool_restarts = True
         panel.handle('pool_restart', {'reloader': _reload})
-        self.assertTrue(consumer.controller.pool.restart.called)
+        consumer.controller.pool.restart.assert_called()
         consumer.reset_rate_limits.assert_called_with()
         consumer.update_strategies.assert_called_with()
-        self.assertFalse(_reload.called)
-        self.assertFalse(_import.called)
+        _reload.assert_not_called()
+        _import.assert_not_called()
         consumer.controller.pool.restart.side_effect = NotImplementedError()
         panel.handle('pool_restart', {'reloader': _reload})
         consumer.controller.consumer = None
@@ -592,10 +592,10 @@ class test_ControlPanel(AppCase):
         panel.handle('pool_restart', {'modules': ['foo', 'bar'],
                                       'reloader': _reload})
 
-        self.assertTrue(consumer.controller.pool.restart.called)
+        consumer.controller.pool.restart.assert_called()
         consumer.reset_rate_limits.assert_called_with()
         consumer.update_strategies.assert_called_with()
-        self.assertFalse(_reload.called)
+        _reload.assert_not_called()
         self.assertItemsEqual(
             [call('bar'), call('foo')],
             _import.call_args_list,
@@ -619,9 +619,9 @@ class test_ControlPanel(AppCase):
                                           'reload': False,
                                           'reloader': _reload})
 
-            self.assertTrue(consumer.controller.pool.restart.called)
-            self.assertFalse(_reload.called)
-            self.assertFalse(_import.called)
+            consumer.controller.pool.restart.assert_called()
+            _reload.assert_not_called()
+            _import.assert_not_called()
 
             _import.reset_mock()
             _reload.reset_mock()
@@ -631,9 +631,9 @@ class test_ControlPanel(AppCase):
                                           'reload': True,
                                           'reloader': _reload})
 
-            self.assertTrue(consumer.controller.pool.restart.called)
-            self.assertTrue(_reload.called)
-            self.assertFalse(_import.called)
+            consumer.controller.pool.restart.assert_called()
+            _reload.assert_called()
+            _import.assert_not_called()
 
     def test_query_task(self):
         consumer = Consumer(self.app)

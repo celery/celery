@@ -39,7 +39,7 @@ class test_Timer(Case):
         t.running = True
         t.start = Mock()
         t.ensure_started()
-        self.assertFalse(t.start.called)
+        t.start.assert_not_called()
         t.running = False
         t.on_start = Mock()
         t.ensure_started()

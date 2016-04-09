@@ -177,7 +177,7 @@ class test_trace_task(RequestCase):
         tid = uuid()
         ret = jail(self.app, tid, self.mytask.name, [2], {})
         self.assertEqual(ret, 4)
-        self.assertTrue(self.mytask.backend.mark_as_done.called)
+        self.mytask.backend.mark_as_done.assert_called()
         self.assertIn('Process cleanup failed', _logger.error.call_args[0][0])
 
     def test_process_cleanup_BaseException(self):
@@ -270,7 +270,7 @@ class test_Request(RequestCase):
         with patch('celery.worker.request.maybe_make_aware') as mma:
             self.get_request(self.add.s(2, 2).set(expires=10),
                              maybe_make_aware=mma)
-            self.assertTrue(mma.called)
+            mma.assert_called()
 
     def test_maybe_expire_when_expires_is_None(self):
         req = self.get_request(self.add.s(2, 2))
@@ -455,7 +455,7 @@ class test_Request(RequestCase):
         job = self.get_request(self.mytask.s(1, f='x'))
         job.time_start = None
         job.terminate(pool, signal='TERM')
-        self.assertFalse(pool.terminate_job.called)
+        pool.terminate_job.assert_not_called()
         self.assertTupleEqual(job._terminate_on_ack, (pool, 15))
         job.terminate(pool, signal='TERM')
 
@@ -587,7 +587,7 @@ class test_Request(RequestCase):
         job.eventer = Mock()
         job.eventer.send = Mock()
         job.on_success((0, 42, 0.001))
-        self.assertTrue(job.eventer.send.called)
+        job.eventer.send.assert_called()
 
     def test_on_success_when_failure(self):
         job = self.xRequest()
@@ -597,7 +597,7 @@ class test_Request(RequestCase):
             raise KeyError('foo')
         except Exception:
             job.on_success((1, ExceptionInfo(), 0.001))
-            self.assertTrue(job.on_failure.called)
+            job.on_failure.assert_called()
 
     def test_on_success_acks_late(self):
         job = self.xRequest()
@@ -673,7 +673,7 @@ class test_Request(RequestCase):
         job.acknowledge = Mock(name='ack')
         job.task.acks_late = False
         job.on_timeout(soft=True, timeout=1335)
-        self.assertFalse(job.acknowledge.called)
+        job.acknowledge.assert_not_called()
 
     def test_fast_trace_task(self):
         from celery.app import trace
@@ -917,7 +917,7 @@ class test_Request(RequestCase):
         except type(exception):
             exc_info = ExceptionInfo()
             job.on_failure(exc_info, **kwargs)
-            self.assertTrue(job.send_event.called)
+            job.send_event.assert_called()
         return job
 
     def test_on_failure(self):
@@ -951,7 +951,7 @@ class test_Request(RequestCase):
         self.assertTrue(job.acknowledged)
         job.on_reject.reset_mock()
         job.reject(requeue=True)
-        self.assertFalse(job.on_reject.called)
+        job.on_reject.assert_not_called()
 
     def test_group(self):
         gid = uuid()
@@ -1013,14 +1013,14 @@ class test_create_request_class(RequestCase):
         job = self.zRequest(id=uuid())
         job.acknowledge = Mock(name='ack')
         job.on_success((False, 'foo', 1.0))
-        self.assertFalse(job.acknowledge.called)
+        job.acknowledge.assert_not_called()
 
     def test_on_success__no_events(self):
         self.eventer = None
         job = self.zRequest(id=uuid())
         job.send_event = Mock(name='send_event')
         job.on_success((False, 'foo', 1.0))
-        self.assertFalse(job.send_event.called)
+        job.send_event.assert_not_called()
 
     def test_on_success__with_events(self):
         job = self.zRequest(id=uuid())

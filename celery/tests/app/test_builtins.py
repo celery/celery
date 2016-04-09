@@ -29,7 +29,7 @@ class test_backend_cleanup(BuiltinsCase):
         self.app.backend.cleanup.__name__ = 'cleanup'
         cleanup_task = builtins.add_backend_cleanup_task(self.app)
         cleanup_task()
-        self.assertTrue(self.app.backend.cleanup.called)
+        self.app.backend.cleanup.assert_called()
 
 
 class test_accumulate(BuiltinsCase):
@@ -84,7 +84,7 @@ class test_chunks(BuiltinsCase):
         self.app.tasks['celery.chunks'](
             chunks_mul, [(2, 2), (4, 4), (8, 8)], 1,
         )
-        self.assertTrue(apply_chunks.called)
+        apply_chunks.assert_called()
 
 
 class test_group(BuiltinsCase):
@@ -101,7 +101,7 @@ class test_group(BuiltinsCase):
     def test_apply_async_eager(self):
         self.task.apply = Mock(name='apply')
         self.task.apply_async((1, 2, 3, 4, 5))
-        self.assertTrue(self.task.apply.called)
+        self.task.apply.assert_called()
 
     def mock_group(self, *tasks):
         g = group(*tasks, app=self.app)
@@ -125,7 +125,7 @@ class test_group(BuiltinsCase):
     def test_task__disable_add_to_parent(self, current_worker_task):
         g, result = self.mock_group(self.add.s(2, 2), self.add.s(4, 4))
         self.task(g.tasks, result, result.id, None, add_to_parent=False)
-        self.assertFalse(current_worker_task.add_trail.called)
+        current_worker_task.add_trail.assert_not_called()
 
 
 class test_chain(BuiltinsCase):
@@ -159,13 +159,13 @@ class test_chord(BuiltinsCase):
         x = chord([self.add.s(i, i) for i in range(10)], body=body)
         x.run = Mock(name='chord.run(x)')
         x.apply_async(group_id='some_group_id')
-        self.assertTrue(x.run.called)
+        x.run.assert_called()
         resbody = x.run.call_args[0][1]
         self.assertEqual(resbody.options['group_id'], 'some_group_id')
         x2 = chord([self.add.s(i, i) for i in range(10)], body=body)
         x2.run = Mock(name='chord.run(x2)')
         x2.apply_async(chord='some_chord_id')
-        self.assertTrue(x2.run.called)
+        x2.run.assert_called()
         resbody = x2.run.call_args[0][1]
         self.assertEqual(resbody.options['chord'], 'some_chord_id')
 

@@ -33,12 +33,12 @@ class test_import_utils(Case):
     @patch('celery.utils.imports.reload')
     def test_reload_from_cwd(self, reload):
         reload_from_cwd('foo')
-        self.assertTrue(reload.called)
+        reload.assert_called()
 
     def test_reload_from_cwd_custom_reloader(self):
         reload = Mock()
         reload_from_cwd('foo', reload)
-        self.assertTrue(reload.called)
+        reload.assert_called()
 
     def test_module_file(self):
         m1 = Mock()

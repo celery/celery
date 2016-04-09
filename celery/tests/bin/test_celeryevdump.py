@@ -63,7 +63,7 @@ class test_Dumper(AppCase):
             conn.channel_errors = ()
 
             evdump(app)
-            self.assertTrue(conn.ensure_connection.called)
+            conn.ensure_connection.assert_called()
             errback = conn.ensure_connection.call_args[0][0]
             errback(KeyError(), 1)
-            self.assertTrue(conn.as_uri.called)
+            conn.as_uri.assert_called()

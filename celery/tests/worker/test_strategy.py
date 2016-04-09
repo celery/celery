@@ -139,7 +139,7 @@ class test_default_strategy_proto2(AppCase):
             logger.isEnabledFor.return_value = False
             with self._context(self.add.s(2, 2)) as C:
                 C()
-                self.assertFalse(logger.info.called)
+                logger.info.assert_not_called()
 
     def test_task_strategy(self):
         with self._context(self.add.s(2, 2)) as C:

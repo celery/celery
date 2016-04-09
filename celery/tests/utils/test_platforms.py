@@ -147,7 +147,7 @@ class test_Signals(Case):
         if hasattr(signal, 'setitimer'):
             with patch('signal.setitimer', create=True) as seti:
                 signals.arm_alarm(30)
-                self.assertTrue(seti.called)
+                seti.assert_called()
 
     def test_signum(self):
         self.assertEqual(signals.signum(13), 13)
@@ -315,7 +315,7 @@ class test_maybe_drop_privileges(Case):
         maybe_drop_privileges(gid='group')
         parse_gid.assert_called_with('group')
         setgid.assert_called_with(50001)
-        self.assertFalse(setuid.called)
+        setuid.assert_not_called()
 
 
 @skip.if_win32()
@@ -476,11 +476,11 @@ class test_DaemonContext(Case):
                 pass
         self.assertEqual(fork.call_count, 2)
         setsid.assert_called_with()
-        self.assertFalse(_exit.called)
+        _exit.assert_not_called()
 
         chdir.assert_called_with(x.workdir)
         umask.assert_called_with(0o22)
-        self.assertTrue(dup2.called)
+        dup2.assert_called()
 
         fork.reset_mock()
         fork.return_value = 1
@@ -496,7 +496,7 @@ class test_DaemonContext(Case):
         x._detach = Mock()
         with x:
             pass
-        self.assertFalse(x._detach.called)
+        x._detach.assert_not_called()
 
         x.after_chdir = Mock()
         with x:
@@ -700,7 +700,7 @@ class test_Pidfile(Case):
         p.write_pid()
         w.seek(0)
         self.assertEqual(w.readline(), '1816\n')
-        self.assertTrue(w.close.called)
+        w.close.assert_called()
         getpid.assert_called_with()
         osopen.assert_called_with(
             p.path, platforms.PIDFILE_FLAGS, platforms.PIDFILE_MODE,

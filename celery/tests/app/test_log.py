@@ -99,8 +99,8 @@ class test_ColorFormatter(AppCase):
         value = KeyError()
         fe.return_value = value
         self.assertIs(x.formatException(value), value)
-        self.assertTrue(fe.called)
-        self.assertFalse(safe_str.called)
+        fe.assert_called()
+        safe_str.assert_not_called()
 
     @patch('logging.Formatter.formatException')
     @patch('celery.utils.log.safe_str')
@@ -112,7 +112,7 @@ class test_ColorFormatter(AppCase):
         except Exception:
             self.assertTrue(x.formatException(sys.exc_info()))
         if sys.version_info[0] == 2:
-            self.assertTrue(safe_str.called)
+            safe_str.assert_called()
 
     @patch('logging.Formatter.format')
     def test_format_object(self, _format):

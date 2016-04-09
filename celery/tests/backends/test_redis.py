@@ -327,7 +327,7 @@ class test_RedisBackend(AppCase):
     def test_on_chord_part_return__success(self):
         with self.chord_context(2) as (_, request, callback):
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
-            self.assertFalse(callback.delay.called)
+            callback.delay.assert_not_called()
             self.b.on_chord_part_return(request, states.SUCCESS, 20)
             callback.delay.assert_called_with([10, 20])
 

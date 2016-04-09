@@ -94,13 +94,9 @@ class test_LoaderBase(AppCase):
         )
 
     def test_import_from_cwd_custom_imp(self):
-
-        def imp(module, package=None):
-            imp.called = True
-        imp.called = False
-
+        imp = Mock(name='imp')
         self.loader.import_from_cwd('foo', imp=imp)
-        self.assertTrue(imp.called)
+        imp.assert_called()
 
     @patch('celery.utils.mail.Mailer._send')
     def test_mail_admins_errors(self, send):
@@ -257,7 +253,7 @@ class test_autodiscovery(Case):
             base._RACE_PROTECTION = False
         with patch('celery.loaders.base.find_related_module') as frm:
             base.autodiscover_tasks(['foo'])
-            self.assertTrue(frm.called)
+            frm.assert_called()
 
     def test_find_related_module(self):
         with patch('importlib.import_module') as imp:

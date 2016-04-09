@@ -45,7 +45,7 @@ class test_RiakBackend(AppCase):
             mocked_is_alive.return_value.value = True
             client = self.backend._get_client()
             self.assertEquals(sentinel._client, client)
-            self.assertFalse(mock_connection.called)
+            mock_connection.assert_not_called()
 
     def test_get(self):
         self.app.conf.couchbase_backend_settings = {}

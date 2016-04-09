@@ -48,7 +48,7 @@ class test_CouchBaseBackend(AppCase):
             connection = self.backend._get_connection()
 
             self.assertEqual(sentinel._connection, connection)
-            self.assertFalse(mock_Connection.called)
+            mock_Connection.assert_not_called()
 
     def test_get(self):
         self.app.conf.couchbase_backend_settings = {}

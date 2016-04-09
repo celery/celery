@@ -174,7 +174,7 @@ class test_Scheduler(AppCase):
 
         scheduler = mScheduler(app=self.app)
         scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app))
-        self.assertTrue(foo.apply_async.called)
+        foo.apply_async.assert_called()
 
     def test_should_sync(self):
 
@@ -193,7 +193,7 @@ class test_Scheduler(AppCase):
         s._do_sync = Mock()
         s.should_sync.return_value = False
         s.apply_async(s.Entry(task=not_sync.name, app=self.app))
-        self.assertFalse(s._do_sync.called)
+        s._do_sync.assert_not_called()
 
     def test_should_sync_increments_sync_every_counter(self):
         self.app.conf.beat_sync_every = 2
@@ -257,7 +257,7 @@ class test_Scheduler(AppCase):
     def test_ensure_connection_error_handler(self, ensure):
         s = mScheduler(app=self.app)
         self.assertTrue(s._ensure_connected())
-        self.assertTrue(ensure.called)
+        ensure.assert_called()
         callback = ensure.call_args[0][0]
 
         callback(KeyError(), 5)
@@ -295,7 +295,7 @@ class test_Scheduler(AppCase):
         scheduler.add(name='test_due_tick_SchedulingError',
                       schedule=always_due)
         self.assertEqual(scheduler.tick(), 0)
-        self.assertTrue(error.called)
+        error.assert_called()
 
     def test_pending_tick(self):
         scheduler = mScheduler(app=self.app)

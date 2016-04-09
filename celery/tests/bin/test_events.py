@@ -56,8 +56,8 @@ class test_events(AppCase):
     def test_run_cam_detached(self, detached, evcam):
         self.ev.prog_name = 'celery events'
         self.ev.run_evcam('myapp.Camera', detach=True)
-        self.assertTrue(detached.called)
-        self.assertTrue(evcam.called)
+        detached.assert_called()
+        evcam.assert_called()
 
     def test_get_options(self):
         self.assertFalse(self.ev.get_options())

@@ -251,7 +251,7 @@ class test_Worker(AppCase):
         worker = Worker(hostname='foo')
         with patch('celery.events.state.warn') as warn:
             worker.event(None, time() + (HEARTBEAT_DRIFT_MAX * 2), time())
-            self.assertTrue(warn.called)
+            warn.assert_called()
             self.assertIn('Substantial drift', warn.call_args[0][0])
 
     def test_updates_heartbeat(self):

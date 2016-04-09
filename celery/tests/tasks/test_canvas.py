@@ -20,11 +20,13 @@ from celery.tests.case import (
     AppCase, ContextMock, MagicMock, Mock, depends_on_current_app,
 )
 
-SIG = Signature({'task': 'TASK',
-                 'args': ('A1',),
-                 'kwargs': {'K1': 'V1'},
-                 'options': {'task_id': 'TASK_ID'},
-                 'subtask_type': ''})
+SIG = Signature({
+    'task': 'TASK',
+    'args': ('A1',),
+    'kwargs': {'K1': 'V1'},
+    'options': {'task_id': 'TASK_ID'},
+    'subtask_type': ''},
+)
 
 
 class test_maybe_unroll_group(AppCase):
@@ -158,7 +160,7 @@ class test_Signature(CanvasCase):
         x.apply_async.return_value.get = Mock()
         x.apply_async.return_value.get.return_value = 4
         self.assertEqual(~x, 4)
-        self.assertTrue(x.apply_async.called)
+        x.apply_async.assert_called()
 
     def test_merge_immutable(self):
         x = self.add.si(2, 2, foo=1)
@@ -180,7 +182,7 @@ class test_Signature(CanvasCase):
         x.freeze('foo')
         x.type.app.control = Mock()
         r = x.election()
-        self.assertTrue(x.type.app.control.election.called)
+        x.type.app.control.election.assert_called()
         self.assertEqual(r.id, 'foo')
 
     def test_AsyncResult_when_not_registered(self):
@@ -444,7 +446,7 @@ class test_chain(CanvasCase):
         self.app.producer_or_acquire = ContextMock()
 
         task.apply_async(**options)
-        self.assertTrue(self.app.amqp.send_task_message.called)
+        self.app.amqp.send_task_message.assert_called()
         message = self.app.amqp.send_task_message.call_args[0][2]
         self.assertEqual(message.headers['parent_id'], pid)
         self.assertEqual(message.headers['root_id'], rid)

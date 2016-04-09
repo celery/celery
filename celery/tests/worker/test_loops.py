@@ -250,7 +250,7 @@ class test_asynloop(AppCase):
         x.hub.on_tick.add(x.closer(mod=2))
         x.hub.timer._queue = [1]
         asynloop(*x.args)
-        self.assertFalse(x.qos.update.called)
+        x.qos.update.assert_not_called()
 
         x = X(self.app)
         x.qos.prev = 1
@@ -282,7 +282,7 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         reader.assert_called_with(6)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_readable_raises_Empty(self):
         x = X(self.app)
@@ -295,7 +295,7 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         reader.assert_called_with(6)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_writable(self):
         x = X(self.app)
@@ -307,7 +307,7 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         writer.assert_called_with(6)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_writable_none_registered(self):
         x = X(self.app)
@@ -318,7 +318,7 @@ class test_asynloop(AppCase):
         poller.poll.return_value = [(7, WRITE)]
         with self.assertRaises(socket.error):
             asynloop(*x.args)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_unknown_event(self):
         x = X(self.app)
@@ -329,7 +329,7 @@ class test_asynloop(AppCase):
         poller.poll.return_value = [(6, 0)]
         with self.assertRaises(socket.error):
             asynloop(*x.args)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_keep_draining_disabled(self):
         x = X(self.app)
@@ -344,7 +344,7 @@ class test_asynloop(AppCase):
         poll.return_value = [(6, 0)]
         with self.assertRaises(socket.error):
             asynloop(*x.args)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_err_writable(self):
         x = X(self.app)
@@ -356,7 +356,7 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         writer.assert_called_with(6, 48)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_write_generator(self):
         x = X(self.app)
@@ -373,7 +373,7 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         self.assertTrue(gen.gi_frame.f_lasti != -1)
-        self.assertFalse(x.hub.remove.called)
+        x.hub.remove.assert_not_called()
 
     def test_poll_write_generator_stopped(self):
         x = X(self.app)
@@ -416,7 +416,7 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         reader.assert_called_with(6, 24)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_raises_ValueError(self):
         x = X(self.app)
@@ -424,7 +424,7 @@ class test_asynloop(AppCase):
         poller = x.hub.poller
         x.close_then_error(poller.poll, exc=ValueError)
         asynloop(*x.args)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
 
 class test_synloop(AppCase):
@@ -443,7 +443,7 @@ class test_synloop(AppCase):
         x.timeout_then_error(x.connection.drain_events)
         with self.assertRaises(socket.error):
             synloop(*x.args)
-        self.assertFalse(x.qos.update.called)
+        x.qos.update.assert_not_called()
 
         x.qos.value = 4
         x.timeout_then_error(x.connection.drain_events)

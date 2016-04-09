@@ -64,10 +64,7 @@ class test_process_initializer(AppCase):
             from celery.concurrency.prefork import (
                 process_initializer, WORKER_SIGRESET, WORKER_SIGIGNORE,
             )
-
-            def on_worker_process_init(**kwargs):
-                on_worker_process_init.called = True
-            on_worker_process_init.called = False
+            on_worker_process_init = Mock()
             signals.worker_process_init.connect(on_worker_process_init)
 
             def Loader(*args, **kwargs):
@@ -82,7 +79,7 @@ class test_process_initializer(AppCase):
                 _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
                 _signals.reset.assert_any_call(*WORKER_SIGRESET)
                 self.assertTrue(app.loader.init_worker.call_count)
-                self.assertTrue(on_worker_process_init.called)
+                on_worker_process_init.assert_called()
                 self.assertIs(_tls.current_app, app)
                 set_mp_process_title.assert_called_with(
                     'celeryd', hostname='awesome.worker.com',
@@ -233,7 +230,7 @@ class test_AsynPool(PoolCase):
             )
             self.assertIn(3, readers)
 
-        with patch('select.poll') as poller:
+        with patch('select.poll', create=True) as poller:
             poll = poller.return_value = Mock(name='poll.poll')
             poll.side_effect = ebadf
             with patch('select.select') as selcheck:
@@ -245,13 +242,13 @@ class test_AsynPool(PoolCase):
                 )
                 self.assertNotIn(3, readers)
 
-        with patch('select.poll') as poller:
+        with patch('select.poll', create=True) as poller:
             poll = poller.return_value = Mock(name='poll.poll')
             poll.side_effect = MemoryError()
             with self.assertRaises(MemoryError):
                 asynpool._select({1}, poll=poll)
 
-        with patch('select.poll') as poller:
+        with patch('select.poll', create=True) as poller:
             poll = poller.return_value = Mock(name='poll.poll')
             with patch('select.select') as selcheck:
 
@@ -262,7 +259,7 @@ class test_AsynPool(PoolCase):
                 with self.assertRaises(MemoryError):
                     asynpool._select({3}, poll=poll)
 
-        with patch('select.poll') as poller:
+        with patch('select.poll', create=True) as poller:
             poll = poller.return_value = Mock(name='poll.poll')
             with patch('select.select') as selcheck:
 
@@ -274,7 +271,7 @@ class test_AsynPool(PoolCase):
                 with self.assertRaises(socket.error):
                     asynpool._select({3}, poll=poll)
 
-        with patch('select.poll') as poller:
+        with patch('select.poll', create=True) as poller:
             poll = poller.return_value = Mock(name='poll.poll')
 
             poll.side_effect = socket.error()
@@ -373,7 +370,7 @@ class test_TaskPool(PoolCase):
         pool._pool = Mock(name='pool')
         pool._pool._state = mp.CLOSE
         pool.on_close()
-        self.assertFalse(pool._pool.close.called)
+        pool._pool.close.assert_not_called()
 
     def test_apply_async(self):
         pool = TaskPool(10)

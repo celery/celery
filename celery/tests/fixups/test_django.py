@@ -74,15 +74,15 @@ class test_DjangoFixup(FixupCase):
         with patch('celery.fixups.django.DjangoFixup') as Fixup:
             with patch.dict(os.environ, DJANGO_SETTINGS_MODULE=''):
                 fixup(self.app)
-                self.assertFalse(Fixup.called)
+                Fixup.assert_not_called()
             with patch.dict(os.environ, DJANGO_SETTINGS_MODULE='settings'):
                 with mock.mask_modules('django'):
                     with self.assertWarnsRegex(UserWarning, 'but Django is'):
                         fixup(self.app)
-                    self.assertFalse(Fixup.called)
+                    Fixup.assert_not_called()
                 with mock.module_exists('django'):
                     fixup(self.app)
-                    self.assertTrue(Fixup.called)
+                    Fixup.assert_called()
 
     def test_maybe_close_fd(self):
         with patch('os.close'):
@@ -116,9 +116,9 @@ class test_DjangoFixup(FixupCase):
     def test_now(self):
         with self.fixup_context(self.app) as (f, _, _):
             self.assertTrue(f.now(utc=True))
-            self.assertFalse(f._now.called)
+            f._now.assert_not_called()
             self.assertTrue(f.now(utc=False))
-            self.assertTrue(f._now.called)
+            f._now.assert_called()
 
     def test_mail_admins(self):
         with self.fixup_context(self.app) as (f, _, _):
@@ -204,7 +204,7 @@ class test_DjangoWorkerFixup(FixupCase):
             task.request.is_eager = True
             with patch.object(f, 'close_database'):
                 f.on_task_prerun(task)
-                self.assertFalse(f.close_database.called)
+                f.close_database.assert_not_called()
 
     def test_on_task_postrun(self):
         task = Mock()
@@ -213,16 +213,16 @@ class test_DjangoWorkerFixup(FixupCase):
                 task.request.is_eager = False
                 with patch.object(f, 'close_database'):
                     f.on_task_postrun(task)
-                    self.assertTrue(f.close_database.called)
-                    self.assertTrue(f.close_cache.called)
+                    f.close_database.assert_called()
+                    f.close_cache.assert_called()
 
             # when a task is eager, do not close connections
             with patch.object(f, 'close_cache'):
                 task.request.is_eager = True
                 with patch.object(f, 'close_database'):
                     f.on_task_postrun(task)
-                    self.assertFalse(f.close_database.called)
-                    self.assertFalse(f.close_cache.called)
+                    f.close_database.assert_not_called()
+                    f.close_cache.assert_not_called()
 
     def test_close_database(self):
         with self.fixup_context(self.app) as (f, _, _):
@@ -239,7 +239,7 @@ class test_DjangoWorkerFixup(FixupCase):
                 f.db_reuse_max = 10
                 f._db_recycles = 3
                 f.close_database()
-                self.assertFalse(_close.called)
+                _close.assert_not_called()
                 self.assertEqual(f._db_recycles, 4)
                 _close.reset_mock()
 

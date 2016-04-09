@@ -143,7 +143,7 @@ class test_MongoBackend(AppCase):
             connection = self.backend._get_connection()
 
             self.assertEqual(sentinel._connection, connection)
-            self.assertFalse(mock_Connection.called)
+            mock_Connection.assert_not_called()
 
     def test_get_connection_no_connection_host(self):
         with patch('pymongo.MongoClient') as mock_Connection:
@@ -205,7 +205,7 @@ class test_MongoBackend(AppCase):
         database = self.backend.database
 
         self.assertTrue(database is mock_database)
-        self.assertFalse(mock_database.authenticate.called)
+        mock_database.authenticate.assert_not_called()
         self.assertTrue(self.backend.__dict__['database'] is mock_database)
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
@@ -371,7 +371,7 @@ class test_MongoBackend(AppCase):
         self.backend.cleanup()
 
         mock_get_database.assert_called_once_with()
-        self.assertTrue(mock_collection.remove.called)
+        mock_collection.remove.assert_called()
 
     def test_get_database_authfailure(self):
         x = MongoBackend(app=self.app)

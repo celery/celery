@@ -31,7 +31,7 @@ class test_Mailer(Case):
         mailer = Mailer(use_ssl=True, use_tls=True)
         client = SMTP_SSL.return_value = Mock()
         mailer._send(msg)
-        self.assertTrue(client.starttls.called)
+        client.starttls.assert_called()
         self.assertEqual(client.ehlo.call_count, 2)
         client.quit.assert_called_with()
         client.sendmail.assert_called_with(msg.sender, msg.to, str(msg))
