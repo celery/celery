@@ -9,8 +9,8 @@ env:
   matrix:
     - TOXENV=2.7
     - TOXENV=3.4
-    - TOXENV=pypy
     - TOXENV=3.5
+    - TOXENV=pypy
     - TOXENV=pypy3
     - TOXENV=flake8
     - TOXENV=flakeplus
