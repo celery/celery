@@ -883,6 +883,12 @@ Ask Solem
 :github: https://github.com/ask
 :twitter: http://twitter.com/#!/asksol
 
+Dmitry Malinovsky
+~~~~~~~~~~~~~~~~~
+
+:github: https://github.com/malinoff
+:twitter: https://twitter.com/__malinoff__
+
 Mher Movsisyan
 ~~~~~~~~~~~~~~
 
