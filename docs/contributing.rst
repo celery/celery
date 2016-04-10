@@ -895,6 +895,11 @@ Mher Movsisyan
 :github: https://github.com/mher
 :twitter: http://twitter.com/#!/movsm
 
+Omer Katz
+~~~~~~~~~
+:github: https://github.com/thedrow
+:twitter: https://twitter.com/the_drow
+
 Steeve Morin
 ~~~~~~~~~~~~
 
