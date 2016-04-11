@@ -853,11 +853,22 @@ Ask Solem
 :github: https://github.com/ask
 :twitter: http://twitter.com/#!/asksol
 
+Dmitry Malinovsky
+~~~~~~~~~~~~~~~~~
+
+:github: https://github.com/malinoff
+:twitter: https://twitter.com/__malinoff__
+
 Mher Movsisyan
 ~~~~~~~~~~~~~~
 
 :github: https://github.com/mher
 :twitter: http://twitter.com/#!/movsm
+
+Omer Katz
+~~~~~~~~~
+:github: https://github.com/thedrow
+:twitter: https://twitter.com/the_drow
 
 Steeve Morin
 ~~~~~~~~~~~~

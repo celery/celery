@@ -71,7 +71,7 @@ Celery is…
 
 .. _`mailing-list`: http://groups.google.com/group/celery-users
 
-.. topic:: \ 
+.. topic:: \
 
     - **Simple**
 
@@ -146,7 +146,7 @@ Celery is…
 Features
 ========
 
-.. topic:: \ 
+.. topic:: \
 
     .. hlist::
         :columns: 2

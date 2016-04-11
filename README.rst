@@ -4,6 +4,8 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
+[build-status] [coverage] [bitdeli]
+
 :Version: 4.0.0rc2 (0today8)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
@@ -436,8 +438,14 @@ file in the top distribution directory for the full license text.
 
 .. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround
 
+.. |build-status| image:: https://secure.travis-ci.org/celery/celery.png?branch=master
+    :alt: Build status
+    :target: https://travis-ci.org/celery/celery
 
-.. image:: https://d2weczhvl823v0.cloudfront.net/celery/celery/trend.png
+.. |coverage| image:: https://codecov.io/github/celery/celery/coverage.svg?branch=master
+    :target: https://codecov.io/github/celery/celery?branch=master
+
+.. |bitdeli| image:: https://d2weczhvl823v0.cloudfront.net/celery/celery/trend.png
     :alt: Bitdeli badge
     :target: https://bitdeli.com/free
 
