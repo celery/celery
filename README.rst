@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-[build-status] [coverage] [bitdeli]
+|build-status| |coverage| |bitdeli|
 
 :Version: 4.0.0rc2 (0today8)
 :Web: http://celeryproject.org/
