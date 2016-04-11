@@ -20,7 +20,6 @@ from time import sleep
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.async.semaphore import DummyLock
-from kombu.five import buffer_t, items
 from kombu.syn import _detect_environment
 from kombu.utils.encoding import safe_repr, bytes_t
 from kombu.utils.limits import TokenBucket
@@ -30,6 +29,7 @@ from celery import bootsteps
 from celery import signals
 from celery.app.trace import build_tracer
 from celery.exceptions import InvalidTaskError, NotRegistered
+from celery.five import buffer_t, items, python_2_unicode_compatible
 from celery.utils import gethostname
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
@@ -120,6 +120,7 @@ def dump_body(m, body):
                                len(m.body))
 
 
+@python_2_unicode_compatible
 class Consumer(object):
 
     Strategies = dict

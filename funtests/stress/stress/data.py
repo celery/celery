@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+from celery.five import python_2_unicode_compatible
+
 try:
     import simplejson as json
 except ImportError:
@@ -50,6 +52,7 @@ def jsonable(cls):
 
 
 @jsonable
+@python_2_unicode_compatible
 class Data(object):
 
     def __init__(self, label, data):
@@ -61,6 +64,9 @@ class Data(object):
             self.label, humanbytes(len(self.data)),
         )
 
+    def __repr__(self):
+        return str(self)
+
     def __to_json__(self):
         return json_reduce(self, {'label': self.label, 'data': self.data})
 
@@ -70,7 +76,6 @@ class Data(object):
 
     def __reduce__(self):
         return Data, (self.label, self.data)
-    __unicode__ = __repr__ = __str__
 
 BIG = Data('BIG', 'x' * 2 ** 20 * 8)
 SMALL = Data('SMALL', 'e' * 1024)

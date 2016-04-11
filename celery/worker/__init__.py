@@ -30,7 +30,7 @@ from celery import signals
 from celery.exceptions import (
     ImproperlyConfigured, WorkerTerminate, TaskRevokedError,
 )
-from celery.five import string_t, values
+from celery.five import python_2_unicode_compatible, string_t, values
 from celery.platforms import EX_FAILURE, create_pidlock
 from celery.utils import default_nodename, worker_direct
 from celery.utils.imports import reload_from_cwd
@@ -64,6 +64,7 @@ def str_to_list(s):
     return s
 
 
+@python_2_unicode_compatible
 class WorkController(object):
     """Unmanaged worker instance."""
     app = None

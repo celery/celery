@@ -21,7 +21,7 @@ from billiard.einfo import ExceptionInfo  # noqa
 from kombu.utils.encoding import safe_str, bytes_to_str
 from kombu.utils.limits import TokenBucket  # noqa
 
-from celery.five import items, values
+from celery.five import items, python_2_unicode_compatible, values
 from celery.utils.functional import LRUCache, first, uniq  # noqa
 from celery.utils.text import match_case
 
@@ -148,6 +148,7 @@ class CycleError(Exception):
     """A cycle was detected in an acyclic graph."""
 
 
+@python_2_unicode_compatible
 class DependencyGraph(object):
     """A directed acyclic graph of objects and their dependencies.
 
@@ -444,6 +445,7 @@ class DictAttribute(object):
 MutableMapping.register(DictAttribute)
 
 
+@python_2_unicode_compatible
 class ConfigurationView(AttributeDictMixin):
     """A view over an applications configuration dicts.
 
@@ -587,6 +589,7 @@ class ConfigurationView(AttributeDictMixin):
 MutableMapping.register(ConfigurationView)
 
 
+@python_2_unicode_compatible
 class LimitedSet(object):
     """Kind-of Set (or priority queue) with limitations.
 

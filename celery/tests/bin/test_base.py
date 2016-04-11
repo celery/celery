@@ -8,7 +8,7 @@ from celery.bin.base import (
     Extensions,
     HelpFormatter,
 )
-from celery.five import module_name_t
+from celery.five import bytes_if_py2
 from celery.utils.objects import Bunch
 
 from celery.tests.case import (
@@ -353,7 +353,7 @@ class test_Command(AppCase):
         cmd = MockCommand(app=self.app)
         with patch('celery.bin.base.symbol_by_name') as sbn:
             from types import ModuleType
-            x = ModuleType(module_name_t('proj'))
+            x = ModuleType(bytes_if_py2('proj'))
 
             def on_sbn(*args, **kwargs):
 

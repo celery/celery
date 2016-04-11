@@ -11,7 +11,7 @@ from __future__ import absolute_import, unicode_literals
 from operator import itemgetter
 
 from celery.datastructures import DependencyGraph, GraphFormatter
-from celery.five import items
+from celery.five import items, python_2_unicode_compatible
 
 from .base import Command
 
@@ -58,6 +58,7 @@ class graph(Command):
             return '{0} ({1}://)'.format(type(node).__name__,
                                          node._label.split('://')[0])
 
+        @python_2_unicode_compatible
         class Node(object):
             force_label = None
             scheme = {}

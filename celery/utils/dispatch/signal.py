@@ -3,11 +3,12 @@
 from __future__ import absolute_import, unicode_literals
 
 import weakref
-from . import saferef
 
-from celery.five import range, text_t
+from celery.five import python_2_unicode_compatible, range, text_t
 from celery.local import PromiseProxy, Proxy
 from celery.utils.log import get_logger
+
+from . import saferef
 
 __all__ = ['Signal']
 
@@ -27,23 +28,20 @@ def _make_id(target):  # pragma: no cover
     return id(target)
 
 
+@python_2_unicode_compatible
 class Signal(object):  # pragma: no cover
-    """Base class for all signals
+    """Observer pattern implementation.
 
-
-    .. attribute:: receivers
-        Internal attribute, holds a dictionary of
-        `{receiverkey (id): weakref(receiver)}` mappings.
+    :param providing_args: A list of the arguments this signal can pass
+        along in a :meth:`send` call.
 
     """
 
+    #: Holds a dictionary of
+    #: ``{receiverkey (id): weakref(receiver)}`` mappings.
+    receivers = None
+
     def __init__(self, providing_args=None):
-        """Create a new signal.
-
-        :param providing_args: A list of the arguments this signal can pass
-            along in a :meth:`send` call.
-
-        """
         self.receivers = []
         if providing_args is None:
             providing_args = []
@@ -214,4 +212,5 @@ class Signal(object):  # pragma: no cover
     def __repr__(self):
         return '<Signal: {0}>'.format(type(self).__name__)
 
-    __str__ = __repr__
+    def __str__(self):
+        return repr(self)

@@ -15,7 +15,7 @@ from __future__ import absolute_import, unicode_literals
 import importlib
 import sys
 
-from .five import module_name_t, string
+from .five import bytes_if_py2, string
 
 __all__ = ['Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate']
 
@@ -39,7 +39,7 @@ def _default_cls_attr(name, type_, cls_value):
     def __get__(self, obj, cls=None):
         return self.__getter(obj) if obj is not None else self
 
-    return type(module_name_t(name), (type_,), {
+    return type(bytes_if_py2(name), (type_,), {
         '__new__': __new__, '__get__': __get__,
     })
 
@@ -125,12 +125,6 @@ class Proxy(object):
         except RuntimeError:  # pragma: no cover
             return False
     __nonzero__ = __bool__  # Py2
-
-    def __unicode__(self):
-        try:
-            return string(self._get_current_object())
-        except RuntimeError:  # pragma: no cover
-            return repr(self)
 
     def __dir__(self):
         try:
@@ -293,6 +287,12 @@ class Proxy(object):
 
         def __long__(self):
             return long(self._get_current_object())  # noqa
+
+        def __unicode__(self):
+            try:
+                return string(self._get_current_object())
+            except RuntimeError:  # pragma: no cover
+                return repr(self)
 
 
 class PromiseProxy(Proxy):

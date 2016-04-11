@@ -15,6 +15,8 @@ import warnings
 
 from email.mime.text import MIMEText
 
+from celery.five import python_2_unicode_compatible
+
 from .functional import maybe_list
 
 try:
@@ -39,6 +41,7 @@ class SendmailWarning(UserWarning):
     """Problem happened while sending the email message."""
 
 
+@python_2_unicode_compatible
 class Message(object):
 
     def __init__(self, to=None, sender=None, subject=None,

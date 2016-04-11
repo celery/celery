@@ -20,17 +20,19 @@ from kombu.utils import cached_property, reprcall
 
 from pytz import timezone as _timezone, AmbiguousTimeError, FixedOffset
 
-from celery.five import string_t
+from celery.five import python_2_unicode_compatible, string_t
 
 from .functional import dictfilter
 from .iso8601 import parse_iso8601
 from .text import pluralize
 
-__all__ = ['LocalTimezone', 'timezone', 'maybe_timedelta',
-           'delta_resolution', 'remaining', 'rate', 'weekday',
-           'humanize_seconds', 'maybe_iso8601', 'is_naive', 'make_aware',
-           'localize', 'to_utc', 'maybe_make_aware', 'ffwd', 'utcoffset',
-           'adjust_timestamp', 'maybe_s_to_ms']
+__all__ = [
+    'LocalTimezone', 'timezone', 'maybe_timedelta',
+    'delta_resolution', 'remaining', 'rate', 'weekday',
+    'humanize_seconds', 'maybe_iso8601', 'is_naive', 'make_aware',
+    'localize', 'to_utc', 'maybe_make_aware', 'ffwd', 'utcoffset',
+    'adjust_timestamp', 'maybe_s_to_ms',
+]
 
 PY3 = sys.version_info[0] == 3
 PY33 = sys.version_info >= (3, 3)
@@ -54,6 +56,7 @@ ZERO = timedelta(0)
 _local_timezone = None
 
 
+@python_2_unicode_compatible
 class LocalTimezone(tzinfo):
     """Local time implementation taken from Python's docs.
 
@@ -313,6 +316,7 @@ def maybe_make_aware(dt, tz=None):
     )
 
 
+@python_2_unicode_compatible
 class ffwd(object):
     """Version of relativedelta that only supports addition."""
 

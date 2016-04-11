@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from kombu.utils import cached_property
 
 from . import current_app
-from .five import range, string_t
+from .five import python_2_unicode_compatible, range, string_t
 from .utils import is_iterable
 from .utils.timeutils import (
     weekday, maybe_timedelta, remaining, humanize_seconds,
@@ -69,6 +69,7 @@ class ParseException(Exception):
     """Raised by crontab_parser when the input can't be parsed."""
 
 
+@python_2_unicode_compatible
 class schedule(object):
     """Schedule for periodic task.
 
@@ -303,6 +304,7 @@ class crontab_parser(object):
         return i
 
 
+@python_2_unicode_compatible
 class crontab(schedule):
     """A crontab can be used as the `run_every` value of a
     :class:`PeriodicTask` to add cron-like scheduling.
@@ -622,6 +624,7 @@ def maybe_schedule(s, relative=False, app=None):
     return s
 
 
+@python_2_unicode_compatible
 class solar(schedule):
     """A solar event can be used as the `run_every` value of a
     :class:`PeriodicTask` to schedule based on certain solar events.

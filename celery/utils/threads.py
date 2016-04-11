@@ -17,10 +17,12 @@ import traceback
 from contextlib import contextmanager
 
 from celery.local import Proxy
-from celery.five import THREAD_TIMEOUT_MAX, items
+from celery.five import THREAD_TIMEOUT_MAX, items, python_2_unicode_compatible
 
-__all__ = ['bgThread', 'Local', 'LocalStack', 'LocalManager',
-           'get_ident', 'default_socket_timeout']
+__all__ = [
+    'bgThread', 'Local', 'LocalStack', 'LocalManager',
+    'get_ident', 'default_socket_timeout',
+]
 
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
 PY3 = sys.version_info[0] == 3
@@ -255,6 +257,7 @@ class _LocalStack(object):
             return None
 
 
+@python_2_unicode_compatible
 class LocalManager(object):
     """Local objects cannot manage themselves. For that you need a local
     manager.  You can pass a local manager multiple locals or add them

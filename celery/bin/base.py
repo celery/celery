@@ -18,7 +18,9 @@ from pprint import pformat
 from celery import VERSION_BANNER, Celery, maybe_patch_concurrency
 from celery import signals
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
-from celery.five import getfullargspec, items, string, string_t
+from celery.five import (
+    getfullargspec, items, python_2_unicode_compatible, string, string_t,
+)
 from celery.platforms import EX_FAILURE, EX_OK, EX_USAGE
 from celery.utils import term
 from celery.utils import text
@@ -29,6 +31,11 @@ try:
     input = raw_input
 except NameError:  # pragma: no cover
     pass
+
+__all__ = [
+    'Error', 'UsageError', 'Extensions',
+    'HelpFormatter', 'Command', 'Option', 'daemon_options',
+]
 
 # always enable DeprecationWarnings, so our users can see them.
 for warning in (CDeprecationWarning, CPendingDeprecationWarning):
@@ -43,10 +50,8 @@ Try --help?
 find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
 find_rst_ref = re.compile(r':\w+:`(.+?)`')
 
-__all__ = ['Error', 'UsageError', 'Extensions', 'HelpFormatter',
-           'Command', 'Option', 'daemon_options']
 
-
+@python_2_unicode_compatible
 class Error(Exception):
     status = EX_FAILURE
 
@@ -57,7 +62,6 @@ class Error(Exception):
 
     def __str__(self):
         return self.reason
-    __unicode__ = __str__
 
 
 class UsageError(Error):

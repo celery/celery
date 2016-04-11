@@ -25,7 +25,7 @@ from celery.exceptions import (
     SoftTimeLimitExceeded, TimeLimitExceeded,
     WorkerLostError, Terminated, Retry, Reject,
 )
-from celery.five import string
+from celery.five import python_2_unicode_compatible, string
 from celery.platforms import signals as _signals
 from celery.utils import cached_property, gethostname
 from celery.utils.functional import noop
@@ -64,6 +64,7 @@ task_ready = state.task_ready
 revoked_tasks = state.revoked
 
 
+@python_2_unicode_compatible
 class Request(object):
     """A request for task execution."""
     acknowledged = False

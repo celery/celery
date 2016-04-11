@@ -2,14 +2,14 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 
-from celery.five import string, long_t
+from celery.five import python_2_unicode_compatible, string, long_t
 from celery.local import (
     Proxy,
     PromiseProxy,
     maybe_evaluate,
     try_import,
 )
-from celery.tests.case import Case, Mock
+from celery.tests.case import Case, Mock, skip
 
 PY3 = sys.version_info[0] == 3
 
@@ -81,8 +81,10 @@ class test_Proxy(Case):
         with self.assertRaises(AttributeError):
             x.__dict__
 
+    @skip.if_python3()
     def test_unicode(self):
 
+        @python_2_unicode_compatible
         class X(object):
 
             def __unicode__(self):

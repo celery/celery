@@ -23,7 +23,9 @@ from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .datastructures import DependencyGraph, GraphFormatter
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
-from .five import items, range, string_t, monotonic
+from .five import (
+    items, python_2_unicode_compatible, range, string_t, monotonic,
+)
 from .utils import deprecated
 
 __all__ = ['ResultBase', 'AsyncResult', 'ResultSet', 'GroupResult',
@@ -58,6 +60,7 @@ class ResultBase(object):
     parent = None
 
 
+@python_2_unicode_compatible
 class AsyncResult(ResultBase):
     """Query task state.
 
@@ -425,6 +428,7 @@ class AsyncResult(ResultBase):
 Thenable.register(AsyncResult)
 
 
+@python_2_unicode_compatible
 class ResultSet(ResultBase):
     """Working with more than one result.
 
@@ -790,6 +794,7 @@ class ResultSet(ResultBase):
 Thenable.register(ResultSet)
 
 
+@python_2_unicode_compatible
 class GroupResult(ResultSet):
     """Like :class:`ResultSet`, but with an associated id.
 
@@ -864,6 +869,7 @@ class GroupResult(ResultSet):
 Thenable.register(ResultSet)
 
 
+@python_2_unicode_compatible
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 

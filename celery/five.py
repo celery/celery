@@ -191,7 +191,7 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
         for attr_name, attr in items(attrs)
     }
     module = sys.modules[fqdn] = type(
-        module_name_t(modname), (base,), cls_attrs)(module_name_t(name))
+        bytes_if_py2(modname), (base,), cls_attrs)(bytes_if_py2(name))
     module.__dict__.update(attrs)
     return module
 

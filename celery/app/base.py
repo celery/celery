@@ -32,7 +32,9 @@ from celery._state import (
 )
 from celery.datastructures import AttributeDictMixin
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
-from celery.five import UserDict, module_name_t, values
+from celery.five import (
+    UserDict, bytes_if_py2, python_2_unicode_compatible, values,
+)
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
@@ -108,6 +110,7 @@ class PendingConfiguration(UserDict, AttributeDictMixin):
         return self.callback(key)
 
 
+@python_2_unicode_compatible
 class Celery(object):
     """Celery application.
 
@@ -950,7 +953,7 @@ class Celery(object):
         if not keep_reduce:
             attrs['__reduce__'] = __reduce__
 
-        return type(module_name_t(name or Class.__name__), (Class,), attrs)
+        return type(bytes_if_py2(name or Class.__name__), (Class,), attrs)
 
     def _rgetattr(self, path):
         return attrgetter(path)(self)

@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-from celery.five import module_name_t
+from celery.five import bytes_if_py2
 
 from celery.utils.imports import (
     qualname,
@@ -24,7 +24,7 @@ class test_import_utils(Case):
         self.assertTrue(find_module('celery.worker.request'))
 
     def test_qualname(self):
-        Class = type(module_name_t('Fox'), (object,), {
+        Class = type(bytes_if_py2('Fox'), (object,), {
             '__module__': 'quick.brown',
         })
         self.assertEqual(qualname(Class), 'quick.brown.Fox')

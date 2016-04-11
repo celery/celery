@@ -20,7 +20,7 @@ from kombu.utils import json
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
 from celery import shared_task, __version__ as celery_version
-from celery.five import items, reraise
+from celery.five import items, python_2_unicode_compatible, reraise
 from celery.utils.log import get_task_logger
 
 __all__ = ['InvalidResponseError', 'RemoteExecuteError', 'UnknownStatusError',
@@ -83,6 +83,7 @@ def extract_response(raw_response, loads=json.loads):
         raise UnknownStatusError(str(status))
 
 
+@python_2_unicode_compatible
 class MutableURL(object):
     """Object wrapping a Uniform Resource Locator.
 

@@ -16,7 +16,7 @@ from kombu.utils import symbol_by_name
 from kombu.utils.encoding import bytes_to_str
 
 from .datastructures import DependencyGraph, GraphFormatter
-from .five import values, with_metaclass
+from .five import bytes_if_py2, values, with_metaclass
 from .utils.imports import instantiate, qualname
 from .utils.log import get_logger
 
@@ -291,10 +291,10 @@ class StepType(type):
         return super(StepType, cls).__new__(cls, name, bases, attrs)
 
     def __str__(self):
-        return self.name
+        return bytes_if_py2(self.name)
 
     def __repr__(self):
-        return 'step:{0.name}{{{0.requires!r}}}'.format(self)
+        return bytes_if_py2('step:{0.name}{{{0.requires!r}}}'.format(self))
 
 
 @with_metaclass(StepType)
@@ -354,7 +354,7 @@ class Step(object):
         pass
 
     def __repr__(self):
-        return '<step: {0.alias}>'.format(self)
+        return bytes_if_py2('<step: {0.alias}>'.format(self))
 
     @property
     def alias(self):

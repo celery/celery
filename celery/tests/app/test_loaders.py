@@ -6,7 +6,7 @@ import warnings
 
 from celery import loaders
 from celery.exceptions import NotConfigured
-from celery.five import module_name_t
+from celery.five import bytes_if_py2
 from celery.loaders import base
 from celery.loaders import default
 from celery.loaders.app import AppLoader
@@ -164,7 +164,7 @@ class test_DefaultLoader(AppCase):
             pass
 
         configname = os.environ.get('CELERY_CONFIG_MODULE') or 'celeryconfig'
-        celeryconfig = ConfigModule(module_name_t(configname))
+        celeryconfig = ConfigModule(bytes_if_py2(configname))
         celeryconfig.imports = ('os', 'sys')
 
         prevconfig = sys.modules.get(configname)

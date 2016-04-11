@@ -17,7 +17,7 @@ from celery import states
 from celery._state import _task_stack
 from celery.canvas import signature
 from celery.exceptions import Ignore, MaxRetriesExceededError, Reject, Retry
-from celery.five import class_property, items
+from celery.five import class_property, items, python_2_unicode_compatible
 from celery.result import EagerResult
 from celery.utils import abstract
 from celery.utils import uuid, maybe_reraise
@@ -65,6 +65,7 @@ def _reprtask(task, fmt=None, flags=None):
     )
 
 
+@python_2_unicode_compatible
 class Context(object):
     # Default context
     logfile = None
@@ -119,6 +120,7 @@ class Context(object):
         return self._children
 
 
+@python_2_unicode_compatible
 class Task(object):
     """Task base class.
 

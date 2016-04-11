@@ -6,7 +6,7 @@ import types
 from contextlib import contextmanager
 
 from celery.exceptions import ChordError, TimeoutError
-from celery.five import items, module_name_t, range
+from celery.five import items, bytes_if_py2, range
 from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
 from celery.utils.serialization import find_pickleable_exception as fnpe
@@ -36,15 +36,15 @@ class wrapobject(object):
 if sys.version_info[0] == 3 or getattr(sys, 'pypy_version_info', None):
     Oldstyle = None
 else:
-    Oldstyle = types.ClassType(module_name_t('Oldstyle'), (), {})
+    Oldstyle = types.ClassType(bytes_if_py2('Oldstyle'), (), {})
 Unpickleable = subclass_exception(
-    module_name_t('Unpickleable'), KeyError, 'foo.module',
+    bytes_if_py2('Unpickleable'), KeyError, 'foo.module',
 )
 Impossible = subclass_exception(
-    module_name_t('Impossible'), object, 'foo.module',
+    bytes_if_py2('Impossible'), object, 'foo.module',
 )
 Lookalike = subclass_exception(
-    module_name_t('Lookalike'), wrapobject, 'foo.module',
+    bytes_if_py2('Lookalike'), wrapobject, 'foo.module',
 )
 
 
