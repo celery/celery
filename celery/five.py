@@ -16,29 +16,14 @@ import sys
 from importlib import import_module
 from types import ModuleType
 
-# extends amqp.five
-from amqp.five import *  # noqa
-from amqp.five import __all__ as _all_five
+# extends vine.five
+from vine.five import *  # noqa
+from vine.five import __all__ as _all_five
 
 try:
     from functools import reduce
 except ImportError:
     pass
-
-try:  # pragma: no cover
-    from inspect import formatargspec, getfullargspec
-except ImportError:  # Py2
-    from collections import namedtuple
-    from inspect import formatargspec, getargspec as _getargspec  # noqa
-
-    FullArgSpec = namedtuple('FullArgSpec', (
-        'args', 'varargs', 'varkw', 'defaults',
-        'kwonlyargs', 'kwonlydefaults', 'annotations',
-    ))
-
-    def getfullargspec(fun, _fill=(None, ) * 3):  # noqa
-        s = _getargspec(fun)
-        return FullArgSpec(*s + _fill)
 
 __all__ = [
     'class_property', 'reclassmethod', 'create_module', 'recreate_module',
