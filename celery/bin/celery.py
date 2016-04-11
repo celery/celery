@@ -304,19 +304,14 @@ Migrating task {state.count}/{state.strtotal}: \
 {body[task]}[{body[id]}]\
 """
 
-DEBUG = os.environ.get('C_DEBUG', False)
-
 command_classes = [
     ('Main', ['worker', 'events', 'beat', 'shell', 'multi', 'amqp'], 'green'),
     ('Remote Control', ['status', 'inspect', 'control'], 'blue'),
     ('Utils',
-     ['purge', 'list', 'migrate', 'call', 'result', 'report', 'upgrade'],
+     ['purge', 'list', 'call', 'result', 'migrate', 'graph', 'upgrade'],
      None),
+    ('Debugging', ['report', 'logtool'], 'red'),
 ]
-if DEBUG:  # pragma: no cover
-    command_classes.append(
-        ('Debug', ['graph', 'logtool'], 'red'),
-    )
 
 
 def determine_exit_status(ret):

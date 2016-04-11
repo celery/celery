@@ -14,7 +14,8 @@ local -a _1st_arguments ifargs dopts controlargs
 typeset -A opt_args
 
 _1st_arguments=('worker' 'events' 'beat' 'shell' 'multi' 'amqp' 'status' 'inspect' \
-                'control' 'purge' 'list' 'migrate' 'call' 'result' 'report')
+                'control' 'purge' 'list' 'migrate' 'call' 'result' 'report' \
+                'graph', 'logtool', 'help')
 ifargs=('--app=' '--broker=' '--loader=' '--config=' '--version')
 dopts=('--detach' '--umask=' '--gid=' '--uid=' '--pidfile=' '--logfile=' '--loglevel=')
 controlargs=('--timeout' '--destination')
