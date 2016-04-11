@@ -12,8 +12,6 @@ import platform
 
 from functools import reduce
 
-from kombu.utils.encoding import safe_str
-
 from celery.five import python_2_unicode_compatible, string
 
 __all__ = ['colored']
