@@ -101,8 +101,6 @@ But for the same reasons the `pickle` serializer is inherently insecure [*]_,
 and should be avoided whenever clients are untrusted or
 unauthenticated.
 
-.. [*] http://nadiana.com/python-pickle-insecure
-
 You can disable untrusted content by specifying
 a white-list of accepted content-types in the :setting:`accept_content`
 setting:
@@ -243,3 +241,7 @@ that can be used.
 .. _`AIDE`: http://aide.sourceforge.net/
 .. _`Open Source Tripwire`: http://sourceforge.net/projects/tripwire/
 .. _`ZFS`: https://en.wikipedia.org/wiki/ZFS
+
+.. rubric:: Footnotes
+
+.. [*] http://nadiana.com/python-pickle-insecure

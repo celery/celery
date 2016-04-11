@@ -38,10 +38,6 @@ You should set up alerts, that will notify you as soon as any queue has
 reached an unacceptable size.  This way you can take appropriate action
 like adding new worker nodes, or revoking unnecessary tasks.
 
-.. [*] The chapter is available to read for free here:
-       `The back of the envelope`_.  The book is a classic text. Highly
-       recommended.
-
 .. _`Programming Pearls`: http://www.cs.bell-labs.com/cm/cs/pearls/
 
 .. _`The back of the envelope`:
@@ -163,16 +159,6 @@ If you have a combination of long- and short-running tasks, the best option
 is to use two worker nodes that are configured separately, and route
 the tasks according to the run-time. (see :ref:`guide-routing`).
 
-.. [*] RabbitMQ and other brokers deliver messages round-robin,
-       so this doesn't apply to an active system.  If there is no prefetch
-       limit and you restart the cluster, there will be timing delays between
-       nodes starting. If there are 3 offline nodes and one active node,
-       all messages will be delivered to the active node.
-
-.. [*] This is the concurrency setting; :setting:`worker_concurrency` or the
-       :option:`celery worker -c` option.
-
-
 Reserve one task at a time
 --------------------------
 
@@ -260,3 +246,17 @@ available for work, disabling the prefetch behavior::
     <- T3 complete sent by process B
     <- T1 complete sent by process A
 
+.. rubric:: Footnotes
+
+.. [*] The chapter is available to read for free here:
+       `The back of the envelope`_.  The book is a classic text. Highly
+       recommended.
+
+.. [*] RabbitMQ and other brokers deliver messages round-robin,
+       so this doesn't apply to an active system.  If there is no prefetch
+       limit and you restart the cluster, there will be timing delays between
+       nodes starting. If there are 3 offline nodes and one active node,
+       all messages will be delivered to the active node.
+
+.. [*] This is the concurrency setting; :setting:`worker_concurrency` or the
+       :option:`celery worker -c` option.
