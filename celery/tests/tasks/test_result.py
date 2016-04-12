@@ -34,7 +34,10 @@ Doesn't matter: really!\
 
 
 def mock_task(name, state, result, traceback=None):
-    return dict(id=uuid(), name=name, state=state, result=result, traceback=traceback)
+    return dict(
+        id=uuid(), name=name, state=state,
+        result=result, traceback=traceback,
+    )
 
 
 def save_result(app, task):
@@ -69,8 +72,8 @@ class test_AsyncResult(AppCase):
         self.task5 = mock_task(
             'task3', states.FAILURE, KeyError('blue'), PYTRACEBACK,
         )
-
-        for task in (self.task1, self.task2, self.task3, self.task4, self.task5):
+        for task in (self.task1, self.task2,
+                     self.task3, self.task4, self.task5):
             save_result(self.app, task)
 
         @self.app.task(shared=False)
@@ -224,7 +227,7 @@ class test_AsyncResult(AppCase):
         try:
             withtb.get()
         except KeyError:
-            tb  = traceback.format_exc()
+            tb = traceback.format_exc()
             self.assertNotIn('  File "foo.py", line 2, in foofunc', tb)
             self.assertNotIn('  File "bar.py", line 3, in barfunc', tb)
             self.assertIn('KeyError:', tb)
@@ -234,12 +237,14 @@ class test_AsyncResult(AppCase):
 
     @skip.unless_module('tblib')
     def test_raising_remote_tracebacks(self):
+        withtb = self.app.AsyncResult(self.task5['id'])
+
         old, self.app.conf.remote_tracebacks = (
             self.app.conf.remote_tracebacks, True)
         try:
             withtb.get()
         except KeyError:
-            tb  = traceback.format_exc()
+            tb = traceback.format_exc()
             self.assertIn('  File "foo.py", line 2, in foofunc', tb)
             self.assertIn('  File "bar.py", line 3, in barfunc', tb)
             self.assertIn('KeyError:', tb)

@@ -438,7 +438,7 @@ class test_crontab_remaining_estimate(AppCase):
         # *** WARNING ***
         # This test triggers an infinite loop in case of a regression
         with self.assertRaises(RuntimeError):
-            next = self.next_ocurrance(
+            self.next_ocurrance(
                 self.crontab(day_of_month=31, month_of_year=4),
                 datetime(2010, 1, 28, 14, 30, 15),
             )

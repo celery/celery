@@ -287,7 +287,8 @@ class AsyncResult(ResultBase):
 
     def maybe_throw(self, propagate=True, callback=None):
         cache = self._get_task_meta() if self._cache is None else self._cache
-        state, value, tb = cache['status'], cache['result'], cache.get('traceback')
+        state, value, tb = (
+            cache['status'], cache['result'], cache.get('traceback'))
         if state in states.PROPAGATE_STATES and propagate:
             self.throw(value, self._to_remote_traceback(tb))
         if callback is not None:
@@ -296,7 +297,7 @@ class AsyncResult(ResultBase):
 
     def _to_remote_traceback(self, tb):
         if tb and tblib is not None and self.app.conf.task_remote_tracebacks:
-            return tblib.Traceback.from_string(tbstring).as_traceback()
+            return tblib.Traceback.from_string(tb).as_traceback()
 
     def build_graph(self, intermediate=False, formatter=None):
         graph = DependencyGraph(
