@@ -889,6 +889,12 @@ Dmitry Malinovsky
 :github: https://github.com/malinoff
 :twitter: https://twitter.com/__malinoff__
 
+Ionel Cristian Mărieș
+~~~~~~~~~~~~~~~~~~~~~
+
+:github: https://github.com/ionelmc
+:twitter: https://twitter.com/ionelmc
+
 Mher Movsisyan
 ~~~~~~~~~~~~~~
 
@@ -1107,7 +1113,8 @@ Commands to make a new public stable release:
 
     $ make distcheck  # checks pep8, autodoc index, runs tests and more
     $ make dist  # NOTE: Runs git clean -xdf and removes files not in the repo.
-    $ python setup.py sdist bdist_wheel upload  # Upload package to PyPI
+    $ python setup.py sdist upload --sign --identity='Celery Security Team'
+    $ python setup.py bdist_wheel upload --sign --identity='Celery Security Team'
 
 If this is a new release series then you also need to do the
 following:
