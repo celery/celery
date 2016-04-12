@@ -6,11 +6,12 @@
     Task Implementation: Task request context, and the base task class.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 
 from billiard.einfo import ExceptionInfo
+from kombu.utils.encoding import safe_str
 
 from celery import current_app
 from celery import states
@@ -72,10 +73,11 @@ def _reprtask(task, fmt=None, flags=None):
     flags.append('v2 compatible') if task.__v2_compat__ else None
     if not fmt:
         fmt = R_BOUND_TASK if task._app else R_UNBOUND_TASK
-    return fmt.format(
+    res = fmt.format(
         task, flags=_strflags(flags),
         app=appstr(task._app) if task._app else None,
     )
+    return safe_str(res)
 
 
 class Context(object):

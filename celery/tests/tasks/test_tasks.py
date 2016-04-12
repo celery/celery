@@ -1,5 +1,7 @@
-from __future__ import absolute_import
+# -*- coding: utf-8 -*-'
+from __future__ import absolute_import, unicode_literals
 
+import sys
 from datetime import datetime, timedelta
 
 from kombu import Queue
@@ -418,6 +420,18 @@ class test_tasks(TasksCase):
             pass
 
         self.assertIn('task_test_repr', repr(task_test_repr))
+
+    def test_repr_unicode_task_name(self):
+        task_name = 'Задача'
+
+        @self.app.task(shared=False, name=task_name)
+        def task_test_repr():
+            pass
+
+        if sys.version_info[0] == 2:
+            task_name = task_name.encode('utf8')
+
+        self.assertIn(task_name, repr(task_test_repr))
 
     def test_has___name__(self):
 
