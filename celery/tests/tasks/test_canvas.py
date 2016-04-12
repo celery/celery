@@ -537,7 +537,7 @@ class test_group(CanvasCase):
         x = group(app=self.app)
         x.apply()
         res = x.apply_async()
-        self.assertFalse(res)
+        self.assertTrue(res)
         self.assertFalse(res.results)
 
     def test_apply_async_with_parent(self):
