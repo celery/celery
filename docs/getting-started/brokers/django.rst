@@ -36,6 +36,10 @@ configuration values.
 
 .. code-block:: console
 
+    $ python manage.py migrate kombu_transport_django
+
+ Or if you are using a version of Django lower than 1.7
+
     $ python manage.py syncdb
 
 .. _broker-django-limitations:
