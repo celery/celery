@@ -20,7 +20,7 @@ from celery.utils import uuid
 from celery.utils.serialization import pickle
 
 from celery.tests.case import (
-    AppCase, Mock, call, depends_on_current_app, patch,
+    AppCase, Mock, call, depends_on_current_app, patch, skip,
 )
 
 PYTRACEBACK = """\
@@ -219,28 +219,33 @@ class test_AsyncResult(AppCase):
         notb = self.app.AsyncResult(self.task3['id'])
         withtb = self.app.AsyncResult(self.task5['id'])
 
-        self.assertRaises(KeyError, notb.get)
+        with self.assertRaises(KeyError):
+            notb.get()
         try:
             withtb.get()
         except KeyError:
             tb  = traceback.format_exc()
             self.assertNotIn('  File "foo.py", line 2, in foofunc', tb)
             self.assertNotIn('  File "bar.py", line 3, in barfunc', tb)
-            self.assertIn("KeyError: 'blue'", tb)
+            self.assertIn('KeyError:', tb)
+            self.assertIn("'blue'", tb)
         else:
             raise AssertionError('Did not raise KeyError.')
+
+    @skip.unless_module('tblib')
+    def test_raising_remote_tracebacks(self):
+        old, self.app.conf.remote_tracebacks = (
+            self.app.conf.remote_tracebacks, True)
         try:
-            old = self.app.conf.remote_tracebacks
-            self.app.conf.remote_tracebacks = True
-            try:
-                withtb.get()
-            except KeyError:
-                tb  = traceback.format_exc()
-                self.assertIn('  File "foo.py", line 2, in foofunc', tb)
-                self.assertIn('  File "bar.py", line 3, in barfunc', tb)
-                self.assertIn("KeyError: 'blue'", tb)
-            else:
-                raise AssertionError('Did not raise KeyError.')
+            withtb.get()
+        except KeyError:
+            tb  = traceback.format_exc()
+            self.assertIn('  File "foo.py", line 2, in foofunc', tb)
+            self.assertIn('  File "bar.py", line 3, in barfunc', tb)
+            self.assertIn('KeyError:', tb)
+            self.assertIn("'blue'", tb)
+        else:
+            raise AssertionError('Did not raise KeyError.')
         finally:
             self.app.conf.remote_tracebacks = old
 
