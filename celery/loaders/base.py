@@ -197,12 +197,12 @@ class BaseLoader(object):
             key, value = arg.split('=', 1)
             key = key.lower().replace('.', '_')
 
-            # ## find namespace.
-            # .key=value|_key=value expands to default namespace.
+            # ## find name-space.
+            # .key=value|_key=value expands to default name-space.
             if key[0] == '_':
                 ns, key = namespace, key[1:]
             else:
-                # find namespace part of key
+                # find name-space part of key
                 ns, key = key.split('_', 1)
 
             ns_key = (ns and ns + '_' or '') + key

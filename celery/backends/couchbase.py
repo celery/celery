@@ -3,7 +3,7 @@
     celery.backends.couchbase
     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    CouchBase result store backend.
+    Couchbase result store backend.
 
 """
 from __future__ import absolute_import, unicode_literals
@@ -24,11 +24,11 @@ from celery.exceptions import ImproperlyConfigured
 
 from .base import KeyValueStoreBackend
 
-__all__ = ['CouchBaseBackend']
+__all__ = ['CouchbaseBackend']
 
 
-class CouchBaseBackend(KeyValueStoreBackend):
-    """CouchBase backend.
+class CouchbaseBackend(KeyValueStoreBackend):
+    """Couchbase backend.
 
     :raises celery.exceptions.ImproperlyConfigured: if
         module :pypi:`couchbase` is not available.
@@ -49,13 +49,13 @@ class CouchBaseBackend(KeyValueStoreBackend):
     key_t = str_t
 
     def __init__(self, url=None, *args, **kwargs):
-        super(CouchBaseBackend, self).__init__(*args, **kwargs)
+        super(CouchbaseBackend, self).__init__(*args, **kwargs)
         self.url = url
 
         if Couchbase is None:
             raise ImproperlyConfigured(
                 'You need to install the couchbase library to use the '
-                'CouchBase backend.',
+                'Couchbase backend.',
             )
 
         uhost = uport = uname = upass = ubucket = None

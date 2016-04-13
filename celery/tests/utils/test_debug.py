@@ -65,8 +65,8 @@ class test_humanbytes(Case):
     def test_humanbytes(self):
         self.assertEqual(debug.humanbytes(2 ** 20), '1MB')
         self.assertEqual(debug.humanbytes(4 * 2 ** 20), '4MB')
-        self.assertEqual(debug.humanbytes(2 ** 16), '64kB')
-        self.assertEqual(debug.humanbytes(2 ** 16), '64kB')
+        self.assertEqual(debug.humanbytes(2 ** 16), '64KB')
+        self.assertEqual(debug.humanbytes(2 ** 16), '64KB')
         self.assertEqual(debug.humanbytes(2 ** 8), '256b')
 
 

@@ -555,7 +555,7 @@ class Celery(object):
 
     def autodiscover_tasks(self, packages=None,
                            related_name='tasks', force=False):
-        """Try to autodiscover and import modules with a specific name (by
+        """Try to auto-discover and import modules with a specific name (by
         default 'tasks').
 
         If the name is empty, this will be delegated to fixups (e.g. Django).
@@ -585,8 +585,8 @@ class Celery(object):
             to "tasks", which means it look for "module.tasks" for every
             module in ``packages``.
         :keyword force: By default this call is lazy so that the actual
-            autodiscovery will not happen until an application imports the
-            default modules.  Forcing will cause the autodiscovery to happen
+            auto-discovery will not happen until an application imports the
+            default modules.  Forcing will cause the auto-discovery to happen
             immediately.
 
         """

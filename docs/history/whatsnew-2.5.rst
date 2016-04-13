@@ -108,8 +108,8 @@ lost worker processes, it should be worth it.
 
 .. _v250-optimizations:
 
-Optimizations
-=============
+Optimization
+============
 
 - The code path used when the worker executes a task has been heavily
   optimized, meaning the worker is able to process a great deal
@@ -126,8 +126,8 @@ Optimizations
 
 .. _v250-deprecations:
 
-Deprecations
-============
+Deprecation Time-line Changes
+=============================
 
 Removals
 --------
@@ -149,8 +149,8 @@ Removals
   from :mod:`celery.task.base`, please import them from :mod:`celery.task`
   instead (originally scheduled for removal in 2.4).
 
-Deprecations
-------------
+Deprecated modules
+------------------
 
 * The :mod:`celery.decorators` module has changed status
   from pending deprecation to deprecated, and is scheduled for removal
@@ -168,7 +168,7 @@ Celery can now be configured to treat all incoming and outgoing dates
 as UTC, and the local timezone can be configured.
 
 This is not yet enabled by default, since enabling
-time zone support means workers running versions pre 2.5
+time zone support means workers running versions pre-2.5
 will be out of sync with upgraded workers.
 
 To enable UTC you have to set :setting:`CELERY_ENABLE_UTC`::
@@ -188,9 +188,9 @@ UTC will enabled by default in version 3.0.
 
 .. note::
 
-    django-celery will use the local timezone as specified by the
+    :pypi:`django-celery` will use the local timezone as specified by the
     ``TIME_ZONE`` setting, it will also honor the new `USE_TZ`_ setting
-    introuced in Django 1.4.
+    introduced in Django 1.4.
 
 .. _`USE_TZ`: https://docs.djangoproject.com/en/dev/topics/i18n/timezones/
 
@@ -235,7 +235,7 @@ effectively reloading the code.
 File system notification backends are pluggable, and Celery comes with three
 implementations:
 
-* inotify (Linux)
+* ``inotify`` (Linux)
 
     Used if the :pypi:`pyinotify` library is installed.
     If you are running on Linux this is the recommended implementation,
@@ -246,9 +246,9 @@ implementations:
 
         $ pip install pyinotify
 
-* kqueue (OS X/BSD)
+* ``kqueue`` (OS X/BSD)
 
-* stat
+* ``stat``
 
     The fallback implementation simply polls the files using ``stat`` and is very
     expensive.
@@ -341,9 +341,9 @@ In Other News
 
 - Now depends on Kombu 2.1.0.
 
-- Efficient Chord support for the memcached backend (Issue #533)
+- Efficient Chord support for the Memcached backend (Issue #533)
 
-    This means memcached joins Redis in the ability to do non-polling
+    This means Memcached joins Redis in the ability to do non-polling
     chords.
 
     Contributed by Dan McGee.
@@ -352,7 +352,7 @@ In Other News
 
     The Rabbit result backend can now use the fallback chord solution.
 
-- Sending :sig:`QUIT` to celeryd will now cause it cold terminate.
+- Sending :sig:`QUIT` to ``celeryd`` will now cause it cold terminate.
 
     That is, it will not finish executing the tasks it is currently
     working on.
@@ -375,7 +375,7 @@ In Other News
 
     Contributed by Daniel Hepper.
 
-- celerybeat can now be configured on the command-line like celeryd.
+- ``celerybeat`` can now be configured on the command-line like ``celeryd``.
 
   Additional configuration must be added at the end of the argument list
   followed by ``--``, for example:
@@ -384,7 +384,7 @@ In Other News
 
     $ celerybeat -l info -- celerybeat.max_loop_interval=10.0
 
-- Now limits the number of frames in a traceback so that celeryd does not
+- Now limits the number of frames in a traceback so that ``celeryd`` does not
   crash on maximum recursion limit exceeded exceptions (Issue #615).
 
     The limit is set to the current recursion limit divided by 8 (which
@@ -410,19 +410,19 @@ In Other News
 - ``task.retry()`` now re-raises the original exception keeping
   the original stack trace.
 
-    Suggested by ojii.
+    Suggested by ``@ojii``.
 
 - The `--uid` argument to daemons now uses ``initgroups()`` to set
   groups to all the groups the user is a member of.
 
     Contributed by Łukasz Oleś.
 
-- celeryctl: Added ``shell`` command.
+- ``celeryctl``: Added ``shell`` command.
 
     The shell will have the current_app (``celery``) and all tasks
     automatically added to locals.
 
-- celeryctl: Added ``migrate`` command.
+- ``celeryctl``: Added ``migrate`` command.
 
     The migrate command moves all tasks from one broker to another.
     Note that this is experimental and you should have a backup
@@ -444,7 +444,7 @@ In Other News
     to set them.
 
     This is useful when using routing classes which decides a destination
-    at runtime.
+    at run-time.
 
     Contributed by Akira Matsuzaki.
 
@@ -464,7 +464,7 @@ In Other News
 
     Contributed by Steeve Morin.
 
-- MongoDB result backend: Now supports save and restore taskset.
+- MongoDB result backend: Now supports save and restore ``taskset``.
 
     Contributed by Julien Poissonnier.
 
@@ -476,7 +476,8 @@ In Other News
 
 - User (tilde) is now expanded in command-line arguments.
 
-- Can now configure CELERYCTL envvar in :file:`/etc/default/celeryd`.
+- Can now configure :envvar:`CELERYCTL` environment variable
+  in :file:`/etc/default/celeryd`.
 
     While not necessary for operation, :program:`celeryctl` is used for the
     ``celeryd status`` command, and the path to :program:`celeryctl` must be
@@ -509,18 +510,18 @@ Fixes
 
 - Windows: The ``celeryd`` program can now be used.
 
-    Previously Windows users had to launch celeryd using
+    Previously Windows users had to launch ``celeryd`` using
     ``python -m celery.bin.celeryd``.
 
 - Redis result backend: Now uses ``SETEX`` command to set result key,
   and expiry atomically.
 
-    Suggested by yaniv-aknin.
+    Suggested by ``@yaniv-aknin``.
 
-- celeryd: Fixed a problem where shutdown hanged when Ctrl+C was used to
-  terminate.
+- ``celeryd``: Fixed a problem where shutdown hanged when :kbd:`Control-c`
+  was used to terminate.
 
-- celeryd: No longer crashes when channel errors occur.
+- ``celeryd``: No longer crashes when channel errors occur.
 
     Fix contributed by Roger Hu.
 
@@ -550,10 +551,10 @@ Fixes
 - ``apply_async`` now forwards the original keyword arguments to ``apply``
   when :setting:`CELERY_ALWAYS_EAGER` is enabled.
 
-- celeryev now tries to re-establish the connection if the connection
+- ``celeryev`` now tries to re-establish the connection if the connection
   to the broker is lost (Issue #574).
 
-- celeryev: Fixed a crash occurring if a task has no associated worker
+- ``celeryev``: Fixed a crash occurring if a task has no associated worker
   information.
 
     Fix contributed by Matt Williamson.
@@ -561,12 +562,12 @@ Fixes
 - The current date and time is now consistently taken from the current loaders
   ``now`` method.
 
-- Now shows helpful error message when given a config module ending in
+- Now shows helpful error message when given a configuration module ending in
   ``.py`` that can't be imported.
 
-- celeryctl: The :option:`--expires <celery call --expires>` and
+- ``celeryctl``: The :option:`--expires <celery call --expires>` and
   :option:`--eta <celery call --eta>` arguments to the apply command
   can now be an ISO-8601 formatted string.
 
-- celeryctl now exits with exit status ``EX_UNAVAILABLE`` (69) if no replies
+- ``celeryctl`` now exits with exit status ``EX_UNAVAILABLE`` (69) if no replies
   have been received.

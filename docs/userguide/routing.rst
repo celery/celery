@@ -42,9 +42,11 @@ With this route enabled import feed tasks will be routed to the
 (named `"celery"` for historical reasons).
 
 Alternatively, you can use glob pattern matching, or even regular expressions,
-to match all tasks in the ``feed.tasks`` namespace::
+to match all tasks in the ``feed.tasks`` name-space:
 
-    task_routes = {'feed.tasks.*': {'queue': 'feeds'}}
+.. code-block:: python
+
+    app.conf.task_routes = {'feed.tasks.*': {'queue': 'feeds'}}
 
 If the order in which the patterns are matched is important you should should
 specify a tuple as the task router instead::
@@ -222,7 +224,7 @@ Special Routing Options
 
 RabbitMQ Message Priorities
 ---------------------------
-:supported transports: rabbitmq
+:supported transports: RabbitMQ
 
 .. versionadded:: 4.0
 
@@ -258,7 +260,7 @@ the content type of the message and its content encoding.  The
 content type is usually the serialization format used to serialize the
 message. The body contains the name of the task to execute, the
 task id (UUID), the arguments to apply it with and some additional
-metadata -- like the number of retries or an ETA.
+meta-data -- like the number of retries or an ETA.
 
 This is an example task message represented as a Python dictionary:
 
@@ -349,7 +351,7 @@ Topic exchanges
 ~~~~~~~~~~~~~~~
 
 Topic exchanges matches routing keys using dot-separated words, and the
-wildcard characters: ``*`` (matches a single word), and ``#`` (matches
+wild-card characters: ``*`` (matches a single word), and ``#`` (matches
 zero or more words).
 
 With routing keys like ``usa.news``, ``usa.weather``, ``norway.news`` and
@@ -652,7 +654,7 @@ Now the ``tasks.reload_cache`` task will be sent to every
 worker consuming from this queue.
 
 Here is another example of broadcast routing, this time with
-a celerybeat schedule:
+a :program:`celery beat` schedule:
 
 .. code-block:: python
 

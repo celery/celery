@@ -152,7 +152,7 @@ For example:
     >>> add.name
     'sum-of-two-numbers'
 
-A best practice is to use the module name as a namespace,
+A best practice is to use the module name as a name-space,
 this way names won't collide if there's already a task with that name
 defined in another module.
 
@@ -170,7 +170,7 @@ You can tell the name of the task by investigating its name attribute:
     'tasks.add'
 
 Which is exactly the name that would have been generated anyway,
-if the module name is "tasks.py":
+if the module name is :file:`tasks.py`:
 
 :file:`tasks.py`:
 
@@ -192,11 +192,12 @@ Automatic naming and relative imports
 Relative imports and automatic name generation do not go well together,
 so if you're using relative imports you should set the name explicitly.
 
-For example if the client imports the module "myapp.tasks" as ".tasks", and
-the worker imports the module as "myapp.tasks", the generated names won't match
-and an :exc:`~@NotRegistered` error will be raised by the worker.
+For example if the client imports the module ``"myapp.tasks"``
+as ``".tasks"``, and the worker imports the module as ``"myapp.tasks"``,
+the generated names won't match and an :exc:`~@NotRegistered` error will
+be raised by the worker.
 
-This is also the case when using Django and using `project.myapp`-style
+This is also the case when using Django and using ``project.myapp``-style
 naming in ``INSTALLED_APPS``:
 
 .. code-block:: python
@@ -358,7 +359,7 @@ The request defines the following attributes:
 
 :errback: A list of signatures to be called if this task fails.
 
-:utc: Set to true the caller has utc enabled (:setting:`enable_utc`).
+:utc: Set to true the caller has UTC enabled (:setting:`enable_utc`).
 
 
 .. versionadded:: 3.1
@@ -768,14 +769,14 @@ General
 
     If :const:`True` the task will report its status as "started"
     when the task is executed by a worker.
-    The default value is :const:`False` as the normal behaviour is to not
+    The default value is :const:`False` as the normal behavior is to not
     report that level of granularity. Tasks are either pending, finished,
     or waiting to be retried.  Having a "started" status can be useful for
     when there are long running tasks and there is a need to report which
     task is currently running.
 
     The host name and process id of the worker executing the task
-    will be available in the state metadata (e.g. `result.info['pid']`)
+    will be available in the state meta-data (e.g. `result.info['pid']`)
 
     The global default can be overridden by the
     :setting:`task_track_started` setting.
@@ -798,7 +799,7 @@ There are several *result backends* to choose from, and they all have
 different strengths and weaknesses (see :ref:`task-result-backends`).
 
 During its lifetime a task will transition through several possible states,
-and each state may have arbitrary metadata attached to it.  When a task
+and each state may have arbitrary meta-data attached to it.  When a task
 moves into a new state the previous state is
 forgotten about, but some transitions can be deducted, (e.g. a task now
 in the :state:`FAILED` state, is implied to have been in the
@@ -821,7 +822,7 @@ Result Backends
 If you want to keep track of tasks or need the return values, then Celery
 must store or send the states somewhere so that they can be retrieved later.
 There are several built-in result backends to choose from: SQLAlchemy/Django ORM,
-Memcached, RabbitMQ/QPid (rpc), MongoDB, and Redis -- or you can define your own.
+Memcached, RabbitMQ/QPid (``rpc``), MongoDB, and Redis -- or you can define your own.
 
 No backend works well for every use case.
 You should read about the strengths and weaknesses of each backend, and choose
@@ -886,8 +887,8 @@ STARTED
 Task has been started.
 Not reported by default, to enable please see :attr:`@Task.track_started`.
 
-:metadata: `pid` and `hostname` of the worker process executing
-           the task.
+:meta-data: `pid` and `hostname` of the worker process executing
+            the task.
 
 .. state:: SUCCESS
 
@@ -896,7 +897,7 @@ SUCCESS
 
 Task has been successfully executed.
 
-:metadata: `result` contains the return value of the task.
+:meta-data: `result` contains the return value of the task.
 :propagates: Yes
 :ready: Yes
 
@@ -907,9 +908,9 @@ FAILURE
 
 Task execution resulted in failure.
 
-:metadata: `result` contains the exception occurred, and `traceback`
-           contains the backtrace of the stack at the point when the
-           exception was raised.
+:meta-data: `result` contains the exception occurred, and `traceback`
+            contains the backtrace of the stack at the point when the
+            exception was raised.
 :propagates: Yes
 
 .. state:: RETRY
@@ -919,9 +920,9 @@ RETRY
 
 Task is being retried.
 
-:metadata: `result` contains the exception that caused the retry,
-           and `traceback` contains the backtrace of the stack at the point
-           when the exceptions was raised.
+:meta-data: `result` contains the exception that caused the retry,
+            and `traceback` contains the backtrace of the stack at the point
+            when the exceptions was raised.
 :propagates: No
 
 .. state:: REVOKED
@@ -958,7 +959,7 @@ Use :meth:`~@Task.update_state` to update a task's state:.
 Here I created the state `"PROGRESS"`, which tells any application
 aware of this state that the task is currently in progress, and also where
 it is in the process by having `current` and `total` counts as part of the
-state metadata.  This can then be used to create e.g. progress bars.
+state meta-data.  This can then be used to create e.g. progress bars.
 
 .. _pickling_exceptions:
 
@@ -1081,7 +1082,7 @@ messages are redelivered to.
 
 .. _`Dead Letter Exchanges`: http://www.rabbitmq.com/dlx.html
 
-Reject can also be used to requeue messages, but please be very careful
+Reject can also be used to re-queue messages, but please be very careful
 when using this as it can easily result in an infinite message loop.
 
 Example using reject when a task causes an out of memory condition:
@@ -1110,7 +1111,7 @@ Example using reject when a task causes an out of memory condition:
         except Exception as exc:
             raise self.retry(exc, countdown=10)
 
-Example requeuing the message:
+Example requeueing the message:
 
 .. code-block:: python
 
@@ -1334,7 +1335,7 @@ The default loader imports any modules listed in the
 :setting:`imports` setting.
 
 The entity responsible for registering your task in the registry is the
-metaclass: :class:`~celery.task.base.TaskType`.
+meta-class: :class:`~celery.task.base.TaskType`.
 
 If you want to register your task manually you can mark the
 task as :attr:`~@Task.abstract`:
@@ -1649,8 +1650,8 @@ I have a Django blog application allowing comments
 on blog posts.  I'll describe parts of the models/views and tasks for this
 application.
 
-blog/models.py
---------------
+``blog/models.py``
+------------------
 
 The comment model looks like this:
 
@@ -1681,8 +1682,8 @@ to the database, then I launch the spam filter task in the background.
 
 .. _task-example-blog-views:
 
-blog/views.py
--------------
+``blog/views.py``
+-----------------
 
 .. code-block:: python
 
@@ -1721,7 +1722,7 @@ blog/views.py
 
 
 To filter spam in comments I use `Akismet`_, the service
-used to filter spam in comments posted to the free weblog platform
+used to filter spam in comments posted to the free blog platform
 `Wordpress`.  `Akismet`_ is free for personal use, but for commercial use you
 need to pay.  You have to sign up to their service to get an API key.
 
@@ -1730,8 +1731,8 @@ To make API calls to `Akismet`_ I use the `akismet.py`_ library written by
 
 .. _task-example-blog-tasks:
 
-blog/tasks.py
--------------
+``blog/tasks.py``
+-----------------
 
 .. code-block:: python
 

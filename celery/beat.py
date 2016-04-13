@@ -289,7 +289,7 @@ class Scheduler(object):
         return new_entry
 
     def apply_async(self, entry, producer=None, advance=True, **kwargs):
-        # Update timestamps and run counts before we actually execute,
+        # Update time-stamps and run counts before we actually execute,
         # so we have that done if an exception is raised (doesn't schedule
         # forever.)
         entry = self.reserve(entry) if advance else entry

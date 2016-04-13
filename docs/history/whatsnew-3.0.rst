@@ -42,7 +42,7 @@ Highlights
 
     - The worker is now thread-less, giving great performance improvements.
 
-    - The new "Canvas" makes it easy to define complex workflows.
+    - The new "Canvas" makes it easy to define complex work-flows.
 
         Ever wanted to chain tasks together? This is possible, but
         not just that, now you can even chain together groups and chords,
@@ -61,7 +61,7 @@ Highlights
 
         Celery will automatically use the :pypi:`librabbitmq` module
         if installed, which is a very fast and memory-optimized
-        replacement for the py-amqp module.
+        replacement for the :pypi:`amqp` module.
 
     - Redis support is more reliable with improved ack emulation.
 
@@ -90,8 +90,9 @@ Broadcast exchanges renamed
 ---------------------------
 
 The workers remote control command exchanges has been renamed
-(a new pidbox name), this is because the ``auto_delete`` flag on the exchanges
-has been removed, and that makes it incompatible with earlier versions.
+(a new :term:`pidbox` name), this is because the ``auto_delete`` flag on
+the exchanges has been removed, and that makes it incompatible with
+earlier versions.
 
 You can manually delete the old exchanges if you want,
 using the :program:`celery amqp` command (previously called ``camqadm``):
@@ -101,8 +102,8 @@ using the :program:`celery amqp` command (previously called ``camqadm``):
     $ celery amqp exchange.delete celeryd.pidbox
     $ celery amqp exchange.delete reply.celeryd.pidbox
 
-Eventloop
----------
+Event-loop
+----------
 
 The worker is now running *without threads* when used with RabbitMQ (AMQP),
 or Redis as a broker, resulting in:
@@ -118,7 +119,7 @@ Hopefully this can be extended to include additional broker transports
 in the future.
 
 For increased reliability the :setting:`CELERY_FORCE_EXECV` setting is enabled
-by default if the eventloop is not used.
+by default if the event-loop is not used.
 
 New ``celery`` umbrella command
 -------------------------------
@@ -126,7 +127,7 @@ New ``celery`` umbrella command
 All Celery's command-line programs are now available from a single
 :program:`celery` umbrella command.
 
-You can see a list of subcommands and options by running:
+You can see a list of sub-commands and options by running:
 
 .. code-block:: console
 
@@ -147,7 +148,7 @@ Now depends on :pypi:`billiard`.
 --------------------------------
 
 Billiard is a fork of the multiprocessing containing
-the no-execv patch by sbt (http://bugs.python.org/issue8713),
+the no-execv patch by ``sbt`` (http://bugs.python.org/issue8713),
 and also contains the pool improvements previously located in Celery.
 
 This fork was necessary as changes to the C extension code was required
@@ -164,7 +165,7 @@ for the no-execv patch to work.
 
 The :mod:`celery.app.task` module is now a module instead of a package.
 
-The setup.py install script will try to remove the old package,
+The :file:`setup.py` install script will try to remove the old package,
 but if that doesn't work for some reason you have to remove
 it manually.  This command helps:
 
@@ -388,8 +389,8 @@ accidentally changed while switching to using blocking pop.
 `group`/`chord`/`chain` are now subtasks
 ----------------------------------------
 
-- group is no longer an alias to TaskSet, but new alltogether,
-  since it was very difficult to migrate the TaskSet class to become
+- group is no longer an alias to ``TaskSet``, but new all together,
+  since it was very difficult to migrate the ``TaskSet`` class to become
   a subtask.
 
 - A new shortcut has been added to tasks:
@@ -425,10 +426,10 @@ accidentally changed while switching to using blocking pop.
 
         >>> chain(add.s(2, 2), pow.s(2)).apply_async().get()
 
-- A new subtask_type key has been added to the subtask dicts
+- A new subtask_type key has been added to the subtask dictionary.
 
-    This can be the string "chord", "group", "chain", "chunks",
-    "xmap", or "xstarmap".
+    This can be the string ``"chord"``, ``"group"``, ``"chain"``,
+    ``"chunks"``, ``"xmap"``, or ``"xstarmap"``.
 
 - maybe_subtask now uses subtask_type to reconstruct
   the object, to be used when using non-pickle serializers.
@@ -464,7 +465,7 @@ New remote control commands
 ---------------------------
 
 These commands were previously experimental, but they have proven
-stable and is now documented as part of the offical API.
+stable and is now documented as part of the official API.
 
 - :control:`add_consumer`/:control:`cancel_consumer`
 
@@ -497,7 +498,7 @@ stable and is now documented as part of the offical API.
 
 - :control:`autoscale`
 
-    Tells workers with `--autoscale` enabled to change autoscale
+    Tells workers with ``--autoscale`` enabled to change autoscale
     max/min concurrency settings.
 
     This command is available programmatically as :meth:`@control.autoscale`:
@@ -573,15 +574,15 @@ Logging support now conforms better with best practices.
 
 - All loggers inherit from a common logger called "celery".
 
-- Before task.get_logger would setup a new logger for every task,
-  and even set the loglevel.  This is no longer the case.
+- Before ``task.get_logger`` would setup a new logger for every task,
+  and even set the log level.  This is no longer the case.
 
     - Instead all task loggers now inherit from a common "celery.task" logger
       that is set up when programs call `setup_logging_subsystem`.
 
     - Instead of using LoggerAdapter to augment the formatter with
       the task_id and task_name field, the task base logger now use
-      a special formatter adding these values at runtime from the
+      a special formatter adding these values at run-time from the
       currently executing task.
 
 - In fact, ``task.get_logger`` is no longer recommended, it is better
@@ -672,7 +673,7 @@ Lazy task decorators
 
 The ``@task`` decorator is now lazy when used with custom apps.
 
-That is, if ``accept_magic_kwargs`` is enabled (herby called "compat mode"), the task
+That is, if ``accept_magic_kwargs`` is enabled (her by called "compat mode"), the task
 decorator executes inline like before, however for custom apps the @task
 decorator now returns a special PromiseProxy object that is only evaluated
 on access.
@@ -690,11 +691,11 @@ The :option:`--app <celery --app>` option now 'auto-detects'
       attribute named 'celery'.
 
     - If the provided path is a package it tries
-      to import a submodule named 'celery',
+      to import a sub module named celery',
       and get the celery attribute from that module.
 
-E.g. if you have a project named 'proj' where the
-celery app is located in 'from proj.celery import app',
+E.g. if you have a project named ``proj`` where the
+celery app is located in ``from proj.celery import app``,
 then the following will be equivalent:
 
 .. code-block:: console
@@ -752,12 +753,12 @@ In Other News
 
 - Module celery.actors has been removed, and will be part of cl instead.
 
-- Introduces new ``celery`` command, which is an entrypoint for all other
+- Introduces new ``celery`` command, which is an entry-point for all other
   commands.
 
     The main for this command can be run by calling ``celery.start()``.
 
-- Annotations now supports decorators if the key startswith '@'.
+- Annotations now supports decorators if the key starts with '@'.
 
     E.g.:
 
@@ -777,9 +778,9 @@ In Other News
     Also tasks are now always bound by class so that
     annotated methods end up being bound.
 
-- Bugreport now available as a command and broadcast command
+- Bug-report now available as a command and broadcast command
 
-    - Get it from a Python repl:
+    - Get it from a Python REPL:
 
         .. code-block:: pycon
 
@@ -869,7 +870,7 @@ In Other News
 - Deprecated module ``celery.conf`` has been removed.
 
 - The :setting:`CELERY_TIMEZONE` now always require the :pypi:`pytz`
-  library to be installed (exept if the timezone is set to `UTC`).
+  library to be installed (except if the timezone is set to `UTC`).
 
 - The Tokyo Tyrant backend has been removed and is no longer supported.
 
@@ -881,7 +882,7 @@ In Other News
 
 - Worker: now truncates very long message bodies in error reports.
 
-- No longer deepcopies exceptions when trying to serialize errors.
+- No longer deep-copies exceptions when trying to serialize errors.
 
 - :envvar:`CELERY_BENCH` environment variable, will now also list
   memory usage statistics at worker shutdown.
@@ -893,7 +894,7 @@ In Other News
 
     Contributed by Matt Long.
 
-- Worker/Celerybeat no longer logs the startup banner.
+- Worker/Beat no longer logs the start-up banner.
 
     Previously it would be logged with severity warning,
     now it's only written to stdout.
@@ -903,7 +904,7 @@ In Other News
 
 - New signal: :signal:`task_revoked`
 
-- celery.contrib.migrate: Many improvements including
+- :mod:`celery.contrib.migrate`: Many improvements including
   filtering, queue migration, and support for acking messages on the broker
   migrating from.
 
@@ -914,7 +915,7 @@ In Other News
 - Worker: No longer calls ``consume`` on the remote control command queue
   twice.
 
-    Probably didn't cause any problems, but was unecessary.
+    Probably didn't cause any problems, but was unnecessary.
 
 Internals
 ---------
@@ -923,7 +924,7 @@ Internals
 
     Both names still work.
 
-- Compat modules are now generated dynamically upon use.
+- Compatibility modules are now generated dynamically upon use.
 
     These modules are ``celery.messaging``, ``celery.log``,
     ``celery.decorators`` and ``celery.registry``.
@@ -995,8 +996,8 @@ but these removals should have no major effect.
 
 .. _v300-deprecations:
 
-Deprecations
-============
+Deprecation Time-line Changes
+=============================
 
 See the :ref:`deprecation-timeline`.
 

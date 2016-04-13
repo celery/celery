@@ -32,7 +32,7 @@ By default, workers trust that the data they get from the broker has not
 been tampered with. See `Message Signing`_ for information on how to make
 the broker connection more trustworthy.
 
-The first line of defence should be to put a firewall in front of the broker,
+The first line of defense should be to put a firewall in front of the broker,
 allowing only white-listed machines to access it.
 
 Keep in mind that both firewall misconfiguration, and temporarily disabling
@@ -222,7 +222,7 @@ open source implementations, used to keep
 cryptographic hashes of files in the file-system, so that administrators
 can be alerted when they change. This way when the damage is done and your
 system has been compromised you can tell exactly what files intruders
-have changed  (password files, logs, backdoors, rootkits and so on).
+have changed  (password files, logs, back-doors, root-kits and so on).
 Often this is the only way you will be able to detect an intrusion.
 
 Some open source implementations include:

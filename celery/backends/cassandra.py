@@ -222,7 +222,7 @@ class CassandraBackend(BaseBackend):
         return 'cassandra://'
 
     def _get_task_meta_for(self, task_id):
-        """Get task metadata for a task by id."""
+        """Get task meta-data for a task by id."""
         self._get_connection()
 
         res = self._session.execute(self._read_stmt, (task_id, ))

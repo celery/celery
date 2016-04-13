@@ -134,7 +134,7 @@ and update several keys at once by using the ``update`` method::
 The configuration object consists of multiple dictionaries
 that are consulted in order:
 
-    #. Changes made at runtime.
+    #. Changes made at run-time.
     #. The configuration module (if any)
     #. The default configuration (:mod:`celery.app.defaults`).
 
@@ -273,7 +273,7 @@ If you add custom settings containing sensitive information you should name
 the keys using a name that Celery identifies as secret.
 
 A configuration setting will be censored if the name contains any of
-these substrings:
+these sub-strings:
 
 ``API``, ``TOKEN``, ``KEY``, ``SECRET``, ``PASS``, ``SIGNATURE``, ``DATABASE``
 
@@ -449,7 +449,7 @@ chain breaks:
 
         >>> Hello.delay('world!')
 
-    Later, it was decided that passing arbitrary call-ables
+    Later, it was decided that passing arbitrary call-able's
     was an anti-pattern, since it makes it very hard to use
     serializers other than pickle, and the feature was removed
     in 2.0, replaced by task decorators:

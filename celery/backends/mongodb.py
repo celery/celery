@@ -187,7 +187,7 @@ class MongoBackend(BaseBackend):
         return result
 
     def _get_task_meta_for(self, task_id):
-        """Get task metadata for a task by id."""
+        """Get task meta-data for a task by id."""
         obj = self.collection.find_one({'_id': task_id})
         if obj:
             return self.meta_from_decoded({
@@ -242,7 +242,7 @@ class MongoBackend(BaseBackend):
         self.collection.remove({'_id': task_id})
 
     def cleanup(self):
-        """Delete expired metadata."""
+        """Delete expired meta-data."""
         self.collection.remove(
             {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
@@ -273,7 +273,7 @@ class MongoBackend(BaseBackend):
 
     @cached_property
     def collection(self):
-        """Get the metadata task collection."""
+        """Get the meta-data task collection."""
         collection = self.database[self.taskmeta_collection]
 
         # Ensure an index on date_done is there, if not process the index
@@ -283,7 +283,7 @@ class MongoBackend(BaseBackend):
 
     @cached_property
     def group_collection(self):
-        """Get the metadata task collection."""
+        """Get the meta-data task collection."""
         collection = self.database[self.groupmeta_collection]
 
         # Ensure an index on date_done is there, if not process the index

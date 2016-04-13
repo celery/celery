@@ -76,7 +76,7 @@ Fixes
 * :class:`~celery.task.control.inspect`: Replies did not work correctly
   if no destination was specified.
 
-* Can now store result/metadata for custom states.
+* Can now store result/meta-data for custom states.
 
 * Worker: A warning is now emitted if the sending of task error
   emails fails.
@@ -718,8 +718,8 @@ News
 
 * Worker: Added `--purge` as an alias to `--discard`.
 
-* Worker: Ctrl+C (SIGINT) once does warm shutdown, hitting Ctrl+C twice
-  forces termination.
+* Worker: :kbd:`Control-c` (SIGINT) once does warm shutdown,
+  hitting :kbd:`Control-c` twice forces termination.
 
 * Added support for using complex crontab-expressions in periodic tasks. For
   example, you can now use:

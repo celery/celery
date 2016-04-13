@@ -53,7 +53,7 @@ total_count = Counter()
 #: count of all tasks accepted by the worker
 all_total_count = [0]
 
-#: the list of currently revoked tasks.  Persistent if statedb set.
+#: the list of currently revoked tasks.  Persistent if ``statedb`` set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 
 #: Update global state when a task has been reserved.

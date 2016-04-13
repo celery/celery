@@ -104,7 +104,7 @@ class Pool(bootsteps.StartStopStep):
     """Bootstep managing the worker pool.
 
     Describes how to initialize the worker pool, and starts and stops
-    the pool during worker startup/shutdown.
+    the pool during worker start-up/shutdown.
 
     Adds attributes:
 

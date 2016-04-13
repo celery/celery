@@ -129,7 +129,7 @@ class DatabaseBackend(BaseBackend):
 
     @retry
     def _get_task_meta_for(self, task_id):
-        """Get task metadata for a task by id."""
+        """Get task meta-data for a task by id."""
         session = self.ResultSession()
         with session_cleanup(session):
             task = list(session.query(Task).filter(Task.task_id == task_id))
@@ -153,7 +153,7 @@ class DatabaseBackend(BaseBackend):
 
     @retry
     def _restore_group(self, group_id):
-        """Get metadata for group by id."""
+        """Get meta-data for group by id."""
         session = self.ResultSession()
         with session_cleanup(session):
             group = session.query(TaskSet).filter(
@@ -163,7 +163,7 @@ class DatabaseBackend(BaseBackend):
 
     @retry
     def _delete_group(self, group_id):
-        """Delete metadata for group by id."""
+        """Delete meta-data for group by id."""
         session = self.ResultSession()
         with session_cleanup(session):
             session.query(TaskSet).filter(
@@ -180,7 +180,7 @@ class DatabaseBackend(BaseBackend):
             session.commit()
 
     def cleanup(self):
-        """Delete expired metadata."""
+        """Delete expired meta-data."""
         session = self.ResultSession()
         expires = self.expires
         now = self.app.now()

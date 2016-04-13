@@ -354,7 +354,7 @@ def find_deprecated_settings(source):  # pragma: no cover
 
 @memoize(maxsize=None)
 def find(name, namespace='celery'):
-    # - Try specified namespace first.
+    # - Try specified name-space first.
     namespace = namespace.lower()
     try:
         return searchresult(

@@ -55,7 +55,7 @@ these will expand to:
     - ``worker1.%n`` -> ``worker1.george``
     - ``worker1.%d`` -> ``worker1.example.com``
 
-.. admonition:: Note for :program:`supervisord` users.
+.. admonition:: Note for :pypi:`supervisor` users.
 
    The ``%`` sign must be escaped by adding a second one: `%%h`.
 
@@ -177,7 +177,7 @@ filename depending on the process that will eventually need to open the file.
 This can be used to specify one log file per child process.
 
 Note that the numbers will stay within the process limit even if processes
-exit or if autoscale/maxtasksperchild/time limits are used.  I.e. the number
+exit or if autoscale/``maxtasksperchild``/time limits are used.  I.e. the number
 is the *process index* not the process count or pid.
 
 * ``%i`` - Pool process index or 0 if MainProcess.
@@ -330,7 +330,7 @@ the `terminate` option is set.
     it's for terminating the process that is executing the task, and that
     process may have already started processing another task at the point
     when the signal is sent, so for this reason you must never call this
-    programatically.
+    programmatically.
 
 If `terminate` is set the worker child process processing the task
 will be terminated.  The default signal sent is `TERM`, but you can
@@ -428,7 +428,7 @@ Time Limits
 
     The time limit is set in two values, `soft` and `hard`.
     The soft time limit allows the task to catch an exception
-    to clean up before it is killed: the hard timeout is not catchable
+    to clean up before it is killed: the hard timeout is not catch-able
     and force terminates the task.
 
 A single task can potentially run forever, if you have lots of tasks
@@ -463,8 +463,8 @@ Time limits can also be set using the :setting:`task_time_limit` /
     platforms that do not support the ``SIGUSR1`` signal.
 
 
-Changing time limits at runtime
--------------------------------
+Changing time limits at run-time
+--------------------------------
 .. versionadded:: 2.3
 
 :broker support: *amqp, redis*
@@ -491,8 +491,8 @@ Rate Limits
 
 .. control:: rate_limit
 
-Changing rate-limits at runtime
--------------------------------
+Changing rate-limits at run-time
+--------------------------------
 
 Example changing the rate limit for the `myapp.mytask` task to execute
 at most 200 tasks of that type every minute:
@@ -594,7 +594,7 @@ By default it will consume from all queues defined in the
 :setting:`task_queues` setting (which if not specified defaults to the
 queue named ``celery``).
 
-You can specify what queues to consume from at startup, by giving a comma
+You can specify what queues to consume from at start-up, by giving a comma
 separated list of queues to the :option:`-Q <celery worker -Q>` option:
 
 .. code-block:: console
@@ -607,7 +607,7 @@ automatically generate a new queue for you (depending on the
 :setting:`task_create_missing_queues` option).
 
 You can also tell the worker to start and stop consuming from a queue at
-runtime using the remote control commands :control:`add_consumer` and
+run-time using the remote control commands :control:`add_consumer` and
 :control:`cancel_consumer`.
 
 .. control:: add_consumer
@@ -732,8 +732,8 @@ This can also be done programmatically by using the
 
 .. _worker-autoreloading:
 
-Autoreloading
-=============
+Auto-reloading
+==============
 
 .. versionadded:: 2.5
 
@@ -761,7 +761,7 @@ effectively reloading the code.
 File system notification backends are pluggable, and it comes with three
 implementations:
 
-* inotify (Linux)
+* ``inotify`` (Linux)
 
     Used if the :pypi:`pyinotify` library is installed.
     If you are running on Linux this is the recommended implementation,
@@ -772,9 +772,9 @@ implementations:
 
         $ pip install pyinotify
 
-* kqueue (OS X/BSD)
+* ``kqueue`` (OS X/BSD)
 
-* stat
+* ``stat``
 
     The fallback implementation simply polls the files using ``stat`` and is very
     expensive.
@@ -1011,9 +1011,11 @@ The output will include the following fields:
         Some transports expects the host name to be an URL, this applies to
         for example SQLAlchemy where the host name part is the connection URI:
 
+        .. code-block:: text
+
             redis+socket:///tmp/redis.sock
 
-        In this example the uri prefix will be ``redis``.
+        In this example the URI-prefix will be ``redis``.
 
     * ``userid``
 
@@ -1046,7 +1048,7 @@ The output will include the following fields:
 
     * ``processes``
 
-        List of pids (or thread-id's).
+        List of PIDs (or thread-id's).
 
     * ``put-guarded-by-semaphore``
 
@@ -1086,12 +1088,12 @@ The output will include the following fields:
 
     * ``idrss``
 
-        Amount of unshared memory used for data (in kilobytes times ticks of
+        Amount of non-shared memory used for data (in kilobytes times ticks of
         execution)
 
     * ``isrss``
 
-        Amount of unshared memory used for stack space (in kilobytes times
+        Amount of non-shared memory used for stack space (in kilobytes times
         ticks of execution)
 
     * ``ixrss``
@@ -1145,7 +1147,7 @@ The output will include the following fields:
 - ``total``
 
     Map of task names and the total number of tasks with that type
-    the worker has accepted since startup.
+    the worker has accepted since start-up.
 
 
 Additional Commands

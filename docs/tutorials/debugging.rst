@@ -21,11 +21,11 @@ Example usage:
     @task()
     def add(x, y):
         result = x + y
-        rdb.set_trace()  # <- set breakpoint
+        rdb.set_trace()  # <- set break-point
         return result
 
 
-:func:`~celery.contrib.rdb.set_trace` sets a breakpoint at the current
+:func:`~celery.contrib.rdb.set_trace` sets a break-point at the current
 location and creates a socket you can telnet into to remotely debug
 your task.
 
@@ -39,7 +39,7 @@ By default the debugger will only be available from the local host,
 to enable access from the outside you have to set the environment
 variable :envvar:`CELERY_RDB_HOST`.
 
-When the worker encounters your breakpoint it will log the following
+When the worker encounters your break-point it will log the following
 information:
 
 .. code-block:: text
@@ -94,8 +94,8 @@ Tips
 
 .. _breakpoint_signal:
 
-Enabling the breakpoint signal
-------------------------------
+Enabling the break-point signal
+-------------------------------
 
 If the environment variable :envvar:`CELERY_RDBSIG` is set, the worker
 will open up an rdb instance whenever the `SIGUSR2` signal is sent.

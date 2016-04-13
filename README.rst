@@ -286,6 +286,9 @@ Transports and Backends
 :celery[sqs]:
     for using Amazon SQS as a message transport (*experimental*).
 
+:celery[tblib]
+    for using the ``task_remote_tracebacks`` feature.
+
 :celery[memcache]:
     for using memcached as a result backend (using pylibmc)
 
@@ -299,7 +302,7 @@ Transports and Backends
     for using CouchDB as a message transport (*experimental*).
 
 :celery[couchbase]:
-    for using CouchBase as a result backend.
+    for using Couchbase as a result backend.
 
 :celery[elasticsearch]
     for using Elasticsearch as a result backend.

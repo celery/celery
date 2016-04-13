@@ -49,6 +49,7 @@ help:
 	@echo "  coverage   to run coverage check of the documentation (if enabled)"
 	@echo "  apicheck   to verify that all modules are present in autodoc"
 	@echo "  configcheck to verify that all modules are present in autodoc"
+	@echo "  spelling   to perform a spell check"
 
 .PHONY: clean
 clean:
@@ -219,6 +220,10 @@ apicheck:
 .PHONY: configcheck
 configcheck:
 	$(SPHINXBUILD) -b configcheck $(ALLSPHINXOPTS) $(BUILDDIR)/configcheck
+
+.PHONY: spelling
+spelling:
+	SPELLCHECK=1 $(SPHINXBUILD) -b spelling $(ALLSPHINXOPTS) $(BUILDDIR)/spelling
 
 .PHONY: xml
 xml:

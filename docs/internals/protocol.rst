@@ -104,7 +104,7 @@ Changes from version 1
     Worker may redirect the message to a worker that supports
     the language.
 
-- Metadata moved to headers.
+- Meta-data moved to headers.
 
     This means that workers/intermediates can inspect the message
     and make decisions based on the headers without decoding
@@ -149,7 +149,7 @@ Changes from version 1
 
 - ``correlation_id`` replaces ``task_id`` field.
 
-- ``root_id`` and ``parent_id`` fields helps keep track of workflows.
+- ``root_id`` and ``parent_id`` fields helps keep track of work-flows.
 
 - ``shadow`` lets you specify a different name for logs, monitors
   can be used for e.g. meta tasks that calls any function:

@@ -42,8 +42,8 @@
 Critical
 --------
 
-* SIGINT/Ctrl+C killed the pool, abruptly terminating the currently executing
-  tasks.
+* :sig:`INT`/:kbd:`Control-c` killed the pool, abruptly terminating the
+  currently executing tasks.
 
     Fixed by making the pool worker processes ignore :const:`SIGINT`.
 
@@ -54,8 +54,8 @@ Critical
 
 * Now depends on :pypi:`billiard` >= 0.3.1
 
-* worker: Previously exceptions raised by worker components could stall startup,
-  now it correctly logs the exceptions and shuts down.
+* worker: Previously exceptions raised by worker components could stall
+  start-up, now it correctly logs the exceptions and shuts down.
 
 * worker: Prefetch counts was set too late. QoS is now set as early as possible,
   so the worker: can't slurp in all the messages at start-up.
@@ -220,7 +220,7 @@ News
     If `Task.track_started` is enabled the task will report its status
     as "started" when the task is executed by a worker.
 
-    The default value is `False` as the normal behaviour is to not
+    The default value is `False` as the normal behavior is to not
     report that level of granularity. Tasks are either pending, finished,
     or waiting to be retried. Having a "started" status can be useful for
     when there are long running tasks and there is a need to report which
@@ -483,7 +483,7 @@ Fixes
 * The worker now shutdowns cleanly when receiving the :sig:`SIGTERM` signal.
 
 * The worker now does a cold shutdown if the :sig:`SIGINT` signal
-  is received (Ctrl+C),
+  is received (:kbd:`Control-c`),
   this means it tries to terminate as soon as possible.
 
 * Caching of results now moved to the base backend classes, so no need
@@ -629,11 +629,11 @@ Backward incompatible changes
 -----------------------------
 
 * Celery does not support detaching anymore, so you have to use the tools
-  available on your platform, or something like Supervisord to make
+  available on your platform, or something like :pypi:`supervisor` to make
   celeryd/celerybeat/celerymon into background processes.
 
     We've had too many problems with the worker daemonizing itself, so it was
-    decided it has to be removed. Example startup scripts has been added to
+    decided it has to be removed. Example start-up scripts has been added to
     the `extra/` directory:
 
     * Debian, Ubuntu, (start-stop-daemon)
@@ -738,7 +738,7 @@ Backward incompatible changes
   instead.
 
 * The worker no longer stores errors if `Task.ignore_result` is set, to
-  revert to the previous behaviour set
+  revert to the previous behavior set
   :setting:`CELERY_STORE_ERRORS_EVEN_IF_IGNORED` to `True`.
 
 * The statistics functionality has been removed in favor of events,
@@ -746,7 +746,7 @@ Backward incompatible changes
 
 * The module `celery.task.strategy` has been removed.
 
-* `celery.discovery` has been removed, and it's `autodiscover` function is
+* `celery.discovery` has been removed, and it's ``autodiscover`` function is
   now in `celery.loaders.djangoapp`. Reason: Internal API.
 
 * The :envvar:`CELERY_LOADER` environment variable now needs loader class name
@@ -840,7 +840,7 @@ News
 * Periodic tasks are now scheduled on the clock.
 
     I.e. `timedelta(hours=1)` means every hour at :00 minutes, not every
-    hour from the server starts.  To revert to the previous behaviour you
+    hour from the server starts.  To revert to the previous behavior you
     can set `PeriodicTask.relative = True`.
 
 * Now supports passing execute options to a TaskSets list of args, e.g.:
@@ -903,7 +903,7 @@ Changes
 
 * Log level for stdout/stderr changed from INFO to ERROR
 
-* ImportErrors are now properly propagated when autodiscovering tasks.
+* ImportErrors are now properly propagated when auto-discovering tasks.
 
 * You can now use `celery.messaging.establish_connection` to establish a
   connection to the broker.
@@ -961,7 +961,7 @@ Documentation
 * Now emits a warning if the --detach argument is used.
   --detach should not be used anymore, as it has several not easily fixed
   bugs related to it. Instead, use something like start-stop-daemon,
-  Supervisord or launchd (os x).
+  :pypi:`supervisor` or launchd (os x).
 
 
 * Make sure logger class is process aware, even if running Python >= 2.6.
@@ -1270,7 +1270,7 @@ News
 * New Tutorial: Creating a click counter using carrot and celery
 
 * Database entries for periodic tasks are now created at the workers
-    startup instead of for each check (which has been a forgotten TODO/XXX
+    start-up instead of for each check (which has been a forgotten TODO/XXX
     in the code for a long time)
 
 * New settings variable: :setting:`CELERY_TASK_RESULT_EXPIRES`
@@ -1481,7 +1481,7 @@ News
   it's the term used in the documentation from now on.
 
 * Make sure the pool and periodic task worker thread is terminated
-  properly at exit. (So `Ctrl-C` works again).
+  properly at exit. (So :kbd:`Control-c` works again).
 
 * Now depends on `python-daemon`.
 
@@ -1734,7 +1734,7 @@ arguments, so be sure to flush your task queue before you upgrade.
         >>> result.result
         [4, 8, 16]
 
-* Refactored the task metadata cache and database backends, and added
+* Refactored the task meta-data cache and database backends, and added
   a new backend for Tokyo Tyrant. You can set the backend in your django
   settings file.
 
@@ -1792,7 +1792,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * Added some unit tests
 
-* Can now use the database for task metadata (like if the task has
+* Can now use the database for task meta-data (like if the task has
   been executed or not). Set `settings.CELERY_TASK_META`
 
 * Can now run `python setup.py test` to run the unit tests from

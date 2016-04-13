@@ -320,7 +320,7 @@ change this using the :setting:`task_serializer` setting,
 or for each individual task, or even per message.
 
 There's built-in support for :mod:`pickle`, `JSON`, `YAML`
-and `msgpack`, and you can also add your own custom serializers by registering
+and ``msgpack``, and you can also add your own custom serializers by registering
 them into the Kombu serializer registry
 
 .. seealso::
@@ -335,7 +335,7 @@ json -- JSON is supported in many programming languages, is now
     using the modern Python libraries such as :pypi:`simplejson`.
 
     The primary disadvantage to JSON is that it limits you to the following
-    data types: strings, Unicode, floats, boolean, dictionaries, and lists.
+    data types: strings, Unicode, floats, Boolean, dictionaries, and lists.
     Decimals and dates are notably missing.
 
     Also, binary data will be transferred using Base64 encoding, which will
@@ -500,4 +500,4 @@ AMQP's full routing capabilities. Interested parties may read the
 
     A number between `0` and `255`, where `255` is the highest priority.
 
-    Supported by: rabbitmq, redis (priority reversed, 0 is highest), beanstalk
+    Supported by: RabbitMQ, Redis (priority reversed, 0 is highest), Beanstalk

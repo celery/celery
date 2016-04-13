@@ -140,7 +140,7 @@ and creating Celery applications.
 Canvas primitives
 -----------------
 
-See :ref:`guide-canvas` for more about creating task workflows.
+See :ref:`guide-canvas` for more about creating task work-flows.
 
 .. class:: group(task1[, task2[, task3[,… taskN]]])
 

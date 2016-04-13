@@ -1,8 +1,8 @@
 .. _guide-canvas:
 
-=============================
- Canvas: Designing Workflows
-=============================
+==============================
+ Canvas: Designing Work-flows
+==============================
 
 .. contents::
     :local:
@@ -305,7 +305,7 @@ The Primitives
 
 
 The primitives are also signature objects themselves, so that they can be combined
-in any number of ways to compose complex workflows.
+in any number of ways to compose complex work-flows.
 
 Here's some examples:
 

@@ -290,7 +290,8 @@ You can see the state of any branch by looking at the Changelog:
     https://github.com/celery/celery/blob/master/Changelog
 
 If the branch is in active development the topmost version info should
-contain metadata like::
+contain meta-data like:
+::
 
     2.4.0
     ======

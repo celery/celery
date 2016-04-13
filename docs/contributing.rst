@@ -244,12 +244,12 @@ Issue Trackers
 Bugs for a package in the Celery ecosystem should be reported to the relevant
 issue tracker.
 
-* Celery: https://github.com/celery/celery/issues/
-* Kombu: https://github.com/celery/kombu/issues
-* pyamqp: https://github.com/celery/py-amqp/issues
-* vine: https://github.com/celery/vine/issues
-* librabbitmq: https://github.com/celery/librabbitmq/issues
-* Django-Celery: https://github.com/celery/django-celery/issues
+* :pypi:`celery`: https://github.com/celery/celery/issues/
+* :pypi:`kombu`: https://github.com/celery/kombu/issues
+* :pypi:`amqp`: https://github.com/celery/py-amqp/issues
+* :pypi:`vine`: https://github.com/celery/vine/issues
+* :pypi:`librabbitmq`: https://github.com/celery/librabbitmq/issues
+* :pypi:`django-celery`: https://github.com/celery/django-celery/issues
 
 If you are unsure of the origin of the bug you can ask the
 :ref:`mailing-list`, or just use the Celery issue tracker.
@@ -291,7 +291,9 @@ You can see the state of any branch by looking at the Changelog:
     https://github.com/celery/celery/blob/master/Changelog
 
 If the branch is in active development the topmost version info should
-contain metadata like::
+contain meta-data like:
+
+.. code-block:: restructuredtext
 
     2.4.0
     ======
@@ -937,8 +939,8 @@ Jan Henrik Helmers
 Packages
 ========
 
-celery
-------
+``celery``
+----------
 
 :git: https://github.com/celery/celery
 :CI: http://travis-ci.org/#!/celery/celery
@@ -946,8 +948,8 @@ celery
 :PyPI: http://pypi.python.org/pypi/celery
 :docs: http://docs.celeryproject.org
 
-kombu
------
+``kombu``
+---------
 
 Messaging library.
 
@@ -957,8 +959,8 @@ Messaging library.
 :PyPI: http://pypi.python.org/pypi/kombu
 :docs: http://kombu.readthedocs.org
 
-amqp
-----
+``amqp``
+--------
 
 Python AMQP 0.9.1 client.
 
@@ -968,8 +970,8 @@ Python AMQP 0.9.1 client.
 :PyPI: http://pypi.python.org/pypi/amqp
 :docs: http://amqp.readthedocs.org
 
-vine
-----
+``vine``
+--------
 
 Promise/deferred implementation.
 
@@ -979,8 +981,8 @@ Promise/deferred implementation.
 :PyPI: http://pypi.python.org/pypi/vine
 :docs: http://vine.readthedocs.org
 
-billiard
---------
+``billiard``
+------------
 
 Fork of multiprocessing containing improvements
 that will eventually be merged into the Python stdlib.
@@ -990,24 +992,16 @@ that will eventually be merged into the Python stdlib.
 :Windows-CI: https://ci.appveyor.com/project/ask/billiard
 :PyPI: http://pypi.python.org/pypi/billiard
 
-librabbitmq
------------
+``librabbitmq``
+---------------
 
 Very fast Python AMQP client written in C.
 
 :git: https://github.com/celery/librabbitmq
 :PyPI: http://pypi.python.org/pypi/librabbitmq
 
-celerymon
----------
-
-Celery monitor web-service.
-
-:git: https://github.com/celery/celerymon
-:PyPI: http://pypi.python.org/pypi/celerymon
-
-django-celery
--------------
+``django-celery``
+-----------------
 
 Django <-> Celery Integration.
 
@@ -1015,16 +1009,16 @@ Django <-> Celery Integration.
 :PyPI: http://pypi.python.org/pypi/django-celery
 :docs: http://docs.celeryproject.org/en/latest/django
 
-cl
---
+``cell``
+--------
 
 Actor library.
 
-:git: https://github.com/celery/cl
-:PyPI: http://pypi.python.org/pypi/cl
+:git: https://github.com/celery/cell
+:PyPI: http://pypi.python.org/pypi/cell
 
-cyme
-----
+``cyme``
+--------
 
 Distributed Celery Instance manager.
 
@@ -1036,32 +1030,37 @@ Distributed Celery Instance manager.
 Deprecated
 ----------
 
-- Flask-Celery
+- ``Flask-Celery``
 
 :git: https://github.com/ask/Flask-Celery
 :PyPI: http://pypi.python.org/pypi/Flask-Celery
 
-- carrot
+- ``celerymon``
+
+:git: https://github.com/celery/celerymon
+:PyPI: http://pypi.python.org/pypi/celerymon
+
+- ``carrot``
 
 :git: https://github.com/ask/carrot
 :PyPI: http://pypi.python.org/pypi/carrot
 
-- ghettoq
+- ``ghettoq``
 
 :git: https://github.com/ask/ghettoq
 :PyPI: http://pypi.python.org/pypi/ghettoq
 
-- kombu-sqlalchemy
+- ``kombu-sqlalchemy``
 
 :git: https://github.com/ask/kombu-sqlalchemy
 :PyPI: http://pypi.python.org/pypi/kombu-sqlalchemy
 
-- django-kombu
+- ``django-kombu``
 
 :git: https://github.com/ask/django-kombu
 :PyPI: http://pypi.python.org/pypi/django-kombu
 
-- pylibrabbitmq
+- ``pylibrabbitmq``
 
 Old name for :pypi:`librabbitmq`.
 

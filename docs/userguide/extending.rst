@@ -195,7 +195,7 @@ Attributes
 
     This is only defined if the ``statedb`` argument is enabled.
 
-    Your worker bootstep must require the Statedb bootstep to use this:
+    Your worker bootstep must require the ``Statedb`` bootstep to use this:
 
     .. code-block:: python
 
@@ -223,7 +223,7 @@ Attributes
 .. attribute:: autoreloader
 
     :class:`~celery.worker.autoreloder.Autoreloader` used to automatically
-    reload use code when the filesystem changes.
+    reload use code when the file-system changes.
 
     This is only defined if the ``autoreload`` argument is enabled.
     Your worker bootstep must require the `Autoreloader` bootstep to use this;
@@ -516,7 +516,7 @@ Attributes
 
 .. attribute:: task_buckets
 
-    A :class:`~collections.defaultdict` used to lookup the rate limit for
+    A :class:`~collections.defaultdict` used to look-up the rate limit for
     a task by type.
     Entries in this dict may be None (for no limit) or a
     :class:`~kombu.utils.limits.TokenBucket` instance implementing
@@ -648,7 +648,7 @@ logs:
     <Consumer: w@example.com (terminating)> is shutting down
 
 The ``print`` statements will be redirected to the logging subsystem after
-the worker has been initialized, so the "is starting" lines are timestamped.
+the worker has been initialized, so the "is starting" lines are time-stamped.
 You may notice that this does no longer happen at shutdown, this is because
 the ``stop`` and ``shutdown`` methods are called inside a *signal handler*,
 and it's not safe to use logging inside such a handler.
@@ -769,7 +769,7 @@ Preload options
 ~~~~~~~~~~~~~~~
 
 The :program:`celery` umbrella command supports the concept of 'preload
-options', which are special options passed to all subcommands and parsed
+options', which are special options passed to all sub-commands and parsed
 outside of the main parsing step.
 
 The list of default preload options can be found in the API reference:
@@ -805,11 +805,11 @@ New commands can be added to the :program:`celery` umbrella command by using
     http://reinout.vanrees.org/weblog/2010/01/06/zest-releaser-entry-points.html
 
 
-Entry-points is special metadata that can be added to your packages ``setup.py`` program,
+Entry-points is special meta-data that can be added to your packages ``setup.py`` program,
 and then after installation, read from the system using the :mod:`pkg_resources` module.
 
 Celery recognizes ``celery.commands`` entry-points to install additional
-subcommands, where the value of the entry-point must point to a valid subclass
+sub-commands, where the value of the entry-point must point to a valid subclass
 of :class:`celery.bin.base.Command`.  There is limited documentation,
 unfortunately, but you can find inspiration from the various commands in the
 :mod:`celery.bin` package.
@@ -870,7 +870,7 @@ Worker API
 .. versionadded:: 3.0
 
 The worker uses asynchronous I/O when the amqp or redis broker transports are
-used.  The eventual goal is for all transports to use the eventloop, but that
+used.  The eventual goal is for all transports to use the event-loop, but that
 will take some time so other transports still use a threading-based solution.
 
 .. method:: hub.add(fd, callback, flags)
@@ -881,12 +881,12 @@ will take some time so other transports still use a threading-based solution.
     Add callback to be called when ``fd`` is readable.
 
     The callback will stay registered until explicitly removed using
-    :meth:`hub.remove(fd) <hub.remove>`, or the fd is automatically discarded
-    because it's no longer valid.
+    :meth:`hub.remove(fd) <hub.remove>`, or the file descriptor is
+    automatically discarded because it's no longer valid.
 
-    Note that only one callback can be registered for any given fd at a time,
-    so calling ``add`` a second time will remove any callback that
-    was previously registered for that fd.
+    Note that only one callback can be registered for any given
+    file descriptor at a time, so calling ``add`` a second time will remove
+    any callback that was previously registered for that file descriptor.
 
     A file descriptor is any file-like object that supports the ``fileno``
     method, or it can be the file descriptor number (int).
@@ -898,7 +898,7 @@ will take some time so other transports still use a threading-based solution.
 
 .. method:: hub.remove(fd)
 
-    Remove all callbacks for ``fd`` from the loop.
+    Remove all callbacks for file descriptor ``fd`` from the loop.
 
 Timer - Scheduling events
 -------------------------

@@ -991,7 +991,7 @@ class help(Command):
 
 
 class report(Command):
-    """Shows information useful to include in bugreports."""
+    """Shows information useful to include in bug-reports."""
 
     def run(self, *args, **kwargs):
         self.out(self.app.bugreport())

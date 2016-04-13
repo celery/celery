@@ -94,7 +94,7 @@ Transports and Backends
     for using CouchDB as a message transport (*experimental*).
 
 :celery[couchbase]:
-    for using CouchBase as a result backend.
+    for using Couchbase as a result backend.
 
 :celery[elasticsearch]
     for using Elasticsearch as a result backend.

@@ -604,14 +604,14 @@ class BaseKeyValueStoreBackend(Backend):
         self.delete(self.get_key_for_group(group_id))
 
     def _get_task_meta_for(self, task_id):
-        """Get task metadata for a task by id."""
+        """Get task meta-data for a task by id."""
         meta = self.get(self.get_key_for_task(task_id))
         if not meta:
             return {'status': states.PENDING, 'result': None}
         return self.decode_result(meta)
 
     def _restore_group(self, group_id):
-        """Get task metadata for a task by id."""
+        """Get task meta-data for a task by id."""
         meta = self.get(self.get_key_for_group(group_id))
         # previously this was always pickled, but later this
         # was extended to support other serializers, so the

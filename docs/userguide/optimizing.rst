@@ -73,7 +73,7 @@ The broker connection pool is enabled by default since version 2.5.
 
 You can tweak the :setting:`broker_pool_limit` setting to minimize
 contention, and the value should be based on the number of
-active threads/greenthreads using broker connections.
+active threads/green-threads using broker connections.
 
 .. _optimizing-transient-queues:
 
@@ -142,7 +142,7 @@ or that the messages may not even fit in memory.
 
 The workers' default prefetch count is the
 :setting:`worker_prefetch_multiplier` setting multiplied by the number
-of concurrency slots[*]_ (processes/threads/greenthreads).
+of concurrency slots[*]_ (processes/threads/green-threads).
 
 If you have many tasks with a long duration you want
 the multiplier value to be 1, which means it will only reserve one
@@ -163,7 +163,7 @@ Reserve one task at a time
 --------------------------
 
 The task message is only deleted from the queue after the task is
-:term:`acknowledged`, so if the worker crashes before acknowleding the task,
+:term:`acknowledged`, so if the worker crashes before acknowledging the task,
 it can be redelivered to another worker (or the same after recovery).
 
 When using the default of early acknowledgment, having a prefetch multiplier setting
@@ -180,7 +180,7 @@ there are worker processes (10 unacknowledged tasks for
 
 That is possible, but not without also enabling
 :term:`late acknowledgment`.  Using this option over the
-default beahvior means a task that has already started executing will be
+default behavior means a task that has already started executing will be
 retried in the event of a power failure or the worker instance being killed
 abruptly, so this also means the task must be :term:`idempotent`
 
@@ -221,7 +221,7 @@ waiting for long running tasks to complete::
 
 The worker will send tasks to the process as long as the pipe buffer is
 writable.  The pipe buffer size varies based on the operating system: some may
-have a buffer as small as 64kb but on recent Linux versions the buffer
+have a buffer as small as 64KB but on recent Linux versions the buffer
 size is 1MB (can only be changed system wide).
 
 You can disable this prefetching behavior by enabling the

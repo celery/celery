@@ -182,7 +182,8 @@ Available Fields
 
     By default :class:`~datetime.timedelta` schedules are scheduled
     "by the clock". This means the frequency is rounded to the nearest
-    second, minute, hour or day depending on the period of the timedelta.
+    second, minute, hour or day depending on the period of the
+    :class:`~datetime.timedelta`.
 
     If `relative` is true the frequency is not rounded and will be
     relative to the time when :program:`celery beat` was started.
@@ -260,7 +261,7 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 | ``crontab(0, 0,``                       | Execute on the first and third weeks of    |
 |         ``day_of_month='1-7,15-21')``   | the month.                                 |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0, day_of_month='11',``    | Execute on 11th of May every year.         |
+| ``crontab(0, 0, day_of_month='11',``    | Execute on the 11th of May every year.     |
 |          ``month_of_year='5')``         |                                            |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(0, 0,``                       | Execute on the first month of every        |
@@ -417,12 +418,12 @@ The default scheduler is :class:`celery.beat.PersistentScheduler`,
 which is simply keeping track of the last run times in a local database file
 (a :mod:`shelve`).
 
-`django-celery` also ships with a scheduler that stores the schedule in the
-Django database:
+:pypi:`django-celery` also ships with a scheduler that stores the schedule in
+the Django database:
 
 .. code-block:: console
 
     $ celery -A proj beat -S djcelery.schedulers.DatabaseScheduler
 
-Using `django-celery`'s scheduler you can add, modify and remove periodic
+Using :pypi:`django-celery`'s scheduler you can add, modify and remove periodic
 tasks from the Django Admin.

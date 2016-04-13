@@ -365,7 +365,7 @@ News
 * Worker logged the string representation of args and kwargs
   without safe guards (Issue #480).
 
-* RHEL init script: Changed worker startup priority.
+* RHEL init script: Changed worker start-up priority.
 
     The default start / stop priorities for MySQL on RHEL are
 

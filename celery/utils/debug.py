@@ -30,7 +30,7 @@ UNITS = (
     (2 ** 40.0, 'TB'),
     (2 ** 30.0, 'GB'),
     (2 ** 20.0, 'MB'),
-    (2 ** 10.0, 'kB'),
+    (2 ** 10.0, 'KB'),
     (0.0, 'b'),
 )
 
@@ -137,7 +137,7 @@ def hfloat(f, p=5):
 
 
 def humanbytes(s):
-    """Convert bytes to human-readable form (e.g. kB, MB)."""
+    """Convert bytes to human-readable form (e.g. KB, MB)."""
     return next(
         '{0}{1}'.format(hfloat(s / div if div else s), unit)
         for div, unit in UNITS if s >= div

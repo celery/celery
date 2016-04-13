@@ -982,8 +982,8 @@ Fixes
 
 * Windows: Utilities no longer output ANSI color codes on Windows
 
-* camqadm: Now properly handles Ctrl+C by simply exiting instead of showing
-  confusing traceback.
+* camqadm: Now properly handles :kbd:`Control-c` by simply exiting instead
+  of showing confusing traceback.
 
 * Windows: All tests are now passing on Windows.
 

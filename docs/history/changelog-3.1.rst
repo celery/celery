@@ -28,7 +28,7 @@ new in Celery 3.1.
 - **Prefork pool**: Fixes memory leak related to processes exiting
   (Issue #2927).
 
-- **Worker**: Fixes crash at startup when trying to censor passwords
+- **Worker**: Fixes crash at start-up when trying to censor passwords
   in MongoDB and Cache result backend URLs (Issue #3079, Issue #3045,
   Issue #3049, Issue #3068, Issue #3073).
 
@@ -147,7 +147,8 @@ new in Celery 3.1.
 
     Fix contributed by Colin McIntosh.
 
-- **Supervisord**: Set higher process priority in supervisord example.
+- **Supervisord**: Set higher process priority in the :pypi:`supervisord`
+    example.
 
     Contributed by George Tantiras.
 
@@ -882,7 +883,7 @@ News
   (Issue #1874).
 
 - **Worker**: Fixed ``UnicodeEncodeError`` occuring when worker is started
-  by `supervisord`.
+  by :pypi:`supervisor`.
 
     Fix contributed by Codeb Fan.
 
@@ -1015,8 +1016,8 @@ News
     Use ``result.get(callback=)`` (or ``result.iter_native()`` where available)
     instead.
 
-- **Worker**\|eventlet/gevent: A regression caused ``Ctrl+C`` to be ineffective
-  for shutdown.
+- **Worker**\|eventlet/gevent: A regression caused :kbd:`Control-c` to be
+  ineffective for shutdown.
 
 - **Redis result backend:** Now using a pipeline to store state changes
   for improved performance.
@@ -1029,7 +1030,7 @@ News
 
     Fix contributed by Brodie Rao.
 
-- **Generic init scripts:** Now runs a check at startup to verify
+- **Generic init scripts:** Now runs a check at start-up to verify
   that any configuration scripts are owned by root and that they
   are not world/group writeable.
 
@@ -1085,7 +1086,7 @@ News
     Fix contributed by Brodie Rao
 
 - **Worker:** Will no longer accept remote control commands while the
-  worker startup phase is incomplete (*Issue #1741*).
+  worker start-up phase is incomplete (*Issue #1741*).
 
 - **Commands:** The output of the event dump utility
   (:program:`celery events -d`) can now be piped into other commands.
@@ -1106,8 +1107,9 @@ News
   to path so that the current celery source code is used as a basis for
   API documentation (*Issue #1782*).
 
-- **Documentation:** Supervisord examples contained an extraneous '-' in a
-  :option:`--logfile <celery worker --logfile>` argument example.
+- **Documentation:** :pypi:`supervisor` examples contained an
+  extraneous '-' in a :option:`--logfile <celery worker --logfile>` argument
+  example.
 
     Fix contributed by Mohammad Almeer.
 
@@ -1167,8 +1169,8 @@ as this is likely to lead to resource starvation and eventually
 deadlock when using the prefork pool (see also :ref:`task-synchronous-subtasks`).
 
 If you really know what you are doing you can avoid the warning (and
-the future exception being raised) by moving the operation in a whitelist
-block:
+the future exception being raised) by moving the operation in a
+white-list block:
 
 .. code-block:: python
 
@@ -1296,7 +1298,7 @@ Fixes
 
 - Now depends on :ref:`Kombu 3.0.7 <kombu:version-3.0.7>`.
 
-- Fixed problem where Mingle caused the worker to hang at startup
+- Fixed problem where Mingle caused the worker to hang at start-up
   (Issue #1686).
 
 - Beat: Would attempt to drop privileges twice (Issue #1708).
@@ -1402,7 +1404,7 @@ Fixes
 
 - ``celery shell`` command: Fixed ``IPython.frontend`` deprecation warning.
 
-- The default app no longer includes the builtin fixups.
+- The default app no longer includes the built-in fixups.
 
     This fixes a bug where ``celery multi`` would attempt
     to load the Django settings module before entering
@@ -1457,7 +1459,7 @@ Fixes
   instead.
 
 - Worker now properly responds to ``inspect stats`` commands
-  even if received before startup is complete (Issue #1659).
+  even if received before start-up is complete (Issue #1659).
 
 - :signal:`task_postrun` is now sent within a :keyword:`finally` block,
   to make sure the signal is always sent.
@@ -1489,7 +1491,7 @@ Fixes
 - Django: Fixup now sets the default app so that threads will use
   the same app instance (e.g. for manage.py runserver).
 
-- Worker: Fixed Unicode error crash at startup experienced by some users.
+- Worker: Fixed Unicode error crash at start-up experienced by some users.
 
 - Calling ``.apply_async`` on an empty chain now works again (Issue #1650).
 

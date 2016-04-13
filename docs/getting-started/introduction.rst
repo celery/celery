@@ -159,9 +159,9 @@ Features
 
             :ref:`Read more… <guide-monitoring>`.
 
-        - **Workflows**
+        - **Work-flows**
 
-            Simple and complex workflows can be composed using
+            Simple and complex work-flows can be composed using
             a set of powerful primitives we call the "canvas",
             including grouping, chaining, chunking and more.
 

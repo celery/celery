@@ -110,13 +110,13 @@ class schedule(object):
         * `(False, 12.3)`, means the task is not due, but that the scheduler
           should check again in 12.3 seconds.
 
-        The next time to check is used to save energy/cpu cycles,
+        The next time to check is used to save energy/CPU cycles,
         it does not need to be accurate but will influence the precision
         of your schedule.  You must also keep in mind
         the value of :setting:`beat_max_loop_interval`,
         which decides the maximum number of seconds the scheduler can
         sleep between re-checking the periodic task intervals.  So if you
-        have a task that changes schedule at runtime then your next_run_at
+        have a task that changes schedule at run-time then your next_run_at
         check will decide how long it will take before a change to the
         schedule takes effect.  The max loop interval takes precendence
         over the next check at value returned.
@@ -125,7 +125,8 @@ class schedule(object):
 
             The default max loop interval may vary for different schedulers.
             For the default scheduler the value is 5 minutes, but for e.g.
-            the django-celery database scheduler the value is 5 seconds.
+            the :pypi:`django-celery` database scheduler the value
+            is 5 seconds.
 
         """
         last_run_at = self.maybe_make_aware(last_run_at)
@@ -377,7 +378,7 @@ class crontab(schedule):
     is every seventh day, only months that begin on Sunday and are also
     in the `month_of_year` attribute will have execution events.  Or,
     `day_of_week` is 1 and `day_of_month` is '1-7,15-21' means every
-    first and third monday of every month present in `month_of_year`.
+    first and third Monday of every month present in `month_of_year`.
 
     """
 

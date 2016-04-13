@@ -3,7 +3,7 @@
     celery.app.utils
     ~~~~~~~~~~~~~~~~
 
-    App utilities: Compat settings, bugreport tool, pickling apps.
+    App utilities: Compat settings, bug-report tool, pickling apps.
 
 """
 from __future__ import absolute_import, unicode_literals
@@ -33,7 +33,7 @@ from .defaults import (
 __all__ = ['Settings', 'appstr', 'bugreport',
            'filter_hidden_settings', 'find_app']
 
-#: Format used to generate bugreport information.
+#: Format used to generate bug-report information.
 BUGREPORT_INFO = """
 software -> celery:{celery_v} kombu:{kombu_v} py:{py_v}
             billiard:{billiard_v} {driver_v}
@@ -133,7 +133,7 @@ class Settings(ConfigurationView):
              <Option: type->bool default->False>))
 
         :param name: Name of option, cannot be partial.
-        :keyword namespace: Preferred namespace (``None`` by default).
+        :keyword namespace: Preferred name-space (``None`` by default).
 
         """
         return find(name, namespace)
@@ -295,7 +295,7 @@ def filter_hidden_settings(conf):
 
 
 def bugreport(app):
-    """Return a string containing information useful in bug reports."""
+    """Return a string containing information useful in bug-reports."""
     import billiard
     import celery
     import kombu

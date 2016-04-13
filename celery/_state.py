@@ -32,7 +32,7 @@ default_app = None
 _apps = weakref.WeakSet()
 
 #: global set of functions to call whenever a new app is finalized
-#: E.g. Shared tasks, and builtin tasks are created
+#: E.g. Shared tasks, and built-in tasks are created
 #: by adding callbacks here.
 _on_app_finalizers = set()
 

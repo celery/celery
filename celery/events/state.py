@@ -3,7 +3,7 @@
     celery.events.state
     ~~~~~~~~~~~~~~~~~~~
 
-    This module implements a datastructure used to keep
+    This module implements a data-structure used to keep
     track of the state of a cluster of workers and the tasks
     it is working on (by consuming events).
 

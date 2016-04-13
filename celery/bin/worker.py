@@ -81,7 +81,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: --without-mingle
 
-    Do not synchronize with other workers at startup.
+    Do not synchronize with other workers at start-up.
 
 .. cmdoption:: --without-heartbeat
 

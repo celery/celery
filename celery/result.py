@@ -158,7 +158,7 @@ class AsyncResult(ResultBase):
         :keyword no_ack: Enable amqp no ack (automatically acknowledge
             message).  If this is :const:`False` then the message will
             **not be acked**.
-        :keyword follow_parents: Reraise any exception raised by parent task.
+        :keyword follow_parents: Re-raise any exception raised by parent task.
 
         :raises celery.exceptions.TimeoutError: if `timeout` is not
             :const:`None` and the result does not arrive within `timeout`

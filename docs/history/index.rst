@@ -14,7 +14,9 @@ version please visit :ref:`changelog`.
     :maxdepth: 2
 
     changelog-3.1
+    whatsnew-3.0
     changelog-3.0
+    whatsnew-2.5
     changelog-2.5
     changelog-2.4
     changelog-2.3

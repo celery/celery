@@ -78,7 +78,7 @@ for Celery.  This means that you don't have to use multiple
 configuration files, and instead configure Celery directly
 from the Django settings; but you can also separate them if wanted.
 
-The uppercase namespace means that all Celery configuration options
+The uppercase name-space means that all Celery configuration options
 must be specified in uppercase instead of lowercase, and start with
 ``CELERY_``, so e.g. the :setting:`task_always_eager`` setting
 becomes ``CELERY_TASK_ALWAYS_EAGER``, and the :setting:`broker_url`
@@ -94,7 +94,7 @@ or execv:
 
 Next, a common practice for reusable apps is to define all tasks
 in a separate ``tasks.py`` module, and Celery does have a way to
-autodiscover these modules:
+auto-discover these modules:
 
 .. code-block:: python
 
@@ -113,7 +113,7 @@ of your installed apps, following the ``tasks.py`` convention::
 
 This way you do not have to manually add the individual modules
 to the :setting:`CELERY_IMPORTS <imports>` setting.  The ``lambda`` so that the
-autodiscovery can happen only when needed, and so that importing your
+auto-discovery can happen only when needed, and so that importing your
 module will not evaluate the Django settings object.
 
 Finally, the ``debug_task`` example is a task that dumps
@@ -148,7 +148,7 @@ result backends that uses the Django ORM and Django Cache frameworks.
 
 To use this with your project you need to follow these four steps:
 
-1. Install the ``django-celery`` library:
+1. Install the :pypi:`django-celery` library:
 
     .. code-block:: console
 
@@ -176,7 +176,7 @@ To use this with your project you need to follow these four steps:
 
         $ python manage.py syncdb
 
-4.  Configure celery to use the django-celery backend.
+4.  Configure celery to use the :pypi:`django-celery` backend.
 
     For the database backend you must use:
 

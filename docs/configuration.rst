@@ -177,10 +177,10 @@ General settings
 
 .. setting:: accept_content
 
-accept_content
-~~~~~~~~~~~~~~
+``accept_content``
+~~~~~~~~~~~~~~~~~~
 
-A whitelist of content-types/serializers to allow.
+A white-list of content-types/serializers to allow.
 
 If a message is received that is not in this list then
 the message will be discarded with an error.
@@ -202,8 +202,8 @@ Time and date settings
 
 .. setting:: enable_utc
 
-enable_utc
-~~~~~~~~~~
+``enable_utc``
+~~~~~~~~~~~~~~
 
 .. versionadded:: 2.5
 
@@ -218,8 +218,8 @@ Enabled by default since version 3.0.
 
 .. setting:: timezone
 
-timezone
-~~~~~~~~
+``timezone``
+~~~~~~~~~~~~
 
 Configure Celery to use a custom time zone.
 The timezone value can be any time zone supported by the `pytz`_
@@ -238,8 +238,8 @@ Task settings
 
 .. setting:: task_annotations
 
-task_annotations
-~~~~~~~~~~~~~~~~
+``task_annotations``
+~~~~~~~~~~~~~~~~~~~~
 
 This setting can be used to rewrite any task attribute from the
 configuration.  The setting can be a dict, or a list of annotation
@@ -283,8 +283,8 @@ instead of a dict to choose which tasks to annotate:
 
 .. setting:: task_compression
 
-task_compression
-~~~~~~~~~~~~~~~~
+``task_compression``
+~~~~~~~~~~~~~~~~~~~~
 
 Default compression used for task messages.
 Can be ``gzip``, ``bzip2`` (if available), or any custom
@@ -294,16 +294,16 @@ The default is to send uncompressed messages.
 
 .. setting:: task_protocol
 
-task_protocol
-~~~~~~~~~~~~~
+``task_protocol``
+~~~~~~~~~~~~~~~~~
 
 Default task message protocol version.
 Supports protocols: 1 and 2 (default is 1 for backwards compatibility).
 
 .. setting:: task_serializer
 
-task_serializer
-~~~~~~~~~~~~~~~
+``task_serializer``
+~~~~~~~~~~~~~~~~~~~
 
 A string identifying the default serialization method to use.  Can be
 `pickle` (default), `json`, `yaml`, `msgpack` or any custom serialization
@@ -315,8 +315,8 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 
 .. setting:: task_publish_retry
 
-task_publish_retry
-~~~~~~~~~~~~~~~~~~
+``task_publish_retry``
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.2
 
@@ -328,8 +328,8 @@ Enabled by default.
 
 .. setting:: task_publish_retry_policy
 
-task_publish_retry_policy
-~~~~~~~~~~~~~~~~~~~~~~~~~
+``task_publish_retry_policy``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.2
 
@@ -337,6 +337,7 @@ Defines the default policy when retrying publishing a task message in
 the case of connection loss or other connection errors.
 
 See :ref:`calling-retry` for more information.
+
 .. _conf-task-execution:
 
 Task execution settings
@@ -344,8 +345,8 @@ Task execution settings
 
 .. setting:: task_always_eager
 
-task_always_eager
-~~~~~~~~~~~~~~~~~
+``task_always_eager``
+~~~~~~~~~~~~~~~~~~~~~
 
 If this is :const:`True`, all tasks will be executed locally by blocking until
 the task returns.  ``apply_async()`` and ``Task.delay()`` will return
@@ -358,8 +359,8 @@ the queue.
 
 .. setting:: task_eager_propagates
 
-task_eager_propagates
-~~~~~~~~~~~~~~~~~~~~~
+``task_eager_propagates``
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If this is :const:`True`, eagerly executed tasks (applied by `task.apply()`,
 or when the :setting:`task_always_eager` setting is enabled), will
@@ -369,10 +370,11 @@ It's the same as always running ``apply()`` with ``throw=True``.
 
 .. setting:: task_remote_tracebacks
 
-task_remote_tracebacks
-~~~~~~~~~~~~~~~~~~~~~~
+``task_remote_tracebacks``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If enabled task results will include the workers stack when reraising task errors.
+If enabled task results will include the workers stack when re-raising
+task errors.
 
 This requires the :pypi:`tblib` library, which can be installed using
 :command:`pip`:
@@ -383,8 +385,8 @@ This requires the :pypi:`tblib` library, which can be installed using
 
 .. setting:: task_ignore_result
 
-task_ignore_result
-~~~~~~~~~~~~~~~~~~
+``task_ignore_result``
+~~~~~~~~~~~~~~~~~~~~~~
 
 Whether to store the task return values or not (tombstones).
 If you still want to store errors, just not successful return values,
@@ -392,36 +394,36 @@ you can set :setting:`task_store_errors_even_if_ignored`.
 
 .. setting:: task_store_errors_even_if_ignored
 
-task_store_errors_even_if_ignored
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``task_store_errors_even_if_ignored``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If set, the worker stores all task errors in the result store even if
 :attr:`Task.ignore_result <celery.task.base.Task.ignore_result>` is on.
 
 .. setting:: task_track_started
 
-task_track_started
-~~~~~~~~~~~~~~~~~~
+``task_track_started``
+~~~~~~~~~~~~~~~~~~~~~~
 
 If :const:`True` the task will report its status as 'started' when the
 task is executed by a worker.  The default value is :const:`False` as
-the normal behaviour is to not report that level of granularity.  Tasks
+the normal behavior is to not report that level of granularity.  Tasks
 are either pending, finished, or waiting to be retried.  Having a 'started'
 state can be useful for when there are long running tasks and there is a
 need to report which task is currently running.
 
 .. setting:: task_time_limit
 
-task_time_limit
-~~~~~~~~~~~~~~~
+``task_time_limit``
+~~~~~~~~~~~~~~~~~~~
 
 Task hard time limit in seconds.  The worker processing the task will
 be killed and replaced with a new one when this is exceeded.
 
 .. setting:: task_soft_time_limit
 
-task_soft_time_limit
-~~~~~~~~~~~~~~~~~~~~
+``task_soft_time_limit``
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Task soft time limit in seconds.
 
@@ -444,8 +446,8 @@ Example:
 
 .. setting:: task_acks_late
 
-task_acks_late
-~~~~~~~~~~~~~~
+``task_acks_late``
+~~~~~~~~~~~~~~~~~~
 
 Late ack means the task messages will be acknowledged **after** the task
 has been executed, not *just before*, which is the default behavior.
@@ -456,14 +458,14 @@ has been executed, not *just before*, which is the default behavior.
 
 .. setting:: task_reject_on_worker_lost
 
-task_reject_on_worker_lost
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+``task_reject_on_worker_lost``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Even if :setting:`task_acks_late` is enabled, the worker will
-acknowledge tasks when the worker process executing them abrubtly
+acknowledge tasks when the worker process executing them abruptly
 exits or is signaled (e.g. :sig:`KILL`/:sig:`INT`, etc).
 
-Setting this to true allows the message to be requeued instead,
+Setting this to true allows the message to be re-queued instead,
 so that the task will execute again by the same worker, or another
 worker.
 
@@ -474,8 +476,8 @@ worker.
 
 .. setting:: task_default_rate_limit
 
-task_default_rate_limit
-~~~~~~~~~~~~~~~~~~~~~~~
+``task_default_rate_limit``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The global default rate limit for tasks.
 
@@ -494,60 +496,60 @@ Task result backend settings
 
 .. setting:: result_backend
 
-result_backend
-~~~~~~~~~~~~~~
+``result_backend``
+~~~~~~~~~~~~~~~~~~
 
 The backend used to store task results (tombstones).
 Disabled by default.
 Can be one of the following:
 
-* rpc
+* ``rpc``
     Send results back as AMQP messages
     See :ref:`conf-rpc-result-backend`.
 
-* database
+* ``database``
     Use a relational database supported by `SQLAlchemy`_.
     See :ref:`conf-database-result-backend`.
 
-* redis
+* ``redis``
     Use `Redis`_ to store the results.
     See :ref:`conf-redis-result-backend`.
 
-* cache
+* ``cache``
     Use `memcached`_ to store the results.
     See :ref:`conf-cache-result-backend`.
 
-* mongodb
+* ``mongodb``
     Use `MongoDB`_ to store the results.
     See :ref:`conf-mongodb-result-backend`.
 
-* cassandra
+* ``cassandra``
     Use `Cassandra`_ to store the results.
     See :ref:`conf-cassandra-result-backend`.
 
-* elasticsearch
+* ``elasticsearch``
     Use `Elasticsearch`_ to store the results.
     See :ref:`conf-elasticsearch-result-backend`.
 
-* ironcache
+* ``ironcache``
     Use `IronCache`_ to store the results.
     See :ref:`conf-ironcache-result-backend`.
 
-* couchbase
+* ``couchbase``
     Use `Couchbase`_ to store the results.
     See :ref:`conf-couchbase-result-backend`.
 
-* couchdb
+* ``couchdb``
     Use `CouchDB`_ to store the results.
     See :ref:`conf-couchdb-result-backend`.
 
-* amqp
-    Older AMQP backend (badly) emulating a database-based backend.
-    See :ref:`conf-amqp-result-backend`.
-
-* filesystem
+* ``filesystem``
     Use a shared directory to store the results.
     See :ref:`conf-filesystem-result-backend`.
+
+* ``amqp``
+    Older AMQP backend (badly) emulating a database-based backend.
+    See :ref:`conf-amqp-result-backend`.
 
 .. warning:
 
@@ -566,18 +568,17 @@ Can be one of the following:
 
 .. setting:: result_serializer
 
-result_serializer
-~~~~~~~~~~~~~~~~~
+``result_serializer``
+~~~~~~~~~~~~~~~~~~~~~
 
 Result serialization format.  Default is ``pickle``. See
 :ref:`calling-serializers` for information about supported
 serialization formats.
 
-
 .. setting:: result_compression
 
-result_compression
-~~~~~~~~~~~~~~~~~~
+``result_compression``
+~~~~~~~~~~~~~~~~~~~~~~
 
 Optional compression method used for task results.
 Supports the same options as the :setting:`task_serializer` setting.
@@ -586,8 +587,8 @@ Default is no compression.
 
 .. setting:: result_expires
 
-result_expires
-~~~~~~~~~~~~~~
+``result_expires``
+~~~~~~~~~~~~~~~~~~
 
 Time (in seconds, or a :class:`~datetime.timedelta` object) for when after
 stored task tombstones will be deleted.
@@ -611,8 +612,8 @@ Default is to expire after 1 day.
 
 .. setting:: result_cache_max
 
-result_cache_max
-~~~~~~~~~~~~~~~~
+``result_cache_max``
+~~~~~~~~~~~~~~~~~~~~
 
 Enables client caching of results, which can be useful for the old 'amqp'
 backend where the result is unavailable as soon as one result instance
@@ -668,29 +669,27 @@ strings (which is the part of the URI that comes after the ``db+`` prefix).
 
 .. setting:: sqlalchemy_dburi
 
-sqlalchemy_dburi
-~~~~~~~~~~~~~~~~
+``sqlalchemy_dburi``
+~~~~~~~~~~~~~~~~~~~~
 
 This setting is no longer used as it's now possible to specify
 the database URL directly in the :setting:`result_backend` setting.
 
 .. setting:: sqlalchemy_engine_options
 
-sqlalchemy_engine_options
-~~~~~~~~~~~~~~~~~~~~~~~~~
+``sqlalchemy_engine_options``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To specify additional SQLAlchemy database engine options you can use
 the :setting:`sqlalchmey_engine_options` setting::
 
     # echo enables verbose logging from SQLAlchemy.
-    sqlalchemy_engine_options = {'echo': True}
+    app.conf.sqlalchemy_engine_options = {'echo': True}
 
 .. setting:: sqlalchemy_short_lived_sessions
 
-sqlalchemy_short_lived_sessions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    sqlalchemy_short_lived_sessions = True
+``sqlalchemy_short_lived_sessions``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Short lived sessions are disabled by default.  If enabled they can drastically reduce
 performance, especially on systems processing lots of tasks.  This option is useful
@@ -701,11 +700,11 @@ short lived sessions.  This option only affects the database backend.
 
 .. setting:: sqlalchemy_table_names
 
-sqlalchemy_table_names
-~~~~~~~~~~~~~~~~~~~~~~
+``sqlalchemy_table_names``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When SQLAlchemy is configured as the result backend, Celery automatically
-creates two tables to store result metadata for tasks.  This setting allows
+creates two tables to store result meta-data for tasks.  This setting allows
 you to customize the table names:
 
 .. code-block:: python
@@ -723,8 +722,8 @@ RPC backend settings
 
 .. setting:: result_persistent
 
-result_persistent
-~~~~~~~~~~~~~~~~~
+``result_persistent``
+~~~~~~~~~~~~~~~~~~~~~
 
 If set to :const:`True`, result messages will be persistent.  This means the
 messages will not be lost after a broker restart.  The default is for the
@@ -745,8 +744,8 @@ Cache backend settings
 
 .. note::
 
-    The cache backend supports the `pylibmc`_ and `python-memcached`
-    libraries.  The latter is used only if `pylibmc`_ is not installed.
+    The cache backend supports the :pypi:`pylibmc` and `python-memcached`
+    libraries.  The latter is used only if :pypi:`pylibmc` is not installed.
 
 Using a single memcached server:
 
@@ -771,10 +770,10 @@ The "memory" backend stores the cache in memory only:
 
 .. setting:: cache_backend_options
 
-cache_backend_options
-~~~~~~~~~~~~~~~~~~~~~
+``cache_backend_options``
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can set pylibmc options using the :setting:`cache_backend_options`
+You can set :pypi:`pylibmc` options using the :setting:`cache_backend_options`
 setting:
 
 .. code-block:: python
@@ -784,12 +783,10 @@ setting:
         'behaviors': {'tcp_nodelay': True},
     }
 
-.. _`pylibmc`: http://sendapatch.se/projects/pylibmc/
-
 .. setting:: cache_backend
 
-cache_backend
-~~~~~~~~~~~~~
+``cache_backend``
+~~~~~~~~~~~~~~~~~
 
 This setting is no longer used as it's now possible to specify
 the cache backend directly in the :setting:`result_backend` setting.
@@ -828,35 +825,35 @@ which is the same as::
 
 The fields of the URL are defined as follows:
 
-- *host*
+#. ``password``
 
-Host name or IP address of the Redis server. e.g. `localhost`.
+    Password used to connect to the database.
 
-- *port*
+#. ``host``
 
-Port to the Redis server. Default is 6379.
+    Host name or IP address of the Redis server. e.g. `localhost`.
 
-- *db*
+#. ``port``
 
-Database number to use. Default is 0.
-The db can include an optional leading slash.
+    Port to the Redis server. Default is 6379.
 
-- *password*
+#. ``db``
 
-Password used to connect to the database.
+    Database number to use. Default is 0.
+    The db can include an optional leading slash.
 
 .. setting:: redis_max_connections
 
-redis_max_connections
-~~~~~~~~~~~~~~~~~~~~~
+``redis_max_connections``
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Maximum number of connections available in the Redis connection
 pool used for sending and retrieving results.
 
 .. setting:: redis_socket_timeout
 
-redis_socket_timeout
-~~~~~~~~~~~~~~~~~~~~
+``redis_socket_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Socket timeout for connections to Redis from the result backend
 in seconds (int/float)
@@ -875,26 +872,26 @@ MongoDB backend settings
 
 .. setting:: mongodb_backend_settings
 
-mongodb_backend_settings
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``mongodb_backend_settings``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is a dict supporting the following keys:
 
-* database
+* ``database``
     The database name to connect to. Defaults to ``celery``.
 
-* taskmeta_collection
+* ``taskmeta_collection``
     The collection name to store task meta data.
     Defaults to ``celery_taskmeta``.
 
-* max_pool_size
+* ``max_pool_size``
     Passed as max_pool_size to PyMongo's Connection or MongoClient
     constructor. It is the maximum number of TCP connections to keep
     open to MongoDB at a given time. If there are more open connections
     than max_pool_size, sockets will be closed when they are released.
     Defaults to 10.
 
-* options
+* ``options``
 
     Additional keyword arguments to pass to the mongodb connection
     constructor.  See the :pypi:`pymongo` docs to see a list of arguments
@@ -915,7 +912,7 @@ Example configuration
 
 .. _conf-cassandra-result-backend:
 
-cassandra backend settings
+Cassandra backend settings
 --------------------------
 
 .. note::
@@ -933,8 +930,8 @@ This backend requires the following configuration directives to be set.
 
 .. setting:: cassandra_servers
 
-cassandra_servers
-~~~~~~~~~~~~~~~~~
+``cassandra_servers``
+~~~~~~~~~~~~~~~~~~~~~
 
 List of ``host`` Cassandra servers. e.g.::
 
@@ -943,24 +940,24 @@ List of ``host`` Cassandra servers. e.g.::
 
 .. setting:: cassandra_port
 
-cassandra_port
-~~~~~~~~~~~~~~
+``cassandra_port``
+~~~~~~~~~~~~~~~~~~
 
 Port to contact the Cassandra servers on. Default is 9042.
 
 .. setting:: cassandra_keyspace
 
-cassandra_keyspace
-~~~~~~~~~~~~~~~~~~
+``cassandra_keyspace``
+~~~~~~~~~~~~~~~~~~~~~~
 
-The keyspace in which to store the results. e.g.::
+The key-space in which to store the results. e.g.::
 
     cassandra_keyspace = 'tasks_keyspace'
 
 .. setting:: cassandra_table
 
-cassandra_table
-~~~~~~~~~~~~~~~
+``cassandra_table``
+~~~~~~~~~~~~~~~~~~~
 
 The table (column family) in which to store the results. e.g.::
 
@@ -968,40 +965,40 @@ The table (column family) in which to store the results. e.g.::
 
 .. setting:: cassandra_read_consistency
 
-cassandra_read_consistency
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+``cassandra_read_consistency``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The read consistency used. Values can be ``ONE``, ``TWO``, ``THREE``, ``QUORUM``, ``ALL``,
 ``LOCAL_QUORUM``, ``EACH_QUORUM``, ``LOCAL_ONE``.
 
 .. setting:: cassandra_write_consistency
 
-cassandra_write_consistency
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``cassandra_write_consistency``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The write consistency used. Values can be ``ONE``, ``TWO``, ``THREE``, ``QUORUM``, ``ALL``,
 ``LOCAL_QUORUM``, ``EACH_QUORUM``, ``LOCAL_ONE``.
 
 .. setting:: cassandra_entry_ttl
 
-cassandra_entry_ttl
-~~~~~~~~~~~~~~~~~~~
+``cassandra_entry_ttl``
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Time-to-live for status entries. They will expire and be removed after that many seconds
 after adding. Default (None) means they will never expire.
 
 .. setting:: cassandra_auth_provider
 
-cassandra_auth_provider
-~~~~~~~~~~~~~~~~~~~~~~~
+``cassandra_auth_provider``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 AuthProvider class within ``cassandra.auth`` module to use.  Values can be
 ``PlainTextAuthProvider`` or ``SaslAuthProvider``.
 
 .. setting:: cassandra_auth_kwargs
 
-cassandra_auth_kwargs
-~~~~~~~~~~~~~~~~~~~~~
+``cassandra_auth_kwargs``
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Named arguments to pass into the auth provider. e.g.::
 
@@ -1068,38 +1065,42 @@ which is the same as::
 
 The fields of the URL are defined as follows:
 
-- *host*
+#. ``host``
 
-Host name or IP address of the Riak server. e.g. `'localhost'`.
+    Host name or IP address of the Riak server. e.g. `'localhost'`.
 
-- *port*
+#. ``port``
 
-Port to the Riak server using the protobuf protocol. Default is 8087.
+    Port to the Riak server using the protobuf protocol. Default is 8087.
 
-- *bucket*
+#. ``bucket``
 
-Bucket name to use. Default is `celery`.
-The bucket needs to be a string with ascii characters only.
+    Bucket name to use. Default is `celery`.
+    The bucket needs to be a string with ascii characters only.
 
 Altenatively, this backend can be configured with the following configuration directives.
 
 .. setting:: riak_backend_settings
 
-riak_backend_settings
-~~~~~~~~~~~~~~~~~~~~~
+``riak_backend_settings``
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is a dict supporting the following keys:
 
-* host
+* ``host``
+
     The host name of the Riak server. Defaults to "localhost".
 
-* port
+* ``port``
+
     The port the Riak server is listening to. Defaults to 8087.
 
-* bucket
+* ``bucket``
+
     The bucket name to connect to. Defaults to "celery".
 
-* protocol
+* ``protocol``
+
     The protocol to use to connect to the Riak server. This is not configurable
     via :setting:`result_backend`
 
@@ -1152,25 +1153,30 @@ set to a couchbase URL::
 
 .. setting:: couchbase_backend_settings
 
-couchbase_backend_settings
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+``couchbase_backend_settings``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is a dict supporting the following keys:
 
-* host
+* ``host``
+
     Host name of the Couchbase server. Defaults to ``localhost``.
 
-* port
+* ``port``
+
     The port the Couchbase server is listening to. Defaults to ``8091``.
 
-* bucket
+* ``bucket``
+
     The default bucket the Couchbase server is writing to.
     Defaults to ``default``.
 
-* username
+* ``username``
+
     User name to authenticate to the Couchbase server as (optional).
 
-* password
+* ``password``
+
     Password to authenticate to the Couchbase server (optional).
 
 .. _conf-couchdb-result-backend:
@@ -1196,19 +1202,24 @@ set to a couchdb URL::
 
 The URL is formed out of the following parts:
 
-* username
+* ``username``
+
     User name to authenticate to the CouchDB server as (optional).
 
-* password
+* ``password``
+
     Password to authenticate to the CouchDB server (optional).
 
-* host
+* ``host``
+
     Host name of the CouchDB server. Defaults to ``localhost``.
 
-* port
+* ``port``
+
     The port the CouchDB server is listening to. Defaults to ``8091``.
 
-* container
+* ``container``
+
     The default container the CouchDB server is writing to.
     Defaults to ``default``.
 
@@ -1234,21 +1245,21 @@ AMQP backend settings
 
 .. setting:: result_exchange
 
-result_exchange
-~~~~~~~~~~~~~~~
+``result_exchange``
+~~~~~~~~~~~~~~~~~~~
 
 Name of the exchange to publish results in.  Default is `celeryresults`.
 
 .. setting:: result_exchange_type
 
-result_exchange_type
-~~~~~~~~~~~~~~~~~~~~
+``result_exchange_type``
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 The exchange type of the result exchange.  Default is to use a `direct`
 exchange.
 
-result_persistent
-~~~~~~~~~~~~~~~~~
+``result_persistent``
+~~~~~~~~~~~~~~~~~~~~~
 
 If set to :const:`True`, result messages will be persistent.  This means the
 messages will not be lost after a broker restart.  The default is for the
@@ -1264,8 +1275,8 @@ Example configuration
 
 .. _conf-filesystem-result-backend:
 
-Filesystem backend settings
----------------------------
+File-system backend settings
+----------------------------
 
 This backend can be configured using a file URL, for example::
 
@@ -1276,7 +1287,7 @@ the backend.
 
 If you are trying Celery on a single system you can simply use the backend
 without any further configuration. For larger clusters you could use NFS,
-`GlusterFS`_, CIFS, `HDFS`_ (using FUSE) or any other filesystem.
+`GlusterFS`_, CIFS, `HDFS`_ (using FUSE) or any other file-system.
 
 .. _`GlusterFS`: http://www.gluster.org/
 .. _`HDFS`: http://hadoop.apache.org/
@@ -1291,8 +1302,8 @@ Message Routing
 
 .. setting:: task_queues
 
-task_queues
-~~~~~~~~~~~
+``task_queues``
+~~~~~~~~~~~~~~~
 
 Most users will not want to specify this setting and should rather use
 the :ref:`automatic routing facilities <routing-automatic>`.
@@ -1314,8 +1325,8 @@ See also :setting:`task_routes`
 
 .. setting:: task_routes
 
-task_routes
-~~~~~~~~~~~~~
+``task_routes``
+~~~~~~~~~~~~~~~
 
 A list of routers, or a single router used to route tasks to queues.
 When deciding the final destination of a task the routers are consulted
@@ -1422,8 +1433,8 @@ See :ref:`routers` for more examples.
 
 .. setting:: task_queue_ha_policy
 
-task_queue_ha_policy
-~~~~~~~~~~~~~~~~~~~~
+``task_queue_ha_policy``
+~~~~~~~~~~~~~~~~~~~~~~~~
 :brokers: RabbitMQ
 
 This will set the default HA policy for a queue, and the value
@@ -1447,16 +1458,16 @@ See http://www.rabbitmq.com/ha.html for more information.
 
 .. setting:: task_queue_max_priority
 
-task_queue_max_priority
-~~~~~~~~~~~~~~~~~~~~~~~
+``task_queue_max_priority``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :brokers: RabbitMQ
 
 See :ref:`routing-options-rabbitmq-priorities`.
 
 .. setting:: worker_direct
 
-worker_direct
-~~~~~~~~~~~~~
+``worker_direct``
+~~~~~~~~~~~~~~~~~
 
 This option enables so that every worker has a dedicated queue,
 so that tasks can be routed to specific workers.
@@ -1478,8 +1489,8 @@ as the routing key and the ``C.dq`` exchange::
 
 .. setting:: task_create_missing_queues
 
-task_create_missing_queues
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+``task_create_missing_queues``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If enabled (default), any queues specified that are not defined in
 :setting:`task_queues` will be automatically created. See
@@ -1487,8 +1498,8 @@ If enabled (default), any queues specified that are not defined in
 
 .. setting:: task_default_queue
 
-task_default_queue
-~~~~~~~~~~~~~~~~~~
+``task_default_queue``
+~~~~~~~~~~~~~~~~~~~~~~
 
 The name of the default queue used by `.apply_async` if the message has
 no route or no custom queue has been specified.
@@ -1506,8 +1517,8 @@ The default is: `celery`.
 
 .. setting:: task_default_exchange
 
-task_default_exchange
-~~~~~~~~~~~~~~~~~~~~~
+``task_default_exchange``
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Name of the default exchange to use when no custom exchange is
 specified for a key in the :setting:`task_queues` setting.
@@ -1516,8 +1527,8 @@ The default is: `celery`.
 
 .. setting:: task_default_exchange_type
 
-task_default_exchange_type
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+``task_default_exchange_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default exchange type used when no custom exchange type is specified
 for a key in the :setting:`task_queues` setting.
@@ -1525,8 +1536,8 @@ The default is: `direct`.
 
 .. setting:: task_default_routing_key
 
-task_default_routing_key
-~~~~~~~~~~~~~~~~~~~~~~~~
+``task_default_routing_key``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The default routing key used when no custom routing key
 is specified for a key in the :setting:`task_queues` setting.
@@ -1535,8 +1546,8 @@ The default is: `celery`.
 
 .. setting:: task_default_delivery_mode
 
-task_default_delivery_mode
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+``task_default_delivery_mode``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Can be `transient` or `persistent`.  The default is to send
 persistent messages.
@@ -1548,8 +1559,8 @@ Broker Settings
 
 .. setting:: broker_url
 
-broker_url
-~~~~~~~~~~
+``broker_url``
+~~~~~~~~~~~~~~
 
 Default broker URL.  This must be an URL in the form of::
 
@@ -1586,8 +1597,8 @@ information.
 
 .. setting:: broker_write_url
 
-broker_read_url / broker_write_url
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``broker_read_url`` / ``broker_write_url``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 These settings can be configured, instead of :setting:`broker_url` to specify
 different connection parameters for broker connections used for consuming and
@@ -1603,8 +1614,8 @@ Both options can also be specified as a list for failover alternates, see
 
 .. setting:: broker_failover_strategy
 
-broker_failover_strategy
-~~~~~~~~~~~~~~~~~~~~~~~~
+``broker_failover_strategy``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default failover strategy for the broker Connection object. If supplied,
 may map to a key in 'kombu.connection.failover_strategies', or be a reference
@@ -1624,8 +1635,8 @@ Example::
 
 .. setting:: broker_heartbeat
 
-broker_heartbeat
-~~~~~~~~~~~~~~~~
+``broker_heartbeat``
+~~~~~~~~~~~~~~~~~~~~
 :transports supported: ``pyamqp``
 
 It's not always possible to detect connection loss in a timely
@@ -1643,8 +1654,8 @@ double the rate of the heartbeat value
 
 .. setting:: broker_heartbeat_checkrate
 
-broker_heartbeat_checkrate
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+``broker_heartbeat_checkrate``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :transports supported: ``pyamqp``
 
 At intervals the worker will monitor that the broker has not missed
@@ -1655,8 +1666,8 @@ will be performed every 5 seconds (twice the heartbeat sending rate).
 
 .. setting:: broker_use_ssl
 
-broker_use_ssl
-~~~~~~~~~~~~~~
+``broker_use_ssl``
+~~~~~~~~~~~~~~~~~~
 :transports supported: ``pyamqp``, ``redis``
 
 Toggles SSL usage on broker connection and SSL settings.
@@ -1693,8 +1704,8 @@ certificate authority:
 
 .. setting:: broker_pool_limit
 
-broker_pool_limit
-~~~~~~~~~~~~~~~~~
+``broker_pool_limit``
+~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.3
 
@@ -1713,16 +1724,16 @@ Default (since 2.5) is to use a pool of 10 connections.
 
 .. setting:: broker_connection_timeout
 
-broker_connection_timeout
-~~~~~~~~~~~~~~~~~~~~~~~~~
+``broker_connection_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The default timeout in seconds before we give up establishing a connection
 to the AMQP server.  Default is 4 seconds.
 
 .. setting:: broker_connection_retry
 
-broker_connection_retry
-~~~~~~~~~~~~~~~~~~~~~~~
+``broker_connection_retry``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Automatically try to re-establish the connection to the AMQP broker if lost.
 
@@ -1734,8 +1745,8 @@ This behavior is on by default.
 
 .. setting:: broker_connection_max_retries
 
-broker_connection_max_retries
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``broker_connection_max_retries``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Maximum number of retries before we give up re-establishing a connection
 to the AMQP broker.
@@ -1746,15 +1757,15 @@ Default is 100 retries.
 
 .. setting:: broker_login_method
 
-broker_login_method
-~~~~~~~~~~~~~~~~~~~
+``broker_login_method``
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Set custom amqp login method, default is ``AMQPLAIN``.
 
 .. setting:: broker_transport_options
 
-broker_transport_options
-~~~~~~~~~~~~~~~~~~~~~~~~
+``broker_transport_options``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.2
 
@@ -1776,8 +1787,8 @@ Worker
 
 .. setting:: imports
 
-imports
-~~~~~~~
+``imports``
+~~~~~~~~~~~
 
 A sequence of modules to import when the worker starts.
 
@@ -1788,8 +1799,8 @@ The modules will be imported in the original order.
 
 .. setting:: include
 
-include
-~~~~~~~
+``include``
+~~~~~~~~~~~
 
 Exact same semantics as :setting:`imports`, but can be used as a means
 to have different import categories.
@@ -1801,8 +1812,8 @@ The modules in this setting are imported after the modules in
 
 .. setting:: worker_concurrency
 
-worker_concurrency
-~~~~~~~~~~~~~~~~~~
+``worker_concurrency``
+~~~~~~~~~~~~~~~~~~~~~~
 
 The number of concurrent worker processes/threads/green threads executing
 tasks.
@@ -1816,8 +1827,8 @@ Defaults to the number of available CPUs.
 
 .. setting:: worker_prefetch_multiplier
 
-worker_prefetch_multiplier
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+``worker_prefetch_multiplier``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 How many messages to prefetch at a time multiplied by the number of
 concurrent processes.  The default is 4 (four messages for each
@@ -1839,8 +1850,8 @@ For more on prefetching, read :ref:`optimizing-prefetch-limit`
 
 .. setting:: worker_lost_wait
 
-worker_lost_wait
-~~~~~~~~~~~~~~~~
+``worker_lost_wait``
+~~~~~~~~~~~~~~~~~~~~
 
 In some cases a worker may be killed without proper cleanup,
 and the worker may have published a result before terminating.
@@ -1851,16 +1862,16 @@ Default is 10.0
 
 .. setting:: worker_max_tasks_per_child
 
-worker_max_tasks_per_child
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``worker_max_tasks_per_child``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Maximum number of tasks a pool worker process can execute before
 it's replaced with a new one.  Default is no limit.
 
 .. setting:: worker_max_memory_per_child
 
-worker_max_memory_per_child
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``worker_max_memory_per_child``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Maximum amount of resident memory that may be consumed by a
 worker before it will be replaced by a new worker. If a single
@@ -1870,15 +1881,15 @@ no limit.
 
 .. setting:: worker_disable_rate_limits
 
-worker_disable_rate_limits
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+``worker_disable_rate_limits``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Disable all rate limits, even if tasks has explicit rate limits set.
 
 .. setting:: worker_state_db
 
-worker_state_db
-~~~~~~~~~~~~~~~
+``worker_state_db``
+~~~~~~~~~~~~~~~~~~~
 
 Name of the file used to stores persistent worker state (like revoked tasks).
 Can be a relative or absolute path, but be aware that the suffix `.db`
@@ -1890,8 +1901,8 @@ Not enabled by default.
 
 .. setting:: worker_timer_precision
 
-worker_timer_precision
-~~~~~~~~~~~~~~~~~~~~~~
+``worker_timer_precision``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Set the maximum time in seconds that the ETA scheduler can sleep between
 rechecking the schedule.  Default is 1 second.
@@ -1901,8 +1912,8 @@ be 1 second. If you need near millisecond precision you can set this to 0.1.
 
 .. setting:: worker_enable_remote_control
 
-worker_enable_remote_control
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``worker_enable_remote_control``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Specify if remote control of the workers is enabled.
 
@@ -1915,8 +1926,8 @@ Error E-Mails
 
 .. setting:: task_send_error_emails
 
-task_send_error_emails
-~~~~~~~~~~~~~~~~~~~~~~
+``task_send_error_emails``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The default value for the `Task.send_error_emails` attribute, which if
 set to :const:`True` means errors occurring during task execution will be
@@ -1926,66 +1937,66 @@ Disabled by default.
 
 .. setting:: admins
 
-admins
-~~~~~~
+``admins``
+~~~~~~~~~~
 
 List of `(name, email_address)` tuples for the administrators that should
 receive error emails.
 
 .. setting:: server_email
 
-server_email
-~~~~~~~~~~~~
+``server_email``
+~~~~~~~~~~~~~~~~
 
 The email address this worker sends emails from.
 Default is celery@localhost.
 
 .. setting:: email_host
 
-email_host
-~~~~~~~~~~
+``email_host``
+~~~~~~~~~~~~~~
 
 The mail server to use.  Default is ``localhost``.
 
 .. setting:: email_host_user
 
-email_host_user
-~~~~~~~~~~~~~~~
+``email_host_user``
+~~~~~~~~~~~~~~~~~~~
 
 User name (if required) to log on to the mail server with.
 
 .. setting:: email_host_password
 
-email_host_password
-~~~~~~~~~~~~~~~~~~~
+``email_host_password``
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Password (if required) to log on to the mail server with.
 
 .. setting:: email_port
 
-email_port
-~~~~~~~~~~
+``email_port``
+~~~~~~~~~~~~~~
 
 The port the mail server is listening on.  Default is `25`.
 
 .. setting:: email_use_ssl
 
-email_use_ssl
-~~~~~~~~~~~~~
+``email_use_ssl``
+~~~~~~~~~~~~~~~~~
 
 Use SSL when connecting to the SMTP server.  Disabled by default.
 
 .. setting:: email_use_tls
 
-email_use_tls
-~~~~~~~~~~~~~
+``email_use_tls``
+~~~~~~~~~~~~~~~~~
 
 Use TLS when connecting to the SMTP server.  Disabled by default.
 
 .. setting:: email_timeout
 
-email_timeout
-~~~~~~~~~~~~~
+``email_timeout``
+~~~~~~~~~~~~~~~~~
 
 Timeout in seconds for when we give up trying to connect
 to the SMTP server when sending emails.
@@ -1994,8 +2005,8 @@ The default is 2 seconds.
 
 .. setting:: email_charset
 
-email_charset
-~~~~~~~~~~~~~
+``email_charset``
+~~~~~~~~~~~~~~~~~
 .. versionadded:: 4.0
 
 Charset for outgoing emails. Default is 'utf-8'.
@@ -2025,6 +2036,7 @@ george@vandelay.com and kramer@vandelay.com:
     # Mailserver configuration
     email_host = 'mail.vandelay.com'
     email_port = 25
+    email_charset = 'utf-8'
     # email_host_user = 'servers'
     # email_host_password = 's3cr3t'
 
@@ -2035,8 +2047,8 @@ Events
 
 .. setting:: worker_send_task_events
 
-worker_send_task_events
-~~~~~~~~~~~~~~~~~~~~~~~
+``worker_send_task_events``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Send task-related events so that tasks can be monitored using tools like
 `flower`.  Sets the default value for the workers
@@ -2044,8 +2056,8 @@ Send task-related events so that tasks can be monitored using tools like
 
 .. setting:: task_send_sent_event
 
-task_send_sent_event
-~~~~~~~~~~~~~~~~~~~~
+``task_send_sent_event``
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.2
 
@@ -2056,8 +2068,8 @@ Disabled by default.
 
 .. setting:: event_queue_ttl
 
-event_queue_ttl
-~~~~~~~~~~~~~~~~~~~~~~
+``event_queue_ttl``
+~~~~~~~~~~~~~~~~~~~
 :transports supported: ``amqp``
 
 Message expiry time in seconds (int/float) for when messages sent to a monitor clients
@@ -2070,8 +2082,8 @@ Disabled by default.
 
 .. setting:: event_queue_expires
 
-event_queue_expires
-~~~~~~~~~~~~~~~~~~~
+``event_queue_expires``
+~~~~~~~~~~~~~~~~~~~~~~~
 :transports supported: ``amqp``
 
 Expiry time in seconds (int/float) for when after a monitor clients
@@ -2081,8 +2093,8 @@ Default is never, relying on the queue autodelete setting.
 
 .. setting:: event_serializer
 
-event_serializer
-~~~~~~~~~~~~~~~~
+``event_serializer``
+~~~~~~~~~~~~~~~~~~~~
 
 Message serialization format used when sending event messages.
 Default is ``json``. See :ref:`calling-serializers`.
@@ -2094,8 +2106,8 @@ Logging
 
 .. setting:: worker_hijack_root_logger
 
-worker_hijack_root_logger
-~~~~~~~~~~~~~~~~~~~~~~~~~
+``worker_hijack_root_logger``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.2
 
@@ -2111,8 +2123,8 @@ can disable this behavior by setting
 
 .. setting:: worker_log_color
 
-worker_log_color
-~~~~~~~~~~~~~~~~~
+``worker_log_color``
+~~~~~~~~~~~~~~~~~~~~
 
 Enables/disables colors in logging output by the Celery apps.
 
@@ -2123,8 +2135,8 @@ By default colors are enabled if
 
 .. setting:: worker_log_format
 
-worker_log_format
-~~~~~~~~~~~~~~~~~
+``worker_log_format``
+~~~~~~~~~~~~~~~~~~~~~
 
 The format to use for log messages.
 
@@ -2137,12 +2149,14 @@ formats.
 
 .. setting:: worker_task_log_format
 
-worker_task_log_format
-~~~~~~~~~~~~~~~~~~~~~~
+``worker_task_log_format``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The format to use for log messages logged in tasks.
 
-Default is::
+Default is:
+
+.. code-block:: text
 
     [%(asctime)s: %(levelname)s/%(processName)s]
         [%(task_name)s(%(task_id)s)] %(message)s
@@ -2152,8 +2166,8 @@ formats.
 
 .. setting:: worker_redirect_stdouts
 
-worker_redirect_stdouts
-~~~~~~~~~~~~~~~~~~~~~~~
+``worker_redirect_stdouts``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If enabled `stdout` and `stderr` will be redirected
 to the current logger.
@@ -2163,8 +2177,8 @@ Used by :program:`celery worker` and :program:`celery beat`.
 
 .. setting:: worker_redirect_stdouts_level
 
-worker_redirect_stdouts_level
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``worker_redirect_stdouts_level``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The log level output to `stdout` and `stderr` is logged as.
 Can be one of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
@@ -2179,8 +2193,8 @@ Security
 
 .. setting:: security_key
 
-security_key
-~~~~~~~~~~~~
+``security_key``
+~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.5
 
@@ -2189,8 +2203,8 @@ used to sign messages when :ref:`message-signing` is used.
 
 .. setting:: security_certificate
 
-security_certificate
-~~~~~~~~~~~~~~~~~~~~
+``security_certificate``
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.5
 
@@ -2199,8 +2213,8 @@ used to sign messages when :ref:`message-signing` is used.
 
 .. setting:: security_cert_store
 
-security_cert_store
-~~~~~~~~~~~~~~~~~~~
+``security_cert_store``
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.5
 
@@ -2215,8 +2229,8 @@ Custom Component Classes (advanced)
 
 .. setting:: worker_pool
 
-worker_pool
-~~~~~~~~~~~
+``worker_pool``
+~~~~~~~~~~~~~~~
 
 Name of the pool class used by the worker.
 
@@ -2231,8 +2245,8 @@ Default is ``celery.concurrency.prefork:TaskPool``.
 
 .. setting:: worker_pool_restarts
 
-worker_pool_restarts
-~~~~~~~~~~~~~~~~~~~~
+``worker_pool_restarts``
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 If enabled the worker pool can be restarted using the
 :control:`pool_restart` remote control command.
@@ -2241,8 +2255,8 @@ Disabled by default.
 
 .. setting:: worker_autoscaler
 
-worker_autoscaler
-~~~~~~~~~~~~~~~~~
+``worker_autoscaler``
+~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.2
 
@@ -2252,8 +2266,8 @@ Default is ``celery.worker.autoscale:Autoscaler``.
 
 .. setting:: worker_autoreloader
 
-worker_autoreloader
-~~~~~~~~~~~~~~~~~~~
+``worker_autoreloader``
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Name of the autoreloader class used by the worker to reload
 Python modules and files that have changed.
@@ -2262,16 +2276,16 @@ Default is: ``celery.worker.autoreload:Autoreloader``.
 
 .. setting:: worker_consumer
 
-worker_consumer
-~~~~~~~~~~~~~~~
+``worker_consumer``
+~~~~~~~~~~~~~~~~~~~
 
 Name of the consumer class used by the worker.
 Default is :class:`celery.worker.consumer.Consumer`
 
 .. setting:: worker_timer
 
-worker_timer
-~~~~~~~~~~~~
+``worker_timer``
+~~~~~~~~~~~~~~~~
 
 Name of the ETA scheduler class used by the worker.
 Default is :class:`kombu.async.hub.timer.Timer`, or one overrided
@@ -2284,16 +2298,16 @@ Beat Settings (:program:`celery beat`)
 
 .. setting:: beat_schedule
 
-beat_schedule
-~~~~~~~~~~~~~
+``beat_schedule``
+~~~~~~~~~~~~~~~~~
 
 The periodic task schedule used by :mod:`~celery.bin.beat`.
 See :ref:`beat-entries`.
 
 .. setting:: beat_scheduler
 
-beat_scheduler
-~~~~~~~~~~~~~~
+``beat_scheduler``
+~~~~~~~~~~~~~~~~~~
 
 The default scheduler class.  Default is ``celery.beat:PersistentScheduler``.
 
@@ -2301,8 +2315,8 @@ Can also be set via the :option:`celery beat -S` argument.
 
 .. setting:: beat_schedule_filename
 
-beat_schedule_filename
-~~~~~~~~~~~~~~~~~~~~~~
+``beat_schedule_filename``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Name of the file used by `PersistentScheduler` to store the last run times
 of periodic tasks.  Can be a relative or absolute path, but be aware that the
@@ -2312,8 +2326,8 @@ Can also be set via the :option:`celery beat --schedule` argument.
 
 .. setting:: beat_sync_every
 
-beat_sync_every
-~~~~~~~~~~~~~~~
+``beat_sync_every``
+~~~~~~~~~~~~~~~~~~~
 
 The number of periodic tasks that can be called before another database sync
 is issued.
@@ -2323,15 +2337,15 @@ message sent.
 
 .. setting:: beat_max_loop_interval
 
-beat_max_loop_interval
-~~~~~~~~~~~~~~~~~~~~~~
+``beat_max_loop_interval``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The maximum number of seconds :mod:`~celery.bin.beat` can sleep
 between checking the schedule.
 
 The default for this value is scheduler specific.
 For the default celery beat scheduler the value is 300 (5 minutes),
-but for e.g. the django-celery database scheduler it is 5 seconds
+but for e.g. the :pypi:`django-celery` database scheduler it is 5 seconds
 because the schedule may be changed externally, and so it must take
 changes to the schedule into account.
 

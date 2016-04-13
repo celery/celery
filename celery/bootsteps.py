@@ -279,7 +279,7 @@ class Blueprint(object):
 
 
 class StepType(type):
-    """Metaclass for steps."""
+    """Meta-class for steps."""
 
     def __new__(cls, name, bases, attrs):
         module = attrs.get('__module__')

@@ -33,7 +33,7 @@ BACKEND_ALIASES = {
     'database': 'celery.backends.database:DatabaseBackend',
     'elasticsearch': 'celery.backends.elasticsearch:ElasticsearchBackend',
     'cassandra': 'celery.backends.cassandra:CassandraBackend',
-    'couchbase': 'celery.backends.couchbase:CouchBaseBackend',
+    'couchbase': 'celery.backends.couchbase:CouchbaseBackend',
     'couchdb': 'celery.backends.couchdb:CouchDBBackend',
     'riak': 'celery.backends.riak:RiakBackend',
     'file': 'celery.backends.filesystem:FilesystemBackend',

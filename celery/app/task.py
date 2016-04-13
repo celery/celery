@@ -44,7 +44,7 @@ R_UNBOUND_TASK = '<unbound {0.__name__}{flags}>'
 R_SELF_TASK = '<@task {0.name} bound to other {0.__self__}>'
 R_INSTANCE = '<@task: {0.name} of {app}{flags}>'
 
-#: Here for backwards compatibility as tasks no longer use a custom metaclass.
+#: Here for backwards compatibility as tasks no longer use a custom meta-class.
 TaskType = type
 
 
@@ -200,7 +200,7 @@ class Task(object):
     autoregister = True
 
     #: If enabled the task will report its status as 'started' when the task
-    #: is executed by a worker.  Disabled by default as the normal behaviour
+    #: is executed by a worker.  Disabled by default as the normal behavior
     #: is to not report that level of granularity.  Tasks are either pending,
     #: finished, or waiting to be retried.
     #:
@@ -225,10 +225,10 @@ class Task(object):
     acks_late = None
 
     #: Even if :attr:`acks_late` is enabled, the worker will
-    #: acknowledge tasks when the worker process executing them abrubtly
+    #: acknowledge tasks when the worker process executing them abruptly
     #: exits or is signaled (e.g. :sig:`KILL`/:sig:`INT`, etc).
     #:
-    #: Setting this to true allows the message to be requeued instead,
+    #: Setting this to true allows the message to be re-queued instead,
     #: so that the task will execute again by the same worker, or another
     #: worker.
     #:
@@ -811,7 +811,7 @@ class Task(object):
         :keyword task_id: Id of the task to update, defaults to the
                           id of the current task
         :keyword state: New state (:class:`str`).
-        :keyword meta: State metadata (:class:`dict`).
+        :keyword meta: State meta-data (:class:`dict`).
 
 
 

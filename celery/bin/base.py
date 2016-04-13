@@ -154,7 +154,7 @@ class Command(object):
     #: Enable if the application should support config from the cmdline.
     enable_config_from_cmdline = False
 
-    #: Default configuration namespace.
+    #: Default configuration name-space.
     namespace = None
 
     #: Text to print at end of --help

@@ -166,7 +166,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - [Worker] Fixed memory leak when restarting after connection lost
   (Issue #1325).
 
-- [Worker] Fixed UnicodeDecodeError at startup (Issue #1373).
+- [Worker] Fixed UnicodeDecodeError at start-up (Issue #1373).
 
     Fix contributed by Jessica Tallon.
 
@@ -268,7 +268,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on :pypi:`billiard` 2.7.3.27.
 
-- Can now specify a whitelist of accepted serializers using
+- Can now specify a white-list of accepted serializers using
   the new :setting:`CELERY_ACCEPT_CONTENT` setting.
 
     This means that you can force the worker to discard messages
@@ -277,7 +277,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
         CELERY_ACCEPT_CONTENT = ['json']
 
-    you can also specify MIME types in the whitelist::
+    you can also specify MIME types in the white-list::
 
         CELERY_ACCEPT_CONTENT = ['application/json']
 
@@ -378,7 +378,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Worker: Message decoding error log message now includes traceback
   information.
 
-- Worker: The startup banner now includes system platform.
+- Worker: The start-up banner now includes system platform.
 
 - ``celery inspect|status|control`` now gives an error if used
   with an SQL based broker transport.
@@ -413,7 +413,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     Fix contributed by Simon Engledew.
 
 - Windows: Fixed problem with the worker trying to pickle the Django settings
-  module at worker startup.
+  module at worker start-up.
 
 - generic-init.d:  No longer double quotes ``$CELERYD_CHDIR`` (Issue #1235).
 
@@ -790,7 +790,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Docs updated to include the default value for the
   :setting:`CELERY_TASK_RESULT_EXPIRES` setting.
 
-- Improvements to the django-celery tutorial.
+- Improvements to the :pypi:`django-celery` tutorial.
 
     Contributed by Locker537.
 
@@ -955,7 +955,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on billiard 2.7.3.14
 
-    - Fixes crash at startup when using Django and pre-1.4 projects
+    - Fixes crash at start-up when using Django and pre-1.4 projects
       (setup_environ).
 
     - Hard time limits now sends the KILL signal shortly after TERM,
@@ -1246,7 +1246,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     It's important to note that crontab schedules uses UTC time by default
     unless this setting is set.
 
-    Issue #904 and django-celery #150.
+    Issue #904 and :pypi:`django-celery` #150.
 
 - ``billiard.enable_forking`` is now only set by the processes pool.
 
@@ -1318,7 +1318,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Now depends on kombu 2.3.1 + billiard 2.7.3.11
 
 - Fixed a bug with the -B option (``cannot pickle thread.lock objects``)
-  (Issue #894 + Issue #892, + django-celery #154).
+  (Issue #894 + Issue #892, + :pypi:`django-celery` #154).
 
 - The :control:`restart_pool` control command now requires the
   :setting:`CELERYD_POOL_RESTARTS` setting to be enabled
@@ -1329,7 +1329,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - ``chain.apply`` now passes args to the first task (Issue #889).
 
-- Documented previously secret options to the Django-Celery monitor
+- Documented previously secret options to the :pypi:`django-celery` monitor
   in the monitoring userguide (Issue #396).
 
 - Old changelog are now organized in separate documents for each series,
@@ -1381,7 +1381,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     It was discovered that the SQS transport adds objects that can't
     be pickled to the delivery info mapping, so we had to go back
-    to using the whitelist again.
+    to using the white-list again.
 
     Fixing this bug also means that the SQS transport is now working again.
 

@@ -50,8 +50,8 @@ Commands
   Also all known tasks will be automatically added to locals (unless the
   :option:`--without-tasks <celery shell --without-tasks>` flag is set).
 
-  Uses Ipython, bpython, or regular python in that order if installed.
-  You can force an implementation using
+  Uses :pypi:`Ipython`, :pypi:`bpython`, or regular python in that order if
+  installed.  You can force an implementation using
   :option:`--ipython <celery shell --ipython>`,
   :option:`--bpython <celery shell --bpython>`, or
   :option:`--python <celery shell --python>`.
@@ -181,7 +181,7 @@ Flower: Real-time Celery web-monitor
 Flower is a real-time web based monitor and administration tool for Celery.
 It is under active development, but is already an essential tool.
 Being the recommended monitor for Celery, it obsoletes the Django-Admin
-monitor, celerymon and the ncurses based monitor.
+monitor, ``celerymon`` and the ``ncurses`` based monitor.
 
 Flower is pronounced like "flow", but you can also use the botanical version
 if you prefer.
@@ -192,7 +192,7 @@ Features
 - Real-time monitoring using Celery Events
 
     - Task progress and history
-    - Ability to show task details (arguments, start time, runtime, and more)
+    - Ability to show task details (arguments, start time, run-time, and more)
     - Graphs and statistics
 
 - Remote Control
@@ -438,20 +438,19 @@ Munin
 This is a list of known Munin plug-ins that can be useful when
 maintaining a Celery cluster.
 
-* rabbitmq-munin: Munin plug-ins for RabbitMQ.
+* ``rabbitmq-munin``: Munin plug-ins for RabbitMQ.
 
     https://github.com/ask/rabbitmq-munin
 
-* celery_tasks: Monitors the number of times each task type has
+* ``celery_tasks``: Monitors the number of times each task type has
   been executed (requires `celerymon`).
 
     http://exchange.munin-monitoring.org/plugins/celery_tasks-2/details
 
-* celery_task_states: Monitors the number of tasks in each state
+* ``celery_task_states``: Monitors the number of tasks in each state
   (requires `celerymon`).
 
     http://exchange.munin-monitoring.org/plugins/celery_tasks/details
-
 
 .. _monitoring-events:
 
@@ -569,7 +568,7 @@ To process events in real-time you need the following
 
   It encapsulates solutions for many common things, like checking if a
   worker is still alive (by verifying heartbeats), merging event fields
-  together as events come in, making sure timestamps are in sync, and so on.
+  together as events come in, making sure time-stamps are in sync, and so on.
 
 
 Combining these you can easily process events in real-time:
@@ -605,7 +604,7 @@ Combining these you can easily process events in real-time:
 
 .. note::
 
-    The wakeup argument to ``capture`` sends a signal to all workers
+    The ``wakeup`` argument to ``capture`` sends a signal to all workers
     to force them to send a heartbeat.  This way you can immediately see
     workers when the monitor starts.
 
@@ -689,7 +688,7 @@ task-succeeded
 
 Sent if the task executed successfully.
 
-Runtime is the time it took to execute the task using the pool.
+Run-time is the time it took to execute the task using the pool.
 (Starting from the task is sent to the worker pool, and ending when the
 pool result handler callback is called).
 
@@ -709,7 +708,7 @@ task-rejected
 
 :signature: ``task-rejected(uuid, requeued)``
 
-The task was rejected by the worker, possibly to be requeued or moved to a
+The task was rejected by the worker, possibly to be re-queued or moved to a
 dead letter queue.
 
 .. event:: task-revoked
@@ -751,7 +750,7 @@ worker-online
 The worker has connected to the broker and is online.
 
 - `hostname`: Nodename of the worker.
-- `timestamp`: Event timestamp.
+- `timestamp`: Event time-stamp.
 - `freq`: Heartbeat frequency in seconds (float).
 - `sw_ident`: Name of worker software (e.g. ``py-celery``).
 - `sw_ver`: Software version (e.g. 2.2.0).
@@ -769,7 +768,7 @@ Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
 it is considered to be offline.
 
 - `hostname`: Nodename of the worker.
-- `timestamp`: Event timestamp.
+- `timestamp`: Event time-stamp.
 - `freq`: Heartbeat frequency in seconds (float).
 - `sw_ident`: Name of worker software (e.g. ``py-celery``).
 - `sw_ver`: Software version (e.g. 2.2.0).

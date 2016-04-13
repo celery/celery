@@ -97,7 +97,7 @@ class test_CassandraBackend(AppCase):
         self.assertIsNone(x._session)
 
     def test_timeouting_cluster(self):
-        # Tests behaviour when Cluster.connect raises
+        # Tests behavior when Cluster.connect raises
         # cassandra.OperationTimedOut.
         from celery.backends import cassandra as mod
 

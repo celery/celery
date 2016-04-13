@@ -3,7 +3,7 @@
     celery.backends.filesystem
     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Filesystem result store backend.
+    File-system result store backend.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -25,14 +25,14 @@ except NameError:
     IsADirectoryError = IOError
 
 E_PATH_INVALID = """\
-The configured path for the Filesystem backend does not
+The configured path for the file-system backend does not
 work correctly, please make sure that it exists and has
 the correct permissions.\
 """
 
 
 class FilesystemBackend(KeyValueStoreBackend):
-    """Filesystem result backend.
+    """File-system result backend.
 
     Keyword arguments (in addition to those of KeyValueStoreBackend):
 
@@ -40,7 +40,7 @@ class FilesystemBackend(KeyValueStoreBackend):
     :param open: open function to use when opening files
     :param unlink: unlink function to use when deleting files
     :param sep: directory seperator (to join the directory with the key)
-    :param encoding: encoding used on the filesystem
+    :param encoding: encoding used on the file-system
 
     """
 
@@ -63,7 +63,7 @@ class FilesystemBackend(KeyValueStoreBackend):
     def _find_path(self, url):
         if not url:
             raise ImproperlyConfigured(
-                'You need to configure a path for the Filesystem backend')
+                'You need to configure a path for the File-system backend')
         if url is not None and url.startswith('file:///'):
             return url[7:]
 

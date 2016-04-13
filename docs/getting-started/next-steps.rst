@@ -138,7 +138,7 @@ These options are described in more detailed in the :ref:`Workers Guide <guide-w
 Stopping the worker
 ~~~~~~~~~~~~~~~~~~~
 
-To stop the worker simply hit Ctrl+C.  A list of signals supported
+To stop the worker simply hit :kbd:`Control-c`.  A list of signals supported
 by the worker is detailed in the :ref:`Workers Guide <guide-workers>`.
 
 In the background
@@ -398,8 +398,8 @@ Calling tasks is described in detail in the
 
 .. _designing-workflows:
 
-*Canvas*: Designing Workflows
-=============================
+*Canvas*: Designing Work-flows
+==============================
 
 You just learned how to call a task using the tasks ``delay`` method,
 and this is often all you need, but sometimes you may want to pass the
@@ -490,7 +490,7 @@ To get to that I must introduce the canvas primitives…
 The Primitives
 --------------
 
-.. topic:: \ 
+.. topic:: \
 
     .. hlist::
         :columns: 2
@@ -503,7 +503,7 @@ The Primitives
         - :ref:`chunks <canvas-chunks>`
 
 These primitives are signature objects themselves, so they can be combined
-in any number of ways to compose complex workflows.
+in any number of ways to compose complex work-flows.
 
 .. note::
 
@@ -597,7 +597,7 @@ can be combined almost however you want, e.g::
 
     >>> upload_document.s(file) | group(apply_filter.s() for filter in filters)
 
-Be sure to read more about workflows in the :ref:`Canvas <guide-canvas>` user
+Be sure to read more about work-flows in the :ref:`Canvas <guide-canvas>` user
 guide.
 
 Routing

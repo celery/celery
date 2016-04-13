@@ -3,7 +3,7 @@
     celery.canvas
     ~~~~~~~~~~~~~
 
-    Composing task workflows.
+    Composing task work-flows.
 
     Documentation for some of these types are in :mod:`celery`.
     You should import these from :mod:`celery` and not this module.

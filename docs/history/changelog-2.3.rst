@@ -177,8 +177,8 @@ Important Notes
 
     .. note::
 
-        For django-celery users the default backend is still ``database``,
-        and results are not disabled by default.
+        For :pypi:`django-celery` users the default backend is
+        still ``database``, and results are not disabled by default.
 
 * The Debian init scripts have been deprecated in favor of the generic-init.d
   init scripts.

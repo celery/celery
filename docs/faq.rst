@@ -109,13 +109,13 @@ The pytz module provides timezone definitions and related tools.
 
 .. _`pytz`: http://pypi.python.org/pypi/pytz
 
-django-celery
-~~~~~~~~~~~~~
+``django-celery``
+~~~~~~~~~~~~~~~~~
 
-If you use django-celery then you don't have to install celery separately,
-as it will make sure that the required version is installed.
+If you use :pypi:`django-celery` then you don't have to install Celery
+separately, as it will make sure that the required version is installed.
 
-django-celery does not have any other dependencies.
+:pypi:`django-celery` does not have any other dependencies.
 
 kombu
 ~~~~~
@@ -875,8 +875,8 @@ Django
 
 .. _faq-django-database-tables:
 
-What purpose does the database tables created by django-celery have?
---------------------------------------------------------------------
+What purpose does the database tables created by ``django-celery`` have?
+------------------------------------------------------------------------
 
 Several database tables are created by default, these relate to
 
@@ -894,8 +894,9 @@ Several database tables are created by default, these relate to
 
 * Task results
 
-    The database result backend is enabled by default when using django-celery
-    (this is for historical reasons, and thus for backward compatibility).
+    The database result backend is enabled by default when using
+    :pypi:`django-celery` (this is for historical reasons, and thus for
+    backward compatibility).
 
     The results are stored in the ``TaskMeta`` and ``TaskSetMeta`` models.
     *these tables are not created if another result backend is configured*.

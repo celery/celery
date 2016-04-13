@@ -49,7 +49,7 @@ Fixes
 * worker: Now properly handles errors occurring while trying to acknowledge
   the message.
 
-* `TaskRequest.on_failure` now encodes traceback using the current filesystem
+* `TaskRequest.on_failure` now encodes traceback using the current file-system
    encoding.  (Issue #286).
 
 * `EagerResult` can now be pickled (Issue #288).
@@ -80,7 +80,7 @@ Documentation
 * `EventReceiver`: now sends heartbeat request to find workers.
 
     This means :program:`celeryev` and friends finds workers immediately
-    at startup.
+    at start-up.
 
 * celeryev cursesmon: Set screen_delay to 10ms, so the screen refreshes more
   often.
@@ -278,8 +278,8 @@ Important Notes
 * No longer depends on SQLAlchemy, this needs to be installed separately
   if the database result backend is used.
 
-* django-celery now comes with a monitor for the Django Admin interface.
-  This can also be used if you're not a Django user.
+* :pypi:`django-celery` now comes with a monitor for the Django Admin
+  interface.  This can also be used if you're not a Django user.
   (Update: Django-Admin monitor has been replaced with Flower, see the
   Monitoring guide).
 
@@ -336,8 +336,8 @@ News
     This can then be stored in a database to generate statistics
     with, or even monitoring over longer time periods.
 
-    django-celery now comes with a Celery monitor for the Django
-    Admin interface. To use this you need to run the django-celery
+    :pypi:`django-celery` now comes with a Celery monitor for the Django
+    Admin interface. To use this you need to run the :pypi:`django-celery`
     snapshot camera, which stores snapshots to the database at configurable
     intervals.
 
@@ -349,7 +349,7 @@ News
 
             $ python manage.py syncdb
 
-    2. Start the django-celery snapshot camera:
+    2. Start the :pypi:`django-celery` snapshot camera:
 
         .. code-block:: console
 
@@ -497,7 +497,7 @@ News
 * worker: Now uses `multiprocessing.freeze_support()` so that it should work
   with **py2exe**, **PyInstaller**, **cx_Freeze**, etc.
 
-* worker: Now includes more metadata for the :state:`STARTED` state: PID and
+* worker: Now includes more meta-data for the :state:`STARTED` state: PID and
   host name of the worker that started the task.
 
     See issue #181

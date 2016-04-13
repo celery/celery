@@ -3,7 +3,7 @@
 ===========================================
  What's new in Celery 4.0 (0Today8)
 ===========================================
-:Author: Ask Solem (ask at celeryproject.org)
+:Author: Ask Solem (``ask at celeryproject.org``)
 
 .. sidebar:: Change history
 
@@ -68,7 +68,7 @@ Joshua Harlow, Juan Rossi, Justin Patrin, Kai Groner, Kevin Harvey,
 Konstantinos Koukopoulos, Kouhei Maeda, Kracekumar Ramaraju,
 Krzysztof Bujniewicz, Latitia M. Haskins, Len Buckens, Lorenzo Mancini,
 Lucas Wiman, Luke Pomfrey, Marcio Ribeiro, Marin Atanasov Nikolov,
-Mark Parncutt, Maxime Vdb, Mher Movsisyan, Michael (michael-k),
+Mark Parncutt, Maxime Vdb, Mher Movsisyan, Michael (``@michael-k``),
 Michael Duane Mooring, Michael Permana, Mickaël Penhard, Mike Attwood,
 Morton Fox, Môshe van der Sterre, Nat Williams, Nathan Van Gheem, Nik Nyby,
 Omer Katz, Omer Korner, Ori Hoch, Paul Pearce, Paulo Bu, Philip Garnero,
@@ -79,9 +79,10 @@ Seungha Kim, Steve Peak, Sukrit Khera, Tadej Janež, Tewfik Sadaoui,
 Thomas French, Thomas Grainger, Tobias Schottdorf, Tocho Tochev,
 Valentyn Klindukh, Vic Kumar, Vladimir Bolshakov, Vladimir Gorbunov,
 Wayne Chang, Wil Langford, Will Thompson, William King, Yury Selivanov,
-Zoran Pavlovic, 許邱翔, @allenling, @bee-keeper, @ffeast, @flyingfoxlee,
-@gdw2, @gitaarik, @hankjin, @m-vdb, @mdk, @nokrik, @ocean1, @orlo666,
-@raducc, @wanglei, @worldexception.
+Zoran Pavlovic, 許邱翔, ``@allenling``, ``@bee-keeper``, ``@ffeast``,
+``@flyingfoxlee``, ``@gdw2``, ``@gitaarik``, ``@hankjin``, ``@m-vdb``,
+``@mdk``, ``@nokrik``, ``@ocean1``, ``@orlo666``, ``@raducc``,
+``@wanglei``, ``@worldexception``.
 
 .. _v400-important:
 
@@ -97,8 +98,8 @@ and also drops support for Python 3.3 so supported versions are:
 - CPython 2.7
 - CPython 3.4
 - CPython 3.5
-- PyPy 4.0 (pypy2)
-- PyPy 2.4 (pypy3)
+- PyPy 4.0 (``pypy2``)
+- PyPy 2.4 (``pypy3``)
 - Jython 2.7.0
 
 Lowercase setting names
@@ -163,7 +164,7 @@ names, are the renaming of some prefixes, like ``celerybeat_`` to ``beat_``,
 ``celeryd_`` to ``worker_``.
 
 The ``celery_`` prefix has also been removed, and task related settings
-from this namespace is now prefixed by ``task_``, worker related settings
+from this name-space is now prefixed by ``task_``, worker related settings
 with ``worker_``.
 
 Apart from this most of the settings will be the same in lowercase, apart from
@@ -231,7 +232,7 @@ then you have to configure your app before upgrading to 4.0:
 The Task base class no longer automatically register tasks
 ----------------------------------------------------------
 
-The :class:`~@Task` class is no longer using a special metaclass
+The :class:`~@Task` class is no longer using a special meta-class
 that automatically registers the task in the task registry.
 
 Instead this is now handled by the :class:`@task` decorators.
@@ -303,8 +304,8 @@ to enable these settings, before upgrading to 4.0:
         'fanout_prefix': True,
     }
 
-Django: Autodiscover now supports Django app configs
-----------------------------------------------------
+Django: Auto-discover now supports Django app configurations
+------------------------------------------------------------
 
 The :meth:`@autodiscover` function can now be called without arguments,
 and the Django handler will automatically find your installed apps:
@@ -397,13 +398,13 @@ some long-requested features:
   serialized with the message body.
 
     In version 1 of the protocol the worker always had to deserialize
-    the message to be able to read task metadata like the task id,
+    the message to be able to read task meta-data like the task id,
     name, etc.  This also meant that the worker was forced to double-decode
     the data, first deserializing the message on receipt, serializing
     the message again to send to child process, then finally the child process
     deserializes the message again.
 
-    Keeping the metadata fields in the message headers means the worker
+    Keeping the meta-data fields in the message headers means the worker
     does not actually have to decode the payload before delivering
     the task to the child process, and also that it's now possible
     for the worker to reroute a task written in a language different
@@ -423,7 +424,7 @@ some long-requested features:
   terminates, deserialization errors, unregistered tasks).
 
 - A new ``origin`` header contains information about the process sending
-  the task (worker nodename, or pid and hostname information).
+  the task (worker node-name, or PID and host-name information).
 
 - A new ``shadow`` header allows you to modify the task name used in logs.
 
@@ -457,17 +458,17 @@ some long-requested features:
   a tasks relationship with other tasks.
 
     - ``parent_id`` is the task id of the task that called this task
-    - ``root_id`` is the first task in the workflow.
+    - ``root_id`` is the first task in the work-flow.
 
     These fields can be used to improve monitors like flower to group
     related messages together (like chains, groups, chords, complete
-    workflows, etc).
+    work-flows, etc).
 
 - ``app.TaskProducer`` replaced by :meth:`@amqp.create_task_message`` and
   :meth:`@amqp.send_task_message``.
 
     Dividing the responsibilities into creating and sending means that
-    people who want to send messages using a Python amqp client directly,
+    people who want to send messages using a Python AMQP client directly,
     does not have to implement the protocol.
 
     The :meth:`@amqp.create_task_message` method calls either
@@ -489,10 +490,10 @@ actually executing the task, which means that logging utilities
 like Sentry can get full information about tasks that fail, including
 variables in the traceback.
 
-Prefork: One logfile per child process
-======================================
+Prefork: One log-file per child process
+=======================================
 
-Init scrips and :program:`celery multi` now uses the `%I` log file format
+Init-scrips and :program:`celery multi` now uses the `%I` log file format
 option (e.g. :file:`/var/log/celery/%n%I.log`).
 
 This change was necessary to ensure each child
@@ -500,14 +501,14 @@ process has a separate log file after moving task logging
 to the child process, as multiple processes writing to the same
 log file can cause corruption.
 
-You are encouraged to upgrade your init scripts and multi arguments
-to use this new option.
+You are encouraged to upgrade your init-scripts and
+:program:`celery multi` arguments to use this new option.
 
 Configure broker URL for read/write separately.
 ===============================================
 
 New :setting:`broker_read_url` and :setting:`broker_write_url` settings
-have been added so that separate broker urls can be provided
+have been added so that separate broker URLs can be provided
 for connections used for consuming/publishing.
 
 In addition to the configuration options, two new methods have been
@@ -538,7 +539,7 @@ the intent of the required connection.
 Canvas Refactor
 ===============
 
-The canvas/workflow implementation have been heavily refactored
+The canvas/work-flow implementation have been heavily refactored
 to fix some long outstanding issues.
 
 # BLALBLABLA
@@ -633,8 +634,8 @@ See :ref:`worker-maxmemperchild` for more information.
 
 Contributed by Dave Smith.
 
-Redis: Result backend optimizations
-===============================================
+Redis: Result backend optimization
+==================================
 
 RPC is now using pub/sub for streaming task results.
 ----------------------------------------------------
@@ -696,8 +697,8 @@ See :ref:`conf-elasticsearch-result-backend` for more information.
 
 Contributed by Ahmet Demir.
 
-New Filesystem result backend introduced.
-=========================================
+New File-system result backend introduced.
+==========================================
 
 See :ref:`conf-filesystem-result-backend` for more information.
 
@@ -731,24 +732,23 @@ Task.replace
 
 Task.replace changed, removes Task.replace_in_chord.
 
-The two methods had almost the same functionality, but the old Task.replace
-would force the new task to inherit the callbacks/errbacks of the existing
-task.
+The two methods had almost the same functionality, but the old
+``Task.replace`` would force the new task to inherit the
+callbacks/errbacks of the existing task.
 
 If you replace a node in a tree, then you would not expect the new node to
 inherit the children of the old node, so this seems like unexpected
 behavior.
 
-So self.replace(sig) now works for any task, in addition sig can now
+So ``self.replace(sig)`` now works for any task, in addition ``sig`` can now
 be a group.
 
 Groups are automatically converted to a chord, where the callback
 will "accumulate" the results of the group tasks.
 
-A new builtin task (`celery.accumulate` was added for this purpose)
+A new built-in task (`celery.accumulate` was added for this purpose)
 
 Closes #817
-
 Optimized Beat implementation
 =============================
 
@@ -757,8 +757,8 @@ for millions of periodic tasks by using a heap to schedule entries.
 
 Contributed by Ask Solem and Alexander Koshelev.
 
-Task Autoretry Decorator
-========================
+Task Auto-retry Decorator
+=========================
 
 Writing custom retry handling for exception events is so common
 that we now have built-in support for it.
@@ -799,7 +799,7 @@ In Other News
 
     - Now depends on :pypi:`billiard` version 3.5.
 
-    - No longer depends on :pypi:`anyjson` :sadface:
+    - No longer depends on :pypi:`anyjson` :(
 
 
 - **Tasks**: The "anon-exchange" is now used for simple name-name direct routing.
@@ -825,7 +825,7 @@ In Other News
   tasks.
 
 - **Programs**: New :program:`celery logtool`: Utility for filtering and parsing
-  celery worker logfiles
+  celery worker log-files
 
 - **Redis Transport**: The Redis transport now supports the
   :setting:`broker_use_ssl` option.
@@ -838,7 +838,7 @@ In Other News
 
 - **Worker**: Now preserves exit code (Issue #2024).
 
-- **Worker**: Loglevel for unrecoverable errors changed from ``error`` to
+- **Worker**: Log--level for unrecoverable errors changed from ``error`` to
   ``critical``.
 
 - **Worker**: Improved rate limiting accuracy.
@@ -858,28 +858,25 @@ In Other News
 
 - **Worker**: Improvements and fixes for LimitedSet
 
-    Getting rid of leaking memory + adding minlen size of the set
-    minlen is minimal residual size of set after operating for long.
-    Minlen items are kept, even if they should be expired by time, until
-    we get newer items.
+    Getting rid of leaking memory + adding ``minlen`` size of the set:
+    the minimal residual size of the set after operating for some time.
+    ``minlen`` items are kept, even if they should have been expired.
 
     Problems with older and even more old code:
 
-    1)
-       Heap would tend to grow in some scenarios
+    #. Heap would tend to grow in some scenarios
        (like adding an item multiple times).
 
-    2) Adding many items fast would not clean them soon enough (if ever).
+    #. Adding many items fast would not clean them soon enough (if ever).
 
-    3) When talking to other workers, revoked._data was sent, but
+    #. When talking to other workers, revoked._data was sent, but
        it was processed on the other side as iterable.
        That means giving those keys new (current)
-       timestamp. By doing this workers could recycle
+       time-stamp. By doing this workers could recycle
        items forever. Combined with 1) and 2), this means that in
        large set of workers, you are getting out of memory soon.
 
-    All those problems should be fixed now,
-    also some new unittests are added.
+    All those problems should be fixed now.
 
     This should fix issues #3095, #3086.
 
@@ -958,8 +955,8 @@ In Other News
 - **Programs**: :program:`celery multi` now passes through `%i` and `%I` log
   file formats.
 
-- **Programs**: ``%p`` can now be used to expand to the full worker nodename
-  in logfile/pidfile arguments.
+- **Programs**: ``%p`` can now be used to expand to the full worker node-name
+  in log-file/pid-file arguments.
 
 - **Programs**: A new command line option
    :option:`--executable <celery worker --executable>` is now
@@ -973,7 +970,7 @@ In Other News
 
     Contributed by Mickaël Penhard.
 
-- **Deployment**: Generic init scripts now support
+- **Deployment**: Generic init-scripts now support
   :envvar:`CELERY_SU`` and :envvar:`CELERYD_SU_ARGS` environment variables
   to set the path and arguments for :command:`su` (:manpage:`su(1)`).
 
@@ -986,7 +983,7 @@ In Other News
     Contributed by Alexander Oblovatniy.
 
 - **Tasks**: New :setting:`email_charset` setting allows for changing
-  the charset used for outgoing error emails.
+  the character set used for outgoing error emails.
 
     Contributed by Vladimir Gorbunov.
 
@@ -994,7 +991,7 @@ In Other News
 
     Fix contributed by Nat Williams.
 
-- **Worker**: Autoscale did not always update keepalive when scaling down.
+- **Worker**: Auto-scale did not always update keep-alive when scaling down.
 
     Fix contributed by Philip Garnero.
 
@@ -1028,7 +1025,7 @@ In Other News
 
     Contributed by Samuel Jaillet.
 
-- **Result Backends**: Fix problem with rpc/amqp backends where exception
+- **Result Backends**: Fix problem with RPC/AMQP backends where exception
     was not deserialized properly with the json serializer (Issue #2518).
 
     Fix contributed by Allard Hoeve.
@@ -1044,7 +1041,7 @@ In Other News
 
     Fix contributed by Feanil Patel.
 
-- **Tasks**: Task error email charset now set to ``utf-8`` by default
+- **Tasks**: Task error email character set now set to ``utf-8`` by default
   (Issue #2737).
 
 - Apps can now define how tasks are named (:meth:`@gen_task_name`).
@@ -1082,11 +1079,11 @@ Unscheduled Removals
 - The experimental :mod:`celery.contrib.methods` feature has been removed,
   as there were far many bugs in the implementation to be useful.
 
-- The CentOS init scripts have been removed.
+- The CentOS init-scripts have been removed.
 
-    These did not really add any features over the generic init scripts,
+    These did not really add any features over the generic init-scripts,
     so you are encouraged to use them instead, or something like
-    ``supervisord``.
+    :pypi:`supervisor`.
 
 
 .. _v400-removals:
@@ -1103,8 +1100,8 @@ Modules
     It is now part of the public API so should not change again.
 
 - Module ``celery.task.trace`` has been renamed to ``celery.app.trace``
-  as the ``celery.task`` package is being phased out.  The compat module
-  will be removed in version 4.0 so please change any import from::
+  as the ``celery.task`` package is being phased out.  The module
+  will be removed in version 5.0 so please change any import from::
 
     from celery.task.trace import X
 
@@ -1237,8 +1234,8 @@ Events
 Magic keyword arguments
 -----------------------
 
-Support for the very old magic keyword arguments accepted by tasks has finally
-been in 4.0.
+Support for the very old magic keyword arguments accepted by tasks is
+finally removed in this version.
 
 If you are still using these you have to rewrite any task still
 using the old ``celery.decorators`` module and depending
@@ -1285,13 +1282,13 @@ Task Settings
 =====================================  =====================================
 **Setting name**                       **Replace with**
 =====================================  =====================================
-``CELERY_CHORD_PROPAGATES``            N/a
+``CELERY_CHORD_PROPAGATES``            N/A
 =====================================  =====================================
 
 .. _v400-deprecations:
 
-Deprecations
-============
+Deprecation Time-line Changes
+=============================
 
 See the :ref:`deprecation-timeline`.
 

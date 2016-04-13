@@ -24,7 +24,7 @@ If you're looking for versions prior to 2.5 you should visit our
 This is a dummy release performed for the following goals:
 
 - Protect against force upgrading to Kombu 2.2.0
-- Version parity with django-celery
+- Version parity with :pypi:`django-celery`
 
 .. _version-2.5.3:
 
@@ -33,7 +33,7 @@ This is a dummy release performed for the following goals:
 :release-date: 2012-04-16 07:00 P.M BST
 :release-by: Ask Solem
 
-* A bug causes messages to be sent with UTC timestamps even though
+* A bug causes messages to be sent with UTC time-stamps even though
   :setting:`CELERY_ENABLE_UTC` was not enabled (Issue #636).
 
 * celerybeat: No longer crashes if an entry's args is set to None
