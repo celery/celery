@@ -94,11 +94,13 @@ Finally, we can install rabbitmq using :program:`brew`:
 
 .. _rabbitmq-osx-system-hostname:
 
-After you have installed rabbitmq with brew you need to add the following to your path to be able to start and stop the broker. Add it to your .bash_profile or .profile
+After you've installed rabbitmq with :command:`brew` you need to add the following to
+your path to be able to start and stop the broker: add it to the startup file for your
+shell (e.g. :file:`.bash_profile` or :file:`.profile`).
 
 .. code-block:: bash
 
-    `PATH=$PATH:/usr/local/sbin`
+    PATH=$PATH:/usr/local/sbin
 
 Configuring the system host name
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
