@@ -1,14 +1,19 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import errno
+import os
 import socket
-import time
 
 from itertools import cycle
 
-from celery.five import items, range
+from celery.app.defaults import DEFAULTS
+from celery.datastructures import AttributeDict
+from celery.five import range
 from celery.utils.functional import noop
-from celery.tests.case import AppCase, Mock, SkipTest, patch
+from celery.utils.objects import Bunch
+
+from celery.tests.case import AppCase, Mock, mock, patch, skip
+
 try:
     from celery.concurrency import prefork as mp
     from celery.concurrency import asynpool
@@ -35,12 +40,6 @@ except ImportError:
     asynpool = None  # noqa
 
 
-class Object(object):   # for writeable attributes.
-
-    def __init__(self, **kwargs):
-        [setattr(self, k, v) for k, v in items(kwargs)]
-
-
 class MockResult(object):
 
     def __init__(self, value, pid):
@@ -52,6 +51,64 @@ class MockResult(object):
 
     def get(self):
         return self.value
+
+
+class test_process_initializer(AppCase):
+
+    @patch('celery.platforms.signals')
+    @patch('celery.platforms.set_mp_process_title')
+    def test_process_initializer(self, set_mp_process_title, _signals):
+        with mock.restore_logging():
+            from celery import signals
+            from celery._state import _tls
+            from celery.concurrency.prefork import (
+                process_initializer, WORKER_SIGRESET, WORKER_SIGIGNORE,
+            )
+            on_worker_process_init = Mock()
+            signals.worker_process_init.connect(on_worker_process_init)
+
+            def Loader(*args, **kwargs):
+                loader = Mock(*args, **kwargs)
+                loader.conf = {}
+                loader.override_backends = {}
+                return loader
+
+            with self.Celery(loader=Loader) as app:
+                app.conf = AttributeDict(DEFAULTS)
+                process_initializer(app, 'awesome.worker.com')
+                _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
+                _signals.reset.assert_any_call(*WORKER_SIGRESET)
+                self.assertTrue(app.loader.init_worker.call_count)
+                on_worker_process_init.assert_called()
+                self.assertIs(_tls.current_app, app)
+                set_mp_process_title.assert_called_with(
+                    'celeryd', hostname='awesome.worker.com',
+                )
+
+                with patch('celery.app.trace.setup_worker_optimizations') as S:
+                    os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
+                    try:
+                        process_initializer(app, 'luke.worker.com')
+                        S.assert_called_with(app, 'luke.worker.com')
+                    finally:
+                        os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+
+                os.environ['CELERY_LOG_FILE'] = 'worker%I.log'
+                app.log.setup = Mock(name='log_setup')
+                try:
+                    process_initializer(app, 'luke.worker.com')
+                finally:
+                    os.environ.pop('CELERY_LOG_FILE', None)
+
+
+class test_process_destructor(AppCase):
+
+    @patch('celery.concurrency.prefork.signals')
+    def test_process_destructor(self, signals):
+        mp.process_destructor(13, -3)
+        signals.worker_process_shutdown.send.assert_called_with(
+            sender=None, pid=13, exitcode=-3,
+        )
 
 
 class MockPool(object):
@@ -68,7 +125,7 @@ class MockPool(object):
         self.maintain_pool = Mock()
         self._state = mp.RUN
         self._processes = kwargs.get('processes')
-        self._pool = [Object(pid=i, inqW_fd=1, outqR_fd=2)
+        self._pool = [Bunch(pid=i, inqW_fd=1, outqR_fd=2)
                       for i in range(self._processes)]
         self._current_proc = cycle(range(self._processes))
 
@@ -124,15 +181,12 @@ class ExeMockTaskPool(mp.TaskPool):
     Pool = BlockingPool = ExeMockPool
 
 
+@skip.unless_module('multiprocessing')
 class PoolCase(AppCase):
-
-    def setup(self):
-        try:
-            import multiprocessing  # noqa
-        except ImportError:
-            raise SkipTest('multiprocessing not supported')
+    pass
 
 
+@skip.if_win32()
 class test_AsynPool(PoolCase):
 
     def test_gen_not_started(self):
@@ -176,7 +230,7 @@ class test_AsynPool(PoolCase):
             )
             self.assertIn(3, readers)
 
-        with patch('select.poll') as poller:
+        with patch('select.poll', create=True) as poller:
             poll = poller.return_value = Mock(name='poll.poll')
             poll.side_effect = ebadf
             with patch('select.select') as selcheck:
@@ -188,13 +242,13 @@ class test_AsynPool(PoolCase):
                 )
                 self.assertNotIn(3, readers)
 
-        with patch('select.poll') as poller:
+        with patch('select.poll', create=True) as poller:
             poll = poller.return_value = Mock(name='poll.poll')
             poll.side_effect = MemoryError()
             with self.assertRaises(MemoryError):
                 asynpool._select({1}, poll=poll)
 
-        with patch('select.poll') as poller:
+        with patch('select.poll', create=True) as poller:
             poll = poller.return_value = Mock(name='poll.poll')
             with patch('select.select') as selcheck:
 
@@ -205,7 +259,7 @@ class test_AsynPool(PoolCase):
                 with self.assertRaises(MemoryError):
                     asynpool._select({3}, poll=poll)
 
-        with patch('select.poll') as poller:
+        with patch('select.poll', create=True) as poller:
             poll = poller.return_value = Mock(name='poll.poll')
             with patch('select.select') as selcheck:
 
@@ -217,7 +271,7 @@ class test_AsynPool(PoolCase):
                 with self.assertRaises(socket.error):
                     asynpool._select({3}, poll=poll)
 
-        with patch('select.poll') as poller:
+        with patch('select.poll', create=True) as poller:
             poll = poller.return_value = Mock(name='poll.poll')
 
             poll.side_effect = socket.error()
@@ -238,6 +292,7 @@ class test_AsynPool(PoolCase):
         w.outq.put.assert_called_with((asynpool.WORKER_UP, (1234,)))
 
 
+@skip.if_win32()
 class test_ResultHandler(PoolCase):
 
     def test_process_result(self):
@@ -270,7 +325,7 @@ class test_TaskPool(PoolCase):
         pool = TaskPool(10)
         pool.start()
         self.assertTrue(pool._pool.started)
-        self.assertTrue(pool._pool._state == asynpool.RUN)
+        self.assertEqual(pool._pool._state, asynpool.RUN)
 
         _pool = pool._pool
         pool.stop()
@@ -283,6 +338,39 @@ class test_TaskPool(PoolCase):
         pool.terminate()
         pool.terminate()
         self.assertTrue(_pool.terminated)
+
+    def test_restart(self):
+        pool = TaskPool(10)
+        pool._pool = Mock(name='pool')
+        pool.restart()
+        pool._pool.restart.assert_called_with()
+        pool._pool.apply_async.assert_called_with(mp.noop)
+
+    def test_did_start_ok(self):
+        pool = TaskPool(10)
+        pool._pool = Mock(name='pool')
+        self.assertIs(pool.did_start_ok(), pool._pool.did_start_ok())
+
+    def test_register_with_event_loop(self):
+        pool = TaskPool(10)
+        pool._pool = Mock(name='pool')
+        loop = Mock(name='loop')
+        pool.register_with_event_loop(loop)
+        pool._pool.register_with_event_loop.assert_called_with(loop)
+
+    def test_on_close(self):
+        pool = TaskPool(10)
+        pool._pool = Mock(name='pool')
+        pool._pool._state = mp.RUN
+        pool.on_close()
+        pool._pool.close.assert_called_with()
+
+    def test_on_close__pool_not_running(self):
+        pool = TaskPool(10)
+        pool._pool = Mock(name='pool')
+        pool._pool._state = mp.CLOSE
+        pool.on_close()
+        pool._pool.close.assert_not_called()
 
     def test_apply_async(self):
         pool = TaskPool(10)
@@ -300,7 +388,7 @@ class test_TaskPool(PoolCase):
 
     def test_info(self):
         pool = TaskPool(10)
-        procs = [Object(pid=i) for i in range(pool.limit)]
+        procs = [Bunch(pid=i) for i in range(pool.limit)]
 
         class _Pool(object):
             _pool = procs
@@ -320,17 +408,3 @@ class test_TaskPool(PoolCase):
         pool = TaskPool(7)
         pool.start()
         self.assertEqual(pool.num_processes, 7)
-
-    def test_restart(self):
-        raise SkipTest('functional test')
-
-        def get_pids(pool):
-            return {p.pid for p in pool._pool._pool}
-
-        tp = self.TaskPool(5)
-        time.sleep(0.5)
-        tp.start()
-        pids = get_pids(tp)
-        tp.restart()
-        time.sleep(0.5)
-        self.assertEqual(pids, get_pids(tp))

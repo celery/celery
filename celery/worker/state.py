@@ -9,7 +9,7 @@
     statistics, and revoked tasks.
 
 """
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import sys
@@ -53,7 +53,7 @@ total_count = Counter()
 #: count of all tasks accepted by the worker
 all_total_count = [0]
 
-#: the list of currently revoked tasks.  Persistent if statedb set.
+#: the list of currently revoked tasks.  Persistent if ``statedb`` set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 
 #: Update global state when a task has been reserved.
@@ -61,6 +61,14 @@ task_reserved = reserved_requests.add
 
 should_stop = None
 should_terminate = None
+
+
+def reset_state():
+    reserved_requests.clear()
+    active_requests.clear()
+    total_count.clear()
+    all_total_count[:] = [0]
+    revoked.clear()
 
 
 def maybe_shutdown():
@@ -142,7 +150,7 @@ if C_BENCH:  # pragma: no cover
 
 class Persistent(object):
     """This is the persistent data stored by the worker when
-    :option:`--statedb` is enabled.
+    :option:`celery worker --statedb` is enabled.
 
     It currently only stores revoked task id's.
 

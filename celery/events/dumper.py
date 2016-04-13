@@ -48,7 +48,7 @@ class Dumper(object):
         # need to flush so that output can be piped.
         try:
             self.out.flush()
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
             pass
 
     def on_event(self, ev):
@@ -88,7 +88,7 @@ def evdump(app=None, out=sys.stdout):
     app = app_or_default(app)
     dumper = Dumper(out=out)
     dumper.say('-> evdump: starting capture...')
-    conn = app.connection().clone()
+    conn = app.connection_for_read().clone()
 
     def _error_handler(exc, interval):
         dumper.say(CONNECTION_ERROR % (

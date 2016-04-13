@@ -1,6 +1,21 @@
 [run]
 branch = 1
 cover_pylib = 0
-omit = celery.utils.debug,celery.tests.*,celery.bin.graph
+include=*celery/*
+omit = celery.tests.*
+
 [report]
-omit = */python?.?/*,*/site-packages/*,*/pypy/*
+omit =
+    */python?.?/*
+    */site-packages/*
+    */pypy/*
+    */celery/bin/graph.py
+    *celery/bin/logtool.py
+    *celery/task/base.py
+    *celery/five.py
+    *celery/contrib/sphinx.py
+    *celery/backends/couchdb.py
+    *celery/backends/couchbase.py
+    *celery/backends/riak.py
+    *celery/concurrency/asynpool.py
+    *celery/utils/debug.py

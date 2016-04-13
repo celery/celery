@@ -1,95 +1,143 @@
+PROJ=celery
 PYTHON=python
-SPHINX_DIR="docs/"
-SPHINX_BUILDDIR="${SPHINX_DIR}/.build"
-README="README.rst"
-CONTRIBUTING="CONTRIBUTING.rst"
-CONFIGREF_SRC="docs/configuration.rst"
+GIT=git
+TOX=tox
+NOSETESTS=nosetests
+ICONV=iconv
+FLAKE8=flake8
+FLAKEPLUS=flakeplus
+SPHINX2RST=sphinx2rst
+
+SPHINX_DIR=docs/
+SPHINX_BUILDDIR="${SPHINX_DIR}/_build"
+README=README.rst
 README_SRC="docs/templates/readme.txt"
+CONTRIBUTING=CONTRIBUTING.rst
 CONTRIBUTING_SRC="docs/contributing.rst"
-SPHINX2RST="extra/release/sphinx-to-rst.py"
-WORKER_GRAPH_FULL="docs/images/worker_graph_full.png"
+SPHINX_HTMLDIR="${SPHINX_BUILDDIR}/html"
+DOCUMENTATION=Documentation
+FLAKEPLUSTARGET=2.7
 
-SPHINX_HTMLDIR = "${SPHINX_BUILDDIR}/html"
+WORKER_GRAPH="docs/images/worker_graph_full.png"
 
-html:
-	(cd "$(SPHINX_DIR)"; make html)
-	mv "$(SPHINX_HTMLDIR)" Documentation
+all: help
 
-docsclean:
+help:
+	@echo "docs                 - Build documentation."
+	@echo "test-all             - Run tests for all supported python versions."
+	@echo "distcheck ---------- - Check distribution for problems."
+	@echo "  test               - Run unittests using current python."
+	@echo "  lint ------------  - Check codebase for problems."
+	@echo "    apicheck         - Check API reference coverage."
+	@echo "    configcheck      - Check configuration reference coverage."
+	@echo "    readmecheck      - Check README.rst encoding."
+	@echo "    contribcheck     - Check CONTRIBUTING.rst encoding"
+	@echo "    flakes --------  - Check code for syntax and style errors."
+	@echo "      flakecheck     - Run flake8 on the source code."
+	@echo "      flakepluscheck - Run flakeplus on the source code."
+	@echo "readme               - Regenerate README.rst file."
+	@echo "contrib              - Regenerate CONTRIBUTING.rst file"
+	@echo "clean-dist --------- - Clean all distribution build artifacts."
+	@echo "  clean-git-force    - Remove all uncomitted files."
+	@echo "  clean ------------ - Non-destructive clean"
+	@echo "    clean-pyc        - Remove .pyc/__pycache__ files"
+	@echo "    clean-docs       - Remove documentation build artifacts."
+	@echo "    clean-build      - Remove setup artifacts."
+
+clean: clean-docs clean-pyc clean-build
+
+clean-dist: clean clean-git-force
+
+Documentation:
+	(cd "$(SPHINX_DIR)"; $(MAKE) html)
+	mv "$(SPHINX_HTMLDIR)" $(DOCUMENTATION)
+
+docs: Documentation
+
+clean-docs:
 	-rm -rf "$(SPHINX_BUILDDIR)"
 
-htmlclean:
-	-rm -rf "$(SPHINX)"
+lint: flakecheck apicheck configcheck readmecheck
 
 apicheck:
-	extra/release/doc4allmods celery
-
-indexcheck:
-	extra/release/verify-reference-index.sh
+	(cd "$(SPHINX_DIR)"; $(MAKE) apicheck)
 
 configcheck:
-	PYTHONPATH=. $(PYTHON) extra/release/verify_config_reference.py $(CONFIGREF_SRC)
+	(cd "$(SPHINX_DIR)"; $(MAKE) configcheck)
 
 flakecheck:
-	flake8 celery
+	$(FLAKE8) "$(PROJ)"
 
 flakediag:
 	-$(MAKE) flakecheck
 
 flakepluscheck:
-	flakeplus celery --2.6
+	$(FLAKEPLUS) --$(FLAKEPLUSTARGET) "$(PROJ)"
 
 flakeplusdiag:
 	-$(MAKE) flakepluscheck
 
 flakes: flakediag flakeplusdiag
 
-readmeclean:
+clean-readme:
 	-rm -f $(README)
 
 readmecheck:
-	iconv -f ascii -t ascii $(README) >/dev/null
+	$(ICONV) -f ascii -t ascii $(README) >/dev/null
 
 $(README):
-	$(PYTHON) $(SPHINX2RST) $(README_SRC) --ascii > $@
+	$(SPHINX2RST) "$(README_SRC)" --ascii > $@
 
-readme: readmeclean $(README) readmecheck
+readme: clean-readme $(README) readmecheck
 
-contributingclean:
-	-rm -f CONTRIBUTING.rst
+clean-contrib:
+	-rm -f "$(CONTRIBUTING)"
 
 $(CONTRIBUTING):
-	$(PYTHON) $(SPHINX2RST) $(CONTRIBUTING_SRC) > $@
+	$(SPHINX2RST) "$(CONTRIBUTING_SRC)" > $@
 
-contributing: contributingclean $(CONTRIBUTING)
+contrib: clean-contrib $(CONTRIBUTING)
 
-test:
-	nosetests -xv celery.tests
-
-cov:
-	nosetests -xv celery.tests --with-coverage --cover-html --cover-branch
-
-removepyc:
+clean-pyc:
 	-find . -type f -a \( -name "*.pyc" -o -name "*$$py.class" \) | xargs rm
 	-find . -type d -name "__pycache__" | xargs rm -r
 
-$(WORKER_GRAPH_FULL):
+removepyc: clean-pyc
+
+clean-build:
+	rm -rf build/ dist/ .eggs/ *.egg-info/ .tox/ .coverage cover/
+
+clean-git:
+	$(GIT) clean -xdn
+
+clean-git-force:
+	$(GIT) clean -xdf
+
+test-all: clean-pyc
+	$(TOX)
+
+test:
+	$(PYTHON) setup.py test
+
+cov:
+	$(NOSETESTS) -xv --with-coverage --cover-html --cover-branch
+
+build:
+	$(PYTHON) setup.py sdist bdist_wheel
+
+distcheck: lint test clean
+
+dist: readme contrib clean-dist build
+
+
+$(WORKER_GRAPH):
 	$(PYTHON) -m celery graph bootsteps | dot -Tpng -o $@
 
-graphclean:
-	-rm -f $(WORKER_GRAPH_FULL)
+clean-graph:
+	-rm -f $(WORKER_GRAPH)
 
-graph: graphclean $(WORKER_GRAPH_FULL)
-
-gitclean:
-	git clean -xdn
-
-gitcleanforce:
-	git clean -xdf
-
-distcheck: flakecheck apicheck indexcheck configcheck readmecheck test gitclean
+graph: clean-graph $(WORKER_GRAPH)
 
 authorcheck:
 	git shortlog -se | cut -f2 | extra/release/attribution.py
 
-dist: readme contributing docsclean gitcleanforce removepyc

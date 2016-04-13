@@ -1,4 +1,4 @@
-from __future__ import print_function, unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import gc
 import os
@@ -77,7 +77,7 @@ class LeakFunCase(unittest.TestCase):
             try:
                 assert self.appx(first) >= self.appx(after)
             except AssertionError:
-                print('BASE: {0!r} AVG: {1!r} SIZES: {2!r}'.format(
+                print('base: {0!r} avg: {1!r} sizes: {2!r}'.format(
                     base, sizes.average(), sizes))
                 raise
         finally:

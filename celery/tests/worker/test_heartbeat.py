@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.worker.heartbeat import Heart
 from celery.tests.case import AppCase
@@ -34,10 +34,10 @@ class MockTimer(object):
     def call_repeatedly(self, secs, fun, args=(), kwargs={}):
 
         class entry(tuple):
-            cancelled = False
+            canceled = False
 
             def cancel(self):
-                self.cancelled = True
+                self.canceled = True
 
         return entry((secs, fun, args, kwargs))
 

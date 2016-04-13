@@ -17,7 +17,7 @@
 #
 #    >>> unlock_graph.apply_async((A.apply_async(),
 #    ...                           A_callback.s()), countdown=1)
-
+from __future__ import absolute_import, unicode_literals
 
 from celery import chord, group, task, signature, uuid
 from celery.result import AsyncResult, ResultSet, allow_join_result
@@ -31,13 +31,13 @@ def add(x, y):
 
 @task()
 def make_request(id, url):
-    print('GET {0!r}'.format(url))
+    print('-get: {0!r}'.format(url))
     return url
 
 
 @task()
 def B_callback(urls, id):
-    print('batch {0} done'.format(id))
+    print('-batch {0} done'.format(id))
     return urls
 
 
@@ -88,7 +88,7 @@ def unlock_graph(result, callback,
 
 @task()
 def A_callback(res):
-    print('Everything is done: {0!r}'.format(res))
+    print('-everything done: {0!r}'.format(res))
     return res
 
 

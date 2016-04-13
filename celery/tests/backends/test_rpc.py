@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.backends.rpc import RPCBackend
 from celery._state import _task_stack
@@ -42,6 +42,9 @@ class test_RPCBackend(AppCase):
 
         with self.assertRaises(RuntimeError):
             self.b.destination_for('task_id', None)
+
+    def test_rkey(self):
+        self.assertEqual(self.b.rkey('id1'), 'id1')
 
     def test_binding(self):
         queue = self.b.binding

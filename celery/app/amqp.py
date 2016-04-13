@@ -15,18 +15,19 @@ from collections import Mapping, namedtuple
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
+from kombu import pools
 from kombu import Connection, Consumer, Exchange, Producer, Queue
 from kombu.common import Broadcast
-from kombu.pools import ProducerPool
 from kombu.utils import cached_property
 from kombu.utils.functional import maybe_list
 
 from celery import signals
 from celery.five import items, string_t
 from celery.local import try_import
+from celery.utils import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
-from celery.utils.timeutils import to_utc
+from celery.utils.timeutils import maybe_make_aware, to_utc
 
 from . import routes as _routes
 
@@ -34,7 +35,10 @@ __all__ = ['AMQP', 'Queues', 'task_message']
 
 PY3 = sys.version_info[0] == 3
 
-# json in Python2.7 borks if dict contains byte keys.
+#: earliest date supported by time.mktime.
+INT_MIN = -2147483648
+
+# json in Python 2.7 borks if dict contains byte keys.
 JSON_NEEDS_UNICODE_KEYS = not PY3 and not try_import('simplejson')
 
 #: Human readable queue declaration.
@@ -91,8 +95,7 @@ class Queues(dict):
             return dict.__getitem__(self, name)
 
     def __setitem__(self, name, queue):
-        if self.default_exchange and (not queue.exchange or
-                                      not queue.exchange.name):
+        if self.default_exchange and not queue.exchange:
             queue.exchange = self.default_exchange
         dict.__setitem__(self, name, queue)
         if queue.alias:
@@ -167,7 +170,8 @@ class Queues(dict):
 
     def select_add(self, queue, **kwargs):
         """Add new task queue that will be consumed from even when
-        a subset has been selected using the :option:`-Q` option."""
+        a subset has been selected using the
+        :option:`celery worker -Q` option."""
         q = self.add(queue, **kwargs)
         if self._consume_from is not None:
             self._consume_from[q.name] = q
@@ -236,6 +240,13 @@ class AMQP(object):
     # and instead send directly to the queue named in the routing key.
     autoexchange = None
 
+    #: Max size of positional argument representation used for
+    #: logging purposes.
+    argsrepr_maxsize = 1024
+
+    #: Max size of keyword argument representation used for logging purposes.
+    kwargsrepr_maxsize = 1024
+
     def __init__(self, app):
         self.app = app
         self.task_protocols = {
@@ -245,7 +256,7 @@ class AMQP(object):
 
     @cached_property
     def create_task_message(self):
-        return self.task_protocols[self.app.conf.CELERY_TASK_PROTOCOL]
+        return self.task_protocols[self.app.conf.task_protocol]
 
     @cached_property
     def send_task_message(self):
@@ -257,15 +268,15 @@ class AMQP(object):
         from the current configuration."""
         conf = self.app.conf
         if create_missing is None:
-            create_missing = conf.CELERY_CREATE_MISSING_QUEUES
+            create_missing = conf.task_create_missing_queues
         if ha_policy is None:
-            ha_policy = conf.CELERY_QUEUE_HA_POLICY
+            ha_policy = conf.task_queue_ha_policy
         if max_priority is None:
-            max_priority = conf.CELERY_QUEUE_MAX_PRIORITY
-        if not queues and conf.CELERY_DEFAULT_QUEUE:
-            queues = (Queue(conf.CELERY_DEFAULT_QUEUE,
+            max_priority = conf.task_queue_max_priority
+        if not queues and conf.task_default_queue:
+            queues = (Queue(conf.task_default_queue,
                             exchange=self.default_exchange,
-                            routing_key=conf.CELERY_DEFAULT_ROUTING_KEY),)
+                            routing_key=conf.task_default_routing_key),)
         autoexchange = (self.autoexchange if autoexchange is None
                         else autoexchange)
         return self.queues_cls(
@@ -276,15 +287,15 @@ class AMQP(object):
     def Router(self, queues=None, create_missing=None):
         """Return the current task router."""
         return _routes.Router(self.routes, queues or self.queues,
-                              self.app.either('CELERY_CREATE_MISSING_QUEUES',
+                              self.app.either('task_create_missing_queues',
                                               create_missing), app=self.app)
 
     def flush_routes(self):
-        self._rtable = _routes.prepare(self.app.conf.CELERY_ROUTES)
+        self._rtable = _routes.prepare(self.app.conf.task_routes)
 
     def TaskConsumer(self, channel, queues=None, accept=None, **kw):
         if accept is None:
-            accept = self.app.conf.CELERY_ACCEPT_CONTENT
+            accept = self.app.conf.accept_content
         return self.Consumer(
             channel, accept=accept,
             queues=queues or list(self.queues.consume_from.values()),
@@ -297,33 +308,35 @@ class AMQP(object):
                    callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
-                   shadow=None, now=None, timezone=None):
+                   shadow=None, chain=None, now=None, timezone=None,
+                   origin=None):
         args = args or ()
         kwargs = kwargs or {}
-        utc = self.utc
         if not isinstance(args, (list, tuple)):
             raise TypeError('task args must be a list or tuple')
         if not isinstance(kwargs, Mapping):
             raise TypeError('task keyword arguments must be a mapping')
         if countdown:  # convert countdown to ETA
+            self._verify_seconds(countdown, 'countdown')
             now = now or self.app.now()
             timezone = timezone or self.app.timezone
-            eta = now + timedelta(seconds=countdown)
-            if utc:
-                eta = to_utc(eta).astimezone(timezone)
+            eta = maybe_make_aware(
+                now + timedelta(seconds=countdown), tz=timezone,
+            )
         if isinstance(expires, numbers.Real):
+            self._verify_seconds(expires, 'expires')
             now = now or self.app.now()
             timezone = timezone or self.app.timezone
-            expires = now + timedelta(seconds=expires)
-            if utc:
-                expires = to_utc(expires).astimezone(timezone)
+            expires = maybe_make_aware(
+                now + timedelta(seconds=expires), tz=timezone,
+            )
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
-        argsrepr = saferepr(args)
-        kwargsrepr = saferepr(kwargs)
+        argsrepr = saferepr(args, self.argsrepr_maxsize)
+        kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
 
-        if JSON_NEEDS_UNICODE_KEYS:
+        if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
             if callbacks:
                 callbacks = [utf8dict(callback) for callback in callbacks]
             if errbacks:
@@ -345,6 +358,7 @@ class AMQP(object):
                 'parent_id': parent_id,
                 'argsrepr': argsrepr,
                 'kwargsrepr': kwargsrepr,
+                'origin': origin or anon_nodename()
             },
             properties={
                 'correlation_id': task_id,
@@ -354,14 +368,14 @@ class AMQP(object):
                 args, kwargs, {
                     'callbacks': callbacks,
                     'errbacks': errbacks,
-                    'chain': None,  # TODO
+                    'chain': chain,
                     'chord': chord,
                 },
             ),
             sent_event={
                 'uuid': task_id,
-                'root': root_id,
-                'parent': parent_id,
+                'root_id': root_id,
+                'parent_id': parent_id,
                 'name': name,
                 'args': argsrepr,
                 'kwargs': kwargsrepr,
@@ -386,12 +400,14 @@ class AMQP(object):
         if not isinstance(kwargs, Mapping):
             raise ValueError('task keyword arguments must be a mapping')
         if countdown:  # convert countdown to ETA
+            self._verify_seconds(countdown, 'countdown')
             now = now or self.app.now()
             timezone = timezone or self.app.timezone
             eta = now + timedelta(seconds=countdown)
             if utc:
                 eta = to_utc(eta).astimezone(timezone)
         if isinstance(expires, numbers.Real):
+            self._verify_seconds(expires, 'expires')
             now = now or self.app.now()
             timezone = timezone or self.app.timezone
             expires = now + timedelta(seconds=expires)
@@ -400,7 +416,7 @@ class AMQP(object):
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
-        if JSON_NEEDS_UNICODE_KEYS:
+        if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
             if callbacks:
                 callbacks = [utf8dict(callback) for callback in callbacks]
             if errbacks:
@@ -441,10 +457,15 @@ class AMQP(object):
             } if create_sent_event else None,
         )
 
+    def _verify_seconds(self, s, what):
+        if s < INT_MIN:
+            raise ValueError('%s is out of range: %r' % (what, s))
+        return s
+
     def _create_task_sender(self):
-        default_retry = self.app.conf.CELERY_TASK_PUBLISH_RETRY
-        default_policy = self.app.conf.CELERY_TASK_PUBLISH_RETRY_POLICY
-        default_delivery_mode = self.app.conf.CELERY_DEFAULT_DELIVERY_MODE
+        default_retry = self.app.conf.task_publish_retry
+        default_policy = self.app.conf.task_publish_retry_policy
+        default_delivery_mode = self.app.conf.task_default_delivery_mode
         default_queue = self.default_queue
         queues = self.queues
         send_before_publish = signals.before_task_publish.send
@@ -458,16 +479,17 @@ class AMQP(object):
         default_evd = self._event_dispatcher
         default_exchange = self.default_exchange
 
-        default_rkey = self.app.conf.CELERY_DEFAULT_ROUTING_KEY
-        default_serializer = self.app.conf.CELERY_TASK_SERIALIZER
-        default_compressor = self.app.conf.CELERY_MESSAGE_COMPRESSION
+        default_rkey = self.app.conf.task_default_routing_key
+        default_serializer = self.app.conf.task_serializer
+        default_compressor = self.app.conf.result_compression
 
-        def publish_task(producer, name, message,
-                         exchange=None, routing_key=None, queue=None,
-                         event_dispatcher=None, retry=None, retry_policy=None,
-                         serializer=None, delivery_mode=None,
-                         compression=None, declare=None,
-                         headers=None, **kwargs):
+        def send_task_message(producer, name, message,
+                              exchange=None, routing_key=None, queue=None,
+                              event_dispatcher=None,
+                              retry=None, retry_policy=None,
+                              serializer=None, delivery_mode=None,
+                              compression=None, declare=None,
+                              headers=None, exchange_type=None, **kwargs):
             retry = default_retry if retry is None else retry
             headers2, properties, body, sent_event = message
             if headers:
@@ -483,14 +505,25 @@ class AMQP(object):
                     qname, queue = queue, queues[queue]
                 else:
                     qname = queue.name
+
             if delivery_mode is None:
                 try:
                     delivery_mode = queue.exchange.delivery_mode
                 except AttributeError:
                     pass
                 delivery_mode = delivery_mode or default_delivery_mode
-            exchange = exchange or queue.exchange.name
-            routing_key = routing_key or queue.routing_key
+
+            if exchange_type is None:
+                try:
+                    exchange_type = queue.exchange.type
+                except AttributeError:
+                    exchange_type = 'direct'
+
+            if not exchange and not routing_key and exchange_type == 'direct':
+                exchange, routing_key = '', qname
+            else:
+                exchange = exchange or queue.exchange.name or default_exchange
+                routing_key = routing_key or queue.routing_key or default_rkey
             if declare is None and queue and not isinstance(queue, Broadcast):
                 declare = [queue]
 
@@ -508,8 +541,8 @@ class AMQP(object):
                 )
             ret = producer.publish(
                 body,
-                exchange=exchange or default_exchange,
-                routing_key=routing_key or default_rkey,
+                exchange=exchange,
+                routing_key=routing_key,
                 serializer=serializer or default_serializer,
                 compression=compression or default_compressor,
                 retry=retry, retry_policy=_rp,
@@ -526,8 +559,8 @@ class AMQP(object):
                                eta=body['eta'], taskset=body['taskset'])
             if sent_event:
                 evd = event_dispatcher or default_evd
-                exname = exchange or self.exchange
-                if isinstance(name, Exchange):
+                exname = exchange
+                if isinstance(exname, Exchange):
                     exname = exname.name
                 sent_event.update({
                     'queue': qname,
@@ -537,16 +570,16 @@ class AMQP(object):
                 evd.publish('task-sent', sent_event,
                             self, retry=retry, retry_policy=retry_policy)
             return ret
-        return publish_task
+        return send_task_message
 
     @cached_property
     def default_queue(self):
-        return self.queues[self.app.conf.CELERY_DEFAULT_QUEUE]
+        return self.queues[self.app.conf.task_default_queue]
 
     @cached_property
     def queues(self):
         """Queue name⇒ declaration mapping."""
-        return self.Queues(self.app.conf.CELERY_QUEUES)
+        return self.Queues(self.app.conf.task_queues)
 
     @queues.setter  # noqa
     def queues(self, queues):
@@ -565,22 +598,20 @@ class AMQP(object):
     @property
     def producer_pool(self):
         if self._producer_pool is None:
-            self._producer_pool = ProducerPool(
-                self.app.pool,
-                limit=self.app.pool.limit,
-                Producer=self.Producer,
-            )
+            self._producer_pool = pools.producers[
+                self.app.connection_for_write()]
+            self._producer_pool.limit = self.app.pool.limit
         return self._producer_pool
     publisher_pool = producer_pool  # compat alias
 
     @cached_property
     def default_exchange(self):
-        return Exchange(self.app.conf.CELERY_DEFAULT_EXCHANGE,
-                        self.app.conf.CELERY_DEFAULT_EXCHANGE_TYPE)
+        return Exchange(self.app.conf.task_default_exchange,
+                        self.app.conf.task_default_exchange_type)
 
     @cached_property
     def utc(self):
-        return self.app.conf.CELERY_ENABLE_UTC
+        return self.app.conf.enable_utc
 
     @cached_property
     def _event_dispatcher(self):

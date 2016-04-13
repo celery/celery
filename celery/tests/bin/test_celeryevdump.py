@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from time import time
 
@@ -7,8 +7,9 @@ from celery.events.dumper import (
     Dumper,
     evdump,
 )
+from celery.five import WhateverIO
 
-from celery.tests.case import AppCase, Mock, WhateverIO, patch
+from celery.tests.case import AppCase, Mock, patch
 
 
 class test_Dumper(AppCase):
@@ -56,13 +57,13 @@ class test_Dumper(AppCase):
                 raise KeyError()
             recv.capture.side_effect = se
 
-            Conn = app.connection.return_value = Mock(name='conn')
+            Conn = app.connection_for_read.return_value = Mock(name='conn')
             conn = Conn.clone.return_value = Mock(name='cloned_conn')
             conn.connection_errors = (KeyError,)
             conn.channel_errors = ()
 
             evdump(app)
-            self.assertTrue(conn.ensure_connection.called)
+            conn.ensure_connection.assert_called()
             errback = conn.ensure_connection.call_args[0][0]
             errback(KeyError(), 1)
-            self.assertTrue(conn.as_uri.called)
+            conn.as_uri.assert_called()

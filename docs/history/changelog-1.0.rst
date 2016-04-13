@@ -42,8 +42,8 @@
 Critical
 --------
 
-* SIGINT/Ctrl+C killed the pool, abruptly terminating the currently executing
-  tasks.
+* :sig:`INT`/:kbd:`Control-c` killed the pool, abruptly terminating the
+  currently executing tasks.
 
     Fixed by making the pool worker processes ignore :const:`SIGINT`.
 
@@ -52,10 +52,10 @@ Critical
 
     See issue #122.
 
-* Now depends on :mod:`billiard` >= 0.3.1
+* Now depends on :pypi:`billiard` >= 0.3.1
 
-* worker: Previously exceptions raised by worker components could stall startup,
-  now it correctly logs the exceptions and shuts down.
+* worker: Previously exceptions raised by worker components could stall
+  start-up, now it correctly logs the exceptions and shuts down.
 
 * worker: Prefetch counts was set too late. QoS is now set as early as possible,
   so the worker: can't slurp in all the messages at start-up.
@@ -187,15 +187,15 @@ News
 
         @periodic_task(run_every=crontab(hour=7, minute=30))
         def every_morning():
-            print("Runs every morning at 7:30a.m")
+            print('Runs every morning at 7:30a.m')
 
-        @periodic_task(run_every=crontab(hour=7, minute=30, day_of_week="mon"))
+        @periodic_task(run_every=crontab(hour=7, minute=30, day_of_week='mon'))
         def every_monday_morning():
-            print("Run every monday morning at 7:30a.m")
+            print('Run every monday morning at 7:30a.m')
 
         @periodic_task(run_every=crontab(minutes=30))
         def every_hour():
-            print("Runs every hour on the clock. e.g. 1:30, 2:30, 3:30 etc.")
+            print('Runs every hour on the clock. e.g. 1:30, 2:30, 3:30 etc.')
 
     .. note::
         This a late addition. While we have unittests, due to the
@@ -220,7 +220,7 @@ News
     If `Task.track_started` is enabled the task will report its status
     as "started" when the task is executed by a worker.
 
-    The default value is `False` as the normal behaviour is to not
+    The default value is `False` as the normal behavior is to not
     report that level of granularity. Tasks are either pending, finished,
     or waiting to be retried. Having a "started" status can be useful for
     when there are long running tasks and there is a need to report which
@@ -250,11 +250,11 @@ Remote control commands
 
     * rate_limit(task_name, destination=all, reply=False, timeout=1, limit=0)
 
-        Worker returns `{"ok": message}` on success,
-        or `{"failure": message}` on failure.
+        Worker returns `{'ok': message}` on success,
+        or `{'failure': message}` on failure.
 
             >>> from celery.task.control import rate_limit
-            >>> rate_limit("tasks.add", "10/s", reply=True)
+            >>> rate_limit('tasks.add', '10/s', reply=True)
             [{'worker1': {'ok': 'new rate limit set successfully'}},
              {'worker2': {'ok': 'new rate limit set successfully'}}]
 
@@ -272,7 +272,7 @@ Remote control commands
         Worker simply returns `True`.
 
             >>> from celery.task.control import revoke
-            >>> revoke("419e46eb-cf6a-4271-86a8-442b7124132c", reply=True)
+            >>> revoke('419e46eb-cf6a-4271-86a8-442b7124132c', reply=True)
             [{'worker1': True},
              {'worker2'; True}]
 
@@ -289,20 +289,20 @@ Remote control commands
         @Panel.register
         def reset_broker_connection(state, **kwargs):
             state.consumer.reset_connection()
-            return {"ok": "connection re-established"}
+            return {'ok': 'connection re-established'}
 
     With this module imported in the worker, you can launch the command
     using `celery.task.control.broadcast`::
 
         >>> from celery.task.control import broadcast
-        >>> broadcast("reset_broker_connection", reply=True)
+        >>> broadcast('reset_broker_connection', reply=True)
         [{'worker1': {'ok': 'connection re-established'},
          {'worker2': {'ok': 'connection re-established'}}]
 
     **TIP** You can choose the worker(s) to receive the command
     by using the `destination` argument::
 
-        >>> broadcast("reset_broker_connection", destination=["worker1"])
+        >>> broadcast('reset_broker_connection', destination=['worker1'])
         [{'worker1': {'ok': 'connection re-established'}]
 
 * New remote control command: `dump_reserved`
@@ -310,7 +310,7 @@ Remote control commands
     Dumps tasks reserved by the worker, waiting to be executed::
 
         >>> from celery.task.control import broadcast
-        >>> broadcast("dump_reserved", reply=True)
+        >>> broadcast('dump_reserved', reply=True)
         [{'myworker1': [<TaskRequest ....>]}]
 
 * New remote control command: `dump_schedule`
@@ -320,27 +320,27 @@ Remote control commands
     waiting to be executed by the worker.
 
         >>> from celery.task.control import broadcast
-        >>> broadcast("dump_schedule", reply=True)
+        >>> broadcast('dump_schedule', reply=True)
         [{'w1': []},
          {'w3': []},
          {'w2': ['0. 2010-05-12 11:06:00 pri0 <TaskRequest
-                    {name:"opalfeeds.tasks.refresh_feed_slice",
-                     id:"95b45760-4e73-4ce8-8eac-f100aa80273a",
-                     args:"(<Feeds freq_max:3600 freq_min:60
-                                   start:2184.0 stop:3276.0>,)",
-                     kwargs:"{'page': 2}"}>']},
+                    {name:'opalfeeds.tasks.refresh_feed_slice',
+                     id:'95b45760-4e73-4ce8-8eac-f100aa80273a',
+                     args:'(<Feeds freq_max:3600 freq_min:60
+                                   start:2184.0 stop:3276.0>,)',
+                     kwargs:'{'page': 2}'}>']},
          {'w4': ['0. 2010-05-12 11:00:00 pri0 <TaskRequest
-                    {name:"opalfeeds.tasks.refresh_feed_slice",
-                     id:"c053480b-58fb-422f-ae68-8d30a464edfe",
-                     args:"(<Feeds freq_max:3600 freq_min:60
-                                   start:1092.0 stop:2184.0>,)",
-                     kwargs:"{\'page\': 1}"}>',
+                    {name:'opalfeeds.tasks.refresh_feed_slice',
+                     id:'c053480b-58fb-422f-ae68-8d30a464edfe',
+                     args:'(<Feeds freq_max:3600 freq_min:60
+                                   start:1092.0 stop:2184.0>,)',
+                     kwargs:'{\'page\': 1}'}>',
                 '1. 2010-05-12 11:12:00 pri0 <TaskRequest
-                    {name:"opalfeeds.tasks.refresh_feed_slice",
-                     id:"ab8bc59e-6cf8-44b8-88d0-f1af57789758",
-                     args:"(<Feeds freq_max:3600 freq_min:60
-                                   start:3276.0 stop:4365>,)",
-                     kwargs:"{\'page\': 3}"}>']}]
+                    {name:'opalfeeds.tasks.refresh_feed_slice',
+                     id:'ab8bc59e-6cf8-44b8-88d0-f1af57789758',
+                     args:'(<Feeds freq_max:3600 freq_min:60
+                                   start:3276.0 stop:4365>,)',
+                     kwargs:'{\'page\': 3}'}>']}]
 
 .. _v103-fixes:
 
@@ -410,10 +410,10 @@ Fixes
 
     .. code-block:: python
 
-        CELERYD_POOL = "celery.concurrency.processes.TaskPool"
-        CELERYD_MEDIATOR = "celery.worker.controllers.Mediator"
-        CELERYD_ETA_SCHEDULER = "celery.worker.controllers.ScheduleController"
-        CELERYD_CONSUMER = "celery.worker.consumer.Consumer"
+        CELERYD_POOL = 'celery.concurrency.processes.TaskPool'
+        CELERYD_MEDIATOR = 'celery.worker.controllers.Mediator'
+        CELERYD_ETA_SCHEDULER = 'celery.worker.controllers.ScheduleController'
+        CELERYD_CONSUMER = 'celery.worker.consumer.Consumer'
 
     The :setting:`CELERYD_POOL` setting makes it easy to swap out the
     multiprocessing pool with a threaded pool, or how about a
@@ -483,7 +483,7 @@ Fixes
 * The worker now shutdowns cleanly when receiving the :sig:`SIGTERM` signal.
 
 * The worker now does a cold shutdown if the :sig:`SIGINT` signal
-  is received (Ctrl+C),
+  is received (:kbd:`Control-c`),
   this means it tries to terminate as soon as possible.
 
 * Caching of results now moved to the base backend classes, so no need
@@ -525,7 +525,7 @@ Fixes
     Example:
 
         >>> from celery.execute import send_task
-        >>> result = send_task("celery.ping", args=[], kwargs={})
+        >>> result = send_task('celery.ping', args=[], kwargs={})
         >>> result.get()
         'pong'
 
@@ -629,11 +629,11 @@ Backward incompatible changes
 -----------------------------
 
 * Celery does not support detaching anymore, so you have to use the tools
-  available on your platform, or something like Supervisord to make
+  available on your platform, or something like :pypi:`supervisor` to make
   celeryd/celerybeat/celerymon into background processes.
 
     We've had too many problems with the worker daemonizing itself, so it was
-    decided it has to be removed. Example startup scripts has been added to
+    decided it has to be removed. Example start-up scripts has been added to
     the `extra/` directory:
 
     * Debian, Ubuntu, (start-stop-daemon)
@@ -738,7 +738,7 @@ Backward incompatible changes
   instead.
 
 * The worker no longer stores errors if `Task.ignore_result` is set, to
-  revert to the previous behaviour set
+  revert to the previous behavior set
   :setting:`CELERY_STORE_ERRORS_EVEN_IF_IGNORED` to `True`.
 
 * The statistics functionality has been removed in favor of events,
@@ -746,7 +746,7 @@ Backward incompatible changes
 
 * The module `celery.task.strategy` has been removed.
 
-* `celery.discovery` has been removed, and it's `autodiscover` function is
+* `celery.discovery` has been removed, and it's ``autodiscover`` function is
   now in `celery.loaders.djangoapp`. Reason: Internal API.
 
 * The :envvar:`CELERY_LOADER` environment variable now needs loader class name
@@ -819,7 +819,7 @@ News
 * worker: now sends events if enabled with the `-E` argument.
 
     Excellent for monitoring tools, one is already in the making
-    (http://github.com/celery/celerymon).
+    (https://github.com/celery/celerymon).
 
     Current events include: :event:`worker-heartbeat`,
     task-[received/succeeded/failed/retried],
@@ -840,14 +840,14 @@ News
 * Periodic tasks are now scheduled on the clock.
 
     I.e. `timedelta(hours=1)` means every hour at :00 minutes, not every
-    hour from the server starts.  To revert to the previous behaviour you
+    hour from the server starts.  To revert to the previous behavior you
     can set `PeriodicTask.relative = True`.
 
 * Now supports passing execute options to a TaskSets list of args, e.g.:
 
-    >>> ts = TaskSet(add, [([2, 2], {}, {"countdown": 1}),
-    ...                   ([4, 4], {}, {"countdown": 2}),
-    ...                   ([8, 8], {}, {"countdown": 3})])
+    >>> ts = TaskSet(add, [([2, 2], {}, {'countdown': 1}),
+    ...                   ([4, 4], {}, {'countdown': 2}),
+    ...                   ([8, 8], {}, {'countdown': 3})])
     >>> ts.run()
 
 * Got a 3x performance gain by setting the prefetch count to four times the
@@ -903,7 +903,7 @@ Changes
 
 * Log level for stdout/stderr changed from INFO to ERROR
 
-* ImportErrors are now properly propagated when autodiscovering tasks.
+* ImportErrors are now properly propagated when auto-discovering tasks.
 
 * You can now use `celery.messaging.establish_connection` to establish a
   connection to the broker.
@@ -922,7 +922,7 @@ Changes
   a task type. See :mod:`celery.task.control`.
 
 * The services now sets informative process names (as shown in `ps`
-  listings) if the :mod:`setproctitle` module is installed.
+  listings) if the :pypi:`setproctitle` module is installed.
 
 * :exc:`~@NotRegistered` now inherits from :exc:`KeyError`,
   and `TaskRegistry.__getitem__`+`pop` raises `NotRegistered` instead
@@ -961,7 +961,7 @@ Documentation
 * Now emits a warning if the --detach argument is used.
   --detach should not be used anymore, as it has several not easily fixed
   bugs related to it. Instead, use something like start-stop-daemon,
-  Supervisord or launchd (os x).
+  :pypi:`supervisor` or launchd (os x).
 
 
 * Make sure logger class is process aware, even if running Python >= 2.6.
@@ -1021,28 +1021,28 @@ Important changes
 * All AMQP_* settings has been renamed to BROKER_*, and in addition
   AMQP_SERVER has been renamed to BROKER_HOST, so before where you had::
 
-        AMQP_SERVER = "localhost"
+        AMQP_SERVER = 'localhost'
         AMQP_PORT = 5678
-        AMQP_USER = "myuser"
-        AMQP_PASSWORD = "mypassword"
-        AMQP_VHOST = "celery"
+        AMQP_USER = 'myuser'
+        AMQP_PASSWORD = 'mypassword'
+        AMQP_VHOST = 'celery'
 
   You need to change that to::
 
-        BROKER_HOST = "localhost"
+        BROKER_HOST = 'localhost'
         BROKER_PORT = 5678
-        BROKER_USER = "myuser"
-        BROKER_PASSWORD = "mypassword"
-        BROKER_VHOST = "celery"
+        BROKER_USER = 'myuser'
+        BROKER_PASSWORD = 'mypassword'
+        BROKER_VHOST = 'celery'
 
 * Custom carrot backends now need to include the backend class name, so before
   where you had::
 
-        CARROT_BACKEND = "mycustom.backend.module"
+        CARROT_BACKEND = 'mycustom.backend.module'
 
   you need to change it to::
 
-        CARROT_BACKEND = "mycustom.backend.module.Backend"
+        CARROT_BACKEND = 'mycustom.backend.module.Backend'
 
   where `Backend` is the class name. This is probably `"Backend"`, as
   that was the previously implied name.
@@ -1270,7 +1270,7 @@ News
 * New Tutorial: Creating a click counter using carrot and celery
 
 * Database entries for periodic tasks are now created at the workers
-    startup instead of for each check (which has been a forgotten TODO/XXX
+    start-up instead of for each check (which has been a forgotten TODO/XXX
     in the code for a long time)
 
 * New settings variable: :setting:`CELERY_TASK_RESULT_EXPIRES`
@@ -1300,7 +1300,7 @@ News
     the task has an ETA (estimated time of arrival). Also the log message now
     includes the ETA for the task (if any).
 
-* Acknowledgement now happens in the pool callback. Can't do ack in the job
+* Acknowledgment now happens in the pool callback. Can't do ack in the job
     target, as it's not pickleable (can't share AMQP connection, etc.)).
 
 * Added note about .delay hanging in README
@@ -1395,9 +1395,11 @@ News
   restarted if it crashes). To use this start the worker with the
   --supervised` option (or alternatively `-S`).
 
-* views.apply: View calling a task. Example
+* views.apply: View calling a task.
 
-    ::
+    Example:
+
+    .. code-block:: text
 
         http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&kwarg2=b
 
@@ -1441,11 +1443,11 @@ News
 * **IMPORTANT** `tasks.register`: Renamed `task_name` argument to
   `name`, so
 
-        >>> tasks.register(func, task_name="mytask")
+        >>> tasks.register(func, task_name='mytask')
 
   has to be replaced with:
 
-        >>> tasks.register(func, name="mytask")
+        >>> tasks.register(func, name='mytask')
 
 * The daemon now correctly runs if the pidlock is stale.
 
@@ -1479,7 +1481,7 @@ News
   it's the term used in the documentation from now on.
 
 * Make sure the pool and periodic task worker thread is terminated
-  properly at exit. (So `Ctrl-C` works again).
+  properly at exit. (So :kbd:`Control-c` works again).
 
 * Now depends on `python-daemon`.
 
@@ -1567,13 +1569,13 @@ arguments, so be sure to flush your task queue before you upgrade.
   `celery.task.apply_async` and `celery.Task.apply_async`.
 
   This also means the AMQP configuration has changed. Some settings has
-  been renamed, while others are new::
+  been renamed, while others are new:
 
-        CELERY_AMQP_EXCHANGE
-        CELERY_AMQP_PUBLISHER_ROUTING_KEY
-        CELERY_AMQP_CONSUMER_ROUTING_KEY
-        CELERY_AMQP_CONSUMER_QUEUE
-        CELERY_AMQP_EXCHANGE_TYPE
+    - ``CELERY_AMQP_EXCHANGE``
+    - ``CELERY_AMQP_PUBLISHER_ROUTING_KEY``
+    - ``CELERY_AMQP_CONSUMER_ROUTING_KEY``
+    - ``CELERY_AMQP_CONSUMER_QUEUE``
+    - ``CELERY_AMQP_EXCHANGE_TYPE``
 
   See the entry :ref:`faq-task-routing` in the
   :ref:`FAQ <faq>` for more information.
@@ -1698,7 +1700,7 @@ arguments, so be sure to flush your task queue before you upgrade.
         $ cd docs
         $ make html
 
-  and the result will be in `docs/.build/html`.
+  and the result will be in `docs/_build/html`.
 
 .. _version-0.1.12:
 
@@ -1732,14 +1734,18 @@ arguments, so be sure to flush your task queue before you upgrade.
         >>> result.result
         [4, 8, 16]
 
-* Refactored the task metadata cache and database backends, and added
+* Refactored the task meta-data cache and database backends, and added
   a new backend for Tokyo Tyrant. You can set the backend in your django
-  settings file. E.g.::
+  settings file.
 
-        CELERY_RESULT_BACKEND = "database"; # Uses the database
-        CELERY_RESULT_BACKEND = "cache"; # Uses the django cache framework
-        CELERY_RESULT_BACKEND = "tyrant"; # Uses Tokyo Tyrant
-        TT_HOST = "localhost"; # Hostname for the Tokyo Tyrant server.
+    Example:
+
+    .. code-block:: python
+
+        CELERY_RESULT_BACKEND = 'database'; # Uses the database
+        CELERY_RESULT_BACKEND = 'cache'; # Uses the django cache framework
+        CELERY_RESULT_BACKEND = 'tyrant'; # Uses Tokyo Tyrant
+        TT_HOST = 'localhost'; # Hostname for the Tokyo Tyrant server.
         TT_PORT = 6657; # Port of the Tokyo Tyrant server.
 
 .. _version-0.1.11:
@@ -1786,7 +1792,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * Added some unit tests
 
-* Can now use the database for task metadata (like if the task has
+* Can now use the database for task meta-data (like if the task has
   been executed or not). Set `settings.CELERY_TASK_META`
 
 * Can now run `python setup.py test` to run the unit tests from
@@ -1826,15 +1832,19 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * You can do this by including the celery `urls.py` into your project,
 
-        >>> url(r'^celery/$', include("celery.urls"))
+        >>> url(r'^celery/$', include('celery.urls'))
 
-  then visiting the following url,::
+  then visiting the following url:
+
+  .. code-block:: text
 
         http://mysite/celery/$task_id/done/
 
   this will return a JSON dictionary like e.g:
 
-        >>> {"task": {"id": $task_id, "executed": true}}
+  .. code-block:: json
+
+        {"task": {"id": "TASK_ID", "executed": true}}
 
 * `delay_task` now returns string id, not `uuid.UUID` instance.
 

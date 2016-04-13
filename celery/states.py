@@ -57,7 +57,7 @@ Misc.
 -----
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 __all__ = ['PENDING', 'RECEIVED', 'STARTED', 'SUCCESS', 'FAILURE',
            'REVOKED', 'RETRY', 'IGNORED', 'READY_STATES', 'UNREADY_STATES',
@@ -72,6 +72,7 @@ PRECEDENCE = ['SUCCESS',
               'REVOKED',
               'STARTED',
               'RECEIVED',
+              'REJECTED',
               'RETRY',
               'PENDING']
 
@@ -126,9 +127,9 @@ class state(str):
 
 #: Task state is unknown (assumed pending since you know the id).
 PENDING = 'PENDING'
-#: Task was received by a worker.
+#: Task was received by a worker (only used in events).
 RECEIVED = 'RECEIVED'
-#: Task was started by a worker (:setting:`CELERY_TRACK_STARTED`).
+#: Task was started by a worker (:setting:`task_track_started`).
 STARTED = 'STARTED'
 #: Task succeeded
 SUCCESS = 'SUCCESS'
@@ -136,13 +137,15 @@ SUCCESS = 'SUCCESS'
 FAILURE = 'FAILURE'
 #: Task was revoked.
 REVOKED = 'REVOKED'
+#: Task was rejected (only used in events).
+REJECTED = 'REJECTED'
 #: Task is waiting for retry.
 RETRY = 'RETRY'
 IGNORED = 'IGNORED'
 REJECTED = 'REJECTED'
 
 READY_STATES = frozenset({SUCCESS, FAILURE, REVOKED})
-UNREADY_STATES = frozenset({PENDING, RECEIVED, STARTED, RETRY})
+UNREADY_STATES = frozenset({PENDING, RECEIVED, STARTED, REJECTED, RETRY})
 EXCEPTION_STATES = frozenset({RETRY, FAILURE, REVOKED})
 PROPAGATE_STATES = frozenset({FAILURE, REVOKED})
 

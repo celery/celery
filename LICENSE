@@ -1,4 +1,4 @@
-Copyright (c) 2015 Ask Solem & contributors.  All rights reserved.
+Copyright (c) 2015-2016 Ask Solem & contributors.  All rights reserved.
 Copyright (c) 2012-2014 GoPivotal, Inc.  All rights reserved.
 Copyright (c) 2009, 2010, 2011, 2012 Ask Solem, and individual contributors.  All rights reserved.
 
@@ -40,9 +40,9 @@ Documentation License
 
 The documentation portion of Celery (the rendered contents of the
 "docs" directory of a software distribution or checkout) is supplied
-under the Creative Commons Attribution-Noncommercial-Share Alike 3.0
-United States License as described by
-http://creativecommons.org/licenses/by-nc-sa/3.0/us/
+under the "Creative Commons Attribution-ShareAlike 4.0
+International" (CC BY-SA 4.0) License as described by
+http://creativecommons.org/licenses/by-sa/4.0/
 
 Footnotes
 =========

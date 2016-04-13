@@ -6,49 +6,52 @@
     Actual App instance implementation.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import os
 import threading
 import warnings
 
 from collections import defaultdict, deque
-from copy import deepcopy
 from operator import attrgetter
-from functools import wraps
 
-from amqp import promise
-try:
-    from billiard.util import register_after_fork
-except ImportError:
-    register_after_fork = None
+from kombu import pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
-from kombu.utils import cached_property, uuid
+from kombu.utils import cached_property, register_after_fork, uuid
+from vine import starpromise
+from vine.utils import wraps
 
 from celery import platforms
 from celery import signals
 from celery._state import (
     _task_stack, get_current_app, _set_current_app, set_default_app,
-    _register_app, get_current_worker_task, connect_on_app_finalize,
+    _register_app, _deregister_app,
+    get_current_worker_task, connect_on_app_finalize,
     _announce_app_finalized,
 )
+from celery.datastructures import AttributeDictMixin
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
-from celery.five import items, values
+from celery.five import (
+    UserDict, bytes_if_py2, python_2_unicode_compatible, values,
+)
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
 from celery.utils import gen_task_name
 from celery.utils.dispatch import Signal
 from celery.utils.functional import first, maybe_list, head_from_fun
+from celery.utils.timeutils import timezone
 from celery.utils.imports import instantiate, symbol_by_name
+from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
 
 from .annotations import prepare as prepare_annotations
-from .defaults import DEFAULTS, find_deprecated_settings
+from .defaults import find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import (
-    AppPickler, Settings, bugreport, _unpickle_app, _unpickle_app_v2, appstr,
+    AppPickler, Settings,
+    bugreport, _unpickle_app, _unpickle_app_v2, appstr, detect_settings,
 )
 
 # Load all builtin tasks
@@ -56,7 +59,9 @@ from . import builtins  # noqa
 
 __all__ = ['Celery']
 
-_EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
+logger = get_logger(__name__)
+
+USING_EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
 BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
 }
@@ -67,11 +72,9 @@ and as such the configuration could not be loaded.
 Please set this variable and make it point to
 a configuration module."""
 
-_after_fork_registered = False
-
 
 def app_has_custom(app, attr):
-    return mro_lookup(app.__class__, attr, stop=(Celery, object),
+    return mro_lookup(app.__class__, attr, stop={Celery, object},
                       monkey_patched=[__name__])
 
 
@@ -81,43 +84,45 @@ def _unpickle_appattr(reverse_name, args):
     return get_current_app()._rgetattr(reverse_name)(*args)
 
 
-def _global_after_fork(obj):
-    # Previously every app would call:
-    #    `register_after_fork(app, app._after_fork)`
-    # but this created a leak as `register_after_fork` stores concrete object
-    # references and once registered an object cannot be removed without
-    # touching and iterating over the private afterfork registry list.
+def _after_fork_cleanup_app(app):
+    try:
+        app._after_fork()
+    except Exception as exc:
+        logger.info('after forker raised exception: %r', exc, exc_info=1)
+
+
+class PendingConfiguration(UserDict, AttributeDictMixin):
+    # `app.conf` will be of this type before being explicitly configured,
+    # which means the app can keep any configuration set directly
+    # on `app.conf` before the `app.config_from_object` call.
     #
-    # See Issue #1949
-    from celery import _state
-    from multiprocessing import util as mputil
-    for app in _state._apps:
-        try:
-            app._after_fork(obj)
-        except Exception as exc:
-            if mputil._logger:
-                mputil._logger.info(
-                    'after forker raised exception: %r', exc, exc_info=1)
+    # accessing any key will finalize the configuration,
+    # replacing `app.conf` with a concrete settings object.
+
+    callback = None
+    data = None
+
+    def __init__(self, conf, callback):
+        object.__setattr__(self, 'data', conf)
+        object.__setattr__(self, 'callback', callback)
+
+    def __getitem__(self, key):
+        return self.callback(key)
 
 
-def _ensure_after_fork():
-    global _after_fork_registered
-    _after_fork_registered = True
-    if register_after_fork is not None:
-        register_after_fork(_global_after_fork, _global_after_fork)
-
-
+@python_2_unicode_compatible
 class Celery(object):
     """Celery application.
 
     :param main: Name of the main module if running as `__main__`.
-        This is used as a prefix for task names.
+        This is used as the prefix for autogenerated task names.
+
     :keyword broker: URL of the default broker used.
     :keyword loader: The loader class, or the name of the loader class to use.
                      Default is :class:`celery.loaders.app.AppLoader`.
     :keyword backend: The result store backend class, or the name of the
                       backend class to use. Default is the value of the
-                      :setting:`CELERY_RESULT_BACKEND` setting.
+                      :setting:`result_backend` setting.
     :keyword amqp: AMQP object or class name.
     :keyword events: Events object or class name.
     :keyword log: Log object or class name.
@@ -152,6 +157,8 @@ class Celery(object):
     #: See :ref:`extending-bootsteps`.
     steps = None
 
+    builtin_fixups = BUILTIN_FIXUPS
+
     amqp_cls = 'celery.app.amqp:AMQP'
     backend_cls = None
     events_cls = 'celery.events:Events'
@@ -160,10 +167,11 @@ class Celery(object):
     control_cls = 'celery.app.control:Control'
     task_cls = 'celery.app.task:Task'
     registry_cls = TaskRegistry
+
     _fixups = None
     _pool = None
     _conf = None
-    builtin_fixups = BUILTIN_FIXUPS
+    _after_fork_registered = False
 
     #: Signal sent when app is loading configuration.
     on_configure = None
@@ -174,14 +182,14 @@ class Celery(object):
     #: Signal sent after app has been finalized.
     on_after_finalize = None
 
-    #: ignored
-    accept_magic_kwargs = False
+    #: Signal sent by every new process after fork.
+    on_after_fork = None
 
     def __init__(self, main=None, loader=None, backend=None,
                  amqp=None, events=None, log=None, control=None,
                  set_as_current=True, tasks=None, broker=None, include=None,
                  changes=None, config_source=None, fixups=None, task_cls=None,
-                 autofinalize=True, **kwargs):
+                 autofinalize=True, namespace=None, **kwargs):
         self.clock = LamportClock()
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
@@ -195,6 +203,7 @@ class Celery(object):
         self.user_options = defaultdict(set)
         self.steps = defaultdict(set)
         self.autofinalize = autofinalize
+        self.namespace = namespace
 
         self.configured = False
         self._config_source = config_source
@@ -216,12 +225,15 @@ class Celery(object):
         # these options are moved to the config to
         # simplify pickling of the app object.
         self._preconf = changes or {}
-        if broker:
-            self._preconf['BROKER_URL'] = broker
-        if backend:
-            self._preconf['CELERY_RESULT_BACKEND'] = backend
-        if include:
-            self._preconf['CELERY_IMPORTS'] = include
+        self._preconf_set_by_auto = set()
+        self.__autoset('broker_url', broker)
+        self.__autoset('result_backend', backend)
+        self.__autoset('include', include)
+        self._conf = Settings(
+            PendingConfiguration(
+                self._preconf, self._get_from_conf_and_finalize),
+            prefix=self.namespace,
+        )
 
         # - Apply fixups.
         self.fixups = set(self.builtin_fixups) if fixups is None else fixups
@@ -237,9 +249,19 @@ class Celery(object):
             self.on_configure = Signal()
         self.on_after_configure = Signal()
         self.on_after_finalize = Signal()
+        self.on_after_fork = Signal()
 
         self.on_init()
         _register_app(self)
+
+    def on_init(self):
+        """Optional callback called at init."""
+        pass
+
+    def __autoset(self, key, value):
+        if value:
+            self._preconf[key] = value
+            self._preconf_set_by_auto.add(key)
 
     def set_current(self):
         """Makes this the current app for this thread."""
@@ -249,6 +271,12 @@ class Celery(object):
         """Makes this the default app for all threads."""
         set_default_app(self)
 
+    def _ensure_after_fork(self):
+        if not self._after_fork_registered:
+            self._after_fork_registered = True
+            if register_after_fork is not None:
+                register_after_fork(self, _after_fork_cleanup_app)
+
     def __enter__(self):
         return self
 
@@ -256,21 +284,19 @@ class Celery(object):
         self.close()
 
     def close(self):
-        """Close any open pool connections and do any other steps necessary
-        to clean up after the application.
+        """Clean up after the application.
 
         Only necessary for dynamically created apps for which you can
-        use the with statement instead::
+        use the :keyword:`with` statement instead:
+
+        .. code-block:: python
 
             with Celery(set_as_current=False) as app:
-                with app.connection() as conn:
+                with app.connection_for_write() as conn:
                     pass
         """
-        self._maybe_close_pool()
-
-    def on_init(self):
-        """Optional callback called at init."""
-        pass
+        self._pool = None
+        _deregister_app(self)
 
     def start(self, argv=None):
         """Run :program:`celery` using `argv`.
@@ -279,8 +305,8 @@ class Celery(object):
 
         """
         return instantiate(
-            'celery.bin.celery:CeleryCommand',
-            app=self).execute_from_commandline(argv)
+            'celery.bin.celery:CeleryCommand', app=self
+        ).execute_from_commandline(argv)
 
     def worker_main(self, argv=None):
         """Run :program:`celery worker` using `argv`.
@@ -289,8 +315,8 @@ class Celery(object):
 
         """
         return instantiate(
-            'celery.bin.worker:worker',
-            app=self).execute_from_commandline(argv)
+            'celery.bin.worker:worker', app=self
+        ).execute_from_commandline(argv)
 
     def task(self, *args, **opts):
         """Decorator to create a task class out of any callable.
@@ -301,15 +327,15 @@ class Celery(object):
 
             @app.task
             def refresh_feed(url):
-                return …
+                store_feed(feedparser.parse(url))
 
         with setting extra options:
 
         .. code-block:: python
 
-            @app.task(exchange="feeds")
+            @app.task(exchange='feeds')
             def refresh_feed(url):
-                return …
+                return store_feed(feedparser.parse(url))
 
         .. admonition:: App Binding
 
@@ -322,7 +348,7 @@ class Celery(object):
             application is fully set up (finalized).
 
         """
-        if _EXECV and opts.get('lazy', True):
+        if USING_EXECV and opts.get('lazy', True):
             # When using execv the task in the original module will point to a
             # different app, so doing things like 'add.request' will point to
             # a different task instance.  This makes sure it will always use
@@ -429,7 +455,9 @@ class Celery(object):
         as a promise, and it won't be loaded until the configuration is
         actually needed.
 
-        This method can be compared to::
+        This method can be compared to:
+
+        .. code-block:: pycon
 
             >>> celery.conf.update(d)
 
@@ -445,7 +473,8 @@ class Celery(object):
             return self._conf.add_defaults(fun())
         self._pending_defaults.append(fun)
 
-    def config_from_object(self, obj, silent=False, force=False):
+    def config_from_object(self, obj,
+                           silent=False, force=False, namespace=None):
         """Reads configuration from object, where object is either
         an object or the name of a module to import.
 
@@ -456,16 +485,18 @@ class Celery(object):
 
         .. code-block:: pycon
 
-            >>> celery.config_from_object("myapp.celeryconfig")
+            >>> celery.config_from_object('myapp.celeryconfig')
 
             >>> from myapp import celeryconfig
             >>> celery.config_from_object(celeryconfig)
 
         """
         self._config_source = obj
+        self.namespace = namespace or self.namespace
         if force or self.configured:
             self._conf = None
-            return self.loader.config_from_object(obj, silent=silent)
+            if self.loader.config_from_object(obj, silent=silent):
+                return self.conf
 
     def config_from_envvar(self, variable_name, silent=False, force=False):
         """Read configuration from environment variable.
@@ -475,8 +506,8 @@ class Celery(object):
 
         .. code-block:: pycon
 
-            >>> os.environ["CELERY_CONFIG_MODULE"] = "myapp.celeryconfig"
-            >>> celery.config_from_envvar("CELERY_CONFIG_MODULE")
+            >>> os.environ['CELERY_CONFIG_MODULE'] = 'myapp.celeryconfig'
+            >>> celery.config_from_envvar('CELERY_CONFIG_MODULE')
 
         """
         module_name = os.environ.get(variable_name)
@@ -488,7 +519,7 @@ class Celery(object):
         return self.config_from_object(module_name, silent=silent, force=force)
 
     def config_from_cmdline(self, argv, namespace='celery'):
-        (self._conf if self.configured else self.conf).update(
+        self._conf.update(
             self.loader.cmdline_config_parser(argv, namespace)
         )
 
@@ -502,18 +533,18 @@ class Celery(object):
         serializer will register the auth serializer with the provided settings
         into the Kombu serializer registry.
 
-        :keyword allowed_serializers:  List of serializer names, or content_types
-            that should be exempt from being disabled.
+        :keyword allowed_serializers: List of serializer names, or
+            content_types that should be exempt from being disabled.
         :keyword key: Name of private key file to use.
-            Defaults to the :setting:`CELERY_SECURITY_KEY` setting.
+            Defaults to the :setting:`security_key` setting.
         :keyword cert: Name of certificate file to use.
-            Defaults to the :setting:`CELERY_SECURITY_CERTIFICATE` setting.
+            Defaults to the :setting:`security_certificate` setting.
         :keyword store: Directory containing certificates.
-            Defaults to the :setting:`CELERY_SECURITY_CERT_STORE` setting.
+            Defaults to the :setting:`security_cert_store` setting.
         :keyword digest: Digest algorithm used when signing messages.
             Default is ``sha1``.
         :keyword serializer: Serializer used to encode messages after
-            they have been signed.  See :setting:`CELERY_TASK_SERIALIZER` for
+            they have been signed.  See :setting:`task_serializer` for
             the serializers supported.
             Default is ``json``.
 
@@ -524,12 +555,14 @@ class Celery(object):
 
     def autodiscover_tasks(self, packages=None,
                            related_name='tasks', force=False):
-        """Try to autodiscover and import modules with a specific name (by
+        """Try to auto-discover and import modules with a specific name (by
         default 'tasks').
 
         If the name is empty, this will be delegated to fixups (e.g. Django).
 
-        For example if you have an (imagined) directory tree like this::
+        For example if you have an (imagined) directory tree like this:
+
+        .. code-block:: text
 
             foo/__init__.py
                tasks.py
@@ -552,15 +585,15 @@ class Celery(object):
             to "tasks", which means it look for "module.tasks" for every
             module in ``packages``.
         :keyword force: By default this call is lazy so that the actual
-            autodiscovery will not happen until an application imports the
-            default modules.  Forcing will cause the autodiscovery to happen
+            auto-discovery will not happen until an application imports the
+            default modules.  Forcing will cause the auto-discovery to happen
             immediately.
 
         """
         if force:
             return self._autodiscover_tasks(packages, related_name)
-        signals.import_modules.connect(promise(
-            self._autodiscover_tasks, (packages, related_name),
+        signals.import_modules.connect(starpromise(
+            self._autodiscover_tasks, packages, related_name,
         ), weak=False, sender=self)
 
     def _autodiscover_tasks(self, packages, related_name, **kwargs):
@@ -588,7 +621,7 @@ class Celery(object):
                   add_to_parent=True, group_id=None, retries=0, chord=None,
                   reply_to=None, time_limit=None, soft_time_limit=None,
                   root_id=None, parent_id=None, route_name=None,
-                  shadow=None, **options):
+                  shadow=None, chain=None, **options):
         """Send task by name.
 
         :param name: Name of task to call (e.g. `"tasks.add"`).
@@ -598,24 +631,35 @@ class Celery(object):
         Otherwise supports the same arguments as :meth:`@-Task.apply_async`.
 
         """
+        parent = have_parent = None
         amqp = self.amqp
         task_id = task_id or uuid()
         producer = producer or publisher  # XXX compat
         router = router or amqp.router
         conf = self.conf
-        if conf.CELERY_ALWAYS_EAGER:  # pragma: no cover
+        if conf.task_always_eager:  # pragma: no cover
             warnings.warn(AlwaysEagerIgnored(
-                'CELERY_ALWAYS_EAGER has no effect on send_task',
+                'task_always_eager has no effect on send_task',
             ), stacklevel=2)
         options = router.route(options, route_name or name, args, kwargs)
+
+        if root_id is None:
+            parent, have_parent = self.current_worker_task, True
+            if parent:
+                root_id = parent.request.root_id or parent.request.id
+        if parent_id is None:
+            if not have_parent:
+                parent, have_parent = self.current_worker_task, True
+            if parent:
+                parent_id = parent.request.id
 
         message = amqp.create_task_message(
             task_id, name, args, kwargs, countdown, eta, group_id,
             expires, retries, chord,
             maybe_list(link), maybe_list(link_error),
             reply_to or self.oid, time_limit, soft_time_limit,
-            self.conf.CELERY_SEND_TASK_SENT_EVENT,
-            root_id, parent_id, shadow,
+            self.conf.task_send_sent_event,
+            root_id, parent_id, shadow, chain,
         )
 
         if connection:
@@ -625,10 +669,27 @@ class Celery(object):
             amqp.send_task_message(P, name, message, **options)
         result = (result_cls or self.AsyncResult)(task_id)
         if add_to_parent:
-            parent = get_current_worker_task()
+            if not have_parent:
+                parent, have_parent = self.current_worker_task, True
             if parent:
                 parent.add_trail(result)
         return result
+
+    def connection_for_read(self, url=None, **kwargs):
+        """Establish connection used for consuming.
+
+        See :meth:`connection` for supported arguments.
+
+        """
+        return self._connection(url or self.conf.broker_read_url, **kwargs)
+
+    def connection_for_write(self, url=None, **kwargs):
+        """Establish connection used for producing.
+
+        See :meth:`connection` for supported arguments.
+
+        """
+        return self._connection(url or self.conf.broker_write_url, **kwargs)
 
     def connection(self, hostname=None, userid=None, password=None,
                    virtual_host=None, port=None, ssl=None,
@@ -636,6 +697,10 @@ class Celery(object):
                    transport_options=None, heartbeat=None,
                    login_method=None, failover_strategy=None, **kwargs):
         """Establish a connection to the message broker.
+
+        Please use :meth:`connection_for_read` and
+        :meth:`connection_for_write` instead, to convey the intent
+        of use for this connection.
 
         :param url: Either the URL or the hostname of the broker to use.
 
@@ -646,32 +711,52 @@ class Celery(object):
         :keyword password: Password to authenticate with
         :keyword virtual_host: Virtual host to use (domain).
         :keyword port: Port to connect to.
-        :keyword ssl: Defaults to the :setting:`BROKER_USE_SSL` setting.
-        :keyword transport: defaults to the :setting:`BROKER_TRANSPORT`
+        :keyword ssl: Defaults to the :setting:`broker_use_ssl` setting.
+        :keyword transport: defaults to the :setting:`broker_transport`
                  setting.
+        :keyword transport_options: Dictionary of transport specific options.
+        :keyword heartbeat: AMQP Heartbeat in seconds (pyamqp only).
+        :keyword login_method: Custom login method to use (amqp only).
+        :keyword failover_strategy: Custom failover strategy.
+        :keyword \*\*kwargs: Additional arguments to :class:`kombu.Connection`.
 
         :returns :class:`kombu.Connection`:
 
         """
+        return self.connection_for_write(
+            hostname or self.conf.broker_write_url,
+            userid=userid, password=password,
+            virtual_host=virtual_host, port=port, ssl=ssl,
+            connect_timeout=connect_timeout, transport=transport,
+            transport_options=transport_options, heartbeat=heartbeat,
+            login_method=login_method, failover_strategy=failover_strategy,
+            **kwargs
+        )
+
+    def _connection(self, url, userid=None, password=None,
+                    virtual_host=None, port=None, ssl=None,
+                    connect_timeout=None, transport=None,
+                    transport_options=None, heartbeat=None,
+                    login_method=None, failover_strategy=None, **kwargs):
         conf = self.conf
         return self.amqp.Connection(
-            hostname or conf.BROKER_URL,
-            userid or conf.BROKER_USER,
-            password or conf.BROKER_PASSWORD,
-            virtual_host or conf.BROKER_VHOST,
-            port or conf.BROKER_PORT,
-            transport=transport or conf.BROKER_TRANSPORT,
-            ssl=self.either('BROKER_USE_SSL', ssl),
+            url,
+            userid or conf.broker_user,
+            password or conf.broker_password,
+            virtual_host or conf.broker_vhost,
+            port or conf.broker_port,
+            transport=transport or conf.broker_transport,
+            ssl=self.either('broker_use_ssl', ssl),
             heartbeat=heartbeat,
-            login_method=login_method or conf.BROKER_LOGIN_METHOD,
+            login_method=login_method or conf.broker_login_method,
             failover_strategy=(
-                failover_strategy or conf.BROKER_FAILOVER_STRATEGY
+                failover_strategy or conf.broker_failover_strategy
             ),
             transport_options=dict(
-                conf.BROKER_TRANSPORT_OPTIONS, **transport_options or {}
+                conf.broker_transport_options, **transport_options or {}
             ),
             connect_timeout=self.either(
-                'BROKER_CONNECTION_TIMEOUT', connect_timeout
+                'broker_connection_timeout', connect_timeout
             ),
         )
     broker_connection = connection
@@ -680,11 +765,11 @@ class Celery(object):
         """Helper for :meth:`connection_or_acquire`."""
         if pool:
             return self.pool.acquire(block=True)
-        return self.connection()
+        return self.connection_for_write()
 
     def connection_or_acquire(self, connection=None, pool=True, *_, **__):
-        """For use within a with-statement to get a connection from the pool
-        if one is not already provided.
+        """For use within a :keyword:`with` statement to get a connection
+        from the pool if one is not already provided.
 
         :keyword connection: If not provided, then a connection will be
                              acquired from the connection pool.
@@ -693,15 +778,15 @@ class Celery(object):
     default_connection = connection_or_acquire  # XXX compat
 
     def producer_or_acquire(self, producer=None):
-        """For use within a with-statement to get a producer from the pool
-        if one is not already provided
+        """For use within a :keyword:`with` statement to get a producer
+        from the pool if one is not already provided
 
         :keyword producer: If not provided, then a producer will be
                            acquired from the producer pool.
 
         """
         return FallbackContext(
-            producer, self.amqp.producer_pool.acquire, block=True,
+            producer, self.producer_pool.acquire, block=True,
         )
     default_producer = producer_or_acquire  # XXX compat
 
@@ -712,36 +797,37 @@ class Celery(object):
     def now(self):
         """Return the current time and date as a
         :class:`~datetime.datetime` object."""
-        return self.loader.now(utc=self.conf.CELERY_ENABLE_UTC)
+        return self.loader.now(utc=self.conf.enable_utc)
 
     def mail_admins(self, subject, body, fail_silently=False):
-        """Sends an email to the admins in the :setting:`ADMINS` setting."""
+        """Sends an email to the admins in the :setting:`admins` setting."""
         conf = self.conf
-        if conf.ADMINS:
-            to = [admin_email for _, admin_email in conf.ADMINS]
+        if conf.admins:
+            to = [admin_email for _, admin_email in conf.admins]
             return self.loader.mail_admins(
                 subject, body, fail_silently, to=to,
-                sender=conf.SERVER_EMAIL,
-                host=conf.EMAIL_HOST,
-                port=conf.EMAIL_PORT,
-                user=conf.EMAIL_HOST_USER,
-                password=conf.EMAIL_HOST_PASSWORD,
-                timeout=conf.EMAIL_TIMEOUT,
-                use_ssl=conf.EMAIL_USE_SSL,
-                use_tls=conf.EMAIL_USE_TLS,
-                charset=conf.EMAIL_CHARSET,
+                sender=conf.server_email,
+                host=conf.email_host,
+                port=conf.email_port,
+                user=conf.email_host_user,
+                password=conf.email_host_password,
+                timeout=conf.email_timeout,
+                use_ssl=conf.email_use_ssl,
+                use_tls=conf.email_use_tls,
+                charset=conf.email_charset,
             )
 
     def select_queues(self, queues=None):
         """Select a subset of queues, where queues must be a list of queue
         names to keep."""
-
         return self.amqp.queues.select(queues)
 
     def either(self, default_key, *values):
         """Fallback to the value of a configuration key if none of the
         `*values` are true."""
-        return first(None, values) or self.conf.get(default_key)
+        return first(None, [
+            first(None, values), starpromise(self.conf.get, default_key),
+        ])
 
     def bugreport(self):
         """Return a string with information useful for the Celery core
@@ -751,7 +837,7 @@ class Celery(object):
     def _get_backend(self):
         from celery.backends import get_backend_by_url
         backend, url = get_backend_by_url(
-            self.backend_cls or self.conf.CELERY_RESULT_BACKEND,
+            self.backend_cls or self.conf.result_backend,
             self.loader)
         return backend(app=self, url=url)
 
@@ -763,39 +849,40 @@ class Celery(object):
             self.on_configure()
         if self._config_source:
             self.loader.config_from_object(self._config_source)
-        defaults = dict(deepcopy(DEFAULTS), **self._preconf)
+
         self.configured = True
-        s = self._conf = Settings(
-            {}, [self.prepare_config(self.loader.conf), defaults],
+        settings = detect_settings(
+            self.prepare_config(self.loader.conf), self._preconf,
+            ignore_keys=self._preconf_set_by_auto, prefix=self.namespace,
         )
+        if self._conf is not None:
+            # replace in place, as someone may have referenced app.conf,
+            # done some changes, accessed a key, and then try to make more
+            # changes to the reference and not the finalized value.
+            self._conf.swap_with(settings)
+        else:
+            self._conf = settings
+
         # load lazy config dict initializers.
         pending_def = self._pending_defaults
         while pending_def:
-            s.add_defaults(maybe_evaluate(pending_def.popleft()()))
+            self._conf.add_defaults(maybe_evaluate(pending_def.popleft()()))
 
         # load lazy periodic tasks
         pending_beat = self._pending_periodic_tasks
         while pending_beat:
             self._add_periodic_task(*pending_beat.popleft())
 
-        # Settings.__setitem__ method, set Settings.change
-        if self._preconf:
-            for key, value in items(self._preconf):
-                setattr(s, key, value)
-        self.on_after_configure.send(sender=self, source=s)
-        return s
+        self.on_after_configure.send(sender=self, source=self._conf)
+        return self._conf
 
-    def _after_fork(self, obj_):
-        self._maybe_close_pool()
-
-    def _maybe_close_pool(self):
-        if self._pool:
-            self._pool.force_close_all()
-            self._pool = None
-            amqp = self.__dict__.get('amqp')
-            if amqp is not None and amqp._producer_pool is not None:
-                amqp._producer_pool.force_close_all()
-                amqp._producer_pool = None
+    def _after_fork(self):
+        self._pool = None
+        try:
+            self.__dict__['amqp']._producer_pool = None
+        except (AttributeError, KeyError):
+            pass
+        self.on_after_fork.send(sender=self)
 
     def signature(self, *args, **kwargs):
         """Return a new :class:`~celery.canvas.Signature` bound to this app.
@@ -830,7 +917,7 @@ class Celery(object):
         }
 
     def _add_periodic_task(self, key, entry):
-        self._conf.CELERYBEAT_SCHEDULE[key] = entry
+        self._conf.beat_schedule[key] = entry
 
     def create_task_cls(self):
         """Creates a base task class using default configuration
@@ -866,7 +953,7 @@ class Celery(object):
         if not keep_reduce:
             attrs['__reduce__'] = __reduce__
 
-        return type(name or Class.__name__, (Class,), attrs)
+        return type(bytes_if_py2(name or Class.__name__), (Class,), attrs)
 
     def _rgetattr(self, path):
         return attrgetter(path)(self)
@@ -893,7 +980,8 @@ class Celery(object):
         when unpickling."""
         return {
             'main': self.main,
-            'changes': self._conf.changes if self._conf else self._preconf,
+            'changes':
+                self._conf.changes if self.configured else self._preconf,
             'loader': self.loader_cls,
             'backend': self.backend_cls,
             'amqp': self.amqp_cls,
@@ -903,11 +991,12 @@ class Celery(object):
             'fixups': self.fixups,
             'config_source': self._config_source,
             'task_cls': self.task_cls,
+            'namespace': self.namespace,
         }
 
     def __reduce_args__(self):
         """Deprecated method, please use :meth:`__reduce_keys__` instead."""
-        return (self.main, self._conf.changes if self._conf else {},
+        return (self.main, self._conf.changes if self.configured else {},
                 self.loader_cls, self.backend_cls, self.amqp_cls,
                 self.events_cls, self.log_cls, self.control_cls,
                 False, self._config_source)
@@ -938,7 +1027,7 @@ class Celery(object):
 
     @cached_property
     def annotations(self):
-        return prepare_annotations(self.conf.CELERY_ANNOTATIONS)
+        return prepare_annotations(self.conf.task_annotations)
 
     @cached_property
     def AsyncResult(self):
@@ -962,16 +1051,6 @@ class Celery(object):
         """
         return self.subclass_with_self('celery.result:GroupResult')
 
-    @cached_property
-    def TaskSet(self):  # XXX compat
-        """Deprecated! Please use :class:`celery.group` instead."""
-        return self.subclass_with_self('celery.task.sets:TaskSet')
-
-    @cached_property
-    def TaskSetResult(self):  # XXX compat
-        """Deprecated! Please use :attr:`GroupResult` instead."""
-        return self.subclass_with_self('celery.result:TaskSetResult')
-
     @property
     def pool(self):
         """Broker connection pool: :class:`~@pool`.
@@ -980,9 +1059,10 @@ class Celery(object):
 
         """
         if self._pool is None:
-            _ensure_after_fork()
-            limit = self.conf.BROKER_POOL_LIMIT
-            self._pool = self.connection().Pool(limit=limit)
+            self._ensure_after_fork()
+            limit = self.conf.broker_pool_limit
+            pools.set_limit(limit)
+            self._pool = pools.connections[self.connection_for_write()]
         return self._pool
 
     @property
@@ -991,8 +1071,19 @@ class Celery(object):
         :const:`None`."""
         return _task_stack.top
 
+    @property
+    def current_worker_task(self):
+        """The task currently being executed by a worker or :const:`None`.
+
+        Differs from :data:`current_task` in that it's not affected
+        by tasks calling other tasks directly, or eagerly.
+
+        """
+        return get_current_worker_task()
+
     @cached_property
     def oid(self):
+        """Universally unique identifier for this app."""
         return oid_from(self)
 
     @cached_property
@@ -1009,8 +1100,12 @@ class Celery(object):
     def conf(self):
         """Current configuration."""
         if self._conf is None:
-            self._load_config()
+            self._conf = self._load_config()
         return self._conf
+
+    def _get_from_conf_and_finalize(self, key):
+        conf = self._conf = self._load_config()
+        return conf[key]
 
     @conf.setter
     def conf(self, d):  # noqa
@@ -1051,19 +1146,22 @@ class Celery(object):
         self.finalize(auto=True)
         return self._tasks
 
+    @property
+    def producer_pool(self):
+        return self.amqp.producer_pool
+
     @cached_property
     def timezone(self):
         """Current timezone for this app.
 
         This is a cached property taking the time zone from the
-        :setting:`CELERY_TIMEZONE` setting.
+        :setting:`timezone` setting.
 
         """
-        from celery.utils.timeutils import timezone
         conf = self.conf
-        tz = conf.CELERY_TIMEZONE
+        tz = conf.timezone
         if not tz:
-            return (timezone.get_timezone('UTC') if conf.CELERY_ENABLE_UTC
+            return (timezone.get_timezone('UTC') if conf.enable_utc
                     else timezone.local)
-        return timezone.get_timezone(conf.CELERY_TIMEZONE)
+        return timezone.get_timezone(conf.timezone)
 App = Celery  # compat

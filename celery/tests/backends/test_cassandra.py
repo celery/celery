@@ -1,190 +1,185 @@
-from __future__ import absolute_import
-
-import socket
+from __future__ import absolute_import, unicode_literals
 
 from pickle import loads, dumps
+from datetime import datetime
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.tests.case import (
-    AppCase, Mock, mock_module, depends_on_current_app,
-)
+from celery.utils.objects import Bunch
+from celery.tests.case import AppCase, Mock, depends_on_current_app, mock
+
+CASSANDRA_MODULES = ['cassandra', 'cassandra.auth', 'cassandra.cluster']
 
 
-class Object(object):
-    pass
-
-
-def install_exceptions(mod):
-    # py3k: cannot catch exceptions not ineheriting from BaseException.
-
-    class NotFoundException(Exception):
-        pass
-
-    class TException(Exception):
-        pass
-
-    class InvalidRequestException(Exception):
-        pass
-
-    class UnavailableException(Exception):
-        pass
-
-    class TimedOutException(Exception):
-        pass
-
-    class AllServersUnavailable(Exception):
-        pass
-
-    mod.NotFoundException = NotFoundException
-    mod.TException = TException
-    mod.InvalidRequestException = InvalidRequestException
-    mod.TimedOutException = TimedOutException
-    mod.UnavailableException = UnavailableException
-    mod.AllServersUnavailable = AllServersUnavailable
-
-
+@mock.module(*CASSANDRA_MODULES)
 class test_CassandraBackend(AppCase):
 
     def setup(self):
         self.app.conf.update(
-            CASSANDRA_SERVERS=['example.com'],
-            CASSANDRA_KEYSPACE='keyspace',
-            CASSANDRA_COLUMN_FAMILY='columns',
+            cassandra_servers=['example.com'],
+            cassandra_keyspace='celery',
+            cassandra_table='task_results',
         )
 
-    def test_init_no_pycassa(self):
-        with mock_module('pycassa'):
-            from celery.backends import cassandra as mod
-            prev, mod.pycassa = mod.pycassa, None
-            try:
-                with self.assertRaises(ImproperlyConfigured):
-                    mod.CassandraBackend(app=self.app)
-            finally:
-                mod.pycassa = prev
-
-    def test_init_with_and_without_LOCAL_QUROM(self):
-        with mock_module('pycassa'):
-            from celery.backends import cassandra as mod
-            mod.pycassa = Mock()
-            install_exceptions(mod.pycassa)
-            cons = mod.pycassa.ConsistencyLevel = Object()
-            cons.LOCAL_QUORUM = 'foo'
-
-            self.app.conf.CASSANDRA_READ_CONSISTENCY = 'LOCAL_FOO'
-            self.app.conf.CASSANDRA_WRITE_CONSISTENCY = 'LOCAL_FOO'
-
-            mod.CassandraBackend(app=self.app)
-            cons.LOCAL_FOO = 'bar'
-            mod.CassandraBackend(app=self.app)
-
-            # no servers raises ImproperlyConfigured
+    def test_init_no_cassandra(self, *modules):
+        # should raise ImproperlyConfigured when no python-driver
+        # installed.
+        from celery.backends import cassandra as mod
+        prev, mod.cassandra = mod.cassandra, None
+        try:
             with self.assertRaises(ImproperlyConfigured):
-                self.app.conf.CASSANDRA_SERVERS = None
-                mod.CassandraBackend(
-                    app=self.app, keyspace='b', column_family='c',
-                )
+                mod.CassandraBackend(app=self.app)
+        finally:
+            mod.cassandra = prev
+
+    def test_init_with_and_without_LOCAL_QUROM(self, *modules):
+        from celery.backends import cassandra as mod
+        mod.cassandra = Mock()
+
+        cons = mod.cassandra.ConsistencyLevel = Bunch(
+            LOCAL_QUORUM='foo',
+        )
+
+        self.app.conf.cassandra_read_consistency = 'LOCAL_FOO'
+        self.app.conf.cassandra_write_consistency = 'LOCAL_FOO'
+
+        mod.CassandraBackend(app=self.app)
+        cons.LOCAL_FOO = 'bar'
+        mod.CassandraBackend(app=self.app)
+
+        # no servers raises ImproperlyConfigured
+        with self.assertRaises(ImproperlyConfigured):
+            self.app.conf.cassandra_servers = None
+            mod.CassandraBackend(
+                app=self.app, keyspace='b', column_family='c',
+            )
 
     @depends_on_current_app
-    def test_reduce(self):
-        with mock_module('pycassa'):
-            from celery.backends.cassandra import CassandraBackend
-            self.assertTrue(loads(dumps(CassandraBackend(app=self.app))))
+    def test_reduce(self, *modules):
+        from celery.backends.cassandra import CassandraBackend
+        self.assertTrue(loads(dumps(CassandraBackend(app=self.app))))
 
-    def test_get_task_meta_for(self):
-        with mock_module('pycassa'):
-            from celery.backends import cassandra as mod
-            mod.pycassa = Mock()
-            install_exceptions(mod.pycassa)
-            mod.Thrift = Mock()
-            install_exceptions(mod.Thrift)
-            x = mod.CassandraBackend(app=self.app)
-            Get_Column = x._get_column_family = Mock()
-            get_column = Get_Column.return_value = Mock()
-            get = get_column.get
-            META = get.return_value = {
-                'task_id': 'task_id',
-                'status': states.SUCCESS,
-                'result': '1',
-                'date_done': 'date',
-                'traceback': '',
-                'children': None,
-            }
-            x.decode = Mock()
-            x.detailed_mode = False
-            meta = x._get_task_meta_for('task_id')
-            self.assertEqual(meta['status'], states.SUCCESS)
+    def test_get_task_meta_for(self, *modules):
+        from celery.backends import cassandra as mod
+        mod.cassandra = Mock()
 
-            x.detailed_mode = True
-            row = get.return_value = Mock()
-            row.values.return_value = [Mock()]
-            x.decode.return_value = META
-            meta = x._get_task_meta_for('task_id')
-            self.assertEqual(meta['status'], states.SUCCESS)
-            x.decode.return_value = Mock()
+        x = mod.CassandraBackend(app=self.app)
+        x._connection = True
+        session = x._session = Mock()
+        execute = session.execute = Mock()
+        execute.return_value = [
+            [states.SUCCESS, '1', datetime.now(), b'', b'']
+        ]
+        x.decode = Mock()
+        meta = x._get_task_meta_for('task_id')
+        self.assertEqual(meta['status'], states.SUCCESS)
 
-            x.detailed_mode = False
-            get.side_effect = KeyError()
-            meta = x._get_task_meta_for('task_id')
-            self.assertEqual(meta['status'], states.PENDING)
+        x._session.execute.return_value = []
+        meta = x._get_task_meta_for('task_id')
+        self.assertEqual(meta['status'], states.PENDING)
 
-            calls = [0]
-            end = [10]
+    def test_store_result(self, *modules):
+        from celery.backends import cassandra as mod
+        mod.cassandra = Mock()
 
-            def work_eventually(*arg):
-                try:
-                    if calls[0] > end[0]:
-                        return META
-                    raise socket.error()
-                finally:
-                    calls[0] += 1
-            get.side_effect = work_eventually
-            x._retry_timeout = 10
-            x._retry_wait = 0.01
-            meta = x._get_task_meta_for('task')
-            self.assertEqual(meta['status'], states.SUCCESS)
+        x = mod.CassandraBackend(app=self.app)
+        x._connection = True
+        session = x._session = Mock()
+        session.execute = Mock()
+        x._store_result('task_id', 'result', states.SUCCESS)
 
-            x._retry_timeout = 0.1
-            calls[0], end[0] = 0, 100
-            with self.assertRaises(socket.error):
-                x._get_task_meta_for('task')
+    def test_process_cleanup(self, *modules):
+        from celery.backends import cassandra as mod
+        x = mod.CassandraBackend(app=self.app)
+        x.process_cleanup()
 
-    def test_store_result(self):
-        with mock_module('pycassa'):
-            from celery.backends import cassandra as mod
-            mod.pycassa = Mock()
-            install_exceptions(mod.pycassa)
-            mod.Thrift = Mock()
-            install_exceptions(mod.Thrift)
-            x = mod.CassandraBackend(app=self.app)
-            Get_Column = x._get_column_family = Mock()
-            cf = Get_Column.return_value = Mock()
-            x.detailed_mode = False
+        self.assertIsNone(x._connection)
+        self.assertIsNone(x._session)
+
+    def test_timeouting_cluster(self):
+        # Tests behavior when Cluster.connect raises
+        # cassandra.OperationTimedOut.
+        from celery.backends import cassandra as mod
+
+        class OTOExc(Exception):
+            pass
+
+        class VeryFaultyCluster(object):
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def connect(self, *args, **kwargs):
+                raise OTOExc()
+
+            def shutdown(self):
+                pass
+
+        mod.cassandra = Mock()
+        mod.cassandra.OperationTimedOut = OTOExc
+        mod.cassandra.cluster = Mock()
+        mod.cassandra.cluster.Cluster = VeryFaultyCluster
+
+        x = mod.CassandraBackend(app=self.app)
+
+        with self.assertRaises(OTOExc):
             x._store_result('task_id', 'result', states.SUCCESS)
-            self.assertTrue(cf.insert.called)
+        self.assertIsNone(x._connection)
+        self.assertIsNone(x._session)
 
-            cf.insert.reset()
-            x.detailed_mode = True
-            x._store_result('task_id', 'result', states.SUCCESS)
-            self.assertTrue(cf.insert.called)
+        x.process_cleanup()  # should not raise
 
-    def test_process_cleanup(self):
-        with mock_module('pycassa'):
-            from celery.backends import cassandra as mod
+    def test_please_free_memory(self):
+        # Ensure that Cluster object IS shut down.
+        from celery.backends import cassandra as mod
+
+        class RAMHoggingCluster(object):
+
+            objects_alive = 0
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def connect(self, *args, **kwargs):
+                RAMHoggingCluster.objects_alive += 1
+                return Mock()
+
+            def shutdown(self):
+                RAMHoggingCluster.objects_alive -= 1
+
+        mod.cassandra = Mock()
+
+        mod.cassandra.cluster = Mock()
+        mod.cassandra.cluster.Cluster = RAMHoggingCluster
+
+        for x in range(0, 10):
             x = mod.CassandraBackend(app=self.app)
-            x._column_family = None
+            x._store_result('task_id', 'result', states.SUCCESS)
             x.process_cleanup()
 
-            x._column_family = True
-            x.process_cleanup()
-            self.assertIsNone(x._column_family)
+        self.assertEquals(RAMHoggingCluster.objects_alive, 0)
 
-    def test_get_column_family(self):
-        with mock_module('pycassa'):
-            from celery.backends import cassandra as mod
-            mod.pycassa = Mock()
-            install_exceptions(mod.pycassa)
-            x = mod.CassandraBackend(app=self.app)
-            self.assertTrue(x._get_column_family())
-            self.assertIsNotNone(x._column_family)
-            self.assertIs(x._get_column_family(), x._column_family)
+    def test_auth_provider(self):
+        # Ensure valid auth_provider works properly, and invalid one raises
+        # ImproperlyConfigured exception.
+        from celery.backends import cassandra as mod
+
+        class DummyAuth(object):
+            ValidAuthProvider = Mock()
+
+        mod.cassandra = Mock()
+        mod.cassandra.auth = DummyAuth
+
+        # Valid auth_provider
+        self.app.conf.cassandra_auth_provider = 'ValidAuthProvider'
+        self.app.conf.cassandra_auth_kwargs = {
+            'username': 'stuff'
+        }
+        mod.CassandraBackend(app=self.app)
+
+        # Invalid auth_provider
+        self.app.conf.cassandra_auth_provider = 'SpiderManAuth'
+        self.app.conf.cassandra_auth_kwargs = {
+            'username': 'Jack'
+        }
+        with self.assertRaises(ImproperlyConfigured):
+            mod.CassandraBackend(app=self.app)

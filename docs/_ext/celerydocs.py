@@ -1,3 +1,5 @@
+from __future__ import absolute_import, unicode_literals
+
 from docutils import nodes
 
 from sphinx.environment import NoUri
@@ -138,35 +140,25 @@ def maybe_resolve_abbreviations(app, env, node, contnode):
 
 
 def setup(app):
-    app.connect('missing-reference', maybe_resolve_abbreviations)
+    app.connect(b'missing-reference', maybe_resolve_abbreviations)
 
     app.add_crossref_type(
-        directivename='setting',
-        rolename='setting',
-        indextemplate='pair: %s; setting',
+        directivename=b'sig',
+        rolename=b'sig',
+        indextemplate=b'pair: %s; sig',
     )
     app.add_crossref_type(
-        directivename='sig',
-        rolename='sig',
-        indextemplate='pair: %s; sig',
+        directivename=b'state',
+        rolename=b'state',
+        indextemplate=b'pair: %s; state',
     )
     app.add_crossref_type(
-        directivename='state',
-        rolename='state',
-        indextemplate='pair: %s; state',
+        directivename=b'control',
+        rolename=b'control',
+        indextemplate=b'pair: %s; control',
     )
     app.add_crossref_type(
-        directivename='control',
-        rolename='control',
-        indextemplate='pair: %s; control',
-    )
-    app.add_crossref_type(
-        directivename='signal',
-        rolename='signal',
-        indextemplate='pair: %s; signal',
-    )
-    app.add_crossref_type(
-        directivename='event',
-        rolename='event',
-        indextemplate='pair: %s; event',
+        directivename=b'event',
+        rolename=b'event',
+        indextemplate=b'pair: %s; event',
     )

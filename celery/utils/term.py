@@ -12,8 +12,7 @@ import platform
 
 from functools import reduce
 
-from kombu.utils.encoding import safe_str
-from celery.five import string
+from celery.five import python_2_unicode_compatible, string
 
 __all__ = ['colored']
 
@@ -29,6 +28,7 @@ def fg(s):
     return COLOR_SEQ % s
 
 
+@python_2_unicode_compatible
 class colored(object):
     """Terminal colored text.
 
@@ -80,14 +80,11 @@ class colored(object):
             prefix = self.op
         return ''.join((string(prefix), string(reduce(self._add, self.s))))
 
-    def __unicode__(self):
+    def __str__(self):
         suffix = ''
         if self.enabled:
             suffix = RESET_SEQ
         return string(''.join((self.embed(), string(suffix))))
-
-    def __str__(self):
-        return safe_str(self.__unicode__())
 
     def node(self, s, op):
         return self.__class__(enabled=self.enabled, op=op, *s)

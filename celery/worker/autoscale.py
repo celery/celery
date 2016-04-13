@@ -7,11 +7,11 @@
     for growing and shrinking the pool according to the
     current autoscale settings.
 
-    The autoscale thread is only enabled if :option:`--autoscale`
-    has been enabled on the command-line.
+    The autoscale thread is only enabled if
+    the :option:`celery worker --autoscale` option is used.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import os
 import threading

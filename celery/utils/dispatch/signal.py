@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
 """Signal class."""
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import weakref
+
+from celery.five import python_2_unicode_compatible, range, text_t
+from celery.local import PromiseProxy, Proxy
+from celery.utils.log import get_logger
+
 from . import saferef
 
-from celery.five import range
-from celery.local import PromiseProxy, Proxy
-
 __all__ = ['Signal']
+
+logger = get_logger(__name__)
 
 WEAKREF_TYPES = (weakref.ReferenceType, saferef.BoundMethodWeakref)
 
@@ -16,28 +20,28 @@ WEAKREF_TYPES = (weakref.ReferenceType, saferef.BoundMethodWeakref)
 def _make_id(target):  # pragma: no cover
     if isinstance(target, Proxy):
         target = target._get_current_object()
+    if isinstance(target, (bytes, text_t)):
+        # see Issue #2475
+        return target
     if hasattr(target, '__func__'):
         return (id(target.__self__), id(target.__func__))
     return id(target)
 
 
+@python_2_unicode_compatible
 class Signal(object):  # pragma: no cover
-    """Base class for all signals
+    """Observer pattern implementation.
 
-
-    .. attribute:: receivers
-        Internal attribute, holds a dictionary of
-        `{receiverkey (id): weakref(receiver)}` mappings.
+    :param providing_args: A list of the arguments this signal can pass
+        along in a :meth:`send` call.
 
     """
 
+    #: Holds a dictionary of
+    #: ``{receiverkey (id): weakref(receiver)}`` mappings.
+    receivers = None
+
     def __init__(self, providing_args=None):
-        """Create a new signal.
-
-        :param providing_args: A list of the arguments this signal can pass
-            along in a :meth:`send` call.
-
-        """
         self.receivers = []
         if providing_args is None:
             providing_args = []
@@ -163,41 +167,11 @@ class Signal(object):  # pragma: no cover
             return responses
 
         for receiver in self._live_receivers(_make_id(sender)):
-            response = receiver(signal=self, sender=sender, **named)
-            responses.append((receiver, response))
-        return responses
-
-    def send_robust(self, sender, **named):
-        """Send signal from sender to all connected receivers catching errors.
-
-        :param sender: The sender of the signal. Can be any python object
-            (normally one registered with a connect if you actually want
-            something to occur).
-
-        :keyword \*\*named: Named arguments which will be passed to receivers.
-            These arguments must be a subset of the argument names defined in
-            :attr:`providing_args`.
-
-        :returns: a list of tuple pairs: `[(receiver, response), … ]`.
-
-        :raises DispatcherKeyError:
-
-        if any receiver raises an error (specifically any subclass of
-        :exc:`Exception`), the error instance is returned as the result
-        for that receiver.
-
-        """
-        responses = []
-        if not self.receivers:
-            return responses
-
-        # Call each receiver with whatever arguments it can accept.
-        # Return a list of tuple pairs [(receiver, response), … ].
-        for receiver in self._live_receivers(_make_id(sender)):
             try:
                 response = receiver(signal=self, sender=sender, **named)
-            except Exception as err:
-                responses.append((receiver, err))
+            except Exception as exc:
+                logger.error('Signal handler %r raised: %r',
+                             receiver, exc, exc_info=1)
             else:
                 responses.append((receiver, response))
         return responses
@@ -238,4 +212,5 @@ class Signal(object):  # pragma: no cover
     def __repr__(self):
         return '<Signal: {0}>'.format(type(self).__name__)
 
-    __str__ = __repr__
+    def __str__(self):
+        return repr(self)

@@ -6,7 +6,7 @@
     Graphical monitor of Celery events using curses.
 
 """
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import curses
 import sys
@@ -508,10 +508,10 @@ def capture_events(app, state, display):  # pragma: no cover
 
     while 1:
         print('-> evtop: starting capture...', file=sys.stderr)
-        with app.connection() as conn:
+        with app.connection_for_read() as conn:
             try:
                 conn.ensure_connection(on_connection_error,
-                                       app.conf.BROKER_CONNECTION_MAX_RETRIES)
+                                       app.conf.broker_connection_max_retries)
                 recv = app.events.Receiver(conn, handlers={'*': state.event})
                 display.resetscreen()
                 display.init_screen()

@@ -3,32 +3,37 @@
     celery.app.utils
     ~~~~~~~~~~~~~~~~
 
-    App utilities: Compat settings, bugreport tool, pickling apps.
+    App utilities: Compat settings, bug-report tool, pickling apps.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import os
 import platform as _platform
 import re
 
-from collections import Mapping
+from collections import Mapping, namedtuple
+from copy import deepcopy
 from types import ModuleType
 
 from kombu.utils.url import maybe_sanitize_url
 
 from celery.datastructures import ConfigurationView
-from celery.five import items, string_t, values
+from celery.exceptions import ImproperlyConfigured
+from celery.five import items, keys, string_t, values
 from celery.platforms import pyimplementation
 from celery.utils.text import pretty
 from celery.utils.imports import import_from_cwd, symbol_by_name, qualname
 
-from .defaults import find
+from .defaults import (
+    _TO_NEW_KEY, _TO_OLD_KEY, _OLD_DEFAULTS, _OLD_SETTING_KEYS,
+    DEFAULTS, SETTING_KEYS, find,
+)
 
 __all__ = ['Settings', 'appstr', 'bugreport',
            'filter_hidden_settings', 'find_app']
 
-#: Format used to generate bugreport information.
+#: Format used to generate bug-report information.
 BUGREPORT_INFO = """
 software -> celery:{celery_v} kombu:{kombu_v} py:{py_v}
             billiard:{billiard_v} {driver_v}
@@ -43,6 +48,28 @@ HIDDEN_SETTINGS = re.compile(
     'API|TOKEN|KEY|SECRET|PASS|PROFANITIES_LIST|SIGNATURE|DATABASE',
     re.IGNORECASE,
 )
+
+E_MIX_OLD_INTO_NEW = """
+
+Cannot mix new and old setting keys, please rename the
+following settings to the new format:
+
+{renames}
+
+"""
+
+E_MIX_NEW_INTO_OLD = """
+
+Cannot mix new setting names with old setting names, please
+rename the following settings to use the old format:
+
+{renames}
+
+Or change all of the settings to use the new format :)
+
+"""
+
+FMT_REPLACE_SETTING = '{replace:<36} -> {with_}'
 
 
 def appstr(app):
@@ -60,28 +87,32 @@ class Settings(ConfigurationView):
     """
 
     @property
-    def CELERY_RESULT_BACKEND(self):
-        return self.first('CELERY_RESULT_BACKEND', 'CELERY_BACKEND')
+    def broker_read_url(self):
+        return (
+            os.environ.get('CELERY_BROKER_READ_URL') or
+            self.get('broker_read_url') or
+            self.broker_url
+        )
 
     @property
-    def BROKER_TRANSPORT(self):
-        return self.first('BROKER_TRANSPORT',
-                          'BROKER_BACKEND', 'CARROT_BACKEND')
+    def broker_write_url(self):
+        return (
+            os.environ.get('CELERY_BROKER_WRITE_URL') or
+            self.get('broker_write_url') or
+            self.broker_url
+        )
 
     @property
-    def BROKER_BACKEND(self):
-        """Deprecated compat alias to :attr:`BROKER_TRANSPORT`."""
-        return self.BROKER_TRANSPORT
+    def broker_url(self):
+        return (
+            os.environ.get('CELERY_BROKER_URL') or
+            self.first('broker_url', 'broker_host')
+        )
 
     @property
-    def BROKER_URL(self):
-        return (os.environ.get('CELERY_BROKER_URL') or
-                self.first('BROKER_URL', 'BROKER_HOST'))
-
-    @property
-    def CELERY_TIMEZONE(self):
+    def timezone(self):
         # this way we also support django's time zone.
-        return self.first('CELERY_TIMEZONE', 'TIME_ZONE')
+        return self.first('timezone', 'time_zone')
 
     def without_defaults(self):
         """Return the current configuration, but without defaults."""
@@ -91,18 +122,18 @@ class Settings(ConfigurationView):
     def value_set_for(self, key):
         return key in self.without_defaults()
 
-    def find_option(self, name, namespace='celery'):
+    def find_option(self, name, namespace=''):
         """Search for option by name.
 
         Will return ``(namespace, key, type)`` tuple, e.g.::
 
             >>> from proj.celery import app
             >>> app.conf.find_option('disable_rate_limits')
-            ('CELERY', 'DISABLE_RATE_LIMITS',
+            ('worker', 'prefetch_multiplier',
              <Option: type->bool default->False>))
 
         :param name: Name of option, cannot be partial.
-        :keyword namespace: Preferred namespace (``CELERY`` by default).
+        :keyword namespace: Preferred name-space (``None`` by default).
 
         """
         return find(name, namespace)
@@ -117,7 +148,7 @@ class Settings(ConfigurationView):
         Example::
 
             >>> from proj.celery import app
-            >>> app.conf.get_by_parts('CELERY', 'DISABLE_RATE_LIMITS')
+            >>> app.conf.get_by_parts('worker', 'disable_rate_limits')
             False
 
         """
@@ -128,7 +159,7 @@ class Settings(ConfigurationView):
         return filt({
             k: v for k, v in items(
                 self if with_defaults else self.without_defaults())
-            if k.isupper() and not k.startswith('_')
+            if not k.startswith('_')
         })
 
     def humanize(self, with_defaults=False, censored=True):
@@ -137,6 +168,73 @@ class Settings(ConfigurationView):
         return '\n'.join(
             '{0}: {1}'.format(key, pretty(value, width=50))
             for key, value in items(self.table(with_defaults, censored)))
+
+
+def _new_key_to_old(key, convert=_TO_OLD_KEY.get):
+    return convert(key, key)
+
+
+def _old_key_to_new(key, convert=_TO_NEW_KEY.get):
+    return convert(key, key)
+
+
+_settings_info_t = namedtuple('settings_info_t', (
+    'defaults', 'convert', 'key_t', 'mix_error',
+))
+
+_settings_info = _settings_info_t(
+    DEFAULTS, _TO_NEW_KEY, _old_key_to_new, E_MIX_OLD_INTO_NEW,
+)
+_old_settings_info = _settings_info_t(
+    _OLD_DEFAULTS, _TO_OLD_KEY, _new_key_to_old, E_MIX_NEW_INTO_OLD,
+)
+
+
+def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
+                    all_keys=SETTING_KEYS, old_keys=_OLD_SETTING_KEYS):
+    source = conf
+    if conf is None:
+        source, conf = preconf, {}
+    have = set(keys(source)) - ignore_keys
+    is_in_new = have.intersection(all_keys)
+    is_in_old = have.intersection(old_keys)
+
+    info = None
+    if is_in_new:
+        # have new setting names
+        info, left = _settings_info, is_in_old
+        if is_in_old and len(is_in_old) > len(is_in_new):
+            # Majority of the settings are old.
+            info, left = _old_settings_info, is_in_new
+    if is_in_old:
+        # have old setting names, or a majority of the names are old.
+        if not info:
+            info, left = _old_settings_info, is_in_new
+        if is_in_new and len(is_in_new) > len(is_in_old):
+            # Majority of the settings are new
+            info, left = _settings_info, is_in_old
+    else:
+        # no settings, just use new format.
+        info, left = _settings_info, is_in_old
+
+    if prefix:
+        # always use new format if prefix is used.
+        info, left = _settings_info, set()
+
+    # only raise error for keys that the user did not provide two keys
+    # for (e.g. both ``result_expires`` and ``CELERY_TASK_RESULT_EXPIRES``).
+    really_left = {key for key in left if info.convert[key] not in have}
+    if really_left:
+        # user is mixing old/new, or new/old settings, give renaming
+        # suggestions.
+        raise ImproperlyConfigured(info.mix_error.format(renames='\n'.join(
+            FMT_REPLACE_SETTING.format(replace=key, with_=info.convert[key])
+            for key in sorted(really_left)
+        )))
+
+    preconf = {info.convert.get(k, k): v for k, v in items(preconf)}
+    defaults = dict(deepcopy(info.defaults), **preconf)
+    return Settings(preconf, [conf, defaults], info.key_t, prefix=prefix)
 
 
 class AppPickler(object):
@@ -185,10 +283,10 @@ def filter_hidden_settings(conf):
         if isinstance(key, string_t):
             if HIDDEN_SETTINGS.search(key):
                 return mask
-            elif 'BROKER_URL' in key.upper():
+            elif 'broker_url' in key.lower():
                 from kombu import Connection
                 return Connection(value).as_uri(mask=mask)
-            elif key.upper() in ('CELERY_RESULT_BACKEND', 'CELERY_BACKEND'):
+            elif 'backend' in key.lower():
                 return maybe_sanitize_url(value, mask=mask)
 
         return value
@@ -197,7 +295,7 @@ def filter_hidden_settings(conf):
 
 
 def bugreport(app):
-    """Return a string containing information useful in bug reports."""
+    """Return a string containing information useful in bug-reports."""
     import billiard
     import celery
     import kombu
@@ -220,7 +318,7 @@ def bugreport(app):
         py_v=_platform.python_version(),
         driver_v=driver_v,
         transport=transport,
-        results=app.conf.CELERY_RESULT_BACKEND or 'disabled',
+        results=maybe_sanitize_url(app.conf.result_backend or 'disabled'),
         human_settings=app.conf.humanize(),
         loader=qualname(app.loader.__class__),
     )

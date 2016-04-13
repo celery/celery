@@ -5,7 +5,9 @@ import re
 from decimal import Decimal
 from pprint import pprint
 
-from celery.five import items, long_t, text_t, values
+from celery.five import (
+    items, long_t, python_2_unicode_compatible, text_t, values,
+)
 
 from celery.utils.saferepr import saferepr
 
@@ -14,7 +16,7 @@ from celery.tests.case import Case
 D_NUMBERS = {
     b'integer': 1,
     b'float': 1.3,
-    b'decimal': Decimal("1.3"),
+    b'decimal': Decimal('1.3'),
     b'long': long_t(4),
     b'complex': complex(13.3),
 }
@@ -73,6 +75,7 @@ class list2(list):
     pass
 
 
+@python_2_unicode_compatible
 class list3(list):
 
     def __repr__(self):
@@ -83,6 +86,7 @@ class tuple2(tuple):
     pass
 
 
+@python_2_unicode_compatible
 class tuple3(tuple):
 
     def __repr__(self):
@@ -93,6 +97,7 @@ class set2(set):
     pass
 
 
+@python_2_unicode_compatible
 class set3(set):
 
     def __repr__(self):
@@ -103,6 +108,7 @@ class frozenset2(frozenset):
     pass
 
 
+@python_2_unicode_compatible
 class frozenset3(frozenset):
 
     def __repr__(self):
@@ -113,12 +119,14 @@ class dict2(dict):
     pass
 
 
+@python_2_unicode_compatible
 class dict3(dict):
 
     def __repr__(self):
         return dict.__repr__(self)
 
 
+@python_2_unicode_compatible
 class Unorderable:
 
     def __repr__(self):
@@ -148,6 +156,15 @@ class test_saferepr(Case):
             saferepr(D_D_TEXT, 100).endswith("...', ...}}")
         )
 
+    def test_maxlevels(self):
+        saferepr(D_ALL, maxlevels=1)
+
+    def test_recursion(self):
+        d = {1: 2, 3: {4: 5}}
+        d[3][6] = d
+        res = saferepr(d)
+        self.assertIn('Recursion on', res)
+
     def test_same_as_repr(self):
         # Simple objects, small containers and classes that overwrite __repr__
         # For those the result should be the same as repr().
@@ -158,14 +175,14 @@ class test_saferepr(Case):
         # multiple lines.  For that reason, dicts with more than one element
         # aren't tested here.
         types = (
-            0, 0, 0+0j, 0.0, "", b"",
+            0, 0, 0+0j, 0.0, '', b'',
             (), tuple2(), tuple3(),
             [], list2(), list3(),
             set(), set2(), set3(),
             frozenset(), frozenset2(), frozenset3(),
             {}, dict2(), dict3(),
             self.assertTrue, pprint,
-            -6, -6, -6-6j, -1.5, "x", b"x", (3,), [3], {3: 6},
+            -6, -6, -6-6j, -1.5, 'x', b'x', (3,), [3], {3: 6},
             (1, 2), [3, 4], {5: 6},
             tuple2((1, 2)), tuple3((1, 2)), tuple3(range(100)),
             [3, 4], list2([3, 4]), list3([3, 4]), list3(range(100)),

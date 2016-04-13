@@ -1,18 +1,38 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
+import errno
 import socket
 
 from kombu.async import Hub, READ, WRITE, ERR
 
 from celery.bootsteps import CLOSE, RUN
-from celery.exceptions import InvalidTaskError, WorkerShutdown, WorkerTerminate
-from celery.five import Empty
+from celery.exceptions import (
+    InvalidTaskError, WorkerLostError, WorkerShutdown, WorkerTerminate,
+)
+from celery.five import Empty, python_2_unicode_compatible
 from celery.platforms import EX_FAILURE
 from celery.worker import state
 from celery.worker.consumer import Consumer
-from celery.worker.loops import asynloop, synloop
+from celery.worker.loops import _quick_drain, asynloop, synloop
 
 from celery.tests.case import AppCase, Mock, task_message_from_sig
+
+
+@python_2_unicode_compatible
+class PromiseEqual(object):
+
+    def __init__(self, fun, *args, **kwargs):
+        self.fun = fun
+        self.args = args
+        self.kwargs = kwargs
+
+    def __eq__(self, other):
+        return (other.fun == self.fun and
+                other.args == self.args and
+                other.kwargs == self.kwargs)
+
+    def __repr__(self):
+        return '<promise: {0.fun!r} {0.args!r} {0.kwargs!r}>'.format(self)
 
 
 class X(object):
@@ -58,7 +78,8 @@ class X(object):
         self.Hub = self.hub
         self.blueprint.state = RUN
         # need this for create_task_handler
-        _consumer = Consumer(Mock(), timer=Mock(), app=app)
+        self._consumer = _consumer = Consumer(
+            Mock(), timer=Mock(), controller=Mock(), app=app)
         _consumer.on_task_message = on_task_message or []
         self.obj.create_task_handler = _consumer.create_task_handler
         self.on_unknown_message = self.obj.on_unknown_message = Mock(
@@ -126,8 +147,15 @@ class test_asynloop(AppCase):
     def test_drain_after_consume(self):
         x, _ = get_task_callback(self.app, transport_driver_type='amqp')
         self.assertIn(
-            x.connection.drain_events, [p.fun for p in x.hub._ready],
+            _quick_drain, [p.fun for p in x.hub._ready],
         )
+
+    def test_pool_did_not_start_at_startup(self):
+        x = X(self.app)
+        x.obj.restart_count = 0
+        x.obj.pool.did_start_ok.return_value = False
+        with self.assertRaises(WorkerLostError):
+            asynloop(*x.args)
 
     def test_setup_heartbeat(self):
         x = X(self.app, heartbeat=10)
@@ -147,27 +175,32 @@ class test_asynloop(AppCase):
         return x, on_task, message, strategy
 
     def test_on_task_received(self):
-        _, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
+        x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
         on_task(msg)
         strategy.assert_called_with(
-            msg, None, msg.ack_log_error, msg.reject_log_error, [],
+            msg, None,
+            PromiseEqual(x._consumer.call_soon, msg.ack_log_error),
+            PromiseEqual(x._consumer.call_soon, msg.reject_log_error), [],
         )
 
     def test_on_task_received_executes_on_task_message(self):
         cbs = [Mock(), Mock(), Mock()]
-        _, on_task, msg, strategy = self.task_context(
+        x, on_task, msg, strategy = self.task_context(
             self.add.s(2, 2), on_task_message=cbs,
         )
         on_task(msg)
         strategy.assert_called_with(
-            msg, None, msg.ack_log_error, msg.reject_log_error, cbs,
+            msg, None,
+            PromiseEqual(x._consumer.call_soon, msg.ack_log_error),
+            PromiseEqual(x._consumer.call_soon, msg.reject_log_error),
+            cbs,
         )
 
     def test_on_task_message_missing_name(self):
         x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
         msg.headers.pop('task')
         on_task(msg)
-        x.on_unknown_message.assert_called_with(msg.payload, msg)
+        x.on_unknown_message.assert_called_with(msg.decode(), msg)
 
     def test_on_task_not_registered(self):
         x, on_task, msg, strategy = self.task_context(self.add.s(2, 2))
@@ -218,7 +251,7 @@ class test_asynloop(AppCase):
         x.hub.on_tick.add(x.closer(mod=2))
         x.hub.timer._queue = [1]
         asynloop(*x.args)
-        self.assertFalse(x.qos.update.called)
+        x.qos.update.assert_not_called()
 
         x = X(self.app)
         x.qos.prev = 1
@@ -250,7 +283,7 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         reader.assert_called_with(6)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_readable_raises_Empty(self):
         x = X(self.app)
@@ -263,7 +296,7 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         reader.assert_called_with(6)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_writable(self):
         x = X(self.app)
@@ -275,7 +308,7 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         writer.assert_called_with(6)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_writable_none_registered(self):
         x = X(self.app)
@@ -286,7 +319,7 @@ class test_asynloop(AppCase):
         poller.poll.return_value = [(7, WRITE)]
         with self.assertRaises(socket.error):
             asynloop(*x.args)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_unknown_event(self):
         x = X(self.app)
@@ -297,7 +330,7 @@ class test_asynloop(AppCase):
         poller.poll.return_value = [(6, 0)]
         with self.assertRaises(socket.error):
             asynloop(*x.args)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_keep_draining_disabled(self):
         x = X(self.app)
@@ -312,7 +345,7 @@ class test_asynloop(AppCase):
         poll.return_value = [(6, 0)]
         with self.assertRaises(socket.error):
             asynloop(*x.args)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_err_writable(self):
         x = X(self.app)
@@ -324,7 +357,7 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         writer.assert_called_with(6, 48)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_write_generator(self):
         x = X(self.app)
@@ -341,7 +374,7 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         self.assertTrue(gen.gi_frame.f_lasti != -1)
-        self.assertFalse(x.hub.remove.called)
+        x.hub.remove.assert_not_called()
 
     def test_poll_write_generator_stopped(self):
         x = X(self.app)
@@ -384,7 +417,7 @@ class test_asynloop(AppCase):
         with self.assertRaises(socket.error):
             asynloop(*x.args)
         reader.assert_called_with(6, 24)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
     def test_poll_raises_ValueError(self):
         x = X(self.app)
@@ -392,7 +425,7 @@ class test_asynloop(AppCase):
         poller = x.hub.poller
         x.close_then_error(poller.poll, exc=ValueError)
         asynloop(*x.args)
-        self.assertTrue(poller.poll.called)
+        poller.poll.assert_called()
 
 
 class test_synloop(AppCase):
@@ -411,7 +444,7 @@ class test_synloop(AppCase):
         x.timeout_then_error(x.connection.drain_events)
         with self.assertRaises(socket.error):
             synloop(*x.args)
-        self.assertFalse(x.qos.update.called)
+        x.qos.update.assert_not_called()
 
         x.qos.value = 4
         x.timeout_then_error(x.connection.drain_events)
@@ -423,3 +456,26 @@ class test_synloop(AppCase):
         x = X(self.app)
         x.close_then_error(x.connection.drain_events)
         self.assertIsNone(synloop(*x.args))
+
+
+class test_quick_drain(AppCase):
+
+    def setup(self):
+        self.connection = Mock(name='connection')
+
+    def test_drain(self):
+        _quick_drain(self.connection, timeout=33.3)
+        self.connection.drain_events.assert_called_with(timeout=33.3)
+
+    def test_drain_error(self):
+        exc = KeyError()
+        exc.errno = 313
+        self.connection.drain_events.side_effect = exc
+        with self.assertRaises(KeyError):
+            _quick_drain(self.connection, timeout=33.3)
+
+    def test_drain_error_EAGAIN(self):
+        exc = KeyError()
+        exc.errno = errno.EAGAIN
+        self.connection.drain_events.side_effect = exc
+        _quick_drain(self.connection, timeout=33.3)

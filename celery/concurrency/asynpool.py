@@ -16,9 +16,10 @@
         3) Safely shutting down this system.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import errno
+import gc
 import os
 import select
 import socket
@@ -33,7 +34,6 @@ from pickle import HIGHEST_PROTOCOL
 from time import sleep
 from weakref import WeakValueDictionary, ref
 
-from amqp.utils import promise
 from billiard.pool import RUN, TERMINATE, ACK, NACK, WorkersJoined
 from billiard import pool as _pool
 from billiard.compat import buf_t, setblocking, isblocking
@@ -42,7 +42,10 @@ from kombu.async import READ, WRITE, ERR
 from kombu.serialization import pickle as _pickle
 from kombu.utils import fxrange
 from kombu.utils.eventio import SELECT_BAD_FD
+from vine import promise
+
 from celery.five import Counter, items, values
+from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
 
@@ -417,13 +420,39 @@ class AsynPool(_pool.Pool):
             # as processes are recycled, or found lost elsewhere.
             self._fileno_to_outq[proc.outqR_fd] = proc
             self._fileno_to_synq[proc.synqW_fd] = proc
-        self.on_soft_timeout = self._timeout_handler.on_soft_timeout
-        self.on_hard_timeout = self._timeout_handler.on_hard_timeout
 
-    def _event_process_exit(self, hub, fd):
+        self.on_soft_timeout = getattr(
+            self._timeout_handler, 'on_soft_timeout', noop,
+        )
+        self.on_hard_timeout = getattr(
+            self._timeout_handler, 'on_hard_timeout', noop,
+        )
+
+    def _create_worker_process(self, i):
+        gc.collect()  # Issue #2927
+        return super(AsynPool, self)._create_worker_process(i)
+
+    def _event_process_exit(self, hub, proc):
         # This method is called whenever the process sentinel is readable.
-        hub.remove(fd)
+        self._untrack_child_process(proc, hub)
         self.maintain_pool()
+
+    def _track_child_process(self, proc, hub):
+        try:
+            fd = proc._sentinel_poll
+        except AttributeError:
+            # we need to duplicate the fd here to carefully
+            # control when the fd is removed from the process table,
+            # as once the original fd is closed we cannot unregister
+            # the fd from epoll(7) anymore, causing a 100% CPU poll loop.
+            fd = proc._sentinel_poll = os.dup(proc._popen.sentinel)
+        hub.add_reader(fd, self._event_process_exit, hub, proc)
+
+    def _untrack_child_process(self, proc, hub):
+        if proc._sentinel_poll is not None:
+            fd, proc._sentinel_poll = proc._sentinel_poll, None
+            hub.remove(fd)
+            os.close(fd)
 
     def register_with_event_loop(self, hub):
         """Registers the async pool with the current event loop."""
@@ -434,8 +463,7 @@ class AsynPool(_pool.Pool):
         self._create_write_handlers(hub)
 
         # Add handler for when a process exits (calls maintain_pool)
-        [hub.add_reader(fd, self._event_process_exit, hub, fd)
-         for fd in self.process_sentinels]
+        [self._track_child_process(w, hub) for w in self._pool]
         # Handle_result_event is called whenever one of the
         # result queues are readable.
         [hub.add_reader(fd, self.handle_result_event, fd)
@@ -522,13 +550,14 @@ class AsynPool(_pool.Pool):
         fileno_to_outq = self._fileno_to_outq
         fileno_to_synq = self._fileno_to_synq
         busy_workers = self._busy_workers
-        event_process_exit = self._event_process_exit
         handle_result_event = self.handle_result_event
         process_flush_queues = self.process_flush_queues
         waiting_to_start = self._waiting_to_start
 
         def verify_process_alive(proc):
-            if proc._is_alive() and proc in waiting_to_start:
+            proc = proc()  # is a weakref
+            if (proc is not None and proc._is_alive() and
+                    proc in waiting_to_start):
                 assert proc.outqR_fd in fileno_to_outq
                 assert fileno_to_outq[proc.outqR_fd] is proc
                 assert proc.outqR_fd in hub.readers
@@ -548,10 +577,9 @@ class AsynPool(_pool.Pool):
                 if job._scheduled_for and job._scheduled_for.inqW_fd == infd:
                     job._scheduled_for = proc
             fileno_to_outq[proc.outqR_fd] = proc
+
             # maintain_pool is called whenever a process exits.
-            add_reader(
-                proc.sentinel, event_process_exit, hub, proc.sentinel,
-            )
+            self._track_child_process(proc, hub)
 
             assert not isblocking(proc.outq._reader)
 
@@ -561,7 +589,7 @@ class AsynPool(_pool.Pool):
 
             waiting_to_start.add(proc)
             hub.call_later(
-                self._proc_alive_timeout, verify_process_alive, proc,
+                self._proc_alive_timeout, verify_process_alive, ref(proc),
             )
 
         self.on_process_up = on_process_up
@@ -605,16 +633,16 @@ class AsynPool(_pool.Pool):
             )
             if inq:
                 busy_workers.discard(inq)
-            remove_reader(proc.sentinel)
+            self._untrack_child_process(proc, hub)
             waiting_to_start.discard(proc)
             self._active_writes.discard(proc.inqW_fd)
-            remove_writer(proc.inqW_fd)
-            remove_reader(proc.outqR_fd)
+            remove_writer(proc.inq._writer)
+            remove_reader(proc.outq._reader)
             if proc.synqR_fd:
-                remove_reader(proc.synqR_fd)
+                remove_reader(proc.synq._reader)
             if proc.synqW_fd:
                 self._active_writes.discard(proc.synqW_fd)
-                remove_reader(proc.synqW_fd)
+                remove_reader(proc.synq._writer)
         self.on_process_down = on_process_down
 
     def _create_write_handlers(self, hub,
@@ -788,8 +816,9 @@ class AsynPool(_pool.Pool):
             put_message(job)
         self._quick_put = send_job
 
-        def on_not_recovering(proc, fd, job):
-            error('Process inqueue damaged: %r %r' % (proc, proc.exitcode))
+        def on_not_recovering(proc, fd, job, exc):
+            error('Process inqueue damaged: %r %r: %r',
+                  proc, proc.exitcode, exc, exc_info=1)
             if proc._is_alive():
                 proc.terminate()
             hub.remove(fd)
@@ -799,7 +828,7 @@ class AsynPool(_pool.Pool):
             # writes job to the worker process.
             # Operation must complete if more than one byte of data
             # was written.  If the broker connection is lost
-            # and no data was written the operation shall be cancelled.
+            # and no data was written the operation shall be canceled.
             header, body, body_size = job._payload
             errors = 0
             try:
@@ -818,7 +847,7 @@ class AsynPool(_pool.Pool):
                         # suspend until more data
                         errors += 1
                         if errors > 100:
-                            on_not_recovering(proc, fd, job)
+                            on_not_recovering(proc, fd, job, exc)
                             raise StopIteration()
                         yield
                     else:
@@ -834,7 +863,7 @@ class AsynPool(_pool.Pool):
                         # suspend until more data
                         errors += 1
                         if errors > 100:
-                            on_not_recovering(proc, fd, job)
+                            on_not_recovering(proc, fd, job, exc)
                             raise StopIteration()
                         yield
                     else:
@@ -1055,7 +1084,7 @@ class AsynPool(_pool.Pool):
         total = sum(vals)
 
         def per(v, total):
-            return '{0:.2f}%'.format((float(v) / total) * 100.0 if v else 0)
+            return '{0:.2%}'.format((float(v) / total) if v else 0)
 
         return {
             'total': total,

@@ -29,7 +29,7 @@ Bug tracker
 ===========
 
 If you have any suggestions, bug reports or annoyances please report them
-to our issue tracker at http://github.com/celery/celery/issues/
+to our issue tracker at https://github.com/celery/celery/issues/
 
 .. _wiki:
 
@@ -43,7 +43,7 @@ http://wiki.github.com/celery/celery/
 Contributing
 ============
 
-Development of `celery` happens at Github: http://github.com/celery/celery
+Development of `celery` happens at Github: https://github.com/celery/celery
 
 You are highly encouraged to participate in the development
 of `celery`. If you don't like Github (for some reason) you're welcome

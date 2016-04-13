@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import errno
 import signal
@@ -15,8 +15,9 @@ from celery.bin.multi import (
     multi_args,
     __doc__ as doc,
 )
+from celery.five import WhateverIO
 
-from celery.tests.case import AppCase, Mock, WhateverIO, SkipTest, patch
+from celery.tests.case import AppCase, Mock, patch, skip
 
 
 class test_functions(AppCase):
@@ -67,7 +68,7 @@ class test_NamespacedOptionParser(AppCase):
 
 class test_multi_args(AppCase):
 
-    @patch('socket.gethostname')
+    @patch('celery.bin.multi.gethostname')
     def test_parse(self, gethostname):
         gethostname.return_value = 'example.com'
         p = NamespacedOptionParser([
@@ -83,7 +84,7 @@ class test_multi_args(AppCase):
         names = list(it)
 
         def assert_line_in(name, args):
-            self.assertIn(name, [tup[0] for tup in names])
+            self.assertIn(name, {tup[0] for tup in names})
             argv = None
             for item in names:
                 if item[0] == name:
@@ -165,6 +166,11 @@ class test_MultiTool(AppCase):
         self.t.note('hello world')
         self.assertFalse(self.fh.getvalue())
 
+    def test_carp(self):
+        self.t.say = Mock()
+        self.t.carp('foo')
+        self.t.say.assert_called_with('foo', True, self.t.stderr)
+
     def test_info(self):
         self.t.verbose = True
         self.t.info('hello info')
@@ -184,7 +190,7 @@ class test_MultiTool(AppCase):
 
         self.t.carp = Mock()
         self.assertEqual(self.t.error(), 1)
-        self.assertFalse(self.t.carp.called)
+        self.t.carp.assert_not_called()
 
         self.assertEqual(self.t.retcode, 1)
 
@@ -234,7 +240,7 @@ class test_MultiTool(AppCase):
         stop = self.t._stop_nodes = Mock()
         self.t.restart(['jerry', 'george'], 'celery worker')
         waitexec = self.t.waitexec = Mock()
-        self.assertTrue(stop.called)
+        stop.assert_called()
         callback = stop.call_args[1]['callback']
         self.assertTrue(callback)
 
@@ -259,9 +265,8 @@ class test_MultiTool(AppCase):
 
         )
 
+    @skip.unless_symbol('signal.SIGKILL')
     def test_kill(self):
-        if not hasattr(signal, 'SIGKILL'):
-            raise SkipTest('SIGKILL not supported by this platform')
         self.t.getpids = Mock()
         self.t.getpids.return_value = [
             ('a', None, 10),
@@ -293,7 +298,7 @@ class test_MultiTool(AppCase):
         Pidfile.side_effect = pids
 
     @patch('celery.bin.multi.Pidfile')
-    @patch('socket.gethostname')
+    @patch('celery.bin.multi.gethostname')
     def test_getpids(self, gethostname, Pidfile):
         gethostname.return_value = 'e.com'
         self.prepare_pidfile_for_getpids(Pidfile)
@@ -317,7 +322,7 @@ class test_MultiTool(AppCase):
                     '-n bar@e.com', '')),
         )
         self.assertEqual(node_1[2], 11)
-        self.assertTrue(callback.called)
+        callback.assert_called()
         cargs, _ = callback.call_args
         self.assertEqual(cargs[0], 'baz@e.com')
         self.assertItemsEqual(
@@ -331,7 +336,7 @@ class test_MultiTool(AppCase):
         nodes = self.t.getpids(p, 'celery worker', callback=None)
 
     @patch('celery.bin.multi.Pidfile')
-    @patch('socket.gethostname')
+    @patch('celery.bin.multi.gethostname')
     @patch('celery.bin.multi.sleep')
     def test_shutdown_nodes(self, slepp, gethostname, Pidfile):
         gethostname.return_value = 'e.com'
@@ -347,14 +352,14 @@ class test_MultiTool(AppCase):
         self.assertEqual(len(sigs), 2)
         self.assertIn(
             ('foo@e.com', 10, signal.SIGTERM),
-            [tup[0] for tup in sigs],
+            {tup[0] for tup in sigs},
         )
         self.assertIn(
             ('bar@e.com', 11, signal.SIGTERM),
-            [tup[0] for tup in sigs],
+            {tup[0] for tup in sigs},
         )
         self.t.signal_node.return_value = False
-        self.assertTrue(callback.called)
+        callback.assert_called()
         self.t.stop(['foo', 'bar', 'baz'], 'celery worker', callback=None)
 
         def on_node_alive(pid):
@@ -410,7 +415,7 @@ class test_MultiTool(AppCase):
         self.t.show(['foo', 'bar', 'baz'], 'celery worker')
         self.assertTrue(self.fh.getvalue())
 
-    @patch('socket.gethostname')
+    @patch('celery.bin.multi.gethostname')
     def test_get(self, gethostname):
         gethostname.return_value = 'e.com'
         self.t.get(['xuzzy@e.com', 'foo', 'bar', 'baz'], 'celery worker')
@@ -418,7 +423,7 @@ class test_MultiTool(AppCase):
         self.t.get(['foo@e.com', 'foo', 'bar', 'baz'], 'celery worker')
         self.assertTrue(self.fh.getvalue())
 
-    @patch('socket.gethostname')
+    @patch('celery.bin.multi.gethostname')
     def test_names(self, gethostname):
         gethostname.return_value = 'e.com'
         self.t.names(['foo', 'bar', 'baz'], 'celery worker')
@@ -428,7 +433,7 @@ class test_MultiTool(AppCase):
         start = self.t.commands['start'] = Mock()
         self.t.error = Mock()
         self.t.execute_from_commandline(['multi', 'start', 'foo', 'bar'])
-        self.assertFalse(self.t.error.called)
+        self.t.error.assert_not_called()
         start.assert_called_with(['foo', 'bar'], 'celery worker')
 
         self.t.error = Mock()

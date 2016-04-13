@@ -6,11 +6,15 @@ Installation
 You can install Celery either via the Python Package Index (PyPI)
 or from source.
 
-To install using `pip`,::
+To install using `pip`,:
+
+.. code-block:: console
 
     $ pip install -U Celery
 
-To install using `easy_install`,::
+To install using `easy_install`,:
+
+.. code-block:: console
 
     $ easy_install -U Celery
 
@@ -74,20 +78,26 @@ Transports and Backends
 :celery[sqs]:
     for using Amazon SQS as a message transport (*experimental*).
 
+:celery[tblib]
+    for using the :setting:`task_remote_tracebacks` feature.
+
 :celery[memcache]:
-    for using memcached as a result backend.
+    for using memcached as a result backend (using pylibmc)
+
+:celery[pymemcache]:
+    for using memcached as a result backend (pure-python implementation).
 
 :celery[cassandra]:
-    for using Apache Cassandra as a result backend with pycassa driver.
-
-:celery[new_cassandra]:
     for using Apache Cassandra as a result backend with DataStax driver.
 
 :celery[couchdb]:
     for using CouchDB as a message transport (*experimental*).
 
 :celery[couchbase]:
-    for using CouchBase as a result backend.
+    for using Couchbase as a result backend.
+
+:celery[elasticsearch]
+    for using Elasticsearch as a result backend.
 
 :celery[riak]:
     for using Riak as a result backend.
@@ -119,7 +129,9 @@ Downloading and installing from source
 Download the latest version of Celery from
 http://pypi.python.org/pypi/celery/
 
-You can install it by doing the following,::
+You can install it by doing the following,:
+
+.. code-block:: console
 
     $ tar xvfz celery-0.0.0.tar.gz
     $ cd celery-0.0.0
@@ -138,15 +150,18 @@ With pip
 ~~~~~~~~
 
 The Celery development version also requires the development
-versions of ``kombu``, ``amqp`` and ``billiard``.
+versions of :pypi:`kombu`, :pypi:`amqp`, :pypi:`billiard` and :pypi:`vine`.
 
 You can install the latest snapshot of these using the following
-pip commands::
+pip commands:
+
+.. code-block:: console
 
     $ pip install https://github.com/celery/celery/zipball/master#egg=celery
     $ pip install https://github.com/celery/billiard/zipball/master#egg=billiard
     $ pip install https://github.com/celery/py-amqp/zipball/master#egg=amqp
     $ pip install https://github.com/celery/kombu/zipball/master#egg=kombu
+    $ pip install https://github.com/celery/vine/zipball/master#egg=vine
 
 With git
 ~~~~~~~~

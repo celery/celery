@@ -34,6 +34,39 @@ The :program:`celery events` command.
     Logging level, choose between `DEBUG`, `INFO`, `WARNING`,
     `ERROR`, `CRITICAL`, or `FATAL`.  Default is INFO.
 
+.. cmdoption:: -f, --logfile
+
+    Path to log file. If no logfile is specified, `stderr` is used.
+
+.. cmdoption:: --pidfile
+
+    Optional file used to store the process pid.
+
+    The program will not start if this file already exists
+    and the pid is still alive.
+
+.. cmdoption:: --uid
+
+    User id, or user name of the user to run as after detaching.
+
+.. cmdoption:: --gid
+
+    Group id, or group name of the main group to change to after
+    detaching.
+
+.. cmdoption:: --umask
+
+    Effective umask (in octal) of the process after detaching.  Inherits
+    the umask of the parent process by default.
+
+.. cmdoption:: --workdir
+
+    Optional directory to change to after detaching.
+
+.. cmdoption:: --executable
+
+    Executable to use for the detached process.
+
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -42,7 +75,7 @@ import sys
 from functools import partial
 
 from celery.platforms import detached, set_process_title, strargv
-from celery.bin.base import Command, Option, daemon_options
+from celery.bin.base import Command, daemon_options
 
 __all__ = ['events']
 
@@ -117,18 +150,16 @@ class events(Command):
         info = '{0} {1}'.format(info, strargv(sys.argv))
         return set_process_title(prog, info=info)
 
-    def get_options(self):
-        return (
-            (Option('-d', '--dump', action='store_true'),
-             Option('-c', '--camera'),
-             Option('--detach', action='store_true'),
-             Option('-F', '--frequency', '--freq',
-                    type='float', default=1.0),
-             Option('-r', '--maxrate'),
-             Option('-l', '--loglevel', default='INFO')) +
-            daemon_options(default_pidfile='celeryev.pid') +
-            tuple(self.app.user_options['events'])
-        )
+    def prepare_arguments(self, parser):
+        parser.add_option('-d', '--dump', action='store_true')
+        parser.add_option('-c', '--camera')
+        parser.add_option('--detach', action='store_true')
+        parser.add_option('-F', '--frequency', '--freq',
+                          type='float', default=1.0)
+        parser.add_option('-r', '--maxrate')
+        parser.add_option('-l', '--loglevel', default='INFO')
+        daemon_options(parser, default_pidfile='celeryev.pid')
+        parser.add_options(self.app.user_options['events'])
 
 
 def main():

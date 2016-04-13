@@ -24,17 +24,19 @@
     celery.concurrency.threads
     celery.backends
     celery.backends.base
+    celery.backends.async
     celery.backends.rpc
     celery.backends.database
     celery.backends.amqp
     celery.backends.cache
     celery.backends.couchdb
     celery.backends.mongodb
+    celery.backends.elasticsearch
     celery.backends.redis
     celery.backends.riak
-    celery.backends.new_cassandra
     celery.backends.cassandra
     celery.backends.couchbase
+    celery.backends.filesystem
     celery.app.trace
     celery.app.annotations
     celery.app.routes
@@ -55,7 +57,6 @@
     celery.utils.term
     celery.utils.timeutils
     celery.utils.iso8601
-    celery.utils.compat
     celery.utils.saferepr
     celery.utils.serialization
     celery.utils.sysinfo

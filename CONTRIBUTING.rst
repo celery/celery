@@ -187,7 +187,7 @@ the developers fix the bug.
 
 A bug could be fixed by some other improvements and fixes - it might not have an
 existing report in the bug tracker. Make sure you're using the latest releases of
-celery, billiard and kombu.
+celery, billiard, kombu, amqp and vine.
 
 5) **Collect information about the bug.**
 
@@ -230,10 +230,10 @@ been made on your bug. In the event you've turned this feature off, you
 should check back on occasion to ensure you don't miss any questions a
 developer trying to fix the bug might ask.
 
-.. _`GitHub`: http://github.com
-.. _`strace`: http://en.wikipedia.org/wiki/Strace
-.. _`ltrace`: http://en.wikipedia.org/wiki/Ltrace
-.. _`lsof`: http://en.wikipedia.org/wiki/Lsof
+.. _`GitHub`: https://github.com
+.. _`strace`: https://en.wikipedia.org/wiki/Strace
+.. _`ltrace`: https://en.wikipedia.org/wiki/Ltrace
+.. _`lsof`: https://en.wikipedia.org/wiki/Lsof
 
 .. _issue-trackers:
 
@@ -243,11 +243,12 @@ Issue Trackers
 Bugs for a package in the Celery ecosystem should be reported to the relevant
 issue tracker.
 
-* Celery: http://github.com/celery/celery/issues/
-* Kombu: http://github.com/celery/kombu/issues
-* pyamqp: http://github.com/celery/pyamqp/issues
-* librabbitmq: http://github.com/celery/librabbitmq/issues
-* Django-Celery: http://github.com/celery/django-celery/issues
+* Celery: https://github.com/celery/celery/issues/
+* Kombu: https://github.com/celery/kombu/issues
+* pyamqp: https://github.com/celery/py-amqp/issues
+* vine: https://github.com/celery/vine/issues
+* librabbitmq: https://github.com/celery/librabbitmq/issues
+* Django-Celery: https://github.com/celery/django-celery/issues
 
 If you are unsure of the origin of the bug you can ask the
 `mailing-list`_, or just use the Celery issue tracker.
@@ -280,16 +281,17 @@ Branches
 
 Current active version branches:
 
-* master (http://github.com/celery/celery/tree/master)
-* 3.1 (http://github.com/celery/celery/tree/3.1)
-* 3.0 (http://github.com/celery/celery/tree/3.0)
+* master (https://github.com/celery/celery/tree/master)
+* 3.1 (https://github.com/celery/celery/tree/3.1)
+* 3.0 (https://github.com/celery/celery/tree/3.0)
 
 You can see the state of any branch by looking at the Changelog:
 
     https://github.com/celery/celery/blob/master/Changelog
 
 If the branch is in active development the topmost version info should
-contain metadata like::
+contain meta-data like:
+::
 
     2.4.0
     ======
@@ -442,13 +444,21 @@ To run the Celery test suite you need to install a few dependencies.
 A complete list of the dependencies needed are located in
 ``requirements/test.txt``.
 
-Installing the test requirements:
+If you're working on the development version, then you need to
+install the development requirements first:
+::
+
+    $ pip install -U -r requirements/dev.txt
+
+Both the stable and the development version have testing related
+dependencies, so install these next:
 ::
 
     $ pip install -U -r requirements/test.txt
+    $ pip install -U -r requirements/default.txt
 
-When installation of dependencies is complete you can execute
-the test suite by calling ``nosetests``:
+After installing the dependencies required, you can now execute
+the test suite by calling ``nosetests <nose>``:
 ::
 
     $ nosetests
@@ -463,7 +473,7 @@ Some useful options to ``nosetests`` are:
 
     Don't capture output
 
-* ``--nologcapture``
+* ``-nologcapture``
 
     Don't capture log output.
 
@@ -534,11 +544,10 @@ To run the tests for all supported Python versions simply execute:
 
     $ tox
 
-If you only want to test specific Python versions use the ``-e``
-option:
+Use the ``tox -e`` option if you only want to test specific Python versions:
 ::
 
-    $ tox -e py26
+    $ tox -e 2.7
 
 Building the documentation
 --------------------------
@@ -554,11 +563,11 @@ build the docs by running:
 ::
 
     $ cd docs
-    $ rm -rf .build
+    $ rm -rf _build
     $ make html
 
 Make sure there are no errors or warnings in the build output.
-After building succeeds the documentation is available at ``.build/html``.
+After building succeeds the documentation is available at ``_build/html``.
 
 .. _contributing-verify:
 
@@ -586,7 +595,7 @@ To not return a negative exit code when this command fails use
 the ``flakes`` target instead:
 ::
 
-    $ make flakes
+    $ make flakes§
 
 API reference
 ~~~~~~~~~~~~~
@@ -619,7 +628,7 @@ Edit the file using your favorite editor:
 
     $ vim celery.worker.awesome.rst
 
-        # change every occurance of ``celery.schedules`` to
+        # change every occurrence of ``celery.schedules`` to
         # ``celery.worker.awesome``
 
 
@@ -737,7 +746,7 @@ is following the conventions.
 
         from __future__ import absolute_import
 
-    * If the module uses the with statement and must be compatible
+    * If the module uses the ``with`` statement and must be compatible
       with Python 2.5 (celery is not) then it must also enable that::
 
         from __future__ import with_statement
@@ -845,11 +854,28 @@ Ask Solem
 :github: https://github.com/ask
 :twitter: http://twitter.com/#!/asksol
 
+Dmitry Malinovsky
+~~~~~~~~~~~~~~~~~
+
+:github: https://github.com/malinoff
+:twitter: https://twitter.com/__malinoff__
+
+Ionel Cristian Mărieș
+~~~~~~~~~~~~~~~~~~~~~
+
+:github: https://github.com/ionelmc
+:twitter: https://twitter.com/ionelmc
+
 Mher Movsisyan
 ~~~~~~~~~~~~~~
 
 :github: https://github.com/mher
 :twitter: http://twitter.com/#!/movsm
+
+Omer Katz
+~~~~~~~~~
+:github: https://github.com/thedrow
+:twitter: https://twitter.com/the_drow
 
 Steeve Morin
 ~~~~~~~~~~~~
@@ -887,6 +913,7 @@ celery
 
 :git: https://github.com/celery/celery
 :CI: http://travis-ci.org/#!/celery/celery
+:Windows-CI: https://ci.appveyor.com/project/ask/celery
 :PyPI: http://pypi.python.org/pypi/celery
 :docs: http://docs.celeryproject.org
 
@@ -897,6 +924,7 @@ Messaging library.
 
 :git: https://github.com/celery/kombu
 :CI: http://travis-ci.org/#!/celery/kombu
+:Windows-CI: https://ci.appveyor.com/project/ask/kombu
 :PyPI: http://pypi.python.org/pypi/kombu
 :docs: http://kombu.readthedocs.org
 
@@ -907,8 +935,20 @@ Python AMQP 0.9.1 client.
 
 :git: https://github.com/celery/py-amqp
 :CI: http://travis-ci.org/#!/celery/py-amqp
+:Windows-CI: https://ci.appveyor.com/project/ask/py-amqp
 :PyPI: http://pypi.python.org/pypi/amqp
 :docs: http://amqp.readthedocs.org
+
+vine
+----
+
+Promise/deferred implementation.
+
+:git: https://github.com/celery/vine/
+:CI: http://travis-ci.org/#!/celery/vine/
+:Windows-CI: https://ci.appveyor.com/project/ask/vine
+:PyPI: http://pypi.python.org/pypi/vine
+:docs: http://vine.readthedocs.org
 
 billiard
 --------
@@ -917,6 +957,8 @@ Fork of multiprocessing containing improvements
 that will eventually be merged into the Python stdlib.
 
 :git: https://github.com/celery/billiard
+:CI: http://travis-ci.org/#!/celery/billiard/
+:Windows-CI: https://ci.appveyor.com/project/ask/billiard
 :PyPI: http://pypi.python.org/pypi/billiard
 
 librabbitmq
@@ -1033,11 +1075,13 @@ and make a new version tag:
 Releasing
 ---------
 
-Commands to make a new public stable release::
+Commands to make a new public stable release:
+::
 
     $ make distcheck  # checks pep8, autodoc index, runs tests and more
     $ make dist  # NOTE: Runs git clean -xdf and removes files not in the repo.
-    $ python setup.py sdist bdist_wheel upload  # Upload package to PyPI
+    $ python setup.py sdist upload --sign --identity='Celery Security Team'
+    $ python setup.py bdist_wheel upload --sign --identity='Celery Security Team'
 
 If this is a new release series then you also need to do the
 following:

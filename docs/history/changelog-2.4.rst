@@ -37,7 +37,8 @@ Security Fixes
 --------------
 
 * [Security: `CELERYSA-0001`_] Daemons would set effective id's rather than
-  real id's when the :option:`--uid`/:option:`--gid` arguments to
+  real id's when the :option:`--uid <celery --uid>`/
+  :option:`--gid <celery --gid>` arguments to
   :program:`celery multi`, :program:`celeryd_detach`,
   :program:`celery beat` and :program:`celery events` were used.
 
@@ -46,7 +47,7 @@ Security Fixes
 
 
 .. _`CELERYSA-0001`:
-    http://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0001.txt
+    https://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0001.txt
 
 .. _v244-fixes:
 
@@ -202,8 +203,8 @@ Important Notes
     the configuration will be ignored, if a setting is not provided in the URL
     then the value from the configuration will be used as default.
 
-    Also, programs now support the :option:`-b|--broker` option to specify
-    a broker URL on the command-line:
+    Also, programs now support the :option:`--broker <celery --broker>`
+    option to specify a broker URL on the command-line:
 
     .. code-block:: console
 
@@ -263,7 +264,7 @@ Important Notes
 News
 ----
 
-* No longer depends on :mod:`pyparsing`.
+* No longer depends on :pypi:`pyparsing`.
 
 * Now depends on Kombu 1.4.3.
 
@@ -364,7 +365,7 @@ News
 * Worker logged the string representation of args and kwargs
   without safe guards (Issue #480).
 
-* RHEL init script: Changed worker startup priority.
+* RHEL init script: Changed worker start-up priority.
 
     The default start / stop priorities for MySQL on RHEL are
 

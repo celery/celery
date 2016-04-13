@@ -6,7 +6,7 @@
     Task execution strategy (optimization).
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import logging
 
@@ -50,7 +50,13 @@ def proto1_to_proto2(message, body):
         body['group'] = body['taskset']
     except KeyError:
         pass
-    return (args, kwargs), body, True, body.get('utc', True)
+    embed = {
+        'callbacks': body.get('callbacks'),
+        'errbacks': body.get('errbacks'),
+        'chord': body.get('chord'),
+        'chain': None,
+    }
+    return (args, kwargs, embed), body, True, body.get('utc', True)
 
 
 def default(task, app, consumer,
@@ -101,6 +107,7 @@ def default(task, app, consumer,
                 'task-received',
                 uuid=req.id, name=req.name,
                 args=req.argsrepr, kwargs=req.kwargsrepr,
+                root_id=req.root_id, parent_id=req.parent_id,
                 retries=req.request_dict.get('retries', 0),
                 eta=req.eta and req.eta.isoformat(),
                 expires=req.expires and req.expires.isoformat(),

@@ -6,7 +6,7 @@
     This module has moved to :mod:`kombu.utils.encoding`.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from kombu.utils.encoding import (  # noqa
     default_encode, default_encoding, bytes_t, bytes_to_str, str_t,

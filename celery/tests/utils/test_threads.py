@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.utils.threads import (
     _LocalStack,
@@ -8,7 +8,7 @@ from celery.utils.threads import (
     bgThread,
 )
 
-from celery.tests.case import Case, override_stdouts, patch
+from celery.tests.case import Case, mock, patch
 
 
 class test_bgThread(Case):
@@ -21,7 +21,7 @@ class test_bgThread(Case):
                 raise KeyError()
 
         with patch('os._exit') as _exit:
-            with override_stdouts():
+            with mock.stdouts():
                 _exit.side_effect = ValueError()
                 t = T()
                 with self.assertRaises(ValueError):

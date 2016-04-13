@@ -1,14 +1,16 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 
 from importlib import import_module
 
-from celery.app.defaults import NAMESPACES
-
-from celery.tests.case import (
-    AppCase, Mock, patch, pypy_version, sys_platform,
+from celery.app.defaults import (
+    _OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY, _TO_OLD_KEY,
+    DEFAULTS, NAMESPACES, SETTING_KEYS
 )
+from celery.five import values
+
+from celery.tests.case import AppCase, mock
 
 
 class test_defaults(AppCase):
@@ -21,39 +23,47 @@ class test_defaults(AppCase):
             sys.modules['celery.app.defaults'] = self._prev
 
     def test_option_repr(self):
-        self.assertTrue(repr(NAMESPACES['BROKER']['URL']))
+        self.assertTrue(repr(NAMESPACES['broker']['url']))
 
     def test_any(self):
         val = object()
         self.assertIs(self.defaults.Option.typemap['any'](val), val)
 
+    @mock.sys_platform('darwin')
+    @mock.pypy_version((1, 4, 0))
     def test_default_pool_pypy_14(self):
-        with sys_platform('darwin'):
-            with pypy_version((1, 4, 0)):
-                self.assertEqual(self.defaults.DEFAULT_POOL, 'solo')
+        self.assertEqual(self.defaults.DEFAULT_POOL, 'solo')
 
+    @mock.sys_platform('darwin')
+    @mock.pypy_version((1, 5, 0))
     def test_default_pool_pypy_15(self):
-        with sys_platform('darwin'):
-            with pypy_version((1, 5, 0)):
-                self.assertEqual(self.defaults.DEFAULT_POOL, 'prefork')
+        self.assertEqual(self.defaults.DEFAULT_POOL, 'prefork')
 
-    def test_deprecated(self):
-        source = Mock()
-        source.CELERYD_LOG_LEVEL = 2
-        with patch('celery.utils.warn_deprecated') as warn:
-            self.defaults.find_deprecated_settings(source)
-            self.assertTrue(warn.called)
+    def test_compat_indices(self):
+        self.assertFalse(any(key.isupper() for key in DEFAULTS))
+        self.assertFalse(any(key.islower() for key in _OLD_DEFAULTS))
+        self.assertFalse(any(key.isupper() for key in _TO_OLD_KEY))
+        self.assertFalse(any(key.islower() for key in _TO_NEW_KEY))
+        self.assertFalse(any(key.isupper() for key in SETTING_KEYS))
+        self.assertFalse(any(key.islower() for key in _OLD_SETTING_KEYS))
+        self.assertFalse(any(value.isupper() for value in values(_TO_NEW_KEY)))
+        self.assertFalse(any(value.islower() for value in values(_TO_OLD_KEY)))
 
+        for key in _TO_NEW_KEY:
+            self.assertIn(key, _OLD_SETTING_KEYS)
+        for key in _TO_OLD_KEY:
+            self.assertIn(key, SETTING_KEYS)
+
+    @mock.sys_platform('java 1.6.51')
     def test_default_pool_jython(self):
-        with sys_platform('java 1.6.51'):
-            self.assertEqual(self.defaults.DEFAULT_POOL, 'threads')
+        self.assertEqual(self.defaults.DEFAULT_POOL, 'threads')
 
     def test_find(self):
         find = self.defaults.find
 
         self.assertEqual(find('server_email')[2].default, 'celery@localhost')
         self.assertEqual(find('default_queue')[2].default, 'celery')
-        self.assertEqual(find('celery_default_exchange')[2], 'celery')
+        self.assertEqual(find('task_default_exchange')[2], 'celery')
 
     @property
     def defaults(self):

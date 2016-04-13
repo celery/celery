@@ -30,17 +30,15 @@ using `:task:proj.tasks.add` syntax.
 Use ``.. autotask::`` to manually document a task.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
-try:
-    from inspect import formatargspec, getfullargspec as getargspec
-except ImportError:  # Py2
-    from inspect import formatargspec, getargspec  # noqa
+from inspect import formatargspec
 
 from sphinx.domains.python import PyModulelevel
 from sphinx.ext.autodoc import FunctionDocumenter
 
 from celery.app.task import BaseTask
+from celery.five import getfullargspec
 
 
 class TaskDocumenter(FunctionDocumenter):
@@ -54,7 +52,7 @@ class TaskDocumenter(FunctionDocumenter):
     def format_args(self):
         wrapped = getattr(self.object, '__wrapped__')
         if wrapped is not None:
-            argspec = getargspec(wrapped)
+            argspec = getfullargspec(wrapped)
             fmt = formatargspec(*argspec)
             fmt = fmt.replace('\\', '\\\\')
             return fmt

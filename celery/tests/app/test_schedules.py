@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import time
 
@@ -7,8 +7,10 @@ from datetime import datetime, timedelta
 from pickle import dumps, loads
 
 from celery.five import items
-from celery.schedules import ParseException, crontab, crontab_parser
-from celery.tests.case import AppCase, SkipTest
+from celery.schedules import (
+    ParseException, crontab, crontab_parser, schedule, solar,
+)
+from celery.tests.case import AppCase, Mock, skip
 
 
 @contextmanager
@@ -19,6 +21,70 @@ def patch_crontab_nowfun(cls, retval):
         yield
     finally:
         cls.nowfun = prev_nowfun
+
+
+@skip.unless_module('ephem')
+class test_solar(AppCase):
+
+    def setup(self):
+        self.s = solar('sunrise', 60, 30, app=self.app)
+
+    def test_reduce(self):
+        fun, args = self.s.__reduce__()
+        self.assertEqual(fun(*args), self.s)
+
+    def test_eq(self):
+        self.assertEqual(self.s, solar('sunrise', 60, 30, app=self.app))
+        self.assertNotEqual(self.s, solar('sunset', 60, 30, app=self.app))
+        self.assertNotEqual(self.s, schedule(10))
+
+    def test_repr(self):
+        self.assertTrue(repr(self.s))
+
+    def test_is_due(self):
+        self.s.remaining_estimate = Mock(name='rem')
+        self.s.remaining_estimate.return_value = timedelta(seconds=0)
+        self.assertTrue(self.s.is_due(datetime.utcnow()).is_due)
+
+    def test_is_due__not_due(self):
+        self.s.remaining_estimate = Mock(name='rem')
+        self.s.remaining_estimate.return_value = timedelta(hours=10)
+        self.assertFalse(self.s.is_due(datetime.utcnow()).is_due)
+
+    def test_remaining_estimate(self):
+        self.s.cal = Mock(name='cal')
+        self.s.cal.next_rising().datetime.return_value = datetime.utcnow()
+        self.s.remaining_estimate(datetime.utcnow())
+
+    def test_coordinates(self):
+        with self.assertRaises(ValueError):
+            solar('sunrise', -120, 60)
+        with self.assertRaises(ValueError):
+            solar('sunrise', 120, 60)
+        with self.assertRaises(ValueError):
+            solar('sunrise', 60, -200)
+        with self.assertRaises(ValueError):
+            solar('sunrise', 60, 200)
+
+    def test_invalid_event(self):
+        with self.assertRaises(ValueError):
+            solar('asdqwewqew', 60, 60)
+
+
+class test_schedule(AppCase):
+
+    def test_ne(self):
+        s1 = schedule(10, app=self.app)
+        s2 = schedule(12, app=self.app)
+        s3 = schedule(10, app=self.app)
+        self.assertEqual(s1, s3)
+        self.assertNotEqual(s1, s2)
+
+    def test_pickle(self):
+        s1 = schedule(10, app=self.app)
+        fun, args = s1.__reduce__()
+        s2 = fun(*args)
+        self.assertEqual(s1, s2)
 
 
 class test_crontab_parser(AppCase):
@@ -180,8 +246,9 @@ class test_crontab_parser(AppCase):
             self.crontab(month_of_year='1'),
             self.crontab(month_of_year='2'),
         )
-        self.assertFalse(object() == self.crontab(minute='1'))
-        self.assertFalse(self.crontab(minute='1') == object())
+        self.assertNotEqual(object(), self.crontab(minute='1'))
+        self.assertNotEqual(self.crontab(minute='1'), object())
+        self.assertNotEqual(crontab(month_of_year='1'), schedule(10))
 
 
 class test_crontab_remaining_estimate(AppCase):
@@ -366,6 +433,22 @@ class test_crontab_remaining_estimate(AppCase):
             datetime(2010, 1, 28, 14, 30, 15),
         )
         self.assertEqual(next, datetime(2010, 5, 29, 0, 5))
+
+    def test_invalid_specification(self):
+        # *** WARNING ***
+        # This test triggers an infinite loop in case of a regression
+        with self.assertRaises(RuntimeError):
+            self.next_ocurrance(
+                self.crontab(day_of_month=31, month_of_year=4),
+                datetime(2010, 1, 28, 14, 30, 15),
+            )
+
+    def test_leapyear(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=30, hour=14, day_of_month=29, month_of_year=2),
+            datetime(2012, 2, 29, 14, 30),
+        )
+        self.assertEqual(next, datetime(2016, 2, 29, 14, 30))
 
 
 class test_crontab_is_due(AppCase):
@@ -668,8 +751,8 @@ class test_crontab_is_due(AppCase):
             self.assertTrue(due)
             self.assertEqual(remaining, 60.)
 
+    @skip.todo('unstable test')
     def test_monthly_moy_execution_is_not_due(self):
-        raise SkipTest('unstable test')
         with patch_crontab_nowfun(
                 self.monthly_moy, datetime(2013, 6, 28, 14, 30)):
             due, remaining = self.monthly_moy.is_due(

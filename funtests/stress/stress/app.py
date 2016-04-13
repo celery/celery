@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, unicode_literals
 
+import celery
 import os
 import sys
 import signal
 
 from time import sleep
 
-from celery import Celery
 from celery import signals
 from celery.bin.base import Option
 from celery.exceptions import SoftTimeLimitExceeded
@@ -17,8 +17,10 @@ from .templates import use_template, template_names
 
 logger = get_task_logger(__name__)
 
+IS_CELERY_4 = celery.VERSION[0] >= 4
 
-class App(Celery):
+
+class App(celery.Celery):
     template_selected = False
 
     def __init__(self, *args, **kwargs):
@@ -33,7 +35,8 @@ class App(Celery):
             )
         )
         signals.user_preload_options.connect(self.on_preload_parsed)
-        self.on_configure.connect(self._maybe_use_default_template)
+        if IS_CELERY_4:
+            self.on_configure.connect(self._maybe_use_default_template)
 
     def on_preload_parsed(self, options=None, **kwargs):
         self.use_template(options['template'])
@@ -48,6 +51,18 @@ class App(Celery):
         if not self.template_selected:
             self.use_template('default')
 
+    if not IS_CELERY_4:
+        after_configure = None
+
+        def _get_config(self):
+            ret = super(App, self)._get_config()
+            if self.after_configure:
+                self.after_configure(ret)
+            return ret
+
+        def on_configure(self):
+            self._maybe_use_default_template()
+
 app = App('stress', set_as_current=False)
 
 
@@ -59,6 +74,16 @@ def _marker(s, sep='-'):
 @app.task
 def add(x, y):
     return x + y
+
+
+@app.task(bind=True)
+def ids(self, i):
+    return (self.request.root_id, self.request.parent_id, i)
+
+
+@app.task(bind=True)
+def collect_ids(self, ids, i):
+    return ids, (self.request.root_id, self.request.parent_id, i)
 
 
 @app.task
@@ -111,6 +136,7 @@ def retries(self):
 
 @app.task
 def print_unicode():
+    logger.warning('håå®ƒ valmuefrø')
     print('hiöäüß')
 
 
@@ -148,9 +174,4 @@ def marker(s, sep='-'):
         try:
             return _marker.delay(s, sep)
         except Exception as exc:
-            print("Retrying marker.delay(). It failed to start: %s" % exc)
-
-
-@app.on_after_configure.connect
-def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(10, add.s(2, 2), expires=10)
+            print('Retrying marker.delay(). It failed to start: %s' % exc)

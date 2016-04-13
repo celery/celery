@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 
@@ -7,8 +7,8 @@ from datetime import datetime
 from kombu.utils.json import dumps
 
 from celery import __main__
-from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
 from celery.bin.base import Error
+from celery.bin import celery as mod
 from celery.bin.celery import (
     Command,
     list_,
@@ -28,19 +28,13 @@ from celery.bin.celery import (
     _RemoteControl,
     command,
 )
+from celery.five import WhateverIO
+from celery.platforms import EX_FAILURE, EX_USAGE, EX_OK
 
-from celery.tests.case import (
-    AppCase, Mock, WhateverIO, override_stdouts, patch,
-)
+from celery.tests.case import AppCase, Mock, patch
 
 
 class test__main__(AppCase):
-
-    def test_warn_deprecated(self):
-        with override_stdouts() as (stdout, _):
-            __main__._warn_deprecated('YADDA YADDA')
-            self.assertIn('command is deprecated', stdout.getvalue())
-            self.assertIn('YADDA YADDA', stdout.getvalue())
 
     def test_main(self):
         with patch('celery.__main__.maybe_patch_concurrency') as mpc:
@@ -49,32 +43,16 @@ class test__main__(AppCase):
                 mpc.assert_called_with()
                 main.assert_called_with()
 
-    def test_compat_worker(self):
+    def test_main__multi(self):
         with patch('celery.__main__.maybe_patch_concurrency') as mpc:
-            with patch('celery.__main__._warn_deprecated') as depr:
-                with patch('celery.bin.worker.main') as main:
-                    __main__._compat_worker()
-                    mpc.assert_called_with()
-                    depr.assert_called_with('celery worker')
+            with patch('celery.bin.celery.main') as main:
+                prev, sys.argv = sys.argv, ['foo', 'multi']
+                try:
+                    __main__.main()
+                    mpc.assert_not_called()
                     main.assert_called_with()
-
-    def test_compat_multi(self):
-        with patch('celery.__main__.maybe_patch_concurrency') as mpc:
-            with patch('celery.__main__._warn_deprecated') as depr:
-                with patch('celery.bin.multi.main') as main:
-                    __main__._compat_multi()
-                    self.assertFalse(mpc.called)
-                    depr.assert_called_with('celery multi')
-                    main.assert_called_with()
-
-    def test_compat_beat(self):
-        with patch('celery.__main__.maybe_patch_concurrency') as mpc:
-            with patch('celery.__main__._warn_deprecated') as depr:
-                with patch('celery.bin.beat.main') as main:
-                    __main__._compat_beat()
-                    mpc.assert_called_with()
-                    depr.assert_called_with('celery beat')
-                    main.assert_called_with()
+                finally:
+                    sys.argv = prev
 
 
 class test_Command(AppCase):
@@ -93,7 +71,7 @@ class test_Command(AppCase):
     def test_error(self):
         self.cmd.out = Mock()
         self.cmd.error('FOO')
-        self.assertTrue(self.cmd.out.called)
+        self.cmd.out.assert_called()
 
     def test_out(self):
         f = Mock()
@@ -169,7 +147,7 @@ class test_call(AppCase):
     def test_run(self, send_task):
         a = call(app=self.app, stderr=WhateverIO(), stdout=WhateverIO())
         a.run(self.add.name)
-        self.assertTrue(send_task.called)
+        send_task.assert_called()
 
         a.run(self.add.name,
               args=dumps([4, 4]),
@@ -202,6 +180,13 @@ class test_purge(AppCase):
         purge_.return_value = 100
         a.run(force=True)
         self.assertIn('100 messages', out.getvalue())
+
+        a.out = Mock(name='out')
+        a.ask = Mock(name='ask')
+        a.run(force=False)
+        a.ask.assert_called_with(a.warn_prompt, ('yes', 'no'), 'no')
+        a.ask.return_value = 'yes'
+        a.run(force=False)
 
 
 class test_result(AppCase):
@@ -255,10 +240,10 @@ class test_migrate(AppCase):
         m = migrate(app=self.app, stdout=out, stderr=WhateverIO())
         with self.assertRaises(TypeError):
             m.run()
-        self.assertFalse(migrate_tasks.called)
+        migrate_tasks.assert_not_called()
 
         m.run('memory://foo', 'memory://bar')
-        self.assertTrue(migrate_tasks.called)
+        migrate_tasks.assert_called()
 
         state = Mock()
         state.count = 10
@@ -327,6 +312,20 @@ class test_CeleryCommand(AppCase):
             x = CeleryCommand(app=self.app)
             x.load_extension_commands()
 
+    def test_load_extensions_commands(self):
+        with patch('celery.bin.celery.Extensions') as Ext:
+            prev, mod.command_classes = list(mod.command_classes), Mock()
+            try:
+                ext = Ext.return_value = Mock(name='Extension')
+                ext.load.return_value = ['foo', 'bar']
+                x = CeleryCommand(app=self.app)
+                x.load_extension_commands()
+                mod.command_classes.append.assert_called_with(
+                    ('Extensions', ['foo', 'bar'], 'magenta'),
+                )
+            finally:
+                mod.command_classes = prev
+
     def test_determine_exit_status(self):
         self.assertEqual(determine_exit_status('true'), EX_OK)
         self.assertEqual(determine_exit_status(''), EX_FAILURE)
@@ -350,6 +349,15 @@ class test_CeleryCommand(AppCase):
             x._relocate_args_from_start(['foo', '--foo=1']),
             ['foo', '--foo=1'],
         )
+
+    def test_register_command(self):
+        prev, CeleryCommand.commands = dict(CeleryCommand.commands), {}
+        try:
+            fun = Mock(name='fun')
+            CeleryCommand.register_command(fun, name='foo')
+            self.assertIs(CeleryCommand.commands['foo'], fun)
+        finally:
+            CeleryCommand.commands = prev
 
     def test_handle_argv(self):
         x = CeleryCommand(app=self.app)
@@ -395,7 +403,7 @@ class test_CeleryCommand(AppCase):
         x = CeleryCommand(app=self.app)
         x.error = Mock()
         x.on_usage_error(x.UsageError('foo'), command=None)
-        self.assertTrue(x.error.called)
+        x.error.assert_called()
         x.on_usage_error(x.UsageError('foo'), command='dummy')
 
     def test_prepare_prog_name(self):
@@ -450,15 +458,15 @@ class test_inspect(AppCase):
         i.out = Mock()
         i.quiet = True
         i.say_chat('<-', 'hello out')
-        self.assertFalse(i.out.called)
+        i.out.assert_not_called()
 
         i.say_chat('->', 'hello in')
-        self.assertTrue(i.out.called)
+        i.out.assert_called()
 
         i.quiet = False
         i.out.reset_mock()
         i.say_chat('<-', 'hello out', 'body')
-        self.assertTrue(i.out.called)
+        i.out.assert_called()
 
     @patch('celery.app.control.Control.inspect')
     def test_run(self, real):
@@ -472,7 +480,7 @@ class test_inspect(AppCase):
             i.run('xyzzybaz')
 
         i.run('ping')
-        self.assertTrue(real.called)
+        real.assert_called()
         i.run('ping', destination='foo,bar')
         self.assertEqual(real.call_args[1]['destination'], ['foo', 'bar'])
         self.assertEqual(real.call_args[1]['timeout'], 0.2)
@@ -480,6 +488,10 @@ class test_inspect(AppCase):
 
         callback({'foo': {'ok': 'pong'}})
         self.assertIn('OK', out.getvalue())
+
+        with patch('celery.bin.celery.json.dumps') as dumps:
+            i.run('ping', json=True)
+            dumps.assert_called()
 
         instance = real.return_value = Mock()
         instance.ping.return_value = None
@@ -491,6 +503,18 @@ class test_inspect(AppCase):
         i.quiet = True
         i.say_chat('<-', 'hello')
         self.assertFalse(out.getvalue())
+
+    def test_objgraph(self):
+        i = inspect(app=self.app)
+        i.call = Mock(name='call')
+        i.objgraph('Message', foo=1)
+        i.call.assert_called_with('objgraph', 'Message', foo=1)
+
+    def test_conf(self):
+        i = inspect(app=self.app)
+        i.call = Mock(name='call')
+        i.conf(with_defaults=True, foo=1)
+        i.call.assert_called_with('conf', True, foo=1)
 
 
 class test_control(AppCase):
@@ -552,7 +576,7 @@ class test_control(AppCase):
 class test_multi(AppCase):
 
     def test_get_options(self):
-        self.assertTupleEqual(multi(app=self.app).get_options(), ())
+        self.assertIsNone(multi(app=self.app).get_options())
 
     def test_run_from_argv(self):
         with patch('celery.bin.multi.MultiTool') as MultiTool:

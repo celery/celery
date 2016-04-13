@@ -19,9 +19,11 @@ import weakref
 from celery.local import Proxy
 from celery.utils.threads import LocalStack
 
-__all__ = ['set_default_app', 'get_current_app', 'get_current_task',
-           'get_current_worker_task', 'current_app', 'current_task',
-           'connect_on_app_finalize']
+__all__ = [
+    'set_default_app', 'get_current_app', 'get_current_task',
+    'get_current_worker_task', 'current_app', 'current_task',
+    'connect_on_app_finalize',
+]
 
 #: Global default app used when no current app.
 default_app = None
@@ -30,7 +32,7 @@ default_app = None
 _apps = weakref.WeakSet()
 
 #: global set of functions to call whenever a new app is finalized
-#: E.g. Shared tasks, and builtin tasks are created
+#: E.g. Shared tasks, and built-in tasks are created
 #: by adding callbacks here.
 _on_app_finalizers = set()
 
@@ -126,6 +128,10 @@ current_task = Proxy(get_current_task)
 
 def _register_app(app):
     _apps.add(app)
+
+
+def _deregister_app(app):
+    _apps.discard(app)
 
 
 def _get_active_apps():

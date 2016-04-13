@@ -1,3 +1,5 @@
+from __future__ import absolute_import, unicode_literals
+
 from django.conf.urls.defaults import (  # noqa
     url, patterns, include, handler404, handler500,
 )

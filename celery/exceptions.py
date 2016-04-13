@@ -6,11 +6,11 @@
     This module contains all exceptions used by the Celery API.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import numbers
 
-from .five import string_t
+from .five import python_2_unicode_compatible, string_t
 
 from billiard.exceptions import (  # noqa
     SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError, Terminated,
@@ -54,6 +54,7 @@ class TaskPredicate(CeleryError):
     pass
 
 
+@python_2_unicode_compatible
 class Retry(TaskPredicate):
     """The task is to be retried later."""
 
@@ -98,6 +99,7 @@ class Ignore(TaskPredicate):
     """A task can raise this to ignore doing state updates."""
 
 
+@python_2_unicode_compatible
 class Reject(TaskPredicate):
     """A task can raise this if it wants to reject/requeue the message."""
 
@@ -120,13 +122,14 @@ class WorkerShutdown(SystemExit):
 
 
 class QueueNotFound(KeyError):
-    """Task routed to a queue not in CELERY_QUEUES."""
+    """Task routed to a queue not in ``conf.queues``."""
 
 
 class ImproperlyConfigured(ImportError):
     """Celery is somehow improperly configured."""
 
 
+@python_2_unicode_compatible
 class NotRegistered(KeyError, CeleryError):
     """The task is not registered."""
 
@@ -155,7 +158,7 @@ class NotConfigured(CeleryWarning):
 
 
 class AlwaysEagerIgnored(CeleryWarning):
-    """send_task ignores CELERY_ALWAYS_EAGER option"""
+    """send_task ignores :setting:`task_always_eager` option"""
 
 
 class InvalidTaskError(CeleryError):

@@ -10,12 +10,12 @@
 from __future__ import absolute_import, unicode_literals
 
 import logging
-import socket
 import sys
 
 from datetime import datetime
 from weakref import ref
 
+from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr, safe_str
 
 from celery import signals
@@ -25,9 +25,9 @@ from celery.exceptions import (
     SoftTimeLimitExceeded, TimeLimitExceeded,
     WorkerLostError, Terminated, Retry, Reject,
 )
-from celery.five import string
+from celery.five import python_2_unicode_compatible, string
 from celery.platforms import signals as _signals
-from celery.utils import cached_property
+from celery.utils import cached_property, gethostname
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.timeutils import maybe_iso8601, timezone, maybe_make_aware
@@ -64,6 +64,7 @@ task_ready = state.task_ready
 revoked_tasks = state.revoked
 
 
+@python_2_unicode_compatible
 class Request(object):
     """A request for task execution."""
     acknowledged = False
@@ -77,10 +78,11 @@ class Request(object):
 
     if not IS_PYPY:  # pragma: no cover
         __slots__ = (
-            'app', 'type', 'name', 'id', 'on_ack', 'body',
-            'hostname', 'eventer', 'connection_errors', 'task', 'eta',
-            'expires', 'request_dict', 'on_reject', 'utc',
+            'app', 'type', 'name', 'id', 'root_id', 'parent_id',
+            'on_ack', 'body', 'hostname', 'eventer', 'connection_errors',
+            'task', 'eta', 'expires', 'request_dict', 'on_reject', 'utc',
             'content_type', 'content_encoding', 'argsrepr', 'kwargsrepr',
+            '_decoded',
             '__weakref__', '__dict__',
         )
 
@@ -99,6 +101,7 @@ class Request(object):
         self.message = message
         self.body = body
         self.utc = utc
+        self._decoded = decoded
         if decoded:
             self.content_type = self.content_encoding = None
         else:
@@ -108,15 +111,17 @@ class Request(object):
 
         self.id = headers['id']
         type = self.type = self.name = headers['task']
+        self.root_id = headers.get('root_id')
+        self.parent_id = headers.get('parent_id')
         if 'shadow' in headers:
-            self.name = headers['shadow']
+            self.name = headers['shadow'] or self.name
         if 'timelimit' in headers:
             self.time_limits = headers['timelimit']
         self.argsrepr = headers.get('argsrepr', '')
         self.kwargsrepr = headers.get('kwargsrepr', '')
         self.on_ack = on_ack
         self.on_reject = on_reject
-        self.hostname = hostname or socket.gethostname()
+        self.hostname = hostname or gethostname()
         self.eventer = eventer
         self.connection_errors = connection_errors or ()
         self.task = task or self.app.tasks[type]
@@ -231,7 +236,7 @@ class Request(object):
                 return True
 
     def terminate(self, pool, signal=None):
-        signal = _signals.signum(signal or 'TERM')
+        signal = _signals.signum(signal or TERM_SIGNAME)
         if self.time_start:
             pool.terminate_job(self.worker_pid, signal)
             self._announce_revoked('terminated', True, signal, False)
@@ -355,12 +360,14 @@ class Request(object):
             )
         # (acks_late) acknowledge after result stored.
         if self.task.acks_late:
-            reject_and_requeue = (
+            requeue = self.delivery_info.get('redelivered', None) is False
+            reject = (
                 self.task.reject_on_worker_lost and
-                isinstance(exc, WorkerLostError) and
-                self.delivery_info.get('redelivered', False) is False)
-            if reject_and_requeue:
-                self.reject(requeue=True)
+                isinstance(exc, WorkerLostError)
+            )
+            if reject:
+                self.reject(requeue=requeue)
+                send_failed_event = False
             else:
                 self.acknowledge()
 
@@ -385,19 +392,22 @@ class Request(object):
         if not self.acknowledged:
             self.on_reject(logger, self.connection_errors, requeue)
             self.acknowledged = True
+            self.send_event('task-rejected', requeue=requeue)
 
     def info(self, safe=False):
-        return {'id': self.id,
-                'name': self.name,
-                'args': self.argsrepr,
-                'kwargs': self.kwargsrepr,
-                'type': self.type,
-                'body': self.body,
-                'hostname': self.hostname,
-                'time_start': self.time_start,
-                'acknowledged': self.acknowledged,
-                'delivery_info': self.delivery_info,
-                'worker_pid': self.worker_pid}
+        return {
+            'id': self.id,
+            'name': self.name,
+            'args': self.argsrepr,
+            'kwargs': self.kwargsrepr,
+            'type': self.type,
+            'body': self.body,
+            'hostname': self.hostname,
+            'time_start': self.time_start,
+            'acknowledged': self.acknowledged,
+            'delivery_info': self.delivery_info,
+            'worker_pid': self.worker_pid,
+        }
 
     def __str__(self):
         return ' '.join([
@@ -419,7 +429,7 @@ class Request(object):
     @property
     def tzlocal(self):
         if self._tzlocal is None:
-            self._tzlocal = self.app.conf.CELERY_TIMEZONE
+            self._tzlocal = self.app.conf.timezone
         return self._tzlocal
 
     @property
@@ -457,14 +467,21 @@ class Request(object):
 
     @cached_property
     def _payload(self):
-        return self.message.payload
+        return self.body if self._decoded else self.message.payload
 
     @cached_property
     def chord(self):
-        # used by backend.on_chord_part_return when failures reported
+        # used by backend.mark_as_failure when failure is reported
         # by parent process
         _, _, embed = self._payload
         return embed.get('chord')
+
+    @cached_property
+    def errbacks(self):
+        # used by backend.mark_as_failure when failure is reported
+        # by parent process
+        _, _, embed = self._payload
+        return embed.get('errbacks')
 
     @cached_property
     def group(self):

@@ -100,7 +100,6 @@ import errno
 import os
 import shlex
 import signal
-import socket
 import sys
 
 from collections import OrderedDict, defaultdict, namedtuple
@@ -115,7 +114,7 @@ from celery import VERSION_BANNER
 from celery.five import items
 from celery.platforms import Pidfile, IS_WINDOWS
 from celery.utils import term
-from celery.utils import host_format, node_format, nodesplit
+from celery.utils import gethostname, host_format, node_format, nodesplit
 from celery.utils.text import pluralize
 
 __all__ = ['MultiTool']
@@ -143,6 +142,7 @@ additional options (must appear after command name):
     * --verbose:    Show more output.
     * --no-color:   Don't display colors.
 """
+CELERY_EXE = 'celery'
 
 multi_args_t = namedtuple(
     'multi_args_t', ('name', 'argv', 'expander', 'namespace'),
@@ -151,12 +151,6 @@ multi_args_t = namedtuple(
 
 def main():
     sys.exit(MultiTool().execute_from_commandline(sys.argv))
-
-
-CELERY_EXE = 'celery'
-if sys.version_info < (2, 7):
-    # pkg.__main__ first supported in Py2.7
-    CELERY_EXE = 'celery.__main__'
 
 
 def celery_exe(*args):
@@ -460,34 +454,50 @@ class MultiTool(object):
         return str(self.colored.magenta('DOWN'))
 
 
+def _args_for_node(p, name, prefix, suffix, cmd, append, options):
+    name, nodename, expand = _get_nodename(
+        name, prefix, suffix, options)
+
+    argv = ([expand(cmd)] +
+            [format_opt(opt, expand(value))
+                for opt, value in items(p.optmerge(name, options))] +
+            [p.passthrough])
+    if append:
+        argv.append(expand(append))
+    return multi_args_t(nodename, argv, expand, name)
+
+
 def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
     names = p.values
     options = dict(p.options)
-    passthrough = p.passthrough
     ranges = len(names) == 1
     if ranges:
         try:
-            noderange = int(names[0])
+            names, prefix = _get_ranges(names)
         except ValueError:
             pass
-        else:
-            names = [str(n) for n in range(1, noderange + 1)]
-            prefix = 'celery'
     cmd = options.pop('--cmd', cmd)
     append = options.pop('--append', append)
     hostname = options.pop('--hostname',
-                           options.pop('-n', socket.gethostname()))
+                           options.pop('-n', gethostname()))
     prefix = options.pop('--prefix', prefix) or ''
     suffix = options.pop('--suffix', suffix) or hostname
-    if suffix in ('""', "''"):
-        suffix = ''
+    suffix = '' if suffix in ('""', "''") else suffix
 
-    for ns_name, ns_opts in list(items(p.namespaces)):
-        if ',' in ns_name or (ranges and '-' in ns_name):
-            for subns in parse_ns_range(ns_name, ranges):
-                p.namespaces[subns].update(ns_opts)
-            p.namespaces.pop(ns_name)
+    _update_ns_opts(p, names)
+    _update_ns_ranges(p, ranges)
+    return (_args_for_node(p, name, prefix, suffix, cmd, append, options)
+            for name in names)
 
+
+def _get_ranges(names):
+    noderange = int(names[0])
+    names = [str(n) for n in range(1, noderange + 1)]
+    prefix = 'celery'
+    return names, prefix
+
+
+def _update_ns_opts(p, names):
     # Numbers in args always refers to the index in the list of names.
     # (e.g. `start foo bar baz -c:1` where 1 is foo, 2 is bar, and so on).
     for ns_name, ns_opts in list(items(p.namespaces)):
@@ -500,7 +510,16 @@ def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
             except IndexError:
                 raise KeyError('No node at index %r' % (ns_name,))
 
-    for name in names:
+
+def _update_ns_ranges(p, ranges):
+    for ns_name, ns_opts in list(items(p.namespaces)):
+        if ',' in ns_name or (ranges and '-' in ns_name):
+            for subns in parse_ns_range(ns_name, ranges):
+                p.namespaces[subns].update(ns_opts)
+            p.namespaces.pop(ns_name)
+
+
+def _get_nodename(name, prefix, suffix, options):
         hostname = suffix
         if '@' in name:
             nodename = options['-n'] = host_format(name)
@@ -511,18 +530,11 @@ def multi_args(p, cmd='celery worker', append='', prefix='', suffix=''):
             nodename = options['-n'] = host_format(
                 '{0}@{1}'.format(shortname, hostname),
             )
-
         expand = partial(
             node_format, nodename=nodename, N=shortname, d=hostname,
             h=nodename, i='%i', I='%I',
         )
-        argv = ([expand(cmd)] +
-                [format_opt(opt, expand(value))
-                 for opt, value in items(p.optmerge(name, options))] +
-                [passthrough])
-        if append:
-            argv.append(expand(append))
-        yield multi_args_t(nodename, argv, expand, name)
+        return name, nodename, expand
 
 
 class NamespacedOptionParser(object):

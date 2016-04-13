@@ -8,7 +8,7 @@ Experimental task class that buffers messages and processes them as a list.
 .. warning::
 
     For this to work you have to set
-    :setting:`CELERYD_PREFETCH_MULTIPLIER` to zero, or some value where
+    :setting:`worker_prefetch_multiplier` to zero, or some value where
     the final multiplied value is higher than ``flush_every``.
 
     In the future we hope to add the ability to direct batching tasks
@@ -17,7 +17,7 @@ Experimental task class that buffers messages and processes them as a list.
 **Simple Example**
 
 A click counter that flushes the buffer every 100 messages, and every
-seconds.  Does not do anything with the data, but can easily be modified
+10 seconds.  Does not do anything with the data, but can easily be modified
 to store it in a database.
 
 .. code-block:: python
@@ -57,7 +57,7 @@ messages, and every 10 seconds.
         )
         # use mark_as_done to manually return response data
         for response, request in zip(reponses, requests):
-            app.backend.mark_as_done(request.id, response)
+            app.backend.mark_as_done(request.id, response, request)
 
 
     def wot_api_real(urls):
@@ -81,7 +81,7 @@ Using the API is done as follows::
         app.backend.mark_as_done(request.id, response)
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from itertools import count
 
@@ -241,7 +241,7 @@ class Batches(Task):
                 logger.debug('Batches: Buffer complete: %s', len(requests))
                 self.flush(requests)
         if not requests:
-            logger.debug('Batches: Cancelling timer: Nothing in buffer.')
+            logger.debug('Batches: Canceling timer: Nothing in buffer.')
             if self._tref:
                 self._tref.cancel()  # cancel timer.
             self._tref = None

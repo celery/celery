@@ -1,3 +1,5 @@
+from __future__ import absolute_import, unicode_literals
+
 import requests
 
 from celery import task

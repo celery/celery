@@ -34,7 +34,7 @@ Configuration
 Configuration is easy, set the transport, and configure the location of
 your Beanstalk database::
 
-    BROKER_URL = 'beanstalk://localhost:11300'
+    broker_url = 'beanstalk://localhost:11300'
 
 Where the URL is in the format of::
 

@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
@@ -6,7 +6,7 @@ from celery.security.certificate import Certificate, CertStore, FSCertStore
 from . import CERT1, CERT2, KEY1
 from .case import SecurityCase
 
-from celery.tests.case import Mock, SkipTest, mock_open, patch
+from celery.tests.case import Mock, mock, patch, skip
 
 
 class test_Certificate(SecurityCase):
@@ -16,15 +16,25 @@ class test_Certificate(SecurityCase):
         Certificate(CERT2)
 
     def test_invalid_certificate(self):
-        self.assertRaises((SecurityError, TypeError), Certificate, None)
-        self.assertRaises(SecurityError, Certificate, '')
-        self.assertRaises(SecurityError, Certificate, 'foo')
-        self.assertRaises(SecurityError, Certificate, CERT1[:20] + CERT1[21:])
-        self.assertRaises(SecurityError, Certificate, KEY1)
+        with self.assertRaises((SecurityError, TypeError)):
+            Certificate(None)
+        with self.assertRaises(SecurityError):
+            Certificate('')
+        with self.assertRaises(SecurityError):
+            Certificate('foo')
+        with self.assertRaises(SecurityError):
+            Certificate(CERT1[:20] + CERT1[21:])
+        with self.assertRaises(SecurityError):
+            Certificate(KEY1)
 
+    @skip.todo(reason='cert expired')
     def test_has_expired(self):
-        raise SkipTest('cert expired')
         self.assertFalse(Certificate(CERT1).has_expired())
+
+    def test_has_expired_mock(self):
+        x = Certificate(CERT1)
+        x._cert = Mock(name='cert')
+        self.assertIs(x.has_expired(), x._cert.has_expired())
 
 
 class test_CertStore(SecurityCase):
@@ -44,7 +54,8 @@ class test_CertStore(SecurityCase):
         cert1 = Certificate(CERT1)
         certstore = CertStore()
         certstore.add_cert(cert1)
-        self.assertRaises(SecurityError, certstore.add_cert, cert1)
+        with self.assertRaises(SecurityError):
+            certstore.add_cert(cert1)
 
 
 class test_FSCertStore(SecurityCase):
@@ -57,7 +68,7 @@ class test_FSCertStore(SecurityCase):
         cert.has_expired.return_value = False
         isdir.return_value = True
         glob.return_value = ['foo.cert']
-        with mock_open():
+        with mock.open():
             cert.get_id.return_value = 1
             x = FSCertStore('/var/certs')
             self.assertIn(1, x._certs)

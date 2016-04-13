@@ -5,11 +5,13 @@
 Provides a way to safely weakref any function, including bound methods (which
 aren't handled by the core weakref module).
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 import traceback
 import weakref
+
+from celery.five import python_2_unicode_compatible
 
 __all__ = ['safe_ref']
 
@@ -42,6 +44,7 @@ def safe_ref(target, on_delete=None):  # pragma: no cover
         return weakref.ref(target)
 
 
+@python_2_unicode_compatible
 class BoundMethodWeakref(object):  # pragma: no cover
     """'Safe' and reusable weak references to instance methods.
 
@@ -167,14 +170,14 @@ class BoundMethodWeakref(object):  # pragma: no cover
     calculate_key = classmethod(calculate_key)
 
     def __str__(self):
-        """Give a friendly representation of the object"""
         return '{0}( {1}.{2} )'.format(
             type(self).__name__,
             self.self_name,
             self.fun_name,
         )
 
-    __repr__ = __str__
+    def __repr__(self):
+        return str(self)
 
     def __bool__(self):
         """Whether we are still a valid reference"""

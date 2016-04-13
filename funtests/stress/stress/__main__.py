@@ -31,7 +31,7 @@ class Stress(Command):
             Option('-r', '--repeat', type='float', default=0,
                    help='Number of times to repeat the test suite'),
             Option('-g', '--group', default='all',
-                   help='Specify test group (all|green)'),
+                   help='Specify test group (all|green|redis)'),
             Option('--diag', default=False, action='store_true',
                    help='Enable diagnostics (slow)'),
             Option('-J', '--no-join', default=False, action='store_true',

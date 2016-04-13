@@ -49,7 +49,7 @@ Fixes
 * worker: Now properly handles errors occurring while trying to acknowledge
   the message.
 
-* `TaskRequest.on_failure` now encodes traceback using the current filesystem
+* `TaskRequest.on_failure` now encodes traceback using the current file-system
    encoding.  (Issue #286).
 
 * `EagerResult` can now be pickled (Issue #288).
@@ -80,7 +80,7 @@ Documentation
 * `EventReceiver`: now sends heartbeat request to find workers.
 
     This means :program:`celeryev` and friends finds workers immediately
-    at startup.
+    at start-up.
 
 * celeryev cursesmon: Set screen_delay to 10ms, so the screen refreshes more
   often.
@@ -197,7 +197,7 @@ News
 
     .. code-block:: python
 
-        CELERYBEAT_SCHEDULER = "djcelery.schedulers.DatabaseScheduler"
+        CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 
 * Added Task.expires: Used to set default expiry time for tasks.
 
@@ -237,13 +237,13 @@ News
     .. code-block:: pycon
 
         >>> from celery.task.control import inspect
-        >>> inspect.add_consumer(queue="queue", exchange="exchange",
-        ...                      exchange_type="direct",
-        ...                      routing_key="key",
+        >>> inspect.add_consumer(queue='queue', exchange='exchange',
+        ...                      exchange_type='direct',
+        ...                      routing_key='key',
         ...                      durable=False,
         ...                      auto_delete=True)
 
-        >>> inspect.cancel_consumer("queue")
+        >>> inspect.cancel_consumer('queue')
 
 * celerybeat: Now logs the traceback if a message can't be sent.
 
@@ -251,7 +251,7 @@ News
 
 * README/introduction/homepage: Added link to `Flask-Celery`_.
 
-.. _`Flask-Celery`: http://github.com/ask/flask-celery
+.. _`Flask-Celery`: https://github.com/ask/flask-celery
 
 .. _version-2.1.0:
 
@@ -278,8 +278,8 @@ Important Notes
 * No longer depends on SQLAlchemy, this needs to be installed separately
   if the database result backend is used.
 
-* django-celery now comes with a monitor for the Django Admin interface.
-  This can also be used if you're not a Django user.
+* :pypi:`django-celery` now comes with a monitor for the Django Admin
+  interface.  This can also be used if you're not a Django user.
   (Update: Django-Admin monitor has been replaced with Flower, see the
   Monitoring guide).
 
@@ -336,8 +336,8 @@ News
     This can then be stored in a database to generate statistics
     with, or even monitoring over longer time periods.
 
-    django-celery now comes with a Celery monitor for the Django
-    Admin interface. To use this you need to run the django-celery
+    :pypi:`django-celery` now comes with a Celery monitor for the Django
+    Admin interface. To use this you need to run the :pypi:`django-celery`
     snapshot camera, which stores snapshots to the database at configurable
     intervals.
 
@@ -349,7 +349,7 @@ News
 
             $ python manage.py syncdb
 
-    2. Start the django-celery snapshot camera:
+    2. Start the :pypi:`django-celery` snapshot camera:
 
         .. code-block:: console
 
@@ -366,15 +366,15 @@ News
 
     New command-line arguments to celeryev:
 
-        * :option:`-c|--camera`: Snapshot camera class to use.
-        * :option:`--logfile|-f`: Log file
-        * :option:`--loglevel|-l`: Log level
-        * :option:`--maxrate|-r`: Shutter rate limit.
-        * :option:`--freq|-F`: Shutter frequency
+        * :option:`celery events --camera`: Snapshot camera class to use.
+        * :option:`celery events --logfile`: Log file
+        * :option:`celery events --loglevel`: Log level
+        * :option:`celery events --maxrate`: Shutter rate limit.
+        * :option:`celery events --freq`: Shutter frequency
 
-    The :option:`--camera` argument is the name of a class used to take
-    snapshots with. It must support the interface defined by
-    :class:`celery.events.snapshot.Polaroid`.
+    The :option:`--camera <celery events --camera>` argument is the name
+    of a class used to take snapshots with. It must support the interface
+    defined by :class:`celery.events.snapshot.Polaroid`.
 
     Shutter frequency controls how often the camera thread wakes up,
     while the rate limit controls how often it will actually take
@@ -389,7 +389,7 @@ News
     anything new.
 
     The rate limit is off by default, which means it will take a snapshot
-    for every :option:`--frequency` seconds.
+    for every :option:`--frequency <celery events --frequency>` seconds.
 
 * :func:`~celery.task.control.broadcast`: Added callback argument, this can be
   used to process replies immediately as they arrive.
@@ -455,11 +455,13 @@ News
 
         @signals.setup_logging.connect
         def setup_logging(**kwargs):
-            fileConfig("logging.conf")
+            fileConfig('logging.conf')
 
     If there are no receivers for this signal, the logging subsystem
-    will be configured using the :option:`--loglevel`/:option:`--logfile`
-    argument, this will be used for *all defined loggers*.
+    will be configured using the
+    :option:`--loglevel <celery worker --loglevel>`/
+    :option:`--logfile <celery worker --logfile>`
+    arguments, this will be used for *all defined loggers*.
 
     Remember that the worker also redirects stdout and stderr
     to the celery logger, if manually configure logging
@@ -472,11 +474,12 @@ News
 
        def setup_logging(**kwargs):
             import logging
-            fileConfig("logging.conf")
-            stdouts = logging.getLogger("mystdoutslogger")
+            fileConfig('logging.conf')
+            stdouts = logging.getLogger('mystdoutslogger')
             log.redirect_stdouts_to_logger(stdouts, loglevel=logging.WARNING)
 
-* worker Added command line option :option:`-I`/:option:`--include`:
+* worker Added command line option
+  :option:`--include <celery worker --include>`:
 
     A comma separated list of (task) modules to be imported.
 
@@ -494,7 +497,7 @@ News
 * worker: Now uses `multiprocessing.freeze_support()` so that it should work
   with **py2exe**, **PyInstaller**, **cx_Freeze**, etc.
 
-* worker: Now includes more metadata for the :state:`STARTED` state: PID and
+* worker: Now includes more meta-data for the :state:`STARTED` state: PID and
   host name of the worker that started the task.
 
     See issue #181
@@ -504,11 +507,11 @@ News
 
     e.g.:
 
-        >>> s = subtask((1, 2), {"foo": "bar"}, baz=1)
+        >>> s = subtask((1, 2), {'foo': 'bar'}, baz=1)
         >>> s.args
         (1, 2)
         >>> s.kwargs
-        {"foo": "bar", "baz": 1}
+        {'foo': 'bar', 'baz': 1}
 
     See issue #182.
 
@@ -740,7 +743,7 @@ Experimental
 
 * Added generic init.d script using `celeryd-multi`
 
-    http://github.com/celery/celery/tree/master/extra/generic-init.d/celeryd
+    https://github.com/celery/celery/tree/master/extra/generic-init.d/celeryd
 
 .. _v210-documentation:
 

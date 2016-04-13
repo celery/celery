@@ -1,9 +1,12 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
+import celery
 import os
 
+from functools import partial
+
 from celery.five import items
-from kombu import Exchange, Queue
+from kombu import Queue
 from kombu.utils import symbol_by_name
 
 CSTRESS_TRANS = os.environ.get('CSTRESS_TRANS', False)
@@ -11,6 +14,8 @@ default_queue = 'c.stress.trans' if CSTRESS_TRANS else 'c.stress'
 CSTRESS_QUEUE = os.environ.get('CSTRESS_QUEUE_NAME', default_queue)
 
 templates = {}
+
+IS_CELERY_4 = celery.VERSION[0] >= 4
 
 
 def template(name=None):
@@ -21,15 +26,23 @@ def template(name=None):
     return _register
 
 
-def use_template(app, template='default'):
-    template = template.split(',')
+if IS_CELERY_4:
 
-    # mixin the rest of the templates when the config is needed
-    @app.on_after_configure.connect(weak=False)
-    def load_template(sender, source, **kwargs):
-        mixin_templates(template[1:], source)
+    def use_template(app, template='default'):
+        template = template.split(',')
 
-    app.config_from_object(templates[template[0]])
+        # mixin the rest of the templates when the config is needed
+        @app.on_after_configure.connect(weak=False)
+        def load_template(sender, source, **kwargs):
+            mixin_templates(template[1:], source)
+
+        app.config_from_object(templates[template[0]])
+else:
+
+    def use_template(app, template='default'):  # noqa
+        template = template.split(',')
+        app.after_configure = partial(mixin_templates, template[1:])
+        app.config_from_object(templates[template[0]])
 
 
 def mixin_templates(templates, conf):
@@ -40,7 +53,7 @@ def mixin_template(template, conf):
     cls = symbol_by_name(templates[template])
     conf.update(dict(
         (k, v) for k, v in items(vars(cls))
-        if k.isupper() and not k.startswith('_')
+        if not k.startswith('_')
     ))
 
 
@@ -50,24 +63,21 @@ def template_names():
 
 @template()
 class default(object):
-    BROKER_HEARTBEAT = 30
     CELERY_ACCEPT_CONTENT = ['json']
-    CELERY_DEFAULT_QUEUE = CSTRESS_QUEUE
-    CELERY_TASK_SERIALIZER = 'json'
+    BROKER_URL = os.environ.get('CSTRESS_BROKER', 'pyamqp://')
+    BROKER_HEARTBEAT = 30
+    CELERY_RESULT_BACKEND = os.environ.get('CSTRESS_BACKEND', 'rpc://')
     CELERY_RESULT_SERIALIZER = 'json'
     CELERY_RESULT_PERSISTENT = True
-    CELERY_TASK_RESULT_EXPIRES = 300
-    CELERY_QUEUES = [
+    CELERY_RESULT_EXPIRES = 300
+    CELERY_MAX_CACHED_RESULTS = 100
+    CELERY_DEFAULT_QUEUE = CSTRESS_QUEUE
+    CELERY_TASK_QUEUES = [
         Queue(CSTRESS_QUEUE,
-              exchange=Exchange(CSTRESS_QUEUE),
-              routing_key=CSTRESS_QUEUE,
               durable=not CSTRESS_TRANS,
               no_ack=CSTRESS_TRANS),
     ]
-    CELERY_MAX_CACHED_RESULTS = -1
-    BROKER_URL = os.environ.get('CSTRESS_BROKER', 'amqp://')
-    CELERY_RESULT_BACKEND = os.environ.get('CSTRESS_BACKEND', 'rpc://')
-    CELERYD_PREFETCH_MULTIPLIER = int(os.environ.get('CSTRESS_PREFETCH', 10))
+    CELERY_TASK_SERIALIZER = 'json'
     CELERY_TASK_PUBLISH_RETRY_POLICY = {
         'max_retries': 100,
         'interval_max': 2,
@@ -76,23 +86,22 @@ class default(object):
     CELERY_TASK_PROTOCOL = 2
     if CSTRESS_TRANS:
         CELERY_DEFAULT_DELIVERY_MODE = 1
+    CELERYD_PREFETCH_MULTIPLIER = int(os.environ.get('CSTRESS_PREFETCH', 10))
 
 
 @template()
 class redis(default):
     BROKER_URL = os.environ.get('CSTRESS_BROKER', 'redis://')
-    CELERY_RESULT_BACKEND = os.environ.get(
-        'CSTRESS_BACKEND', 'redis://?new_join=1',
-    )
     BROKER_TRANSPORT_OPTIONS = {
         'fanout_prefix': True,
         'fanout_patterns': True,
     }
+    CELERY_RESULT_BACKEND = os.environ.get('CSTRESS_BACKEND', 'redis://')
 
 
 @template()
 class redistore(default):
-    CELERY_RESULT_BACKEND = 'redis://?new_join=1'
+    CELERY_RESULT_BACKEND = 'redis://'
 
 
 @template()
@@ -135,3 +144,14 @@ class sqs(default):
 @template()
 class proto1(default):
     CELERY_TASK_PROTOCOL = 1
+
+
+@template()
+class vagrant1(default):
+    BROKER_URL = 'pyamqp://testing:t3s71ng@192.168.33.123//testing'
+
+
+@template()
+class vagrant1_redis(redis):
+    BROKER_URL = 'redis://192.168.33.123'
+    CELERY_RESULT_BACKEND = 'redis://192.168.33.123'

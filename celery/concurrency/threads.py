@@ -6,7 +6,7 @@
     Pool implementation using threads.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.five import UserDict
 
@@ -34,6 +34,9 @@ class TaskPool(BasePool):
         super(TaskPool, self).__init__(*args, **kwargs)
 
     def on_start(self):
+        # make sure all threads have the same current_app.
+        self.app.set_default()
+
         self._pool = self.ThreadPool(self.limit)
         # threadpool stores all work requests until they are processed
         # we don't need this dict, and it occupies way too much memory.

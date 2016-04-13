@@ -6,33 +6,35 @@
     SQLAlchemy sessions.
 
 """
-from __future__ import absolute_import
-
-try:
-    from billiard.util import register_after_fork
-except ImportError:
-    register_after_fork = None
+from __future__ import absolute_import, unicode_literals
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
+from kombu.utils import register_after_fork
+
 ResultModelBase = declarative_base()
 
 __all__ = ['SessionManager']
 
 
+def _after_fork_cleanup_session(session):
+    session._after_fork()
+
+
 class SessionManager(object):
+
     def __init__(self):
         self._engines = {}
         self._sessions = {}
         self.forked = False
         self.prepared = False
         if register_after_fork is not None:
-            register_after_fork(self, self._after_fork)
+            register_after_fork(self, _after_fork_cleanup_session)
 
-    def _after_fork(self,):
+    def _after_fork(self):
         self.forked = True
 
     def get_engine(self, dburi, **kwargs):

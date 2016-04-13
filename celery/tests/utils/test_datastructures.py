@@ -1,7 +1,9 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import pickle
-import sys
+
+from collections import Mapping
+from itertools import count
 
 from billiard.einfo import ExceptionInfo
 from time import time
@@ -13,19 +15,16 @@ from celery.datastructures import (
     ConfigurationView,
     DependencyGraph,
 )
-from celery.five import items
+from celery.five import WhateverIO, items
+from celery.utils.objects import Bunch
 
-from celery.tests.case import Case, Mock, WhateverIO, SkipTest, patch
-
-
-class Object(object):
-    pass
+from celery.tests.case import Case, Mock, skip
 
 
 class test_DictAttribute(Case):
 
     def test_get_set_keys_values_items(self):
-        x = DictAttribute(Object())
+        x = DictAttribute(Bunch())
         x['foo'] = 'The quick brown fox'
         self.assertEqual(x['foo'], 'The quick brown fox')
         self.assertEqual(x['foo'], x.obj.foo)
@@ -43,19 +42,20 @@ class test_DictAttribute(Case):
         self.assertIn('The quick yellow fox', list(x.values()))
 
     def test_setdefault(self):
-        x = DictAttribute(Object())
-        self.assertEqual(x.setdefault('foo', 'NEW'), 'NEW')
-        self.assertEqual(x.setdefault('foo', 'XYZ'), 'NEW')
+        x = DictAttribute(Bunch())
+        x.setdefault('foo', 'NEW')
+        self.assertEqual(x['foo'], 'NEW')
+        x.setdefault('foo', 'XYZ')
+        self.assertEqual(x['foo'], 'NEW')
 
     def test_contains(self):
-        x = DictAttribute(Object())
+        x = DictAttribute(Bunch())
         x['foo'] = 1
         self.assertIn('foo', x)
         self.assertNotIn('bar', x)
 
     def test_items(self):
-        obj = Object()
-        obj.attr1 = 1
+        obj = Bunch(attr1=1)
         x = DictAttribute(obj)
         x['attr2'] = 2
         self.assertEqual(x['attr1'], 1)
@@ -71,8 +71,10 @@ class test_ConfigurationView(Case):
                                        'both': 1}])
 
     def test_setdefault(self):
-        self.assertEqual(self.view.setdefault('both', 36), 2)
-        self.assertEqual(self.view.setdefault('new', 36), 36)
+        self.view.setdefault('both', 36)
+        self.assertEqual(self.view['both'], 2)
+        self.view.setdefault('new', 36)
+        self.assertEqual(self.view['new'], 36)
 
     def test_get(self):
         self.assertEqual(self.view.get('both'), 2)
@@ -116,8 +118,7 @@ class test_ConfigurationView(Case):
         self.assertEqual(self.view.foo, 10)
 
     def test_add_defaults_object(self):
-        defaults = Object()
-        defaults.foo = 10
+        defaults = Bunch(foo=10)
         self.view.add_defaults(defaults)
         self.assertEqual(self.view.foo, 10)
 
@@ -166,15 +167,10 @@ class test_ExceptionInfo(Case):
             self.assertTrue(r)
 
 
+@skip.if_win32()
 class test_LimitedSet(Case):
 
-    def setUp(self):
-        if sys.platform == 'win32':
-            raise SkipTest('Not working on Windows')
-
     def test_add(self):
-        if sys.platform == 'win32':
-            raise SkipTest('Not working properly on Windows')
         s = LimitedSet(maxlen=2)
         s.add('foo')
         s.add('bar')
@@ -185,44 +181,50 @@ class test_LimitedSet(Case):
             self.assertIn(n, s)
         self.assertNotIn('foo', s)
 
+        s = LimitedSet(maxlen=10)
+        for i in range(150):
+            s.add(i)
+        self.assertLessEqual(len(s), 10)
+
+        # make sure heap is not leaking:
+        self.assertLessEqual(
+            len(s._heap),
+            len(s) * (100. + s.max_heap_percent_overload) / 100,
+        )
+
     def test_purge(self):
-        s = LimitedSet(maxlen=None)
+        # purge now enforces rules
+        # cant purge(1) now. but .purge(now=...) still works
+        s = LimitedSet(maxlen=10)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(1)
-        self.assertEqual(len(s), 9)
-        s.purge(None)
+        s.purge()
         self.assertEqual(len(s), 2)
 
         # expired
-        s = LimitedSet(maxlen=None, expires=1)
+        s = LimitedSet(maxlen=10, expires=1)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(1, now=lambda: time() + 100)
-        self.assertEqual(len(s), 9)
-        s.purge(None, now=lambda: time() + 100)
-        self.assertEqual(len(s), 2)
+        s.purge(now=time() + 100)
+        self.assertEqual(len(s), 0)
 
         # not expired
         s = LimitedSet(maxlen=None, expires=1)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(1, now=lambda: time() - 100)
-        self.assertEqual(len(s), 10)
-        s.purge(None, now=lambda: time() - 100)
-        self.assertEqual(len(s), 10)
+        s.purge(now=lambda: time() - 100)
+        self.assertEqual(len(s), 2)
 
-        s = LimitedSet(maxlen=None)
-        [s.add(i) for i in range(10)]
-        s.maxlen = 2
-        with patch('celery.datastructures.heappop') as hp:
-            hp.side_effect = IndexError()
-            s.purge()
-            hp.assert_called_with(s._heap)
-        with patch('celery.datastructures.heappop') as hp:
-            s._data = {i * 2: i * 2 for i in range(10)}
-            s.purge()
-            self.assertEqual(hp.call_count, 10)
+        # expired -> minsize
+        s = LimitedSet(maxlen=10, minlen=10, expires=1)
+        [s.add(i) for i in range(20)]
+        s.minlen = 3
+        s.purge(now=time() + 3)
+        self.assertEqual(s.minlen, len(s))
+        self.assertLessEqual(
+            len(s._heap),
+            s.maxlen * (100. + s.max_heap_percent_overload) / 100,
+        )
 
     def test_pickleable(self):
         s = LimitedSet(maxlen=2)
@@ -231,8 +233,6 @@ class test_LimitedSet(Case):
         self.assertEqual(pickle.loads(pickle.dumps(s)), s)
 
     def test_iter(self):
-        if sys.platform == 'win32':
-            raise SkipTest('Not working on Windows')
         s = LimitedSet(maxlen=3)
         items = ['foo', 'bar', 'baz', 'xaz']
         for item in items:
@@ -255,6 +255,7 @@ class test_LimitedSet(Case):
         s.add('foo')
         s.discard('foo')
         self.assertNotIn('foo', s)
+        self.assertEqual(len(s._data), 0)
         s.discard('foo')
 
     def test_clear(self):
@@ -279,11 +280,78 @@ class test_LimitedSet(Case):
 
         s2.update(['do', 're'])
         self.assertItemsEqual(list(s2), ['do', 're'])
+        s1 = LimitedSet(maxlen=10, expires=None)
+        s2 = LimitedSet(maxlen=10, expires=None)
+        s3 = LimitedSet(maxlen=10, expires=None)
+        s4 = LimitedSet(maxlen=10, expires=None)
+        s5 = LimitedSet(maxlen=10, expires=None)
+        for i in range(12):
+            s1.add(i)
+            s2.add(i*i)
+        s3.update(s1)
+        s3.update(s2)
+        s4.update(s1.as_dict())
+        s4.update(s2.as_dict())
+        s5.update(s1._data)  # revoke is using this
+        s5.update(s2._data)
+        self.assertEqual(s3, s4)
+        self.assertEqual(s3, s5)
+        s2.update(s4)
+        s4.update(s2)
+        self.assertEqual(s2, s4)
+
+    def test_iterable_and_ordering(self):
+        s = LimitedSet(maxlen=35, expires=None)
+        # we use a custom clock here, as time.time() does not have enough
+        # precision when called quickly (can return the same value twice).
+        clock = count(1)
+        for i in reversed(range(15)):
+            s.add(i, now=next(clock))
+        j = 40
+        for i in s:
+            self.assertLess(i, j)  # each item is smaller and smaller
+            j = i
+        self.assertEqual(i, 0)  # last item is zero
+
+    def test_pop_and_ordering_again(self):
+        s = LimitedSet(maxlen=5)
+        for i in range(10):
+            s.add(i)
+        j = -1
+        for _ in range(5):
+            i = s.pop()
+            self.assertLess(j, i)
+        i = s.pop()
+        self.assertEqual(i, None)
 
     def test_as_dict(self):
         s = LimitedSet(maxlen=2)
         s.add('foo')
-        self.assertIsInstance(s.as_dict(), dict)
+        self.assertIsInstance(s.as_dict(), Mapping)
+
+    def test_add_removes_duplicate_from_small_heap(self):
+        s = LimitedSet(maxlen=2)
+        s.add('foo')
+        s.add('foo')
+        s.add('foo')
+        self.assertEqual(len(s), 1)
+        self.assertEqual(len(s._data), 1)
+        self.assertEqual(len(s._heap), 1)
+
+    def test_add_removes_duplicate_from_big_heap(self):
+        s = LimitedSet(maxlen=1000)
+        [s.add(i) for i in range(2000)]
+        self.assertEqual(len(s), 1000)
+        [s.add('foo') for i in range(1000)]
+        # heap is refreshed when 15% larger than _data
+        self.assertLess(len(s._heap), 1150)
+        [s.add('foo') for i in range(1000)]
+        self.assertLess(len(s._heap), 1150)
+
+    def assert_lengths(self, s, expected, expected_data, expected_heap):
+        self.assertEqual(len(s), expected)
+        self.assertEqual(len(s._data), expected_data)
+        self.assertEqual(len(s._heap), expected_heap)
 
 
 class test_AttributeDict(Case):

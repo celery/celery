@@ -7,7 +7,7 @@
     users, groups, and so on.
 
 """
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import atexit
 import errno
@@ -21,10 +21,6 @@ import warnings
 
 from collections import namedtuple
 
-try:
-    from billiard.process import current_process
-except ImportError:
-    current_process = None
 from billiard.compat import get_fdmax, close_open_fds
 # fileno used to be in this module
 from kombu.utils import maybe_fileno
@@ -33,6 +29,11 @@ from contextlib import contextmanager
 
 from .local import try_import
 from .five import items, reraise, string_t
+
+try:
+    from billiard.process import current_process
+except ImportError:  # pragma: no cover
+    current_process = None
 
 _setproctitle = try_import('setproctitle')
 resource = try_import('resource')
@@ -46,7 +47,8 @@ __all__ = ['EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
            'close_open_fds', 'DaemonContext', 'detached', 'parse_uid',
            'parse_gid', 'setgroups', 'initgroups', 'setgid', 'setuid',
            'maybe_drop_privileges', 'signals', 'set_process_title',
-           'set_mp_process_title', 'get_errno_name', 'ignore_errno']
+           'set_mp_process_title', 'get_errno_name', 'ignore_errno',
+           'fd_by_path']
 
 # exitcodes
 EX_OK = getattr(os, 'EX_OK', 0)
@@ -248,6 +250,43 @@ def _create_pidlock(pidfile):
     return pidlock
 
 
+def fd_by_path(paths):
+    """Return a list of fds.
+
+    This method returns list of fds corresponding to
+    file paths passed in paths variable.
+
+    :keyword paths: List of file paths go get fd for.
+
+    :returns: :list:.
+
+    **Example**:
+
+    .. code-block:: python
+
+        keep = fd_by_path(['/dev/urandom',
+                           '/my/precious/'])
+    """
+    stats = set()
+    for path in paths:
+        try:
+            fd = os.open(path, os.O_RDONLY)
+        except OSError:
+            continue
+        try:
+            stats.add(os.fstat(fd)[1:3])
+        finally:
+            os.close(fd)
+
+    def fd_in_stats(fd):
+        try:
+            return os.fstat(fd)[1:3] in stats
+        except OSError:
+            return False
+
+    return [_fd for _fd in range(get_fdmax(2048)) if fd_in_stats(_fd)]
+
+
 class DaemonContext(object):
     _is_open = False
 
@@ -282,7 +321,10 @@ class DaemonContext(object):
                 self.after_chdir()
 
             if not self.fake:
-                close_open_fds(self.stdfds)
+                # We need to keep /dev/urandom from closing because
+                # shelve needs it, and Beat needs shelve to start.
+                keep = list(self.stdfds) + fd_by_path(['/dev/urandom'])
+                close_open_fds(keep)
                 for fd in self.stdfds:
                     self.redirect_to_null(maybe_fileno(fd))
                 if self.after_forkers and mputil is not None:
@@ -299,7 +341,8 @@ class DaemonContext(object):
     def _detach(self):
         if os.fork() == 0:      # first child
             os.setsid()         # create new session
-            if os.fork() > 0:   # second child
+            if os.fork() > 0:   # pragma: no cover
+                # second child
                 os._exit(0)
         else:
             os._exit(0)
@@ -641,7 +684,7 @@ def strargv(argv):
 def set_process_title(progname, info=None):
     """Set the ps name for the currently running process.
 
-    Only works if :mod:`setproctitle` is installed.
+    Only works if :pypi:`setproctitle` is installed.
 
     """
     proctitle = '[{0}]'.format(progname)
@@ -660,7 +703,7 @@ else:
     def set_mp_process_title(progname, info=None, hostname=None):  # noqa
         """Set the ps name using the multiprocessing process name.
 
-        Only works if :mod:`setproctitle` is installed.
+        Only works if :pypi:`setproctitle` is installed.
 
         """
         if hostname:

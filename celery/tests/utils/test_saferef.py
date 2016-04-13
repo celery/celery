@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.five import range
 from celery.utils.dispatch.saferef import safe_ref
@@ -53,7 +53,7 @@ class SaferefTests(Case):
 
         """
         for t in self.ts[:50]:
-            self.assertTrue(safe_ref(t.x) in self.ss)
+            self.assertIn(safe_ref(t.x), self.ss)
 
     def test_valid(self):
         """test_value

@@ -6,19 +6,21 @@
     Database tables for the SQLAlchemy result store backend.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime
 
 import sqlalchemy as sa
 
 from celery import states
+from celery.five import python_2_unicode_compatible
 
 from .session import ResultModelBase
 
 __all__ = ['Task', 'TaskSet']
 
 
+@python_2_unicode_compatible
 class Task(ResultModelBase):
     """Task result/status."""
     __tablename__ = 'celery_taskmeta'
@@ -27,7 +29,7 @@ class Task(ResultModelBase):
     id = sa.Column(sa.Integer, sa.Sequence('task_id_sequence'),
                    primary_key=True,
                    autoincrement=True)
-    task_id = sa.Column(sa.String(255), unique=True)
+    task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
     result = sa.Column(sa.BLOB, nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
@@ -48,6 +50,7 @@ class Task(ResultModelBase):
         return '<Task {0.task_id} state: {0.status}>'.format(self)
 
 
+@python_2_unicode_compatible
 class TaskSet(ResultModelBase):
     """TaskSet result"""
     __tablename__ = 'celery_tasksetmeta'
@@ -55,7 +58,7 @@ class TaskSet(ResultModelBase):
 
     id = sa.Column(sa.Integer, sa.Sequence('taskset_id_sequence'),
                    autoincrement=True, primary_key=True)
-    taskset_id = sa.Column(sa.String(255), unique=True)
+    taskset_id = sa.Column(sa.String(155), unique=True)
     result = sa.Column(sa.BLOB, nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
                           nullable=True)

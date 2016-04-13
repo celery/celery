@@ -1,69 +1,11 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 import time
 
 import celery.utils.timer2 as timer2
 
-from celery.tests.case import Case, Mock, patch
-from kombu.tests.case import redirect_stdouts
-
-
-class test_Entry(Case):
-
-    def test_call(self):
-        scratch = [None]
-
-        def timed(x, y, moo='foo'):
-            scratch[0] = (x, y, moo)
-
-        tref = timer2.Entry(timed, (4, 4), {'moo': 'baz'})
-        tref()
-
-        self.assertTupleEqual(scratch[0], (4, 4, 'baz'))
-
-    def test_cancel(self):
-        tref = timer2.Entry(lambda x: x, (1,), {})
-        tref.cancel()
-        self.assertTrue(tref.cancelled)
-
-    def test_repr(self):
-        tref = timer2.Entry(lambda x: x(1,), {})
-        self.assertTrue(repr(tref))
-
-
-class test_Schedule(Case):
-
-    def test_supports_Timer_interface(self):
-        x = timer2.Schedule()
-        x.stop()
-
-        tref = Mock()
-        x.cancel(tref)
-        tref.cancel.assert_called_with()
-
-        self.assertIs(x.schedule, x)
-
-    def test_handle_error(self):
-        from datetime import datetime
-        scratch = [None]
-
-        def on_error(exc_info):
-            scratch[0] = exc_info
-
-        s = timer2.Schedule(on_error=on_error)
-
-        with patch('kombu.async.timer.to_timestamp') as tot:
-            tot.side_effect = OverflowError()
-            s.enter_at(timer2.Entry(lambda: None, (), {}),
-                       eta=datetime.now())
-            s.enter_at(timer2.Entry(lambda: None, (), {}), eta=None)
-            s.on_error = None
-            with self.assertRaises(OverflowError):
-                s.enter_at(timer2.Entry(lambda: None, (), {}),
-                           eta=datetime.now())
-        exc = scratch[0]
-        self.assertIsInstance(exc, OverflowError)
+from celery.tests.case import Case, Mock, patch, call
 
 
 class test_Timer(Case):
@@ -97,55 +39,23 @@ class test_Timer(Case):
         t.running = True
         t.start = Mock()
         t.ensure_started()
-        self.assertFalse(t.start.called)
+        t.start.assert_not_called()
+        t.running = False
+        t.on_start = Mock()
+        t.ensure_started()
+        t.on_start.assert_called_with(t)
+        t.start.assert_called_with()
 
-    def test_call_repeatedly(self):
-        t = timer2.Timer()
-        try:
-            t.schedule.enter_after = Mock()
-
-            myfun = Mock()
-            myfun.__name__ = 'myfun'
-            t.call_repeatedly(0.03, myfun)
-
-            self.assertEqual(t.schedule.enter_after.call_count, 1)
-            args1, _ = t.schedule.enter_after.call_args_list[0]
-            sec1, tref1, _ = args1
-            self.assertEqual(sec1, 0.03)
-            tref1()
-
-            self.assertEqual(t.schedule.enter_after.call_count, 2)
-            args2, _ = t.schedule.enter_after.call_args_list[1]
-            sec2, tref2, _ = args2
-            self.assertEqual(sec2, 0.03)
-            tref2.cancelled = True
-            tref2()
-
-            self.assertEqual(t.schedule.enter_after.call_count, 2)
-        finally:
-            t.stop()
-
-    @patch('kombu.async.timer.logger')
-    def test_apply_entry_error_handled(self, logger):
-        t = timer2.Timer()
-        t.schedule.on_error = None
-
-        fun = Mock()
-        fun.side_effect = ValueError()
-
-        t.schedule.apply_entry(fun)
-        self.assertTrue(logger.error.called)
-
-    @redirect_stdouts
-    def test_apply_entry_error_not_handled(self, stdout, stderr):
-        t = timer2.Timer()
-        t.schedule.on_error = Mock()
-
-        fun = Mock()
-        fun.side_effect = ValueError()
-        t.schedule.apply_entry(fun)
-        fun.assert_called_with()
-        self.assertFalse(stderr.getvalue())
+    @patch('celery.utils.timer2.sleep')
+    def test_on_tick(self, sleep):
+        on_tick = Mock(name='on_tick')
+        t = timer2.Timer(on_tick=on_tick)
+        ne = t._next_entry = Mock(name='_next_entry')
+        ne.return_value = 3.33
+        ne.on_nth_call_do(t._is_shutdown.set, 3)
+        t.run()
+        sleep.assert_called_with(3.33)
+        on_tick.assert_has_calls([call(3.33), call(3.33), call(3.33)])
 
     @patch('os._exit')
     def test_thread_crash(self, _exit):
@@ -163,9 +73,6 @@ class test_Timer(Case):
         t._is_shutdown.set()
         t.run()
         t._is_stopped.set.assert_called_with()
-
-    def test_to_timestamp(self):
-        self.assertIs(timer2.to_timestamp(3.13), 3.13)
 
     def test_test_enter(self):
         t = timer2.Timer()

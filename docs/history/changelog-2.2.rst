@@ -20,16 +20,17 @@ Security Fixes
 --------------
 
 * [Security: `CELERYSA-0001`_] Daemons would set effective id's rather than
-  real id's when the :option:`--uid`/:option:`--gid` arguments to
-  :program:`celery multi`, :program:`celeryd_detach`,
-  :program:`celery beat` and :program:`celery events` were used.
+  real id's when the :option:`--uid <celery --uid>`/
+  :option:`--gid <celery --gid>` arguments to :program:`celery multi`,
+  :program:`celeryd_detach`, :program:`celery beat` and
+  :program:`celery events` were used.
 
   This means privileges weren't properly dropped, and that it would
   be possible to regain supervisor privileges later.
 
 
 .. _`CELERYSA-0001`:
-    http://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0001.txt
+    https://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0001.txt
 
 .. _version-2.2.7:
 
@@ -46,7 +47,7 @@ Security Fixes
 
 * Redis result backend now works with Redis 2.4.4.
 
-* multi: The :option:`--gid` option now works correctly.
+* multi: The :option:`--gid <celery --gid>` option now works correctly.
 
 * worker: Retry wrongfully used the repr of the traceback instead
   of the string representation.
@@ -361,7 +362,7 @@ Fixes
   instances, not classes.
 
 * :program:`celeryev` did not create pidfile even though the
-  :option:`--pidfile` argument was set.
+  :option:`--pidfile <celery events --pidfile>` argument was set.
 
 * Task logger format was no longer used. (Issue #317).
 
@@ -378,7 +379,7 @@ Fixes
     structure: the exchange key is now a dictionary containing the
     exchange declaration in full.
 
-* The :option:`-Q` option to :program:`celery worker` removed unused queue
+* The :option:`celery worker -Q` option removed unused queue
   declarations, so routing of tasks could fail.
 
     Queues are no longer removed, but rather `app.amqp.queues.consume_from()`
@@ -507,7 +508,7 @@ Important Notes
 
                 @task()
                 def add(x, y, **kwargs):
-                    print("In task %s" % kwargs["task_id"])
+                    print('In task %s' % kwargs['task_id'])
                     return x + y
 
         And this will not use magic keyword arguments (new style):
@@ -518,7 +519,7 @@ Important Notes
 
                 @task()
                 def add(x, y):
-                    print("In task %s" % add.request.id)
+                    print('In task %s' % add.request.id)
                     return x + y
 
     In addition, tasks can choose not to accept magic keyword arguments by
@@ -548,12 +549,12 @@ Important Notes
     =====================================  ===================================
     **Magic Keyword Argument**             **Replace with**
     =====================================  ===================================
-    `kwargs["task_id"]`                    `self.request.id`
-    `kwargs["delivery_info"]`              `self.request.delivery_info`
-    `kwargs["task_retries"]`               `self.request.retries`
-    `kwargs["logfile"]`                    `self.request.logfile`
-    `kwargs["loglevel"]`                   `self.request.loglevel`
-    `kwargs["task_is_eager`                `self.request.is_eager`
+    `kwargs['task_id']`                    `self.request.id`
+    `kwargs['delivery_info']`              `self.request.delivery_info`
+    `kwargs['task_retries']`               `self.request.retries`
+    `kwargs['logfile']`                    `self.request.logfile`
+    `kwargs['loglevel']`                   `self.request.loglevel`
+    `kwargs['task_is_eager']`              `self.request.is_eager`
     **NEW**                                `self.request.args`
     **NEW**                                `self.request.kwargs`
     =====================================  ===================================
@@ -569,8 +570,8 @@ Important Notes
 
     This is great news for I/O-bound tasks!
 
-    To change pool implementations you use the :option:`-P|--pool` argument
-    to :program:`celery worker`, or globally using the
+    To change pool implementations you use the :option:`celery worker --pool`
+    argument, or globally using the
     :setting:`CELERYD_POOL` setting.  This can be the full name of a class,
     or one of the following aliases: `processes`, `eventlet`, `gevent`.
 
@@ -599,19 +600,21 @@ Important Notes
     Python 2.4.  Complain to your package maintainers, sysadmins and bosses:
     tell them it's time to move on!
 
-    Apart from wanting to take advantage of with-statements, coroutines,
-    conditional expressions and enhanced try blocks, the code base
-    now contains so many 2.4 related hacks and workarounds it's no longer
-    just a compromise, but a sacrifice.
+    Apart from wanting to take advantage of :keyword:`with` statements,
+    coroutines, conditional expressions and enhanced :keyword:`try` blocks,
+    the code base now contains so many 2.4 related hacks and workarounds
+    it's no longer just a compromise, but a sacrifice.
 
     If it really isn't your choice, and you don't have the option to upgrade
     to a newer version of Python, you can just continue to use Celery 2.2.
-    Important fixes can be backported for as long as there is interest.
+    Important fixes can be back ported for as long as there is interest.
 
 * worker: Now supports Autoscaling of child worker processes.
 
-    The :option:`--autoscale` option can be used to configure the minimum
-    and maximum number of child worker processes::
+    The :option:`--autoscale <celery worker --autoscale>` option can be used
+    to configure the minimum and maximum number of child worker processes:
+
+    .. code-block:: text
 
         --autoscale=AUTOSCALE
              Enable autoscaling by providing
@@ -627,7 +630,7 @@ Important Notes
 
    Example usage:
 
-   .. code-block:: python
+   .. code-block:: text
 
         from celery.contrib import rdb
         from celery.task import task
@@ -635,9 +638,9 @@ Important Notes
         @task()
         def add(x, y):
             result = x + y
-            rdb.set_trace()  # <- set breakpoint
+            # set breakpoint
+            rdb.set_trace()
             return result
-
 
     :func:`~celery.contrib.rdb.set_trace` sets a breakpoint at the current
     location and creates a socket you can telnet into to remotely debug
@@ -862,8 +865,8 @@ News
         >>> from celery.task.control import revoke
 
         >>> revoke(task_id, terminate=True)
-        >>> revoke(task_id, terminate=True, signal="KILL")
-        >>> revoke(task_id, terminate=True, signal="SIGKILL")
+        >>> revoke(task_id, terminate=True, signal='KILL')
+        >>> revoke(task_id, terminate=True, signal='SIGKILL')
 
 * `TaskSetResult.join_native`: Backend-optimized version of `join()`.
 
@@ -979,8 +982,8 @@ Fixes
 
 * Windows: Utilities no longer output ANSI color codes on Windows
 
-* camqadm: Now properly handles Ctrl+C by simply exiting instead of showing
-  confusing traceback.
+* camqadm: Now properly handles :kbd:`Control-c` by simply exiting instead
+  of showing confusing traceback.
 
 * Windows: All tests are now passing on Windows.
 

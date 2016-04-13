@@ -20,16 +20,17 @@ Security Fixes
 --------------
 
 * [Security: `CELERYSA-0001`_] Daemons would set effective id's rather than
-  real id's when the :option:`--uid`/:option:`--gid` arguments to
-  :program:`celery multi`, :program:`celeryd_detach`,
-  :program:`celery beat` and :program:`celery events` were used.
+  real id's when the :option:`--uid <celery --uid>`/
+  :option:`--gid <celery --gid>` arguments to :program:`celery multi`,
+  :program:`celeryd_detach`, :program:`celery beat` and
+  :program:`celery events` were used.
 
   This means privileges weren't properly dropped, and that it would
   be possible to regain supervisor privileges later.
 
 
 .. _`CELERYSA-0001`:
-    http://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0001.txt
+    https://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0001.txt
 
 Fixes
 -----
@@ -172,12 +173,12 @@ Important Notes
     If you depend on the previous default which was the AMQP backend, then
     you have to set this explicitly before upgrading::
 
-        CELERY_RESULT_BACKEND = "amqp"
+        CELERY_RESULT_BACKEND = 'amqp'
 
     .. note::
 
-        For django-celery users the default backend is still ``database``,
-        and results are not disabled by default.
+        For :pypi:`django-celery` users the default backend is
+        still ``database``, and results are not disabled by default.
 
 * The Debian init scripts have been deprecated in favor of the generic-init.d
   init scripts.
@@ -250,7 +251,7 @@ News
     at runtime using the :func:`time_limit` remote control command::
 
         >>> from celery.task import control
-        >>> control.time_limit("tasks.sleeptask",
+        >>> control.time_limit('tasks.sleeptask',
         ...                    soft=60, hard=120, reply=True)
         [{'worker1.example.com': {'ok': 'time limits set successfully'}}]
 

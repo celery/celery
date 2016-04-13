@@ -39,7 +39,8 @@ The API defines a standard set of execution options, as well as three methods:
 .. topic:: Quick Cheat Sheet
 
     - ``T.delay(arg, kwarg=value)``
-        always a shortcut to ``.apply_async``.
+        Star arguments shortcut to ``.apply_async``.
+        (``.delay(*args, **kwargs)`` calls ``.apply_async(args, kwargs)``).
 
     - ``T.apply_async((arg,), {'kwarg': value})``
 
@@ -247,8 +248,8 @@ To disable retry you can set the ``retry`` execution option to :const:`False`:
     .. hlist::
         :columns: 2
 
-        - :setting:`CELERY_TASK_PUBLISH_RETRY`
-        - :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`
+        - :setting:`task_publish_retry`
+        - :setting:`task_publish_retry_policy`
 
 Retry Policy
 ------------
@@ -315,11 +316,11 @@ so every message in Celery has a ``content_type`` header that
 describes the serialization method used to encode it.
 
 The default serializer is :mod:`pickle`, but you can
-change this using the :setting:`CELERY_TASK_SERIALIZER` setting,
+change this using the :setting:`task_serializer` setting,
 or for each individual task, or even per message.
 
 There's built-in support for :mod:`pickle`, `JSON`, `YAML`
-and `msgpack`, and you can also add your own custom serializers by registering
+and ``msgpack``, and you can also add your own custom serializers by registering
 them into the Kombu serializer registry
 
 .. seealso::
@@ -331,10 +332,10 @@ Each option has its advantages and disadvantages.
 
 json -- JSON is supported in many programming languages, is now
     a standard part of Python (since 2.6), and is fairly fast to decode
-    using the modern Python libraries such as :mod:`cjson` or :mod:`simplejson`.
+    using the modern Python libraries such as :pypi:`simplejson`.
 
     The primary disadvantage to JSON is that it limits you to the following
-    data types: strings, Unicode, floats, boolean, dictionaries, and lists.
+    data types: strings, Unicode, floats, Boolean, dictionaries, and lists.
     Decimals and dates are notably missing.
 
     Also, binary data will be transferred using Base64 encoding, which will
@@ -382,7 +383,7 @@ to use when sending a task:
 
     1. The `serializer` execution option.
     2. The :attr:`@-Task.serializer` attribute
-    3. The :setting:`CELERY_TASK_SERIALIZER` setting.
+    3. The :setting:`task_serializer` setting.
 
 
 Example setting a custom serializer for a single task invocation:
@@ -405,7 +406,7 @@ to use when sending a task:
 
     1. The `compression` execution option.
     2. The :attr:`@-Task.compression` attribute.
-    3. The :setting:`CELERY_MESSAGE_COMPRESSION` attribute.
+    3. The :setting:`task_compression` attribute.
 
 Example specifying the compression used when calling a task::
 
@@ -424,7 +425,7 @@ Connections
 
     The connection pool is enabled by default since version 2.5.
 
-    See the :setting:`BROKER_POOL_LIMIT` setting for more information.
+    See the :setting:`broker_pool_limit` setting for more information.
 
 You can handle the connection manually by creating a
 publisher:
@@ -449,7 +450,7 @@ Though this particular example is much better expressed as a group:
     >>> from celery import group
 
     >>> numbers = [(2, 2), (4, 4), (8, 8), (16, 16)]
-    >>> res = group(add.s(i) for i in numbers).apply_async()
+    >>> res = group(add.s(i, j) for i, j in numbers).apply_async()
 
     >>> res.get()
     [4, 8, 16, 32]
@@ -466,7 +467,7 @@ Simple routing (name <-> name) is accomplished using the ``queue`` option::
     add.apply_async(queue='priority.high')
 
 You can then assign workers to the ``priority.high`` queue by using
-the workers :option:`-Q` argument:
+the workers :option:`-Q <celery worker -Q>` argument:
 
 .. code-block:: console
 
@@ -475,7 +476,7 @@ the workers :option:`-Q` argument:
 .. seealso::
 
     Hard-coding queue names in code is not recommended, the best practice
-    is to use configuration routers (:setting:`CELERY_ROUTES`).
+    is to use configuration routers (:setting:`task_routes`).
 
     To find out more about routing, please see :ref:`guide-routing`.
 
@@ -497,6 +498,6 @@ AMQP's full routing capabilities. Interested parties may read the
 
 - priority
 
-    A number between `0` and `9`, where `0` is the highest priority.
+    A number between `0` and `255`, where `255` is the highest priority.
 
-    Supported by: redis, beanstalk
+    Supported by: RabbitMQ, Redis (priority reversed, 0 is highest), Beanstalk

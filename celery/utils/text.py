@@ -6,7 +6,7 @@
     Text formatting utilities
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from textwrap import fill
 
@@ -90,3 +90,7 @@ def pretty(value, width=80, nl_width=80, sep='\n', **kw):
         )
     else:
         return pformat(value, width=width, **kw)
+
+
+def match_case(s, other):
+    return s.upper() if other.isupper() else s.lower()

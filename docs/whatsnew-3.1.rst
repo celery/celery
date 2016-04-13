@@ -3,7 +3,7 @@
 ===========================================
  What's new in Celery 3.1 (Cipater)
 ===========================================
-:Author: Ask Solem (ask at celeryproject.org)
+:Author: Ask Solem (``ask at celeryproject.org``)
 
 .. sidebar:: Change history
 
@@ -102,7 +102,9 @@ requiring the ``2to3`` porting tool.
 .. note::
 
     This is also the last version to support Python 2.6! From Celery 4.0 and
-    onwards Python 2.7 or later will be required.
+    on-wards Python 2.7 or later will be required.
+
+.. _last-version-to-enable-pickle:
 
 Last version to enable Pickle by default
 ----------------------------------------
@@ -208,9 +210,9 @@ implementation.
     If a child process is killed or exits mysteriously the pool previously
     had to wait for 30 seconds before marking the task with a
     :exc:`~celery.exceptions.WorkerLostError`.  It had to do this because
-    the outqueue was shared between all processes, and the pool could not
+    the out-queue was shared between all processes, and the pool could not
     be certain whether the process completed the task or not.  So an arbitrary
-    timeout of 30 seconds was chosen, as it was believed that the outqueue
+    timeout of 30 seconds was chosen, as it was believed that the out-queue
     would have been drained by this point.
 
     This timeout is no longer necessary, and so the task can be marked as
@@ -218,7 +220,7 @@ implementation.
 
 - Rare race conditions fixed
 
-    Most of these bugs were never reported to us, but was discovered while
+    Most of these bugs were never reported to us, but were discovered while
     running the new stress test suite.
 
 Caveats
@@ -227,7 +229,7 @@ Caveats
 .. topic:: Long running tasks
 
     The new pool will send tasks to a child process as long as the process
-    inqueue is writable, and since the socket is buffered this means
+    in-queue is writable, and since the socket is buffered this means
     that the processes are, in effect, prefetching tasks.
 
     This benefits performance but it also means that other tasks may be stuck
@@ -244,11 +246,11 @@ Caveats
         # will not start until T1 returns
 
     The buffer size varies based on the operating system: some may
-    have a buffer as small as 64kb but on recent Linux versions the buffer
+    have a buffer as small as 64KB but on recent Linux versions the buffer
     size is 1MB (can only be changed system wide).
 
-    You can disable this prefetching behavior by enabling the :option:`-Ofair`
-    worker option:
+    You can disable this prefetching behavior by enabling the
+    :option:`-Ofair <celery worker -O>` worker option:
 
     .. code-block:: console
 
@@ -260,12 +262,14 @@ Caveats
 .. topic:: Max tasks per child
 
     If a process exits and pool prefetch is enabled the worker may have
-    already written many tasks to the process inqueue, and these tasks
+    already written many tasks to the process in-queue, and these tasks
     must then be moved back and rewritten to a new process.
 
-    This is very expensive if you have ``--maxtasksperchild`` set to a low
-    value (e.g. less than 10), so if you need to enable this option
-    you should also enable ``-Ofair`` to turn off the prefetching behavior.
+    This is very expensive if you have the
+    :option:`--maxtasksperchild <celery worker --maxtasksperchild>` option
+    set to a low value (e.g. less than 10), so if you need to enable this option
+    you should also enable :option:`-Ofair <celery worker -O>` to turn off the
+    prefetching behavior.
 
 Django supported out of the box
 -------------------------------
@@ -278,7 +282,7 @@ in core and new Django users coming to Celery are now expected
 to use the new API directly.
 
 The Django community has a convention where there's a separate
-django-x package for every library, acting like a bridge between
+``django-x`` package for every library, acting like a bridge between
 Django and the library.
 
 Having a separate project for Django users has been a pain for Celery,
@@ -314,7 +318,8 @@ but if you would like to experiment with it you should know that:
         app.config_from_object('django.conf:settings')
 
     Neither will it automatically traverse your installed apps to find task
-    modules, but this still available as an option you must enable:
+    modules. If you want this behavior, you must explicitly pass a list of
+    Django instances to the Celery app:
 
     .. code-block:: python
 
@@ -334,19 +339,19 @@ but if you would like to experiment with it you should know that:
     guide <django-first-steps>`.
 
 To get started with the new API you should first read the :ref:`first-steps`
-tutorial, and then you should read the Django specific instructions in
+tutorial, and then you should read the Django-specific instructions in
 :ref:`django-first-steps`.
 
-The fixes and improvements applied by the django-celery library are now
-automatically applied by core Celery when it detects that
+The fixes and improvements applied by the :pypi:`django-celery` library
+are now automatically applied by core Celery when it detects that
 the :envvar:`DJANGO_SETTINGS_MODULE` environment variable is set.
 
 The distribution ships with a new example project using Django
 in :file:`examples/django`:
 
-http://github.com/celery/celery/tree/3.1/examples/django
+https://github.com/celery/celery/tree/3.1/examples/django
 
-Some features still require the :mod:`django-celery` library:
+Some features still require the :pypi:`django-celery` library:
 
     - Celery does not implement the Django database or cache result backends.
     - Celery does not ship with the database-based periodic task
@@ -357,7 +362,7 @@ Some features still require the :mod:`django-celery` library:
     If you're still using the old API when you upgrade to Celery 3.1
     then you must make sure that your settings module contains
     the ``djcelery.setup_loader()`` line, since this will
-    no longer happen as a side-effect of importing the :mod:`djcelery`
+    no longer happen as a side-effect of importing the :pypi:`django-celery`
     module.
 
     New users (or if you have ported to the new API) don't need the ``setup_loader``
@@ -367,7 +372,7 @@ Events are now ordered using logical time
 -----------------------------------------
 
 Keeping physical clocks in perfect sync is impossible, so using
-timestamps to order events in a distributed system is not reliable.
+time-stamps to order events in a distributed system is not reliable.
 
 Celery event messages have included a logical clock value for some time,
 but starting with this version that field is also used to order them.
@@ -375,10 +380,10 @@ but starting with this version that field is also used to order them.
 Also, events now record timezone information
 by including a new ``utcoffset`` field in the event message.
 This is a signed integer telling the difference from UTC time in hours,
-so e.g. an even sent from the Europe/London timezone in daylight savings
+so e.g. an event sent from the Europe/London timezone in daylight savings
 time will have an offset of 1.
 
-:class:`@events.Receiver` will automatically convert the timestamps
+:class:`@events.Receiver` will automatically convert the time-stamps
 to the local timezone.
 
 .. note::
@@ -389,19 +394,20 @@ to the local timezone.
     starts.
 
     If all of the workers are shutdown the clock value will be lost
-    and reset to 0, to protect against this you should specify
-    a :option:`--statedb` so that the worker can persist the clock
-    value at shutdown.
+    and reset to 0. To protect against this, you should specify the
+    :option:`celery worker --statedb` option such that the worker can
+    persist the clock value at shutdown.
 
     You may notice that the logical clock is an integer value and
     increases very rapidly.  Do not worry about the value overflowing
     though, as even in the most busy clusters it may take several
-    millennia before the clock exceeds a 64 bits value.
+    millennium before the clock exceeds a 64 bits value.
 
 New worker node name format (``name@host``)
 -------------------------------------------
 
-Node names are now constructed by two elements: name and hostname separated by '@'.
+Node names are now constructed by two elements: name and host-name
+separated by '@'.
 
 This change was made to more easily identify multiple instances running
 on the same machine.
@@ -427,9 +433,9 @@ node name in events and broadcast messages, so where before
 a worker would identify itself as 'worker1.example.com', it will now
 use 'celery@worker1.example.com'.
 
-Remember that the ``-n`` argument also supports simple variable
-substitutions, so if the current hostname is *george.example.com*
-then the ``%h`` macro will expand into that:
+Remember that the :option:`-n <celery worker -n>` argument also supports
+simple variable substitutions, so if the current host-name
+is *george.example.com* then the ``%h`` macro will expand into that:
 
 .. code-block:: console
 
@@ -438,17 +444,17 @@ then the ``%h`` macro will expand into that:
 
 The available substitutions are as follows:
 
-+---------------+---------------------------------------+
-| Variable      | Substitution                          |
-+===============+=======================================+
-| ``%h``        | Full hostname (including domain name) |
-+---------------+---------------------------------------+
-| ``%d``        | Domain name only                      |
-+---------------+---------------------------------------+
-| ``%n``        | Hostname only (without domain name)   |
-+---------------+---------------------------------------+
-| ``%%``        | The character ``%``                   |
-+---------------+---------------------------------------+
++---------------+----------------------------------------+
+| Variable      | Substitution                           |
++===============+========================================+
+| ``%h``        | Full host-name (including domain name) |
++---------------+----------------------------------------+
+| ``%d``        | Domain name only                       |
++---------------+----------------------------------------+
+| ``%n``        | Host-name only (without domain name)   |
++---------------+----------------------------------------+
+| ``%%``        | The character ``%``                    |
++---------------+----------------------------------------+
 
 Bound tasks
 -----------
@@ -480,10 +486,11 @@ the same cluster.
 
 Synchronized data currently includes revoked tasks and logical clock.
 
-This only happens at startup and causes a one second startup delay
+This only happens at start-up and causes a one second start-up delay
 to collect broadcast responses from other workers.
 
-You can disable this bootstep using the ``--without-mingle`` argument.
+You can disable this bootstep using the
+:option:`celery worker --without-mingle` option.
 
 Gossip: Worker <-> Worker communication
 ---------------------------------------
@@ -499,10 +506,11 @@ and you can write extensions that take advantage of this already.
 Some ideas include consensus protocols, reroute task to best worker (based on
 resource usage or data locality) or restarting workers when they crash.
 
-We believe that this is a small addition but one that really opens
-up for amazing possibilities.
+We believe that although this is a small addition, it opens
+amazing possibilities.
 
-You can disable this bootstep using the ``--without-gossip`` argument.
+You can disable this bootstep using the
+:option:`celery worker --without-gossip` option.
 
 Bootsteps: Extending the worker
 -------------------------------
@@ -584,22 +592,22 @@ This setting will be the default in a future version.
 
 Related to Issue #1490.
 
-:mod:`pytz` replaces ``python-dateutil`` dependency
----------------------------------------------------
+:pypi:`pytz` replaces :pypi:`python-dateutil` dependency
+--------------------------------------------------------
 
-Celery no longer depends on the ``python-dateutil`` library,
-but instead a new dependency on the :mod:`pytz` library was added.
+Celery no longer depends on the :pypi:`python-dateutil` library,
+but instead a new dependency on the :pypi:`pytz` library was added.
 
-The :mod:`pytz` library was already recommended for accurate timezone support.
+The :pypi:`pytz` library was already recommended for accurate timezone support.
 
 This also means that dependencies are the same for both Python 2 and
 Python 3, and that the :file:`requirements/default-py3k.txt` file has
 been removed.
 
-Support for Setuptools extra requirements
------------------------------------------
+Support for :pypi:`setuptools` extra requirements
+-------------------------------------------------
 
-Pip now supports the :mod:`setuptools` extra requirements format,
+Pip now supports the :pypi:`setuptools` extra requirements format,
 so we have removed the old bundles concept, and instead specify
 setuptools extras.
 
@@ -668,7 +676,7 @@ In Other News
 
 - Now depends on :ref:`Kombu 3.0 <kombu:version-3.0.0>`.
 
-- Now depends on :mod:`billiard` version 3.3.
+- Now depends on :pypi:`billiard` version 3.3.
 
 - Worker will now crash if running as the root user with pickle enabled.
 
@@ -718,7 +726,7 @@ In Other News
 
     The :attr:`@user_options` attribute can be used
     to add additional command-line arguments, and expects
-    optparse-style options:
+    :mod:`optparse`-style options:
 
     .. code-block:: python
 
@@ -752,7 +760,8 @@ In Other News
     The monotonic clock function is built-in starting from Python 3.4,
     but we also have fallback implementations for Linux and OS X.
 
-- :program:`celery worker` now supports a ``--detach`` argument to start
+- :program:`celery worker` now supports a new
+  :option:`--detach <celery worker --detach>` argument to start
   the worker as a daemon in the background.
 
 - :class:`@events.Receiver` now sets a ``local_received`` field for incoming
@@ -776,7 +785,7 @@ In Other News
 
 - New :setting:`BROKER_FAILOVER_STRATEGY` setting.
 
-    This setting can be used to change the transport failover strategy,
+    This setting can be used to change the transport fail-over strategy,
     can either be a callable returning an iterable or the name of a
     Kombu built-in failover strategy.  Default is "round-robin".
 
@@ -797,7 +806,7 @@ In Other News
     The `-P` option should always be used to select the eventlet/gevent pool
     to ensure that the patches are applied as early as possible.
 
-    If you start the worker in a wrapper (like Django's manage.py)
+    If you start the worker in a wrapper (like Django's :file:`manage.py`)
     then you must apply the patches manually, e.g. by creating an alternative
     wrapper that monkey patches at the start of the program before importing
     any other modules.
@@ -821,7 +830,7 @@ In Other News
     Configuration values will be converted to values supported by JSON
     where possible.
 
-    Contributed by Mher Movisyan.
+    Contributed by Mher Movsisyan.
 
 - New settings :setting:`CELERY_EVENT_QUEUE_TTL` and
   :setting:`CELERY_EVENT_QUEUE_EXPIRES`.
@@ -907,7 +916,7 @@ In Other News
 
         from multiprocessing.util import register_after_fork
 
-        engine = create_engine(…)
+        engine = create_engine(*engine_args)
         register_after_fork(engine, engine.dispose)
 
 - A stress test suite for the Celery worker has been written.
@@ -926,13 +935,13 @@ In Other News
     .. code-block:: console
 
         # Create graph of currently installed bootsteps in both the worker
-        # and consumer namespaces.
+        # and consumer name-spaces.
         $ celery graph bootsteps | dot -T png -o steps.png
 
-        # Graph of the consumer namespace only.
+        # Graph of the consumer name-space only.
         $ celery graph bootsteps consumer | dot -T png -o consumer_only.png
 
-        # Graph of the worker namespace only.
+        # Graph of the worker name-space only.
         $ celery graph bootsteps worker | dot -T png -o worker_only.png
 
     Or graphs of workers in a cluster:
@@ -1083,18 +1092,20 @@ In Other News
     :class:`~celery.worker.request.Request` object to get information
     about the task.
 
-- Worker: New :option:`-X` command line argument to exclude queues
-  (Issue #1399).
+- Worker: New :option:`-X <celery worker -X>` command line argument to
+  exclude queues (Issue #1399).
 
-    The :option:`-X` argument is the inverse of the :option:`-Q` argument
-    and accepts a list of queues to exclude (not consume from):
+    The :option:`-X <celery worker -X>` argument is the inverse of the
+    :option:`-Q <celery worker -Q>` argument and accepts a list of queues
+    to exclude (not consume from):
 
     .. code-block:: console
 
         # Consume from all queues in CELERY_QUEUES, but not the 'foo' queue.
         $ celery worker -A proj -l info -X foo
 
-- Adds :envvar:`C_FAKEFORK` envvar for simple init script/multi debugging.
+- Adds :envvar:`C_FAKEFORK` environment variable for simple
+  init-script/:program:`celery multi` debugging.
 
     This means that you can now do:
 
@@ -1181,8 +1192,8 @@ Scheduled Removals
 
 .. _v310-deprecations:
 
-Deprecations
-============
+Deprecation Time-line Changes
+=============================
 
 See the :ref:`deprecation-timeline`.
 
@@ -1226,8 +1237,8 @@ Fixes
 - Worker: Now makes sure that the shutdown process is not initiated multiple
   times.
 
-- Multi: Now properly handles both ``-f`` and ``--logfile`` options
-  (Issue #1541).
+- Programs: :program:`celery multi` now properly handles both ``-f`` and
+  :option:`--logfile <celery worker --logfile>` options (Issue #1541).
 
 .. _v310-internal:
 

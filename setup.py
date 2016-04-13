@@ -8,12 +8,44 @@ import re
 import sys
 import codecs
 
-CELERY_COMPAT_PROGRAMS = int(os.environ.get('CELERY_COMPAT_PROGRAMS', 1))
+try:
+    import platform
+    _pyimp = platform.python_implementation
+except (AttributeError, ImportError):
+    def _pyimp():
+        return 'Python'
 
-if sys.version_info < (2, 7):
-    raise Exception('Celery 4.0 requires Python 2.7 or higher.')
-elif sys.version_info > (3, ) < (3, 4):
-    raise Exception('Celery 4.0 requires Python 3.4 or higher.')
+E_UNSUPPORTED_PYTHON = """
+----------------------------------------
+ Celery 4.0 requires %s %s or later!
+----------------------------------------
+
+- For CPython 2.6, PyPy 1.x, Jython 2.6, CPython 3.2->3.3; use Celery 3.1:
+
+    $ pip install 'celery<4'
+
+- For CPython 2.5, Jython 2.5; use Celery 3.0:
+
+    $ pip install 'celery<3.1'
+
+- For CPython 2.4; use Celery 2.2:
+
+    $ pip install 'celery<2.3'
+"""
+
+PYIMP = _pyimp()
+PY26_OR_LESS = sys.version_info < (2, 7)
+PY3 = sys.version_info[0] == 3
+PY33_OR_LESS = PY3 and sys.version_info < (3, 4)
+JYTHON = sys.platform.startswith('java')
+PYPY_VERSION = getattr(sys, 'pypy_version_info', None)
+PYPY = PYPY_VERSION is not None
+PYPY24_ATLEAST = PYPY_VERSION and PYPY_VERSION >= (2, 4)
+
+if PY26_OR_LESS:
+    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '2.7'))
+elif PY33_OR_LESS and not PYPY24_ATLEAST:
+    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '3.4'))
 
 # -*- Upgrading from older versions -*-
 
@@ -47,10 +79,6 @@ except:
     pass
 finally:
     sys.path[:] = orig_path
-
-PY3 = sys.version_info[0] == 3
-JYTHON = sys.platform.startswith('java')
-PYPY = hasattr(sys, 'pypy_version_info')
 
 NAME = 'celery'
 entrypoints = {}
@@ -116,7 +144,6 @@ with open(os.path.join(here, 'celery/__init__.py')) as meta_fh:
 
 # -*- Installation Requires -*-
 
-
 def strip_comments(l):
     return l.split('#', 1)[0].strip()
 
@@ -143,10 +170,6 @@ install_requires = reqs('default.txt')
 if JYTHON:
     install_requires.extend(reqs('jython.txt'))
 
-# -*- Tests Requires -*-
-
-tests_require = reqs('test3.txt' if PY3 else 'test.txt')
-
 # -*- Long Description -*-
 
 if os.path.exists('README.rst'):
@@ -160,13 +183,6 @@ console_scripts = entrypoints['console_scripts'] = [
     'celery = celery.__main__:main',
 ]
 
-if CELERY_COMPAT_PROGRAMS:
-    console_scripts.extend([
-        'celeryd = celery.__main__:_compat_worker',
-        'celerybeat = celery.__main__:_compat_beat',
-        'celeryd-multi = celery.__main__:_compat_multi',
-    ])
-
 # -*- Extras -*-
 
 
@@ -175,11 +191,10 @@ def extras(*p):
 
 # Celery specific
 features = set([
-    'auth', 'cassandra', 'memcache', 'couchbase', 'threads',
-    'eventlet', 'gevent', 'msgpack', 'yaml', 'redis',
-    'mongodb', 'sqs', 'couchdb', 'riak', 'beanstalk', 'zookeeper',
-    'zeromq', 'sqlalchemy', 'librabbitmq', 'pyro', 'slmq',
-    'new_cassandra',
+    'auth', 'cassandra', 'elasticsearch', 'memcache', 'pymemcache',
+    'couchbase', 'threads', 'eventlet', 'gevent', 'msgpack', 'yaml',
+    'redis', 'mongodb', 'sqs', 'couchdb', 'riak', 'beanstalk', 'zookeeper',
+    'zeromq', 'sqlalchemy', 'librabbitmq', 'pyro', 'slmq', 'tblib'
 ])
 extras_require = dict((x, extras(x + '.txt')) for x in features)
 extra['extras_require'] = extras_require
@@ -199,7 +214,7 @@ setup(
     include_package_data=False,
     zip_safe=False,
     install_requires=install_requires,
-    tests_require=tests_require,
+    tests_require=reqs('test.txt'),
     test_suite='nose.collector',
     classifiers=classifiers,
     entry_points=entrypoints,

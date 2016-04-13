@@ -26,7 +26,7 @@ configuration values.
 
 #. Set your broker transport::
 
-    BROKER_URL = 'django://'
+    CELERY_BROKER_URL = 'django://'
 
 #. Add :mod:`kombu.transport.django` to `INSTALLED_APPS`::
 
@@ -35,6 +35,10 @@ configuration values.
 #. Sync your database schema:
 
 .. code-block:: console
+
+    $ python manage.py migrate kombu_transport_django
+
+ Or if you are using a version of Django lower than 1.7
 
     $ python manage.py syncdb
 

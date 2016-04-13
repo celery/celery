@@ -84,7 +84,7 @@ have it block until the task is finished.
    database backends.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery import Task
 from celery.result import AsyncResult
@@ -132,9 +132,9 @@ class AbortableAsyncResult(AsyncResult):
 
         """
         # TODO: store_result requires all four arguments to be set,
-        # but only status should be updated here
+        # but only state should be updated here
         return self.backend.store_result(self.id, result=None,
-                                         status=ABORTED, traceback=None)
+                                         state=ABORTED, traceback=None)
 
 
 class AbortableTask(Task):

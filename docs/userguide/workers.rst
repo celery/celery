@@ -34,7 +34,7 @@ For a full list of available command-line options see
 
 You can also start multiple workers on the same machine. If you do so
 be sure to give a unique name to each individual worker by specifying a
-host name with the :option:`--hostname|-n` argument:
+node name with the :option:`--hostname <celery worker --hostname>` argument:
 
 .. code-block:: console
 
@@ -42,7 +42,7 @@ host name with the :option:`--hostname|-n` argument:
     $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker2.%h
     $ celery -A proj worker --loglevel=INFO --concurrency=10 -n worker3.%h
 
-The hostname argument can expand the following variables:
+The ``hostname`` argument can expand the following variables:
 
     - ``%h``:  Hostname including domain name.
     - ``%n``:  Hostname only.
@@ -55,7 +55,7 @@ these will expand to:
     - ``worker1.%n`` -> ``worker1.george``
     - ``worker1.%d`` -> ``worker1.example.com``
 
-.. admonition:: Note for :program:`supervisord` users.
+.. admonition:: Note for :pypi:`supervisor` users.
 
    The ``%`` sign must be escaped by adding a second one: `%%h`.
 
@@ -143,22 +143,26 @@ The worker's main process overrides the following signals:
 Variables in file paths
 =======================
 
-The file path arguments for :option:`--logfile`, :option:`--pidfile` and :option:`--statedb`
-can contain variables that the worker will expand:
+The file path arguments for :option:`--logfile <celery worker --logfile>`,
+:option:`--pidfile <celery worker --pidfile>` and
+:option:`--statedb <celery worker --statedb>` can contain variables that the
+worker will expand:
 
 Node name replacements
 ----------------------
 
+- ``%p``:  Full node name.
 - ``%h``:  Hostname including domain name.
 - ``%n``:  Hostname only.
 - ``%d``:  Domain name only.
 - ``%i``:  Prefork pool process index or 0 if MainProcess.
 - ``%I``:  Prefork pool process index with separator.
 
-E.g. if the current hostname is ``george.example.com`` then
+E.g. if the current hostname is ``george@foo.example.com`` then
 these will expand to:
 
-- ``--logfile=%h.log`` -> :file:`george.example.com.log`
+- ``--logfile-%p.log`` -> :file:`george@foo.example.com.log`
+- ``--logfile=%h.log`` -> :file:`foo.example.com.log`
 - ``--logfile=%n.log`` -> :file:`george.log`
 - ``--logfile=%d`` -> :file:`example.com.log`
 
@@ -173,7 +177,7 @@ filename depending on the process that will eventually need to open the file.
 This can be used to specify one log file per child process.
 
 Note that the numbers will stay within the process limit even if processes
-exit or if autoscale/maxtasksperchild/time limits are used.  I.e. the number
+exit or if autoscale/``maxtasksperchild``/time limits are used.  I.e. the number
 is the *process index* not the process count or pid.
 
 * ``%i`` - Pool process index or 0 if MainProcess.
@@ -201,8 +205,9 @@ Concurrency
 
 By default multiprocessing is used to perform concurrent execution of tasks,
 but you can also use :ref:`Eventlet <concurrency-eventlet>`.  The number
-of worker processes/threads can be changed using the :option:`--concurrency`
-argument and defaults to the number of CPUs available on the machine.
+of worker processes/threads can be changed using the
+:option:`--concurrency <celery worker --concurrency>` argument and defaults
+to the number of CPUs available on the machine.
 
 .. admonition:: Number of processes (multiprocessing/prefork pool)
 
@@ -227,8 +232,8 @@ Remote control
     commands from the command-line.  It supports all of the commands
     listed below.  See :ref:`monitoring-control` for more information.
 
-pool support: *prefork, eventlet, gevent*, blocking:*threads/solo* (see note)
-broker support: *amqp, redis*
+:pool support: *prefork, eventlet, gevent*, blocking:*threads/solo* (see note)
+:broker support: *amqp, redis*
 
 Workers have the ability to be remote controlled using a high-priority
 broadcast message queue.  The commands can be directed to all, or a specific
@@ -307,7 +312,7 @@ Commands
 
 ``revoke``: Revoking tasks
 --------------------------
-:pool support: all
+:pool support: all, terminate only supported by prefork
 :broker support: *amqp, redis*
 :command: :program:`celery -A proj control revoke <task_id>`
 
@@ -325,7 +330,7 @@ the `terminate` option is set.
     it's for terminating the process that is executing the task, and that
     process may have already started processing another task at the point
     when the signal is sent, so for this reason you must never call this
-    programatically.
+    programmatically.
 
 If `terminate` is set the worker child process processing the task
 will be terminated.  The default signal sent is `TERM`, but you can
@@ -417,13 +422,13 @@ Time Limits
 
 .. versionadded:: 2.0
 
-pool support: *prefork/gevent*
+:pool support: *prefork/gevent*
 
 .. sidebar:: Soft, or hard?
 
     The time limit is set in two values, `soft` and `hard`.
     The soft time limit allows the task to catch an exception
-    to clean up before it is killed: the hard timeout is not catchable
+    to clean up before it is killed: the hard timeout is not catch-able
     and force terminates the task.
 
 A single task can potentially run forever, if you have lots of tasks
@@ -449,8 +454,8 @@ time limit kills it:
         except SoftTimeLimitExceeded:
             clean_up_in_a_hurry()
 
-Time limits can also be set using the :setting:`CELERYD_TASK_TIME_LIMIT` /
-:setting:`CELERYD_TASK_SOFT_TIME_LIMIT` settings.
+Time limits can also be set using the :setting:`task_time_limit` /
+:setting:`task_soft_time_limit` settings.
 
 .. note::
 
@@ -458,11 +463,11 @@ Time limits can also be set using the :setting:`CELERYD_TASK_TIME_LIMIT` /
     platforms that do not support the ``SIGUSR1`` signal.
 
 
-Changing time limits at runtime
--------------------------------
+Changing time limits at run-time
+--------------------------------
 .. versionadded:: 2.3
 
-broker support: *amqp, redis*
+:broker support: *amqp, redis*
 
 There is a remote control command that enables you to change both soft
 and hard time limits for a task — named ``time_limit``.
@@ -486,8 +491,8 @@ Rate Limits
 
 .. control:: rate_limit
 
-Changing rate-limits at runtime
--------------------------------
+Changing rate-limits at run-time
+--------------------------------
 
 Example changing the rate limit for the `myapp.mytask` task to execute
 at most 200 tasks of that type every minute:
@@ -508,7 +513,7 @@ list of workers you can include the ``destination`` argument:
 .. warning::
 
     This won't affect workers with the
-    :setting:`CELERY_DISABLE_RATE_LIMITS` setting enabled.
+    :setting:`worker_disable_rate_limits` setting enabled.
 
 .. _worker-maxtasksperchild:
 
@@ -517,7 +522,7 @@ Max tasks per child setting
 
 .. versionadded:: 2.0
 
-pool support: *prefork*
+:pool support: *prefork*
 
 With this option you can configure the maximum number of tasks
 a worker can execute before it's replaced by a new process.
@@ -525,8 +530,28 @@ a worker can execute before it's replaced by a new process.
 This is useful if you have memory leaks you have no control over
 for example from closed source C extensions.
 
-The option can be set using the workers `--maxtasksperchild` argument
-or using the :setting:`CELERYD_MAX_TASKS_PER_CHILD` setting.
+The option can be set using the workers
+:option:`--maxtasksperchild <celery worker --maxtasksperchild>` argument
+or using the :setting:`worker_max_tasks_per_child` setting.
+
+.. _worker-maxmemperchild:
+
+Max memory per child setting
+============================
+
+.. versionadded:: 4.0
+
+:pool support: *prefork*
+
+With this option you can configure the maximum amount of resident
+memory a worker can execute before it's replaced by a new process.
+
+This is useful if you have memory leaks you have no control over
+for example from closed source C extensions.
+
+The option can be set using the workers
+:option:`--maxmemperchild <celery worker --maxmemperchild>` argument
+or using the :setting:`worker_max_memory_per_child` setting.
 
 .. _worker-autoscaling:
 
@@ -535,7 +560,7 @@ Autoscaling
 
 .. versionadded:: 2.2
 
-pool support: *prefork*, *gevent*
+:pool support: *prefork*, *gevent*
 
 The *autoscaler* component is used to dynamically resize the pool
 based on load:
@@ -543,8 +568,10 @@ based on load:
 - The autoscaler adds more pool processes when there is work to do,
     - and starts removing processes when the workload is low.
 
-It's enabled by the :option:`--autoscale` option, which needs two
-numbers: the maximum and minimum number of pool processes::
+It's enabled by the :option:`--autoscale <celery worker --autoscale>` option,
+which needs two numbers: the maximum and minimum number of pool processes:
+
+.. code-block:: text
 
         --autoscale=AUTOSCALE
              Enable autoscaling by providing
@@ -555,7 +582,7 @@ numbers: the maximum and minimum number of pool processes::
 You can also define your own rules for the autoscaler by subclassing
 :class:`~celery.worker.autoscaler.Autoscaler`.
 Some ideas for metrics include load average or the amount of memory available.
-You can specify a custom autoscaler with the :setting:`CELERYD_AUTOSCALER` setting.
+You can specify a custom autoscaler with the :setting:`worker_autoscaler` setting.
 
 .. _worker-queues:
 
@@ -564,23 +591,23 @@ Queues
 
 A worker instance can consume from any number of queues.
 By default it will consume from all queues defined in the
-:setting:`CELERY_QUEUES` setting (which if not specified defaults to the
+:setting:`task_queues` setting (which if not specified defaults to the
 queue named ``celery``).
 
-You can specify what queues to consume from at startup,
-by giving a comma separated list of queues to the :option:`-Q` option:
+You can specify what queues to consume from at start-up, by giving a comma
+separated list of queues to the :option:`-Q <celery worker -Q>` option:
 
 .. code-block:: console
 
     $ celery -A proj worker -l info -Q foo,bar,baz
 
-If the queue name is defined in :setting:`CELERY_QUEUES` it will use that
+If the queue name is defined in :setting:`task_queues` it will use that
 configuration, but if it's not defined in the list of queues Celery will
 automatically generate a new queue for you (depending on the
-:setting:`CELERY_CREATE_MISSING_QUEUES` option).
+:setting:`task_create_missing_queues` option).
 
 You can also tell the worker to start and stop consuming from a queue at
-runtime using the remote control commands :control:`add_consumer` and
+run-time using the remote control commands :control:`add_consumer` and
 :control:`cancel_consumer`.
 
 .. control:: add_consumer
@@ -601,7 +628,7 @@ named "``foo``" you can use the :program:`celery control` program:
         started consuming from u'foo'
 
 If you want to specify a specific worker you can use the
-:option:`--destination`` argument:
+:option:`--destination <celery control --destination>` argument:
 
 .. code-block:: console
 
@@ -640,8 +667,8 @@ even other options:
 
 .. control:: cancel_consumer
 
-Queues: Cancelling consumers
-----------------------------
+Queues: Canceling consumers
+---------------------------
 
 You can cancel a consumer by queue name using the :control:`cancel_consumer`
 control command.
@@ -653,8 +680,8 @@ you can use the :program:`celery control` program:
 
     $ celery -A proj control cancel_consumer foo
 
-The :option:`--destination` argument can be used to specify a worker, or a
-list of workers, to act on the command:
+The :option:`--destination <celery control --destination>` argument can be
+used to specify a worker, or a list of workers, to act on the command:
 
 .. code-block:: console
 
@@ -683,8 +710,8 @@ the :control:`active_queues` control command:
     [...]
 
 Like all other remote control commands this also supports the
-:option:`--destination` argument used to specify which workers should
-reply to the request:
+:option:`--destination <celery inspect --destination>` argument used
+to specify which workers should reply to the request:
 
 .. code-block:: console
 
@@ -705,17 +732,18 @@ This can also be done programmatically by using the
 
 .. _worker-autoreloading:
 
-Autoreloading
-=============
+Auto-reloading
+==============
 
 .. versionadded:: 2.5
 
-pool support: *prefork, eventlet, gevent, threads, solo*
+:pool support: *prefork, eventlet, gevent, threads, solo*
 
-Starting :program:`celery worker` with the :option:`--autoreload` option will
+Starting :program:`celery worker` with the
+:option:`--autoreload <celery worker --autoreload>` option will
 enable the worker to watch for file system changes to all imported task
-modules imported (and also any non-task modules added to the
-:setting:`CELERY_IMPORTS` setting or the :option:`-I|--include` option).
+modules (and also any non-task modules added to the :setting:`imports`
+setting or the :option:`--include <celery worker --include>` option).
 
 This is an experimental feature intended for use in development only,
 using auto-reload in production is discouraged as the behavior of reloading
@@ -733,20 +761,20 @@ effectively reloading the code.
 File system notification backends are pluggable, and it comes with three
 implementations:
 
-* inotify (Linux)
+* ``inotify`` (Linux)
 
-    Used if the :mod:`pyinotify` library is installed.
+    Used if the :pypi:`pyinotify` library is installed.
     If you are running on Linux this is the recommended implementation,
-    to install the :mod:`pyinotify` library you have to run the following
+    to install the :pypi:`pyinotify` library you have to run the following
     command:
 
     .. code-block:: console
 
         $ pip install pyinotify
 
-* kqueue (OS X/BSD)
+* ``kqueue`` (OS X/BSD)
 
-* stat
+* ``stat``
 
     The fallback implementation simply polls the files using ``stat`` and is very
     expensive.
@@ -767,7 +795,7 @@ Pool Restart Command
 
 .. versionadded:: 2.5
 
-Requires the :setting:`CELERYD_POOL_RESTARTS` setting to be enabled.
+Requires the :setting:`worker_pool_restarts` setting to be enabled.
 
 The remote control command :control:`pool_restart` sends restart requests to
 the workers child processes.  It is particularly useful for forcing
@@ -952,7 +980,7 @@ The output will include the following fields:
 
     * ``hostname``
 
-        Hostname of the remote broker.
+        Node name of the remote broker.
 
     * ``insist``
 
@@ -983,9 +1011,11 @@ The output will include the following fields:
         Some transports expects the host name to be an URL, this applies to
         for example SQLAlchemy where the host name part is the connection URI:
 
+        .. code-block:: text
+
             redis+socket:///tmp/redis.sock
 
-        In this example the uri prefix will be ``redis``.
+        In this example the URI-prefix will be ``redis``.
 
     * ``userid``
 
@@ -1018,7 +1048,7 @@ The output will include the following fields:
 
     * ``processes``
 
-        List of pids (or thread-id's).
+        List of PIDs (or thread-id's).
 
     * ``put-guarded-by-semaphore``
 
@@ -1058,12 +1088,12 @@ The output will include the following fields:
 
     * ``idrss``
 
-        Amount of unshared memory used for data (in kilobytes times ticks of
+        Amount of non-shared memory used for data (in kilobytes times ticks of
         execution)
 
     * ``isrss``
 
-        Amount of unshared memory used for stack space (in kilobytes times
+        Amount of non-shared memory used for stack space (in kilobytes times
         ticks of execution)
 
     * ``ixrss``
@@ -1116,8 +1146,8 @@ The output will include the following fields:
 
 - ``total``
 
-    List of task names and a total number of times that task have been
-    executed since worker start.
+    Map of task names and the total number of tasks with that type
+    the worker has accepted since start-up.
 
 
 Additional Commands
@@ -1133,7 +1163,7 @@ This command will gracefully shut down the worker remotely:
 .. code-block:: pycon
 
     >>> app.control.broadcast('shutdown') # shutdown all workers
-    >>> app.control.broadcast('shutdown, destination="worker1@example.com")
+    >>> app.control.broadcast('shutdown, destination='worker1@example.com')
 
 .. control:: ping
 

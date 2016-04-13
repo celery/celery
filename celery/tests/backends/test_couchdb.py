@@ -1,12 +1,10 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.backends import couchdb as module
 from celery.backends.couchdb import CouchBackend
 from celery.exceptions import ImproperlyConfigured
 from celery import backends
-from celery.tests.case import (
-    AppCase, Mock, SkipTest, patch, sentinel,
-)
+from celery.tests.case import AppCase, Mock, patch, sentinel, skip
 
 try:
     import pycouchdb
@@ -16,11 +14,10 @@ except ImportError:
 COUCHDB_CONTAINER = 'celery_container'
 
 
+@skip.unless_module('pycouchdb')
 class test_CouchBackend(AppCase):
 
     def setup(self):
-        if pycouchdb is None:
-            raise SkipTest('pycouchdb is not installed.')
         self.backend = CouchBackend(app=self.app)
 
     def test_init_no_pycouchdb(self):
@@ -39,7 +36,7 @@ class test_CouchBackend(AppCase):
             connection = self.backend._get_connection()
 
             self.assertEqual(sentinel._connection, connection)
-            self.assertFalse(mock_Connection.called)
+            mock_Connection.assert_not_called()
 
     def test_get(self):
         """test_get

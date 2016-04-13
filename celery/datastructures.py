@@ -11,17 +11,19 @@ from __future__ import absolute_import, print_function, unicode_literals
 import sys
 import time
 
-from collections import defaultdict, Mapping, MutableMapping, MutableSet
+from collections import (
+    Callable, Mapping, MutableMapping, MutableSet, defaultdict,
+)
 from heapq import heapify, heappush, heappop
-from functools import partial
 from itertools import chain
 
 from billiard.einfo import ExceptionInfo  # noqa
-from kombu.utils.encoding import safe_str
+from kombu.utils.encoding import safe_str, bytes_to_str
 from kombu.utils.limits import TokenBucket  # noqa
 
-from celery.five import items
+from celery.five import items, python_2_unicode_compatible, values
 from celery.utils.functional import LRUCache, first, uniq  # noqa
+from celery.utils.text import match_case
 
 try:
     from django.utils.functional import LazyObject, LazySettings
@@ -29,6 +31,10 @@ except ImportError:
     class LazyObject(object):  # noqa
         pass
     LazySettings = LazyObject  # noqa
+
+__all__ = ['GraphFormatter', 'CycleError', 'DependencyGraph',
+           'AttributeDictMixin', 'AttributeDict', 'DictAttribute',
+           'ConfigurationView', 'LimitedSet']
 
 DOT_HEAD = """
 {IN}{type} {id} {{
@@ -41,9 +47,9 @@ DOT_ATTRSEP = ', '
 DOT_DIRS = {'graph': '--', 'digraph': '->'}
 DOT_TAIL = '{IN}}}'
 
-__all__ = ['GraphFormatter', 'CycleError', 'DependencyGraph',
-           'AttributeDictMixin', 'AttributeDict', 'DictAttribute',
-           'ConfigurationView', 'LimitedSet']
+REPR_LIMITED_SET = """\
+<{name}({size}): maxlen={0.maxlen}, expires={0.expires}, minlen={0.minlen}>\
+"""
 
 
 def force_mapping(m):
@@ -142,6 +148,7 @@ class CycleError(Exception):
     """A cycle was detected in an acyclic graph."""
 
 
+@python_2_unicode_compatible
 class DependencyGraph(object):
     """A directed acyclic graph of objects and their dependencies.
 
@@ -226,7 +233,7 @@ class DependencyGraph(object):
     def _khan62(self):
         """Khans simple topological sort algorithm from '62
 
-        See http://en.wikipedia.org/wiki/Topological_sorting
+        See https://en.wikipedia.org/wiki/Topological_sorting
 
         """
         count = defaultdict(lambda: 0)
@@ -288,7 +295,9 @@ class DependencyGraph(object):
         """
         seen = set()
         draw = formatter or self.formatter
-        P = partial(print, file=fh)
+
+        def P(s):
+            print(bytes_to_str(s), file=fh)
 
         def if_not_seen(fun, obj):
             if draw.label(obj) not in seen:
@@ -387,11 +396,8 @@ class DictAttribute(object):
             return default
 
     def setdefault(self, key, default):
-        try:
-            return self[key]
-        except KeyError:
+        if key not in self:
             self[key] = default
-            return default
 
     def __getitem__(self, key):
         try:
@@ -439,6 +445,7 @@ class DictAttribute(object):
 MutableMapping.register(DictAttribute)
 
 
+@python_2_unicode_compatible
 class ConfigurationView(AttributeDictMixin):
     """A view over an applications configuration dicts.
 
@@ -451,13 +458,30 @@ class ConfigurationView(AttributeDictMixin):
     :param defaults: List of dicts containing the default configuration.
 
     """
+    key_t = None
     changes = None
     defaults = None
     _order = None
 
-    def __init__(self, changes, defaults):
-        self.__dict__.update(changes=changes, defaults=defaults,
-                             _order=[changes] + defaults)
+    def __init__(self, changes, defaults=None, key_t=None, prefix=None):
+        defaults = [] if defaults is None else defaults
+        self.__dict__.update(
+            changes=changes,
+            defaults=defaults,
+            key_t=key_t,
+            _order=[changes] + defaults,
+            prefix=prefix.rstrip('_') + '_' if prefix else prefix,
+        )
+
+    def _to_keys(self, key):
+        prefix = self.prefix
+        if prefix:
+            pkey = prefix + key if not key.startswith(prefix) else key
+            return match_case(pkey, prefix), self._key(key)
+        return self._key(key),
+
+    def _key(self, key):
+        return self.key_t(key) if self.key_t is not None else key
 
     def add_defaults(self, d):
         d = force_mapping(d)
@@ -465,15 +489,20 @@ class ConfigurationView(AttributeDictMixin):
         self._order.insert(1, d)
 
     def __getitem__(self, key):
-        for d in self._order:
-            try:
-                return d[key]
-            except KeyError:
-                pass
+        keys = self._to_keys(key)
+        for k in keys:
+            for d in self._order:
+                try:
+                    return d[k]
+                except KeyError:
+                    pass
+        if len(keys) > 1:
+            raise KeyError(
+                'Key not found: {0!r} (with prefix: {0!r})'.format(*keys))
         raise KeyError(key)
 
     def __setitem__(self, key, value):
-        self.changes[key] = value
+        self.changes[self._key(key)] = value
 
     def first(self, *keys):
         return first(None, (self.get(key) for key in keys))
@@ -489,17 +518,16 @@ class ConfigurationView(AttributeDictMixin):
         self.changes.clear()
 
     def setdefault(self, key, default):
-        try:
-            return self[key]
-        except KeyError:
+        key = self._key(key)
+        if key not in self:
             self[key] = default
-            return default
 
     def update(self, *args, **kwargs):
         return self.changes.update(*args, **kwargs)
 
     def __contains__(self, key):
-        return any(key in m for m in self._order)
+        keys = self._to_keys(key)
+        return any(any(k in m for k in keys) for m in self._order)
 
     def __bool__(self):
         return any(self._order)
@@ -521,8 +549,19 @@ class ConfigurationView(AttributeDictMixin):
         # changes takes precedence.
         return chain(*[op(d) for d in reversed(self._order)])
 
+    def swap_with(self, other):
+        changes = other.__dict__['changes']
+        defaults = other.__dict__['defaults']
+        self.__dict__.update(
+            changes=changes,
+            defaults=defaults,
+            key_t=other.__dict__['key_t'],
+            prefix=other.__dict__['prefix'],
+            _order=[changes] + defaults
+        )
+
     def _iterate_keys(self):
-        return uniq(self._iter(lambda d: d))
+        return uniq(self._iter(lambda d: d.keys()))
     iterkeys = _iterate_keys
 
     def _iterate_items(self):
@@ -547,125 +586,226 @@ class ConfigurationView(AttributeDictMixin):
 
         def values(self):
             return list(self._iterate_values())
-
 MutableMapping.register(ConfigurationView)
 
 
+@python_2_unicode_compatible
 class LimitedSet(object):
-    """Kind-of Set with limitations.
+    """Kind-of Set (or priority queue) with limitations.
 
     Good for when you need to test for membership (`a in set`),
     but the set should not grow unbounded.
 
-    :keyword maxlen: Maximum number of members before we start
-                     evicting expired members.
-    :keyword expires: Time in seconds, before a membership expires.
+    Maxlen is enforced at all times, so if the limit is reached
+    we will also remove non-expired items.
+
+    You can also configure minlen, which is the minimal residual size
+    of the set.
+
+    All arguments are optional, and no limits are enabled by default.
+
+    :keyword maxlen: Optional max number of items.
+
+        Adding more items than maxlen will result in immediate
+        removal of items sorted by oldest insertion time.
+
+    :keyword expires: TTL for all items.
+
+        Expired items are purged as keys are inserted.
+
+    :keyword minlen: Minimal residual size of this set.
+        .. versionadded:: 4.0
+
+        Value must be less than ``maxlen`` if both are configured.
+
+        Older expired items will be deleted, only after the set
+        exceeds minlen number of items.
+
+    :keyword data: Initial data to initialize set with.
+        Can be an iterable of ``(key, value)`` pairs,
+        a dict (``{key: insertion_time}``), or another instance
+        of :class:`LimitedSet`.
+
+    Example::
+
+        >>> s = LimitedSet(maxlen=50000, expires=3600, minlen=4000)
+        >>> for i in range(60000):
+        ...     s.add(i)
+        ...     s.add(str(i))
+        ...
+        >>> 57000 in s  # last 50k inserted values are kept
+        True
+        >>> '10' in s  # '10' did expire and was purged from set.
+        False
+        >>> len(s)  # maxlen is reached
+        50000
+        >>> s.purge(now=time.time() + 7200)  # clock + 2 hours
+        >>> len(s)  # now only minlen items are cached
+        4000
+        >>>> 57000 in s  # even this item is gone now
+        False
 
     """
 
-    def __init__(self, maxlen=None, expires=None, data=None, heap=None):
-        # heap is ignored
-        self.maxlen = maxlen
-        self.expires = expires
-        self._data = {} if data is None else data
+    max_heap_percent_overload = 15
+
+    def __init__(self, maxlen=0, expires=0, data=None, minlen=0):
+        self.maxlen = 0 if maxlen is None else maxlen
+        self.minlen = 0 if minlen is None else minlen
+        self.expires = 0 if expires is None else expires
+        self._data = {}
         self._heap = []
 
         # make shortcuts
-        self.__len__ = self._heap.__len__
+        self.__len__ = self._data.__len__
         self.__contains__ = self._data.__contains__
 
-        self._refresh_heap()
+        if data:
+            # import items from data
+            self.update(data)
+
+        if not self.maxlen >= self.minlen >= 0:
+            raise ValueError(
+                'minlen must be a positive number, less or equal to maxlen.')
+        if self.expires < 0:
+            raise ValueError('expires cannot be negative!')
 
     def _refresh_heap(self):
-        self._heap[:] = [(t, key) for key, t in items(self._data)]
+        """Time consuming recreating of heap. Do not run this too often."""
+        self._heap[:] = [entry for entry in values(self._data)]
         heapify(self._heap)
 
-    def add(self, key, now=time.time, heappush=heappush):
-        """Add a new member."""
-        # offset is there to modify the length of the list,
-        # this way we can expire an item before inserting the value,
-        # and it will end up in the correct order.
-        self.purge(1, offset=1)
-        inserted = now()
-        self._data[key] = inserted
-        heappush(self._heap, (inserted, key))
+    def _maybe_refresh_heap(self):
+        if self._heap_overload >= self.max_heap_percent_overload:
+            self._refresh_heap()
 
     def clear(self):
-        """Remove all members"""
+        """Clear all data, start from scratch again."""
         self._data.clear()
         self._heap[:] = []
 
-    def discard(self, value):
-        """Remove membership by finding value."""
-        try:
-            itime = self._data[value]
-        except KeyError:
-            return
-        try:
-            self._heap.remove((value, itime))
-        except ValueError:
-            pass
-        self._data.pop(value, None)
-    pop_value = discard  # XXX compat
-
-    def purge(self, limit=None, offset=0, now=time.time):
-        """Purge expired items."""
-        H, maxlen = self._heap, self.maxlen
-        if not maxlen:
-            return
-
-        # If the data/heap gets corrupted and limit is None
-        # this will go into an infinite loop, so limit must
-        # have a value to guard the loop.
-        limit = len(self) + offset if limit is None else limit
-
-        i = 0
-        while len(self) + offset > maxlen:
-            if i >= limit:
-                break
-            try:
-                item = heappop(H)
-            except IndexError:
-                break
-            if self.expires:
-                if now() < item[0] + self.expires:
-                    heappush(H, item)
-                    break
-            try:
-                self._data.pop(item[1])
-            except KeyError:  # out of sync with heap
-                pass
-            i += 1
+    def add(self, item, now=None):
+        """Add a new item, or reset the expiry time of an existing item."""
+        now = now or time.time()
+        if item in self._data:
+            self.discard(item)
+        entry = (now, item)
+        self._data[item] = entry
+        heappush(self._heap, entry)
+        if self.maxlen and len(self._data) >= self.maxlen:
+            self.purge()
 
     def update(self, other):
+        """Update this set from other LimitedSet, dict or iterable."""
+        if not other:
+            return
         if isinstance(other, LimitedSet):
             self._data.update(other._data)
             self._refresh_heap()
+            self.purge()
+        elif isinstance(other, dict):
+            # revokes are sent as a dict
+            for key, inserted in items(other):
+                if isinstance(inserted, (tuple, list)):
+                    # in case someone uses ._data directly for sending update
+                    inserted = inserted[0]
+                if not isinstance(inserted, float):
+                    raise ValueError(
+                        'Expecting float timestamp, got type '
+                        '{0!r} with value: {1}'.format(
+                            type(inserted), inserted))
+                self.add(key, inserted)
         else:
+            # XXX AVOID THIS, it could keep old data if more parties
+            # exchange them all over and over again
             for obj in other:
                 self.add(obj)
 
+    def discard(self, item):
+        # mark an existing item as removed. If KeyError is not found, pass.
+        self._data.pop(item, None)
+        self._maybe_refresh_heap()
+    pop_value = discard
+
+    def purge(self, now=None):
+        """Check oldest items and remove them if needed.
+
+        :keyword now: Time of purging -- by default right now.
+                      This can be useful for unit testing.
+
+        """
+        now = now or time.time()
+        now = now() if isinstance(now, Callable) else now
+        if self.maxlen:
+            while len(self._data) > self.maxlen:
+                self.pop()
+        # time based expiring:
+        if self.expires:
+            while len(self._data) > self.minlen >= 0:
+                inserted_time, _ = self._heap[0]
+                if inserted_time + self.expires > now:
+                    break  # oldest item has not expired yet
+                self.pop()
+
+    def pop(self, default=None):
+        """Remove and return the oldest item, or :const:`None` when empty."""
+        while self._heap:
+            _, item = heappop(self._heap)
+            try:
+                self._data.pop(item)
+            except KeyError:
+                pass
+            else:
+                return item
+        return default
+
     def as_dict(self):
-        return self._data
+        """Whole set as serializable dictionary.
+
+        Example::
+
+            >>> s = LimitedSet(maxlen=200)
+            >>> r = LimitedSet(maxlen=200)
+            >>> for i in range(500):
+            ...     s.add(i)
+            ...
+            >>> r.update(s.as_dict())
+            >>> r == s
+            True
+
+        """
+        return {key: inserted for inserted, key in values(self._data)}
 
     def __eq__(self, other):
-        return self._heap == other._heap
+        return self._data == other._data
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return 'LimitedSet({0})'.format(len(self))
+        return REPR_LIMITED_SET.format(
+            self, name=type(self).__name__, size=len(self),
+        )
 
     def __iter__(self):
-        return (item[1] for item in self._heap)
+        return (i for _, i in sorted(values(self._data)))
 
     def __len__(self):
-        return len(self._heap)
+        return len(self._data)
 
     def __contains__(self, key):
         return key in self._data
 
     def __reduce__(self):
-        return self.__class__, (self.maxlen, self.expires, self._data)
+        return self.__class__, (
+            self.maxlen, self.expires, self.as_dict(), self.minlen)
+
+    def __bool__(self):
+        return bool(self._data)
+    __nonzero__ = __bool__  # Py2
+
+    @property
+    def _heap_overload(self):
+        """Compute how much is heap bigger than data [percents]."""
+        return len(self._heap) * 100 / max(len(self._data), 1) - 100
 MutableSet.register(LimitedSet)

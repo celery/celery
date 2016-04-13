@@ -1,11 +1,12 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import os
 
 from itertools import count
 
 from celery.concurrency.base import apply_target, BasePool
-from celery.tests.case import AppCase, Mock
+from celery.exceptions import WorkerShutdown, WorkerTerminate
+from celery.tests.case import AppCase, Mock, patch
 
 
 class test_BasePool(AppCase):
@@ -47,6 +48,47 @@ class test_BasePool(AppCase):
                              {'target': (3, (8, 16)),
                               'callback': (4, (42,))})
 
+    def test_apply_target__propagate(self):
+        target = Mock(name='target')
+        target.side_effect = KeyError()
+        with self.assertRaises(KeyError):
+            apply_target(target, propagate=(KeyError,))
+
+    def test_apply_target__raises(self):
+        target = Mock(name='target')
+        target.side_effect = KeyError()
+        with self.assertRaises(KeyError):
+            apply_target(target)
+
+    def test_apply_target__raises_WorkerShutdown(self):
+        target = Mock(name='target')
+        target.side_effect = WorkerShutdown()
+        with self.assertRaises(WorkerShutdown):
+            apply_target(target)
+
+    def test_apply_target__raises_WorkerTerminate(self):
+        target = Mock(name='target')
+        target.side_effect = WorkerTerminate()
+        with self.assertRaises(WorkerTerminate):
+            apply_target(target)
+
+    def test_apply_target__raises_BaseException(self):
+        target = Mock(name='target')
+        callback = Mock(name='callback')
+        target.side_effect = BaseException()
+        apply_target(target, callback=callback)
+        callback.assert_called()
+
+    @patch('celery.concurrency.base.reraise')
+    def test_apply_target__raises_BaseException_raises_else(self, reraise):
+        target = Mock(name='target')
+        callback = Mock(name='callback')
+        reraise.side_effect = KeyError()
+        target.side_effect = BaseException()
+        with self.assertRaises(KeyError):
+            apply_target(target, callback=callback)
+        callback.assert_not_called()
+
     def test_does_not_debug(self):
         x = BasePool(10)
         x._does_debug = False
@@ -65,7 +107,12 @@ class test_BasePool(AppCase):
         BasePool(10).on_apply()
 
     def test_interface_info(self):
-        self.assertDictEqual(BasePool(10).info, {})
+        self.assertDictEqual(BasePool(10).info, {
+            'max-concurrency': 10,
+        })
+
+    def test_interface_flush(self):
+        self.assertIsNone(BasePool(10).flush())
 
     def test_active(self):
         p = BasePool(10)

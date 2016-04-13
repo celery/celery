@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery import messaging
 from celery.tests.case import AppCase, depends_on_current_app

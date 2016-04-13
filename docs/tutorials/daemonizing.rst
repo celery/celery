@@ -23,7 +23,7 @@ This directory contains generic bash init scripts for the
 these should run on Linux, FreeBSD, OpenBSD, and other Unix-like platforms.
 
 .. _`extra/generic-init.d/`:
-    http://github.com/celery/celery/tree/3.1/extra/generic-init.d/
+    https://github.com/celery/celery/tree/3.1/extra/generic-init.d/
 
 .. _generic-initd-celeryd:
 
@@ -31,7 +31,7 @@ Init script: celeryd
 --------------------
 
 :Usage: `/etc/init.d/celeryd {start|stop|restart|status}`
-:Configuration file: /etc/default/celeryd
+:Configuration file: :file:`/etc/default/celeryd`
 
 To configure this script to run the worker properly you probably need to at least
 tell it where to change
@@ -119,6 +119,19 @@ This is an example configuration for a Python project.
     # and owned by the userid/group configured.
     CELERY_CREATE_DIRS=1
 
+Using a login shell
+~~~~~~~~~~~~~~~~~~~
+
+You can inherit the environment of the ``CELERYD_USER`` by using a login
+shell:
+
+.. code-block:: bash
+
+    CELERYD_SU_ARGS="-l"
+
+Note that this is not recommended, and that you should only use this option
+when absolutely necessary.
+
 .. _generic-initd-celeryd-django-example:
 
 Example Django configuration
@@ -134,12 +147,14 @@ as shown in the example Django project in :ref:`django-first-steps`.
 Available options
 ~~~~~~~~~~~~~~~~~~
 
-* CELERY_APP
-    App instance to use (value for ``--app`` argument).
-    If you're still using the old API, or django-celery, then you
+* ``CELERY_APP``
+
+    App instance to use (value for :option:`--app <celery --app>` argument).
+    If you're still using the old API, or :pypi:`django-celery`, then you
     can omit this setting.
 
-* CELERY_BIN
+* ``CELERY_BIN``
+
     Absolute or relative path to the :program:`celery` program.
     Examples:
 
@@ -148,45 +163,56 @@ Available options
         * :file:`/virtualenvs/proj/bin/celery`
         * :file:`/virtualenvs/proj/bin/python -m celery`
 
-* CELERYD_NODES
+* ``CELERYD_NODES``
+
     List of node names to start (separated by space).
 
-* CELERYD_OPTS
+* ``CELERYD_OPTS``
+
     Additional command-line arguments for the worker, see
     `celery worker --help` for a list.  This also supports the extended
     syntax used by `multi` to configure settings for individual nodes.
     See `celery multi --help` for some multi-node configuration examples.
 
-* CELERYD_CHDIR
+* ``CELERYD_CHDIR``
+
     Path to change directory to at start. Default is to stay in the current
     directory.
 
-* CELERYD_PID_FILE
+* ``CELERYD_PID_FILE``
+
     Full path to the PID file. Default is /var/run/celery/%n.pid
 
-* CELERYD_LOG_FILE
+* ``CELERYD_LOG_FILE``
+
     Full path to the worker log file. Default is /var/log/celery/%n%I.log
     **Note**: Using `%I` is important when using the prefork pool as having
     multiple processes share the same log file will lead to race conditions.
 
-* CELERYD_LOG_LEVEL
+* ``CELERYD_LOG_LEVEL``
+
     Worker log level. Default is INFO.
 
-* CELERYD_USER
+* ``CELERYD_USER``
+
     User to run the worker as. Default is current user.
 
-* CELERYD_GROUP
+* ``CELERYD_GROUP``
+
     Group to run worker as. Default is current user.
 
-* CELERY_CREATE_DIRS
+* ``CELERY_CREATE_DIRS``
+
     Always create directories (log directory and pid file directory).
     Default is to only create directories when no custom logfile/pidfile set.
 
-* CELERY_CREATE_RUNDIR
+* ``CELERY_CREATE_RUNDIR``
+
     Always create pidfile directory.  By default only enabled when no custom
     pidfile location set.
 
-* CELERY_CREATE_LOGDIR
+* ``CELERY_CREATE_LOGDIR``
+
     Always create logfile directory.  By default only enable when no custom
     logfile location set.
 
@@ -195,7 +221,8 @@ Available options
 Init script: celerybeat
 -----------------------
 :Usage: `/etc/init.d/celerybeat {start|stop|restart}`
-:Configuration file: /etc/default/celerybeat or /etc/default/celeryd
+:Configuration file: :file:`/etc/default/celerybeat` or
+                     :file:``/etc/default/celeryd`.
 
 .. _generic-initd-celerybeat-example:
 
@@ -243,44 +270,54 @@ You should use the same template as above, but make sure the
 Available options
 ~~~~~~~~~~~~~~~~~
 
-* CELERY_APP
-    App instance to use (value for ``--app`` argument).
+* ``CELERY_APP``
 
-* CELERYBEAT_OPTS
+    App instance to use (value for :option:`--app <celery --app>` argument).
+
+* ``CELERYBEAT_OPTS``
+
     Additional arguments to celerybeat, see `celerybeat --help` for a
     list.
 
-* CELERYBEAT_PID_FILE
+* ``CELERYBEAT_PID_FILE``
+
     Full path to the PID file. Default is /var/run/celeryd.pid.
 
-* CELERYBEAT_LOG_FILE
+* ``CELERYBEAT_LOG_FILE``
+
     Full path to the celeryd log file. Default is /var/log/celeryd.log
 
-* CELERYBEAT_LOG_LEVEL
+* ``CELERYBEAT_LOG_LEVEL``
+
     Log level to use for celeryd. Default is INFO.
 
-* CELERYBEAT_USER
+* ``CELERYBEAT_USER``
+
     User to run beat as. Default is current user.
 
-* CELERYBEAT_GROUP
+* ``CELERYBEAT_GROUP``
+
     Group to run beat as. Default is current user.
 
-* CELERY_CREATE_DIRS
+* ``CELERY_CREATE_DIRS``
+
     Always create directories (log directory and pid file directory).
     Default is to only create directories when no custom logfile/pidfile set.
 
-* CELERY_CREATE_RUNDIR
+* ``CELERY_CREATE_RUNDIR``
+
     Always create pidfile directory.  By default only enabled when no custom
     pidfile location set.
 
-* CELERY_CREATE_LOGDIR
+* ``CELERY_CREATE_LOGDIR``
+
     Always create logfile directory.  By default only enable when no custom
     logfile location set.
 
 .. _daemon-systemd-generic:
 
-Usage systemd
-=============
+Usage ``systemd``
+=================
 
 .. _generic-systemd-celery:
 
@@ -291,9 +328,10 @@ Service file: celery.service
 :Configuration file: /etc/conf.d/celery
 
 To create a temporary folders for the log and pid files change user and group in
-/usr/lib/tmpfiles.d/celery.conf.
-To configure user, group, chdir change settings User, Group and WorkingDirectory defines
-in /usr/lib/systemd/system/celery.service.
+:file:`/usr/lib/tmpfiles.d/celery.conf`.
+To configure user, group, ``chdir`` change settings:
+User, Group and WorkingDirectory defines in
+:file:`/usr/lib/systemd/system/celery.service`.
 
 .. _generic-systemd-celery-example:
 
@@ -333,7 +371,7 @@ This is an example configuration for a Python project:
 Example Django configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is an example configuration for those using `django-celery`:
+This is an example configuration for those using :pypi:`django-celery`:
 
 .. code-block:: bash
 
@@ -396,24 +434,23 @@ you should :ref:`report it <reporting-bugs>`).
 
 .. _daemon-supervisord:
 
-`supervisord`_
-==============
+:pypi:`supervisor`
+==================
 
 * `extra/supervisord/`_
 
 .. _`extra/supervisord/`:
-    http://github.com/celery/celery/tree/3.1/extra/supervisord/
-.. _`supervisord`: http://supervisord.org/
+    https://github.com/celery/celery/tree/3.1/extra/supervisord/
 
 .. _daemon-launchd:
 
-launchd (OS X)
-==============
+``launchd`` (OS X)
+==================
 
 * `extra/osx`_
 
 .. _`extra/osx`:
-    http://github.com/celery/celery/tree/3.1/extra/osx/
+    https://github.com/celery/celery/tree/3.1/extra/osx/
 
 
 .. _daemon-windows:
@@ -424,9 +461,3 @@ Windows
 See this excellent external tutorial:
 
 http://www.calazan.com/windows-tip-run-applications-in-the-background-using-task-scheduler/
-
-CentOS
-======
-In CentOS we can take advantage of built-in service helpers, such as the
-pid-based status checker function in ``/etc/init.d/functions``.
-See the sample script in http://github.com/celery/celery/tree/3.1/extra/centos/.

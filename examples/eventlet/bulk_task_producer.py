@@ -1,3 +1,4 @@
+from __future__ import absolute_import, unicode_literals
 
 from eventlet import spawn_n, monkey_patch, Timeout
 from eventlet.queue import LightQueue
@@ -10,7 +11,7 @@ class Receipt(object):
     result = None
 
     def __init__(self, callback=None):
-        self.callback = None
+        self.callback = callback
         self.ready = Event()
 
     def finished(self, result):

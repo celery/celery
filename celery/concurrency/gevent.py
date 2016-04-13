@@ -6,7 +6,7 @@
     gevent pool implementation.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from time import time
 
@@ -56,7 +56,7 @@ class Timer(_timer.Timer):
         g.entry = entry
         g.eta = eta
         g.priority = priority
-        g.cancelled = False
+        g.canceled = False
         return g
 
     def _entry_exit(self, g):

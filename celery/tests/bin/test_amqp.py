@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.bin.amqp import (
     AMQPAdmin,
@@ -7,8 +7,9 @@ from celery.bin.amqp import (
     amqp,
     main,
 )
+from celery.five import WhateverIO
 
-from celery.tests.case import AppCase, Mock, WhateverIO, patch
+from celery.tests.case import AppCase, Mock, patch
 
 
 class test_AMQShell(AppCase):
@@ -59,7 +60,7 @@ class test_AMQShell(AppCase):
         self.shell.say = Mock()
         self.assertFalse(self.shell.needs_reconnect)
         self.shell.onecmd('hello')
-        self.assertTrue(self.shell.say.called)
+        self.shell.say.assert_called()
         self.assertTrue(self.shell.needs_reconnect)
 
     def test_exit(self):

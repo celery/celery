@@ -6,12 +6,19 @@
     Object related utilities including introspection, etc.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 __all__ = ['mro_lookup']
 
 
-def mro_lookup(cls, attr, stop=(), monkey_patched=[]):
+class Bunch(object):
+    """Object that enables you to modify attributes."""
+
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+
+def mro_lookup(cls, attr, stop=set(), monkey_patched=[]):
     """Return the first node by MRO order that defines an attribute.
 
     :keyword stop: A list of types that if reached will stop the search.
@@ -25,8 +32,8 @@ def mro_lookup(cls, attr, stop=(), monkey_patched=[]):
     for node in cls.mro():
         if node in stop:
             try:
-                attr = node.__dict__[attr]
-                module_origin = attr.__module__
+                value = node.__dict__[attr]
+                module_origin = value.__module__
             except (AttributeError, KeyError):
                 pass
             else:

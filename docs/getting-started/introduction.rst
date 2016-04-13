@@ -25,11 +25,12 @@ A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
-language.  So far there's RCelery_ for the Ruby programming language,
-node-celery_ for Node.js and a `PHP client`_. Language interoperability can also be achieved
+language.  In addition to Python there's node-celery_ for Node.js,
+and a `PHP client`_.
+
+Language interoperability can also be achieved
 by :ref:`using webhooks <guide-webhooks>`.
 
-.. _RCelery: http://leapfrogdevelopment.github.com/rcelery/
 .. _`PHP client`: https://github.com/gjedeer/celery-php
 .. _node-celery: https://github.com/mher/node-celery
 
@@ -70,7 +71,7 @@ Celery is…
 
 .. _`mailing-list`: http://groups.google.com/group/celery-users
 
-.. topic:: \ 
+.. topic:: \
 
     - **Simple**
 
@@ -101,7 +102,7 @@ Celery is…
 
         A single Celery process can process millions of tasks a minute,
         with sub-millisecond round-trip latency (using RabbitMQ,
-        py-librabbitmq, and optimized settings).
+        librabbitmq, and optimized settings).
 
     - **Flexible**
 
@@ -134,7 +135,7 @@ Celery is…
             - AMQP, Redis
             - memcached, MongoDB
             - SQLAlchemy, Django ORM
-            - Apache Cassandra
+            - Apache Cassandra, IronCache, Elasticsearch
 
         - **Serialization**
 
@@ -145,7 +146,7 @@ Celery is…
 Features
 ========
 
-.. topic:: \ 
+.. topic:: \
 
     .. hlist::
         :columns: 2
@@ -158,9 +159,9 @@ Features
 
             :ref:`Read more… <guide-monitoring>`.
 
-        - **Workflows**
+        - **Work-flows**
 
-            Simple and complex workflows can be composed using
+            Simple and complex work-flows can be composed using
             a set of powerful primitives we call the "canvas",
             including grouping, chaining, chunking and more.
 
@@ -203,9 +204,9 @@ Features
 
         - **Resource Leak Protection**
 
-            The :option:`--maxtasksperchild` option is used for user tasks
-            leaking resources, like memory or file descriptors, that
-            are simply out of your control.
+            The :option:`--maxtasksperchild <celery worker --maxtasksperchild>`
+            option is used for user tasks leaking resources, like memory or
+            file descriptors, that are simply out of your control.
 
             :ref:`Read more… <worker-maxtasksperchild>`.
 
@@ -254,7 +255,7 @@ database connections at :manpage:`fork(2)`.
 .. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
-.. _`tornado-celery`: http://github.com/mher/tornado-celery/
+.. _`tornado-celery`: https://github.com/mher/tornado-celery/
 
 Quickjump
 =========

@@ -7,9 +7,9 @@ dist/
 *.egg-info
 *.egg
 *.egg/
-doc/__build/*
 build/
 .build/
+_build/
 pip-log.txt
 .directory
 erl_crash.dump
@@ -24,4 +24,4 @@ Documentation/
 celery/tests/cover/
 .ve*
 cover/
-
+.vagrant/

@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import errno
 import socket
@@ -6,19 +6,14 @@ import socket
 from billiard.exceptions import RestartFreqExceeded
 
 from celery.datastructures import LimitedSet
-from celery.worker import state as worker_state
-from celery.worker.consumer import (
-    Consumer,
-    Heart,
-    Tasks,
-    Agent,
-    Mingle,
-    Gossip,
-    dump_body,
-    CLOSE,
-)
+from celery.worker.consumer.agent import Agent
+from celery.worker.consumer.consumer import CLOSE, Consumer, dump_body
+from celery.worker.consumer.gossip import Gossip
+from celery.worker.consumer.heart import Heart
+from celery.worker.consumer.mingle import Mingle
+from celery.worker.consumer.tasks import Tasks
 
-from celery.tests.case import AppCase, ContextMock, Mock, SkipTest, call, patch
+from celery.tests.case import AppCase, ContextMock, Mock, call, patch, skip
 
 
 class test_Consumer(AppCase):
@@ -34,53 +29,92 @@ class test_Consumer(AppCase):
             hub=None if no_hub else Mock(),
             **kwargs
         )
-        consumer.blueprint = Mock()
-        consumer._restart_state = Mock()
+        consumer.blueprint = Mock(name='blueprint')
+        consumer._restart_state = Mock(name='_restart_state')
         consumer.connection = _amqp_connection()
         consumer.connection_errors = (socket.error, OSError,)
+        consumer.conninfo = consumer.connection
         return consumer
+
+    def test_repr(self):
+        self.assertTrue(repr(self.get_consumer()))
 
     def test_taskbuckets_defaultdict(self):
         c = self.get_consumer()
         self.assertIsNone(c.task_buckets['fooxasdwx.wewe'])
 
+    @skip.if_python3(reason='buffer type not available')
     def test_dump_body_buffer(self):
         msg = Mock()
         msg.body = 'str'
-        try:
-            buf = buffer(msg.body)
-        except NameError:
-            raise SkipTest('buffer type not available')
-        self.assertTrue(dump_body(msg, buf))
+        self.assertTrue(dump_body(msg, buffer(msg.body)))
 
     def test_sets_heartbeat(self):
         c = self.get_consumer(amqheartbeat=10)
         self.assertEqual(c.amqheartbeat, 10)
-        self.app.conf.BROKER_HEARTBEAT = 20
+        self.app.conf.broker_heartbeat = 20
         c = self.get_consumer(amqheartbeat=None)
         self.assertEqual(c.amqheartbeat, 20)
 
     def test_gevent_bug_disables_connection_timeout(self):
-        with patch('celery.worker.consumer._detect_environment') as de:
-            de.return_value = 'gevent'
-            self.app.conf.BROKER_CONNECTION_TIMEOUT = 33.33
+        with patch('celery.worker.consumer.consumer._detect_environment') as d:
+            d.return_value = 'gevent'
+            self.app.conf.broker_connection_timeout = 33.33
             self.get_consumer()
-            self.assertIsNone(self.app.conf.BROKER_CONNECTION_TIMEOUT)
+            self.assertIsNone(self.app.conf.broker_connection_timeout)
+
+    def test_limit_moved_to_pool(self):
+        with patch('celery.worker.consumer.consumer.task_reserved') as reserv:
+            c = self.get_consumer()
+            c.on_task_request = Mock(name='on_task_request')
+            request = Mock(name='request')
+            c._limit_move_to_pool(request)
+            reserv.assert_called_with(request)
+            c.on_task_request.assert_called_with(request)
+
+    def test_update_prefetch_count(self):
+        c = self.get_consumer()
+        c._update_qos_eventually = Mock(name='update_qos')
+        c.initial_prefetch_count = None
+        c.pool.num_processes = None
+        c.prefetch_multiplier = 10
+        self.assertIsNone(c._update_prefetch_count(1))
+        c.initial_prefetch_count = 10
+        c.pool.num_processes = 10
+        c._update_prefetch_count(8)
+        c._update_qos_eventually.assert_called_with(8)
+        self.assertEqual(c.initial_prefetch_count, 10 * 10)
+
+    def test_flush_events(self):
+        c = self.get_consumer()
+        c.event_dispatcher = None
+        c._flush_events()
+        c.event_dispatcher = Mock(name='evd')
+        c._flush_events()
+        c.event_dispatcher.flush.assert_called_with()
+
+    def test_on_send_event_buffered(self):
+        c = self.get_consumer()
+        c.hub = None
+        c.on_send_event_buffered()
+        c.hub = Mock(name='hub')
+        c.on_send_event_buffered()
+        c.hub._ready.add.assert_called_with(c._flush_events)
 
     def test_limit_task(self):
         c = self.get_consumer()
 
-        with patch('celery.worker.consumer.task_reserved') as reserved:
+        with patch('celery.worker.consumer.consumer.task_reserved') as reserv:
             bucket = Mock()
             request = Mock()
             bucket.can_consume.return_value = True
 
             c._limit_task(request, bucket, 3)
             bucket.can_consume.assert_called_with(3)
-            reserved.assert_called_with(request)
+            reserv.assert_called_with(request)
             c.on_task_request.assert_called_with(request)
 
-        with patch('celery.worker.consumer.task_reserved') as reserved:
+        with patch('celery.worker.consumer.consumer.task_reserved') as reserv:
             bucket.can_consume.return_value = False
             bucket.expected_time.return_value = 3.33
             limit_order = c._limit_order
@@ -92,7 +126,7 @@ class test_Consumer(AppCase):
                 priority=c._limit_order,
             )
             bucket.expected_time.assert_called_with(4)
-            self.assertFalse(reserved.called)
+            reserv.assert_not_called()
 
     def test_start_blueprint_raises_EMFILE(self):
         c = self.get_consumer()
@@ -111,12 +145,12 @@ class test_Consumer(AppCase):
         c._restart_state.step.side_effect = se
         c.blueprint.start.side_effect = socket.error()
 
-        with patch('celery.worker.consumer.sleep') as sleep:
+        with patch('celery.worker.consumer.consumer.sleep') as sleep:
             c.start()
             sleep.assert_called_with(1)
 
     def test_no_retry_raises_error(self):
-        self.app.conf.BROKER_CONNECTION_RETRY = False
+        self.app.conf.broker_connection_retry = False
         c = self.get_consumer()
         c.blueprint.start.side_effect = socket.error()
         with self.assertRaises(socket.error):
@@ -140,12 +174,12 @@ class test_Consumer(AppCase):
         c.register_with_event_loop(Mock(name='loop'))
 
     def test_on_close_clears_semaphore_timer_and_reqs(self):
-        with patch('celery.worker.consumer.reserved_requests') as reserved:
+        with patch('celery.worker.consumer.consumer.reserved_requests') as res:
             c = self.get_consumer()
             c.on_close()
             c.controller.semaphore.clear.assert_called_with()
             c.timer.clear.assert_called_with()
-            reserved.clear.assert_called_with()
+            res.clear.assert_called_with()
             c.pool.flush.assert_called_with()
 
             c.controller = None
@@ -154,11 +188,11 @@ class test_Consumer(AppCase):
             c.on_close()
 
     def test_connect_error_handler(self):
-        self.app.connection = _amqp_connection()
-        conn = self.app.connection.return_value
+        self.app._connection = _amqp_connection()
+        conn = self.app._connection.return_value
         c = self.get_consumer()
         self.assertTrue(c.connect())
-        self.assertTrue(conn.ensure_connection.called)
+        conn.ensure_connection.assert_called()
         errback = conn.ensure_connection.call_args[0][0]
         conn.alt = [(1, 2, 3)]
         errback(Mock(), 0)
@@ -233,55 +267,54 @@ class test_Mingle(AppCase):
 
     def test_start_no_replies(self):
         c = Mock()
-        c.app.connection = _amqp_connection()
+        c.app.connection_for_read = _amqp_connection()
         mingle = Mingle(c)
         I = c.app.control.inspect.return_value = Mock()
         I.hello.return_value = {}
         mingle.start(c)
 
     def test_start(self):
-        try:
-            c = Mock()
-            c.app.connection = _amqp_connection()
-            mingle = Mingle(c)
-            self.assertTrue(mingle.enabled)
+        c = Mock()
+        c.app.connection_for_read = _amqp_connection()
+        mingle = Mingle(c)
+        self.assertTrue(mingle.enabled)
 
-            Aig = LimitedSet()
-            Big = LimitedSet()
-            Aig.add('Aig-1')
-            Aig.add('Aig-2')
-            Big.add('Big-1')
+        Aig = LimitedSet()
+        Big = LimitedSet()
+        Aig.add('Aig-1')
+        Aig.add('Aig-2')
+        Big.add('Big-1')
 
-            I = c.app.control.inspect.return_value = Mock()
-            I.hello.return_value = {
-                'A@example.com': {
-                    'clock': 312,
-                    'revoked': Aig._data,
-                },
-                'B@example.com': {
-                    'clock': 29,
-                    'revoked': Big._data,
-                },
-                'C@example.com': {
-                    'error': 'unknown method',
-                },
-            }
+        I = c.app.control.inspect.return_value = Mock()
+        I.hello.return_value = {
+            'A@example.com': {
+                'clock': 312,
+                'revoked': Aig._data,
+            },
+            'B@example.com': {
+                'clock': 29,
+                'revoked': Big._data,
+            },
+            'C@example.com': {
+                'error': 'unknown method',
+            },
+        }
 
-            mingle.start(c)
-            I.hello.assert_called_with(c.hostname, worker_state.revoked._data)
-            c.app.clock.adjust.assert_has_calls([
-                call(312), call(29),
-            ], any_order=True)
-            self.assertIn('Aig-1', worker_state.revoked)
-            self.assertIn('Aig-2', worker_state.revoked)
-            self.assertIn('Big-1', worker_state.revoked)
-        finally:
-            worker_state.revoked.clear()
+        our_revoked = c.controller.state.revoked = LimitedSet()
+
+        mingle.start(c)
+        I.hello.assert_called_with(c.hostname, our_revoked._data)
+        c.app.clock.adjust.assert_has_calls([
+            call(312), call(29),
+        ], any_order=True)
+        self.assertIn('Aig-1', our_revoked)
+        self.assertIn('Aig-2', our_revoked)
+        self.assertIn('Big-1', our_revoked)
 
 
 def _amqp_connection():
-    connection = ContextMock()
-    connection.return_value = ContextMock()
+    connection = ContextMock(name='Connection')
+    connection.return_value = ContextMock(name='connection')
     connection.return_value.transport.driver_type = 'amqp'
     return connection
 
@@ -290,14 +323,36 @@ class test_Gossip(AppCase):
 
     def test_init(self):
         c = self.Consumer()
-        c.app.connection = _amqp_connection()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         self.assertTrue(g.enabled)
         self.assertIs(c.gossip, g)
 
+    def test_callbacks(self):
+        c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
+        g = Gossip(c)
+        on_node_join = Mock(name='on_node_join')
+        on_node_join2 = Mock(name='on_node_join2')
+        on_node_leave = Mock(name='on_node_leave')
+        on_node_lost = Mock(name='on.node_lost')
+        g.on.node_join.add(on_node_join)
+        g.on.node_join.add(on_node_join2)
+        g.on.node_leave.add(on_node_leave)
+        g.on.node_lost.add(on_node_lost)
+
+        worker = Mock(name='worker')
+        g.on_node_join(worker)
+        on_node_join.assert_called_with(worker)
+        on_node_join2.assert_called_with(worker)
+        g.on_node_leave(worker)
+        on_node_leave.assert_called_with(worker)
+        g.on_node_lost(worker)
+        on_node_lost.assert_called_with(worker)
+
     def test_election(self):
         c = self.Consumer()
-        c.app.connection = _amqp_connection()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.start(c)
         g.election('id', 'topic', 'action')
@@ -308,21 +363,19 @@ class test_Gossip(AppCase):
 
     def test_call_task(self):
         c = self.Consumer()
-        c.app.connection = _amqp_connection()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.start(c)
+        signature = g.app.signature = Mock(name='app.signature')
+        task = Mock()
+        g.call_task(task)
+        signature.assert_called_with(task)
+        signature.return_value.apply_async.assert_called_with()
 
-        with patch('celery.worker.consumer.signature') as signature:
-            sig = signature.return_value = Mock()
-            task = Mock()
+        signature.return_value.apply_async.side_effect = MemoryError()
+        with patch('celery.worker.consumer.gossip.error') as error:
             g.call_task(task)
-            signature.assert_called_with(task, app=c.app)
-            sig.apply_async.assert_called_with()
-
-            sig.apply_async.side_effect = MemoryError()
-            with patch('celery.worker.consumer.error') as error:
-                g.call_task(task)
-                self.assertTrue(error.called)
+            error.assert_called()
 
     def Event(self, id='id', clock=312,
               hostname='foo@example.com', pid=4312,
@@ -339,7 +392,7 @@ class test_Gossip(AppCase):
 
     def test_on_elect(self):
         c = self.Consumer()
-        c.app.connection = _amqp_connection()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.start(c)
 
@@ -350,9 +403,9 @@ class test_Gossip(AppCase):
         g.dispatcher.send.assert_called_with('worker-elect-ack', id='id1')
 
         event.pop('clock')
-        with patch('celery.worker.consumer.error') as error:
+        with patch('celery.worker.consumer.gossip.error') as error:
             g.on_elect(event)
-            self.assertTrue(error.called)
+            error.assert_called()
 
     def Consumer(self, hostname='foo@x.com', pid=4312):
         c = Mock()
@@ -380,7 +433,7 @@ class test_Gossip(AppCase):
         g.on_elect(e3)
         self.assertEqual(len(g.consensus_requests['id1']), 3)
 
-        with patch('celery.worker.consumer.info'):
+        with patch('celery.worker.consumer.gossip.info'):
             g.on_elect_ack(e1)
             self.assertEqual(len(g.consensus_replies['id1']), 1)
             g.on_elect_ack(e2)
@@ -391,6 +444,7 @@ class test_Gossip(AppCase):
 
     def test_on_elect_ack_win(self):
         c = self.Consumer(hostname='foo@x.com')  # I will win
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         handler = g.election_handlers['topic'] = Mock()
         self.setup_election(g, c)
@@ -398,43 +452,48 @@ class test_Gossip(AppCase):
 
     def test_on_elect_ack_lose(self):
         c = self.Consumer(hostname='bar@x.com')  # I will lose
-        c.app.connection = _amqp_connection()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         handler = g.election_handlers['topic'] = Mock()
         self.setup_election(g, c)
-        self.assertFalse(handler.called)
+        handler.assert_not_called()
 
     def test_on_elect_ack_win_but_no_action(self):
         c = self.Consumer(hostname='foo@x.com')  # I will win
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.election_handlers = {}
-        with patch('celery.worker.consumer.error') as error:
+        with patch('celery.worker.consumer.gossip.error') as error:
             self.setup_election(g, c)
-            self.assertTrue(error.called)
+            error.assert_called()
 
     def test_on_node_join(self):
         c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
-        with patch('celery.worker.consumer.debug') as debug:
+        with patch('celery.worker.consumer.gossip.debug') as debug:
             g.on_node_join(c)
             debug.assert_called_with('%s joined the party', 'foo@x.com')
 
     def test_on_node_leave(self):
         c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
-        with patch('celery.worker.consumer.debug') as debug:
+        with patch('celery.worker.consumer.gossip.debug') as debug:
             g.on_node_leave(c)
             debug.assert_called_with('%s left', 'foo@x.com')
 
     def test_on_node_lost(self):
         c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
-        with patch('celery.worker.consumer.info') as info:
+        with patch('celery.worker.consumer.gossip.info') as info:
             g.on_node_lost(c)
             info.assert_called_with('missed heartbeat from %s', 'foo@x.com')
 
     def test_register_timer(self):
         c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.register_timer()
         c.timer.call_repeatedly.assert_called_with(g.interval, g.periodic)
@@ -444,6 +503,7 @@ class test_Gossip(AppCase):
 
     def test_periodic(self):
         c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.on_node_lost = Mock()
         state = g.state = Mock()
@@ -459,8 +519,18 @@ class test_Gossip(AppCase):
         with self.assertRaises(KeyError):
             state.workers['foo']
 
+    def test_on_message__task(self):
+        c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
+        g = Gossip(c)
+        self.assertTrue(g.enabled)
+        message = Mock(name='message')
+        message.delivery_info = {'routing_key': 'task.failed'}
+        g.on_message(Mock(name='prepare'), message)
+
     def test_on_message(self):
         c = self.Consumer()
+        c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         self.assertTrue(g.enabled)
         prepare = Mock()

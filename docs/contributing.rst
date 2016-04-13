@@ -187,7 +187,7 @@ the developers fix the bug.
 
 A bug could be fixed by some other improvements and fixes - it might not have an
 existing report in the bug tracker. Make sure you're using the latest releases of
-celery, billiard and kombu.
+celery, billiard, kombu, amqp and vine.
 
 5) **Collect information about the bug.**
 
@@ -231,10 +231,10 @@ been made on your bug. In the event you've turned this feature off, you
 should check back on occasion to ensure you don't miss any questions a
 developer trying to fix the bug might ask.
 
-.. _`GitHub`: http://github.com
-.. _`strace`: http://en.wikipedia.org/wiki/Strace
-.. _`ltrace`: http://en.wikipedia.org/wiki/Ltrace
-.. _`lsof`: http://en.wikipedia.org/wiki/Lsof
+.. _`GitHub`: https://github.com
+.. _`strace`: https://en.wikipedia.org/wiki/Strace
+.. _`ltrace`: https://en.wikipedia.org/wiki/Ltrace
+.. _`lsof`: https://en.wikipedia.org/wiki/Lsof
 
 .. _issue-trackers:
 
@@ -244,11 +244,12 @@ Issue Trackers
 Bugs for a package in the Celery ecosystem should be reported to the relevant
 issue tracker.
 
-* Celery: http://github.com/celery/celery/issues/
-* Kombu: http://github.com/celery/kombu/issues
-* pyamqp: http://github.com/celery/pyamqp/issues
-* librabbitmq: http://github.com/celery/librabbitmq/issues
-* Django-Celery: http://github.com/celery/django-celery/issues
+* :pypi:`celery`: https://github.com/celery/celery/issues/
+* :pypi:`kombu`: https://github.com/celery/kombu/issues
+* :pypi:`amqp`: https://github.com/celery/py-amqp/issues
+* :pypi:`vine`: https://github.com/celery/vine/issues
+* :pypi:`librabbitmq`: https://github.com/celery/librabbitmq/issues
+* :pypi:`django-celery`: https://github.com/celery/django-celery/issues
 
 If you are unsure of the origin of the bug you can ask the
 :ref:`mailing-list`, or just use the Celery issue tracker.
@@ -281,16 +282,18 @@ Branches
 
 Current active version branches:
 
-* master (http://github.com/celery/celery/tree/master)
-* 3.1 (http://github.com/celery/celery/tree/3.1)
-* 3.0 (http://github.com/celery/celery/tree/3.0)
+* master (https://github.com/celery/celery/tree/master)
+* 3.1 (https://github.com/celery/celery/tree/3.1)
+* 3.0 (https://github.com/celery/celery/tree/3.0)
 
 You can see the state of any branch by looking at the Changelog:
 
     https://github.com/celery/celery/blob/master/Changelog
 
 If the branch is in active development the topmost version info should
-contain metadata like::
+contain meta-data like:
+
+.. code-block:: restructuredtext
 
     2.4.0
     ======
@@ -416,7 +419,7 @@ to upstream changes:
     $ git fetch upstream
 
 If you need to pull in new changes from upstream you should
-always use the :option:`--rebase` option to ``git pull``:
+always use the ``--rebase`` option to ``git pull``:
 
 .. code-block:: console
 
@@ -446,34 +449,43 @@ To run the Celery test suite you need to install a few dependencies.
 A complete list of the dependencies needed are located in
 :file:`requirements/test.txt`.
 
-Installing the test requirements:
+If you're working on the development version, then you need to
+install the development requirements first:
+
+.. code-block:: console
+
+    $ pip install -U -r requirements/dev.txt
+
+Both the stable and the development version have testing related
+dependencies, so install these next:
 
 .. code-block:: console
 
     $ pip install -U -r requirements/test.txt
+    $ pip install -U -r requirements/default.txt
 
-When installation of dependencies is complete you can execute
-the test suite by calling ``nosetests``:
+After installing the dependencies required, you can now execute
+the test suite by calling :pypi:`nosetests <nose>`:
 
 .. code-block:: console
 
     $ nosetests
 
-Some useful options to :program:`nosetests` are:
+Some useful options to :command:`nosetests` are:
 
-* :option:`-x`
+* ``-x``
 
     Stop running the tests at the first test that fails.
 
-* :option:`-s`
+* ``-s``
 
     Don't capture output
 
-* :option:`--nologcapture`
+* ``-nologcapture``
 
     Don't capture log output.
 
-* :option:`-v`
+* ``-v``
 
     Run with verbose output.
 
@@ -506,9 +518,9 @@ the steps outlined here: http://bit.ly/koJoso
 Calculating test coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To calculate test coverage you must first install the :mod:`coverage` module.
+To calculate test coverage you must first install the :pypi:`coverage` module.
 
-Installing the :mod:`coverage` module:
+Installing the :pypi:`coverage` module:
 
 .. code-block:: console
 
@@ -536,7 +548,7 @@ The coverage XML output will then be located at :file:`coverage.xml`
 Running the tests on all supported Python versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There is a ``tox`` configuration file in the top directory of the
+There is a :pypi:`tox` configuration file in the top directory of the
 distribution.
 
 To run the tests for all supported Python versions simply execute:
@@ -545,8 +557,7 @@ To run the tests for all supported Python versions simply execute:
 
     $ tox
 
-If you only want to test specific Python versions use the :option:`-e`
-option:
+Use the ``tox -e`` option if you only want to test specific Python versions:
 
 .. code-block:: console
 
@@ -568,11 +579,11 @@ build the docs by running:
 .. code-block:: console
 
     $ cd docs
-    $ rm -rf .build
+    $ rm -rf _build
     $ make html
 
 Make sure there are no errors or warnings in the build output.
-After building succeeds the documentation is available at :file:`.build/html`.
+After building succeeds the documentation is available at :file:`_build/html`.
 
 .. _contributing-verify:
 
@@ -714,7 +725,7 @@ is following the conventions.
 
 * Lines should not exceed 78 columns.
 
-  You can enforce this in :program:`vim` by setting the ``textwidth`` option:
+  You can enforce this in :command:`vim` by setting the ``textwidth`` option:
 
   .. code-block:: vim
 
@@ -764,7 +775,7 @@ is following the conventions.
 
         from __future__ import absolute_import
 
-    * If the module uses the with statement and must be compatible
+    * If the module uses the :keyword:`with` statement and must be compatible
       with Python 2.5 (celery is not) then it must also enable that::
 
         from __future__ import with_statement
@@ -874,11 +885,28 @@ Ask Solem
 :github: https://github.com/ask
 :twitter: http://twitter.com/#!/asksol
 
+Dmitry Malinovsky
+~~~~~~~~~~~~~~~~~
+
+:github: https://github.com/malinoff
+:twitter: https://twitter.com/__malinoff__
+
+Ionel Cristian Mărieș
+~~~~~~~~~~~~~~~~~~~~~
+
+:github: https://github.com/ionelmc
+:twitter: https://twitter.com/ionelmc
+
 Mher Movsisyan
 ~~~~~~~~~~~~~~
 
 :github: https://github.com/mher
 :twitter: http://twitter.com/#!/movsm
+
+Omer Katz
+~~~~~~~~~
+:github: https://github.com/thedrow
+:twitter: https://twitter.com/the_drow
 
 Steeve Morin
 ~~~~~~~~~~~~
@@ -911,61 +939,69 @@ Jan Henrik Helmers
 Packages
 ========
 
-celery
-------
+``celery``
+----------
 
 :git: https://github.com/celery/celery
 :CI: http://travis-ci.org/#!/celery/celery
+:Windows-CI: https://ci.appveyor.com/project/ask/celery
 :PyPI: http://pypi.python.org/pypi/celery
 :docs: http://docs.celeryproject.org
 
-kombu
------
+``kombu``
+---------
 
 Messaging library.
 
 :git: https://github.com/celery/kombu
 :CI: http://travis-ci.org/#!/celery/kombu
+:Windows-CI: https://ci.appveyor.com/project/ask/kombu
 :PyPI: http://pypi.python.org/pypi/kombu
 :docs: http://kombu.readthedocs.org
 
-amqp
-----
+``amqp``
+--------
 
 Python AMQP 0.9.1 client.
 
 :git: https://github.com/celery/py-amqp
 :CI: http://travis-ci.org/#!/celery/py-amqp
+:Windows-CI: https://ci.appveyor.com/project/ask/py-amqp
 :PyPI: http://pypi.python.org/pypi/amqp
 :docs: http://amqp.readthedocs.org
 
-billiard
+``vine``
 --------
+
+Promise/deferred implementation.
+
+:git: https://github.com/celery/vine/
+:CI: http://travis-ci.org/#!/celery/vine/
+:Windows-CI: https://ci.appveyor.com/project/ask/vine
+:PyPI: http://pypi.python.org/pypi/vine
+:docs: http://vine.readthedocs.org
+
+``billiard``
+------------
 
 Fork of multiprocessing containing improvements
 that will eventually be merged into the Python stdlib.
 
 :git: https://github.com/celery/billiard
+:CI: http://travis-ci.org/#!/celery/billiard/
+:Windows-CI: https://ci.appveyor.com/project/ask/billiard
 :PyPI: http://pypi.python.org/pypi/billiard
 
-librabbitmq
------------
+``librabbitmq``
+---------------
 
 Very fast Python AMQP client written in C.
 
 :git: https://github.com/celery/librabbitmq
 :PyPI: http://pypi.python.org/pypi/librabbitmq
 
-celerymon
----------
-
-Celery monitor web-service.
-
-:git: https://github.com/celery/celerymon
-:PyPI: http://pypi.python.org/pypi/celerymon
-
-django-celery
--------------
+``django-celery``
+-----------------
 
 Django <-> Celery Integration.
 
@@ -973,16 +1009,16 @@ Django <-> Celery Integration.
 :PyPI: http://pypi.python.org/pypi/django-celery
 :docs: http://docs.celeryproject.org/en/latest/django
 
-cl
---
+``cell``
+--------
 
 Actor library.
 
-:git: https://github.com/celery/cl
-:PyPI: http://pypi.python.org/pypi/cl
+:git: https://github.com/celery/cell
+:PyPI: http://pypi.python.org/pypi/cell
 
-cyme
-----
+``cyme``
+--------
 
 Distributed Celery Instance manager.
 
@@ -994,34 +1030,39 @@ Distributed Celery Instance manager.
 Deprecated
 ----------
 
-- Flask-Celery
+- ``Flask-Celery``
 
 :git: https://github.com/ask/Flask-Celery
 :PyPI: http://pypi.python.org/pypi/Flask-Celery
 
-- carrot
+- ``celerymon``
+
+:git: https://github.com/celery/celerymon
+:PyPI: http://pypi.python.org/pypi/celerymon
+
+- ``carrot``
 
 :git: https://github.com/ask/carrot
 :PyPI: http://pypi.python.org/pypi/carrot
 
-- ghettoq
+- ``ghettoq``
 
 :git: https://github.com/ask/ghettoq
 :PyPI: http://pypi.python.org/pypi/ghettoq
 
-- kombu-sqlalchemy
+- ``kombu-sqlalchemy``
 
 :git: https://github.com/ask/kombu-sqlalchemy
 :PyPI: http://pypi.python.org/pypi/kombu-sqlalchemy
 
-- django-kombu
+- ``django-kombu``
 
 :git: https://github.com/ask/django-kombu
 :PyPI: http://pypi.python.org/pypi/django-kombu
 
-- pylibrabbitmq
+- ``pylibrabbitmq``
 
-Old name for :mod:`librabbitmq`.
+Old name for :pypi:`librabbitmq`.
 
 :git: :const:`None`
 :PyPI: http://pypi.python.org/pypi/pylibrabbitmq
@@ -1065,11 +1106,14 @@ and make a new version tag:
 Releasing
 ---------
 
-Commands to make a new public stable release::
+Commands to make a new public stable release:
+
+.. code-block:: console
 
     $ make distcheck  # checks pep8, autodoc index, runs tests and more
     $ make dist  # NOTE: Runs git clean -xdf and removes files not in the repo.
-    $ python setup.py sdist bdist_wheel upload  # Upload package to PyPI
+    $ python setup.py sdist upload --sign --identity='Celery Security Team'
+    $ python setup.py bdist_wheel upload --sign --identity='Celery Security Team'
 
 If this is a new release series then you also need to do the
 following:

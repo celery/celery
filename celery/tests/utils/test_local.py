@@ -2,14 +2,14 @@ from __future__ import absolute_import, unicode_literals
 
 import sys
 
-from celery.five import string, long_t
+from celery.five import python_2_unicode_compatible, string, long_t
 from celery.local import (
     Proxy,
     PromiseProxy,
     maybe_evaluate,
     try_import,
 )
-from celery.tests.case import Case, Mock
+from celery.tests.case import Case, Mock, skip
 
 PY3 = sys.version_info[0] == 3
 
@@ -30,6 +30,12 @@ class test_Proxy(Case):
         self.assertEqual(Proxy.__name__, 'Proxy')
         self.assertEqual(Proxy.__module__, 'celery.local')
         self.assertIsInstance(Proxy.__doc__, str)
+
+    def test_doc(self):
+        def real():
+            pass
+        x = Proxy(real, __doc__='foo')
+        self.assertEqual(x.__doc__, 'foo')
 
     def test_name(self):
 
@@ -75,8 +81,10 @@ class test_Proxy(Case):
         with self.assertRaises(AttributeError):
             x.__dict__
 
+    @skip.if_python3()
     def test_unicode(self):
 
+        @python_2_unicode_compatible
         class X(object):
 
             def __unicode__(self):

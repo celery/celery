@@ -6,7 +6,7 @@
     Pool implementation abstract factory, and alias definitions.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 # Import from kombu directly as it's used
 # early in the import stage, where celery.utils loads

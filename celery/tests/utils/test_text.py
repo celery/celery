@@ -7,6 +7,7 @@ from celery.utils.text import (
     indent,
     pretty,
     truncate,
+    truncate_bytes,
 )
 
 from celery.tests.case import AppCase, Case
@@ -67,6 +68,10 @@ class test_utils(Case):
     def test_truncate_text(self):
         self.assertEqual(truncate('ABCDEFGHI', 3), 'ABC...')
         self.assertEqual(truncate('ABCDEFGHI', 10), 'ABCDEFGHI')
+
+    def test_truncate_bytes(self):
+        self.assertEqual(truncate_bytes(b'ABCDEFGHI', 3), b'ABC...')
+        self.assertEqual(truncate_bytes(b'ABCDEFGHI', 10), b'ABCDEFGHI')
 
     def test_abbr(self):
         self.assertEqual(abbr(None, 3), '???')

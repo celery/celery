@@ -24,7 +24,7 @@ If you're looking for versions prior to 2.5 you should visit our
 This is a dummy release performed for the following goals:
 
 - Protect against force upgrading to Kombu 2.2.0
-- Version parity with django-celery
+- Version parity with :pypi:`django-celery`
 
 .. _version-2.5.3:
 
@@ -33,7 +33,7 @@ This is a dummy release performed for the following goals:
 :release-date: 2012-04-16 07:00 P.M BST
 :release-by: Ask Solem
 
-* A bug causes messages to be sent with UTC timestamps even though
+* A bug causes messages to be sent with UTC time-stamps even though
   :setting:`CELERY_ENABLE_UTC` was not enabled (Issue #636).
 
 * celerybeat: No longer crashes if an entry's args is set to None
@@ -76,7 +76,7 @@ News
 
         @task_sent.connect
         def on_task_sent(**kwargs):
-            print("sent task: %r" % (kwargs,))
+            print('sent task: %r' % (kwargs,))
 
 - Invalid task messages are now rejected instead of acked.
 
@@ -102,7 +102,7 @@ News
         (10, 5)
 
         >>> new.options
-        {"countdown": 5}
+        {'countdown': 5}
 
 - Chord callbacks are now triggered in eager mode.
 
@@ -194,8 +194,10 @@ Fixes
 * Internal timer (timer2) now logs exceptions instead of swallowing them
   (Issue #626).
 
-* celery shell: can now be started with :option:`--eventlet` or
-  :option:`--gevent` options to apply their monkey patches.
+* celery shell: can now be started with
+  :option:`--eventlet <celery shell --eventlet>` or
+  :option:`--gevent <celery shell --gevent>` options to apply their
+  monkey patches.
 
 .. _version-2.5.0:
 

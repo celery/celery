@@ -27,10 +27,34 @@ Example generic app.  This is decoupled from the rest of the project by using
 the ``@shared_task`` decorator.  This decorator returns a proxy that always
 points to the currently active Celery instance.
 
+Installing requirements
+=======================
+
+The settings file assumes that ``rabbitmq-server`` is running on ``localhost``
+using the default ports. More information here:
+
+http://docs.celeryproject.org/en/latest/getting-started/brokers/rabbitmq.html
+
+In addition, some Python requirements must also be satisfied:
+
+.. code-block:: console
+
+    $ pip install -r requirements.txt
 
 Starting the worker
 ===================
 
-.. code-block:: bash
+.. code-block:: console
 
     $ celery -A proj worker -l info
+
+Running a task
+===================
+
+.. code-block:: console
+
+    $ python ./manage.sh shell
+    >>> from demoapp.tasks import add, mul, xsum
+    >>> res = add.delay(2,3)
+    >>> res.get()
+    5

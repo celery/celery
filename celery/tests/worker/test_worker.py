@@ -1,7 +1,8 @@
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import socket
+import sys
 
 from collections import deque
 from datetime import datetime, timedelta
@@ -12,12 +13,11 @@ from kombu import Connection
 from kombu.common import QoS, ignore_errors
 from kombu.transport.base import Message
 
-from celery.app.defaults import DEFAULTS
-from celery.bootsteps import RUN, CLOSE, StartStopStep
+from celery.bootsteps import RUN, CLOSE, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
-from celery.datastructures import AttributeDict
 from celery.exceptions import (
-    WorkerShutdown, WorkerTerminate, TaskRevokedError, InvalidTaskError,
+    WorkerShutdown, WorkerTerminate, TaskRevokedError,
+    InvalidTaskError, ImproperlyConfigured,
 )
 from celery.five import Empty, range, Queue as FastQueue
 from celery.platforms import EX_FAILURE
@@ -30,9 +30,7 @@ from celery.utils import worker_direct
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 
-from celery.tests.case import (
-    AppCase, Mock, SkipTest, TaskMessage, patch, restore_logging,
-)
+from celery.tests.case import AppCase, Mock, TaskMessage, patch, skip
 
 
 def MockStep(step=None):
@@ -51,7 +49,7 @@ def mock_event_dispatcher():
 
 
 class PlaceHolder(object):
-        pass
+    pass
 
 
 def find_step(obj, typ):
@@ -64,6 +62,7 @@ class Consumer(__Consumer):
         kwargs.setdefault('without_mingle', True)  # disable Mingle step
         kwargs.setdefault('without_gossip', True)  # disable Gossip step
         kwargs.setdefault('without_heartbeat', True)  # disable Heart step
+        kwargs.setdefault('controller', Mock())
         super(Consumer, self).__init__(*args, **kwargs)
 
 
@@ -73,6 +72,7 @@ class _MyKombuConsumer(Consumer):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('pool', BasePool(2))
+        kwargs.setdefault('controller', Mock())
         super(_MyKombuConsumer, self).__init__(*args, **kwargs)
 
     def restart_heartbeat(self):
@@ -199,7 +199,7 @@ class test_Consumer(AppCase):
         step = find_step(l, consumer.Connection)
         conn = l.connection = Mock()
         step.shutdown(l)
-        self.assertTrue(conn.close.called)
+        conn.close.assert_called()
         self.assertIsNone(l.connection)
 
         l = MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
@@ -214,7 +214,7 @@ class test_Consumer(AppCase):
         self.assertTrue(eventer.close.call_count)
         self.assertTrue(heart.closed)
 
-    @patch('celery.worker.consumer.warn')
+    @patch('celery.worker.consumer.consumer.warn')
     def test_receive_message_unknown(self, warn):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.blueprint.state = RUN
@@ -250,7 +250,7 @@ class test_Consumer(AppCase):
         callback(m)
         self.assertTrue(m.acknowledged)
 
-    @patch('celery.worker.consumer.error')
+    @patch('celery.worker.consumer.consumer.error')
     def test_receive_message_InvalidTaskError(self, error):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
         l.blueprint.state = RUN
@@ -268,10 +268,10 @@ class test_Consumer(AppCase):
 
         callback = self._get_on_message(l)
         callback(m)
-        self.assertTrue(error.called)
+        error.assert_called()
         self.assertIn('Received invalid task message', error.call_args[0][0])
 
-    @patch('celery.worker.consumer.crit')
+    @patch('celery.worker.consumer.consumer.crit')
     def test_on_decode_error(self, crit):
         l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
 
@@ -355,12 +355,13 @@ class test_Consumer(AppCase):
         l.pool = l.controller.pool = Mock()
 
         l.connection_errors = (KeyError,)
-        self.assertRaises(SyntaxError, l.start)
+        with self.assertRaises(SyntaxError):
+            l.start()
         l.timer.stop()
 
     def test_loop_ignores_socket_timeout(self):
 
-        class Connection(self.app.connection().__class__):
+        class Connection(self.app.connection_for_read().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
@@ -376,7 +377,7 @@ class test_Consumer(AppCase):
 
     def test_loop_when_socket_error(self):
 
-        class Connection(self.app.connection().__class__):
+        class Connection(self.app.connection_for_read().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
@@ -398,7 +399,7 @@ class test_Consumer(AppCase):
 
     def test_loop(self):
 
-        class Connection(self.app.connection().__class__):
+        class Connection(self.app.connection_for_read().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
@@ -496,7 +497,7 @@ class test_Consumer(AppCase):
         con.node.handle_message.side_effect = ValueError('foo')
         con.on_message('foo', 'bar')
         con.node.handle_message.assert_called_with('foo', 'bar')
-        self.assertTrue(con.reset.called)
+        con.reset.assert_called()
 
     def test_revoke(self):
         l = _MyKombuConsumer(self.buffer.put, timer=self.timer, app=self.app)
@@ -531,8 +532,8 @@ class test_Consumer(AppCase):
             self.buffer.get_nowait()
         self.assertTrue(self.timer.empty())
 
-    @patch('celery.worker.consumer.warn')
-    @patch('celery.worker.consumer.logger')
+    @patch('celery.worker.consumer.consumer.warn')
+    @patch('celery.worker.consumer.consumer.logger')
     def test_receieve_message_ack_raises(self, logger, warn):
         l = Consumer(self.buffer.put, timer=self.timer, app=self.app)
         l.controller = l.app.WorkController()
@@ -587,12 +588,12 @@ class test_Consumer(AppCase):
             pp('+ BLUEPRINT START 1')
             l.blueprint.start(l)
             pp('- BLUEPRINT START 1')
-            p = l.app.conf.BROKER_CONNECTION_RETRY
-            l.app.conf.BROKER_CONNECTION_RETRY = False
+            p = l.app.conf.broker_connection_retry
+            l.app.conf.broker_connection_retry = False
             pp('+ BLUEPRINT START 2')
             l.blueprint.start(l)
             pp('- BLUEPRINT START 2')
-            l.app.conf.BROKER_CONNECTION_RETRY = p
+            l.app.conf.broker_connection_retry = p
             pp('+ BLUEPRINT RESTART')
             l.blueprint.restart(l)
             pp('- BLUEPRINT RESTART')
@@ -704,7 +705,7 @@ class test_Consumer(AppCase):
         controller = find_step(l, consumer.Control)
         controller.box.loop(l)
 
-        self.assertTrue(controller.box.node.listen.called)
+        controller.box.node.listen.assert_called()
         self.assertTrue(controller.box.consumer)
         controller.box.consumer.consume.assert_called_with()
 
@@ -825,20 +826,31 @@ class test_WorkController(AppCase):
         self.worker.on_consumer_ready(Mock())
 
     def test_setup_queues_worker_direct(self):
-        self.app.conf.CELERY_WORKER_DIRECT = True
+        self.app.conf.worker_direct = True
         self.app.amqp.__dict__['queues'] = Mock()
         self.worker.setup_queues({})
         self.app.amqp.queues.select_add.assert_called_with(
             worker_direct(self.worker.hostname),
         )
 
+    def test_setup_queues__missing_queue(self):
+        self.app.amqp.queues.select = Mock(name='select')
+        self.app.amqp.queues.deselect = Mock(name='deselect')
+        self.app.amqp.queues.select.side_effect = KeyError()
+        self.app.amqp.queues.deselect.side_effect = KeyError()
+        with self.assertRaises(ImproperlyConfigured):
+            self.worker.setup_queues('x,y', exclude='foo,bar')
+        self.app.amqp.queues.select = Mock(name='select')
+        with self.assertRaises(ImproperlyConfigured):
+            self.worker.setup_queues('x,y', exclude='foo,bar')
+
     def test_send_worker_shutdown(self):
         with patch('celery.signals.worker_shutdown') as ws:
             self.worker._send_worker_shutdown()
             ws.send.assert_called_with(sender=self.worker)
 
+    @skip.todo('unstable test')
     def test_process_shutdown_on_worker_shutdown(self):
-        raise SkipTest('unstable test')
         from celery.concurrency.prefork import process_destructor
         from celery.concurrency.asynpool import Worker
         with patch('celery.signals.worker_process_shutdown') as ws:
@@ -871,50 +883,9 @@ class test_WorkController(AppCase):
         worker = self.create_worker(pidfile='pidfilelockfilepid')
         worker.steps = []
         worker.start()
-        self.assertTrue(create_pidlock.called)
+        create_pidlock.assert_called()
         worker.stop()
-        self.assertTrue(worker.pidlock.release.called)
-
-    @patch('celery.platforms.signals')
-    @patch('celery.platforms.set_mp_process_title')
-    def test_process_initializer(self, set_mp_process_title, _signals):
-        with restore_logging():
-            from celery import signals
-            from celery._state import _tls
-            from celery.concurrency.prefork import (
-                process_initializer, WORKER_SIGRESET, WORKER_SIGIGNORE,
-            )
-
-            def on_worker_process_init(**kwargs):
-                on_worker_process_init.called = True
-            on_worker_process_init.called = False
-            signals.worker_process_init.connect(on_worker_process_init)
-
-            def Loader(*args, **kwargs):
-                loader = Mock(*args, **kwargs)
-                loader.conf = {}
-                loader.override_backends = {}
-                return loader
-
-            with self.Celery(loader=Loader) as app:
-                app.conf = AttributeDict(DEFAULTS)
-                process_initializer(app, 'awesome.worker.com')
-                _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
-                _signals.reset.assert_any_call(*WORKER_SIGRESET)
-                self.assertTrue(app.loader.init_worker.call_count)
-                self.assertTrue(on_worker_process_init.called)
-                self.assertIs(_tls.current_app, app)
-                set_mp_process_title.assert_called_with(
-                    'celeryd', hostname='awesome.worker.com',
-                )
-
-                with patch('celery.app.trace.setup_worker_optimizations') as S:
-                    os.environ['FORKED_BY_MULTIPROCESSING'] = "1"
-                    try:
-                        process_initializer(app, 'luke.worker.com')
-                        S.assert_called_with(app, 'luke.worker.com')
-                    finally:
-                        os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+        worker.pidlock.release.assert_called()
 
     def test_attrs(self):
         worker = self.worker
@@ -1076,6 +1047,23 @@ class test_WorkController(AppCase):
         worker.consumer.close.side_effect = AttributeError()
         worker.signal_consumer_close()
 
+    def test_rusage__no_resource(self):
+        from celery import worker
+        prev, worker.resource = worker.resource, None
+        try:
+            self.worker.pool = Mock(name='pool')
+            with self.assertRaises(NotImplementedError):
+                self.worker.rusage()
+            self.worker.stats()
+        finally:
+            worker.resource = prev
+
+    def test_repr(self):
+        self.assertTrue(repr(self.worker))
+
+    def test_str(self):
+        self.assertEqual(str(self.worker), self.worker.hostname)
+
     def test_start__stop(self):
         worker = self.worker
         worker.blueprint.shutdown_complete.set()
@@ -1091,7 +1079,7 @@ class test_WorkController(AppCase):
         for w in worker.steps:
             self.assertTrue(w.start.call_count)
         worker.consumer = Mock()
-        worker.stop()
+        worker.stop(exitcode=3)
         for stopstep in worker.steps:
             self.assertTrue(stopstep.close.call_count)
             self.assertTrue(stopstep.stop.call_count)
@@ -1105,6 +1093,24 @@ class test_WorkController(AppCase):
         worker.steps[-1] = None
         worker.start()
         worker.stop()
+
+    def test_start__KeyboardInterrupt(self):
+        worker = self.worker
+        worker.blueprint = Mock(name='blueprint')
+        worker.blueprint.start.side_effect = KeyboardInterrupt()
+        worker.stop = Mock(name='stop')
+        worker.start()
+        worker.stop.assert_called_with(exitcode=EX_FAILURE)
+
+    def test_register_with_event_loop(self):
+        worker = self.worker
+        hub = Mock(name='hub')
+        worker.blueprint = Mock(name='blueprint')
+        worker.register_with_event_loop(hub)
+        worker.blueprint.send_all.assert_called_with(
+            worker, 'register_with_event_loop', args=(hub,),
+            description='hub.register',
+        )
 
     def test_step_raises(self):
         worker = self.worker
@@ -1132,6 +1138,8 @@ class test_WorkController(AppCase):
         worker.terminate()
         for step in worker.steps:
             self.assertTrue(step.terminate.call_count)
+        worker.blueprint.state = TERMINATE
+        worker.terminate()
 
     def test_Hub_crate(self):
         w = Mock()
@@ -1181,6 +1189,7 @@ class test_WorkController(AppCase):
         pool = components.Pool(w)
         pool.create(w)
         pool.register_with_event_loop(w, w.hub)
-        self.assertIsInstance(w.semaphore, LaxBoundedSemaphore)
-        P = w.pool
-        P.start()
+        if sys.platform != 'win32':
+            self.assertIsInstance(w.semaphore, LaxBoundedSemaphore)
+            P = w.pool
+            P.start()

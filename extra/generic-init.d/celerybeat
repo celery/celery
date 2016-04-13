@@ -110,6 +110,9 @@ DEFAULT_CELERYBEAT="$CELERY_BIN beat"
 CELERYBEAT=${CELERYBEAT:-$DEFAULT_CELERYBEAT}
 CELERYBEAT_LOG_LEVEL=${CELERYBEAT_LOG_LEVEL:-${CELERYBEAT_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
 
+CELERYBEAT_SU=${CELERYBEAT_SU:-"su"}
+CELERYBEAT_SU_ARGS=${CELERYBEAT_SU_ARGS:-""}
+
 # Sets --app argument for CELERY_BIN
 CELERY_APP_ARG=""
 if [ ! -z "$CELERY_APP" ]; then
@@ -240,7 +243,8 @@ stop_beat () {
 }
 
 _chuid () {
-    su "$CELERYBEAT_USER" -c "$CELERYBEAT $*"
+    ${CELERYBEAT_SU} ${CELERYBEAT_SU_ARGS} \
+        "$CELERYBEAT_USER" -c "$CELERYBEAT $*"
 }
 
 start_beat () {
@@ -254,7 +258,7 @@ check_status () {
     local failed=
     local pid_file=$CELERYBEAT_PID_FILE
     if [ ! -e $pid_file ]; then
-        echo "${SCRIPT_NAME} is up: no pid file found"
+        echo "${SCRIPT_NAME} is down: no pid file found"
         failed=true
     elif [ ! -r $pid_file ]; then
         echo "${SCRIPT_NAME} is in unknown state, user cannot read pid file."

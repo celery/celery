@@ -6,7 +6,7 @@
     This module contains various utilities related to dates and times.
 
 """
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import numbers
 import os
@@ -20,17 +20,19 @@ from kombu.utils import cached_property, reprcall
 
 from pytz import timezone as _timezone, AmbiguousTimeError, FixedOffset
 
-from celery.five import string_t
+from celery.five import python_2_unicode_compatible, string_t
 
 from .functional import dictfilter
 from .iso8601 import parse_iso8601
 from .text import pluralize
 
-__all__ = ['LocalTimezone', 'timezone', 'maybe_timedelta',
-           'delta_resolution', 'remaining', 'rate', 'weekday',
-           'humanize_seconds', 'maybe_iso8601', 'is_naive', 'make_aware',
-           'localize', 'to_utc', 'maybe_make_aware', 'ffwd', 'utcoffset',
-           'adjust_timestamp', 'maybe_s_to_ms']
+__all__ = [
+    'LocalTimezone', 'timezone', 'maybe_timedelta',
+    'delta_resolution', 'remaining', 'rate', 'weekday',
+    'humanize_seconds', 'maybe_iso8601', 'is_naive', 'make_aware',
+    'localize', 'to_utc', 'maybe_make_aware', 'ffwd', 'utcoffset',
+    'adjust_timestamp', 'maybe_s_to_ms',
+]
 
 PY3 = sys.version_info[0] == 3
 PY33 = sys.version_info >= (3, 3)
@@ -54,6 +56,7 @@ ZERO = timedelta(0)
 _local_timezone = None
 
 
+@python_2_unicode_compatible
 class LocalTimezone(tzinfo):
     """Local time implementation taken from Python's docs.
 
@@ -86,11 +89,11 @@ class LocalTimezone(tzinfo):
     def tzname(self, dt):
         return _time.tzname[self._isdst(dt)]
 
-    if PY3:
+    if PY3:  # pragma: no cover
 
         def fromutc(self, dt):
             # The base tzinfo class no longer implements a DST
-            # offset aware .fromutc() in Python3 (Issue #2306).
+            # offset aware .fromutc() in Python 3 (Issue #2306).
 
             # I'd rather rely on pytz to do this, than port
             # the C code from cpython's fromutc [asksol]
@@ -122,7 +125,7 @@ class _Zone(object):
             dt = make_aware(dt, orig or self.utc)
         return localize(dt, self.tz_or_local(local))
 
-    if PY33:
+    if PY33:  # pragma: no cover
 
         def to_system(self, dt):
             # tz=None is a special case since Python 3.3, and will
@@ -313,6 +316,7 @@ def maybe_make_aware(dt, tz=None):
     )
 
 
+@python_2_unicode_compatible
 class ffwd(object):
     """Version of relativedelta that only supports addition."""
 
@@ -355,8 +359,8 @@ class ffwd(object):
         }, **extra)
 
 
-def utcoffset(time=_time):
-    if time.daylight:
+def utcoffset(time=_time, localtime=_time.localtime):
+    if localtime().tm_isdst:
         return time.altzone // 3600
     return time.timezone // 3600
 

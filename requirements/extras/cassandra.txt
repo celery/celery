@@ -1,1 +1,1 @@
-pycassa
+cassandra-driver

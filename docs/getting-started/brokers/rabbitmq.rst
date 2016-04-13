@@ -16,7 +16,7 @@ the broker instance you want to use:
 
 .. code-block:: python
 
-    BROKER_URL = 'amqp://guest:guest@localhost:5672//'
+    broker_url = 'amqp://guest:guest@localhost:5672//'
 
 For a description of broker URLs and a full list of the
 various broker configuration options available to Celery,
@@ -35,7 +35,7 @@ see `Installing RabbitMQ on OS X`_.
 .. note::
 
     If you're getting `nodedown` errors after installing and using
-    :program:`rabbitmqctl` then this blog post can help you identify
+    :command:`rabbitmqctl` then this blog post can help you identify
     the source of the problem:
 
         http://somic.org/2009/02/19/on-rabbitmqctl-and-badrpcnodedown/
@@ -85,22 +85,24 @@ documentation`_:
 
     ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
 
-Finally, we can install rabbitmq using :program:`brew`:
+Finally, we can install rabbitmq using :command:`brew`:
 
 .. code-block:: console
 
     $ brew install rabbitmq
 
-.. _`Homebrew`: http://github.com/mxcl/homebrew/
+.. _`Homebrew`: https://github.com/mxcl/homebrew/
 .. _`Homebrew documentation`: https://github.com/Homebrew/homebrew/wiki/Installation
 
 .. _rabbitmq-osx-system-hostname:
 
-After you have installed rabbitmq with brew you need to add the following to your path to be able to start and stop the broker. Add it to your .bash_profile or .profile
+After you've installed rabbitmq with :command:`brew` you need to add the following to
+your path to be able to start and stop the broker: add it to the startup file for your
+shell (e.g. :file:`.bash_profile` or :file:`.profile`).
 
-.. code-block:: console
+.. code-block:: bash
 
-    `PATH=$PATH:/usr/local/sbin`
+    PATH=$PATH:/usr/local/sbin
 
 Configuring the system host name
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,7 +111,7 @@ If you're using a DHCP server that is giving you a random host name, you need
 to permanently configure the host name. This is because RabbitMQ uses the host name
 to communicate with nodes.
 
-Use the :program:`scutil` command to permanently set your host name:
+Use the :command:`scutil` command to permanently set your host name:
 
 .. code-block:: console
 
@@ -121,7 +123,7 @@ back into an IP address::
     127.0.0.1       localhost myhost myhost.local
 
 If you start the rabbitmq server, your rabbit node should now be `rabbit@myhost`,
-as verified by :program:`rabbitmqctl`:
+as verified by :command:`rabbitmqctl`:
 
 .. code-block:: console
 
@@ -152,15 +154,15 @@ To start the server:
 
     $ sudo rabbitmq-server
 
-you can also run it in the background by adding the :option:`-detached` option
+you can also run it in the background by adding the ``-detached`` option
 (note: only one dash):
 
 .. code-block:: console
 
     $ sudo rabbitmq-server -detached
 
-Never use :program:`kill` to stop the RabbitMQ server, but rather use the
-:program:`rabbitmqctl` command:
+Never use :command:`kill` (:manpage:`kill(1)`) to stop the RabbitMQ server,
+but rather use the :command:`rabbitmqctl` command:
 
 .. code-block:: console
 

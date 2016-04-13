@@ -38,6 +38,8 @@ and creating Celery applications.
 
     .. autoattribute:: current_task
 
+    .. autoattribute:: current_worker_task
+
     .. autoattribute:: amqp
 
     .. autoattribute:: backend
@@ -49,8 +51,11 @@ and creating Celery applications.
     .. autoattribute:: log
     .. autoattribute:: tasks
     .. autoattribute:: pool
+    .. autoattribute:: producer_pool
     .. autoattribute:: Task
     .. autoattribute:: timezone
+    .. autoattribute:: builtin_fixups
+    .. autoattribute:: oid
 
     .. automethod:: close
 
@@ -66,6 +71,8 @@ and creating Celery applications.
 
     .. automethod:: add_defaults
 
+    .. automethod:: add_periodic_task
+
     .. automethod:: setup_security
 
     .. automethod:: start
@@ -73,6 +80,8 @@ and creating Celery applications.
     .. automethod:: task
 
     .. automethod:: send_task
+
+    .. automethod:: gen_task_name
 
     .. autoattribute:: AsyncResult
 
@@ -85,6 +94,10 @@ and creating Celery applications.
     .. autoattribute:: WorkController
 
     .. autoattribute:: Beat
+
+    .. automethod:: connection_for_read
+
+    .. automethod:: connection_for_write
 
     .. automethod:: connection
 
@@ -100,24 +113,42 @@ and creating Celery applications.
 
     .. automethod:: set_current
 
+    .. automethod:: set_default
+
     .. automethod:: finalize
 
-    .. autodata:: on_configure
+    .. automethod:: on_init
 
-    .. autodata:: on_after_configure
+    .. automethod:: prepare_config
 
-    .. autodata:: on_after_finalize
+    .. data:: on_configure
+
+        Signal sent when app is loading configuration.
+
+    .. data:: on_after_configure
+
+        Signal sent after app has prepared the configuration.
+
+    .. data:: on_after_finalize
+
+        Signal sent after app has been finalized.
+
+    .. data:: on_after_fork
+
+        Signal sent in child process after fork.
 
 Canvas primitives
 -----------------
 
-See :ref:`guide-canvas` for more about creating task workflows.
+See :ref:`guide-canvas` for more about creating task work-flows.
 
 .. class:: group(task1[, task2[, task3[,… taskN]]])
 
     Creates a group of tasks to be executed in parallel.
 
-    Example::
+    Example:
+
+    .. code-block:: pycon
 
         >>> res = group([add.s(2, 2), add.s(4, 4)])()
         >>> res.get()
@@ -138,17 +169,23 @@ See :ref:`guide-canvas` for more about creating task workflows.
     If called with only one argument, then that argument must
     be an iterable of tasks to chain.
 
-    Example::
+    Example:
+
+    .. code-block:: pycon
 
         >>> res = chain(add.s(2, 2), add.s(4))()
 
-    is effectively :math:`(2 + 2) + 4)`::
+    is effectively :math:`(2 + 2) + 4)`:
+
+    .. code-block:: pycon
 
         >>> res.get()
         8
 
     Calling a chain will return the result of the last task in the chain.
-    You can get to the other tasks by following the ``result.parent``'s::
+    You can get to the other tasks by following the ``result.parent``'s:
+
+    .. code-block:: pycon
 
         >>> res.parent.get()
         4
@@ -159,11 +196,15 @@ See :ref:`guide-canvas` for more about creating task workflows.
     The header is a group of tasks that must complete before the callback is
     called.  A chord is essentially a callback for a group of tasks.
 
-    Example::
+    Example:
+
+    .. code-block:: pycon
 
         >>> res = chord([add.s(2, 2), add.s(4, 4)])(sum_task.s())
 
-    is effectively :math:`\Sigma ((2 + 2) + (4 + 4))`::
+    is effectively :math:`\Sigma ((2 + 2) + (4 + 4))`:
+
+    .. code-block:: pycon
 
         >>> res.get()
         12
@@ -178,11 +219,15 @@ See :ref:`guide-canvas` for more about creating task workflows.
     Used as the parts in a :class:`group` or to safely pass
     tasks around as callbacks.
 
-    Signatures can also be created from tasks::
+    Signatures can also be created from tasks:
+
+    .. code-block:: pycon
 
         >>> add.signature(args=(), kwargs={}, options={})
 
-    or the ``.s()`` shortcut::
+    or the ``.s()`` shortcut:
+
+    .. code-block:: pycon
 
         >>> add.s(*args, **kwargs)
 
@@ -195,9 +240,9 @@ See :ref:`guide-canvas` for more about creating task workflows.
     arguments will be ignored and the values in the dict will be used
     instead.
 
-        >>> s = signature("tasks.add", args=(2, 2))
-        >>> signature(s)
-        {"task": "tasks.add", args=(2, 2), kwargs={}, options={}}
+        >>> s = app.signature('tasks.add', args=(2, 2))
+        >>> app.signature(s)
+        {'task': 'tasks.add', args=(2, 2), kwargs={}, options={}}
 
     .. method:: signature.__call__(*args \*\*kwargs)
 

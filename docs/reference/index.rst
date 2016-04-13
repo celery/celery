@@ -45,10 +45,19 @@
     celery.apps.worker
     celery.apps.beat
     celery.worker
-    celery.worker.consumer
     celery.worker.request
     celery.worker.state
     celery.worker.strategy
+    celery.worker.consumer
+    celery.worker.consumer.agent
+    celery.worker.consumer.connection
+    celery.worker.consumer.consumer
+    celery.worker.consumer.control
+    celery.worker.consumer.events
+    celery.worker.consumer.gossip
+    celery.worker.consumer.heart
+    celery.worker.consumer.mingle
+    celery.worker.consumer.tasks
     celery.bin.base
     celery.bin.celery
     celery.bin.worker

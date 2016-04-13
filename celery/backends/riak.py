@@ -6,7 +6,7 @@
     Riak result store backend.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 
@@ -38,7 +38,7 @@ if sys.version_info[0] == 3:
 else:
 
     def str_decode(s, encoding):
-        return s.decode("ascii")
+        return s.decode('ascii')
 
 
 def is_ascii(s):
@@ -50,6 +50,12 @@ def is_ascii(s):
 
 
 class RiakBackend(KeyValueStoreBackend):
+    """Riak result backend.
+
+    :raises celery.exceptions.ImproperlyConfigured: if
+        module :pypi:`riak` is not available.
+
+    """
     # TODO: allow using other protocols than protobuf ?
     #: default protocol used to connect to Riak, might be `http` or `pbc`
     protocol = 'pbc'
@@ -67,12 +73,8 @@ class RiakBackend(KeyValueStoreBackend):
 
     def __init__(self, host=None, port=None, bucket_name=None, protocol=None,
                  url=None, *args, **kwargs):
-        """Initialize Riak backend instance.
-
-        :raises celery.exceptions.ImproperlyConfigured: if
-            module :mod:`riak` is not available.
-        """
         super(RiakBackend, self).__init__(*args, **kwargs)
+        self.url = url
 
         if not riak:
             raise ImproperlyConfigured(
@@ -85,7 +87,7 @@ class RiakBackend(KeyValueStoreBackend):
             if ubucket:
                 ubucket = ubucket.strip('/')
 
-        config = self.app.conf.get('CELERY_RIAK_BACKEND_SETTINGS', None)
+        config = self.app.conf.get('riak_backend_settings', None)
         if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(

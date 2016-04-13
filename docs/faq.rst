@@ -109,13 +109,13 @@ The pytz module provides timezone definitions and related tools.
 
 .. _`pytz`: http://pypi.python.org/pypi/pytz
 
-django-celery
-~~~~~~~~~~~~~
+``django-celery``
+~~~~~~~~~~~~~~~~~
 
-If you use django-celery then you don't have to install celery separately,
-as it will make sure that the required version is installed.
+If you use :pypi:`django-celery` then you don't have to install Celery
+separately, as it will make sure that the required version is installed.
 
-django-celery does not have any other dependencies.
+:pypi:`django-celery` does not have any other dependencies.
 
 kombu
 ~~~~~
@@ -387,8 +387,9 @@ you have to use the AMQP API or the :program:`celery amqp` utility:
 
 The number 1753 is the number of messages deleted.
 
-You can also start :mod:`~celery.bin.worker` with the
-:option:`--purge` argument, to purge messages when the worker starts.
+You can also start the worker with the
+:option:`--purge <celery worker --purge>` option enabled to purge messages
+when the worker starts.
 
 .. _faq-messages-left-after-purge:
 
@@ -449,10 +450,10 @@ data.
 Note that this is not just something you should be aware of with Celery, for
 example also Django uses pickle for its cache client.
 
-For the task messages you can set the :setting:`CELERY_TASK_SERIALIZER`
+For the task messages you can set the :setting:`task_serializer`
 setting to "json" or "yaml" instead of pickle.
 
-Similarly for task results you can set :setting:`CELERY_RESULT_SERIALIZER`.
+Similarly for task results you can set :setting:`result_serializer`.
 
 For more details of the formats used and the lookup order when
 checking which format to use for a task see :ref:`calling-serializers`
@@ -461,7 +462,7 @@ Can messages be encrypted?
 --------------------------
 
 **Answer**: Some AMQP brokers supports using SSL (including RabbitMQ).
-You can enable this using the :setting:`BROKER_USE_SSL` setting.
+You can enable this using the :setting:`broker_use_ssl` setting.
 
 It is also possible to add additional encryption and security to messages,
 if you have a need for this then you should contact the :ref:`mailing-list`.
@@ -504,7 +505,7 @@ important that you are aware of the common pitfalls.
 
 * Events.
 
-Running :mod:`~celery.bin.worker` with the :option:`-E`/:option:`--events`
+Running :mod:`~celery.bin.worker` with the :option:`-E <celery worker -E>`
 option will send messages for events happening inside of the worker.
 
 Events should only be enabled if you have an active monitor consuming them,
@@ -517,7 +518,7 @@ as a message. If you don't collect these results, they will build up and
 RabbitMQ will eventually run out of memory.
 
 Results expire after 1 day by default.  It may be a good idea
-to lower this value by configuring the :setting:`CELERY_TASK_RESULT_EXPIRES`
+to lower this value by configuring the :setting:`result_expires`
 setting.
 
 If you don't use the results for a task, make sure you set the
@@ -527,7 +528,7 @@ If you don't use the results for a task, make sure you set the
 
     @app.task(ignore_result=True)
     def mytask():
-        …
+        pass
 
     class MyTask(Task):
         ignore_result = True
@@ -565,7 +566,7 @@ Tasks
 How can I reuse the same connection when calling tasks?
 -------------------------------------------------------
 
-**Answer**: See the :setting:`BROKER_POOL_LIMIT` setting.
+**Answer**: See the :setting:`broker_pool_limit` setting.
 The connection pool is enabled by default since version 2.5.
 
 .. _faq-sudo-subprocess:
@@ -703,7 +704,8 @@ so if you have more than one worker with the same host name, the
 control commands will be received in round-robin between them.
 
 To work around this you can explicitly set the nodename for every worker
-using the :option:`-n` argument to :mod:`~celery.bin.worker`:
+using the :option:`-n <celery worker -n>` argument to
+:mod:`~celery.bin.worker`:
 
 .. code-block:: console
 
@@ -722,6 +724,21 @@ and a worker can bind to as many queues as it wants.
 
 See :doc:`userguide/routing` for more information.
 
+.. _faq-disable-prefetch:
+
+Can I disable prefetching of tasks?
+-----------------------------------
+
+**Answer**: The term prefetch must have confused you, as as in Celery it's only used
+to describe the task prefetching *limits*.
+
+Disabling the prefetch limits is possible, but that means the worker will
+consume as many tasks as it can, as fast as possible.
+
+A discussion on prefetch limits, and configuration settings for a worker
+that only reserves one task at a time is found here:
+:ref:`optimizing-prefetch-limit`.
+
 .. _faq-change-periodic-task-interval-at-runtime:
 
 Can I change the interval of a periodic task at runtime?
@@ -739,20 +756,22 @@ create a new schedule subclass and override
     class my_schedule(schedule):
 
         def is_due(self, last_run_at):
-            return …
+            return run_now, next_time_to_check
 
 .. _faq-task-priorities:
 
 Does celery support task priorities?
 ------------------------------------
 
-**Answer**: No. In theory, yes, as AMQP supports priorities. However
-RabbitMQ doesn't implement them yet.
+**Answer**: Yes.
 
-The usual way to prioritize work in Celery, is to route high priority tasks
-to different servers. In the real world this may actually work better than per message
-priorities. You can use this in combination with rate limiting to achieve a
-highly responsive system.
+RabbitMQ supports priorities since version 3.5.0.
+Redis transport emulates support of priorities.
+
+You can also prioritize work by routing high priority tasks
+to different workers.  In the real world this may actually work better
+than per message priorities.  You can use this in combination with rate
+limiting to achieve a responsive system.
 
 .. _faq-acks_late-vs-retry:
 
@@ -763,7 +782,7 @@ Should I use retry or acks_late?
 to use both.
 
 `Task.retry` is used to retry tasks, notably for expected errors that
-is catchable with the `try:` block. The AMQP transaction is not used
+is catchable with the :keyword:`try` block. The AMQP transaction is not used
 for these errors: **if the task raises an exception it is still acknowledged!**
 
 The `acks_late` setting would be used when you need the task to be
@@ -790,7 +809,7 @@ scenario of course, but you can probably imagine something far more
 sinister. So for ease of programming we have less reliability;
 It's a good default, users who require it and know what they
 are doing can still enable acks_late (and in the future hopefully
-use manual acknowledgement).
+use manual acknowledgment).
 
 In addition `Task.retry` has features not available in AMQP
 transactions: delay between retries, max retries, etc.
@@ -808,18 +827,8 @@ Can I schedule tasks to execute at a specific time?
 
 **Answer**: Yes. You can use the `eta` argument of :meth:`Task.apply_async`.
 
-Or to schedule a periodic task at a specific time, use the
-:class:`celery.schedules.crontab` schedule behavior:
+See also :ref:`guide-beat`.
 
-
-.. code-block:: python
-
-    from celery.schedules import crontab
-    from celery.task import periodic_task
-
-    @periodic_task(run_every=crontab(hour=7, minute=30, day_of_week="mon"))
-    def every_monday_morning():
-        print("This is run every Monday morning at 7:30")
 
 .. _faq-safe-worker-shutdown:
 
@@ -830,7 +839,7 @@ How can I safely shut down the worker?
 executing jobs and shut down as soon as possible. No tasks should be lost.
 
 You should never stop :mod:`~celery.bin.worker` with the :sig:`KILL` signal
-(:option:`-9`), unless you've tried :sig:`TERM` a few times and waited a few
+(``kill -9``), unless you've tried :sig:`TERM` a few times and waited a few
 minutes to let it get a chance to shut down.
 
 Also make sure you kill the main worker process, not its child processes.
@@ -866,8 +875,8 @@ Django
 
 .. _faq-django-database-tables:
 
-What purpose does the database tables created by django-celery have?
---------------------------------------------------------------------
+What purpose does the database tables created by ``django-celery`` have?
+------------------------------------------------------------------------
 
 Several database tables are created by default, these relate to
 
@@ -885,8 +894,9 @@ Several database tables are created by default, these relate to
 
 * Task results
 
-    The database result backend is enabled by default when using django-celery
-    (this is for historical reasons, and thus for backward compatibility).
+    The database result backend is enabled by default when using
+    :pypi:`django-celery` (this is for historical reasons, and thus for
+    backward compatibility).
 
     The results are stored in the ``TaskMeta`` and ``TaskSetMeta`` models.
     *these tables are not created if another result backend is configured*.

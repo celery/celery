@@ -10,7 +10,7 @@
     could have something to do with the threading mutex bug)
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import celery
 import os
@@ -19,9 +19,10 @@ import sys
 from optparse import OptionParser, BadOptionError
 
 from celery.platforms import EX_FAILURE, detached
+from celery.utils import default_nodename, node_format
 from celery.utils.log import get_logger
 
-from celery.bin.base import daemon_options, Option
+from celery.bin.base import daemon_options
 
 __all__ = ['detached_celeryd', 'detach']
 
@@ -29,17 +30,13 @@ logger = get_logger(__name__)
 
 C_FAKEFORK = os.environ.get('C_FAKEFORK')
 
-OPTION_LIST = daemon_options(default_pidfile='celeryd.pid') + (
-    Option('--workdir', default=None, dest='working_directory'),
-    Option('--fake',
-           default=False, action='store_true', dest='fake',
-           help="Don't fork (for debugging purposes)"),
-)
-
 
 def detach(path, argv, logfile=None, pidfile=None, uid=None,
            gid=None, umask=None, working_directory=None, fake=False, app=None,
-           executable=None):
+           executable=None, hostname=None):
+    hostname = default_nodename(hostname)
+    logfile = node_format(logfile, hostname)
+    pidfile = node_format(pidfile, hostname)
     fake = 1 if C_FAKEFORK else fake
     with detached(logfile, pidfile, uid, gid, umask, working_directory, fake,
                   after_forkers=False):
@@ -51,7 +48,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
             if app is None:
                 from celery import current_app
                 app = current_app
-            app.log.setup_logging_subsystem('ERROR', logfile)
+            app.log.setup_logging_subsystem(
+                'ERROR', logfile, hostname=hostname)
             logger.critical("Can't exec %r", ' '.join([path] + argv),
                             exc_info=True)
         return EX_FAILURE
@@ -114,40 +112,40 @@ class PartialOptionParser(OptionParser):
 
 
 class detached_celeryd(object):
-    option_list = OPTION_LIST
     usage = '%prog [options] [celeryd options]'
     version = celery.VERSION_BANNER
     description = ('Detaches Celery worker nodes.  See `celery worker --help` '
                    'for the list of supported worker arguments.')
     command = sys.executable
     execv_path = sys.executable
-    if sys.version_info < (2, 7):  # does not support pkg/__main__.py
-        execv_argv = ['-m', 'celery.__main__', 'worker']
-    else:
-        execv_argv = ['-m', 'celery', 'worker']
+    execv_argv = ['-m', 'celery', 'worker']
 
     def __init__(self, app=None):
         self.app = app
 
-    def Parser(self, prog_name):
-        return PartialOptionParser(prog=prog_name,
-                                   option_list=self.option_list,
-                                   usage=self.usage,
-                                   description=self.description,
-                                   version=self.version)
+    def create_parser(self, prog_name):
+        p = PartialOptionParser(
+            prog=prog_name,
+            usage=self.usage,
+            description=self.description,
+            version=self.version,
+        )
+        self.prepare_arguments(p)
+        return p
 
     def parse_options(self, prog_name, argv):
-        parser = self.Parser(prog_name)
+        parser = self.create_parser(prog_name)
         options, values = parser.parse_args(argv)
         if options.logfile:
             parser.leftovers.append('--logfile={0}'.format(options.logfile))
         if options.pidfile:
             parser.leftovers.append('--pidfile={0}'.format(options.pidfile))
+        if options.hostname:
+            parser.leftovers.append('--hostname={0}'.format(options.hostname))
         return options, values, parser.leftovers
 
     def execute_from_commandline(self, argv=None):
-        if argv is None:
-            argv = sys.argv
+        argv = sys.argv if argv is None else argv
         config = []
         seen_cargs = 0
         for arg in argv:
@@ -164,6 +162,16 @@ class detached_celeryd(object):
             argv=self.execv_argv + leftovers + config,
             **vars(options)
         ))
+
+    def prepare_arguments(self, parser):
+        daemon_options(parser, default_pidfile='celeryd.pid')
+        parser.add_option('--workdir', default=None, dest='working_directory')
+        parser.add_option('-n', '--hostname')
+        parser.add_option(
+            '--fake',
+            default=False, action='store_true', dest='fake',
+            help="Don't fork (for debugging purposes)",
+        )
 
 
 def main(app=None):

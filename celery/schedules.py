@@ -7,18 +7,19 @@
     should run.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import numbers
 import re
 
+from bisect import bisect, bisect_left
 from collections import namedtuple
 from datetime import datetime, timedelta
 
 from kombu.utils import cached_property
 
 from . import current_app
-from .five import range, string_t
+from .five import python_2_unicode_compatible, range, string_t
 from .utils import is_iterable
 from .utils.timeutils import (
     weekday, maybe_timedelta, remaining, humanize_seconds,
@@ -68,15 +69,16 @@ class ParseException(Exception):
     """Raised by crontab_parser when the input can't be parsed."""
 
 
+@python_2_unicode_compatible
 class schedule(object):
     """Schedule for periodic task.
 
     :param run_every: Interval in seconds (or a :class:`~datetime.timedelta`).
-    :param relative:  If set to True the run time will be rounded to the
+    :keyword relative:  If set to True the run time will be rounded to the
         resolution of the interval.
-    :param nowfun: Function returning the current date and time
+    :keyword nowfun: Function returning the current date and time
         (class:`~datetime.datetime`).
-    :param app: Celery app instance.
+    :keyword app: Celery app instance.
 
     """
     relative = False
@@ -108,13 +110,13 @@ class schedule(object):
         * `(False, 12.3)`, means the task is not due, but that the scheduler
           should check again in 12.3 seconds.
 
-        The next time to check is used to save energy/cpu cycles,
+        The next time to check is used to save energy/CPU cycles,
         it does not need to be accurate but will influence the precision
         of your schedule.  You must also keep in mind
-        the value of :setting:`CELERYBEAT_MAX_LOOP_INTERVAL`,
+        the value of :setting:`beat_max_loop_interval`,
         which decides the maximum number of seconds the scheduler can
         sleep between re-checking the periodic task intervals.  So if you
-        have a task that changes schedule at runtime then your next_run_at
+        have a task that changes schedule at run-time then your next_run_at
         check will decide how long it will take before a change to the
         schedule takes effect.  The max loop interval takes precendence
         over the next check at value returned.
@@ -123,7 +125,8 @@ class schedule(object):
 
             The default max loop interval may vary for different schedulers.
             For the default scheduler the value is 5 minutes, but for e.g.
-            the django-celery database scheduler the value is 5 seconds.
+            the :pypi:`django-celery` database scheduler the value
+            is 5 seconds.
 
         """
         last_run_at = self.maybe_make_aware(last_run_at)
@@ -172,7 +175,7 @@ class schedule(object):
 
     @cached_property
     def utc_enabled(self):
-        return self.app.conf.CELERY_ENABLE_UTC
+        return self.app.conf.enable_utc
 
     def to_local(self, dt):
         if not self.utc_enabled:
@@ -184,7 +187,9 @@ class crontab_parser(object):
     """Parser for crontab expressions. Any expression of the form 'groups'
     (see BNF grammar below) is accepted and expanded to a set of numbers.
     These numbers represent the units of time that the crontab needs to
-    run on::
+    run on:
+
+    .. code-block:: bnf
 
         digit   :: '0'..'9'
         dow     :: 'a'..'z'
@@ -196,7 +201,9 @@ class crontab_parser(object):
         groups  :: expr ( ',' expr ) *
 
     The parser is a general purpose one, useful for parsing hours, minutes and
-    day_of_week expressions.  Example usage::
+    day_of_week expressions.  Example usage:
+
+    .. code-block:: pycon
 
         >>> minutes = crontab_parser(60).parse('*/15')
         [0, 15, 30, 45]
@@ -206,7 +213,9 @@ class crontab_parser(object):
         [0, 1, 2, 3, 4, 5, 6]
 
     It can also parse day_of_month and month_of_year expressions if initialized
-    with an minimum of 1.  Example usage::
+    with an minimum of 1.  Example usage:
+
+    .. code-block:: pycon
 
         >>> days_of_month = crontab_parser(31, 1).parse('*/3')
         [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31]
@@ -215,9 +224,9 @@ class crontab_parser(object):
         >>> months_of_year = crontab_parser(12, 1).parse('2-12/2')
         [2, 4, 6, 8, 10, 12]
 
-    The maximum possible expanded value returned is found by the formula::
+    The maximum possible expanded value returned is found by the formula:
 
-        max_ + min_ - 1
+        :math:`max_ + min_ - 1`
 
     """
     ParseException = ParseException
@@ -296,6 +305,7 @@ class crontab_parser(object):
         return i
 
 
+@python_2_unicode_compatible
 class crontab(schedule):
     """A crontab can be used as the `run_every` value of a
     :class:`PeriodicTask` to add cron-like scheduling.
@@ -368,7 +378,7 @@ class crontab(schedule):
     is every seventh day, only months that begin on Sunday and are also
     in the `month_of_year` attribute will have execution events.  Or,
     `day_of_week` is 1 and `day_of_month` is '1-7,15-21' means every
-    first and third monday of every month present in `month_of_year`.
+    first and third Monday of every month present in `month_of_year`.
 
     """
 
@@ -389,7 +399,9 @@ class crontab(schedule):
 
     @staticmethod
     def _expand_cronspec(cronspec, max_, min_=0):
-        """Takes the given cronspec argument in one of the forms::
+        """Takes the given cronspec argument in one of the forms:
+
+        .. code-block:: text
 
             int         (like 7)
             str         (like '3-5,*/15', '*', or 'monday')
@@ -431,14 +443,13 @@ class crontab(schedule):
         return result
 
     def _delta_to_next(self, last_run_at, next_hour, next_minute):
-        """
-        Takes a datetime of last run, next minute and hour, and
+        """Takes a datetime of last run, next minute and hour, and
         returns a relativedelta for the next scheduled day and time.
+
         Only called when day_of_month and/or month_of_year cronspec
         is specified to further limit scheduled task execution.
-        """
-        from bisect import bisect, bisect_left
 
+        """
         datedata = AttributeDict(year=last_run_at.year)
         days_of_month = sorted(self.day_of_month)
         months_of_year = sorted(self.month_of_year)
@@ -451,7 +462,7 @@ class crontab(schedule):
             return False
 
         def roll_over():
-            while 1:
+            for _ in range(2000):
                 flag = (datedata.dom == len(days_of_month) or
                         day_out_of_range(datedata.year,
                                          months_of_year[datedata.moy],
@@ -468,6 +479,10 @@ class crontab(schedule):
                         datedata.year += 1
                 else:
                     break
+            else:
+                # Tried 2000 times, we're most likely in an infinite loop
+                raise RuntimeError('unable to rollover, '
+                                   'time specification is probably invalid')
 
         if last_run_at.month in self.month_of_year:
             datedata.dom = bisect(days_of_month, last_run_at.day)
@@ -515,16 +530,20 @@ class crontab(schedule):
         now = self.maybe_make_aware(self.now())
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
-        execute_this_date = (last_run_at.month in self.month_of_year and
-                             last_run_at.day in self.day_of_month and
-                             dow_num in self.day_of_week)
+        execute_this_date = (
+            last_run_at.month in self.month_of_year and
+            last_run_at.day in self.day_of_month and
+            dow_num in self.day_of_week
+        )
 
-        execute_this_hour = (execute_this_date and
-                             last_run_at.day == now.day and
-                             last_run_at.month == now.month and
-                             last_run_at.year == now.year and
-                             last_run_at.hour in self.hour and
-                             last_run_at.minute < max(self.minute))
+        execute_this_hour = (
+            execute_this_date and
+            last_run_at.day == now.day and
+            last_run_at.month == now.month and
+            last_run_at.year == now.year and
+            last_run_at.hour in self.hour and
+            last_run_at.minute < max(self.minute)
+        )
 
         if execute_this_hour:
             next_minute = min(minute for minute in self.minute
@@ -549,12 +568,14 @@ class crontab(schedule):
                                     if day > dow_num] or self.day_of_week)
                     add_week = next_day == dow_num
 
-                    delta = ffwd(weeks=add_week and 1 or 0,
-                                 weekday=(next_day - 1) % 7,
-                                 hour=next_hour,
-                                 minute=next_minute,
-                                 second=0,
-                                 microsecond=0)
+                    delta = ffwd(
+                        weeks=add_week and 1 or 0,
+                        weekday=(next_day - 1) % 7,
+                        hour=next_hour,
+                        minute=next_minute,
+                        second=0,
+                        microsecond=0,
+                    )
                 else:
                     delta = self._delta_to_next(last_run_at,
                                                 next_hour, next_minute)
@@ -581,15 +602,20 @@ class crontab(schedule):
 
     def __eq__(self, other):
         if isinstance(other, crontab):
-            return (other.month_of_year == self.month_of_year and
-                    other.day_of_month == self.day_of_month and
-                    other.day_of_week == self.day_of_week and
-                    other.hour == self.hour and
-                    other.minute == self.minute)
+            return (
+                other.month_of_year == self.month_of_year and
+                other.day_of_month == self.day_of_month and
+                other.day_of_week == self.day_of_week and
+                other.hour == self.hour and
+                other.minute == self.minute
+            )
         return NotImplemented
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        res = self.__eq__(other)
+        if res is NotImplemented:
+            return True
+        return not res
 
 
 def maybe_schedule(s, relative=False, app=None):
@@ -603,6 +629,7 @@ def maybe_schedule(s, relative=False, app=None):
     return s
 
 
+@python_2_unicode_compatible
 class solar(schedule):
     """A solar event can be used as the `run_every` value of a
     :class:`PeriodicTask` to schedule based on certain solar events.
@@ -691,12 +718,8 @@ class solar(schedule):
         self.method = self._methods[event]
         self.use_center = self._use_center_l[event]
 
-    def now(self):
-        return (self.nowfun or self.app.now)()
-
     def __reduce__(self):
-        return (self.__class__, (
-            self.event, self.lat, self.lon), None)
+        return self.__class__, (self.event, self.lat, self.lon)
 
     def __repr__(self):
         return '<solar: {0} at latitude {1}, longitude: {2}>'.format(
@@ -715,9 +738,9 @@ class solar(schedule):
                 self.ephem.Sun(),
                 start=last_run_at_utc, use_center=self.use_center,
             )
-        except self.ephem.CircumpolarError:
-            """Sun will not rise/set today. Check again tomorrow
-            (specifically, after the next anti-transit)."""
+        except self.ephem.CircumpolarError:  # pragma: no cover
+            # Sun will not rise/set today. Check again tomorrow
+            # (specifically, after the next anti-transit).
             next_utc = (
                 self.cal.next_antitransit(self.ephem.Sun()) +
                 timedelta(minutes=1)
@@ -744,10 +767,15 @@ class solar(schedule):
 
     def __eq__(self, other):
         if isinstance(other, solar):
-            return (other.event == self.event and
-                    other.lat == self.lat and
-                    other.lon == self.lon)
+            return (
+                other.event == self.event and
+                other.lat == self.lat and
+                other.lon == self.lon
+            )
         return NotImplemented
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        res = self.__eq__(other)
+        if res is NotImplemented:
+            return True
+        return not res

@@ -8,7 +8,7 @@
 
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import operator
 import sys
@@ -16,9 +16,9 @@ import sys
 from importlib import import_module
 from types import ModuleType
 
-# extends amqp.five
-from amqp.five import *  # noqa
-from amqp.five import __all__ as _all_five
+# extends vine.five
+from vine.five import *  # noqa
+from vine.five import __all__ as _all_five
 
 try:
     from functools import reduce
@@ -175,7 +175,8 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
         attr_name: (prepare_attr(attr) if prepare_attr else attr)
         for attr_name, attr in items(attrs)
     }
-    module = sys.modules[fqdn] = type(modname, (base,), cls_attrs)(name)
+    module = sys.modules[fqdn] = type(
+        bytes_if_py2(modname), (base,), cls_attrs)(bytes_if_py2(name))
     module.__dict__.update(attrs)
     return module
 

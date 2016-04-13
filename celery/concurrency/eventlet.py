@@ -6,7 +6,7 @@
     Eventlet pool implementation.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 
@@ -62,7 +62,7 @@ class Timer(_timer.Timer):
         g.entry = entry
         g.eta = eta
         g.priority = priority
-        g.cancelled = False
+        g.canceled = False
         return g
 
     def _entry_exit(self, g, entry):
@@ -71,7 +71,7 @@ class Timer(_timer.Timer):
                 g.wait()
             except self.GreenletExit:
                 entry.cancel()
-                g.cancelled = True
+                g.canceled = True
         finally:
             self._queue.discard(g)
 
@@ -143,8 +143,10 @@ class TaskPool(base.BasePool):
         self.limit = limit
 
     def _get_info(self):
-        return {
+        info = super(TaskPool, self)._get_info()
+        info.update({
             'max-concurrency': self.limit,
             'free-threads': self._pool.free(),
             'running-threads': self._pool.running(),
-        }
+        })
+        return info

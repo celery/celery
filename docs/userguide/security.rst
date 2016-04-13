@@ -17,7 +17,7 @@ Depending on your `Security Policy`_, there are
 various steps you can take to make your Celery installation more secure.
 
 
-.. _`Security Policy`: http://en.wikipedia.org/wiki/Security_policy
+.. _`Security Policy`: https://en.wikipedia.org/wiki/Security_policy
 
 
 Areas of Concern
@@ -32,7 +32,7 @@ By default, workers trust that the data they get from the broker has not
 been tampered with. See `Message Signing`_ for information on how to make
 the broker connection more trustworthy.
 
-The first line of defence should be to put a firewall in front of the broker,
+The first line of defense should be to put a firewall in front of the broker,
 allowing only white-listed machines to access it.
 
 Keep in mind that both firewall misconfiguration, and temporarily disabling
@@ -47,7 +47,7 @@ this is something you should look at enabling. See for example
 http://www.rabbitmq.com/access-control.html.
 
 If supported by your broker backend, you can enable end-to-end SSL encryption
-and authentication using :setting:`BROKER_USE_SSL`.
+and authentication using :setting:`broker_use_ssl`.
 
 Client
 ------
@@ -85,10 +85,10 @@ same network access as the machine on which it's running. If the worker
 is located on an internal network it's recommended to add firewall rules for
 outbound traffic.
 
-.. _`chroot`: http://en.wikipedia.org/wiki/Chroot
-.. _`jail`: http://en.wikipedia.org/wiki/FreeBSD_jail
+.. _`chroot`: https://en.wikipedia.org/wiki/Chroot
+.. _`jail`: https://en.wikipedia.org/wiki/FreeBSD_jail
 .. _`sandboxing`:
-    http://en.wikipedia.org/wiki/Sandbox_(computer_security)
+    https://en.wikipedia.org/wiki/Sandbox_(computer_security)
 
 Serializers
 ===========
@@ -101,10 +101,8 @@ But for the same reasons the `pickle` serializer is inherently insecure [*]_,
 and should be avoided whenever clients are untrusted or
 unauthenticated.
 
-.. [*] http://nadiana.com/python-pickle-insecure
-
 You can disable untrusted content by specifying
-a white-list of accepted content-types in the :setting:`CELERY_ACCEPT_CONTENT`
+a white-list of accepted content-types in the :setting:`accept_content`
 setting:
 
 .. versionadded:: 3.0.18
@@ -117,7 +115,7 @@ setting:
 
 .. code-block:: python
 
-    CELERY_ACCEPT_CONTENT = ['json']
+    accept_content = ['json']
 
 
 This accepts a list of serializer names and content-types, so you could
@@ -125,7 +123,7 @@ also specify the content type for json:
 
 .. code-block:: python
 
-    CELERY_ACCEPT_CONTENT = ['application/json']
+    accept_content = ['application/json']
 
 Celery also comes with a special `auth` serializer that validates
 communication between Celery clients and workers, making sure
@@ -136,7 +134,7 @@ for more information.
 
 .. _`pickle`: http://docs.python.org/library/pickle.html
 .. _`Public-key cryptography`:
-    http://en.wikipedia.org/wiki/Public-key_cryptography
+    https://en.wikipedia.org/wiki/Public-key_cryptography
 
 .. _message-signing:
 
@@ -151,12 +149,12 @@ and then later verified by the worker using a public certificate.
 Optimally certificates should be signed by an official
 `Certificate Authority`_, but they can also be self-signed.
 
-To enable this you should configure the :setting:`CELERY_TASK_SERIALIZER`
+To enable this you should configure the :setting:`task_serializer`
 setting to use the `auth` serializer.
 Also required is configuring the
 paths used to locate private keys and certificates on the file-system:
-the :setting:`CELERY_SECURITY_KEY`,
-:setting:`CELERY_SECURITY_CERTIFICATE` and :setting:`CELERY_SECURITY_CERT_STORE`
+the :setting:`security_key`,
+:setting:`security_certificate` and :setting:`security_cert_store`
 settings respectively.
 With these configured it is also necessary to call the
 :func:`celery.setup_security` function.  Note that this will also
@@ -168,11 +166,13 @@ with the private key and certificate files located in `/etc/ssl`.
 
 .. code-block:: python
 
-    CELERY_SECURITY_KEY = '/etc/ssl/private/worker.key'
-    CELERY_SECURITY_CERTIFICATE = '/etc/ssl/certs/worker.pem'
-    CELERY_SECURITY_CERT_STORE = '/etc/ssl/certs/*.pem'
-    from celery.security import setup_security
-    setup_security()
+    app = Celery()
+    app.conf.update(
+        security_key='/etc/ssl/private/worker.key'
+        security_certificate='/etc/ssl/certs/worker.pem'
+        security_cert_store='/etc/ssl/certs/*.pem',
+    )
+    app.setup_security()
 
 .. note::
 
@@ -183,9 +183,9 @@ with the private key and certificate files located in `/etc/ssl`.
     a message, so if needed this will have to be enabled separately.
 
 .. _`pyOpenSSL`: http://pypi.python.org/pypi/pyOpenSSL
-.. _`X.509`: http://en.wikipedia.org/wiki/X.509
+.. _`X.509`: https://en.wikipedia.org/wiki/X.509
 .. _`Certificate Authority`:
-    http://en.wikipedia.org/wiki/Certificate_authority
+    https://en.wikipedia.org/wiki/Certificate_authority
 
 Intrusion Detection
 ===================
@@ -211,7 +211,7 @@ support for using syslog.
 A tip for the paranoid is to send logs using UDP and cut the
 transmit part of the logging server's network cable :-)
 
-.. _`syslog-ng`: http://en.wikipedia.org/wiki/Syslog-ng
+.. _`syslog-ng`: https://en.wikipedia.org/wiki/Syslog-ng
 .. _`rsyslog`: http://www.rsyslog.com/
 
 Tripwire
@@ -222,7 +222,7 @@ open source implementations, used to keep
 cryptographic hashes of files in the file-system, so that administrators
 can be alerted when they change. This way when the damage is done and your
 system has been compromised you can tell exactly what files intruders
-have changed  (password files, logs, backdoors, rootkits and so on).
+have changed  (password files, logs, back-doors, root-kits and so on).
 Often this is the only way you will be able to detect an intrusion.
 
 Some open source implementations include:
@@ -240,4 +240,8 @@ that can be used.
 .. _`Samhain`: http://la-samhna.de/samhain/index.html
 .. _`AIDE`: http://aide.sourceforge.net/
 .. _`Open Source Tripwire`: http://sourceforge.net/projects/tripwire/
-.. _`ZFS`: http://en.wikipedia.org/wiki/ZFS
+.. _`ZFS`: https://en.wikipedia.org/wiki/ZFS
+
+.. rubric:: Footnotes
+
+.. [*] http://nadiana.com/python-pickle-insecure

@@ -48,11 +48,13 @@ Commands
 
   The locals will include the ``celery`` variable, which is the current app.
   Also all known tasks will be automatically added to locals (unless the
-  ``--without-tasks`` flag is set).
+  :option:`--without-tasks <celery shell --without-tasks>` flag is set).
 
-  Uses Ipython, bpython, or regular python in that order if installed.
-  You can force an implementation using ``--force-ipython|-I``,
-  ``--force-bpython|-B``, or ``--force-python|-P``.
+  Uses :pypi:`Ipython`, :pypi:`bpython`, or regular python in that order if
+  installed.  You can force an implementation using
+  :option:`--ipython <celery shell --ipython>`,
+  :option:`--bpython <celery shell --bpython>`, or
+  :option:`--python <celery shell --python>`.
 
 * **status**: List active nodes in this cluster
 
@@ -149,7 +151,8 @@ Commands
 
 .. note::
 
-    All ``inspect`` and ``control`` commands supports a ``--timeout`` argument,
+    All ``inspect`` and ``control`` commands supports a
+    :option:`--timeout <celery inspect --timeout>` argument,
     This is the number of seconds to wait for responses.
     You may have to increase this timeout if you're not getting a response
     due to latency.
@@ -161,7 +164,7 @@ Specifying destination nodes
 
 By default the inspect and control commands operates on all workers.
 You can specify a single, or a list of workers by using the
-`--destination` argument:
+:option:`--destination <celery inspect --destination>` argument:
 
 .. code-block:: console
 
@@ -178,7 +181,7 @@ Flower: Real-time Celery web-monitor
 Flower is a real-time web based monitor and administration tool for Celery.
 It is under active development, but is already an essential tool.
 Being the recommended monitor for Celery, it obsoletes the Django-Admin
-monitor, celerymon and the ncurses based monitor.
+monitor, ``celerymon`` and the ``ncurses`` based monitor.
 
 Flower is pronounced like "flow", but you can also use the botanical version
 if you prefer.
@@ -189,7 +192,7 @@ Features
 - Real-time monitoring using Celery Events
 
     - Task progress and history
-    - Ability to show task details (arguments, start time, runtime, and more)
+    - Ability to show task details (arguments, start time, run-time, and more)
     - Graphs and statistics
 
 - Remote Control
@@ -254,13 +257,15 @@ Running the flower command will start a web-server that you can visit:
 
     $ celery -A proj flower
 
-The default port is http://localhost:5555, but you can change this using the `--port` argument:
+The default port is http://localhost:5555, but you can change this using the
+:option:`--port <flower --port>` argument:
 
 .. code-block:: console
 
     $ celery -A proj flower --port=5555
 
-Broker URL can also be passed through the `--broker` argument :
+Broker URL can also be passed through the
+:option:`--broker <celery --broker>` argument :
 
 .. code-block:: console
 
@@ -318,13 +323,13 @@ and it includes a tool to dump events to :file:`stdout`:
 
     $ celery -A proj events --dump
 
-For a complete list of options use ``--help``:
+For a complete list of options use :option:`--help <celery --help>`:
 
 .. code-block:: console
 
     $ celery events --help
 
-.. _`celerymon`: http://github.com/celery/celerymon/
+.. _`celerymon`: https://github.com/celery/celerymon/
 
 .. _monitoring-rabbitmq:
 
@@ -433,20 +438,19 @@ Munin
 This is a list of known Munin plug-ins that can be useful when
 maintaining a Celery cluster.
 
-* rabbitmq-munin: Munin plug-ins for RabbitMQ.
+* ``rabbitmq-munin``: Munin plug-ins for RabbitMQ.
 
-    http://github.com/ask/rabbitmq-munin
+    https://github.com/ask/rabbitmq-munin
 
-* celery_tasks: Monitors the number of times each task type has
+* ``celery_tasks``: Monitors the number of times each task type has
   been executed (requires `celerymon`).
 
     http://exchange.munin-monitoring.org/plugins/celery_tasks-2/details
 
-* celery_task_states: Monitors the number of tasks in each state
+* ``celery_task_states``: Monitors the number of tasks in each state
   (requires `celerymon`).
 
     http://exchange.munin-monitoring.org/plugins/celery_tasks/details
-
 
 .. _monitoring-events:
 
@@ -504,6 +508,7 @@ Here is an example camera, dumping the snapshot to screen:
     from celery.events.snapshot import Polaroid
 
     class DumpCam(Polaroid):
+        clear_after = True  # clear after flush (incl, state.event_count).
 
         def on_shutter(self, state):
             if not state.event_count:
@@ -518,7 +523,7 @@ See the API reference for :mod:`celery.events.state` to read more
 about state objects.
 
 Now you can use this cam with :program:`celery events` by specifying
-it with the :option:`-c` option:
+it with the :option:`-c <celery events -c>` option:
 
 .. code-block:: console
 
@@ -563,7 +568,7 @@ To process events in real-time you need the following
 
   It encapsulates solutions for many common things, like checking if a
   worker is still alive (by verifying heartbeats), merging event fields
-  together as events come in, making sure timestamps are in sync, and so on.
+  together as events come in, making sure time-stamps are in sync, and so on.
 
 
 Combining these you can easily process events in real-time:
@@ -599,7 +604,7 @@ Combining these you can easily process events in real-time:
 
 .. note::
 
-    The wakeup argument to ``capture`` sends a signal to all workers
+    The ``wakeup`` argument to ``capture`` sends a signal to all workers
     to force them to send a heartbeat.  This way you can immediately see
     workers when the monitor starts.
 
@@ -650,10 +655,10 @@ task-sent
 ~~~~~~~~~
 
 :signature: ``task-sent(uuid, name, args, kwargs, retries, eta, expires,
-              queue, exchange, routing_key)``
+              queue, exchange, routing_key, root_id, parent_id)``
 
 Sent when a task message is published and
-the :setting:`CELERY_SEND_TASK_SENT_EVENT` setting is enabled.
+the :setting:`task_send_sent_event` setting is enabled.
 
 .. event:: task-received
 
@@ -661,7 +666,7 @@ task-received
 ~~~~~~~~~~~~~
 
 :signature: ``task-received(uuid, name, args, kwargs, retries, eta, hostname,
-              timestamp)``
+              timestamp, root_id, parent_id)``
 
 Sent when the worker receives a task.
 
@@ -683,7 +688,7 @@ task-succeeded
 
 Sent if the task executed successfully.
 
-Runtime is the time it took to execute the task using the pool.
+Run-time is the time it took to execute the task using the pool.
 (Starting from the task is sent to the worker pool, and ending when the
 pool result handler callback is called).
 
@@ -695,6 +700,16 @@ task-failed
 :signature: ``task-failed(uuid, exception, traceback, hostname, timestamp)``
 
 Sent if the execution of the task failed.
+
+.. event:: task-rejected
+
+task-rejected
+~~~~~~~~~~~~~
+
+:signature: ``task-rejected(uuid, requeued)``
+
+The task was rejected by the worker, possibly to be re-queued or moved to a
+dead letter queue.
 
 .. event:: task-revoked
 
@@ -734,8 +749,8 @@ worker-online
 
 The worker has connected to the broker and is online.
 
-- `hostname`: Hostname of the worker.
-- `timestamp`: Event timestamp.
+- `hostname`: Nodename of the worker.
+- `timestamp`: Event time-stamp.
 - `freq`: Heartbeat frequency in seconds (float).
 - `sw_ident`: Name of worker software (e.g. ``py-celery``).
 - `sw_ver`: Software version (e.g. 2.2.0).
@@ -752,8 +767,8 @@ worker-heartbeat
 Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
 it is considered to be offline.
 
-- `hostname`: Hostname of the worker.
-- `timestamp`: Event timestamp.
+- `hostname`: Nodename of the worker.
+- `timestamp`: Event time-stamp.
 - `freq`: Heartbeat frequency in seconds (float).
 - `sw_ident`: Name of worker software (e.g. ``py-celery``).
 - `sw_ver`: Software version (e.g. 2.2.0).

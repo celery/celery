@@ -1,16 +1,14 @@
-"""Tests for the CouchBaseBackend."""
+"""Tests for the CouchbaseBackend."""
 
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from kombu.utils.encoding import str_t
 
 from celery.backends import couchbase as module
-from celery.backends.couchbase import CouchBaseBackend
+from celery.backends.couchbase import CouchbaseBackend
 from celery.exceptions import ImproperlyConfigured
 from celery import backends
-from celery.tests.case import (
-    AppCase, MagicMock, Mock, SkipTest, patch, sentinel,
-)
+from celery.tests.case import AppCase, MagicMock, Mock, patch, sentinel, skip
 
 try:
     import couchbase
@@ -20,63 +18,41 @@ except ImportError:
 COUCHBASE_BUCKET = 'celery_bucket'
 
 
-class test_CouchBaseBackend(AppCase):
-
-    """CouchBaseBackend TestCase."""
+@skip.unless_module('couchbase')
+class test_CouchbaseBackend(AppCase):
 
     def setup(self):
-        """Skip the test if couchbase cannot be imported."""
-        if couchbase is None:
-            raise SkipTest('couchbase is not installed.')
-        self.backend = CouchBaseBackend(app=self.app)
+        self.backend = CouchbaseBackend(app=self.app)
 
     def test_init_no_couchbase(self):
-        """
-        Test init no couchbase raises.
-
-        If celery.backends.couchbase cannot import the couchbase client, it
-        sets the couchbase.Couchbase to None and then handles this in the
-        CouchBaseBackend __init__ method.
-        """
         prev, module.Couchbase = module.Couchbase, None
         try:
             with self.assertRaises(ImproperlyConfigured):
-                CouchBaseBackend(app=self.app)
+                CouchbaseBackend(app=self.app)
         finally:
             module.Couchbase = prev
 
     def test_init_no_settings(self):
-        """Test init no settings."""
-        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = []
+        self.app.conf.couchbase_backend_settings = []
         with self.assertRaises(ImproperlyConfigured):
-            CouchBaseBackend(app=self.app)
+            CouchbaseBackend(app=self.app)
 
     def test_init_settings_is_None(self):
-        """Test init settings is None."""
-        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
-        CouchBaseBackend(app=self.app)
+        self.app.conf.couchbase_backend_settings = None
+        CouchbaseBackend(app=self.app)
 
     def test_get_connection_connection_exists(self):
-        """Test _get_connection works."""
         with patch('couchbase.connection.Connection') as mock_Connection:
             self.backend._connection = sentinel._connection
 
             connection = self.backend._get_connection()
 
             self.assertEqual(sentinel._connection, connection)
-            self.assertFalse(mock_Connection.called)
+            mock_Connection.assert_not_called()
 
     def test_get(self):
-        """
-        Test get method.
-
-        CouchBaseBackend.get should return  and take two params
-        db conn to couchbase is mocked.
-
-        TODO Should test on key not exists
-        """
-        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
-        x = CouchBaseBackend(app=self.app)
+        self.app.conf.couchbase_backend_settings = {}
+        x = CouchbaseBackend(app=self.app)
         x._connection = Mock()
         mocked_get = x._connection.get = Mock()
         mocked_get.return_value.value = sentinel.retval
@@ -85,30 +61,16 @@ class test_CouchBaseBackend(AppCase):
         x._connection.get.assert_called_once_with('1f3fab')
 
     def test_set(self):
-        """
-        Test set method.
-
-        CouchBaseBackend.set should return None and take two params
-        db conn to couchbase is mocked.
-        """
-        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = None
-        x = CouchBaseBackend(app=self.app)
+        self.app.conf.couchbase_backend_settings = None
+        x = CouchbaseBackend(app=self.app)
         x._connection = MagicMock()
         x._connection.set = MagicMock()
         # should return None
         self.assertIsNone(x.set(sentinel.key, sentinel.value))
 
     def test_delete(self):
-        """
-        Test delete method.
-
-        CouchBaseBackend.delete should return and take two params
-        db conn to couchbase is mocked.
-
-        TODO Should test on key not exists.
-        """
-        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {}
-        x = CouchBaseBackend(app=self.app)
+        self.app.conf.couchbase_backend_settings = {}
+        x = CouchbaseBackend(app=self.app)
         x._connection = Mock()
         mocked_delete = x._connection.delete = Mock()
         mocked_delete.return_value = None
@@ -117,19 +79,14 @@ class test_CouchBaseBackend(AppCase):
         x._connection.delete.assert_called_once_with('1f3fab')
 
     def test_config_params(self):
-        """
-        Test config params are correct.
-
-        celery.conf.CELERY_COUCHBASE_BACKEND_SETTINGS is properly set.
-        """
-        self.app.conf.CELERY_COUCHBASE_BACKEND_SETTINGS = {
+        self.app.conf.couchbase_backend_settings = {
             'bucket': 'mycoolbucket',
             'host': ['here.host.com', 'there.host.com'],
             'username': 'johndoe',
             'password': 'mysecret',
             'port': '1234',
         }
-        x = CouchBaseBackend(app=self.app)
+        x = CouchbaseBackend(app=self.app)
         self.assertEqual(x.bucket, 'mycoolbucket')
         self.assertEqual(x.host, ['here.host.com', 'there.host.com'],)
         self.assertEqual(x.username, 'johndoe',)
@@ -137,14 +94,12 @@ class test_CouchBaseBackend(AppCase):
         self.assertEqual(x.port, 1234)
 
     def test_backend_by_url(self, url='couchbase://myhost/mycoolbucket'):
-        """Test that a CouchBaseBackend is loaded from the couchbase url."""
-        from celery.backends.couchbase import CouchBaseBackend
+        from celery.backends.couchbase import CouchbaseBackend
         backend, url_ = backends.get_backend_by_url(url, self.app.loader)
-        self.assertIs(backend, CouchBaseBackend)
+        self.assertIs(backend, CouchbaseBackend)
         self.assertEqual(url_, url)
 
     def test_backend_params_by_url(self):
-        """Test config params are correct from config url."""
         url = 'couchbase://johndoe:mysecret@myhost:123/mycoolbucket'
         with self.Celery(backend=url) as app:
             x = app.backend
@@ -155,13 +110,6 @@ class test_CouchBaseBackend(AppCase):
             self.assertEqual(x.port, 123)
 
     def test_correct_key_types(self):
-        """
-        Test that the key is the correct type for the couchbase python API.
-
-        We check that get_key_for_task, get_key_for_chord, and
-        get_key_for_group always returns a python string. Need to use str_t
-        for cross Python reasons.
-        """
         keys = [
             self.backend.get_key_for_task('task_id', bytes('key')),
             self.backend.get_key_for_chord('group_id', bytes('key')),

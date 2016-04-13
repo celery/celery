@@ -5,9 +5,261 @@ The :program:`celery` umbrella command.
 
 .. program:: celery
 
-"""
-from __future__ import absolute_import, unicode_literals
+.. _preload-options:
 
+Preload Options
+---------------
+
+These options are supported by all commands,
+and usually parsed before command-specific arguments.
+
+.. cmdoption:: -A, --app
+
+    app instance to use (e.g. module.attr_name)
+
+.. cmdoption:: -b, --broker
+
+    url to broker.  default is 'amqp://guest@localhost//'
+
+.. cmdoption:: --loader
+
+    name of custom loader class to use.
+
+.. cmdoption:: --config
+
+    Name of the configuration module
+
+.. cmdoption:: -C, --no-color
+
+    Disable colors in output.
+
+.. cmdoption:: -q, --quiet
+
+    Give less verbose output (behavior depends on the sub command).
+
+.. cmdoption:: --help
+
+    Show help and exit.
+
+.. _daemon-options:
+
+Daemon Options
+--------------
+
+These options are supported by commands that can detach
+into the background (daemon).  They will be present
+in any command that also has a `--detach` option.
+
+.. cmdoption:: -f, --logfile
+
+    Path to log file. If no logfile is specified, `stderr` is used.
+
+.. cmdoption:: --pidfile
+
+    Optional file used to store the process pid.
+
+    The program will not start if this file already exists
+    and the pid is still alive.
+
+.. cmdoption:: --uid
+
+    User id, or user name of the user to run as after detaching.
+
+.. cmdoption:: --gid
+
+    Group id, or group name of the main group to change to after
+    detaching.
+
+.. cmdoption:: --umask
+
+    Effective umask (in octal) of the process after detaching.  Inherits
+    the umask of the parent process by default.
+
+.. cmdoption:: --workdir
+
+    Optional directory to change to after detaching.
+
+.. cmdoption:: --executable
+
+    Executable to use for the detached process.
+
+``celery inspect``
+------------------
+
+.. program:: celery inspect
+
+.. cmdoption:: -t, --timeout
+
+    Timeout in seconds (float) waiting for reply
+
+.. cmdoption:: -d, --destination
+
+    Comma separated list of destination node names.
+
+.. cmdoption:: -j, --json
+
+    Use json as output format.
+
+``celery control``
+------------------
+
+.. program:: celery control
+
+.. cmdoption:: -t, --timeout
+
+    Timeout in seconds (float) waiting for reply
+
+.. cmdoption:: -d, --destination
+
+    Comma separated list of destination node names.
+
+.. cmdoption:: -j, --json
+
+    Use json as output format.
+
+``celery migrate``
+------------------
+
+.. program:: celery migrate
+
+.. cmdoption:: -n, --limit
+
+    Number of tasks to consume (int).
+
+.. cmdoption:: -t, -timeout
+
+    Timeout in seconds (float) waiting for tasks.
+
+.. cmdoption:: -a, --ack-messages
+
+    Ack messages from source broker.
+
+.. cmdoption:: -T, --tasks
+
+    List of task names to filter on.
+
+.. cmdoption:: -Q, --queues
+
+    List of queues to migrate.
+
+.. cmdoption:: -F, --forever
+
+    Continually migrate tasks until killed.
+
+``celery upgrade``
+------------------
+
+.. program:: celery upgrade
+
+.. cmdoption:: --django
+
+    Upgrade a Django project.
+
+.. cmdoption:: --compat
+
+    Maintain backwards compatibility.
+
+.. cmdoption:: --no-backup
+
+    Don't backup original files.
+
+``celery shell``
+----------------
+
+.. program:: celery shell
+
+.. cmdoption:: -I, --ipython
+
+    Force :pypi:`iPython` implementation.
+
+.. cmdoption:: -B, --bpython
+
+    Force :pypi:`bpython` implementation.
+
+.. cmdoption:: -P, --python
+
+    Force default Python shell.
+
+.. cmdoption:: -T, --without-tasks
+
+    Don't add tasks to locals.
+
+.. cmdoption:: --eventlet
+
+    Use :pypi:`eventlet` monkey patches.
+
+.. cmdoption:: --gevent
+
+    Use :pypi:`gevent` monkey patches.
+
+
+``celery result``
+-----------------
+
+.. program:: celery result
+
+.. cmdoption:: -t, --task
+
+    Name of task (if custom backend).
+
+.. cmdoption:: --traceback
+
+    Show traceback if any.
+
+``celery purge``
+----------------
+
+.. program:: celery purge
+
+.. cmdoption:: -f, --force
+
+    Don't prompt for verification before deleting messages (DANGEROUS)
+
+``celery call``
+---------------
+
+.. program:: celery call
+
+.. cmdoption:: -a, --args
+
+    Positional arguments (json format).
+
+.. cmdoption:: -k, --kwargs
+
+    Keyword arguments (json format).
+
+.. cmdoption:: --eta
+
+    Scheduled time in ISO-8601 format.
+
+.. cmdoption:: --countdown
+
+    ETA in seconds from now (float/int).
+
+.. cmdoption:: --expires
+
+    Expiry time in float/int seconds, or a ISO-8601 date.
+
+.. cmdoption:: --serializer
+
+    Specify serializer to use (default is json).
+
+.. cmdoption:: --queue
+
+    Destination queue.
+
+.. cmdoption:: --exchange
+
+    Destination exchange (defaults to the queue exchange).
+
+.. cmdoption:: --routing-key
+
+    Destination routing key (defaults to the queue routing key).
+
+"""
+from __future__ import absolute_import, unicode_literals, print_function
+
+import codecs
 import numbers
 import os
 import sys
@@ -17,10 +269,12 @@ from importlib import import_module
 
 from kombu.utils import json
 
+from celery.app import defaults
 from celery.five import string_t, values
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from celery.utils import term
 from celery.utils import text
+from celery.utils.functional import pass1
 from celery.utils.timeutils import maybe_iso8601
 
 # Cannot use relative imports here due to a Windows issue (#1111).
@@ -50,17 +304,14 @@ Migrating task {state.count}/{state.strtotal}: \
 {body[task]}[{body[id]}]\
 """
 
-DEBUG = os.environ.get('C_DEBUG', False)
-
 command_classes = [
     ('Main', ['worker', 'events', 'beat', 'shell', 'multi', 'amqp'], 'green'),
     ('Remote Control', ['status', 'inspect', 'control'], 'blue'),
-    ('Utils', ['purge', 'list', 'migrate', 'call', 'result', 'report'], None),
+    ('Utils',
+     ['purge', 'list', 'call', 'result', 'migrate', 'graph', 'upgrade'],
+     None),
+    ('Debugging', ['report', 'logtool'], 'red'),
 ]
-if DEBUG:  # pragma: no cover
-    command_classes.append(
-        ('Debug', ['graph', 'logtool'], 'red'),
-    )
 
 
 def determine_exit_status(ret):
@@ -90,7 +341,7 @@ class multi(Command):
     respects_app_option = False
 
     def get_options(self):
-        return ()
+        pass
 
     def run_from_argv(self, prog_name, argv, command=None):
         from celery.bin.multi import MultiTool
@@ -337,7 +588,7 @@ class _RemoteControl(Command):
             raise self.UsageError(
                 'Unknown {0.name} method {1}'.format(self, method))
 
-        if self.app.connection().transport.driver_type == 'sql':
+        if self.app.connection_for_write().transport.driver_type == 'sql':
             raise self.Error('Broadcast not supported by SQL broker transport')
 
         output_json = kwargs.get('json')
@@ -623,16 +874,104 @@ class shell(Command):  # pragma: no cover
         code.interact(local=self.locals)
 
     def invoke_ipython_shell(self):
-        try:
-            from IPython.terminal import embed
-            embed.TerminalInteractiveShell(user_ns=self.locals).mainloop()
-        except ImportError:  # ipython < 0.11
-            from IPython.Shell import IPShell
-            IPShell(argv=[], user_ns=self.locals).mainloop()
+        for ip in (self._ipython, self._ipython_pre_10,
+                   self._ipython_terminal, self._ipython_010,
+                   self._no_ipython):
+            try:
+                return ip()
+            except ImportError:
+                pass
+
+    def _ipython(self):
+        from IPython import start_ipython
+        start_ipython(argv=[], user_ns=self.locals)
+
+    def _ipython_pre_10(self):  # pragma: no cover
+        from IPython.frontend.terminal.ipapp import TerminalIPythonApp
+        app = TerminalIPythonApp.instance()
+        app.initialize(argv=[])
+        app.shell.user_ns.update(self.locals)
+        app.start()
+
+    def _ipython_terminal(self):  # pragma: no cover
+        from IPython.terminal import embed
+        embed.TerminalInteractiveShell(user_ns=self.locals).mainloop()
+
+    def _ipython_010(self):  # pragma: no cover
+        from IPython.Shell import IPShell
+        IPShell(argv=[], user_ns=self.locals).mainloop()
+
+    def _no_ipython(self):  # pragma: no cover
+        raise ImportError('no suitable ipython found')
 
     def invoke_bpython_shell(self):
         import bpython
         bpython.embed(self.locals)
+
+
+class upgrade(Command):
+    """Perform upgrade between versions."""
+    option_list = Command.option_list + (
+        Option('--django', action='store_true',
+               help='Upgrade Django project'),
+        Option('--compat', action='store_true',
+               help='Maintain backwards compatibility'),
+        Option('--no-backup', action='store_true',
+               help='Dont backup original files'),
+    )
+    choices = {'settings'}
+
+    def usage(self, command):
+        return '%prog <command> settings [filename] [options]'
+
+    def run(self, *args, **kwargs):
+        try:
+            command = args[0]
+        except IndexError:
+            raise self.UsageError('missing upgrade type')
+        if command not in self.choices:
+            raise self.UsageError('unknown upgrade type: {0}'.format(command))
+        return getattr(self, command)(*args, **kwargs)
+
+    def settings(self, command, filename,
+                 no_backup=False, django=False, compat=False, **kwargs):
+        lines = self._slurp(filename) if no_backup else self._backup(filename)
+        keyfilter = self._compat_key if django or compat else pass1
+        print('processing {0}...'.format(filename), file=self.stderr)
+        with codecs.open(filename, 'w', 'utf-8') as write_fh:
+            for line in lines:
+                write_fh.write(self._to_new_key(line, keyfilter))
+
+    def _slurp(self, filename):
+        with codecs.open(filename, 'r', 'utf-8') as read_fh:
+            return [line for line in read_fh]
+
+    def _backup(self, filename, suffix='.orig'):
+        lines = []
+        backup_filename = ''.join([filename, suffix])
+        print('writing backup to {0}...'.format(backup_filename),
+              file=self.stderr)
+        with codecs.open(filename, 'r', 'utf-8') as read_fh:
+            with codecs.open(backup_filename, 'w', 'utf-8') as backup_fh:
+                for line in read_fh:
+                    backup_fh.write(line)
+                    lines.append(line)
+        return lines
+
+    def _to_new_key(self, line, keyfilter=pass1, source=defaults._TO_NEW_KEY):
+        # sort by length to avoid e.g. broker_transport overriding
+        # broker_transport_options.
+        for old_key in reversed(sorted(source, key=lambda x: len(x))):
+            new_line = line.replace(old_key, keyfilter(source[old_key]))
+            if line != new_line:
+                return new_line  # only one match per line.
+        return line
+
+    def _compat_key(self, key, namespace='CELERY'):
+        key = key.upper()
+        if not key.startswith(namespace):
+            key = '_'.join([namespace, key])
+        return key
 
 
 class help(Command):
@@ -652,7 +991,7 @@ class help(Command):
 
 
 class report(Command):
-    """Shows information useful to include in bugreports."""
+    """Shows information useful to include in bug-reports."""
 
     def run(self, *args, **kwargs):
         self.out(self.app.bugreport())
@@ -660,7 +999,6 @@ class report(Command):
 
 
 class CeleryCommand(Command):
-    namespace = 'celery'
     ext_fmt = '{self.namespace}.commands'
     commands = {
         'amqp': amqp,
@@ -680,6 +1018,7 @@ class CeleryCommand(Command):
         'result': result,
         'shell': shell,
         'status': status,
+        'upgrade': upgrade,
         'worker': worker,
 
     }
@@ -741,13 +1080,13 @@ class CeleryCommand(Command):
                             # is (maybe) a value for this option
                             rest.extend([value, nxt])
                             index += 1
-                    except IndexError:
+                    except IndexError:  # pragma: no cover
                         rest.append(value)
                         break
                 else:
                     break
                 index += 1
-            if argv[index:]:
+            if argv[index:]:  # pragma: no cover
                 # if there are more arguments left then divide and swap
                 # we assume the first argument in argv[i:] is the command
                 # name.

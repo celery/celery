@@ -7,12 +7,15 @@
     Server implementation is in :mod:`celery.worker.control`.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import warnings
 
+from billiard.common import TERM_SIGNAME
+
 from kombu.pidbox import Mailbox
 from kombu.utils import cached_property
+from kombu.utils.functional import lazy
 
 from celery.exceptions import DuplicateNodenameWarning
 from celery.utils.text import pluralize
@@ -20,8 +23,9 @@ from celery.utils.text import pluralize
 __all__ = ['Inspect', 'Control', 'flatten_reply']
 
 W_DUPNODE = """\
-Received multiple replies from node name: {0!r}.
-Please make sure you give each node a unique nodename using the `-n` option.\
+Received multiple replies from node {0}: {1}.
+Please make sure you give each node a unique nodename using
+the celery worker `-n` option.\
 """
 
 
@@ -52,13 +56,12 @@ class Inspect(object):
         self.limit = limit
 
     def _prepare(self, reply):
-        if not reply:
-            return
-        by_node = flatten_reply(reply)
-        if self.destination and \
-                not isinstance(self.destination, (list, tuple)):
-            return by_node.get(self.destination)
-        return by_node
+        if reply:
+            by_node = flatten_reply(reply)
+            if (self.destination and
+                    not isinstance(self.destination, (list, tuple))):
+                return by_node.get(self.destination)
+            return by_node
 
     def _request(self, command, **kwargs):
         return self._prepare(self.app.control.broadcast(
@@ -126,7 +129,12 @@ class Control(object):
 
     def __init__(self, app=None):
         self.app = app
-        self.mailbox = self.Mailbox('celery', type='fanout', accept=['json'])
+        self.mailbox = self.Mailbox(
+            'celery',
+            type='fanout',
+            accept=['json'],
+            producer_pool=lazy(lambda: self.app.amqp.producer_pool),
+        )
 
     @cached_property
     def inspect(self):
@@ -151,7 +159,7 @@ class Control(object):
         })
 
     def revoke(self, task_id, destination=None, terminate=False,
-               signal='SIGTERM', **kwargs):
+               signal=TERM_SIGNAME, **kwargs):
         """Tell all (or specific) workers to revoke a task by id.
 
         If a task is revoked, the workers will ignore the task and
@@ -281,6 +289,15 @@ class Control(object):
 
         """
         return self.broadcast('pool_shrink', {'n': n}, destination, **kwargs)
+
+    def autoscale(self, max, min, destination=None, **kwargs):
+        """Change worker(s) autoscale setting.
+
+        Supports the same arguments as :meth:`broadcast`.
+
+        """
+        return self.broadcast(
+            'autoscale', {'max': max, 'min': min}, destination, **kwargs)
 
     def broadcast(self, command, arguments=None, destination=None,
                   connection=None, reply=False, timeout=1, limit=None,

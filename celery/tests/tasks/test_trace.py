@@ -1,13 +1,23 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
-from celery import uuid
+from kombu.exceptions import EncodeError
+
+from celery import group, uuid
 from celery import signals
 from celery import states
-from celery.exceptions import Ignore, Retry
+from celery.exceptions import Ignore, Retry, Reject
 from celery.app.trace import (
     TraceInfo,
     build_tracer,
+    get_log_policy,
+    log_policy_reject,
+    log_policy_ignore,
+    log_policy_internal,
+    log_policy_expected,
+    log_policy_unexpected,
     trace_task,
+    _trace_task_ret,
+    _fast_trace_task,
     setup_worker_optimizations,
     reset_worker_optimizations,
 )
@@ -58,7 +68,34 @@ class test_trace(TraceCase):
             return x + y
 
         self.trace(add_with_success, (2, 2), {})
-        self.assertTrue(add_with_success.on_success.called)
+        add_with_success.on_success.assert_called()
+
+    def test_get_log_policy(self):
+        einfo = Mock(name='einfo')
+        einfo.internal = False
+        self.assertIs(
+            get_log_policy(self.add, einfo, Reject()),
+            log_policy_reject,
+        )
+        self.assertIs(
+            get_log_policy(self.add, einfo, Ignore()),
+            log_policy_ignore,
+        )
+        self.add.throws = (TypeError,)
+        self.assertIs(
+            get_log_policy(self.add, einfo, KeyError()),
+            log_policy_unexpected,
+        )
+        self.assertIs(
+            get_log_policy(self.add, einfo, TypeError()),
+            log_policy_expected,
+        )
+        einfo2 = Mock(name='einfo2')
+        einfo2.internal = True
+        self.assertIs(
+            get_log_policy(self.add, einfo2, KeyError()),
+            log_policy_internal,
+        )
 
     def test_trace_after_return(self):
 
@@ -67,14 +104,14 @@ class test_trace(TraceCase):
             return x + y
 
         self.trace(add_with_after_return, (2, 2), {})
-        self.assertTrue(add_with_after_return.after_return.called)
+        add_with_after_return.after_return.assert_called()
 
     def test_with_prerun_receivers(self):
         on_prerun = Mock()
         signals.task_prerun.connect(on_prerun)
         try:
             self.trace(self.add, (2, 2), {})
-            self.assertTrue(on_prerun.called)
+            on_prerun.assert_called()
         finally:
             signals.task_prerun.receivers[:] = []
 
@@ -83,7 +120,7 @@ class test_trace(TraceCase):
         signals.task_postrun.connect(on_postrun)
         try:
             self.trace(self.add, (2, 2), {})
-            self.assertTrue(on_postrun.called)
+            on_postrun.assert_called()
         finally:
             signals.task_postrun.receivers[:] = []
 
@@ -92,7 +129,7 @@ class test_trace(TraceCase):
         signals.task_success.connect(on_success)
         try:
             self.trace(self.add, (2, 2), {})
-            self.assertTrue(on_success.called)
+            on_success.assert_called()
         finally:
             signals.task_success.receivers[:] = []
 
@@ -105,7 +142,7 @@ class test_trace(TraceCase):
 
         request = {'chord': uuid()}
         self.trace(add, (2, 2), {}, request=request)
-        self.assertTrue(add.backend.mark_as_done.called)
+        add.backend.mark_as_done.assert_called()
         args, kwargs = add.backend.mark_as_done.call_args
         self.assertEqual(args[0], 'id-1')
         self.assertEqual(args[1], 4)
@@ -134,6 +171,91 @@ class test_trace(TraceCase):
         retval, info = self.trace(ignored, (), {})
         self.assertEqual(info.state, states.IGNORED)
 
+    def test_when_Reject(self):
+
+        @self.app.task(shared=False)
+        def rejecting():
+            raise Reject()
+
+        retval, info = self.trace(rejecting, (), {})
+        self.assertEqual(info.state, states.REJECTED)
+
+    def test_backend_cleanup_raises(self):
+        self.add.backend.process_cleanup = Mock()
+        self.add.backend.process_cleanup.side_effect = RuntimeError()
+        self.trace(self.add, (2, 2), {})
+
+    @patch('celery.canvas.maybe_signature')
+    def test_callbacks__scalar(self, maybe_signature):
+        sig = Mock(name='sig')
+        request = {'callbacks': [sig], 'root_id': 'root'}
+        maybe_signature.return_value = sig
+        retval, _ = self.trace(self.add, (2, 2), {}, request=request)
+        sig.apply_async.assert_called_with(
+            (4,), parent_id='id-1', root_id='root',
+        )
+
+    @patch('celery.canvas.maybe_signature')
+    def test_chain_proto2(self, maybe_signature):
+        sig = Mock(name='sig')
+        sig2 = Mock(name='sig2')
+        request = {'chain': [sig2, sig], 'root_id': 'root'}
+        maybe_signature.return_value = sig
+        retval, _ = self.trace(self.add, (2, 2), {}, request=request)
+        sig.apply_async.assert_called_with(
+            (4, ), parent_id='id-1', root_id='root',
+            chain=[sig2],
+        )
+
+    @patch('celery.canvas.maybe_signature')
+    def test_callbacks__EncodeError(self, maybe_signature):
+        sig = Mock(name='sig')
+        request = {'callbacks': [sig], 'root_id': 'root'}
+        maybe_signature.return_value = sig
+        sig.apply_async.side_effect = EncodeError()
+        retval, einfo = self.trace(self.add, (2, 2), {}, request=request)
+        self.assertEqual(einfo.state, states.FAILURE)
+
+    @patch('celery.canvas.maybe_signature')
+    @patch('celery.app.trace.group.apply_async')
+    def test_callbacks__sigs(self, group_, maybe_signature):
+        sig1 = Mock(name='sig')
+        sig2 = Mock(name='sig2')
+        sig3 = group([Mock(name='g1'), Mock(name='g2')], app=self.app)
+        sig3.apply_async = Mock(name='gapply')
+        request = {'callbacks': [sig1, sig3, sig2], 'root_id': 'root'}
+
+        def passt(s, *args, **kwargs):
+            return s
+        maybe_signature.side_effect = passt
+        retval, _ = self.trace(self.add, (2, 2), {}, request=request)
+        group_.assert_called_with(
+            (4,), parent_id='id-1', root_id='root',
+        )
+        sig3.apply_async.assert_called_with(
+            (4,), parent_id='id-1', root_id='root',
+        )
+
+    @patch('celery.canvas.maybe_signature')
+    @patch('celery.app.trace.group.apply_async')
+    def test_callbacks__only_groups(self, group_, maybe_signature):
+        sig1 = group([Mock(name='g1'), Mock(name='g2')], app=self.app)
+        sig2 = group([Mock(name='g3'), Mock(name='g4')], app=self.app)
+        sig1.apply_async = Mock(name='gapply')
+        sig2.apply_async = Mock(name='gapply')
+        request = {'callbacks': [sig1, sig2], 'root_id': 'root'}
+
+        def passt(s, *args, **kwargs):
+            return s
+        maybe_signature.side_effect = passt
+        retval, _ = self.trace(self.add, (2, 2), {}, request=request)
+        sig1.apply_async.assert_called_with(
+            (4,), parent_id='id-1', root_id='root',
+        )
+        sig2.apply_async.assert_called_with(
+            (4,), parent_id='id-1', root_id='root',
+        )
+
     def test_trace_SystemExit(self):
         with self.assertRaises(SystemExit):
             self.trace(self.raises, (SystemExit(),), {})
@@ -149,6 +271,21 @@ class test_trace(TraceCase):
         _, info = self.trace(self.raises, (exc,), {})
         self.assertEqual(info.state, states.FAILURE)
         self.assertIs(info.retval, exc)
+
+    def test_trace_task_ret__no_content_type(self):
+        _trace_task_ret(
+            self.add.name, 'id1', {}, ((2, 2), {}, {}), None, None,
+            app=self.app,
+        )
+
+    def test_fast_trace_task__no_content_type(self):
+        self.app.tasks[self.add.name].__trace__ = build_tracer(
+            self.add.name, self.add, app=self.app,
+        )
+        _fast_trace_task(
+            self.add.name, 'id1', {}, ((2, 2), {}, {}), None, None,
+            app=self.app, _loc=[self.app.tasks, {}, 'hostname']
+        )
 
     def test_trace_exception_propagate(self):
         with self.assertRaises(KeyError):
@@ -182,7 +319,16 @@ class test_TraceInfo(TraceCase):
         x.handle_failure.assert_called_with(
             self.add_cast, self.add_cast.request,
             store_errors=self.add_cast.store_errors_even_if_ignored,
+            call_errbacks=True,
         )
+
+    @patch('celery.app.trace.ExceptionInfo')
+    def test_handle_reject(self, ExceptionInfo):
+        x = self.TI(states.FAILURE)
+        x._log_error = Mock(name='log_error')
+        req = Mock(name='req')
+        x.handle_reject(self.add, req)
+        x._log_error.assert_called_with(self.add, req, ExceptionInfo())
 
 
 class test_stackprotection(AppCase):

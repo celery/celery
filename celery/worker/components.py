@@ -6,7 +6,7 @@
     Default worker bootsteps.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import atexit
 import warnings
@@ -31,7 +31,7 @@ use standalone beat instead.\
 """
 
 W_POOL_SETTING = """
-The CELERYD_POOL setting should not be used to select the eventlet/gevent
+The worker_pool setting should not be used to select the eventlet/gevent
 pools, instead you *must use the -P* argument so that patches are applied
 as early as possible.
 """
@@ -73,7 +73,9 @@ class Hub(bootsteps.StartStopStep):
     def create(self, w):
         w.hub = get_event_loop()
         if w.hub is None:
-            w.hub = set_event_loop(_Hub(w.timer))
+            required_hub = getattr(w._conninfo, 'requires_hub', None)
+            w.hub = set_event_loop((
+                required_hub if required_hub else _Hub)(w.timer))
         self._patch_thread_primitives(w)
         return self
 
@@ -92,7 +94,7 @@ class Hub(bootsteps.StartStopStep):
         # multiprocessing's ApplyResult uses this lock.
         try:
             from billiard import pool
-        except ImportError:
+        except ImportError:  # pragma: no cover
             pass
         else:
             pool.Lock = DummyLock
@@ -102,7 +104,7 @@ class Pool(bootsteps.StartStopStep):
     """Bootstep managing the worker pool.
 
     Describes how to initialize the worker pool, and starts and stops
-    the pool during worker startup/shutdown.
+    the pool during worker start-up/shutdown.
 
     Adds attributes:
 
@@ -137,8 +139,9 @@ class Pool(bootsteps.StartStopStep):
         if w.pool:
             w.pool.terminate()
 
-    def create(self, w, semaphore=None, max_restarts=None):
-        if w.app.conf.CELERYD_POOL in ('eventlet', 'gevent'):
+    def create(self, w, semaphore=None, max_restarts=None,
+               green_pools={'eventlet', 'gevent'}):
+        if w.app.conf.worker_pool in green_pools:  # pragma: no cover
             warnings.warn(UserWarning(W_POOL_SETTING))
         threaded = not w.use_eventloop or IS_WINDOWS
         procs = w.min_concurrency
@@ -156,6 +159,7 @@ class Pool(bootsteps.StartStopStep):
             w.pool_cls, w.min_concurrency,
             initargs=(w.app, w.hostname),
             maxtasksperchild=w.max_tasks_per_child,
+            max_memory_per_child=w.max_memory_per_child,
             timeout=w.task_time_limit,
             soft_timeout=w.task_soft_time_limit,
             putlocks=w.pool_putlocks and threaded,
@@ -166,6 +170,7 @@ class Pool(bootsteps.StartStopStep):
             forking_enable=forking_enable,
             semaphore=semaphore,
             sched_strategy=self.optimization,
+            app=w.app,
         )
         _set_task_join_will_block(pool.task_join_will_block)
         return pool

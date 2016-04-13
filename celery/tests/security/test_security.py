@@ -14,18 +14,19 @@ Generated with:
     $ rm key1.key.org cert1.csr
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from kombu.serialization import disable_insecure_serializers
 
 from celery.exceptions import ImproperlyConfigured, SecurityError
 from celery.five import builtins
+from celery.security import disable_untrusted_serializers, setup_security
 from celery.security.utils import reraise_errors
 from kombu.serialization import registry
 
 from .case import SecurityCase
 
-from celery.tests.case import Mock, mock_open, patch
+from celery.tests.case import Mock, mock, patch
 
 
 class test_security(SecurityCase):
@@ -53,14 +54,23 @@ class test_security(SecurityCase):
         finally:
             disable_insecure_serializers(allowed=['json'])
 
+    @patch('celery.security._disable_insecure_serializers')
+    def test_disable_untrusted_serializers(self, disable):
+        disable_untrusted_serializers(['foo'])
+        disable.assert_called_with(allowed=['foo'])
+
     def test_setup_security(self):
         disabled = registry._disabled_content_types
         self.assertEqual(0, len(disabled))
 
-        self.app.conf.CELERY_TASK_SERIALIZER = 'json'
+        self.app.conf.task_serializer = 'json'
         self.app.setup_security()
         self.assertIn('application/x-python-serialize', disabled)
         disabled.clear()
+
+    @patch('celery.current_app')
+    def test_setup_security__default_app(self, current_app):
+        setup_security()
 
     @patch('celery.security.register_auth')
     @patch('celery.security._disable_insecure_serializers')
@@ -75,8 +85,8 @@ class test_security(SecurityCase):
             finally:
                 calls[0] += 1
 
-        self.app.conf.CELERY_TASK_SERIALIZER = 'auth'
-        with mock_open(side_effect=effect):
+        self.app.conf.task_serializer = 'auth'
+        with mock.open(side_effect=effect):
             with patch('celery.security.registry') as registry:
                 store = Mock()
                 self.app.setup_security(['json'], key, cert, store)
@@ -85,7 +95,7 @@ class test_security(SecurityCase):
                 registry._set_default_serializer.assert_called_with('auth')
 
     def test_security_conf(self):
-        self.app.conf.CELERY_TASK_SERIALIZER = 'auth'
+        self.app.conf.task_serializer = 'auth'
         with self.assertRaises(ImproperlyConfigured):
             self.app.setup_security()
 

@@ -18,6 +18,28 @@ Glossary
     ack
         Short for :term:`acknowledged`.
 
+    early acknowledgment
+        Task is :term:`acknowledged` just-in-time before being executed,
+        meaning the task will not be redelivered to another worker if the
+        machine loses power, or the worker instance is abruptly killed,
+        mid-execution.
+
+        Configured using :setting:`task_acks_late`.
+
+    late acknowledgment
+        Task is :term:`acknowledged` after execution (both if successful, or
+        if the task is raising an error), which means the task will be
+        redelivered to another worker in the event of the machine losing
+        power, or the worker instance being killed mid-execution.
+
+        Configured using :setting:`task_acks_late`.
+
+    early ack
+        Short for :term:`early acknowledgment`
+
+    late ack
+        Short for :term:`late acknowledgment`
+
     request
         Task messages are converted to *requests* within the worker.
         The request information is also available as the task's
@@ -54,6 +76,8 @@ Glossary
         unintended effects, but not necessarily side-effect free in the pure
         sense (compare to :term:`nullipotent`).
 
+        Further reading: https://en.wikipedia.org/wiki/Idempotent
+
     nullipotent
         describes a function that will have the same effect, and give the same
         result, even if called zero or multiple times (side-effect free).
@@ -74,10 +98,13 @@ Glossary
 
     prefetch multiplier
         The :term:`prefetch count` is configured by using the
-        :setting:`CELERYD_PREFETCH_MULTIPLIER` setting, which is multiplied
+        :setting:`worker_prefetch_multiplier` setting, which is multiplied
         by the number of pool slots (threads/processes/greenthreads).
 
-    prefetch count
+    `prefetch count`
         Maximum number of unacknowledged messages a consumer can hold and if
         exceeded the transport should not deliver any more messages to that
         consumer.  See :ref:`optimizing-prefetch-limit`.
+
+    pidbox
+        A process mailbox, used to implement remote control commands.

@@ -6,7 +6,7 @@
     Utility functions.
 
 """
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import numbers
 import os
@@ -18,13 +18,16 @@ import warnings
 import datetime
 
 from collections import Callable
-from functools import partial, wraps
+from functools import partial
 from pprint import pprint
 
 from kombu.entity import Exchange, Queue
+from vine.utils import wraps
 
 from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 from celery.five import WhateverIO, items, reraise, string_t
+
+from .functional import memoize
 
 __all__ = ['worker_direct', 'warn_deprecated', 'deprecated', 'lpmerge',
            'is_iterable', 'isatty', 'cry', 'maybe_reraise', 'strtobool',
@@ -32,7 +35,6 @@ __all__ = ['worker_direct', 'warn_deprecated', 'deprecated', 'lpmerge',
            'cached_property']
 
 PY3 = sys.version_info[0] == 3
-
 
 PENDING_DEPRECATION_FMT = """
     {description} is scheduled for deprecation in \
@@ -45,23 +47,31 @@ DEPRECATION_FMT = """
     version {removal}. {alternative}
 """
 
+UNKNOWN_SIMPLE_FORMAT_KEY = """
+Unknown format %{0} in string {1!r}.
+Possible causes: Did you forget to escape the expand sign (use '%%{0!r}'),
+or did you escape and the value was expanded twice? (%%N -> %N -> %hostname)?
+""".strip()
+
 #: Billiard sets this when execv is enabled.
 #: We use it to find out the name of the original ``__main__``
 #: module, so that we can properly rewrite the name of the
 #: task to be that of ``App.main``.
-MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE') or None
+MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE')
 
 #: Exchange for worker direct queues.
-WORKER_DIRECT_EXCHANGE = Exchange('C.dq')
+WORKER_DIRECT_EXCHANGE = Exchange('C.dq2')
 
 #: Format for worker direct queue names.
-WORKER_DIRECT_QUEUE_FORMAT = '{hostname}.dq'
+WORKER_DIRECT_QUEUE_FORMAT = '{hostname}.dq2'
 
 #: Separator for worker node name and hostname.
 NODENAME_SEP = '@'
 
 NODENAME_DEFAULT = 'celery'
 RE_FORMAT = re.compile(r'%(\w)')
+
+gethostname = memoize(1, Cache=dict)(socket.gethostname)
 
 
 def worker_direct(hostname):
@@ -75,9 +85,11 @@ def worker_direct(hostname):
     """
     if isinstance(hostname, Queue):
         return hostname
-    return Queue(WORKER_DIRECT_QUEUE_FORMAT.format(hostname=hostname),
-                 WORKER_DIRECT_EXCHANGE,
-                 hostname, auto_delete=True)
+    return Queue(
+        WORKER_DIRECT_QUEUE_FORMAT.format(hostname=hostname),
+        WORKER_DIRECT_EXCHANGE,
+        hostname,
+    )
 
 
 def warn_deprecated(description=None, deprecation=None,
@@ -325,7 +337,7 @@ def nodename(name, hostname):
 
 def anon_nodename(hostname=None, prefix='gen'):
     return nodename(''.join([prefix, str(os.getpid())]),
-                    hostname or socket.gethostname())
+                    hostname or gethostname())
 
 
 def nodesplit(nodename):
@@ -338,13 +350,13 @@ def nodesplit(nodename):
 
 def default_nodename(hostname):
     name, host = nodesplit(hostname or '')
-    return nodename(name or NODENAME_DEFAULT, host or socket.gethostname())
+    return nodename(name or NODENAME_DEFAULT, host or gethostname())
 
 
 def node_format(s, nodename, **extra):
     name, host = nodesplit(nodename)
     return host_format(
-        s, host, name or NODENAME_DEFAULT, **extra)
+        s, host, name or NODENAME_DEFAULT, p=nodename, **extra)
 
 
 def _fmt_process_index(prefix='', default='0'):
@@ -355,7 +367,7 @@ _fmt_process_index_with_prefix = partial(_fmt_process_index, '-', '')
 
 
 def host_format(s, host=None, name=None, **extra):
-    host = host or socket.gethostname()
+    host = host or gethostname()
     hname, _, domain = host.partition('.')
     name = name or hname
     keys = dict({
@@ -370,7 +382,11 @@ def simple_format(s, keys, pattern=RE_FORMAT, expand=r'\1'):
         keys.setdefault('%', '%')
 
         def resolve(match):
-            resolver = keys[match.expand(expand)]
+            key = match.expand(expand)
+            try:
+                resolver = keys[key]
+            except KeyError:
+                raise ValueError(UNKNOWN_SIMPLE_FORMAT_KEY.format(key, s))
             if isinstance(resolver, Callable):
                 return resolver()
             return resolver

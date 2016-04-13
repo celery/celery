@@ -9,19 +9,20 @@ from celery.exceptions import ImproperlyConfigured
 from celery.utils import uuid
 
 from celery.tests.case import (
-    AppCase,
-    SkipTest,
-    depends_on_current_app,
-    skip_if_pypy,
-    skip_if_jython,
+    AppCase, Mock, depends_on_current_app, patch, skip,
 )
 
 try:
     import sqlalchemy  # noqa
 except ImportError:
     DatabaseBackend = Task = TaskSet = retry = None  # noqa
+    SessionManager = session_cleanup = None  # noqa
 else:
-    from celery.backends.database import DatabaseBackend, retry
+    from celery.backends.database import (
+        DatabaseBackend, retry, session_cleanup,
+    )
+    from celery.backends.database import session
+    from celery.backends.database.session import SessionManager
     from celery.backends.database.models import Task, TaskSet
 
 
@@ -31,15 +32,32 @@ class SomeClass(object):
         self.data = data
 
 
+@skip.unless_module('sqlalchemy')
+class test_session_cleanup(AppCase):
+
+    def test_context(self):
+        session = Mock(name='session')
+        with session_cleanup(session):
+            pass
+        session.close.assert_called_with()
+
+    def test_context_raises(self):
+        session = Mock(name='session')
+        with self.assertRaises(KeyError):
+            with session_cleanup(session):
+                raise KeyError()
+        session.rollback.assert_called_with()
+        session.close.assert_called_with()
+
+
+@skip.unless_module('sqlalchemy')
+@skip.if_pypy()
+@skip.if_jython()
 class test_DatabaseBackend(AppCase):
 
-    @skip_if_pypy
-    @skip_if_jython
     def setup(self):
-        if DatabaseBackend is None:
-            raise SkipTest('sqlalchemy not installed')
         self.uri = 'sqlite:///test.db'
-        self.app.conf.CELERY_RESULT_SERIALIZER = 'pickle'
+        self.app.conf.result_serializer = 'pickle'
 
     def test_retry_helper(self):
         from celery.backends.database import DatabaseError
@@ -56,13 +74,13 @@ class test_DatabaseBackend(AppCase):
         self.assertEqual(calls[0], 5)
 
     def test_missing_dburi_raises_ImproperlyConfigured(self):
-        self.app.conf.CELERY_RESULT_DBURI = None
+        self.app.conf.sqlalchemy_dburi = None
         with self.assertRaises(ImproperlyConfigured):
             DatabaseBackend(app=self.app)
 
     def test_missing_task_id_is_PENDING(self):
         tb = DatabaseBackend(self.uri, app=self.app)
-        self.assertEqual(tb.get_status('xxx-does-not-exist'), states.PENDING)
+        self.assertEqual(tb.get_state('xxx-does-not-exist'), states.PENDING)
 
     def test_missing_task_meta_is_dict_with_pending(self):
         tb = DatabaseBackend(self.uri, app=self.app)
@@ -78,11 +96,11 @@ class test_DatabaseBackend(AppCase):
 
         tid = uuid()
 
-        self.assertEqual(tb.get_status(tid), states.PENDING)
+        self.assertEqual(tb.get_state(tid), states.PENDING)
         self.assertIsNone(tb.get_result(tid))
 
         tb.mark_as_done(tid, 42)
-        self.assertEqual(tb.get_status(tid), states.SUCCESS)
+        self.assertEqual(tb.get_state(tid), states.SUCCESS)
         self.assertEqual(tb.get_result(tid), 42)
 
     def test_is_pickled(self):
@@ -100,13 +118,13 @@ class test_DatabaseBackend(AppCase):
         tb = DatabaseBackend(self.uri, app=self.app)
         tid = uuid()
         tb.mark_as_started(tid)
-        self.assertEqual(tb.get_status(tid), states.STARTED)
+        self.assertEqual(tb.get_state(tid), states.STARTED)
 
     def test_mark_as_revoked(self):
         tb = DatabaseBackend(self.uri, app=self.app)
         tid = uuid()
         tb.mark_as_revoked(tid)
-        self.assertEqual(tb.get_status(tid), states.REVOKED)
+        self.assertEqual(tb.get_state(tid), states.REVOKED)
 
     def test_mark_as_retry(self):
         tb = DatabaseBackend(self.uri, app=self.app)
@@ -117,7 +135,7 @@ class test_DatabaseBackend(AppCase):
             import traceback
             trace = '\n'.join(traceback.format_stack())
             tb.mark_as_retry(tid, exception, traceback=trace)
-            self.assertEqual(tb.get_status(tid), states.RETRY)
+            self.assertEqual(tb.get_state(tid), states.RETRY)
             self.assertIsInstance(tb.get_result(tid), KeyError)
             self.assertEqual(tb.get_traceback(tid), trace)
 
@@ -131,7 +149,7 @@ class test_DatabaseBackend(AppCase):
             import traceback
             trace = '\n'.join(traceback.format_stack())
             tb.mark_as_failure(tid3, exception, traceback=trace)
-            self.assertEqual(tb.get_status(tid3), states.FAILURE)
+            self.assertEqual(tb.get_state(tid3), states.FAILURE)
             self.assertIsInstance(tb.get_result(tid3), KeyError)
             self.assertEqual(tb.get_traceback(tid3), trace)
 
@@ -188,3 +206,50 @@ class test_DatabaseBackend(AppCase):
 
     def test_TaskSet__repr__(self):
         self.assertIn('foo', repr(TaskSet('foo', None)))
+
+
+@skip.unless_module('sqlalchemy')
+class test_SessionManager(AppCase):
+
+    def test_after_fork(self):
+        s = SessionManager()
+        self.assertFalse(s.forked)
+        s._after_fork()
+        self.assertTrue(s.forked)
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_get_engine_forked(self, create_engine):
+        s = SessionManager()
+        s._after_fork()
+        engine = s.get_engine('dburi', foo=1)
+        create_engine.assert_called_with('dburi', foo=1)
+        self.assertIs(engine, create_engine())
+        engine2 = s.get_engine('dburi', foo=1)
+        self.assertIs(engine2, engine)
+
+    @patch('celery.backends.database.session.sessionmaker')
+    def test_create_session_forked(self, sessionmaker):
+        s = SessionManager()
+        s.get_engine = Mock(name='get_engine')
+        s._after_fork()
+        engine, session = s.create_session('dburi', short_lived_sessions=True)
+        sessionmaker.assert_called_with(bind=s.get_engine())
+        self.assertIs(session, sessionmaker())
+        sessionmaker.return_value = Mock(name='new')
+        engine, session2 = s.create_session('dburi', short_lived_sessions=True)
+        sessionmaker.assert_called_with(bind=s.get_engine())
+        self.assertIsNot(session2, session)
+        sessionmaker.return_value = Mock(name='new2')
+        engine, session3 = s.create_session(
+            'dburi', short_lived_sessions=False)
+        sessionmaker.assert_called_with(bind=s.get_engine())
+        self.assertIs(session3, session2)
+
+    def test_coverage_madness(self):
+        prev, session.register_after_fork = (
+            session.register_after_fork, None,
+        )
+        try:
+            SessionManager()
+        finally:
+            session.register_after_fork = prev

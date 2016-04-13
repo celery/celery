@@ -18,7 +18,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on :ref:`Kombu 2.5.15 <kombu:version-2.5.15>`.
 
-- Now depends on :mod:`billiard` version 2.7.3.34.
+- Now depends on :pypi:`billiard` version 2.7.3.34.
 
 - AMQP Result backend:  No longer caches queue declarations.
 
@@ -57,7 +57,9 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   debug the init scripts.
 
     Setting this will skip the daemonization step so that errors
-    printed to stderr after standard outs are closed can be seen::
+    printed to stderr after standard outs are closed can be seen:
+
+    .. code-block:: console
 
         $ C_FAKEFORK /etc/init.d/celeryd start
 
@@ -109,7 +111,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on :ref:`Kombu 2.5.13 <kombu:version-2.5.13>`.
 
-- Now depends on :mod:`billiard` 2.7.3.32
+- Now depends on :pypi:`billiard` 2.7.3.32
 
 - Fixed bug with monthly and yearly crontabs (Issue #1465).
 
@@ -132,7 +134,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 :release-date: 2013-07-05 04:30 P.M BST
 :release-by: Ask Solem
 
-- Now depends on :mod:`billiard` 2.7.3.31.
+- Now depends on :pypi:`billiard` 2.7.3.31.
 
     This version fixed a bug when running without the billiard C extension.
 
@@ -156,15 +158,15 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on :ref:`Kombu 2.5.12 <kombu:version-2.5.12>`.
 
-- Now depends on :mod:`billiard` 2.7.3.30.
+- Now depends on :pypi:`billiard` 2.7.3.30.
 
-- ``--loader`` argument no longer supported importing loaders from the
-  current directory.
+- :option:`--loader <celery --loader>` argument no longer supported
+  importing loaders from the current directory.
 
 - [Worker] Fixed memory leak when restarting after connection lost
   (Issue #1325).
 
-- [Worker] Fixed UnicodeDecodeError at startup (Issue #1373).
+- [Worker] Fixed UnicodeDecodeError at start-up (Issue #1373).
 
     Fix contributed by Jessica Tallon.
 
@@ -219,7 +221,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 :release-date: 2013-04-17 04:30:00 P.M BST
 :release-by: Ask Solem
 
-- Now depends on :mod:`billiard` 2.7.3.28
+- Now depends on :pypi:`billiard` 2.7.3.28
 
 - A Python 3 related fix managed to disable the deadlock fix
   announced in 3.0.18.
@@ -260,13 +262,13 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 :release-date: 2013-04-12 05:00:00 P.M BST
 :release-by: Ask Solem
 
-- Now depends on :mod:`kombu` 2.5.10.
+- Now depends on :pypi:`kombu` 2.5.10.
 
     See the :ref:`kombu changelog <kombu:version-2.5.10>`.
 
-- Now depends on :mod:`billiard` 2.7.3.27.
+- Now depends on :pypi:`billiard` 2.7.3.27.
 
-- Can now specify a whitelist of accepted serializers using
+- Can now specify a white-list of accepted serializers using
   the new :setting:`CELERY_ACCEPT_CONTENT` setting.
 
     This means that you can force the worker to discard messages
@@ -275,7 +277,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
         CELERY_ACCEPT_CONTENT = ['json']
 
-    you can also specify MIME types in the whitelist::
+    you can also specify MIME types in the white-list::
 
         CELERY_ACCEPT_CONTENT = ['application/json']
 
@@ -306,9 +308,10 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Worker: Optimized storing/loading the revoked tasks list (Issue #1289).
 
-    After this change the ``--statedb`` file will take up more disk space,
-    but loading from and storing the revoked tasks will be considerably
-    faster (what before took 5 minutes will now take less than a second).
+    After this change the :option:`celery worker --statedb` file will
+    take up more disk space, but loading from and storing the revoked
+    tasks will be considerably faster (what before took 5 minutes will
+    now take less than a second).
 
 - Celery will now suggest alternatives if there's a typo in the
   broker transport name (e.g. ``ampq`` -> ``amqp``).
@@ -375,7 +378,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Worker: Message decoding error log message now includes traceback
   information.
 
-- Worker: The startup banner now includes system platform.
+- Worker: The start-up banner now includes system platform.
 
 - ``celery inspect|status|control`` now gives an error if used
   with an SQL based broker transport.
@@ -410,7 +413,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     Fix contributed by Simon Engledew.
 
 - Windows: Fixed problem with the worker trying to pickle the Django settings
-  module at worker startup.
+  module at worker start-up.
 
 - generic-init.d:  No longer double quotes ``$CELERYD_CHDIR`` (Issue #1235).
 
@@ -457,9 +460,9 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
      - Girls Who Code — http://www.girlswhocode.com
      - Women Who Code — http://www.meetup.com/Women-Who-Code-SF/
 
-- Now depends on :mod:`kombu` version 2.5.7
+- Now depends on :pypi:`kombu` version 2.5.7
 
-- Now depends on :mod:`billiard` version 2.7.3.22
+- Now depends on :pypi:`billiard` version 2.7.3.22
 
 - AMQP heartbeats are now disabled by default.
 
@@ -680,10 +683,10 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Fixed a deadlock issue that could occur when the producer pool
   inherited the connection pool instance of the parent process.
 
-- The :option:`--loader` option now works again (Issue #1066).
+- The :option:`--loader <celery --loader>` option now works again (Issue #1066).
 
 - :program:`celery` umbrella command: All subcommands now supports
-  the :option:`--workdir` option (Issue #1063).
+  the :option:`--workdir <celery --workdir>` option (Issue #1063).
 
 - Groups included in chains now give GroupResults (Issue #1057)
 
@@ -780,14 +783,14 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Contributed by Craig Younkins.
 
-- Fixed problem when using earlier versions of :mod:`pytz`.
+- Fixed problem when using earlier versions of :pypi:`pytz`.
 
     Fix contributed by Vlad.
 
 - Docs updated to include the default value for the
   :setting:`CELERY_TASK_RESULT_EXPIRES` setting.
 
-- Improvements to the django-celery tutorial.
+- Improvements to the :pypi:`django-celery` tutorial.
 
     Contributed by Locker537.
 
@@ -840,7 +843,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Worker: ETA scheduler now uses millisecond precision (Issue #1040).
 
-- The ``--config`` argument to programs is now supported by all loaders.
+- The :option:`--config <celery --config>` argument to programs is
+  now supported by all loaders.
 
 - The :setting:`CASSANDRA_OPTIONS` setting has now been documented.
 
@@ -901,7 +905,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
         the files from source control and update them manually.
         You can find the init scripts for version 3.0.x at:
 
-            http://github.com/celery/celery/tree/3.0/extra/generic-init.d
+            https://github.com/celery/celery/tree/3.0/extra/generic-init.d
 
 - Now depends on billiard 2.7.3.17
 
@@ -929,7 +933,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   the working directory has been changed into.
 
 - :program:`celery worker` and :program:`celery beat` commands now respects
-  the :option:`--no-color` option (Issue #999).
+  the :option:`--no-color <celery --no-color>` option (Issue #999).
 
 - Fixed typos in eventlet examples (Issue #1000)
 
@@ -951,7 +955,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on billiard 2.7.3.14
 
-    - Fixes crash at startup when using Django and pre-1.4 projects
+    - Fixes crash at start-up when using Django and pre-1.4 projects
       (setup_environ).
 
     - Hard time limits now sends the KILL signal shortly after TERM,
@@ -1106,7 +1110,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Unit test suite now passes for PyPy 1.9.
 
-- App instances now supports the with statement.
+- App instances now supports the :keyword:`with` statement.
 
     This calls the new :meth:`@close` method at exit, which
     cleans up after the app like closing pool connections.
@@ -1145,7 +1149,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     or occasionally a ``Framing error`` exception appearing.
 
     Users of the new ``pyamqp://`` transport must upgrade to
-    :mod:`amqp` 0.9.3.
+    :pypi:`amqp` 0.9.3.
 
 - Beat: Fixed another timezone bug with interval and crontab schedules
   (Issue #943).
@@ -1242,7 +1246,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     It's important to note that crontab schedules uses UTC time by default
     unless this setting is set.
 
-    Issue #904 and django-celery #150.
+    Issue #904 and :pypi:`django-celery` #150.
 
 - ``billiard.enable_forking`` is now only set by the processes pool.
 
@@ -1314,7 +1318,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Now depends on kombu 2.3.1 + billiard 2.7.3.11
 
 - Fixed a bug with the -B option (``cannot pickle thread.lock objects``)
-  (Issue #894 + Issue #892, + django-celery #154).
+  (Issue #894 + Issue #892, + :pypi:`django-celery` #154).
 
 - The :control:`restart_pool` control command now requires the
   :setting:`CELERYD_POOL_RESTARTS` setting to be enabled
@@ -1325,7 +1329,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - ``chain.apply`` now passes args to the first task (Issue #889).
 
-- Documented previously secret options to the Django-Celery monitor
+- Documented previously secret options to the :pypi:`django-celery` monitor
   in the monitoring userguide (Issue #396).
 
 - Old changelog are now organized in separate documents for each series,
@@ -1348,9 +1352,11 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now supports AMQP heartbeats if using the new ``pyamqp://`` transport.
 
-    - The py-amqp transport requires the :mod:`amqp` library to be installed::
+    - The py-amqp transport requires the :pypi:`amqp` library to be installed:
 
-        $ pip install amqp
+        .. code-block:: console
+
+            $ pip install amqp
 
     - Then you need to set the transport URL prefix to ``pyamqp://``.
 
@@ -1375,7 +1381,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     It was discovered that the SQS transport adds objects that can't
     be pickled to the delivery info mapping, so we had to go back
-    to using the whitelist again.
+    to using the white-list again.
 
     Fixing this bug also means that the SQS transport is now working again.
 

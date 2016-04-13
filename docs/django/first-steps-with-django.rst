@@ -76,7 +76,13 @@ but there's probably no reason for that when using Django.
 We also add the Django settings module as a configuration source
 for Celery.  This means that you don't have to use multiple
 configuration files, and instead configure Celery directly
-from the Django settings.
+from the Django settings; but you can also separate them if wanted.
+
+The uppercase name-space means that all Celery configuration options
+must be specified in uppercase instead of lowercase, and start with
+``CELERY_``, so e.g. the :setting:`task_always_eager`` setting
+becomes ``CELERY_TASK_ALWAYS_EAGER``, and the :setting:`broker_url`
+setting becomes ``CELERY_BROKER_URL``.
 
 You can pass the object directly here, but using a string is better since
 then the worker doesn't have to serialize the object when using Windows
@@ -84,11 +90,11 @@ or execv:
 
 .. code-block:: python
 
-    app.config_from_object('django.conf:settings')
+    app.config_from_object('django.conf:settings', namespace='CELERY')
 
 Next, a common practice for reusable apps is to define all tasks
 in a separate ``tasks.py`` module, and Celery does have a way to
-autodiscover these modules:
+auto-discover these modules:
 
 .. code-block:: python
 
@@ -106,8 +112,8 @@ of your installed apps, following the ``tasks.py`` convention::
 
 
 This way you do not have to manually add the individual modules
-to the :setting:`CELERY_IMPORTS` setting.  The ``lambda`` so that the
-autodiscovery can happen only when needed, and so that importing your
+to the :setting:`CELERY_IMPORTS <imports>` setting.  The ``lambda`` so that the
+auto-discovery can happen only when needed, and so that importing your
 module will not evaluate the Django settings object.
 
 Finally, the ``debug_task`` example is a task that dumps
@@ -142,7 +148,7 @@ result backends that uses the Django ORM and Django Cache frameworks.
 
 To use this with your project you need to follow these four steps:
 
-1. Install the ``django-celery`` library:
+1. Install the :pypi:`django-celery` library:
 
     .. code-block:: console
 
@@ -157,26 +163,27 @@ To use this with your project you need to follow these four steps:
     by the database periodic task scheduler.  You can skip
     this step if you don't use these.
 
-    If you are using south_ for schema migrations, you'll want to:
+    If you are using Django 1.7+ or south_, you'll want to:
 
     .. code-block:: console
 
         $ python manage.py migrate djcelery
 
-    For those who are not using south, a normal ``syncdb`` will work:
+    For those who are on Django 1.6 or lower and not using south, a normal
+    ``syncdb`` will work:
 
     .. code-block:: console
 
         $ python manage.py syncdb
 
-4.  Configure celery to use the django-celery backend.
+4.  Configure celery to use the :pypi:`django-celery` backend.
 
     For the database backend you must use:
 
     .. code-block:: python
 
         app.conf.update(
-            CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend',
+            result_backend='djcelery.backends.database:DatabaseBackend',
         )
 
     For the cache backend you can use:
@@ -184,7 +191,7 @@ To use this with your project you need to follow these four steps:
     .. code-block:: python
 
         app.conf.update(
-            CELERY_RESULT_BACKEND='djcelery.backends.cache:CacheBackend',
+            result_backend='djcelery.backends.cache:CacheBackend',
         )
 
     If you have connected Celery to your Django settings then you can

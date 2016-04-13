@@ -10,12 +10,12 @@
     Parts of this module is Copyright by Werkzeug Team.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import importlib
 import sys
 
-from .five import string
+from .five import bytes_if_py2, string
 
 __all__ = ['Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate']
 
@@ -39,7 +39,7 @@ def _default_cls_attr(name, type_, cls_value):
     def __get__(self, obj, cls=None):
         return self.__getter(obj) if obj is not None else self
 
-    return type(name, (type_,), {
+    return type(bytes_if_py2(name), (type_,), {
         '__new__': __new__, '__get__': __get__,
     })
 
@@ -99,9 +99,10 @@ class Proxy(object):
         loc = object.__getattribute__(self, '_Proxy__local')
         if not hasattr(loc, '__release_local__'):
             return loc(*self.__args, **self.__kwargs)
-        try:
+        try:  # pragma: no cover
+            # not sure what this is about
             return getattr(loc, self.__name__)
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
             raise RuntimeError('no object bound to {0.__name__}'.format(self))
 
     @property
@@ -124,12 +125,6 @@ class Proxy(object):
         except RuntimeError:  # pragma: no cover
             return False
     __nonzero__ = __bool__  # Py2
-
-    def __unicode__(self):
-        try:
-            return string(self._get_current_object())
-        except RuntimeError:  # pragma: no cover
-            return repr(self)
 
     def __dir__(self):
         try:
@@ -286,12 +281,18 @@ class Proxy(object):
     def __reduce__(self):
         return self._get_current_object().__reduce__()
 
-    if not PY3:
+    if not PY3:  # pragma: no cover
         def __cmp__(self, other):
             return cmp(self._get_current_object(), other)  # noqa
 
         def __long__(self):
             return long(self._get_current_object())  # noqa
+
+        def __unicode__(self):
+            try:
+                return string(self._get_current_object())
+            except RuntimeError:  # pragma: no cover
+                return repr(self)
 
 
 class PromiseProxy(Proxy):
@@ -361,7 +362,7 @@ class PromiseProxy(Proxy):
                 finally:
                     try:
                         object.__delattr__(self, '__pending__')
-                    except AttributeError:
+                    except AttributeError:  # pragma: no cover
                         pass
             return thing
 

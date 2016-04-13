@@ -66,7 +66,6 @@ these can be specified as arguments to the decorator:
         User.objects.create(username=username, password=password)
 
 
-
 .. sidebar:: How do I import the task decorator? And what is "app"?
 
     The task decorator is available on your :class:`@Celery` application instance,
@@ -98,6 +97,42 @@ these can be specified as arguments to the decorator:
         def add(x, y):
             return x + y
 
+Bound tasks
+-----------
+
+A task being bound means the first argument to the task will always
+be the task instance (``self``), just like Python bound methods:
+
+.. code-block:: python
+
+    logger = get_task_logger(__name__)
+
+    @task(bind=True)
+    def add(self, x, y):
+        logger.info(self.request.id)
+
+Bound tasks are needed for retries (using :meth:`@Task.retry`), for
+accessing information about the current task request, and for any additional
+functionality you add to custom task base classes.
+
+Task inheritance
+----------------
+
+The ``base`` argument to the task decorator specifies the base class of the task:
+
+.. code-block:: python
+
+    import celery
+
+    class MyTask(celery.Task):
+
+        def on_failure(self, exc, task_id, args, kwargs, einfo):
+            print('{0!r} failed: {1!r}'.format(task_id, exc)
+
+    @task(base=MyTask)
+    def add(x, y):
+        raise KeyError()
+
 .. _task-names:
 
 Names
@@ -117,7 +152,7 @@ For example:
     >>> add.name
     'sum-of-two-numbers'
 
-A best practice is to use the module name as a namespace,
+A best practice is to use the module name as a name-space,
 this way names won't collide if there's already a task with that name
 defined in another module.
 
@@ -135,7 +170,7 @@ You can tell the name of the task by investigating its name attribute:
     'tasks.add'
 
 Which is exactly the name that would have been generated anyway,
-if the module name is "tasks.py":
+if the module name is :file:`tasks.py`:
 
 :file:`tasks.py`:
 
@@ -154,14 +189,15 @@ if the module name is "tasks.py":
 Automatic naming and relative imports
 -------------------------------------
 
-Relative imports and automatic name generation does not go well together,
+Relative imports and automatic name generation do not go well together,
 so if you're using relative imports you should set the name explicitly.
 
-For example if the client imports the module "myapp.tasks" as ".tasks", and
-the worker imports the module as "myapp.tasks", the generated names won't match
-and an :exc:`~@NotRegistered` error will be raised by the worker.
+For example if the client imports the module ``"myapp.tasks"``
+as ``".tasks"``, and the worker imports the module as ``"myapp.tasks"``,
+the generated names won't match and an :exc:`~@NotRegistered` error will
+be raised by the worker.
 
-This is also the case when using Django and using `project.myapp`-style
+This is also the case when using Django and using ``project.myapp``-style
 naming in ``INSTALLED_APPS``:
 
 .. code-block:: python
@@ -296,18 +332,18 @@ The request defines the following attributes:
            the client, and not by a worker.
 
 :eta: The original ETA of the task (if any).
-      This is in UTC time (depending on the :setting:`CELERY_ENABLE_UTC`
+      This is in UTC time (depending on the :setting:`enable_utc`
       setting).
 
 :expires: The original expiry time of the task (if any).
-          This is in UTC time (depending on the :setting:`CELERY_ENABLE_UTC`
+          This is in UTC time (depending on the :setting:`enable_utc`
           setting).
 
 :logfile: The file the worker logs to.  See `Logging`_.
 
 :loglevel: The current log level used.
 
-:hostname: Hostname of the worker instance executing the task.
+:hostname: Node name of the worker instance executing the task.
 
 :delivery_info: Additional message delivery information. This is a mapping
                 containing the exchange and routing key used to deliver this
@@ -323,7 +359,7 @@ The request defines the following attributes:
 
 :errback: A list of signatures to be called if this task fails.
 
-:utc: Set to true the caller has utc enabled (:setting:`CELERY_ENABLE_UTC`).
+:utc: Set to true the caller has UTC enabled (:setting:`enable_utc`).
 
 
 .. versionadded:: 3.1
@@ -381,7 +417,7 @@ module.
 
 You can also use :func:`print`, as anything written to standard
 out/-err will be redirected to the logging system (you can disable this,
-see :setting:`CELERY_REDIRECT_STDOUTS`).
+see :setting:`worker_redirect_stdouts`).
 
 .. note::
 
@@ -400,7 +436,7 @@ see :setting:`CELERY_REDIRECT_STDOUTS`).
         @app.task(bind=True)
         def add(self, x, y):
             old_outs = sys.stdout, sys.stderr
-            rlevel = self.app.conf.CELERY_REDIRECT_STDOUTS_LEVEL
+            rlevel = self.app.conf.worker_redirect_stdouts_level
             try:
                 self.app.log.redirect_stdouts_to_logger(logger, rlevel)
                 print('Adding {0} + {1}'.format(x, y))
@@ -462,7 +498,7 @@ but this will not happen if:
 
 - An ``exc`` argument was not given.
 
-    In this case the :exc:`~@MaxRetriesExceeded`
+    In this case the :exc:`~@MaxRetriesExceededError`
     exception will be raised.
 
 - There is no current exception
@@ -495,28 +531,23 @@ override this default.
     @app.task(bind=True, default_retry_delay=30 * 60)  # retry in 30 minutes.
     def add(self, x, y):
         try:
-            …
+            something_raising()
         except Exception as exc:
-            raise self.retry(exc=exc, countdown=60)  # override the default and
-                                                     # retry in 1 minute
+            # overrides the default delay to retry after 1 minute
+            raise self.retry(exc=exc, countdown=60)
 
-Autoretrying
-------------
+.. _task-autoretry:
+
+Automatic retry for known exceptions
+------------------------------------
 
 .. versionadded:: 4.0
 
-Sometimes you may want to retry a task on particular exception. To do so,
-you should wrap a task body with `try-except` statement, for example:
+Sometimes you just want to retry a task whenever a particular exception
+is raised.
 
-.. code-block:: python
-
-    @app.task
-    def div(a, b):
-        try:
-            return a / b
-        except ZeroDivisionError as exc:
-            raise div.retry(exc=exc)
-
+As this is such a common pattern we have built-in support for it
+with the
 This may not be acceptable all the time, since you may have a lot of such
 tasks.
 
@@ -525,19 +556,34 @@ Fortunately, you can tell Celery to automatically retry a task using
 
 .. code-block:: python
 
-    @app.task(autoretry_for(ZeroDivisionError,))
-    def div(a, b):
-        return a / b
+    from twitter.exceptions import FailWhaleError
+
+    @app.task(autoretry_for=(FailWhaleError,))
+    def refresh_timeline(user):
+        return twitter.refresh_timeline(user)
 
 If you want to specify custom arguments for internal `~@Task.retry`
 call, pass `retry_kwargs` argument to `~@Celery.task` decorator:
 
 .. code-block:: python
 
-    @app.task(autoretry_for=(ZeroDivisionError,),
+    @app.task(autoretry_for=(FailWhaleError,),
               retry_kwargs={'max_retries': 5})
-    def div(a, b):
-        return a / b
+    def refresh_timeline(user):
+        return twitter.refresh_timeline(user)
+
+This is provided as an alternative to manually handling the exceptions,
+and the example above will do the same as wrapping the task body
+in a :keyword:`try` ... :keyword:`except` statement, i.e.:
+
+.. code-block:: python
+
+    @app.task
+    def refresh_timeline(user):
+        try:
+            twitter.refresh_timeline(user)
+        except FailWhaleError as exc:
+            raise div.retry(exc=exc, max_retries=5)
 
 .. _task-options:
 
@@ -580,7 +626,7 @@ General
 .. attribute:: Task.max_retries
 
     The maximum number of attempted retries before giving up.
-    If the number of retries exceeds this value a :exc:`~@MaxRetriesExceeded`
+    If the number of retries exceeds this value a :exc:`~@MaxRetriesExceededError`
     exception will be raised.  *NOTE:* You have to call :meth:`~@Task.retry`
     manually, as it will not automatically retry on exception..
 
@@ -637,8 +683,8 @@ General
 
     Example: `"100/m"` (hundred tasks a minute). This will enforce a minimum
     delay of 600ms between starting two tasks on the same worker instance.
-    
-    Default is the :setting:`CELERY_DEFAULT_RATE_LIMIT` setting,
+
+    Default is the :setting:`task_default_rate_limit` setting,
     which if not specified means rate limiting for tasks is disabled by default.
 
     Note that this is a *per worker instance* rate limit, and not a global
@@ -670,7 +716,7 @@ General
 .. attribute:: Task.send_error_emails
 
     Send an email whenever a task of this type fails.
-    Defaults to the :setting:`CELERY_SEND_TASK_ERROR_EMAILS` setting.
+    Defaults to the :setting:`task_send_error_emails` setting.
     See :ref:`conf-error-mails` for more information.
 
 .. attribute:: Task.ErrorMail
@@ -681,8 +727,8 @@ General
 .. attribute:: Task.serializer
 
     A string identifying the default serialization
-    method to use. Defaults to the :setting:`CELERY_TASK_SERIALIZER`
-    setting.  Can be `pickle` `json`, `yaml`, or any custom
+    method to use. Defaults to the :setting:`task_serializer`
+    setting.  Can be `pickle`, `json`, `yaml`, or any custom
     serialization methods that have been registered with
     :mod:`kombu.serialization.registry`.
 
@@ -692,7 +738,7 @@ General
 
     A string identifying the default compression scheme to use.
 
-    Defaults to the :setting:`CELERY_MESSAGE_COMPRESSION` setting.
+    Defaults to the :setting:`task_compression` setting.
     Can be `gzip`, or `bzip2`, or any custom compression schemes
     that have been registered with the :mod:`kombu.compression` registry.
 
@@ -702,7 +748,7 @@ General
 
     The result store backend to use for this task. An instance of one of the
     backend classes in `celery.backends`. Defaults to `app.backend` which is
-    defined by the :setting:`CELERY_RESULT_BACKEND` setting.
+    defined by the :setting:`result_backend` setting.
 
 .. attribute:: Task.acks_late
 
@@ -714,7 +760,7 @@ General
     crashes in the middle of execution, which may be acceptable for some
     applications.
 
-    The global default can be overridden by the :setting:`CELERY_ACKS_LATE`
+    The global default can be overridden by the :setting:`task_acks_late`
     setting.
 
 .. _task-track-started:
@@ -723,17 +769,17 @@ General
 
     If :const:`True` the task will report its status as "started"
     when the task is executed by a worker.
-    The default value is :const:`False` as the normal behaviour is to not
+    The default value is :const:`False` as the normal behavior is to not
     report that level of granularity. Tasks are either pending, finished,
     or waiting to be retried.  Having a "started" status can be useful for
     when there are long running tasks and there is a need to report which
     task is currently running.
 
     The host name and process id of the worker executing the task
-    will be available in the state metadata (e.g. `result.info['pid']`)
+    will be available in the state meta-data (e.g. `result.info['pid']`)
 
     The global default can be overridden by the
-    :setting:`CELERY_TRACK_STARTED` setting.
+    :setting:`task_track_started` setting.
 
 
 .. seealso::
@@ -753,7 +799,7 @@ There are several *result backends* to choose from, and they all have
 different strengths and weaknesses (see :ref:`task-result-backends`).
 
 During its lifetime a task will transition through several possible states,
-and each state may have arbitrary metadata attached to it.  When a task
+and each state may have arbitrary meta-data attached to it.  When a task
 moves into a new state the previous state is
 forgotten about, but some transitions can be deducted, (e.g. a task now
 in the :state:`FAILED` state, is implied to have been in the
@@ -776,7 +822,7 @@ Result Backends
 If you want to keep track of tasks or need the return values, then Celery
 must store or send the states somewhere so that they can be retrieved later.
 There are several built-in result backends to choose from: SQLAlchemy/Django ORM,
-Memcached, RabbitMQ/QPid (rpc), MongoDB, and Redis -- or you can define your own.
+Memcached, RabbitMQ/QPid (``rpc``), MongoDB, and Redis -- or you can define your own.
 
 No backend works well for every use case.
 You should read about the strengths and weaknesses of each backend, and choose
@@ -800,7 +846,7 @@ poll for new states.
 
 The messages are transient (non-persistent) by default, so the results will
 disappear if the broker restarts. You can configure the result backend to send
-persistent messages using the :setting:`CELERY_RESULT_PERSISTENT` setting.
+persistent messages using the :setting:`result_persistent` setting.
 
 Database Result Backend
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -841,8 +887,8 @@ STARTED
 Task has been started.
 Not reported by default, to enable please see :attr:`@Task.track_started`.
 
-:metadata: `pid` and `hostname` of the worker process executing
-           the task.
+:meta-data: `pid` and `hostname` of the worker process executing
+            the task.
 
 .. state:: SUCCESS
 
@@ -851,7 +897,7 @@ SUCCESS
 
 Task has been successfully executed.
 
-:metadata: `result` contains the return value of the task.
+:meta-data: `result` contains the return value of the task.
 :propagates: Yes
 :ready: Yes
 
@@ -862,9 +908,9 @@ FAILURE
 
 Task execution resulted in failure.
 
-:metadata: `result` contains the exception occurred, and `traceback`
-           contains the backtrace of the stack at the point when the
-           exception was raised.
+:meta-data: `result` contains the exception occurred, and `traceback`
+            contains the backtrace of the stack at the point when the
+            exception was raised.
 :propagates: Yes
 
 .. state:: RETRY
@@ -874,9 +920,9 @@ RETRY
 
 Task is being retried.
 
-:metadata: `result` contains the exception that caused the retry,
-           and `traceback` contains the backtrace of the stack at the point
-           when the exceptions was raised.
+:meta-data: `result` contains the exception that caused the retry,
+            and `traceback` contains the backtrace of the stack at the point
+            when the exceptions was raised.
 :propagates: No
 
 .. state:: REVOKED
@@ -913,7 +959,7 @@ Use :meth:`~@Task.update_state` to update a task's state:.
 Here I created the state `"PROGRESS"`, which tells any application
 aware of this state that the task is currently in progress, and also where
 it is in the process by having `current` and `total` counts as part of the
-state metadata.  This can then be used to create e.g. progress bars.
+state meta-data.  This can then be used to create e.g. progress bars.
 
 .. _pickling_exceptions:
 
@@ -1036,7 +1082,7 @@ messages are redelivered to.
 
 .. _`Dead Letter Exchanges`: http://www.rabbitmq.com/dlx.html
 
-Reject can also be used to requeue messages, but please be very careful
+Reject can also be used to re-queue messages, but please be very careful
 when using this as it can easily result in an infinite message loop.
 
 Example using reject when a task causes an out of memory condition:
@@ -1065,7 +1111,7 @@ Example using reject when a task causes an out of memory condition:
         except Exception as exc:
             raise self.retry(exc, countdown=10)
 
-Example requeuing the message:
+Example requeueing the message:
 
 .. code-block:: python
 
@@ -1173,7 +1219,7 @@ that can be added to tasks like this:
     @app.task(base=DatabaseTask)
     def process_rows():
         for row in process_rows.db.table.all():
-            …
+            process_row(row)
 
 The ``db`` attribute of the ``process_rows`` task will then
 always stay the same in each process.
@@ -1264,7 +1310,7 @@ Handlers
 How it works
 ============
 
-Here comes the technical details, this part isn't something you need to know,
+Here come the technical details. This part isn't something you need to know,
 but you may be interested.
 
 All defined tasks are listed in a registry.  The registry contains
@@ -1286,10 +1332,10 @@ This is the list of tasks built-in to celery.  Note that tasks
 will only be registered when the module they are defined in is imported.
 
 The default loader imports any modules listed in the
-:setting:`CELERY_IMPORTS` setting.
+:setting:`imports` setting.
 
 The entity responsible for registering your task in the registry is the
-metaclass: :class:`~celery.task.base.TaskType`.
+meta-class: :class:`~celery.task.base.TaskType`.
 
 If you want to register your task manually you can mark the
 task as :attr:`~@Task.abstract`:
@@ -1327,10 +1373,10 @@ wastes time and resources.
 .. code-block:: python
 
     @app.task(ignore_result=True)
-    def mytask(…):
+    def mytask():
         something()
 
-Results can even be disabled globally using the :setting:`CELERY_IGNORE_RESULT`
+Results can even be disabled globally using the :setting:`task_ignore_result`
 setting.
 
 .. _task-disable-rate-limits:
@@ -1342,12 +1388,12 @@ Disabling rate limits altogether is recommended if you don't have
 any tasks using them.  This is because the rate limit subsystem introduces
 quite a lot of complexity.
 
-Set the :setting:`CELERY_DISABLE_RATE_LIMITS` setting to globally disable
+Set the :setting:`worker_disable_rate_limits` setting to globally disable
 rate limits:
 
 .. code-block:: python
 
-    CELERY_DISABLE_RATE_LIMITS = True
+    worker_disable_rate_limits = True
 
 You find additional optimization tips in the
 :ref:`Optimizing Guide <guide-optimizing>`.
@@ -1423,8 +1469,8 @@ Granularity
 -----------
 
 The task granularity is the amount of computation needed by each subtask.
-In general it is better to split the problem up into many small tasks, than
-have a few long running tasks.
+In general it is better to split the problem up into many small tasks rather
+than have a few long running tasks.
 
 With smaller tasks you can process more tasks in parallel and the tasks
 won't run long enough to block the worker from processing other waiting tasks.
@@ -1549,7 +1595,7 @@ Let's have a look at another example:
 
     @transaction.commit_on_success
     def create_article(request):
-        article = Article.objects.create(…)
+        article = Article.objects.create()
         expand_abbreviations.delay(article.pk)
 
 This is a Django view creating an article object in the database,
@@ -1569,7 +1615,7 @@ depending on state from the current transaction*:
     @transaction.commit_manually
     def create_article(request):
         try:
-            article = Article.objects.create(…)
+            article = Article.objects.create()
         except:
             transaction.rollback()
             raise
@@ -1596,7 +1642,7 @@ depending on state from the current transaction*:
 Example
 =======
 
-Let's take a real world example; A blog where comments posted needs to be
+Let's take a real world example: a blog where comments posted need to be
 filtered for spam.  When the comment is created, the spam filter runs in the
 background, so the user doesn't have to wait for it to finish.
 
@@ -1604,8 +1650,8 @@ I have a Django blog application allowing comments
 on blog posts.  I'll describe parts of the models/views and tasks for this
 application.
 
-blog/models.py
---------------
+``blog/models.py``
+------------------
 
 The comment model looks like this:
 
@@ -1636,8 +1682,8 @@ to the database, then I launch the spam filter task in the background.
 
 .. _task-example-blog-views:
 
-blog/views.py
--------------
+``blog/views.py``
+-----------------
 
 .. code-block:: python
 
@@ -1676,7 +1722,7 @@ blog/views.py
 
 
 To filter spam in comments I use `Akismet`_, the service
-used to filter spam in comments posted to the free weblog platform
+used to filter spam in comments posted to the free blog platform
 `Wordpress`.  `Akismet`_ is free for personal use, but for commercial use you
 need to pay.  You have to sign up to their service to get an API key.
 
@@ -1685,8 +1731,8 @@ To make API calls to `Akismet`_ I use the `akismet.py`_ library written by
 
 .. _task-example-blog-tasks:
 
-blog/tasks.py
--------------
+``blog/tasks.py``
+-----------------
 
 .. code-block:: python
 

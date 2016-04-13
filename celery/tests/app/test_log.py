@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 import logging
@@ -9,6 +9,7 @@ from tempfile import mktemp
 
 from celery import signals
 from celery.app.log import TaskFormatter
+from celery.five import python_2_unicode_compatible
 from celery.utils.log import LoggingProxy
 from celery.utils import uuid
 from celery.utils.log import (
@@ -20,10 +21,9 @@ from celery.utils.log import (
     in_sighandler,
     logger_isa,
 )
-from celery.tests.case import (
-    AppCase, Mock, SkipTest, mask_modules,
-    get_handlers, override_stdouts, patch, wrap_logger, restore_logging,
-)
+
+from case.utils import get_logger_handlers
+from celery.tests.case import AppCase, Mock, mock, patch, skip
 
 
 class test_TaskFormatter(AppCase):
@@ -100,20 +100,20 @@ class test_ColorFormatter(AppCase):
         value = KeyError()
         fe.return_value = value
         self.assertIs(x.formatException(value), value)
-        self.assertTrue(fe.called)
-        self.assertFalse(safe_str.called)
+        fe.assert_called()
+        safe_str.assert_not_called()
 
     @patch('logging.Formatter.formatException')
     @patch('celery.utils.log.safe_str')
-    def test_formatException_string(self, safe_str, fe):
+    def test_formatException_bytes(self, safe_str, fe):
         x = ColorFormatter()
-        fe.return_value = 'HELLO'
+        fe.return_value = b'HELLO'
         try:
             raise Exception()
         except Exception:
             self.assertTrue(x.formatException(sys.exc_info()))
         if sys.version_info[0] == 2:
-            self.assertTrue(safe_str.called)
+            safe_str.assert_called()
 
     @patch('logging.Formatter.format')
     def test_format_object(self, _format):
@@ -135,6 +135,7 @@ class test_ColorFormatter(AppCase):
                 safe_str.side_effect = None
         safe_str.side_effect = on_safe_str
 
+        @python_2_unicode_compatible
         class Record(object):
             levelname = 'ERROR'
             msg = 'HELLO'
@@ -155,10 +156,9 @@ class test_ColorFormatter(AppCase):
         self.assertIn('<Unrepresentable', msg)
         self.assertEqual(safe_str.call_count, 1)
 
+    @skip.if_python3()
     @patch('celery.utils.log.safe_str')
     def test_format_raises_no_color(self, safe_str):
-        if sys.version_info[0] == 3:
-            raise SkipTest('py3k')
         x = ColorFormatter(use_color=False)
         record = Mock()
         record.levelname = 'ERROR'
@@ -184,14 +184,14 @@ class test_default_logger(AppCase):
         logger = get_logger(base_logger.name)
         self.assertIs(logger.parent, logging.root)
 
+    @mock.restore_logging()
     def test_setup_logging_subsystem_misc(self):
-        with restore_logging():
-            self.app.log.setup_logging_subsystem(loglevel=None)
+        self.app.log.setup_logging_subsystem(loglevel=None)
 
+    @mock.restore_logging()
     def test_setup_logging_subsystem_misc2(self):
-        with restore_logging():
-            self.app.conf.CELERYD_HIJACK_ROOT_LOGGER = True
-            self.app.log.setup_logging_subsystem()
+        self.app.conf.worker_hijack_root_logger = True
+        self.app.log.setup_logging_subsystem()
 
     def test_get_default_logger(self):
         self.assertTrue(self.app.log.get_default_logger())
@@ -199,21 +199,22 @@ class test_default_logger(AppCase):
     def test_configure_logger(self):
         logger = self.app.log.get_default_logger()
         self.app.log._configure_logger(logger, sys.stderr, None, '', False)
+        self.app.log._configure_logger(None, sys.stderr, None, '', False)
         logger.handlers[:] = []
 
+    @mock.restore_logging()
     def test_setup_logging_subsystem_colorize(self):
-        with restore_logging():
-            self.app.log.setup_logging_subsystem(colorize=None)
-            self.app.log.setup_logging_subsystem(colorize=True)
+        self.app.log.setup_logging_subsystem(colorize=None)
+        self.app.log.setup_logging_subsystem(colorize=True)
 
+    @mock.restore_logging()
     def test_setup_logging_subsystem_no_mputil(self):
-        with restore_logging():
-            with mask_modules('billiard.util'):
-                self.app.log.setup_logging_subsystem()
+        with mock.mask_modules('billiard.util'):
+            self.app.log.setup_logging_subsystem()
 
     def _assertLog(self, logger, logmsg, loglevel=logging.ERROR):
 
-        with wrap_logger(logger, loglevel=loglevel) as sio:
+        with mock.wrap_logger(logger, loglevel=loglevel) as sio:
             logger.log(loglevel, logmsg)
             return sio.getvalue().strip()
 
@@ -225,30 +226,30 @@ class test_default_logger(AppCase):
         val = self._assertLog(logger, logmsg, loglevel=loglevel)
         return self.assertFalse(val, reason)
 
+    @mock.restore_logging()
     def test_setup_logger(self):
-        with restore_logging():
-            logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
-                                       root=False, colorize=True)
-            logger.handlers = []
-            self.app.log.already_setup = False
-            logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
-                                       root=False, colorize=None)
-            self.assertIs(
-                get_handlers(logger)[0].stream, sys.__stderr__,
-                'setup_logger logs to stderr without logfile argument.',
-            )
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False, colorize=True)
+        logger.handlers = []
+        self.app.log.already_setup = False
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False, colorize=None)
+        self.assertIs(
+            get_logger_handlers(logger)[0].stream, sys.__stderr__,
+            'setup_logger logs to stderr without logfile argument.',
+        )
 
+    @mock.restore_logging()
     def test_setup_logger_no_handlers_stream(self):
-        with restore_logging():
-            l = self.get_logger()
-            l.handlers = []
+        l = self.get_logger()
+        l.handlers = []
 
-            with override_stdouts() as outs:
-                stdout, stderr = outs
-                l = self.setup_logger(logfile=sys.stderr,
-                                      loglevel=logging.INFO, root=False)
-                l.info('The quick brown fox...')
-                self.assertIn('The quick brown fox...', stderr.getvalue())
+        with mock.stdouts() as outs:
+            stdout, stderr = outs
+            l = self.setup_logger(logfile=sys.stderr,
+                                  loglevel=logging.INFO, root=False)
+            l.info('The quick brown fox...')
+            self.assertIn('The quick brown fox...', stderr.getvalue())
 
     @patch('os.fstat')
     def test_setup_logger_no_handlers_file(self, *args):
@@ -256,7 +257,7 @@ class test_default_logger(AppCase):
         _open = ('builtins.open' if sys.version_info[0] == 3
                  else '__builtin__.open')
         with patch(_open) as osopen:
-            with restore_logging():
+            with mock.restore_logging():
                 files = defaultdict(StringIO)
 
                 def open_file(filename, *args, **kwargs):
@@ -272,63 +273,63 @@ class test_default_logger(AppCase):
                     logfile=tempfile, loglevel=logging.INFO, root=False,
                 )
                 self.assertIsInstance(
-                    get_handlers(l)[0], logging.FileHandler,
+                    get_logger_handlers(l)[0], logging.FileHandler,
                 )
                 self.assertIn(tempfile, files)
 
+    @mock.restore_logging()
     def test_redirect_stdouts(self):
-        with restore_logging():
-            logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
-                                       root=False)
-            try:
-                with wrap_logger(logger) as sio:
-                    self.app.log.redirect_stdouts_to_logger(
-                        logger, loglevel=logging.ERROR,
-                    )
-                    logger.error('foo')
-                    self.assertIn('foo', sio.getvalue())
-                    self.app.log.redirect_stdouts_to_logger(
-                        logger, stdout=False, stderr=False,
-                    )
-            finally:
-                sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
-
-    def test_logging_proxy(self):
-        with restore_logging():
-            logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
-                                       root=False)
-
-            with wrap_logger(logger) as sio:
-                p = LoggingProxy(logger, loglevel=logging.ERROR)
-                p.close()
-                p.write('foo')
-                self.assertNotIn('foo', sio.getvalue())
-                p.closed = False
-                p.write('foo')
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
+        try:
+            with mock.wrap_logger(logger) as sio:
+                self.app.log.redirect_stdouts_to_logger(
+                    logger, loglevel=logging.ERROR,
+                )
+                logger.error('foo')
                 self.assertIn('foo', sio.getvalue())
-                lines = ['baz', 'xuzzy']
-                p.writelines(lines)
-                for line in lines:
-                    self.assertIn(line, sio.getvalue())
-                p.flush()
-                p.close()
-                self.assertFalse(p.isatty())
+                self.app.log.redirect_stdouts_to_logger(
+                    logger, stdout=False, stderr=False,
+                )
+        finally:
+            sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
-                with override_stdouts() as (stdout, stderr):
-                    with in_sighandler():
-                        p.write('foo')
-                        self.assertTrue(stderr.getvalue())
+    @mock.restore_logging()
+    def test_logging_proxy(self):
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
 
-    def test_logging_proxy_recurse_protection(self):
-        with restore_logging():
-            logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
-                                       root=False)
+        with mock.wrap_logger(logger) as sio:
             p = LoggingProxy(logger, loglevel=logging.ERROR)
-            p._thread.recurse_protection = True
-            try:
-                self.assertIsNone(p.write('FOOFO'))
-            finally:
-                p._thread.recurse_protection = False
+            p.close()
+            p.write('foo')
+            self.assertNotIn('foo', sio.getvalue())
+            p.closed = False
+            p.write('foo')
+            self.assertIn('foo', sio.getvalue())
+            lines = ['baz', 'xuzzy']
+            p.writelines(lines)
+            for line in lines:
+                self.assertIn(line, sio.getvalue())
+            p.flush()
+            p.close()
+            self.assertFalse(p.isatty())
+
+            with mock.stdouts() as (stdout, stderr):
+                with in_sighandler():
+                    p.write('foo')
+                    self.assertTrue(stderr.getvalue())
+
+    @mock.restore_logging()
+    def test_logging_proxy_recurse_protection(self):
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
+        p = LoggingProxy(logger, loglevel=logging.ERROR)
+        p._thread.recurse_protection = True
+        try:
+            self.assertIsNone(p.write('FOOFO'))
+        finally:
+            p._thread.recurse_protection = False
 
 
 class test_task_logger(test_default_logger):

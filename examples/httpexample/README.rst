@@ -18,14 +18,14 @@ To execute the task you could use curl::
 
 which then gives the expected JSON response::
 
-    {"status": "success": "retval": 100}
+    {'status': 'success': 'retval': 100}
 
 
 To execute this http callback task asynchronously you could fire up
-a python shell with a properly configured celery and do:
+a python shell with a properly configured celery and do::
 
     >>> from celery.task.http import URL
-    >>> res = URL("http://localhost:8000/multiply").get_async(x=10, y=10)
+    >>> res = URL('http://localhost:8000/multiply').get_async(x=10, y=10)
     >>> res.wait()
     100
 

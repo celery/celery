@@ -225,13 +225,17 @@ built-in result backends to choose from: `SQLAlchemy`_/`Django`_ ORM,
 
 For this example you will use the `rpc` result backend, which sends states
 back as transient messages.  The backend is specified via the ``backend`` argument to
-:class:`@Celery`, (or via the :setting:`CELERY_RESULT_BACKEND` setting if
-you choose to use a configuration module)::
+:class:`@Celery`, (or via the :setting:`task_result_backend` setting if
+you choose to use a configuration module):
+
+.. code-block:: python
 
     app = Celery('tasks', backend='rpc://', broker='amqp://')
 
 Or if you want to use Redis as the result backend, but still use RabbitMQ as
-the message broker (a popular combination)::
+the message broker (a popular combination):
+
+.. code-block:: python
 
     app = Celery('tasks', backend='redis://localhost', broker='amqp://')
 
@@ -239,31 +243,41 @@ To read more about result backends please see :ref:`task-result-backends`.
 
 Now with the result backend configured, let's call the task again.
 This time you'll hold on to the :class:`~@AsyncResult` instance returned
-when you call a task::
+when you call a task:
+
+.. code-block:: pycon
 
     >>> result = add.delay(4, 4)
 
 The :meth:`~@AsyncResult.ready` method returns whether the task
-has finished processing or not::
+has finished processing or not:
+
+.. code-block:: pycon
 
     >>> result.ready()
     False
 
 You can wait for the result to complete, but this is rarely used
-since it turns the asynchronous call into a synchronous one::
+since it turns the asynchronous call into a synchronous one:
+
+.. code-block:: pycon
 
     >>> result.get(timeout=1)
     8
 
 In case the task raised an exception, :meth:`~@AsyncResult.get` will
 re-raise the exception, but you can override this by specifying
-the ``propagate`` argument::
+the ``propagate`` argument:
+
+.. code-block:: pycon
 
     >>> result.get(propagate=False)
 
 
 If the task raised an exception you can also gain access to the
-original traceback::
+original traceback:
+
+.. code-block:: pycon
 
     >>> result.traceback
     …
@@ -275,7 +289,7 @@ See :mod:`celery.result` for the complete result object reference.
 Configuration
 =============
 
-Celery, like a consumer appliance doesn't need much to be operated.
+Celery, like a consumer appliance, doesn't need much to be operated.
 It has an input and an output, where you must connect the input to a broker and maybe
 the output to a result backend if so wanted.  But if you look closely at the back
 there's a lid revealing loads of sliders, dials and buttons: this is the configuration.
@@ -289,22 +303,22 @@ can be configured. You can read about the options in the
 The configuration can be set on the app directly or by using a dedicated
 configuration module.
 As an example you can configure the default serializer used for serializing
-task payloads by changing the :setting:`CELERY_TASK_SERIALIZER` setting:
+task payloads by changing the :setting:`task_serializer` setting:
 
 .. code-block:: python
 
-    app.conf.CELERY_TASK_SERIALIZER = 'json'
+    app.conf.task_serializer = 'json'
 
 If you are configuring many settings at once you can use ``update``:
 
 .. code-block:: python
 
     app.conf.update(
-        CELERY_TASK_SERIALIZER='json',
-        CELERY_ACCEPT_CONTENT=['json'],  # Ignore other content
-        CELERY_RESULT_SERIALIZER='json',
-        CELERY_TIMEZONE='Europe/Oslo',
-        CELERY_ENABLE_UTC=True,
+        task_serializer='json',
+        accept_content=['json'],  # Ignore other content
+        result_serializer='json',
+        timezone='Europe/Oslo',
+        enable_utc=True,
     )
 
 For larger projects using a dedicated configuration module is useful,
@@ -332,14 +346,14 @@ current directory or on the Python path, it could look like this:
 
 .. code-block:: python
 
-    BROKER_URL = 'amqp://'
-    CELERY_RESULT_BACKEND = 'rpc://'
+    broker_url = 'amqp://'
+    result_backend = 'rpc://'
 
-    CELERY_TASK_SERIALIZER = 'json'
-    CELERY_RESULT_SERIALIZER = 'json'
-    CELERY_ACCEPT_CONTENT=['json']
-    CELERY_TIMEZONE = 'Europe/Oslo'
-    CELERY_ENABLE_UTC = True
+    task_serializer = 'json'
+    result_serializer = 'json'
+    accept_content = ['json']
+    timezone = 'Europe/Oslo'
+    enable_utc = True
 
 To verify that your configuration file works properly, and doesn't
 contain any syntax errors, you can try to import it:
@@ -357,7 +371,7 @@ route a misbehaving task to a dedicated queue:
 
 .. code-block:: python
 
-    CELERY_ROUTES = {
+    task_routes = {
         'tasks.add': 'low-priority',
     }
 
@@ -369,7 +383,7 @@ instead, so that only 10 tasks of this type can be processed in a minute
 
 .. code-block:: python
 
-    CELERY_ANNOTATIONS = {
+    task_annotations = {
         'tasks.add': {'rate_limit': '10/m'}
     }
 
@@ -384,7 +398,7 @@ for the task at runtime:
         new rate limit set successfully
 
 See :ref:`guide-routing` to read more about task routing,
-and the :setting:`CELERY_ANNOTATIONS` setting for more about annotations,
+and the :setting:`task_annotations` setting for more about annotations,
 or :ref:`guide-monitoring` for more about remote control commands,
 and how to monitor what your workers are doing.
 
@@ -407,7 +421,8 @@ Worker does not start: Permission Error
 
 - If you're using Debian, Ubuntu or other Debian-based distributions:
 
-    Debian recently renamed the ``/dev/shm`` special file to ``/run/shm``.
+    Debian recently renamed the :file:`/dev/shm` special file
+    to :file:`/run/shm`.
 
     A simple workaround is to create a symbolic link:
 
@@ -417,15 +432,16 @@ Worker does not start: Permission Error
 
 - Others:
 
-    If you provide any of the :option:`--pidfile`, :option:`--logfile` or
-    ``--statedb`` arguments, then you must make sure that they
-    point to a file/directory that is writable and readable by the
-    user starting the worker.
+    If you provide any of the :option:`--pidfile <celery worker --pidfile>`,
+    :option:`--logfile <celery worker --logfile>` or
+    :option:`--statedb <celery worker --statedb>` arguments, then you must
+    make sure that they point to a file/directory that is writable and
+    readable by the user starting the worker.
 
 Result backend does not work or tasks are always in ``PENDING`` state.
 ----------------------------------------------------------------------
 
-All tasks are ``PENDING`` by default, so the state would have been
+All tasks are :state:`PENDING` by default, so the state would have been
 better named "unknown".  Celery does not update any state when a task
 is sent, and any task with no history is assumed to be pending (you know
 the task id after all).
@@ -435,7 +451,7 @@ the task id after all).
     Enabling this option will force the worker to skip updating
     states.
 
-2) Make sure the :setting:`CELERY_IGNORE_RESULT` setting is not enabled.
+2) Make sure the :setting:`task_ignore_result` setting is not enabled.
 
 3) Make sure that you do not have any old workers still running.
 
@@ -445,8 +461,8 @@ the task id after all).
     An old worker that is not configured with the expected result backend
     may be running and is hijacking the tasks.
 
-    The `--pidfile` argument can be set to an absolute path to make sure
-    this doesn't happen.
+    The :option:`--pidfile <celery worker --pidfile>` argument can be set to
+    an absolute path to make sure this doesn't happen.
 
 4) Make sure the client is configured with the right backend.
 
@@ -454,7 +470,7 @@ the task id after all).
     than the worker, you will not be able to receive the result,
     so make sure the backend is correct by inspecting it:
 
-    .. code-block:: python
+    .. code-block:: pycon
 
-        >>> result = task.delay(…)
+        >>> result = task.delay()
         >>> print(result.backend)

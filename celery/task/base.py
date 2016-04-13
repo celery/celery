@@ -9,13 +9,16 @@
     and shouldn't be used in new applications.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from kombu import Exchange
 
 from celery import current_app
 from celery.app.task import Context, Task as BaseTask, _reprtask
-from celery.five import class_property, reclassmethod, with_metaclass
+from celery.five import (
+    class_property, reclassmethod,
+    python_2_unicode_compatible, with_metaclass,
+)
 from celery.local import Proxy
 from celery.schedules import maybe_schedule
 from celery.utils.log import get_task_logger
@@ -30,6 +33,7 @@ _COMPAT_CLASSMETHODS = (
 )
 
 
+@python_2_unicode_compatible
 class _CompatShared(object):
 
     def __init__(self, name, cons):
@@ -124,6 +128,7 @@ class TaskType(type):
 
 
 @with_metaclass(TaskType)
+@python_2_unicode_compatible
 class Task(BaseTask):
     """Deprecated Task base class.
 
@@ -148,8 +153,8 @@ class Task(BaseTask):
     disable_error_emails = False
 
     from_config = BaseTask.from_config + (
-        ('exchange_type', 'CELERY_DEFAULT_EXCHANGE_TYPE'),
-        ('delivery_mode', 'CELERY_DEFAULT_DELIVERY_MODE'),
+        ('exchange_type', 'task_default_exchange_type'),
+        ('delivery_mode', 'task_default_delivery_mode'),
     )
 
     # In old Celery the @task decorator didn't exist, so one would create
@@ -192,10 +197,10 @@ class Task(BaseTask):
                 ...
 
             # establish fresh connection
-            with celery.connection() as conn:
+            with celery.connection_for_write() as conn:
                 ...
         """
-        return self._get_app().connection()
+        return self._get_app().connection_for_write()
 
     def get_publisher(self, connection=None, exchange=None,
                       exchange_type=None, **options):
@@ -205,7 +210,7 @@ class Task(BaseTask):
 
         .. code-block:: python
 
-            with app.connection() as conn:
+            with app.connection_for_write() as conn:
                 with app.amqp.Producer(conn) as prod:
                     my_task.apply_async(producer=prod)
 
@@ -244,7 +249,7 @@ class Task(BaseTask):
 
 class PeriodicTask(Task):
     """A periodic task is a task that adds itself to the
-    :setting:`CELERYBEAT_SCHEDULE` setting."""
+    :setting:`beat_schedule` setting."""
     abstract = True
     ignore_result = True
     relative = False
@@ -260,7 +265,7 @@ class PeriodicTask(Task):
 
     @classmethod
     def on_bound(cls, app):
-        app.conf.CELERYBEAT_SCHEDULE[cls.name] = {
+        app.conf.beat_schedule[cls.name] = {
             'task': cls.name,
             'schedule': cls.run_every,
             'args': (),
@@ -276,5 +281,5 @@ def task(*args, **kwargs):
 
 
 def periodic_task(*args, **options):
-    """Deprecated decorator, please use :setting:`CELERYBEAT_SCHEDULE`."""
+    """Deprecated decorator, please use :setting:`beat_schedule`."""
     return task(**dict({'base': PeriodicTask}, **options))

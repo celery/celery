@@ -1,12 +1,10 @@
-from __future__ import absolute_import
-
-import warnings
-
-from functools import wraps
+from __future__ import absolute_import, unicode_literals
 
 from kombu.pidbox import Mailbox
+from vine.utils import wraps
 
 from celery.app import control
+from celery.exceptions import DuplicateNodenameWarning
 from celery.utils import uuid
 from celery.tests.case import AppCase
 
@@ -48,14 +46,15 @@ class test_flatten_reply(AppCase):
             {'foo@example.com': {'hello': 20}},
             {'bar@example.com': {'hello': 30}}
         ]
-        with warnings.catch_warnings(record=True) as w:
+        with self.assertWarns(DuplicateNodenameWarning) as w:
             nodes = control.flatten_reply(reply)
-            self.assertIn(
-                'multiple replies',
-                str(w[-1].message),
-            )
-            self.assertIn('foo@example.com', nodes)
-            self.assertIn('bar@example.com', nodes)
+
+        self.assertIn(
+            'Received multiple replies from node name: foo@example.com.',
+            str(w.warning)
+        )
+        self.assertIn('foo@example.com', nodes)
+        self.assertIn('bar@example.com', nodes)
 
 
 class test_inspect(AppCase):

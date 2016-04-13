@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import errno
 
@@ -9,11 +9,9 @@ from celery import beat
 from celery.five import keys, string_t
 from celery.schedules import schedule
 from celery.utils import uuid
-from celery.tests.case import AppCase, Mock, SkipTest, call, patch
+from celery.utils.objects import Bunch
 
-
-class Object(object):
-    pass
+from celery.tests.case import AppCase, Mock, call, patch, skip
 
 
 class MockShelve(dict):
@@ -82,6 +80,22 @@ class test_ScheduleEntry(AppCase):
     def test_repr(self):
         entry = self.create_entry()
         self.assertIn('<Entry:', repr(entry))
+
+    def test_reduce(self):
+        entry = self.create_entry(schedule=timedelta(seconds=10))
+        fun, args = entry.__reduce__()
+        res = fun(*args)
+        self.assertEqual(res.schedule, entry.schedule)
+
+    def test_lt(self):
+        e1 = self.create_entry(schedule=timedelta(seconds=10))
+        e2 = self.create_entry(schedule=timedelta(seconds=2))
+        # order doesn't matter, see comment in __lt__
+        res1 = e1 < e2  # noqa
+        try:
+            res2 = e1 < object()  # noqa
+        except TypeError:
+            pass
 
     def test_update(self):
         entry = self.create_entry()
@@ -160,7 +174,7 @@ class test_Scheduler(AppCase):
 
         scheduler = mScheduler(app=self.app)
         scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app))
-        self.assertTrue(foo.apply_async.called)
+        foo.apply_async.assert_called()
 
     def test_should_sync(self):
 
@@ -179,10 +193,10 @@ class test_Scheduler(AppCase):
         s._do_sync = Mock()
         s.should_sync.return_value = False
         s.apply_async(s.Entry(task=not_sync.name, app=self.app))
-        self.assertFalse(s._do_sync.called)
+        s._do_sync.assert_not_called()
 
     def test_should_sync_increments_sync_every_counter(self):
-        self.app.conf.CELERYBEAT_SYNC_EVERY = 2
+        self.app.conf.beat_sync_every = 2
 
         @self.app.task(shared=False)
         def not_sync():
@@ -198,10 +212,10 @@ class test_Scheduler(AppCase):
         s.apply_async(s.Entry(task=not_sync.name, app=self.app))
         s._do_sync.assert_called_with()
 
-        self.app.conf.CELERYBEAT_SYNC_EVERY = 0
+        self.app.conf.beat_sync_every = 0
 
     def test_sync_task_counter_resets_on_do_sync(self):
-        self.app.conf.CELERYBEAT_SYNC_EVERY = 1
+        self.app.conf.beat_sync_every = 1
 
         @self.app.task(shared=False)
         def not_sync():
@@ -214,7 +228,7 @@ class test_Scheduler(AppCase):
         s.apply_async(s.Entry(task=not_sync.name, app=self.app))
         self.assertEqual(s._tasks_since_sync, 0)
 
-        self.app.conf.CELERYBEAT_SYNC_EVERY = 0
+        self.app.conf.beat_sync_every = 0
 
     @patch('celery.app.base.Celery.send_task')
     def test_send_task(self, send_task):
@@ -243,26 +257,26 @@ class test_Scheduler(AppCase):
     def test_ensure_connection_error_handler(self, ensure):
         s = mScheduler(app=self.app)
         self.assertTrue(s._ensure_connected())
-        self.assertTrue(ensure.called)
+        ensure.assert_called()
         callback = ensure.call_args[0][0]
 
         callback(KeyError(), 5)
 
     def test_install_default_entries(self):
-        self.app.conf.CELERY_TASK_RESULT_EXPIRES = None
-        self.app.conf.CELERYBEAT_SCHEDULE = {}
+        self.app.conf.result_expires = None
+        self.app.conf.beat_schedule = {}
         s = mScheduler(app=self.app)
         s.install_default_entries({})
         self.assertNotIn('celery.backend_cleanup', s.data)
         self.app.backend.supports_autoexpire = False
 
-        self.app.conf.CELERY_TASK_RESULT_EXPIRES = 30
+        self.app.conf.result_expires = 30
         s = mScheduler(app=self.app)
         s.install_default_entries({})
         self.assertIn('celery.backend_cleanup', s.data)
 
         self.app.backend.supports_autoexpire = True
-        self.app.conf.CELERY_TASK_RESULT_EXPIRES = 31
+        self.app.conf.result_expires = 31
         s = mScheduler(app=self.app)
         s.install_default_entries({})
         self.assertNotIn('celery.backend_cleanup', s.data)
@@ -281,7 +295,7 @@ class test_Scheduler(AppCase):
         scheduler.add(name='test_due_tick_SchedulingError',
                       schedule=always_due)
         self.assertEqual(scheduler.tick(), 0)
-        self.assertTrue(error.called)
+        error.assert_called()
 
     def test_pending_tick(self):
         scheduler = mScheduler(app=self.app)
@@ -337,8 +351,9 @@ def create_persistent_scheduler(shelv=None):
 
     class MockPersistentScheduler(beat.PersistentScheduler):
         sh = shelv
-        persistence = Object()
-        persistence.open = lambda *a, **kw: shelv
+        persistence = Bunch(
+            open=lambda *a, **kw: shelv,
+        )
         tick_raises_exit = False
         shutdown_service = None
 
@@ -470,12 +485,8 @@ class test_Service(AppCase):
 
 class test_EmbeddedService(AppCase):
 
+    @skip.unless_module('_multiprocessing', name='multiprocessing')
     def test_start_stop_process(self):
-        try:
-            import _multiprocessing  # noqa
-        except ImportError:
-            raise SkipTest('multiprocessing not available')
-
         from billiard.process import Process
 
         s = beat.EmbeddedService(self.app)

@@ -13,7 +13,7 @@ Introduction
 :program:`celery beat` is a scheduler.  It kicks off tasks at regular intervals,
 which are then executed by the worker nodes available in the cluster.
 
-By default the entries are taken from the :setting:`CELERYBEAT_SCHEDULE` setting,
+By default the entries are taken from the :setting:`beat_schedule` setting,
 but custom stores can also be used, like storing the entries
 in an SQL database.
 
@@ -28,22 +28,20 @@ Time Zones
 ==========
 
 The periodic task schedules uses the UTC time zone by default,
-but you can change the time zone used using the :setting:`CELERY_TIMEZONE`
+but you can change the time zone used using the :setting:`timezone`
 setting.
 
 An example time zone could be `Europe/London`:
 
 .. code-block:: python
 
-    CELERY_TIMEZONE = 'Europe/London'
-
+    timezone = 'Europe/London'
 
 This setting must be added to your app, either by configuration it directly
-using (``app.conf.CELERY_TIMEZONE = 'Europe/London'``), or by adding
+using (``app.conf.timezone = 'Europe/London'``), or by adding
 it to your configuration module if you have set one up using
 ``app.config_from_object``.  See :ref:`celerytut-configuration` for
 more information about configuration options.
-
 
 The default scheduler (storing the schedule in the :file:`celerybeat-schedule`
 file) will automatically detect that the time zone has changed, and so will
@@ -58,7 +56,7 @@ schedule manually.
 
     For Django users the time zone specified in the ``TIME_ZONE`` setting
     will be used, or you can specify a custom time zone for Celery alone
-    by using the :setting:`CELERY_TIMEZONE` setting.
+    by using the :setting:`timezone` setting.
 
     The database scheduler will not reset when timezone related settings
     change, so you must do this manually:
@@ -103,26 +101,25 @@ beat schedule list.
         print(arg)
 
 
-Setting these up from within the ``on_after_configure`` handler means
+Setting these up from within the :data:`~@on_after_configure` handler means
 that we will not evaluate the app at module level when using ``test.s()``.
 
-The `@add_periodic_task` function will add the entry to the
-:setting:`CELERYBEAT_SCHEDULE` setting behind the scenes, which also
+The :meth:`~@add_periodic_task` function will add the entry to the
+:setting:`beat_schedule` setting behind the scenes, which also
 can be used to set up periodic tasks manually:
 
 Example: Run the `tasks.add` task every 30 seconds.
 
 .. code-block:: python
 
-    CELERYBEAT_SCHEDULE = {
+    app.conf.beat_schedule = {
         'add-every-30-seconds': {
             'task': 'tasks.add',
             'schedule': 30.0,
             'args': (16, 16)
         },
     }
-
-    CELERY_TIMEZONE = 'UTC'
+    app.conf.timezone = 'UTC'
 
 
 .. note::
@@ -131,7 +128,7 @@ Example: Run the `tasks.add` task every 30 seconds.
     please see :ref:`celerytut-configuration`.  You can either
     set these options on your app directly or you can keep
     a separate module for configuration.
-    
+
     If you want to use a single item tuple for `args`, don't forget
     that the constructor is a comma and not a pair of parentheses.
 
@@ -185,7 +182,8 @@ Available Fields
 
     By default :class:`~datetime.timedelta` schedules are scheduled
     "by the clock". This means the frequency is rounded to the nearest
-    second, minute, hour or day depending on the period of the timedelta.
+    second, minute, hour or day depending on the period of the
+    :class:`~datetime.timedelta`.
 
     If `relative` is true the frequency is not rounded and will be
     relative to the time when :program:`celery beat` was started.
@@ -203,7 +201,7 @@ the :class:`~celery.schedules.crontab` schedule type:
 
     from celery.schedules import crontab
 
-    CELERYBEAT_SCHEDULE = {
+    app.conf.beat_schedule = {
         # Executes every Monday morning at 7:30 A.M
         'add-every-monday-morning': {
             'task': 'tasks.add',
@@ -263,7 +261,7 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 | ``crontab(0, 0,``                       | Execute on the first and third weeks of    |
 |         ``day_of_month='1-7,15-21')``   | the month.                                 |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0, day_of_month='11',``    | Execute on 11th of May every year.         |
+| ``crontab(0, 0, day_of_month='11',``    | Execute on the 11th of May every year.     |
 |          ``month_of_year='5')``         |                                            |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(0, 0,``                       | Execute on the first month of every        |
@@ -285,7 +283,7 @@ sunset, dawn or dusk, you can use the
 
     from celery.schedules import solar
 
-    CELERYBEAT_SCHEDULE = {
+    app.conf.beat_schedule = {
         # Executes at sunset in Melbourne
         'add-at-melbourne-sunset': {
             'task': 'tasks.add',
@@ -386,8 +384,8 @@ To start the :program:`celery beat` service:
     $ celery -A proj beat
 
 You can also start embed `beat` inside the worker by enabling
-workers `-B` option, this is convenient if you will never run
-more than one worker node, but it's not commonly used and for that
+workers :option:`-B <celery worker -B>` option, this is convenient if you'll
+never run more than one worker node, but it's not commonly used and for that
 reason is not recommended for production use:
 
 .. code-block:: console
@@ -413,17 +411,19 @@ location for this file:
 Using custom scheduler classes
 ------------------------------
 
-Custom scheduler classes can be specified on the command-line (the `-S`
-argument).  The default scheduler is :class:`celery.beat.PersistentScheduler`,
+Custom scheduler classes can be specified on the command-line (the
+:option:`-S <celery beat -S>` argument).
+
+The default scheduler is :class:`celery.beat.PersistentScheduler`,
 which is simply keeping track of the last run times in a local database file
 (a :mod:`shelve`).
 
-`django-celery` also ships with a scheduler that stores the schedule in the
-Django database:
+:pypi:`django-celery` also ships with a scheduler that stores the schedule in
+the Django database:
 
 .. code-block:: console
 
     $ celery -A proj beat -S djcelery.schedulers.DatabaseScheduler
 
-Using `django-celery`'s scheduler you can add, modify and remove periodic
+Using :pypi:`django-celery`'s scheduler you can add, modify and remove periodic
 tasks from the Django Admin.

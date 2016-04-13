@@ -1,4 +1,6 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
+
+from celery.five import bytes_if_py2
 
 from celery.utils.imports import (
     qualname,
@@ -19,21 +21,24 @@ class test_import_utils(Case):
         imp.return_value = None
         with self.assertRaises(NotAPackage):
             find_module('foo.bar.baz', imp=imp)
+        self.assertTrue(find_module('celery.worker.request'))
 
     def test_qualname(self):
-        Class = type('Fox', (object,), {'__module__': 'quick.brown'})
+        Class = type(bytes_if_py2('Fox'), (object,), {
+            '__module__': 'quick.brown',
+        })
         self.assertEqual(qualname(Class), 'quick.brown.Fox')
         self.assertEqual(qualname(Class()), 'quick.brown.Fox')
 
     @patch('celery.utils.imports.reload')
     def test_reload_from_cwd(self, reload):
         reload_from_cwd('foo')
-        self.assertTrue(reload.called)
+        reload.assert_called()
 
     def test_reload_from_cwd_custom_reloader(self):
         reload = Mock()
         reload_from_cwd('foo', reload)
-        self.assertTrue(reload.called)
+        reload.assert_called()
 
     def test_module_file(self):
         m1 = Mock()

@@ -51,8 +51,6 @@ Contents
     changelog
     whatsnew-4.0
     whatsnew-3.1
-    whatsnew-3.0
-    whatsnew-2.5
     reference/index
     internals/index
     history/index

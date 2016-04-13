@@ -2,7 +2,6 @@
 from __future__ import absolute_import, unicode_literals
 
 from contextlib import contextmanager
-from functools import wraps
 try:
     from urllib import addinfourl
 except ImportError:  # py3k
@@ -10,6 +9,7 @@ except ImportError:  # py3k
 
 from kombu.utils.encoding import from_utf8
 from kombu.utils.json import dumps
+from vine.utils import wraps
 
 from celery.five import WhateverIO, items
 from celery.task import http
@@ -142,7 +142,7 @@ class test_HttpDispatch(AppCase):
 class test_URL(AppCase):
 
     def test_URL_get_async(self):
-        self.app.conf.CELERY_ALWAYS_EAGER = True
+        self.app.conf.task_always_eager = True
         with mock_urlopen(success_response(100)):
             d = http.URL(
                 'http://example.com/mul', app=self.app,
@@ -150,7 +150,7 @@ class test_URL(AppCase):
             self.assertEqual(d.get(), 100)
 
     def test_URL_post_async(self):
-        self.app.conf.CELERY_ALWAYS_EAGER = True
+        self.app.conf.task_always_eager = True
         with mock_urlopen(success_response(100)):
             d = http.URL(
                 'http://example.com/mul', app=self.app,

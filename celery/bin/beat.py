@@ -37,14 +37,43 @@ The :program:`celery beat` command.
     Logging level, choose between `DEBUG`, `INFO`, `WARNING`,
     `ERROR`, `CRITICAL`, or `FATAL`.
 
+.. cmdoption:: --pidfile
+
+    Optional file used to store the process pid.
+
+    The program will not start if this file already exists
+    and the pid is still alive.
+
+.. cmdoption:: --uid
+
+    User id, or user name of the user to run as after detaching.
+
+.. cmdoption:: --gid
+
+    Group id, or group name of the main group to change to after
+    detaching.
+
+.. cmdoption:: --umask
+
+    Effective umask (in octal) of the process after detaching.  Inherits
+    the umask of the parent process by default.
+
+.. cmdoption:: --workdir
+
+    Optional directory to change to after detaching.
+
+.. cmdoption:: --executable
+
+    Executable to use for the detached process.
+
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from functools import partial
 
 from celery.platforms import detached, maybe_drop_privileges
 
-from celery.bin.base import Command, Option, daemon_options
+from celery.bin.base import Command, daemon_options
 
 __all__ = ['beat']
 
@@ -78,19 +107,15 @@ class beat(Command):
         else:
             return beat().run()
 
-    def get_options(self):
+    def prepare_arguments(self, parser):
         c = self.app.conf
-
-        return (
-            (Option('--detach', action='store_true'),
-             Option('-s', '--schedule',
-                    default=c.CELERYBEAT_SCHEDULE_FILENAME),
-             Option('--max-interval', type='float'),
-             Option('-S', '--scheduler', dest='scheduler_cls'),
-             Option('-l', '--loglevel', default=c.CELERYBEAT_LOG_LEVEL)) +
-            daemon_options(default_pidfile='celerybeat.pid') +
-            tuple(self.app.user_options['beat'])
-        )
+        parser.add_option('--detach', action='store_true')
+        parser.add_option('-s', '--schedule', default=c.beat_schedule_filename)
+        parser.add_option('--max-interval', type='float')
+        parser.add_option('-S', '--scheduler', dest='scheduler_cls')
+        parser.add_option('-l', '--loglevel', default='WARN')
+        daemon_options(parser, default_pidfile='celerybeat.pid')
+        parser.add_options(self.app.user_options['beat'])
 
 
 def main(app=None):

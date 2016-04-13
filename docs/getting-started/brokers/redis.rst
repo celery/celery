@@ -23,20 +23,33 @@ Configuration
 =============
 
 Configuration is easy, just configure the location of
-your Redis database::
+your Redis database:
 
-    BROKER_URL = 'redis://localhost:6379/0'
+.. code-block:: python
 
-Where the URL is in the format of::
+    app.conf.broker_url = 'redis://localhost:6379/0'
+
+Where the URL is in the format of:
+
+.. code-block:: text
 
     redis://:password@hostname:port/db_number
 
 all fields after the scheme are optional, and will default to localhost on port 6379,
 using database 0.
 
-If a unix socket connection should be used, the URL needs to be in the format::
+If a unix socket connection should be used, the URL needs to be in the format:
+
+.. code-block:: text
 
     redis+socket:///path/to/redis.sock
+
+Specifying a different database number when using a unix socket is possible
+by adding the ``virtual_host`` parameter to the URL:
+
+.. code-block:: text
+
+    redis+socket:///path/to/redis.sock?virtual_host=db_number
 
 .. _redis-visibility_timeout:
 
@@ -47,9 +60,11 @@ The visibility timeout defines the number of seconds to wait
 for the worker to acknowledge the task before the message is redelivered
 to another worker.  Be sure to see :ref:`redis-caveats` below.
 
-This option is set via the :setting:`BROKER_TRANSPORT_OPTIONS` setting::
+This option is set via the :setting:`broker_transport_options` setting:
 
-    BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}  # 1 hour.
+.. code-block:: python
+
+    app.conf.broker_transport_options = {'visibility_timeout': 3600}  # 1 hour.
 
 The default visibility timeout for Redis is 1 hour.
 
@@ -61,7 +76,7 @@ Results
 If you also want to store the state and return values of tasks in Redis,
 you should configure these settings::
 
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+    app.conf.result_backend = 'redis://localhost:6379/0'
 
 For a complete list of options supported by the Redis result backend, see
 :ref:`conf-redis-result-backend`
@@ -79,9 +94,11 @@ Fanout prefix
 Broadcast messages will be seen by all virtual hosts by default.
 
 You have to set a transport option to prefix the messages so that
-they will only be received by the active virtual host::
+they will only be received by the active virtual host:
 
-    BROKER_TRANSPORT_OPTIONS = {'fanout_prefix': True}
+.. code-block:: python
+
+    app.conf.broker_transport_options = {'fanout_prefix': True}
 
 Note that you will not be able to communicate with workers running older
 versions or workers that does not have this setting enabled.
@@ -97,9 +114,11 @@ Fanout patterns
 Workers will receive all task related events by default.
 
 To avoid this you must set the ``fanout_patterns`` fanout option so that
-the workers may only subscribe to worker related events::
+the workers may only subscribe to worker related events:
 
-    BROKER_TRANSPORT_OPTIONS = {'fanout_patterns': True}
+.. code-block:: python
+
+    app.conf.broker_transport_options = {'fanout_patterns': True}
 
 Note that this change is backward incompatible so all workers in the
 cluster must have this option enabled, or else they will not be able to
@@ -129,9 +148,11 @@ Periodic tasks will not be affected by the visibility timeout,
 as this is a concept separate from ETA/countdown.
 
 You can increase this timeout by configuring a transport option
-with the same name::
+with the same name:
 
-    BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 43200}
+.. code-block:: python
+
+    app.conf.broker_transport_options = {'visibility_timeout': 43200}
 
 The value must be an int describing the number of seconds.
 
@@ -140,10 +161,12 @@ Key eviction
 
 Redis may evict keys from the database in some situations
 
-If you experience an error like::
+If you experience an error like:
 
-    InconsistencyError, Probably the key ('_kombu.binding.celery') has been
+.. code-block:: text
+
+    InconsistencyError: Probably the key ('_kombu.binding.celery') has been
     removed from the Redis database.
 
-you may want to configure the redis-server to not evict keys by setting
+then you may want to configure the redis-server to not evict keys by setting
 the ``timeout`` parameter to 0 in the redis configuration file.

@@ -1,7 +1,7 @@
-:Version: 4.0.0a1 (0today8)
+:Version: 4.0.0rc2 (0today8)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
-:Source: http://github.com/celery/celery/
+:Source: https://github.com/celery/celery/
 :Keywords: task queue, job queue, asynchronous, async, rabbitmq, amqp, redis,
   python, webhooks, queue, distributed
 
@@ -23,12 +23,14 @@ message on the queue, the broker then delivers the message to a worker.
 A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
-Celery is a library written in Python, but the protocol can be implemented in
-any language.  So far there's RCelery_ for the Ruby programming language, and a
-`PHP client`, but language interoperability can also be achieved
-by using webhooks.
+Celery is written in Python, but the protocol can be implemented in any
+language.  In addition to Python there's node-celery_ for Node.js,
+and a `PHP client`_.
 
-.. _RCelery: http://leapfrogdevelopment.github.com/rcelery/
+Language interoperability can also be achieved
+by `using webhooks`_.
+
+.. _node-celery: https://github.com/mher/node-celery
 .. _`PHP client`: https://github.com/gjedeer/celery-php
 .. _`using webhooks`:
     http://docs.celeryproject.org/en/latest/userguide/remote-tasks.html
@@ -133,7 +135,7 @@ It supports…
         - AMQP, Redis
         - memcached, MongoDB
         - SQLAlchemy, Django ORM
-        - Apache Cassandra, IronCache
+        - Apache Cassandra, IronCache, Elasticsearch
 
     - **Serialization**
 
@@ -187,7 +189,7 @@ database connections at ``fork``.
 .. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
-.. _`tornado-celery`: http://github.com/mher/tornado-celery/
+.. _`tornado-celery`: https://github.com/mher/tornado-celery/
 
 .. _celery-documentation:
 

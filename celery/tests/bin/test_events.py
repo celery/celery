@@ -1,8 +1,8 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery.bin import events
 
-from celery.tests.case import AppCase, SkipTest, patch, _old_patch
+from celery.tests.case import AppCase, patch, _old_patch, skip
 
 
 class MockCommand(object):
@@ -29,12 +29,8 @@ class test_events(AppCase):
         self.assertEqual(self.ev.run(dump=True), 'me dumper, you?')
         self.assertIn('celery events:dump', proctitle.last[0])
 
+    @skip.unless_module('curses', import_errors=(ImportError, OSError))
     def test_run_top(self):
-        try:
-            import curses  # noqa
-        except (ImportError, OSError):
-            raise SkipTest('curses monitor requires curses')
-
         @_old_patch('celery.events.cursesmon', 'evtop',
                     lambda **kw: 'me top, you?')
         @_old_patch('celery.bin.events', 'set_process_title', proctitle)
@@ -60,11 +56,11 @@ class test_events(AppCase):
     def test_run_cam_detached(self, detached, evcam):
         self.ev.prog_name = 'celery events'
         self.ev.run_evcam('myapp.Camera', detach=True)
-        self.assertTrue(detached.called)
-        self.assertTrue(evcam.called)
+        detached.assert_called()
+        evcam.assert_called()
 
     def test_get_options(self):
-        self.assertTrue(self.ev.get_options())
+        self.assertFalse(self.ev.get_options())
 
     @_old_patch('celery.bin.events', 'events', MockCommand)
     def test_main(self):

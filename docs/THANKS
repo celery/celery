@@ -2,5 +2,6 @@ Thanks to Rune Halvorsen <runeh@opera.com> for the name.
 Thanks to Anton Tsigularov <antont@opera.com> for the previous name (crunchy)
     which we had to abandon because of an existing project with that name.
 Thanks to Armin Ronacher for the Sphinx theme.
-Thanks to Brian K. Jones for bunny.py (http://github.com/bkjones/bunny), the
+Thanks to Brian K. Jones for bunny.py (https://github.com/bkjones/bunny), the
     tool that inspired 'celery amqp'.
+Thanks to Barry Pedersonn for amqplib (the project py-amqp forked).

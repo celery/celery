@@ -1,11 +1,11 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import time
 import itertools
 
 from billiard.einfo import ExceptionInfo
 
-from celery.tests.case import AppCase, SkipTest
+from celery.tests.case import AppCase, skip
 
 
 def do_something(i):
@@ -23,13 +23,10 @@ def raise_something(i):
         return ExceptionInfo()
 
 
+@skip.unless_module('multiprocessing')
 class test_TaskPool(AppCase):
 
     def setup(self):
-        try:
-            __import__('multiprocessing')
-        except ImportError:
-            raise SkipTest('multiprocessing not supported')
         from celery.concurrency.prefork import TaskPool
         self.TaskPool = TaskPool
 

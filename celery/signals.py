@@ -12,7 +12,8 @@
     See :ref:`signals` for more information.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
+
 from .utils.dispatch import Signal
 
 __all__ = ['before_task_publish', 'after_task_publish',
@@ -49,6 +50,12 @@ task_failure = Signal(providing_args=[
 ])
 task_revoked = Signal(providing_args=[
     'request', 'terminated', 'signum', 'expired',
+])
+task_rejected = Signal(providing_args=[
+    'message', 'exc',
+])
+task_unknown = Signal(providing_args=[
+    'message', 'exc', 'name', 'id',
 ])
 celeryd_init = Signal(providing_args=['instance', 'conf', 'options'])
 celeryd_after_setup = Signal(providing_args=['instance', 'conf'])

@@ -9,7 +9,7 @@
     ``celery.app.base.Celery.task``.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from celery._state import current_app, current_task as current
 from celery.five import LazyModule, recreate_module
@@ -17,7 +17,7 @@ from celery.local import Proxy
 
 __all__ = [
     'BaseTask', 'Task', 'PeriodicTask', 'task', 'periodic_task',
-    'group', 'chord', 'subtask', 'TaskSet',
+    'group', 'chord', 'subtask',
 ]
 
 
@@ -29,7 +29,6 @@ if STATICA_HACK:  # pragma: no cover
     # they contain.
     from celery.canvas import group, chord, subtask
     from .base import BaseTask, Task, PeriodicTask, task, periodic_task
-    from .sets import TaskSet
 
 
 class module(LazyModule):
@@ -44,7 +43,6 @@ old_module, new_module = recreate_module(  # pragma: no cover
         'celery.task.base': ['BaseTask', 'Task', 'PeriodicTask',
                              'task', 'periodic_task'],
         'celery.canvas': ['group', 'chord', 'subtask'],
-        'celery.task.sets': ['TaskSet'],
     },
     base=module,
     __package__='celery.task',

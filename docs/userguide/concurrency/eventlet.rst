@@ -31,7 +31,7 @@ often limited to a few processes per CPU.  With Eventlet you can efficiently
 spawn hundreds, or thousands of green threads.  In an informal test with a
 feed hub system the Eventlet pool could fetch and process hundreds of feeds
 every second, while the prefork pool spent 14 seconds processing 100
-feeds.  Note that is one of the applications evented I/O is especially good
+feeds.  Note that this is one of the applications async I/O is especially good
 at (asynchronous HTTP requests).  You may want a mix of both Eventlet and
 prefork workers, and route tasks according to compatibility or
 what works best.
@@ -39,8 +39,8 @@ what works best.
 Enabling Eventlet
 =================
 
-You can enable the Eventlet pool by using the ``-P`` option to
-:program:`celery worker`:
+You can enable the Eventlet pool by using the :option:`celery worker -P`
+worker option.
 
 .. code-block:: console
 
@@ -58,8 +58,8 @@ some examples taking use of Eventlet support.
 .. _`epoll(4)`: http://linux.die.net/man/4/epoll
 .. _`libevent`: http://monkey.org/~provos/libevent/
 .. _`highly scalable non-blocking I/O`:
-    http://en.wikipedia.org/wiki/Asynchronous_I/O#Select.28.2Fpoll.29_loops
-.. _`Coroutines`: http://en.wikipedia.org/wiki/Coroutine
+    https://en.wikipedia.org/wiki/Asynchronous_I/O#Select.28.2Fpoll.29_loops
+.. _`Coroutines`: https://en.wikipedia.org/wiki/Coroutine
 .. _`Eventlet examples`:
     https://github.com/celery/celery/tree/master/examples/eventlet
 

@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import sys
 
@@ -6,11 +6,9 @@ from celery.concurrency.base import BasePool
 from celery.five import monotonic
 from celery.worker import state
 from celery.worker import autoscale
-from celery.tests.case import AppCase, Mock, patch, sleepdeprived
+from celery.utils.objects import Bunch
 
-
-class Object(object):
-    pass
+from celery.tests.case import AppCase, Mock, mock, patch
 
 
 class MockPool(BasePool):
@@ -19,8 +17,7 @@ class MockPool(BasePool):
 
     def __init__(self, *args, **kwargs):
         super(MockPool, self).__init__(*args, **kwargs)
-        self._pool = Object()
-        self._pool._processes = self.limit
+        self._pool = Bunch(_processes=self.limit)
 
     def grow(self, n=1):
         self._pool._processes += n
@@ -92,7 +89,7 @@ class test_Autoscaler(AppCase):
         x.stop()
         self.assertFalse(x.joined)
 
-    @sleepdeprived(autoscale)
+    @mock.sleepdeprived(module=autoscale)
     def test_body(self):
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
@@ -103,14 +100,14 @@ class test_Autoscaler(AppCase):
         x.body()
         x.body()
         self.assertEqual(x.pool.num_processes, 10)
-        self.assertTrue(worker.consumer._update_prefetch_count.called)
+        worker.consumer._update_prefetch_count.assert_called()
         state.reserved_requests.clear()
         x.body()
         self.assertEqual(x.pool.num_processes, 10)
         x._last_scale_up = monotonic() - 10000
         x.body()
         self.assertEqual(x.pool.num_processes, 3)
-        self.assertTrue(worker.consumer._update_prefetch_count.called)
+        worker.consumer._update_prefetch_count.assert_called()
 
     def test_run(self):
 
@@ -134,7 +131,7 @@ class test_Autoscaler(AppCase):
         x.scale_up(3)
         x._last_action = monotonic() - 10000
         x.pool.shrink_raises_exception = True
-        x.scale_down(1)
+        x._shrink(1)
 
     @patch('celery.worker.autoscale.debug')
     def test_shrink_raises_ValueError(self, debug):
@@ -196,3 +193,25 @@ class test_Autoscaler(AppCase):
             sys.stderr = p
         _exit.assert_called_with(1)
         self.assertTrue(stderr.write.call_count)
+
+    @mock.sleepdeprived(module=autoscale)
+    def test_no_negative_scale(self):
+        total_num_processes = []
+        worker = Mock(name='worker')
+        x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
+        x.body()  # the body func scales up or down
+
+        for i in range(35):
+            state.reserved_requests.add(i)
+            x.body()
+            total_num_processes.append(self.pool.num_processes)
+
+        for i in range(35):
+            state.reserved_requests.remove(i)
+            x.body()
+            total_num_processes.append(self.pool.num_processes)
+
+        self. assertTrue(
+            all(x.min_concurrency <= i <= x.max_concurrency
+                for i in total_num_processes)
+        )

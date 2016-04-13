@@ -9,7 +9,7 @@
 Installation
 ============
 
-For IronMQ support, you'll need the [iron_celery](http://github.com/iron-io/iron_celery) library:
+For IronMQ support, you'll need the [iron_celery](https://github.com/iron-io/iron_celery) library:
 
 .. code-block:: console
 
@@ -31,7 +31,7 @@ First, you'll need to import the iron_celery library right after you import Cele
 
 You have to specify IronMQ in the broker URL::
 
-    BROKER_URL = 'ironmq://ABCDEFGHIJKLMNOPQRST:ZYXK7NiynGlTogH8Nj+P9nlE73sq3@'
+    broker_url = 'ironmq://ABCDEFGHIJKLMNOPQRST:ZYXK7NiynGlTogH8Nj+P9nlE73sq3@'
 
 where the URL format is::
 
@@ -67,4 +67,4 @@ This will default to a cache named "Celery", if you want to change that::
 More Information
 ================
 
-You can find more information in the [iron_celery README](http://github.com/iron-io/iron_celery).
+You can find more information in the [iron_celery README](https://github.com/iron-io/iron_celery).

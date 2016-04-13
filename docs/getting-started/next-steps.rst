@@ -94,7 +94,7 @@ When the worker starts you should see a banner and some messages::
 
 -- The *broker* is the URL you specified in the broker argument in our ``celery``
 module, you can also specify a different broker on the command-line by using
-the :option:`-b` option.
+the :option:`-b <celery -b>` option.
 
 -- *Concurrency* is the number of prefork worker process used
 to process your tasks concurrently, when all of these are busy doing work
@@ -102,7 +102,8 @@ new tasks will have to wait for one of the tasks to finish before
 it can be processed.
 
 The default concurrency number is the number of CPU's on that machine
-(including cores), you can specify a custom number using :option:`-c` option.
+(including cores), you can specify a custom number using
+the :option:`celery worker -c` option.
 There is no recommended value, as the optimal number depends on a number of
 factors, but if your tasks are mostly I/O-bound then you can try to increase
 it, experimentation has shown that adding more than twice the number
@@ -122,11 +123,11 @@ the :ref:`Monitoring and Management guide <guide-monitoring>`.
 tasks from.  The worker can be told to consume from several queues
 at once, and this is used to route messages to specific workers
 as a means for Quality of Service, separation of concerns,
-and emulating priorities, all described in the :ref:`Routing Guide
+and prioritization, all described in the :ref:`Routing Guide
 <guide-routing>`.
 
 You can get a complete list of command-line arguments
-by passing in the `--help` flag:
+by passing in the :option:`--help <celery --help>` flag:
 
 .. code-block:: console
 
@@ -137,7 +138,7 @@ These options are described in more detailed in the :ref:`Workers Guide <guide-w
 Stopping the worker
 ~~~~~~~~~~~~~~~~~~~
 
-To stop the worker simply hit Ctrl+C.  A list of signals supported
+To stop the worker simply hit :kbd:`Control-c`.  A list of signals supported
 by the worker is detailed in the :ref:`Workers Guide <guide-workers>`.
 
 In the background
@@ -217,16 +218,16 @@ reference.
 
 .. _app-argument:
 
-About the :option:`--app` argument
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+About the :option:`--app <celery --app>` argument
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The :option:`--app` argument specifies the Celery app instance to use,
-it must be in the form of ``module.path:attribute``
+The :option:`--app <celery --app>` argument specifies the Celery app instance
+to use, it must be in the form of ``module.path:attribute``
 
 But it also supports a shortcut form If only a package name is specified,
 where it'll try to search for the app instance, in the following order:
 
-With ``--app=proj``:
+With :option:`--app=proj <celery --app>`:
 
 1) an attribute named ``proj.app``, or
 2) an attribute named ``proj.celery``, or
@@ -369,7 +370,7 @@ states. The stages of a typical task can be::
     PENDING -> STARTED -> SUCCESS
 
 The started state is a special state that is only recorded if the
-:setting:`CELERY_TRACK_STARTED` setting is enabled, or if the
+:setting:`task_track_started` setting is enabled, or if the
 ``@task(track_started=True)`` option is set for the task.
 
 The pending state is actually not a recorded state, but rather
@@ -397,8 +398,8 @@ Calling tasks is described in detail in the
 
 .. _designing-workflows:
 
-*Canvas*: Designing Workflows
-=============================
+*Canvas*: Designing Work-flows
+==============================
 
 You just learned how to call a task using the tasks ``delay`` method,
 and this is often all you need, but sometimes you may want to pass the
@@ -489,7 +490,7 @@ To get to that I must introduce the canvas primitives…
 The Primitives
 --------------
 
-.. topic:: \ 
+.. topic:: \
 
     .. hlist::
         :columns: 2
@@ -502,7 +503,7 @@ The Primitives
         - :ref:`chunks <canvas-chunks>`
 
 These primitives are signature objects themselves, so they can be combined
-in any number of ways to compose complex workflows.
+in any number of ways to compose complex work-flows.
 
 .. note::
 
@@ -596,7 +597,7 @@ can be combined almost however you want, e.g::
 
     >>> upload_document.s(file) | group(apply_filter.s() for filter in filters)
 
-Be sure to read more about workflows in the :ref:`Canvas <guide-canvas>` user
+Be sure to read more about work-flows in the :ref:`Canvas <guide-canvas>` user
 guide.
 
 Routing
@@ -605,13 +606,13 @@ Routing
 Celery supports all of the routing facilities provided by AMQP,
 but it also supports simple routing where messages are sent to named queues.
 
-The :setting:`CELERY_ROUTES` setting enables you to route tasks by name
+The :setting:`task_routes` setting enables you to route tasks by name
 and keep everything centralized in one location:
 
 .. code-block:: python
 
     app.conf.update(
-        CELERY_ROUTES = {
+        task_routes = {
             'proj.tasks.add': {'queue': 'hipri'},
         },
     )
@@ -625,7 +626,7 @@ with the ``queue`` argument to ``apply_async``:
     >>> add.apply_async((2, 2), queue='hipri')
 
 You can then make a worker consume from this queue by
-specifying the :option:`-Q` option:
+specifying the :option:`celery worker -Q` option:
 
 .. code-block:: console
 
@@ -662,8 +663,8 @@ This is implemented by using broadcast messaging, so all remote
 control commands are received by every worker in the cluster.
 
 You can also specify one or more workers to act on the request
-using the :option:`--destination` option, which is a comma separated
-list of worker host names:
+using the :option:`--destination <celery inspect --destination>` option,
+which is a comma separated list of worker host names:
 
 .. code-block:: console
 
@@ -732,11 +733,11 @@ All times and dates, internally and in messages uses the UTC timezone.
 When the worker receives a message, for example with a countdown set it
 converts that UTC time to local time.  If you wish to use
 a different timezone than the system timezone then you must
-configure that using the :setting:`CELERY_TIMEZONE` setting:
+configure that using the :setting:`timezone` setting:
 
 .. code-block:: python
 
-    app.conf.CELERY_TIMEZONE = 'Europe/London'
+    app.conf.timezone = 'Europe/London'
 
 Optimization
 ============
@@ -749,7 +750,7 @@ If you have strict fair scheduling requirements, or want to optimize
 for throughput then you should read the :ref:`Optimizing Guide
 <guide-optimizing>`.
 
-If you're using RabbitMQ then you should install the :mod:`librabbitmq`
+If you're using RabbitMQ then you should install the :pypi:`librabbitmq`
 module, which is an AMQP client implemented in C:
 
 .. code-block:: console

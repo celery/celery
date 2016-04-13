@@ -17,8 +17,8 @@ Creating a Celery instance::
 
     >>> from celery import Celery
     >>> app = Celery()
-    >>> app.config_from_object("celeryconfig")
-    >>> #app.config_from_envvar("CELERY_CONFIG_MODULE")
+    >>> app.config_from_object('celeryconfig')
+    >>> #app.config_from_envvar('CELERY_CONFIG_MODULE')
 
 
 Creating tasks:
@@ -51,21 +51,21 @@ Starting a worker:
 
 .. code-block:: python
 
-    worker = celery.Worker(loglevel="INFO")
+    worker = celery.Worker(loglevel='INFO')
 
 Getting access to the configuration:
 
 .. code-block:: python
 
-    celery.conf.CELERY_ALWAYS_EAGER = True
-    celery.conf["CELERY_ALWAYS_EAGER"] = True
+    celery.conf.task_always_eager = True
+    celery.conf['task_always_eager'] = True
 
 
 Controlling workers::
 
     >>> celery.control.inspect().active()
-    >>> celery.control.rate_limit(add.name, "100/m")
-    >>> celery.control.broadcast("shutdown")
+    >>> celery.control.rate_limit(add.name, '100/m')
+    >>> celery.control.broadcast('shutdown')
     >>> celery.control.discard_all()
 
 Other interesting attributes::
@@ -135,15 +135,15 @@ Aliases (Pending deprecation)
 * celery.conf.* -> {app.conf}
 
     **NOTE**: All configuration keys are now named the same
-    as in the configuration. So the key "CELERY_ALWAYS_EAGER"
+    as in the configuration. So the key "task_always_eager"
     is accessed as::
 
-        >>> app.conf.CELERY_ALWAYS_EAGER
+        >>> app.conf.task_always_eager
 
     instead of::
 
         >>> from celery import conf
-        >>> conf.ALWAYS_EAGER
+        >>> conf.always_eager
 
     * .get_queues -> {app.amqp.get_queues}
 

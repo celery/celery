@@ -3,7 +3,7 @@
     celery.events.state
     ~~~~~~~~~~~~~~~~~~~
 
-    This module implements a datastructure used to keep
+    This module implements a data-structure used to keep
     track of the state of a cluster of workers and the tasks
     it is working on (by consuming events).
 
@@ -16,7 +16,7 @@
     to e.g. store that in a database.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import bisect
 import sys
@@ -27,14 +27,13 @@ from decimal import Decimal
 from itertools import islice
 from operator import itemgetter
 from time import time
-from weakref import ref
+from weakref import WeakSet, ref
 
 from kombu.clocks import timetuple
 from kombu.utils import cached_property
 
 from celery import states
-from celery.five import class_property, items, values
-from celery.utils import deprecated
+from celery.five import items, python_2_unicode_compatible, values
 from celery.utils.functional import LRUCache, memoize
 from celery.utils.log import get_logger
 
@@ -98,7 +97,8 @@ def with_unique_field(attr):
         cls.__eq__ = __eq__
 
         def __ne__(this, other):
-            return not this.__eq__(other)
+            res = this.__eq__(other)
+            return True if res is NotImplemented else not res
         cls.__ne__ = __ne__
 
         def __hash__(this):
@@ -110,6 +110,7 @@ def with_unique_field(attr):
 
 
 @with_unique_field('hostname')
+@python_2_unicode_compatible
 class Worker(object):
     """Worker State."""
     heartbeat_max = 4
@@ -118,7 +119,7 @@ class Worker(object):
     _fields = ('hostname', 'pid', 'freq', 'heartbeats', 'clock',
                'active', 'processed', 'loadavg', 'sw_ident',
                'sw_ver', 'sw_sys')
-    if not PYPY:
+    if not PYPY:  # pragma: no cover
         __slots__ = _fields + ('event', '__dict__', '__weakref__')
 
     def __init__(self, hostname=None, pid=None, freq=60,
@@ -166,7 +167,7 @@ class Worker(object):
                 if drift > max_drift:
                     _warn_drift(self.hostname, drift,
                                 local_received, timestamp)
-                if local_received:
+                if local_received:  # pragma: no cover
                     hearts = len(heartbeats)
                     if hearts > hbmax - 1:
                         hb_pop(0)
@@ -200,45 +201,27 @@ class Worker(object):
     def id(self):
         return '{0.hostname}.{0.pid}'.format(self)
 
-    @deprecated(4.0, 5.0)
-    def update_heartbeat(self, received, timestamp):
-        self.event(None, timestamp, received)
-
-    @deprecated(4.0, 5.0)
-    def on_online(self, timestamp=None, local_received=None, **fields):
-        self.event('online', timestamp, local_received, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_offline(self, timestamp=None, local_received=None, **fields):
-        self.event('offline', timestamp, local_received, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_heartbeat(self, timestamp=None, local_received=None, **fields):
-        self.event('heartbeat', timestamp, local_received, fields)
-
-    @class_property
-    def _defaults(cls):
-        """Deprecated, to be removed in 5.0"""
-        source = cls()
-        return {k: getattr(source, k) for k in cls._fields}
-
 
 @with_unique_field('uuid')
+@python_2_unicode_compatible
 class Task(object):
     """Task State."""
     name = received = sent = started = succeeded = failed = retried = \
-        revoked = args = kwargs = eta = expires = retries = worker = result = \
-        exception = timestamp = runtime = traceback = exchange = \
-        routing_key = client = None
+        revoked = rejected = args = kwargs = eta = expires = retries = \
+        worker = result = exception = timestamp = runtime = traceback = \
+        exchange = routing_key = root_id = parent_id = client = None
     state = states.PENDING
     clock = 0
 
-    _fields = ('uuid', 'name', 'state', 'received', 'sent', 'started',
-               'succeeded', 'failed', 'retried', 'revoked', 'args', 'kwargs',
-               'eta', 'expires', 'retries', 'worker', 'result', 'exception',
-               'timestamp', 'runtime', 'traceback', 'exchange', 'routing_key',
-               'clock', 'client')
-    if not PYPY:
+    _fields = (
+        'uuid', 'name', 'state', 'received', 'sent', 'started', 'rejected',
+        'succeeded', 'failed', 'retried', 'revoked', 'args', 'kwargs',
+        'eta', 'expires', 'retries', 'worker', 'result', 'exception',
+        'timestamp', 'runtime', 'traceback', 'exchange', 'routing_key',
+        'clock', 'client', 'root', 'root_id', 'parent', 'parent_id',
+        'children',
+    )
+    if not PYPY:  # pragma: no cover
         __slots__ = ('__dict__', '__weakref__')
 
     #: How to merge out of order events.
@@ -249,25 +232,33 @@ class Task(object):
     #: that state. ``(RECEIVED, ('name', 'args')``, means the name and args
     #: fields are always taken from the RECEIVED state, and any values for
     #: these fields received before or after is simply ignored.
-    merge_rules = {states.RECEIVED: ('name', 'args', 'kwargs',
-                                     'retries', 'eta', 'expires')}
+    merge_rules = {
+        states.RECEIVED: (
+            'name', 'args', 'kwargs', 'parent_id',
+            'root_id' 'retries', 'eta', 'expires',
+        ),
+    }
 
     #: meth:`info` displays these fields by default.
-    _info_fields = ('args', 'kwargs', 'retries', 'result', 'eta', 'runtime',
-                    'expires', 'exception', 'exchange', 'routing_key')
+    _info_fields = (
+        'args', 'kwargs', 'retries', 'result', 'eta', 'runtime',
+        'expires', 'exception', 'exchange', 'routing_key',
+        'root_id', 'parent_id',
+    )
 
-    def __init__(self, uuid=None, **kwargs):
+    def __init__(self, uuid=None, cluster_state=None, **kwargs):
         self.uuid = uuid
+        self.children = WeakSet()
+        self.cluster_state = cluster_state
         if kwargs:
-            for k, v in items(kwargs):
-                setattr(self, k, v)
+            self.__dict__.update(kwargs)
 
     def event(self, type_, timestamp=None, local_received=None, fields=None,
               precedence=states.precedence, items=items, dict=dict,
               PENDING=states.PENDING, RECEIVED=states.RECEIVED,
               STARTED=states.STARTED, FAILURE=states.FAILURE,
               RETRY=states.RETRY, SUCCESS=states.SUCCESS,
-              REVOKED=states.REVOKED):
+              REVOKED=states.REVOKED, REJECTED=states.REJECTED):
         fields = fields or {}
         if type_ == 'sent':
             state, self.sent = PENDING, timestamp
@@ -283,6 +274,8 @@ class Task(object):
             state, self.succeeded = SUCCESS, timestamp
         elif type_ == 'revoked':
             state, self.revoked = REVOKED, timestamp
+        elif type_ == 'rejected':
+            state, self.rejected = REJECTED, timestamp
         else:
             state = type_.upper()
 
@@ -296,13 +289,11 @@ class Task(object):
                 fields = {
                     k: v for k, v in items(fields) if k in keep
                 }
-            for key, value in items(fields):
-                setattr(self, key, value)
+            self.__dict__.update(fields)
         else:
             self.state = state
             self.timestamp = timestamp
-            for key, value in items(fields):
-                setattr(self, key, value)
+            self.__dict__.update(fields)
 
     def info(self, fields=None, extra=[]):
         """Information about this task suitable for on-screen display."""
@@ -329,6 +320,10 @@ class Task(object):
         return _depickle_task, (self.__class__, self.as_dict())
 
     @property
+    def id(self):
+        return self.uuid
+
+    @property
     def origin(self):
         return self.client if self.worker is None else self.worker.id
 
@@ -336,56 +331,13 @@ class Task(object):
     def ready(self):
         return self.state in states.READY_STATES
 
-    @deprecated(4.0, 5.0)
-    def on_sent(self, timestamp=None, **fields):
-        self.event('sent', timestamp, fields)
+    @cached_property
+    def parent(self):
+        return self.parent_id and self.cluster_state.tasks[self.parent_id]
 
-    @deprecated(4.0, 5.0)
-    def on_received(self, timestamp=None, **fields):
-        self.event('received', timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_started(self, timestamp=None, **fields):
-        self.event('started', timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_failed(self, timestamp=None, **fields):
-        self.event('failed', timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_retried(self, timestamp=None, **fields):
-        self.event('retried', timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_succeeded(self, timestamp=None, **fields):
-        self.event('succeeded', timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_revoked(self, timestamp=None, **fields):
-        self.event('revoked', timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def on_unknown_event(self, shortype, timestamp=None, **fields):
-        self.event(shortype, timestamp, fields)
-
-    @deprecated(4.0, 5.0)
-    def update(self, state, timestamp, fields,
-               _state=states.state, RETRY=states.RETRY):
-        return self.event(state, timestamp, None, fields)
-
-    @deprecated(4.0, 5.0)
-    def merge(self, state, timestamp, fields):
-        keep = self.merge_rules.get(state)
-        if keep is not None:
-            fields = {k: v for k, v in items(fields) if k in keep}
-        for key, value in items(fields):
-            setattr(self, key, value)
-
-    @class_property
-    def _defaults(cls):
-        """Deprecated, to be removed in 5.0."""
-        source = cls()
-        return {k: getattr(source, k) for k in source._fields}
+    @cached_property
+    def root(self):
+        return self.root_id and self.cluster_state.tasks[self.root_id]
 
 
 class State(object):
@@ -413,6 +365,7 @@ class State(object):
         self._mutex = threading.Lock()
         self.handlers = {}
         self._seen_types = set()
+        self._tasks_to_resolve = {}
         self.rebuild_taskheap()
 
     @cached_property
@@ -474,7 +427,7 @@ class State(object):
         try:
             return self.tasks[uuid], False
         except KeyError:
-            task = self.tasks[uuid] = self.Task(uuid)
+            task = self.tasks[uuid] = self.Task(uuid, cluster_state=self)
             return task, True
 
     def event(self, event):
@@ -553,7 +506,7 @@ class State(object):
                 try:
                     task, created = get_task(uuid), False
                 except KeyError:
-                    task = tasks[uuid] = Task(uuid)
+                    task = tasks[uuid] = Task(uuid, cluster_state=self)
                 if is_client_event:
                     task.client = hostname
                 else:
@@ -585,8 +538,29 @@ class State(object):
                 task_name = task.name
                 if task_name is not None:
                     add_type(task_name)
+                if task.parent_id:
+                    try:
+                        parent_task = self.tasks[task.parent_id]
+                    except KeyError:
+                        self._add_pending_task_child(task)
+                    else:
+                        parent_task.children.add(task)
+                try:
+                    _children = self._tasks_to_resolve.pop(uuid)
+                except KeyError:
+                    pass
+                else:
+                    task.children.update(_children)
+
                 return (task, created), subject
         return _event
+
+    def _add_pending_task_child(self, task):
+        try:
+            ch = self._tasks_to_resolve[task.parent_id]
+        except KeyError:
+            ch = self._tasks_to_resolve[task.parent_id] = WeakSet()
+        ch.add(task)
 
     def rebuild_taskheap(self, timetuple=timetuple):
         heap = self._taskheap[:] = [

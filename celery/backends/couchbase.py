@@ -3,10 +3,10 @@
     celery.backends.couchbase
     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    CouchBase result store backend.
+    Couchbase result store backend.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import logging
 
@@ -24,10 +24,16 @@ from celery.exceptions import ImproperlyConfigured
 
 from .base import KeyValueStoreBackend
 
-__all__ = ['CouchBaseBackend']
+__all__ = ['CouchbaseBackend']
 
 
-class CouchBaseBackend(KeyValueStoreBackend):
+class CouchbaseBackend(KeyValueStoreBackend):
+    """Couchbase backend.
+
+    :raises celery.exceptions.ImproperlyConfigured: if
+        module :pypi:`couchbase` is not available.
+
+    """
     bucket = 'default'
     host = 'localhost'
     port = 8091
@@ -38,24 +44,18 @@ class CouchBaseBackend(KeyValueStoreBackend):
     unlock_gil = True
     timeout = 2.5
     transcoder = None
-    # supports_autoexpire = False
 
     # Use str as couchbase key not bytes
     key_t = str_t
 
     def __init__(self, url=None, *args, **kwargs):
-        """Initialize CouchBase backend instance.
-
-        :raises celery.exceptions.ImproperlyConfigured: if
-            module :mod:`couchbase` is not available.
-
-        """
-        super(CouchBaseBackend, self).__init__(*args, **kwargs)
+        super(CouchbaseBackend, self).__init__(*args, **kwargs)
+        self.url = url
 
         if Couchbase is None:
             raise ImproperlyConfigured(
                 'You need to install the couchbase library to use the '
-                'CouchBase backend.',
+                'Couchbase backend.',
             )
 
         uhost = uport = uname = upass = ubucket = None
@@ -63,7 +63,7 @@ class CouchBaseBackend(KeyValueStoreBackend):
             _, uhost, uport, uname, upass, ubucket, _ = _parse_url(url)
             ubucket = ubucket.strip('/') if ubucket else None
 
-        config = self.app.conf.get('CELERY_COUCHBASE_BACKEND_SETTINGS', None)
+        config = self.app.conf.get('couchbase_backend_settings', None)
         if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(

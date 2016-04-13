@@ -5,6 +5,8 @@ This can be used to distribute your tasks and worker
 as a Python package, on PyPI or on your own private package index.
 
 """
+from __future__ import absolute_import, unicode_literals
+
 from setuptools import setup, find_packages
 
 setup(
@@ -14,7 +16,7 @@ setup(
     packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
     zip_safe=False,
     install_requires=[
-        'celery>=3.0',
+        'celery>=4.0',
         #  'requests',
     ],
 )

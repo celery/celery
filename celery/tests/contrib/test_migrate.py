@@ -26,7 +26,7 @@ from celery.contrib.migrate import (
     move,
 )
 from celery.utils.encoding import bytes_t, ensure_bytes
-from celery.tests.case import AppCase, Mock, override_stdouts, patch
+from celery.tests.case import AppCase, Mock, mock, patch
 
 # hack to ignore error at shutdown
 QoS.restore_at_shutdown = False
@@ -76,7 +76,7 @@ class test_move(AppCase):
                 pred = Mock(name='predicate')
                 move(pred, app=self.app,
                      connection=self.app.connection(), **kwargs)
-                self.assertTrue(start.called)
+                start.assert_called()
                 callback = start.call_args[0][2]
                 yield callback, pred, republish
 
@@ -89,13 +89,13 @@ class test_move(AppCase):
             pred.return_value = None
             body, message = self.msgpair()
             callback(body, message)
-            self.assertFalse(message.ack.called)
-            self.assertFalse(republish.called)
+            message.ack.assert_not_called()
+            republish.assert_not_called()
 
             pred.return_value = 'foo'
             callback(body, message)
             message.ack.assert_called_with()
-            self.assertTrue(republish.called)
+            republish.assert_called()
 
     def test_move_transform(self):
         trans = Mock(name='transform')
@@ -106,8 +106,8 @@ class test_move(AppCase):
             with patch('celery.contrib.migrate.maybe_declare') as maybed:
                 callback(body, message)
                 trans.assert_called_with('foo')
-                self.assertTrue(maybed.called)
-                self.assertTrue(republish.called)
+                maybed.assert_called()
+                republish.assert_called()
 
     def test_limit(self):
         with self.move_context(limit=1) as (callback, pred, republish):
@@ -115,7 +115,7 @@ class test_move(AppCase):
             body, message = self.msgpair()
             with self.assertRaises(StopFiltering):
                 callback(body, message)
-            self.assertTrue(republish.called)
+            republish.assert_called()
 
     def test_callback(self):
         cb = Mock()
@@ -123,8 +123,8 @@ class test_move(AppCase):
             pred.return_value = 'foo'
             body, message = self.msgpair()
             callback(body, message)
-            self.assertTrue(republish.called)
-            self.assertTrue(cb.called)
+            republish.assert_called()
+            cb.assert_called()
 
 
 class test_start_filter(AppCase):
@@ -157,12 +157,12 @@ class test_start_filter(AppCase):
             start_filter(app, conn, filt, tasks='add,mul', callback=cb)
             for callback in consumer.callbacks:
                 callback(body, Message(body))
-            self.assertTrue(cb.called)
+            cb.assert_called()
 
             on_declare_queue = Mock()
             start_filter(app, conn, filt, tasks='add,mul', queues='foo',
                          on_declare_queue=on_declare_queue)
-            self.assertTrue(on_declare_queue.called)
+            on_declare_queue.assert_called()
             start_filter(app, conn, filt, queues=['foo', 'bar'])
             consumer.callbacks[:] = []
             state = State()
@@ -188,7 +188,7 @@ class test_filter_callback(AppCase):
 
         message = Mock()
         filt(t2, message)
-        self.assertFalse(callback.called)
+        callback.assert_not_called()
         filt(t1, message)
         callback.assert_called_with(t1, message)
 
@@ -213,29 +213,29 @@ class test_utils(AppCase):
         self.assertEqual(_maybe_queue(app, 'foo'), 313)
         self.assertEqual(_maybe_queue(app, Queue('foo')), Queue('foo'))
 
-    def test_filter_status(self):
-        with override_stdouts() as (stdout, stderr):
-            filter_status(State(), {'id': '1', 'task': 'add'}, Mock())
-            self.assertTrue(stdout.getvalue())
+    @mock.stdouts
+    def test_filter_status(self, stdout, stderr):
+        filter_status(State(), {'id': '1', 'task': 'add'}, Mock())
+        self.assertTrue(stdout.getvalue())
 
     def test_move_by_taskmap(self):
         with patch('celery.contrib.migrate.move') as move:
             move_by_taskmap({'add': Queue('foo')})
-            self.assertTrue(move.called)
+            move.assert_called()
             cb = move.call_args[0][0]
             self.assertTrue(cb({'task': 'add'}, Mock()))
 
     def test_move_by_idmap(self):
         with patch('celery.contrib.migrate.move') as move:
             move_by_idmap({'123f': Queue('foo')})
-            self.assertTrue(move.called)
+            move.assert_called()
             cb = move.call_args[0][0]
             self.assertTrue(cb({'id': '123f'}, Mock()))
 
     def test_move_task_by_id(self):
         with patch('celery.contrib.migrate.move') as move:
             move_task_by_id('123f', Queue('foo'))
-            self.assertTrue(move.called)
+            move.assert_called()
             cb = move.call_args[0][0]
             self.assertEqual(
                 cb({'id': '123f'}, Mock()),
@@ -249,7 +249,7 @@ class test_migrate_task(AppCase):
         x = Message('foo', compression='zlib')
         producer = Mock()
         migrate_task(producer, x.body, x)
-        self.assertTrue(producer.publish.called)
+        producer.publish.assert_called()
         args, kwargs = producer.publish.call_args
         self.assertIsInstance(args[0], bytes_t)
         self.assertNotIn('compression', kwargs['headers'])
@@ -289,12 +289,12 @@ class test_migrate_tasks(AppCase):
         callback = Mock()
         migrate_tasks(x, y,
                       callback=callback, accept=['text/plain'], app=self.app)
-        self.assertTrue(callback.called)
+        callback.assert_called()
         migrate = Mock()
         Producer(x).publish('baz', exchange=name, routing_key=name)
         migrate_tasks(x, y, callback=callback,
                       migrate=migrate, accept=['text/plain'], app=self.app)
-        self.assertTrue(migrate.called)
+        migrate.assert_called()
 
         with patch('kombu.transport.virtual.Channel.queue_declare') as qd:
 
@@ -311,4 +311,4 @@ class test_migrate_tasks(AppCase):
         callback = Mock()
         migrate_tasks(x, y,
                       callback=callback, accept=['text/plain'], app=self.app)
-        self.assertFalse(callback.called)
+        callback.assert_not_called()

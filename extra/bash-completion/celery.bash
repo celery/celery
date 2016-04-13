@@ -10,9 +10,11 @@ _celery()
     prevp="${COMP_WORDS[COMP_CWORD-1]}"
     basep="${COMP_WORDS[1]}"
     opts="worker events beat shell multi amqp status
-          inspect control purge list migrate call result report"
+          inspect control purge list migrate call result
+          report upgrade flower graph logtool help"
     fargs="--app= --broker= --loader= --config= --version"
-    dopts="--detach --umask= --gid= --uid= --pidfile= --logfile= --loglevel="
+    dopts="--detach --umask= --gid= --uid= --pidfile=
+           --logfile= --loglevel= --executable="
     controlargs="--timeout --destination"
     pools="prefork eventlet gevent threads solo"
     loglevels="critical error warning info debug"
