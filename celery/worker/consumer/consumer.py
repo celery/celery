@@ -302,14 +302,24 @@ class Consumer(object):
                 except RestartFreqExceeded as exc:
                     crit('Frequent restarts detected: %r', exc, exc_info=1)
                     sleep(1)
-                if blueprint.state != CLOSE and self.connection:
-                    warn(CONNECTION_RETRY, exc_info=True)
-                    try:
-                        self.connection.collect()
-                    except Exception:
-                        pass
+                if blueprint.state != CLOSE:
+                    if self.connection:
+                        self.on_connection_error_after_connected(exc)
+                    else:
+                        self.on_connection_error_before_connected(exc)
                     self.on_close()
                     blueprint.restart(self)
+
+    def on_connection_error_before_connected(self, exc):
+        error(CONNECTION_ERROR, self.conninfo.as_uri(), exc,
+              'Trying to reconnect...')
+
+    def on_connection_error_after_connected(self, exc):
+        warn(CONNECTION_RETRY, exc_info=True)
+        try:
+            self.connection.collect()
+        except Exception:
+            pass
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
