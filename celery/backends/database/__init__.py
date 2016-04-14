@@ -140,6 +140,7 @@ class DatabaseBackend(BaseBackend):
                 task = Task(task_id)
                 task.status = states.PENDING
                 task.result = None
+            task.result = self.decode(task.result)
             return self.meta_from_decoded(task.to_dict())
 
     @retry
