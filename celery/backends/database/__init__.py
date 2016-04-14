@@ -158,6 +158,9 @@ class DatabaseBackend(BaseBackend):
                 task = self.task_cls(task_id)
                 task.status = states.PENDING
                 task.result = None
+            else:
+                task.result = self.decode(task.result)
+
             data = task.to_dict()
             if 'args' in data:
                 data['args'] = self.decode(data['args'])
