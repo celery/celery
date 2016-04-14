@@ -148,7 +148,7 @@ class DatabaseBackend(BaseBackend):
         """Store the result of an executed group."""
         session = self.ResultSession()
         with session_cleanup(session):
-            group = TaskSet(group_id, result)
+            group = TaskSet(group_id, ensure_bytes(self.encode(result)))
             session.add(group)
             session.flush()
             session.commit()
@@ -162,6 +162,7 @@ class DatabaseBackend(BaseBackend):
             group = session.query(TaskSet).filter(
                 TaskSet.taskset_id == group_id).first()
             if group:
+                group.result = self.decode(group.result)
                 return group.to_dict()
 
     @retry
