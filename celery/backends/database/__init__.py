@@ -124,7 +124,7 @@ class DatabaseBackend(BaseBackend):
                 session.add(task)
                 session.flush()
             task.result = ensure_bytes(self.encode(result))
-            task.status = status
+            task.status = state
             task.traceback = traceback
             session.commit()
             return result
