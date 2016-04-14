@@ -1,8 +1,8 @@
 .. _daemonizing:
 
-================================
- Running the worker as a daemon
-================================
+======================================================================
+                     Running the worker as a daemon
+======================================================================
 
 Celery does not daemonize itself, please use one of the following
 daemonization tools.
@@ -13,12 +13,12 @@ daemonization tools.
 
 .. _daemon-generic:
 
-Generic init scripts
-====================
+Generic init-scripts
+======================================================================
 
 See the `extra/generic-init.d/`_ directory Celery distribution.
 
-This directory contains generic bash init scripts for the
+This directory contains generic bash init-scripts for the
 :program:`celery worker` program,
 these should run on Linux, FreeBSD, OpenBSD, and other Unix-like platforms.
 
@@ -27,8 +27,8 @@ these should run on Linux, FreeBSD, OpenBSD, and other Unix-like platforms.
 
 .. _generic-initd-celeryd:
 
-Init script: celeryd
---------------------
+Init-script: ``celeryd``
+----------------------------------------------------------------------
 
 :Usage: `/etc/init.d/celeryd {start|stop|restart|status}`
 :Configuration file: :file:`/etc/default/celeryd`
@@ -38,17 +38,17 @@ tell it where to change
 directory to when it starts (to find the module containing your app, or your
 configuration module).
 
-The daemonization script is configured by the file ``/etc/default/celeryd``,
-which is a shell (sh) script.  You can add environment variables and the
+The daemonization script is configured by the file :file:`/etc/default/celeryd`,
+which is a shell (:command:`sh`) script.  You can add environment variables and the
 configuration options below to this file.  To add environment variables you
-must also export them (e.g. ``export DISPLAY=":0"``)
+must also export them (e.g. :command:`export DISPLAY=":0"`)
 
 .. Admonition:: Superuser privileges required
 
-    The init scripts can only be used by root,
+    The init-scripts can only be used by root,
     and the shell configuration file must also be owned by root.
 
-    Unprivileged users do not need to use the init script,
+    Unprivileged users do not need to use the init-script,
     instead they can use the :program:`celery multi` utility (or
     :program:`celery worker --detach`):
 
@@ -69,7 +69,7 @@ must also export them (e.g. ``export DISPLAY=":0"``)
 .. _generic-initd-celeryd-example:
 
 Example configuration
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is an example configuration for a Python project.
 
@@ -120,7 +120,7 @@ This is an example configuration for a Python project.
     CELERY_CREATE_DIRS=1
 
 Using a login shell
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can inherit the environment of the ``CELERYD_USER`` by using a login
 shell:
@@ -135,7 +135,7 @@ when absolutely necessary.
 .. _generic-initd-celeryd-django-example:
 
 Example Django configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Django users now uses the exact same template as above,
 but make sure that the module that defines your Celery app instance
@@ -145,7 +145,7 @@ as shown in the example Django project in :ref:`django-first-steps`.
 .. _generic-initd-celeryd-options:
 
 Available options
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * ``CELERY_APP``
 
@@ -218,16 +218,16 @@ Available options
 
 .. _generic-initd-celerybeat:
 
-Init script: celerybeat
------------------------
+Init-script: ``celerybeat``
+----------------------------------------------------------------------
 :Usage: `/etc/init.d/celerybeat {start|stop|restart}`
 :Configuration file: :file:`/etc/default/celerybeat` or
-                     :file:``/etc/default/celeryd`.
+                     :file:`/etc/default/celeryd`.
 
 .. _generic-initd-celerybeat-example:
 
 Example configuration
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is an example configuration for a Python project:
 
@@ -254,7 +254,7 @@ This is an example configuration for a Python project:
 .. _generic-initd-celerybeat-django-example:
 
 Example Django configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You should use the same template as above, but make sure the
 ``DJANGO_SETTINGS_MODULE`` variable is set (and exported), and that
@@ -268,7 +268,7 @@ You should use the same template as above, but make sure the
 .. _generic-initd-celerybeat-options:
 
 Available options
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * ``CELERY_APP``
 
@@ -276,28 +276,28 @@ Available options
 
 * ``CELERYBEAT_OPTS``
 
-    Additional arguments to celerybeat, see `celerybeat --help` for a
-    list.
+    Additional arguments to :program:`celery beat`, see
+    :command:`celery beat --help` for a list of available options.
 
 * ``CELERYBEAT_PID_FILE``
 
-    Full path to the PID file. Default is /var/run/celeryd.pid.
+    Full path to the PID file. Default is :file:`/var/run/celeryd.pid`.
 
 * ``CELERYBEAT_LOG_FILE``
 
-    Full path to the celeryd log file. Default is /var/log/celeryd.log
+    Full path to the log file. Default is :file:`/var/log/celeryd.log`.
 
 * ``CELERYBEAT_LOG_LEVEL``
 
-    Log level to use for celeryd. Default is INFO.
+    Log level to use.  Default is ``INFO``.
 
 * ``CELERYBEAT_USER``
 
-    User to run beat as. Default is current user.
+    User to run beat as. Default is the current user.
 
 * ``CELERYBEAT_GROUP``
 
-    Group to run beat as. Default is current user.
+    Group to run beat as. Default is the current user.
 
 * ``CELERY_CREATE_DIRS``
 
@@ -317,26 +317,26 @@ Available options
 .. _daemon-systemd-generic:
 
 Usage ``systemd``
-=================
+======================================================================
 
 .. _generic-systemd-celery:
 
 Service file: celery.service
-----------------------------
+----------------------------------------------------------------------
 
 :Usage: `systemctl {start|stop|restart|status} celery.service`
 :Configuration file: /etc/conf.d/celery
 
 To create a temporary folders for the log and pid files change user and group in
 :file:`/usr/lib/tmpfiles.d/celery.conf`.
-To configure user, group, ``chdir`` change settings:
-User, Group and WorkingDirectory defines in
+To configure user, group, :command:`chdir` change settings:
+``User``, ``Group``, and ``WorkingDirectory`` defines in
 :file:`/usr/lib/systemd/system/celery.service`.
 
 .. _generic-systemd-celery-example:
 
 Example configuration
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is an example configuration for a Python project:
 
@@ -369,7 +369,7 @@ This is an example configuration for a Python project:
 .. _generic-systemd-celeryd-django-example:
 
 Example Django configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is an example configuration for those using :pypi:`django-celery`:
 
@@ -395,15 +395,15 @@ This is an example configuration for those using :pypi:`django-celery`:
     CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
     CELERYD_PID_FILE="/var/run/celery/%n.pid"
 
-To add an environment variable such as DJANGO_SETTINGS_MODULE use the
-Environment in celery.service.
+To add an environment variable such as :envvar:`DJANGO_SETTINGS_MODULE`
+use the Environment in :file:`celery.service`.
 
 .. _generic-initd-troubleshooting:
 
 Troubleshooting
----------------
+----------------------------------------------------------------------
 
-If you can't get the init scripts to work, you should try running
+If you can't get the init-scripts to work, you should try running
 them in *verbose mode*:
 
 .. code-block:: console
@@ -412,7 +412,7 @@ them in *verbose mode*:
 
 This can reveal hints as to why the service won't start.
 
-If the worker starts with "OK" but exits almost immediately afterwards
+If the worker starts with *"OK"* but exits almost immediately afterwards
 and there is nothing in the log file, then there is probably an error
 but as the daemons standard outputs are already closed you'll
 not be able to see them anywhere.  For this situation you can use
@@ -428,14 +428,14 @@ and now you should be able to see the errors.
 
 Commonly such errors are caused by insufficient permissions
 to read from, or write to a file, and also by syntax errors
-in configuration modules, user modules, 3rd party libraries,
+in configuration modules, user modules, third-party libraries,
 or even from Celery itself (if you've found a bug, in which case
 you should :ref:`report it <reporting-bugs>`).
 
 .. _daemon-supervisord:
 
 :pypi:`supervisor`
-==================
+======================================================================
 
 * `extra/supervisord/`_
 
@@ -445,7 +445,7 @@ you should :ref:`report it <reporting-bugs>`).
 .. _daemon-launchd:
 
 ``launchd`` (OS X)
-==================
+======================================================================
 
 * `extra/osx`_
 
@@ -456,7 +456,7 @@ you should :ref:`report it <reporting-bugs>`).
 .. _daemon-windows:
 
 Windows
-=======
+======================================================================
 
 See this excellent external tutorial:
 

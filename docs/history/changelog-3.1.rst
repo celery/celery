@@ -21,7 +21,8 @@ new in Celery 3.1.
 
     - Now depends on :mod:`billiard` 3.3.0.23.
 
-- **Prefork pool**: Fixes 100% CPU loop on Linux epoll (Issue #1845).
+- **Prefork pool**: Fixes 100% CPU loop on Linux :manpage:`epoll`
+  (Issue #1845).
 
     Also potential fix for: Issue #2142, Issue #2606
 
@@ -38,7 +39,7 @@ new in Celery 3.1.
   than -2147483648 (Issue #3078).
 
 - **Programs**: :program:`celery shell --ipython` now compatible with newer
-  IPython versions.
+  :pypi:`IPython` versions.
 
 - **Programs**: The DuplicateNodeName warning emitted by inspect/control
   now includes a list of the node names returned.
@@ -54,7 +55,7 @@ new in Celery 3.1.
 - **Worker**: Node name formatting now emits less confusing error message
   for unmatched format keys (Issue #3016).
 
-- **Results**: amqp/rpc backends: Fixed deserialization of JSON exceptions
+- **Results**: RPC/AMQP backends: Fixed deserialization of JSON exceptions
   (Issue #2518).
 
     Fix contributed by Allard Hoeve.
@@ -81,7 +82,8 @@ new in Celery 3.1.
 
         Includes binary wheels for Microsoft Windows x86 and x86_64!
 
-- **Task**: Error emails now uses ``utf-8`` charset by default (Issue #2737).
+- **Task**: Error emails now uses ``utf-8`` character set by default
+  (Issue #2737).
 
 - **Task**: Retry now forwards original message headers (Issue #3017).
 
@@ -101,7 +103,7 @@ new in Celery 3.1.
 - **Results**: Redis ``new_join`` did not properly call task errbacks on chord
   error (Issue #2796).
 
-- **Results**: Restores Redis compatibility with redis-py < 2.10.0
+- **Results**: Restores Redis compatibility with Python :pypi:`redis` < 2.10.0
   (Issue #2903).
 
 - **Results**: Fixed rare issue with chord error handling (Issue #2409).
@@ -133,7 +135,7 @@ new in Celery 3.1.
     This commit changes the code to a version that does not iterate over
     the dict, and should also be a little bit faster.
 
-- **Init scripts**: The beat init script now properly reports service as down
+- **Init-scripts**: The beat init-script now properly reports service as down
   when no pid file can be found.
 
     Eric Zarowny
@@ -154,7 +156,7 @@ new in Celery 3.1.
 
 - **Documentation**: Includes improvements by:
 
-    Bryson
+    :github_user:`Bryson`
     Caleb Mingle
     Christopher Martin
     Dieter Adriaenssens
@@ -165,15 +167,15 @@ new in Celery 3.1.
     Kevin McCarthy
     Kirill Pavlov
     Marco Buttu
-    Mayflower
+    :github_user:`Mayflower`
     Mher Movsisyan
     Michael Floering
-    michael-k
+    :github_user:`michael-k`
     Nathaniel Varona
     Rudy Attias
     Ryan Luckie
     Steven Parker
-    squfrans
+    :github_user:`squfrans`
     Tadej Janež
     TakesxiSximada
     Tom S
@@ -231,7 +233,7 @@ new in Celery 3.1.
 
     Fix contributed by Sukrit Khera.
 
-- **Results**: RPC/amqp backends did not deserialize exceptions properly
+- **Results**: RPC/AMQP backends did not deserialize exceptions properly
   (Issue #2691).
 
     Fix contributed by Sukrit Khera.
@@ -248,11 +250,11 @@ new in Celery 3.1.
 
         Carlos Garcia-Dubus
         D. Yu
-        jerry
+        :github_user:`jerry`
         Jocelyn Delalande
         Josh Kupershmidt
         Juan Rossi
-        kanemra
+        :github_user:`kanemra`
         Paul Pearce
         Pavel Savchenko
         Sean Wang
@@ -294,8 +296,8 @@ new in Celery 3.1.
 
     Fix contributed by Gunnlaugur Thor Briem.
 
-- **init scripts**: The celerybeat generic init script now uses
-  ``/bin/sh`` instead of bash (Issue #2496).
+- **init-scripts**: The beat generic init-script now uses
+  :file:`/bin/sh` instead of :command:`bash` (Issue #2496).
 
     Fix contributed by Jelle Verstraaten.
 
@@ -358,7 +360,7 @@ new in Celery 3.1.
     Fix contributed by Thomas French.
 
 - **Task**: Callbacks was not called properly if ``link`` was a list of
-  signatures (Issuse #2350).
+  signatures (Issue #2350).
 
 - **Canvas**: chain and group now handles json serialized signatures
   (Issue #2076).
@@ -377,7 +379,7 @@ new in Celery 3.1.
 - **Task**: Fixed problem with app not being properly propagated to
   ``trace_task`` in all cases.
 
-    Fix contributed by kristaps.
+    Fix contributed by :github_user:`kristaps`.
 
 - **Worker**: Expires from task message now associated with a timezone.
 
@@ -391,7 +393,7 @@ new in Celery 3.1.
     Fix contributed by Gino Ledesma.
 
 - **Mongodb Result backend**: Pickling the backend instance will now include
-  the original url (Issue #2347).
+  the original URL (Issue #2347).
 
     Fix contributed by Sukrit Khera.
 
@@ -404,7 +406,7 @@ new in Celery 3.1.
 - **celery.contrib.rdb**: Fixed problems with ``rdb.set_trace`` calling stop
   from the wrong frame.
 
-    Fix contributed by llllllllll.
+    Fix contributed by :github_user:`llllllllll`.
 
 - **Canvas**: ``chain`` and ``chord`` can now be immutable.
 
@@ -414,7 +416,7 @@ new in Celery 3.1.
 - **Results**: Small refactoring so that results are decoded the same way in
   all result backends.
 
-- **Logging**: The ``processName`` format was introduced in Py2.6.2 so for
+- **Logging**: The ``processName`` format was introduced in Python 2.6.2 so for
   compatibility this format is now excluded when using earlier versions
   (Issue #1644).
 
@@ -478,10 +480,10 @@ new in Celery 3.1.
 
     - Now depends on :ref:`Kombu 3.0.22 <kombu:version-3.0.22>`.
 
-- **Init scripts**: The generic worker init scripts ``status`` command
+- **Init-scripts**: The generic worker init-scripts ``status`` command
   now gets an accurate pidfile list (Issue #1942).
 
-- **Init scripts**: The generic beat script now implements the ``status``
+- **Init-scripts**: The generic beat script now implements the ``status``
    command.
 
     Contributed by John Whitlock.
@@ -544,7 +546,7 @@ News
 - **Task**: ``signature_from_request`` now propagates ``reply_to`` so that
   the RPC backend works with retried tasks (Issue #2113).
 
-- **Task**: ``retry`` will no longer attempt to requeue the task if sending
+- **Task**: ``retry`` will no longer attempt to re-queue the task if sending
   the retry message fails.
 
     Unrelated exceptions being raised could cause a message loop, so it was
@@ -558,7 +560,7 @@ News
 
 - Documentation fixes
 
-    Contributed by Yuval Greenfield, Lucas Wiman, nicholsonjf
+    Contributed by Yuval Greenfield, Lucas Wiman, :github_user:`nicholsonjf`.
 
 - **Worker**: Removed an outdated assert statement that could lead to errors
   being masked (Issue #2086).
@@ -682,10 +684,10 @@ News
 
     Fix contributed by Ian Dees.
 
-- **Init scripts**: The CentOS init scripts did not quote
+- **Init-scripts**: The CentOS init-scripts did not quote
   :envvar:`CELERY_CHDIR`.
 
-    Fix contributed by ffeast.
+    Fix contributed by :github_user:`ffeast`.
 
 .. _version-3.1.11:
 
@@ -824,6 +826,8 @@ News
 
     The new option can be set in the result backend URL:
 
+    .. code-block:: python
+
         CELERY_RESULT_BACKEND = 'redis://localhost?new_join=1'
 
     This must be enabled manually as it's incompatible
@@ -882,7 +886,7 @@ News
 - **Task**: ``Task.apply`` now properly sets ``request.headers``
   (Issue #1874).
 
-- **Worker**: Fixed ``UnicodeEncodeError`` occuring when worker is started
+- **Worker**: Fixed :exc:`UnicodeEncodeError` occurring when worker is started
   by :pypi:`supervisor`.
 
     Fix contributed by Codeb Fan.
@@ -934,15 +938,15 @@ News
 - **Task**: Task.backend is now a property that forwards to ``app.backend``
   if no custom backend has been specified for the task (Issue #1821).
 
-- **Generic init scripts**: Fixed bug in stop command.
+- **Generic init-scripts**: Fixed bug in stop command.
 
     Fix contributed by Rinat Shigapov.
 
-- **Generic init scripts**: Fixed compatibility with GNU :manpage:`stat`.
+- **Generic init-scripts**: Fixed compatibility with GNU :manpage:`stat`.
 
     Fix contributed by Paul Kilgo.
 
-- **Generic init scripts**: Fixed compatibility with the minimal
+- **Generic init-scripts**: Fixed compatibility with the minimal
   :program:`dash` shell (Issue #1815).
 
 - **Commands**: The :program:`celery amqp basic.publish` command was not
@@ -1030,17 +1034,17 @@ News
 
     Fix contributed by Brodie Rao.
 
-- **Generic init scripts:** Now runs a check at start-up to verify
+- **Generic init-scripts:** Now runs a check at start-up to verify
   that any configuration scripts are owned by root and that they
-  are not world/group writeable.
+  are not world/group writable.
 
-    The init script configuration is a shell script executed by root,
+    The init-script configuration is a shell script executed by root,
     so this is a preventive measure to ensure that users do not
     leave this file vulnerable to changes by unprivileged users.
 
     .. note::
 
-        Note that upgrading celery will not update the init scripts,
+        Note that upgrading celery will not update the init-scripts,
         instead you need to manually copy the improved versions from the
         source distribution:
         https://github.com/celery/celery/tree/3.1/extra/generic-init.d
@@ -1092,7 +1096,7 @@ News
   (:program:`celery events -d`) can now be piped into other commands.
 
 - **Documentation:** The RabbitMQ installation instructions for OS X was
-  updated to use modern homebrew practices.
+  updated to use modern Homebrew practices.
 
     Contributed by Jon Chen.
 
@@ -1125,10 +1129,10 @@ News
 Important Notes
 ---------------
 
-Init script security improvements
+Init-script security improvements
 ---------------------------------
 
-Where the generic init scripts (for ``celeryd``, and ``celerybeat``) before
+Where the generic init-scripts (for ``celeryd``, and ``celerybeat``) before
 delegated the responsibility of dropping privileges to the target application,
 it will now use ``su`` instead, so that the Python program is not trusted
 with superuser privileges.
@@ -1137,7 +1141,7 @@ This is not in reaction to any known exploit, but it will
 limit the possibility of a privilege escalation bug being abused in the
 future.
 
-You have to upgrade the init scripts manually from this directory:
+You have to upgrade the init-scripts manually from this directory:
 https://github.com/celery/celery/tree/3.1/extra/generic-init.d
 
 AMQP result backend
@@ -1205,8 +1209,8 @@ Fixes
 - Worker: Now keeps count of the total number of tasks processed,
   not just by type (``all_active_count``).
 
-- Init scripts:  Fixed problem with reading configuration file
-  when the init script is symlinked to a runlevel (e.g. ``S02celeryd``).
+- Init-scripts:  Fixed problem with reading configuration file
+  when the init-script is symlinked to a runlevel (e.g. ``S02celeryd``).
   (Issue #1740).
 
     This also removed a rarely used feature where you can symlink the script
@@ -1255,7 +1259,7 @@ Fixes
 - Redis/Cache result backends: Will now timeout if keys evicted while trying
   to join a chord.
 
-- The fallbock unlock chord task now raises :exc:`Retry` so that the
+- The fallback unlock chord task now raises :exc:`Retry` so that the
   retry even is properly logged by the worker.
 
 - Multi: Will no longer apply Eventlet/gevent monkey patches (Issue #1717).
@@ -1280,7 +1284,7 @@ Fixes
     a skew of -1.
 
 - Prefork pool: The method used to find terminated processes was flawed
-  in that it did not also take into account missing popen objects.
+  in that it did not also take into account missing ``popen`` objects.
 
 - Canvas: ``group`` and ``chord`` now works with anon signatures as long
   as the group/chord object is associated with an app instance (Issue #1744).
@@ -1324,7 +1328,7 @@ Fixes
 
 - Cache result backend now compatible with Python 3 (Issue #1697).
 
-- CentOS init script: Now compatible with sys-v style init symlinks.
+- CentOS init-script: Now compatible with SysV style init symlinks.
 
     Fix contributed by Jonathan Jordan.
 
@@ -1395,7 +1399,7 @@ Fixes
   :option:`--gid <celery beat --gid>` arguments even if
   :option:`--detach <celery beat --detach>` is not enabled.
 
-- Python 3: Fixed unorderable error occuring with the worker
+- Python 3: Fixed unorderable error occurring with the worker
   :option:`-B <celery worker -B>` argument enabled.
 
 - ``celery.VERSION`` is now a named tuple.
@@ -1404,7 +1408,7 @@ Fixes
 
 - ``celery shell`` command: Fixed ``IPython.frontend`` deprecation warning.
 
-- The default app no longer includes the built-in fixups.
+- The default app no longer includes the built-in fix-ups.
 
     This fixes a bug where ``celery multi`` would attempt
     to load the Django settings module before entering
@@ -1455,7 +1459,7 @@ Fixes
   the rare ``--opt value`` format (Issue #1668).
 
 - ``celery`` command: Accidentally removed options
-  appearing before the subcommand, these are now moved to the end
+  appearing before the sub-command, these are now moved to the end
   instead.
 
 - Worker now properly responds to ``inspect stats`` commands
@@ -1466,11 +1470,11 @@ Fixes
 
 - Beat: Fixed syntax error in string formatting.
 
-    Contributed by nadad.
+    Contributed by :github_user:`nadad`.
 
 - Fixed typos in the documentation.
 
-    Fixes contributed by Loic Bistuer, sunfinite.
+    Fixes contributed by Loic Bistuer, :github_user:`sunfinite`.
 
 - Nested chains now works properly when constructed using the
   ``chain`` type instead of the ``|`` operator (Issue #1656).
@@ -1488,8 +1492,8 @@ Fixes
 
 - Worker accidentally set a default socket timeout of 5 seconds.
 
-- Django: Fixup now sets the default app so that threads will use
-  the same app instance (e.g. for manage.py runserver).
+- Django: Fix-up now sets the default app so that threads will use
+  the same app instance (e.g. for :command:`manage.py runserver`).
 
 - Worker: Fixed Unicode error crash at start-up experienced by some users.
 
@@ -1501,7 +1505,7 @@ Fixes
 - The :option:`--app <celery --app>` argument could end up using a module
   object instead of an app instance (with a resulting crash).
 
-- Fixed a syntax error problem in the celerybeat init script.
+- Fixed a syntax error problem in the beat init-script.
 
     Fix contributed by Vsevolod.
 
@@ -1540,7 +1544,7 @@ Fixes
 - Django: Fixed ``ImproperlyConfigured`` error raised
   when no database backend specified.
 
-    Fix contributed by j0hnsmith
+    Fix contributed by :github_user:`j0hnsmith`.
 
 - Prefork pool: Now using ``_multiprocessing.read`` with ``memoryview``
   if available.
@@ -1570,11 +1574,11 @@ Fixes
     Also fixed typos in the tutorial, and added the settings
     required to use the Django database backend.
 
-    Thanks to Chris Ward, orarbel.
+    Thanks to Chris Ward, :github_user:`orarbel`.
 
 - Django: Fixed a problem when using the Django settings in Django 1.6.
 
-- Django: Fixup should not be applied if the django loader is active.
+- Django: Fix-up should not be applied if the django loader is active.
 
 - Worker:  Fixed attribute error for ``human_write_stats`` when using the
   compatibility prefork pool implementation.

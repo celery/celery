@@ -1,5 +1,5 @@
 ===========================================
- celery.backends.couchdb
+ ``celery.backends.couchdb``
 ===========================================
 
 .. contents::

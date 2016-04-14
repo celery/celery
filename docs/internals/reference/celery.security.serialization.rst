@@ -1,5 +1,5 @@
 ==========================================
- celery.security.serialization
+ ``celery.security.serialization``
 ==========================================
 
 .. contents::

@@ -140,7 +140,7 @@ Everyone should move to the new :program:`celery` umbrella
 command, so we are incrementally deprecating the old command names.
 
 In this version we've removed all commands that are not used
-in init scripts.  The rest will be removed in 4.0.
+in init-scripts.  The rest will be removed in 4.0.
 
 +-------------------+--------------+-------------------------------------+
 | Program           | New Status   | Replacement                         |
@@ -851,7 +851,7 @@ In Other News
 
     .. _`Couchbase`: http://www.couchbase.com
 
-- CentOS init script now supports starting multiple worker instances.
+- CentOS init-script now supports starting multiple worker instances.
 
     See the script header for details.
 
@@ -909,7 +909,7 @@ In Other News
 - SQLAlchemy Result Backend: Now calls ``enginge.dispose`` after fork
    (Issue #1564).
 
-    If you create your own sqlalchemy engines then you must also
+    If you create your own SQLAlchemy engines then you must also
     make sure that these are closed after fork in the worker:
 
     .. code-block:: python
@@ -1122,7 +1122,7 @@ In Other News
     to avoid the daemonization step to see errors that are not visible
     due to missing stdout/stderr.
 
-    A ``dryrun`` command has been added to the generic init script that
+    A ``dryrun`` command has been added to the generic init-script that
     enables this option.
 
 - New public API to push and pop from the current task stack:

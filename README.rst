@@ -250,7 +250,7 @@ Serializers
 ~~~~~~~~~~~
 
 :celery[auth]:
-    for using the auth serializer.
+    for using the ``auth`` security serializer.
 
 :celery[msgpack]:
     for using the msgpack serializer.
@@ -419,10 +419,10 @@ http://wiki.github.com/celery/celery/
 Contributing
 ============
 
-Development of `celery` happens at Github: https://github.com/celery/celery
+Development of `celery` happens at GitHub: https://github.com/celery/celery
 
 You are highly encouraged to participate in the development
-of `celery`. If you don't like Github (for some reason) you're welcome
+of `celery`. If you don't like GitHub (for some reason) you're welcome
 to send regular patches.
 
 Be sure to also read the `Contributing to Celery`_ section in the

@@ -1,5 +1,5 @@
 =====================================
- celery.backends.async
+ ``celery.backends.async``
 =====================================
 
 .. contents::

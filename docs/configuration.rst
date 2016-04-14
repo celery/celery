@@ -516,7 +516,7 @@ Can be one of the following:
     See :ref:`conf-redis-result-backend`.
 
 * ``cache``
-    Use `memcached`_ to store the results.
+    Use `Memcached`_ to store the results.
     See :ref:`conf-cache-result-backend`.
 
 * ``mongodb``
@@ -557,7 +557,7 @@ Can be one of the following:
     you only receive the same result once.  See :doc:`userguide/calling`).
 
 .. _`SQLAlchemy`: http://sqlalchemy.org
-.. _`memcached`: http://memcached.org
+.. _`Memcached`: http://memcached.org
 .. _`MongoDB`: http://mongodb.org
 .. _`Redis`: http://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
@@ -604,8 +604,8 @@ Default is to expire after 1 day.
 
 .. note::
 
-    For the moment this only works with the amqp, database, cache, redis and MongoDB
-    backends.
+    For the moment this only works with the AMQP, database, cache,
+    Redis and MongoDB backends.
 
     When using the database or MongoDB backends, `celery beat` must be
     running for the results to be expired.
@@ -747,13 +747,13 @@ Cache backend settings
     The cache backend supports the :pypi:`pylibmc` and `python-memcached`
     libraries.  The latter is used only if :pypi:`pylibmc` is not installed.
 
-Using a single memcached server:
+Using a single Memcached server:
 
 .. code-block:: python
 
     result_backend = 'cache+memcached://127.0.0.1:11211/'
 
-Using multiple memcached servers:
+Using multiple Memcached servers:
 
 .. code-block:: python
 
@@ -893,7 +893,7 @@ This is a dict supporting the following keys:
 
 * ``options``
 
-    Additional keyword arguments to pass to the mongodb connection
+    Additional keyword arguments to pass to the MongoDB connection
     constructor.  See the :pypi:`pymongo` docs to see a list of arguments
     supported.
 
@@ -1000,7 +1000,9 @@ AuthProvider class within ``cassandra.auth`` module to use.  Values can be
 ``cassandra_auth_kwargs``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Named arguments to pass into the auth provider. e.g.::
+Named arguments to pass into the authentication provider. e.g.:
+
+.. code-block:: python
 
     cassandra_auth_kwargs = {
         username: 'cassandra',
@@ -1044,7 +1046,7 @@ Riak backend settings
     The Riak backend requires the :pypi:`riak` library:
     http://pypi.python.org/pypi/riak/
 
-    To install the riak package use `pip` or `easy_install`:
+    To install the :pypi:`riak` package use `pip` or `easy_install`:
 
     .. code-block:: console
 
@@ -1076,9 +1078,9 @@ The fields of the URL are defined as follows:
 #. ``bucket``
 
     Bucket name to use. Default is `celery`.
-    The bucket needs to be a string with ascii characters only.
+    The bucket needs to be a string with ASCII characters only.
 
-Altenatively, this backend can be configured with the following configuration directives.
+Alternatively, this backend can be configured with the following configuration directives.
 
 .. setting:: riak_backend_settings
 
@@ -1089,7 +1091,7 @@ This is a dict supporting the following keys:
 
 * ``host``
 
-    The host name of the Riak server. Defaults to "localhost".
+    The host name of the Riak server. Defaults to ``"localhost"``.
 
 * ``port``
 
@@ -1140,14 +1142,16 @@ Couchbase backend settings
     The Couchbase backend requires the :pypi:`couchbase` library:
     https://pypi.python.org/pypi/couchbase
 
-    To install the couchbase package use `pip` or `easy_install`:
+    To install the :pypi:`couchbase` package use `pip` or `easy_install`:
 
     .. code-block:: console
 
         $ pip install couchbase
 
 This backend can be configured via the :setting:`result_backend`
-set to a couchbase URL::
+set to a Couchbase URL:
+
+.. code-block:: python
 
     result_backend = 'couchbase://username:password@host:port/bucket'
 
@@ -1189,14 +1193,14 @@ CouchDB backend settings
     The CouchDB backend requires the :pypi:`pycouchdb` library:
     https://pypi.python.org/pypi/pycouchdb
 
-    To install the couchbase package use `pip` or `easy_install`:
+    To install the Couchbase package use :command:`pip`, or :command:`easy_install`:
 
     .. code-block:: console
 
         $ pip install pycouchdb
 
 This backend can be configured via the :setting:`result_backend`
-set to a couchdb URL::
+set to a CouchDB URL::
 
     result_backend = 'couchdb://username:password@host:port/container'
 
@@ -1282,7 +1286,7 @@ This backend can be configured using a file URL, for example::
 
     CELERY_RESULT_BACKEND = 'file:///var/celery/results'
 
-The configured directory needs to be shared and writeable by all servers using
+The configured directory needs to be shared and writable by all servers using
 the backend.
 
 If you are trying Celery on a single system you can simply use the backend
@@ -1311,7 +1315,7 @@ the :ref:`automatic routing facilities <routing-automatic>`.
 If you really want to configure advanced routing, this setting should
 be a list of :class:`kombu.Queue` objects the worker will consume from.
 
-Note that workers can be overriden this setting via the
+Note that workers can be overridden this setting via the
 :option:`-Q <celery worker -Q>` option, or individual queues from this
 list (by name) can be excluded using the :option:`-X <celery worker -X>`
 option.
@@ -1713,7 +1717,7 @@ The maximum number of connections that can be open in the connection pool.
 
 The pool is enabled by default since version 2.5, with a default limit of ten
 connections.  This number can be tweaked depending on the number of
-threads/greenthreads (eventlet/gevent) using a connection.  For example
+threads/green-threads (eventlet/gevent) using a connection.  For example
 running eventlet with 1000 greenlets that use a connection to the broker,
 contention can arise and you should consider increasing the limit.
 
@@ -2009,7 +2013,7 @@ The default is 2 seconds.
 ~~~~~~~~~~~~~~~~~
 .. versionadded:: 4.0
 
-Charset for outgoing emails. Default is 'utf-8'.
+Character set for outgoing emails. Default is ``"utf-8"``.
 
 .. _conf-example-error-mail-config:
 
@@ -2089,7 +2093,7 @@ Disabled by default.
 Expiry time in seconds (int/float) for when after a monitor clients
 event queue will be deleted (``x-expires``).
 
-Default is never, relying on the queue autodelete setting.
+Default is never, relying on the queue auto-delete setting.
 
 .. setting:: event_serializer
 
@@ -2219,7 +2223,7 @@ used to sign messages when :ref:`message-signing` is used.
 .. versionadded:: 2.5
 
 The directory containing X.509 certificates used for
-:ref:`message-signing`.  Can be a glob with wildcards,
+:ref:`message-signing`.  Can be a glob with wild-cards,
 (for example :file:`/etc/certs/*.pem`).
 
 .. _conf-custom-components:
@@ -2269,7 +2273,7 @@ Default is ``celery.worker.autoscale:Autoscaler``.
 ``worker_autoreloader``
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Name of the autoreloader class used by the worker to reload
+Name of the auto-reloader class used by the worker to reload
 Python modules and files that have changed.
 
 Default is: ``celery.worker.autoreload:Autoreloader``.
@@ -2288,8 +2292,8 @@ Default is :class:`celery.worker.consumer.Consumer`
 ~~~~~~~~~~~~~~~~
 
 Name of the ETA scheduler class used by the worker.
-Default is :class:`kombu.async.hub.timer.Timer`, or one overrided
-by the pool implementation.
+Default is :class:`kombu.async.hub.timer.Timer`, or set by the
+pool implementation.
 
 .. _conf-celerybeat:
 

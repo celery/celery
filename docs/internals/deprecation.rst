@@ -1,8 +1,8 @@
 .. _deprecation-timeline:
 
-=============================
- Celery Deprecation Timeline
-=============================
+==============================
+ Celery Deprecation Time-line
+==============================
 
 .. contents::
     :local:
@@ -62,7 +62,7 @@ Compat Task Modules
 
 
 Note that the new :class:`~celery.Task` class no longer
-uses classmethods for these methods:
+uses :func:`classmethod` for these methods:
 
     - delay
     - apply_async

@@ -54,7 +54,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
   when publishing tasks (Issue #1540).
 
 - New :envvar:`C_FAKEFORK` environment variable can be used to
-  debug the init scripts.
+  debug the init-scripts.
 
     Setting this will skip the daemonization step so that errors
     printed to stderr after standard outs are closed can be seen:
@@ -93,7 +93,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Contributed by Matt Robenolt.
 
-- Posix: Daemonization did not redirect ``sys.stdin`` to ``/dev/null``.
+- POSIX: Daemonization did not redirect ``sys.stdin`` to ``/dev/null``.
 
     Fix contributed by Alexander Smirnov.
 
@@ -113,7 +113,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on :pypi:`billiard` 2.7.3.32
 
-- Fixed bug with monthly and yearly crontabs (Issue #1465).
+- Fixed bug with monthly and yearly Crontabs (Issue #1465).
 
     Fix contributed by Guillaume Gauvrit.
 
@@ -177,7 +177,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - [generic-init.d] Fixed compatibility with Ubuntu's minimal Dash
   shell (Issue #1387).
 
-    Fix contributed by monkut.
+    Fix contributed by :github_user:`monkut`.
 
 - ``Task.apply``/``ALWAYS_EAGER`` now also executes callbacks and errbacks
   (Issue #1336).
@@ -192,13 +192,13 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - [Python 3] Now handles ``io.UnsupportedOperation`` that may be raised
   by ``file.fileno()`` in Python 3.
 
-- [Python 3] Fixed problem with qualname.
+- [Python 3] Fixed problem with ``qualname``.
 
 - [events.State] Now ignores unknown event-groups.
 
 - [MongoDB backend] No longer uses deprecated ``safe`` parameter.
 
-    Fix contributed by rfkrocktk
+    Fix contributed by :github_user:`rfkrocktk`.
 
 - The eventlet pool now imports on Windows.
 
@@ -294,7 +294,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Connection URLs now ignore multiple '+' tokens.
 
-- Worker/statedb: Now uses pickle protocol 2 (Py2.5+)
+- Worker/``statedb``: Now uses pickle protocol 2 (Python 2.5+)
 
 - Fixed Python 3 compatibility issues.
 
@@ -397,7 +397,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - RabbitMQ/Redis: thread-less and lock-free rate-limit implementation.
 
     This means that rate limits pose minimal overhead when used with
-    RabbitMQ/Redis or future transports using the eventloop,
+    RabbitMQ/Redis or future transports using the event-loop,
     and that the rate-limit implementation is now thread-less and lock-free.
 
     The thread-based transports will still use the old implementation for
@@ -511,7 +511,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Contributed by Milen Pavlov.
 
-- Improved init scripts for CentOS.
+- Improved init-scripts for CentOS.
 
     - Updated to support celery 3.x conventions.
     - Now uses CentOS built-in ``status`` and ``killproc``
@@ -559,7 +559,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     It was causing too many problems for users, you can still enable
     it using the :setting:`CELERYD_FORCE_EXECV` setting.
 
-    execv was only enabled when transports other than amqp/redis was used,
+    execv was only enabled when transports other than AMQP/Redis was used,
     and it's there to prevent deadlocks caused by mutexes not being released
     before the process forks.  Unfortunately it also changes the environment
     introducing many corner case bugs that is hard to fix without adding
@@ -670,7 +670,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on Kombu 2.5
 
-    - py-amqp has replaced amqplib as the default transport,
+    - :pypi:`amqp` has replaced :pypi:`amqplib` as the default transport,
       gaining support for AMQP 0.9, and the RabbitMQ extensions
       including Consumer Cancel Notifications and heartbeats.
 
@@ -685,7 +685,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - The :option:`--loader <celery --loader>` option now works again (Issue #1066).
 
-- :program:`celery` umbrella command: All subcommands now supports
+- :program:`celery` umbrella command: All sub-commands now supports
   the :option:`--workdir <celery --workdir>` option (Issue #1063).
 
 - Groups included in chains now give GroupResults (Issue #1057)
@@ -744,14 +744,14 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Contributed by Loren Abrams.
 
-- multi stopwait command now shows the pid of processes.
+- ``multi stopwait`` command now shows the pid of processes.
 
     Contributed by Loren Abrams.
 
 - Handling of ETA/countdown fixed when the :setting:`CELERY_ENABLE_UTC`
    setting is disabled (Issue #1065).
 
-- A number of uneeded properties were included in messages,
+- A number of unneeded properties were included in messages,
   caused by accidentally passing ``Queue.as_dict`` as message properties.
 
 - Rate limit values can now be float
@@ -778,7 +778,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Contributed by Thomas Grainger.
 
-- Mongodb backend: Connection ``max_pool_size`` can now be set in
+- MongoDB backend: Connection ``max_pool_size`` can now be set in
   :setting:`CELERY_MONGODB_BACKEND_SETTINGS`.
 
     Contributed by Craig Younkins.
@@ -857,7 +857,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - :mod:`celery.contrib.batches` now works again.
 
-- Fixed missing whitespace in ``bdist_rpm`` requirements (Issue #1046).
+- Fixed missing white-space in ``bdist_rpm`` requirements (Issue #1046).
 
 - Event state's ``tasks_by_name`` applied limit before filtering by name.
 
@@ -893,17 +893,17 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
           changed if *no custom locations are set*.
 
     Users can force paths to be created by calling the ``create-paths``
-    subcommand:
+    sub-command:
 
     .. code-block:: console
 
         $ sudo /etc/init.d/celeryd create-paths
 
-    .. admonition:: Upgrading Celery will not update init scripts
+    .. admonition:: Upgrading Celery will not update init-scripts
 
-        To update the init scripts you have to re-download
+        To update the init-scripts you have to re-download
         the files from source control and update them manually.
-        You can find the init scripts for version 3.0.x at:
+        You can find the init-scripts for version 3.0.x at:
 
             https://github.com/celery/celery/tree/3.0/extra/generic-init.d
 
@@ -923,11 +923,11 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Terminating a task now properly updates the state of the task to revoked,
   and sends a ``task-revoked`` event.
 
-- Generic worker init script now waits for workers to shutdown by default.
+- Generic worker init-script now waits for workers to shutdown by default.
 
 - Multi: No longer parses --app option (Issue #1008).
 
-- Multi: stop_verify command renamed to stopwait.
+- Multi: ``stop_verify`` command renamed to ``stopwait``.
 
 - Daemonization: Now delays trying to create pidfile/logfile until after
   the working directory has been changed into.
@@ -956,7 +956,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Now depends on billiard 2.7.3.14
 
     - Fixes crash at start-up when using Django and pre-1.4 projects
-      (setup_environ).
+      (``setup_environ``).
 
     - Hard time limits now sends the KILL signal shortly after TERM,
       to terminate processes that have signal handlers blocked by C extensions.
@@ -964,7 +964,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     - Billiard now installs even if the C extension cannot be built.
 
         It's still recommended to build the C extension if you are using
-        a transport other than rabbitmq/redis (or use forced execv for some
+        a transport other than RabbitMQ/Redis (or use forced execv for some
         other reason).
 
     - Pool now sets a ``current_process().index`` attribute that can be used to create
@@ -1041,7 +1041,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Worker: Log messages when connection established and lost have been improved.
 
-- The repr of a crontab schedule value of '0' should be '*'  (Issue #972).
+- The repr of a Crontab schedule value of '0' should be '*'  (Issue #972).
 
 - Revoked tasks are now removed from reserved/active state in the worker
   (Issue #969)
@@ -1050,7 +1050,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - gevent: Now supports hard time limits using ``gevent.Timeout``.
 
-- Documentation: Links to init scripts now point to the 3.0 branch instead
+- Documentation: Links to init-scripts now point to the 3.0 branch instead
   of the development branch (master).
 
 - Documentation: Fixed typo in signals user guide (Issue #986).
@@ -1100,7 +1100,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Fixed bug with timezones when :setting:`CELERY_ENABLE_UTC` is disabled
   (Issue #952).
 
-- Fixed a typo in the celerybeat upgrade mechanism (Issue #951).
+- Fixed a typo in the ``celerybeat`` upgrade mechanism (Issue #951).
 
 - Make sure the `exc_info` argument to logging is resolved (Issue #899).
 
@@ -1142,7 +1142,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now depends on Kombu 2.4.4
 
-- Fixed problem with amqplib and receiving larger message payloads
+- Fixed problem with :pypi:`amqplib` and receiving larger message payloads
   (Issue #922).
 
     The problem would manifest itself as either the worker hanging,
@@ -1151,7 +1151,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
     Users of the new ``pyamqp://`` transport must upgrade to
     :pypi:`amqp` 0.9.3.
 
-- Beat: Fixed another timezone bug with interval and crontab schedules
+- Beat: Fixed another timezone bug with interval and Crontab schedules
   (Issue #943).
 
 - Beat: The schedule file is now automatically cleared if the timezone
@@ -1243,7 +1243,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Crontab schedules now properly respects :setting:`CELERY_TIMEZONE` setting.
 
-    It's important to note that crontab schedules uses UTC time by default
+    It's important to note that Crontab schedules uses UTC time by default
     unless this setting is set.
 
     Issue #904 and :pypi:`django-celery` #150.
@@ -1284,8 +1284,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - The argument to :class:`~celery.exceptions.TaskRevokedError` is now one
   of the reasons ``revoked``, ``expired`` or ``terminated``.
 
-- Old Task class does no longer use classmethods for push_request and
-  pop_request  (Issue #912).
+- Old Task class does no longer use :class:`classmethod` for ``push_request``
+  and ``pop_request``  (Issue #912).
 
 - ``GroupResult`` now supports the ``children`` attribute (Issue #916).
 
@@ -1301,7 +1301,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Improved event and camera examples in the monitoring guide.
 
-- Disables celery command setuptools entrypoints if the command can't be
+- Disables celery command setuptools entry-points if the command can't be
   loaded.
 
 - Fixed broken ``dump_request`` example in the tasks guide.
@@ -1330,7 +1330,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - ``chain.apply`` now passes args to the first task (Issue #889).
 
 - Documented previously secret options to the :pypi:`django-celery` monitor
-  in the monitoring userguide (Issue #396).
+  in the monitoring user guide (Issue #396).
 
 - Old changelog are now organized in separate documents for each series,
   see :ref:`history`.
@@ -1352,7 +1352,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Now supports AMQP heartbeats if using the new ``pyamqp://`` transport.
 
-    - The py-amqp transport requires the :pypi:`amqp` library to be installed:
+    - The :pypi:`amqp` transport requires the :pypi:`amqp` library to be installed:
 
         .. code-block:: console
 
@@ -1366,7 +1366,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
         BROKER_HEARTBEAT = 5.0
 
     - If the broker heartbeat is set to 10 seconds, the heartbeats will be
-      monitored every 5 seconds (double the hertbeat rate).
+      monitored every 5 seconds (double the heartbeat rate).
 
     See the :ref:`Kombu 2.3 changelog <kombu:version-2.3.0>` for more information.
 
@@ -1418,7 +1418,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
             }
 
 - New :meth:`@add_defaults` method can add new default configuration
-  dicts to the applications configuration.
+  dictionaries to the applications configuration.
 
     For example::
 
@@ -1450,8 +1450,8 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Fix contributed by Hynek Schlawack.
 
-- Eventloop now properly handles the case when the epoll poller object
-  has been closed (Issue #882).
+- Event-loop now properly handles the case when the :manpage:`epoll` poller
+  object has been closed (Issue #882).
 
 - Fixed syntax error in ``funtests/test_leak.py``
 
@@ -1474,7 +1474,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 :release-date: 2012-07-20 09:17 P.M BST
 :release-by: Ask Solem
 
-- amqplib passes the channel object as part of the delivery_info
+- :pypi:`amqplib` passes the channel object as part of the delivery_info
   and it's not pickleable, so we now remove it.
 
 .. _version-3.0.2:
@@ -1557,7 +1557,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 - Beat: now works with timezone aware datetime's.
 
 - Task classes inheriting ``from celery import Task``
-  mistakingly enabled ``accept_magic_kwargs``.
+  mistakenly enabled ``accept_magic_kwargs``.
 
 - Fixed bug in ``inspect scheduled`` (Issue #829).
 

@@ -1,5 +1,5 @@
 =====================================
- celery.worker.request
+ ``celery.worker.request``
 =====================================
 
 .. contents::

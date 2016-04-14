@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-"Safe weakrefs", originally from pyDispatcher.
+"Safe weakrefs", originally from :pypi:`pyDispatcher`.
 
 Provides a way to safely weakref any function, including bound methods (which
 aren't handled by the core weakref module).

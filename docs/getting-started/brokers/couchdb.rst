@@ -30,16 +30,20 @@ Configuration
 =============
 
 Configuration is easy, set the transport, and configure the location of
-your CouchDB database::
+your CouchDB database:
+
+.. code-block:: python
 
     broker_url = 'couchdb://localhost:5984/database_name'
 
-Where the URL is in the format of::
+Where the URL is in the format of:
+
+.. code-block:: text
 
     couchdb://userid:password@hostname:port/database_name
 
 The host name will default to ``localhost`` and the port to 5984,
-and so they are optional.  userid and password are also optional,
+and so they are optional.  ``userid`` and ``password`` are also optional,
 but needed if your CouchDB server requires authentication.
 
 .. _couchdb-results-configuration:

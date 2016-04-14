@@ -217,12 +217,12 @@ Starting the worker process
 In a production environment you will want to run the worker in the background
 as a daemon - see :ref:`daemonizing` - but for testing and
 development it is useful to be able to start a worker instance by using the
-``celery worker`` manage command, much as you would use Django's runserver:
+:program:`celery worker` manage command, much as you would use Django's
+:command:`manage.py runserver`:
 
 .. code-block:: console
 
     $ celery -A proj worker -l info
-
 
 For a complete listing of the command-line options available,
 use the help command:

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.backends.redis
-    ~~~~~~~~~~~~~~~~~~~~~
+    ``celery.backends.redis``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Redis result store backend.
 
@@ -102,10 +102,10 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
 
     ResultConsumer = ResultConsumer
 
-    #: redis-py client module.
+    #: :pypi:`redis` client module.
     redis = redis
 
-    #: Maximium number of connections in the pool.
+    #: Maximum number of connections in the pool.
     max_connections = None
 
     supports_autoexpire = True

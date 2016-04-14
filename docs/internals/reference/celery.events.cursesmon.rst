@@ -1,5 +1,5 @@
 ==========================================
- celery.events.cursesmon
+ ``celery.events.cursesmon``
 ==========================================
 
 .. contents::

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-    celery.datastructures
-    ~~~~~~~~~~~~~~~~~~~~~
+    ``celery.datastructures``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Custom types and data structures.
+    Custom types and data-structures.
 
 """
 from __future__ import absolute_import, print_function, unicode_literals
@@ -32,9 +32,11 @@ except ImportError:
         pass
     LazySettings = LazyObject  # noqa
 
-__all__ = ['GraphFormatter', 'CycleError', 'DependencyGraph',
-           'AttributeDictMixin', 'AttributeDict', 'DictAttribute',
-           'ConfigurationView', 'LimitedSet']
+__all__ = [
+    'GraphFormatter', 'CycleError', 'DependencyGraph',
+    'AttributeDictMixin', 'AttributeDict', 'DictAttribute',
+    'ConfigurationView', 'LimitedSet',
+]
 
 DOT_HEAD = """
 {IN}{type} {id} {{
@@ -447,15 +449,16 @@ MutableMapping.register(DictAttribute)
 
 @python_2_unicode_compatible
 class ConfigurationView(AttributeDictMixin):
-    """A view over an applications configuration dicts.
+    """A view over an applications configuration dictionaries.
 
     Custom (but older) version of :class:`collections.ChainMap`.
 
-    If the key does not exist in ``changes``, the ``defaults`` dicts
-    are consulted.
+    If the key does not exist in ``changes``, the ``defaults``
+    dictionaries are consulted.
 
     :param changes:  Dict containing changes to the configuration.
-    :param defaults: List of dicts containing the default configuration.
+    :param defaults: List of dictionaries containing the default
+                     configuration.
 
     """
     key_t = None
@@ -596,17 +599,17 @@ class LimitedSet(object):
     Good for when you need to test for membership (`a in set`),
     but the set should not grow unbounded.
 
-    Maxlen is enforced at all times, so if the limit is reached
+    ``maxlen`` is enforced at all times, so if the limit is reached
     we will also remove non-expired items.
 
-    You can also configure minlen, which is the minimal residual size
+    You can also configure ``minlen``, which is the minimal residual size
     of the set.
 
     All arguments are optional, and no limits are enabled by default.
 
     :keyword maxlen: Optional max number of items.
 
-        Adding more items than maxlen will result in immediate
+        Adding more items than ``maxlen`` will result in immediate
         removal of items sorted by oldest insertion time.
 
     :keyword expires: TTL for all items.
@@ -614,19 +617,22 @@ class LimitedSet(object):
         Expired items are purged as keys are inserted.
 
     :keyword minlen: Minimal residual size of this set.
+
         .. versionadded:: 4.0
 
         Value must be less than ``maxlen`` if both are configured.
 
         Older expired items will be deleted, only after the set
-        exceeds minlen number of items.
+        exceeds ``minlen`` number of items.
 
     :keyword data: Initial data to initialize set with.
         Can be an iterable of ``(key, value)`` pairs,
         a dict (``{key: insertion_time}``), or another instance
         of :class:`LimitedSet`.
 
-    Example::
+    Example:
+
+    .. code-block:: pycon
 
         >>> s = LimitedSet(maxlen=50000, expires=3600, minlen=4000)
         >>> for i in range(60000):

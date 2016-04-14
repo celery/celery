@@ -1,7 +1,7 @@
 # -* coding: utf-8 -*-
 """
-    celery.backends.elasticsearch
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ``celery.backends.elasticsearch``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Elasticsearch result store backend.
 

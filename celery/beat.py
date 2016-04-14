@@ -52,7 +52,7 @@ DEFAULT_MAX_INTERVAL = 300  # 5 minutes
 
 
 class SchedulingError(Exception):
-    """An error occured while scheduling a task."""
+    """An error occurred while scheduling a task."""
 
 
 @total_ordering
@@ -74,7 +74,7 @@ class ScheduleEntry(object):
     #: The task name
     name = None
 
-    #: The schedule (run_every/crontab)
+    #: The schedule (:class:`~celery.schedules.schedule`)
     schedule = None
 
     #: Positional arguments to apply.

@@ -89,9 +89,11 @@ class MutableURL(object):
 
     Supports editing the query parameter list.
     You can convert the object back to a string, the query will be
-    properly urlencoded.
+    properly URL-encoded.
 
-    Examples
+    Examples:
+
+    .. code-block:: pycon
 
         >>> url = URL('http://www.google.com:6580/foo/bar?x=3&y=4#foo')
         >>> url.query
@@ -177,7 +179,7 @@ def dispatch(self, url=None, method='GET', **kwargs):
     .. attribute:: url
 
         If this is set, this is used as the default URL for requests.
-        Default is to require the user of the task to supply the url as an
+        Default is to require the user of the task to supply the URL as an
         argument, as this attribute is intended for subclasses.
 
     .. attribute:: method

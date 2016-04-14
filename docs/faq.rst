@@ -88,7 +88,7 @@ Kombu is part of the Celery ecosystem and is the library used
 to send and receive messages.  It is also the library that enables
 us to support many different message brokers.  It is also used by the
 OpenStack project, and many others, validating the choice to separate
-it from the Celery codebase.
+it from the Celery code-base.
 
 .. _`kombu`: http://pypi.python.org/pypi/kombu
 
@@ -296,7 +296,7 @@ I'm having `IntegrityError: Duplicate Key` errors. Why?
 ---------------------------------------------------------
 
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
-Thanks to howsthedotcom.
+Thanks to :github_user:`@howsthedotcom`.
 
 .. _faq-worker-stops-processing:
 
@@ -370,7 +370,7 @@ all configured task queues:
 
     $ celery -A proj purge
 
-or programatically:
+or programmatically:
 
 .. code-block:: pycon
 
@@ -571,17 +571,20 @@ The connection pool is enabled by default since version 2.5.
 
 .. _faq-sudo-subprocess:
 
-Sudo in a :mod:`subprocess` returns :const:`None`
--------------------------------------------------
+:command:`sudo` in a :mod:`subprocess` returns :const:`None`
+------------------------------------------------------------
 
-There is a sudo configuration option that makes it illegal for process
-without a tty to run sudo::
+There is a :command:`sudo` configuration option that makes it illegal
+for process without a tty to run :command:`sudo`:
+
+.. code-block:: text
 
     Defaults requiretty
 
 If you have this configuration in your :file:`/etc/sudoers` file then
-tasks will not be able to call sudo when the worker is running as a daemon.
-If you want to enable that, then you need to remove the line from sudoers.
+tasks will not be able to call :command:`sudo` when the worker is
+running as a daemon.  If you want to enable that, then you need to remove
+the line from :file:`/etc/sudoers`.
 
 See: http://timelordz.com/wiki/Apache_Sudo_Commands
 
@@ -782,7 +785,7 @@ Should I use retry or acks_late?
 to use both.
 
 `Task.retry` is used to retry tasks, notably for expected errors that
-is catchable with the :keyword:`try` block. The AMQP transaction is not used
+is catch-able with the :keyword:`try` block. The AMQP transaction is not used
 for these errors: **if the task raises an exception it is still acknowledged!**
 
 The `acks_late` setting would be used when you need the task to be
@@ -849,14 +852,14 @@ but this also means that a ``WorkerLostError`` state will be set for the
 task so the task will not run again.
 
 Identifying the type of process is easier if you have installed the
-``setproctitle`` module:
+:pypi:`setproctitle` module:
 
 .. code-block:: console
 
     $ pip install setproctitle
 
-With this library installed you will be able to see the type of process in ps
-listings, but the worker must be restarted for this to take effect.
+With this library installed you will be able to see the type of process in
+:command:`ps` listings, but the worker must be restarted for this to take effect.
 
 .. seealso::
 

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-    celery.backends.filesystem
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ``celery.backends.filesystem``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     File-system result store backend.
+
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -39,7 +40,7 @@ class FilesystemBackend(KeyValueStoreBackend):
     :param url:  URL to the directory we should use
     :param open: open function to use when opening files
     :param unlink: unlink function to use when deleting files
-    :param sep: directory seperator (to join the directory with the key)
+    :param sep: directory separator (to join the directory with the key)
     :param encoding: encoding used on the file-system
 
     """
@@ -50,7 +51,7 @@ class FilesystemBackend(KeyValueStoreBackend):
         self.url = url
         path = self._find_path(url)
 
-        # We need the path and seperator as bytes objects
+        # We need the path and separator as bytes objects
         self.path = path.encode(encoding)
         self.sep = sep.encode(encoding)
 

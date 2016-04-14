@@ -1,5 +1,5 @@
 ========================================
- celery.worker.autoscale
+ ``celery.worker.autoscale``
 ========================================
 
 .. contents::

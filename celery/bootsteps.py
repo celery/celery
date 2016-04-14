@@ -308,7 +308,7 @@ class Step(object):
 
     """
 
-    #: Optional step name, will use qualname if not specified.
+    #: Optional step name, will use ``qualname`` if not specified.
     name = None
 
     #: Optional short name used for graph outputs and in logs.

@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-    celery.app.builtins
-    ~~~~~~~~~~~~~~~~~~~
+    ``celery.app.builtins``
+    ~~~~~~~~~~~~~~~~~~~~~~~
 
     Built-in tasks that are always available in all
-    app instances. E.g. chord, group and xmap.
+    app instances. E.g. :class:`@chord`, :class:`@group`
+    and :class:`@xmap`.
 
 """
 from __future__ import absolute_import, unicode_literals

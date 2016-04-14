@@ -78,14 +78,14 @@ Installing RabbitMQ on OS X
 The easiest way to install RabbitMQ on OS X is using `Homebrew`_ the new and
 shiny package management system for OS X.
 
-First, install homebrew using the one-line command provided by the `Homebrew
+First, install Homebrew using the one-line command provided by the `Homebrew
 documentation`_:
 
 .. code-block:: console
 
     ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
 
-Finally, we can install rabbitmq using :command:`brew`:
+Finally, we can install RabbitMQ using :command:`brew`:
 
 .. code-block:: console
 
@@ -96,8 +96,8 @@ Finally, we can install rabbitmq using :command:`brew`:
 
 .. _rabbitmq-osx-system-hostname:
 
-After you've installed rabbitmq with :command:`brew` you need to add the following to
-your path to be able to start and stop the broker: add it to the startup file for your
+After you've installed RabbitMQ with :command:`brew` you need to add the following to
+your path to be able to start and stop the broker: add it to the start-up file for your
 shell (e.g. :file:`.bash_profile` or :file:`.profile`).
 
 .. code-block:: bash
@@ -122,8 +122,8 @@ back into an IP address::
 
     127.0.0.1       localhost myhost myhost.local
 
-If you start the rabbitmq server, your rabbit node should now be `rabbit@myhost`,
-as verified by :command:`rabbitmqctl`:
+If you start the :command:`rabbitmq-server`, your rabbit node should now
+be `rabbit@myhost`, as verified by :command:`rabbitmqctl`:
 
 .. code-block:: console
 

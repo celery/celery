@@ -59,7 +59,7 @@ class Signal(object):  # pragma: no cover
         :param receiver: A function or an instance method which is to
             receive signals. Receivers must be hashable objects.
 
-            if weak is :const:`True`, then receiver must be weak-referencable
+            if weak is :const:`True`, then receiver must be weak-referenceable
             (more precisely :func:`saferef.safe_ref()` must be able to create a
             reference to the receiver).
 

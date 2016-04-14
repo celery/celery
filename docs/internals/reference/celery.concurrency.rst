@@ -1,5 +1,5 @@
 ==================================
- celery.concurrency
+ ``celery.concurrency``
 ==================================
 
 .. contents::

@@ -322,7 +322,7 @@ def install_cry_handler(sig='SIGUSR1'):
         return
 
     def cry_handler(*args):
-        """Signal handler logging the stacktrace of all active threads."""
+        """Signal handler logging the stack-trace of all active threads."""
         with in_sighandler():
             safe_say(cry())
     platforms.signals[sig] = cry_handler

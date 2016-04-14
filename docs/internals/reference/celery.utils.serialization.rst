@@ -1,5 +1,5 @@
 ============================================
- celery.utils.serialization
+ ``celery.utils.serialization``
 ============================================
 
 .. contents::

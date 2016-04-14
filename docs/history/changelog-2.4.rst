@@ -71,7 +71,7 @@ Fixes
 
     Contributed by Juan Ignacio Catalano.
 
-* generic init scripts now automatically creates log and pid file
+* generic init-scripts now automatically creates log and pid file
   directories (Issue #545).
 
     Contributed by Chris Streeter.
@@ -104,14 +104,14 @@ Fixes
 :release-date: 2011-11-07 06:00 P.M GMT
 :release-by: Ask Solem
 
-* celeryctl inspect commands was missing output.
+* ``celeryctl inspect`` commands was missing output.
 
 * processes pool: Decrease polling interval for less idle CPU usage.
 
 * processes pool: MaybeEncodingError was not wrapped in ExceptionInfo
   (Issue #524).
 
-* worker: would silence errors occuring after task consumer started.
+* worker: would silence errors occurring after task consumer started.
 
 * logging: Fixed a bug where unicode in stdout redirected log messages
   couldn't be written (Issue #522).
@@ -168,11 +168,15 @@ Important Notes
 * Broker transports can be now be specified using URLs
 
     The broker can now be specified as an URL instead.
-    This URL must have the format::
+    This URL must have the format:
+
+    .. code-block:: text
 
         transport://user:password@hostname:port/virtual_host
 
-    for example the default broker is written as::
+    for example the default broker is written as:
+
+    .. code-block:: text
 
         amqp://guest:guest@localhost:5672//
 
@@ -190,9 +194,13 @@ Important Notes
 
         A virtual host of ``'/'`` becomes:
 
+        .. code-block:: text
+
             amqp://guest:guest@localhost:5672//
 
-        and a virtual host of ``''`` (empty) becomes::
+        and a virtual host of ``''`` (empty) becomes:
+
+        .. code-block:: text
 
             amqp://guest:guest@localhost:5672/
 
@@ -278,13 +286,13 @@ News
     tutorials out there using a tuple, and this change should be a help
     to new users.
 
-    Suggested by jsaxon-cars.
+    Suggested by :github_user:`jsaxon-cars`.
 
 * Fixed a memory leak when using the thread pool (Issue #486).
 
     Contributed by Kornelijus Survila.
 
-* The statedb was not saved at exit.
+* The ``statedb`` was not saved at exit.
 
     This has now been fixed and it should again remember previously
     revoked tasks when a ``--statedb`` is enabled.
@@ -302,13 +310,13 @@ News
 
     Contributed by Chris Chamberlin.
 
-* Fixed race condition in celery.events.state (celerymon/celeryev)
+* Fixed race condition in :mod:`celery.events.state` (``celerymon``/``celeryev``)
   where task info would be removed while iterating over it (Issue #501).
 
 * The Cache, Cassandra, MongoDB, Redis and Tyrant backends now respects
   the :setting:`CELERY_RESULT_SERIALIZER` setting (Issue #435).
 
-    This means that only the database (django/sqlalchemy) backends
+    This means that only the database (Django/SQLAlchemy) backends
     currently does not support using custom serializers.
 
     Contributed by Steeve Morin
@@ -344,11 +352,11 @@ News
 
     Fix contributed by Joshua Ginsberg
 
-* Generic beat init script no longer sets `bash -e` (Issue #510).
+* Generic beat init-script no longer sets `bash -e` (Issue #510).
 
     Fix contributed by Roger Hu.
 
-* Documented that Chords do not work well with redis-server versions
+* Documented that Chords do not work well with :command:`redis-server` versions
   before 2.2.
 
     Contributed by Dan McGee.
@@ -365,15 +373,19 @@ News
 * Worker logged the string representation of args and kwargs
   without safe guards (Issue #480).
 
-* RHEL init script: Changed worker start-up priority.
+* RHEL init-script: Changed worker start-up priority.
 
-    The default start / stop priorities for MySQL on RHEL are
+    The default start / stop priorities for MySQL on RHEL are:
+
+    .. code-block:: console
 
         # chkconfig: - 64 36
 
     Therefore, if Celery is using a database as a broker / message store, it
     should be started after the database is up and running, otherwise errors
-    will ensue. This commit changes the priority in the init script to
+    will ensue. This commit changes the priority in the init-script to:
+
+    .. code-block:: console
 
         # chkconfig: - 85 15
 
@@ -386,7 +398,7 @@ News
 * KeyValueStoreBackend.get_many did not respect the ``timeout`` argument
   (Issue #512).
 
-* beat/events's --workdir option did not chdir before after
+* beat/events's ``--workdir`` option did not :manpage:`chdir(2)` before after
   configuration was attempted (Issue #506).
 
 * After deprecating 2.4 support we can now name modules correctly, since we
@@ -394,10 +406,10 @@ News
 
     Therefore the following internal modules have been renamed:
 
-        celery.concurrency.evlet    -> celery.concurrency.eventlet
-        celery.concurrency.evg      -> celery.concurrency.gevent
+        ``celery.concurrency.evlet``    -> ``celery.concurrency.eventlet``
+        ``celery.concurrency.evg``      -> ``celery.concurrency.gevent``
 
-* AUTHORS file is now sorted alphabetically.
+* :file:`AUTHORS` file is now sorted alphabetically.
 
     Also, as you may have noticed the contributors of new features/fixes are
     now mentioned in the Changelog.

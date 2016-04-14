@@ -15,11 +15,11 @@ and usually parsed before command-specific arguments.
 
 .. cmdoption:: -A, --app
 
-    app instance to use (e.g. module.attr_name)
+    app instance to use (e.g. ``module.attr_name``)
 
 .. cmdoption:: -b, --broker
 
-    url to broker.  default is 'amqp://guest@localhost//'
+    URL to broker.  default is ``amqp://guest@localhost//``
 
 .. cmdoption:: --loader
 
@@ -615,7 +615,7 @@ class _RemoteControl(Command):
 class inspect(_RemoteControl):
     """Inspect the worker at runtime.
 
-    Availability: RabbitMQ (amqp), Redis, and MongoDB transports.
+    Availability: RabbitMQ (AMQP), Redis, and MongoDB transports.
 
     Examples::
 
@@ -656,7 +656,7 @@ class inspect(_RemoteControl):
 class control(_RemoteControl):
     """Workers remote control.
 
-    Availability: RabbitMQ (amqp), Redis, and MongoDB transports.
+    Availability: RabbitMQ (AMQP), Redis, and MongoDB transports.
 
     Examples::
 
@@ -744,10 +744,12 @@ class status(Command):
 class migrate(Command):
     """Migrate tasks from one broker to another.
 
-    Examples::
+    Examples:
 
-        celery migrate redis://localhost amqp://guest@localhost//
-        celery migrate django:// redis://localhost
+    .. code-block:: console
+
+        $ celery migrate redis://localhost amqp://guest@localhost//
+        $ celery migrate django:// redis://localhost
 
     NOTE: This command is experimental, make sure you have
           a backup of the tasks before you continue.

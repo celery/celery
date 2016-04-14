@@ -1,5 +1,5 @@
 ==========================================
- celery.app.annotations
+ ``celery.app.annotations``
 ==========================================
 
 .. contents::

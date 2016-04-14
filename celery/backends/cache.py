@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-    celery.backends.cache
-    ~~~~~~~~~~~~~~~~~~~~~
+    ``celery.backends.cache``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Memcache and in-memory cache result backend.
+    Memcached and in-memory cache result backend.
 
 """
 from __future__ import absolute_import, unicode_literals
@@ -25,7 +25,7 @@ _imp = [None]
 PY3 = sys.version_info[0] == 3
 
 REQUIRES_BACKEND = """\
-The memcached backend requires either pylibmc or python-memcached.\
+The Memcached backend requires either pylibmc or python-memcached.\
 """
 
 UNKNOWN_BACKEND = """\

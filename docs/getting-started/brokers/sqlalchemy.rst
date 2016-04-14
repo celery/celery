@@ -22,7 +22,9 @@ Configuration
 =============
 
 Celery needs to know the location of your database, which should be the usual
-SQLAlchemy connection string, but with 'sqla+' prepended to it::
+SQLAlchemy connection string, but with the ``sqla+`` prefix added:
+
+.. code-block:: python
 
     broker_url = 'sqla+sqlite:///celerydb.sqlite'
 

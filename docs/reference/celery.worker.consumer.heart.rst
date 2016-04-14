@@ -1,5 +1,5 @@
 ==================================================
- celery.worker.consumer.heart
+ ``celery.worker.consumer.heart``
 ==================================================
 
 .. contents::

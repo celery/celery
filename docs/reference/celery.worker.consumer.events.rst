@@ -1,5 +1,5 @@
 ==================================================
- celery.worker.consumer.events
+ ``celery.worker.consumer.events``
 ==================================================
 
 .. contents::

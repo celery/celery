@@ -49,6 +49,7 @@ Try --help?
 
 find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
 find_rst_ref = re.compile(r':\w+:`(.+?)`')
+find_rst_decl = re.compile(r'^\s*\.\. .+?::.+$')
 
 
 @python_2_unicode_compatible
@@ -163,7 +164,7 @@ class Command(object):
     #: Text to print in --help before option list.
     description = ''
 
-    #: Set to true if this command doesn't have subcommands
+    #: Set to true if this command doesn't have sub-commands
     leaf = True
 
     # used by :meth:`say_remote_command_reply`.
@@ -184,7 +185,7 @@ class Command(object):
         self._no_color = no_color
         self.quiet = quiet
         if not self.description:
-            self.description = self.__doc__
+            self.description = self._strip_restructeredtext(self.__doc__)
         if on_error:
             self.on_error = on_error
         if on_usage_error:
@@ -512,9 +513,18 @@ class Command(object):
                     in_option = m.groups()[0].strip()
                 assert in_option, 'missing long opt'
             elif in_option and line.startswith(' ' * 4):
-                options[in_option].append(
-                    find_rst_ref.sub(r'\1', line.strip()).replace('`', ''))
+                if not find_rst_decl.match(line):
+                    options[in_option].append(
+                        find_rst_ref.sub(
+                            r'\1', line.strip()).replace('`', ''))
         return options
+
+    def _strip_restructeredtext(self, s):
+        return '\n'.join(
+            find_rst_ref.sub(r'\1', line.replace('`', ''))
+            for line in (s or '').splitlines()
+            if not find_rst_decl.match(line)
+        )
 
     def with_pool_option(self, argv):
         """Return tuple of ``(short_opts, long_opts)`` if the command

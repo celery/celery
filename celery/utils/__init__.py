@@ -208,7 +208,7 @@ def isatty(fh):
 
 
 def cry(out=None, sepchr='=', seplen=49):  # pragma: no cover
-    """Return stacktrace of all active threads,
+    """Return stack-trace of all active threads,
     taken from https://gist.github.com/737056."""
     import threading
 

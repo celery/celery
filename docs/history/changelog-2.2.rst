@@ -70,17 +70,21 @@ Important Notes
 
 * Now depends on Kombu 1.1.2.
 
-* Dependency lists now explicitly specifies that we don't want python-dateutil
-  2.x, as this version only supports py3k.
+* Dependency lists now explicitly specifies that we don't want
+  :pypi:`python-dateutil` 2.x, as this version only supports Python 3.
 
     If you have installed dateutil 2.0 by accident you should downgrade
-    to the 1.5.0 version::
+    to the 1.5.0 version:
 
-        pip install -U python-dateutil==1.5.0
+    .. code-block:: console
 
-    or by easy_install::
+        $ pip install -U python-dateutil==1.5.0
 
-        easy_install -U python-dateutil==1.5.0
+    or by ``easy_install``:
+
+    .. code-block:: console
+
+        $ easy_install -U python-dateutil==1.5.0
 
 .. _v226-fixes:
 
@@ -146,7 +150,7 @@ News
 .. _`logrotate.d`:
     http://www.ducea.com/2006/06/06/rotating-linux-log-files-part-2-logrotate/
 
-* otherqueues tutorial now documents how to configure Redis/Database result
+* ``otherqueues`` tutorial now documents how to configure Redis/Database result
    backends.
 
 * gevent: Now supports ETA tasks.
@@ -178,7 +182,7 @@ News
 * SQLAlchemy result backend: taskset_id and taskset_id columns now have a
   unique constraint.  (Tables need to recreated for this to take affect).
 
-* Task Userguide: Added section about choosing a result backend.
+* Task user guide: Added section about choosing a result backend.
 
 * Removed unused attribute ``AsyncResult.uuid``.
 
@@ -206,10 +210,10 @@ Fixes
     that we haven't consumed from the result queue. It
     is unlikely we will receive any after 5 seconds with no worker processes).
 
-* celerybeat: Now creates pidfile even if the ``--detach`` option is not set.
+* ``celerybeat``: Now creates pidfile even if the ``--detach`` option is not set.
 
 * eventlet/gevent: The broadcast command consumer is now running in a separate
-  greenthread.
+  green-thread.
 
     This ensures broadcast commands will take priority even if there are many
     active tasks.
@@ -234,7 +238,7 @@ Fixes
 
 * ConfigurationView: ``iter(dict)`` should return keys, not items (Issue #362).
 
-* celerybeat:  PersistentScheduler now automatically removes a corrupted
+* ``celerybeat``:  PersistentScheduler now automatically removes a corrupted
   schedule file (Issue #346).
 
 * Programs that doesn't support positional command-line arguments now provides
@@ -270,7 +274,7 @@ Fixes
     disable the prefetch count, it is re-enabled as soon as the value is below
     the limit again.
 
-* cursesmon: Fixed unbound local error (Issue #303).
+* ``cursesmon``: Fixed unbound local error (Issue #303).
 
 * eventlet/gevent is now imported on demand so autodoc can import the modules
   without having eventlet/gevent installed.
@@ -283,17 +287,17 @@ Fixes
 * Cassandra Result Backend: Should now work with the latest ``pycassa``
   version.
 
-* multiprocessing.Pool: No longer cares if the putlock semaphore is released
+* multiprocessing.Pool: No longer cares if the ``putlock`` semaphore is released
   too many times. (this can happen if one or more worker processes are
   killed).
 
 * SQLAlchemy Result Backend: Now returns accidentally removed ``date_done`` again
   (Issue #325).
 
-* Task.request contex is now always initialized to ensure calling the task
+* Task.request context is now always initialized to ensure calling the task
   function directly works even if it actively uses the request context.
 
-* Exception occuring when iterating over the result from ``TaskSet.apply``
+* Exception occurring when iterating over the result from ``TaskSet.apply``
   fixed.
 
 * eventlet: Now properly schedules tasks with an ETA in the past.
@@ -329,7 +333,7 @@ Fixes
 
 * Fixed exception raised when iterating on the result of ``TaskSet.apply()``.
 
-* Tasks Userguide: Added section on choosing a result backend.
+* Tasks user guide: Added section on choosing a result backend.
 
 .. _version-2.2.3:
 
@@ -353,12 +357,12 @@ Fixes
 
 * Coloring of log messages broke if the logged object was not a string.
 
-* Fixed several typos in the init script documentation.
+* Fixed several typos in the init-script documentation.
 
 * A regression caused `Task.exchange` and `Task.routing_key` to no longer
   have any effect.  This is now fixed.
 
-* Routing Userguide: Fixes typo, routers in :setting:`CELERY_ROUTES` must be
+* Routing user guide: Fixes typo, routers in :setting:`CELERY_ROUTES` must be
   instances, not classes.
 
 * :program:`celeryev` did not create pidfile even though the
@@ -387,7 +391,7 @@ Fixes
 
     This ensures all queues are available for routing purposes.
 
-* celeryctl: Now supports the `inspect active_queues` command.
+* ``celeryctl``: Now supports the `inspect active_queues` command.
 
 .. _version-2.2.2:
 
@@ -401,7 +405,7 @@ Fixes
 Fixes
 -----
 
-* Celerybeat could not read the schedule properly, so entries in
+* ``celerybeat`` could not read the schedule properly, so entries in
   :setting:`CELERYBEAT_SCHEDULE` would not be scheduled.
 
 * Task error log message now includes `exc_info` again.
@@ -410,7 +414,7 @@ Fixes
 
     Previously it was overwritten by the countdown argument.
 
-* celery multi/celeryd_detach: Now logs errors occuring when executing
+* ``celery multi``/``celeryd_detach``: Now logs errors occurring when executing
   the `celery worker` command.
 
 * daemonizing tutorial: Fixed typo ``--time-limit 300`` ->
@@ -439,10 +443,10 @@ Fixes
 
 * ``BasePool.on_terminate`` stub did not exist
 
-* celeryd_detach: Adds readable error messages if user/group name does not
+* ``celeryd_detach``: Adds readable error messages if user/group name does not
    exist.
 
-* Smarter handling of unicode decod errors when logging errors.
+* Smarter handling of unicode decode errors when logging errors.
 
 .. _version-2.2.0:
 
@@ -469,7 +473,7 @@ Important Notes
     * Consistent error handling with introspection,
     * The ability to ensure that an operation is performed by gracefully
       handling connection and channel errors,
-    * Message compression (zlib, bzip2, or custom compression schemes).
+    * Message compression (:mod:`zlib`, :mod:`bz2`, or custom compression schemes).
 
     This means that `ghettoq` is no longer needed as the
     functionality it provided is already available in Celery by default.
@@ -482,7 +486,7 @@ Important Notes
 
 * Magic keyword arguments pending deprecation.
 
-    The magic keyword arguments were responsibile for many problems
+    The magic keyword arguments were responsible for many problems
     and quirks: notably issues with tasks and decorators, and name
     collisions in keyword arguments for the unaware.
 
@@ -708,8 +712,8 @@ Important Notes
 
     .. note::
 
-        The event exchange has been renamed from "celeryevent" to "celeryev"
-        so it does not collide with older versions.
+        The event exchange has been renamed from ``"celeryevent"``
+        to ``"celeryev"`` so it does not collide with older versions.
 
         If you would like to remove the old exchange you can do so
         by executing the following command:
@@ -746,7 +750,7 @@ Important Notes
 
 * Previously deprecated modules `celery.models` and
   `celery.management.commands` have now been removed as per the deprecation
-  timeline.
+  time-line.
 
 * [Security: Low severity] Removed `celery.task.RemoteExecuteTask` and
     accompanying functions: `dmap`, `dmap_async`, and `execute_remote`.
@@ -845,8 +849,8 @@ News
   :setting:`CELERY_MESSAGE_COMPRESSION` setting, or the `compression` argument
   to `apply_async`.  This can also be set using routers.
 
-* worker: Now logs stacktrace of all threads when receiving the
-   `SIGUSR1` signal.  (Does not work on cPython 2.4, Windows or Jython).
+* worker: Now logs stack-trace of all threads when receiving the
+   `SIGUSR1` signal.  (Does not work on CPython 2.4, Windows or Jython).
 
     Inspired by https://gist.github.com/737056
 
@@ -874,7 +878,7 @@ News
     multiple results at once, unlike `join()` which fetches the results
     one by one.
 
-    So far only supported by the AMQP result backend.  Support for memcached
+    So far only supported by the AMQP result backend.  Support for Memcached
     and Redis may be added later.
 
 * Improved implementations of `TaskSetResult.join` and `AsyncResult.wait`.
@@ -896,7 +900,7 @@ News
 
 * The following fields have been added to all events in the worker class:
 
-    * `sw_ident`: Name of worker software (e.g. py-celery).
+    * `sw_ident`: Name of worker software (e.g. ``"py-celery"``).
     * `sw_ver`: Software version (e.g. 2.2.0).
     * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
 
@@ -947,11 +951,11 @@ News
 * Redis result backend: Removed deprecated settings `REDIS_TIMEOUT` and
   `REDIS_CONNECT_RETRY`.
 
-* CentOS init script for :program:`celery worker` now available in `extra/centos`.
+* CentOS init-script for :program:`celery worker` now available in `extra/centos`.
 
-* Now depends on `pyparsing` version 1.5.0 or higher.
+* Now depends on :pypi:`pyparsing` version 1.5.0 or higher.
 
-    There have been reported issues using Celery with pyparsing 1.4.x,
+    There have been reported issues using Celery with :pypi:`pyparsing` 1.4.x,
     so please upgrade to the latest version.
 
 * Lots of new unit tests written, now with a total coverage of 95%.
@@ -977,19 +981,19 @@ Fixes
 
 * Windows: worker: Show error if running with `-B` option.
 
-    Running celerybeat embedded is known not to work on Windows, so
-    users are encouraged to run celerybeat as a separate service instead.
+    Running ``celerybeat`` embedded is known not to work on Windows, so
+    users are encouraged to run ``celerybeat`` as a separate service instead.
 
 * Windows: Utilities no longer output ANSI color codes on Windows
 
-* camqadm: Now properly handles :kbd:`Control-c` by simply exiting instead
+* ``camqadm``: Now properly handles :kbd:`Control-c` by simply exiting instead
   of showing confusing traceback.
 
 * Windows: All tests are now passing on Windows.
 
-* Remove bin/ directory, and `scripts` section from setup.py.
+* Remove bin/ directory, and `scripts` section from :file:`setup.py`.
 
-    This means we now rely completely on setuptools entrypoints.
+    This means we now rely completely on setuptools entry-points.
 
 .. _v220-experimental:
 
@@ -1006,7 +1010,7 @@ Experimental
     multiple instances (e.g. using :program:`multi`).
 
     Sadly an initial benchmark seems to show a 30% performance decrease on
-    pypy-1.4.1 + JIT.  We would like to find out why this is, so stay tuned.
+    ``pypy-1.4.1`` + JIT.  We would like to find out why this is, so stay tuned.
 
 * :class:`PublisherPool`: Experimental pool of task publishers and
   connections to be used with the `retry` argument to `apply_async`.

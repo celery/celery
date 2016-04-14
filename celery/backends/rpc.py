@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.backends.rpc
-    ~~~~~~~~~~~~~~~~~~~
+    ``celery.backends.rpc``
+    ~~~~~~~~~~~~~~~~~~~~~~~
 
     RPC-style result backend, using reply-to and one queue per client.
 

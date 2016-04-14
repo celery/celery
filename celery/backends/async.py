@@ -1,8 +1,8 @@
 """
-    celery.backends.async
-    ~~~~~~~~~~~~~~~~~~~~~
+    ``celery.backends.async``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Async backend support utilitites.
+    Async backend support utilities.
 
 """
 from __future__ import absolute_import, unicode_literals

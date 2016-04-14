@@ -99,7 +99,7 @@ is by using `celery multi`:
     $ celery multi start 1 -A proj -l info -c4 --pidfile=/var/run/celery/%n.pid
     $ celery multi restart 1 --pidfile=/var/run/celery/%n.pid
 
-For production deployments you should be using init scripts or other process
+For production deployments you should be using init-scripts or other process
 supervision systems (see :ref:`daemonizing`).
 
 Other than stopping then starting the worker to restart, you can also

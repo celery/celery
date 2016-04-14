@@ -111,7 +111,7 @@ def memdump(samples=10, file=None):  # pragma: no cover
 def sample(x, n, k=0):
     """Given a list `x` a sample of length ``n`` of that list is returned.
 
-    E.g. if `n` is 10, and `x` has 100 items, a list of every 10th
+    E.g. if `n` is 10, and `x` has 100 items, a list of every tenth.
     item is returned.
 
     ``k`` can be used as offset.

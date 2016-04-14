@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-    celery.worker.autoreload
-    ~~~~~~~~~~~~~~~~~~~~~~~~
+    ``celery.worker.autoreload``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     This module implements automatic module reloading
+
 """
 from __future__ import absolute_import, unicode_literals
 

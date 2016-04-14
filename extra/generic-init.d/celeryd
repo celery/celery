@@ -19,7 +19,7 @@
 ### END INIT INFO
 #
 #
-# To implement separate init scripts, copy this script and give it a different
+# To implement separate init-scripts, copy this script and give it a different
 # name:
 # I.e., if my new application, "little-worker" needs an init, I
 # should just use:

@@ -45,7 +45,7 @@ class Spec(object):
     """AMQP Command specification.
 
     Used to convert arguments to Python values and display various help
-    and tooltips.
+    and tool-tips.
 
     :param args: see :attr:`args`.
     :keyword returns: see :attr:`returns`.
@@ -259,7 +259,7 @@ class AMQShell(cmd.Cmd):
     def dispatch(self, cmd, arglist):
         """Dispatch and execute the command.
 
-        Lookup order is: :attr:`builtins` -> :attr:`amqp`.
+        Look-up order is: :attr:`builtins` -> :attr:`amqp`.
 
         """
         if isinstance(arglist, string_t):
@@ -354,19 +354,21 @@ class AMQPAdmin(object):
 class amqp(Command):
     """AMQP Administration Shell.
 
-    Also works for non-amqp transports (but not ones that
+    Also works for non-AMQP transports (but not ones that
     store declarations in memory).
 
-    Examples::
+    Examples:
 
-        celery amqp
+    .. code-block:: console
+
+        $ celery amqp
             start shell mode
-        celery amqp help
+        $ celery amqp help
             show list of commands
 
-        celery amqp exchange.delete name
-        celery amqp queue.delete queue
-        celery amqp queue.delete queue yes yes
+        $ celery amqp exchange.delete name
+        $ celery amqp queue.delete queue
+        $ celery amqp queue.delete queue yes yes
 
     """
 

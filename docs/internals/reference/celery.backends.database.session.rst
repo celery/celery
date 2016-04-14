@@ -1,5 +1,5 @@
 ========================================
- celery.backends.database.session
+ ``celery.backends.database.session``
 ========================================
 
 .. contents::

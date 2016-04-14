@@ -209,10 +209,10 @@ spelling or other errors on the website/docs/code.
        * Enable celery's :ref:`breakpoint signal <breakpoint_signal>` and use it
          to inspect the process's state.  This will allow you to open a
          :mod:`pdb` session.
-       * Collect tracing data using strace_(Linux), dtruss (OSX) and ktrace(BSD),
-         ltrace_ and lsof_.
+       * Collect tracing data using `strace`_(Linux), :command:`dtruss` (OSX),
+         and :command:`ktrace` (BSD), `ltrace`_ and `lsof`_.
 
-    D) Include the output from the `celery report` command:
+    D) Include the output from the :command:`celery report` command:
 
         .. code-block:: console
 
@@ -254,11 +254,11 @@ issue tracker.
 If you are unsure of the origin of the bug you can ask the
 :ref:`mailing-list`, or just use the Celery issue tracker.
 
-Contributors guide to the codebase
-==================================
+Contributors guide to the code base
+===================================
 
 There's a separate section for internal details,
-including details about the codebase and a style guide.
+including details about the code base and a style guide.
 
 Read :ref:`internals-guide` for more!
 
@@ -269,7 +269,7 @@ Versions
 
 Version numbers consists of a major version, minor version and a release number.
 Since version 2.1.0 we use the versioning semantics described by
-semver: http://semver.org.
+SemVer: http://semver.org.
 
 Stable releases are published at PyPI
 while development releases are only available in the GitHub git repository as tags.
@@ -351,17 +351,17 @@ An archived version is named ``X.Y-archived``.
 
 Our currently archived branches are:
 
-* 2.5-archived
+* :github_branch:`2.5-archived`
 
-* 2.4-archived
+* :github_branch:`2.4-archived`
 
-* 2.3-archived
+* :github_branch:`2.3-archived`
 
-* 2.1-archived
+* :github_branch:`2.1-archived`
 
-* 2.0-archived
+* :github_branch:`2.0-archived`
 
-* 1.0-archived
+* :github_branch:`1.0-archived`
 
 Feature branches
 ----------------
@@ -400,7 +400,7 @@ Forking and setting up the repository
 -------------------------------------
 
 First you need to fork the Celery repository, a good introduction to this
-is in the Github Guide: `Fork a Repo`_.
+is in the GitHub Guide: `Fork a Repo`_.
 
 After you have cloned the repository you should checkout your copy
 to a directory on your machine:
@@ -428,7 +428,7 @@ always use the ``--rebase`` option to ``git pull``:
 With this option you don't clutter the history with merging
 commit notes. See `Rebasing merge commits in git`_.
 If you want to learn more about rebasing see the `Rebase`_
-section in the Github guides.
+section in the GitHub guides.
 
 If you need to work on a different branch than ``master`` you can
 fetch and checkout a remote branch like this::
@@ -505,7 +505,7 @@ When your feature/bugfix is complete you may want to submit
 a pull requests so that it can be reviewed by the maintainers.
 
 Creating pull requests is easy, and also let you track the progress
-of your contribution.  Read the `Pull Requests`_ section in the Github
+of your contribution.  Read the `Pull Requests`_ section in the GitHub
 Guide to learn how this is done.
 
 You can also attach pull requests to existing issues by following
@@ -739,14 +739,14 @@ is following the conventions.
 
     * Python standard library (`import xxx`)
     * Python standard library ('from xxx import`)
-    * Third party packages.
+    * Third-party packages.
     * Other modules from the current package.
 
     or in case of code using Django:
 
     * Python standard library (`import xxx`)
     * Python standard library ('from xxx import`)
-    * Third party packages.
+    * Third-party packages.
     * Django packages.
     * Other modules from the current package.
 
@@ -766,7 +766,7 @@ is following the conventions.
         from .five import zip_longest, items, range
         from .utils import timeutils
 
-* Wildcard imports must not be used (`from xxx import *`).
+* Wild-card imports must not be used (`from xxx import *`).
 
 * For distributions where Python 2.5 is the oldest support version
   additional rules apply:
@@ -814,18 +814,22 @@ Some features like a new result backend may require additional libraries
 that the user must install.
 
 We use setuptools `extra_requires` for this, and all new optional features
-that require 3rd party libraries must be added.
+that require third-party libraries must be added.
 
 1) Add a new requirements file in `requirements/extras`
 
     E.g. for the Cassandra backend this is
-    :file:`requirements/extras/cassandra.txt`, and the file looks like this::
+    :file:`requirements/extras/cassandra.txt`, and the file looks like this:
+
+    .. code-block:: text
 
         pycassa
 
     These are pip requirement files so you can have version specifiers and
     multiple packages are separated by newline.  A more complex example could
     be:
+
+    .. code-block:: text
 
         # pycassa 2.0 breaks Foo
         pycassa>=1.0,<2.0
@@ -834,14 +838,14 @@ that require 3rd party libraries must be added.
 2) Modify ``setup.py``
 
     After the requirements file is added you need to add it as an option
-    to ``setup.py`` in the ``extras_require`` section::
+    to :file:`setup.py` in the ``extras_require`` section::
 
         extra['extras_require'] = {
             # ...
             'cassandra': extras('cassandra.txt'),
         }
 
-3) Document the new feature in ``docs/includes/installation.txt``
+3) Document the new feature in :file:`docs/includes/installation.txt`
 
     You must add your feature to the list in the :ref:`bundles` section
     of :file:`docs/includes/installation.txt`.
@@ -857,10 +861,10 @@ that require 3rd party libraries must be added.
 
 That's all that needs to be done, but remember that if your feature
 adds additional configuration options then these needs to be documented
-in ``docs/configuration.rst``.  Also all settings need to be added to the
-``celery/app/defaults.py`` module.
+in :file:`docs/configuration.rst`.  Also all settings need to be added to the
+:file:`celery/app/defaults.py` module.
 
-Result backends require a separate section in the ``docs/configuration.rst``
+Result backends require a separate section in the :file:`docs/configuration.rst`
 file.
 
 .. _contact_information:

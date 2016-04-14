@@ -1,5 +1,5 @@
 ====================================
- celery.worker.strategy
+ ``celery.worker.strategy``
 ====================================
 
 .. contents::

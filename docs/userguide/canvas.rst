@@ -876,7 +876,6 @@ Example Task subclass:
 .. code-block:: python
 
     class MyTask(Task):
-        abstract = True
         ignore_result = False
 
 

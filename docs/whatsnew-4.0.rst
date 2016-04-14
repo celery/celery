@@ -68,7 +68,7 @@ Joshua Harlow, Juan Rossi, Justin Patrin, Kai Groner, Kevin Harvey,
 Konstantinos Koukopoulos, Kouhei Maeda, Kracekumar Ramaraju,
 Krzysztof Bujniewicz, Latitia M. Haskins, Len Buckens, Lorenzo Mancini,
 Lucas Wiman, Luke Pomfrey, Marcio Ribeiro, Marin Atanasov Nikolov,
-Mark Parncutt, Maxime Vdb, Mher Movsisyan, Michael (``@michael-k``),
+Mark Parncutt, Maxime Vdb, Mher Movsisyan, Michael (:github_user:`michael-k`),
 Michael Duane Mooring, Michael Permana, Mickaël Penhard, Mike Attwood,
 Morton Fox, Môshe van der Sterre, Nat Williams, Nathan Van Gheem, Nik Nyby,
 Omer Katz, Omer Korner, Ori Hoch, Paul Pearce, Paulo Bu, Philip Garnero,
@@ -79,10 +79,12 @@ Seungha Kim, Steve Peak, Sukrit Khera, Tadej Janež, Tewfik Sadaoui,
 Thomas French, Thomas Grainger, Tobias Schottdorf, Tocho Tochev,
 Valentyn Klindukh, Vic Kumar, Vladimir Bolshakov, Vladimir Gorbunov,
 Wayne Chang, Wil Langford, Will Thompson, William King, Yury Selivanov,
-Zoran Pavlovic, 許邱翔, ``@allenling``, ``@bee-keeper``, ``@ffeast``,
-``@flyingfoxlee``, ``@gdw2``, ``@gitaarik``, ``@hankjin``, ``@m-vdb``,
-``@mdk``, ``@nokrik``, ``@ocean1``, ``@orlo666``, ``@raducc``,
-``@wanglei``, ``@worldexception``.
+Zoran Pavlovic, 許邱翔, :github_user:`allenling`, :github_user:`bee-keeper`,
+:github_user:`ffeast`, :github_user:`flyingfoxlee`, :github_user:`gdw2`,
+:github_user:`gitaarik`, :github_user:`hankjin`, :github_user:`m-vdb`,
+:github_user:`mdk`, :github_user:`nokrik`, :github_user:`ocean1`,
+:github_user:`orlo666`, :github_user:`raducc`, :github_user:`wanglei`,
+:github_user:`worldexception`.
 
 .. _v400-important:
 
@@ -370,7 +372,7 @@ News
 
 New Task Message Protocol
 =========================
-# e71652d384b1b5df2a4e6145df9f0efb456bc71c
+.. :sha:`e71652d384b1b5df2a4e6145df9f0efb456bc71c`
 
 This version introduces a brand new task message protocol,
 the first major change to the protocol since the beginning of the project.
@@ -542,11 +544,10 @@ Canvas Refactor
 The canvas/work-flow implementation have been heavily refactored
 to fix some long outstanding issues.
 
-# BLALBLABLA
-d79dcd8e82c5e41f39abd07ffed81ca58052bcd2
-1e9dd26592eb2b93f1cb16deb771cfc65ab79612
-e442df61b2ff1fe855881c1e2ff9acc970090f54
-0673da5c09ac22bdd49ba811c470b73a036ee776
+.. :sha:`d79dcd8e82c5e41f39abd07ffed81ca58052bcd2`
+.. :sha:`1e9dd26592eb2b93f1cb16deb771cfc65ab79612`
+.. :sha:`e442df61b2ff1fe855881c1e2ff9acc970090f54`
+.. :sha:`0673da5c09ac22bdd49ba811c470b73a036ee776`
 
 - Now unrolls groups within groups into a single group (Issue #1509).
 - chunks/map/starmap tasks now routes based on the target task
@@ -606,8 +607,8 @@ removing the chance of mistyping task names.
 
 An example of the new API is :ref:`here <beat-entries>`.
 
-# bc18d0859c1570f5eb59f5a969d1d32c63af764b
-# 132d8d94d38f4050db876f56a841d5a5e487b25b
+.. :sha:`bc18d0859c1570f5eb59f5a969d1d32c63af764b`
+.. :sha:`132d8d94d38f4050db876f56a841d5a5e487b25b`
 
 RabbitMQ Priority queue support
 ===============================
@@ -618,7 +619,7 @@ Contributed by Gerald Manipon.
 
 Prefork: Limit child process resident memory size.
 ==================================================
-# 5cae0e754128750a893524dcba4ae030c414de33
+.. :sha:`5cae0e754128750a893524dcba4ae030c414de33`
 
 You can now limit the maximum amount of memory allocated per prefork
 pool child process by setting the worker
@@ -688,7 +689,7 @@ library is replacing the old result backend which was using the older
 
 See :ref:`conf-cassandra-result-backend` for more information.
 
-# XXX What changed?
+.. # XXX What changed?
 
 New Elasticsearch result backend introduced.
 ============================================
@@ -725,7 +726,7 @@ in the following way:
       of a dictionary.  Each item in the list can be regarded
       as a normal event message body.
 
-03399b4d7c26fb593e61acf34f111b66b340ba4e
+.. :sha:`03399b4d7c26fb593e61acf34f111b66b340ba4e`
 
 Task.replace
 ============
@@ -771,7 +772,7 @@ See :ref:`task-autoretry` for more information.
 
 Contributed by Dmitry Malinovsky.
 
-# 75246714dd11e6c463b9dc67f4311690643bff24
+.. :sha:`75246714dd11e6c463b9dc67f4311690643bff24`
 
 Remote Task Tracebacks
 ======================

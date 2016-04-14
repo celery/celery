@@ -370,7 +370,7 @@ In Other News
 
     Contributed by Steeve Morin.
 
-- The crontab parser now matches Vixie Cron behavior when parsing ranges
+- The Crontab parser now matches Vixie Cron behavior when parsing ranges
   with steps (e.g. 1-59/2).
 
     Contributed by Daniel Hepper.
@@ -399,7 +399,7 @@ In Other News
 
     Contributed by Sean O'Connor.
 
-- CentOS init script has been updated and should be more flexible.
+- CentOS init-script has been updated and should be more flexible.
 
     Contributed by Andrew McFague.
 
@@ -410,7 +410,7 @@ In Other News
 - ``task.retry()`` now re-raises the original exception keeping
   the original stack trace.
 
-    Suggested by ``@ojii``.
+    Suggested by :github_user:`ojii`.
 
 - The `--uid` argument to daemons now uses ``initgroups()`` to set
   groups to all the groups the user is a member of.
@@ -470,7 +470,7 @@ In Other News
 
 - There's a new :ref:`guide-security` guide in the documentation.
 
-- The init scripts has been updated, and many bugs fixed.
+- The init-scripts have been updated, and many bugs fixed.
 
     Contributed by Chris Streeter.
 
@@ -516,7 +516,7 @@ Fixes
 - Redis result backend: Now uses ``SETEX`` command to set result key,
   and expiry atomically.
 
-    Suggested by ``@yaniv-aknin``.
+    Suggested by :github_user:`yaniv-aknin`.
 
 - ``celeryd``: Fixed a problem where shutdown hanged when :kbd:`Control-c`
   was used to terminate.

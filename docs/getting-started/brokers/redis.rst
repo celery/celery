@@ -35,16 +35,16 @@ Where the URL is in the format of:
 
     redis://:password@hostname:port/db_number
 
-all fields after the scheme are optional, and will default to localhost on port 6379,
-using database 0.
+all fields after the scheme are optional, and will default to ``localhost``
+on port 6379, using database 0.
 
-If a unix socket connection should be used, the URL needs to be in the format:
+If a Unix socket connection should be used, the URL needs to be in the format:
 
 .. code-block:: text
 
     redis+socket:///path/to/redis.sock
 
-Specifying a different database number when using a unix socket is possible
+Specifying a different database number when using a Unix socket is possible
 by adding the ``virtual_host`` parameter to the URL:
 
 .. code-block:: text
@@ -168,5 +168,5 @@ If you experience an error like:
     InconsistencyError: Probably the key ('_kombu.binding.celery') has been
     removed from the Redis database.
 
-then you may want to configure the redis-server to not evict keys by setting
-the ``timeout`` parameter to 0 in the redis configuration file.
+then you may want to configure the :command:`redis-server` to not evict keys
+by setting the ``timeout`` parameter to 0 in the redis configuration file.

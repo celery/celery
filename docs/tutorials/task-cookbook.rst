@@ -26,7 +26,7 @@ consisting of the MD5 check-sum of the feed URL.
 The cache key expires after some time in case something unexpected happens,
 and something always will...
 
-For this reason your tasks runtime should not exceed the timeout.
+For this reason your tasks run-time should not exceed the timeout.
 
 
 .. code-block:: python

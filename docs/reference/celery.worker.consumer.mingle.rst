@@ -1,5 +1,5 @@
 ==================================================
- celery.worker.consumer.mingle
+ ``celery.worker.consumer.mingle``
 ==================================================
 
 .. contents::

@@ -1,5 +1,5 @@
 ==================================================
- celery.worker.consumer.control
+ ``celery.worker.consumer.control``
 ==================================================
 
 .. contents::

@@ -1,5 +1,5 @@
 ====================================
- celery.worker.autoreload
+ ``celery.worker.autoreload``
 ====================================
 
 .. contents::

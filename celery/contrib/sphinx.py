@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-celery.contrib.sphinx
-=====================
+``celery.contrib.sphinx``
+=========================
 
 Sphinx documentation plugin
 

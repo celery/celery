@@ -81,7 +81,7 @@ Fixes
 * Worker: A warning is now emitted if the sending of task error
   emails fails.
 
-* celeryev: Curses monitor no longer crashes if the terminal window
+* ``celeryev``: Curses monitor no longer crashes if the terminal window
   is resized.
 
     See issue #160.
@@ -105,11 +105,11 @@ Fixes
     This is now fixed by using a workaround.
     See issue #143.
 
-* Debian init scripts: Commands should not run in a sub shell
+* Debian init-scripts: Commands should not run in a sub shell
 
     See issue #163.
 
-* Debian init scripts: Use the absolute path of celeryd program to allow stat
+* Debian init-scripts: Use the absolute path of ``celeryd`` program to allow stat
 
     See issue #162.
 
@@ -146,7 +146,7 @@ Documentation
 
     to `CELERYD_LOG_FILE` / `CELERYD_PID_FILE`
 
-    Also added troubleshooting section for the init scripts.
+    Also added troubleshooting section for the init-scripts.
 
 .. _version-2.0.2:
 
@@ -162,7 +162,7 @@ Documentation
 
 * Test suite now passing on Python 2.4
 
-* No longer have to type `PYTHONPATH=.` to use celeryconfig in the current
+* No longer have to type `PYTHONPATH=.` to use ``celeryconfig`` in the current
   directory.
 
     This is accomplished by the default loader ensuring that the current
@@ -181,7 +181,7 @@ Documentation
 
 * Worker: SIGHUP handler accidentally propagated to worker pool processes.
 
-    In combination with 7a7c44e39344789f11b5346e9cc8340f5fe4846c
+    In combination with :sha:`7a7c44e39344789f11b5346e9cc8340f5fe4846c`
     this would make each child process start a new worker instance when
     the terminal window was closed :/
 
@@ -199,7 +199,7 @@ Documentation
 
     See issue #154.
 
-* Debian worker init script: Stop now works correctly.
+* Debian worker init-script: Stop now works correctly.
 
 * Task logger: `warn` method added (synonym for `warning`)
 
@@ -326,7 +326,7 @@ Documentation
 
 * Task.__reduce__: Tasks created using the task decorator can now be pickled.
 
-* setup.py: nose added to `tests_require`.
+* :file:`setup.py`: :pypi:`nose` added to `tests_require`.
 
 * Pickle should now work with SQLAlchemy 0.5.x
 
@@ -721,7 +721,7 @@ News
 * Worker: :kbd:`Control-c` (SIGINT) once does warm shutdown,
   hitting :kbd:`Control-c` twice forces termination.
 
-* Added support for using complex crontab-expressions in periodic tasks. For
+* Added support for using complex Crontab-expressions in periodic tasks. For
   example, you can now use:
 
     .. code-block:: pycon
@@ -810,7 +810,7 @@ News
         exception will be raised when this is exceeded.  The task can catch
         this to e.g. clean up before the hard time limit comes.
 
-    New command-line arguments to celeryd added:
+    New command-line arguments to ``celeryd`` added:
     `--time-limit` and `--soft-time-limit`.
 
     What's left?
@@ -910,7 +910,7 @@ News
 
 * :class:`~celery.datastructures.ExceptionInfo` now passed to
    :meth:`~celery.task.base.Task.on_retry`/
-   :meth:`~celery.task.base.Task.on_failure` as einfo keyword argument.
+   :meth:`~celery.task.base.Task.on_failure` as ``einfo`` keyword argument.
 
 * Worker: Added :setting:`CELERYD_MAX_TASKS_PER_CHILD` /
   :option:`celery worker --maxtasksperchild`
@@ -1035,7 +1035,7 @@ News
             celeryd -n celeryd1.worker.example.com -c 3
             celeryd -n celeryd2.worker.example.com -c 3
 
-        Additional options are added to each celeryd',
+        Additional options are added to each ``celeryd``,
         but you can also modify the options for ranges of or single workers
 
     - 3 workers: Two with 3 processes, and one with 10 processes.

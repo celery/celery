@@ -6,7 +6,7 @@
     The Celery instances logging section: ``Celery.log``.
 
     Sets up logging for the worker and other programs,
-    redirects stdouts, colors log output, patches logging
+    redirects standard outs, colors log output, patches logging
     related compatibility fixes, and so on.
 
 """

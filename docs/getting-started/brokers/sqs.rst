@@ -34,7 +34,9 @@ You have to specify SQS in the broker URL::
 
     broker_url = 'sqs://ABCDEFGHIJKLMNOPQRST:ZYXK7NiynGlTogH8Nj+P9nlE73sq3@'
 
-where the URL format is::
+where the URL format is:
+
+.. code-block:: text
 
     sqs://aws_access_key_id:aws_secret_access_key@
 
@@ -42,7 +44,7 @@ you must *remember to include the "@" at the end*.
 
 The login credentials can also be set using the environment variables
 :envvar:`AWS_ACCESS_KEY_ID` and :envvar:`AWS_SECRET_ACCESS_KEY`,
-in that case the broker url may only be ``sqs://``.
+in that case the broker URL may only be ``sqs://``.
 
 .. note::
 

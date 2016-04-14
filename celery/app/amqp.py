@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.app.amqp
-    ~~~~~~~~~~~~~~~
+    ``celery.app.amqp``
+    ~~~~~~~~~~~~~~~~~~~
 
     Sending and receiving messages using Kombu.
 
@@ -236,7 +236,7 @@ class AMQP(object):
 
     # Exchange class/function used when defining automatic queues.
     # E.g. you can use ``autoexchange = lambda n: None`` to use the
-    # amqp default exchange, which is a shortcut to bypass routing
+    # AMQP default exchange, which is a shortcut to bypass routing
     # and instead send directly to the queue named in the routing key.
     autoexchange = None
 

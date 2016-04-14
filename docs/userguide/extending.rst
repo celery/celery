@@ -832,7 +832,7 @@ by adding an entry-point in :file:`setup.py`:
 .. _Flower: http://pypi.python.org/pypi/flower
 
 The command definition is in two parts separated by the equal sign, where the
-first part is the name of the subcommand (flower), then the fully qualified
+first part is the name of the sub-command (flower), then the fully qualified
 module path to the class that implements the command
 (``flower.command.FlowerCommand``).
 

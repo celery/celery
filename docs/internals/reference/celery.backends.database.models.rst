@@ -1,5 +1,5 @@
 ======================================
- celery.backends.database.models
+ ``celery.backends.database.models``
 ======================================
 
 .. contents::

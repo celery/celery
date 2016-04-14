@@ -618,11 +618,6 @@ General
 
     See :ref:`task-request-info`.
 
-.. attribute:: Task.abstract
-
-    Abstract classes are not registered, but are used as the
-    base class for new task types.
-
 .. attribute:: Task.max_retries
 
     The maximum number of attempted retries before giving up.
@@ -1111,7 +1106,7 @@ Example using reject when a task causes an out of memory condition:
         except Exception as exc:
             raise self.retry(exc, countdown=10)
 
-Example requeueing the message:
+Example re-queuing the message:
 
 .. code-block:: python
 
@@ -1201,7 +1196,6 @@ e.g. a base Task class that caches a database connection:
     from celery import Task
 
     class DatabaseTask(Task):
-        abstract = True
         _db = None
 
         @property
@@ -1223,28 +1217,6 @@ that can be added to tasks like this:
 
 The ``db`` attribute of the ``process_rows`` task will then
 always stay the same in each process.
-
-Abstract classes
-----------------
-
-Abstract classes are not registered, but are used as the
-base class for new task types.
-
-.. code-block:: python
-
-    from celery import Task
-
-    class DebugTask(Task):
-        abstract = True
-
-        def after_return(self, *args, **kwargs):
-            print('Task returned: {0!r}'.format(self.request))
-
-
-    @app.task(base=DebugTask)
-    def add(x, y):
-        return x + y
-
 
 Handlers
 --------
@@ -1334,19 +1306,8 @@ will only be registered when the module they are defined in is imported.
 The default loader imports any modules listed in the
 :setting:`imports` setting.
 
-The entity responsible for registering your task in the registry is the
-meta-class: :class:`~celery.task.base.TaskType`.
-
-If you want to register your task manually you can mark the
-task as :attr:`~@Task.abstract`:
-
-.. code-block:: python
-
-    class MyTask(Task):
-        abstract = True
-
-This way the task won't be registered, but any task inheriting from
-it will be.
+The :meth:`@task` decorator is responsible for registering your task
+in the applications task registry.
 
 When tasks are sent, no actual function code is sent with it, just the name
 of the task to execute.  When the worker then receives the message it can look

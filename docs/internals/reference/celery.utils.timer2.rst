@@ -1,5 +1,5 @@
 ==============================
- celery.utils.timer2
+ ``celery.utils.timer2``
 ==============================
 
 .. contents::

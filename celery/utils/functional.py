@@ -88,10 +88,11 @@ def evaluate_promises(it):
 
 
 def first(predicate, it):
-    """Return the first element in `iterable` that `predicate` Gives a
+    """Return the first element in ``iterable`` that ``predicate`` gives a
     :const:`True` value for.
 
-    If `predicate` is None it will return the first item that is not None.
+    If ``predicate`` is None it will return the first item that is not
+    :const:`None`.
 
     """
     return next(
@@ -127,7 +128,9 @@ def firstmethod(method, on_call=None):
 def chunks(it, n):
     """Split an iterator into chunks with `n` elements each.
 
-    Examples
+    Examples:
+
+    .. code-block:: pycon
 
         # n == 2
         >>> x = chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 2)
@@ -148,6 +151,8 @@ def padlist(container, size, default=None):
     """Pad list with default elements.
 
     Examples:
+
+    .. code-block:: pycon
 
         >>> first, last, city = padlist(['George', 'Costanza', 'NYC'], 3)
         ('George', 'Costanza', 'NYC')
@@ -175,7 +180,7 @@ def uniq(it):
 
 
 def regen(it):
-    """Regen takes any iterable, and if the object is an
+    """``Regen`` takes any iterable, and if the object is an
     generator it will cache the evaluated list on first access,
     so that the generator can be "consumed" multiple times."""
     if isinstance(it, (list, tuple)):

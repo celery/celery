@@ -41,7 +41,7 @@ def subclass_exception(name, parent, module):  # noqa
 
 def find_pickleable_exception(exc, loads=pickle.loads,
                               dumps=pickle.dumps):
-    """With an exception instance, iterate over its super classes (by mro)
+    """With an exception instance, iterate over its super classes (by MRO)
     and find the first super exception that is pickleable.  It does
     not go below :exc:`Exception` (i.e. it skips :exc:`Exception`,
     :class:`BaseException` and :class:`object`).  If that happens

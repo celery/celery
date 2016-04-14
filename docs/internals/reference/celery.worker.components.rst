@@ -1,5 +1,5 @@
 ========================================
- celery.worker.components
+ ``celery.worker.components``
 ========================================
 
 .. contents::

@@ -1,5 +1,5 @@
 ====================================
- celery.worker.pidbox
+ ``celery.worker.pidbox``
 ====================================
 
 .. contents::

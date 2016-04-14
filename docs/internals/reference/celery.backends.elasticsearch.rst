@@ -1,5 +1,5 @@
 ===========================================
- celery.backends.elasticsearch
+ ``celery.backends.elasticsearch``
 ===========================================
 
 .. contents::

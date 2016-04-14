@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.events.cursesmon
-    ~~~~~~~~~~~~~~~~~~~~~~~
+    ``celery.events.cursesmon``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Graphical monitor of Celery events using curses.
 

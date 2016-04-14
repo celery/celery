@@ -1,5 +1,5 @@
 ==================================================
- celery.worker.consumer.gossip
+ ``celery.worker.consumer.gossip``
 ==================================================
 
 .. contents::

@@ -74,7 +74,7 @@ Changes
   if events are disabled
 
 * Added required RPM package names under `[bdist_rpm]` section, to support building RPMs
-  from the sources using setup.py
+  from the sources using :file:`setup.py`.
 
 * Running unit tests: :envvar:`NOSE_VERBOSE` environment var now enables verbose output from Nose.
 
@@ -129,15 +129,20 @@ Important notes
 
     See: http://bit.ly/d5OwMr
 
-    This means those who created their celery tables (via syncdb or
-    celeryinit) with picklefield versions >= 0.1.5 has to alter their tables to
+    This means those who created their celery tables (via ``syncdb`` or
+    ``celeryinit``) with :pypi:`django-picklefield``
+    versions >= 0.1.5 has to alter their tables to
     allow the result field to be `NULL` manually.
 
-    MySQL::
+    MySQL:
+
+    .. code-block:: sql
 
         ALTER TABLE celery_taskmeta MODIFY result TEXT NULL
 
-    PostgreSQL::
+    PostgreSQL:
+
+    .. code-block:: sql
 
         ALTER TABLE celery_taskmeta ALTER COLUMN result DROP NOT NULL
 
@@ -167,16 +172,16 @@ News
         crashes in mid-execution. Not acceptable for most
         applications, but desirable for others.
 
-* Added crontab-like scheduling to periodic tasks.
+* Added Crontab-like scheduling to periodic tasks.
 
-    Like a cron job, you can specify units of time of when
+    Like a cronjob, you can specify units of time of when
     you would like the task to execute. While not a full implementation
-    of cron's features, it should provide a fair degree of common scheduling
+    of :command:`cron`'s features, it should provide a fair degree of common scheduling
     needs.
 
     You can specify a minute (0-59), an hour (0-23), and/or a day of the
-    week (0-6 where 0 is Sunday, or by names: sun, mon, tue, wed, thu, fri,
-    sat).
+    week (0-6 where 0 is Sunday, or by names:
+    ``sun, mon, tue, wed, thu, fri, sat``).
 
     Examples:
 
@@ -198,7 +203,7 @@ News
             print('Runs every hour on the clock. e.g. 1:30, 2:30, 3:30 etc.')
 
     .. note::
-        This a late addition. While we have unittests, due to the
+        This a late addition. While we have unit tests, due to the
         nature of this feature we haven't been able to completely test this
         in practice, so consider this experimental.
 
@@ -209,7 +214,7 @@ News
 
 * `Task.max_retries` can now be `None`, which means it will retry forever.
 
-* Celerybeat: Now reuses the same connection when publishing large
+* ``celerybeat``: Now reuses the same connection when publishing large
   sets of tasks.
 
 * Modified the task locking example in the documentation to use
@@ -422,15 +427,15 @@ Fixes
     Consider the competition for the first pool plug-in started!
 
 
-* Debian init scripts: Use `-a` not `&&` (Issue #82).
+* Debian init-scripts: Use `-a` not `&&` (Issue #82).
 
-* Debian init scripts: Now always preserves `$CELERYD_OPTS` from the
+* Debian init-scripts: Now always preserves `$CELERYD_OPTS` from the
   `/etc/default/celeryd` and `/etc/default/celerybeat`.
 
 * celery.beat.Scheduler: Fixed a bug where the schedule was not properly
   flushed to disk if the schedule had not been properly initialized.
 
-* celerybeat: Now syncs the schedule to disk when receiving the :sig:`SIGTERM`
+* ``celerybeat``: Now syncs the schedule to disk when receiving the :sig:`SIGTERM`
   and :sig:`SIGINT` signals.
 
 * Control commands: Make sure keywords arguments are not in Unicode.
@@ -438,7 +443,7 @@ Fixes
 * ETA scheduler: Was missing a logger object, so the scheduler crashed
   when trying to log that a task had been revoked.
 
-* management.commands.camqadm: Fixed typo `camqpadm` -> `camqadm`
+* ``management.commands.camqadm``: Fixed typo `camqpadm` -> `camqadm`
   (Issue #83).
 
 * PeriodicTask.delta_resolution: Was not working for days and hours, now fixed
@@ -460,8 +465,8 @@ Fixes
 * Tasks are now acknowledged early instead of late.
 
     This is done because messages can only be acknowledged within the same
-    connection channel, so if the connection is lost we would have to refetch
-    the message again to acknowledge it.
+    connection channel, so if the connection is lost we would have to
+    re-fetch the message again to acknowledge it.
 
     This might or might not affect you, but mostly those running tasks with a
     really long execution time are affected, as all tasks that has made it
@@ -494,7 +499,7 @@ Fixes
 
     You can set the maximum number of results the cache
     can hold using the :setting:`CELERY_MAX_CACHED_RESULTS` setting (the
-    default is five thousand results). In addition, you can refetch already
+    default is five thousand results). In addition, you can re-fetch already
     retrieved results using `backend.reload_task_result` +
     `backend.reload_taskset_result` (that's for those who want to send
     results incrementally).
@@ -587,7 +592,7 @@ Fixes
   in celerymon)
 
 * Added `--schedule`/`-s` option to the worker, so it is possible to
-  specify a custom schedule filename when using an embedded celerybeat
+  specify a custom schedule filename when using an embedded ``celerybeat``
   server (the `-B`/`--beat`) option.
 
 * Better Python 2.4 compatibility. The test suite now passes.
@@ -612,7 +617,7 @@ Fixes
 * Now have our own `ImproperlyConfigured` exception, instead of using the
   Django one.
 
-* Improvements to the Debian init scripts: Shows an error if the program is
+* Improvements to the Debian init-scripts: Shows an error if the program is
   not executable.  Does not modify `CELERYD` when using django with
   virtualenv.
 
@@ -630,24 +635,24 @@ Backward incompatible changes
 
 * Celery does not support detaching anymore, so you have to use the tools
   available on your platform, or something like :pypi:`supervisor` to make
-  celeryd/celerybeat/celerymon into background processes.
+  ``celeryd``/``celerybeat``/``celerymon`` into background processes.
 
     We've had too many problems with the worker daemonizing itself, so it was
     decided it has to be removed. Example start-up scripts has been added to
     the `extra/` directory:
 
-    * Debian, Ubuntu, (start-stop-daemon)
+    * Debian, Ubuntu, (:command:`start-stop-daemon`)
 
         `extra/debian/init.d/celeryd`
         `extra/debian/init.d/celerybeat`
 
-    * Mac OS X launchd
+    * Mac OS X :command:`launchd`
 
         `extra/mac/org.celeryq.celeryd.plist`
         `extra/mac/org.celeryq.celerybeat.plist`
         `extra/mac/org.celeryq.celerymon.plist`
 
-    * Supervisord (http://supervisord.org)
+    * Supervisor (http://supervisord.org)
 
         `extra/supervisord/supervisord.conf`
 
@@ -709,7 +714,7 @@ Backward incompatible changes
     This means the worker no longer schedules periodic tasks by default,
     but a new daemon has been introduced: `celerybeat`.
 
-    To launch the periodic task scheduler you have to run celerybeat:
+    To launch the periodic task scheduler you have to run ``celerybeat``:
 
     .. code-block:: console
 
@@ -780,12 +785,12 @@ Deprecations
 * The following configuration variables has been renamed and will be
   deprecated in v2.0:
 
-    * CELERYD_DAEMON_LOG_FORMAT -> CELERYD_LOG_FORMAT
-    * CELERYD_DAEMON_LOG_LEVEL -> CELERYD_LOG_LEVEL
-    * CELERY_AMQP_CONNECTION_TIMEOUT -> CELERY_BROKER_CONNECTION_TIMEOUT
-    * CELERY_AMQP_CONNECTION_RETRY -> CELERY_BROKER_CONNECTION_RETRY
-    * CELERY_AMQP_CONNECTION_MAX_RETRIES -> CELERY_BROKER_CONNECTION_MAX_RETRIES
-    * SEND_CELERY_TASK_ERROR_EMAILS -> CELERY_SEND_TASK_ERROR_EMAILS
+    * ``CELERYD_DAEMON_LOG_FORMAT`` -> ``CELERYD_LOG_FORMAT``
+    * ``CELERYD_DAEMON_LOG_LEVEL`` -> ``CELERYD_LOG_LEVEL``
+    * ``CELERY_AMQP_CONNECTION_TIMEOUT`` -> ``CELERY_BROKER_CONNECTION_TIMEOUT``
+    * ``CELERY_AMQP_CONNECTION_RETRY`` -> ``CELERY_BROKER_CONNECTION_RETRY``
+    * ``CELERY_AMQP_CONNECTION_MAX_RETRIES`` -> ``CELERY_BROKER_CONNECTION_MAX_RETRIES``
+    * ``SEND_CELERY_TASK_ERROR_EMAILS`` -> ``CELERY_SEND_TASK_ERROR_EMAILS``
 
 * The public API names in celery.conf has also changed to a consistent naming
   scheme.
@@ -870,9 +875,10 @@ News
 Changes
 -------
 
-* Now depends on carrot >= 0.8.1
+* Now depends on :pypi:`carrot` >= 0.8.1
 
-* New dependencies: billiard, python-dateutil, django-picklefield
+* New dependencies: :pypi:`billiard`, :pypi:`python-dateutil`,
+  :pypi:`django-picklefield`.
 
 * No longer depends on python-daemon
 
@@ -961,7 +967,7 @@ Documentation
 * Now emits a warning if the --detach argument is used.
   --detach should not be used anymore, as it has several not easily fixed
   bugs related to it. Instead, use something like start-stop-daemon,
-  :pypi:`supervisor` or launchd (os x).
+  :pypi:`supervisor` or :command:`launchd` (os x).
 
 
 * Make sure logger class is process aware, even if running Python >= 2.6.
@@ -979,8 +985,9 @@ Documentation
 * Fixed a possible race condition that could happen when storing/querying
   task results using the database backend.
 
-* Now has console script entry points in the setup.py file, so tools like
-  Buildout will correctly install the programs celeryd and celeryinit.
+* Now has console script entry points in the :file:`setup.py` file, so tools like
+  :pypi:`zc.buildout` will correctly install the programs ``celeryd`` and
+  ``celeryinit``.
 
 .. _version-0.8.2:
 
@@ -1061,12 +1068,13 @@ Changes
 
 * Added a Redis result store backend
 
-* Allow /etc/default/celeryd to define additional options for the celeryd init
-  script.
+* Allow :file:`/etc/default/celeryd` to define additional options
+  for the ``celeryd`` init-script.
 
 * MongoDB periodic tasks issue when using different time than UTC fixed.
 
-* Windows specific: Negate test for available os.fork (thanks miracle2k)
+* Windows specific: Negate test for available ``os.fork``
+  (thanks :github_user:`miracle2k`).
 
 * Now tried to handle broken PID files.
 
@@ -1074,9 +1082,9 @@ Changes
   `CELERY_ALWAYS_EAGER = True` for testing with the database backend.
 
 * Added a :setting:`CELERY_CACHE_BACKEND` setting for using something other
-  than the django-global cache backend.
+  than the Django-global cache backend.
 
-* Use custom implementation of functools.partial (curry) for Python 2.4 support
+* Use custom implementation of ``functools.partial`` for Python 2.4 support
   (Probably still problems with running on 2.4, but it will eventually be
   supported)
 
@@ -1191,7 +1199,7 @@ News
     detaching.
 
 * Fixed a possible DjangoUnicodeDecodeError being raised when saving pickled
-    data to Django`s memcached cache backend.
+    data to Django`s Memcached cache backend.
 
 * Better Windows compatibility.
 
@@ -1230,7 +1238,7 @@ News
 * Add a sensible __repr__ to ExceptionInfo for easier debugging
 
 * Fix documentation typo `.. import map` -> `.. import dmap`.
-    Thanks to mikedizon
+    Thanks to :github_user:`mikedizon`.
 
 .. _version-0.6.0:
 
@@ -1411,18 +1419,18 @@ News
 
 * Refactored `celery.task`. It's now split into three modules:
 
-    * celery.task
+    * ``celery.task``
 
         Contains `apply_async`, `delay_task`, `discard_all`, and task
         shortcuts, plus imports objects from `celery.task.base` and
         `celery.task.builtins`
 
-    * celery.task.base
+    * ``celery.task.base``
 
         Contains task base classes: `Task`, `PeriodicTask`,
         `TaskSet`, `AsynchronousMapTask`, `ExecuteRemoteTask`.
 
-    * celery.task.builtins
+    * ``celery.task.builtins``
 
         Built-in tasks: `PingTask`, `DeleteExpiredTaskMetaTask`.
 
@@ -1441,15 +1449,15 @@ News
   available on the system.
 
 * **IMPORTANT** `tasks.register`: Renamed `task_name` argument to
-  `name`, so
+  `name`, so::
 
         >>> tasks.register(func, task_name='mytask')
 
-  has to be replaced with:
+  has to be replaced with::
 
         >>> tasks.register(func, name='mytask')
 
-* The daemon now correctly runs if the pidlock is stale.
+* The daemon now correctly runs if the pidfile is stale.
 
 * Now compatible with carrot 0.4.5
 
@@ -1474,7 +1482,7 @@ News
 * No longer depends on `django`, so installing `celery` won't affect
   the preferred Django version installed.
 
-* Now works with PostgreSQL (psycopg2) again by registering the
+* Now works with PostgreSQL (:pypi:`psycopg2`) again by registering the
   `PickledObject` field.
 
 * Worker: Added `--detach` option as an alias to `--daemon`, and
@@ -1488,7 +1496,7 @@ News
 * Removed dependency to `simplejson`
 
 * Cache Backend: Re-establishes connection for every task process
-  if the Django cache backend is memcached/libmemcached.
+  if the Django cache backend is :pypi:`python-memcached`/:pypi:`libmemcached`.
 
 * Tyrant Backend: Now re-establishes the connection for every task
   executed.
@@ -1542,7 +1550,7 @@ News
 **VERY IMPORTANT:** Pickle is now the encoder used for serializing task
 arguments, so be sure to flush your task queue before you upgrade.
 
-* **IMPORTANT** TaskSet.run() now returns a celery.result.TaskSetResult
+* **IMPORTANT** TaskSet.run() now returns a ``celery.result.TaskSetResult``
   instance, which lets you inspect the status and return values of a
   taskset as it was a single entity.
 
@@ -1581,7 +1589,7 @@ arguments, so be sure to flush your task queue before you upgrade.
   :ref:`FAQ <faq>` for more information.
 
 * Task errors are now logged using log level `ERROR` instead of `INFO`,
-  and stacktraces are dumped. Thanks to Grégoire Cachet.
+  and stack-traces are dumped. Thanks to Grégoire Cachet.
 
 * Make every new worker process re-establish it's Django DB connection,
   this solving the "MySQL connection died?" exceptions.
@@ -1714,9 +1722,11 @@ arguments, so be sure to flush your task queue before you upgrade.
   happened.  It kind of works like the `multiprocessing.AsyncResult`
   class returned by `multiprocessing.Pool.map_async`.
 
-* Added dmap() and dmap_async(). This works like the
+* Added ``dmap()`` and ``dmap_async()``. This works like the
   `multiprocessing.Pool` versions except they are tasks
   distributed to the celery server. Example:
+
+    .. code-block:: pycon
 
         >>> from celery.task import dmap
         >>> import operator
@@ -1834,7 +1844,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
         >>> url(r'^celery/$', include('celery.urls'))
 
-  then visiting the following url:
+  then visiting the following URL:
 
   .. code-block:: text
 

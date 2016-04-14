@@ -1,5 +1,5 @@
 ==========================================
- celery.backends.filesystem
+ ``celery.backends.filesystem``
 ==========================================
 
 .. contents::

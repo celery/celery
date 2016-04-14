@@ -147,9 +147,6 @@ class Task(object):
     #: Name of the task.
     name = None
 
-    #: If :const:`True` the task is an abstract base class.
-    abstract = True
-
     #: Maximum number of retries before giving up.  If set to :const:`None`,
     #: it will **never** stop retrying.
     max_retries = 3
@@ -256,6 +253,9 @@ class Task(object):
     #: Some may expect a request to exist even if the task has not been
     #: called.  This should probably be deprecated.
     _default_request = None
+
+    #: Deprecated attribute ``abstract`` here for compatibility.
+    abstract = True
 
     _exec_options = None
 
@@ -565,7 +565,7 @@ class Task(object):
 
             If this argument is set and retry is called while
             an exception was raised (``sys.exc_info()`` is set)
-            it will attempt to reraise the current exception.
+            it will attempt to re-raise the current exception.
 
             If no exception was raised it will raise the ``exc``
             argument provided.
@@ -582,7 +582,7 @@ class Task(object):
         :keyword soft_time_limit: If set, overrides the default soft
                                   time limit.
         :keyword \*\*options: Any extra options to pass on to
-                              meth:`apply_async`.
+                              :meth:`apply_async`.
         :keyword throw: If this is :const:`False`, do not raise the
                         :exc:`~@Retry` exception,
                         that tells the worker to mark the task as being
@@ -638,7 +638,7 @@ class Task(object):
 
         if max_retries is not None and retries > max_retries:
             if exc:
-                # first try to reraise the original exception
+                # first try to re-raise the original exception
                 maybe_reraise()
                 # or if not in an except block then raise the custom exc.
                 raise exc

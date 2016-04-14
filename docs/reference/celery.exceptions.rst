@@ -1,5 +1,5 @@
 ================================
- celery.exceptions
+ ``celery.exceptions``
 ================================
 
 .. contents::

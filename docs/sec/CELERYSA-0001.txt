@@ -47,11 +47,11 @@ Users of Celery versions 2.1, 2.2, 2.3, 2.4 except the recently
 released 2.2.8, 2.3.4 and 2.4.4, daemonizing the celery programs
 as the root user, using either:
     1) the --uid or --gid arguments, or
-    2) the provided generic init scripts with the environment variables
+    2) the provided generic init-scripts with the environment variables
        CELERYD_USER or CELERYD_GROUP defined,
 are affected.
 
-Users using the Debian init scripts, CentOS init scripts, OS X launchctl
+Users using the Debian init-scripts, CentOS init-scripts, OS X launchctl
 scripts, Supervisor, or users not starting the programs as the root user
 are *not* affected.
 

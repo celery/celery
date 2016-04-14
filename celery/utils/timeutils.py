@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.utils.timeutils
-    ~~~~~~~~~~~~~~~~~~~~~~
+    ``celery.utils.timeutils``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     This module contains various utilities related to dates and times.
 
@@ -158,19 +158,23 @@ timezone = _Zone()
 
 
 def maybe_timedelta(delta):
-    """Coerces integer to timedelta if `delta` is an integer."""
+    """Coerces integer to :class:`~datetime.timedelta` if argument
+    is an integer."""
     if isinstance(delta, numbers.Real):
         return timedelta(seconds=delta)
     return delta
 
 
 def delta_resolution(dt, delta):
-    """Round a datetime to the resolution of a timedelta.
+    """Round a :class:`~datetime.datetime` to the resolution of
+    a :class:`~datetime.timedelta`.
 
-    If the timedelta is in days, the datetime will be rounded
-    to the nearest days, if the timedelta is in hours the datetime
-    will be rounded to the nearest hour, and so on until seconds
-    which will just return the original datetime.
+    If the :class:`~datetime.timedelta` is in days, the
+    :class:`~datetime.datetime` will be rounded to the nearest days,
+    if the :class:`~datetime.timedelta` is in hours the
+    :class:`~datetime.datetime` will be rounded to the nearest hour,
+    and so on until seconds which will just return the original
+    :class:`~datetime.datetime`.
 
     """
     delta = max(delta.total_seconds(), 0)
@@ -187,7 +191,8 @@ def delta_resolution(dt, delta):
 
 
 def remaining(start, ends_in, now=None, relative=False):
-    """Calculate the remaining time for a start date and a timedelta.
+    """Calculate the remaining time for a start date and a
+    :class:`~datetime.timedelta`.
 
     e.g. "how many seconds left for 30 seconds after start?"
 
@@ -257,7 +262,7 @@ def humanize_seconds(secs, prefix='', sep='', now='now'):
 
 
 def maybe_iso8601(dt):
-    """`Either datetime | str -> datetime or None -> None`"""
+    """Either ``datetime | str -> datetime`` or ``None -> None``"""
     if not dt:
         return
     if isinstance(dt, datetime):
@@ -266,13 +271,13 @@ def maybe_iso8601(dt):
 
 
 def is_naive(dt):
-    """Return :const:`True` if the datetime is naive
+    """Return :const:`True` if the :class:`~datetime.datetime` is naive
     (does not have timezone information)."""
     return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
 
 
 def make_aware(dt, tz):
-    """Sets the timezone for a datetime object."""
+    """Sets the timezone for a :class:`~datetime.datetime` object."""
     try:
         _localize = tz.localize
     except AttributeError:
@@ -287,7 +292,7 @@ def make_aware(dt, tz):
 
 
 def localize(dt, tz):
-    """Convert aware datetime to another timezone."""
+    """Convert aware :class:`~datetime.datetime` to another timezone."""
     dt = dt.astimezone(tz)
     try:
         _normalize = tz.normalize
@@ -304,7 +309,7 @@ def localize(dt, tz):
 
 
 def to_utc(dt):
-    """Converts naive datetime to UTC"""
+    """Converts naive :class:`~datetime.datetime` to UTC"""
     return make_aware(dt, timezone.utc)
 
 
@@ -318,7 +323,7 @@ def maybe_make_aware(dt, tz=None):
 
 @python_2_unicode_compatible
 class ffwd(object):
-    """Version of relativedelta that only supports addition."""
+    """Version of ``dateutil.relativedelta`` that only supports addition."""
 
     def __init__(self, year=None, month=None, weeks=0, weekday=None, day=None,
                  hour=None, minute=None, second=None, microsecond=None,

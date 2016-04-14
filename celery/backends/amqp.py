@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.backends.amqp
-    ~~~~~~~~~~~~~~~~~~~~
+    ``celery.backends.amqp``
+    ~~~~~~~~~~~~~~~~~~~~~~~~
 
     The AMQP result backend.
 

@@ -137,9 +137,9 @@ be sent in 30 second intervals (the first task will be sent 30 seconds
 after `celery beat` starts, and then every 30 seconds
 after the last run).
 
-A crontab like schedule also exists, see the section on `Crontab schedules`_.
+A Crontab like schedule also exists, see the section on `Crontab schedules`_.
 
-Like with ``cron``, the tasks may overlap if the first task does not complete
+Like with :command:`cron`, the tasks may overlap if the first task does not complete
 before the next.  If that is a concern you should use a locking
 strategy to ensure only one instance can run at a time (see for example
 :ref:`cookbook-task-serial`).
@@ -210,7 +210,7 @@ the :class:`~celery.schedules.crontab` schedule type:
         },
     }
 
-The syntax of these crontab expressions are very flexible.  Some examples:
+The syntax of these Crontab expressions are very flexible.  Some examples:
 
 +-----------------------------------------+--------------------------------------------+
 | **Example**                             | **Meaning**                                |
@@ -261,7 +261,7 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 | ``crontab(0, 0,``                       | Execute on the first and third weeks of    |
 |         ``day_of_month='1-7,15-21')``   | the month.                                 |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0, day_of_month='11',``    | Execute on the 11th of May every year.     |
+| ``crontab(0, 0, day_of_month='11',``    | Execute on the eleventh of May every year. |
 |          ``month_of_year='5')``         |                                            |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(0, 0,``                       | Execute on the first month of every        |

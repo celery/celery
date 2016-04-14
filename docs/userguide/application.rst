@@ -85,7 +85,9 @@ with :meth:`@worker_main`:
 
 When this module is executed the tasks will be named starting with "``__main__``",
 but when the module is imported by another process, say to call a task,
-the tasks will be named starting with "``tasks``" (the real name of the module)::
+the tasks will be named starting with "``tasks``" (the real name of the module):
+
+.. code-block:: pycon
 
     >>> from tasks import add
     >>> add.name
@@ -115,16 +117,22 @@ There are several options you can set that will change how
 Celery works.  These options can be set directly on the app instance,
 or you can use a dedicated configuration module.
 
-The configuration is available as :attr:`@conf`::
+The configuration is available as :attr:`@conf`:
+
+.. code-block:: pycon
 
     >>> app.conf.timezone
     'Europe/London'
 
-where you can also set configuration values directly::
+where you can also set configuration values directly:
+
+.. code-block:: pycon
 
     >>> app.conf.enable_utc = True
 
-and update several keys at once by using the ``update`` method::
+or update several keys at once by using the ``update`` method:
+
+.. code-block:: python
 
     >>> app.conf.update(
     ...     enable_utc=True,
@@ -161,13 +169,17 @@ configuration you should do so after.
 Example 1: Using the name of a module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+The :meth:`@config_from_object` method can take the fully qualified
+name of a Python module, or even the name of a Python attribute,
+for example: ``"celeryconfig"``, ``"myproj.config.celery"``, or
+``"myproj.config:CeleryConfig"``:
+
 .. code-block:: python
 
     from celery import Celery
 
     app = Celery()
     app.config_from_object('celeryconfig')
-
 
 The ``celeryconfig`` module may then look like this:
 
@@ -178,24 +190,31 @@ The ``celeryconfig`` module may then look like this:
     enable_utc = True
     timezone = 'Europe/London'
 
-Example 2: Using a configuration module
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+and the app will be able to use it as long as ``import celeryconfig`` is
+possible.
+
+Example 2: Passing an actual module object
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can also pass an already imported module object, but this
+is not always recommended.
 
 .. tip::
 
-    Using the name of a module is recommended
-    as this means that the module doesn't need to be serialized
-    when the prefork pool is used.  If you're
-    experiencing configuration pickle errors then please try using
-    the name of a module instead.
+    Using the name of a module is recommended as this means the module does
+    not need to be serialized when the prefork pool is used.  If you're
+    experiencing configuration problems or pickle errors then please
+    try using the name of a module instead.
 
 .. code-block:: python
+
+    import celeryconfig
 
     from celery import Celery
 
     app = Celery()
-    import celeryconfig
     app.config_from_object(celeryconfig)
+
 
 Example 3:  Using a configuration class/object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -249,7 +268,7 @@ If you ever want to print out the configuration, as debugging information
 or similar, you may also want to filter out sensitive information like
 passwords and API keys.
 
-Celery comes with several utilities used for presenting the configuration,
+Celery comes with several utilities useful for presenting the configuration,
 one is :meth:`~celery.app.utils.Settings.humanize`:
 
 .. code-block:: pycon
@@ -258,9 +277,9 @@ one is :meth:`~celery.app.utils.Settings.humanize`:
 
 This method returns the configuration as a tabulated string.  This will
 only contain changes to the configuration by default, but you can include the
-default keys and values by changing the ``with_defaults`` argument.
+built-in default keys and values by enabling the ``with_defaults`` argument.
 
-If you instead want to work with the configuration as a dictionary, then you
+If you instead want to work with the configuration as a dictionary, you
 can use the :meth:`~celery.app.utils.Settings.table` method:
 
 .. code-block:: pycon
@@ -280,8 +299,8 @@ these sub-strings:
 Laziness
 ========
 
-The application instance is lazy, meaning that it will not be evaluated
-until something is actually needed.
+The application instance is lazy, meaning it will not be evaluated
+until it's actually needed.
 
 Creating a :class:`@Celery` instance will only do the following:
 
@@ -291,8 +310,8 @@ Creating a :class:`@Celery` instance will only do the following:
        argument was disabled)
     #. Call the :meth:`@on_init` callback (does nothing by default).
 
-The :meth:`@task` decorator does not actually create the
-tasks at the point when it's called, instead it will defer the creation
+The :meth:`@task` decorators do not create the tasks at the point when
+the task is defined, instead it will defer the creation
 of the task to happen either when the task is used, or after the
 application has been *finalized*,
 
@@ -340,9 +359,9 @@ Finalizing the object will:
 
 .. topic:: The "default app".
 
-    Celery did not always work this way, it used to be that
+    Celery did not always have applications, it used to be that
     there was only a module-based API, and for backwards compatibility
-    the old API is still there.
+    the old API is still there until the release of Celery 5.0.
 
     Celery always creates a special app that is the "default app",
     and this is used if no custom application has been instantiated.
@@ -417,7 +436,7 @@ chain breaks:
 
 .. topic:: Evolving the API
 
-    Celery has changed a lot in the 3 years since it was initially
+    Celery has changed a lot in the 7 years since it was initially
     created.
 
     For example, in the beginning it was possible to use any callable as
@@ -468,7 +487,7 @@ Abstract Tasks
 All tasks created using the :meth:`~@task` decorator
 will inherit from the application's base :attr:`~@Task` class.
 
-You can specify a different base class with the ``base`` argument:
+You can specify a different base class using the ``base`` argument:
 
 .. code-block:: python
 
@@ -484,7 +503,6 @@ class: :class:`celery.Task`.
     from celery import Task
 
     class DebugTask(Task):
-        abstract = True
 
         def __call__(self, *args, **kwargs):
             print('TASK STARTING: {0.name}[{0.request.id}]'.format(self))
@@ -498,13 +516,19 @@ class: :class:`celery.Task`.
     default request used when a task is called directly.
 
 The neutral base class is special because it's not bound to any specific app
-yet.  Concrete subclasses of this class will be bound, so you should
-always mark generic base classes as ``abstract``
+yet.  Once a task is bound to an app it will read configuration to set default
+values and so on.
 
-Once a task is bound to an app it will read configuration to set default values
-and so on.
+To realize a base class you need to create a task using the :meth:`@task`
+decorator:
 
-It's also possible to change the default base class for an application
+.. code-block:: python
+
+    @app.task(base=DebugTask)
+    def add(x, y):
+        return x + y
+
+It's even possible to change the default base class for an application
 by changing its :meth:`@Task` attribute:
 
 .. code-block:: pycon
@@ -514,7 +538,6 @@ by changing its :meth:`@Task` attribute:
     >>> app = Celery()
 
     >>> class MyBaseTask(Task):
-    ...    abstract = True
     ...    send_error_emails = True
 
     >>> app.Task = MyBaseTask

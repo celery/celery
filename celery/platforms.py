@@ -109,7 +109,7 @@ def pyimplementation():
 
 
 class LockFailed(Exception):
-    """Raised if a pidlock can't be acquired."""
+    """Raised if a PID lock can't be acquired."""
 
 
 class Pidfile(object):
@@ -251,12 +251,12 @@ def _create_pidlock(pidfile):
 
 
 def fd_by_path(paths):
-    """Return a list of fds.
+    """Return a list of file descriptors.
 
-    This method returns list of fds corresponding to
+    This method returns list of file descriptors corresponding to
     file paths passed in paths variable.
 
-    :keyword paths: List of file paths go get fd for.
+    :keyword paths: List of file paths.
 
     :returns: :list:.
 
@@ -364,7 +364,7 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
       privileges to.
     :keyword umask: Optional umask that will be effective in the child process.
     :keyword workdir: Optional new working directory.
-    :keyword fake: Don't actually detach, intented for debugging purposes.
+    :keyword fake: Don't actually detach, intended for debugging purposes.
     :keyword \*\*opts: Ignored.
 
     **Example**:
@@ -682,7 +682,7 @@ def strargv(argv):
 
 
 def set_process_title(progname, info=None):
-    """Set the ps name for the currently running process.
+    """Set the :command:`ps` name for the currently running process.
 
     Only works if :pypi:`setproctitle` is installed.
 
@@ -701,7 +701,8 @@ if os.environ.get('NOSETPS'):  # pragma: no cover
 else:
 
     def set_mp_process_title(progname, info=None, hostname=None):  # noqa
-        """Set the ps name using the multiprocessing process name.
+        """Set the :command:`ps` name using the :mod:`multiprocessing`
+        process name.
 
         Only works if :pypi:`setproctitle` is installed.
 

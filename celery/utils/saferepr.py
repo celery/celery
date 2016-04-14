@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.utils.saferepr
-    ~~~~~~~~~~~~~~~~~~~~~
+    ``celery.utils.saferepr``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Streaming, truncating, non-recursive version of :func:`repr`.
 

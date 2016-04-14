@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.backends.riak
-    ~~~~~~~~~~~~~~~~~~~~
+    ``celery.backends.riak``
+    ~~~~~~~~~~~~~~~~~~~~~~~~
 
     Riak result store backend.
 

@@ -37,7 +37,7 @@ Fixes
 
 * Backported fix for #455 from 2.4 to 2.3.
 
-* Statedb was not saved at shutdown.
+* StateDB was not saved at shutdown.
 
 * Fixes worker sometimes hanging when hard time limit exceeded.
 
@@ -54,7 +54,7 @@ Fixes
   (Issue #477).
 
 * ``CELERYD`` option in :file:`/etc/default/celeryd` should not
-  be used with generic init scripts.
+  be used with generic init-scripts.
 
 
 .. _version-2.3.2:
@@ -118,7 +118,7 @@ Fixes
 
     growing and shrinking eventlet pools is still not supported.
 
-* py24 target removed from :file:`tox.ini`.
+* ``py24`` target removed from :file:`tox.ini`.
 
 
 .. _version-2.3.1:
@@ -140,7 +140,7 @@ Fixes
 2.3.0
 =====
 :release-date: 2011-08-05 12:00 P.M BST
-:tested: cPython: 2.5, 2.6, 2.7; PyPy: 1.5; Jython: 2.5.2
+:tested: CPython: 2.5, 2.6, 2.7; PyPy: 1.5; Jython: 2.5.2
 :release-by: Ask Solem
 
 .. _v230-important:
@@ -165,7 +165,7 @@ Important Notes
 
     The default backend is now a dummy backend
     (:class:`celery.backends.base.DisabledBackend`).  Saving state is simply an
-    noop operation, and AsyncResult.wait(), .result, .state, etc. will raise
+    no-op, and AsyncResult.wait(), .result, .state, etc. will raise
     a :exc:`NotImplementedError` telling the user to configure the result backend.
 
     For help choosing a backend please see :ref:`task-result-backends`.
@@ -180,11 +180,11 @@ Important Notes
         For :pypi:`django-celery` users the default backend is
         still ``database``, and results are not disabled by default.
 
-* The Debian init scripts have been deprecated in favor of the generic-init.d
-  init scripts.
+* The Debian init-scripts have been deprecated in favor of the generic-init.d
+  init-scripts.
 
-    In addition generic init scripts for celerybeat and celeryev has been
-    added.
+    In addition generic init-scripts for ``celerybeat`` and ``celeryev`` has
+    been added.
 
 .. _v230-news:
 
@@ -294,9 +294,9 @@ News
                                          broker.vhost=/               \
                                          celery.disable_rate_limits=yes
 
-* celerybeat: Now retries establishing the connection (Issue #419).
+* ``celerybeat``: Now retries establishing the connection (Issue #419).
 
-* celeryctl: New ``list bindings`` command.
+* ``celeryctl``: New ``list bindings`` command.
 
     Lists the current or all available bindings, depending on the
     broker transport used.
@@ -331,7 +331,7 @@ News
 * Added ``TaskSetResult.delete()``, which will delete a previously
   saved taskset result.
 
-* Celerybeat now syncs every 3 minutes instead of only at
+* ``celerybeat`` now syncs every 3 minutes instead of only at
   shutdown (Issue #382).
 
 * Monitors now properly handles unknown events, so user-defined events
@@ -353,7 +353,7 @@ News
 Fixes
 -----
 
-* celeryev was trying to create the pidfile twice.
+* ``celeryev`` was trying to create the pidfile twice.
 
 * celery.contrib.batches: Fixed problem where tasks failed
   silently (Issue #393).
@@ -364,7 +364,7 @@ Fixes
 * ``CELERY_TASK_ERROR_WHITE_LIST`` is now properly initialized
   in all loaders.
 
-* celeryd_detach now passes through command line configuration.
+* ``celeryd_detach`` now passes through command line configuration.
 
 * Remote control command ``add_consumer`` now does nothing if the
   queue is already being consumed from.

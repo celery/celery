@@ -20,7 +20,7 @@ _celery()
     loglevels="critical error warning info debug"
     in_opt=0
 
-    # find the current subcommand, store in basep'
+    # find the current sub-command, store in basep'
     for index in $(seq 1 $((${#COMP_WORDS[@]} - 2)))
     do
         basep=${COMP_WORDS[$index]}

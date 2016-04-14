@@ -32,7 +32,7 @@ _arguments \
         '*:: :->subcmds' && return 0
 
 if (( CURRENT == 1 )); then
-    _describe -t commands "celery subcommand" _1st_arguments
+    _describe -t commands "celery sub-command" _1st_arguments
     return
 fi
 

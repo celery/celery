@@ -1,5 +1,5 @@
 ============================================
- celery.backends.mongodb
+ ``celery.backends.mongodb``
 ============================================
 
 .. contents::

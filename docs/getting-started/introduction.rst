@@ -119,7 +119,7 @@ Celery is…
         - **Brokers**
 
             - :ref:`RabbitMQ <broker-rabbitmq>`, :ref:`Redis <broker-redis>`,
-            - :ref:`MongoDB <broker-mongodb>` (exp), ZeroMQ (exp)
+            - :ref:`MongoDB <broker-mongodb>` (exp),
             - :ref:`CouchDB <broker-couchdb>` (exp), :ref:`SQLAlchemy <broker-sqlalchemy>` (exp)
             - :ref:`Django ORM <broker-django>` (exp), :ref:`Amazon SQS <broker-sqs>`, (exp)
             - and more…
@@ -133,7 +133,7 @@ Celery is…
         - **Result Stores**
 
             - AMQP, Redis
-            - memcached, MongoDB
+            - Memcached, MongoDB
             - SQLAlchemy, Django ORM
             - Apache Cassandra, IronCache, Elasticsearch
 
@@ -180,7 +180,7 @@ Features
             You can specify the time to run a task in seconds or a
             :class:`~datetime.datetime`, or or you can use
             periodic tasks for recurring events based on a
-            simple interval, or crontab expressions
+            simple interval, or Crontab expressions
             supporting minute, hour, day of week, day of month, and
             month of year.
 
@@ -257,8 +257,8 @@ database connections at :manpage:`fork(2)`.
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
 
-Quickjump
-=========
+Quick Jump
+==========
 
 .. topic:: I want to ⟶
 

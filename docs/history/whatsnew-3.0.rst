@@ -1019,7 +1019,7 @@ See the :ref:`deprecation-timeline`.
 Fixes
 =====
 
-- Retry sqlalchemy backend operations on DatabaseError/OperationalError
+- Retry SQLAlchemy backend operations on DatabaseError/OperationalError
   (Issue #634)
 
 - Tasks that called ``retry`` was not acknowledged if acks late was enabled

@@ -261,11 +261,11 @@ class _LocalStack(object):
 class LocalManager(object):
     """Local objects cannot manage themselves. For that you need a local
     manager.  You can pass a local manager multiple locals or add them
-    later by appending them to `manager.locals`.  Everytime the manager
-    cleans up it, will clean up all the data left in the locals for this
+    later by appending them to ``manager.locals``.  Every time the manager
+    cleans up, it will clean up all the data left in the locals for this
     context.
 
-    The `ident_func` parameter can be added to override the default ident
+    The ``ident_func`` parameter can be added to override the default ident
     function for the wrapped locals.
 
     """
@@ -294,7 +294,7 @@ class LocalManager(object):
     def cleanup(self):
         """Manually clean up the data in the locals for this context.
 
-        Call this at the end of the request or use `make_middleware()`.
+        Call this at the end of the request or use ``make_middleware()``.
 
         """
         for local in self.locals:

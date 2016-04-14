@@ -37,7 +37,6 @@ Creating custom Task subclasses:
     Task = celery.create_task_cls()
 
     class DebugTask(Task):
-        abstract = True
 
         def on_failure(self, *args, **kwargs):
             import pdb
@@ -89,11 +88,11 @@ Other interesting attributes::
 As you can probably see, this really opens up another
 dimension of customization abilities.
 
-Deprecations
-============
+Deprecated
+==========
 
-* celery.task.ping
-  celery.task.PingTask
+* ``celery.task.ping``
+  ``celery.task.PingTask``
 
   Inferior to the ping remote control command.
   Will be removed in Celery 2.3.
@@ -101,41 +100,41 @@ Deprecations
 Aliases (Pending deprecation)
 =============================
 
-* celery.task.base
-    * .Task -> {app.Task / :class:`celery.app.task.Task`}
+* ``celery.task.base``
+    * ``.Task`` -> {``app.Task`` / :class:`celery.app.task.Task`}
 
-* celery.task.sets
-    * .TaskSet -> {app.TaskSet}
+* ``celery.task.sets``
+    * ``.TaskSet`` -> {``app.TaskSet``}
 
-* celery.decorators / celery.task
-    * .task -> {app.task}
+* ``celery.decorators`` / ``celery.task``
+    * ``.task`` -> {``app.task``}
 
-* celery.execute
-    * .apply_async -> {task.apply_async}
-    * .apply -> {task.apply}
-    * .send_task -> {app.send_task}
-    * .delay_task -> no alternative
+* ``celery.execute``
+    * ``.apply_async`` -> {``task.apply_async``}
+    * ``.apply`` -> {``task.apply``}
+    * ``.send_task`` -> {``app.send_task``}
+    * ``.delay_task`` -> *no alternative*
 
-* celery.log
-    * .get_default_logger -> {app.log.get_default_logger}
-    * .setup_logger -> {app.log.setup_logger}
-    * .get_task_logger -> {app.log.get_task_logger}
-    * .setup_task_logger -> {app.log.setup_task_logger}
-    * .setup_logging_subsystem -> {app.log.setup_logging_subsystem}
-    * .redirect_stdouts_to_logger -> {app.log.redirect_stdouts_to_logger}
+* ``celery.log``
+    * ``.get_default_logger`` -> {``app.log.get_default_logger``}
+    * ``.setup_logger`` -> {``app.log.setup_logger``}
+    * ``.get_task_logger`` -> {``app.log.get_task_logger``}
+    * ``.setup_task_logger`` -> {``app.log.setup_task_logger``}
+    * ``.setup_logging_subsystem`` -> {``app.log.setup_logging_subsystem``}
+    * ``.redirect_stdouts_to_logger`` -> {``app.log.redirect_stdouts_to_logger``}
 
-* celery.messaging
-    * .establish_connection -> {app.broker_connection}
-    * .with_connection -> {app.with_connection}
-    * .get_consumer_set -> {app.amqp.get_task_consumer}
-    * .TaskPublisher -> {app.amqp.TaskPublisher}
-    * .TaskConsumer -> {app.amqp.TaskConsumer}
-    * .ConsumerSet -> {app.amqp.ConsumerSet}
+* ``celery.messaging``
+    * ``.establish_connection`` -> {``app.broker_connection``}
+    * ``.with_connection`` -> {``app.with_connection``}
+    * ``.get_consumer_set`` -> {``app.amqp.get_task_consumer``}
+    * ``.TaskPublisher`` -> {``app.amqp.TaskPublisher``}
+    * ``.TaskConsumer`` -> {``app.amqp.TaskConsumer``}
+    * ``.ConsumerSet`` -> {``app.amqp.ConsumerSet``}
 
-* celery.conf.* -> {app.conf}
+* ``celery.conf.*`` -> {``app.conf``}
 
     **NOTE**: All configuration keys are now named the same
-    as in the configuration. So the key "task_always_eager"
+    as in the configuration. So the key ``task_always_eager``
     is accessed as::
 
         >>> app.conf.task_always_eager
@@ -145,22 +144,22 @@ Aliases (Pending deprecation)
         >>> from celery import conf
         >>> conf.always_eager
 
-    * .get_queues -> {app.amqp.get_queues}
+    * ``.get_queues`` -> {``app.amqp.get_queues``}
 
-* celery.task.control
-    * .broadcast -> {app.control.broadcast}
-    * .rate_limit -> {app.control.rate_limit}
-    * .ping -> {app.control.ping}
-    * .revoke -> {app.control.revoke}
-    * .discard_all -> {app.control.discard_all}
-    * .inspect -> {app.control.inspect}
+* ``celery.task.control``
+    * ``.broadcast`` -> {``app.control.broadcast``}
+    * ``.rate_limit`` -> {``app.control.rate_limit``}
+    * ``.ping`` -> {``app.control.ping``}
+    * ``.revoke`` -> {``app.control.revoke``}
+    * ``.discard_all`` -> {``app.control.discard_all``}
+    * ``.inspect`` -> {``app.control.inspect``}
 
-* celery.utils.info
-    * .humanize_seconds -> celery.utils.timeutils.humanize_seconds
-    * .textindent -> celery.utils.textindent
-    * .get_broker_info -> {app.amqp.get_broker_info}
-    * .format_broker_info -> {app.amqp.format_broker_info}
-    * .format_queues -> {app.amqp.format_queues}
+* ``celery.utils.info``
+    * ``.humanize_seconds`` -> ``celery.utils.timeutils.humanize_seconds``
+    * ``.textindent`` -> ``celery.utils.textindent``
+    * ``.get_broker_info`` -> {``app.amqp.get_broker_info``}
+    * ``.format_broker_info`` -> {``app.amqp.format_broker_info``}
+    * ``.format_queues`` -> {``app.amqp.format_queues``}
 
 Default App Usage
 =================
@@ -193,44 +192,42 @@ instance.
 App Dependency Tree
 -------------------
 
-* {app}
-    * celery.loaders.base.BaseLoader
-    * celery.backends.base.BaseBackend
-    * {app.TaskSet}
-        * celery.task.sets.TaskSet (app.TaskSet)
-    * [app.TaskSetResult]
-        * celery.result.TaskSetResult (app.TaskSetResult)
+* {``app``}
+    * ``celery.loaders.base.BaseLoader``
+    * ``celery.backends.base.BaseBackend``
+    * {``app.TaskSet``}
+        * ``celery.task.sets.TaskSet`` (``app.TaskSet``)
+    * [``app.TaskSetResult``]
+        * ``celery.result.TaskSetResult`` (``app.TaskSetResult``)
 
-* {app.AsyncResult}
-    * celery.result.BaseAsyncResult / celery.result.AsyncResult
+* {``app.AsyncResult``}
+    * ``celery.result.BaseAsyncResult`` / ``celery.result.AsyncResult``
 
-* celery.bin.worker.WorkerCommand
-    * celery.apps.worker.Worker
-        * celery.worker.WorkerController
-            * celery.worker.consumer.Consumer
-                * celery.worker.request.Request
-                * celery.events.EventDispatcher
-                * celery.worker.control.ControlDispatch
-                    * celery.woker.control.registry.Panel
-                    * celery.pidbox.BroadcastPublisher
-                * celery.pidbox.BroadcastConsumer
-            * celery.worker.controllers.Mediator
-            * celery.beat.EmbeddedService
+* ``celery.bin.worker.WorkerCommand``
+    * ``celery.apps.worker.Worker``
+        * ``celery.worker.WorkerController``
+            * ``celery.worker.consumer.Consumer``
+                * ``celery.worker.request.Request``
+                * ``celery.events.EventDispatcher``
+                * ``celery.worker.control.ControlDispatch``
+                    * ``celery.worker.control.registry.Panel``
+                    * ``celery.pidbox.BroadcastPublisher``
+                * ``celery.pidbox.BroadcastConsumer``
+            * ``celery.beat.EmbeddedService``
 
-* celery.bin.events.EvCommand
-    * celery.events.snapshot.evcam
-        * celery.events.snapshot.Polaroid
-        * celery.events.EventReceiver
-    * celery.events.cursesmon.evtop
-        * celery.events.EventReceiver
-        * celery.events.cursesmon.CursesMonitor
-    * celery.events.dumper
-        * celery.events.EventReceiver
+* ``celery.bin.events.EvCommand``
+    * ``celery.events.snapshot.evcam``
+        * ``celery.events.snapshot.Polaroid``
+        * ``celery.events.EventReceiver``
+    * ``celery.events.cursesmon.evtop``
+        * ``celery.events.EventReceiver``
+        * ``celery.events.cursesmon.CursesMonitor``
+    * ``celery.events.dumper``
+        * ``celery.events.EventReceiver``
 
-* celery.bin.amqp.AMQPAdmin
+* ``celery.bin.amqp.AMQPAdmin``
 
-* celery.bin.beat.BeatCommand
-    * celery.apps.beat.Beat
-        * celery.beat.Service
-            * celery.beat.Scheduler
-
+* ``celery.bin.beat.BeatCommand``
+    * ``celery.apps.beat.Beat``
+        * ``celery.beat.Service``
+            * ``celery.beat.Scheduler``

@@ -1,5 +1,5 @@
 ========================
- celery.events
+ ``celery.events``
 ========================
 
 .. contents::

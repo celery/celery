@@ -92,7 +92,7 @@ class EventDispatcher(object):
         include ``"task"`` and ``"worker"``.
 
     :keyword enabled: Set to :const:`False` to not actually publish any events,
-        making :meth:`send` a noop operation.
+        making :meth:`send` a no-op.
 
     :keyword channel: Can be used instead of `connection` to specify
         an exact channel to use when sending events.

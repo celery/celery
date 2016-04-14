@@ -64,7 +64,7 @@ individual transport (see :ref:`broker_toc`).
 +---------------+--------------+----------------+--------------------+
 | *SQLAlchemy*  | Experimental | No             | No                 |
 +---------------+--------------+----------------+--------------------+
-| *Iron MQ*     | 3rd party    | No             | No                 |
+| *Iron MQ*     | third-party  | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 
 Experimental brokers may be functional but they do not have

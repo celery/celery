@@ -735,9 +735,9 @@ class AsynPool(_pool.Pool):
 
         def schedule_writes(ready_fds, total_write_count=[0]):
             # Schedule write operation to ready file descriptor.
-            # The file descriptor is writeable, but that does not
+            # The file descriptor is writable, but that does not
             # mean the process is currently reading from the socket.
-            # The socket is buffered so writeable simply means that
+            # The socket is buffered so writable simply means that
             # the buffer can accept at least 1 byte of data.
 
             # This means we have to cycle between the ready fds.
@@ -766,7 +766,7 @@ class AsynPool(_pool.Pool):
                     job = pop_message()
                 except IndexError:
                     # no more messages, remove all inactive fds from the hub.
-                    # this is important since the fds are always writeable
+                    # this is important since the fds are always writable
                     # as long as there's 1 byte left in the buffer, and so
                     # this may create a spinloop where the event loop
                     # always wakes up.
@@ -877,7 +877,7 @@ class AsynPool(_pool.Pool):
 
         def send_ack(response, pid, job, fd, WRITE=WRITE, ERR=ERR):
             # Only used when synack is enabled.
-            # Schedule writing ack response for when the fd is writeable.
+            # Schedule writing ack response for when the fd is writable.
             msg = Ack(job, fd, precalc[response])
             callback = promise(write_generator_done)
             cor = _write_ack(fd, msg, callback=callback)

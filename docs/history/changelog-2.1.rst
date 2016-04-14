@@ -82,8 +82,8 @@ Documentation
     This means :program:`celeryev` and friends finds workers immediately
     at start-up.
 
-* celeryev cursesmon: Set screen_delay to 10ms, so the screen refreshes more
-  often.
+* ``celeryev`` curses monitor: Set screen_delay to 10ms, so the screen
+  refreshes more often.
 
 * Fixed pickling errors when pickling :class:`AsyncResult` on older Python
   versions.
@@ -108,7 +108,7 @@ Fixes
 * worker: Now honors ignore result for
   :exc:`~@WorkerLostError` and timeout errors.
 
-* celerybeat: Fixed :exc:`UnboundLocalError` in celerybeat logging
+* ``celerybeat``: Fixed :exc:`UnboundLocalError` in ``celerybeat`` logging
   when using logging setup signals.
 
 * worker: All log messages now includes `exc_info`.
@@ -127,7 +127,7 @@ Fixes
 
 * Now working on Windows again.
 
-   Removed dependency on the pwd/grp modules.
+   Removed dependency on the :mod:`pwd`/:mod:`grp` modules.
 
 * snapshots: Fixed race condition leading to loss of events.
 
@@ -161,12 +161,12 @@ Fixes
     positional arguments in the future, so please do not depend on this
     behavior.
 
-* celerybeat: Now respects routers and task execution options again.
+* ``celerybeat``: Now respects routers and task execution options again.
 
-* celerybeat: Now reuses the publisher instead of the connection.
+* ``celerybeat``: Now reuses the publisher instead of the connection.
 
 * Cache result backend: Using :class:`float` as the expires argument
-  to `cache.set` is deprecated by the memcached libraries,
+  to `cache.set` is deprecated by the Memcached libraries,
   so we now automatically cast to :class:`int`.
 
 * unit tests: No longer emits logging and warnings in test output.
@@ -204,7 +204,7 @@ News
 * New remote control commands: `add_consumer` and `cancel_consumer`.
 
     .. method:: add_consumer(queue, exchange, exchange_type, routing_key,
-                             **options)
+                             \*\*options)
         :module:
 
         Tells the worker to declare and consume from the specified
@@ -220,7 +220,7 @@ News
     :class:`~celery.task.control.inspect`.
 
 
-    Example using celeryctl to start consuming from queue "queue", in
+    Example using ``celeryctl`` to start consuming from queue "queue", in
     exchange "exchange", of type "direct" using binding key "key":
 
     .. code-block:: console
@@ -245,11 +245,11 @@ News
 
         >>> inspect.cancel_consumer('queue')
 
-* celerybeat: Now logs the traceback if a message can't be sent.
+* ``celerybeat``: Now logs the traceback if a message can't be sent.
 
-* celerybeat: Now enables a default socket timeout of 30 seconds.
+* ``celerybeat``: Now enables a default socket timeout of 30 seconds.
 
-* README/introduction/homepage: Added link to `Flask-Celery`_.
+* ``README``/introduction/homepage: Added link to `Flask-Celery`_.
 
 .. _`Flask-Celery`: https://github.com/ask/flask-celery
 
@@ -325,7 +325,7 @@ News
         CELERY_AMQP_TASK_RESULT_EXPIRES = 30 * 60  # 30 minutes.
         CELERY_AMQP_TASK_RESULT_EXPIRES = 0.80     # 800 ms.
 
-* celeryev: Event Snapshots
+* ``celeryev``: Event Snapshots
 
     If enabled, the worker sends messages about what the worker is doing.
     These messages are called "events".
@@ -364,7 +364,7 @@ News
     There's also a Debian init.d script for :mod:`~celery.bin.events` available,
     see :ref:`daemonizing` for more information.
 
-    New command-line arguments to celeryev:
+    New command-line arguments to ``celeryev``:
 
         * :option:`celery events --camera`: Snapshot camera class to use.
         * :option:`celery events --logfile`: Log file
@@ -394,7 +394,7 @@ News
 * :func:`~celery.task.control.broadcast`: Added callback argument, this can be
   used to process replies immediately as they arrive.
 
-* celeryctl: New command line utility to manage and inspect worker nodes,
+* ``celeryctl``: New command line utility to manage and inspect worker nodes,
   apply tasks and inspect the results of tasks.
 
     .. seealso::
@@ -436,13 +436,13 @@ News
     =====================================  =====================================
     **Application**                        **Logger Name**
     =====================================  =====================================
-    `celeryd`                              "celery"
-    `celerybeat`                           "celery.beat"
-    `celeryev`                             "celery.ev"
+    ``celeryd``                            ``"celery"``
+    ``celerybeat``                         ``"celery.beat"``
+    ``celeryev``                           ``"celery.ev"``
     =====================================  =====================================
 
     This means that the `loglevel` and `logfile` arguments will
-    affect all registered loggers (even those from 3rd party libraries).
+    affect all registered loggers (even those from third-party libraries).
     Unless you configure the loggers manually as shown below, that is.
 
     *Users can choose to configure logging by subscribing to the
@@ -465,7 +465,7 @@ News
 
     Remember that the worker also redirects stdout and stderr
     to the celery logger, if manually configure logging
-    you also need to redirect the stdouts manually:
+    you also need to redirect the standard outs manually:
 
     .. code-block:: python
 
@@ -537,7 +537,7 @@ News
 * Added `Task.store_errors_even_if_ignored`, so it can be changed per Task,
   not just by the global setting.
 
-* The crontab scheduler no longer wakes up every second, but implements
+* The Crontab scheduler no longer wakes up every second, but implements
   `remaining_estimate` (*Optimization*).
 
 * worker:  Store :state:`FAILURE` result if the
@@ -557,7 +557,7 @@ News
       backend cleanup task can be easily changed.
 
     * The task is now run every day at 4:00 AM, rather than every day since
-      the first time it was run (using crontab schedule instead of
+      the first time it was run (using Crontab schedule instead of
       `run_every`)
 
     * Renamed `celery.task.builtins.DeleteExpiredTaskMetaTask`
@@ -568,8 +568,8 @@ News
 
     See issue #134.
 
-* Implemented `AsyncResult.forget` for sqla/cache/redis/tyrant backends.
-  (Forget and remove task result).
+* Implemented `AsyncResult.forget` for SQLAlchemy/Memcached/Redis/Tokyo Tyrant
+  backends.  (Forget and remove task result).
 
     See issue #184.
 
@@ -612,7 +612,7 @@ News
 
     See issue #164.
 
-* timedelta_seconds: Use `timedelta.total_seconds` if running on Python 2.7
+* ``timedelta_seconds``: Use ``timedelta.total_seconds`` if running on Python 2.7
 
 * :class:`~celery.datastructures.TokenBucket`: Generic Token Bucket algorithm
 

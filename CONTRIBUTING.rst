@@ -209,10 +209,10 @@ spelling or other errors on the website/docs/code.
        * Enable celery's ``breakpoint_signal`` and use it
          to inspect the process's state.  This will allow you to open a
          ``pdb`` session.
-       * Collect tracing data using strace_(Linux), dtruss (OSX) and ktrace(BSD),
-         ltrace_ and lsof_.
+       * Collect tracing data using `strace`_(Linux), ``dtruss`` (OSX),
+         and ``ktrace`` (BSD), `ltrace`_ and `lsof`_.
 
-    D) Include the output from the `celery report` command:
+    D) Include the output from the ``celery report`` command:
         ::
 
             $ celery -A proj report
@@ -243,21 +243,21 @@ Issue Trackers
 Bugs for a package in the Celery ecosystem should be reported to the relevant
 issue tracker.
 
-* Celery: https://github.com/celery/celery/issues/
-* Kombu: https://github.com/celery/kombu/issues
-* pyamqp: https://github.com/celery/py-amqp/issues
-* vine: https://github.com/celery/vine/issues
-* librabbitmq: https://github.com/celery/librabbitmq/issues
-* Django-Celery: https://github.com/celery/django-celery/issues
+* ``celery``: https://github.com/celery/celery/issues/
+* ``kombu``: https://github.com/celery/kombu/issues
+* ``amqp``: https://github.com/celery/py-amqp/issues
+* ``vine``: https://github.com/celery/vine/issues
+* ``librabbitmq``: https://github.com/celery/librabbitmq/issues
+* ``django-celery``: https://github.com/celery/django-celery/issues
 
 If you are unsure of the origin of the bug you can ask the
 `mailing-list`_, or just use the Celery issue tracker.
 
-Contributors guide to the codebase
-==================================
+Contributors guide to the code base
+===================================
 
 There's a separate section for internal details,
-including details about the codebase and a style guide.
+including details about the code base and a style guide.
 
 Read `internals-guide`_ for more!
 
@@ -268,7 +268,7 @@ Versions
 
 Version numbers consists of a major version, minor version and a release number.
 Since version 2.1.0 we use the versioning semantics described by
-semver: http://semver.org.
+SemVer: http://semver.org.
 
 Stable releases are published at PyPI
 while development releases are only available in the GitHub git repository as tags.
@@ -398,7 +398,7 @@ Forking and setting up the repository
 -------------------------------------
 
 First you need to fork the Celery repository, a good introduction to this
-is in the Github Guide: `Fork a Repo`_.
+is in the GitHub Guide: `Fork a Repo`_.
 
 After you have cloned the repository you should checkout your copy
 to a directory on your machine:
@@ -423,7 +423,7 @@ always use the ``--rebase`` option to ``git pull``:
 With this option you don't clutter the history with merging
 commit notes. See `Rebasing merge commits in git`_.
 If you want to learn more about rebasing see the `Rebase`_
-section in the Github guides.
+section in the GitHub guides.
 
 If you need to work on a different branch than ``master`` you can
 fetch and checkout a remote branch like this::
@@ -496,7 +496,7 @@ When your feature/bugfix is complete you may want to submit
 a pull requests so that it can be reviewed by the maintainers.
 
 Creating pull requests is easy, and also let you track the progress
-of your contribution.  Read the `Pull Requests`_ section in the Github
+of your contribution.  Read the `Pull Requests`_ section in the GitHub
 Guide to learn how this is done.
 
 You can also attach pull requests to existing issues by following
@@ -711,14 +711,14 @@ is following the conventions.
 
     * Python standard library (`import xxx`)
     * Python standard library ('from xxx import`)
-    * Third party packages.
+    * Third-party packages.
     * Other modules from the current package.
 
     or in case of code using Django:
 
     * Python standard library (`import xxx`)
     * Python standard library ('from xxx import`)
-    * Third party packages.
+    * Third-party packages.
     * Django packages.
     * Other modules from the current package.
 
@@ -784,7 +784,7 @@ Some features like a new result backend may require additional libraries
 that the user must install.
 
 We use setuptools `extra_requires` for this, and all new optional features
-that require 3rd party libraries must be added.
+that require third-party libraries must be added.
 
 1) Add a new requirements file in `requirements/extras`
 
@@ -908,8 +908,8 @@ Jan Henrik Helmers
 Packages
 ========
 
-celery
-------
+``celery``
+----------
 
 :git: https://github.com/celery/celery
 :CI: http://travis-ci.org/#!/celery/celery
@@ -917,8 +917,8 @@ celery
 :PyPI: http://pypi.python.org/pypi/celery
 :docs: http://docs.celeryproject.org
 
-kombu
------
+``kombu``
+---------
 
 Messaging library.
 
@@ -928,8 +928,8 @@ Messaging library.
 :PyPI: http://pypi.python.org/pypi/kombu
 :docs: http://kombu.readthedocs.org
 
-amqp
-----
+``amqp``
+--------
 
 Python AMQP 0.9.1 client.
 
@@ -939,8 +939,8 @@ Python AMQP 0.9.1 client.
 :PyPI: http://pypi.python.org/pypi/amqp
 :docs: http://amqp.readthedocs.org
 
-vine
-----
+``vine``
+--------
 
 Promise/deferred implementation.
 
@@ -950,8 +950,8 @@ Promise/deferred implementation.
 :PyPI: http://pypi.python.org/pypi/vine
 :docs: http://vine.readthedocs.org
 
-billiard
---------
+``billiard``
+------------
 
 Fork of multiprocessing containing improvements
 that will eventually be merged into the Python stdlib.
@@ -961,24 +961,16 @@ that will eventually be merged into the Python stdlib.
 :Windows-CI: https://ci.appveyor.com/project/ask/billiard
 :PyPI: http://pypi.python.org/pypi/billiard
 
-librabbitmq
------------
+``librabbitmq``
+---------------
 
 Very fast Python AMQP client written in C.
 
 :git: https://github.com/celery/librabbitmq
 :PyPI: http://pypi.python.org/pypi/librabbitmq
 
-celerymon
----------
-
-Celery monitor web-service.
-
-:git: https://github.com/celery/celerymon
-:PyPI: http://pypi.python.org/pypi/celerymon
-
-django-celery
--------------
+``django-celery``
+-----------------
 
 Django <-> Celery Integration.
 
@@ -986,16 +978,16 @@ Django <-> Celery Integration.
 :PyPI: http://pypi.python.org/pypi/django-celery
 :docs: http://docs.celeryproject.org/en/latest/django
 
-cl
---
+``cell``
+--------
 
 Actor library.
 
-:git: https://github.com/celery/cl
-:PyPI: http://pypi.python.org/pypi/cl
+:git: https://github.com/celery/cell
+:PyPI: http://pypi.python.org/pypi/cell
 
-cyme
-----
+``cyme``
+--------
 
 Distributed Celery Instance manager.
 
@@ -1007,32 +999,37 @@ Distributed Celery Instance manager.
 Deprecated
 ----------
 
-- Flask-Celery
+- ``Flask-Celery``
 
 :git: https://github.com/ask/Flask-Celery
 :PyPI: http://pypi.python.org/pypi/Flask-Celery
 
-- carrot
+- ``celerymon``
+
+:git: https://github.com/celery/celerymon
+:PyPI: http://pypi.python.org/pypi/celerymon
+
+- ``carrot``
 
 :git: https://github.com/ask/carrot
 :PyPI: http://pypi.python.org/pypi/carrot
 
-- ghettoq
+- ``ghettoq``
 
 :git: https://github.com/ask/ghettoq
 :PyPI: http://pypi.python.org/pypi/ghettoq
 
-- kombu-sqlalchemy
+- ``kombu-sqlalchemy``
 
 :git: https://github.com/ask/kombu-sqlalchemy
 :PyPI: http://pypi.python.org/pypi/kombu-sqlalchemy
 
-- django-kombu
+- ``django-kombu``
 
 :git: https://github.com/ask/django-kombu
 :PyPI: http://pypi.python.org/pypi/django-kombu
 
-- pylibrabbitmq
+- ``pylibrabbitmq``
 
 Old name for ``librabbitmq``.
 

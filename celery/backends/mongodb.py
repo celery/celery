@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.backends.mongodb
-    ~~~~~~~~~~~~~~~~~~~~~~~
+    ``celery.backends.mongodb``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     MongoDB result store backend.
 

@@ -16,7 +16,7 @@ The API>RCP Precedence Rule
 - The API is more important than Readability
 - Readability is more important than Convention
 - Convention is more important than Performance
-    - …unless the code is a proven hotspot.
+    - …unless the code is a proven hot-spot.
 
 More important than anything else is the end-user API.
 Conventions must step aside, and any suffering is always alleviated
@@ -62,7 +62,7 @@ Naming
     .. note::
 
         Sometimes it makes sense to have a class mask as a function,
-        and there is precedence for this in the stdlib (e.g.
+        and there is precedence for this in the Python standard library (e.g.
         :class:`~contextlib.contextmanager`).  Celery examples include
         :class:`~celery.signature`, :class:`~celery.chord`,
         ``inspect``, :class:`~kombu.utils.functional.promise` and more..
@@ -179,7 +179,7 @@ can't co-exist in the same process space, this later posed a problem
 for using Celery with frameworks that doesn't have this limitation.
 
 Therefore the app concept was introduced.  When using apps you use 'celery'
-objects instead of importing things from celery submodules, this
+objects instead of importing things from celery sub-modules, this
 (unfortunately) also means that Celery essentially has two API's.
 
 Here's an example using Celery in single-mode:
@@ -264,7 +264,7 @@ Module Overview
 - celery.bin
 
     Command-line applications.
-    setup.py creates setuptools entrypoints for these.
+    :file:`setup.py` creates setuptools entry-points for these.
 
 - celery.concurrency
 
@@ -325,7 +325,7 @@ Worker overview
 * `app.Worker` -> `celery.apps.worker:Worker`
 
    Responsibilities:
-   * sets up logging and redirects stdouts
+   * sets up logging and redirects standard outs
    * installs signal handlers (`TERM`/`HUP`/`STOP`/`USR1` (cry)/`USR2` (rdb))
    * prints banner and warnings (e.g. pickle warning)
    * handles the :option:`celery worker --purge` argument

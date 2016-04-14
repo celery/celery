@@ -1,5 +1,5 @@
 ==========================================
- celery.security.certificate
+ ``celery.security.certificate``
 ==========================================
 
 .. contents::

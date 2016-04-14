@@ -426,7 +426,6 @@ class test_App(AppCase):
         from celery.app.task import Task
 
         class adX(Task):
-            abstract = True
 
             def run(self, y, z, x):
                 return y, z, x

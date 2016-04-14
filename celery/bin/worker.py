@@ -63,7 +63,8 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: --scheduler
 
-    Scheduler class to use. Default is celery.beat.PersistentScheduler
+    Scheduler class to use. Default is
+    :class:`celery.beat.PersistentScheduler`
 
 .. cmdoption:: -S, --statedb
 
@@ -129,7 +130,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: --autoreload
 
-    Enable autoreloading.
+    Enable auto-reloading.
 
 .. cmdoption:: --no-execv
 
@@ -166,8 +167,8 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: --umask
 
-    Effective umask (in octal) of the process after detaching.  Inherits
-    the umask of the parent process by default.
+    Effective :manpage:`umask(1)` (in octal) of the process after detaching.
+    Inherits the :manpage:`umask(1)` of the parent process by default.
 
 .. cmdoption:: --workdir
 

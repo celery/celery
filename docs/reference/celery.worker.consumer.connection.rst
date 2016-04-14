@@ -1,5 +1,5 @@
 ==================================================
- celery.worker.consumer.connection
+ ``celery.worker.consumer.connection``
 ==================================================
 
 .. contents::

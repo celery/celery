@@ -238,7 +238,7 @@ If none of these are found it'll try a submodule named ``proj.celery``:
 
 4) an attribute named ``proj.celery.app``, or
 5) an attribute named ``proj.celery.celery``, or
-6) Any atribute in the module ``proj.celery`` where the value is a Celery
+6) Any attribute in the module ``proj.celery`` where the value is a Celery
    application.
 
 This scheme mimics the practices used in the documentation,

@@ -66,7 +66,7 @@ def cronfield(s):
 
 
 class ParseException(Exception):
-    """Raised by crontab_parser when the input can't be parsed."""
+    """Raised by :class:`crontab_parser` when the input can't be parsed."""
 
 
 @python_2_unicode_compatible
@@ -99,15 +99,13 @@ class schedule(object):
         )
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items `(is_due, next_time_to_check)`,
+        """Returns tuple of two items ``(is_due, next_time_to_check)``,
         where next time to check is in seconds.
 
-        e.g.
-
-        * `(True, 20)`, means the task should be run now, and the next
+        * ``(True, 20)``, means the task should be run now, and the next
             time to check is in 20 seconds.
 
-        * `(False, 12.3)`, means the task is not due, but that the scheduler
+        * ``(False, 12.3)``, means the task is not due, but that the scheduler
           should check again in 12.3 seconds.
 
         The next time to check is used to save energy/CPU cycles,
@@ -118,7 +116,7 @@ class schedule(object):
         sleep between re-checking the periodic task intervals.  So if you
         have a task that changes schedule at run-time then your next_run_at
         check will decide how long it will take before a change to the
-        schedule takes effect.  The max loop interval takes precendence
+        schedule takes effect.  The max loop interval takes precedence
         over the next check at value returned.
 
         .. admonition:: Scheduler max interval variance
@@ -184,9 +182,9 @@ class schedule(object):
 
 
 class crontab_parser(object):
-    """Parser for crontab expressions. Any expression of the form 'groups'
+    """Parser for Crontab expressions. Any expression of the form 'groups'
     (see BNF grammar below) is accepted and expanded to a set of numbers.
-    These numbers represent the units of time that the crontab needs to
+    These numbers represent the units of time that the Crontab needs to
     run on:
 
     .. code-block:: bnf
@@ -201,7 +199,7 @@ class crontab_parser(object):
         groups  :: expr ( ',' expr ) *
 
     The parser is a general purpose one, useful for parsing hours, minutes and
-    day_of_week expressions.  Example usage:
+    day of week expressions.  Example usage:
 
     .. code-block:: pycon
 
@@ -212,8 +210,8 @@ class crontab_parser(object):
         >>> day_of_week = crontab_parser(7).parse('*')
         [0, 1, 2, 3, 4, 5, 6]
 
-    It can also parse day_of_month and month_of_year expressions if initialized
-    with an minimum of 1.  Example usage:
+    It can also parse day of month and month of year expressions if initialized
+    with a minimum of 1.  Example usage:
 
     .. code-block:: pycon
 
@@ -307,12 +305,12 @@ class crontab_parser(object):
 
 @python_2_unicode_compatible
 class crontab(schedule):
-    """A crontab can be used as the `run_every` value of a
-    :class:`PeriodicTask` to add cron-like scheduling.
+    """A Crontab can be used as the ``run_every`` value of a
+    periodic task entry to add :manpage:`crontab(5)`-like scheduling.
 
-    Like a :manpage:`cron` job, you can specify units of time of when
+    Like a :manpage:`cron(5)`-job, you can specify units of time of when
     you would like the task to execute. It is a reasonably complete
-    implementation of cron's features, so it should provide a fair
+    implementation of :command:`cron`'s features, so it should provide a fair
     degree of scheduling needs.
 
     You can specify a minute, an hour, a day of the week, a day of the
@@ -322,17 +320,17 @@ class crontab(schedule):
 
         - A (list of) integers from 0-59 that represent the minutes of
           an hour of when execution should occur; or
-        - A string representing a crontab pattern.  This may get pretty
-          advanced, like `minute='*/15'` (for every quarter) or
-          `minute='1,13,30-45,50-59/2'`.
+        - A string representing a Crontab pattern.  This may get pretty
+          advanced, like ``minute='*/15'`` (for every quarter) or
+          ``minute='1,13,30-45,50-59/2'``.
 
     .. attribute:: hour
 
         - A (list of) integers from 0-23 that represent the hours of
           a day of when execution should occur; or
-        - A string representing a crontab pattern.  This may get pretty
-          advanced, like `hour='*/3'` (for every three hours) or
-          `hour='0,8-17/2'` (at midnight, and every two hours during
+        - A string representing a Crontab pattern.  This may get pretty
+          advanced, like ``hour='*/3'`` (for every three hours) or
+          ``hour='0,8-17/2'`` (at midnight, and every two hours during
           office hours).
 
     .. attribute:: day_of_week
@@ -340,27 +338,27 @@ class crontab(schedule):
         - A (list of) integers from 0-6, where Sunday = 0 and Saturday =
           6, that represent the days of a week that execution should
           occur.
-        - A string representing a crontab pattern.  This may get pretty
-          advanced, like `day_of_week='mon-fri'` (for weekdays only).
-          (Beware that `day_of_week='*/2'` does not literally mean
+        - A string representing a Crontab pattern.  This may get pretty
+          advanced, like ``day_of_week='mon-fri'`` (for weekdays only).
+          (Beware that ``day_of_week='*/2'`` does not literally mean
           'every two days', but 'every day that is divisible by two'!)
 
     .. attribute:: day_of_month
 
         - A (list of) integers from 1-31 that represents the days of the
           month that execution should occur.
-        - A string representing a crontab pattern.  This may get pretty
-          advanced, such as `day_of_month='2-30/3'` (for every even
-          numbered day) or `day_of_month='1-7,15-21'` (for the first and
+        - A string representing a Crontab pattern.  This may get pretty
+          advanced, such as ``day_of_month='2-30/3'`` (for every even
+          numbered day) or ``day_of_month='1-7,15-21'`` (for the first and
           third weeks of the month).
 
     .. attribute:: month_of_year
 
         - A (list of) integers from 1-12 that represents the months of
           the year during which execution can occur.
-        - A string representing a crontab pattern.  This may get pretty
-          advanced, such as `month_of_year='*/3'` (for the first month
-          of every quarter) or `month_of_year='2-12/2'` (for every even
+        - A string representing a Crontab pattern.  This may get pretty
+          advanced, such as ``month_of_year='*/3'`` (for the first month
+          of every quarter) or ``month_of_year='2-12/2'`` (for every even
           numbered month).
 
     .. attribute:: nowfun
@@ -374,11 +372,12 @@ class crontab(schedule):
 
     It is important to realize that any day on which execution should
     occur must be represented by entries in all three of the day and
-    month attributes.  For example, if `day_of_week` is 0 and `day_of_month`
-    is every seventh day, only months that begin on Sunday and are also
-    in the `month_of_year` attribute will have execution events.  Or,
-    `day_of_week` is 1 and `day_of_month` is '1-7,15-21' means every
-    first and third Monday of every month present in `month_of_year`.
+    month attributes.  For example, if ``day_of_week`` is 0 and
+    ``day_of_month`` is every seventh day, only months that begin
+    on Sunday and are also in the ``month_of_year`` attribute will have
+    execution events.  Or, ``day_of_week`` is 1 and ``day_of_month``
+    is '1-7,15-21' means every first and third Monday of every month
+    present in ``month_of_year``.
 
     """
 
@@ -409,19 +408,18 @@ class crontab(schedule):
             list        (like [8-17])
 
         And convert it to an (expanded) set representing all time unit
-        values on which the crontab triggers.  Only in case of the base
-        type being 'str', parsing occurs.  (It is fast and
-        happens only once for each crontab instance, so there is no
+        values on which the Crontab triggers.  Only in case of the base
+        type being :class:`str`, parsing occurs.  (It is fast and
+        happens only once for each Crontab instance, so there is no
         significant performance overhead involved.)
 
         For the other base types, merely Python type conversions happen.
 
-        The argument `max_` is needed to determine the expansion of '*'
-        and ranges.
-        The argument `min_` is needed to determine the expansion of '*'
-        and ranges for 1-based cronspecs, such as day of month or month
-        of year. The default is sufficient for minute, hour, and day of
-        week.
+        The argument ``max_`` is needed to determine the expansion of
+        ``*`` and ranges.  The argument ``min_`` is needed to determine
+        the expansion of ``*`` and ranges for 1-based cronspecs, such as
+        day of month or month of year.  The default is sufficient for minute,
+        hour, and day of week.
 
         """
         if isinstance(cronspec, numbers.Integral):
@@ -443,11 +441,12 @@ class crontab(schedule):
         return result
 
     def _delta_to_next(self, last_run_at, next_hour, next_minute):
-        """Takes a datetime of last run, next minute and hour, and
-        returns a relativedelta for the next scheduled day and time.
+        """Takes a :class:`~datetime.datetime` of last run, next minute and hour,
+        and returns a :class:`~celery.utils.timeutils.ffwd` for the next
+        scheduled day and time.
 
-        Only called when day_of_month and/or month_of_year cronspec
-        is specified to further limit scheduled task execution.
+        Only called when ``day_of_month`` and/or ``month_of_year``
+        cronspec is specified to further limit scheduled task execution.
 
         """
         datedata = AttributeDict(year=last_run_at.year)
@@ -582,11 +581,12 @@ class crontab(schedule):
         return self.to_local(last_run_at), delta, self.to_local(now)
 
     def remaining_estimate(self, last_run_at, ffwd=ffwd):
-        """Returns when the periodic task should run next as a timedelta."""
+        """Returns when the periodic task should run next as a
+        :class:`~datetime.timedelta`."""
         return remaining(*self.remaining_delta(last_run_at, ffwd=ffwd))
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items `(is_due, next_time_to_run)`,
+        """Returns tuple of two items ``(is_due, next_time_to_run)``,
         where next time to run is in seconds.
 
         See :meth:`celery.schedules.schedule.is_due` for more information.
@@ -631,21 +631,22 @@ def maybe_schedule(s, relative=False, app=None):
 
 @python_2_unicode_compatible
 class solar(schedule):
-    """A solar event can be used as the `run_every` value of a
-    :class:`PeriodicTask` to schedule based on certain solar events.
+    """A solar event can be used as the ``run_every`` value of a
+    periodic task entry to schedule based on certain solar events.
 
     :param event: Solar event that triggers this task. Available
-        values are: dawn_astronomical, dawn_nautical, dawn_civil,
-        sunrise, solar_noon, sunset, dusk_civil, dusk_nautical,
-        dusk_astronomical
+        values are: ``dawn_astronomical``, ``dawn_nautical``, ``dawn_civil``,
+        ``sunrise``, ``solar_noon``, ``sunset``, ``dusk_civil``,
+        ``dusk_nautical``, ``dusk_astronomical``.
     :param lat: The latitude of the observer.
     :param lon: The longitude of the observer.
     :param nowfun: Function returning the current date and time
         (class:`~datetime.datetime`).
     :param app: Celery app instance.
+
     """
 
-    _all_events = [
+    _all_events = {
         'dawn_astronomical',
         'dawn_nautical',
         'dawn_civil',
@@ -655,7 +656,7 @@ class solar(schedule):
         'dusk_civil',
         'dusk_nautical',
         'dusk_astronomical',
-    ]
+    }
     _horizons = {
         'dawn_astronomical': '-18',
         'dawn_nautical': '-12',
@@ -700,7 +701,7 @@ class solar(schedule):
 
         if event not in self._all_events:
             raise ValueError(SOLAR_INVALID_EVENT.format(
-                event=event, all_events=', '.join(self._all_events),
+                event=event, all_events=', '.join(sorted(self._all_events)),
             ))
         if lat < -90 or lat > 90:
             raise ValueError(SOLAR_INVALID_LATITUDE.format(lat=lat))
@@ -727,9 +728,10 @@ class solar(schedule):
         )
 
     def remaining_estimate(self, last_run_at):
-        """Returns when the periodic task should run next as a timedelta,
-        or if it shouldn't run today (e.g. the sun does not rise today),
-        returns the time when the next check should take place."""
+        """Returns when the periodic task should run next as a
+        :class:`~datetime.timedelta`, or if it shouldn't run today (e.g.
+        the sun does not rise today), returns the time when the next check
+        should take place."""
         last_run_at = self.maybe_make_aware(last_run_at)
         last_run_at_utc = localize(last_run_at, timezone.utc)
         self.cal.date = last_run_at_utc
@@ -751,7 +753,7 @@ class solar(schedule):
         return delta
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items `(is_due, next_time_to_run)`,
+        """Returns tuple of two items ``(is_due, next_time_to_run)``,
         where next time to run is in seconds.
 
         See :meth:`celery.schedules.schedule.is_due` for more information.

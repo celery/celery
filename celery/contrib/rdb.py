@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-celery.contrib.rdb
-==================
+``celery.contrib.rdb``
+======================
 
 Remote debugger for Celery tasks running in multiprocessing pool workers.
 Inspired by http://snippets.dzone.com/posts/show/7248
@@ -24,10 +24,16 @@ Inspired by http://snippets.dzone.com/posts/show/7248
 
 .. envvar:: CELERY_RDB_HOST
 
+``CELERY_RDB_HOST``
+-------------------
+
     Hostname to bind to.  Default is '127.0.01', which means the socket
     will only be accessible from the local host.
 
 .. envvar:: CELERY_RDB_PORT
+
+``CELERY_RDB_PORT``
+-------------------
 
     Base port to bind to.  Default is 6899.
     The debugger will try to find an available port starting from the
@@ -177,7 +183,7 @@ def debugger():
 
 
 def set_trace(frame=None):
-    """Set breakpoint at current location, or a specified frame"""
+    """Set break-point at current location, or a specified frame."""
     if frame is None:
         frame = _frame().f_back
     return debugger().set_trace(frame)

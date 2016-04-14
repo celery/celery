@@ -101,7 +101,7 @@ class Ignore(TaskPredicate):
 
 @python_2_unicode_compatible
 class Reject(TaskPredicate):
-    """A task can raise this if it wants to reject/requeue the message."""
+    """A task can raise this if it wants to reject/re-queue the message."""
 
     def __init__(self, reason=None, requeue=False):
         self.reason = reason

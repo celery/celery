@@ -1,5 +1,5 @@
 ================================
- celery.app.registry
+ ``celery.app.registry``
 ================================
 
 .. contents::

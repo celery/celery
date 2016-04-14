@@ -123,7 +123,7 @@ Changes from version 1
     - If a message uses raw encoding then the raw data
       will be passed as a single argument to the function.
 
-    - Java/C, etc. can use a thrift/protobuf document as the body
+    - Java/C, etc. can use a Thrift/protobuf document as the body
 
 - Dispatches to actor based on ``task``, ``meth`` headers
 
@@ -159,7 +159,6 @@ Changes from version 1
         from celery.utils.imports import qualname
 
         class PickleTask(Task):
-            abstract = True
 
             def unpack_args(self, fun, args=()):
                 return fun, args
@@ -188,41 +187,41 @@ to read the fields.
 Message body
 ~~~~~~~~~~~~
 
-* task
+* ``task``
     :`string`:
 
     Name of the task. **required**
 
-* id
+* ``id``
     :`string`:
 
     Unique id of the task (UUID). **required**
 
-* args
+* ``args``
     :`list`:
 
     List of arguments. Will be an empty list if not provided.
 
-* kwargs
+* ``kwargs``
     :`dictionary`:
 
     Dictionary of keyword arguments. Will be an empty dictionary if not
     provided.
 
-* retries
+* ``retries``
     :`int`:
 
     Current number of times this task has been retried.
     Defaults to `0` if not specified.
 
-* eta
+* ``eta``
     :`string` (ISO 8601):
 
     Estimated time of arrival. This is the date and time in ISO 8601
     format. If not provided the message is not scheduled, but will be
     executed asap.
 
-* expires
+* ``expires``
     :`string` (ISO 8601):
 
     .. versionadded:: 2.0.2
@@ -232,12 +231,12 @@ Message body
     will be expired when the message is received and the expiration date
     has been exceeded.
 
-* taskset
+* ``taskset``
     :`string`:
 
-    The taskset this task is part of (if any).
+    The group this task is part of (if any).
 
-* chord
+* ``chord``
     :`Signature`:
 
     .. versionadded:: 2.3
@@ -246,7 +245,7 @@ Message body
     of this key is the body of the cord that should be executed when all of
     the tasks in the header has returned.
 
-* utc
+* ``utc``
     :`bool`:
 
     .. versionadded:: 2.5
@@ -254,21 +253,21 @@ Message body
     If true time uses the UTC timezone, if not the current local timezone
     should be used.
 
-* callbacks
+* ``callbacks``
     :`<list>Signature`:
 
     .. versionadded:: 3.0
 
     A list of signatures to call if the task exited successfully.
 
-* errbacks
+* ``errbacks``
     :`<list>Signature`:
 
     .. versionadded:: 3.0
 
     A list of signatures to call if an error occurs while executing the task.
 
-* timelimit
+* ``timelimit``
     :`<tuple>(float, float)`:
 
     .. versionadded:: 3.1
@@ -277,7 +276,7 @@ Message body
     limit value (`int`/`float` or :const:`None` for no limit).
 
     Example value specifying a soft time limit of 3 seconds, and a hard time
-    limt of 10 seconds::
+    limit of 10 seconds::
 
         {'timelimit': (3.0, 10.0)}
 
@@ -285,7 +284,7 @@ Message body
 Example message
 ~~~~~~~~~~~~~~~
 
-This is an example invocation of a `celery.task.ping` task in JSON
+This is an example invocation of a `celery.task.ping` task in json
 format:
 
 .. code-block:: javascript
@@ -334,7 +333,7 @@ Standard body fields
 - *string* ``type``
 
     The type of event.  This is a string containing the *category* and
-    *action* separated by a dash delimeter (e.g. ``task-succeeded``).
+    *action* separated by a dash delimiter (e.g. ``task-succeeded``).
 
 - *string* ``hostname``
 
@@ -342,11 +341,11 @@ Standard body fields
 
 - *unsigned long long* ``clock``
 
-    The logical clock value for this event (Lamport timestamp).
+    The logical clock value for this event (Lamport time-stamp).
 
 - *float* ``timestamp``
 
-    The UNIX timestamp corresponding to the time of when the event occurred.
+    The UNIX time-stamp corresponding to the time of when the event occurred.
 
 - *signed short* ``utcoffset``
 
