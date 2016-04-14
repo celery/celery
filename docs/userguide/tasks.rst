@@ -316,7 +316,7 @@ The request defines the following attributes:
 
 :id: The unique id of the executing task.
 
-:group: The unique id a group, if this task is a member.
+:group: The unique id of the task's :ref:`group <canvas-group>`, if this task is a member.
 
 :chord: The unique id of the chord this task belongs to (if the task
         is part of the header).
