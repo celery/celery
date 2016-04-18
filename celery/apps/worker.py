@@ -162,10 +162,11 @@ class Worker(WorkController):
         )
 
     def purge_messages(self):
-        count = self.app.control.purge()
-        if count:  # pragma: no cover
-            print('purge: Erased {0} {1} from the queue.\n'.format(
-                count, pluralize(count, 'message')))
+        with self.app.connection_for_write() as connection:
+            count = self.app.control.purge(connection=connection)
+            if count:  # pragma: no cover
+                print('purge: Erased {0} {1} from the queue.\n'.format(
+                    count, pluralize(count, 'message')))
 
     def tasklist(self, include_builtins=True, sep='\n', int_='celery.'):
         return sep.join(
