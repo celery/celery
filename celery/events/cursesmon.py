@@ -320,7 +320,7 @@ class CursesMonitor(object):  # pragma: no cover
             task = self.state.tasks[self.selected_task]
             result = (getattr(task, 'result', None) or
                       getattr(task, 'exception', None))
-            for line in wrap(result, mx - 2):
+            for line in wrap(result or '', mx - 2):
                 self.win.addstr(next(y), 3, line)
 
         return self.alert(
@@ -424,7 +424,7 @@ class CursesMonitor(object):  # pragma: no cover
                 STATUS_SCREEN.format(
                     s=self.state,
                     w_alive=len([w for w in values(self.state.workers)
-                                if w.alive]),
+                                 if w.alive]),
                     w_all=len(self.state.workers),
                 ),
                 curses.A_DIM,
