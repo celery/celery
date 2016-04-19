@@ -29,7 +29,7 @@ from celery import bootsteps
 from celery import signals
 from celery.app.trace import build_tracer
 from celery.exceptions import InvalidTaskError, NotRegistered
-from celery.five import buffer_t, items, python_2_unicode_compatible
+from celery.five import buffer_t, items, python_2_unicode_compatible, values
 from celery.utils import gethostname
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
@@ -270,17 +270,37 @@ class Consumer(object):
         task_reserved(request)
         self.on_task_request(request)
 
-    def _limit_task(self, request, bucket, tokens):
-        if not bucket.can_consume(tokens):
-            hold = bucket.expected_time(tokens)
-            pri = self._limit_order = (self._limit_order + 1) % 10
-            self.timer.call_after(
-                hold, self._limit_move_to_pool, (request,),
-                priority=pri,
-            )
+    def _on_bucket_wakeup(self, bucket, tokens):
+        try:
+            request = bucket.pop()
+        except IndexError:
+            pass
         else:
-            task_reserved(request)
-            self.on_task_request(request)
+            self._limit_move_to_pool(request)
+            self._schedule_oldest_bucket_request(bucket, tokens)
+
+    def _schedule_oldest_bucket_request(self, bucket, tokens):
+        try:
+            request = bucket.pop()
+        except IndexError:
+            pass
+        else:
+            return self._schedule_bucket_request(request, bucket, tokens)
+
+    def _schedule_bucket_request(self, request, bucket, tokens):
+        bucket.can_consume(tokens)
+        bucket.add(request)
+        pri = self._limit_order = (self._limit_order + 1) % 10
+        hold = bucket.expected_time(tokens)
+        self.timer.call_after(
+            hold, self._on_bucket_wakeup, (bucket, tokens),
+            priority=pri,
+        )
+
+    def _limit_task(self, request, bucket, tokens):
+        if bucket.contents:
+            return bucket.add(request)
+        return self._schedule_bucket_request(request, bucket, tokens)
 
     def start(self):
         blueprint = self.blueprint
@@ -369,6 +389,9 @@ class Consumer(object):
             self.controller.semaphore.clear()
         if self.timer:
             self.timer.clear()
+        for bucket in values(self.task_buckets):
+            if bucket:
+                bucket.clear_pending()
         reserved_requests.clear()
         if self.pool and self.pool.flush:
             self.pool.flush()

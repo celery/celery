@@ -3,6 +3,8 @@ from __future__ import absolute_import, unicode_literals
 import errno
 import socket
 
+from collections import deque
+
 from billiard.exceptions import RestartFreqExceeded
 
 from celery.datastructures import LimitedSet
@@ -13,7 +15,9 @@ from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
 from celery.worker.consumer.tasks import Tasks
 
-from celery.tests.case import AppCase, ContextMock, Mock, call, patch, skip
+from celery.tests.case import (
+    AppCase, ContextMock, Mock, call, patch, skip,
+)
 
 
 class test_Consumer(AppCase):
@@ -103,30 +107,32 @@ class test_Consumer(AppCase):
 
     def test_limit_task(self):
         c = self.get_consumer()
+        c.timer = Mock()
 
-        with patch('celery.worker.consumer.consumer.task_reserved') as reserv:
-            bucket = Mock()
-            request = Mock()
-            bucket.can_consume.return_value = True
+        bucket = Mock()
+        request = Mock()
+        bucket.can_consume.return_value = True
+        bucket.contents = deque()
 
-            c._limit_task(request, bucket, 3)
-            bucket.can_consume.assert_called_with(3)
-            reserv.assert_called_with(request)
-            c.on_task_request.assert_called_with(request)
+        c._limit_task(request, bucket, 3)
+        bucket.can_consume.assert_called_with(3)
+        bucket.expected_time.assert_called_with(3)
+        c.timer.call_after.assert_called_with(
+            bucket.expected_time(), c._on_bucket_wakeup, (bucket, 3),
+            priority=c._limit_order,
+        )
 
-        with patch('celery.worker.consumer.consumer.task_reserved') as reserv:
-            bucket.can_consume.return_value = False
-            bucket.expected_time.return_value = 3.33
-            limit_order = c._limit_order
-            c._limit_task(request, bucket, 4)
-            self.assertEqual(c._limit_order, limit_order + 1)
-            bucket.can_consume.assert_called_with(4)
-            c.timer.call_after.assert_called_with(
-                3.33, c._limit_move_to_pool, (request,),
-                priority=c._limit_order,
-            )
-            bucket.expected_time.assert_called_with(4)
-            reserv.assert_not_called()
+        bucket.can_consume.return_value = False
+        bucket.expected_time.return_value = 3.33
+        limit_order = c._limit_order
+        c._limit_task(request, bucket, 4)
+        self.assertEqual(c._limit_order, limit_order + 1)
+        bucket.can_consume.assert_called_with(4)
+        c.timer.call_after.assert_called_with(
+            3.33, c._on_bucket_wakeup, (bucket, 4),
+            priority=c._limit_order,
+        )
+        bucket.expected_time.assert_called_with(4)
 
     def test_start_blueprint_raises_EMFILE(self):
         c = self.get_consumer()
