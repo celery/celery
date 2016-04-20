@@ -13,45 +13,11 @@ from celery.apps import beat as beatapp
 from celery.tests.case import AppCase, Mock, mock, patch
 
 
-class MockedShelveModule(object):
-    shelves = defaultdict(lambda: {})
-
-    def open(self, filename, *args, **kwargs):
-        return self.shelves[filename]
-mocked_shelve = MockedShelveModule()
-
-
-class MockService(beat.Service):
-    started = False
-    in_sync = False
-    persistence = mocked_shelve
-
-    def start(self):
-        self.__class__.started = True
-
-    def sync(self):
-        self.__class__.in_sync = True
-
-
 class MockBeat(beatapp.Beat):
-    running = False
-
-    def run(self):
-        MockBeat.running = True
-
-
-class MockBeat2(beatapp.Beat):
-    Service = MockService
-
-    def install_sync_handler(self, b):
-        pass
-
-
-class MockBeat3(beatapp.Beat):
-    Service = MockService
-
-    def install_sync_handler(self, b):
-        raise TypeError('xxx')
+    Service = Mock(
+        name='MockBeat.Service',
+        return_value=Mock(name='MockBeat()', max_interval=3.3),
+    )
 
 
 class test_Beat(AppCase):
@@ -82,10 +48,11 @@ class test_Beat(AppCase):
         b.set_process_title()
 
     def test_run(self):
-        b = MockBeat2(app=self.app, redirect_stdouts=False)
-        MockService.started = False
+        b = MockBeat(app=self.app, redirect_stdouts=False)
+        b.install_sync_handler = Mock(name='beat.install_sync_handler')
+        b.Service.return_value.max_interval = 3.0
         b.run()
-        self.assertTrue(MockService.started)
+        b.Service().start.assert_called_with()
 
     def psig(self, fun, *args, **kwargs):
         handlers = {}
@@ -104,13 +71,13 @@ class test_Beat(AppCase):
 
     def test_install_sync_handler(self):
         b = beatapp.Beat(app=self.app, redirect_stdouts=False)
-        clock = MockService(app=self.app)
-        MockService.in_sync = False
+        clock = beat.Service(app=self.app)
+        clock.start = Mock(name='beat.Service().start')
+        clock.sync = Mock(name='beat.Service().sync')
         handlers = self.psig(b.install_sync_handler, clock)
         with self.assertRaises(SystemExit):
             handlers['SIGINT']('SIGINT', object())
-        self.assertTrue(MockService.in_sync)
-        MockService.in_sync = False
+        clock.sync.assert_called_with()
 
     @mock.restore_logging()
     def test_setup_logging(self):
@@ -133,63 +100,42 @@ class test_Beat(AppCase):
     @mock.restore_logging()
     @mock.stdouts
     def test_logs_errors(self, logger, stdout, stderr):
-        b = MockBeat3(
+        b = MockBeat(
             app=self.app, redirect_stdouts=False, socket_timeout=None,
         )
-        b.start_scheduler()
+        b.install_sync_handler = Mock('beat.install_sync_handler')
+        b.install_sync_handler.side_effect = RuntimeError('xxx')
+        with self.assertRaises(RuntimeError):
+            b.start_scheduler()
         logger.critical.assert_called()
 
     @patch('celery.platforms.create_pidlock')
     @mock.stdouts
-    def test_use_pidfile(self, create_pidlock, stdout, stderr):
-        b = MockBeat2(app=self.app, pidfile='pidfilelockfilepid',
-                      socket_timeout=None, redirect_stdouts=False)
+    def test_using_pidfile(self, create_pidlock, stdout, stderr):
+        b = MockBeat(app=self.app, pidfile='pidfilelockfilepid',
+                     socket_timeout=None, redirect_stdouts=False)
+        b.install_sync_handler = Mock(name='beat.install_sync_handler')
         b.start_scheduler()
         create_pidlock.assert_called()
-
-
-class MockDaemonContext(object):
-    opened = False
-    closed = False
-
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def open(self):
-        self.__class__.opened = True
-        return self
-    __enter__ = open
-
-    def close(self, *args):
-        self.__class__.closed = True
-    __exit__ = close
 
 
 class test_div(AppCase):
 
     def setup(self):
-        self.prev, beatapp.Beat = beatapp.Beat, MockBeat
-        self.ctx, beat_bin.detached = (
-            beat_bin.detached, MockDaemonContext,
-        )
-
-    def teardown(self):
-        beatapp.Beat = self.prev
+        self.Beat = self.app.Beat = self.patch('celery.apps.beat.Beat')
+        self.detached = self.patch('celery.bin.beat.detached')
+        self.Beat.__name__ = 'Beat'
 
     def test_main(self):
         sys.argv = [sys.argv[0], '-s', 'foo']
-        try:
-            beat_bin.main(app=self.app)
-            self.assertTrue(MockBeat.running)
-        finally:
-            MockBeat.running = False
+        beat_bin.main(app=self.app)
+        self.Beat().run.assert_called_with()
 
     def test_detach(self):
         cmd = beat_bin.beat()
         cmd.app = self.app
         cmd.run(detach=True)
-        self.assertTrue(MockDaemonContext.opened)
-        self.assertTrue(MockDaemonContext.closed)
+        self.detached.assert_called()
 
     def test_parse_options(self):
         cmd = beat_bin.beat()

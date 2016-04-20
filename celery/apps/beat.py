@@ -116,7 +116,7 @@ class Beat(object):
             logger.critical('beat raised exception %s: %r',
                             exc.__class__, exc,
                             exc_info=True)
-            raise exc
+            raise
 
     def init_loader(self):
         # Run the worker init handler.
