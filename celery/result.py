@@ -67,6 +67,7 @@ class ResultBase(object):
     parent = None
 
 
+@Thenable.register
 @python_2_unicode_compatible
 class AsyncResult(ResultBase):
     """Query task state.
@@ -437,9 +438,9 @@ class AsyncResult(ResultBase):
     @task_id.setter  # noqa
     def task_id(self, id):
         self.id = id
-Thenable.register(AsyncResult)
 
 
+@Thenable.register
 @python_2_unicode_compatible
 class ResultSet(ResultBase):
     """Working with more than one result.
@@ -803,9 +804,9 @@ class ResultSet(ResultBase):
     @property
     def backend(self):
         return self.app.backend if self.app else self.results[0].backend
-Thenable.register(ResultSet)
 
 
+@Thenable.register
 @python_2_unicode_compatible
 class GroupResult(ResultSet):
     """Like :class:`ResultSet`, but with an associated id.
@@ -882,9 +883,9 @@ class GroupResult(ResultSet):
         return (
             backend or (self.app.backend if self.app else current_app.backend)
         ).restore_group(id)
-Thenable.register(ResultSet)
 
 
+@Thenable.register
 @python_2_unicode_compatible
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
@@ -961,7 +962,6 @@ class EagerResult(AsyncResult):
     @property
     def supports_native_join(self):
         return False
-Thenable.register(EagerResult)
 
 
 def result_from_tuple(r, app=None):

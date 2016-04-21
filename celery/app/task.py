@@ -120,6 +120,7 @@ class Context(object):
         return self._children
 
 
+@abstract.CallableTask.register
 @python_2_unicode_compatible
 class Task(object):
     """Task base class.
@@ -940,5 +941,4 @@ class Task(object):
     @property
     def __name__(self):
         return self.__class__.__name__
-abstract.CallableTask.register(Task)
 BaseTask = Task  # compat alias

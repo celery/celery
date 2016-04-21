@@ -31,6 +31,12 @@ class _AbstractClass(object):
             all(_hasattr(C, attr) for attr in cls.__required_attributes__)
         ) or NotImplemented
 
+    @classmethod
+    def register(cls, other):
+        # we override `register` to return other for use as a decorator.
+        type(cls).register(cls, other)
+        return other
+
 
 class CallableTask(_AbstractClass, Callable):  # pragma: no cover
     __required_attributes__ = frozenset({

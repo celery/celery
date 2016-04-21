@@ -120,6 +120,7 @@ def _upgrade(fields, sig):
     return sig
 
 
+@abstract.CallableSignature.register
 @python_2_unicode_compatible
 class Signature(dict):
     """Class that wraps the arguments and execution options
@@ -395,7 +396,6 @@ class Signature(dict):
     subtask_type = _getitem_property('subtask_type')
     chord_size = _getitem_property('chord_size')
     immutable = _getitem_property('immutable')
-abstract.CallableSignature.register(Signature)
 
 
 @Signature.register_type
