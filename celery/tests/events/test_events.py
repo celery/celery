@@ -218,6 +218,19 @@ class test_EventReceiver(AppCase):
         r = self.app.events.Receiver(Mock(), accept={'app/foo'})
         self.assertEqual(r.accept, {'app/foo'})
 
+    def test_event_queue_prefix__default(self):
+        r = self.app.events.Receiver(Mock())
+        self.assertTrue(r.queue.name.startswith('celeryev.'))
+
+    def test_event_queue_prefix__setting(self):
+        self.app.conf.event_queue_prefix = 'eventq'
+        r = self.app.events.Receiver(Mock())
+        self.assertTrue(r.queue.name.startswith('eventq.'))
+
+    def test_event_queue_prefix__argument(self):
+        r = self.app.events.Receiver(Mock(), queue_prefix='fooq')
+        self.assertTrue(r.queue.name.startswith('fooq.'))
+
     def test_catch_all_event(self):
 
         message = {'type': 'world-war'}
