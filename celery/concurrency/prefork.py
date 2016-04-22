@@ -112,6 +112,7 @@ class TaskPool(BasePool):
         P = self._pool = Pool(processes=self.limit,
                               initializer=process_initializer,
                               on_process_exit=process_destructor,
+                              enable_timeouts=True,
                               synack=False,
                               **self.options)
 
