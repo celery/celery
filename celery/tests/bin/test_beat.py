@@ -3,8 +3,6 @@ from __future__ import absolute_import, unicode_literals
 import logging
 import sys
 
-from collections import defaultdict
-
 from celery import beat
 from celery import platforms
 from celery.bin import beat as beat_bin
