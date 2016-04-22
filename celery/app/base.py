@@ -469,7 +469,7 @@ class Celery(object):
         pool, self._pool = self._pool, None
         if pool is not None:
             pool.force_close_all()
-        amqp = self.__dict__['amqp']
+        amqp = self.__dict__.get('amqp')
         if amqp is not None:
             producer_pool, amqp._producer_pool = amqp._producer_pool, None
             if producer_pool is not None:
