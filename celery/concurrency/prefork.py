@@ -106,11 +106,6 @@ class TaskPool(BasePool):
     write_stats = None
 
     def on_start(self):
-        """Run the task pool.
-
-        Will pre-fork all workers so they're ready to accept tasks.
-
-        """
         forking_enable(self.forking_enable)
         Pool = (self.BlockingPool if self.options.get('threads', True)
                 else self.Pool)

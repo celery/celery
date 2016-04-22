@@ -184,8 +184,6 @@ class Request(object):
             raise TaskRevokedError(task_id)
 
         time_limit, soft_time_limit = self.time_limits
-        time_limit = time_limit or task.time_limit
-        soft_time_limit = soft_time_limit or task.soft_time_limit
         result = pool.apply_async(
             trace_task_ret,
             args=(self.type, task_id, self.request_dict, self.body,
@@ -194,8 +192,8 @@ class Request(object):
             timeout_callback=self.on_timeout,
             callback=self.on_success,
             error_callback=self.on_failure,
-            soft_timeout=soft_time_limit,
-            timeout=time_limit,
+            soft_timeout=soft_time_limit or task.soft_time_limit,
+            timeout=time_limit or task.time_limit,
             correlation_id=task_id,
         )
         # cannot create weakref to None
@@ -508,8 +506,6 @@ def create_request_cls(base, task, pool, hostname, eventer,
                 raise TaskRevokedError(task_id)
 
             time_limit, soft_time_limit = self.time_limits
-            time_limit = time_limit or default_time_limit
-            soft_time_limit = soft_time_limit or default_soft_time_limit
             result = apply_async(
                 trace,
                 args=(self.type, task_id, self.request_dict, self.body,
@@ -518,8 +514,8 @@ def create_request_cls(base, task, pool, hostname, eventer,
                 timeout_callback=self.on_timeout,
                 callback=self.on_success,
                 error_callback=self.on_failure,
-                soft_timeout=soft_time_limit,
-                timeout=time_limit,
+                soft_timeout=soft_time_limit or default_soft_time_limit,
+                timeout=time_limit or default_time_limit,
                 correlation_id=task_id,
             )
             # cannot create weakref to None
