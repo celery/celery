@@ -466,13 +466,14 @@ class Celery(object):
         self._maybe_close_pool()
 
     def _maybe_close_pool(self):
-        if self._pool:
-            self._pool.force_close_all()
-            self._pool = None
-            amqp = self.__dict__.get('amqp')
-            if amqp is not None and amqp._producer_pool is not None:
-                amqp._producer_pool.force_close_all()
-                amqp._producer_pool = None
+        pool, self._pool = self._pool, None
+        if pool is not None:
+            pool.force_close_all()
+        amqp = self.__dict__['amqp']
+        if amqp is not None:
+            producer_pool, amqp._producer_pool = amqp._producer_pool, None
+            if producer_pool is not None:
+                producer_pool.force_close_all()
 
     def signature(self, *args, **kwargs):
         kwargs['app'] = self
