@@ -314,24 +314,104 @@ Available options
     Always create logfile directory.  By default only enable when no custom
     logfile location set.
 
+.. _generic-initd-troubleshooting:
+
+Troubleshooting
+----------------------------------------------------------------------
+
+If you can't get the init-scripts to work, you should try running
+them in *verbose mode*:
+
+.. code-block:: console
+
+    # sh -x /etc/init.d/celeryd start
+
+This can reveal hints as to why the service won't start.
+
+If the worker starts with *"OK"* but exits almost immediately afterwards
+and there is nothing in the log file, then there is probably an error
+but as the daemons standard outputs are already closed you'll
+not be able to see them anywhere.  For this situation you can use
+the :envvar:`C_FAKEFORK` environment variable to skip the
+daemonization step:
+
+.. code-block:: console
+
+    # C_FAKEFORK=1 sh -x /etc/init.d/celeryd start
+
+
+and now you should be able to see the errors.
+
+Commonly such errors are caused by insufficient permissions
+to read from, or write to a file, and also by syntax errors
+in configuration modules, user modules, third-party libraries,
+or even from Celery itself (if you've found a bug, in which case
+you should :ref:`report it <reporting-bugs>`).
+
+
 .. _daemon-systemd-generic:
 
 Usage ``systemd``
 ======================================================================
 
-.. _generic-systemd-celery:
+* `extra/systemd/`_
 
-Service file: celery.service
-----------------------------------------------------------------------
+.. _`extra/systemd/`:
+    https://github.com/celery/celery/tree/3.1/extra/systemd/
+
+.. _generic-systemd-celery:
 
 :Usage: `systemctl {start|stop|restart|status} celery.service`
 :Configuration file: /etc/conf.d/celery
 
-To create a temporary folders for the log and pid files change user and group in
-:file:`/usr/lib/tmpfiles.d/celery.conf`.
-To configure user, group, :command:`chdir` change settings:
-``User``, ``Group``, and ``WorkingDirectory`` defines in
-:file:`/usr/lib/systemd/system/celery.service`.
+Service file: celery.service
+----------------------------------------------------------------------
+
+This is an example systemd file:
+
+:file:`/etc/systemd/system/celery.service`:
+
+.. code-block:: bash
+  
+  [Unit]
+  Description=Celery Service
+  After=network.target
+  
+  [Service]
+  Type=forking
+  User=celery
+  Group=celery
+  EnvironmentFile=-/etc/conf.d/celery
+  WorkingDirectory=/opt/celery
+  ExecStart=/bin/sh '${CELERY_BIN} multi start $CELERYD_NODES \
+  	-A $CELERY_APP --logfile=${CELERYD_LOG_FILE} \
+  	--pidfile=${CELERYD_PID_FILE} $CELERYD_OPTS'
+  ExecStop=/bin/sh '${CELERY_BIN} multi stopwait $CELERYD_NODES \
+  	--pidfile=${CELERYD_PID_FILE}'
+  ExecReload=/bin/sh '${CELERY_BIN} multi restart $CELERYD_NODES \
+  	-A $CELERY_APP --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
+  	--loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
+  
+  [Install]
+  WantedBy=multi-user.target
+
+Once you've put that file in :file:`/etc/systemd/system`, you should run
+:command:`systemctl daemon-reload` in order that Systemd acknowledges that file.
+You should also run that command each time you modify it.
+
+To configure user, group, :command:`chdir` change settings: 
+``User``, ``Group``, and ``WorkingDirectory`` defined in 
+:file:`/etc/systemd/system/celery.service`.
+
+You can also use systemd-tmpfiles in order to create working directories (for logs and pid).
+
+:file: `/etc/tmpfiles.d/celery.conf`
+
+.. code-block:: bash
+  
+  d /var/run/celery 0755 celery celery -
+  d /var/log/celery 0755 celery celery -
+
 
 .. _generic-systemd-celery-example:
 
@@ -397,40 +477,6 @@ This is an example configuration for those using :pypi:`django-celery`:
 
 To add an environment variable such as :envvar:`DJANGO_SETTINGS_MODULE`
 use the Environment in :file:`celery.service`.
-
-.. _generic-initd-troubleshooting:
-
-Troubleshooting
-----------------------------------------------------------------------
-
-If you can't get the init-scripts to work, you should try running
-them in *verbose mode*:
-
-.. code-block:: console
-
-    # sh -x /etc/init.d/celeryd start
-
-This can reveal hints as to why the service won't start.
-
-If the worker starts with *"OK"* but exits almost immediately afterwards
-and there is nothing in the log file, then there is probably an error
-but as the daemons standard outputs are already closed you'll
-not be able to see them anywhere.  For this situation you can use
-the :envvar:`C_FAKEFORK` environment variable to skip the
-daemonization step:
-
-.. code-block:: console
-
-    # C_FAKEFORK=1 sh -x /etc/init.d/celeryd start
-
-
-and now you should be able to see the errors.
-
-Commonly such errors are caused by insufficient permissions
-to read from, or write to a file, and also by syntax errors
-in configuration modules, user modules, third-party libraries,
-or even from Celery itself (if you've found a bug, in which case
-you should :ref:`report it <reporting-bugs>`).
 
 .. _daemon-supervisord:
 
