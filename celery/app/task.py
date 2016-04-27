@@ -766,11 +766,11 @@ class Task(object):
 
         :param sig: :class:`@signature`
 
+        .. versionadded:: 4.0
+
         Note: This will raise :exc:`~@Ignore`, so the best practice
         is to always use ``raise self.replace(...)`` to convey
         to the reader that the task will not continue after being replaced.
-
-        :param: Signature of new task.
 
         """
         chord = self.request.chord
@@ -784,7 +784,7 @@ class Task(object):
                    chord=chord,
                    root_id=self.request.root_id)
         sig.delay()
-        raise Ignore('Chord member replaced by new task')
+        raise Ignore('Replaced by new task')
 
     def add_to_chord(self, sig, lazy=False):
         """Add signature to the chord the current task is a member of.
