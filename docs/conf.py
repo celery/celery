@@ -22,6 +22,9 @@ globals().update(conf.build_config(
         'celery.contrib.sphinx',
         'celerydocs',
     ],
+    extra_intersphinx_mapping={
+        'cyanide': ('http://cyanide.readthedocs.org/en/latest', None),
+    },
     apicheck_ignore_modules=[
         'celery.five',
         'celery.__main__',
