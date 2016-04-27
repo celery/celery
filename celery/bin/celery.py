@@ -1026,6 +1026,7 @@ class CeleryCommand(Command):
     }
     enable_config_from_cmdline = True
     prog_name = 'celery'
+    namespace = 'celery'
 
     @classmethod
     def register_command(cls, fun, name=None):
