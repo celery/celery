@@ -13,10 +13,10 @@ app = Celery('proj')
 
 # Using a string here means the worker will not have to
 # pickle the object when using Windows.
-app.config_from_object('django.conf:settings', namespace='CELERY')
+app.config_from_object('django.conf:settings')
 
 # load task modules from all registered Django app configs.
-app.autodiscover_tasks()
+app.autodiscover_tasks(['demoapp'])
 
 
 @app.task(bind=True)

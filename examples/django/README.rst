@@ -53,7 +53,7 @@ Running a task
 
 .. code-block:: console
 
-    $ python ./manage.sh shell
+    $ python ./manage.py shell
     >>> from demoapp.tasks import add, mul, xsum
     >>> res = add.delay(2,3)
     >>> res.get()
