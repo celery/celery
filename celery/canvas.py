@@ -153,10 +153,12 @@ class Signature(dict):
         return subclass
 
     @classmethod
-    def from_dict(self, d, app=None):
+    def from_dict(cls, d, app=None):
         typ = d.get('subtask_type')
         if typ:
-            return self.TYPES[typ].from_dict(d, app=app)
+            target_cls = cls.TYPES[typ]
+            if target_cls is not cls:
+                return target_cls.from_dict(d, app=app)
         return Signature(d, app=app)
 
     def __init__(self, task=None, args=None, kwargs=None, options=None,
