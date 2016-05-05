@@ -656,7 +656,7 @@ The :class:`~celery.group` function takes a list of signatures:
     (proj.tasks.add(2, 2), proj.tasks.add(4, 4))
 
 If you **call** the group, the tasks will be applied
-one after one in the current process, and a :class:`~celery.result.GroupResult`
+one after another in the current process, and a :class:`~celery.result.GroupResult`
 instance is returned which can be used to keep track of the results,
 or tell how many tasks are ready and so on:
 
