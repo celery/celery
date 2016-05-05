@@ -1581,7 +1581,7 @@ default is ``amqp``, which uses ``librabbitmq`` by default or falls back to
 ``couchdb``.
 It can also be a fully qualified path to your own transport implementation.
 
-More than broker URL, of the same transport, can also be specified.
+More than one broker URL, of the same transport, can also be specified.
 The broker URLs can be passed in as a single string that is semicolon delimited::
 
     broker_url = 'transport://userid:password@hostname:port//;transport://userid:password@hostname:port//'
