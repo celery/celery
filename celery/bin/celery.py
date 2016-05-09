@@ -334,6 +334,15 @@ def main(argv=None):
         cmd.execute_from_commandline(argv)
     except KeyboardInterrupt:
         pass
+    except Exception as exc:
+        from celery.utils.log import worker_logger as logger
+        logger.info('#####################')
+        logger.info('# service retry ... #')
+        logger.info('#####################')
+
+        import time
+        time.sleep(10)
+        main(argv)
 
 
 class multi(Command):

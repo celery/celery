@@ -211,6 +211,8 @@ class WorkController(object):
         except Exception as exc:
             logger.critical('Unrecoverable error: %r', exc, exc_info=True)
             self.stop(exitcode=EX_FAILURE)
+
+            raise
         except SystemExit as exc:
             self.stop(exitcode=exc.code)
         except KeyboardInterrupt:
