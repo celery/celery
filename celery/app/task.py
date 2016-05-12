@@ -777,6 +777,7 @@ class Task(object):
         if isinstance(sig, group):
             sig |= self.app.tasks['celery.accumulate'].s(index=0).set(
                 chord=chord,
+                link=self.request.callbacks,
             )
             chord = None
         sig.freeze(self.request.id,
