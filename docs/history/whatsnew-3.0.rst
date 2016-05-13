@@ -737,7 +737,7 @@ In Other News
 
         app = Celery(broker='redis://')
 
-- Result backends can now be set using an URL
+- Result backends can now be set using a URL
 
     Currently only supported by redis.  Example use:
 

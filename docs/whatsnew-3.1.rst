@@ -1030,7 +1030,7 @@ In Other News
 
 - ``celery.platforms.PIDFile`` renamed to :class:`celery.platforms.Pidfile`.
 
-- MongoDB Backend: Can now be configured using an URL:
+- MongoDB Backend: Can now be configured using a URL:
 
     See :ref:`example-mongodb-result-config`.
 

@@ -5,7 +5,7 @@ For asynchronous DNS lookups install the `dnspython` package:
     $ pip install dnspython
 
 Requires the `pybloom` module for the bloom filter which is used
-to ensure a lower chance of recrawling an URL previously seen.
+to ensure a lower chance of recrawling a URL previously seen.
 
 Since the bloom filter is not shared, but only passed as an argument
 to each subtask, it would be much better to have this as a centralized
@@ -41,7 +41,7 @@ url_regex = re.compile(
 
 
 def domain(url):
-    """Return the domain part of an URL."""
+    """Return the domain part of a URL."""
     return urlsplit(url)[1].split(':')[0]
 
 

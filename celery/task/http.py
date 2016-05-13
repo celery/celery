@@ -169,7 +169,7 @@ class HttpDispatch(object):
 
 @shared_task(name='celery.http_dispatch', bind=True, url=None, method=None)
 def dispatch(self, url=None, method='GET', **kwargs):
-    """Task dispatching to an URL.
+    """Task dispatching to a URL.
 
     :keyword url: The URL location of the HTTP callback task.
     :keyword method: Method to use when dispatching the callback. Usually
@@ -197,7 +197,7 @@ def dispatch(self, url=None, method='GET', **kwargs):
 class URL(MutableURL):
     """HTTP Callback URL
 
-    Supports requesting an URL asynchronously.
+    Supports requesting a URL asynchronously.
 
     :param url: URL to request.
     :keyword dispatcher: Class used to dispatch the request.

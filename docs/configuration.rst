@@ -1567,7 +1567,7 @@ Broker Settings
 ``broker_url``
 ~~~~~~~~~~~~~~
 
-Default broker URL.  This must be an URL in the form of::
+Default broker URL.  This must be a URL in the form of::
 
     transport://userid:password@hostname:port/virtual_host
 

@@ -705,7 +705,7 @@ class Celery(object):
         :param url: Either the URL or the hostname of the broker to use.
 
         :keyword hostname: URL, Hostname/IP-address of the broker.
-            If an URL is used, then the other argument below will
+            If a URL is used, then the other argument below will
             be taken from the URL instead.
         :keyword userid: Username to authenticate as.
         :keyword password: Password to authenticate with
@@ -940,6 +940,10 @@ class Celery(object):
         :keyword name: Custom name for the target class.
         :keyword attribute: Name of the attribute holding the app,
                             default is 'app'.
+        :keyword reverse: Reverse path to this object used for pickling
+            purposes.  E.g. for ``app.AsyncResult`` use ``"AsyncResult"``.
+        :keyword keep_reduce: If enabled a custom ``__reduce__`` implementation
+           will not be provided.
 
         """
         Class = symbol_by_name(Class)
@@ -948,8 +952,10 @@ class Celery(object):
         def __reduce__(self):
             return _unpickle_appattr, (reverse, self.__reduce_args__())
 
-        attrs = dict({attribute: self}, __module__=Class.__module__,
-                     __doc__=Class.__doc__, **kw)
+        attrs = dict({attribute: self},
+                     __module__=Class.__module__,
+                     __doc__=Class.__doc__,
+                     **kw)
         if not keep_reduce:
             attrs['__reduce__'] = __reduce__
 

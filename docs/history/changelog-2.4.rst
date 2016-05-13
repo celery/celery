@@ -167,7 +167,7 @@ Important Notes
 
 * Broker transports can be now be specified using URLs
 
-    The broker can now be specified as an URL instead.
+    The broker can now be specified as a URL instead.
     This URL must have the format:
 
     .. code-block:: text
@@ -181,7 +181,7 @@ Important Notes
         amqp://guest:guest@localhost:5672//
 
     The scheme is required, so that the host is identified
-    as an URL and not just a host name.
+    as a URL and not just a host name.
     User, password, port and virtual_host are optional and
     defaults to the particular transports default value.
 
