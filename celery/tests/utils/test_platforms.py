@@ -773,7 +773,7 @@ class test_setgroups(Case):
     @skip.if_win32()
     @patch('celery.platforms._setgroups_hack')
     def test_setgroups(self, hack):
-        with @patch('os.sysconf') as sysconf:
+        with patch('os.sysconf') as sysconf:
             sysconf.return_value = 100
             setgroups(list(range(400)))
             hack.assert_called_with(list(range(100)))

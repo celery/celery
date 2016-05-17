@@ -855,7 +855,6 @@ class Celery(object):
             self.on_configure()
         if self._config_source:
             self.loader.config_from_object(self._config_source)
-
         self.configured = True
         settings = detect_settings(
             self.prepare_config(self.loader.conf), self._preconf,
