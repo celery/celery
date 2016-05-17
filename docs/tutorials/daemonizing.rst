@@ -478,6 +478,24 @@ This is an example configuration for those using :pypi:`django-celery`:
 To add an environment variable such as :envvar:`DJANGO_SETTINGS_MODULE`
 use the Environment in :file:`celery.service`.
 
+Daemonizing as root
+======================================================================
+It is not best practice to daemonize as the root user. There should always
+be a workaround to avoid running as root. Celery may run arbitrary code
+in messages serialized with pickle - which is dangerous, especially if
+run as root.
+
+By default Celery will not run workers as root. The associated error
+message may not be visible in the logs but may be seen if :envvar:`C_FAKEFORK`
+is used.
+
+To force Celery to run workers as root use :envvar:`C_FORCE_ROOT`.
+
+When running as root without :envvar:`C_FORCE_ROOT` the worker will
+appear to start with *"OK"* but exit immediately after with no apparent
+errors. This problem may appear when running the project in a new devleopment
+or deployment environment (inadvertently) as root.
+
 .. _daemon-supervisord:
 
 :pypi:`supervisor`
