@@ -452,14 +452,21 @@ class Celery(object):
         self.on_configure()
         if self._config_source:
             self.loader.config_from_object(self._config_source)
-        defaults = dict(deepcopy(DEFAULTS), **self._preconf)
         self.configured = True
         s = Settings({}, [self.prepare_config(self.loader.conf),
-                          defaults])
+                          deepcopy(DEFAULTS)])
         # load lazy config dict initializers.
         pending = self._pending_defaults
         while pending:
             s.add_defaults(maybe_evaluate(pending.popleft()()))
+
+        # preconf options must be explicitly set in the conf, and not
+        # as defaults or they will not be pickled with the app instance.
+        # This will cause errors when `CELERYD_FORCE_EXECV=True` as
+        # the workers will not have a BROKER_URL, CELERY_RESULT_BACKEND,
+        # or CELERY_IMPORTS set in the config.
+        if self._preconf:
+            s.update(self._preconf)
         return s
 
     def _after_fork(self, obj_):
