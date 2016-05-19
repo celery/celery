@@ -406,6 +406,12 @@ class Celery(object):
                 '__module__': fun.__module__,
                 '__header__': staticmethod(head_from_fun(fun, bound=bind)),
                 '__wrapped__': run}, **options))()
+            # for some reason __qualname__ cannot be set in type()
+            # so we have to set it here.
+            try:
+                task.__qualname__ = fun.__qualname__
+            except AttributeError:
+                pass
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app
 

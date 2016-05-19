@@ -76,6 +76,13 @@ class Proxy(object):
         except AttributeError:
             return self._get_current_object().__name__
 
+    @_default_cls_attr('qualname', str, __name__)
+    def __qualname__(self):
+        try:
+            return self.__custom_name__
+        except AttributeError:
+            return self._get_current_object().__qualname__
+
     @_default_cls_attr('module', str, __module__)
     def __module__(self):
         return self._get_current_object().__module__
