@@ -471,8 +471,8 @@ arguments:
 
     For this reason you should probably encrypt your message if it contains
     sensitive information, or in this example with a credit card number
-    the actual number could be stored in a secure store that you retrieve
-    in the task itself.
+    the actual number could be stored encrypted in a secure store that you retrieve
+    and decrypt in the task itself.
 
 .. _task-retry:
 
