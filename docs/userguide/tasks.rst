@@ -445,6 +445,35 @@ see :setting:`worker_redirect_stdouts`).
                 sys.stdout, sys.stderr = old_outs
 
 
+Hiding sensitive information in arguments
+-----------------------------------------
+
+.. versionadded:: 4.0
+
+When using :setting:`task_protocol` 2 or higher, you can override how
+positional arguments and keyword arguments are represented in logs and in
+monitoring events using the ``argsrepr`` and ``kwargsrepr`` calling
+arguments:
+
+.. code-block:: pycon
+
+    >>> add.apply_async((2, 3), argsrepr='(<secret-x>, <secret-y>)')
+
+    >>> charge.s(account, card='1234 5678 1234 5678').set(
+    ...     kwargsrepr=repr({'card': '**** **** **** 5678'})
+    ... ).delay()
+
+
+.. warning::
+
+    Sensitive information will still be accessible to anyone able
+    to read your task message from the broker, or otherwise able intercept it.
+
+    For this reason you should probably encrypt your message if it contains
+    sensitive information, or in this example with a credit card number
+    the actual number could be stored in a secure store that you retrieve
+    in the task itself.
+
 .. _task-retry:
 
 Retrying
