@@ -458,9 +458,14 @@ def _args_for_node(p, name, prefix, suffix, cmd, append, options):
     name, nodename, expand = _get_nodename(
         name, prefix, suffix, options)
 
+    if nodename in p.namespaces:
+        ns = nodename
+    else:
+        ns = name
+
     argv = ([expand(cmd)] +
             [format_opt(opt, expand(value))
-                for opt, value in items(p.optmerge(name, options))] +
+                for opt, value in items(p.optmerge(ns, options))] +
             [p.passthrough])
     if append:
         argv.append(expand(append))

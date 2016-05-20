@@ -149,6 +149,22 @@ class test_multi_args(AppCase):
              ['COMMAND', '-n foo@', '-c 5', '']),
         )
 
+        p4 = NamespacedOptionParser(['foo', '-Q:1', 'test'])
+        names6 = list(multi_args(p4, cmd='COMMAND', suffix='""'))
+        self.assertEqual(
+            names6[0][0:2],
+            ('foo@',
+             ['COMMAND', '-n foo@', '-Q test', '']),
+        )
+
+        p5 = NamespacedOptionParser(['foo@bar', '-Q:1', 'test'])
+        names7 = list(multi_args(p5, cmd='COMMAND', suffix='""'))
+        self.assertEqual(
+            names7[0][0:2],
+            ('foo@bar',
+             ['COMMAND', '-n foo@bar', '-Q test', '']),
+        )
+
 
 class test_MultiTool(AppCase):
 
