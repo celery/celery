@@ -309,7 +309,7 @@ class AMQP(object):
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
                    shadow=None, chain=None, now=None, timezone=None,
-                   origin=None):
+                   origin=None, argsrepr=None, kwargsrepr=None):
         args = args or ()
         kwargs = kwargs or {}
         if not isinstance(args, (list, tuple)):
@@ -333,8 +333,10 @@ class AMQP(object):
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
-        argsrepr = saferepr(args, self.argsrepr_maxsize)
-        kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
+        if argsrepr is None:
+            argsrepr = saferepr(args, self.argsrepr_maxsize)
+        if kwargsrepr is None:
+            kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
 
         if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
             if callbacks:
