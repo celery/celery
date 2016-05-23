@@ -15,7 +15,7 @@ from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601
 
 from celery.tests.case import (
-    AppCase, ContextMock, Mock, depends_on_current_app, patch,
+    AppCase, ContextMock, MagicMock, Mock, depends_on_current_app, patch,
 )
 
 
@@ -426,24 +426,21 @@ class test_tasks(TasksCase):
         self.mytask.request.group = 'group'
         self.mytask.request.root_id = 'root_id'
         self.mytask.request.callbacks = 'callbacks'
+        self.mytask.request.errbacks = 'errbacks'
 
-        class TaskMock(Mock):
-            def __json__(self):
-                return "whatever"
-
-        mocked_signature = TaskMock(name='s',
-                                    # side_effect=mocked_s
-                                    )
-        accumulate_mock = TaskMock(name='accumulate',
+        mocked_signature = MagicMock(name='s')
+        accumulate_mock = MagicMock(name='accumulate',
                                    s=mocked_signature)
         self.mytask.app.tasks['celery.accumulate'] = accumulate_mock
 
         try:
             self.mytask.replace(c)
         except Ignore:
-            mocked_signature.return_value.set. \
-                assert_called_with(chord=None,
-                                   link="callbacks")
+            mocked_signature.return_value.set.assert_called_with(
+                chord=None,
+                link='callbacks',
+                link_error='errbacks',
+            )
 
     def test_replace_group(self):
         c = group([self.mytask.s()], app=self.app)
