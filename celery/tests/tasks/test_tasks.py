@@ -429,8 +429,7 @@ class test_tasks(TasksCase):
         self.mytask.request.errbacks = 'errbacks'
 
         mocked_signature = MagicMock(name='s')
-        accumulate_mock = MagicMock(name='accumulate',
-                                   s=mocked_signature)
+        accumulate_mock = MagicMock(name='accumulate', s=mocked_signature)
         self.mytask.app.tasks['celery.accumulate'] = accumulate_mock
 
         try:
