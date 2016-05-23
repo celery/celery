@@ -12,9 +12,17 @@ from textwrap import fill
 
 from pprint import pformat
 
+from celery.five import string_t
+
 __all__ = ['dedent_initial', 'dedent', 'fill_paragraphs', 'join',
            'ensure_2lines', 'abbr', 'abbrtask', 'indent', 'truncate',
-           'pluralize', 'pretty']
+           'pluralize', 'pretty', 'str_to_list']
+
+
+def str_to_list(s):
+    if isinstance(s, string_t):
+        return s.split(',')
+    return s
 
 
 def dedent_initial(s, n=4):
@@ -76,7 +84,7 @@ def truncate_bytes(s, maxlen=128, suffix=b'...'):
 
 
 def pluralize(n, text, suffix='s'):
-    if n > 1:
+    if n != 1:
         return text + suffix
     return text
 

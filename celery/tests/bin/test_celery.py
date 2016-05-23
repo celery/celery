@@ -169,15 +169,15 @@ class test_call(AppCase):
 
 class test_purge(AppCase):
 
-    @patch('celery.app.control.Control.purge')
-    def test_run(self, purge_):
+    def test_run(self):
         out = WhateverIO()
         a = purge(app=self.app, stdout=out)
-        purge_.return_value = 0
+        a._purge = Mock(name='_purge')
+        a._purge.return_value = 0
         a.run(force=True)
         self.assertIn('No messages purged', out.getvalue())
 
-        purge_.return_value = 100
+        a._purge.return_value = 100
         a.run(force=True)
         self.assertIn('100 messages', out.getvalue())
 

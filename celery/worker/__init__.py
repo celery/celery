@@ -30,11 +30,12 @@ from celery import signals
 from celery.exceptions import (
     ImproperlyConfigured, WorkerTerminate, TaskRevokedError,
 )
-from celery.five import python_2_unicode_compatible, string_t, values
+from celery.five import python_2_unicode_compatible, values
 from celery.platforms import EX_FAILURE, create_pidlock
 from celery.utils import default_nodename, worker_direct
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel, worker_logger as logger
+from celery.utils.text import str_to_list
 from celery.utils.threads import default_socket_timeout
 
 from . import state
@@ -56,12 +57,6 @@ DESELECT_UNKNOWN_QUEUE = """\
 Trying to deselect queue subset of {0!r}, but queue {1} is not
 defined in the `task_queues` setting.
 """
-
-
-def str_to_list(s):
-    if isinstance(s, string_t):
-        return s.split(',')
-    return s
 
 
 @python_2_unicode_compatible

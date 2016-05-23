@@ -270,11 +270,12 @@ from importlib import import_module
 from kombu.utils import json
 
 from celery.app import defaults
-from celery.five import string_t, values
+from celery.five import keys, string_t, values
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from celery.utils import term
 from celery.utils import text
 from celery.utils.functional import pass1
+from celery.utils.text import str_to_list
 from celery.utils.timeutils import maybe_iso8601
 
 # Cannot use relative imports here due to a Windows issue (#1111).
@@ -462,24 +463,41 @@ class purge(Command):
     option_list = Command.option_list + (
         Option('--force', '-f', action='store_true',
                help='Do not prompt for verification'),
+        Option('--queues', '-Q', default=[],
+               help='Comma separated list of queue names to purge.'),
+        Option('--exclude-queues', '-X', default=[],
+               help='Comma separated list of queues names not to purge.')
     )
 
-    def run(self, force=False, **kwargs):
-        names = list(sorted(self.app.amqp.queues.keys()))
+    def run(self, force=False, queues=None, exclude_queues=None, **kwargs):
+        queues = set(str_to_list(queues or []))
+        exclude = set(str_to_list(exclude_queues or []))
+        names = (queues or set(keys(self.app.amqp.queues))) - exclude
         qnum = len(names)
-        if not force:
-            self.out(self.warn_prelude.format(
-                warning=self.colored.red('WARNING'),
-                queues=text.pluralize(qnum, 'queue'), names=', '.join(names),
-            ))
-            if self.ask(self.warn_prompt, ('yes', 'no'), 'no') != 'yes':
-                return
-        messages = self.app.control.purge()
+
+        messages = None
+        if names:
+            if not force:
+                self.out(self.warn_prelude.format(
+                    warning=self.colored.red('WARNING'),
+                    queues=text.pluralize(qnum, 'queue'),
+                    names=', '.join(sorted(names)),
+                ))
+                if self.ask(self.warn_prompt, ('yes', 'no'), 'no') != 'yes':
+                    return
+            with self.app.connection_for_write() as conn:
+                messages = sum(self._purge(conn, queue) for queue in names)
         fmt = self.fmt_purged if messages else self.fmt_empty
         self.out(fmt.format(
             mnum=messages, qnum=qnum,
             messages=text.pluralize(messages, 'message'),
             queues=text.pluralize(qnum, 'queue')))
+
+    def _purge(self, conn, queue):
+        try:
+            return conn.default_channel.queue_purge(queue) or 0
+        except conn.channel_errors:
+            return 0
 
 
 class result(Command):

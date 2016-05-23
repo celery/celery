@@ -73,6 +73,9 @@ Commands
 
 * **purge**: Purge messages from all configured task queues.
 
+    This command will remove all messages from queues configured in
+    the :setting:`CELERY_QUEUES` setting:
+
     .. warning::
         There is no undo for this operation, and messages will
         be permanently deleted!
@@ -81,6 +84,18 @@ Commands
 
         $ celery -A proj purge
 
+
+    You can also specify the queues to purge using the `-Q` option:
+
+    .. code-block:: console
+
+        $ celery -A proj purge -Q celery,foo,bar
+
+    and exclude queues from being purged using the `-X` option:
+
+    .. code-block:: console
+
+        $ celery -A proj purge -X celery
 
 * **inspect active**: List active tasks
 
