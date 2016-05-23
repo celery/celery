@@ -770,47 +770,51 @@ class test_setgroups(Case):
         with self.assertRaises(OSError):
             _setgroups_hack(list(range(400)))
 
-    @patch('os.sysconf')
+    @skip.if_win32()
     @patch('celery.platforms._setgroups_hack')
-    def test_setgroups(self, hack, sysconf):
-        sysconf.return_value = 100
-        setgroups(list(range(400)))
-        hack.assert_called_with(list(range(100)))
-
-    @patch('os.sysconf')
-    @patch('celery.platforms._setgroups_hack')
-    def test_setgroups_sysconf_raises(self, hack, sysconf):
-        sysconf.side_effect = ValueError()
-        setgroups(list(range(400)))
-        hack.assert_called_with(list(range(400)))
-
-    @patch('os.getgroups')
-    @patch('os.sysconf')
-    @patch('celery.platforms._setgroups_hack')
-    def test_setgroups_raises_ESRCH(self, hack, sysconf, getgroups):
-        sysconf.side_effect = ValueError()
-        esrch = OSError()
-        esrch.errno = errno.ESRCH
-        hack.side_effect = esrch
-        with self.assertRaises(OSError):
+    def test_setgroups(self, hack):
+        with @patch('os.sysconf') as sysconf:
+            sysconf.return_value = 100
             setgroups(list(range(400)))
+            hack.assert_called_with(list(range(100)))
 
-    @patch('os.getgroups')
-    @patch('os.sysconf')
+    @skip.if_win32()
     @patch('celery.platforms._setgroups_hack')
-    def test_setgroups_raises_EPERM(self, hack, sysconf, getgroups):
-        sysconf.side_effect = ValueError()
-        eperm = OSError()
-        eperm.errno = errno.EPERM
-        hack.side_effect = eperm
-        getgroups.return_value = list(range(400))
-        setgroups(list(range(400)))
-        getgroups.assert_called_with()
-
-        getgroups.return_value = [1000]
-        with self.assertRaises(OSError):
+    def test_setgroups_sysconf_raises(self, hack):
+        with patch('os.sysconf') as sysconf:
+            sysconf.side_effect = ValueError()
             setgroups(list(range(400)))
-        getgroups.assert_called_with()
+            hack.assert_called_with(list(range(400)))
+
+    @skip.if_win32()
+    @patch('os.getgroups')
+    @patch('celery.platforms._setgroups_hack')
+    def test_setgroups_raises_ESRCH(self, hack, getgroups):
+        with patch('os.sysconf') as sysconf:
+            sysconf.side_effect = ValueError()
+            esrch = OSError()
+            esrch.errno = errno.ESRCH
+            hack.side_effect = esrch
+            with self.assertRaises(OSError):
+                setgroups(list(range(400)))
+
+    @skip.if_win32()
+    @patch('os.getgroups')
+    @patch('celery.platforms._setgroups_hack')
+    def test_setgroups_raises_EPERM(self, hack, getgroups):
+        with patch('os.sysconf') as sysconf:
+            sysconf.side_effect = ValueError()
+            eperm = OSError()
+            eperm.errno = errno.EPERM
+            hack.side_effect = eperm
+            getgroups.return_value = list(range(400))
+            setgroups(list(range(400)))
+            getgroups.assert_called_with()
+
+            getgroups.return_value = [1000]
+            with self.assertRaises(OSError):
+                setgroups(list(range(400)))
+            getgroups.assert_called_with()
 
 
 class test_check_privileges(Case):
