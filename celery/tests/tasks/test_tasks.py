@@ -428,8 +428,12 @@ class test_tasks(TasksCase):
         self.mytask.request.callbacks = 'callbacks'
         self.mytask.request.errbacks = 'errbacks'
 
-        mocked_signature = MagicMock(name='s')
-        accumulate_mock = MagicMock(name='accumulate', s=mocked_signature)
+        class JsonMagicMock(MagicMock):
+            def __json__(self):
+                return 'whatever'
+
+        mocked_signature = JsonMagicMock(name='s')
+        accumulate_mock = JsonMagicMock(name='accumulate', s=mocked_signature)
         self.mytask.app.tasks['celery.accumulate'] = accumulate_mock
 
         try:
