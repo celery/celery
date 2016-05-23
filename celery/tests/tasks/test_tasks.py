@@ -408,7 +408,19 @@ class test_tasks(TasksCase):
         with self.assertRaises(Ignore):
             self.mytask.replace(sig1)
 
-    def test_replace__group(self):
+
+    def test_replace_callback(self):
+        c = group([self.mytask.s()], app=self.app)
+        c.freeze = Mock(name='freeze')
+        c.delay = Mock(name='delay')
+        self.mytask.request.id = 'id'
+        self.mytask.request.group = 'group'
+        self.mytask.request.root_id = 'root_id',
+        self.mytask.request.callbacks = 'callbacks',
+        with self.assertRaises(Ignore):
+            self.mytask.replace(c)
+
+    def test_replace_group(self):
         c = group([self.mytask.s()], app=self.app)
         c.freeze = Mock(name='freeze')
         c.delay = Mock(name='delay')
