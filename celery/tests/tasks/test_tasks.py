@@ -406,8 +406,7 @@ class test_tasks(TasksCase):
         mytask.request.id = 'fb'
         mytask.send_event('task-foo', id=3122)
         mytask.app.events.default_dispatcher().send.assert_called_with(
-            'task-foo', uuid='fb', id=3122,
-        )
+            'task-foo', uuid='fb', id=3122)
 
     def test_replace(self):
         sig1 = Mock(name='sig1')
