@@ -372,11 +372,11 @@ This is an example systemd file:
 :file:`/etc/systemd/system/celery.service`:
 
 .. code-block:: bash
-  
+
   [Unit]
   Description=Celery Service
   After=network.target
-  
+
   [Service]
   Type=forking
   User=celery
@@ -384,14 +384,14 @@ This is an example systemd file:
   EnvironmentFile=-/etc/conf.d/celery
   WorkingDirectory=/opt/celery
   ExecStart=/bin/sh '${CELERY_BIN} multi start $CELERYD_NODES \
-  	-A $CELERY_APP --logfile=${CELERYD_LOG_FILE} \
-  	--pidfile=${CELERYD_PID_FILE} $CELERYD_OPTS'
+    -A $CELERY_APP --logfile=${CELERYD_LOG_FILE} \
+    --pidfile=${CELERYD_PID_FILE} $CELERYD_OPTS'
   ExecStop=/bin/sh '${CELERY_BIN} multi stopwait $CELERYD_NODES \
-  	--pidfile=${CELERYD_PID_FILE}'
+    --pidfile=${CELERYD_PID_FILE}'
   ExecReload=/bin/sh '${CELERY_BIN} multi restart $CELERYD_NODES \
-  	-A $CELERY_APP --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
-  	--loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
-  
+    -A $CELERY_APP --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
+    --loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
+
   [Install]
   WantedBy=multi-user.target
 
@@ -399,8 +399,8 @@ Once you've put that file in :file:`/etc/systemd/system`, you should run
 :command:`systemctl daemon-reload` in order that Systemd acknowledges that file.
 You should also run that command each time you modify it.
 
-To configure user, group, :command:`chdir` change settings: 
-``User``, ``Group``, and ``WorkingDirectory`` defined in 
+To configure user, group, :command:`chdir` change settings:
+``User``, ``Group``, and ``WorkingDirectory`` defined in
 :file:`/etc/systemd/system/celery.service`.
 
 You can also use systemd-tmpfiles in order to create working directories (for logs and pid).
@@ -408,7 +408,7 @@ You can also use systemd-tmpfiles in order to create working directories (for lo
 :file: `/etc/tmpfiles.d/celery.conf`
 
 .. code-block:: bash
-  
+
   d /var/run/celery 0755 celery celery -
   d /var/log/celery 0755 celery celery -
 
