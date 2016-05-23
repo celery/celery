@@ -29,9 +29,14 @@ if [ $(id -u) -ne 0 ]; then
     exit 1
 fi
 
+origin_is_runlevel_dir () {
+    set +e
+    dirname $0 | grep -q "/etc/rc.\.d"
+    echo $?
+}
 
-# May be a runlevel symlink (e.g. S02celeryd)
-if [ -L "$0" ]; then
+# Can be a runlevel symlink (e.g. S02celeryd)
+if [ $(origin_is_runlevel_dir) -eq 0 ]; then
     SCRIPT_FILE=$(readlink "$0")
 else
     SCRIPT_FILE="$0"
