@@ -38,6 +38,7 @@ BACKEND_ALIASES = {
     'riak': 'celery.backends.riak:RiakBackend',
     'file': 'celery.backends.filesystem:FilesystemBackend',
     'disabled': 'celery.backends.base:DisabledBackend',
+    'rest': 'celery.backends.rest:RESTBackend',
 }
 
 #: deprecated alias to ``current_app.backend``.
