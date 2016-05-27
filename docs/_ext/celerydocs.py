@@ -57,7 +57,7 @@ DEFAULT_EMPTY = 'celery.Celery'
 if sys.version_info[0] < 3:
     def bytes_if_py2(s):
         if isinstance(s, unicode):
-            return s.decode()
+            return s.encode()
         return s
 else:
     def bytes_if_py2(s):  # noqa
