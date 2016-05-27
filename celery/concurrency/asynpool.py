@@ -319,7 +319,7 @@ class ResultHandler(_pool.ResultHandler):
             pending_remove_fd = set()
             for fd in outqueues:
                 self._flush_outqueue(
-                    fd, pending_remove_fd.discard, fileno_to_outq,
+                    fd, pending_remove_fd.add, fileno_to_outq,
                     on_state_change,
                 )
                 try:
