@@ -287,7 +287,7 @@ class test_LimitedSet(Case):
         s5 = LimitedSet(maxlen=10, expires=None)
         for i in range(12):
             s1.add(i)
-            s2.add(i*i)
+            s2.add(i * i)
         s3.update(s1)
         s3.update(s2)
         s4.update(s1.as_dict())

@@ -64,11 +64,11 @@ def old_repr(s):
             RE_OLD_SET_REPR.sub(
                 RE_OLD_SET_REPR_REPLACE,
                 RE_OLD_SET_CUSTOM_REPR.sub(
-                    RE_OLD_SET_CUSTOM_REPR_REPLACE, repr(s).replace("u'", "'"))
-                ),
+                    RE_OLD_SET_CUSTOM_REPR_REPLACE, repr(s).replace("u'", "'"),
+                )
             ),
         ),
-    ).replace('set([])', 'set()')
+    )).replace('set([])', 'set()')
 
 
 class list2(list):
@@ -175,14 +175,14 @@ class test_saferepr(Case):
         # multiple lines.  For that reason, dicts with more than one element
         # aren't tested here.
         types = (
-            0, 0, 0+0j, 0.0, '', b'',
+            0, 0, 0 + 0j, 0.0, '', b'',
             (), tuple2(), tuple3(),
             [], list2(), list3(),
             set(), set2(), set3(),
             frozenset(), frozenset2(), frozenset3(),
             {}, dict2(), dict3(),
             self.assertTrue, pprint,
-            -6, -6, -6-6j, -1.5, 'x', b'x', (3,), [3], {3: 6},
+            -6, -6, -6 - 6j, -1.5, 'x', b'x', (3,), [3], {3: 6},
             (1, 2), [3, 4], {5: 6},
             tuple2((1, 2)), tuple3((1, 2)), tuple3(range(100)),
             [3, 4], list2([3, 4]), list3([3, 4]), list3(range(100)),

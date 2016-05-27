@@ -66,7 +66,8 @@ configcheck:
 	(cd "$(SPHINX_DIR)"; $(MAKE) configcheck)
 
 flakecheck:
-	$(FLAKE8) "$(PROJ)"
+	# the only way to enable all-1 errors is to ignore one of them.
+	$(FLAKE8) --ignore=W503 "$(PROJ)"
 
 flakediag:
 	-$(MAKE) flakecheck

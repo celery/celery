@@ -81,7 +81,7 @@ class SecureSerializer(object):
         signature = raw_payload[
             first_sep + len(sep):first_sep + len(sep) + sig_len
         ]
-        end_of_sig = first_sep + len(sep) + sig_len+len(sep)
+        end_of_sig = first_sep + len(sep) + sig_len + len(sep)
 
         v = raw_payload[end_of_sig:].split(sep)
 
