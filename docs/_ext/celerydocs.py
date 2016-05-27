@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
+import sys
+
 from docutils import nodes
 
 from sphinx.environment import NoUri
@@ -50,6 +52,16 @@ ABBR_EMPTY = {
     'exc': 'celery.exceptions',
 }
 DEFAULT_EMPTY = 'celery.Celery'
+
+
+if sys.version_info[0] < 3:
+    def bytes_if_py2(s):
+        if isinstance(s, unicode):
+            return s.decode()
+        return s
+else:
+    def bytes_if_py2(s):  # noqa
+        return s
 
 
 def typeify(S, type):
@@ -140,25 +152,28 @@ def maybe_resolve_abbreviations(app, env, node, contnode):
 
 
 def setup(app):
-    app.connect(b'missing-reference', maybe_resolve_abbreviations)
+    app.connect(
+        bytes_if_py2('missing-reference'),
+        maybe_resolve_abbreviations,
+    )
 
     app.add_crossref_type(
-        directivename=b'sig',
-        rolename=b'sig',
-        indextemplate=b'pair: %s; sig',
+        directivename=bytes_if_py2('sig'),
+        rolename=bytes_if_py2('sig'),
+        indextemplate=bytes_if_py2('pair: %s; sig'),
     )
     app.add_crossref_type(
-        directivename=b'state',
-        rolename=b'state',
-        indextemplate=b'pair: %s; state',
+        directivename=bytes_if_py2('state'),
+        rolename=bytes_if_py2('state'),
+        indextemplate=bytes_if_py2('pair: %s; state'),
     )
     app.add_crossref_type(
-        directivename=b'control',
-        rolename=b'control',
-        indextemplate=b'pair: %s; control',
+        directivename=bytes_if_py2('control'),
+        rolename=bytes_if_py2('control'),
+        indextemplate=bytes_if_py2('pair: %s; control'),
     )
     app.add_crossref_type(
-        directivename=b'event',
-        rolename=b'event',
-        indextemplate=b'pair: %s; event',
+        directivename=bytes_if_py2('event'),
+        rolename=bytes_if_py2('event'),
+        indextemplate=bytes_if_py2('pair: %s; event'),
     )
