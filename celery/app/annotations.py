@@ -3,7 +3,7 @@
     celery.app.annotations
     ~~~~~~~~~~~~~~~~~~~~~~
 
-    Annotations is a nice term for moneky patching
+    Annotations is a nice term for monkey patching
     task classes in the configuration.
 
     This prepares and performs the annotations in the
