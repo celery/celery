@@ -411,6 +411,7 @@ class test_tasks(TasksCase):
 
     def test_replace(self):
         sig1 = Mock(name='sig1')
+        sig1.options = {}
         with self.assertRaises(Ignore):
             self.mytask.replace(sig1)
 
