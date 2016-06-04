@@ -789,8 +789,8 @@ class Task(object):
             chord = None
 
         if self.request.chain:
-          for t in self.request.chain:
-            sig |= signature(t)
+            for t in self.request.chain:
+                sig |= signature(t)
 
         sig.freeze(self.request.id,
                    group_id=self.request.group,
