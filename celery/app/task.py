@@ -774,6 +774,12 @@ class Task(object):
 
         """
         chord = self.request.chord
+        if 'chord' in sig.options:
+            if chord:
+                chord = sig.options['chord'] | chord
+            else:
+                chord = sig.options['chord']
+
         if isinstance(sig, group):
             sig |= self.app.tasks['celery.accumulate'].s(index=0).set(
                 chord=chord,
@@ -781,10 +787,16 @@ class Task(object):
                 link_error=self.request.errbacks,
             )
             chord = None
+
+        if self.request.chain:
+          for t in self.request.chain:
+            sig |= signature(t)
+
         sig.freeze(self.request.id,
                    group_id=self.request.group,
                    chord=chord,
                    root_id=self.request.root_id)
+
         sig.delay()
         raise Ignore('Replaced by new task')
 
