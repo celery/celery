@@ -375,5 +375,5 @@ def add_chord_task(app):
             res = super(Chord, self).apply(args, dict(kwargs, eager=True),
                                            **options)
             return maybe_signature(body, app=self.app).apply(
-                args=(res.get(propagate=propagate).get(), ))
+                (res.get(propagate=propagate).get(), ))
     return Chord
