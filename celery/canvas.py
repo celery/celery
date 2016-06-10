@@ -583,9 +583,9 @@ class chord(Signature):
 
     def apply(self, partial_args=(), args=(), kwargs={}, **options):
         """Apply the chord task with partial_args."""
-        # partial_args which will passed on to the header tasks are put in
-        # kwargs to be passed on.
-        kwargs['partial_args'] = partial_args
+        # partial_args will passed on to the header tasks.
+        kwargs['partial_args'] = (
+            tuple(partial_args) + tuple(self.kwargs.get('partial_args', ())))
         # For callbacks: extra args are prepended to the stored args.
         args, kwargs, options = self._merge(args, kwargs, options)
         return self.type.apply(args, kwargs, **options)
@@ -634,6 +634,8 @@ class chord(Signature):
                 if args and not self.immutable else self.args)
         body = kwargs.get('body') or self.kwargs['body']
         kwargs = dict(self.kwargs, **kwargs)
+        partial_args = (
+            tuple(partial_args) + tuple(self.kwargs.get('partial_args', ())))
         body = body.clone(**options)
 
         _chord = self.type
@@ -649,8 +651,15 @@ class chord(Signature):
         return self.apply_async(
             (), (), {'body': body} if body else {}, **options)
 
-    def clone(self, *args, **kwargs):
+    def clone(self, partial_args=(), *args, **kwargs):
         s = Signature.clone(self, *args, **kwargs)
+        # Need to save partial_args
+        if partial_args:
+            if s.kwargs.get('partial_args'):
+                s.kwargs['partial_args'] = (
+                    tuple(partial_args) + tuple(s.kwargs['partial_args']))
+            else:
+                s.kwargs['partial_args'] = tuple(partial_args)
         # need to make copy of body
         try:
             s.kwargs['body'] = s.kwargs['body'].clone()
