@@ -215,3 +215,9 @@ class test_chord(BuiltinsCase):
         x = chord([self.add.s(i, i) for i in range(10)], body=self.xsum.s())
         r = x.apply_async()
         self.assertEqual(r.get(), 90)
+
+    def test_apply_eager_with_arguments(self):
+        self.app.conf.CELERY_ALWAYS_EAGER = True
+        x = chord([self.add.s(i) for i in range(10)], body=self.xsum.s())
+        r = x.apply_async([1])
+        self.assertEqual(r.get(), 55)
