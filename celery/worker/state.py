@@ -15,6 +15,7 @@ import os
 import sys
 import platform
 import shelve
+import weakref
 import zlib
 
 from kombu.serialization import pickle, pickle_protocol
@@ -41,11 +42,13 @@ REVOKES_MAX = 50000
 #: being expired when the max limit has been exceeded.
 REVOKE_EXPIRES = 10800
 
+requests = weakref.WeakValueDictionary()
+
 #: set of all reserved :class:`~celery.worker.request.Request`'s.
 reserved_requests = set()
 
 #: set of currently active :class:`~celery.worker.request.Request`'s.
-active_requests = set()
+active_requests = weakref.WeakSet()
 
 #: count of tasks accepted by the worker, sorted by type.
 total_count = Counter()
@@ -56,9 +59,6 @@ all_total_count = [0]
 #: the list of currently revoked tasks.  Persistent if ``statedb`` set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 
-#: Update global state when a task has been reserved.
-task_reserved = reserved_requests.add
-
 should_stop = None
 should_terminate = None
 
@@ -66,6 +66,7 @@ should_terminate = None
 def reset_state():
     reserved_requests.clear()
     active_requests.clear()
+    requests.clear()
     total_count.clear()
     all_total_count[:] = [0]
     revoked.clear()
@@ -78,17 +79,32 @@ def maybe_shutdown():
         raise WorkerTerminate(should_terminate)
 
 
-def task_accepted(request, _all_total_count=all_total_count):
+def task_reserved(request,
+                  add_request=requests.__setitem__,
+                  add_reserved_request=reserved_requests.add):
+    """Update global state when a task has been reserved."""
+    add_request(request.id, request)
+    add_reserved_request(request)
+
+
+def task_accepted(request,
+                  _all_total_count=all_total_count,
+                  add_active_request=active_requests.add,
+                  add_to_total_count=total_count.update):
     """Updates global state when a task has been accepted."""
-    active_requests.add(request)
-    total_count[request.name] += 1
+    add_active_request(request)
+    add_to_total_count({request.name: 1})
     all_total_count[0] += 1
 
 
-def task_ready(request):
+def task_ready(request,
+               remove_request=requests.pop,
+               discard_active_request=active_requests.discard,
+               discard_reserved_request=reserved_requests.discard):
     """Updates global state when a task is ready."""
-    active_requests.discard(request)
-    reserved_requests.discard(request)
+    remove_request(request, None)
+    discard_active_request(request)
+    discard_reserved_request(request)
 
 
 C_BENCH = os.environ.get('C_BENCH') or os.environ.get('CELERY_BENCH')

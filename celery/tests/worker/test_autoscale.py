@@ -95,8 +95,8 @@ class test_Autoscaler(AppCase):
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.body()
         self.assertEqual(x.pool.num_processes, 3)
-        for i in range(20):
-            state.reserved_requests.add(i)
+        _keep = [Mock(name='req{0}'.format(i)) for i in range(20)]
+        [state.task_reserved(m) for m in _keep]
         x.body()
         x.body()
         self.assertEqual(x.pool.num_processes, 10)
@@ -129,7 +129,6 @@ class test_Autoscaler(AppCase):
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.scale_up(3)
-        x._last_action = monotonic() - 10000
         x.pool.shrink_raises_exception = True
         x._shrink(1)
 
@@ -201,13 +200,14 @@ class test_Autoscaler(AppCase):
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.body()  # the body func scales up or down
 
-        for i in range(35):
-            state.reserved_requests.add(i)
+        _keep = [Mock(name='req{0}'.format(i)) for i in range(35)]
+        for req in _keep:
+            state.task_reserved(req)
             x.body()
             total_num_processes.append(self.pool.num_processes)
 
-        for i in range(35):
-            state.reserved_requests.remove(i)
+        for req in _keep:
+            state.task_ready(req)
             x.body()
             total_num_processes.append(self.pool.num_processes)
 
