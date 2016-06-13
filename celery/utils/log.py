@@ -41,7 +41,6 @@ MP_LOG = os.environ.get('MP_LOG', False)
 # logger, and every task logger inherits from the "celery.task"
 # logger.
 base_logger = logger = _get_logger('celery')
-mp_logger = _get_logger('multiprocessing')
 
 _in_sighandler = False
 

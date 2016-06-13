@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 from celery.utils.text import (
     abbr,
     abbrtask,
-    ensure_2lines,
+    ensure_newlines,
     indent,
     pretty,
     truncate,
@@ -54,12 +54,12 @@ class test_Info(AppCase):
         self.assertEqual(sorted(self.app.amqp.queues.format().split('\n')),
                          sorted([QUEUE_FORMAT1, QUEUE_FORMAT2]))
 
-    def test_ensure_2lines(self):
+    def test_ensure_newlines(self):
         self.assertEqual(
-            len(ensure_2lines('foo\nbar\nbaz\n').splitlines()), 3,
+            len(ensure_newlines('foo\nbar\nbaz\n').splitlines()), 3,
         )
         self.assertEqual(
-            len(ensure_2lines('foo\nbar').splitlines()), 2,
+            len(ensure_newlines('foo\nbar').splitlines()), 2,
         )
 
 

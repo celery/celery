@@ -67,8 +67,6 @@ class X(object):
         if transport_driver_type:
             self.connection.transport.driver_type = transport_driver_type
         self.hub.readers = {}
-        self.hub.writers = {}
-        self.hub.consolidate = set()
         self.hub.timer = Mock(name='hub.timer')
         self.hub.timer._queue = [Mock()]
         self.hub.fire_timers = Mock(name='hub.fire_timers')
@@ -100,7 +98,6 @@ class X(object):
 
         def first(*args, **kwargs):
             mock.side_effect = socket.error()
-            self.connection.more_to_read = False
             raise socket.timeout()
         mock.side_effect = first
 
@@ -110,7 +107,6 @@ class X(object):
         def first(*args, **kwargs):
             if not mod or mock.call_count > mod:
                 self.close()
-                self.connection.more_to_read = False
                 raise (socket.error() if exc is None else exc)
         mock.side_effect = first
         return mock

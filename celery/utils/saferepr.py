@@ -48,7 +48,6 @@ _quoted = namedtuple('_quoted', ('value',))
 _dirty = namedtuple('_dirty', ('objid',))
 
 chars_t = (bytes, text_t)
-literal_t = (_literal, _key)
 safe_t = (Number,)
 set_t = (frozenset, set)
 

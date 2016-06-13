@@ -125,9 +125,6 @@ class Consumer(object):
 
     Strategies = dict
 
-    #: set when consumer is shutting down.
-    in_shutdown = False
-
     #: Optional callback called the first time the worker
     #: is ready to receive tasks.
     init_callback = None
@@ -348,7 +345,6 @@ class Consumer(object):
         )
 
     def shutdown(self):
-        self.in_shutdown = True
         self.blueprint.shutdown(self)
 
     def stop(self):

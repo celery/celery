@@ -10,7 +10,9 @@ import sys
 from datetime import datetime, timedelta
 
 from billiard.einfo import ExceptionInfo
-from kombu.utils.encoding import from_utf8, default_encode
+from kombu.utils.encoding import (
+    default_encode, from_utf8, safe_str, safe_repr,
+)
 
 from celery import states
 from celery.app.trace import (
@@ -228,16 +230,6 @@ class test_trace_task(RequestCase):
         self.assertFalse(self.app.AsyncResult(task_id).ready())
 
 
-class MockEventDispatcher(object):
-
-    def __init__(self):
-        self.sent = []
-        self.enabled = True
-
-    def send(self, event, **fields):
-        self.sent.append(event)
-
-
 class test_Request(RequestCase):
 
     def get_request(self, sig, Request=Request, **kwargs):
@@ -391,19 +383,24 @@ class test_Request(RequestCase):
 
     def test_send_event(self):
         job = self.xRequest()
-        job.eventer = MockEventDispatcher()
+        job.eventer = Mock(name='.eventer')
         job.send_event('task-frobulated')
-        self.assertIn('task-frobulated', job.eventer.sent)
+        job.eventer.send.assert_called_with('task-frobulated', uuid=job.id)
 
     def test_on_retry(self):
         job = self.get_request(self.mytask.s(1, f='x'))
-        job.eventer = MockEventDispatcher()
+        job.eventer = Mock(name='.eventer')
         try:
             raise Retry('foo', KeyError('moofoobar'))
         except:
             einfo = ExceptionInfo()
             job.on_failure(einfo)
-            self.assertIn('task-retried', job.eventer.sent)
+            job.eventer.send.assert_called_with(
+                'task-retried',
+                uuid=job.id,
+                exception=safe_repr(einfo.exception.exc),
+                traceback=safe_str(einfo.traceback),
+            )
             prev, module._does_info = module._does_info, False
             try:
                 job.on_failure(einfo)
@@ -737,9 +734,6 @@ class test_Request(RequestCase):
 
     def test_trace_catches_exception(self):
 
-        def _error_exec(self, *args, **kwargs):
-            raise KeyError('baz')
-
         @self.app.task(request=None, shared=False)
         def raising():
             raise KeyError('baz')
@@ -943,7 +937,6 @@ class test_Request(RequestCase):
     def test_reject(self):
         job = self.xRequest(id=uuid())
         job.on_reject = Mock(name='on_reject')
-        job.acknowleged = False
         job.reject(requeue=True)
         job.on_reject.assert_called_with(
             req_logger, job.connection_errors, True,

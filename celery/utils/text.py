@@ -8,15 +8,19 @@
 """
 from __future__ import absolute_import, unicode_literals
 
+from functools import partial
 from textwrap import fill
 
 from pprint import pformat
 
 from celery.five import string_t
 
-__all__ = ['dedent_initial', 'dedent', 'fill_paragraphs', 'join',
-           'ensure_2lines', 'abbr', 'abbrtask', 'indent', 'truncate',
-           'pluralize', 'pretty', 'str_to_list']
+__all__ = [
+    'abbr', 'abbrtask', 'dedent', 'dedent_initial',
+    'ensure_newlines', 'ensure_sep',
+    'fill_paragraphs', 'indent', 'join',
+    'pluralize', 'pretty', 'str_to_list', 'truncate',
+]
 
 
 def str_to_list(s):
@@ -41,10 +45,9 @@ def join(l, sep='\n'):
     return sep.join(v for v in l if v)
 
 
-def ensure_2lines(s, sep='\n'):
-    if len(s.splitlines()) <= 2:
-        return s + sep
-    return s
+def ensure_sep(sep, s, n=2):
+    return s + sep * (n - s.count(sep))
+ensure_newlines = partial(ensure_sep, '\n')
 
 
 def abbr(S, max, ellipsis='...'):

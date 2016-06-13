@@ -65,7 +65,6 @@ def find_pickleable_exception(exc, loads=pickle.loads,
             pass
         else:
             return superexc
-find_nearest_pickleable_exception = find_pickleable_exception  # XXX compat
 
 
 def itermro(cls, stop):

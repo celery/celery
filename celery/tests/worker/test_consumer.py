@@ -200,7 +200,6 @@ class test_Consumer(AppCase):
         self.assertTrue(c.connect())
         conn.ensure_connection.assert_called()
         errback = conn.ensure_connection.call_args[0][0]
-        conn.alt = [(1, 2, 3)]
         errback(Mock(), 0)
 
 

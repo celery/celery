@@ -126,13 +126,6 @@ class dict3(dict):
         return dict.__repr__(self)
 
 
-@python_2_unicode_compatible
-class Unorderable:
-
-    def __repr__(self):
-        return str(id(self))
-
-
 class test_saferepr(Case):
 
     def test_safe_types(self):

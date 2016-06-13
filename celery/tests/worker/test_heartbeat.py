@@ -22,13 +22,6 @@ class MockDispatcher(object):
             self.next_iter += 1
 
 
-class MockDispatcherRaising(object):
-
-    def send(self, msg):
-        if msg == 'worker-offline':
-            raise Exception('foo')
-
-
 class MockTimer(object):
 
     def call_repeatedly(self, secs, fun, args=(), kwargs={}):

@@ -188,7 +188,6 @@ class test_KQueueMonitor(Case):
             class ev(object):
                 ident = 10
                 filter = eventio.KQ_FILTER_VNODE
-                fflags = eventio.KQ_NOTE_WRITE
             kq.control.return_value = [ev()]
             x = KQueueMonitor(['a'])
             osopen.return_value = 10

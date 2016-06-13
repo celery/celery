@@ -348,11 +348,6 @@ class test_LimitedSet(Case):
         [s.add('foo') for i in range(1000)]
         self.assertLess(len(s._heap), 1150)
 
-    def assert_lengths(self, s, expected, expected_data, expected_heap):
-        self.assertEqual(len(s), expected)
-        self.assertEqual(len(s._data), expected_data)
-        self.assertEqual(len(s._heap), expected_heap)
-
 
 class test_AttributeDict(Case):
 

@@ -29,7 +29,6 @@ __all__ = [
 ]
 
 IS_PY3 = sys.version_info[0] == 3
-IS_PY2 = sys.version_info[0] == 2
 
 FUNHEAD_TEMPLATE = """
 def {fun_name}({fun_args}):

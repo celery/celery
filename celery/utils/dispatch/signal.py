@@ -43,9 +43,8 @@ class Signal(object):  # pragma: no cover
 
     def __init__(self, providing_args=None):
         self.receivers = []
-        if providing_args is None:
-            providing_args = []
-        self.providing_args = set(providing_args)
+        self.providing_args = set(
+            providing_args if providing_args is not None else [])
 
     def _connect_proxy(self, fun, sender, weak, dispatch_uid):
         return self.connect(

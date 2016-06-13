@@ -55,7 +55,6 @@ def __optimize__():
 __optimize__()
 
 # Localize
-tz_utc = timezone.utc
 tz_or_local = timezone.tz_or_local
 send_revoked = signals.task_revoked.send
 
@@ -413,7 +412,6 @@ class Request(object):
             ' eta:[{0}]'.format(self.eta) if self.eta else '',
             ' expires:[{0}]'.format(self.expires) if self.expires else '',
         ])
-    shortinfo = __str__
 
     def humaninfo(self):
         return '{0.name}[{0.id}]'.format(self)

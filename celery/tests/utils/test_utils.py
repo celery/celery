@@ -20,10 +20,6 @@ from celery.utils import (
 from celery.tests.case import Case, Mock, patch
 
 
-def double(x):
-    return x * 2
-
-
 class test_isatty(Case):
 
     def test_tty(self):

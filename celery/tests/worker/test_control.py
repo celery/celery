@@ -37,7 +37,6 @@ class Consumer(consumer.Consumer):
     def __init__(self, app):
         self.app = app
         self.buffer = FastQueue()
-        self.handle_task = self.buffer.put
         self.timer = Timer()
         self.event_dispatcher = Mock()
         self.controller = WorkController()
@@ -400,9 +399,10 @@ class test_ControlPanel(AppCase):
 
     def test_dump_reserved(self):
         consumer = Consumer(self.app)
-        worker_state.reserved_requests.add(
-            Request(TaskMessage(self.mytask.name, args=(2, 2)), app=self.app),
-        )
+        req = Request(
+            TaskMessage(self.mytask.name, args=(2, 2)), app=self.app,
+        )  # ^ need to keep reference for reserved_tasks WeakSet.
+        worker_state.task_reserved(req)
         try:
             panel = self.create_panel(consumer=consumer)
             response = panel.handle('dump_reserved', {'safe': True})

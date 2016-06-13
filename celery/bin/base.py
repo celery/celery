@@ -106,8 +106,8 @@ class HelpFormatter(IndentedHelpFormatter):
         return ''
 
     def format_description(self, description):
-        return text.ensure_2lines(text.fill_paragraphs(
-            text.dedent(description), self.width))
+        return text.ensure_newlines(
+            text.fill_paragraphs(text.dedent(description), self.width))
 
 
 class Command(object):

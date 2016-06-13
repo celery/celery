@@ -24,10 +24,6 @@ def return_True(*args, **kwargs):
     return True
 
 
-def raise_exception(self, **kwargs):
-    raise Exception('%s error' % self.__class__)
-
-
 class MockApplyTask(Task):
     abstract = True
     applied = 0

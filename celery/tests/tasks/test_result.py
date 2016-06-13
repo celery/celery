@@ -817,11 +817,11 @@ class test_pending_Group(AppCase):
     def test_waiting(self):
         self.assertTrue(self.ts.waiting())
 
-    def x_join(self):
+    def test_join(self):
         with self.assertRaises(TimeoutError):
             self.ts.join(timeout=0.001)
 
-    def x_join_longer(self):
+    def test_join_longer(self):
         with self.assertRaises(TimeoutError):
             self.ts.join(timeout=1)
 

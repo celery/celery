@@ -1,7 +1,5 @@
 from __future__ import absolute_import, unicode_literals
 
-from operator import itemgetter
-
 from celery import bootsteps
 from celery.five import items
 from celery.utils.log import get_logger
@@ -9,8 +7,6 @@ from celery.utils.log import get_logger
 from .events import Events
 
 __all__ = ['Mingle']
-
-MINGLE_GET_FIELDS = itemgetter('clock', 'revoked')
 
 logger = get_logger(__name__)
 debug, info, exception = logger.debug, logger.info, logger.exception
