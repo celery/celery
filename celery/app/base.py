@@ -135,6 +135,9 @@ class Celery(object):
     :keyword autofinalize: If set to False a :exc:`RuntimeError`
         will be raised if the task registry or tasks are used before
         the app is finalized.
+    :keyword config_source: receives a class with class level attributes that
+        allows configurating Celery from a single object. All attributes
+        described in the documentation can be defined.
 
     """
     #: This is deprecated, use :meth:`reduce_keys` instead
