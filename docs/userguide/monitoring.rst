@@ -142,6 +142,21 @@ Commands
 
         $ celery -A proj inspect stats
 
+* **inspect query_task**: Show information about task(s) by id.
+
+    Any worker having a task in this set of ids reserved/active will respond
+    with status and information.
+
+    .. code-block:: console
+
+        $ celery -A proj inspect query_task e9f6c8f0-fec9-4ae8-a8c6-cf8c8451d4f8
+
+    You can also query for information about multiple tasks:
+
+    .. code-block:: console
+
+        $ celery -A proj inspect query_task id1 id2 ... idN
+
 * **control enable_events**: Enable events
 
     .. code-block:: console

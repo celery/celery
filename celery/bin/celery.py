@@ -646,18 +646,19 @@ class inspect(_RemoteControl):
     choices = {
         'active': (1.0, 'dump active tasks (being processed)'),
         'active_queues': (1.0, 'dump queues being consumed from'),
-        'scheduled': (1.0, 'dump scheduled tasks (eta/countdown/retry)'),
-        'reserved': (1.0, 'dump reserved tasks (waiting to be processed)'),
-        'stats': (1.0, 'dump worker statistics'),
-        'revoked': (1.0, 'dump of revoked task ids'),
-        'registered': (1.0, 'dump of registered tasks'),
-        'ping': (0.2, 'ping worker(s)'),
         'clock': (1.0, 'get value of logical clock'),
         'conf': (1.0, 'dump worker configuration'),
-        'report': (1.0, 'get bugreport info'),
-        'memsample': (1.0, 'sample memory (requires psutil)'),
         'memdump': (1.0, 'dump memory samples (requires psutil)'),
+        'memsample': (1.0, 'sample memory (requires psutil)'),
         'objgraph': (60.0, 'create object graph (requires objgraph)'),
+        'ping': (0.2, 'ping worker(s)'),
+        'query_task': (1.0, 'query for task information by id'),
+        'reserved': (1.0, 'dump reserved tasks (waiting to be processed)'),
+        'scheduled': (1.0, 'dump scheduled tasks (eta/countdown/retry)'),
+        'stats': (1.0, 'dump worker statistics'),
+        'registered': (1.0, 'dump of registered tasks'),
+        'report': (1.0, 'get bugreport info'),
+        'revoked': (1.0, 'dump of revoked task ids'),
     }
 
     def call(self, method, *args, **options):
@@ -669,6 +670,9 @@ class inspect(_RemoteControl):
 
     def conf(self, with_defaults=False, *args, **kwargs):
         return self.call('conf', with_defaults, **kwargs)
+
+    def query_task(self, *ids, **options):
+        return self.call('query_task', ids, **options)
 
 
 class control(_RemoteControl):
