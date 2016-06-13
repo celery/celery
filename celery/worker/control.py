@@ -48,28 +48,31 @@ class Panel(UserDict):
         return method
 
 
-def _find_requests_by_id(ids, requests):
-    found, total = 0, len(ids)
-    for request in requests:
-        if request.id in ids:
-            yield request
-            found += 1
-            if found >= total:
-                break
+def _find_requests_by_id(ids,
+                         get_request=worker_state.requests.__getitem__):
+    for task_id in ids:
+        try:
+            yield get_request(task_id)
+        except KeyError:
+            pass
+
+
+def _state_of_task(request,
+                   is_active=worker_state.active_requests.__contains__,
+                   is_reserved=worker_state.reserved_requests.__contains__):
+    if is_active(request):
+        return 'active'
+    elif is_reserved(request):
+        return 'reserved'
+    return 'ready'
 
 
 @Panel.register
 def query_task(state, ids, **kwargs):
-    ids = maybe_list(ids)
-    return dict({
-        req.id: ('reserved', req.info())
-        for req in _find_requests_by_id(
-            ids, state.tset(worker_state.reserved_requests))
-    }, **{
-        req.id: ('active', req.info())
-        for req in _find_requests_by_id(
-            ids, state.tset(worker_state.active_requests))
-    })
+    return {
+        req.id: (_state_of_task(req), req.info())
+        for req in _find_requests_by_id(maybe_list(ids))
+    }
 
 
 @Panel.register
@@ -83,13 +86,7 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
     revoked.update(task_ids)
     if terminate:
         signum = _signals.signum(signal or TERM_SIGNAME)
-        # reserved_requests changes size during iteration
-        # so need to consume the items first, then terminate after.
-        requests = set(_find_requests_by_id(
-            task_ids,
-            state.tset(worker_state.reserved_requests),
-        ))
-        for request in requests:
+        for request in _find_requests_by_id(task_ids):
             if request.id not in terminated:
                 terminated.add(request.id)
                 logger.info('Terminating %s (%s)', request.id, signum)

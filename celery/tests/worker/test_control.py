@@ -489,7 +489,7 @@ class test_ControlPanel(AppCase):
         request.id = tid = uuid()
         state = self.create_state()
         state.consumer = Mock()
-        worker_state.reserved_requests.add(request)
+        worker_state.task_reserved(request)
         try:
             r = control.revoke(state, tid, terminate=True)
             self.assertIn(tid, revoked)
@@ -499,7 +499,7 @@ class test_ControlPanel(AppCase):
             r = control.revoke(state, uuid(), terminate=True)
             self.assertIn('tasks unknown', r['ok'])
         finally:
-            worker_state.reserved_requests.discard(request)
+            worker_state.task_ready(request)
 
     def test_autoscale(self):
         self.panel.state.consumer = Mock()
@@ -645,7 +645,7 @@ class test_ControlPanel(AppCase):
             TaskMessage(self.mytask.name, args=(2, 2)),
             app=self.app,
         )
-        worker_state.reserved_requests.add(req1)
+        worker_state.task_reserved(req1)
         try:
             self.assertFalse(panel.handle('query_task', {'ids': {'1daa'}}))
             ret = panel.handle('query_task', {'ids': {req1.id}})
