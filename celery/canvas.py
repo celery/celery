@@ -957,7 +957,7 @@ class chord(Signature):
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=app))
         if app.conf.task_always_eager:
-            return self.apply((), kwargs,
+            return self.apply(args, kwargs,
                               body=body, task_id=task_id, **options)
         return self.run(tasks, body, args, task_id=task_id, **options)
 
@@ -966,7 +966,7 @@ class chord(Signature):
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=self.app))
         return body.apply(
-            args=(tasks.apply().get(propagate=propagate),),
+            args=(tasks.apply(args, kwargs).get(propagate=propagate),),
         )
 
     def _traverse_tasks(self, tasks, value=None):
