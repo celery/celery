@@ -14,9 +14,6 @@ queues = {'testcelery': {'routing_key': 'testcelery'}}
 
 log_color = False
 
-imports = ('celery.tests.functional.tasks',)
-
-
 @atexit.register
 def teardown_testdb():
     import os
