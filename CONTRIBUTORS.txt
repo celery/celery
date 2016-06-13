@@ -199,7 +199,6 @@ Krzysztof Bujniewicz, 2015/10/21
 Sukrit Khera, 2015/10/26
 Dave Smith, 2015/10/27
 Dennis Brakhane, 2015/10/30
-<<<<<<< HEAD
 Chris Harris, 2015/11/27
 Valentyn Klindukh, 2016/01/15
 Wayne Chang, 2016/01/15
