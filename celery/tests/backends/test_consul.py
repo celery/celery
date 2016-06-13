@@ -18,7 +18,6 @@ class test_ConsulBackend(AppCase):
         self.assertEqual('consistent', self.backend.consistency)
 
     def test_get(self):
-        c = self.backend
         index = 100
         data = {'Key': 'test-consul-1', 'Value': 'mypayload'}
         self.backend.client = Mock(name='c.client')
