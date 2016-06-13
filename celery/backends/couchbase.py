@@ -40,10 +40,7 @@ class CouchbaseBackend(KeyValueStoreBackend):
     username = None
     password = None
     quiet = False
-    conncache = None
-    unlock_gil = True
     timeout = 2.5
-    transcoder = None
 
     # Use str as couchbase key not bytes
     key_t = str_t
