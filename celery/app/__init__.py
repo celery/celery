@@ -35,12 +35,6 @@ default_app = Proxy(lambda: _state.default_app)
 #: is no active app.
 app_or_default = None
 
-#: The 'default' loader is the default loader used by old applications.
-#: This is deprecated and should no longer be used as it's set too early
-#: to be affected by --loader argument.
-default_loader = os.environ.get('CELERY_LOADER') or 'default'  # XXX
-
-
 #: Function used to push a task to the thread local stack
 #: keeping track of the currently executing task.
 #: You must remember to pop the task after.

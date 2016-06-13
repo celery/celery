@@ -17,10 +17,3 @@
     .. autofunction:: app_or_default
     .. autofunction:: enable_trace
     .. autofunction:: disable_trace
-
-
-    Data
-    ----
-
-    .. autodata:: default_loader
-

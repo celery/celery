@@ -89,7 +89,6 @@ def _set_current_app(app):
     _tls.current_app = app
 
 
-C_STRICT_APP = os.environ.get('C_STRICT_APP')
 if os.environ.get('C_STRICT_APP'):  # pragma: no cover
     def get_current_app():
         raise Exception('USES CURRENT APP')
