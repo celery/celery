@@ -88,8 +88,6 @@ if os.environ.get('CELERY_TRACE_APP'):  # pragma: no cover
 else:
     disable_trace()
 
-App = Celery  # XXX Compat
-
 
 def shared_task(*args, **kwargs):
     """Create shared tasks (decorator).

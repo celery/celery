@@ -188,7 +188,6 @@ class Queues(dict):
             self._consume_from = {
                 name: self[name] for name in maybe_list(include)
             }
-    select_subset = select  # XXX compat
 
     def deselect(self, exclude):
         """Deselect queues so that they will not be consumed from.
@@ -205,7 +204,6 @@ class Queues(dict):
             # using all queues
             for queue in exclude:
                 self._consume_from.pop(queue, None)
-    select_remove = deselect  # XXX compat
 
     def new_missing(self, name):
         return Queue(name, self.autoexchange(name), name)
