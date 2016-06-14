@@ -365,7 +365,11 @@ class chain(Signature):
     def from_dict(self, d, app=None):
         tasks = [maybe_signature(t, app=app) for t in d['kwargs']['tasks']]
         if d['args'] and tasks:
-            # partial args passed on to first task in chain (Issue #1057).
+            # Partial args passed on to first task in chain (Issue #1057).
+            # We need to clone first task because we're changing it by adding
+            # args. The task in the chain should change, but not the original
+            # task.
+            tasks[0] = tasks[0].clone()
             tasks[0]['args'] = tasks[0]._merge(d['args'])[0]
         return _upgrade(d, chain(*tasks, app=app, **d['options']))
 
