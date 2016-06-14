@@ -86,11 +86,11 @@ Fixes
 
     See issue #160.
 
-* Worker: On OS X it is not possible to run `os.exec*` in a process
+* Worker: On macOS it is not possible to run `os.exec*` in a process
   that is threaded.
 
       This breaks the SIGHUP restart handler,
-      and is now disabled on OS X, emitting a warning instead.
+      and is now disabled on macOS, emitting a warning instead.
 
     See issue #152.
 
@@ -99,8 +99,8 @@ Fixes
 
     See issue #175.
 
-* Using urllib2 in a periodic task on OS X crashed because
-  of the proxy auto detection used in OS X.
+* Using urllib2 in a periodic task on macOS crashed because
+  of the proxy auto detection used in macOS.
 
     This is now fixed by using a workaround.
     See issue #143.

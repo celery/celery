@@ -198,7 +198,7 @@ spelling or other errors on the website/docs/code.
 
     A) If the error is from a Python traceback, include it in the bug report.
 
-    B) We also need to know what platform you're running (Windows, OS X, Linux,
+    B) We also need to know what platform you're running (Windows, macOS, Linux,
        etc.), the version of your Python interpreter, and the version of Celery,
        and related packages that you were running when the bug occurred.
 
@@ -209,8 +209,9 @@ spelling or other errors on the website/docs/code.
        * Enable celery's :ref:`breakpoint signal <breakpoint_signal>` and use it
          to inspect the process's state.  This will allow you to open a
          :mod:`pdb` session.
-       * Collect tracing data using `strace`_(Linux), :command:`dtruss` (OSX),
-         and :command:`ktrace` (BSD), `ltrace`_ and `lsof`_.
+       * Collect tracing data using `strace`_(Linux),
+         :command:`dtruss` (macOS), and :command:`ktrace` (BSD),
+         `ltrace`_ and `lsof`_.
 
     D) Include the output from the :command:`celery report` command:
 

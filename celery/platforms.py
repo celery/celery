@@ -42,7 +42,7 @@ grp = try_import('grp')
 mputil = try_import('multiprocessing.util')
 
 __all__ = ['EX_OK', 'EX_FAILURE', 'EX_UNAVAILABLE', 'EX_USAGE', 'SYSTEM',
-           'IS_OSX', 'IS_WINDOWS', 'pyimplementation', 'LockFailed',
+           'IS_macOS', 'IS_WINDOWS', 'pyimplementation', 'LockFailed',
            'get_fdmax', 'Pidfile', 'create_pidlock',
            'close_open_fds', 'DaemonContext', 'detached', 'parse_uid',
            'parse_gid', 'setgroups', 'initgroups', 'setgid', 'setuid',
@@ -58,7 +58,7 @@ EX_USAGE = getattr(os, 'EX_USAGE', 64)
 EX_CANTCREAT = getattr(os, 'EX_CANTCREAT', 73)
 
 SYSTEM = _platform.system()
-IS_OSX = SYSTEM == 'Darwin'
+IS_macOS = SYSTEM == 'Darwin'
 IS_WINDOWS = SYSTEM == 'Windows'
 
 DAEMON_WORKDIR = '/'

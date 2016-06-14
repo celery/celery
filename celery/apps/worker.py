@@ -223,16 +223,16 @@ class Worker(WorkController):
 
     def install_platform_tweaks(self, worker):
         """Install platform specific tweaks and workarounds."""
-        if self.app.IS_OSX:
-            self.osx_proxy_detection_workaround()
+        if self.app.IS_macOS:
+            self.macOS_proxy_detection_workaround()
 
         # Install signal handler so SIGHUP restarts the worker.
         if not self._isatty:
             # only install HUP handler if detached from terminal,
             # so closing the terminal window doesn't restart the worker
             # into the background.
-            if self.app.IS_OSX:
-                # OS X can't exec from a process using threads.
+            if self.app.IS_macOS:
+                # macOS can't exec from a process using threads.
                 # See https://github.com/celery/celery/issues#issue/152
                 install_HUP_not_supported_handler(worker)
             else:
@@ -243,7 +243,7 @@ class Worker(WorkController):
         install_cry_handler()
         install_rdb_handler()
 
-    def osx_proxy_detection_workaround(self):
+    def macOS_proxy_detection_workaround(self):
         """See https://github.com/celery/celery/issues#issue/161"""
         os.environ.setdefault('celery_dummy_proxy', 'set_by_celeryd')
 

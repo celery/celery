@@ -758,7 +758,7 @@ In Other News
     A monotonic clock is now used for timeouts and scheduling.
 
     The monotonic clock function is built-in starting from Python 3.4,
-    but we also have fallback implementations for Linux and OS X.
+    but we also have fallback implementations for Linux and macOS.
 
 - :program:`celery worker` now supports a new
   :option:`--detach <celery worker --detach>` argument to start

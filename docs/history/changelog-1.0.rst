@@ -646,7 +646,7 @@ Backward incompatible changes
         `extra/debian/init.d/celeryd`
         `extra/debian/init.d/celerybeat`
 
-    * Mac OS X :command:`launchd`
+    * macOS :command:`launchd`
 
         `extra/mac/org.celeryq.celeryd.plist`
         `extra/mac/org.celeryq.celerybeat.plist`
@@ -967,7 +967,7 @@ Documentation
 * Now emits a warning if the --detach argument is used.
   --detach should not be used anymore, as it has several not easily fixed
   bugs related to it. Instead, use something like start-stop-daemon,
-  :pypi:`supervisor` or :command:`launchd` (os x).
+  :pypi:`supervisor` or :command:`launchd` (macOS).
 
 
 * Make sure logger class is process aware, even if running Python >= 2.6.

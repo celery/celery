@@ -246,7 +246,7 @@ implementations:
 
         $ pip install pyinotify
 
-* ``kqueue`` (OS X/BSD)
+* ``kqueue`` (macOS/BSD)
 
 * ``stat``
 

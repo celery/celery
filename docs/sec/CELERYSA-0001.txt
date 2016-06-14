@@ -51,7 +51,7 @@ as the root user, using either:
        CELERYD_USER or CELERYD_GROUP defined,
 are affected.
 
-Users using the Debian init-scripts, CentOS init-scripts, OS X launchctl
+Users using the Debian init-scripts, CentOS init-scripts, macOS launchctl
 scripts, Supervisor, or users not starting the programs as the root user
 are *not* affected.
 

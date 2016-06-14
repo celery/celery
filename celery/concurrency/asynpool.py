@@ -745,7 +745,7 @@ class AsynPool(_pool.Pool):
             # using `total_writes % ready_fds` is about 30% faster
             # with many processes, and also leans more towards fairness
             # in write stats when used with many processes
-            # [XXX On OS X, this may vary depending
+            # [XXX On macOS, this may vary depending
             # on event loop implementation (i.e select vs epoll), so
             # have to test further]
             num_ready = len(ready_fds)

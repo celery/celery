@@ -504,17 +504,17 @@ or production environment (inadvertently) as root.
 * `extra/supervisord/`_
 
 .. _`extra/supervisord/`:
-    https://github.com/celery/celery/tree/3.1/extra/supervisord/
+    https://github.com/celery/celery/tree/master/extra/supervisord/
 
 .. _daemon-launchd:
 
-``launchd`` (OS X)
+``launchd`` (macOS)
 ======================================================================
 
-* `extra/osx`_
+* `extra/macOS`_
 
-.. _`extra/osx`:
-    https://github.com/celery/celery/tree/3.1/extra/osx/
+.. _`extra/macOS`:
+    https://github.com/celery/celery/tree/master/extra/macOS/
 
 
 .. _daemon-windows:

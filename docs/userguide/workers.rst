@@ -117,7 +117,7 @@ is not recommended in production:
     in the background as a daemon (it does not have a controlling
     terminal).
 
-    :sig:`HUP` is disabled on OS X because of a limitation on
+    :sig:`HUP` is disabled on macOS because of a limitation on
     that platform.
 
 
@@ -772,7 +772,7 @@ implementations:
 
         $ pip install pyinotify
 
-* ``kqueue`` (OS X/BSD)
+* ``kqueue`` (macOS/BSD)
 
 * ``stat``
 

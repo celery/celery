@@ -198,7 +198,7 @@ spelling or other errors on the website/docs/code.
 
     A) If the error is from a Python traceback, include it in the bug report.
 
-    B) We also need to know what platform you're running (Windows, OS X, Linux,
+    B) We also need to know what platform you're running (Windows, macOS, Linux,
        etc.), the version of your Python interpreter, and the version of Celery,
        and related packages that you were running when the bug occurred.
 
@@ -209,8 +209,9 @@ spelling or other errors on the website/docs/code.
        * Enable celery's ``breakpoint_signal`` and use it
          to inspect the process's state.  This will allow you to open a
          ``pdb`` session.
-       * Collect tracing data using `strace`_(Linux), ``dtruss`` (OSX),
-         and ``ktrace`` (BSD), `ltrace`_ and `lsof`_.
+       * Collect tracing data using `strace`_(Linux),
+         ``dtruss`` (macOS), and ``ktrace`` (BSD),
+         `ltrace`_ and `lsof`_.
 
     D) Include the output from the ``celery report`` command:
         ::
@@ -349,17 +350,17 @@ An archived version is named ``X.Y-archived``.
 
 Our currently archived branches are:
 
-* 2.5-archived
+* ``2.5-archived``
 
-* 2.4-archived
+* ``2.4-archived``
 
-* 2.3-archived
+* ``2.3-archived``
 
-* 2.1-archived
+* ``2.1-archived``
 
-* 2.0-archived
+* ``2.0-archived``
 
-* 1.0-archived
+* ``1.0-archived``
 
 Feature branches
 ----------------
@@ -737,7 +738,7 @@ is following the conventions.
         from .five import zip_longest, items, range
         from .utils import timeutils
 
-* Wildcard imports must not be used (`from xxx import *`).
+* Wild-card imports must not be used (`from xxx import *`).
 
 * For distributions where Python 2.5 is the oldest support version
   additional rules apply:
@@ -789,13 +790,15 @@ that require third-party libraries must be added.
 1) Add a new requirements file in `requirements/extras`
 
     E.g. for the Cassandra backend this is
-    ``requirements/extras/cassandra.txt``, and the file looks like this::
+    ``requirements/extras/cassandra.txt``, and the file looks like this:
+    ::
 
         pycassa
 
     These are pip requirement files so you can have version specifiers and
     multiple packages are separated by newline.  A more complex example could
     be:
+    ::
 
         # pycassa 2.0 breaks Foo
         pycassa>=1.0,<2.0

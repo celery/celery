@@ -1095,7 +1095,7 @@ News
 - **Commands:** The output of the event dump utility
   (:program:`celery events -d`) can now be piped into other commands.
 
-- **Documentation:** The RabbitMQ installation instructions for OS X was
+- **Documentation:** The RabbitMQ installation instructions for macOS was
   updated to use modern Homebrew practices.
 
     Contributed by Jon Chen.

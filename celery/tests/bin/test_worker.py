@@ -320,15 +320,15 @@ class test_Worker(WorkerAppCase):
             signals.setup_logging.disconnect(on_logging_setup)
 
     @mock.stdouts
-    def test_platform_tweaks_osx(self, stdout, stderr):
+    def test_platform_tweaks_macOS(self, stdout, stderr):
 
-        class OSXWorker(Worker):
+        class macOSWorker(Worker):
             proxy_workaround_installed = False
 
-            def osx_proxy_detection_workaround(self):
+            def macOS_proxy_detection_workaround(self):
                 self.proxy_workaround_installed = True
 
-        worker = OSXWorker(app=self.app, redirect_stdouts=False)
+        worker = macOSWorker(app=self.app, redirect_stdouts=False)
 
         def install_HUP_nosupport(controller):
             controller.hup_not_supported_installed = True
@@ -339,7 +339,7 @@ class test_Worker(WorkerAppCase):
         prev = cd.install_HUP_not_supported_handler
         cd.install_HUP_not_supported_handler = install_HUP_nosupport
         try:
-            worker.app.IS_OSX = True
+            worker.app.IS_macOS = True
             controller = Controller()
             worker.install_platform_tweaks(controller)
             self.assertTrue(controller.hup_not_supported_installed)
@@ -362,7 +362,7 @@ class test_Worker(WorkerAppCase):
         cd.install_worker_restart_handler = install_worker_restart_handler
         try:
             worker = self.Worker(app=self.app)
-            worker.app.IS_OSX = False
+            worker.app.IS_macOS = False
             worker.install_platform_tweaks(Controller())
             self.assertTrue(restart_worker_handler_installed[0])
         finally:

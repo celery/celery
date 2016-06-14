@@ -141,7 +141,7 @@ class Celery(object):
     Pickler = AppPickler
 
     SYSTEM = platforms.SYSTEM
-    IS_OSX, IS_WINDOWS = platforms.IS_OSX, platforms.IS_WINDOWS
+    IS_macOS, IS_WINDOWS = platforms.IS_macOS, platforms.IS_WINDOWS
 
     #: Name of the `__main__` module.  Required for standalone scripts.
     #:

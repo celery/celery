@@ -27,8 +27,8 @@ see :ref:`conf-broker-settings`.
 Installing the RabbitMQ Server
 ==============================
 
-See `Installing RabbitMQ`_ over at RabbitMQ's website. For Mac OS X
-see `Installing RabbitMQ on OS X`_.
+See `Installing RabbitMQ`_ over at RabbitMQ's website. For macOS
+see `Installing RabbitMQ on macOS`_.
 
 .. _`Installing RabbitMQ`: http://www.rabbitmq.com/install.html
 
@@ -70,13 +70,13 @@ See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
 
 .. _`access control`: http://www.rabbitmq.com/admin-guide.html#access-control
 
-.. _rabbitmq-osx-installation:
+.. _rabbitmq-macOS-installation:
 
-Installing RabbitMQ on OS X
----------------------------
+Installing RabbitMQ on macOS
+----------------------------
 
-The easiest way to install RabbitMQ on OS X is using `Homebrew`_ the new and
-shiny package management system for OS X.
+The easiest way to install RabbitMQ on macOS is using `Homebrew`_ the new and
+shiny package management system for macOS.
 
 First, install Homebrew using the one-line command provided by the `Homebrew
 documentation`_:
@@ -94,7 +94,7 @@ Finally, we can install RabbitMQ using :command:`brew`:
 .. _`Homebrew`: https://github.com/mxcl/homebrew/
 .. _`Homebrew documentation`: https://github.com/Homebrew/homebrew/wiki/Installation
 
-.. _rabbitmq-osx-system-hostname:
+.. _rabbitmq-macOS-system-hostname:
 
 After you've installed RabbitMQ with :command:`brew` you need to add the following to
 your path to be able to start and stop the broker: add it to the start-up file for your
@@ -143,7 +143,7 @@ This is especially important if your DHCP server gives you a host name
 starting with an IP address, (e.g. `23.10.112.31.comcast.net`), because
 then RabbitMQ will try to use `rabbit@23`, which is an illegal host name.
 
-.. _rabbitmq-osx-start-stop:
+.. _rabbitmq-macOS-start-stop:
 
 Starting/Stopping the RabbitMQ server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
