@@ -302,8 +302,14 @@ class Consumer(object):
     def start(self):
         blueprint = self.blueprint
         while blueprint.state != CLOSE:
-            self.restart_count += 1
             maybe_shutdown()
+            if self.restart_count:
+                try:
+                    self._restart_state.step()
+                except RestartFreqExceeded as exc:
+                    crit('Frequent restarts detected: %r', exc, exc_info=1)
+                    sleep(1)
+            self.restart_count += 1
             try:
                 blueprint.start(self)
             except self.connection_errors as exc:
@@ -314,11 +320,6 @@ class Consumer(object):
                 if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
                     raise  # Too many open files
                 maybe_shutdown()
-                try:
-                    self._restart_state.step()
-                except RestartFreqExceeded as exc:
-                    crit('Frequent restarts detected: %r', exc, exc_info=1)
-                    sleep(1)
                 if blueprint.state != CLOSE:
                     if self.connection:
                         self.on_connection_error_after_connected(exc)
