@@ -588,7 +588,7 @@ class chain(Signature):
         if app is None:
             try:
                 app = self.tasks[0]._app
-            except (KeyError, IndexError):
+            except LookupError:
                 pass
         return app or current_app
 
@@ -881,7 +881,7 @@ class group(Signature):
         if app is None:
             try:
                 app = self.tasks[0].app
-            except (KeyError, IndexError):
+            except LookupError:
                 pass
         return app if app is not None else current_app
 
