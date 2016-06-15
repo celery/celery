@@ -104,6 +104,23 @@ and also drops support for Python 3.3 so supported versions are:
 - PyPy 2.4 (``pypy3``)
 - Jython 2.7.0
 
+Last major version to support Python 2
+--------------------------------------
+
+Starting from Celery 5.0 only Python 3.6+ will be supported.
+
+To make sure you're not affected by this change you should pin
+the Celery version in your requirements file, either to a specific
+version: ``celery==4.0.0``, or a range: ``celery>=4.0,<5.0``.
+
+Dropping support for Python 2 will enable us to remove massive
+amounts of compatibility code, and going with Python 3.6 allows
+us to take advantage of typing, async/await, asyncio, ++, for which
+there are no convenient alternatives in older versions.
+
+Celery 4.x will continue to work on Python 2.7, 3.4, 3.5; just as Celery 3.x
+still works on Python 2.6.
+
 Lowercase setting names
 -----------------------
 
