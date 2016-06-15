@@ -10,12 +10,25 @@ env:
     - TOXENV=2.7
     - TOXENV=3.4
     - TOXENV=3.5
-    - TOXENV=pypy
+    - TOXENV=pypy PYPY_VERSION="5.3"
     - TOXENV=pypy3
     - TOXENV=flake8
     - TOXENV=flakeplus
     - TOXENV=apicheck
     - TOXENV=configcheck
+before_install:
+    - |
+          if [ "$TRAVIS_PYTHON_VERSION" = "pypy" ]; then
+            export PYENV_ROOT="$HOME/.pyenv"
+            if [ -f "$PYENV_ROOT/bin/pyenv" ]; then
+              cd "$PYENV_ROOT" && git pull
+            else
+              rm -rf "$PYENV_ROOT" && git clone --depth 1 https://github.com/yyuu/pyenv.git "$PYENV_ROOT"
+            fi
+            "$PYENV_ROOT/bin/pyenv" install "pypy-$PYPY_VERSION"
+            virtualenv --python="$PYENV_ROOT/versions/pypy-$PYPY_VERSION/bin/python" "$HOME/virtualenvs/pypy-$PYPY_VERSION"
+            source "$HOME/virtualenvs/pypy-$PYPY_VERSION/bin/activate"
+          fi
 install: travis_retry pip install -U tox
 script: tox -v -- -v
 after_success:
