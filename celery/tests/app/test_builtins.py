@@ -21,6 +21,13 @@ class BuiltinsCase(AppCase):
             return x + y
         self.add = add
 
+        # Subtraction is not commutative so maybe a better test in testing
+        # the order of arguments.
+        @self.app.task(shared=False)
+        def sub(x, y):
+            return x - y
+        self.sub = sub
+
 
 class test_backend_cleanup(BuiltinsCase):
 
@@ -177,6 +184,80 @@ class test_chain(BuiltinsCase):
         for task in c.tasks:
             self.assertListEqual(task.options['link_error'], [s('error')])
 
+    def test_clone_does_not_change_first_task(self):
+        """Test that a cloned chain does not modify original task."""
+        first_task = self.add.s(1)
+        my_chain = (
+            first_task |
+            self.add.s(2)
+        )
+        # We'll add an argument which means first task needs to change.
+        cloned_chain = my_chain.clone([5])
+        # Check that we haven't changed the original task's args when we cloned
+        # a chain that has it.
+        self.assertEqual(first_task.args, (1,))
+        # Check that cloned chain's first task has the new partial args though.
+        self.assertEqual(cloned_chain.tasks[0].args, (5, 1,))
+
+    def test_apply_async_eager(self):
+        self.app.conf.CELERY_ALWAYS_EAGER = True
+        my_chain = (
+            self.sub.s(2) |
+            self.sub.s(1)
+        )
+        result = my_chain.apply_async([9])
+        self.assertEqual(result.get(), 6)
+
+    def test_apply_eager(self):
+        self.app.conf.CELERY_ALWAYS_EAGER = True
+        my_chain = (
+            self.sub.s(2) |
+            self.sub.s(1)
+        )
+        result = my_chain.apply([9])
+        self.assertEqual(result.get(), 6)
+
+    def test_apply_async_eager_cloned_chain(self):
+        self.app.conf.CELERY_ALWAYS_EAGER = True
+        my_chain = (
+            self.sub.s(2) |
+            self.sub.s(1)
+        )
+        cloned_chain = my_chain.clone([9])
+        result = cloned_chain.apply_async()
+        self.assertEqual(result.get(), 6)
+
+    def test_apply_eager_cloned_chain(self):
+        self.app.conf.CELERY_ALWAYS_EAGER = True
+        my_chain = (
+            self.sub.s(2) |
+            self.sub.s(1)
+        )
+        cloned_chain = my_chain.clone([9])
+        result = cloned_chain.apply()
+        self.assertEqual(result.get(), 6)
+
+    def test_apply_eager_multi_cloned_chain(self):
+        """Test a task cloned multiple times."""
+        self.app.conf.CELERY_ALWAYS_EAGER = True
+        my_chain = (
+            self.sub.s() |
+            self.sub.s(1)
+        )
+        cloned_chain = my_chain.clone([9])
+        double_cloned = cloned_chain.clone([20])
+        result = double_cloned.apply()
+        self.assertEqual(result.get(), 10)
+
+    def test_delay_eager(self):
+        self.app.conf.CELERY_ALWAYS_EAGER = True
+        my_chain = (
+            self.sub.s(2) |
+            self.sub.s(1)
+        )
+        result = my_chain.delay(9)
+        self.assertEqual(result.get(), 6)
+
 
 class test_chord(BuiltinsCase):
 
@@ -216,8 +297,15 @@ class test_chord(BuiltinsCase):
         r = x.apply_async()
         self.assertEqual(r.get(), 90)
 
-    def test_apply_eager_with_arguments(self):
+    def test_apply_async_eager_with_arguments(self):
         self.app.conf.CELERY_ALWAYS_EAGER = True
-        x = chord([self.add.s(i) for i in range(10)], body=self.xsum.s())
-        r = x.apply_async([1])
+        x = chord([self.sub.s(i) for i in range(10)], body=self.xsum.s())
+        r = x.apply_async([10])
+        self.assertEqual(r.get(), 55)
+
+    def test_apply_async_eager_clone_chord(self):
+        self.app.conf.CELERY_ALWAYS_EAGER = True
+        x = chord([self.sub.s(i) for i in range(10)], body=self.xsum.s())
+        clone = x.clone([10])
+        r = clone.apply_async()
         self.assertEqual(r.get(), 55)

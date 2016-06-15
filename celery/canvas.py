@@ -638,14 +638,16 @@ class chord(Signature):
                 if args and not self.immutable else self.args)
         body = kwargs.get('body') or self.kwargs['body']
         kwargs = dict(self.kwargs, **kwargs)
-        partial_args = (
-            tuple(partial_args) + tuple(self.kwargs.get('partial_args', ())))
         body = body.clone(**options)
 
         _chord = self.type
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
             return self.apply(partial_args, args, kwargs,
                               task_id=task_id, **options)
+        # If not eagerly executed, we'd need to have previous partial_args to
+        # hand over to the chord task.
+        partial_args = (
+            tuple(partial_args) + tuple(self.kwargs.get('partial_args', ())))
         res = body.freeze(task_id)
         parent = _chord(self.tasks, body, partial_args, **options)
         res.parent = parent
