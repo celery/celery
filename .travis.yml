@@ -18,7 +18,7 @@ env:
     - TOXENV=configcheck
 before_install:
     - |
-          if [ "$TRAVIS_PYTHON_VERSION" = "pypy" ]; then
+          if [ "$TOXENV" = "pypy" ]; then
             export PYENV_ROOT="$HOME/.pyenv"
             if [ -f "$PYENV_ROOT/bin/pyenv" ]; then
               cd "$PYENV_ROOT" && git pull
