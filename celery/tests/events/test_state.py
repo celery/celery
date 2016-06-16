@@ -353,7 +353,10 @@ class test_State(AppCase):
         self.assertTrue(repr(State()))
 
     def test_pickleable(self):
-        self.assertTrue(pickle.loads(pickle.dumps(State())))
+        state = State()
+        r = ev_logical_clock_ordering(state)
+        r.play()
+        self.assertTrue(pickle.loads(pickle.dumps(state)))
 
     def test_task_logical_clock_ordering(self):
         state = State()
