@@ -43,10 +43,10 @@ REVOKES_MAX = 50000
 REVOKE_EXPIRES = 10800
 
 #: Mapping of reserved task_id->Request.
-requests = weakref.WeakValueDictionary()
+requests = {}
 
 #: set of all reserved :class:`~celery.worker.request.Request`'s.
-reserved_requests = set()
+reserved_requests = weakref.WeakSet()
 
 #: set of currently active :class:`~celery.worker.request.Request`'s.
 active_requests = weakref.WeakSet()
@@ -65,9 +65,9 @@ should_terminate = None
 
 
 def reset_state():
+    requests.clear()
     reserved_requests.clear()
     active_requests.clear()
-    requests.clear()
     total_count.clear()
     all_total_count[:] = [0]
     revoked.clear()
