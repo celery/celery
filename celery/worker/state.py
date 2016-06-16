@@ -42,6 +42,7 @@ REVOKES_MAX = 50000
 #: being expired when the max limit has been exceeded.
 REVOKE_EXPIRES = 10800
 
+#: Mapping of reserved task_id->Request.
 requests = weakref.WeakValueDictionary()
 
 #: set of all reserved :class:`~celery.worker.request.Request`'s.
