@@ -313,7 +313,7 @@ Flower has many more features than are detailed here, including
 authorization options. Check out the `official documentation`_ for more
 information.
 
-.. _official documentation: http://flower.readthedocs.org/en/latest/
+.. _official documentation: https://flower.readthedocs.io/en/latest/
 
 
 .. _monitoring-celeryev:

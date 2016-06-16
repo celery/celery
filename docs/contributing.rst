@@ -962,7 +962,7 @@ Messaging library.
 :CI: http://travis-ci.org/#!/celery/kombu
 :Windows-CI: https://ci.appveyor.com/project/ask/kombu
 :PyPI: http://pypi.python.org/pypi/kombu
-:docs: http://kombu.readthedocs.org
+:docs: https://kombu.readthedocs.io
 
 ``amqp``
 --------
@@ -973,7 +973,7 @@ Python AMQP 0.9.1 client.
 :CI: http://travis-ci.org/#!/celery/py-amqp
 :Windows-CI: https://ci.appveyor.com/project/ask/py-amqp
 :PyPI: http://pypi.python.org/pypi/amqp
-:docs: http://amqp.readthedocs.org
+:docs: https://amqp.readthedocs.io
 
 ``vine``
 --------
@@ -984,7 +984,7 @@ Promise/deferred implementation.
 :CI: http://travis-ci.org/#!/celery/vine/
 :Windows-CI: https://ci.appveyor.com/project/ask/vine
 :PyPI: http://pypi.python.org/pypi/vine
-:docs: http://vine.readthedocs.org
+:docs: https://vine.readthedocs.io
 
 ``billiard``
 ------------
@@ -1029,7 +1029,7 @@ Distributed Celery Instance manager.
 
 :git: https://github.com/celery/cyme
 :PyPI: http://pypi.python.org/pypi/cyme
-:docs: http://cyme.readthedocs.org/
+:docs: https://cyme.readthedocs.io/
 
 
 Deprecated
