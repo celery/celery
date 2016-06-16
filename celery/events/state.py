@@ -620,7 +620,7 @@ class State(object):
 
     def alive_workers(self):
         """Return a list of (seemingly) alive workers."""
-        return [w for w in values(self.workers) if w.alive]
+        return (w for w in values(self.workers) if w.alive)
 
     def __repr__(self):
         return R_STATE.format(self)

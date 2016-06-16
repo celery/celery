@@ -107,7 +107,7 @@ class Gossip(bootsteps.ConsumerStep):
             replies = self.consensus_replies[id]
         except KeyError:
             return  # not for us
-        alive_workers = self.state.alive_workers()
+        alive_workers = set(self.state.alive_workers())
         replies.append(event['hostname'])
 
         if len(replies) >= len(alive_workers):

@@ -430,10 +430,10 @@ class test_State(AppCase):
     def test_worker_online_offline(self):
         r = ev_worker_online_offline(State())
         next(r)
-        self.assertTrue(r.state.alive_workers())
+        self.assertTrue(list(r.state.alive_workers()))
         self.assertTrue(r.state.workers['utest1'].alive)
         r.play()
-        self.assertFalse(r.state.alive_workers())
+        self.assertFalse(list(r.state.alive_workers()))
         self.assertFalse(r.state.workers['utest1'].alive)
 
     def test_itertasks(self):
@@ -444,10 +444,10 @@ class test_State(AppCase):
     def test_worker_heartbeat_expire(self):
         r = ev_worker_heartbeats(State())
         next(r)
-        self.assertFalse(r.state.alive_workers())
+        self.assertFalse(list(r.state.alive_workers()))
         self.assertFalse(r.state.workers['utest1'].alive)
         r.play()
-        self.assertTrue(r.state.alive_workers())
+        self.assertTrue(list(r.state.alive_workers()))
         self.assertTrue(r.state.workers['utest1'].alive)
 
     def test_task_states(self):
@@ -596,7 +596,7 @@ class test_State(AppCase):
     def test_alive_workers(self):
         r = ev_snapshot(State())
         r.play()
-        self.assertEqual(len(r.state.alive_workers()), 3)
+        self.assertEqual(len(list(r.state.alive_workers())), 3)
 
     def test_tasks_by_worker(self):
         r = ev_snapshot(State())
