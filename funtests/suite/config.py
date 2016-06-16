@@ -14,6 +14,7 @@ queues = {'testcelery': {'routing_key': 'testcelery'}}
 
 log_color = False
 
+
 @atexit.register
 def teardown_testdb():
     import os

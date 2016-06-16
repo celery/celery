@@ -17,8 +17,14 @@ from importlib import import_module
 from types import ModuleType
 
 # extends vine.five
+from vine import five
 from vine.five import *  # noqa
 from vine.five import __all__ as _all_five
+
+# bloody flake8
+items = five.items
+bytes_if_py2 = five.bytes_if_py2
+string_t = five.string_t
 
 try:
     from functools import reduce

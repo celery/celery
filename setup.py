@@ -144,6 +144,7 @@ with open(os.path.join(here, 'celery/__init__.py')) as meta_fh:
 
 # -*- Installation Requires -*-
 
+
 def strip_comments(l):
     return l.split('#', 1)[0].strip()
 

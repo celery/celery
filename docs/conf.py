@@ -61,6 +61,7 @@ ignored_settings = {
     'worker_force_execv',
 }
 
+
 def configcheck_project_settings():
     from celery.app.defaults import NAMESPACES, flatten
     settings.update(dict(flatten(NAMESPACES)))
