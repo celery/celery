@@ -593,6 +593,9 @@ class test_State(AppCase):
         self.assertEqual(len(list(r.state.tasks_by_type('task1'))), 10)
         self.assertEqual(len(list(r.state.tasks_by_type('task2'))), 10)
 
+        self.assertEqual(len(r.state.tasks_by_type['task1']), 10)
+        self.assertEqual(len(r.state.tasks_by_type['task2']), 10)
+
     def test_alive_workers(self):
         r = ev_snapshot(State())
         r.play()
@@ -603,6 +606,9 @@ class test_State(AppCase):
         r.play()
         self.assertEqual(len(list(r.state.tasks_by_worker('utest1'))), 10)
         self.assertEqual(len(list(r.state.tasks_by_worker('utest2'))), 10)
+
+        self.assertEqual(len(r.state.tasks_by_worker['utest1']), 10)
+        self.assertEqual(len(r.state.tasks_by_worker['utest2']), 10)
 
     def test_survives_unknown_worker_event(self):
         s = State()
