@@ -71,3 +71,8 @@ For this reason your tasks run-time should not exceed the timeout.
                 return Feed.objects.import_feed(feed_url).url
         logger.debug(
             'Feed %s is already being imported by another worker', feed_url)
+
+
+Note that in order for this to work correctly you need to be using a cache
+backend that supports an atomic ``.add`` operation.  ``memcached`` is known
+to work well for this purpose.
