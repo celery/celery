@@ -444,7 +444,7 @@ class SyncBackendMixin(object):
             if timeout and time_elapsed >= timeout:
                 raise TimeoutError('The operation timed out.')
 
-    def add_pending_result(self, result):
+    def add_pending_result(self, result, weak=False):
         return result
 
     def remove_pending_result(self, result):

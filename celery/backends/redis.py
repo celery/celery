@@ -146,7 +146,8 @@ class RedisBackend(base.BaseKeyValueStoreBackend, async.AsyncBackendMixin):
             get_redis_error_classes() if get_redis_error_classes
             else ((), ()))
         self.result_consumer = self.ResultConsumer(
-            self, self.app, self.accept, self._pending_results)
+            self, self.app, self.accept,
+            self._pending_results, self._weak_pending_results)
 
     def _params_from_url(self, url, defaults):
         scheme, host, port, user, password, path, query = _parse_url(url)
