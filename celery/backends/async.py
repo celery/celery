@@ -130,14 +130,23 @@ class AsyncBackendMixin(object):
             node = bucket.popleft()
             yield node.id, node._cache
 
-    def add_pending_result(self, result):
-        if result.id not in self._pending_results:
-            self._pending_results[result.id] = result
+    def add_pending_result(self, result, weak=False):
+        if weak:
+            dest, alt = self._weak_pending_results, self._pending_results
+        else:
+            dest, alt = self._pending_results, self._weak_pending_results
+        if result.id not in dest and result.id not in alt:
+            dest[result.id] = result
             self.result_consumer.consume_from(result.id)
         return result
 
+    def add_pending_results(self, results, weak=False):
+        return [self.add_pending_result(result, weak=weak)
+                for result in results]
+
     def remove_pending_result(self, result):
         self._pending_results.pop(result.id, None)
+        self._weak_pending_results.pop(result.id, None)
         self.on_result_fulfilled(result)
         return result
 
@@ -166,11 +175,13 @@ class AsyncBackendMixin(object):
 
 class BaseResultConsumer(object):
 
-    def __init__(self, backend, app, accept, pending_results):
+    def __init__(self, backend, app, accept, pending_results,
+                 weak_pending_results):
         self.backend = backend
         self.app = app
         self.accept = accept
         self._pending_results = pending_results
+        self._weak_pending_results = weak_pending_results
         self.on_message = None
         self.buckets = WeakKeyDictionary()
         self.drainer = drainers[detect_environment()](self)
@@ -232,7 +243,10 @@ class BaseResultConsumer(object):
             try:
                 result = self._pending_results[meta['task_id']]
             except KeyError:
-                return
+                try:
+                    result = self._weak_pending_results[meta['task_id']]
+                except KeyError:
+                    return
             result._maybe_set_cache(meta)
             buckets = self.buckets
             try:

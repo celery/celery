@@ -17,6 +17,7 @@ import sys
 import time
 
 from datetime import timedelta
+from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
 from kombu.serialization import (
@@ -109,6 +110,7 @@ class Backend(object):
             conf.accept_content if accept is None else accept,
         )
         self._pending_results = {}
+        self._weak_pending_results = WeakValueDictionary()
         self.url = url
 
     def as_uri(self, include_password=False):

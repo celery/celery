@@ -753,9 +753,16 @@ class group(Signature):
                 sig.apply_async(producer=producer, add_to_parent=False,
                                 chord=sig.options.get('chord') or chord,
                                 **options)
-                if p:
-                    p.add(res)
-                    res.backend.add_pending_result(res)
+
+                # adding callback to result, such that it will gradually
+                # fulfill the barrier.
+                #
+                # Using barrier.add would use result.then, but we need
+                # to add the weak argument here to only create a weak
+                # reference to the object.
+                if p and not p.cancelled and not p.ready:
+                    p.size += 1
+                    res.then(p, weak=True)
                 yield res  # <-- r.parent, etc set in the frozen result.
 
     def _freeze_gid(self, options):

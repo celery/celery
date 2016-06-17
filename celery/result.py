@@ -100,8 +100,8 @@ class AsyncResult(ResultBase):
         self.on_ready = promise(self._on_fulfilled)
         self._cache = None
 
-    def then(self, callback, on_error=None):
-        self.backend.add_pending_result(self)
+    def then(self, callback, on_error=None, weak=False):
+        self.backend.add_pending_result(self, weak=weak)
         return self.on_ready.then(callback, on_error)
 
     def _on_fulfilled(self, result):
@@ -342,9 +342,6 @@ class AsyncResult(ResultBase):
 
     def __reduce_args__(self):
         return self.id, self.backend, None, None, self.parent
-
-    def __del__(self):
-        self._cache = None
 
     @cached_property
     def graph(self):
@@ -903,9 +900,6 @@ class EagerResult(AsyncResult):
 
     def _get_task_meta(self):
         return self._cache
-
-    def __del__(self):
-        pass
 
     def __reduce__(self):
         return self.__class__, self.__reduce_args__()
