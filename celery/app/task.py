@@ -373,7 +373,7 @@ class Task(object):
         :param \*args: positional arguments passed on to the task.
         :param \*\*kwargs: keyword arguments passed on to the task.
 
-        :returns :class:`celery.result.AsyncResult`:
+        :returns: :class:`celery.result.AsyncResult`
 
         """
         return self.apply_async(args, kwargs)
