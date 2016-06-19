@@ -1622,7 +1622,8 @@ blog/tasks.py
 
         comment = Comment.objects.get(pk=comment_id)
         current_domain = Site.objects.get_current().domain
-        akismet = Akismet(settings.AKISMET_KEY, 'http://{0}'.format(domain))
+        akismet = Akismet(settings.AKISMET_KEY,
+                          'http://{0}'.format(current_domain))
         if not akismet.verify_key():
             raise ImproperlyConfigured('Invalid AKISMET_KEY')
 
