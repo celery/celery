@@ -1751,7 +1751,8 @@ Default (since 2.5) is to use a pool of 10 connections.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The default timeout in seconds before we give up establishing a connection
-to the AMQP server.  Default is 4 seconds.
+to the AMQP server.  Default is 4 seconds. This setting is disabled when using
+gevent.
 
 .. setting:: broker_connection_retry
 
