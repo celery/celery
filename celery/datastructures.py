@@ -944,7 +944,9 @@ class BufferMapping(OrderedDict, Evictable):
     def __init__(self, maxsize, iterable=None, bufmaxsize=1000):
         self.maxsize = maxsize
         self.bufmaxsize = 1000
-        super(BufferMapping, self).__init__(iterable or ())
+        super(BufferMapping, self).__init__()
+        if iterable:
+            self.update(iterable)
         self.total = sum(len(buf) for buf in values(self))
 
     def pop(self, key, *default):
