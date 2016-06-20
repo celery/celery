@@ -18,7 +18,7 @@ from kombu.utils import cached_property
 
 from celery import states
 from celery.exceptions import TimeoutError
-from celery.five import monotonic
+from celery.five import Empty, monotonic
 
 drainers = {}
 
@@ -131,6 +131,13 @@ class AsyncBackendMixin(object):
             yield node.id, node._cache
 
     def add_pending_result(self, result, weak=False):
+        try:
+            meta = self._pending_messages.pop(result.id)
+        except Empty:
+            pass
+        else:
+            result._maybe_set_cache(meta)
+            return result
         if weak:
             dest, alt = self._weak_pending_results, self._pending_results
         else:
@@ -175,13 +182,15 @@ class AsyncBackendMixin(object):
 
 class BaseResultConsumer(object):
 
-    def __init__(self, backend, app, accept, pending_results,
-                 weak_pending_results):
+    def __init__(self, backend, app, accept,
+                 pending_results, weak_pending_results,
+                 pending_messages):
         self.backend = backend
         self.app = app
         self.accept = accept
         self._pending_results = pending_results
         self._weak_pending_results = weak_pending_results
+        self._pending_messages = pending_messages
         self.on_message = None
         self.buckets = WeakKeyDictionary()
         self.drainer = drainers[detect_environment()](self)
@@ -240,13 +249,15 @@ class BaseResultConsumer(object):
         if self.on_message:
             self.on_message(meta)
         if meta['status'] in states.READY_STATES:
+            task_id = meta['task_id']
             try:
-                result = self._pending_results[meta['task_id']]
+                result = self._pending_results[task_id]
             except KeyError:
                 try:
-                    result = self._weak_pending_results[meta['task_id']]
+                    result = self._weak_pending_results[task_id]
                 except KeyError:
-                    return
+                    # send to BufferMapping
+                    self._pending_messages.append(task_id, meta)
             result._maybe_set_cache(meta)
             buckets = self.buckets
             try:

@@ -12,16 +12,17 @@ import sys
 import time
 
 from collections import (
-    Callable, Mapping, MutableMapping, MutableSet, defaultdict,
+    Callable, Mapping, MutableMapping, MutableSet, Sequence,
+    OrderedDict as _OrderedDict, defaultdict, deque,
 )
 from heapq import heapify, heappush, heappop
-from itertools import chain
+from itertools import chain, count
 
 from billiard.einfo import ExceptionInfo  # noqa
 from kombu.utils.encoding import safe_str, bytes_to_str
 from kombu.utils.limits import TokenBucket  # noqa
 
-from celery.five import items, python_2_unicode_compatible, values
+from celery.five import Empty, items, python_2_unicode_compatible, values
 from celery.utils.functional import LRUCache, first, uniq  # noqa
 from celery.utils.text import match_case
 
@@ -815,3 +816,207 @@ class LimitedSet(object):
         """Compute how much is heap bigger than data [percents]."""
         return len(self._heap) * 100 / max(len(self._data), 1) - 100
 MutableSet.register(LimitedSet)
+
+
+if not hasattr(_OrderedDict, 'move_to_end'):
+
+    class OrderedDict(_OrderedDict):
+        def move_to_end(self, key, last=True):
+            link = self._OrderedDict__map[key]
+            link_prev = link[0]
+            link_next = link[1]
+            link_prev[1] = link_next
+            link_next[0] = link_prev
+            root = self._OrderedDict__root
+            if last:
+                last = root[0]
+                link[0] = last
+                link[1] = root
+                last[1] = root[0] = link
+            else:
+                first = root[1]
+                link[0] = root
+                link[1] = first
+                root[1] = first[0] = link
+
+        def _LRUkey(self):
+            return self._OrderedDict__root[1][2]
+
+else:  # pragma: no cover
+
+    class OrderedDict(object):  # noqa
+
+        def _LRUkey(self):
+            return self._OrderedDict__root.next.key
+
+
+class Evictable(object):
+
+    Empty = Empty
+
+    def evict(self):
+        """Force evict until maxsize is enforced."""
+        self._evict(range=count)
+
+    def _evict(self, limit=100, range=range):
+        try:
+            [self._evict1() for _ in range(limit)]
+        except IndexError:
+            pass
+
+    def _evict1(self):
+        if self._evictcount <= self.maxsize:
+            raise IndexError()
+        try:
+            self._pop_to_evict()
+        except self.Empty:
+            raise IndexError()
+
+
+class Messagebuffer(Evictable):
+
+    Empty = Empty
+
+    def __init__(self, maxsize, iterable=None, deque=deque):
+        self.maxsize = maxsize
+        self.data = deque(iterable or [])
+        self._append = self.data.append
+        self._pop = self.data.popleft
+        self._len = self.data.__len__
+        self._extend = self.data.extend
+
+    def append(self, item):
+        self._append(item)
+        self.maxsize and self._evict()
+
+    def extend(self, it):
+        self._extend(it)
+        self.maxsize and self._evict()
+
+    def pop(self, *default):
+        try:
+            return self._pop()
+        except IndexError:
+            if default:
+                return default[0]
+            raise self.Empty()
+
+    def _pop_to_evict(self):
+        return self.pop()
+
+    def __repr__(self):
+        return '<{0}: {1}/{2}>'.format(
+            type(self).__name__, len(self), self.maxsize,
+        )
+
+    def __iter__(self):
+        while 1:
+            try:
+                yield self._pop()
+            except IndexError:
+                break
+
+    def __len__(self):
+        return self._len()
+
+    def __contains__(self, item):
+        return item in self.data
+
+    def __reversed__(self):
+        return reversed(self.data)
+
+    def __getitem__(self, index):
+        return self.data[index]
+
+    @property
+    def _evictcount(self):
+        return len(self)
+Sequence.register(Messagebuffer)
+
+
+class BufferMapping(OrderedDict, Evictable):
+
+    Buffer = Messagebuffer
+    Empty = Empty
+
+    maxsize = None
+
+    def __init__(self, maxsize, iterable=None, bufmaxsize=1000):
+        self.maxsize = maxsize
+        self.bufmaxsize = 1000
+        super(BufferMapping, self).__init__(iterable or ())
+        self.total = sum(len(buf) for buf in values(self))
+
+    def pop(self, key, *default):
+        item, throw = None, False
+        try:
+            buf = self[key]
+        except KeyError:
+            throw = True
+        else:
+            try:
+                item = buf.pop()
+                self.total -= 1
+            except self.Empty:
+                throw = True
+            else:
+                self.move_to_end(key)  # least recently used.
+
+        if throw:
+            if default:
+                return default[0]
+            raise self.Empty()
+        return item
+
+    def get_or_create(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            buf = self[key] = self.Buffer(maxsize=self.bufmaxsize)
+            return buf
+
+    def discard(self, key, *default):
+        super(BufferMapping, self).pop(key, *default)
+
+    def _LRUpop(self, *default):
+        return self[self._LRUkey()].pop(*default)
+
+    def _pop_to_evict(self):
+        for i in range(100):
+            key = self._LRUkey()
+            buf = self[key]
+            try:
+                buf.pop()
+            except (IndexError, self.Empty):
+                # buffer empty, remove it from mapping.
+                self.discard(key)
+            else:
+                # we removed one item
+                self.total -= 1
+                # if buffer is empty now, remove it from mapping.
+                if not len(buf):
+                    self.discard(key)
+                else:
+                    # move to least recently used.
+                    self.move_to_end(key)
+                break
+
+    def append(self, key, item):
+        self.get_or_create(key).append(item)
+        self.total += 1
+        self.move_to_end(key)   # least recently used.
+        self.maxsize and self._evict()
+
+    def extend(self, key, it):
+        self.get_or_create(key).extend(it)
+        self.total += len(it)
+        self.maxsize and self._evict()
+
+    def __repr__(self):
+        return '<{0}: {1}/{2}>'.format(
+            type(self).__name__, self.total, self.maxsize,
+        )
+
+    @property
+    def _evictcount(self):
+        return self.total

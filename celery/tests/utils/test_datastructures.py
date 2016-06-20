@@ -9,11 +9,13 @@ from billiard.einfo import ExceptionInfo
 from time import time
 
 from celery.datastructures import (
-    LimitedSet,
     AttributeDict,
-    DictAttribute,
+    BufferMapping,
     ConfigurationView,
     DependencyGraph,
+    DictAttribute,
+    LimitedSet,
+    Messagebuffer,
 )
 from celery.five import WhateverIO, items
 from celery.utils.objects import Bunch
@@ -419,3 +421,116 @@ class test_DependencyGraph(Case):
         s = WhateverIO()
         self.graph1().to_dot(s)
         self.assertTrue(s.getvalue())
+
+
+class test_Messagebuffer(Case):
+
+    def assert_size_and_first(self, buf, size, expected_first_item):
+        self.assertEqual(len(buf), size)
+        self.assertEqual(buf.pop(), expected_first_item)
+
+    def test_append_limited(self):
+        b = Messagebuffer(10)
+        for i in range(20):
+            b.append(i)
+        self.assert_size_and_first(b, 10, 10)
+
+    def test_append_unlimited(self):
+        b = Messagebuffer(None)
+        for i in range(20):
+            b.append(i)
+        self.assert_size_and_first(b, 20, 0)
+
+    def test_extend_limited(self):
+        b = Messagebuffer(10)
+        b.extend(list(range(20)))
+        self.assert_size_and_first(b, 10, 10)
+
+    def test_extend_unlimited(self):
+        b = Messagebuffer(None)
+        b.extend(list(range(20)))
+        self.assert_size_and_first(b, 20, 0)
+
+    def test_extend_eviction_time_limited(self):
+        b = Messagebuffer(3000)
+        b.extend(range(10000))
+        self.assertGreater(len(b), 3000)
+        b.evict()
+        self.assertEqual(len(b), 3000)
+
+    def test_pop_empty_with_default(self):
+        b = Messagebuffer(10)
+        sentinel = object()
+        self.assertIs(b.pop(sentinel), sentinel)
+
+    def test_pop_empty_no_default(self):
+        b = Messagebuffer(10)
+        with self.assertRaises(b.Empty):
+            b.pop()
+
+    def test_repr(self):
+        self.assertTrue(repr(Messagebuffer(10, [1, 2, 3])))
+
+    def test_iter(self):
+        b = Messagebuffer(10, list(range(10)))
+        self.assertEqual(len(b), 10)
+        for i, item in enumerate(b):
+            self.assertEqual(item, i)
+        self.assertEqual(len(b), 0)
+
+    def test_contains(self):
+        b = Messagebuffer(10, list(range(10)))
+        self.assertIn(5, b)
+
+    def test_reversed(self):
+        self.assertEqual(
+            list(reversed(Messagebuffer(10, list(range(10))))),
+            list(reversed(range(10))),
+        )
+
+    def test_getitem(self):
+        b = Messagebuffer(10, list(range(10)))
+        for i in range(10):
+            self.assertEqual(b[i], i)
+
+
+class test_BufferMapping(Case):
+
+    def test_append_limited(self):
+        b = BufferMapping(10)
+        for i in range(20):
+            b.append(i, i)
+        self.assert_size_and_first(b, 10, 10)
+
+    def assert_size_and_first(self, buf, size, expected_first_item):
+        self.assertEqual(buf.total, size)
+        self.assertEqual(buf._LRUpop(), expected_first_item)
+
+    def test_append_unlimited(self):
+        b = BufferMapping(None)
+        for i in range(20):
+            b.append(i, i)
+        self.assert_size_and_first(b, 20, 0)
+
+    def test_extend_limited(self):
+        b = BufferMapping(10)
+        b.extend(1, list(range(20)))
+        self.assert_size_and_first(b, 10, 10)
+
+    def test_extend_unlimited(self):
+        b = BufferMapping(None)
+        b.extend(1, list(range(20)))
+        self.assert_size_and_first(b, 20, 0)
+
+    def test_pop_empty_with_default(self):
+        b = BufferMapping(10)
+        sentinel = object()
+        self.assertIs(b.pop(1, sentinel), sentinel)
+
+    def test_pop_empty_no_default(self):
+        b = BufferMapping(10)
+        with self.assertRaises(b.Empty):
+            b.pop(1)
+
+    def test_repr(self):
+        self.assertTrue(repr(Messagebuffer(10, [1, 2, 3])))

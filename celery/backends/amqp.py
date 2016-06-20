@@ -135,7 +135,9 @@ class AMQPBackend(base.Backend, AsyncBackendMixin):
         })
         self.result_consumer = self.ResultConsumer(
             self, self.app, self.accept,
-            self._pending_results, self._weak_pending_results)
+            self._pending_results, self._weak_pending_results,
+            self._pending_messages,
+        )
         if register_after_fork is not None:
             register_after_fork(self, _on_after_fork_cleanup_backend)
 
