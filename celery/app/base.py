@@ -729,7 +729,7 @@ class Celery(object):
         :keyword failover_strategy: Custom failover strategy.
         :keyword \*\*kwargs: Additional arguments to :class:`kombu.Connection`.
 
-        :returns :class:`kombu.Connection`:
+        :returns: :class:`kombu.Connection`
 
         """
         return self.connection_for_write(

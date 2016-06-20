@@ -81,7 +81,7 @@ This is an example configuration for a Python project.
     #   most people will only start one node:
     CELERYD_NODES="worker1"
     #   but you can also start multiple and configure settings
-    #   for each in CELERYD_OPTS (see `celery multi --help` for examples):
+    #   for each in CELERYD_OPTS
     #CELERYD_NODES="worker1 worker2 worker3"
     #   alternatively, you can specify the number of nodes to start:
     #CELERYD_NODES=10
@@ -101,6 +101,8 @@ This is an example configuration for a Python project.
 
     # Extra command-line arguments to the worker
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
+    # Configure node-specific settings by appending node name to arguments:
+    #CELERYD_OPTS="--time-limit=300 -c 8 -c:worker2 4 -c:worker3 2 -Ofair:worker1"
 
     # Set logging level to DEBUG
     #CELERYD_LOG_LEVEL="DEBUG"

@@ -26,7 +26,7 @@ def mro_lookup(cls, attr, stop=set(), monkey_patched=[]):
         attributes module origin is not in this list, this to detect
         monkey patched attributes.
 
-    :returns None: if the attribute was not found.
+    :returns: None if the attribute was not found.
 
     """
     for node in cls.mro():
