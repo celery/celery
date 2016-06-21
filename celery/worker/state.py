@@ -103,7 +103,7 @@ def task_ready(request,
                discard_active_request=active_requests.discard,
                discard_reserved_request=reserved_requests.discard):
     """Updates global state when a task is ready."""
-    remove_request(request, None)
+    remove_request(request.id, None)
     discard_active_request(request)
     discard_reserved_request(request)
 
