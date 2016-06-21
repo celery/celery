@@ -30,7 +30,7 @@ from kombu.utils.url import maybe_sanitize_url
 from celery import states
 from celery import current_app, group, maybe_signature
 from celery.app import current_task
-from celery.datastructures import BufferMapping
+from celery.datastructures import BufferMap
 from celery.exceptions import ChordError, TimeoutError, TaskRevokedError
 from celery.five import items
 from celery.result import (
@@ -114,7 +114,7 @@ class Backend(object):
         )
         self._pending_results = {}
         self._weak_pending_results = WeakValueDictionary()
-        self._pending_messages = BufferMapping(MESSAGE_BUFFER_MAX)
+        self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
         self.url = url
 
     def as_uri(self, include_password=False):

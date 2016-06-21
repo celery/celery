@@ -938,7 +938,7 @@ Sequence.register(Messagebuffer)
 
 
 @python_2_unicode_compatible
-class BufferMapping(OrderedDict, Evictable):
+class BufferMap(OrderedDict, Evictable):
 
     Buffer = Messagebuffer
     Empty = Empty
@@ -948,7 +948,7 @@ class BufferMapping(OrderedDict, Evictable):
     bufmaxsize = None
 
     def __init__(self, maxsize, iterable=None, bufmaxsize=1000):
-        super(BufferMapping, self).__init__()
+        super(BufferMap, self).__init__()
         self.maxsize = maxsize
         self.bufmaxsize = 1000
         if iterable:
@@ -984,7 +984,7 @@ class BufferMapping(OrderedDict, Evictable):
             return buf
 
     def discard(self, key, *default):
-        super(BufferMapping, self).pop(key, *default)
+        super(BufferMap, self).pop(key, *default)
 
     def _LRUpop(self, *default):
         return self[self._LRUkey()].pop(*default)
