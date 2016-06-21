@@ -135,15 +135,13 @@ class AMQPBackend(base.Backend, AsyncBackendMixin):
         })
         self.result_consumer = self.ResultConsumer(
             self, self.app, self.accept,
-            self._pending_results, self._weak_pending_results,
-            self._pending_messages,
+            self._pending_results, self._pending_messages,
         )
         if register_after_fork is not None:
             register_after_fork(self, _on_after_fork_cleanup_backend)
 
     def _after_fork(self):
         self._pending_results.clear()
-        self._weak_pending_results.clear()
         self.result_consumer._after_fork()
 
     def _create_exchange(self, name, type='direct', delivery_mode=2):

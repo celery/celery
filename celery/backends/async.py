@@ -132,30 +132,32 @@ class AsyncBackendMixin(object):
 
     def add_pending_result(self, result, weak=False):
         try:
-            meta = self._pending_messages.pop(result.id)
+            self._maybe_resolve_from_buffer(result)
         except Empty:
-            pass
-        else:
-            result._maybe_set_cache(meta)
-            return result
-        if weak:
-            dest, alt = self._weak_pending_results, self._pending_results
-        else:
-            dest, alt = self._pending_results, self._weak_pending_results
-        if result.id not in dest and result.id not in alt:
-            dest[result.id] = result
-            self.result_consumer.consume_from(result.id)
+            self._add_pending_result(result.id, result, weak=weak)
         return result
+
+    def _maybe_resolve_from_buffer(self, result):
+        result._maybe_set_cache(self._pending_messages.pop(result.id))
+
+    def _add_pending_result(self, task_id, result, weak=False):
+        weak, concrete = self._pending_results
+        if task_id not in weak and result.id not in concrete:
+            (weak if weak else concrete)[task_id] = result
+            self.result_consumer.consume_from(task_id)
 
     def add_pending_results(self, results, weak=False):
         return [self.add_pending_result(result, weak=weak)
                 for result in results]
 
     def remove_pending_result(self, result):
-        self._pending_results.pop(result.id, None)
-        self._weak_pending_results.pop(result.id, None)
+        self._remove_pending_result(result.id)
         self.on_result_fulfilled(result)
         return result
+
+    def _remove_pending_result(self, task_id):
+        for map in self._pending_results:
+            map.pop(task_id, None)
 
     def on_result_fulfilled(self, result):
         self.result_consumer.cancel_for(result.id)
@@ -183,13 +185,11 @@ class AsyncBackendMixin(object):
 class BaseResultConsumer(object):
 
     def __init__(self, backend, app, accept,
-                 pending_results, weak_pending_results,
-                 pending_messages):
+                 pending_results, pending_messages):
         self.backend = backend
         self.app = app
         self.accept = accept
         self._pending_results = pending_results
-        self._weak_pending_results = weak_pending_results
         self._pending_messages = pending_messages
         self.on_message = None
         self.buckets = WeakKeyDictionary()
@@ -245,23 +245,30 @@ class BaseResultConsumer(object):
     def on_out_of_band_result(self, message):
         self.on_state_change(message.payload, message)
 
+    def _get_pending_result(self, task_id):
+        for mapping in self._pending_results:
+            try:
+                return mapping[task_id]
+            except KeyError:
+                pass
+        raise KeyError(task_id)
+
     def on_state_change(self, meta, message):
         if self.on_message:
             self.on_message(meta)
         if meta['status'] in states.READY_STATES:
             task_id = meta['task_id']
             try:
-                result = self._pending_results[task_id]
+                result = self._get_pending_result(task_id)
             except KeyError:
+                # send to buffer in case we received this result
+                # before it was added to _pending_results.
+                self._pending_messages.append(task_id, meta)
+            else:
+                result._maybe_set_cache(meta)
+                buckets = self.buckets
                 try:
-                    result = self._weak_pending_results[task_id]
+                    buckets.pop(result)
                 except KeyError:
-                    # send to BufferMapping
-                    self._pending_messages.append(task_id, meta)
-            result._maybe_set_cache(meta)
-            buckets = self.buckets
-            try:
-                buckets.pop(result)
-            except KeyError:
-                pass
+                    pass
         sleep(0)

@@ -16,6 +16,7 @@ from __future__ import absolute_import, unicode_literals
 import sys
 import time
 
+from collections import namedtuple
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
@@ -52,6 +53,10 @@ PY3 = sys.version_info >= (3, 0)
 logger = get_logger(__name__)
 
 MESSAGE_BUFFER_MAX = 8192
+
+pending_results_t = namedtuple('pending_results_t', (
+    'concrete', 'weak',
+))
 
 
 def unpickle_backend(cls, args, kwargs):
@@ -112,8 +117,7 @@ class Backend(object):
         self.accept = prepare_accept_content(
             conf.accept_content if accept is None else accept,
         )
-        self._pending_results = {}
-        self._weak_pending_results = WeakValueDictionary()
+        self._pending_results = pending_results_t({}, WeakValueDictionary())
         self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
         self.url = url
 
