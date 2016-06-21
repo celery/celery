@@ -245,6 +245,11 @@ def _argsfromspec(spec, replace_defaults=True):
 
 
 def head_from_fun(fun, bound=False, debug=False):
+    # we could use inspect.Signature here, but that implementation
+    # is very slow since it implements the argument checking
+    # in pure-Python.  Instead we use exec to create a new function
+    # with an empty body, meaning it has the same performance as
+    # as just calling a function.
     if not isfunction(fun) and hasattr(fun, '__call__'):
         name, fun = fun.__class__.__name__, fun.__call__
     else:
