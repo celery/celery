@@ -117,7 +117,7 @@ class Settings(ConfigurationView):
     def without_defaults(self):
         """Return the current configuration, but without defaults."""
         # the last stash is the default settings, so just skip that
-        return Settings({}, self._order[:-1])
+        return Settings({}, self.maps[:-1])
 
     def value_set_for(self, key):
         return key in self.without_defaults()

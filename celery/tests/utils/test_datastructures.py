@@ -131,7 +131,7 @@ class test_ConfigurationView(Case):
 
     def test_bool(self):
         self.assertTrue(bool(self.view))
-        self.view._order[:] = []
+        self.view.maps[:] = []
         self.assertFalse(bool(self.view))
 
     def test_len(self):
