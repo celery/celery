@@ -844,10 +844,12 @@ if not hasattr(_OrderedDict, 'move_to_end'):
 
 else:  # pragma: no cover
 
-    class OrderedDict(object):  # noqa
+    class OrderedDict(_OrderedDict):  # noqa
 
         def _LRUkey(self):
-            return self._OrderedDict__root.next.key
+            # return value of od.keys does not support __next__,
+            # but this version will also not create a copy of the list.
+            return next(iter(self.keys()))
 
 
 class Evictable(object):
@@ -873,6 +875,7 @@ class Evictable(object):
             raise IndexError()
 
 
+@python_2_unicode_compatible
 class Messagebuffer(Evictable):
 
     Empty = Empty
@@ -934,20 +937,23 @@ class Messagebuffer(Evictable):
 Sequence.register(Messagebuffer)
 
 
+@python_2_unicode_compatible
 class BufferMapping(OrderedDict, Evictable):
 
     Buffer = Messagebuffer
     Empty = Empty
 
     maxsize = None
+    total = 0
+    bufmaxsize = None
 
     def __init__(self, maxsize, iterable=None, bufmaxsize=1000):
+        super(BufferMapping, self).__init__()
         self.maxsize = maxsize
         self.bufmaxsize = 1000
-        super(BufferMapping, self).__init__()
         if iterable:
             self.update(iterable)
-        self.total = sum(len(buf) for buf in values(self))
+        self.total = sum(len(buf) for buf in items(self))
 
     def pop(self, key, *default):
         item, throw = None, False
