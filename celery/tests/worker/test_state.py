@@ -4,6 +4,7 @@ import pickle
 
 from time import time
 
+from celery import uuid
 from celery.datastructures import LimitedSet
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.worker import state
@@ -163,6 +164,7 @@ class test_Persistent(StateResetCase):
 class SimpleReq(object):
 
     def __init__(self, name):
+        self.id = uuid()
         self.name = name
 
 
