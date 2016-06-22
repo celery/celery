@@ -77,8 +77,8 @@ class test_mem_rss(Case):
     def test_mem_rss(self, humanbytes, ps):
         ret = debug.mem_rss()
         ps.assert_called_with()
-        ps().get_memory_info.assert_called_with()
-        humanbytes.assert_called_with(ps().get_memory_info().rss)
+        ps().memory_info.assert_called_with()
+        humanbytes.assert_called_with(ps().memory_info().rss)
         self.assertIs(ret, humanbytes())
         ps.return_value = None
         self.assertIsNone(debug.mem_rss())
