@@ -534,30 +534,38 @@ and signatures can be linked too:
     >>> s.link(mul.s(4))
     >>> s.link(log_result.s())
 
-You can also add *error callbacks* using the ``link_error`` argument:
+You can also add *error callbacks* using the `on_error` method::
+
+.. code-block:: pycon
+
+    >>> add.s(2, 2).on_error(log_error.s()).delay()
+
+Which will resut in the following ``.apply_async`` call when the signature
+is applied:
 
 .. code-block:: pycon
 
     >>> add.apply_async((2, 2), link_error=log_error.s())
 
-    >>> add.signature((2, 2), link_error=log_error.s())
+The worker will not actually call the errback as a task, but will
+instead call the errback function directly so that the raw request, exception
+and traceback objects can be passed to it.
 
-Since exceptions can only be serialized when pickle is used
-the error callbacks take the id of the parent task as argument instead:
+Here's an example errback:
 
 .. code-block:: python
 
     from __future__ import print_function
+
     import os
+
     from proj.celery import app
 
     @app.task
-    def log_error(task_id):
-        result = app.AsyncResult(task_id)
-        result.get(propagate=False)  # make sure result written.
-        with open(os.path.join('/var/errors', task_id), 'a') as fh:
+    def log_error(request, exc, traceback):
+        with open(os.path.join('/var/errors', request.id), 'a') as fh:
             print('--\n\n{0} {1} {2}'.format(
-                task_id, result.result, result.traceback), file=fh)
+                task_id, exc, traceback), file=fh)
 
 To make it even easier to link tasks together there is
 a special signature called :class:`~celery.chain` that lets
@@ -828,8 +836,7 @@ Error handling
 
 So what happens if one of the tasks raises an exception?
 
-Errors will propagate to the callback, so the callback will not be executed
-instead the callback changes to failure state, and the error is set
+The chord callback result will transition to the failure state, and the error is set
 to the :exc:`~@ChordError` exception:
 
 .. code-block:: pycon
@@ -858,6 +865,20 @@ Note that the rest of the tasks will still execute, so the third task
 (``add.s(8, 8)``) is still executed even though the middle task failed.
 Also the :exc:`~@ChordError` only shows the task that failed
 first (in time): it does not respect the ordering of the header group.
+
+To perform an action when a chord fails you can therefore attach
+an errback to the chord callback:
+
+.. code-block:: python
+
+    @app.task
+    def on_chord_error(request, exc, traceback):
+        print('Task {0!r} raised error: {1!r}'.format(request.id, exc))
+
+.. code-block:: pycon
+
+    >>> c = (group(add.s(i, i) for i in range(10)) |
+    ...      xsum.s().on_error(on_chord_error.s()))).delay()
 
 .. _chord-important-notes:
 

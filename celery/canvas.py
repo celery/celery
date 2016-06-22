@@ -299,6 +299,20 @@ class Signature(dict):
     def link_error(self, errback):
         return self.append_to_list_option('link_error', errback)
 
+    def on_error(self, errback):
+        """Version of :meth:`link_error` that supports chaining.
+
+        on_error chains the original signature, not the errback so::
+
+            >>> add.s(2, 2).on_error(errback.s()).delay()
+
+        calls the ``add`` task, not the ``errback`` task, but the
+        reverse is true for :meth:`link_error`.
+
+        """
+        self.link_error(errback)
+        return self
+
     def flatten_links(self):
         return list(_chain.from_iterable(_chain(
             [[self]],

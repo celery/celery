@@ -270,6 +270,11 @@ def head_from_fun(fun, bound=False, debug=False):
     return result
 
 
+def arity_greater(fun, n):
+    argspec = getfullargspec(fun)
+    return argspec.varargs or len(argspec.args) > n
+
+
 def fun_takes_argument(name, fun, position=None):
     spec = getfullargspec(fun)
     return (

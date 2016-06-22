@@ -37,7 +37,7 @@ from celery.result import (
     GroupResult, ResultBase, allow_join_result, result_from_tuple,
 )
 from celery.utils.collections import BufferMap
-from celery.utils.functional import LRUCache
+from celery.utils.functional import LRUCache, arity_greater
 from celery.utils.log import get_logger
 from celery.utils.serialization import (
     get_pickled_exception,
@@ -153,12 +153,25 @@ class Backend(object):
         if request:
             if request.chord:
                 self.on_chord_part_return(request, state, exc)
-            if call_errbacks:
-                root_id = request.root_id or task_id
-                group(
-                    [self.app.signature(errback)
-                     for errback in request.errbacks or []], app=self.app,
-                ).apply_async((task_id,), parent_id=task_id, root_id=root_id)
+            if call_errbacks and request.errbacks:
+                self._call_task_errbacks(request, exc, traceback)
+
+    def _call_task_errbacks(self, request, exc, traceback):
+        old_signature = []
+        for errback in request.errbacks:
+            errback = self.app.signature(errback)
+            if arity_greater(errback.type.__header__, 1):
+                errback(request, exc, traceback)
+            else:
+                old_signature.append(errback)
+        if old_signature:
+            # Previously errback was called as a task so we still
+            # need to do so if the errback only takes a single task_id arg.
+            task_id = request.id
+            root_id = request.root_id or task_id
+            group(old_signature, app=self.app).apply_async(
+                (task_id,), parent_id=task_id, root_id=root_id
+            )
 
     def mark_as_revoked(self, task_id, reason='',
                         request=None, store_result=True, state=states.REVOKED):
