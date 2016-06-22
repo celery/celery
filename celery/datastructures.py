@@ -22,9 +22,15 @@ from billiard.einfo import ExceptionInfo  # noqa
 from kombu.utils.encoding import safe_str, bytes_to_str
 from kombu.utils.limits import TokenBucket  # noqa
 
-from celery.five import Empty, items, python_2_unicode_compatible, values
+from celery.five import Empty, items, keys, python_2_unicode_compatible, values
 from celery.utils.functional import LRUCache, first, uniq  # noqa
 from celery.utils.text import match_case
+
+try:
+    # pypy: dicts are ordered in recent versions
+    from __pypy__ import reversed_dict as _dict_is_ordered
+except ImportError:
+    _dict_is_ordered = None
 
 try:
     from django.utils.functional import LazyObject, LazySettings
@@ -38,6 +44,8 @@ __all__ = [
     'AttributeDictMixin', 'AttributeDict', 'DictAttribute',
     'ConfigurationView', 'LimitedSet',
 ]
+
+PY3 = sys.version_info[0] >= 3
 
 DOT_HEAD = """
 {IN}{type} {id} {{
@@ -883,38 +891,52 @@ class LimitedSet(object):
 MutableSet.register(LimitedSet)
 
 
-if not hasattr(_OrderedDict, 'move_to_end'):
+class OrderedDict(_OrderedDict):
 
-    class OrderedDict(_OrderedDict):
-        def move_to_end(self, key, last=True):
-            link = self._OrderedDict__map[key]
-            link_prev = link[0]
-            link_next = link[1]
-            link_prev[1] = link_next
-            link_next[0] = link_prev
-            root = self._OrderedDict__root
-            if last:
-                last = root[0]
-                link[0] = last
-                link[1] = root
-                last[1] = root[0] = link
-            else:
-                first = root[1]
-                link[0] = root
-                link[1] = first
-                root[1] = first[0] = link
-
-        def _LRUkey(self):
-            return self._OrderedDict__root[1][2]
-
-else:  # pragma: no cover
-
-    class OrderedDict(_OrderedDict):  # noqa
-
+    if PY3:  # pragma: no cover
         def _LRUkey(self):
             # return value of od.keys does not support __next__,
             # but this version will also not create a copy of the list.
-            return next(iter(self.keys()))
+            return next(iter(keys(self)))
+    else:
+        if _dict_is_ordered:  # pragma: no cover
+            def _LRUkey(self):
+                # iterkeys is iterable.
+                return next(self.iterkeys())
+        else:
+            def _LRUkey(self):
+                return self._OrderedDict__root[1][2]
+
+    if not hasattr(_OrderedDict, 'move_to_end'):
+        if _dict_is_ordered:  # pragma: no cover
+
+            def move_to_end(self, key, last=True):
+                if not last:
+                    # we don't use this argument, and the only way to
+                    # implement this on PyPy seems to be O(n): creating a
+                    # copy with the order changed, so we just raise.
+                    raise NotImplementedError('no last=True on PyPy')
+                self[key] = self.pop(key)
+
+        else:
+
+            def move_to_end(self, key, last=True):
+                link = self._OrderedDict__map[key]
+                link_prev = link[0]
+                link_next = link[1]
+                link_prev[1] = link_next
+                link_next[0] = link_prev
+                root = self._OrderedDict__root
+                if last:
+                    last = root[0]
+                    link[0] = last
+                    link[1] = root
+                    last[1] = root[0] = link
+                else:
+                    first = root[1]
+                    link[0] = root
+                    link[1] = first
+                    root[1] = first[0] = link
 
 
 class Evictable(object):
