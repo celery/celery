@@ -10,7 +10,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import numbers
 import os
-import re
 import socket
 import sys
 import traceback
