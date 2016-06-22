@@ -427,18 +427,18 @@ class test_Messagebuffer(Case):
 
     def assert_size_and_first(self, buf, size, expected_first_item):
         self.assertEqual(len(buf), size)
-        self.assertEqual(buf.pop(), expected_first_item)
+        self.assertEqual(buf.take(), expected_first_item)
 
     def test_append_limited(self):
         b = Messagebuffer(10)
         for i in range(20):
-            b.append(i)
+            b.put(i)
         self.assert_size_and_first(b, 10, 10)
 
     def test_append_unlimited(self):
         b = Messagebuffer(None)
         for i in range(20):
-            b.append(i)
+            b.put(i)
         self.assert_size_and_first(b, 20, 0)
 
     def test_extend_limited(self):
@@ -461,12 +461,12 @@ class test_Messagebuffer(Case):
     def test_pop_empty_with_default(self):
         b = Messagebuffer(10)
         sentinel = object()
-        self.assertIs(b.pop(sentinel), sentinel)
+        self.assertIs(b.take(sentinel), sentinel)
 
     def test_pop_empty_no_default(self):
         b = Messagebuffer(10)
         with self.assertRaises(b.Empty):
-            b.pop()
+            b.take()
 
     def test_repr(self):
         self.assertTrue(repr(Messagebuffer(10, [1, 2, 3])))
@@ -499,7 +499,7 @@ class test_BufferMap(Case):
     def test_append_limited(self):
         b = BufferMap(10)
         for i in range(20):
-            b.append(i, i)
+            b.put(i, i)
         self.assert_size_and_first(b, 10, 10)
 
     def assert_size_and_first(self, buf, size, expected_first_item):
@@ -509,7 +509,7 @@ class test_BufferMap(Case):
     def test_append_unlimited(self):
         b = BufferMap(None)
         for i in range(20):
-            b.append(i, i)
+            b.put(i, i)
         self.assert_size_and_first(b, 20, 0)
 
     def test_extend_limited(self):
@@ -525,12 +525,12 @@ class test_BufferMap(Case):
     def test_pop_empty_with_default(self):
         b = BufferMap(10)
         sentinel = object()
-        self.assertIs(b.pop(1, sentinel), sentinel)
+        self.assertIs(b.take(1, sentinel), sentinel)
 
     def test_pop_empty_no_default(self):
         b = BufferMap(10)
         with self.assertRaises(b.Empty):
-            b.pop(1)
+            b.take(1)
 
     def test_repr(self):
         self.assertTrue(repr(Messagebuffer(10, [1, 2, 3])))

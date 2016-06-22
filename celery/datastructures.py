@@ -975,7 +975,7 @@ class Messagebuffer(Evictable):
         self._len = self.data.__len__
         self._extend = self.data.extend
 
-    def append(self, item):
+    def put(self, item):
         self._append(item)
         self.maxsize and self._evict()
 
@@ -983,7 +983,7 @@ class Messagebuffer(Evictable):
         self._extend(it)
         self.maxsize and self._evict()
 
-    def pop(self, *default):
+    def take(self, *default):
         try:
             return self._pop()
         except IndexError:
@@ -992,7 +992,7 @@ class Messagebuffer(Evictable):
             raise self.Empty()
 
     def _pop_to_evict(self):
-        return self.pop()
+        return self.take()
 
     def __repr__(self):
         return '<{0}: {1}/{2}>'.format(
@@ -1042,7 +1042,18 @@ class BufferMap(OrderedDict, Evictable):
             self.update(iterable)
         self.total = sum(len(buf) for buf in items(self))
 
-    def pop(self, key, *default):
+    def put(self, key, item):
+        self._get_or_create_buffer(key).put(item)
+        self.total += 1
+        self.move_to_end(key)   # least recently used.
+        self.maxsize and self._evict()
+
+    def extend(self, key, it):
+        self._get_or_create_buffer(key).extend(it)
+        self.total += len(it)
+        self.maxsize and self._evict()
+
+    def take(self, key, *default):
         item, throw = None, False
         try:
             buf = self[key]
@@ -1050,12 +1061,12 @@ class BufferMap(OrderedDict, Evictable):
             throw = True
         else:
             try:
-                item = buf.pop()
+                item = buf.take()
                 self.total -= 1
             except self.Empty:
                 throw = True
             else:
-                self.move_to_end(key)  # least recently used.
+                self.move_to_end(key)  # mark as LRU
 
         if throw:
             if default:
@@ -1063,49 +1074,38 @@ class BufferMap(OrderedDict, Evictable):
             raise self.Empty()
         return item
 
-    def get_or_create(self, key):
+    def _get_or_create_buffer(self, key):
         try:
             return self[key]
         except KeyError:
-            buf = self[key] = self.Buffer(maxsize=self.bufmaxsize)
+            buf = self[key] = self._new_buffer()
             return buf
 
-    def discard(self, key, *default):
-        super(BufferMap, self).pop(key, *default)
+    def _new_buffer(self):
+        return self.Buffer(maxsize=self.bufmaxsize)
 
     def _LRUpop(self, *default):
-        return self[self._LRUkey()].pop(*default)
+        return self[self._LRUkey()].take(*default)
 
     def _pop_to_evict(self):
         for i in range(100):
             key = self._LRUkey()
             buf = self[key]
             try:
-                buf.pop()
+                buf.take()
             except (IndexError, self.Empty):
                 # buffer empty, remove it from mapping.
-                self.discard(key)
+                self.pop(key)
             else:
                 # we removed one item
                 self.total -= 1
                 # if buffer is empty now, remove it from mapping.
                 if not len(buf):
-                    self.discard(key)
+                    self.pop(key)
                 else:
                     # move to least recently used.
                     self.move_to_end(key)
                 break
-
-    def append(self, key, item):
-        self.get_or_create(key).append(item)
-        self.total += 1
-        self.move_to_end(key)   # least recently used.
-        self.maxsize and self._evict()
-
-    def extend(self, key, it):
-        self.get_or_create(key).extend(it)
-        self.total += len(it)
-        self.maxsize and self._evict()
 
     def __repr__(self):
         return '<{0}: {1}/{2}>'.format(

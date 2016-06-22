@@ -138,7 +138,7 @@ class AsyncBackendMixin(object):
         return result
 
     def _maybe_resolve_from_buffer(self, result):
-        result._maybe_set_cache(self._pending_messages.pop(result.id))
+        result._maybe_set_cache(self._pending_messages.take(result.id))
 
     def _add_pending_result(self, task_id, result, weak=False):
         weak, concrete = self._pending_results
@@ -263,7 +263,7 @@ class BaseResultConsumer(object):
             except KeyError:
                 # send to buffer in case we received this result
                 # before it was added to _pending_results.
-                self._pending_messages.append(task_id, meta)
+                self._pending_messages.put(task_id, meta)
             else:
                 result._maybe_set_cache(meta)
                 buckets = self.buckets
