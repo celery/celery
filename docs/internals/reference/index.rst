@@ -53,6 +53,7 @@
     celery.utils
     celery.utils.abstract
     celery.utils.functional
+    celery.utils.graph
     celery.utils.objects
     celery.utils.term
     celery.utils.timeutils

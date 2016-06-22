@@ -607,7 +607,7 @@ Graphs
 ~~~~~~
 
 In addition you can work with the result graph as a
-:class:`~celery.datastructures.DependencyGraph`:
+:class:`~celery.utils.graph.DependencyGraph`:
 
 .. code-block:: pycon
 

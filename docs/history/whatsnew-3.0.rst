@@ -293,15 +293,15 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
        - AsyncResult.graph
 
-            A ``DependencyGraph`` of the tasks dependencies.
-            This can also be used to convert to dot format:
+            A :class:`~celery.utils.graph.DependencyGraph` of the tasks
+            dependencies.  With this you can also convert to dot format:
 
             .. code-block:: python
 
                 with open('graph.dot') as fh:
                     result.graph.to_dot(fh)
 
-            which can than be used to produce an image:
+            then produce an image of the graph:
 
             .. code-block:: console
 

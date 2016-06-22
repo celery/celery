@@ -10,8 +10,8 @@ from __future__ import absolute_import, unicode_literals
 
 from operator import itemgetter
 
-from celery.datastructures import DependencyGraph, GraphFormatter
 from celery.five import items, python_2_unicode_compatible
+from celery.utils.graph import DependencyGraph, GraphFormatter
 
 from .base import Command
 

@@ -15,8 +15,8 @@ from kombu.common import ignore_errors
 from kombu.utils import symbol_by_name
 from kombu.utils.encoding import bytes_to_str
 
-from .datastructures import DependencyGraph, GraphFormatter
 from .five import bytes_if_py2, values, with_metaclass
+from .utils.graph import DependencyGraph, GraphFormatter
 from .utils.imports import instantiate, qualname
 from .utils.log import get_logger
 
