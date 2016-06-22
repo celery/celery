@@ -630,7 +630,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Fix contributed by Mher Movsisyan.
 
-- :class:`celery.datastructures.LRUCache` is now pickleable.
+- :class:`celery.utils.functional.LRUCache` is now pickleable.
 
     Fix contributed by Mher Movsisyan.
 

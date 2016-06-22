@@ -30,7 +30,6 @@ from celery._state import (
     get_current_worker_task, connect_on_app_finalize,
     _announce_app_finalized,
 )
-from celery.datastructures import AttributeDictMixin
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
 from celery.five import (
     UserDict, bytes_if_py2, python_2_unicode_compatible, values,
@@ -39,6 +38,7 @@ from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
 from celery.utils import gen_task_name
+from celery.utils.collections import AttributeDictMixin
 from celery.utils.dispatch import Signal
 from celery.utils.functional import first, maybe_list, head_from_fun
 from celery.utils.timeutils import timezone

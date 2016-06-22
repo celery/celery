@@ -908,7 +908,7 @@ News
 * New Task handler called after the task returns:
   :meth:`~celery.task.base.Task.after_return`.
 
-* :class:`~celery.datastructures.ExceptionInfo` now passed to
+* :class:`~billiard.einfo.ExceptionInfo` now passed to
    :meth:`~celery.task.base.Task.on_retry`/
    :meth:`~celery.task.base.Task.on_failure` as ``einfo`` keyword argument.
 

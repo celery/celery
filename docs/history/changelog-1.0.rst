@@ -82,8 +82,8 @@ Changes
 
     See issue #110.
 
-* celery.execute.apply: Should return exception, not :class:`~celery.datastructures.ExceptionInfo`
-  on error.
+* celery.execute.apply: Should return exception, not
+  :class:`~billiard.einfo.ExceptionInfo` on error.
 
     See issue #111.
 

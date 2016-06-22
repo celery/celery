@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-    ``celery.datastructures``
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
+    ``celery.utils.collections``
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Custom types and data-structures.
+    Custom maps, sets, sequences and other data structures.
 
 """
 from __future__ import absolute_import, unicode_literals
@@ -18,12 +18,10 @@ from collections import (
 from heapq import heapify, heappush, heappop
 from itertools import chain, count
 
-from billiard.einfo import ExceptionInfo  # noqa
-from kombu.utils.limits import TokenBucket  # noqa
-
 from celery.five import Empty, items, keys, python_2_unicode_compatible, values
-from celery.utils.functional import LRUCache, first, uniq  # noqa
-from celery.utils.text import match_case
+
+from .functional import first, uniq
+from .text import match_case
 
 try:
     # pypy: dicts are ordered in recent versions
@@ -39,8 +37,9 @@ except ImportError:
     LazySettings = LazyObject  # noqa
 
 __all__ = [
-    'AttributeDictMixin', 'AttributeDict', 'DictAttribute',
-    'ConfigurationView', 'LimitedSet',
+    'AttributeDictMixin', 'AttributeDict', 'BufferMap', 'ChainMap',
+    'ConfigurationView', 'DictAttribute', 'Evictable',
+    'LimitedSet', 'Messagebuffer', 'OrderedDict', 'force_mapping',
 ]
 
 PY3 = sys.version_info[0] >= 3
@@ -54,6 +53,54 @@ def force_mapping(m):
     if isinstance(m, (LazyObject, LazySettings)):
         m = m._wrapped
     return DictAttribute(m) if not isinstance(m, Mapping) else m
+
+
+class OrderedDict(_OrderedDict):
+
+    if PY3:  # pragma: no cover
+        def _LRUkey(self):
+            # return value of od.keys does not support __next__,
+            # but this version will also not create a copy of the list.
+            return next(iter(keys(self)))
+    else:
+        if _dict_is_ordered:  # pragma: no cover
+            def _LRUkey(self):
+                # iterkeys is iterable.
+                return next(self.iterkeys())
+        else:
+            def _LRUkey(self):
+                return self._OrderedDict__root[1][2]
+
+    if not hasattr(_OrderedDict, 'move_to_end'):
+        if _dict_is_ordered:  # pragma: no cover
+
+            def move_to_end(self, key, last=True):
+                if not last:
+                    # we don't use this argument, and the only way to
+                    # implement this on PyPy seems to be O(n): creating a
+                    # copy with the order changed, so we just raise.
+                    raise NotImplementedError('no last=True on PyPy')
+                self[key] = self.pop(key)
+
+        else:
+
+            def move_to_end(self, key, last=True):
+                link = self._OrderedDict__map[key]
+                link_prev = link[0]
+                link_next = link[1]
+                link_prev[1] = link_next
+                link_next[0] = link_prev
+                root = self._OrderedDict__root
+                if last:
+                    last = root[0]
+                    link[0] = last
+                    link[1] = root
+                    last[1] = root[0] = link
+                else:
+                    first = root[1]
+                    link[0] = root
+                    link[1] = first
+                    root[1] = first[0] = link
 
 
 class AttributeDictMixin(object):
@@ -589,54 +636,6 @@ class LimitedSet(object):
         """Compute how much is heap bigger than data [percents]."""
         return len(self._heap) * 100 / max(len(self._data), 1) - 100
 MutableSet.register(LimitedSet)
-
-
-class OrderedDict(_OrderedDict):
-
-    if PY3:  # pragma: no cover
-        def _LRUkey(self):
-            # return value of od.keys does not support __next__,
-            # but this version will also not create a copy of the list.
-            return next(iter(keys(self)))
-    else:
-        if _dict_is_ordered:  # pragma: no cover
-            def _LRUkey(self):
-                # iterkeys is iterable.
-                return next(self.iterkeys())
-        else:
-            def _LRUkey(self):
-                return self._OrderedDict__root[1][2]
-
-    if not hasattr(_OrderedDict, 'move_to_end'):
-        if _dict_is_ordered:  # pragma: no cover
-
-            def move_to_end(self, key, last=True):
-                if not last:
-                    # we don't use this argument, and the only way to
-                    # implement this on PyPy seems to be O(n): creating a
-                    # copy with the order changed, so we just raise.
-                    raise NotImplementedError('no last=True on PyPy')
-                self[key] = self.pop(key)
-
-        else:
-
-            def move_to_end(self, key, last=True):
-                link = self._OrderedDict__map[key]
-                link_prev = link[0]
-                link_next = link[1]
-                link_prev[1] = link_next
-                link_next[0] = link_prev
-                root = self._OrderedDict__root
-                if last:
-                    last = root[0]
-                    link[0] = last
-                    link[1] = root
-                    last[1] = root[0] = link
-                else:
-                    first = root[1]
-                    link[0] = root
-                    link[1] = first
-                    root[1] = first[0] = link
 
 
 class Evictable(object):

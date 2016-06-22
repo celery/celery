@@ -31,12 +31,12 @@ from kombu.utils.url import maybe_sanitize_url
 from celery import states
 from celery import current_app, group, maybe_signature
 from celery.app import current_task
-from celery.datastructures import BufferMap
 from celery.exceptions import ChordError, TimeoutError, TaskRevokedError
 from celery.five import items
 from celery.result import (
     GroupResult, ResultBase, allow_join_result, result_from_tuple,
 )
+from celery.utils.collections import BufferMap
 from celery.utils.functional import LRUCache
 from celery.utils.log import get_logger
 from celery.utils.serialization import (

@@ -285,7 +285,7 @@ Provides arguments:
 
 * ``einfo``
 
-    The :class:`celery.datastructures.ExceptionInfo` instance.
+    The :class:`billiard.einfo.ExceptionInfo` instance.
 
 .. signal:: task_revoked
 

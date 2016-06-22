@@ -1261,7 +1261,7 @@ Handlers
     :param kwargs: Original keyword arguments for the task
                    that returned.
 
-    :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
+    :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
                     instance, containing the traceback (if any).
 
     The return value of this handler is ignored.
@@ -1276,7 +1276,7 @@ Handlers
     :param kwargs: Original keyword arguments for the task
                        that failed.
 
-    :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
+    :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
                            instance, containing the traceback.
 
     The return value of this handler is ignored.
@@ -1290,7 +1290,7 @@ Handlers
     :param args: Original arguments for the retried task.
     :param kwargs: Original keyword arguments for the retried task.
 
-    :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
+    :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
                     instance, containing the traceback.
 
     The return value of this handler is ignored.

@@ -7,8 +7,8 @@ import socket
 from itertools import cycle
 
 from celery.app.defaults import DEFAULTS
-from celery.datastructures import AttributeDict
 from celery.five import range
+from celery.utils.collections import AttributeDict
 from celery.utils.functional import noop
 from celery.utils.objects import Bunch
 

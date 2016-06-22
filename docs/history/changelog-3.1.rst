@@ -47,7 +47,7 @@ new in Celery 3.1.
     Contributed by Sebastian Kalinowski.
 
 - **Utils**: The ``.discard(item)`` method of
-  :class:`~celery.datastructures.LimitedSet` did not actually remove the item
+  :class:`~celery.utils.collections.LimitedSet` did not actually remove the item
   (Issue #3087).
 
     Fix contributed by Dave Smith.

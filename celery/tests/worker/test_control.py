@@ -8,7 +8,6 @@ from datetime import datetime, timedelta
 
 from kombu import pidbox
 
-from celery.datastructures import AttributeDict
 from celery.five import Queue as FastQueue
 from celery.utils import uuid
 from celery.utils.timer2 import Timer
@@ -19,6 +18,7 @@ from celery.worker import state as worker_state
 from celery.worker.request import Request
 from celery.worker.state import revoked
 from celery.worker.pidbox import Pidbox, gPidbox
+from celery.utils.collections import AttributeDict
 
 from celery.tests.case import AppCase, Mock, TaskMessage, call, patch
 

@@ -734,7 +734,7 @@ is following the conventions.
         from collections import deque
         from Queue import Queue, Empty
 
-        from .datastructures import TokenBucket
+        from .platforms import Pidfile
         from .five import zip_longest, items, range
         from .utils import timeutils
 

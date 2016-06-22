@@ -40,7 +40,6 @@
     celery.app.trace
     celery.app.annotations
     celery.app.routes
-    celery.datastructures
     celery.security.certificate
     celery.security.key
     celery.security.serialization
@@ -52,6 +51,7 @@
     celery.backends.database.session
     celery.utils
     celery.utils.abstract
+    celery.utils.collections
     celery.utils.functional
     celery.utils.graph
     celery.utils.objects

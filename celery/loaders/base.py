@@ -21,8 +21,8 @@ from kombu.utils import cached_property
 from kombu.utils.encoding import safe_str
 
 from celery import signals
-from celery.datastructures import DictAttribute, force_mapping
 from celery.five import reraise, string_t
+from celery.utils.collections import DictAttribute, force_mapping
 from celery.utils.functional import maybe_list
 from celery.utils.imports import (
     import_from_cwd, symbol_by_name, NotAPackage, find_module,

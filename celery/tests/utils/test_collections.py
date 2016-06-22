@@ -8,7 +8,7 @@ from itertools import count
 from billiard.einfo import ExceptionInfo
 from time import time
 
-from celery.datastructures import (
+from celery.utils.collections import (
     AttributeDict,
     BufferMap,
     ConfigurationView,

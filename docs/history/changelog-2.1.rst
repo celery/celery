@@ -614,7 +614,7 @@ News
 
 * ``timedelta_seconds``: Use ``timedelta.total_seconds`` if running on Python 2.7
 
-* :class:`~celery.datastructures.TokenBucket`: Generic Token Bucket algorithm
+* :class:`~kombu.utils.limits.TokenBucket`: Generic Token Bucket algorithm
 
 * :mod:`celery.events.state`: Recording of cluster state can now
   be paused and resumed, including support for buffering.

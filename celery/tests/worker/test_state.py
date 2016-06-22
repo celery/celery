@@ -5,9 +5,9 @@ import pickle
 from time import time
 
 from celery import uuid
-from celery.datastructures import LimitedSet
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.worker import state
+from celery.utils.collections import LimitedSet
 
 from celery.tests.case import AppCase, Mock, patch
 

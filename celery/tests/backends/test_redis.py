@@ -9,8 +9,8 @@ from celery import signature
 from celery import states
 from celery import uuid
 from celery.canvas import Signature
-from celery.datastructures import AttributeDict
 from celery.exceptions import ChordError, ImproperlyConfigured
+from celery.utils.collections import AttributeDict
 
 from celery.tests.case import (
     ANY, AppCase, ContextMock, Mock, mock,

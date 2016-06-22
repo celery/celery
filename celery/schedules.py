@@ -21,11 +21,11 @@ from kombu.utils import cached_property
 from . import current_app
 from .five import python_2_unicode_compatible, range, string_t
 from .utils import is_iterable
+from .utils.collections import AttributeDict
 from .utils.timeutils import (
     weekday, maybe_timedelta, remaining, humanize_seconds,
     timezone, maybe_make_aware, ffwd, localize
 )
-from .datastructures import AttributeDict
 
 __all__ = ['ParseException', 'schedule', 'crontab', 'crontab_parser',
            'maybe_schedule', 'solar']
