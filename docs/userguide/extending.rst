@@ -823,7 +823,7 @@ by adding an entry-point in :file:`setup.py`:
         name='flower',
         entry_points={
             'celery.commands': [
-               'flower = flower.command.FlowerCommand',
+               'flower = flower.command:FlowerCommand',
             ],
         }
     )
@@ -832,9 +832,15 @@ by adding an entry-point in :file:`setup.py`:
 .. _Flower: http://pypi.python.org/pypi/flower
 
 The command definition is in two parts separated by the equal sign, where the
-first part is the name of the sub-command (flower), then the fully qualified
-module path to the class that implements the command
-(``flower.command.FlowerCommand``).
+first part is the name of the sub-command (flower), then the second part is
+the fully qualified symbol path to the class that implements the command:
+
+.. code-block:: text
+
+    flower.command:FlowerCommand
+
+The module path and the name of the attribute should be separated by colon
+as above.
 
 
 In the module :file:`flower/command.py`, the command class is defined
