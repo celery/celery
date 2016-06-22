@@ -620,7 +620,7 @@ class crontab(schedule):
 
 def maybe_schedule(s, relative=False, app=None):
     if s is not None:
-        if isinstance(s, numbers.Integral):
+        if isinstance(s, numbers.Number):
             s = timedelta(seconds=s)
         if isinstance(s, timedelta):
             return schedule(s, relative, app=app)
