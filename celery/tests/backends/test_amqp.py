@@ -230,8 +230,8 @@ class test_AMQPBackend(AppCase):
             )
 
     def test_poll_result_for_json_serializer(self):
-        with self._result_context(serializer='json') as \
-                (results, backend, Message):
+        with self._result_context(serializer='json') as (
+                results, backend, Message):
             tid = uuid()
             # FFWD's to the latest state.
             state_messages = [
@@ -242,16 +242,14 @@ class test_AMQPBackend(AppCase):
                             'exc_type': 'RuntimeError',
                             'exc_message': 'Mock'
                         }),
-                ]
+            ]
             for state_message in state_messages:
                 results.put(state_message)
             r1 = backend.get_task_meta(tid)
-            self.assertDictContainsSubset(
-                {
-                    'status': states.FAILURE,
-                    'seq': 3
-                }, r1, 'FFWDs to the last state',
-            )
+            self.assertDictContainsSubset({
+                'status': states.FAILURE,
+                'seq': 3
+            }, r1, 'FFWDs to the last state')
             self.assertEquals(type(r1['result']).__name__, 'RuntimeError')
             self.assertEqual(str(r1['result']), 'Mock')
 
@@ -270,7 +268,7 @@ class test_AMQPBackend(AppCase):
             self.assertEqual(
                 backend.get_task_meta(tid), 'hello',
                 'Returns cache if no new states',
-                )
+            )
 
     def test_wait_for(self):
         b = self.create_backend()

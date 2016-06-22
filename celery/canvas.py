@@ -638,14 +638,16 @@ class chord(Signature):
 
         _chord = self.type
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
-            return self.apply(partial_args, args, kwargs, task_id=task_id, **options)
+            return self.apply(partial_args, args, kwargs,
+                              task_id=task_id, **options)
         res = body.freeze(task_id)
         parent = _chord(self.tasks, body, partial_args, **options)
         res.parent = parent
         return res
 
     def __call__(self, body=None, **options):
-        return self.apply_async((), (), {'body': body} if body else {}, **options)
+        return self.apply_async(
+            (), (), {'body': body} if body else {}, **options)
 
     def clone(self, *args, **kwargs):
         s = Signature.clone(self, *args, **kwargs)
