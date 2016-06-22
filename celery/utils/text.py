@@ -8,6 +8,9 @@
 """
 from __future__ import absolute_import, unicode_literals
 
+import re
+
+from collections import Callable
 from functools import partial
 from textwrap import fill
 
@@ -19,8 +22,16 @@ __all__ = [
     'abbr', 'abbrtask', 'dedent', 'dedent_initial',
     'ensure_newlines', 'ensure_sep',
     'fill_paragraphs', 'indent', 'join',
-    'pluralize', 'pretty', 'str_to_list', 'truncate',
+    'pluralize', 'pretty', 'str_to_list', 'simple_format', 'truncate',
 ]
+
+UNKNOWN_SIMPLE_FORMAT_KEY = """
+Unknown format %{0} in string {1!r}.
+Possible causes: Did you forget to escape the expand sign (use '%%{0!r}'),
+or did you escape and the value was expanded twice? (%%N -> %N -> %hostname)?
+""".strip()
+
+RE_FORMAT = re.compile(r'%(\w)')
 
 
 def str_to_list(s):
@@ -105,3 +116,21 @@ def pretty(value, width=80, nl_width=80, sep='\n', **kw):
 
 def match_case(s, other):
     return s.upper() if other.isupper() else s.lower()
+
+
+def simple_format(s, keys, pattern=RE_FORMAT, expand=r'\1'):
+    if s:
+        keys.setdefault('%', '%')
+
+        def resolve(match):
+            key = match.expand(expand)
+            try:
+                resolver = keys[key]
+            except KeyError:
+                raise ValueError(UNKNOWN_SIMPLE_FORMAT_KEY.format(key, s))
+            if isinstance(resolver, Callable):
+                return resolver()
+            return resolver
+
+        return pattern.sub(resolve, s)
+    return s

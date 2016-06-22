@@ -17,7 +17,6 @@ import traceback
 import warnings
 import datetime
 
-from collections import Callable
 from functools import partial
 from pprint import pprint
 
@@ -28,6 +27,7 @@ from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 from celery.five import WhateverIO, items, reraise, string_t
 
 from .functional import memoize
+from .text import simple_format
 
 __all__ = ['worker_direct', 'warn_deprecated', 'deprecated', 'lpmerge',
            'is_iterable', 'isatty', 'cry', 'maybe_reraise', 'strtobool',
@@ -47,12 +47,6 @@ DEPRECATION_FMT = """
     version {removal}. {alternative}
 """
 
-UNKNOWN_SIMPLE_FORMAT_KEY = """
-Unknown format %{0} in string {1!r}.
-Possible causes: Did you forget to escape the expand sign (use '%%{0!r}'),
-or did you escape and the value was expanded twice? (%%N -> %N -> %hostname)?
-""".strip()
-
 #: Billiard sets this when execv is enabled.
 #: We use it to find out the name of the original ``__main__``
 #: module, so that we can properly rewrite the name of the
@@ -69,7 +63,6 @@ WORKER_DIRECT_QUEUE_FORMAT = '{hostname}.dq2'
 NODENAME_SEP = '@'
 
 NODENAME_DEFAULT = 'celery'
-RE_FORMAT = re.compile(r'%(\w)')
 
 gethostname = memoize(1, Cache=dict)(socket.gethostname)
 
@@ -375,24 +368,6 @@ def host_format(s, host=None, name=None, **extra):
         'i': _fmt_process_index, 'I': _fmt_process_index_with_prefix,
     }, **extra)
     return simple_format(s, keys)
-
-
-def simple_format(s, keys, pattern=RE_FORMAT, expand=r'\1'):
-    if s:
-        keys.setdefault('%', '%')
-
-        def resolve(match):
-            key = match.expand(expand)
-            try:
-                resolver = keys[key]
-            except KeyError:
-                raise ValueError(UNKNOWN_SIMPLE_FORMAT_KEY.format(key, s))
-            if isinstance(resolver, Callable):
-                return resolver()
-            return resolver
-
-        return pattern.sub(resolve, s)
-    return s
 
 
 # ------------------------------------------------------------------------ #
