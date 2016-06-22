@@ -652,8 +652,8 @@ See :ref:`worker-maxmemperchild` for more information.
 
 Contributed by Dave Smith.
 
-Redis: Result backend optimization
-==================================
+Redis: Result backend optimizations
+===================================
 
 RPC is now using pub/sub for streaming task results.
 ----------------------------------------------------
