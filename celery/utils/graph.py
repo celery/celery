@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import, print_function, unicode_literals
 
-from collections import defaultdict
+from collections import Counter
 from textwrap import dedent
 
 from kombu.utils.encoding import safe_str, bytes_to_str
@@ -123,7 +123,7 @@ class DependencyGraph(object):
         See https://en.wikipedia.org/wiki/Topological_sorting
 
         """
-        count = defaultdict(lambda: 0)
+        count = Counter()
         result = []
 
         for node in self:
