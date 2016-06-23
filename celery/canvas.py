@@ -633,7 +633,8 @@ class chord(Signature):
         return self.apply_async(partial_args)
 
     def apply_async(self, partial_args=(), args=(), kwargs={}, task_id=None,
-                    **options):
+                    producer=None, publisher=None, connection=None,
+                    router=None, result_cls=None, **options):
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)
         body = kwargs.get('body') or self.kwargs['body']
