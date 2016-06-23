@@ -261,7 +261,7 @@ def head_from_fun(fun, bound=False, debug=False):
     )
     if debug:  # pragma: no cover
         print(definition, file=sys.stderr)
-    namespace = {'__name__': 'headof_{0}'.format(name)}
+    namespace = {'__name__': fun.__module__}
     exec(definition, namespace)
     result = namespace[name]
     result._source = definition
