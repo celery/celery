@@ -21,14 +21,6 @@ Broker Instructions
     redis
     sqs
 
-Experimental Transports
-=======================
-
-.. toctree::
-    :maxdepth: 1
-
-    django
-
 .. _broker-overview:
 
 Broker Overview
@@ -48,8 +40,6 @@ individual transport (see :ref:`broker_toc`).
 | *Amazon SQS*  | Stable       | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 | *Zookeeper*   | Experimental | No             | No                 |
-+---------------+--------------+----------------+--------------------+
-| *Django DB*   | Experimental | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 
 Experimental brokers may be functional but they do not have

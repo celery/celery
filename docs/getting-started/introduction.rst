@@ -119,8 +119,7 @@ Celery is…
         - **Brokers**
 
             - :ref:`RabbitMQ <broker-rabbitmq>`, :ref:`Redis <broker-redis>`,
-            - :ref:`Django ORM <broker-django>` (exp), :ref:`Amazon SQS <broker-sqs>`
-            - and more…
+            - :ref:`Amazon SQS <broker-sqs>` and more…
 
         - **Concurrency**
 

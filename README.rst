@@ -129,8 +129,6 @@ It supports...
     - **Message Transports**
 
         - RabbitMQ_, Redis_, Amazon SQS
-        - Django ORM (experimental),
-        - and more...
 
     - **Concurrency**
 
