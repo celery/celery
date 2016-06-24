@@ -19,6 +19,7 @@ Broker Instructions
 
     rabbitmq
     redis
+    sqs
 
 Experimental Transports
 =======================
@@ -26,10 +27,7 @@ Experimental Transports
 .. toctree::
     :maxdepth: 1
 
-    sqlalchemy
     django
-    sqs
-    couchdb
 
 .. _broker-overview:
 
@@ -47,15 +45,11 @@ individual transport (see :ref:`broker_toc`).
 +---------------+--------------+----------------+--------------------+
 | *Redis*       | Stable       | Yes            | Yes                |
 +---------------+--------------+----------------+--------------------+
-| *Amazon SQS*  | Experimental | No             | No                 |
-+---------------+--------------+----------------+--------------------+
-| *Couch DB*    | Experimental | No             | No                 |
+| *Amazon SQS*  | Stable       | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 | *Zookeeper*   | Experimental | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 | *Django DB*   | Experimental | No             | No                 |
-+---------------+--------------+----------------+--------------------+
-| *Iron MQ*     | third-party  | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 
 Experimental brokers may be functional but they do not have

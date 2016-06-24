@@ -129,7 +129,6 @@ It supports...
     - **Message Transports**
 
         - RabbitMQ_, Redis_, Amazon SQS
-        - CouchDB_ (experimental),
         - Django ORM (experimental),
         - and more...
 
@@ -155,7 +154,6 @@ It supports...
 
 .. _RabbitMQ: http://rabbitmq.com
 .. _Redis: http://redis.io
-.. _CouchDB: http://couchdb.apache.org
 .. _SQLAlchemy: http://sqlalchemy.org
 
 Framework Integration
@@ -289,9 +287,6 @@ Transports and Backends
 
 :``celery[cassandra]``:
     for using Apache Cassandra as a result backend with DataStax driver.
-
-:``celery[couchdb]``:
-    for using CouchDB as a message transport (*experimental*).
 
 :``celery[couchbase]``:
     for using Couchbase as a result backend.
