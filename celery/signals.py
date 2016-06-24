@@ -22,9 +22,9 @@ __all__ = ['before_task_publish', 'after_task_publish',
            'celeryd_after_setup', 'worker_init', 'worker_process_init',
            'worker_ready', 'worker_shutdown', 'setup_logging',
            'after_setup_logger', 'after_setup_task_logger',
-           'beat_init', 'beat_embedded_init', 'eventlet_pool_started',
-           'eventlet_pool_preshutdown', 'eventlet_pool_postshutdown',
-           'eventlet_pool_apply']
+           'beat_init', 'beat_embedded_init', 'heartbeat',
+           'eventlet_pool_started', 'eventlet_pool_preshutdown',
+           'eventlet_pool_postshutdown', 'eventlet_pool_apply']
 
 before_task_publish = Signal(providing_args=[
     'body', 'exchange', 'routing_key', 'headers', 'properties',
@@ -76,6 +76,7 @@ after_setup_task_logger = Signal(providing_args=[
 ])
 beat_init = Signal(providing_args=[])
 beat_embedded_init = Signal(providing_args=[])
+heartbeat = Signal(providing_args=[])
 eventlet_pool_started = Signal(providing_args=[])
 eventlet_pool_preshutdown = Signal(providing_args=[])
 eventlet_pool_postshutdown = Signal(providing_args=[])
