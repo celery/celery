@@ -185,7 +185,7 @@ Do I have to use AMQP/RabbitMQ?
 **Answer**: No.
 
 Although using RabbitMQ is recommended you can also use Redis.  There are also
-experimental transports available such as Beanstalk, CouchDB, or using
+experimental transports available such as CouchDB, or using
 SQL databases. See :ref:`brokers` for more information.
 
 The experimental transports may have reliability problems and

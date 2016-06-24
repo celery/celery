@@ -128,8 +128,7 @@ It supports...
 
     - **Message Transports**
 
-        - RabbitMQ_, Redis_,
-        - MongoDB_ (experimental), Amazon SQS (experimental),
+        - RabbitMQ_, Redis_, Amazon SQS
         - CouchDB_ (experimental), SQLAlchemy_ (experimental),
         - Django ORM (experimental), `IronMQ`_
         - and more...
@@ -141,7 +140,7 @@ It supports...
     - **Result Stores**
 
         - AMQP, Redis
-        - memcached, MongoDB
+        - memcached
         - SQLAlchemy, Django ORM
         - Apache Cassandra, IronCache, Elasticsearch
 
@@ -157,7 +156,6 @@ It supports...
 .. _RabbitMQ: http://rabbitmq.com
 .. _Redis: http://redis.io
 .. _MongoDB: http://mongodb.org
-.. _Beanstalk: http://kr.github.com/beanstalkd
 .. _CouchDB: http://couchdb.apache.org
 .. _SQLAlchemy: http://sqlalchemy.org
 .. _`IronMQ`: http://iron.io
@@ -235,9 +233,9 @@ Bundles
 Celery also defines a group of bundles that can be used
 to install Celery and the dependencies for a given feature.
 
-You can specify these in your requirements or on the ``pip`` comand-line
-by using brackets.  Multiple bundles can be specified by separating them by
-commas.
+You can specify these in your requirements or on the ``pip``
+command-line by using brackets.  Multiple bundles can be specified by
+separating them by commas.
 ::
 
     $ pip install "celery[librabbitmq]"
@@ -249,85 +247,81 @@ The following bundles are available:
 Serializers
 ~~~~~~~~~~~
 
-:celery[auth]:
+:``celery[auth]``:
     for using the ``auth`` security serializer.
 
-:celery[msgpack]:
+:``celery[msgpack]``:
     for using the msgpack serializer.
 
-:celery[yaml]:
+:``celery[yaml]``:
     for using the yaml serializer.
 
 Concurrency
 ~~~~~~~~~~~
 
-:celery[eventlet]:
-    for using the eventlet pool.
+:``celery[eventlet]``:
+    for using the ``eventlet`` pool.
 
-:celery[gevent]:
-    for using the gevent pool.
+:``celery[gevent]``:
+    for using the ``gevent`` pool.
 
-:celery[threads]:
+:``celery[threads]``:
     for using the thread pool.
 
 Transports and Backends
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-:celery[librabbitmq]:
+:``celery[librabbitmq]``:
     for using the librabbitmq C library.
 
-:celery[redis]:
+:``celery[redis]``:
     for using Redis as a message transport or as a result backend.
 
-:celery[mongodb]:
-    for using MongoDB as a message transport (*experimental*),
-    or as a result backend (*supported*).
-
-:celery[sqs]:
+:``celery[sqs]``:
     for using Amazon SQS as a message transport (*experimental*).
 
-:celery[tblib]
+:``celery[tblib``]
     for using the ``task_remote_tracebacks`` feature.
 
-:celery[memcache]:
-    for using memcached as a result backend (using pylibmc)
+:``celery[memcache]``:
+    for using Memcached as a result backend (using ``pylibmc``)
 
-:celery[pymemcache]:
-    for using memcached as a result backend (pure-python implementation).
+:``celery[pymemcache]``:
+    for using Memcached as a result backend (pure-Python implementation).
 
-:celery[cassandra]:
+:``celery[cassandra]``:
     for using Apache Cassandra as a result backend with DataStax driver.
 
-:celery[couchdb]:
+:``celery[couchdb]``:
     for using CouchDB as a message transport (*experimental*).
 
-:celery[couchbase]:
+:``celery[couchbase]``:
     for using Couchbase as a result backend.
 
-:celery[elasticsearch]
+:``celery[elasticsearch]``:
     for using Elasticsearch as a result backend.
 
-:celery[riak]:
+:``celery[riak]``:
     for using Riak as a result backend.
 
-:celery[beanstalk]:
-    for using Beanstalk as a message transport (*experimental*).
-
-:celery[zookeeper]:
+:``celery[zookeeper]``:
     for using Zookeeper as a message transport.
 
-:celery[zeromq]:
+:``celery[zeromq]``:
     for using ZeroMQ as a message transport (*experimental*).
 
-:celery[sqlalchemy]:
+:``celery[sqlalchemy]``:
     for using SQLAlchemy as a message transport (*experimental*),
     or as a result backend (*supported*).
 
-:celery[pyro]:
+:``celery[pyro]``:
     for using the Pyro4 message transport (*experimental*).
 
-:celery[slmq]:
+:``celery[slmq]``:
     for using the SoftLayer Message Queue transport (*experimental*).
+
+:``celery[consul]``:
+    for using the Consul.io Key/Value store as a message transport or result backend (*experimental*).
 
 .. _celery-installing-from-source:
 

@@ -30,7 +30,6 @@ Experimental Transports
     django
     sqs
     couchdb
-    beanstalk
     ironmq
 
 .. _broker-overview:
@@ -48,10 +47,6 @@ individual transport (see :ref:`broker_toc`).
 | *RabbitMQ*    | Stable       | Yes            | Yes                |
 +---------------+--------------+----------------+--------------------+
 | *Redis*       | Stable       | Yes            | Yes                |
-+---------------+--------------+----------------+--------------------+
-| *Mongo DB*    | Experimental | Yes            | Yes                |
-+---------------+--------------+----------------+--------------------+
-| *Beanstalk*   | Experimental | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 | *Amazon SQS*  | Experimental | No             | No                 |
 +---------------+--------------+----------------+--------------------+

@@ -148,7 +148,6 @@ It supports…
 .. _RabbitMQ: http://rabbitmq.com
 .. _Redis: http://redis.io
 .. _MongoDB: http://mongodb.org
-.. _Beanstalk: http://kr.github.com/beanstalkd
 .. _CouchDB: http://couchdb.apache.org
 .. _SQLAlchemy: http://sqlalchemy.org
 .. _`IronMQ`: http://iron.io
