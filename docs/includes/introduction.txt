@@ -122,7 +122,7 @@ It supports…
 
         - RabbitMQ_, Redis_, Amazon SQS
         - CouchDB_ (experimental),
-        - Django ORM (experimental), `IronMQ`_
+        - Django ORM (experimental),
         - and more…
 
     - **Concurrency**
@@ -147,10 +147,8 @@ It supports…
 
 .. _RabbitMQ: http://rabbitmq.com
 .. _Redis: http://redis.io
-.. _MongoDB: http://mongodb.org
 .. _CouchDB: http://couchdb.apache.org
 .. _SQLAlchemy: http://sqlalchemy.org
-.. _`IronMQ`: http://iron.io
 
 Framework Integration
 =====================

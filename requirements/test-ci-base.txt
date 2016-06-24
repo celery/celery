@@ -1,7 +1,6 @@
 coverage>=3.0
 codecov
 -r extras/redis.txt
--r extras/mongodb.txt
 -r extras/sqlalchemy.txt
 -r extras/pymemcache.txt
 -r dev.txt

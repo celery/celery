@@ -30,7 +30,6 @@ Experimental Transports
     django
     sqs
     couchdb
-    ironmq
 
 .. _broker-overview:
 
