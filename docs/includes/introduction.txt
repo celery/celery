@@ -121,7 +121,7 @@ It supports…
     - **Message Transports**
 
         - RabbitMQ_, Redis_, Amazon SQS
-        - CouchDB_ (experimental), SQLAlchemy_ (experimental),
+        - CouchDB_ (experimental),
         - Django ORM (experimental), `IronMQ`_
         - and more…
 

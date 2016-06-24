@@ -129,7 +129,7 @@ It supports...
     - **Message Transports**
 
         - RabbitMQ_, Redis_, Amazon SQS
-        - CouchDB_ (experimental), SQLAlchemy_ (experimental),
+        - CouchDB_ (experimental),
         - Django ORM (experimental), `IronMQ`_
         - and more...
 
@@ -311,8 +311,7 @@ Transports and Backends
     for using ZeroMQ as a message transport (*experimental*).
 
 :``celery[sqlalchemy]``:
-    for using SQLAlchemy as a message transport (*experimental*),
-    or as a result backend (*supported*).
+    for using SQLAlchemy as a result backend (*supported*).
 
 :``celery[pyro]``:
     for using the Pyro4 message transport (*experimental*).

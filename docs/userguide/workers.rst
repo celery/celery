@@ -1008,8 +1008,7 @@ The output will include the following fields:
 
     * ``uri_prefix``
 
-        Some transports expects the host name to be a URL, this applies to
-        for example SQLAlchemy where the host name part is the connection URI:
+        Some transports expects the host name to be a URL.
 
         .. code-block:: text
 
