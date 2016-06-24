@@ -548,6 +548,14 @@ Dispatched in addition to the :signal:`beat_init` signal when :program:`celery
 beat` is started as an embedded process.  Sender is the
 :class:`celery.beat.Service` instance.
 
+.. signal:: heartbeat
+
+``heartbeat``
+~~~~~~~~~~~~~
+
+Dispatched when Celery sends a worker heartbeat. Sender is the
+:class:`celery.worker.heartbeat.Heart` instance.
+
 Eventlet Signals
 ----------------
 

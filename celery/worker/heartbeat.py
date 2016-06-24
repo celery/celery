@@ -9,6 +9,7 @@
 """
 from __future__ import absolute_import, unicode_literals
 
+from celery.signals import heartbeat
 from celery.utils.sysinfo import load_average
 
 from .state import SOFTWARE_INFO, active_requests, all_total_count
@@ -37,6 +38,7 @@ class Heart(object):
         self.eventer.on_disabled.add(self.stop)
 
     def _send(self, event):
+        heartbeat.send(sender=self)
         return self.eventer.send(event, freq=self.interval,
                                  active=len(active_requests),
                                  processed=all_total_count[0],
