@@ -846,7 +846,7 @@ Result Backends
 If you want to keep track of tasks or need the return values, then Celery
 must store or send the states somewhere so that they can be retrieved later.
 There are several built-in result backends to choose from: SQLAlchemy/Django ORM,
-Memcached, RabbitMQ/QPid (``rpc``), MongoDB, and Redis -- or you can define your own.
+Memcached, RabbitMQ/QPid (``rpc``), and Redis -- or you can define your own.
 
 No backend works well for every use case.
 You should read about the strengths and weaknesses of each backend, and choose

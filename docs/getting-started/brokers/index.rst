@@ -28,7 +28,6 @@ Experimental Transports
 
     sqlalchemy
     django
-    mongodb
     sqs
     couchdb
     beanstalk

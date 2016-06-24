@@ -633,7 +633,7 @@ class _RemoteControl(Command):
 class inspect(_RemoteControl):
     """Inspect the worker at runtime.
 
-    Availability: RabbitMQ (AMQP), Redis, and MongoDB transports.
+    Availability: RabbitMQ (AMQP) and Redis transports.
 
     Examples::
 

@@ -120,8 +120,7 @@ It supports…
 
     - **Message Transports**
 
-        - RabbitMQ_, Redis_,
-        - MongoDB_ (experimental), Amazon SQS (experimental),
+        - RabbitMQ_, Redis_, Amazon SQS
         - CouchDB_ (experimental), SQLAlchemy_ (experimental),
         - Django ORM (experimental), `IronMQ`_
         - and more…
@@ -133,7 +132,7 @@ It supports…
     - **Result Stores**
 
         - AMQP, Redis
-        - memcached, MongoDB
+        - memcached
         - SQLAlchemy, Django ORM
         - Apache Cassandra, IronCache, Elasticsearch
 

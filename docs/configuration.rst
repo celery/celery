@@ -520,10 +520,6 @@ Can be one of the following:
     Use `Memcached`_ to store the results.
     See :ref:`conf-cache-result-backend`.
 
-* ``mongodb``
-    Use `MongoDB`_ to store the results.
-    See :ref:`conf-mongodb-result-backend`.
-
 * ``cassandra``
     Use `Cassandra`_ to store the results.
     See :ref:`conf-cassandra-result-backend`.
@@ -563,7 +559,6 @@ Can be one of the following:
 
 .. _`SQLAlchemy`: http://sqlalchemy.org
 .. _`Memcached`: http://memcached.org
-.. _`MongoDB`: http://mongodb.org
 .. _`Redis`: http://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
 .. _`Elasticsearch`: https://aws.amazon.com/elasticsearch-service/
@@ -611,9 +606,9 @@ Default is to expire after 1 day.
 .. note::
 
     For the moment this only works with the AMQP, database, cache,
-    Redis and MongoDB backends.
+    and Redis backends.
 
-    When using the database or MongoDB backends, `celery beat` must be
+    When using the database backend, `celery beat` must be
     running for the results to be expired.
 
 .. setting:: result_cache_max
@@ -865,56 +860,6 @@ Socket timeout for connections to Redis from the result backend
 in seconds (int/float)
 
 Default is 5 seconds.
-
-.. _conf-mongodb-result-backend:
-
-MongoDB backend settings
-------------------------
-
-.. note::
-
-    The MongoDB backend requires the :pypi:`pymongo` library:
-    https://github.com/mongodb/mongo-python-driver/tree/master
-
-.. setting:: mongodb_backend_settings
-
-``mongodb_backend_settings``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This is a dict supporting the following keys:
-
-* ``database``
-    The database name to connect to. Defaults to ``celery``.
-
-* ``taskmeta_collection``
-    The collection name to store task meta data.
-    Defaults to ``celery_taskmeta``.
-
-* ``max_pool_size``
-    Passed as max_pool_size to PyMongo's Connection or MongoClient
-    constructor. It is the maximum number of TCP connections to keep
-    open to MongoDB at a given time. If there are more open connections
-    than max_pool_size, sockets will be closed when they are released.
-    Defaults to 10.
-
-* ``options``
-
-    Additional keyword arguments to pass to the MongoDB connection
-    constructor.  See the :pypi:`pymongo` docs to see a list of arguments
-    supported.
-
-.. _example-mongodb-result-config:
-
-Example configuration
-~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-    result_backend = 'mongodb://192.168.1.100:30000/'
-    mongodb_backend_settings = {
-        'database': 'mydb',
-        'taskmeta_collection': 'my_taskmeta_collection',
-    }
 
 .. _conf-cassandra-result-backend:
 
