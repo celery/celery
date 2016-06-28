@@ -16,7 +16,6 @@
     canvas
     workers
     periodic-tasks
-    remote-tasks
     routing
     monitoring
     security

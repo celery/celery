@@ -598,7 +598,7 @@ Backward incompatible changes
     `CELERY_AMQP_PUBLISHER_ROUTING_KEY`    `CELERY_DEFAULT_ROUTING_KEY`
     =====================================  =====================================
 
-* The `celery.task.rest` module has been removed, use :mod:`celery.task.http`
+* The `celery.task.rest` module has been removed, use `celery.task.http`
   instead (as scheduled by the :ref:`deprecation-timeline`).
 
 * It's no longer allowed to skip the class name in loader names.

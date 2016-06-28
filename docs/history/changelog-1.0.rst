@@ -864,7 +864,7 @@ News
 * Improved support for webhook tasks.
 
     `celery.task.rest` is now deprecated, replaced with the new and shiny
-    :mod:`celery.task.http`. With more reflective names, sensible interface,
+    `celery.task.http`. With more reflective names, sensible interface,
     and it's possible to override the methods used to perform HTTP requests.
 
 * The results of task sets are now cached by storing it in the result

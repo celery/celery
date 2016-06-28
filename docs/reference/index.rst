@@ -22,7 +22,6 @@
     celery.app.utils
     celery.bootsteps
     celery.result
-    celery.task.http
     celery.schedules
     celery.signals
     celery.security

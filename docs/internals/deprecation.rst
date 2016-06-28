@@ -225,5 +225,3 @@ Removals for version 2.0
 
 * :meth:`TaskSet.run`. Use :meth:`celery.task.base.TaskSet.apply_async`
     instead.
-
-* The module :mod:`celery.task.rest`; use :mod:`celery.task.http` instead.
