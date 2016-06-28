@@ -262,7 +262,7 @@ Fixes
 * Now emits a user-friendly error message if the result backend name is
   unknown (Issue #349).
 
-* :mod:`celery.contrib.batches`: Now sets loglevel and logfile in the task
+* ``celery.contrib.batches``: Now sets loglevel and logfile in the task
   request so ``task.get_logger`` works with batch tasks (Issue #357).
 
 * worker: An exception was raised if using the amqp transport and the prefetch

@@ -35,7 +35,6 @@
     celery.loaders.base
     celery.states
     celery.contrib.abortable
-    celery.contrib.batches
     celery.contrib.migrate
     celery.contrib.sphinx
     celery.contrib.rdb

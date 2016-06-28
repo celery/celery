@@ -774,7 +774,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
     Fix contributed by Thomas Grainger.
 
-- Batches: Added example sending results to :mod:`celery.contrib.batches`.
+- Batches: Added example sending results to ``celery.contrib.batches``.
 
     Contributed by Thomas Grainger.
 
@@ -855,7 +855,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - An optimization was too eager and caused some logging messages to never emit.
 
-- :mod:`celery.contrib.batches` now works again.
+- ``celery.contrib.batches`` now works again.
 
 - Fixed missing white-space in ``bdist_rpm`` requirements (Issue #1046).
 

@@ -82,7 +82,6 @@ def find_distribution_modules(name=__name__, file=__file__):
 
 def import_all_modules(name=__name__, file=__file__,
                        skip=('celery.decorators',
-                             'celery.contrib.batches',
                              'celery.task')):
     for module in find_distribution_modules(name, file):
         if not module.startswith(skip):
