@@ -601,7 +601,7 @@ If you want to specify a specific worker you can use the
 
 .. code-block:: console
 
-    $ celery -A proj control add_consumer foo -d worker1.local
+    $ celery -A proj control add_consumer foo -d celery@worker1.local
 
 The same can be accomplished dynamically using the :meth:`@control.add_consumer` method:
 
@@ -654,7 +654,7 @@ used to specify a worker, or a list of workers, to act on the command:
 
 .. code-block:: console
 
-    $ celery -A proj control cancel_consumer foo -d worker1.local
+    $ celery -A proj control cancel_consumer foo -d celery@worker1.local
 
 
 You can also cancel consumers programmatically using the
@@ -684,7 +684,7 @@ to specify which workers should reply to the request:
 
 .. code-block:: console
 
-    $ celery -A proj inspect active_queues -d worker1.local
+    $ celery -A proj inspect active_queues -d celery@worker1.local
     [...]
 
 

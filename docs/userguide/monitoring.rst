@@ -198,9 +198,9 @@ You can specify a single, or a list of workers by using the
 
 .. code-block:: console
 
-    $ celery -A proj inspect -d w1,w2 reserved
+    $ celery -A proj inspect -d w1@e.com,w2@e.com reserved
 
-    $ celery -A proj control -d w1,w2 enable_events
+    $ celery -A proj control -d w1@e.com,w2@e.com enable_events
 
 
 .. _monitoring-flower:
