@@ -119,10 +119,6 @@ The :program:`celery worker` command (previously known as ``celeryd``)
     completed and the child process will be replaced afterwards.
     Default: no limit.
 
-.. cmdoption:: --autoreload
-
-    Enable auto-reloading.
-
 .. cmdoption:: --no-execv
 
     Don't do execv after multiprocessing child fork.
@@ -322,7 +318,6 @@ class worker(Command):
         parser.add_option_group(qopts)
 
         fopts = OptionGroup(parser, 'Features')
-        fopts.add_option('--autoreload', action='store_true')
         fopts.add_option(
             '--without-gossip', action='store_true', default=False,
         )

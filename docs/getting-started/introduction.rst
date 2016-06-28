@@ -183,22 +183,6 @@ Features
 
             :ref:`Read more… <guide-beat>`.
 
-        - **Autoreloading**
-
-            In development workers can be configured to automatically reload source
-            code as it changes, including :manpage:`inotify(7)` support on Linux.
-
-            :ref:`Read more… <worker-autoreloading>`.
-
-        - **Autoscaling**
-
-            Dynamically resizing the worker pool depending on load,
-            or custom metrics specified by the user, used to limit
-            memory usage in shared hosting/cloud environments or to
-            enforce a given quality of service.
-
-            :ref:`Read more… <worker-autoscaling>`.
-
         - **Resource Leak Protection**
 
             The :option:`--maxtasksperchild <celery worker --maxtasksperchild>`

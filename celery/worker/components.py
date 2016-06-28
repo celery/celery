@@ -115,13 +115,12 @@ class Pool(bootsteps.StartStopStep):
     """
     requires = (Hub,)
 
-    def __init__(self, w, autoreload=None,
+    def __init__(self, w,
                  no_execv=False, optimization=None, **kwargs):
         w.pool = None
         w.max_concurrency = None
         w.min_concurrency = w.concurrency
         w.no_execv = no_execv
-        self.autoreload_enabled = autoreload
         self.optimization = optimization
 
     def close(self, w):
@@ -147,7 +146,7 @@ class Pool(bootsteps.StartStopStep):
             max_restarts = 100
             if w.pool_putlocks and w.pool_cls.uses_semaphore:
                 w.process_task = w._process_task_sem
-        allow_restart = self.autoreload_enabled or w.pool_restarts
+        allow_restart = w.pool_restarts
         pool = w.pool = self.instantiate(
             w.pool_cls, w.min_concurrency,
             initargs=(w.app, w.hostname),

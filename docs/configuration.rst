@@ -142,7 +142,6 @@ rush in moving to the new settings format.
 ``CELERYD_TASK_TIME_LIMIT``            :setting:`task_time_limit`
 ``CELERY_TRACK_STARTED``               :setting:`task_track_started`
 ``CELERYD_AGENT``                      :setting:`worker_agent`
-``CELERYD_AUTORELAODER``               :setting:`worker_autoreloader`
 ``CELERYD_CONCURRENCY``                :setting:`worker_concurrency`
 ``CELERYD_CONSUMER``                   :setting:`worker_consumer`
 ``CELERY_WORKER_DIRECT``               :setting:`worker_direct`
@@ -2229,16 +2228,6 @@ If enabled the worker pool can be restarted using the
 :control:`pool_restart` remote control command.
 
 Disabled by default.
-
-.. setting:: worker_autoreloader
-
-``worker_autoreloader``
-~~~~~~~~~~~~~~~~~~~~~~~
-
-Name of the auto-reloader class used by the worker to reload
-Python modules and files that have changed.
-
-Default is: ``celery.worker.autoreload:Autoreloader``.
 
 .. setting:: worker_consumer
 

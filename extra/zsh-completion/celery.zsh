@@ -55,7 +55,6 @@ case "$words[1]" in
     '(-Q --queues=)'{-Q,--queues=}'[List of queues to enable for this worker, separated by comma. By default all configured queues are enabled.]' \
     '(-I --include=)'{-I,--include=}'[Comma separated list of additional modules to import.]' \
     '(--pidfile=)--pidfile=[Optional file used to store the process pid.]' \
-    '(--autoreload)--autoreload[Enable autoreloading.]' \
     '(--no-execv)--no-execv[Don"t do execv after multiprocessing child fork.]'
     compadd -a ifargs
     ;;
