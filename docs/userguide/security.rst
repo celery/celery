@@ -69,9 +69,9 @@ memory, file-systems and devices.
 
 An exception to this rule is when using the multiprocessing based task pool,
 which is currently the default. In this case, the task will have access to
-any memory copied as a result of the :func:`fork` call (does not apply
-under MS Windows), and access to memory contents written
-by parent tasks in the same worker child process.
+any memory copied as a result of the :func:`fork` call,
+and access to memory contents written by parent tasks in the same worker
+child process.
 
 Limiting access to memory contents can be done by launching every task
 in a subprocess (:func:`fork` + :func:`execve`).

@@ -49,12 +49,22 @@ What do I need?
 Celery version 3.0 runs on,
 
 - Python (2.7, 3.4, 3.5)
-- PyPy (1.8, 1.9)
-- Jython (2.5, 2.7).
+- PyPy (5.1, 2.4)
 
-This is the last version to support Python 2.5,
-and from Celery 3.1, Python 2.6 or later is required.
-The last version to support Python 2.4 was Celery series 2.2.
+
+This is the last version to support Python 2.7,
+and from the next version (Celery 5.x) Python 3.6 or newer is required.
+
+If you are running an older version of Python, you need to be running
+an older version of Celery:
+
+- Python 2.6: Celery series 3.1 or earlier.
+- Python 2.5: Celery series 3.0 or earlier.
+- Python 2.4 was Celery series 2.2 or earlier.
+
+Celery is a project with minimal funding,
+so we do not support Microsoft Windows.
+Please do not open any issues related to that platform.
 
 *Celery* is usually used with a message broker to send and receive messages.
 The RabbitMQ, Redis transports are feature complete,

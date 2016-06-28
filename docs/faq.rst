@@ -907,7 +907,8 @@ Windows
 
 .. _faq-windows-worker-embedded-beat:
 
-The `-B` / `--beat` option to worker doesn't work?
+Does Celery support Windows?
 ----------------------------------------------------------------
-**Answer**: That's right. Run `celery beat` and `celery worker` as separate
-services instead.
+**Answer**: No.
+
+Since Celery 4.x, Windows is no longer supported due to lack of resources.

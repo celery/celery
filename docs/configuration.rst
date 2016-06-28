@@ -2104,10 +2104,8 @@ can disable this behavior by setting
 
 Enables/disables colors in logging output by the Celery apps.
 
-By default colors are enabled if
-
-    1) the app is logging to a real terminal, and not a file.
-    2) the app is not running on Windows.
+By default colors are enabled if the app is logging to a real
+terminal, and not a file.
 
 .. setting:: worker_log_format
 

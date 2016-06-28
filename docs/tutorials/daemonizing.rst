@@ -517,13 +517,3 @@ or production environment (inadvertently) as root.
 
 .. _`extra/macOS`:
     https://github.com/celery/celery/tree/master/extra/macOS/
-
-
-.. _daemon-windows:
-
-Windows
-======================================================================
-
-See this excellent external tutorial:
-
-http://www.calazan.com/windows-tip-run-applications-in-the-background-using-task-scheduler/

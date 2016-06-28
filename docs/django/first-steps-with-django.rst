@@ -85,8 +85,7 @@ becomes ``CELERY_TASK_ALWAYS_EAGER``, and the :setting:`broker_url`
 setting becomes ``CELERY_BROKER_URL``.
 
 You can pass the object directly here, but using a string is better since
-then the worker doesn't have to serialize the object when using Windows
-or execv:
+then the worker doesn't have to serialize the object.
 
 .. code-block:: python
 

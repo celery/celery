@@ -11,8 +11,8 @@ from django.conf import settings  # noqa
 
 app = Celery('proj')
 
-# Using a string here means the worker will not have to
-# pickle the object when using Windows.
+# Using a string here means the worker does not have to serialize
+# the configuration object.
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # load task modules from all registered Django app configs.

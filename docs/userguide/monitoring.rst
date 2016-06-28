@@ -783,7 +783,7 @@ The worker has connected to the broker and is online.
 - `freq`: Heartbeat frequency in seconds (float).
 - `sw_ident`: Name of worker software (e.g. ``py-celery``).
 - `sw_ver`: Software version (e.g. 2.2.0).
-- `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
+- `sw_sys`: Operating System (e.g. Linux/Darwin).
 
 .. event:: worker-heartbeat
 
@@ -801,7 +801,7 @@ it is considered to be offline.
 - `freq`: Heartbeat frequency in seconds (float).
 - `sw_ident`: Name of worker software (e.g. ``py-celery``).
 - `sw_ver`: Software version (e.g. 2.2.0).
-- `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
+- `sw_sys`: Operating System (e.g. Linux/Darwin).
 - `active`: Number of currently executing tasks.
 - `processed`: Total number of tasks processed by this worker.
 

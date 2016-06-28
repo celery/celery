@@ -459,8 +459,8 @@ Time limits can also be set using the :setting:`task_time_limit` /
 
 .. note::
 
-    Time limits do not currently work on Windows and other
-    platforms that do not support the ``SIGUSR1`` signal.
+    Time limits do not currently work on platforms that do not support
+    the :sig:`SIGUSR1` signal.
 
 
 Changing time limits at run-time
