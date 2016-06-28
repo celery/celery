@@ -193,14 +193,17 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={},
     origins = get_origins(by_module)
     compat_modules = COMPAT_MODULES.get(name, ())
 
+    _all = tuple(set(reduce(
+        operator.add,
+        [tuple(v) for v in [compat_modules, origins, direct, attrs]],
+    )))
+    if sys.version_info[0] < 3:
+        _all = [s.encode() for s in _all]
     cattrs = dict(
         _compat_modules=compat_modules,
         _all_by_module=by_module, _direct=direct,
         _object_origins=origins,
-        __all__=tuple(set(reduce(
-            operator.add,
-            [tuple(v) for v in [compat_modules, origins, direct, attrs]],
-        ))),
+        __all__=_all,
     )
     new_module = create_module(name, attrs, cls_attrs=cattrs, base=base)
     new_module.__dict__.update({
