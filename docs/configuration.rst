@@ -594,7 +594,7 @@ Default is to expire after 1 day.
 .. note::
 
     For the moment this only works with the AMQP, database, cache,
-    and Redis backends.
+    and Redis result backends.
 
     When using the database backend, `celery beat` must be
     running for the results to be expired.
@@ -1730,7 +1730,7 @@ A dict of additional options passed to the underlying transport.
 
 See your transport user manual for supported options (if any).
 
-Example setting the visibility timeout (supported by Redis and SQS
+Example setting the visibility timeout (supported by SQS
 transports):
 
 .. code-block:: python

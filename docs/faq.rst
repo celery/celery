@@ -184,19 +184,8 @@ Do I have to use AMQP/RabbitMQ?
 
 **Answer**: No.
 
-Although using RabbitMQ is recommended you can also use Redis, SQS or Qpid.
+Although using RabbitMQ is recommended you can also use SQS or Qpid.
 See :ref:`brokers` for more information.
-
-Redis as a broker won't perform as well as
-an AMQP broker, but the combination RabbitMQ as broker and Redis as a result
-store is commonly used.  If you have strict reliability requirements you are
-encouraged to use RabbitMQ or another AMQP broker. Some transports also uses
-polling, so they are likely to consume more resources. However, if you for
-some reason are not able to use AMQP, feel free to use these alternatives.
-They will probably work fine for most use cases, and note that the above
-points are not specific to Celery; If using Redis/database as a queue worked
-fine for you before, it probably will now. You can always upgrade later
-if you need to.
 
 .. _faq-is-celery-multilingual:
 
@@ -273,8 +262,7 @@ Does it work on FreeBSD?
 
 **Answer:** Depends
 
-When using the RabbitMQ (AMQP) and Redis transports it should work
-out of the box.
+When using the RabbitMQ (AMQP) it should work out of the box.
 
 For other transports the compatibility prefork pool is
 used which requires a working POSIX semaphore implementation,
@@ -545,12 +533,11 @@ What features are not supported when not using an AMQP broker?
 This is an incomplete list of features not available when
 using the virtual transports:
 
-    * Remote control commands (supported only by Redis).
+    * Remote control commands.
 
     * Monitoring with events may not work in all virtual transports.
 
     * The `header` and `fanout` exchange types
-        (`fanout` is supported by Redis).
 
 .. _faq-tasks:
 
@@ -765,7 +752,6 @@ Does celery support task priorities?
 **Answer**: Yes.
 
 RabbitMQ supports priorities since version 3.5.0.
-Redis transport emulates support of priorities.
 
 You can also prioritize work by routing high priority tasks
 to different workers.  In the real world this may actually work better

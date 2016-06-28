@@ -34,7 +34,7 @@ separating them by commas.
 
     $ pip install "celery[librabbitmq]"
 
-    $ pip install "celery[librabbitmq,redis,auth,msgpack]"
+    $ pip install "celery[librabbitmq,auth,msgpack]"
 
 The following bundles are available:
 
@@ -67,9 +67,6 @@ Transports and Backends
 
 :``celery[librabbitmq]``:
     for using the librabbitmq C library.
-
-:``celery[redis]``:
-    for using Redis as a message transport or as a result backend.
 
 :``celery[sqs]``:
     for using Amazon SQS as a message transport (*experimental*).

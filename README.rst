@@ -67,9 +67,8 @@ so we do not support Microsoft Windows.
 Please do not open any issues related to that platform.
 
 *Celery* is usually used with a message broker to send and receive messages.
-The RabbitMQ, Redis transports are feature complete,
-but there's also experimental support for a myriad of other solutions, including
-using SQLite for local development.
+The RabbitMQ transports is feature complete, but there's also Qpid and Amazon
+SQS broker support.
 
 *Celery* can run on a single machine, on multiple machines, or even
 across datacenters.
@@ -138,7 +137,7 @@ It supports...
 
     - **Message Transports**
 
-        - RabbitMQ_, Redis_, Amazon SQS
+        - RabbitMQ_, Amazon SQS
 
     - **Concurrency**
 
@@ -244,7 +243,7 @@ separating them by commas.
 
     $ pip install "celery[librabbitmq]"
 
-    $ pip install "celery[librabbitmq,redis,auth,msgpack]"
+    $ pip install "celery[librabbitmq,auth,msgpack]"
 
 The following bundles are available:
 
@@ -277,9 +276,6 @@ Transports and Backends
 
 :``celery[librabbitmq]``:
     for using the librabbitmq C library.
-
-:``celery[redis]``:
-    for using Redis as a message transport or as a result backend.
 
 :``celery[sqs]``:
     for using Amazon SQS as a message transport (*experimental*).

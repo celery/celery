@@ -173,7 +173,7 @@ Commands
 
     .. code-block:: console
 
-        $ celery -A proj migrate redis://localhost amqp://localhost
+        $ celery -A proj migrate amqp://A.example.com amqp://B.example.cmo
 
   This command will migrate all the tasks on one broker to another.
   As this command is new and experimental you should be sure to have
@@ -299,8 +299,6 @@ Broker URL can also be passed through the
 .. code-block:: console
 
     $ celery flower --broker=amqp://guest:guest@localhost:5672//
-    or
-    $ celery flower --broker=redis://guest:guest@localhost:6379/0
 
 Then, you can visit flower in your web browser :
 
@@ -416,48 +414,6 @@ Finding the amount of memory allocated to a queue:
 
 :Tip: Adding the ``-q`` option to `rabbitmqctl(1)`_ makes the output
       easier to parse.
-
-
-.. _monitoring-redis:
-
-Redis
-=====
-
-If you're using Redis as the broker, you can monitor the Celery cluster using
-the `redis-cli(1)` command to list lengths of queues.
-
-.. _monitoring-redis-queues:
-
-Inspecting queues
------------------
-
-Finding the number of tasks in a queue:
-
-.. code-block:: console
-
-    $ redis-cli -h HOST -p PORT -n DATABASE_NUMBER llen QUEUE_NAME
-
-The default queue is named `celery`. To get all available queues, invoke:
-
-.. code-block:: console
-
-    $ redis-cli -h HOST -p PORT -n DATABASE_NUMBER keys \*
-
-.. note::
-
-    Queue keys only exists when there are tasks in them, so if a key
-    does not exist it simply means there are no messages in that queue.
-    This is because in Redis a list with no elements in it is automatically
-    removed, and hence it won't show up in the `keys` command output,
-    and `llen` for that list returns 0.
-
-    Also, if you're using Redis for other purposes, the
-    output of the `keys` command will include unrelated values stored in
-    the database.  The recommended way around this is to use a
-    dedicated `DATABASE_NUMBER` for Celery, you can also use
-    database numbers to separate Celery applications from each other (virtual
-    hosts), but this will not affect the monitoring events used by e.g. Flower
-    as Redis pub/sub commands are global rather than database based.
 
 .. _monitoring-munin:
 

@@ -111,7 +111,7 @@ A queue named `"video"` will be created with the following settings:
      'exchange_type': 'direct',
      'routing_key': 'video'}
 
-The non-AMQP backends like `Redis` or `Django-models` do not support exchanges,
+The non-AMQP backends like `SQS` do not support exchanges,
 so they require the exchange to have the same name as the queue. Using this
 design ensures it will work for them as well.
 

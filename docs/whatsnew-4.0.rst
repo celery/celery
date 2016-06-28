@@ -301,27 +301,6 @@ even asynchronously:
         check_arguments(*(args or ()), **(kwargs or {}))
     TypeError: add() takes exactly 2 arguments (1 given)
 
-Redis Events not backward compatible
-------------------------------------
-
-The Redis ``fanout_patterns`` and ``fanout_prefix`` transport
-options are now enabled by default, which means that workers
-running 4.0 cannot see workers running 3.1 on the default configuration,
-and vice versa.
-
-This is only related to monitor event messages, the workers should still
-execute tasks as normally.
-
-You can avoid this situation by configuring the 3.1 workers (and clients)
-to enable these settings, before upgrading to 4.0:
-
-.. code-block:: python
-
-    BROKER_TRANSPORT_OPTIONS = {
-        'fanout_patterns': True,
-        'fanout_prefix': True,
-    }
-
 Django: Auto-discover now supports Django app configurations
 ------------------------------------------------------------
 
@@ -601,7 +580,7 @@ Amazon SQS transport now officially supported.
 ==============================================
 
 The SQS broker transport has been rewritten to use async I/O and as such
-joins RabbitMQ and Redis as officially supported transports.
+joins RabbitMQ and Qpid as officially supported transports.
 
 The new implementation also takes advantage of long polling,
 and closes several issues related to using SQS as a broker.
@@ -821,8 +800,7 @@ In Other News
 
 - **Tasks**: The "anon-exchange" is now used for simple name-name direct routing.
 
-  This increases performance as it completely bypasses the routing table,
-  in addition it also improves reliability for the Redis broker transport.
+  This increases performance as it completely bypasses the routing table.
 
 - **Tasks**: :setting:`task_routes` can now contain glob patterns and
   regexes.
@@ -843,9 +821,6 @@ In Other News
 
 - **Programs**: New :program:`celery logtool`: Utility for filtering and parsing
   celery worker log-files
-
-- **Redis Transport**: The Redis transport now supports the
-  :setting:`broker_use_ssl` option.
 
 - **Worker**: Worker now only starts the remote control command consumer if the
   broker transport used actually supports them.

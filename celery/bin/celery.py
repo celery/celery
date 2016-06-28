@@ -633,7 +633,7 @@ class _RemoteControl(Command):
 class inspect(_RemoteControl):
     """Inspect the worker at runtime.
 
-    Availability: RabbitMQ (AMQP) and Redis transports.
+    Availability: RabbitMQ (AMQP) transport.
 
     Examples::
 
@@ -678,7 +678,7 @@ class inspect(_RemoteControl):
 class control(_RemoteControl):
     """Workers remote control.
 
-    Availability: RabbitMQ (AMQP), Redis, and MongoDB transports.
+    Availability: RabbitMQ (AMQP) transport.
 
     Examples::
 
@@ -761,12 +761,11 @@ class status(Command):
 class migrate(Command):
     """Migrate tasks from one broker to another.
 
-    Examples:
+    Example:
 
     .. code-block:: console
 
-        $ celery migrate redis://localhost amqp://guest@localhost//
-        $ celery migrate django:// redis://localhost
+        $ celery migrate amqp://A.example.com amqp://guest@B.example.com//
 
     NOTE: This command is experimental, make sure you have
           a backup of the tasks before you continue.

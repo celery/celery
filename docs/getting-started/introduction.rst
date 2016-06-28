@@ -58,9 +58,8 @@ What do I need?
     Please do not open any issues related to that platform.
 
 *Celery* requires a message transport to send and receive messages.
-The RabbitMQ and Redis broker transports are feature complete,
-but there's also support for a myriad of other experimental solutions, including
-using SQLite for local development.
+The RabbitMQ broker transport is feature complete,
+but there's also support for SQS and Apache Qpid.
 
 *Celery* can run on a single machine, on multiple machines, or even
 across data centers.
@@ -127,7 +126,7 @@ Celery is…
 
         - **Brokers**
 
-            - :ref:`RabbitMQ <broker-rabbitmq>`, :ref:`Redis <broker-redis>`,
+            - :ref:`RabbitMQ <broker-rabbitmq>`
             - :ref:`Amazon SQS <broker-sqs>` and more…
 
         - **Concurrency**
